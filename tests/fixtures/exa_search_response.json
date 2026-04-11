@@ -1,0 +1,23 @@
+{
+  "results": [
+    {
+      "url": "https://example.com/result-1",
+      "title": "Example Result 1",
+      "snippet": "This is an example search result for testing purposes.",
+      "published_date": "2024-01-15"
+    },
+    {
+      "url": "https://example.com/result-2",
+      "title": "Example Result 2",
+      "snippet": "Another example search result with more details.",
+      "published_date": "2024-01-10"
+    },
+    {
+      "url": "https://example.com/result-3",
+      "title": "Example Result 3",
+      "snippet": "Yet another example result from the search.",
+      "published_date": "2024-01-05"
+    }
+  ],
+  "autopromptString": "example search query"
+}

@@ -1,0 +1,264 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: loom
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: loom-config
+  namespace: loom
+data:
+  # Search provider configuration
+  LOOM_HOST: "0.0.0.0"
+  LOOM_PORT: "8787"
+  LOOM_CACHE_DIR: "/data/cache"
+  LOOM_LOGS_DIR: "/data/logs"
+  LOOM_SESSIONS_DIR: "/data/sessions"
+  LOOM_LOG_LEVEL: "INFO"
+  SPIDER_CONCURRENCY: "5"
+  LLM_PROVIDER_CASCADE: "nvidia,openai"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: loom-api-keys
+  namespace: loom
+type: Opaque
+stringData:
+  # IMPORTANT: Replace these with actual credentials
+  # Recommend using Sealed Secrets or External Secrets in production
+  EXA_API_KEY: "YOUR_EXA_API_KEY"
+  TAVILY_API_KEY: "YOUR_TAVILY_API_KEY"
+  FIRECRAWL_API_KEY: "YOUR_FIRECRAWL_API_KEY"
+  BRAVE_API_KEY: "YOUR_BRAVE_API_KEY"
+  NVIDIA_NIM_API_KEY: "YOUR_NVIDIA_NIM_API_KEY"
+  NVIDIA_NIM_ENDPOINT: "https://integrate.api.nvidia.com/v1"
+  OPENAI_API_KEY: "YOUR_OPENAI_API_KEY"
+  OPENAI_BASE_URL: "https://api.openai.com/v1"
+  ANTHROPIC_API_KEY: ""
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: loom-data
+  namespace: loom
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loom
+  namespace: loom
+  labels:
+    app: loom
+    version: "0.1.0"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: loom
+  template:
+    metadata:
+      labels:
+        app: loom
+    spec:
+      # Single replica: sessions are local state, not distributed
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - loom
+                topologyKey: kubernetes.io/hostname
+
+      # Security context: run as non-root
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+
+      containers:
+        - name: loom
+          image: ghcr.io/aadelb/loom:latest
+          imagePullPolicy: Always
+          ports:
+            - name: mcp
+              containerPort: 8787
+              protocol: TCP
+
+          # ConfigMap environment variables
+          envFrom:
+            - configMapRef:
+                name: loom-config
+            - secretRef:
+                name: loom-api-keys
+
+          # Additional environment variables
+          env:
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - name: LOOM_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: LOOM_POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+
+          # Volume mounts
+          volumeMounts:
+            - name: data
+              mountPath: /data
+
+          # Resource requests and limits
+          resources:
+            requests:
+              # CPU: 2 cores, Memory: 4 GB
+              cpu: 2000m
+              memory: 4Gi
+            limits:
+              # CPU: 4 cores, Memory: 16 GB
+              cpu: 4000m
+              memory: 16Gi
+
+          # Liveness probe: restart if unresponsive
+          livenessProbe:
+            httpProbe:
+              httpHeaders:
+                - name: Content-Type
+                  value: application/json
+                - name: Accept
+                  value: "application/json, text/event-stream"
+              path: /mcp
+              port: mcp
+              scheme: HTTP
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          # Readiness probe: remove from load balancer if not ready
+          readinessProbe:
+            httpProbe:
+              httpHeaders:
+                - name: Content-Type
+                  value: application/json
+                - name: Accept
+                  value: "application/json, text/event-stream"
+              path: /mcp
+              port: mcp
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 2
+
+          # Graceful shutdown
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 15"]
+
+          # Security context for the container
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            capabilities:
+              drop:
+                - ALL
+
+      # Volume definition
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: loom-data
+
+      # Restart policy
+      restartPolicy: Always
+
+      # Termination grace period
+      terminationGracePeriodSeconds: 30
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: loom
+  namespace: loom
+  labels:
+    app: loom
+spec:
+  type: ClusterIP
+  selector:
+    app: loom
+  ports:
+    - name: mcp
+      protocol: TCP
+      port: 8787
+      targetPort: mcp
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: loom
+  namespace: loom
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: loom
+
+---
+# OPTIONAL: Horizontal Pod Autoscaler
+# Note: Only use if running multiple replicas
+# Requires metrics-server to be installed
+# kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+# apiVersion: autoscaling/v2
+# kind: HorizontalPodAutoscaler
+# metadata:
+#   name: loom
+#   namespace: loom
+# spec:
+#   scaleTargetRef:
+#     apiVersion: apps/v1
+#     kind: Deployment
+#     name: loom
+#   minReplicas: 1
+#   maxReplicas: 3
+#   metrics:
+#   - type: Resource
+#     resource:
+#       name: cpu
+#       target:
+#         type: Utilization
+#         averageUtilization: 70
+#   - type: Resource
+#     resource:
+#       name: memory
+#       target:
+#         type: Utilization
+#         averageUtilization: 80

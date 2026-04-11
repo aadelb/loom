@@ -1,0 +1,17 @@
+tests/
+docs/
+cache/
+logs/
+sessions/
+.git/
+examples/
+*.md
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+dist/
+build/
+*.egg-info/
+.env
+.env.local

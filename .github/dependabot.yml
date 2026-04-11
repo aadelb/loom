@@ -1,0 +1,40 @@
+version: 2
+
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "03:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "aadelb"
+    labels:
+      - "dependencies"
+    groups:
+      - dependency-type: "production"
+        update-types:
+          - "patch"
+          - "minor"
+      - dependency-type: "development"
+        update-types:
+          - "patch"
+          - "minor"
+    ignore:
+      # Ignore major version updates, require manual review
+      - dependency-name: "*"
+        update-types:
+          - "major"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "03:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "aadelb"
+    labels:
+      - "ci"

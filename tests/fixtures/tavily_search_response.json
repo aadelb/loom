@@ -1,0 +1,24 @@
+{
+  "results": [
+    {
+      "title": "Example Tavily Result 1",
+      "url": "https://example.com/tavily-1",
+      "content": "Example content from Tavily search result.",
+      "score": 0.95
+    },
+    {
+      "title": "Example Tavily Result 2",
+      "url": "https://example.com/tavily-2",
+      "content": "More example content from Tavily.",
+      "score": 0.87
+    },
+    {
+      "title": "Example Tavily Result 3",
+      "url": "https://example.com/tavily-3",
+      "content": "Additional example content.",
+      "score": 0.76
+    }
+  ],
+  "query": "example search query",
+  "response_time": 0.342
+}

@@ -1,0 +1,21 @@
+{
+  "id": "chatcmpl-example-12345",
+  "object": "text_completion",
+  "created": 1700000000,
+  "model": "meta-llama3-8b-instruct",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "This is an example response from NVIDIA NIM. It demonstrates a typical LLM response for testing purposes."
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 25,
+    "completion_tokens": 35,
+    "total_tokens": 60
+  }
+}

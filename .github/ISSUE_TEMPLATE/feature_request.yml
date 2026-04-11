@@ -1,0 +1,65 @@
+name: Feature Request
+description: Suggest a new feature or enhancement
+labels: ["enhancement"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a feature! Please describe your idea clearly and explain why it would be useful.
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Why do you need this feature? What problem does it solve?
+      placeholder: |
+        I need this because...
+        This would improve...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed Solution
+      description: Describe how you would like the feature to work
+      placeholder: |
+        The feature would allow users to...
+        Example usage:
+        ```
+        loom [command] [options]
+        ```
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: What other solutions have you considered?
+      placeholder: |
+        - Alternative 1: ...
+        - Alternative 2: ...
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other information or examples
+      placeholder: |
+        - Links to related issues
+        - Screenshots or diagrams
+        - Links to similar features in other projects
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      options:
+        - label: I have checked existing issues and feature requests
+          required: true
+        - label: This feature is not already implemented
+          required: true
+        - label: This feature aligns with Loom's scope (research tools)
+          required: false

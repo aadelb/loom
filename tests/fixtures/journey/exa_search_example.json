@@ -1,0 +1,17 @@
+{
+  "results": [
+    {
+      "url": "https://example.com/research-1",
+      "title": "Research Topic Result 1",
+      "snippet": "This result covers key aspects of the research topic.",
+      "published_date": "2024-01-20"
+    },
+    {
+      "url": "https://example.com/research-2",
+      "title": "Research Topic Result 2",
+      "snippet": "Additional research findings on the topic.",
+      "published_date": "2024-01-18"
+    }
+  ],
+  "autopromptString": "expanded research query"
+}

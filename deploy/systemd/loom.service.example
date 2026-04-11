@@ -1,0 +1,75 @@
+[Unit]
+Description=Loom MCP Research Server
+Documentation=https://github.com/aadelb/loom
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+# Service type: simple process, no daemonization
+Type=simple
+
+# User and group running the service
+User=loom
+Group=loom
+
+# Working directory
+WorkingDirectory=/opt/loom
+
+# Environment variables loaded from /etc/loom/loom.env
+# Use EnvironmentFile=- to ignore missing file
+EnvironmentFile=-/etc/loom/loom.env
+
+# Explicitly set key environment variables for reliability
+Environment="PATH=/opt/loom/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="PYTHONUNBUFFERED=1"
+Environment="LOOM_PORT=8787"
+Environment="LOOM_HOST=127.0.0.1"
+
+# Main execution command
+# Assumes loom is installed in a virtualenv at /opt/loom/venv
+ExecStart=/opt/loom/venv/bin/python -m loom.server
+
+# Restart policy
+Restart=on-failure
+RestartSec=10s
+
+# Restart limit: allow max 5 restarts within 1 minute
+StartLimitInterval=60
+StartLimitBurst=5
+
+# Process limits and safety
+# Memory limit: 16 GB
+MemoryMax=16G
+
+# CPU limit: 4 cores (400%)
+CPUQuota=400%
+
+# File descriptors (needed for concurrent connections)
+LimitNOFILE=65536
+
+# Process count limit (Playwright spawns subprocesses)
+LimitNPROC=512
+
+# Security: disable new privileges (no setuid allowed)
+NoNewPrivileges=true
+
+# Security: keep /tmp across restarts (Playwright/Firefox needs it)
+PrivateTmp=false
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=loom
+
+# Timeout for graceful shutdown
+TimeoutStopSec=30
+
+# Optional: Nice value for lower scheduling priority (-20 to 19)
+# Nice=5
+
+# Optional: CPU affinity (pin to specific cores)
+# CPUAffinity=0 1 2 3
+
+[Install]
+# Enable with: sudo systemctl enable loom
+WantedBy=multi-user.target

@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://github.com/aadelb/loom#readme
+    about: Read the Loom documentation for usage guides and examples
+  - name: Security Report
+    url: https://github.com/aadelb/loom/security/advisories
+    about: Report security vulnerabilities privately
+  - name: Discussions
+    url: https://github.com/aadelb/loom/discussions
+    about: Ask questions and share ideas

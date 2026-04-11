@@ -1,0 +1,18 @@
+version: "3.9"
+
+services:
+  loom:
+    image: ghcr.io/aadelb/loom:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8787:8787"
+    volumes:
+      - ./cache:/app/cache
+      - ./logs:/app/logs
+      - ./sessions:/app/sessions
+      - ./config.json:/app/config.json:ro
+    env_file: .env
+    mem_limit: 16g
+    cpus: "4.0"
+    security_opt:
+      - no-new-privileges:true
