@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import time
+from datetime import datetime, timezone
 from typing import Any, Literal, cast
 
 import httpx
@@ -19,6 +21,7 @@ except ImportError:  # pragma: no cover — optional HTML parser
     HTMLParser = None  # type: ignore[assignment,misc]
     _HAS_SELECTOLAX = False
 
+from loom.cache import get_cache
 from loom.params import FetchParams
 from loom.validators import EXTERNAL_TIMEOUT_SECS, MAX_FETCH_CHARS
 
@@ -31,6 +34,7 @@ class FetchResult(BaseModel):
     url: str
     status_code: int | None = None
     content_type: str | None = None
+    title: str | None = None
     text: str = ""
     html: str | None = None
     json: Any | None = None
@@ -38,6 +42,44 @@ class FetchResult(BaseModel):
     error: str | None = None
     tool: str = "unknown"
     elapsed_ms: int = 0
+
+
+def _to_scrapling_schema(result: dict[str, Any], max_chars: int) -> dict[str, Any]:
+    """Transform httpx result to Scrapling-compatible schema.
+
+    Adds: title, html_len, fetched_at
+    Keeps: url, text, tool, status_code, error, elapsed_ms (all optional)
+    """
+    output: dict[str, Any] = {
+        "url": result.get("url", ""),
+        "tool": result.get("tool", "unknown"),
+    }
+
+    # Extract title from text or set empty
+    output["title"] = result.get("title", "")
+
+    # Ensure text is capped
+    text = result.get("text", "")
+    if text and len(text) > max_chars:
+        text = text[:max_chars]
+    output["text"] = text
+
+    # html_len from html field if present
+    html = result.get("html", "")
+    output["html_len"] = len(html) if html else 0
+
+    # Add fetched_at timestamp
+    output["fetched_at"] = datetime.now(timezone.utc).isoformat()
+
+    # Optionally include legacy fields for backward compat
+    if result.get("status_code"):
+        output["status_code"] = result["status_code"]
+    if result.get("error"):
+        output["error"] = result["error"]
+    if result.get("elapsed_ms"):
+        output["elapsed_ms"] = result["elapsed_ms"]
+
+    return output
 
 
 def _extract_text(html: str, max_chars: int) -> str:
@@ -71,6 +113,12 @@ def _extract_text(html: str, max_chars: int) -> str:
         return ""
 
 
+def _make_cache_key(url: str, mode: str) -> str:
+    """Create a cache key from url and mode."""
+    combined = f"{url}|{mode}"
+    return hashlib.sha256(combined.encode()).hexdigest()[:32]
+
+
 def research_fetch(
     url: str,
     mode: str = "stealthy",
@@ -84,6 +132,7 @@ def research_fetch(
     wait_for: str | None = None,
     return_format: str = "text",
     timeout: int | None = None,
+    bypass_cache: bool = False,
 ) -> dict[str, Any]:
     """Fetch a URL with configurable strategy.
 
@@ -100,9 +149,11 @@ def research_fetch(
         wait_for: CSS selector to wait for (dynamic only)
         return_format: 'text' | 'html' | 'json' | 'screenshot'
         timeout: request timeout in seconds
+        bypass_cache: skip cache read/write when True
 
     Returns:
-        Dict with keys: url, status_code, text, html, json, error, tool, elapsed_ms
+        Dict with keys: url, title, text, html_len, fetched_at, tool, and optionally
+        status_code, error, elapsed_ms for backward compatibility
     """
     # Validate and normalize
     params = FetchParams(
@@ -121,13 +172,24 @@ def research_fetch(
     )
 
     logger.info(
-        "fetch_start url=%s mode=%s return=%s",
+        "fetch_start url=%s mode=%s return=%s bypass_cache=%s",
         url,
         params.mode,
         params.return_format,
+        bypass_cache,
     )
 
     start = time.time()
+
+    # Check cache for mode='http' only
+    cache_key = _make_cache_key(url, params.mode)
+    cached = None
+    if params.mode == "http" and not bypass_cache:
+        cached = get_cache().get(cache_key)
+        if cached:
+            logger.info("cache_hit url=%s", url)
+            cached["elapsed_ms"] = int((time.time() - start) * 1000)
+            return cached
 
     # Route to appropriate fetcher
     if params.mode == "http":
@@ -144,14 +206,65 @@ def research_fetch(
             elapsed_ms=int((time.time() - start) * 1000),
         )
 
-    # Convert to dict
+    # Convert to dict and enrich with Scrapling-compatible fields
     output = result.model_dump(exclude_none=True)
     output["elapsed_ms"] = int((time.time() - start) * 1000)
+
+    # For mode='http', transform result to Scrapling-compatible schema and cache
+    if params.mode == "http" and not output.get("error"):
+        output = _to_scrapling_schema(output, params.max_chars)
+        get_cache().put(cache_key, output)
+
     return output
 
 
 def _fetch_http(params: FetchParams) -> FetchResult:
-    """Fetch using plain HTTP (httpx)."""
+    """Fetch using plain HTTP.
+
+    Tries Scrapling first (if available), falls back to httpx.
+    """
+    try:
+        from scrapling.fetchers import Fetcher  # type: ignore[import-not-found]
+
+        return _fetch_http_scrapling(params, Fetcher)
+    except ImportError:
+        logger.debug("Scrapling not available, falling back to httpx")
+        return _fetch_http_httpx(params)
+
+
+def _fetch_http_scrapling(params: FetchParams, Fetcher: Any) -> FetchResult:
+    """Fetch using Scrapling (if available)."""
+    try:
+        page = Fetcher.get(params.url)
+
+        # Extract title
+        title = page.css("title::text").get() or page.css("h1::text").get() or ""
+
+        # Extract text
+        text = page.get_all_text()
+        if text and len(text) > params.max_chars:
+            text = text[: params.max_chars]
+
+        # Get HTML length
+        html_len = len(page.html_content) if page.html_content else 0
+
+        return FetchResult(
+            url=params.url,
+            text=text,
+            html=page.html_content,
+            tool="scrapling",
+            # Include title for Scrapling compatibility (will be used in schema transform)
+            title=title,  # type: ignore[arg-type]
+            status_code=200,
+            content_type="text/html",
+        )
+    except Exception as e:
+        logger.warning("scrapling_fetch_failed url=%s error=%s", params.url, e)
+        return FetchResult(url=params.url, error=str(e), tool="scrapling")
+
+
+def _fetch_http_httpx(params: FetchParams) -> FetchResult:
+    """Fetch using httpx (fallback)."""
     # Build headers
     headers = params.headers or {}
     if params.user_agent:
@@ -211,7 +324,7 @@ def _fetch_http(params: FetchParams) -> FetchResult:
             )
 
     except Exception as e:
-        logger.warning("http_fetch_failed url=%s error=%s", params.url, e)
+        logger.warning("httpx_fetch_failed url=%s error=%s", params.url, e)
         return FetchResult(url=params.url, error=str(e), tool="httpx")
 
 

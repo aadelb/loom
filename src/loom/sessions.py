@@ -502,8 +502,17 @@ class SessionManager:
     def __init__(self) -> None:
         """Initialize SessionManager, creating DB if needed."""
         base_dir = os.environ.get("LOOM_SESSIONS_DIR", "~/.loom/sessions")
-        self.base_dir = Path(base_dir).expanduser()
+        base_path = Path(base_dir).expanduser()
+        # Reject path traversal in LOOM_SESSIONS_DIR (cf. sessions audit HIGH #4)
+        if ".." in base_path.parts:
+            raise ValueError(f"LOOM_SESSIONS_DIR must not contain '..' (got {base_path!s})")
+        self.base_dir = base_path.resolve()
         self.base_dir.mkdir(parents=True, exist_ok=True)
+        # Enforce 0700 on an existing dir (mkdir(mode=...) is a no-op when exist_ok=True)
+        try:
+            os.chmod(self.base_dir, 0o700)
+        except OSError:
+            pass
 
         self.db_path = self.base_dir / "sessions.db"
         self._init_db()
@@ -565,22 +574,27 @@ class SessionManager:
             existing = cursor.fetchone()
 
             if existing:
-                # Reuse and extend TTL
-                session_id = existing[4]  # session_id is at index 4
-                cursor.execute(
-                    "UPDATE sessions SET last_used_at = ?, expires_at = ? WHERE name = ?",
-                    (now_iso, expires_iso, name)
-                )
-                conn.commit()
-                conn.close()
-
-                profile_dir = existing[3]  # profile_dir is at index 3
+                # Schema order (matches INSERT below):
+                #   [0]=name, [1]=browser, [2]=profile_dir, [3]=session_id,
+                #   [4]=created_at, [5]=last_used_at, [6]=expires_at
+                browser_existing = existing[1]
+                profile_dir = existing[2]
+                session_id = existing[3]
+                created_at = existing[4]
+                try:
+                    cursor.execute(
+                        "UPDATE sessions SET last_used_at = ?, expires_at = ? WHERE name = ?",
+                        (now_iso, expires_iso, name),
+                    )
+                    conn.commit()
+                finally:
+                    conn.close()
                 return {
                     "name": name,
                     "session_id": session_id,
-                    "created_at": existing[5],  # created_at is at index 5
+                    "created_at": created_at,
                     "expires_at": expires_iso,
-                    "browser": browser,
+                    "browser": browser_existing,
                     "profile_dir": profile_dir,
                 }
 
@@ -627,25 +641,31 @@ class SessionManager:
         lock = self._get_session_lock(name)
         async with lock:
             conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-
-            cursor.execute("SELECT profile_dir FROM sessions WHERE name = ?", (name,))
-            row = cursor.fetchone()
-
-            if not row:
-                conn.close()
-                return {"error": "Session not found"}
-
-            profile_dir = row[0]
-
-            # Delete DB row
-            cursor.execute("DELETE FROM sessions WHERE name = ?", (name,))
-            conn.commit()
-            conn.close()
-
-            # Delete profile directory
             try:
-                profile_path = Path(profile_dir)
+                cursor = conn.cursor()
+                cursor.execute("SELECT profile_dir FROM sessions WHERE name = ?", (name,))
+                row = cursor.fetchone()
+                if not row:
+                    return {"error": "Session not found"}
+                profile_dir = row[0]
+                cursor.execute("DELETE FROM sessions WHERE name = ?", (name,))
+                conn.commit()
+            finally:
+                conn.close()
+
+            # Validate profile_dir is under base_dir before rmtree (guard against
+            # DB tampering / symlink escape — sessions audit LOW #7).
+            try:
+                profile_path = Path(profile_dir).resolve()
+                profile_path.relative_to(self.base_dir)
+            except ValueError:
+                logger.error(
+                    "profile_dir_outside_base name=%s profile=%s base=%s",
+                    name, profile_dir, self.base_dir,
+                )
+                return {}
+
+            try:
                 if profile_path.exists():
                     shutil.rmtree(profile_path)
             except Exception as e:

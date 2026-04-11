@@ -196,7 +196,7 @@ class TestSessionManager:
     async def test_session_open_reuse_extends_ttl(
         self, isolated_session_manager: SessionManager
     ) -> None:
-        """Reopening an existing session extends its TTL."""
+        """Reopening an existing session extends its TTL and returns stable metadata."""
         result1 = await isolated_session_manager.open("reuse_test", ttl_seconds=100)
         expires_at_1 = result1["expires_at"]
 
@@ -207,6 +207,15 @@ class TestSessionManager:
 
         # Second call should have a later expiration
         assert expires_at_2 > expires_at_1
+        # Reuse must preserve the original identity (regression guard for the
+        # off-by-one schema index bug caught in session-audit CRITICAL #1).
+        assert result2["session_id"] == result1["session_id"]
+        assert result2["profile_dir"] == result1["profile_dir"]
+        assert result2["created_at"] == result1["created_at"]
+        # session_id must still look like a UUID (not a datetime leaked from column 4)
+        import uuid as _uuid
+
+        _uuid.UUID(result2["session_id"])
 
     async def test_session_lru_eviction_at_9_sessions(
         self, isolated_session_manager: SessionManager

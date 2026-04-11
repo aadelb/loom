@@ -42,7 +42,6 @@ class TestFetch:
         with pytest.raises(ValidationError):
             research_fetch(url="http://192.168.1.1")
 
-    @pytest.mark.skip(reason=_SCRAPLING_API_TODO)
     def test_fetch_returns_expected_fields(self, tmp_cache_dir: Path) -> None:
         """Fetch result has expected fields (url, title, text, html_len, fetched_at)."""
         import os
@@ -75,7 +74,6 @@ class TestFetch:
         except ModuleNotFoundError as e:
             pytest.skip(f"scrapling dependency missing: {e}")
 
-    @pytest.mark.skip(reason=_SCRAPLING_API_TODO)
     def test_fetch_cache_hit(self, tmp_cache_dir: Path) -> None:
         """Fetch returns cached result on second call (same params)."""
         import os
@@ -110,7 +108,6 @@ class TestFetch:
         except ModuleNotFoundError as e:
             pytest.skip(f"scrapling dependency missing: {e}")
 
-    @pytest.mark.skip(reason=_SCRAPLING_API_TODO)
     def test_fetch_max_chars_applied(self, tmp_cache_dir: Path) -> None:
         """Fetch respects max_chars parameter."""
         import os
@@ -140,7 +137,6 @@ class TestFetch:
         except ModuleNotFoundError as e:
             pytest.skip(f"scrapling dependency missing: {e}")
 
-    @pytest.mark.skip(reason=_SCRAPLING_API_TODO)
     def test_fetch_bypass_cache(self, tmp_cache_dir: Path) -> None:
         """Fetch with bypass_cache=True ignores cache."""
         import os
