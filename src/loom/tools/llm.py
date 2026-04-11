@@ -7,7 +7,6 @@ Implements cascade routing across NVIDIA NIM, OpenAI, Anthropic, and vLLM.
 
 from __future__ import annotations
 
-import asyncio
 import contextlib
 import json
 import logging

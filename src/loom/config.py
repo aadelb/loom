@@ -22,7 +22,7 @@ import json
 import logging
 import os
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
 
@@ -190,14 +190,14 @@ def save_config(cfg: dict[str, Any], path: Path | str | None = None) -> Path:
 class suppress_errors:
     """Tiny contextmanager that swallows exceptions (cleanup-only)."""
 
-    def __enter__(self) -> "suppress_errors":
+    def __enter__(self) -> suppress_errors:
         return self
 
     def __exit__(self, *_: Any) -> bool:
         return True
 
 
-def set(key: str, value: Any, path: Path | str | None = None) -> dict[str, Any]:  # noqa: A001
+def set(key: str, value: Any, path: Path | str | None = None) -> dict[str, Any]:
     """Validate and persist a single config key update.
 
     Returns a dict with ``key``, ``old``, ``new``, and ``persisted_at`` fields.
@@ -224,7 +224,7 @@ def set(key: str, value: Any, path: Path | str | None = None) -> dict[str, Any]:
         "key": key,
         "old": old_value,
         "new": validated.get(key),
-        "persisted_at": datetime.now(timezone.utc).isoformat(),
+        "persisted_at": datetime.now(UTC).isoformat(),
     }
 
 

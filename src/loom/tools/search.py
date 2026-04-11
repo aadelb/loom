@@ -6,7 +6,6 @@ import json
 import logging
 from typing import Any
 
-import httpx
 from mcp.types import TextContent
 
 logger = logging.getLogger("loom.tools.search")
@@ -42,7 +41,7 @@ def research_search(
     # Import here to avoid circular imports
     from loom.config import get_config
 
-    config = get_config()
+    get_config()
     provider_config = provider_config or {}
 
     # Validate and normalize
@@ -73,7 +72,7 @@ def research_search(
                 **provider_config,
             )
             result["provider"] = "exa"
-            return result
+            return result  # type: ignore[no-any-return]
 
         elif provider == "tavily":
             from loom.providers.tavily import search_tavily
@@ -88,7 +87,7 @@ def research_search(
                 **provider_config,
             )
             result["provider"] = "tavily"
-            return result
+            return result  # type: ignore[no-any-return]
 
         elif provider == "firecrawl":
             from loom.providers.firecrawl import search_firecrawl
@@ -101,7 +100,7 @@ def research_search(
                 **provider_config,
             )
             result["provider"] = "firecrawl"
-            return result
+            return result  # type: ignore[no-any-return]
 
         elif provider == "brave":
             from loom.providers.brave import search_brave
@@ -112,7 +111,7 @@ def research_search(
                 **provider_config,
             )
             result["provider"] = "brave"
-            return result
+            return result  # type: ignore[no-any-return]
 
         else:
             logger.error("unknown_search_provider provider=%s", provider)

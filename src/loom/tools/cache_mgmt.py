@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import time
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -23,7 +23,7 @@ def research_cache_stats() -> dict[str, Any]:
         Dict with keys: size_mb, entry_count, oldest, newest
     """
     cache = get_cache()
-    cache_dir = Path(cache.cache_dir)
+    cache_dir = Path(cache.base_dir)
 
     if not cache_dir.exists():
         return {
@@ -73,7 +73,7 @@ def research_cache_clear(older_than_days: int = 30) -> dict[str, Any]:
         Dict with keys: deleted_count, freed_mb
     """
     cache = get_cache()
-    cache_dir = Path(cache.cache_dir)
+    cache_dir = Path(cache.base_dir)
 
     if not cache_dir.exists():
         return {"deleted_count": 0, "freed_mb": 0.0}

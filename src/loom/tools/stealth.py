@@ -1,7 +1,7 @@
-"""research_camoufox — Camoufox‑based stealth browser for anti‑bot websites.
+"""research_camoufox — Camoufox-based stealth browser for anti-bot websites.
 
-Uses Camoufox (Firefox + anti‑detection patches) to scrape Cloudflare‑protected,
-bot‑managed, and JavaScript‑heavy pages.
+Uses Camoufox (Firefox + anti-detection patches) to scrape Cloudflare-protected,
+bot-managed, and JavaScript-heavy pages.
 """
 
 from __future__ import annotations
@@ -9,8 +9,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import time
-from typing import Any, cast
+from typing import Any
 
 from mcp.types import TextContent
 from pydantic import BaseModel
@@ -39,7 +38,7 @@ def _fetch_camoufox(
     """Synchronous wrapper for Camoufox."""
     # Import here to avoid startup dependency
     try:
-        from camoufox import Camoufox
+        from camoufox import Camoufox  # type: ignore[import-untyped]
     except ImportError:
         return CamoufoxResult(
             url=url,
@@ -47,22 +46,22 @@ def _fetch_camoufox(
         )
 
     try:
-        with Camoufox() as fox:
+        with Camoufox() as fox:  # type: ignore[no-untyped-call,attr-defined]
             # Navigate
-            fox.get(url)
+            fox.get(url)  # type: ignore[attr-defined]
 
             # Wait for page load
-            fox.wait_for_page_load()
+            fox.wait_for_page_load()  # type: ignore[attr-defined]
 
             # Extract
-            title = fox.title
-            html = fox.page_source
-            text = fox.page_text
+            title = fox.title  # type: ignore[attr-defined]
+            html = fox.page_source  # type: ignore[attr-defined]
+            text = fox.page_text  # type: ignore[attr-defined]
 
             # Optional screenshot
             screenshot_b64 = None
             if screenshot:
-                screenshot_b64 = fox.screenshot_as_base64
+                screenshot_b64 = fox.screenshot_as_base64  # type: ignore[attr-defined]
 
             return CamoufoxResult(
                 url=url,
@@ -80,14 +79,14 @@ async def research_camoufox(
     url: str,
     session: str | None = None,
     screenshot: bool = False,
-    timeout: int | None = None,
+    timeout: int | None = None,  # noqa: ASYNC109
 ) -> dict[str, Any]:
     """Fetch a URL using Camoufox stealth browser.
 
     Args:
         url: URL to fetch
         session: NOT USED (for API compatibility with other tools)
-        screenshot: include base64‑encoded screenshot
+        screenshot: include base64-encoded screenshot
         timeout: operation timeout in seconds
 
     Returns:
@@ -126,6 +125,41 @@ async def research_camoufox(
     output = result.model_dump(exclude_none=True)
     output["tool"] = "camoufox"
     return output
+
+
+async def research_botasaurus(
+    url: str,
+    session: str | None = None,
+    screenshot: bool = False,
+    timeout: int | None = None,  # noqa: ASYNC109
+) -> dict[str, Any]:
+    """Fetch a URL using Botasaurus stealth browser (second stealth escalation).
+
+    Thin wrapper over ``research_fetch(url, mode="dynamic")`` which routes
+    through Botasaurus' ``@browser`` decorator. Exposed as a distinct MCP tool
+    so callers can explicitly request the Chrome-based stealth path when
+    Camoufox (Firefox) is blocked by the target.
+
+    Args:
+        url: URL to fetch
+        session: NOT USED (for API parity with research_camoufox / research_fetch)
+        screenshot: return base64-encoded screenshot alongside text
+        timeout: operation timeout in seconds
+
+    Returns:
+        Dict with keys: url, title, text, html_len, fetched_at, tool, error (if any)
+    """
+    from loom.tools.fetch import research_fetch
+
+    logger.info("botasaurus_start url=%s", url)
+    result: dict[str, Any] = research_fetch(
+        url=url,
+        mode="dynamic",
+        return_format="screenshot" if screenshot else "text",
+        timeout=timeout,
+    )
+    result.setdefault("tool", "botasaurus")
+    return result
 
 
 def tool_camoufox(

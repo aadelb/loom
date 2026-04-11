@@ -6,6 +6,7 @@ Supports Camoufox, Chromium, and Firefox with configurable TTL.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import logging
 import os
@@ -17,10 +18,10 @@ import uuid
 from collections import defaultdict
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any, Literal, cast
+from typing import Any, ClassVar, Literal, cast
 
 from mcp.types import TextContent
-from playwright.async_api import Browser, BrowserContext, Page, async_playwright
+from playwright.async_api import Browser, BrowserContext, async_playwright
 from pydantic import BaseModel, Field
 
 from loom.config import get_config
@@ -110,10 +111,10 @@ async def _get_browser(
     """Launch or reuse a Playwright browser instance."""
     # Import here to avoid circular imports
     if browser_type == "camoufox":
-        from camoufox import Camoufox
+        from camoufox import Camoufox  # type: ignore[import-untyped]
 
-        camou = Camoufox()
-        return await camou.launch()
+        camou: Any = Camoufox()  # type: ignore[no-untyped-call]
+        return await camou.launch()  # type: ignore[no-any-return,attr-defined]
     else:
         playwright = await async_playwright().start()
         if browser_type == "chromium":
@@ -124,7 +125,7 @@ async def _get_browser(
 
 async def open_session(
     name: str,
-    browser: Literal["camoufox", "chromium", "firefox"] = "camoufox",
+    browser: Literal["camoufox", "chromium", "firefox"] | str = "camoufox",
     ttl_seconds: int = SESSION_TTL_SECONDS,
     login_url: str | None = None,
     login_script: str | None = None,
@@ -143,7 +144,7 @@ async def open_session(
     """
     params = SessionOpenParams(
         name=name,
-        browser=browser,  # type: ignore[arg-type]
+        browser=browser,  # type: ignore[arg-type] # camoufox type mismatch
         ttl_seconds=ttl_seconds,
         login_url=login_url,
         login_script=login_script,
@@ -175,7 +176,7 @@ async def open_session(
             user_data_dir = _get_session_dir() / name
             user_data_dir.mkdir(exist_ok=True)
 
-            context = await browser_instance.new_context(
+            context = await browser_instance.new_context(  # type: ignore[call-arg]
                 user_data_dir=str(user_data_dir),
                 viewport={"width": 1280, "height": 800},
                 locale="en-US",
@@ -222,8 +223,7 @@ async def open_session(
             if name in _sessions:
                 await _sessions[name].close()
                 del _sessions[name]
-            if name in _metadata:
-                del _metadata[name]
+            _metadata.pop(name, None)
             _delete_metadata(name)
             return {"name": name, "error": str(e), "status": "failed"}
 
@@ -245,8 +245,7 @@ async def close_session(name: str) -> dict[str, Any]:
         try:
             await _sessions[name].close()
             del _sessions[name]
-            if name in _metadata:
-                del _metadata[name]
+            _metadata.pop(name, None)
             _delete_metadata(name)
             return {"name": name, "status": "closed"}
         except Exception as e:
@@ -278,8 +277,8 @@ async def get_session(name: str) -> BrowserContext | None:
                     logger.info("session_expired name=%s age=%d", name, age)
                     await close_session(name)
                     return None
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("session_load_fallback name=%s error=%s", name, e)
 
         # Update last used
         _metadata[name]["last_used"] = datetime.now(UTC).isoformat()
@@ -295,7 +294,7 @@ def list_sessions() -> list[dict[str, Any]]:
     results = []
 
     # Active sessions
-    for name, ctx in _sessions.items():
+    for name, _ctx in _sessions.items():
         meta = _metadata.get(name, {})
         results.append(
             {
@@ -345,7 +344,7 @@ async def _find_oldest_session() -> str | None:
     """Find the oldest active session by creation time."""
     if not _metadata:
         return None
-    
+
     def get_created_at(item: tuple[str, dict[str, Any]]) -> Any | None:
         """Extract creation timestamp from metadata."""
         _, meta = item
@@ -355,13 +354,13 @@ async def _find_oldest_session() -> str | None:
             except (ValueError, KeyError):
                 return None
         return None
-    
+
     # Filter out items without valid timestamps
     valid_items = [(name, meta) for name, meta in _metadata.items() if get_created_at((name, meta)) is not None]
-    
+
     if not valid_items:
         return None
-    
+
     # Find the session with minimum creation time
     oldest = min(valid_items, key=lambda x: cast(datetime, get_created_at(x)))
     return oldest[0]
@@ -496,8 +495,8 @@ class SessionManager:
     For testing, set SessionManager._instance = None to reset.
     """
 
-    _instance: "SessionManager | None" = None
-    _lock_map: dict[str, asyncio.Semaphore] = {}
+    _instance: ClassVar[SessionManager | None] = None
+    _lock_map: ClassVar[dict[str, asyncio.Semaphore]] = {}
 
     def __init__(self) -> None:
         """Initialize SessionManager, creating DB if needed."""
@@ -509,10 +508,8 @@ class SessionManager:
         self.base_dir = base_path.resolve()
         self.base_dir.mkdir(parents=True, exist_ok=True)
         # Enforce 0700 on an existing dir (mkdir(mode=...) is a no-op when exist_ok=True)
-        try:
+        with contextlib.suppress(OSError):
             os.chmod(self.base_dir, 0o700)
-        except OSError:
-            pass
 
         self.db_path = self.base_dir / "sessions.db"
         self._init_db()
@@ -656,7 +653,7 @@ class SessionManager:
             # Validate profile_dir is under base_dir before rmtree (guard against
             # DB tampering / symlink escape — sessions audit LOW #7).
             try:
-                profile_path = Path(profile_dir).resolve()
+                profile_path = Path(profile_dir).resolve()  # noqa: ASYNC240
                 profile_path.relative_to(self.base_dir)
             except ValueError:
                 logger.error(

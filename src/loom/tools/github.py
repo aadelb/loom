@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import os
-import subprocess
+import subprocess  # noqa: F401  # module-level patch target for tests/test_tools/test_github.py
 from typing import Any
 
 import httpx

@@ -6,7 +6,7 @@ import hashlib
 import json
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, Literal, cast
 
 import httpx
@@ -14,11 +14,11 @@ from mcp.types import TextContent
 from pydantic import BaseModel
 
 try:
-    from selectolax.parser import HTMLParser  # type: ignore[import-not-found]
+    from selectolax.parser import HTMLParser
 
     _HAS_SELECTOLAX = True
 except ImportError:  # pragma: no cover — optional HTML parser
-    HTMLParser = None  # type: ignore[assignment,misc]
+    HTMLParser = None
     _HAS_SELECTOLAX = False
 
 from loom.cache import get_cache
@@ -69,7 +69,7 @@ def _to_scrapling_schema(result: dict[str, Any], max_chars: int) -> dict[str, An
     output["html_len"] = len(html) if html else 0
 
     # Add fetched_at timestamp
-    output["fetched_at"] = datetime.now(timezone.utc).isoformat()
+    output["fetched_at"] = datetime.now(UTC).isoformat()
 
     # Optionally include legacy fields for backward compat
     if result.get("status_code"):
@@ -142,10 +142,10 @@ def research_fetch(
         max_chars: maximum characters to return (capped)
         solve_cloudflare: attempt Cloudflare bypass (stealthy/dynamic only)
         headers: custom HTTP headers
-        user_agent: override User‑Agent
+        user_agent: override User-Agent
         proxy: proxy URL (http:// or socks5://)
         cookies: dict of cookies
-        accept_language: Accept‑Language header
+        accept_language: Accept-Language header
         wait_for: CSS selector to wait for (dynamic only)
         return_format: 'text' | 'html' | 'json' | 'screenshot'
         timeout: request timeout in seconds
@@ -224,7 +224,7 @@ def _fetch_http(params: FetchParams) -> FetchResult:
     Tries Scrapling first (if available), falls back to httpx.
     """
     try:
-        from scrapling.fetchers import Fetcher  # type: ignore[import-not-found]
+        from scrapling.fetchers import Fetcher  # type: ignore[import-untyped]
 
         return _fetch_http_scrapling(params, Fetcher)
     except ImportError:
@@ -246,7 +246,7 @@ def _fetch_http_scrapling(params: FetchParams, Fetcher: Any) -> FetchResult:
             text = text[: params.max_chars]
 
         # Get HTML length
-        html_len = len(page.html_content) if page.html_content else 0
+        len(page.html_content) if page.html_content else 0
 
         return FetchResult(
             url=params.url,
@@ -254,7 +254,7 @@ def _fetch_http_scrapling(params: FetchParams, Fetcher: Any) -> FetchResult:
             html=page.html_content,
             tool="scrapling",
             # Include title for Scrapling compatibility (will be used in schema transform)
-            title=title,  # type: ignore[arg-type]
+            title=title,  # type: ignore[assignment]
             status_code=200,
             content_type="text/html",
         )
@@ -331,7 +331,7 @@ def _fetch_http_httpx(params: FetchParams) -> FetchResult:
 def _fetch_stealthy(params: FetchParams) -> FetchResult:
     """Fetch using stealth browser (Camoufox)."""
     try:
-        from camoufox import Camoufox
+        from camoufox import Camoufox  # type: ignore[import-untyped]
     except ImportError:
         return FetchResult(
             url=params.url,
@@ -340,26 +340,25 @@ def _fetch_stealthy(params: FetchParams) -> FetchResult:
         )
 
     try:
-        with Camoufox() as fox:
+        with Camoufox() as fox:  # type: ignore[no-untyped-call,attr-defined]
             # Navigate
-            fox.get(params.url)
+            fox.get(params.url)  # type: ignore[attr-defined]
 
             # Wait for page load
-            fox.wait_for_page_load()
+            fox.wait_for_page_load()  # type: ignore[attr-defined]
 
             # Optional: wait for selector
             if params.wait_for:
-                fox.wait_for(params.wait_for)
+                fox.wait_for(params.wait_for)  # type: ignore[attr-defined]
 
             # Extract
-            title = fox.title
-            html = fox.page_source
-            text = fox.page_text
+            html = fox.page_source  # type: ignore[attr-defined]
+            text = fox.page_text  # type: ignore[attr-defined]
 
             # Optional screenshot
             screenshot_b64 = None
             if params.return_format == "screenshot":
-                screenshot_b64 = fox.screenshot_as_base64
+                screenshot_b64 = fox.screenshot_as_base64  # type: ignore[attr-defined]
 
             # Trim text
             if text and len(text) > params.max_chars:
@@ -380,7 +379,7 @@ def _fetch_stealthy(params: FetchParams) -> FetchResult:
 def _fetch_dynamic(params: FetchParams) -> FetchResult:
     """Fetch using dynamic browser (Botasaurus)."""
     try:
-        from botasaurus.browser import browser  # type: ignore[import-not-found]
+        from botasaurus.browser import browser  # type: ignore[import-untyped]
     except ImportError:
         return FetchResult(
             url=params.url,
@@ -388,7 +387,7 @@ def _fetch_dynamic(params: FetchParams) -> FetchResult:
             tool="botasaurus",
         )
 
-    @browser(
+    @browser(  # type: ignore[misc]
         headless=True,
         block_images=True,
         proxy=params.proxy,
