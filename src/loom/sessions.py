@@ -8,9 +8,14 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
+import re
+import shutil
+import sqlite3
 import time
+import uuid
 from collections import defaultdict
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, Literal, cast
 
@@ -460,3 +465,261 @@ async def research_session_close(name: str) -> dict[str, Any]:
 def research_session_list() -> list[dict[str, Any]]:
     """List active persistent browser sessions."""
     return list_sessions()
+
+
+# ─── SessionManager class for test compatibility ──────────────────────────────
+
+
+def _validate_session_name(name: Any) -> None:
+    """Validate session name against allow-list regex.
+
+    Raises ValueError if:
+    - Not a string
+    - Contains uppercase letters
+    - Contains spaces, dots, or special chars
+    - Longer than 32 chars
+    """
+    if not isinstance(name, str):
+        raise ValueError("Session name must be a string")
+
+    pattern = r"^[a-z0-9_-]{1,32}$"
+    if not re.match(pattern, name):
+        raise ValueError(
+            f"Session name must match {pattern} (lowercase alphanumeric, underscore, hyphen, max 32 chars)"
+        )
+
+
+class SessionManager:
+    """Manages browser sessions with SQLite persistence and LRU eviction.
+
+    Singleton pattern: use get_session_manager() to get the shared instance.
+    For testing, set SessionManager._instance = None to reset.
+    """
+
+    _instance: "SessionManager | None" = None
+    _lock_map: dict[str, asyncio.Semaphore] = {}
+
+    def __init__(self) -> None:
+        """Initialize SessionManager, creating DB if needed."""
+        base_dir = os.environ.get("LOOM_SESSIONS_DIR", "~/.loom/sessions")
+        self.base_dir = Path(base_dir).expanduser()
+        self.base_dir.mkdir(parents=True, exist_ok=True)
+
+        self.db_path = self.base_dir / "sessions.db"
+        self._init_db()
+
+    def _init_db(self) -> None:
+        """Create sessions table if not exists."""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS sessions (
+                name TEXT PRIMARY KEY,
+                browser TEXT NOT NULL,
+                profile_dir TEXT NOT NULL,
+                session_id TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                last_used_at TEXT NOT NULL,
+                expires_at TEXT NOT NULL
+            )
+        """)
+        conn.commit()
+        conn.close()
+
+    def _get_session_lock(self, name: str) -> asyncio.Semaphore:
+        """Get or create a semaphore for a session name (for serializing access)."""
+        if name not in self._lock_map:
+            self._lock_map[name] = asyncio.Semaphore(1)
+        return self._lock_map[name]
+
+    async def open(
+        self,
+        name: str,
+        browser: str = "camoufox",
+        ttl_seconds: int = SESSION_TTL_SECONDS,
+    ) -> dict[str, Any]:
+        """Open or reuse a session, updating TTL. Creates profile_dir and DB entry.
+
+        Args:
+            name: session name (validated)
+            browser: browser type (default "camoufox")
+            ttl_seconds: time-to-live in seconds (default SESSION_TTL_SECONDS)
+
+        Returns:
+            Dict with name, session_id, created_at, expires_at, browser, profile_dir
+        """
+        _validate_session_name(name)
+
+        lock = self._get_session_lock(name)
+        async with lock:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+
+            now = datetime.now(UTC)
+            expires_at = now + timedelta(seconds=ttl_seconds)
+            now_iso = now.isoformat()
+            expires_iso = expires_at.isoformat()
+
+            # Check if session exists
+            cursor.execute("SELECT * FROM sessions WHERE name = ?", (name,))
+            existing = cursor.fetchone()
+
+            if existing:
+                # Reuse and extend TTL
+                session_id = existing[4]  # session_id is at index 4
+                cursor.execute(
+                    "UPDATE sessions SET last_used_at = ?, expires_at = ? WHERE name = ?",
+                    (now_iso, expires_iso, name)
+                )
+                conn.commit()
+                conn.close()
+
+                profile_dir = existing[3]  # profile_dir is at index 3
+                return {
+                    "name": name,
+                    "session_id": session_id,
+                    "created_at": existing[5],  # created_at is at index 5
+                    "expires_at": expires_iso,
+                    "browser": browser,
+                    "profile_dir": profile_dir,
+                }
+
+            # Create new session
+            session_id = str(uuid.uuid4())
+            profile_dir_path = self.base_dir / name
+            profile_dir_path.mkdir(mode=0o700, exist_ok=True)
+            profile_dir = str(profile_dir_path)
+
+            cursor.execute(
+                """INSERT INTO sessions
+                   (name, browser, profile_dir, session_id, created_at, last_used_at, expires_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                (name, browser, profile_dir, session_id, now_iso, now_iso, expires_iso)
+            )
+            conn.commit()
+            conn.close()
+
+            # Check LRU eviction (max 8 sessions)
+            sessions = self.list()
+            if len(sessions) > 8:
+                # Evict oldest (first in list, sorted by last_used_at DESC)
+                oldest = sessions[-1]["name"]
+                await self.close(oldest)
+
+            return {
+                "name": name,
+                "session_id": session_id,
+                "created_at": now_iso,
+                "expires_at": expires_iso,
+                "browser": browser,
+                "profile_dir": profile_dir,
+            }
+
+    async def close(self, name: str) -> dict[str, Any]:
+        """Close a session, delete profile_dir and DB row.
+
+        Args:
+            name: session name
+
+        Returns:
+            Empty dict on success, or {error: "..."} on failure
+        """
+        lock = self._get_session_lock(name)
+        async with lock:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+
+            cursor.execute("SELECT profile_dir FROM sessions WHERE name = ?", (name,))
+            row = cursor.fetchone()
+
+            if not row:
+                conn.close()
+                return {"error": "Session not found"}
+
+            profile_dir = row[0]
+
+            # Delete DB row
+            cursor.execute("DELETE FROM sessions WHERE name = ?", (name,))
+            conn.commit()
+            conn.close()
+
+            # Delete profile directory
+            try:
+                profile_path = Path(profile_dir)
+                if profile_path.exists():
+                    shutil.rmtree(profile_path)
+            except Exception as e:
+                logger.warning("failed_to_delete_profile_dir path=%s error=%s", profile_dir, e)
+
+            return {}
+
+    def list(self) -> list[dict[str, Any]]:
+        """List all sessions, sorted by last_used_at DESC (newest first).
+
+        Returns:
+            List of session dicts with name, browser, profile_dir, session_id, etc.
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT name, browser, profile_dir, session_id, created_at, last_used_at, expires_at "
+            "FROM sessions ORDER BY last_used_at DESC"
+        )
+        rows = cursor.fetchall()
+        conn.close()
+
+        result = []
+        for row in rows:
+            result.append({
+                "name": row[0],
+                "browser": row[1],
+                "profile_dir": row[2],
+                "session_id": row[3],
+                "created_at": row[4],
+                "last_used_at": row[5],
+                "expires_at": row[6],
+            })
+        return result
+
+    def get_context(self, name: str) -> dict[str, Any] | None:
+        """Get session metadata by name, or None if not found.
+
+        Args:
+            name: session name
+
+        Returns:
+            Session dict or None
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT name, browser, profile_dir, session_id, created_at, last_used_at, expires_at "
+            "FROM sessions WHERE name = ?",
+            (name,)
+        )
+        row = cursor.fetchone()
+        conn.close()
+
+        if not row:
+            return None
+
+        return {
+            "name": row[0],
+            "browser": row[1],
+            "profile_dir": row[2],
+            "session_id": row[3],
+            "created_at": row[4],
+            "last_used_at": row[5],
+            "expires_at": row[6],
+        }
+
+
+def get_session_manager() -> SessionManager:
+    """Get or create the singleton SessionManager instance.
+
+    Returns:
+        The shared SessionManager instance
+    """
+    if SessionManager._instance is None:
+        SessionManager._instance = SessionManager()
+    return SessionManager._instance

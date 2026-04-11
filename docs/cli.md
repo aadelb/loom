@@ -88,6 +88,38 @@ loom serve --reload
 
 ---
 
+## loom install-browsers
+
+Install browser runtimes required for stealth and dynamic scraping modes.
+
+### Synopsis
+
+```text
+loom install-browsers
+```
+
+### Description
+
+Install Playwright browser distributions (Chromium, Firefox) and fetch the Camoufox Firefox binary for stealth-mode scraping. This command must be run once after installing `loom-mcp[stealth]` before using the camoufox, botasaurus, or dynamic fetch modes.
+
+Runs `playwright install chromium firefox` and `python -m camoufox fetch` in sequence. If Camoufox is not installed, the command completes successfully but warns the user.
+
+### Examples
+
+Install all browser runtimes:
+
+```bash
+loom install-browsers
+```
+
+### Exit Codes
+
+- `0` — All installations successful, or Camoufox not installed (non-fatal)
+- `1` — Playwright installation failed
+- `2` — Camoufox fetch failed (but Camoufox tools may still work if browsers exist)
+
+---
+
 ## loom fetch
 
 Fetch a single URL and extract content.

@@ -57,6 +57,6 @@ This runs a live journey once and records every HTTP response as a fixture, so s
 
 ## See also
 
-- [docs/cli.md](docs/cli.md) - Complete CLI reference
-- [docs/deployment/claude-code-integration.md](docs/deployment/claude-code-integration.md) - Production deployment guide
-- [src/loom/journey.py](src/loom/journey.py) - Journey test implementation
+- [CLI reference](cli.md) - Complete CLI reference
+- [Deployment guide](deployment/claude-code-integration.md) - Production deployment guide
+- [Journey implementation](../src/loom/journey.py) - Journey test implementation

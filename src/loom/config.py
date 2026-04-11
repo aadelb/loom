@@ -75,27 +75,41 @@ class ConfigModel(BaseModel):
     @field_validator("LLM_CASCADE_ORDER", mode="before")
     @classmethod
     def _coerce_cascade_order(cls, v: Any) -> list[str]:
-        """Accept a comma-separated string or a single provider name and coerce to list."""
+        """Accept a comma-separated string or a single provider name and coerce to list.
+
+        Empty strings and empty lists fall back to the default cascade so downstream
+        code never sees an unusable `[""]` or `[]`.
+        """
+        default_order = ["nvidia", "openai", "anthropic", "vllm"]
         if v is None:
-            return ["nvidia", "openai", "anthropic", "vllm"]
+            return default_order
         if isinstance(v, str):
-            if "," in v:
-                return [p.strip() for p in v.split(",") if p.strip()]
-            return [v.strip()]
+            parts = [p.strip() for p in v.split(",") if p.strip()]
+            return parts or default_order
         if isinstance(v, list):
-            return [str(p) for p in v]
+            parts = [str(p).strip() for p in v if str(p).strip()]
+            return parts or default_order
         raise ValueError(f"LLM_CASCADE_ORDER must be list or string, got {type(v).__name__}")
 
 
 # ─── Internal helpers ────────────────────────────────────────────────────────
 def _resolve_path(path: Path | str | None) -> Path:
-    """Resolve the config path: explicit arg > $LOOM_CONFIG_PATH > ./config.json."""
+    """Resolve the config path: explicit arg > $LOOM_CONFIG_PATH > ./config.json.
+
+    Normalises and expands ``~``, then rejects paths containing parent-directory
+    references (``..``) to prevent accidental traversal when the operator sets
+    a crafted ``LOOM_CONFIG_PATH`` value.
+    """
     if path is not None:
-        return Path(path)
-    env_path = os.environ.get("LOOM_CONFIG_PATH")
-    if env_path:
-        return Path(env_path)
-    return Path("config.json")
+        p = Path(path)
+    else:
+        env_path = os.environ.get("LOOM_CONFIG_PATH")
+        p = Path(env_path) if env_path else Path("config.json")
+
+    p = p.expanduser()
+    if ".." in p.parts:
+        raise ValueError(f"config path must not contain '..' (got {p!s})")
+    return p
 
 
 def _defaults_dict() -> dict[str, Any]:

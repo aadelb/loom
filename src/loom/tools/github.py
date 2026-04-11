@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import subprocess
 from typing import Any
 
 import httpx
@@ -39,8 +40,15 @@ def research_github(
         Dict with results list and metadata.
     """
     # Validate
-    if kind not in ("repo", "code", "issues"):
+    if kind not in ("repo", "repos", "code", "issues"):
         return {"error": f"Invalid kind: {kind}"}
+    # Normalize "repos" to "repo"
+    if kind == "repos":
+        kind = "repo"
+
+    # Reject shell injection and flag injection patterns
+    if any(pattern in query for pattern in ["$", "(", ")", "`", "--", "&&", "||", ";"]):
+        return {"error": "Query contains disallowed characters (allow-list violated)"}
 
     limit = max(1, min(limit, 100))
 

@@ -65,6 +65,9 @@ coverage.xml
 # Journey test artifacts
 /journey-out/
 /journey-recording/
+# Journey fixture snapshots regenerated on each run (timestamps drift)
+tests/fixtures/journey/report.json
+tests/fixtures/journey/report.md
 
 # Docker
 .docker/
