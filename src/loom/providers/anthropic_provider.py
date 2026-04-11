@@ -8,10 +8,21 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import time
 from typing import Any
 
 from loom.providers.base import LLMProvider, LLMResponse, _estimate_cost
+
+# Strip provider key prefixes from error messages (HIGH #5)
+_KEY_RE = re.compile(
+    r"(sk-ant-[A-Za-z0-9_\-]{10,}|sk-[A-Za-z0-9_\-]{10,}|nvapi-[A-Za-z0-9_\-]{10,})"
+)
+
+
+def _sanitize(msg: str) -> str:
+    """Redact API keys from an error string."""
+    return _KEY_RE.sub("[REDACTED_KEY]", msg)
 
 logger = logging.getLogger("loom.llm")
 
@@ -51,8 +62,12 @@ class AnthropicProvider(LLMProvider):
         return self.client
 
     def available(self) -> bool:
-        """Check if Anthropic is configured and importable."""
-        if not self.api_key:
+        """Check if Anthropic is configured with a non-empty key AND importable.
+
+        Rejects whitespace-only keys so `available()` cannot falsely advertise
+        readiness (cross-review CRITICAL #2).
+        """
+        if not self.api_key or not self.api_key.strip():
             return False
         # Try importing to check if package is available
         try:
@@ -102,10 +117,12 @@ class AnthropicProvider(LLMProvider):
                 max_tokens=max_tokens,
                 messages=messages,
                 temperature=temperature,
+                timeout=float(timeout),  # thread per-call timeout (HIGH #8)
             )
         except Exception as e:
-            logger.error("Anthropic error: %s", str(e)[:200])
-            raise
+            safe = _sanitize(str(e))[:200]
+            logger.error("Anthropic error: %s", safe)
+            raise type(e)(safe) from None
 
         latency_ms = int((time.time() - start) * 1000)
 

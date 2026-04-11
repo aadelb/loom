@@ -8,10 +8,19 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import time
 from typing import Any
 
 from loom.providers.base import LLMProvider, LLMResponse, _estimate_cost
+
+# Local helper — keeps provider self-contained even if tools/llm.py is not loaded.
+_KEY_RE = re.compile(r"(sk-[A-Za-z0-9_\-]{10,}|nvapi-[A-Za-z0-9_\-]{10,})")
+
+
+def _sanitize(msg: str) -> str:
+    """Strip provider API key prefixes from an error message (HIGH #5)."""
+    return _KEY_RE.sub("[REDACTED_KEY]", msg)
 
 logger = logging.getLogger("loom.llm")
 
@@ -54,8 +63,12 @@ class OpenAIProvider(LLMProvider):
         return self.client
 
     def available(self) -> bool:
-        """Check if OpenAI is configured."""
-        return bool(self.api_key)
+        """Check if OpenAI is configured with a non-empty key.
+
+        Rejects whitespace-only keys so `available()` cannot falsely advertise
+        readiness and leak the key in a 401 traceback (cross-review CRITICAL #2).
+        """
+        return bool(self.api_key and self.api_key.strip())
 
     async def close(self) -> None:
         """Close the OpenAI client."""
@@ -90,11 +103,13 @@ class OpenAIProvider(LLMProvider):
         client = self._get_client()
         start = time.time()
 
-        kwargs = {
+        kwargs: dict[str, Any] = {
             "model": model,
             "messages": messages,
             "max_tokens": max_tokens,
             "temperature": temperature,
+            # Thread per-call timeout through to the OpenAI SDK (HIGH #8).
+            "timeout": float(timeout),
         }
 
         # Add response_format if provided
@@ -104,8 +119,11 @@ class OpenAIProvider(LLMProvider):
         try:
             response = await client.chat.completions.create(**kwargs)
         except Exception as e:
-            logger.error("OpenAI error: %s", str(e)[:200])
-            raise
+            # Sanitize API key patterns out of the error message before logging
+            # or re-raising (HIGH #5).
+            safe = _sanitize(str(e))[:200]
+            logger.error("OpenAI error: %s", safe)
+            raise type(e)(safe) from None
 
         latency_ms = int((time.time() - start) * 1000)
 
@@ -146,12 +164,14 @@ class OpenAIProvider(LLMProvider):
         texts: list[str],
         *,
         model: str | None = None,
+        timeout: int = 60,
     ) -> list[list[float]]:
         """Generate embeddings via OpenAI.
 
         Args:
             texts: List of text strings
             model: Embedding model (default: text-embedding-3-small)
+            timeout: Per-call timeout in seconds (HIGH #6/8)
 
         Returns:
             List of embedding vectors
@@ -164,10 +184,12 @@ class OpenAIProvider(LLMProvider):
             response = await client.embeddings.create(
                 model=model,
                 input=texts,
+                timeout=float(timeout),
             )
         except Exception as e:
-            logger.error("OpenAI embeddings error: %s", str(e)[:200])
-            raise
+            safe = _sanitize(str(e))[:200]
+            logger.error("OpenAI embeddings error: %s", safe)
+            raise type(e)(safe) from None
 
         latency_ms = int((time.time() - start) * 1000)
 

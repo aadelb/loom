@@ -66,8 +66,12 @@ class NvidiaNimProvider(LLMProvider):
         return self.client
 
     def available(self) -> bool:
-        """Check if NVIDIA NIM is configured."""
-        return bool(self.api_key)
+        """Check if NVIDIA NIM is configured with a non-empty key.
+
+        Rejects whitespace-only keys so `available()` does not lie and cause
+        a 401 at the API boundary (cross-review CRITICAL #2).
+        """
+        return bool(self.api_key and self.api_key.strip())
 
     async def close(self) -> None:
         """Close the HTTP client."""
@@ -187,53 +191,57 @@ class NvidiaNimProvider(LLMProvider):
         texts: list[str],
         *,
         model: str | None = None,
+        timeout: int = 60,
     ) -> list[list[float]]:
         """Generate embeddings via NVIDIA NIM.
+
+        Respects the global NIM rate-limit semaphore just like ``chat()`` does
+        (cross-review HIGH #7) and honours the per-call ``timeout`` kwarg
+        (cross-review HIGH #6).
 
         Args:
             texts: List of text strings
             model: Embedding model (default: nvidia/nv-embed-v2)
+            timeout: Per-call timeout in seconds
 
         Returns:
             List of embedding vectors
         """
         model = model or "nvidia/nv-embed-v2"
-        client = await self._get_client()
-        start = time.time()
+        async with self.semaphore:
+            client = await self._get_client()
+            start = time.time()
 
-        payload = {
-            "model": model,
-            "input": texts,
-        }
+            payload = {
+                "model": model,
+                "input": texts,
+            }
 
-        try:
-            response = await client.post(
-                "/embeddings",
-                json=payload,
-                timeout=60.0,
+            try:
+                response = await client.post(
+                    "/embeddings",
+                    json=payload,
+                    timeout=float(timeout),
+                )
+                response.raise_for_status()
+            except httpx.TimeoutException:
+                logger.error("NVIDIA NIM embeddings timeout")
+                raise
+            except httpx.HTTPStatusError as e:
+                logger.error("NVIDIA NIM embeddings error: %d", e.response.status_code)
+                raise
+
+            data = response.json()
+            latency_ms = int((time.time() - start) * 1000)
+
+            embeddings = [item.get("embedding", []) for item in data.get("data", [])]
+
+            logger.info(
+                "llm_embed_ok provider=%s model=%s texts=%d latency=%dms",
+                self.name,
+                model,
+                len(texts),
+                latency_ms,
             )
-            response.raise_for_status()
-        except httpx.TimeoutException:
-            logger.error("NVIDIA NIM embeddings timeout")
-            raise
-        except httpx.HTTPStatusError as e:
-            logger.error("NVIDIA NIM embeddings error: %d", e.response.status_code)
-            raise
 
-        data = response.json()
-        latency_ms = int((time.time() - start) * 1000)
-
-        # Extract embeddings
-        embeddings = []
-        for item in data.get("data", []):
-            embeddings.append(item.get("embedding", []))
-
-        logger.info(
-            "llm_embed_ok provider=%s model=%s texts=%d latency=%dms",
-            self.name,
-            model,
-            len(texts),
-            latency_ms,
-        )
-
-        return embeddings
+            return embeddings

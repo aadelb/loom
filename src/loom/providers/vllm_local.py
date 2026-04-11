@@ -158,12 +158,14 @@ class VllmLocalProvider(LLMProvider):
         texts: list[str],
         *,
         model: str | None = None,
+        timeout: int = 60,
     ) -> list[list[float]]:
         """Generate embeddings via local vLLM.
 
         Args:
             texts: List of text strings
             model: Embedding model (provider-specific)
+            timeout: Per-call timeout in seconds (cross-review HIGH #6)
 
         Returns:
             List of embedding vectors
@@ -181,7 +183,7 @@ class VllmLocalProvider(LLMProvider):
             response = await client.post(
                 "/embeddings",
                 json=payload,
-                timeout=60.0,
+                timeout=float(timeout),
             )
             response.raise_for_status()
         except httpx.TimeoutException:

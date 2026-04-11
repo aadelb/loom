@@ -33,6 +33,29 @@ def _utc_now_iso() -> str:
     return iso_str
 
 
+def _safe_on_step(
+    on_step: Callable[["Step"], None] | None,
+    step: "Step",
+) -> None:
+    """Invoke the journey ``on_step`` callback with error containment.
+
+    A user-provided callback that raises (e.g. logs to a closed file, raises
+    KeyboardInterrupt in a debugger, has a typo) must NOT kill the whole
+    journey — report a warning and continue (cross-review CRITICAL #4).
+    """
+    if on_step is None:
+        return
+    try:
+        on_step(step)
+    except Exception as exc:
+        log.warning(
+            "journey_on_step_callback_failed step=%d tool=%s error=%s",
+            step.n,
+            step.tool,
+            exc,
+        )
+
+
 def _format_duration(ms: int) -> str:
     """Format milliseconds as human-readable duration."""
     if ms < 1000:
@@ -209,8 +232,7 @@ async def run_journey(
                     },
                 )
                 report.steps.append(step_0)
-                if on_step:
-                    on_step(step_0)
+                _safe_on_step(on_step, step_0)
 
                 # Step 1: List tools
                 log.info("Journey: listing tools")
@@ -229,8 +251,7 @@ async def run_journey(
                     result={"tool_count": len(tool_names), "tools": tool_names},
                 )
                 report.steps.append(step_1)
-                if on_step:
-                    on_step(step_1)
+                _safe_on_step(on_step, step_1)
 
                 if step_1.ok:
                     report.ok_count += 1
@@ -257,8 +278,7 @@ async def run_journey(
                         result={"config_keys": list(cfg_data.keys())},
                     )
                     report.steps.append(step_2)
-                    if on_step:
-                        on_step(step_2)
+                    _safe_on_step(on_step, step_2)
                     report.ok_count += 1
 
                     # Step 3: Set config (SPIDER_CONCURRENCY = 5)
@@ -280,8 +300,7 @@ async def run_journey(
                         result={"ok": True},
                     )
                     report.steps.append(step_3)
-                    if on_step:
-                        on_step(step_3)
+                    _safe_on_step(on_step, step_3)
                     report.ok_count += 1
 
                 except Exception as e:
@@ -317,8 +336,7 @@ async def run_journey(
                         },
                     )
                     report.steps.append(step_4)
-                    if on_step:
-                        on_step(step_4)
+                    _safe_on_step(on_step, step_4)
                     report.ok_count += 1
 
                 except Exception as e:
@@ -333,8 +351,7 @@ async def run_journey(
                         error=str(e),
                     )
                     report.steps.append(step_4)
-                    if on_step:
-                        on_step(step_4)
+                    _safe_on_step(on_step, step_4)
                     report.fail_count += 1
 
                 # Step 5: LLM query expand
@@ -362,8 +379,7 @@ async def run_journey(
                         },
                     )
                     report.steps.append(step_5)
-                    if on_step:
-                        on_step(step_5)
+                    _safe_on_step(on_step, step_5)
                     report.ok_count += 1
 
                 except Exception as e:
@@ -390,8 +406,7 @@ async def run_journey(
                         result=report.cache_stats,
                     )
                     report.steps.append(step_6)
-                    if on_step:
-                        on_step(step_6)
+                    _safe_on_step(on_step, step_6)
                     report.ok_count += 1
 
                 except Exception as e:
@@ -424,8 +439,7 @@ async def run_journey(
                         },
                     )
                     report.steps.append(step_7)
-                    if on_step:
-                        on_step(step_7)
+                    _safe_on_step(on_step, step_7)
                     report.ok_count += 1
 
                 except Exception as e:

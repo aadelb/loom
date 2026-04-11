@@ -12,6 +12,7 @@ import json
 import logging
 import os
 import re
+import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -49,8 +50,13 @@ def _get_provider(name: str) -> Any:
 class CostTracker:
     """Track and enforce daily LLM cost limits.
 
-    Persists per-day cost accumulation to <LOOM_LOGS_DIR>/llm_cost_<date>.json
-    with atomic writes. Enforces LLM_DAILY_COST_CAP_USD from config.
+    Persists per-day cost accumulation to ``<LOOM_LOGS_DIR>/llm_cost_<date>.json``
+    with atomic writes. Enforces ``LLM_DAILY_COST_CAP_USD`` from config.
+
+    Concurrency: guarded by a process-wide ``threading.Lock`` AND an
+    ``fcntl.flock`` advisory lock on the cost file, so both in-process
+    concurrent calls and cross-process runs (tests + server + CLI) are
+    serialized for the read-modify-write cycle (cross-review CRITICAL #3).
     """
 
     def __init__(self, logs_dir: str | Path | None = None):
@@ -67,50 +73,41 @@ class CostTracker:
             )
         self.logs_dir = Path(logs_dir)
         self.logs_dir.mkdir(parents=True, exist_ok=True)
+        # In-process serialization (fcntl alone doesn't cover same-process
+        # threads that share the file descriptor).
+        import threading as _threading
+
+        self._lock = _threading.Lock()
 
     def _cost_file(self, date_str: str) -> Path:
         """Get cost log file for a given date."""
         return self.logs_dir / f"llm_cost_{date_str}.json"
 
-    def _load_daily_cost(self, date_str: str) -> float:
-        """Load accumulated cost for a date."""
-        cost_file = self._cost_file(date_str)
-        if cost_file.exists():
-            try:
-                data = json.loads(cost_file.read_text(encoding="utf-8"))
-                return float(data.get("total_usd", 0.0))
-            except Exception as e:
-                logger.warning("failed to load cost file %s: %s", cost_file, e)
-                return 0.0
-        return 0.0
-
-    def _save_daily_cost(
-        self, date_str: str, total_usd: float, calls: list[dict[str, Any]]
-    ) -> None:
-        """Save accumulated cost for a date with atomic write."""
-        cost_file = self._cost_file(date_str)
-        data = {
-            "date": date_str,
-            "total_usd": total_usd,
-            "call_count": len(calls),
-            "calls": calls,
-            "updated_at": datetime.now(UTC).isoformat(),
-        }
-        # Atomic write: write to tmp then replace
-        import uuid
-
-        tmp_file = cost_file.with_suffix(cost_file.suffix + f".tmp-{uuid.uuid4().hex}")
+    def _read_locked(self, cost_file: Path) -> dict[str, Any]:
+        """Read the cost file under a shared fcntl lock. Returns {} on missing/corrupt."""
+        if not cost_file.exists():
+            return {}
         try:
-            tmp_file.write_text(json.dumps(data, indent=2, ensure_ascii=False))
+            data = json.loads(cost_file.read_text(encoding="utf-8"))
+            return data if isinstance(data, dict) else {}
+        except Exception as e:
+            logger.warning("cost_file_load_failed path=%s error=%s", cost_file, e)
+            return {}
+
+    def _write_atomic(self, cost_file: Path, data: dict[str, Any]) -> None:
+        """Atomic write via uuid tmp + os.replace."""
+        tmp_file = cost_file.with_suffix(cost_file.suffix + f".tmp-{uuid.uuid4().hex[:16]}")
+        try:
+            tmp_file.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
             os.replace(tmp_file, cost_file)
         except Exception as e:
-            logger.error("failed to save cost file %s: %s", cost_file, e)
+            logger.error("cost_file_save_failed path=%s error=%s", cost_file, e)
             if tmp_file.exists():
                 with contextlib.suppress(Exception):
                     tmp_file.unlink()
 
     def add_cost(self, cost_usd: float, provider: str, model: str) -> None:
-        """Record a cost and check against daily cap.
+        """Record a cost and enforce the daily cap atomically.
 
         Args:
             cost_usd: USD cost of this call
@@ -118,29 +115,56 @@ class CostTracker:
             model: model identifier
 
         Raises:
-            RuntimeError: if daily cap would be exceeded
+            RuntimeError: if the updated total would exceed the daily cap.
+                On cap hit, NO state is persisted (the caller's cost is not
+                double-counted on retry).
         """
         today = datetime.now(UTC).date().isoformat()
-        current_total = self._load_daily_cost(today)
+        cost_file = self._cost_file(today)
+        daily_cap = CONFIG.get("LLM_DAILY_COST_CAP_USD", 10.0)
+
+        with self._lock:
+            # Acquire an exclusive advisory file lock around the whole
+            # read-check-write cycle so a concurrent process can't race us.
+            try:
+                import fcntl as _fcntl
+
+                lock_path = cost_file.with_suffix(cost_file.suffix + ".lock")
+                lock_fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o600)
+                try:
+                    _fcntl.flock(lock_fd, _fcntl.LOCK_EX)
+                    self._add_cost_locked(cost_file, today, cost_usd, provider, model, daily_cap)
+                finally:
+                    with contextlib.suppress(Exception):
+                        _fcntl.flock(lock_fd, _fcntl.LOCK_UN)
+                    os.close(lock_fd)
+            except ImportError:
+                # fcntl not available (e.g. Windows) — fall back to in-process
+                # threading lock only; document the limitation.
+                self._add_cost_locked(cost_file, today, cost_usd, provider, model, daily_cap)
+
+    def _add_cost_locked(
+        self,
+        cost_file: Path,
+        today: str,
+        cost_usd: float,
+        provider: str,
+        model: str,
+        daily_cap: float,
+    ) -> None:
+        """Read-modify-write cycle executed under both locks."""
+        data = self._read_locked(cost_file)
+        current_total = float(data.get("total_usd", 0.0))
         new_total = current_total + cost_usd
 
-        daily_cap = CONFIG.get("LLM_DAILY_COST_CAP_USD", 10.0)
+        # Check cap BEFORE writing so a rejected call never touches disk
         if new_total > daily_cap:
             raise RuntimeError(
                 f"daily cost cap ${daily_cap} would be exceeded; "
                 f"current ${current_total:.2f} + call ${cost_usd:.2f}"
             )
 
-        # Load existing calls and add new one
-        cost_file = self._cost_file(today)
-        calls = []
-        if cost_file.exists():
-            try:
-                data = json.loads(cost_file.read_text(encoding="utf-8"))
-                calls = data.get("calls", [])
-            except Exception as e:
-                logger.warning("failed to load cost file %s: %s", cost_file, e)
-
+        calls: list[dict[str, Any]] = data.get("calls", [])
         calls.append(
             {
                 "timestamp": datetime.now(UTC).isoformat(),
@@ -150,7 +174,16 @@ class CostTracker:
             }
         )
 
-        self._save_daily_cost(today, new_total, calls)
+        self._write_atomic(
+            cost_file,
+            {
+                "date": today,
+                "total_usd": new_total,
+                "call_count": len(calls),
+                "calls": calls,
+                "updated_at": datetime.now(UTC).isoformat(),
+            },
+        )
         logger.info(
             "cost_tracked provider=%s model=%s cost=$%.5f daily_total=$%.2f",
             provider,
@@ -806,29 +839,43 @@ async def research_llm_embed(
     texts = [t[:5000] if isinstance(t, str) else str(t) for t in texts]
 
     try:
-        # Synchronously call async embed
-        provider_obj = None
+        provider_obj: Any = None
+        embeddings: list[list[float]] | None = None
+
         if provider_override:
+            # Caller forced a specific provider — call it directly (single hit)
             provider_obj = _get_provider(provider_override)
+            embeddings = await provider_obj.embed(texts, model=model)
         else:
-            # Try cascade for embedding
+            # Walk the cascade; the FIRST provider that succeeds wins and we
+            # keep its embeddings. Never double-invoke (cross-review CRITICAL #1).
             chain = _build_provider_chain()
+            last_error: Exception | None = None
             for p in chain:
-                if p.available():
-                    try:
-                        embeddings = await p.embed(texts, model=model)
-                        provider_obj = p
-                        break
-                    except NotImplementedError:
-                        continue
-                    except Exception as e:
-                        logger.warning("embedding provider %s failed: %s", type(p).__name__, e)
-                        continue
+                if not p.available():
+                    continue
+                try:
+                    embeddings = await p.embed(texts, model=model)
+                    provider_obj = p
+                    break
+                except NotImplementedError:
+                    continue
+                except Exception as e:
+                    last_error = e
+                    logger.warning(
+                        "embedding_provider_failed provider=%s error=%s",
+                        type(p).__name__,
+                        _sanitize_error(str(e)),
+                    )
+                    continue
 
-        if provider_obj is None:
-            raise RuntimeError("no embedding provider available")
-
-        embeddings = await provider_obj.embed(texts, model=model)
+            if provider_obj is None or embeddings is None:
+                reason = (
+                    _sanitize_error(str(last_error))
+                    if last_error is not None
+                    else "no embedding provider available (all unavailable or unsupported)"
+                )
+                raise RuntimeError(reason)
 
         return {
             "embeddings": embeddings,
