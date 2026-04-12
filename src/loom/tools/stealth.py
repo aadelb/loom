@@ -43,7 +43,7 @@ def _fetch_camoufox(
     ``# type: ignore`` comments on every attribute lookup.
     """
     try:
-        from camoufox import Camoufox  # type: ignore[import-untyped]
+        from camoufox import Camoufox
     except ImportError:
         return CamoufoxResult(
             url=url,
@@ -51,7 +51,7 @@ def _fetch_camoufox(
         )
 
     try:
-        with Camoufox() as _fox:  # type: ignore[no-untyped-call]
+        with Camoufox() as _fox:
             fox: Any = _fox  # Camoufox has no type stubs; narrow to Any
             fox.get(url)
             fox.wait_for_page_load()

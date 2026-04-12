@@ -111,10 +111,9 @@ async def _get_browser(
     """Launch or reuse a Playwright browser instance."""
     # Import here to avoid circular imports
     if browser_type == "camoufox":
-        from camoufox import Camoufox  # type: ignore[import-untyped]
-
+        from camoufox import Camoufox
         # camoufox is untyped third-party — narrow to Any at the boundary
-        camou: Any = Camoufox()  # type: ignore[no-untyped-call]
+        camou: Any = Camoufox()
         launched: Browser = await camou.launch()
         return launched
     else:

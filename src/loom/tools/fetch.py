@@ -233,8 +233,7 @@ def _fetch_http(params: FetchParams) -> FetchResult:
     Tries Scrapling first (if available), falls back to httpx.
     """
     try:
-        from scrapling.fetchers import Fetcher  # type: ignore[import-untyped]
-
+        from scrapling.fetchers import Fetcher
         return _fetch_http_scrapling(params, Fetcher)
     except ImportError:
         logger.debug("Scrapling not available, falling back to httpx")
@@ -263,7 +262,7 @@ def _fetch_http_scrapling(params: FetchParams, Fetcher: Any) -> FetchResult:
             html=page.html_content,
             tool="scrapling",
             # Include title for Scrapling compatibility (will be used in schema transform)
-            title=title,  # type: ignore[assignment]
+            title=title,
             status_code=200,
             content_type="text/html",
         )
@@ -340,7 +339,7 @@ def _fetch_http_httpx(params: FetchParams) -> FetchResult:
 def _fetch_stealthy(params: FetchParams) -> FetchResult:
     """Fetch using stealth browser (Camoufox)."""
     try:
-        from camoufox import Camoufox  # type: ignore[import-untyped]
+        from camoufox import Camoufox
     except ImportError:
         return FetchResult(
             url=params.url,
@@ -384,7 +383,7 @@ def _fetch_stealthy(params: FetchParams) -> FetchResult:
 def _fetch_dynamic(params: FetchParams) -> FetchResult:
     """Fetch using dynamic browser (Botasaurus)."""
     try:
-        from botasaurus.browser import browser  # type: ignore[import-untyped]
+        from botasaurus.browser import browser
     except ImportError:
         return FetchResult(
             url=params.url,
@@ -395,7 +394,7 @@ def _fetch_dynamic(params: FetchParams) -> FetchResult:
     # botasaurus' @browser decorator is untyped, so the resulting
     # ``scrape_page`` gets no annotation. Silence both ruff and mypy
     # with a narrow type-ignore block.
-    @browser(  # type: ignore[misc,untyped-decorator]
+    @browser(  # type: ignore[untyped-decorator]
         headless=True,
         block_images=True,
         proxy=params.proxy,
