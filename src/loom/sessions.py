@@ -468,9 +468,14 @@ async def research_session_close(name: str) -> dict[str, Any]:
     return await close_session(name)
 
 
-def research_session_list() -> list[dict[str, Any]]:
-    """List active persistent browser sessions."""
-    return list_sessions()
+def research_session_list() -> dict[str, Any]:
+    """List active persistent browser sessions.
+
+    Returns a dict wrapper (not a bare list) so FastMCP always serializes
+    it as a non-empty TextContent even when there are zero sessions.
+    """
+    sessions = list_sessions()
+    return {"sessions": sessions, "count": len(sessions)}
 
 
 # ─── SessionManager class for test compatibility ──────────────────────────────
