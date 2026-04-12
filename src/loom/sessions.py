@@ -113,8 +113,10 @@ async def _get_browser(
     if browser_type == "camoufox":
         from camoufox import Camoufox  # type: ignore[import-untyped]
 
+        # camoufox is untyped third-party — narrow to Any at the boundary
         camou: Any = Camoufox()  # type: ignore[no-untyped-call]
-        return await camou.launch()  # type: ignore[no-any-return,attr-defined]
+        launched: Browser = await camou.launch()
+        return launched
     else:
         playwright = await async_playwright().start()
         if browser_type == "chromium":
@@ -169,8 +171,14 @@ async def open_session(
         # Create new session
         logger.info("session_create name=%s browser=%s", name, browser)
         try:
-            # Launch browser
-            browser_instance = await _get_browser(params.browser)
+            # Map the stealth-library literal (camoufox|playwright|patchright)
+            # onto the browser engine literal (camoufox|chromium|firefox) that
+            # _get_browser accepts. Both patchright and playwright drive
+            # Chromium under the hood, so they map to "chromium".
+            engine: Literal["camoufox", "chromium", "firefox"] = (
+                "camoufox" if params.browser == "camoufox" else "chromium"
+            )
+            browser_instance = await _get_browser(engine)
 
             # Create context with persistent storage
             user_data_dir = _get_session_dir() / name

@@ -149,11 +149,31 @@ warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
 ignore_missing_imports = true  # optional deps may be missing at check time
+# Optional-dep imports (scrapling / camoufox / botasaurus / anthropic etc.)
+# have "# type: ignore[import-untyped]" markers. Whether those markers end
+# up "used" depends on whether the package is installed in the current env,
+# so we explicitly allow unused ignores rather than flip-flop the comments.
+warn_unused_ignores = false
 plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_defs = false
+
+# Optional stealth / scraping backends — treat as fully dynamic
+[[tool.mypy.overrides]]
+module = [
+  "camoufox",
+  "camoufox.*",
+  "botasaurus",
+  "botasaurus.*",
+  "scrapling",
+  "scrapling.*",
+  "patchright",
+  "patchright.*",
+]
+ignore_missing_imports = true
+follow_imports = "skip"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

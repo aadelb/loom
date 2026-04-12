@@ -191,7 +191,7 @@ class NvidiaNimProvider(LLMProvider):
         texts: list[str],
         *,
         model: str | None = None,
-        timeout: int = 60,
+        timeout: int = 60,  # noqa: ASYNC109  # legacy kwarg threaded through to httpx/openai SDK
     ) -> list[list[float]]:
         """Generate embeddings via NVIDIA NIM.
 

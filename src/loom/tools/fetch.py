@@ -11,7 +11,7 @@ from typing import Any, Literal, cast
 
 import httpx
 from mcp.types import TextContent
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 try:
     from selectolax.parser import HTMLParser
@@ -29,7 +29,12 @@ logger = logging.getLogger("loom.tools.fetch")
 
 
 class FetchResult(BaseModel):
-    """Result from a fetch operation."""
+    """Result from a fetch operation.
+
+    The ``json_data`` field is serialized with the alias ``json`` so the
+    output dict still has the historical ``json`` key, but the attribute
+    name avoids shadowing ``BaseModel.json()`` in strict type checking.
+    """
 
     url: str
     status_code: int | None = None
@@ -37,11 +42,13 @@ class FetchResult(BaseModel):
     title: str | None = None
     text: str = ""
     html: str | None = None
-    json: Any | None = None
+    json_data: Any | None = Field(default=None, serialization_alias="json")
     screenshot: str | None = None
     error: str | None = None
     tool: str = "unknown"
     elapsed_ms: int = 0
+
+    model_config = ConfigDict(populate_by_name=True)
 
 
 def _to_scrapling_schema(result: dict[str, Any], max_chars: int) -> dict[str, Any]:
@@ -207,7 +214,9 @@ def research_fetch(
         )
 
     # Convert to dict and enrich with Scrapling-compatible fields
-    output = result.model_dump(exclude_none=True)
+    # by_alias=True so the historical "json" dict key is preserved despite
+    # the internal field being renamed to json_data for mypy --strict.
+    output = result.model_dump(exclude_none=True, by_alias=True)
     output["elapsed_ms"] = int((time.time() - start) * 1000)
 
     # For mode='http', transform result to Scrapling-compatible schema and cache
@@ -298,12 +307,12 @@ def _fetch_http_httpx(params: FetchParams) -> FetchResult:
             # Extract based on format
             if params.return_format == "json" or "application/json" in content_type:
                 try:
-                    json_data = resp.json()
+                    parsed_json = resp.json()
                     return FetchResult(
                         url=params.url,
                         status_code=resp.status_code,
                         content_type=content_type,
-                        json=json_data,
+                        json_data=parsed_json,
                         tool="httpx",
                     )
                 except ValueError:
@@ -340,25 +349,21 @@ def _fetch_stealthy(params: FetchParams) -> FetchResult:
         )
 
     try:
-        with Camoufox() as fox:  # type: ignore[no-untyped-call,attr-defined]
-            # Navigate
-            fox.get(params.url)  # type: ignore[attr-defined]
+        with Camoufox() as _fox:
+            # camoufox is untyped; narrow to Any once to avoid per-line ignores
+            fox: Any = _fox
+            fox.get(params.url)
+            fox.wait_for_page_load()
 
-            # Wait for page load
-            fox.wait_for_page_load()  # type: ignore[attr-defined]
-
-            # Optional: wait for selector
             if params.wait_for:
-                fox.wait_for(params.wait_for)  # type: ignore[attr-defined]
+                fox.wait_for(params.wait_for)
 
-            # Extract
-            html = fox.page_source  # type: ignore[attr-defined]
-            text = fox.page_text  # type: ignore[attr-defined]
+            html = fox.page_source
+            text = fox.page_text
 
-            # Optional screenshot
             screenshot_b64 = None
             if params.return_format == "screenshot":
-                screenshot_b64 = fox.screenshot_as_base64  # type: ignore[attr-defined]
+                screenshot_b64 = fox.screenshot_as_base64
 
             # Trim text
             if text and len(text) > params.max_chars:
@@ -387,7 +392,10 @@ def _fetch_dynamic(params: FetchParams) -> FetchResult:
             tool="botasaurus",
         )
 
-    @browser(  # type: ignore[misc]
+    # botasaurus' @browser decorator is untyped, so the resulting
+    # ``scrape_page`` gets no annotation. Silence both ruff and mypy
+    # with a narrow type-ignore block.
+    @browser(  # type: ignore[misc,untyped-decorator]
         headless=True,
         block_images=True,
         proxy=params.proxy,

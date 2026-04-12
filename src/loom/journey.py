@@ -34,8 +34,8 @@ def _utc_now_iso() -> str:
 
 
 def _safe_on_step(
-    on_step: Callable[["Step"], None] | None,
-    step: "Step",
+    on_step: Callable[[Step], None] | None,
+    step: Step,
 ) -> None:
     """Invoke the journey ``on_step`` callback with error containment.
 

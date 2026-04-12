@@ -35,8 +35,13 @@ def _fetch_camoufox(
     session: str | None = None,
     screenshot: bool = False,
 ) -> CamoufoxResult:
-    """Synchronous wrapper for Camoufox."""
-    # Import here to avoid startup dependency
+    """Synchronous wrapper for Camoufox.
+
+    ``camoufox`` is an untyped third-party package, so ``fox`` is cast to
+    ``Any`` once inside the context manager to suppress spurious mypy
+    errors on its attribute access. This is safer than scattering
+    ``# type: ignore`` comments on every attribute lookup.
+    """
     try:
         from camoufox import Camoufox  # type: ignore[import-untyped]
     except ImportError:
@@ -46,22 +51,14 @@ def _fetch_camoufox(
         )
 
     try:
-        with Camoufox() as fox:  # type: ignore[no-untyped-call,attr-defined]
-            # Navigate
-            fox.get(url)  # type: ignore[attr-defined]
-
-            # Wait for page load
-            fox.wait_for_page_load()  # type: ignore[attr-defined]
-
-            # Extract
-            title = fox.title  # type: ignore[attr-defined]
-            html = fox.page_source  # type: ignore[attr-defined]
-            text = fox.page_text  # type: ignore[attr-defined]
-
-            # Optional screenshot
-            screenshot_b64 = None
-            if screenshot:
-                screenshot_b64 = fox.screenshot_as_base64  # type: ignore[attr-defined]
+        with Camoufox() as _fox:  # type: ignore[no-untyped-call]
+            fox: Any = _fox  # Camoufox has no type stubs; narrow to Any
+            fox.get(url)
+            fox.wait_for_page_load()
+            title = fox.title
+            html = fox.page_source
+            text = fox.page_text
+            screenshot_b64 = fox.screenshot_as_base64 if screenshot else None
 
             return CamoufoxResult(
                 url=url,
