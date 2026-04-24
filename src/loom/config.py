@@ -93,6 +93,11 @@ class ConfigModel(BaseModel):
     # Fetch
     FETCH_AUTO_ESCALATE: bool = True
 
+    # Advanced pipeline stages (off by default — enable for thorough research)
+    RESEARCH_COMMUNITY_SENTIMENT: bool = False
+    RESEARCH_RED_TEAM: bool = False
+    RESEARCH_MISINFO_CHECK: bool = False
+
     @field_validator("LLM_CASCADE_ORDER", mode="before")
     @classmethod
     def _coerce_cascade_order(cls, v: Any) -> list[str]:

@@ -43,6 +43,11 @@ with suppress(ImportError):
 
     _optional_tools["creative"] = creative_tools
 
+with suppress(ImportError):
+    from loom.providers import youtube_transcripts as yt_tools
+
+    _optional_tools["youtube"] = yt_tools
+
 
 def _register_tools(mcp: FastMCP) -> None:
     """Register all MCP tools from tool modules.
@@ -139,6 +144,12 @@ def _register_tools(mcp: FastMCP) -> None:
         for tool_name in _creative_tools:
             if hasattr(creative_mod, tool_name):
                 mcp.tool()(getattr(creative_mod, tool_name))
+
+    # YouTube transcript tool (if yt-dlp available)
+    if "youtube" in _optional_tools:
+        yt_mod = _optional_tools["youtube"]
+        if hasattr(yt_mod, "fetch_youtube_transcript"):
+            mcp.tool()(yt_mod.fetch_youtube_transcript)
 
 
 def create_app() -> FastMCP:

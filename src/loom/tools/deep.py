@@ -1,13 +1,18 @@
 """Full-pipeline deep research: expand → search → fetch → extract → rank → synthesize.
 
-Combines all available Loom tools into a single orchestrated research pipeline:
+Combines all available Loom tools into a single orchestrated 12-stage pipeline:
 1. Query expansion via LLM
-2. Multi-provider parallel search
-3. Parallel fetch + markdown extraction with auto-escalation
+2. Multi-provider parallel search (auto-detect academic/knowledge/code queries)
+3. Parallel fetch + markdown (YouTube transcript, Wayback fallback, auto-escalation)
 4. LLM-powered content extraction
 5. Relevance ranking
 6. Answer synthesis with citations
-7. GitHub enrichment for code-related queries
+7. GitHub enrichment (repos + README content)
+8. Language detection on extracted pages
+9. Community sentiment from HN + Reddit (optional)
+10. Adversarial red team on synthesis (optional)
+11. Misinformation stress test on claims (optional)
+12. Build response
 """
 
 from __future__ import annotations
@@ -138,6 +143,9 @@ async def research_deep(
     extract: bool = True,
     synthesize: bool = True,
     include_github: bool = True,
+    include_community: bool = False,
+    include_red_team: bool = False,
+    include_misinfo_check: bool = False,
     max_cost_usd: float | None = None,
 ) -> dict[str, Any]:
     """Full-pipeline deep research using all available tools.
@@ -182,6 +190,9 @@ async def research_deep(
     extract = extract and config.get("RESEARCH_EXTRACT", True)
     synthesize = synthesize and config.get("RESEARCH_SYNTHESIZE", True)
     include_github = include_github and config.get("RESEARCH_GITHUB_ENRICHMENT", True)
+    include_community = include_community or config.get("RESEARCH_COMMUNITY_SENTIMENT", False)
+    include_red_team = include_red_team or config.get("RESEARCH_RED_TEAM", False)
+    include_misinfo_check = include_misinfo_check or config.get("RESEARCH_MISINFO_CHECK", False)
 
     # Auto-detect query type and add specialized providers
     query_types = _detect_query_type(query)
@@ -441,7 +452,64 @@ async def research_deep(
             except Exception as exc:
                 logger.warning("github_enrichment_fail: %s", exc)
 
-    # ── Build Response ───────────────────────────────────────────────────
+    # ── STAGE 8: Language Detection ─────────────────────────────────────
+    language_stats: dict[str, int] = {}
+    try:
+        from loom.tools.enrich import research_detect_language
+
+        for page in top_pages:
+            snippet = page.get("markdown", "")[:1000]
+            if snippet:
+                lang_result = research_detect_language(snippet)
+                lang = lang_result.get("language", "unknown")
+                language_stats[lang] = language_stats.get(lang, 0) + 1
+                page["detected_language"] = lang
+    except Exception as exc:
+        logger.debug("language_detection_skipped: %s", exc)
+
+    # ── STAGE 9: Community Sentiment (optional) ─────────────────────────
+    community_sentiment: dict[str, Any] | None = None
+    if include_community:
+        query_words = set(query.lower().split())
+        tech_keywords = _CODE_KEYWORDS | {"tool", "app", "service", "platform", "startup"}
+        if query_words & tech_keywords:
+            try:
+                from loom.tools.creative import research_community_sentiment
+
+                community_sentiment = await research_community_sentiment(query, n=5)
+            except Exception as exc:
+                logger.warning("community_sentiment_fail: %s", exc)
+
+    # ── STAGE 10: Red Team (optional) ───────────────────────────────────
+    red_team_report: dict[str, Any] | None = None
+    if include_red_team and synthesis_result and total_cost < max_cost_usd:
+        try:
+            from loom.tools.creative import research_red_team
+
+            claim = synthesis_result.get("answer", "")[:500]
+            if claim:
+                red_team_report = await research_red_team(
+                    claim=claim, n_counter=3, max_cost_usd=min(0.05, max_cost_usd - total_cost)
+                )
+                total_cost += red_team_report.get("total_cost_usd", 0.0)
+        except Exception as exc:
+            logger.warning("red_team_fail: %s", exc)
+
+    # ── STAGE 11: Misinfo Check (optional) ──────────────────────────────
+    misinfo_report: dict[str, Any] | None = None
+    if include_misinfo_check and synthesis_result and total_cost < max_cost_usd:
+        try:
+            from loom.tools.creative import research_misinfo_check
+
+            claim = synthesis_result.get("answer", "")[:300]
+            if claim:
+                misinfo_report = await research_misinfo_check(
+                    claim=claim, max_cost_usd=min(0.05, max_cost_usd - total_cost)
+                )
+        except Exception as exc:
+            logger.warning("misinfo_check_fail: %s", exc)
+
+    # ── STAGE 12: Build Response ─────────────────────────────────────────
     for p in top_pages:
         if len(p.get("markdown", "")) > 2000:
             p["markdown"] = p["markdown"][:2000] + "…"
@@ -455,6 +523,10 @@ async def research_deep(
         "top_pages": top_pages,
         "synthesis": synthesis_result,
         "github_repos": github_repos,
+        "language_stats": language_stats,
+        "community_sentiment": community_sentiment,
+        "red_team_report": red_team_report,
+        "misinfo_report": misinfo_report,
         "total_cost_usd": total_cost,
         "elapsed_ms": int((time.time() - start_time) * 1000),
     }
