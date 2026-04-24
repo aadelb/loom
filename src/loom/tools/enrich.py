@@ -70,7 +70,7 @@ def research_wayback(
         ``archive_url``, ``status_code``) and ``original_url``.
     """
     try:
-        with httpx.Client(timeout=15.0) as client:
+        with httpx.Client(timeout=30.0) as client:
             resp = client.get(
                 _WAYBACK_CDX_URL,
                 params={

@@ -38,12 +38,25 @@ os.environ.setdefault("NVIDIA_NIM_ENDPOINT", "https://integrate.api.nvidia.com/v
 os.environ.setdefault("LOOM_CACHE_DIR", "/tmp/loom-journey-cache")
 os.environ.setdefault("LOOM_LOGS_DIR", "/tmp/loom-journey-logs")
 
-# Verify minimum keys
-_required_keys = ["NVIDIA_NIM_API_KEY"]
-_missing = [k for k in _required_keys if not os.environ.get(k)]
-if _missing:
-    print(f"ERROR: Missing required env vars: {_missing}")
-    print("Set them in .env or environment before running.")
+# Report key status
+_all_keys = {
+    "NVIDIA_NIM_API_KEY": "LLM (free)",
+    "EXA_API_KEY": "Exa search",
+    "TAVILY_API_KEY": "Tavily search",
+    "BRAVE_API_KEY": "Brave search",
+    "FIRECRAWL_API_KEY": "Firecrawl search",
+    "GITHUB_TOKEN": "GitHub (higher rate limits)",
+}
+print("\nAPI Key Status:")
+for key, desc in _all_keys.items():
+    val = os.environ.get(key, "")
+    status = "SET" if val else "MISSING"
+    print(f"  {'✓' if val else '✗'} {key}: {status} ({desc})")
+print()
+
+if not os.environ.get("NVIDIA_NIM_API_KEY"):
+    print("ERROR: NVIDIA_NIM_API_KEY required for LLM tools.")
+    print("Set it in .env or environment.")
     sys.exit(2)
 
 RESULTS: list[dict[str, Any]] = []
