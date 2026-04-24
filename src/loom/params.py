@@ -202,6 +202,9 @@ class DeepParams(BaseModel):
     extract: bool = True
     synthesize: bool = True
     include_github: bool = True
+    include_community: bool = False
+    include_red_team: bool = False
+    include_misinfo_check: bool = False
     max_cost_usd: float = 0.50
 
     model_config = {"extra": "forbid", "strict": True}

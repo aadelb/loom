@@ -112,6 +112,7 @@ async def _get_browser(
     # Import here to avoid circular imports
     if browser_type == "camoufox":
         from camoufox import Camoufox
+
         # camoufox is untyped third-party — narrow to Any at the boundary
         camou: Any = Camoufox()
         launched: Browser = await camou.launch()
@@ -319,28 +320,29 @@ def list_sessions() -> list[dict[str, Any]]:
     for meta_path in session_dir.glob("*.json"):
         name = meta_path.stem
         if name in _sessions:
-            continue  # Already listed as active
+            continue
+
+        meta_obj = _load_metadata(name)
+        if meta_obj is None:
+            continue
 
         try:
-            meta = json.loads(meta_path.read_text())
-            # Check if expired
-            created = datetime.fromisoformat(meta["created_at"].replace("Z", "+00:00"))
+            created = datetime.fromisoformat(meta_obj.created_at.replace("Z", "+00:00"))
             age = time.time() - created.timestamp()
-            ttl = meta.get("ttl_seconds", SESSION_TTL_SECONDS)
-            status = "expired" if age > ttl else "persisted"
+            status = "expired" if age > meta_obj.ttl_seconds else "persisted"
 
             results.append(
                 {
                     "name": name,
                     "status": status,
-                    "browser": meta.get("browser", "unknown"),
-                    "created_at": meta["created_at"],
-                    "last_used": meta.get("last_used"),
-                    "ttl_seconds": ttl,
+                    "browser": meta_obj.browser,
+                    "created_at": meta_obj.created_at,
+                    "last_used": meta_obj.last_used,
+                    "ttl_seconds": meta_obj.ttl_seconds,
                 }
             )
         except Exception as e:
-            logger.warning("session_meta_load_failed path=%s error=%s", meta_path, e)
+            logger.warning("session_meta_parse_failed name=%s error=%s", name, e)
 
     # Sort by name
     results.sort(key=lambda x: x["name"])
@@ -363,7 +365,9 @@ async def _find_oldest_session() -> str | None:
         return None
 
     # Filter out items without valid timestamps
-    valid_items = [(name, meta) for name, meta in _metadata.items() if get_created_at((name, meta)) is not None]
+    valid_items = [
+        (name, meta) for name, meta in _metadata.items() if get_created_at((name, meta)) is not None
+    ]
 
     if not valid_items:
         return None
@@ -617,7 +621,7 @@ class SessionManager:
                 """INSERT INTO sessions
                    (name, browser, profile_dir, session_id, created_at, last_used_at, expires_at)
                    VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                (name, browser, profile_dir, session_id, now_iso, now_iso, expires_iso)
+                (name, browser, profile_dir, session_id, now_iso, now_iso, expires_iso),
             )
             conn.commit()
             conn.close()
@@ -670,7 +674,9 @@ class SessionManager:
             except ValueError:
                 logger.error(
                     "profile_dir_outside_base name=%s profile=%s base=%s",
-                    name, profile_dir, self.base_dir,
+                    name,
+                    profile_dir,
+                    self.base_dir,
                 )
                 return {}
 
@@ -699,15 +705,17 @@ class SessionManager:
 
         result = []
         for row in rows:
-            result.append({
-                "name": row[0],
-                "browser": row[1],
-                "profile_dir": row[2],
-                "session_id": row[3],
-                "created_at": row[4],
-                "last_used_at": row[5],
-                "expires_at": row[6],
-            })
+            result.append(
+                {
+                    "name": row[0],
+                    "browser": row[1],
+                    "profile_dir": row[2],
+                    "session_id": row[3],
+                    "created_at": row[4],
+                    "last_used_at": row[5],
+                    "expires_at": row[6],
+                }
+            )
         return result
 
     def get_context(self, name: str) -> dict[str, Any] | None:
@@ -724,7 +732,7 @@ class SessionManager:
         cursor.execute(
             "SELECT name, browser, profile_dir, session_id, created_at, last_used_at, expires_at "
             "FROM sessions WHERE name = ?",
-            (name,)
+            (name,),
         )
         row = cursor.fetchone()
         conn.close()

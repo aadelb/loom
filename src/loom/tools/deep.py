@@ -330,6 +330,26 @@ async def research_deep(
                 if len(markdown) < 100 and fetch_result.get("text"):
                     markdown = fetch_result["text"]
 
+            # Wayback fallback for dead links (404, empty content)
+            if len(markdown) < 100:
+                try:
+                    from loom.tools.enrich import research_wayback
+
+                    wb = research_wayback(url, limit=1)
+                    snapshots = wb.get("snapshots", [])
+                    if snapshots:
+                        archive_url = snapshots[0]["archive_url"]
+                        try:
+                            wb_md = await research_markdown(archive_url)
+                            if wb_md.get("markdown") and len(wb_md["markdown"]) >= 100:
+                                markdown = wb_md["markdown"]
+                                md_title = wb_md.get("title", md_title)
+                                logger.info("wayback_recovery url=%s archive=%s", url, archive_url)
+                        except Exception as wb_exc:
+                            logger.debug("wayback_markdown_fail: %s", wb_exc)
+                except Exception as exc:
+                    logger.debug("wayback_fallback_skipped url=%s: %s", url, exc)
+
             if len(markdown) < 100:
                 return None
 

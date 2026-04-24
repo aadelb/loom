@@ -25,6 +25,9 @@ _search_providers = {
     "ddgs": "search_ddgs",
     "arxiv_search": "search_arxiv",
     "wikipedia_search": "search_wikipedia",
+    "hn_reddit": "search_hackernews",
+    "youtube_transcripts": "fetch_youtube_transcript",
+    "trafilatura_extract": "extract_with_trafilatura",
 }
 for _mod_name, _func_name in _search_providers.items():
     try:

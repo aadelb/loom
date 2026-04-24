@@ -853,6 +853,22 @@ def repl(server_url: str = ServerURL) -> None:
 
                         result = tool_cache_clear()
                         console.print(result[0].text if result else "No result")
+                elif cmd == "session" and args:
+                    if args[0] == "list":
+                        from loom.sessions import tool_session_list
+
+                        result = tool_session_list()
+                        console.print(result[0].text if result else "No result")
+                    elif args[0] == "close" and len(args) > 1:
+                        from loom.sessions import tool_session_close
+
+                        result = tool_session_close(args[1])
+                        console.print(result[0].text if result else "No result")
+                elif cmd == "camoufox" and args:
+                    from loom.tools.stealth import tool_camoufox
+
+                    result = tool_camoufox(url=args[0])
+                    console.print(result[0].text if result else "No result")
                 else:
                     console.print(f"[yellow]Command: {cmd} {' '.join(args)}[/yellow]")
                     console.print("[dim]Use CLI directly for full features: loom {cmd} ...[/dim]")
