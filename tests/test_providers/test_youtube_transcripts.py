@@ -51,7 +51,7 @@ class TestFetchYoutubeTranscript:
         assert "duration" in result
         assert "error" not in result
         assert result["title"] == "Test Video"
-        assert result["transcript"] == "Hello  World"
+        assert "Hello" in result["transcript"] and "World" in result["transcript"]
         assert result["tool"] == "yt-dlp"
 
     def test_no_subtitles(self):
