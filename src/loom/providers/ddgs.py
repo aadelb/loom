@@ -37,7 +37,6 @@ def search_ddgs(
     try:
         ddgs = DDGS()
         search_kwargs: dict[str, Any] = {
-            "keywords": query,
             "max_results": min(n, 30),
             "region": region,
         }
@@ -45,7 +44,7 @@ def search_ddgs(
             search_kwargs["timelimit"] = time_range
 
         if search_type == "news":
-            raw = list(ddgs.news(**search_kwargs))
+            raw = list(ddgs.news(query, **search_kwargs))
             results = [
                 {
                     "url": r.get("url", ""),
@@ -57,7 +56,7 @@ def search_ddgs(
                 for r in raw
             ]
         else:
-            raw = list(ddgs.text(**search_kwargs))
+            raw = list(ddgs.text(query, **search_kwargs))
             results = [
                 {
                     "url": r.get("href", ""),

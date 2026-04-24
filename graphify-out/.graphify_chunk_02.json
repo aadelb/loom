@@ -1,0 +1,732 @@
+{
+  "nodes": [
+    {
+      "id": "research_github",
+      "label": "research_github Tool",
+      "file_type": "document",
+      "source_file": "docs/tools/research_github.md"
+    },
+    {
+      "id": "research_sessions",
+      "label": "research_sessions Tool",
+      "file_type": "document",
+      "source_file": "docs/tools/research_sessions.md"
+    },
+    {
+      "id": "research_config",
+      "label": "research_config Tool",
+      "file_type": "document",
+      "source_file": "docs/tools/research_config.md"
+    },
+    {
+      "id": "runtime_config",
+      "label": "Runtime Configuration Management",
+      "file_type": "document",
+      "source_file": "docs/advanced/runtime-config.md"
+    },
+    {
+      "id": "custom_providers",
+      "label": "Adding Custom LLM Providers",
+      "file_type": "document",
+      "source_file": "docs/advanced/custom-providers.md"
+    },
+    {
+      "id": "security_arch",
+      "label": "Security Architecture",
+      "file_type": "document",
+      "source_file": "docs/advanced/security.md"
+    },
+    {
+      "id": "nvidia_nim_provider",
+      "label": "NVIDIA NIM Provider",
+      "file_type": "document",
+      "source_file": "docs/providers/nvidia-nim.md"
+    },
+    {
+      "id": "openai_provider",
+      "label": "OpenAI Provider",
+      "file_type": "document",
+      "source_file": "docs/providers/openai.md"
+    },
+    {
+      "id": "anthropic_provider",
+      "label": "Anthropic Provider",
+      "file_type": "document",
+      "source_file": "docs/providers/anthropic.md"
+    },
+    {
+      "id": "vllm_provider",
+      "label": "Local vLLM Provider",
+      "file_type": "document",
+      "source_file": "docs/providers/local-vllm.md"
+    },
+    {
+      "id": "quickstart_example",
+      "label": "Quickstart Example",
+      "file_type": "document",
+      "source_file": "examples/quickstart.py"
+    },
+    {
+      "id": "harvest_example",
+      "label": "Harvest Model Cards Example",
+      "file_type": "document",
+      "source_file": "examples/harvest_model_cards.py"
+    },
+    {
+      "id": "deep_research_example",
+      "label": "Deep Research Workflow Example",
+      "file_type": "document",
+      "source_file": "examples/deep_research.py"
+    },
+    {
+      "id": "cloudflare_bypass_example",
+      "label": "Cloudflare Bypass Example",
+      "file_type": "document",
+      "source_file": "examples/cloudflare_bypass.py"
+    },
+    {
+      "id": "bulk_arxiv_example",
+      "label": "Bulk arXiv Crawler Example",
+      "file_type": "document",
+      "source_file": "examples/bulk_arxiv.py"
+    },
+    {
+      "id": "session_login_example",
+      "label": "Session Login Example",
+      "file_type": "document",
+      "source_file": "examples/session_login.py"
+    },
+    {
+      "id": "examples_readme",
+      "label": "Examples README",
+      "file_type": "document",
+      "source_file": "examples/README.md"
+    },
+    {
+      "id": "v0_1_0_release",
+      "label": "Loom v0.1.0-alpha.1 Release",
+      "file_type": "document",
+      "source_file": "release-notes/v0.1.0-alpha.1.md"
+    },
+    {
+      "id": "systemd_unit",
+      "label": "Systemd Service Unit",
+      "file_type": "document",
+      "source_file": "deploy/systemd/loom.service.example"
+    },
+    {
+      "id": "dockerfile",
+      "label": "Docker Image Definition",
+      "file_type": "document",
+      "source_file": "deploy/docker/Dockerfile"
+    },
+    {
+      "id": "docker_compose",
+      "label": "Docker Compose Configuration",
+      "file_type": "document",
+      "source_file": "deploy/docker/docker-compose.yml"
+    },
+    {
+      "id": "llm_provider_cascade",
+      "label": "LLM Provider Cascade System",
+      "file_type": "concept",
+      "source_file": "docs/advanced/custom-providers.md"
+    },
+    {
+      "id": "research_fetch_tool",
+      "label": "research_fetch Tool",
+      "file_type": "concept",
+      "source_file": "docs/tools/research_config.md"
+    },
+    {
+      "id": "research_spider_tool",
+      "label": "research_spider Tool",
+      "file_type": "concept",
+      "source_file": "docs/tools/research_config.md"
+    },
+    {
+      "id": "research_search_tool",
+      "label": "research_search Tool",
+      "file_type": "concept",
+      "source_file": "examples/deep_research.py"
+    },
+    {
+      "id": "research_llm_chat",
+      "label": "research_llm_chat Tool",
+      "file_type": "concept",
+      "source_file": "docs/providers/openai.md"
+    },
+    {
+      "id": "research_llm_summarize",
+      "label": "research_llm_summarize Tool",
+      "file_type": "concept",
+      "source_file": "docs/providers/nvidia-nim.md"
+    },
+    {
+      "id": "research_llm_extract",
+      "label": "research_llm_extract Tool",
+      "file_type": "concept",
+      "source_file": "docs/providers/openai.md"
+    },
+    {
+      "id": "research_llm_classify",
+      "label": "research_llm_classify Tool",
+      "file_type": "concept",
+      "source_file": "examples/bulk_arxiv.py"
+    },
+    {
+      "id": "research_camoufox",
+      "label": "research_camoufox Tool",
+      "file_type": "concept",
+      "source_file": "examples/cloudflare_bypass.py"
+    },
+    {
+      "id": "ssrf_protection",
+      "label": "SSRF Protection Mechanism",
+      "file_type": "concept",
+      "source_file": "docs/advanced/security.md"
+    },
+    {
+      "id": "api_key_sanitization",
+      "label": "API Key Sanitization",
+      "file_type": "concept",
+      "source_file": "docs/advanced/security.md"
+    },
+    {
+      "id": "session_management",
+      "label": "Persistent Session Management",
+      "file_type": "concept",
+      "source_file": "docs/tools/research_sessions.md"
+    },
+    {
+      "id": "cache_management",
+      "label": "Cache Management System",
+      "file_type": "concept",
+      "source_file": "docs/tools/research_config.md"
+    },
+    {
+      "id": "hugging_face_integration",
+      "label": "Hugging Face Model Card Integration",
+      "file_type": "concept",
+      "source_file": "examples/harvest_model_cards.py"
+    },
+    {
+      "id": "arxiv_integration",
+      "label": "arXiv Paper Classification Integration",
+      "file_type": "concept",
+      "source_file": "examples/bulk_arxiv.py"
+    }
+  ],
+  "edges": [
+    {
+      "source": "research_github",
+      "target": "security_arch",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/tools/research_github.md"
+    },
+    {
+      "source": "research_sessions",
+      "target": "session_management",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/tools/research_sessions.md"
+    },
+    {
+      "source": "research_config",
+      "target": "cache_management",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/tools/research_config.md"
+    },
+    {
+      "source": "research_config",
+      "target": "llm_provider_cascade",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/tools/research_config.md"
+    },
+    {
+      "source": "runtime_config",
+      "target": "research_config",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/advanced/runtime-config.md"
+    },
+    {
+      "source": "custom_providers",
+      "target": "llm_provider_cascade",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/advanced/custom-providers.md"
+    },
+    {
+      "source": "custom_providers",
+      "target": "nvidia_nim_provider",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/advanced/custom-providers.md"
+    },
+    {
+      "source": "custom_providers",
+      "target": "openai_provider",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/advanced/custom-providers.md"
+    },
+    {
+      "source": "custom_providers",
+      "target": "anthropic_provider",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/advanced/custom-providers.md"
+    },
+    {
+      "source": "custom_providers",
+      "target": "vllm_provider",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/advanced/custom-providers.md"
+    },
+    {
+      "source": "nvidia_nim_provider",
+      "target": "research_llm_summarize",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/providers/nvidia-nim.md"
+    },
+    {
+      "source": "openai_provider",
+      "target": "research_llm_chat",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/providers/openai.md"
+    },
+    {
+      "source": "openai_provider",
+      "target": "research_llm_extract",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/providers/openai.md"
+    },
+    {
+      "source": "anthropic_provider",
+      "target": "research_llm_chat",
+      "relation": "documents",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "docs/providers/anthropic.md"
+    },
+    {
+      "source": "vllm_provider",
+      "target": "llm_provider_cascade",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/providers/local-vllm.md"
+    },
+    {
+      "source": "quickstart_example",
+      "target": "research_fetch_tool",
+      "relation": "demonstrates",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "examples/quickstart.py"
+    },
+    {
+      "source": "harvest_example",
+      "target": "research_spider_tool",
+      "relation": "demonstrates",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "examples/harvest_model_cards.py"
+    },
+    {
+      "source": "harvest_example",
+      "target": "hugging_face_integration",
+      "relation": "demonstrates",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "examples/harvest_model_cards.py"
+    },
+    {
+      "source": "deep_research_example",
+      "target": "research_search_tool",
+      "relation": "demonstrates",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "examples/deep_research.py"
+    },
+    {
+      "source": "deep_research_example",
+      "target": "research_spider_tool",
+      "relation": "demonstrates",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "examples/deep_research.py"
+    },
+    {
+      "source": "deep_research_example",
+      "target": "research_llm_summarize",
+      "relation": "demonstrates",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "examples/deep_research.py"
+    },
+    {
+      "source": "deep_research_example",
+      "target": "nvidia_nim_provider",
+      "relation": "uses",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "examples/deep_research.py"
+    },
+    {
+      "source": "cloudflare_bypass_example",
+      "target": "research_fetch_tool",
+      "relation": "demonstrates",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "examples/cloudflare_bypass.py"
+    },
+    {
+      "source": "cloudflare_bypass_example",
+      "target": "research_camoufox",
+      "relation": "demonstrates",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "examples/cloudflare_bypass.py"
+    },
+    {
+      "source": "bulk_arxiv_example",
+      "target": "research_fetch_tool",
+      "relation": "demonstrates",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "examples/bulk_arxiv.py"
+    },
+    {
+      "source": "bulk_arxiv_example",
+      "target": "research_spider_tool",
+      "relation": "demonstrates",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "examples/bulk_arxiv.py"
+    },
+    {
+      "source": "bulk_arxiv_example",
+      "target": "research_llm_classify",
+      "relation": "demonstrates",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "examples/bulk_arxiv.py"
+    },
+    {
+      "source": "bulk_arxiv_example",
+      "target": "arxiv_integration",
+      "relation": "demonstrates",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "examples/bulk_arxiv.py"
+    },
+    {
+      "source": "session_login_example",
+      "target": "session_management",
+      "relation": "demonstrates",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "examples/session_login.py"
+    },
+    {
+      "source": "session_login_example",
+      "target": "research_camoufox",
+      "relation": "demonstrates",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "examples/session_login.py"
+    },
+    {
+      "source": "examples_readme",
+      "target": "quickstart_example",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "examples/README.md"
+    },
+    {
+      "source": "examples_readme",
+      "target": "harvest_example",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "examples/README.md"
+    },
+    {
+      "source": "examples_readme",
+      "target": "deep_research_example",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "examples/README.md"
+    },
+    {
+      "source": "examples_readme",
+      "target": "cloudflare_bypass_example",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "examples/README.md"
+    },
+    {
+      "source": "examples_readme",
+      "target": "bulk_arxiv_example",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "examples/README.md"
+    },
+    {
+      "source": "examples_readme",
+      "target": "session_login_example",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "examples/README.md"
+    },
+    {
+      "source": "security_arch",
+      "target": "ssrf_protection",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/advanced/security.md"
+    },
+    {
+      "source": "security_arch",
+      "target": "api_key_sanitization",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/advanced/security.md"
+    },
+    {
+      "source": "security_arch",
+      "target": "systemd_unit",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": "docs/advanced/security.md"
+    },
+    {
+      "source": "security_arch",
+      "target": "dockerfile",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": "docs/advanced/security.md"
+    },
+    {
+      "source": "systemd_unit",
+      "target": "nvidia_nim_provider",
+      "relation": "configures",
+      "confidence": "INFERRED",
+      "confidence_score": 0.6,
+      "source_file": "deploy/systemd/loom.service.example"
+    },
+    {
+      "source": "dockerfile",
+      "target": "research_camoufox",
+      "relation": "configures",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "deploy/docker/Dockerfile"
+    },
+    {
+      "source": "docker_compose",
+      "target": "dockerfile",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "deploy/docker/docker-compose.yml"
+    },
+    {
+      "source": "docker_compose",
+      "target": "runtime_config",
+      "relation": "configures",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": "deploy/docker/docker-compose.yml"
+    },
+    {
+      "source": "v0_1_0_release",
+      "target": "nvidia_nim_provider",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "release-notes/v0.1.0-alpha.1.md"
+    },
+    {
+      "source": "v0_1_0_release",
+      "target": "openai_provider",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "release-notes/v0.1.0-alpha.1.md"
+    },
+    {
+      "source": "v0_1_0_release",
+      "target": "anthropic_provider",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "release-notes/v0.1.0-alpha.1.md"
+    },
+    {
+      "source": "v0_1_0_release",
+      "target": "vllm_provider",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "release-notes/v0.1.0-alpha.1.md"
+    },
+    {
+      "source": "v0_1_0_release",
+      "target": "api_key_sanitization",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "release-notes/v0.1.0-alpha.1.md"
+    },
+    {
+      "source": "llm_provider_cascade",
+      "target": "nvidia_nim_provider",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/advanced/custom-providers.md"
+    },
+    {
+      "source": "llm_provider_cascade",
+      "target": "openai_provider",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/advanced/custom-providers.md"
+    },
+    {
+      "source": "llm_provider_cascade",
+      "target": "anthropic_provider",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/advanced/custom-providers.md"
+    },
+    {
+      "source": "llm_provider_cascade",
+      "target": "vllm_provider",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/advanced/custom-providers.md"
+    },
+    {
+      "source": "nvidia_nim_provider",
+      "target": "research_llm_chat",
+      "relation": "documents",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "docs/providers/nvidia-nim.md"
+    },
+    {
+      "source": "openai_provider",
+      "target": "llm_provider_cascade",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/providers/openai.md"
+    },
+    {
+      "source": "anthropic_provider",
+      "target": "llm_provider_cascade",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/providers/anthropic.md"
+    },
+    {
+      "source": "vllm_provider",
+      "target": "dockerfile",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": "docs/providers/local-vllm.md"
+    }
+  ],
+  "hyperedges": [
+    {
+      "nodes": [
+        "research_llm_summarize",
+        "research_llm_chat",
+        "research_llm_extract",
+        "research_llm_classify"
+      ],
+      "relation": "group_llm_tools",
+      "description": "LLM-powered tools used across examples"
+    },
+    {
+      "nodes": [
+        "nvidia_nim_provider",
+        "openai_provider",
+        "anthropic_provider",
+        "vllm_provider"
+      ],
+      "relation": "group_llm_providers",
+      "description": "Multi-provider LLM cascade system"
+    },
+    {
+      "nodes": [
+        "research_fetch_tool",
+        "research_spider_tool",
+        "research_search_tool",
+        "research_github"
+      ],
+      "relation": "group_research_tools",
+      "description": "Core research and data discovery tools"
+    },
+    {
+      "nodes": [
+        "systemd_unit",
+        "dockerfile",
+        "docker_compose"
+      ],
+      "relation": "group_deployment",
+      "description": "Deployment and infrastructure configurations"
+    },
+    {
+      "nodes": [
+        "deep_research_example",
+        "harvest_example",
+        "bulk_arxiv_example",
+        "cloudflare_bypass_example",
+        "session_login_example"
+      ],
+      "relation": "group_example_workflows",
+      "description": "Practical example implementations of Loom capabilities"
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}
