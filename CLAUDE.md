@@ -60,8 +60,8 @@ src/loom/
     stealth.py     research_camoufox + research_botasaurus
     cache_mgmt.py  research_cache_stats + research_cache_clear
     creative.py    11 creative research tools (red_team, multilingual, consensus, misinfo_check, temporal_diff, citation_graph, ai_detect, curriculum, community_sentiment, wiki_ghost, semantic_sitemap)
-    media.py       YouTube transcript extraction
-    recovery.py    Wayback Machine recovery, expertise finder
+    enrich.py      research_wayback (Wayback Machine recovery)
+    experts.py     research_expertise (expertise finder)
     llm.py         8 LLM tools (summarize/extract/classify/translate/expand/answer/embed/chat)
   providers/       LLM provider abstraction:
     base.py        Abstract LLMProvider + LLMResponse dataclass + _estimate_cost
@@ -69,6 +69,7 @@ src/loom/
     openai_provider.py
     anthropic_provider.py
     vllm_local.py  Local vLLM endpoint
+    youtube_transcripts.py  YouTube transcript extraction
 ```
 
 ### Key patterns
