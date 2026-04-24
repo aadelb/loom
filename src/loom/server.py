@@ -38,6 +38,11 @@ with suppress(ImportError):
 
     _optional_tools["experts"] = experts_tools
 
+with suppress(ImportError):
+    from loom.tools import creative as creative_tools
+
+    _optional_tools["creative"] = creative_tools
+
 
 def _register_tools(mcp: FastMCP) -> None:
     """Register all MCP tools from tool modules.
@@ -106,6 +111,25 @@ def _register_tools(mcp: FastMCP) -> None:
         experts_mod = _optional_tools["experts"]
         if hasattr(experts_mod, "research_find_experts"):
             mcp.tool()(experts_mod.research_find_experts)
+
+    # Creative research tools (if available)
+    if "creative" in _optional_tools:
+        creative_mod = _optional_tools["creative"]
+        _creative_tools = [
+            "research_red_team",
+            "research_multilingual",
+            "research_consensus",
+            "research_misinfo_check",
+            "research_temporal_diff",
+            "research_citation_graph",
+            "research_ai_detect",
+            "research_curriculum",
+            "research_community_sentiment",
+            "research_wiki_ghost",
+        ]
+        for tool_name in _creative_tools:
+            if hasattr(creative_mod, tool_name):
+                mcp.tool()(getattr(creative_mod, tool_name))
 
 
 def create_app() -> FastMCP:
