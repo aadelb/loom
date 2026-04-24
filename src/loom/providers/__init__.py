@@ -17,10 +17,19 @@ __all__ = [
 ]
 
 # Search providers — optional, may fail if SDKs not installed
-for _name in ("exa", "tavily", "firecrawl", "brave"):
+_search_providers = {
+    "exa": "search_exa",
+    "tavily": "search_tavily",
+    "firecrawl": "search_firecrawl",
+    "brave": "search_brave",
+    "ddgs": "search_ddgs",
+    "arxiv_search": "search_arxiv",
+    "wikipedia_search": "search_wikipedia",
+}
+for _mod_name, _func_name in _search_providers.items():
     try:
-        _mod = __import__(f"loom.providers.{_name}", fromlist=[f"search_{_name}"])
-        globals()[f"search_{_name}"] = getattr(_mod, f"search_{_name}")
-        __all__.append(f"search_{_name}")
+        _mod = __import__(f"loom.providers.{_mod_name}", fromlist=[_func_name])
+        globals()[_func_name] = getattr(_mod, _func_name)
+        __all__.append(_func_name)
     except (ImportError, AttributeError):
         pass

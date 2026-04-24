@@ -78,6 +78,14 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(github.research_github_readme)
     mcp.tool()(github.research_github_releases)
 
+    # Exa find_similar (if exa provider exists)
+    try:
+        from loom.providers.exa import find_similar_exa
+
+        mcp.tool()(find_similar_exa)
+    except ImportError:
+        pass
+
     # LLM tools (if available)
     if "llm" in _optional_tools:
         llm_mod = _optional_tools["llm"]
