@@ -181,9 +181,7 @@ def install_browsers() -> None:
     import sys as _sys
 
     console.print("[cyan]Installing Playwright browsers (chromium + firefox)...[/cyan]")
-    rc = subprocess.call(
-        [_sys.executable, "-m", "playwright", "install", "chromium", "firefox"]
-    )
+    rc = subprocess.call([_sys.executable, "-m", "playwright", "install", "chromium", "firefox"])
     if rc != 0:
         err_console.print("[red]playwright install failed[/red]")
         raise typer.Exit(code=rc)
@@ -827,11 +825,39 @@ def repl(server_url: str = ServerURL) -> None:
             cmd = parts[0]
             args = parts[1:] if len(parts) > 1 else []
 
-            # Route to appropriate subcommand
-            # (This is a simple implementation; a full implementation
-            # would parse the command line properly with typer's parser)
-            console.print(f"[yellow]Command: {cmd} {args}[/yellow]")
-            console.print("[red]Note: REPL is simplified; use CLI directly for full features[/red]")
+            # Route to tool_* wrappers for quick REPL execution
+            try:
+                if cmd == "fetch" and args:
+                    from loom.tools.fetch import tool_fetch
+
+                    result = tool_fetch(url=args[0])
+                    console.print(result[0].text if result else "No result")
+                elif cmd == "search" and args:
+                    from loom.tools.search import tool_search
+
+                    result = tool_search(query=" ".join(args))
+                    console.print(result[0].text if result else "No result")
+                elif cmd == "github" and len(args) >= 2:
+                    from loom.tools.github import tool_github
+
+                    result = tool_github(kind=args[0], query=" ".join(args[1:]))
+                    console.print(result[0].text if result else "No result")
+                elif cmd == "cache" and args:
+                    if args[0] == "stats":
+                        from loom.tools.cache_mgmt import tool_cache_stats
+
+                        result = tool_cache_stats()
+                        console.print(result[0].text if result else "No result")
+                    elif args[0] == "clear":
+                        from loom.tools.cache_mgmt import tool_cache_clear
+
+                        result = tool_cache_clear()
+                        console.print(result[0].text if result else "No result")
+                else:
+                    console.print(f"[yellow]Command: {cmd} {' '.join(args)}[/yellow]")
+                    console.print("[dim]Use CLI directly for full features: loom {cmd} ...[/dim]")
+            except Exception as e:
+                console.print(f"[red]Error: {e}[/red]")
 
         except KeyboardInterrupt:
             console.print("\n[cyan]Goodbye![/cyan]")

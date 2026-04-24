@@ -13,7 +13,7 @@ logger = logging.getLogger("loom.tools.search")
 
 def research_search(
     query: str,
-    provider: str = "exa",
+    provider: str | None = None,
     n: int = 10,
     include_domains: list[str] | None = None,
     exclude_domains: list[str] | None = None,
@@ -26,7 +26,8 @@ def research_search(
 
     Args:
         query: search query
-        provider: 'exa' | 'tavily' | 'firecrawl' | 'brave'
+        provider: exa, tavily, firecrawl, brave, ddgs, arxiv, wikipedia,
+            hackernews, or reddit
         n: max number of results (1-50)
         include_domains: list of domains to include
         exclude_domains: list of domains to exclude
@@ -38,10 +39,11 @@ def research_search(
     Returns:
         Dict with keys: provider, query, results (list of dicts), error (if any)
     """
-    # Import here to avoid circular imports
     from loom.config import get_config
 
-    get_config()
+    config = get_config()
+    if provider is None:
+        provider = config.get("DEFAULT_SEARCH_PROVIDER", "exa")
     provider_config = provider_config or {}
 
     # Validate and normalize
@@ -144,6 +146,28 @@ def research_search(
                 **provider_config,
             )
             result["provider"] = "wikipedia"
+            return result  # type: ignore[no-any-return]
+
+        elif provider == "hackernews":
+            from loom.providers.hn_reddit import search_hackernews
+
+            result = search_hackernews(
+                query=query,
+                n=n,
+                **provider_config,
+            )
+            result["provider"] = "hackernews"
+            return result  # type: ignore[no-any-return]
+
+        elif provider == "reddit":
+            from loom.providers.hn_reddit import search_reddit
+
+            result = search_reddit(
+                query=query,
+                n=n,
+                **provider_config,
+            )
+            result["provider"] = "reddit"
             return result  # type: ignore[no-any-return]
 
         else:

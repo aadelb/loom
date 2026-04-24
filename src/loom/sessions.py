@@ -314,7 +314,7 @@ def list_sessions() -> list[dict[str, Any]]:
             }
         )
 
-    # Persisted sessions on disk
+    # Persisted sessions on disk (using _load_metadata for consistent parsing)
     session_dir = _get_session_dir()
     for meta_path in session_dir.glob("*.json"):
         name = meta_path.stem

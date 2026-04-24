@@ -101,6 +101,13 @@ def _normalize_url(url: str) -> str:
     return f"{parsed.scheme}://{parsed.netloc}{parsed.path.rstrip('/')}"
 
 
+def _is_youtube_url(url: str) -> bool:
+    """Check if URL is from YouTube."""
+    parsed = urlparse(url)
+    domain = parsed.netloc.lower()
+    return domain in ("youtube.com", "www.youtube.com", "youtu.be", "www.youtu.be", "m.youtube.com")
+
+
 def _merge_search_results(all_results: list[dict[str, Any]], max_urls: int) -> list[dict[str, Any]]:
     """Deduplicate search results by normalized URL, keeping highest score."""
     seen: dict[str, dict[str, Any]] = {}
@@ -131,7 +138,7 @@ async def research_deep(
     extract: bool = True,
     synthesize: bool = True,
     include_github: bool = True,
-    max_cost_usd: float = 0.50,
+    max_cost_usd: float | None = None,
 ) -> dict[str, Any]:
     """Full-pipeline deep research using all available tools.
 
@@ -167,6 +174,8 @@ async def research_deep(
     config = get_config()
     total_cost = 0.0
 
+    if max_cost_usd is None:
+        max_cost_usd = config.get("RESEARCH_MAX_COST_USD", 0.50)
     if search_providers is None:
         search_providers = list(config.get("RESEARCH_SEARCH_PROVIDERS", ["exa", "brave"]))
     expand_queries = expand_queries and config.get("RESEARCH_EXPAND_QUERIES", True)
@@ -268,30 +277,54 @@ async def research_deep(
             return None
         async with sem:
             fetch_result: dict[str, Any] = {}
-            try:
-                fetch_result = await loop.run_in_executor(
-                    None,
-                    lambda: research_fetch(url, mode="http", auto_escalate=True),
-                )
-            except Exception as exc:
-                logger.warning("deep_fetch_fail url=%s error=%s", url, exc)
+            markdown = ""
+            md_title = ""
 
-            try:
-                md_result = await research_markdown(url)
-            except Exception as exc:
-                logger.warning("deep_markdown_fail url=%s error=%s", url, exc)
-                md_result = {}
+            # Check if URL is YouTube and try transcript extraction
+            if _is_youtube_url(url):
+                try:
+                    from loom.providers.youtube_transcripts import fetch_youtube_transcript
 
-            markdown = md_result.get("markdown", "")
-            # Fallback: use fetched text if markdown extraction failed
-            if len(markdown) < 100 and fetch_result.get("text"):
-                markdown = fetch_result["text"]
+                    yt_result = await loop.run_in_executor(
+                        None,
+                        lambda: fetch_youtube_transcript(url),
+                    )
+                    if "error" not in yt_result:
+                        markdown = yt_result.get("transcript", "")
+                        if not markdown:
+                            markdown = yt_result.get("description", "")
+                        md_title = yt_result.get("title", "")
+                except ImportError:
+                    logger.debug("youtube_transcripts not available (yt-dlp not installed)")
+                except Exception as exc:
+                    logger.warning("youtube_transcript_extraction_failed url=%s error=%s", url, exc)
+            else:
+                try:
+                    fetch_result = await loop.run_in_executor(
+                        None,
+                        lambda: research_fetch(url, mode="http", auto_escalate=True),
+                    )
+                except Exception as exc:
+                    logger.warning("deep_fetch_fail url=%s error=%s", url, exc)
+
+                try:
+                    md_result = await research_markdown(url)
+                except Exception as exc:
+                    logger.warning("deep_markdown_fail url=%s error=%s", url, exc)
+                    md_result = {}
+
+                markdown = md_result.get("markdown", "")
+                md_title = md_result.get("title", "")
+                # Fallback: use fetched text if markdown extraction failed
+                if len(markdown) < 100 and fetch_result.get("text"):
+                    markdown = fetch_result["text"]
+
             if len(markdown) < 100:
                 return None
 
             return {
                 "url": url,
-                "title": hit.get("title") or md_result.get("title", ""),
+                "title": hit.get("title") or md_title or "",
                 "snippet": hit.get("snippet", ""),
                 "markdown": markdown,
                 "score": hit.get("score"),
@@ -382,14 +415,29 @@ async def research_deep(
         query_words = set(query.lower().split())
         if query_words & _CODE_KEYWORDS:
             try:
-                from loom.tools.github import research_github
+                from loom.tools.github import research_github, research_github_readme
 
                 gh_result = await loop.run_in_executor(
                     None,
                     lambda: research_github(kind="repo", query=query, limit=5),
                 )
                 if isinstance(gh_result, dict) and "error" not in gh_result:
-                    github_repos = gh_result.get("results", [])
+                    repos = gh_result.get("results", [])
+                    # Enrich top repo with README
+                    if repos:
+                        top_repo = repos[0]
+                        if "name" in top_repo and "/" in top_repo["name"]:
+                            owner, repo = top_repo["name"].split("/", 1)
+                            try:
+                                readme_result = await loop.run_in_executor(
+                                    None,
+                                    lambda: research_github_readme(owner, repo),
+                                )
+                                if "error" not in readme_result:
+                                    top_repo["readme"] = readme_result.get("content", "")
+                            except Exception as exc:
+                                logger.warning("github_readme_fail %s/%s: %s", owner, repo, exc)
+                    github_repos = repos
             except Exception as exc:
                 logger.warning("github_enrichment_fail: %s", exc)
 

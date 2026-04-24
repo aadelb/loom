@@ -56,7 +56,17 @@ class ConfigModel(BaseModel):
     CACHE_TTL_DAYS: int = Field(default=30, ge=1, le=365)
 
     # Search defaults
-    DEFAULT_SEARCH_PROVIDER: Literal["exa", "tavily", "firecrawl", "brave", "ddgs", "arxiv", "wikipedia"] = "exa"
+    DEFAULT_SEARCH_PROVIDER: Literal[
+        "exa",
+        "tavily",
+        "firecrawl",
+        "brave",
+        "ddgs",
+        "arxiv",
+        "wikipedia",
+        "hackernews",
+        "reddit",
+    ] = "exa"
     DEFAULT_ACCEPT_LANGUAGE: str = "en-US,en;q=0.9,ar;q=0.8"
 
     # Logging

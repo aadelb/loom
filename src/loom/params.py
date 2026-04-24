@@ -145,7 +145,17 @@ class SearchParams(BaseModel):
     """Parameters for research_search tool."""
 
     query: str
-    provider: Literal["exa", "tavily", "firecrawl", "brave", "ddgs", "arxiv", "wikipedia"] = "exa"
+    provider: Literal[
+        "exa",
+        "tavily",
+        "firecrawl",
+        "brave",
+        "ddgs",
+        "arxiv",
+        "wikipedia",
+        "hackernews",
+        "reddit",
+    ] = "exa"
     n: int = 10
     include_domains: list[str] | None = None
     exclude_domains: list[str] | None = None
@@ -176,7 +186,17 @@ class DeepParams(BaseModel):
 
     query: str
     depth: int = 2
-    provider: Literal["exa", "tavily", "firecrawl", "brave", "ddgs", "arxiv", "wikipedia"] = "exa"
+    provider: Literal[
+        "exa",
+        "tavily",
+        "firecrawl",
+        "brave",
+        "ddgs",
+        "arxiv",
+        "wikipedia",
+        "hackernews",
+        "reddit",
+    ] = "exa"
     search_providers: list[str] | None = None
     expand_queries: bool = True
     extract: bool = True

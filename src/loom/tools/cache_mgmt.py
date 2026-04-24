@@ -50,28 +50,30 @@ def research_cache_stats() -> dict[str, Any]:
         "size_mb": round(size_mb, 2),
         "entry_count": entry_count,
         "oldest": (
-            datetime.fromtimestamp(min(timestamps), UTC).isoformat()
-            if timestamps
-            else None
+            datetime.fromtimestamp(min(timestamps), UTC).isoformat() if timestamps else None
         ),
         "newest": (
-            datetime.fromtimestamp(max(timestamps), UTC).isoformat()
-            if timestamps
-            else None
+            datetime.fromtimestamp(max(timestamps), UTC).isoformat() if timestamps else None
         ),
         "cache_dir": str(cache_dir),
     }
 
 
-def research_cache_clear(older_than_days: int = 30) -> dict[str, Any]:
+def research_cache_clear(older_than_days: int | None = None) -> dict[str, Any]:
     """Remove cache entries older than N days.
 
+    Uses CACHE_TTL_DAYS from config if older_than_days not specified.
+
     Args:
-        older_than_days: delete entries older than this many days
+        older_than_days: delete entries older than this many days (default from config)
 
     Returns:
         Dict with keys: deleted_count, freed_mb
     """
+    if older_than_days is None:
+        from loom.config import get_config
+
+        older_than_days = get_config().get("CACHE_TTL_DAYS", 30)
     cache = get_cache()
     cache_dir = Path(cache.base_dir)
 

@@ -148,7 +148,7 @@ def research_fetch(
     return_format: str = "text",
     timeout: int | None = None,
     bypass_cache: bool = False,
-    auto_escalate: bool = False,
+    auto_escalate: bool | None = None,
 ) -> dict[str, Any]:
     """Fetch a URL with configurable strategy.
 
@@ -187,12 +187,19 @@ def research_fetch(
         timeout=timeout,
     )
 
+    # Wire config defaults for auto_escalate
+    if auto_escalate is None:
+        from loom.config import get_config
+
+        auto_escalate = get_config().get("FETCH_AUTO_ESCALATE", False)
+
     logger.info(
-        "fetch_start url=%s mode=%s return=%s bypass_cache=%s",
+        "fetch_start url=%s mode=%s return=%s bypass_cache=%s auto_escalate=%s",
         url,
         params.mode,
         params.return_format,
         bypass_cache,
+        auto_escalate,
     )
 
     start = time.time()
