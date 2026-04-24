@@ -9,7 +9,7 @@ import pytest
 
 pytest.importorskip("loom.tools.github")
 
-from loom.tools.github import research_github
+from loom.tools.github import research_github, research_github_readme, research_github_releases
 
 
 class TestGitHub:
@@ -52,7 +52,6 @@ class TestGitHub:
     def test_github_cache_on_repeated_query(self) -> None:
         """GitHub caches results for repeated queries."""
         import os
-        from pathlib import Path
         from tempfile import TemporaryDirectory
 
         mock_response = {"items": [{"name": "repo1", "url": "https://github.com/r1"}]}
@@ -83,3 +82,86 @@ class TestGitHub:
             for kind in ["repos", "code", "issues"]:
                 result = research_github(kind=kind, query="test")
                 assert "results" in result
+
+
+class TestGitHubReadme:
+    def test_readme_success(self):
+        import base64
+        from unittest.mock import MagicMock
+
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.raise_for_status = MagicMock()
+        mock_resp.json.return_value = {
+            "name": "README.md",
+            "html_url": "https://github.com/owner/repo/blob/main/README.md",
+            "content": base64.b64encode(b"# My Project\nHello world").decode(),
+        }
+
+        mock_client = MagicMock()
+        mock_client.__enter__ = MagicMock(return_value=mock_client)
+        mock_client.__exit__ = MagicMock(return_value=False)
+        mock_client.get.return_value = mock_resp
+
+        with patch("httpx.Client", return_value=mock_client):
+            result = research_github_readme("owner", "repo")
+
+        assert "content" in result
+        assert "My Project" in result["content"]
+        assert result["name"] == "README.md"
+
+    def test_readme_not_found(self):
+        from unittest.mock import MagicMock
+
+        mock_client = MagicMock()
+        mock_client.__enter__ = MagicMock(return_value=mock_client)
+        mock_client.__exit__ = MagicMock(return_value=False)
+        mock_client.get.side_effect = Exception("404 Not Found")
+
+        with patch("httpx.Client", return_value=mock_client):
+            result = research_github_readme("owner", "nonexistent")
+
+        assert "error" in result
+
+
+class TestGitHubReleases:
+    def test_releases_success(self):
+        from unittest.mock import MagicMock
+
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.raise_for_status = MagicMock()
+        mock_resp.json.return_value = [
+            {
+                "tag_name": "v1.0.0",
+                "name": "First Release",
+                "body": "Initial release notes",
+                "published_at": "2024-01-01T00:00:00Z",
+                "prerelease": False,
+            }
+        ]
+
+        mock_client = MagicMock()
+        mock_client.__enter__ = MagicMock(return_value=mock_client)
+        mock_client.__exit__ = MagicMock(return_value=False)
+        mock_client.get.return_value = mock_resp
+
+        with patch("httpx.Client", return_value=mock_client):
+            result = research_github_releases("owner", "repo")
+
+        assert "releases" in result
+        assert len(result["releases"]) == 1
+        assert result["releases"][0]["tag"] == "v1.0.0"
+
+    def test_releases_error(self):
+        from unittest.mock import MagicMock
+
+        mock_client = MagicMock()
+        mock_client.__enter__ = MagicMock(return_value=mock_client)
+        mock_client.__exit__ = MagicMock(return_value=False)
+        mock_client.get.side_effect = Exception("API error")
+
+        with patch("httpx.Client", return_value=mock_client):
+            result = research_github_releases("owner", "repo")
+
+        assert "error" in result

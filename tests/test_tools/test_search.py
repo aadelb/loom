@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
 import sys
+from unittest.mock import MagicMock, patch
 
 from loom.tools.search import research_search
 
@@ -46,9 +46,7 @@ class TestSearchMocked:
         mock_module = MagicMock()
         mock_module.search_tavily.return_value = mock_result
         with patch.dict(sys.modules, {"loom.providers.tavily": mock_module}):
-            result = research_search(
-                "tavily test", provider="tavily", n=5
-            )
+            result = research_search("tavily test", provider="tavily", n=5)
 
             assert "results" in result
             assert "provider" in result
@@ -115,3 +113,50 @@ class TestSearchMocked:
         assert result["results"] == []
         assert "error" in result
         assert "Unknown provider" in result["error"]
+
+    def test_search_hackernews_routing(self) -> None:
+        """HackerNews provider is routed correctly."""
+        mock_module = MagicMock()
+        mock_module.search_hackernews.return_value = {
+            "results": [{"title": "HN Post", "url": "https://news.ycombinator.com/item?id=123"}],
+            "query": "test",
+            "source": "hackernews",
+        }
+
+        with patch.dict("sys.modules", {"loom.providers.hn_reddit": mock_module}):
+            result = research_search("test query", provider="hackernews")
+
+        assert result["provider"] == "hackernews"
+        mock_module.search_hackernews.assert_called_once()
+
+    def test_search_reddit_routing(self) -> None:
+        """Reddit provider is routed correctly."""
+        mock_module = MagicMock()
+        mock_module.search_reddit.return_value = {
+            "results": [{"title": "Reddit Post", "url": "https://reddit.com/r/test"}],
+            "query": "test",
+            "source": "reddit",
+        }
+
+        with patch.dict("sys.modules", {"loom.providers.hn_reddit": mock_module}):
+            result = research_search("test query", provider="reddit")
+
+        assert result["provider"] == "reddit"
+        mock_module.search_reddit.assert_called_once()
+
+    def test_search_default_provider_from_config(self) -> None:
+        """When provider is None, uses DEFAULT_SEARCH_PROVIDER from config."""
+        mock_config = {"DEFAULT_SEARCH_PROVIDER": "ddgs"}
+        mock_module = MagicMock()
+        mock_module.search_ddgs.return_value = {
+            "results": [],
+            "query": "test",
+        }
+
+        with (
+            patch("loom.config.get_config", return_value=mock_config),
+            patch.dict("sys.modules", {"loom.providers.ddgs": mock_module}),
+        ):
+            result = research_search("test query")
+
+        assert result["provider"] == "ddgs"

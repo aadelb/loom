@@ -139,3 +139,34 @@ class TestSearchExa:
 
         assert "API down" in result["error"]
         assert result["results"] == []
+
+
+class TestFindSimilarExa:
+    def test_find_similar_missing_key(self):
+        with patch.dict("os.environ", {}, clear=True):
+            from loom.providers.exa import find_similar_exa
+
+            result = find_similar_exa("https://example.com")
+            assert result["error"] == "EXA_API_KEY not set"
+
+    def test_find_similar_success(self):
+        mock_result = SimpleNamespace(
+            url="https://similar.com", title="Similar Page", text="Similar content", score=0.88
+        )
+        mock_response = SimpleNamespace(results=[mock_result])
+        mock_exa_cls = MagicMock()
+        mock_exa_cls.return_value.find_similar_and_contents.return_value = mock_response
+        mock_exa_mod = MagicMock()
+        mock_exa_mod.Exa = mock_exa_cls
+
+        with (
+            patch.dict("os.environ", {"EXA_API_KEY": "test-key"}),
+            patch.dict("sys.modules", {"exa_py": mock_exa_mod}),
+        ):
+            from loom.providers.exa import find_similar_exa
+
+            result = find_similar_exa("https://example.com", n=3)
+
+        assert "error" not in result
+        assert len(result["results"]) == 1
+        assert result["results"][0]["url"] == "https://similar.com"
