@@ -195,53 +195,23 @@ class NvidiaNimProvider(LLMProvider):
     ) -> list[list[float]]:
         """Generate embeddings via NVIDIA NIM.
 
-        Respects the global NIM rate-limit semaphore just like ``chat()`` does
-        (cross-review HIGH #7) and honours the per-call ``timeout`` kwarg
-        (cross-review HIGH #6).
+        The NVIDIA NIM free tier at integrate.api.nvidia.com does NOT support
+        the /v1/embeddings endpoint (it only supports /v1/chat/completions).
+        This method raises NotImplementedError to cascade to the next provider
+        in the chain (OpenAI, Anthropic, or vLLM).
 
         Args:
-            texts: List of text strings
-            model: Embedding model (default: nvidia/nv-embed-v2)
-            timeout: Per-call timeout in seconds
+            texts: List of text strings (unused, method will raise)
+            model: Embedding model (unused, method will raise)
+            timeout: Per-call timeout in seconds (unused)
 
         Returns:
-            List of embedding vectors
+            Never returns; always raises NotImplementedError
+
+        Raises:
+            NotImplementedError: Always, as NVIDIA NIM free tier has no embeddings API
         """
-        model = model or "nvidia/nv-embed-v2"
-        async with self.semaphore:
-            client = await self._get_client()
-            start = time.time()
-
-            payload = {
-                "model": model,
-                "input": texts,
-            }
-
-            try:
-                response = await client.post(
-                    "/embeddings",
-                    json=payload,
-                    timeout=float(timeout),
-                )
-                response.raise_for_status()
-            except httpx.TimeoutException:
-                logger.error("NVIDIA NIM embeddings timeout")
-                raise
-            except httpx.HTTPStatusError as e:
-                logger.error("NVIDIA NIM embeddings error: %d", e.response.status_code)
-                raise
-
-            data = response.json()
-            latency_ms = int((time.time() - start) * 1000)
-
-            embeddings = [item.get("embedding", []) for item in data.get("data", [])]
-
-            logger.info(
-                "llm_embed_ok provider=%s model=%s texts=%d latency=%dms",
-                self.name,
-                model,
-                len(texts),
-                latency_ms,
-            )
-
-            return embeddings
+        raise NotImplementedError(
+            "NVIDIA NIM free tier does not support embeddings. "
+            "Use OpenAI, Anthropic, vLLM, or another provider with embedding support."
+        )

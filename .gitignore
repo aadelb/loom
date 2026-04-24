@@ -64,6 +64,7 @@ coverage.xml
 
 # Journey test artifacts
 /journey-out/
+/graphify-out/
 /journey-recording/
 # Journey fixture snapshots regenerated on each run (timestamps drift)
 tests/fixtures/journey/report.json
@@ -76,3 +77,7 @@ tests/fixtures/journey/report.md
 *.log
 *.sqlite
 *.db
+
+# Check and audit scripts
+audit.py
+check_*.py

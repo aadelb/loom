@@ -24,7 +24,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-# ── API Keys (read from .env or environment) ────────────────────────────
+# ── API Keys (read from .env or environment) ────────────────────────
 # Load .env if it exists
 _env_path = Path(__file__).parent.parent / ".env"
 if _env_path.exists():
@@ -87,7 +87,9 @@ def run_sync(name: str, fn: Any, *args: Any, **kwargs: Any) -> dict[str, Any] | 
     except Exception as e:
         elapsed = int((time.time() - t0) * 1000)
         _log(name, "FAIL", elapsed, str(e)[:80])
-        RESULTS.append({"tool": name, "status": "FAIL", "elapsed_ms": elapsed, "error": str(e)[:200]})
+        RESULTS.append(
+            {"tool": name, "status": "FAIL", "elapsed_ms": elapsed, "error": str(e)[:200]}
+        )
         return None
 
 
@@ -106,7 +108,9 @@ async def run_async(name: str, fn: Any, *args: Any, **kwargs: Any) -> dict[str, 
     except Exception as e:
         elapsed = int((time.time() - t0) * 1000)
         _log(name, "FAIL", elapsed, str(e)[:80])
-        RESULTS.append({"tool": name, "status": "FAIL", "elapsed_ms": elapsed, "error": str(e)[:200]})
+        RESULTS.append(
+            {"tool": name, "status": "FAIL", "elapsed_ms": elapsed, "error": str(e)[:200]}
+        )
         return None
 
 
@@ -125,7 +129,7 @@ async def main() -> None:
     run_sync("config_set", research_config_set, "SPIDER_CONCURRENCY", 3)
     run_sync("config_get_key", research_config_get, "SPIDER_CONCURRENCY")
 
-    from loom.tools.cache_mgmt import research_cache_stats, research_cache_clear
+    from loom.tools.cache_mgmt import research_cache_clear, research_cache_stats
 
     run_sync("cache_stats", research_cache_stats)
     run_sync("cache_clear", research_cache_clear, 365)
@@ -134,7 +138,11 @@ async def main() -> None:
     print("\n── Group 2: Enrichment ──")
     from loom.tools.enrich import research_detect_language, research_wayback
 
-    run_sync("detect_language_en", research_detect_language, "The quick brown fox jumps over the lazy dog")
+    run_sync(
+        "detect_language_en",
+        research_detect_language,
+        "The quick brown fox jumps over the lazy dog",
+    )
     run_sync("detect_language_ar", research_detect_language, "هذا نص باللغة العربية للاختبار")
     run_sync("wayback", research_wayback, "https://example.com", 1)
 
@@ -146,7 +154,9 @@ async def main() -> None:
 
     run_sync("fetch_http", research_fetch, "https://example.com", "http")
     run_sync("fetch_escalate", research_fetch, "https://example.com", "http", auto_escalate=True)
-    await run_async("markdown", research_markdown, "https://en.wikipedia.org/wiki/Python_(programming_language)")
+    await run_async(
+        "markdown", research_markdown, "https://en.wikipedia.org/wiki/Python_(programming_language)"
+    )
     await run_async("spider", research_spider, ["https://example.com"], "http", concurrency=1)
 
     # ── GROUP 4: Free Search Providers ──────────────────────────────────
@@ -171,22 +181,28 @@ async def main() -> None:
 
     # ── GROUP 6: Expert & Citation (free) ───────────────────────────────
     print("\n── Group 6: Expert & Citation ──")
-    from loom.tools.experts import research_find_experts
     from loom.tools.creative import (
         research_citation_graph,
         research_community_sentiment,
-        research_wiki_ghost,
-        research_multilingual,
         research_consensus,
         research_curriculum,
+        research_multilingual,
+        research_wiki_ghost,
     )
+    from loom.tools.experts import research_find_experts
 
     await run_async("find_experts", research_find_experts, "machine learning", n=3)
-    await run_async("citation_graph", research_citation_graph, "transformer attention", depth=1, max_papers=5)
+    await run_async(
+        "citation_graph", research_citation_graph, "transformer attention", depth=1, max_papers=5
+    )
     await run_async("community_sentiment", research_community_sentiment, "rust programming", n=3)
     await run_async("wiki_ghost", research_wiki_ghost, "Climate change")
-    await run_async("multilingual", research_multilingual, "bitcoin", languages=["ar", "es"], n_per_lang=2)
-    await run_async("consensus", research_consensus, "renewable energy", providers=["ddgs", "wikipedia"], n=3)
+    await run_async(
+        "multilingual", research_multilingual, "bitcoin", languages=["ar", "es"], n_per_lang=2
+    )
+    await run_async(
+        "consensus", research_consensus, "renewable energy", providers=["ddgs", "wikipedia"], n=3
+    )
     await run_async("curriculum", research_curriculum, "machine learning")
 
     # ── GROUP 7: YouTube (free, needs yt-dlp) ───────────────────────────
@@ -194,7 +210,11 @@ async def main() -> None:
     try:
         from loom.providers.youtube_transcripts import fetch_youtube_transcript
 
-        run_sync("youtube_transcript", fetch_youtube_transcript, "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+        run_sync(
+            "youtube_transcript",
+            fetch_youtube_transcript,
+            "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        )
     except ImportError:
         _log("youtube_transcript", "SKIP", 0, "yt-dlp not installed")
         RESULTS.append({"tool": "youtube_transcript", "status": "SKIP", "elapsed_ms": 0})
@@ -208,19 +228,21 @@ async def main() -> None:
 
     from loom.providers.exa import find_similar_exa
 
-    run_sync("exa_find_similar", find_similar_exa, "https://en.wikipedia.org/wiki/Machine_learning", n=2)
+    run_sync(
+        "exa_find_similar", find_similar_exa, "https://en.wikipedia.org/wiki/Machine_learning", n=2
+    )
 
     # ── GROUP 9: LLM Tools (NVIDIA NIM free) ────────────────────────────
     print("\n── Group 9: LLM Tools ──")
     from loom.tools.llm import (
-        research_llm_summarize,
-        research_llm_extract,
-        research_llm_classify,
-        research_llm_translate,
-        research_llm_query_expand,
         research_llm_answer,
-        research_llm_embed,
         research_llm_chat,
+        research_llm_classify,
+        research_llm_embed,
+        research_llm_extract,
+        research_llm_query_expand,
+        research_llm_summarize,
+        research_llm_translate,
     )
 
     sample_text = (
@@ -229,29 +251,73 @@ async def main() -> None:
     )
 
     await run_async("llm_summarize", research_llm_summarize, sample_text, max_tokens=50)
-    await run_async("llm_extract", research_llm_extract, sample_text, schema={"name": "str", "company": "str", "salary": "int"})
-    await run_async("llm_classify", research_llm_classify, "I love this product! It works perfectly.", labels=["positive", "negative", "neutral"])
-    await run_async("llm_translate", research_llm_translate, "Hello, how are you?", target_lang="es")
-    await run_async("llm_query_expand", research_llm_query_expand, "artificial intelligence ethics", n=3)
-    await run_async("llm_answer", research_llm_answer, "What is photosynthesis?", sources=[{"title": "Biology", "text": "Photosynthesis converts sunlight to energy", "url": "https://example.com"}])
+    await run_async(
+        "llm_extract",
+        research_llm_extract,
+        sample_text,
+        schema={"name": "str", "company": "str", "salary": "int"},
+    )
+    await run_async(
+        "llm_classify",
+        research_llm_classify,
+        "I love this product! It works perfectly.",
+        labels=["positive", "negative", "neutral"],
+    )
+    await run_async(
+        "llm_translate", research_llm_translate, "Hello, how are you?", target_lang="es"
+    )
+    await run_async(
+        "llm_query_expand", research_llm_query_expand, "artificial intelligence ethics", n=3
+    )
+    await run_async(
+        "llm_answer",
+        research_llm_answer,
+        "What is photosynthesis?",
+        sources=[
+            {
+                "title": "Biology",
+                "text": "Photosynthesis converts sunlight to energy",
+                "url": "https://example.com",
+            }
+        ],
+    )
     await run_async("llm_embed", research_llm_embed, ["hello world", "good morning"])
-    await run_async("llm_chat", research_llm_chat, messages=[{"role": "user", "content": "What is 2+2? Answer in one word."}], max_tokens=10)
+    await run_async(
+        "llm_chat",
+        research_llm_chat,
+        messages=[{"role": "user", "content": "What is 2+2? Answer in one word."}],
+        max_tokens=10,
+    )
 
     # ── GROUP 10: Creative Tools (LLM-dependent) ────────────────────────
     print("\n── Group 10: Creative Tools ──")
     from loom.tools.creative import (
-        research_red_team,
-        research_misinfo_check,
         research_ai_detect,
-        research_temporal_diff,
+        research_misinfo_check,
+        research_red_team,
         research_semantic_sitemap,
+        research_temporal_diff,
     )
 
-    await run_async("red_team", research_red_team, "AI will replace all human jobs within 10 years", n_counter=2, max_cost_usd=0.05)
-    await run_async("misinfo_check", research_misinfo_check, "The Earth is approximately 4.5 billion years old", n_sources=3, max_cost_usd=0.03)
+    await run_async(
+        "red_team",
+        research_red_team,
+        "AI will replace all human jobs within 10 years",
+        n_counter=2,
+        max_cost_usd=0.05,
+    )
+    await run_async(
+        "misinfo_check",
+        research_misinfo_check,
+        "The Earth is approximately 4.5 billion years old",
+        n_sources=3,
+        max_cost_usd=0.03,
+    )
     await run_async("ai_detect", research_ai_detect, sample_text * 3, max_cost_usd=0.02)
-    await run_async("temporal_diff", research_temporal_diff, "https://example.com", max_cost_usd=0.03)
-    await run_async("semantic_sitemap", research_semantic_sitemap, "example.com", max_pages=5)
+    await run_async(
+        "temporal_diff", research_temporal_diff, "https://example.com", max_cost_usd=0.03
+    )
+    await run_async("semantic_sitemap", research_semantic_sitemap, "docs.python.org", max_pages=5)
 
     # ── GROUP 11: Full Deep Pipeline ────────────────────────────────────
     print("\n── Group 11: Full Pipeline ──")
@@ -317,7 +383,9 @@ async def main() -> None:
 
     # Write JSON report
     out_dir = Path("journey-out")
-    out_dir.mkdir(exist_ok=True)
+    import os as _os
+
+    _os.makedirs("journey-out", exist_ok=True)
     report = {
         "started_at": datetime.now(UTC).isoformat(),
         "elapsed_ms": elapsed_total,
