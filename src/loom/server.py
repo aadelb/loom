@@ -126,6 +126,7 @@ def _register_tools(mcp: FastMCP) -> None:
             "research_curriculum",
             "research_community_sentiment",
             "research_wiki_ghost",
+            "research_semantic_sitemap",
         ]
         for tool_name in _creative_tools:
             if hasattr(creative_mod, tool_name):
