@@ -28,6 +28,16 @@ with suppress(ImportError):
 
     _optional_tools["llm"] = llm_tools
 
+with suppress(ImportError):
+    from loom.tools import enrich as enrich_tools
+
+    _optional_tools["enrich"] = enrich_tools
+
+with suppress(ImportError):
+    from loom.tools import experts as experts_tools
+
+    _optional_tools["experts"] = experts_tools
+
 
 def _register_tools(mcp: FastMCP) -> None:
     """Register all MCP tools from tool modules.
@@ -59,6 +69,10 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(research_config_get)
     mcp.tool()(research_config_set)
 
+    # GitHub enhanced tools
+    mcp.tool()(github.research_github_readme)
+    mcp.tool()(github.research_github_releases)
+
     # LLM tools (if available)
     if "llm" in _optional_tools:
         llm_mod = _optional_tools["llm"]
@@ -78,6 +92,20 @@ def _register_tools(mcp: FastMCP) -> None:
             mcp.tool()(llm_mod.research_llm_embed)
         if hasattr(llm_mod, "research_llm_chat"):
             mcp.tool()(llm_mod.research_llm_chat)
+
+    # Enrichment tools (if available)
+    if "enrich" in _optional_tools:
+        enrich_mod = _optional_tools["enrich"]
+        if hasattr(enrich_mod, "research_detect_language"):
+            mcp.tool()(enrich_mod.research_detect_language)
+        if hasattr(enrich_mod, "research_wayback"):
+            mcp.tool()(enrich_mod.research_wayback)
+
+    # Expert finder (if available)
+    if "experts" in _optional_tools:
+        experts_mod = _optional_tools["experts"]
+        if hasattr(experts_mod, "research_find_experts"):
+            mcp.tool()(experts_mod.research_find_experts)
 
 
 def create_app() -> FastMCP:

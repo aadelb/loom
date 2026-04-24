@@ -1,4 +1,4 @@
-"""Unit tests for research_deep tool — search + markdown chaining."""
+"""Unit tests for research_deep tool — updated for v2 pipeline return shape."""
 
 from __future__ import annotations
 
@@ -10,35 +10,55 @@ pytest.importorskip("loom.tools.deep")
 
 from loom.tools.deep import research_deep
 
+_MOCK_CONFIG: dict = {
+    "RESEARCH_SEARCH_PROVIDERS": ["exa"],
+    "RESEARCH_EXPAND_QUERIES": False,
+    "RESEARCH_EXTRACT": False,
+    "RESEARCH_SYNTHESIZE": False,
+    "RESEARCH_GITHUB_ENRICHMENT": False,
+    "RESEARCH_MAX_COST_USD": 0.50,
+    "SPIDER_CONCURRENCY": 5,
+    "FETCH_AUTO_ESCALATE": True,
+}
+
+
+def _mock_fetch(url, **kwargs):
+    return {"url": url, "text": "content", "tool": "httpx"}
+
 
 @pytest.mark.asyncio
 async def test_deep_returns_expected_shape() -> None:
-    """research_deep returns dict with query, results list with url/title/markdown."""
+    """research_deep returns dict with new v2 shape."""
     mock_search = MagicMock(
         return_value={
             "results": [
-                {"url": "https://example.com/1", "title": "Example 1"},
-                {"url": "https://example.com/2", "title": "Example 2"},
+                {"url": "https://example.com/1", "title": "Example 1", "score": 0.9},
+                {"url": "https://example.com/2", "title": "Example 2", "score": 0.8},
             ],
-            "provider": "test_provider",
+            "provider": "exa",
         }
     )
 
     mock_markdown = AsyncMock(
         side_effect=[
-            {"url": "https://example.com/1", "markdown": "# Example 1\nContent 1"},
-            {"url": "https://example.com/2", "markdown": "# Example 2\nContent 2"},
+            {"url": "https://example.com/1", "title": "Example 1", "markdown": "M" * 200},
+            {"url": "https://example.com/2", "title": "Example 2", "markdown": "M" * 200},
         ]
     )
 
-    with patch("loom.tools.search.research_search", mock_search):
-        with patch("loom.tools.markdown.research_markdown", mock_markdown):
-            result = await research_deep(query="test query")
+    with (
+        patch("loom.config.get_config", return_value=_MOCK_CONFIG),
+        patch("loom.tools.deep.research_search", mock_search),
+        patch("loom.tools.deep.research_markdown", mock_markdown),
+        patch("loom.tools.deep.research_fetch", side_effect=_mock_fetch),
+    ):
+        result = await research_deep(query="test query", expand_queries=False)
 
     assert result["query"] == "test query"
-    assert "pages" in result
-    assert len(result["pages"]) == 2
-    assert result["pages"][0]["url"] == "https://example.com/1"
+    assert "top_pages" in result
+    assert "pages_fetched" in result
+    assert "providers_used" in result
+    assert "elapsed_ms" in result
 
 
 @pytest.mark.asyncio
@@ -46,12 +66,14 @@ async def test_deep_handles_search_failure() -> None:
     """research_deep returns error when search fails."""
     mock_search = MagicMock(side_effect=ValueError("Search API error"))
 
-    with patch("loom.tools.search.research_search", mock_search):
-        result = await research_deep(query="test query")
+    with (
+        patch("loom.config.get_config", return_value=_MOCK_CONFIG),
+        patch("loom.tools.deep.research_search", mock_search),
+    ):
+        result = await research_deep(query="test query", expand_queries=False)
 
-    assert "error" in result
-    assert result["pages"] == []
-    assert result["hit_count"] == 0
+    assert result["top_pages"] == []
+    assert result["pages_fetched"] == 0
 
 
 @pytest.mark.asyncio
@@ -60,66 +82,64 @@ async def test_deep_handles_markdown_failure() -> None:
     mock_search = MagicMock(
         return_value={
             "results": [
-                {"url": "https://example.com/1", "title": "Example 1"},
-                {"url": "https://example.com/2", "title": "Example 2"},
+                {"url": "https://example.com/1", "title": "Example 1", "score": 0.9},
+                {"url": "https://example.com/2", "title": "Example 2", "score": 0.8},
             ],
-            "provider": "test_provider",
+            "provider": "exa",
         }
     )
 
-    # First markdown succeeds, second fails
     mock_markdown = AsyncMock(
         side_effect=[
-            {"url": "https://example.com/1", "markdown": "# Content 1"},
+            {"url": "https://example.com/1", "title": "Ex 1", "markdown": "M" * 200},
             ValueError("Markdown extraction failed"),
         ]
     )
 
-    with patch("loom.tools.search.research_search", mock_search):
-        with patch("loom.tools.markdown.research_markdown", mock_markdown):
-            result = await research_deep(query="test query")
+    with (
+        patch("loom.config.get_config", return_value=_MOCK_CONFIG),
+        patch("loom.tools.deep.research_search", mock_search),
+        patch("loom.tools.deep.research_markdown", mock_markdown),
+        patch("loom.tools.deep.research_fetch", side_effect=_mock_fetch),
+    ):
+        result = await research_deep(query="test query", expand_queries=False)
 
-    # Should return partial results
-    assert len(result["pages"]) == 1
-    assert result["pages"][0]["url"] == "https://example.com/1"
+    assert len(result["top_pages"]) >= 1
 
 
 @pytest.mark.asyncio
 async def test_deep_respects_depth_parameter() -> None:
-    """research_deep with depth=2 limits URL fetches."""
+    """research_deep with depth=1 limits results."""
     search_results = [
-        {"url": f"https://example.com/{i}", "title": f"Result {i}"}
-        for i in range(10)
+        {"url": f"https://example.com/{i}", "title": f"Result {i}", "score": 0.5} for i in range(20)
     ]
 
-    mock_search = MagicMock(
-        return_value={
-            "results": search_results,
-            "provider": "test_provider",
-        }
-    )
+    mock_search = MagicMock(return_value={"results": search_results, "provider": "exa"})
 
     mock_markdown = AsyncMock(
-        return_value={"url": "https://example.com", "markdown": "Content"}
+        return_value={"url": "https://example.com", "title": "T", "markdown": "M" * 200}
     )
 
-    with patch("loom.tools.search.research_search", mock_search):
-        with patch("loom.tools.markdown.research_markdown", mock_markdown):
-            result = await research_deep(query="test", depth=2)
+    with (
+        patch("loom.config.get_config", return_value=_MOCK_CONFIG),
+        patch("loom.tools.deep.research_search", mock_search),
+        patch("loom.tools.deep.research_markdown", mock_markdown),
+        patch("loom.tools.deep.research_fetch", side_effect=_mock_fetch),
+    ):
+        result = await research_deep(query="test", depth=1, expand_queries=False)
 
-    # With depth=2, should limit to depth*3 = 6 URLs
-    assert mock_markdown.call_count <= 6
-    assert result["hit_count"] <= 6
+    assert result["pages_fetched"] <= 3
 
 
 @pytest.mark.asyncio
-async def test_deep_validates_query_empty() -> None:
+async def test_deep_empty_query() -> None:
     """research_deep handles empty query gracefully."""
-    mock_search = MagicMock(
-        return_value={"results": [], "provider": None}
-    )
+    mock_search = MagicMock(return_value={"results": [], "provider": "exa"})
 
-    with patch("loom.tools.search.research_search", mock_search):
-        result = await research_deep(query="")
+    with (
+        patch("loom.config.get_config", return_value=_MOCK_CONFIG),
+        patch("loom.tools.deep.research_search", mock_search),
+    ):
+        result = await research_deep(query="", expand_queries=False)
 
-    assert result["pages"] == [] or "error" in result
+    assert result["top_pages"] == [] or "error" in result

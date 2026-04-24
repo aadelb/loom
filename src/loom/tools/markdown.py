@@ -96,16 +96,31 @@ async def research_markdown(
 
     log.info("markdown url=%s", params.url)
 
-    # Import Crawl4AI lazily
+    # Import Crawl4AI lazily; fall back to trafilatura if unavailable
     try:
         from crawl4ai import AsyncWebCrawler
-    except ImportError as e:
-        log.exception("crawl4ai import failed")
-        return {
-            "url": params.url,
-            "error": f"crawl4ai not available: {e}",
-            "tool": "crawl4ai",
-        }
+    except ImportError:
+        log.info("crawl4ai not available, falling back to trafilatura")
+        try:
+            from loom.providers.trafilatura_extract import extract_with_trafilatura
+
+            traf_result = extract_with_trafilatura(url=params.url)
+            result_dict: dict[str, Any] = {
+                "url": params.url,
+                "title": traf_result.get("title", ""),
+                "markdown": traf_result.get("text", ""),
+                "tool": "trafilatura",
+            }
+            if not traf_result.get("error") and result_dict["markdown"]:
+                cache.put(cache_key, result_dict)
+            return result_dict
+        except Exception as traf_exc:
+            log.warning("trafilatura fallback failed: %s", traf_exc)
+            return {
+                "url": params.url,
+                "error": "crawl4ai and trafilatura both unavailable",
+                "tool": "none",
+            }
 
     try:
         # Prepare crawler kwargs

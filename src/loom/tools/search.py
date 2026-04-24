@@ -113,6 +113,39 @@ def research_search(
             result["provider"] = "brave"
             return result  # type: ignore[no-any-return]
 
+        elif provider == "ddgs":
+            from loom.providers.ddgs import search_ddgs
+
+            result = search_ddgs(
+                query=query,
+                n=n,
+                **provider_config,
+            )
+            result["provider"] = "ddgs"
+            return result  # type: ignore[no-any-return]
+
+        elif provider == "arxiv":
+            from loom.providers.arxiv_search import search_arxiv
+
+            result = search_arxiv(
+                query=query,
+                n=n,
+                **provider_config,
+            )
+            result["provider"] = "arxiv"
+            return result  # type: ignore[no-any-return]
+
+        elif provider == "wikipedia":
+            from loom.providers.wikipedia_search import search_wikipedia
+
+            result = search_wikipedia(
+                query=query,
+                n=n,
+                **provider_config,
+            )
+            result["provider"] = "wikipedia"
+            return result  # type: ignore[no-any-return]
+
         else:
             logger.error("unknown_search_provider provider=%s", provider)
             return {

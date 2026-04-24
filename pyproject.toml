@@ -53,6 +53,9 @@ dependencies = [
   "tavily-python>=0.7",
   "openai>=2.31",
   "python-dotenv>=1.2",
+  "ddgs>=3.9",
+  "trafilatura>=1.6",
+  "langdetect>=1.0",
 ]
 
 [project.optional-dependencies]
@@ -63,6 +66,7 @@ stealth = [
   "tf-playwright-stealth>=1.2",
 ]
 anthropic = ["anthropic>=0.40"]
+academic = ["arxiv>=2.1"]
 dev = [
   "pytest>=8",
   "pytest-asyncio>=0.24",
@@ -73,7 +77,7 @@ dev = [
   "pre-commit>=4",
   "types-requests",
 ]
-all = ["loom-mcp[stealth,anthropic,dev]"]
+all = ["loom-mcp[stealth,anthropic,academic,dev]"]
 
 [project.urls]
 Homepage = "https://github.com/aadelb/loom"

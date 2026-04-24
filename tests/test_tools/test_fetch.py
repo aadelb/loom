@@ -17,7 +17,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from loom.tools.fetch import research_fetch
+from loom.tools.fetch import FetchResult, _is_cloudflare_block, research_fetch
 
 _SCRAPLING_API_TODO = (
     "fetch.py currently uses httpx; Scrapling cache+return-shape API "
@@ -172,3 +172,75 @@ class TestFetch:
                 assert result1["text"] != result2["text"]
         except ModuleNotFoundError as e:
             pytest.skip(f"scrapling dependency missing: {e}")
+
+
+class TestCloudflareDetection:
+    """Tests for _is_cloudflare_block helper."""
+
+    def test_detects_403_with_ray_id(self):
+        result = FetchResult(
+            url="https://x.com", status_code=403, text="Attention Required Ray ID: abc123"
+        )
+        assert _is_cloudflare_block(result) is True
+
+    def test_detects_403_with_cf_ray(self):
+        result = FetchResult(
+            url="https://x.com", status_code=403, html="<html>cf-ray header</html>"
+        )
+        assert _is_cloudflare_block(result) is True
+
+    def test_detects_503_cloudflare(self):
+        result = FetchResult(url="https://x.com", status_code=503, text="Cloudflare challenge page")
+        assert _is_cloudflare_block(result) is True
+
+    def test_ignores_normal_403(self):
+        result = FetchResult(url="https://x.com", status_code=403, text="Forbidden")
+        assert _is_cloudflare_block(result) is False
+
+    def test_ignores_200(self):
+        result = FetchResult(url="https://x.com", status_code=200, text="OK")
+        assert _is_cloudflare_block(result) is False
+
+    def test_ignores_404(self):
+        result = FetchResult(url="https://x.com", status_code=404, text="Not found cloudflare")
+        assert _is_cloudflare_block(result) is False
+
+
+class TestFetchAutoEscalation:
+    """Tests for auto_escalate parameter."""
+
+    def test_auto_escalate_off_returns_as_is(self, tmp_cache_dir):
+        import os
+
+        os.environ["LOOM_CACHE_DIR"] = str(tmp_cache_dir)
+
+        cf_result = FetchResult(
+            url="https://example.com", status_code=403, text="Cloudflare Ray ID: x", tool="httpx"
+        )
+        with patch("loom.tools.fetch._fetch_http", return_value=cf_result):
+            result = research_fetch(
+                url="https://example.com", mode="http", auto_escalate=False, bypass_cache=True
+            )
+        assert result.get("status_code") == 403
+
+    def test_auto_escalate_on_tries_stealthy(self, tmp_cache_dir):
+        import os
+
+        os.environ["LOOM_CACHE_DIR"] = str(tmp_cache_dir)
+
+        cf_result = FetchResult(
+            url="https://example.com", status_code=403, text="Cloudflare Ray ID: x", tool="httpx"
+        )
+        ok_result = FetchResult(
+            url="https://example.com", status_code=200, text="Real content", tool="camoufox"
+        )
+
+        with (
+            patch("loom.tools.fetch._fetch_http", return_value=cf_result),
+            patch("loom.tools.fetch._fetch_stealthy", return_value=ok_result),
+        ):
+            result = research_fetch(
+                url="https://example.com", mode="http", auto_escalate=True, bypass_cache=True
+            )
+
+        assert result.get("tool") == "camoufox"

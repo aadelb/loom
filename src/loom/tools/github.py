@@ -155,6 +155,83 @@ def research_github(
         }
 
 
+def research_github_readme(owner: str, repo: str) -> dict[str, Any]:
+    """Fetch a repository's README content.
+
+    Args:
+        owner: GitHub user or organization
+        repo: repository name
+
+    Returns:
+        Dict with ``content`` (decoded text), ``name``, ``url``.
+    """
+    token = os.environ.get("GITHUB_TOKEN", "")
+    headers: dict[str, str] = {"Accept": "application/vnd.github.v3+json"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
+    try:
+        with httpx.Client(timeout=15.0, headers=headers) as client:
+            resp = client.get(f"https://api.github.com/repos/{owner}/{repo}/readme")
+            resp.raise_for_status()
+            data = resp.json()
+
+            import base64
+
+            content = base64.b64decode(data.get("content", "")).decode("utf-8", errors="replace")
+            return {
+                "name": data.get("name", "README.md"),
+                "url": data.get("html_url", ""),
+                "content": content[:20000],
+            }
+
+    except Exception as exc:
+        logger.warning("github_readme_failed %s/%s: %s", owner, repo, exc)
+        return {"error": str(exc)}
+
+
+def research_github_releases(owner: str, repo: str, limit: int = 5) -> dict[str, Any]:
+    """Fetch recent releases for a repository.
+
+    Args:
+        owner: GitHub user or organization
+        repo: repository name
+        limit: max releases to return
+
+    Returns:
+        Dict with ``releases`` list (each has ``tag``, ``name``, ``body``, ``published_at``).
+    """
+    token = os.environ.get("GITHUB_TOKEN", "")
+    headers: dict[str, str] = {"Accept": "application/vnd.github.v3+json"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
+    try:
+        with httpx.Client(timeout=15.0, headers=headers) as client:
+            resp = client.get(
+                f"https://api.github.com/repos/{owner}/{repo}/releases",
+                params={"per_page": limit},
+            )
+            resp.raise_for_status()
+            data = resp.json()
+
+        releases = [
+            {
+                "tag": r.get("tag_name", ""),
+                "name": r.get("name", ""),
+                "body": (r.get("body", "") or "")[:1000],
+                "published_at": r.get("published_at"),
+                "prerelease": r.get("prerelease", False),
+            }
+            for r in data[:limit]
+        ]
+        return {"owner": owner, "repo": repo, "releases": releases}
+
+    except Exception as exc:
+        logger.warning("github_releases_failed %s/%s: %s", owner, repo, exc)
+        return {"error": str(exc)}
+
+
 def tool_github(
     kind: str,
     query: str,

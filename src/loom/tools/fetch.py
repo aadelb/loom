@@ -126,6 +126,14 @@ def _make_cache_key(url: str, mode: str) -> str:
     return hashlib.sha256(combined.encode()).hexdigest()[:32]
 
 
+def _is_cloudflare_block(result: FetchResult) -> bool:
+    """Detect Cloudflare challenge or block in a fetch result."""
+    text = ((result.text or "") + (result.html or "")).lower()
+    if result.status_code == 403 and ("ray id" in text or "cf-ray" in text or "cloudflare" in text):
+        return True
+    return result.status_code == 503 and "cloudflare" in text
+
+
 def research_fetch(
     url: str,
     mode: str = "stealthy",
@@ -140,6 +148,7 @@ def research_fetch(
     return_format: str = "text",
     timeout: int | None = None,
     bypass_cache: bool = False,
+    auto_escalate: bool = False,
 ) -> dict[str, Any]:
     """Fetch a URL with configurable strategy.
 
@@ -188,13 +197,13 @@ def research_fetch(
 
     start = time.time()
 
-    # Check cache for mode='http' only
+    # Check cache for all modes
     cache_key = _make_cache_key(url, params.mode)
     cached = None
-    if params.mode == "http" and not bypass_cache:
+    if not bypass_cache:
         cached = get_cache().get(cache_key)
         if cached:
-            logger.info("cache_hit url=%s", url)
+            logger.info("cache_hit url=%s mode=%s", url, params.mode)
             cached["elapsed_ms"] = int((time.time() - start) * 1000)
             return cached
 
@@ -213,15 +222,26 @@ def research_fetch(
             elapsed_ms=int((time.time() - start) * 1000),
         )
 
+    # Auto-escalation: http -> stealthy -> dynamic on Cloudflare block
+    if auto_escalate and params.mode == "http" and _is_cloudflare_block(result):
+        logger.info("auto_escalate http->stealthy url=%s", url)
+        result = _fetch_stealthy(params)
+        if _is_cloudflare_block(result):
+            logger.info("auto_escalate stealthy->dynamic url=%s", url)
+            result = _fetch_dynamic(params)
+
     # Convert to dict and enrich with Scrapling-compatible fields
     # by_alias=True so the historical "json" dict key is preserved despite
     # the internal field being renamed to json_data for mypy --strict.
     output = result.model_dump(exclude_none=True, by_alias=True)
     output["elapsed_ms"] = int((time.time() - start) * 1000)
 
-    # For mode='http', transform result to Scrapling-compatible schema and cache
+    # For mode='http', transform result to Scrapling-compatible schema
     if params.mode == "http" and not output.get("error"):
         output = _to_scrapling_schema(output, params.max_chars)
+
+    # Cache all successful results (any mode)
+    if not output.get("error") and not bypass_cache:
         get_cache().put(cache_key, output)
 
     return output
@@ -234,6 +254,7 @@ def _fetch_http(params: FetchParams) -> FetchResult:
     """
     try:
         from scrapling.fetchers import Fetcher
+
         return _fetch_http_scrapling(params, Fetcher)
     except ImportError:
         logger.debug("Scrapling not available, falling back to httpx")
@@ -320,7 +341,11 @@ def _fetch_http_httpx(params: FetchParams) -> FetchResult:
 
             # HTML/text handling
             html = resp.text if params.return_format == "html" else None
-            text = resp.text if params.return_format == "text" else _extract_text(resp.text, params.max_chars)
+            text = (
+                resp.text
+                if params.return_format == "text"
+                else _extract_text(resp.text, params.max_chars)
+            )
 
             return FetchResult(
                 url=params.url,

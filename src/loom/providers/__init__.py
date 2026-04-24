@@ -1,4 +1,4 @@
-"""LLM provider implementations for Loom's research_llm_* tools."""
+"""LLM and search provider implementations for Loom."""
 
 from loom.providers.anthropic_provider import AnthropicProvider
 from loom.providers.base import LLMProvider, LLMResponse, _estimate_cost
@@ -15,3 +15,12 @@ __all__ = [
     "VllmLocalProvider",
     "_estimate_cost",
 ]
+
+# Search providers — optional, may fail if SDKs not installed
+for _name in ("exa", "tavily", "firecrawl", "brave"):
+    try:
+        _mod = __import__(f"loom.providers.{_name}", fromlist=[f"search_{_name}"])
+        globals()[f"search_{_name}"] = getattr(_mod, f"search_{_name}")
+        __all__.append(f"search_{_name}")
+    except (ImportError, AttributeError):
+        pass

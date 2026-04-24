@@ -72,6 +72,17 @@ class ConfigModel(BaseModel):
         default_factory=lambda: ["nvidia", "openai", "anthropic", "vllm"]
     )
 
+    # Research pipeline
+    RESEARCH_SEARCH_PROVIDERS: list[str] = Field(default_factory=lambda: ["exa", "brave"])
+    RESEARCH_EXPAND_QUERIES: bool = True
+    RESEARCH_EXTRACT: bool = True
+    RESEARCH_SYNTHESIZE: bool = True
+    RESEARCH_GITHUB_ENRICHMENT: bool = True
+    RESEARCH_MAX_COST_USD: float = Field(default=0.50, ge=0.0, le=10.0)
+
+    # Fetch
+    FETCH_AUTO_ESCALATE: bool = True
+
     @field_validator("LLM_CASCADE_ORDER", mode="before")
     @classmethod
     def _coerce_cascade_order(cls, v: Any) -> list[str]:
@@ -90,6 +101,23 @@ class ConfigModel(BaseModel):
             parts = [str(p).strip() for p in v if str(p).strip()]
             return parts or default_order
         raise ValueError(f"LLM_CASCADE_ORDER must be list or string, got {type(v).__name__}")
+
+    @field_validator("RESEARCH_SEARCH_PROVIDERS", mode="before")
+    @classmethod
+    def _coerce_search_providers(cls, v: Any) -> list[str]:
+        """Coerce search provider list from string or list."""
+        default = ["exa", "brave"]
+        if v is None:
+            return default
+        if isinstance(v, str):
+            parts = [p.strip() for p in v.split(",") if p.strip()]
+            return parts or default
+        if isinstance(v, list):
+            parts = [str(p).strip() for p in v if str(p).strip()]
+            return parts or default
+        raise ValueError(
+            f"RESEARCH_SEARCH_PROVIDERS must be list or string, got {type(v).__name__}"
+        )
 
 
 # ─── Internal helpers ────────────────────────────────────────────────────────

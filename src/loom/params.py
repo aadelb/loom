@@ -18,6 +18,7 @@ class FetchParams(BaseModel):
 
     url: str
     mode: Literal["http", "stealthy", "dynamic"] = "stealthy"
+    auto_escalate: bool = False
     solve_cloudflare: bool = True
     bypass_cache: bool = False
     max_chars: int = 20000
@@ -176,6 +177,12 @@ class DeepParams(BaseModel):
     query: str
     depth: int = 2
     provider: Literal["exa", "tavily", "firecrawl", "brave"] = "exa"
+    search_providers: list[str] | None = None
+    expand_queries: bool = True
+    extract: bool = True
+    synthesize: bool = True
+    include_github: bool = True
+    max_cost_usd: float = 0.50
 
     model_config = {"extra": "forbid", "strict": True}
 
@@ -184,6 +191,13 @@ class DeepParams(BaseModel):
     def validate_depth(cls, v: int) -> int:
         if v < 1 or v > 10:
             raise ValueError("depth must be 1-10")
+        return v
+
+    @field_validator("max_cost_usd")
+    @classmethod
+    def validate_max_cost(cls, v: float) -> float:
+        if v < 0.0 or v > 10.0:
+            raise ValueError("max_cost_usd must be 0.0-10.0")
         return v
 
 
