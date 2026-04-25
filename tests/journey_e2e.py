@@ -210,11 +210,15 @@ async def main() -> None:
     try:
         from loom.providers.youtube_transcripts import fetch_youtube_transcript
 
-        run_sync(
+        result = run_sync(
             "youtube_transcript",
             fetch_youtube_transcript,
             "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
         )
+        # If yt-dlp is not installed, the function returns {"error": "..."}
+        # Treat this as SKIP rather than FAIL (don't call _log since run_sync already logged it)
+        if result and "error" in result and "yt-dlp" in result["error"]:
+            RESULTS[-1]["status"] = "SKIP"
     except ImportError:
         _log("youtube_transcript", "SKIP", 0, "yt-dlp not installed")
         RESULTS.append({"tool": "youtube_transcript", "status": "SKIP", "elapsed_ms": 0})

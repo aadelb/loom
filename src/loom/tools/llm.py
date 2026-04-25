@@ -205,6 +205,23 @@ def _get_cost_tracker() -> CostTracker:
     return _COST_TRACKER
 
 
+def _safe_error_str(exc: Exception | None) -> str:
+    """Safely convert exception to string, handling broken __str__ methods.
+
+    Some libraries (e.g., OpenAI) have exceptions with broken __str__ methods.
+    This function uses a fallback chain: str(e) → repr(e) → class name.
+    """
+    if exc is None:
+        return "unknown error"
+    try:
+        return str(exc)
+    except Exception:
+        try:
+            return repr(exc)
+        except Exception:
+            return f"{exc.__class__.__name__}"
+
+
 def _sanitize_error(error_str: str) -> str:
     """Remove API keys from error messages.
 
@@ -361,13 +378,13 @@ async def _call_with_cascade(
                 "llm_provider_failed provider=%s attempt=%d error=%s",
                 provider.name,
                 len(attempts),
-                _sanitize_error(str(e)),
+                _sanitize_error(_safe_error_str(e)),
             )
             last_error = e
             continue
 
     raise RuntimeError(
-        f"all providers failed (attempted {', '.join(attempts)}); last error: {_sanitize_error(str(last_error))}"
+        f"all providers failed (attempted {', '.join(attempts)}); last error: {_sanitize_error(_safe_error_str(last_error))}"
     )
 
 
@@ -437,8 +454,8 @@ async def research_llm_summarize(
             "output_tokens": response.output_tokens,
         }
     except Exception as e:
-        logger.error("llm_summarize_failed: %s", _sanitize_error(str(e)))
-        return {"error": _sanitize_error(str(e))}
+        logger.error("llm_summarize_failed: %s", _sanitize_error(_safe_error_str(e)))
+        return {"error": _sanitize_error(_safe_error_str(e))}
 
 
 async def research_llm_extract(
@@ -524,8 +541,8 @@ async def research_llm_extract(
             "cost_usd": response.cost_usd,
         }
     except Exception as e:
-        logger.error("llm_extract_failed: %s", _sanitize_error(str(e)))
-        return {"error": _sanitize_error(str(e))}
+        logger.error("llm_extract_failed: %s", _sanitize_error(_safe_error_str(e)))
+        return {"error": _sanitize_error(_safe_error_str(e))}
 
 
 async def research_llm_classify(
@@ -604,8 +621,8 @@ async def research_llm_classify(
             "cost_usd": response.cost_usd,
         }
     except Exception as e:
-        logger.error("llm_classify_failed: %s", _sanitize_error(str(e)))
-        return {"error": _sanitize_error(str(e))}
+        logger.error("llm_classify_failed: %s", _sanitize_error(_safe_error_str(e)))
+        return {"error": _sanitize_error(_safe_error_str(e))}
 
 
 async def research_llm_translate(
@@ -662,8 +679,8 @@ async def research_llm_translate(
             "cost_usd": response.cost_usd,
         }
     except Exception as e:
-        logger.error("llm_translate_failed: %s", _sanitize_error(str(e)))
-        return {"error": _sanitize_error(str(e))}
+        logger.error("llm_translate_failed: %s", _sanitize_error(_safe_error_str(e)))
+        return {"error": _sanitize_error(_safe_error_str(e))}
 
 
 async def research_llm_query_expand(
@@ -728,8 +745,8 @@ async def research_llm_query_expand(
             "cost_usd": response.cost_usd,
         }
     except Exception as e:
-        logger.error("llm_query_expand_failed: %s", _sanitize_error(str(e)))
-        return {"error": _sanitize_error(str(e))}
+        logger.error("llm_query_expand_failed: %s", _sanitize_error(_safe_error_str(e)))
+        return {"error": _sanitize_error(_safe_error_str(e))}
 
 
 async def research_llm_answer(
@@ -805,8 +822,8 @@ async def research_llm_answer(
             "cost_usd": response.cost_usd,
         }
     except Exception as e:
-        logger.error("llm_answer_failed: %s", _sanitize_error(str(e)))
-        return {"error": _sanitize_error(str(e))}
+        logger.error("llm_answer_failed: %s", _sanitize_error(_safe_error_str(e)))
+        return {"error": _sanitize_error(_safe_error_str(e))}
 
 
 async def research_llm_embed(
@@ -865,13 +882,13 @@ async def research_llm_embed(
                     logger.warning(
                         "embedding_provider_failed provider=%s error=%s",
                         type(p).__name__,
-                        _sanitize_error(str(e)),
+                        _sanitize_error(_safe_error_str(e)),
                     )
                     continue
 
             if provider_obj is None or embeddings is None:
                 reason = (
-                    _sanitize_error(str(last_error))
+                    _sanitize_error(_safe_error_str(last_error))
                     if last_error is not None
                     else "no embedding provider available (all unavailable or unsupported)"
                 )
@@ -885,8 +902,8 @@ async def research_llm_embed(
             "cost_usd": 0.0,  # Embeddings are usually free or very cheap
         }
     except Exception as e:
-        logger.error("llm_embed_failed: %s", _sanitize_error(str(e)))
-        return {"error": _sanitize_error(str(e))}
+        logger.error("llm_embed_failed: %s", _sanitize_error(_safe_error_str(e)))
+        return {"error": _sanitize_error(_safe_error_str(e))}
 
 
 async def research_llm_chat(
@@ -939,5 +956,5 @@ async def research_llm_chat(
             "finish_reason": response.finish_reason,
         }
     except Exception as e:
-        logger.error("llm_chat_failed: %s", _sanitize_error(str(e)))
-        return {"error": _sanitize_error(str(e))}
+        logger.error("llm_chat_failed: %s", _sanitize_error(_safe_error_str(e)))
+        return {"error": _sanitize_error(_safe_error_str(e))}

@@ -929,9 +929,12 @@ async def research_semantic_sitemap(
                 result = await loop.run_in_executor(
                     None, partial(extract_with_trafilatura, url=url)
                 )
-                title = result.get("title", "")
-                text = result.get("text", "")[:200]
-                if title or text:
+                # Skip results with errors
+                if result.get("error"):
+                    page_data.append({"url": url, "title": "", "snippet": ""})
+                else:
+                    title = result.get("title", "")
+                    text = result.get("text", "")[:200]
                     page_data.append({"url": url, "title": title, "snippet": text})
             except Exception:
                 page_data.append({"url": url, "title": "", "snippet": ""})
