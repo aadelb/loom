@@ -2,11 +2,8 @@
 
 from __future__ import annotations
 
-import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-
-import pytest
 
 from loom.cache import CacheStore
 

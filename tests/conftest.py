@@ -61,9 +61,8 @@ def mock_httpx_transport() -> MockTransport:
         elif "arxiv.org" in url:
             content = b'<html><title>arXiv</title><body>Paper</body></html>'
             status = 200
-        elif "127.0.0.1" in url or "localhost" in url or "169.254" in url:
-            status = 403
-        elif "10.0.0.1" in url or "192.168" in url or "172.16" in url:
+        elif ("127.0.0.1" in url or "localhost" in url or "169.254" in url or
+              "10.0.0.1" in url or "192.168" in url or "172.16" in url):
             status = 403
         else:
             status = 200
