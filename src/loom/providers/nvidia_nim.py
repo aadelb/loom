@@ -195,23 +195,36 @@ class NvidiaNimProvider(LLMProvider):
     ) -> list[list[float]]:
         """Generate embeddings via NVIDIA NIM.
 
-        The NVIDIA NIM free tier at integrate.api.nvidia.com does NOT support
-        the /v1/embeddings endpoint (it only supports /v1/chat/completions).
-        This method raises NotImplementedError to cascade to the next provider
-        in the chain (OpenAI, Anthropic, or vLLM).
+        Uses NIM's /v1/embeddings endpoint with input_type parameter.
+        Default model: nvidia/nv-embedqa-e5-v5 (1024 dims, free tier).
 
         Args:
-            texts: List of text strings (unused, method will raise)
-            model: Embedding model (unused, method will raise)
-            timeout: Per-call timeout in seconds (unused)
+            texts: List of text strings to embed
+            model: Embedding model (default: nvidia/nv-embedqa-e5-v5)
+            timeout: Per-call timeout in seconds
 
         Returns:
-            Never returns; always raises NotImplementedError
-
-        Raises:
-            NotImplementedError: Always, as NVIDIA NIM free tier has no embeddings API
+            List of embedding vectors
         """
-        raise NotImplementedError(
-            "NVIDIA NIM free tier does not support embeddings. "
-            "Use OpenAI, Anthropic, vLLM, or another provider with embedding support."
-        )
+        model = model or "nvidia/nv-embedqa-e5-v5"
+        client = await self._get_client()
+
+        payload: dict[str, Any] = {
+            "model": model,
+            "input": texts,
+            "input_type": "query",
+            "encoding_format": "float",
+        }
+
+        try:
+            response = await client.post(
+                "/embeddings",
+                json=payload,
+                timeout=float(timeout),
+            )
+            response.raise_for_status()
+            data = response.json()
+            return [item["embedding"] for item in data.get("data", [])]
+        except Exception as exc:
+            logger.error("NVIDIA NIM embeddings error: %s", exc)
+            raise

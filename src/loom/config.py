@@ -74,7 +74,7 @@ class ConfigModel(BaseModel):
 
     # LLM
     LLM_DEFAULT_CHAT_MODEL: str = "meta/llama-4-maverick-17b-128e-instruct"
-    LLM_DEFAULT_EMBED_MODEL: str = "nvidia/nv-embed-v2"
+    LLM_DEFAULT_EMBED_MODEL: str = "nvidia/nv-embedqa-e5-v5"
     LLM_DEFAULT_TRANSLATE_MODEL: str = "moonshotai/kimi-k2-instruct"
     LLM_MAX_PARALLEL: int = Field(default=12, ge=1, le=64)
     LLM_DAILY_COST_CAP_USD: float = Field(default=10.0, ge=0.0, le=1000.0)

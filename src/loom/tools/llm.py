@@ -850,7 +850,7 @@ async def research_llm_embed(
 
     # Resolve default embedding model
     if model == "auto":
-        model = CONFIG.get("LLM_DEFAULT_EMBED_MODEL", "nvidia/nv-embed-v2")
+        model = CONFIG.get("LLM_DEFAULT_EMBED_MODEL", "nvidia/nv-embedqa-e5-v5")
 
     # Truncate texts to prevent explosion
     texts = [t[:5000] if isinstance(t, str) else str(t) for t in texts]
