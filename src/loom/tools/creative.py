@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from functools import partial
 from typing import Any
 
@@ -25,6 +26,49 @@ import httpx
 logger = logging.getLogger("loom.tools.creative")
 
 _SEMANTIC_SCHOLAR_URL = "https://api.semanticscholar.org/graph/v1"
+
+
+def _get_with_retry(
+    client: httpx.Client,
+    url: str,
+    params: dict[str, Any] | None = None,
+    max_retries: int = 3,
+) -> httpx.Response:
+    """Fetch with exponential backoff retry on 429 (rate limit).
+
+    Args:
+        client: httpx.Client instance
+        url: URL to fetch
+        params: query parameters
+        max_retries: number of retries on 429
+
+    Returns:
+        httpx.Response from the successful request
+    """
+    backoff_delays = [2, 4, 8]
+    last_response = None
+
+    for attempt in range(max_retries):
+        try:
+            last_response = client.get(url, params=params)
+            if last_response.status_code != 429:
+                return last_response
+            # 429: rate limited, will retry
+            if attempt < max_retries - 1:
+                delay = backoff_delays[attempt]
+                logger.debug("citation_graph_429_retry attempt=%d delay=%ds", attempt + 1, delay)
+                time.sleep(delay)
+        except Exception as e:
+            logger.warning("citation_graph_request_failed attempt=%d error=%s", attempt + 1, e)
+            if attempt == max_retries - 1:
+                raise
+            time.sleep(backoff_delays[attempt])
+
+    # Exhausted retries, return last 429 response
+    if last_response is not None:
+        return last_response
+    # Fallback (shouldn't reach here)
+    raise RuntimeError("Failed to get response from Semantic Scholar API")
 
 
 # ── Red Team Mode (#23) ─────────────────────────────────────────────────
@@ -449,17 +493,18 @@ async def research_temporal_diff(
 async def research_citation_graph(
     paper_query: str,
     depth: int = 1,
-    max_papers: int = 20,
+    max_papers: int = 10,
 ) -> dict[str, Any]:
     """Build a citation graph from a seed paper query.
 
     Uses Semantic Scholar API (free, no key for basic) to traverse
-    citations and references.
+    citations and references. Includes retry logic with exponential backoff
+    to handle 429 rate limits.
 
     Args:
         paper_query: search query or paper title
         depth: citation traversal depth (1 or 2)
-        max_papers: max papers in the graph
+        max_papers: max papers in the graph (reduced from 20 to 10 to avoid rate limits)
 
     Returns:
         Dict with ``papers`` list and ``edges`` (citation links).
@@ -469,7 +514,8 @@ async def research_citation_graph(
 
     try:
         with httpx.Client(timeout=15.0) as client:
-            search_resp = client.get(  # noqa: ASYNC212
+            search_resp = _get_with_retry(
+                client,
                 f"{_SEMANTIC_SCHOLAR_URL}/paper/search",
                 params={
                     "query": paper_query,
@@ -497,9 +543,16 @@ async def research_citation_graph(
                 }
 
                 if depth >= 1 and len(papers) < max_papers:
-                    cit_resp = client.get(  # noqa: ASYNC212
+                    # Sleep before citations call to respect rate limits
+                    await asyncio.sleep(1)
+
+                    cit_resp = _get_with_retry(
+                        client,
                         f"{_SEMANTIC_SCHOLAR_URL}/paper/{pid}/citations",
-                        params={"limit": 5, "fields": "title,authors,year,citationCount,url"},
+                        params={
+                            "limit": 5,
+                            "fields": "title,authors,year,citationCount,url",
+                        },
                     )
                     if cit_resp.status_code == 200:
                         for cit in cit_resp.json().get("data", [])[:5]:
@@ -519,9 +572,16 @@ async def research_citation_graph(
                                 }
                                 edges.append({"from": cid, "to": pid, "type": "cites"})
 
-                    ref_resp = client.get(  # noqa: ASYNC212
+                    # Sleep between calls
+                    await asyncio.sleep(1)
+
+                    ref_resp = _get_with_retry(
+                        client,
                         f"{_SEMANTIC_SCHOLAR_URL}/paper/{pid}/references",
-                        params={"limit": 5, "fields": "title,authors,year,citationCount,url"},
+                        params={
+                            "limit": 5,
+                            "fields": "title,authors,year,citationCount,url",
+                        },
                     )
                     if ref_resp.status_code == 200:
                         for ref in ref_resp.json().get("data", [])[:5]:

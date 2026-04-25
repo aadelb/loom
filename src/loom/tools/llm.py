@@ -439,12 +439,12 @@ async def research_llm_summarize(
 
     try:
         response = await _call_with_cascade(
-                messages,
-                model=model,
-                provider_override=provider_override,
-                max_tokens=max_tokens,
-                temperature=0.2,
-            )
+            messages,
+            model=model,
+            provider_override=provider_override,
+            max_tokens=max_tokens,
+            temperature=0.2,
+        )
         return {
             "summary": response.text,
             "model": response.model,
@@ -513,13 +513,13 @@ async def research_llm_extract(
         }
 
         response = await _call_with_cascade(
-                messages,
-                model=model,
-                provider_override=provider_override,
-                max_tokens=1000,
-                temperature=0.0,
-                response_format=response_format,
-            )
+            messages,
+            model=model,
+            provider_override=provider_override,
+            max_tokens=1000,
+            temperature=0.0,
+            response_format=response_format,
+        )
 
         # Parse JSON response
         try:
@@ -594,12 +594,12 @@ async def research_llm_classify(
 
     try:
         response = await _call_with_cascade(
-                messages,
-                model=model,
-                provider_override=provider_override,
-                max_tokens=100,
-                temperature=0.0,
-            )
+            messages,
+            model=model,
+            provider_override=provider_override,
+            max_tokens=100,
+            temperature=0.0,
+        )
 
         text_out = response.text.strip().strip('"').strip("'")
 
@@ -665,12 +665,12 @@ async def research_llm_translate(
 
     try:
         response = await _call_with_cascade(
-                messages,
-                model=model,
-                provider_override=provider_override,
-                max_tokens=2000,
-                temperature=0.1,
-            )
+            messages,
+            model=model,
+            provider_override=provider_override,
+            max_tokens=2000,
+            temperature=0.1,
+        )
 
         return {
             "translated": response.text.strip(),
@@ -722,12 +722,12 @@ async def research_llm_query_expand(
 
     try:
         response = await _call_with_cascade(
-                messages,
-                model=model,
-                provider_override=provider_override,
-                max_tokens=500,
-                temperature=0.7,
-            )
+            messages,
+            model=model,
+            provider_override=provider_override,
+            max_tokens=500,
+            temperature=0.7,
+        )
 
         # Parse JSON array
         text_out = response.text.strip()
@@ -807,12 +807,12 @@ async def research_llm_answer(
 
     try:
         response = await _call_with_cascade(
-                messages,
-                model=model,
-                provider_override=provider_override,
-                max_tokens=max_tokens,
-                temperature=0.2,
-            )
+            messages,
+            model=model,
+            provider_override=provider_override,
+            max_tokens=max_tokens,
+            temperature=0.2,
+        )
 
         return {
             "answer": response.text,
@@ -938,13 +938,13 @@ async def research_llm_chat(
     """
     try:
         response = await _call_with_cascade(
-                messages,
-                model=model,
-                provider_override=provider_override,
-                max_tokens=max_tokens,
-                temperature=temperature,
-                response_format=response_format,
-            )
+            messages,
+            model=model,
+            provider_override=provider_override,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            response_format=response_format,
+        )
 
         return {
             "text": response.text,
