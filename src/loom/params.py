@@ -55,8 +55,8 @@ class FetchParams(BaseModel):
         if v is None:
             return v
         # Basic proxy URL format check
-        if not v.startswith(("http://", "https://")):
-            raise ValueError("proxy must start with http:// or https://")
+        if not v.startswith(("http://", "https://", "socks5://", "socks5h://")):
+            raise ValueError("proxy must start with http://, https://, socks5://, or socks5h://")
         return v
 
     @field_validator("headers")
@@ -177,6 +177,8 @@ class SearchParams(BaseModel):
         "coindesk",
         "binance",
         "investing",
+        "ahmia",
+        "darksearch",
     ] = "exa"
     n: int = 10
     include_domains: list[str] | None = None
@@ -223,6 +225,8 @@ class DeepParams(BaseModel):
         "coindesk",
         "binance",
         "investing",
+        "ahmia",
+        "darksearch",
     ] = "exa"
     search_providers: list[str] | None = None
     expand_queries: bool = True

@@ -71,6 +71,8 @@ class ConfigModel(BaseModel):
         "coindesk",
         "binance",
         "investing",
+        "ahmia",
+        "darksearch",
     ] = "exa"
     DEFAULT_ACCEPT_LANGUAGE: str = "en-US,en;q=0.9,ar;q=0.8"
 
@@ -97,6 +99,11 @@ class ConfigModel(BaseModel):
 
     # Fetch
     FETCH_AUTO_ESCALATE: bool = True
+
+    # Tor / Darkweb
+    TOR_ENABLED: bool = False
+    TOR_SOCKS5_PROXY: str = "socks5h://127.0.0.1:9050"
+    ALLOW_ONION_URLS: bool = False
 
     # Rate limits (per-minute sliding window)
     RATE_LIMIT_SEARCH_PER_MIN: int = Field(default=30, ge=1, le=200)

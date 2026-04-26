@@ -81,6 +81,11 @@ with suppress(ImportError):
 
     _optional_tools["joplin"] = joplin_tools
 
+with suppress(ImportError):
+    from loom.tools import tor as tor_tools
+
+    _optional_tools["tor"] = tor_tools
+
 
 _start_time = time.time()
 
@@ -259,6 +264,14 @@ def _register_tools(mcp: FastMCP) -> None:
             mcp.tool()(_wrap_tool(joplin_mod.research_save_note))
         if hasattr(joplin_mod, "research_list_notebooks"):
             mcp.tool()(_wrap_tool(joplin_mod.research_list_notebooks))
+
+    # Tor management tools (if available)
+    if "tor" in _optional_tools:
+        tor_mod = _optional_tools["tor"]
+        if hasattr(tor_mod, "research_tor_status"):
+            mcp.tool()(_wrap_tool(tor_mod.research_tor_status))
+        if hasattr(tor_mod, "research_tor_new_identity"):
+            mcp.tool()(_wrap_tool(tor_mod.research_tor_new_identity))
 
 
 def create_app() -> FastMCP:

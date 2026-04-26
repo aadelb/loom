@@ -226,6 +226,28 @@ def research_search(
             result["provider"] = "investing"
             return result  # type: ignore[no-any-return]
 
+        elif provider == "ahmia":
+            from loom.providers.ahmia_search import search_ahmia
+
+            result = search_ahmia(
+                query=query,
+                n=n,
+                **provider_config,
+            )
+            result["provider"] = "ahmia"
+            return result  # type: ignore[no-any-return]
+
+        elif provider == "darksearch":
+            from loom.providers.darksearch_search import search_darksearch
+
+            result = search_darksearch(
+                query=query,
+                n=n,
+                **provider_config,
+            )
+            result["provider"] = "darksearch"
+            return result  # type: ignore[no-any-return]
+
         else:
             logger.error("unknown_search_provider provider=%s", provider)
             return {

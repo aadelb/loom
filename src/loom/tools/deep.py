@@ -110,6 +110,23 @@ _FINANCE_KEYWORDS = frozenset(
     }
 )
 
+_DARKWEB_KEYWORDS = frozenset(
+    {
+        "tor",
+        "onion",
+        "darkweb",
+        "darknet",
+        "hidden",
+        ".onion",
+        "deep web",
+        "dark web",
+        "i2p",
+        "freenet",
+        "tails",
+        "whonix",
+    }
+)
+
 _NEWS_KEYWORDS = frozenset(
     {
         "news",
@@ -139,6 +156,8 @@ def _detect_query_type(query: str) -> set[str]:
         types.add("academic")
     if query_words & _FINANCE_KEYWORDS:
         types.add("finance")
+    if query_words & _DARKWEB_KEYWORDS:
+        types.add("darkweb")
     if query_words & _NEWS_KEYWORDS:
         types.add("news")
     for phrase in _KNOWLEDGE_KEYWORDS:
@@ -254,6 +273,11 @@ async def research_deep(
             search_providers.append("binance")
         if "investing" not in search_providers:
             search_providers.append("investing")
+    if "darkweb" in query_types:
+        if "ahmia" not in search_providers:
+            search_providers.append("ahmia")
+        if "darksearch" not in search_providers:
+            search_providers.append("darksearch")
     if "news" in query_types and "newsapi" not in search_providers:
         search_providers.append("newsapi")
     if "ddgs" not in search_providers:
