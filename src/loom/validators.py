@@ -56,6 +56,8 @@ PROVIDER_CONFIG_ALLOWLIST: dict[str, frozenset[str]] = {
     "newsapi": frozenset({"language", "sort_by", "from_date", "to_date", "domains"}),
     "crypto": frozenset({"convert", "sort", "sort_dir"}),
     "coindesk": frozenset({"language"}),
+    "binance": frozenset({"symbol", "interval"}),
+    "investing": frozenset({"interval", "range"}),
 }
 
 # Dangerous JavaScript APIs blocked in login_script / js_before_scrape.

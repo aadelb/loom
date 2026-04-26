@@ -61,6 +61,26 @@ with suppress(ImportError):
 
     _optional_tools["youtube"] = yt_tools
 
+with suppress(ImportError):
+    from loom.tools import vastai as vastai_tools
+
+    _optional_tools["vastai"] = vastai_tools
+
+with suppress(ImportError):
+    from loom.tools import billing as billing_tools
+
+    _optional_tools["billing"] = billing_tools
+
+with suppress(ImportError):
+    from loom.tools import email_report as email_tools
+
+    _optional_tools["email"] = email_tools
+
+with suppress(ImportError):
+    from loom.tools import joplin as joplin_tools
+
+    _optional_tools["joplin"] = joplin_tools
+
 
 _start_time = time.time()
 
@@ -209,6 +229,36 @@ def _register_tools(mcp: FastMCP) -> None:
         yt_mod = _optional_tools["youtube"]
         if hasattr(yt_mod, "fetch_youtube_transcript"):
             mcp.tool()(_wrap_tool(yt_mod.fetch_youtube_transcript, "fetch"))
+
+    # Vast.ai GPU tools (if available)
+    if "vastai" in _optional_tools:
+        vastai_mod = _optional_tools["vastai"]
+        if hasattr(vastai_mod, "research_vastai_search"):
+            mcp.tool()(_wrap_tool(vastai_mod.research_vastai_search))
+        if hasattr(vastai_mod, "research_vastai_status"):
+            mcp.tool()(_wrap_tool(vastai_mod.research_vastai_status))
+
+    # Billing/usage tools (if available)
+    if "billing" in _optional_tools:
+        billing_mod = _optional_tools["billing"]
+        if hasattr(billing_mod, "research_usage_report"):
+            mcp.tool()(_wrap_tool(billing_mod.research_usage_report))
+        if hasattr(billing_mod, "research_stripe_balance"):
+            mcp.tool()(_wrap_tool(billing_mod.research_stripe_balance))
+
+    # Email report tool (if available)
+    if "email" in _optional_tools:
+        email_mod = _optional_tools["email"]
+        if hasattr(email_mod, "research_email_report"):
+            mcp.tool()(_wrap_tool(email_mod.research_email_report))
+
+    # Joplin note tools (if available)
+    if "joplin" in _optional_tools:
+        joplin_mod = _optional_tools["joplin"]
+        if hasattr(joplin_mod, "research_save_note"):
+            mcp.tool()(_wrap_tool(joplin_mod.research_save_note))
+        if hasattr(joplin_mod, "research_list_notebooks"):
+            mcp.tool()(_wrap_tool(joplin_mod.research_list_notebooks))
 
 
 def create_app() -> FastMCP:

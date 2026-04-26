@@ -204,6 +204,28 @@ def research_search(
             result["provider"] = "coindesk"
             return result  # type: ignore[no-any-return]
 
+        elif provider == "binance":
+            from loom.providers.binance_data import search_binance
+
+            result = search_binance(
+                query=query,
+                n=n,
+                **provider_config,
+            )
+            result["provider"] = "binance"
+            return result  # type: ignore[no-any-return]
+
+        elif provider == "investing":
+            from loom.providers.investing_data import search_investing
+
+            result = search_investing(
+                query=query,
+                n=n,
+                **provider_config,
+            )
+            result["provider"] = "investing"
+            return result  # type: ignore[no-any-return]
+
         else:
             logger.error("unknown_search_provider provider=%s", provider)
             return {

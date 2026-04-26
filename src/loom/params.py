@@ -175,6 +175,8 @@ class SearchParams(BaseModel):
         "newsapi",
         "crypto",
         "coindesk",
+        "binance",
+        "investing",
     ] = "exa"
     n: int = 10
     include_domains: list[str] | None = None
@@ -219,6 +221,8 @@ class DeepParams(BaseModel):
         "newsapi",
         "crypto",
         "coindesk",
+        "binance",
+        "investing",
     ] = "exa"
     search_providers: list[str] | None = None
     expand_queries: bool = True

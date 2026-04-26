@@ -149,6 +149,7 @@ class TestProviderConfigFilter:
         expected = {
             "exa", "tavily", "firecrawl", "brave", "ddgs", "arxiv",
             "wikipedia", "hackernews", "reddit", "newsapi", "crypto", "coindesk",
+            "binance", "investing",
         }
         assert set(PROVIDER_CONFIG_ALLOWLIST.keys()) == expected
 
