@@ -1,4 +1,4 @@
-"""HackerNews + Reddit sentiment search (free, no API key)."""
+"""HackerNews and Reddit community search via public APIs."""
 
 from __future__ import annotations
 
@@ -10,6 +10,33 @@ import httpx
 logger = logging.getLogger("loom.providers.hn_reddit")
 
 _HN_ALGOLIA_URL = "https://hn.algolia.com/api/v1/search"
+
+# Module-level clients for connection pooling
+_hn_client: httpx.Client | None = None
+_reddit_client: httpx.Client | None = None
+
+
+def _get_hn_client() -> httpx.Client:
+    """Get or create HackerNews client with connection pooling."""
+    global _hn_client
+    if _hn_client is None:
+        _hn_client = httpx.Client(
+            timeout=15.0,
+            limits=httpx.Limits(max_keepalive_connections=10, max_connections=50),
+        )
+    return _hn_client
+
+
+def _get_reddit_client() -> httpx.Client:
+    """Get or create Reddit client with connection pooling."""
+    global _reddit_client
+    if _reddit_client is None:
+        _reddit_client = httpx.Client(
+            timeout=15.0,
+            headers={"User-Agent": "Loom/0.1 (research MCP server)"},
+            limits=httpx.Limits(max_keepalive_connections=10, max_connections=50),
+        )
+    return _reddit_client
 
 
 def search_hackernews(
@@ -31,10 +58,10 @@ def search_hackernews(
     endpoint = _HN_ALGOLIA_URL if sort_by == "relevance" else f"{_HN_ALGOLIA_URL}_by_date"
 
     try:
-        with httpx.Client(timeout=15.0) as client:
-            resp = client.get(endpoint, params={"query": query, "hitsPerPage": min(n, 30)})
-            resp.raise_for_status()
-            data = resp.json()
+        client = _get_hn_client()
+        resp = client.get(endpoint, params={"query": query, "hitsPerPage": min(n, 30)})
+        resp.raise_for_status()
+        data = resp.json()
 
         results = [
             {
@@ -94,22 +121,19 @@ def search_reddit(
         url = "https://www.reddit.com/search.json"
 
     try:
-        with httpx.Client(
-            timeout=15.0,
-            headers={"User-Agent": "Loom/0.1 (research MCP server)"},
-        ) as client:
-            resp = client.get(
-                url,
-                params={
-                    "q": query,
-                    "limit": min(n, 25),
-                    "sort": sort,
-                    "t": time_filter,
-                    "restrict_sr": "on" if subreddit else "off",
-                },
-            )
-            resp.raise_for_status()
-            data = resp.json()
+        client = _get_reddit_client()
+        resp = client.get(
+            url,
+            params={
+                "q": query,
+                "limit": min(n, 25),
+                "sort": sort,
+                "t": time_filter,
+                "restrict_sr": "on" if subreddit else "off",
+            },
+        )
+        resp.raise_for_status()
+        data = resp.json()
 
         posts = data.get("data", {}).get("children", [])
         results = [
@@ -119,12 +143,10 @@ def search_reddit(
                 "snippet": (post["data"].get("selftext", "") or "")[:500],
                 "score": post["data"].get("score"),
                 "num_comments": post["data"].get("num_comments"),
-                "subreddit": post["data"].get("subreddit"),
                 "author": post["data"].get("author"),
                 "created_utc": post["data"].get("created_utc"),
             }
             for post in posts
-            if post.get("data")
         ]
         return {"results": results, "query": query, "source": "reddit"}
 

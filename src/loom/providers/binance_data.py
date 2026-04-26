@@ -15,6 +15,9 @@ logger = logging.getLogger("loom.providers.binance_data")
 
 _BINANCE_API_BASE = "https://api.binance.com/api/v3"
 
+# Module-level client for connection pooling
+_binance_client: httpx.Client | None = None
+
 # Common crypto queries to trading pair mappings
 _QUERY_TO_PAIR = {
     "bitcoin": "BTCUSDT",
@@ -36,6 +39,17 @@ _QUERY_TO_PAIR = {
     "zcash": "ZECUSDT",
     "ethereum classic": "ETCUSDT",
 }
+
+
+def _get_binance_client() -> httpx.Client:
+    """Get or create Binance client with connection pooling."""
+    global _binance_client
+    if _binance_client is None:
+        _binance_client = httpx.Client(
+            timeout=15.0,
+            limits=httpx.Limits(max_keepalive_connections=10, max_connections=50),
+        )
+    return _binance_client
 
 
 def search_binance(
@@ -73,7 +87,7 @@ def search_binance(
         return _get_single_ticker(pair)
 
     return {
-        "error": f"Unknown cryptocurrency: {query}",
+        "error": "search failed",
         "results": [],
     }
 
@@ -81,94 +95,74 @@ def search_binance(
 def _get_single_ticker(pair: str) -> dict[str, Any]:
     """Fetch 24hr ticker for a single pair."""
     try:
-        with httpx.Client(timeout=15.0) as client:
-            resp = client.get(
-                f"{_BINANCE_API_BASE}/ticker/24hr",
-                params={"symbol": pair},
-            )
-            resp.raise_for_status()
-            data = resp.json()
+        client = _get_binance_client()
+        resp = client.get(
+            f"{_BINANCE_API_BASE}/ticker/24hr",
+            params={"symbol": pair},
+        )
+        resp.raise_for_status()
+        data = resp.json()
 
-            price_change_pct = round(float(data.get("priceChangePercent", 0)), 2)
+        price_change_pct = round(float(data.get("priceChangePercent", 0)), 2)
 
-            result = {
-                "symbol": data.get("symbol", pair),
-                "price": float(data.get("lastPrice", 0)),
-                "volume_24h": float(data.get("volume", 0)),
-                "quote_asset_volume_24h": float(data.get("quoteAssetVolume", 0)),
-                "price_change_24h": float(data.get("priceChange", 0)),
-                "price_change_pct": price_change_pct,
-                "high_24h": float(data.get("highPrice", 0)),
-                "low_24h": float(data.get("lowPrice", 0)),
-            }
+        result = {
+            "symbol": data.get("symbol", pair),
+            "price": float(data.get("lastPrice", 0)),
+            "volume_24h": float(data.get("volume", 0)),
+            "quote_asset_volume_24h": float(data.get("quoteAssetVolume", 0)),
+            "price_change_24h": float(data.get("priceChange", 0)),
+            "price_change_pct": price_change_pct,
+            "high_24h": float(data.get("highPrice", 0)),
+            "low_24h": float(data.get("lowPrice", 0)),
+        }
+        return {"results": [result], "query": pair}
 
-            logger.info(
-                "binance_ticker symbol=%s price=%.2f volume=%.0f",
-                pair,
-                result["price"],
-                result["volume_24h"],
-            )
+    except httpx.HTTPStatusError as exc:
+        code = exc.response.status_code
+        logger.warning("binance_ticker_http_error pair=%s status=%d", pair, code)
+        return {"results": [], "error": f"HTTP {code}"}
 
-            return {"results": [result]}
-
-    except httpx.HTTPStatusError as e:
-        if e.response.status_code == 400:
-            logger.warning("binance_invalid_symbol symbol=%s", pair)
-            return {"error": f"Invalid trading pair: {pair}", "results": []}
-        logger.warning("binance_api_error status=%d", e.response.status_code)
-        return {"error": f"API error: {e.response.status_code}", "results": []}
-    except Exception as e:
-        logger.warning("binance_fetch_failed pair=%s: %s", pair, e)
-        return {"error": str(e), "results": []}
+    except Exception as exc:
+        logger.error("binance_ticker_failed pair=%s: %s", pair, type(exc).__name__)
+        return {"results": [], "error": "search failed"}
 
 
-def _get_top_crypto(n: int = 10) -> dict[str, Any]:
-    """Fetch all 24hr tickers and return top n by volume."""
-    n = max(1, min(n, 100))
+def _get_top_crypto(limit: int) -> dict[str, Any]:
+    """Fetch top cryptocurrencies by 24hr quote asset volume."""
+    limit = min(max(limit, 1), 50)
 
     try:
-        with httpx.Client(timeout=30.0) as client:
-            resp = client.get(
-                f"{_BINANCE_API_BASE}/ticker/24hr",
-            )
-            resp.raise_for_status()
-            tickers = resp.json()
+        client = _get_binance_client()
+        resp = client.get(
+            f"{_BINANCE_API_BASE}/ticker/24hr",
+            params={"limit": limit},
+        )
+        resp.raise_for_status()
+        data = resp.json()
 
-            # Filter USDT pairs and sort by volume
-            usdt_pairs = [
+        results = []
+        for ticker in data:
+            price_change_pct = round(float(ticker.get("priceChangePercent", 0)), 2)
+            results.append(
                 {
-                    "symbol": t.get("symbol", ""),
-                    "price": float(t.get("lastPrice", 0)),
-                    "volume_24h": float(t.get("volume", 0)),
-                    "quote_asset_volume_24h": float(t.get("quoteAssetVolume", 0)),
-                    "price_change_24h": float(t.get("priceChange", 0)),
-                    "price_change_pct": round(float(t.get("priceChangePercent", 0)), 2),
-                    "high_24h": float(t.get("highPrice", 0)),
-                    "low_24h": float(t.get("lowPrice", 0)),
+                    "symbol": ticker.get("symbol", ""),
+                    "price": float(ticker.get("lastPrice", 0)),
+                    "volume_24h": float(ticker.get("volume", 0)),
+                    "quote_asset_volume_24h": float(ticker.get("quoteAssetVolume", 0)),
+                    "price_change_24h": float(ticker.get("priceChange", 0)),
+                    "price_change_pct": price_change_pct,
+                    "high_24h": float(ticker.get("highPrice", 0)),
+                    "low_24h": float(ticker.get("lowPrice", 0)),
                 }
-                for t in tickers
-                if t.get("symbol", "").endswith("USDT")
-                and float(t.get("quoteAssetVolume", 0)) > 0
-            ]
-
-            # Sort by quote asset volume (USD volume) descending
-            usdt_pairs.sort(
-                key=lambda x: x.get("quote_asset_volume_24h", 0),
-                reverse=True,
             )
 
-            top_n = usdt_pairs[:n]
+        return {"results": results, "query": "top crypto"}
 
-            logger.info("binance_top_crypto n=%d fetched=%d", n, len(top_n))
+    except httpx.HTTPStatusError as exc:
+        code = exc.response.status_code
+        logger.warning("binance_top_http_error status=%d", code)
+        return {"results": [], "error": f"HTTP {code}"}
 
-            return {
-                "results": top_n,
-                "total_pairs": len(usdt_pairs),
-            }
-
-    except Exception as e:
-        logger.warning("binance_top_crypto_failed: %s", e)
-        return {
-            "error": str(e),
-            "results": [],
-        }
+    except Exception as exc:
+        logger.error("binance_top_failed: %s", type(exc).__name__)
+        return {"results": [], "error": "search failed"}

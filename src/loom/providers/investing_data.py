@@ -72,6 +72,20 @@ _SYMBOL_MAP: dict[str, str] = {
 # Request timeout
 REQUEST_TIMEOUT = 15.0
 
+
+# Module-level client for connection pooling
+_investing_client: httpx.Client | None = None
+
+
+def _get_investing_client() -> httpx.Client:
+    """Get or create investing client with connection pooling."""
+    global _investing_client
+    if _investing_client is None:
+        _investing_client = httpx.Client(
+            timeout=REQUEST_TIMEOUT,
+            limits=httpx.Limits(max_keepalive_connections=10, max_connections=50),
+        )
+    return _investing_client
 # Response constraints
 MAX_RESULTS = 20
 
@@ -143,84 +157,84 @@ def search_investing(
         logger.debug("investing_symbol_not_found query=%s", query)
         return {
             "query": query,
-            "error": f"Could not identify financial symbol from query: {query}",
+            "error": "search failed",
             "results": [],
         }
 
     # Fetch data from Yahoo Finance
     try:
-        with httpx.Client(timeout=REQUEST_TIMEOUT) as client:
-            response = client.get(
+        client = _get_investing_client()
+        response = client.get(
                 YAHOO_FINANCE_API,
                 params={
                     "symbols": symbol,
                     "interval": "1d",
                     "range": "5d",
                 },
-            )
-            response.raise_for_status()
+        )
+        response.raise_for_status()
 
-            data = response.json()
-            chart_data = data.get("chart", {})
-            error_data = chart_data.get("error")
+        data = response.json()
+        chart_data = data.get("chart", {})
+        error_data = chart_data.get("error")
 
-            # Check for API errors
-            if error_data:
+        # Check for API errors
+        if error_data:
                 error_msg = error_data.get("description", "Unknown error")
                 logger.warning("investing_api_error symbol=%s error=%s", symbol, error_msg)
                 return {
                     "query": query,
-                    "error": f"Yahoo Finance error: {error_msg}",
+                    "error": "search failed",
                     "results": [],
                 }
 
-            results_data = chart_data.get("result", [])
+        results_data = chart_data.get("result", [])
 
-            if not results_data:
+        if not results_data:
                 return {
                     "query": query,
                     "error": "No data returned from Yahoo Finance",
                     "results": [],
                 }
 
-            # Extract quote data
-            quote = results_data[0].get("meta", {})
-            timestamps = results_data[0].get("timestamp", [])
-            closes = results_data[0].get("indicators", {}).get("quote", [{}])[0].get(
+        # Extract quote data
+        quote = results_data[0].get("meta", {})
+        timestamps = results_data[0].get("timestamp", [])
+        closes = results_data[0].get("indicators", {}).get("quote", [{}])[0].get(
                 "close", []
-            )
-            volumes = results_data[0].get("indicators", {}).get("quote", [{}])[0].get(
+        )
+        volumes = results_data[0].get("indicators", {}).get("quote", [{}])[0].get(
                 "volume", []
-            )
+        )
 
-            # Get latest price (last non-null close)
-            current_price = None
-            for close in reversed(closes):
+        # Get latest price (last non-null close)
+        current_price = None
+        for close in reversed(closes):
                 if close is not None:
                     current_price = close
                     break
 
-            if current_price is None:
+        if current_price is None:
                 return {
                     "query": query,
                     "error": "No price data available",
                     "results": [],
                 }
 
-            # Get previous close if available
-            prev_close = quote.get("previousClose", current_price)
-            change = current_price - prev_close if prev_close else 0
-            change_pct = (change / prev_close * 100) if prev_close and prev_close != 0 else 0
+        # Get previous close if available
+        prev_close = quote.get("previousClose", current_price)
+        change = current_price - prev_close if prev_close else 0
+        change_pct = (change / prev_close * 100) if prev_close and prev_close != 0 else 0
 
-            # Get latest volume
-            volume = None
-            for vol in reversed(volumes):
+        # Get latest volume
+        volume = None
+        for vol in reversed(volumes):
                 if vol is not None:
                     volume = vol
                     break
 
-            # Build result
-            result = {
+        # Build result
+        result = {
                 "symbol": symbol,
                 "name": quote.get("shortName", quote.get("longName", symbol)),
                 "price": round(current_price, 2),
@@ -230,50 +244,50 @@ def search_investing(
                 "volume": volume if volume is not None else 0,
                 "market_cap": quote.get("marketCap"),
                 "timezone": quote.get("exchangeTimezoneName"),
-            }
+        }
 
-            logger.info(
+        logger.info(
                 "investing_quote_retrieved symbol=%s price=%s change_pct=%s",
                 symbol,
                 current_price,
                 change_pct,
-            )
+        )
 
-            return {
+        return {
                 "query": query,
                 "symbol": symbol,
                 "results": [result],
                 "updated": timestamps[-1] if timestamps else None,
-            }
+        }
 
     except httpx.HTTPStatusError as exc:
         logger.warning("investing_http_error symbol=%s status=%d", symbol, exc.response.status_code)
         return {
-            "query": query,
-            "error": f"HTTP error {exc.response.status_code} from Yahoo Finance",
-            "results": [],
+        "query": query,
+        "error": "search failed",
+        "results": [],
         }
 
     except httpx.ConnectError:
         logger.warning("investing_connect_failed")
         return {
-            "query": query,
-            "error": "Could not connect to Yahoo Finance API",
-            "results": [],
+        "query": query,
+        "error": "Could not connect to Yahoo Finance API",
+        "results": [],
         }
 
     except httpx.TimeoutException:
         logger.warning("investing_timeout symbol=%s", symbol)
         return {
-            "query": query,
-            "error": f"Yahoo Finance request timeout ({REQUEST_TIMEOUT}s)",
-            "results": [],
+        "query": query,
+        "error": "search failed",
+        "results": [],
         }
 
     except Exception as exc:
         logger.error("investing_unexpected_error symbol=%s: %s", symbol, exc)
         return {
-            "query": query,
-            "error": f"Unexpected error: {str(exc)}",
-            "results": [],
+        "query": query,
+        "error": "search failed",
+        "results": [],
         }

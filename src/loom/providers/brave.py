@@ -12,6 +12,20 @@ logger = logging.getLogger("loom.providers.brave")
 
 _BRAVE_SEARCH_URL = "https://api.search.brave.com/res/v1/web/search"
 
+# Module-level client for connection pooling
+_brave_client: httpx.Client | None = None
+
+
+def _get_brave_client() -> httpx.Client:
+    """Get or create Brave Search client with connection pooling."""
+    global _brave_client
+    if _brave_client is None:
+        _brave_client = httpx.Client(
+            timeout=30.0,
+            limits=httpx.Limits(max_keepalive_connections=10, max_connections=50),
+        )
+    return _brave_client
+
 
 def search_brave(
     query: str,
@@ -51,10 +65,10 @@ def search_brave(
     }
 
     try:
-        with httpx.Client(timeout=30.0) as client:
-            resp = client.get(_BRAVE_SEARCH_URL, params=params, headers=headers)
-            resp.raise_for_status()
-            data = resp.json()
+        client = _get_brave_client()
+        resp = client.get(_BRAVE_SEARCH_URL, params=params, headers=headers)
+        resp.raise_for_status()
+        data = resp.json()
 
         results = [
             {

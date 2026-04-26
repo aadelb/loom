@@ -13,6 +13,9 @@ logger = logging.getLogger("loom.providers.coinmarketcap")
 _CMC_LISTINGS_URL = "https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest"
 _CMC_QUOTES_URL = "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest"
 
+# Module-level client for connection pooling
+_cmc_client: httpx.Client | None = None
+
 # Common cryptocurrency symbols/names for matching
 _KNOWN_CRYPTOS = {
     "btc": "BTC",
@@ -36,6 +39,17 @@ _KNOWN_CRYPTOS = {
     "link": "LINK",
     "chainlink": "LINK",
 }
+
+
+def _get_cmc_client() -> httpx.Client:
+    """Get or create CoinMarketCap client with connection pooling."""
+    global _cmc_client
+    if _cmc_client is None:
+        _cmc_client = httpx.Client(
+            timeout=30.0,
+            limits=httpx.Limits(max_keepalive_connections=10, max_connections=50),
+        )
+    return _cmc_client
 
 
 def search_crypto(
@@ -76,18 +90,18 @@ def search_crypto(
     }
 
     try:
-        with httpx.Client(timeout=30.0) as client:
-            if matched_symbol:
-                # Fetch specific cryptocurrency
-                params = {"symbol": matched_symbol}
-                resp = client.get(_CMC_QUOTES_URL, params=params, headers=headers)
-            else:
-                # Fetch top cryptocurrencies by market cap
-                params = {"limit": n, "convert": "USD"}
-                resp = client.get(_CMC_LISTINGS_URL, params=params, headers=headers)
+        client = _get_cmc_client()
+        if matched_symbol:
+            # Fetch specific cryptocurrency
+            params = {"symbol": matched_symbol}
+            resp = client.get(_CMC_QUOTES_URL, params=params, headers=headers)
+        else:
+            # Fetch top cryptocurrencies by market cap
+            params = {"limit": n, "convert": "USD"}
+            resp = client.get(_CMC_LISTINGS_URL, params=params, headers=headers)
 
-            resp.raise_for_status()
-            data = resp.json()
+        resp.raise_for_status()
+        data = resp.json()
 
         results: list[dict[str, Any]] = []
 
@@ -126,7 +140,7 @@ def search_crypto(
     except httpx.HTTPStatusError as exc:
         code = exc.response.status_code
         logger.warning("cmc_search_http_error query=%s status=%d", query[:50], code)
-        return {"results": [], "query": query, "error": f"HTTP {code}"}
+        return {"results": [], "query": query, "error": "search failed"}
 
     except Exception as exc:
         # Don't log full exception to avoid leaking API keys (HIGH #4)

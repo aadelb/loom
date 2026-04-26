@@ -12,6 +12,20 @@ logger = logging.getLogger("loom.providers.newsapi_search")
 
 _NEWSAPI_EVERYTHING_URL = "https://newsapi.org/v2/everything"
 
+# Module-level client for connection pooling
+_newsapi_client: httpx.Client | None = None
+
+
+def _get_newsapi_client() -> httpx.Client:
+    """Get or create NewsAPI client with connection pooling."""
+    global _newsapi_client
+    if _newsapi_client is None:
+        _newsapi_client = httpx.Client(
+            timeout=30.0,
+            limits=httpx.Limits(max_keepalive_connections=10, max_connections=50),
+        )
+    return _newsapi_client
+
 
 def search_newsapi(
     query: str,
@@ -45,10 +59,10 @@ def search_newsapi(
     }
 
     try:
-        with httpx.Client(timeout=30.0) as client:
-            resp = client.get(_NEWSAPI_EVERYTHING_URL, params=params, headers=headers)
-            resp.raise_for_status()
-            data = resp.json()
+        client = _get_newsapi_client()
+        resp = client.get(_NEWSAPI_EVERYTHING_URL, params=params, headers=headers)
+        resp.raise_for_status()
+        data = resp.json()
 
         results = [
             {
@@ -64,7 +78,7 @@ def search_newsapi(
     except httpx.HTTPStatusError as exc:
         code = exc.response.status_code
         logger.warning("newsapi_search_http_error query=%s status=%d", query[:50], code)
-        return {"results": [], "query": query, "error": f"HTTP {code}"}
+        return {"results": [], "query": query, "error": "search failed"}
 
     except Exception as exc:
         # Don't log full exception to avoid leaking API keys (HIGH #4)

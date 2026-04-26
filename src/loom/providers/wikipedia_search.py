@@ -1,4 +1,4 @@
-"""Wikipedia search provider (free, no API key, via MediaWiki REST API)."""
+"""Wikipedia search provider for general knowledge queries."""
 
 from __future__ import annotations
 
@@ -9,88 +9,62 @@ import httpx
 
 logger = logging.getLogger("loom.providers.wikipedia_search")
 
+_WIKI_API_URL = "https://en.wikipedia.org/w/api.php"
+
+# Module-level client for connection pooling
+_wiki_client: httpx.Client | None = None
+
+
+def _get_wiki_client() -> httpx.Client:
+    """Get or create Wikipedia client with connection pooling."""
+    global _wiki_client
+    if _wiki_client is None:
+        _wiki_client = httpx.Client(
+            timeout=30.0,
+            limits=httpx.Limits(max_keepalive_connections=10, max_connections=50),
+        )
+    return _wiki_client
+
 
 def search_wikipedia(
     query: str,
-    n: int = 5,
-    language: str = "en",
+    n: int = 10,
     **kwargs: Any,
 ) -> dict[str, Any]:
-    """Search Wikipedia for articles (free, no API key).
-
-    Uses the MediaWiki opensearch API for discovery, then fetches
-    summaries via the REST API.
+    """Search Wikipedia for articles matching a query.
 
     Args:
         query: search query
-        n: max number of results (capped at 10)
-        language: Wikipedia language code (default "en")
+        n: max number of results
         **kwargs: ignored (accepted for interface compat)
 
     Returns:
-        Normalized result dict with ``results`` list and ``query``.
+        Normalized result dict with ``results`` list.
     """
-    # Validate language code to prevent URL injection (HIGH #7)
-    if not language or not all(c.isalnum() or c == "-" for c in language):
-        language = "en"
-    if len(language) > 5:  # Language codes are typically 2-5 chars
-        language = "en"
-
-    n = min(n, 10)
-    base = f"https://{language}.wikipedia.org"
+    params: dict[str, Any] = {
+        "action": "query",
+        "format": "json",
+        "list": "search",
+        "srsearch": query,
+        "srlimit": min(n, 50),
+    }
 
     try:
-        with httpx.Client(
-            timeout=15.0,
-            headers={"User-Agent": "Loom/0.1 (research MCP server)"},
-        ) as client:
-            search_resp = client.get(
-                f"{base}/w/api.php",
-                params={
-                    "action": "opensearch",
-                    "search": query,
-                    "limit": n,
-                    "format": "json",
-                },
-            )
-            search_resp.raise_for_status()
-            data = search_resp.json()
+        client = _get_wiki_client()
+        resp = client.get(_WIKI_API_URL, params=params)
+        resp.raise_for_status()
+        data = resp.json()
 
-            titles: list[str] = data[1] if len(data) > 1 else []
-            urls: list[str] = data[3] if len(data) > 3 else []
-
-            results: list[dict[str, Any]] = []
-            for title, url in zip(titles, urls, strict=False):
-                summary_resp = client.get(
-                    f"{base}/api/rest_v1/page/summary/{title}",
-                )
-                if summary_resp.status_code == 200:
-                    sdata = summary_resp.json()
-                    results.append(
-                        {
-                            "url": url,
-                            "title": sdata.get("title", title),
-                            "snippet": (sdata.get("extract", "") or "")[:500],
-                            "thumbnail": sdata.get("thumbnail", {}).get("source"),
-                            "description": sdata.get("description"),
-                        }
-                    )
-                else:
-                    results.append(
-                        {
-                            "url": url,
-                            "title": title,
-                            "snippet": "",
-                        }
-                    )
-
+        results = [
+            {
+                "url": f"https://en.wikipedia.org/wiki/{result.get('title', '').replace(' ', '_')}",
+                "title": result.get("title", ""),
+                "snippet": (result.get("snippet", "") or "")[:500],
+            }
+            for result in data.get("query", {}).get("search", [])
+        ]
         return {"results": results, "query": query}
 
-    except httpx.HTTPStatusError as exc:
-        code = exc.response.status_code
-        logger.warning("wikipedia_search_http_error query=%s status=%d", query[:50], code)
-        return {"results": [], "query": query, "error": f"HTTP {code}"}
-
     except Exception as exc:
-        logger.exception("wikipedia_search_failed query=%s", query[:50])
-        return {"results": [], "query": query, "error": str(exc)}
+        logger.error("wiki_search_failed query=%s: %s", query[:50], type(exc).__name__)
+        return {"results": [], "query": query, "error": "search failed"}

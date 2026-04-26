@@ -4,7 +4,7 @@ Combines all available Loom tools into a single orchestrated 12-stage pipeline:
 1. Query expansion via LLM
 2. Multi-provider parallel search (auto-detect academic/knowledge/code queries)
 3. Parallel fetch + markdown (YouTube transcript, Wayback fallback, auto-escalation)
-4. LLM-powered content extraction
+4. LLM-powered content extraction (parallelized with cost cap)
 5. Relevance ranking
 6. Answer synthesis with citations
 7. GitHub enrichment (repos + README content)
@@ -83,6 +83,50 @@ _KNOWLEDGE_KEYWORDS = frozenset(
     }
 )
 
+_FINANCE_KEYWORDS = frozenset(
+    {
+        "bitcoin",
+        "ethereum",
+        "crypto",
+        "cryptocurrency",
+        "stock",
+        "stocks",
+        "market",
+        "trading",
+        "price",
+        "forex",
+        "commodity",
+        "gold",
+        "silver",
+        "oil",
+        "nasdaq",
+        "s&p",
+        "dow",
+        "blockchain",
+        "defi",
+        "nft",
+        "token",
+        "coin",
+    }
+)
+
+_NEWS_KEYWORDS = frozenset(
+    {
+        "news",
+        "breaking",
+        "latest",
+        "report",
+        "announcement",
+        "update",
+        "today",
+        "yesterday",
+        "recent",
+        "headline",
+        "press",
+        "release",
+    }
+)
+
 
 def _detect_query_type(query: str) -> set[str]:
     """Detect query intent to auto-select providers."""
@@ -93,6 +137,10 @@ def _detect_query_type(query: str) -> set[str]:
         types.add("code")
     if query_words & _ACADEMIC_KEYWORDS:
         types.add("academic")
+    if query_words & _FINANCE_KEYWORDS:
+        types.add("finance")
+    if query_words & _NEWS_KEYWORDS:
+        types.add("news")
     for phrase in _KNOWLEDGE_KEYWORDS:
         if phrase in query_lower:
             types.add("knowledge")
@@ -201,6 +249,13 @@ async def research_deep(
         search_providers.append("arxiv")
     if "knowledge" in query_types and "wikipedia" not in search_providers:
         search_providers.append("wikipedia")
+    if "finance" in query_types:
+        if "binance" not in search_providers:
+            search_providers.append("binance")
+        if "investing" not in search_providers:
+            search_providers.append("investing")
+    if "news" in query_types and "newsapi" not in search_providers:
+        search_providers.append("newsapi")
     if "ddgs" not in search_providers:
         search_providers.append("ddgs")
 
@@ -385,7 +440,7 @@ async def research_deep(
     ]
     pages = pages[: depth * 3]
 
-    # ── STAGE 4: LLM Extraction ──────────────────────────────────────────
+    # ── STAGE 4: LLM Extraction (PARALLELIZED) ──────────────────────────
     if extract and pages and total_cost < max_cost_usd:
         try:
             from loom.tools.llm import research_llm_extract
@@ -395,21 +450,36 @@ async def research_deep(
                 "entities": "array",
                 "relevance_score": "number",
             }
-            for page in pages:
-                if total_cost >= max_cost_usd:
-                    break
-                try:
-                    result = await research_llm_extract(page["markdown"][:5000], schema=schema)
-                    if "error" not in result:
-                        data = result.get("data", {})
-                        page["extracted"] = data
-                        page["relevance_score"] = data.get("relevance_score")
-                    else:
-                        warnings.append({"stage": "extract", "url": page["url"], "error": result["error"]})
-                    total_cost += result.get("cost_usd", 0.0)
-                except Exception as exc:
-                    logger.warning("extract_fail url=%s error=%s", page["url"], exc)
-                    warnings.append({"stage": "extract", "url": page["url"], "error": str(exc)})
+            
+            # Limit concurrent extractions to avoid exceeding cost cap
+            extract_concurrency = config.get("LLM_EXTRACT_CONCURRENCY", 3)
+            extract_sem = asyncio.Semaphore(extract_concurrency)
+            
+            async def _extract_single(page: dict[str, Any]) -> None:
+                """Extract content from a single page."""
+                nonlocal total_cost
+                
+                async with extract_sem:
+                    if total_cost >= max_cost_usd:
+                        return
+                    
+                    try:
+                        result = await research_llm_extract(page["markdown"][:5000], schema=schema)
+                        if "error" not in result:
+                            data = result.get("data", {})
+                            page["extracted"] = data
+                            page["relevance_score"] = data.get("relevance_score")
+                        else:
+                            warnings.append({"stage": "extract", "url": page["url"], "error": result["error"]})
+                        total_cost += result.get("cost_usd", 0.0)
+                    except Exception as exc:
+                        logger.warning("extract_fail url=%s error=%s", page["url"], exc)
+                        warnings.append({"stage": "extract", "url": page["url"], "error": str(exc)})
+            
+            # Extract in parallel up to cost limit
+            extract_tasks = [_extract_single(page) for page in pages]
+            await asyncio.gather(*extract_tasks, return_exceptions=True)
+            
         except ImportError:
             warnings.append({"stage": "extract", "error": "llm module not available"})
 
