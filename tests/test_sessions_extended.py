@@ -18,11 +18,8 @@ from __future__ import annotations
 
 import asyncio
 import json
-import os
-import sqlite3
-import tempfile
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -274,7 +271,7 @@ class TestCleanupExpired:
     @pytest.mark.asyncio
     async def test_cleanup_expired_removes_old_sessions(self) -> None:
         """_cleanup_expired removes sessions past TTL."""
-        from loom.sessions import _metadata, _sessions
+        from loom.sessions import _metadata
 
         # Add expired session metadata
         old_session = SessionMetadata(name="old", browser="camoufox", ttl_seconds=1)

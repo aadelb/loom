@@ -398,7 +398,9 @@ async def research_deep(
             else:
                 # Auto-set Tor proxy for .onion URLs
                 proxy = None
-                if url.endswith(".onion"):
+                from urllib.parse import urlparse as _urlparse
+                _host = _urlparse(url).hostname or ""
+                if _host.endswith(".onion"):
                     proxy = config.get("TOR_SOCKS5_PROXY", "socks5h://127.0.0.1:9050")
 
                 try:

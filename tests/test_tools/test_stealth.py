@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
-
-import pytest
+from unittest.mock import MagicMock, patch
 
 from loom.tools.stealth import research_botasaurus, research_camoufox
 

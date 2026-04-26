@@ -13,7 +13,6 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import httpx
-import pytest
 
 from loom.providers.ahmia_search import search_ahmia
 

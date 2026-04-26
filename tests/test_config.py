@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from loom.config import CONFIG, ConfigModel, load_config, research_config_set, save_config, set
+from loom.config import ConfigModel, load_config, research_config_set, save_config, set
 
 
 class TestConfigModel:

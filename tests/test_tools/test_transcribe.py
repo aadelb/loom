@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 import tempfile
-from unittest.mock import MagicMock, AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -416,6 +416,7 @@ class TestTranscribeAudio:
     def test_audio_too_long(self):
         """Test handling of audio exceeding max duration."""
         import sys
+
         from loom.tools.transcribe import MAX_AUDIO_DURATION_SECS
 
         mock_whisper = MagicMock()

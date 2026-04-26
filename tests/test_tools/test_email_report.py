@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import sys
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -91,7 +91,6 @@ class TestResearchEmailReport:
 
     async def test_success_plain_text(self):
         """Test successful email send with plain text."""
-        import asyncio
         with patch.dict("os.environ", {"SMTP_USER": "sender@test.com", "SMTP_APP_PASSWORD": "pass"}), patch(
             "asyncio.get_running_loop"
         ) as mock_loop:
@@ -175,4 +174,3 @@ class TestResearchEmailReport:
             assert result["status"] != "failed" or "exceeds" not in result.get("error", "")
 
 
-import asyncio

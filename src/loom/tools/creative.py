@@ -18,7 +18,6 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import time
 from functools import partial
 from typing import Any
 
@@ -42,49 +41,6 @@ def _parse_llm_json(text: str, fallback: Any = None) -> Any:
         return json.loads(text.strip())
     except (json.JSONDecodeError, ValueError):
         return fallback if fallback is not None else []
-
-
-async def _get_with_retry(
-    client: httpx.Client,
-    url: str,
-    params: dict[str, Any] | None = None,
-    max_retries: int = 3,
-) -> httpx.Response:
-    """Fetch with exponential backoff retry on 429 (rate limit).
-
-    Args:
-        client: httpx.Client instance
-        url: URL to fetch
-        params: query parameters
-        max_retries: number of retries on 429
-
-    Returns:
-        httpx.Response from the successful request
-    """
-    backoff_delays = [2, 4, 8]
-    last_response = None
-
-    for attempt in range(max_retries):
-        try:
-            last_response = client.get(url, params=params)
-            if last_response.status_code != 429:
-                return last_response
-            # 429: rate limited, will retry
-            if attempt < max_retries - 1:
-                delay = backoff_delays[attempt]
-                logger.debug("citation_graph_429_retry attempt=%d delay=%ds", attempt + 1, delay)
-                await asyncio.sleep(delay)
-        except Exception as e:
-            logger.warning("citation_graph_request_failed attempt=%d error=%s", attempt + 1, e)
-            if attempt == max_retries - 1:
-                raise
-            await asyncio.sleep(backoff_delays[attempt])
-
-    # Exhausted retries, return last 429 response
-    if last_response is not None:
-        return last_response
-    # Fallback (shouldn't reach here)
-    raise RuntimeError("Failed to get response from Semantic Scholar API")
 
 
 # ── Red Team Mode (#23) ─────────────────────────────────────────────

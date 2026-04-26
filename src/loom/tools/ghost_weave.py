@@ -7,7 +7,6 @@ directed graph, and tracks timestamps for temporal analysis of structural change
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import re
 from datetime import UTC, datetime
@@ -42,9 +41,9 @@ def _extract_hyperlinks(html: str, base_url: str) -> list[str]:
             absolute_url = urljoin(base_url, href)
             # Filter only http/https/onion
             parsed = urlparse(absolute_url)
-            if parsed.scheme in ("http", "https") or parsed.hostname and parsed.hostname.endswith(
+            if parsed.scheme in ("http", "https") or (parsed.hostname and parsed.hostname.endswith(
                 ".onion"
-            ):
+            )):
                 links.append(absolute_url)
         except Exception:
             # Skip malformed URLs

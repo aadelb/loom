@@ -18,17 +18,19 @@ It covers 11 categories:
 
 from __future__ import annotations
 
-import asyncio
 import logging
-import re
-import sys
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from pydantic import ValidationError
 
-from loom import tracing
-from loom.config import CONFIG, ConfigModel, get_config, load_config, research_config_get, research_config_set, set
+from loom.config import (
+    ConfigModel,
+    get_config,
+    load_config,
+    research_config_get,
+    research_config_set,
+)
 from loom.params import (
     BotasaurusParams,
     CamoufoxParams,
@@ -42,12 +44,9 @@ from loom.params import (
 )
 from loom.rate_limiter import RateLimiter, check_rate_limit, reset_all
 from loom.server import create_app, research_health_check
-from loom.tracing import RequestIdFilter, get_request_id, install_tracing, new_request_id
-from pydantic import ValidationError
+from loom.tracing import RequestIdFilter, get_request_id, new_request_id
 from loom.validators import (
-    GH_QUERY_RE,
     MAX_CHARS_HARD_CAP,
-    SAFE_REQUEST_HEADERS,
     UrlSafetyError,
     cap_chars,
     filter_headers,
@@ -55,7 +54,6 @@ from loom.validators import (
     validate_js_script,
     validate_url,
 )
-
 
 # ────────────────────────────────────────────────────────────────────────────
 # 1. INPUT VALIDATION (SECURITY BOUNDARY)

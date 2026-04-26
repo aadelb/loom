@@ -6,7 +6,6 @@ deep warnings, health check.
 from __future__ import annotations
 
 import asyncio
-import re
 
 import pytest
 
@@ -14,12 +13,10 @@ from loom.rate_limiter import RateLimiter, reset_all
 from loom.tracing import REQUEST_ID, RequestIdFilter, get_request_id, new_request_id
 from loom.validators import (
     PROVIDER_CONFIG_ALLOWLIST,
-    SAFE_REQUEST_HEADERS,
     filter_headers,
     filter_provider_config,
     validate_js_script,
 )
-
 
 # ─── Header validation ─────────────────────────────────────────────────────
 

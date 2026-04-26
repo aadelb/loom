@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import json
 import sys
-from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
@@ -51,6 +49,7 @@ class TestResearchUsageReport:
             create=True,
         ) as mock_open:
             from datetime import datetime
+
             from loom.tools.billing import research_usage_report
 
             # Create mock file

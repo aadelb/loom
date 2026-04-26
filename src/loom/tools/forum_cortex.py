@@ -112,7 +112,7 @@ async def research_forum_cortex(
     """
     loop = asyncio.get_running_loop()
     posts: list[dict[str, Any]] = []
-    category_counts: dict[str, int] = {cat: 0 for cat in _POST_CATEGORIES}
+    category_counts: dict[str, int] = dict.fromkeys(_POST_CATEGORIES, 0)
 
     try:
         from loom.tools.search import research_search

@@ -178,6 +178,10 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
 
         return async_wrapper
     else:
+        if category:
+            from loom.rate_limiter import sync_rate_limited
+            func = sync_rate_limited(category)(func)
+
         @functools.wraps(func)
         def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
             new_request_id()

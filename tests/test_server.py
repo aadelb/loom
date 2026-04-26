@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import asyncio
 
-import pytest
-
 
 class TestServerCreateApp:
     """create_app() initializes correctly."""

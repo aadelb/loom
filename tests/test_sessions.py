@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from loom.sessions import SessionManager, _validate_session_name, get_session_manager
+from loom.sessions import SessionManager, _validate_session_name
 
 
 class TestSessionNameValidation:

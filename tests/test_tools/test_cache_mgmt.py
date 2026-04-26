@@ -2,12 +2,9 @@
 
 from __future__ import annotations
 
-import json
 import os
 import time
 from pathlib import Path
-
-import pytest
 
 from loom.tools.cache_mgmt import research_cache_clear, research_cache_stats
 

@@ -17,12 +17,10 @@ from __future__ import annotations
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
-
+from loom.params import FetchParams
 from loom.tools.fetch import (
     FetchResult,
     _extract_text,
-    _fetch_http,
     _fetch_http_httpx,
     _fetch_stealthy,
     _is_cloudflare_block,
@@ -30,7 +28,6 @@ from loom.tools.fetch import (
     _to_scrapling_schema,
     research_fetch,
 )
-from loom.params import FetchParams
 
 
 class TestMakeCacheKey:

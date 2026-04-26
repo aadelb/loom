@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 import tempfile
-from unittest.mock import MagicMock, AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -235,7 +235,6 @@ class TestGetDocumentType:
 
     def test_pdf_content_type(self):
         """Test PDF content type detection."""
-        from loom.tools.document import research_convert_document
 
         # PDF should be recognized
         # This is an indirect test through the main function

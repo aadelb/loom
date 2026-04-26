@@ -12,8 +12,6 @@ Tests integration scenarios:
 from __future__ import annotations
 
 import asyncio
-import re
-from unittest import mock
 
 import pytest
 
@@ -87,13 +85,13 @@ class TestLLMCascadeWithEightProviders:
 
     def test_all_eight_providers_importable(self) -> None:
         """All 8 provider modules should be importable."""
-        from loom.providers.groq_provider import GroqProvider
-        from loom.providers.nvidia_nim import NvidiaNimProvider
+        from loom.providers.anthropic_provider import AnthropicProvider
         from loom.providers.deepseek_provider import DeepSeekProvider
         from loom.providers.gemini_provider import GeminiProvider
+        from loom.providers.groq_provider import GroqProvider
         from loom.providers.moonshot_provider import MoonshotProvider
+        from loom.providers.nvidia_nim import NvidiaNimProvider
         from loom.providers.openai_provider import OpenAIProvider
-        from loom.providers.anthropic_provider import AnthropicProvider
         from loom.providers.vllm_local import VllmLocalProvider
 
         # All should be importable
@@ -144,7 +142,7 @@ class TestLLMCascadeWithEightProviders:
     @pytest.mark.asyncio
     async def test_cascade_fallback_on_provider_failure(self) -> None:
         """Cascade should try next provider when current fails."""
-        from loom.tools.llm import _get_provider, _PROVIDERS
+        from loom.tools.llm import _PROVIDERS, _get_provider
 
         # Clear cached providers
         _PROVIDERS.clear()
@@ -186,7 +184,7 @@ class TestSyncRateLimitingOnFetch:
 
     def test_sync_rate_limited_decorator(self) -> None:
         """@sync_rate_limited decorator should wrap function."""
-        from loom.rate_limiter import sync_rate_limited, reset_all
+        from loom.rate_limiter import reset_all, sync_rate_limited
 
         reset_all()
 
@@ -221,9 +219,10 @@ class TestSyncRateLimitingOnFetch:
 
     def test_wrap_tool_applies_sync_rate_limiting(self) -> None:
         """_wrap_tool should apply sync_rate_limited for sync functions."""
-        from loom.server import _wrap_tool
-        from loom.rate_limiter import reset_all
         import inspect
+
+        from loom.rate_limiter import reset_all
+        from loom.server import _wrap_tool
 
         reset_all()
 
@@ -273,8 +272,9 @@ class TestHealthCheckEndpoint:
     @pytest.mark.asyncio
     async def test_health_check_timestamp_format(self) -> None:
         """research_health_check timestamp should be ISO format."""
-        from loom.server import research_health_check
         from datetime import datetime
+
+        from loom.server import research_health_check
 
         result = await research_health_check()
         timestamp = result["timestamp"]
@@ -449,7 +449,7 @@ class TestTokenRedactionCoverageAllPatterns:
 
         error = "Error: connection timeout while calling API endpoint"
         sanitized = _sanitize_error(error)
-        assert "Error: connection timeout while calling API endpoint" == sanitized
+        assert sanitized == "Error: connection timeout while calling API endpoint"
 
     def test_sanitize_case_insensitive_bearer(self) -> None:
         """_sanitize_error should handle Bearer case-insensitively."""

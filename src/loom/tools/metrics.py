@@ -185,7 +185,7 @@ def research_metrics() -> dict[str, Any]:
 
     # Initialize result
     metrics: dict[str, dict[str, Any]] = {
-        name: {} for name in _METRIC_HELP.keys()
+        name: {} for name in _METRIC_HELP
     }
 
     # Read tool call metrics

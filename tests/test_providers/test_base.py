@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from loom.providers.base import LLMResponse, _estimate_cost
 
 

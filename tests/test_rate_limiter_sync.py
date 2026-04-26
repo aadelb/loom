@@ -14,8 +14,6 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-import pytest
-
 from loom.rate_limiter import SyncRateLimiter, reset_all, sync_rate_limited
 
 

@@ -186,7 +186,7 @@ async def research_onion_spectra(
     except Exception as exc:
         return {
             "url": url,
-            "error": f"Invalid URL: {str(exc)}",
+            "error": f"Invalid URL: {exc!s}",
             "language": {},
             "category": "suspicious",
             "confidence": 0.0,

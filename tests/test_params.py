@@ -23,7 +23,6 @@ from loom.params import (
     SessionOpenParams,
     SpiderParams,
 )
-from loom.validators import UrlSafetyError
 
 
 class TestFetchParams:
