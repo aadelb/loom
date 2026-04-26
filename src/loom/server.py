@@ -86,6 +86,16 @@ with suppress(ImportError):
 
     _optional_tools["tor"] = tor_tools
 
+with suppress(ImportError):
+    from loom.tools import transcribe as transcribe_tools
+
+    _optional_tools["transcribe"] = transcribe_tools
+
+with suppress(ImportError):
+    from loom.tools import document as document_tools
+
+    _optional_tools["document"] = document_tools
+
 
 _start_time = time.time()
 
@@ -272,6 +282,18 @@ def _register_tools(mcp: FastMCP) -> None:
             mcp.tool()(_wrap_tool(tor_mod.research_tor_status))
         if hasattr(tor_mod, "research_tor_new_identity"):
             mcp.tool()(_wrap_tool(tor_mod.research_tor_new_identity))
+
+    # Transcription tool (if whisper available)
+    if "transcribe" in _optional_tools:
+        transcribe_mod = _optional_tools["transcribe"]
+        if hasattr(transcribe_mod, "research_transcribe"):
+            mcp.tool()(_wrap_tool(transcribe_mod.research_transcribe, "fetch"))
+
+    # Document conversion tool (if pandoc available)
+    if "document" in _optional_tools:
+        document_mod = _optional_tools["document"]
+        if hasattr(document_mod, "research_convert_document"):
+            mcp.tool()(_wrap_tool(document_mod.research_convert_document, "fetch"))
 
 
 def create_app() -> FastMCP:
