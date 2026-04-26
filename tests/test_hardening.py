@@ -150,6 +150,7 @@ class TestProviderConfigFilter:
             "exa", "tavily", "firecrawl", "brave", "ddgs", "arxiv",
             "wikipedia", "hackernews", "reddit", "newsapi", "crypto", "coindesk",
             "binance", "investing", "ahmia", "darksearch", "ummro",
+            "onionsearch", "torcrawl", "darkweb_cti", "robin_osint",
         }
         assert set(PROVIDER_CONFIG_ALLOWLIST.keys()) == expected
 
