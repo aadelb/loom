@@ -18,7 +18,7 @@ class TestConfigModel:
         """ConfigModel has sensible defaults."""
         cfg = ConfigModel()
 
-        assert cfg.SPIDER_CONCURRENCY == 5
+        assert cfg.SPIDER_CONCURRENCY == 10
         assert cfg.EXTERNAL_TIMEOUT_SECS == 30
         assert cfg.MAX_CHARS_HARD_CAP == 200_000
         assert cfg.CACHE_TTL_DAYS == 30
@@ -114,7 +114,7 @@ class TestConfigLoadSave:
         # Don't create the file
         cfg = load_config(tmp_config_path)
 
-        assert cfg["SPIDER_CONCURRENCY"] == 5
+        assert cfg["SPIDER_CONCURRENCY"] == 10
         assert cfg["EXTERNAL_TIMEOUT_SECS"] == 30
 
     def test_load_config_merges_over_defaults(self, tmp_config_path: Path) -> None:
