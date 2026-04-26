@@ -27,6 +27,7 @@ def _get_ahmia_client() -> httpx.Client:
         _ahmia_client = httpx.Client(
             timeout=30.0,
             follow_redirects=True,
+            headers={"User-Agent": "Mozilla/5.0 (compatible; LoomMCP/1.0; +https://github.com/aadelb/loom)"},
             limits=httpx.Limits(max_keepalive_connections=5, max_connections=20),
         )
     return _ahmia_client
