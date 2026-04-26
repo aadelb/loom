@@ -146,7 +146,10 @@ class TestProviderConfigFilter:
         assert filter_provider_config("exa", None) == {}
 
     def test_all_providers_have_schemas(self) -> None:
-        expected = {"exa", "tavily", "firecrawl", "brave", "ddgs", "arxiv", "wikipedia", "hackernews", "reddit"}
+        expected = {
+            "exa", "tavily", "firecrawl", "brave", "ddgs", "arxiv",
+            "wikipedia", "hackernews", "reddit", "newsapi", "crypto", "coindesk",
+        }
         assert set(PROVIDER_CONFIG_ALLOWLIST.keys()) == expected
 
 

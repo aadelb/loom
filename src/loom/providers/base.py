@@ -98,6 +98,30 @@ def _estimate_cost(provider: str, model: str, input_tokens: int, output_tokens: 
         out_cost = (output_tokens / 1_000_000) * 15.0
         return in_cost + out_cost
 
+    # GroQ: free tier for most models
+    if provider == "groq" or "groq" in model.lower():
+        return 0.0
+
+    # DeepSeek: very cheap
+    if provider == "deepseek" or "deepseek" in model.lower():
+        in_cost = (input_tokens / 1_000_000) * 0.14
+        out_cost = (output_tokens / 1_000_000) * 0.28
+        return in_cost + out_cost
+
+    # Gemini: free tier for Flash, paid for Pro
+    if provider == "gemini" or "gemini" in model.lower():
+        if "flash" in model.lower():
+            return 0.0
+        in_cost = (input_tokens / 1_000_000) * 1.25
+        out_cost = (output_tokens / 1_000_000) * 5.0
+        return in_cost + out_cost
+
+    # Moonshot/Kimi: similar to DeepSeek pricing
+    if provider == "moonshot" or "kimi" in model.lower() or "moonshot" in model.lower():
+        in_cost = (input_tokens / 1_000_000) * 0.20
+        out_cost = (output_tokens / 1_000_000) * 0.60
+        return in_cost + out_cost
+
     # Default: free
     return 0.0
 

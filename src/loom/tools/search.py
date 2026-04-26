@@ -171,6 +171,39 @@ def research_search(
             result["provider"] = "reddit"
             return result  # type: ignore[no-any-return]
 
+        elif provider == "newsapi":
+            from loom.providers.newsapi_search import search_newsapi
+
+            result = search_newsapi(
+                query=query,
+                n=n,
+                **provider_config,
+            )
+            result["provider"] = "newsapi"
+            return result  # type: ignore[no-any-return]
+
+        elif provider == "crypto":
+            from loom.providers.coinmarketcap import search_crypto
+
+            result = search_crypto(
+                query=query,
+                n=n,
+                **provider_config,
+            )
+            result["provider"] = "crypto"
+            return result  # type: ignore[no-any-return]
+
+        elif provider == "coindesk":
+            from loom.providers.coindesk_search import search_coindesk_news
+
+            result = search_coindesk_news(
+                query=query,
+                n=n,
+                **provider_config,
+            )
+            result["provider"] = "coindesk"
+            return result  # type: ignore[no-any-return]
+
         else:
             logger.error("unknown_search_provider provider=%s", provider)
             return {

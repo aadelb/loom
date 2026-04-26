@@ -172,6 +172,9 @@ class SearchParams(BaseModel):
         "wikipedia",
         "hackernews",
         "reddit",
+        "newsapi",
+        "crypto",
+        "coindesk",
     ] = "exa"
     n: int = 10
     include_domains: list[str] | None = None
@@ -213,6 +216,9 @@ class DeepParams(BaseModel):
         "wikipedia",
         "hackernews",
         "reddit",
+        "newsapi",
+        "crypto",
+        "coindesk",
     ] = "exa"
     search_providers: list[str] | None = None
     expand_queries: bool = True

@@ -53,6 +53,9 @@ PROVIDER_CONFIG_ALLOWLIST: dict[str, frozenset[str]] = {
     "wikipedia": frozenset({"language"}),
     "hackernews": frozenset({"tags", "numeric_filters"}),
     "reddit": frozenset({"subreddit", "sort", "time_filter"}),
+    "newsapi": frozenset({"language", "sort_by", "from_date", "to_date", "domains"}),
+    "crypto": frozenset({"convert", "sort", "sort_dir"}),
+    "coindesk": frozenset({"language"}),
 }
 
 # Dangerous JavaScript APIs blocked in login_script / js_before_scrape.

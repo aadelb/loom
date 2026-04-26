@@ -66,6 +66,9 @@ class ConfigModel(BaseModel):
         "wikipedia",
         "hackernews",
         "reddit",
+        "newsapi",
+        "crypto",
+        "coindesk",
     ] = "exa"
     DEFAULT_ACCEPT_LANGUAGE: str = "en-US,en;q=0.9,ar;q=0.8"
 
@@ -79,7 +82,7 @@ class ConfigModel(BaseModel):
     LLM_MAX_PARALLEL: int = Field(default=12, ge=1, le=64)
     LLM_DAILY_COST_CAP_USD: float = Field(default=10.0, ge=0.0, le=1000.0)
     LLM_CASCADE_ORDER: list[str] = Field(
-        default_factory=lambda: ["nvidia", "openai", "anthropic", "vllm"]
+        default_factory=lambda: ["groq", "nvidia", "deepseek", "gemini", "moonshot", "openai", "anthropic", "vllm"]
     )
 
     # Research pipeline

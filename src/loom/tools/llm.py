@@ -20,6 +20,10 @@ from typing import Any
 from loom.config import CONFIG, load_config
 from loom.providers.anthropic_provider import AnthropicProvider
 from loom.providers.base import LLMResponse
+from loom.providers.deepseek_provider import DeepSeekProvider
+from loom.providers.gemini_provider import GeminiProvider
+from loom.providers.groq_provider import GroqProvider
+from loom.providers.moonshot_provider import MoonshotProvider
 from loom.providers.nvidia_nim import NvidiaNimProvider
 from loom.providers.openai_provider import OpenAIProvider
 from loom.providers.vllm_local import VllmLocalProvider
@@ -42,6 +46,14 @@ def _get_provider(name: str) -> Any:
             _PROVIDERS[name] = AnthropicProvider()
         elif name == "vllm":
             _PROVIDERS[name] = VllmLocalProvider()
+        elif name == "groq":
+            _PROVIDERS[name] = GroqProvider()
+        elif name == "deepseek":
+            _PROVIDERS[name] = DeepSeekProvider()
+        elif name == "gemini":
+            _PROVIDERS[name] = GeminiProvider()
+        elif name == "moonshot":
+            _PROVIDERS[name] = MoonshotProvider()
         else:
             raise ValueError(f"unknown provider: {name}")
     return _PROVIDERS[name]
