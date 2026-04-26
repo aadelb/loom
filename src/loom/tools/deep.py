@@ -450,19 +450,19 @@ async def research_deep(
                 "entities": "array",
                 "relevance_score": "number",
             }
-            
+
             # Limit concurrent extractions to avoid exceeding cost cap
             extract_concurrency = config.get("LLM_EXTRACT_CONCURRENCY", 3)
             extract_sem = asyncio.Semaphore(extract_concurrency)
-            
+
             async def _extract_single(page: dict[str, Any]) -> None:
                 """Extract content from a single page."""
                 nonlocal total_cost
-                
+
                 async with extract_sem:
                     if total_cost >= max_cost_usd:
                         return
-                    
+
                     try:
                         result = await research_llm_extract(page["markdown"][:5000], schema=schema)
                         if "error" not in result:
@@ -475,11 +475,11 @@ async def research_deep(
                     except Exception as exc:
                         logger.warning("extract_fail url=%s error=%s", page["url"], exc)
                         warnings.append({"stage": "extract", "url": page["url"], "error": str(exc)})
-            
+
             # Extract in parallel up to cost limit
             extract_tasks = [_extract_single(page) for page in pages]
             await asyncio.gather(*extract_tasks, return_exceptions=True)
-            
+
         except ImportError:
             warnings.append({"stage": "extract", "error": "llm module not available"})
 

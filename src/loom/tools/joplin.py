@@ -149,7 +149,7 @@ async def research_save_note(
         }
 
     except Exception as exc:
-        error_msg = f"unexpected error: {str(exc)}"
+        error_msg = f"unexpected error: {exc!s}"
         logger.error("joplin_unexpected_error: %s", exc)
         return {
             "error": error_msg,
@@ -230,7 +230,7 @@ async def research_list_notebooks() -> dict[str, Any]:
         }
 
     except Exception as exc:
-        error_msg = f"unexpected error: {str(exc)}"
+        error_msg = f"unexpected error: {exc!s}"
         logger.error("joplin_unexpected_error: %s", exc)
         return {
             "error": error_msg,

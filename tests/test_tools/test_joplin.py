@@ -101,16 +101,21 @@ class TestResearchSaveNote:
 
     async def test_success(self):
         """Test successful note creation."""
-        mock_response = AsyncMock()
+        mock_response = MagicMock()
         mock_response.json.return_value = {
-            "id": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6",
+            "id": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6",
         }
         mock_response.raise_for_status = MagicMock()
 
         with patch.dict("os.environ", {"JOPLIN_TOKEN": "token123"}), patch(
-            "httpx.AsyncClient.post",
-            return_value=mock_response,
-        ):
+            "loom.tools.joplin.httpx.AsyncClient"
+        ) as mock_client_class:
+            mock_instance = AsyncMock()
+            mock_instance.post = AsyncMock(return_value=mock_response)
+            mock_instance.__aenter__ = AsyncMock(return_value=mock_instance)
+            mock_instance.__aexit__ = AsyncMock(return_value=None)
+            mock_client_class.return_value = mock_instance
+
             from loom.tools.joplin import research_save_note
 
             result = await research_save_note(
@@ -119,46 +124,58 @@ class TestResearchSaveNote:
             )
 
             assert result["status"] == "saved"
-            assert result["note_id"] == "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"
+            assert result["note_id"] == "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6"
             assert result["title"] == "Test Note"
 
     async def test_success_with_notebook(self):
         """Test successful note creation with notebook."""
-        mock_response = AsyncMock()
+        mock_response = MagicMock()
         mock_response.json.return_value = {
-            "id": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6",
+            "id": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6",
         }
         mock_response.raise_for_status = MagicMock()
 
         with patch.dict("os.environ", {"JOPLIN_TOKEN": "token123"}), patch(
-            "httpx.AsyncClient.post",
-            return_value=mock_response,
-        ) as mock_post:
+            "loom.tools.joplin.httpx.AsyncClient"
+        ) as mock_client_class:
+            mock_instance = AsyncMock()
+            mock_instance.post = AsyncMock(return_value=mock_response)
+            mock_instance.__aenter__ = AsyncMock(return_value=mock_instance)
+            mock_instance.__aexit__ = AsyncMock(return_value=None)
+            mock_client_class.return_value = mock_instance
+
             from loom.tools.joplin import research_save_note
 
             result = await research_save_note(
                 title="Test Note",
                 body="Content",
-                notebook="a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6",
+                notebook="a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6",
             )
 
             assert result["status"] == "saved"
             # Verify notebook was included in request
-            call_kwargs = mock_post.call_args.kwargs
-            assert call_kwargs["json"]["parent_id"] == "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"
+            call_kwargs = mock_instance.post.call_args.kwargs
+            assert call_kwargs["json"]["parent_id"] == "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6"
 
     async def test_http_error_401(self):
         """Test handling of 401 authentication error."""
         mock_response = MagicMock()
         mock_response.status_code = 401
-        mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
-            "Unauthorized", request=MagicMock(), response=mock_response
+        mock_response.raise_for_status = MagicMock(
+            side_effect=httpx.HTTPStatusError(
+                "Unauthorized", request=MagicMock(), response=mock_response
+            )
         )
 
         with patch.dict("os.environ", {"JOPLIN_TOKEN": "invalid"}), patch(
-            "httpx.AsyncClient.post",
-            return_value=mock_response,
-        ):
+            "loom.tools.joplin.httpx.AsyncClient"
+        ) as mock_client_class:
+            mock_instance = AsyncMock()
+            mock_instance.post = AsyncMock(return_value=mock_response)
+            mock_instance.__aenter__ = AsyncMock(return_value=mock_instance)
+            mock_instance.__aexit__ = AsyncMock(return_value=None)
+            mock_client_class.return_value = mock_instance
+
             from loom.tools.joplin import research_save_note
 
             result = await research_save_note(
@@ -173,20 +190,27 @@ class TestResearchSaveNote:
         """Test handling of 404 not found (notebook not found)."""
         mock_response = MagicMock()
         mock_response.status_code = 404
-        mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
-            "Not Found", request=MagicMock(), response=mock_response
+        mock_response.raise_for_status = MagicMock(
+            side_effect=httpx.HTTPStatusError(
+                "Not Found", request=MagicMock(), response=mock_response
+            )
         )
 
         with patch.dict("os.environ", {"JOPLIN_TOKEN": "token"}), patch(
-            "httpx.AsyncClient.post",
-            return_value=mock_response,
-        ):
+            "loom.tools.joplin.httpx.AsyncClient"
+        ) as mock_client_class:
+            mock_instance = AsyncMock()
+            mock_instance.post = AsyncMock(return_value=mock_response)
+            mock_instance.__aenter__ = AsyncMock(return_value=mock_instance)
+            mock_instance.__aexit__ = AsyncMock(return_value=None)
+            mock_client_class.return_value = mock_instance
+
             from loom.tools.joplin import research_save_note
 
             result = await research_save_note(
                 title="Test",
                 body="Content",
-                notebook="a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6",
+                notebook="a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6",
             )
 
             assert "notebook not found" in result["error"]
@@ -194,9 +218,16 @@ class TestResearchSaveNote:
     async def test_connection_error(self):
         """Test handling of connection error."""
         with patch.dict("os.environ", {"JOPLIN_TOKEN": "token"}), patch(
-            "httpx.AsyncClient.post",
-            side_effect=httpx.ConnectError("Connection failed"),
-        ):
+            "loom.tools.joplin.httpx.AsyncClient"
+        ) as mock_client_class:
+            mock_instance = AsyncMock()
+            mock_instance.post = AsyncMock(
+                side_effect=httpx.ConnectError("Connection failed")
+            )
+            mock_instance.__aenter__ = AsyncMock(return_value=mock_instance)
+            mock_instance.__aexit__ = AsyncMock(return_value=None)
+            mock_client_class.return_value = mock_instance
+
             from loom.tools.joplin import research_save_note
 
             result = await research_save_note(
@@ -210,9 +241,16 @@ class TestResearchSaveNote:
     async def test_timeout_error(self):
         """Test handling of timeout error."""
         with patch.dict("os.environ", {"JOPLIN_TOKEN": "token"}), patch(
-            "httpx.AsyncClient.post",
-            side_effect=httpx.TimeoutException("Timeout"),
-        ):
+            "loom.tools.joplin.httpx.AsyncClient"
+        ) as mock_client_class:
+            mock_instance = AsyncMock()
+            mock_instance.post = AsyncMock(
+                side_effect=httpx.TimeoutException("Timeout")
+            )
+            mock_instance.__aenter__ = AsyncMock(return_value=mock_instance)
+            mock_instance.__aexit__ = AsyncMock(return_value=None)
+            mock_client_class.return_value = mock_instance
+
             from loom.tools.joplin import research_save_note
 
             result = await research_save_note(
@@ -237,19 +275,19 @@ class TestResearchListNotebooks:
 
     async def test_success(self):
         """Test successful notebook listing."""
-        mock_response = AsyncMock()
+        mock_response = MagicMock()
         mock_response.json.return_value = {
             "items": [
                 {
-                    "id": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6",
+                    "id": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6",
                     "title": "Research",
                 },
                 {
-                    "id": "b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6a1",
+                    "id": "b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6a1",
                     "title": "Projects",
                 },
                 {
-                    "id": "c3d4e5f6g7h8i9j0k1l2m3n4o5p6a1b2",
+                    "id": "c3d4e5f6a7b8c9d0e1f2a3b4c5d6a1b2",
                     "title": "Notes",
                 },
             ]
@@ -257,9 +295,14 @@ class TestResearchListNotebooks:
         mock_response.raise_for_status = MagicMock()
 
         with patch.dict("os.environ", {"JOPLIN_TOKEN": "token123"}), patch(
-            "httpx.AsyncClient.get",
-            return_value=mock_response,
-        ):
+            "loom.tools.joplin.httpx.AsyncClient"
+        ) as mock_client_class:
+            mock_instance = AsyncMock()
+            mock_instance.get = AsyncMock(return_value=mock_response)
+            mock_instance.__aenter__ = AsyncMock(return_value=mock_instance)
+            mock_instance.__aexit__ = AsyncMock(return_value=None)
+            mock_client_class.return_value = mock_instance
+
             from loom.tools.joplin import research_list_notebooks
 
             result = await research_list_notebooks()
@@ -274,14 +317,21 @@ class TestResearchListNotebooks:
         """Test handling of 401 authentication error."""
         mock_response = MagicMock()
         mock_response.status_code = 401
-        mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
-            "Unauthorized", request=MagicMock(), response=mock_response
+        mock_response.raise_for_status = MagicMock(
+            side_effect=httpx.HTTPStatusError(
+                "Unauthorized", request=MagicMock(), response=mock_response
+            )
         )
 
         with patch.dict("os.environ", {"JOPLIN_TOKEN": "invalid"}), patch(
-            "httpx.AsyncClient.get",
-            return_value=mock_response,
-        ):
+            "loom.tools.joplin.httpx.AsyncClient"
+        ) as mock_client_class:
+            mock_instance = AsyncMock()
+            mock_instance.get = AsyncMock(return_value=mock_response)
+            mock_instance.__aenter__ = AsyncMock(return_value=mock_instance)
+            mock_instance.__aexit__ = AsyncMock(return_value=None)
+            mock_client_class.return_value = mock_instance
+
             from loom.tools.joplin import research_list_notebooks
 
             result = await research_list_notebooks()
@@ -292,9 +342,16 @@ class TestResearchListNotebooks:
     async def test_connection_error(self):
         """Test handling of connection error."""
         with patch.dict("os.environ", {"JOPLIN_TOKEN": "token"}), patch(
-            "httpx.AsyncClient.get",
-            side_effect=httpx.ConnectError("Connection failed"),
-        ):
+            "loom.tools.joplin.httpx.AsyncClient"
+        ) as mock_client_class:
+            mock_instance = AsyncMock()
+            mock_instance.get = AsyncMock(
+                side_effect=httpx.ConnectError("Connection failed")
+            )
+            mock_instance.__aenter__ = AsyncMock(return_value=mock_instance)
+            mock_instance.__aexit__ = AsyncMock(return_value=None)
+            mock_client_class.return_value = mock_instance
+
             from loom.tools.joplin import research_list_notebooks
 
             result = await research_list_notebooks()
@@ -305,9 +362,16 @@ class TestResearchListNotebooks:
     async def test_timeout_error(self):
         """Test handling of timeout error."""
         with patch.dict("os.environ", {"JOPLIN_TOKEN": "token"}), patch(
-            "httpx.AsyncClient.get",
-            side_effect=httpx.TimeoutException("Timeout"),
-        ):
+            "loom.tools.joplin.httpx.AsyncClient"
+        ) as mock_client_class:
+            mock_instance = AsyncMock()
+            mock_instance.get = AsyncMock(
+                side_effect=httpx.TimeoutException("Timeout")
+            )
+            mock_instance.__aenter__ = AsyncMock(return_value=mock_instance)
+            mock_instance.__aexit__ = AsyncMock(return_value=None)
+            mock_client_class.return_value = mock_instance
+
             from loom.tools.joplin import research_list_notebooks
 
             result = await research_list_notebooks()
@@ -317,16 +381,21 @@ class TestResearchListNotebooks:
 
     async def test_empty_notebooks_list(self):
         """Test handling of empty notebooks list."""
-        mock_response = AsyncMock()
+        mock_response = MagicMock()
         mock_response.json.return_value = {
             "items": [],
         }
         mock_response.raise_for_status = MagicMock()
 
         with patch.dict("os.environ", {"JOPLIN_TOKEN": "token"}), patch(
-            "httpx.AsyncClient.get",
-            return_value=mock_response,
-        ):
+            "loom.tools.joplin.httpx.AsyncClient"
+        ) as mock_client_class:
+            mock_instance = AsyncMock()
+            mock_instance.get = AsyncMock(return_value=mock_response)
+            mock_instance.__aenter__ = AsyncMock(return_value=mock_instance)
+            mock_instance.__aexit__ = AsyncMock(return_value=None)
+            mock_client_class.return_value = mock_instance
+
             from loom.tools.joplin import research_list_notebooks
 
             result = await research_list_notebooks()
@@ -336,11 +405,11 @@ class TestResearchListNotebooks:
 
     async def test_filter_notebooks_without_id(self):
         """Test that notebooks without ID are filtered out."""
-        mock_response = AsyncMock()
+        mock_response = MagicMock()
         mock_response.json.return_value = {
             "items": [
                 {
-                    "id": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6",
+                    "id": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6",
                     "title": "Research",
                 },
                 {
@@ -355,9 +424,14 @@ class TestResearchListNotebooks:
         mock_response.raise_for_status = MagicMock()
 
         with patch.dict("os.environ", {"JOPLIN_TOKEN": "token"}), patch(
-            "httpx.AsyncClient.get",
-            return_value=mock_response,
-        ):
+            "loom.tools.joplin.httpx.AsyncClient"
+        ) as mock_client_class:
+            mock_instance = AsyncMock()
+            mock_instance.get = AsyncMock(return_value=mock_response)
+            mock_instance.__aenter__ = AsyncMock(return_value=mock_instance)
+            mock_instance.__aexit__ = AsyncMock(return_value=None)
+            mock_client_class.return_value = mock_instance
+
             from loom.tools.joplin import research_list_notebooks
 
             result = await research_list_notebooks()

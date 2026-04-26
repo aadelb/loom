@@ -11,8 +11,8 @@ import logging
 import os
 import re
 import smtplib
-from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from typing import Any
 
 logger = logging.getLogger("loom.tools.email_report")
@@ -129,11 +129,11 @@ async def research_email_report(
         except smtplib.SMTPAuthenticationError:
             return False, "SMTP authentication failed (invalid credentials)"
         except smtplib.SMTPException as exc:
-            return False, f"SMTP error: {str(exc)}"
+            return False, f"SMTP error: {exc!s}"
         except TimeoutError:
             return False, "SMTP connection timeout"
         except Exception as exc:
-            return False, f"unexpected error: {str(exc)}"
+            return False, f"unexpected error: {exc!s}"
 
     success, message = await loop.run_in_executor(None, _send_email)
 

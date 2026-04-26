@@ -7,7 +7,6 @@ with global rate limiting (15 parallel requests by default).
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 import os
 import time
@@ -164,13 +163,13 @@ class GeminiProvider(LLMProvider):
             )
             raise
 
-        data = response.json()
+        data = await response.json()
         latency_ms = int((time.time() - start) * 1000)
 
         # Extract response data
         text = ""
         finish_reason = None
-        if "candidates" in data and data["candidates"]:
+        if data.get("candidates"):
             candidate = data["candidates"][0]
             if "content" in candidate and "parts" in candidate["content"]:
                 parts = candidate["content"]["parts"]

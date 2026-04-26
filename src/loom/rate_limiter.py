@@ -1,4 +1,4 @@
-"""Async rate limiter for MCP tool calls.
+"""Rate limiter for MCP tool calls (async + sync).
 
 Sliding-window counter per tool category. Returns an error dict instead
 of raising so callers can pass it straight back to the MCP client.
@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import functools
 import logging
+import threading
 import time
 from collections import defaultdict
 from collections.abc import Callable
@@ -112,6 +113,76 @@ async def check_rate_limit(category: str) -> dict[str, Any] | None:
     return None
 
 
+class SyncRateLimiter:
+    """Sliding-window rate limiter for synchronous functions (threading.Lock)."""
+
+    def __init__(self, max_calls: int, window_seconds: int = 60) -> None:
+        self.max_calls = max_calls
+        self.window_seconds = window_seconds
+        self._calls: dict[str, list[float]] = defaultdict(list)
+        self._lock = threading.Lock()
+
+    def check(self, key: str = "global") -> bool:
+        with self._lock:
+            now = time.time()
+            cutoff = now - self.window_seconds
+            window = [t for t in self._calls[key] if t > cutoff]
+            if len(window) >= self.max_calls:
+                self._calls[key] = window
+                return False
+            window.append(now)
+            self._calls[key] = window
+            empty_keys = [k for k, v in self._calls.items() if not v]
+            for k in empty_keys:
+                del self._calls[k]
+            return True
+
+
+_sync_limiters: dict[str, SyncRateLimiter] = {}
+
+
+def _get_sync_limiter(name: str) -> SyncRateLimiter:
+    if name not in _sync_limiters:
+        from loom.config import get_config
+
+        cfg = get_config()
+        defaults = {
+            "search": cfg.get("RATE_LIMIT_SEARCH_PER_MIN", 30),
+            "deep": cfg.get("RATE_LIMIT_DEEP_PER_MIN", 5),
+            "llm": cfg.get("RATE_LIMIT_LLM_PER_MIN", 20),
+            "fetch": cfg.get("RATE_LIMIT_FETCH_PER_MIN", 60),
+        }
+        limit = defaults.get(name, 30)
+        _sync_limiters[name] = SyncRateLimiter(max_calls=limit, window_seconds=60)
+    return _sync_limiters[name]
+
+
+def sync_rate_limited(category: str) -> Callable[..., Any]:
+    """Decorator that rate-limits a sync tool function."""
+
+    def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
+        @functools.wraps(fn)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            limiter = _get_sync_limiter(category)
+            if not limiter.check():
+                logger.warning(
+                    "rate_limit_exceeded category=%s function=%s",
+                    category,
+                    fn.__name__,
+                )
+                return {
+                    "error": "rate_limit_exceeded",
+                    "category": category,
+                    "retry_after_seconds": limiter.window_seconds,
+                }
+            return fn(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
 def reset_all() -> None:
     """Reset all limiters (for tests)."""
     _limiters.clear()
+    _sync_limiters.clear()

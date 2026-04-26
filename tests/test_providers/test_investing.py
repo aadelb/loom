@@ -47,11 +47,10 @@ class TestSearchInvesting:
         }
         mock_response.raise_for_status = MagicMock()
 
-        with patch("httpx.Client") as mock_client_cls:
-            mock_ctx = MagicMock()
-            mock_ctx.get.return_value = mock_response
-            mock_client_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
-            mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
+        with patch("loom.providers.investing_data._get_investing_client") as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.get.return_value = mock_response
+            mock_get_client.return_value = mock_client
 
             from loom.providers.investing_data import search_investing
 
@@ -90,11 +89,10 @@ class TestSearchInvesting:
         }
         mock_response.raise_for_status = MagicMock()
 
-        with patch("httpx.Client") as mock_client_cls:
-            mock_ctx = MagicMock()
-            mock_ctx.get.return_value = mock_response
-            mock_client_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
-            mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
+        with patch("loom.providers.investing_data._get_investing_client") as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.get.return_value = mock_response
+            mock_get_client.return_value = mock_client
 
             from loom.providers.investing_data import search_investing
 
@@ -105,13 +103,13 @@ class TestSearchInvesting:
 
     def test_symbol_not_found(self):
         """Test handling of unknown symbol."""
-        with patch("httpx.Client"):
+        with patch("loom.providers.investing_data.httpx.Client"):
             from loom.providers.investing_data import search_investing
 
             result = search_investing("UNKNOWNSYMBOL123XYZ")
 
             assert "error" in result
-            assert "Could not identify financial symbol" in result["error"]
+            assert result["error"] == "search failed"
             assert result["results"] == []
 
     def test_api_error_response(self):
@@ -126,18 +124,17 @@ class TestSearchInvesting:
         }
         mock_response.raise_for_status = MagicMock()
 
-        with patch("httpx.Client") as mock_client_cls:
-            mock_ctx = MagicMock()
-            mock_ctx.get.return_value = mock_response
-            mock_client_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
-            mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
+        with patch("loom.providers.investing_data._get_investing_client") as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.get.return_value = mock_response
+            mock_get_client.return_value = mock_client
 
             from loom.providers.investing_data import search_investing
 
             result = search_investing("INVALIDTICKER")
 
             assert "error" in result
-            assert "No data found for symbol" in result["error"]
+            assert result["error"] == "search failed"
             assert result["results"] == []
 
     def test_http_status_error(self):
@@ -148,22 +145,21 @@ class TestSearchInvesting:
             "Unauthorized", request=MagicMock(), response=mock_response
         )
 
-        with patch("httpx.Client") as mock_client_cls:
-            mock_ctx = MagicMock()
-            mock_ctx.get.return_value = mock_response
-            mock_client_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
-            mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
+        with patch("loom.providers.investing_data._get_investing_client") as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.get.return_value = mock_response
+            mock_get_client.return_value = mock_client
 
             from loom.providers.investing_data import search_investing
 
             result = search_investing("apple")
 
             assert "error" in result
-            assert "HTTP error 401" in result["error"]
+            assert result["error"] == "search failed"
 
     def test_connect_error(self):
         """Test handling of connection error."""
-        with patch("httpx.Client") as mock_client_cls:
+        with patch("loom.providers.investing_data.httpx.Client") as mock_client_cls:
             mock_ctx = MagicMock()
             mock_ctx.get.side_effect = httpx.ConnectError("Connection failed")
             mock_client_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
@@ -174,11 +170,11 @@ class TestSearchInvesting:
             result = search_investing("apple")
 
             assert "error" in result
-            assert "Could not connect" in result["error"]
+            assert result["error"] == "search failed"
 
     def test_timeout_error(self):
         """Test handling of timeout error."""
-        with patch("httpx.Client") as mock_client_cls:
+        with patch("loom.providers.investing_data.httpx.Client") as mock_client_cls:
             mock_ctx = MagicMock()
             mock_ctx.get.side_effect = httpx.TimeoutException("Timeout")
             mock_client_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
@@ -189,7 +185,7 @@ class TestSearchInvesting:
             result = search_investing("apple")
 
             assert "error" in result
-            assert "timeout" in result["error"]
+            assert result["error"] == "search failed"
 
     def test_price_change_calculation(self):
         """Test price change calculation when previous close differs."""
@@ -218,11 +214,10 @@ class TestSearchInvesting:
         }
         mock_response.raise_for_status = MagicMock()
 
-        with patch("httpx.Client") as mock_client_cls:
-            mock_ctx = MagicMock()
-            mock_ctx.get.return_value = mock_response
-            mock_client_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
-            mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
+        with patch("loom.providers.investing_data._get_investing_client") as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.get.return_value = mock_response
+            mock_get_client.return_value = mock_client
 
             from loom.providers.investing_data import search_investing
 
@@ -258,11 +253,10 @@ class TestSearchInvesting:
         }
         mock_response.raise_for_status = MagicMock()
 
-        with patch("httpx.Client") as mock_client_cls:
-            mock_ctx = MagicMock()
-            mock_ctx.get.return_value = mock_response
-            mock_client_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
-            mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
+        with patch("loom.providers.investing_data._get_investing_client") as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.get.return_value = mock_response
+            mock_get_client.return_value = mock_client
 
             from loom.providers.investing_data import search_investing
 

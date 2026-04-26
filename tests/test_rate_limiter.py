@@ -319,7 +319,7 @@ class TestGetLimiter:
     def test_get_limiter_respects_config(self):
         """Test _get_limiter respects config values."""
         reset_all()
-        with patch("loom.rate_limiter.get_config") as mock_config:
+        with patch("loom.config.get_config") as mock_config:
             mock_config.return_value = {
                 "RATE_LIMIT_SEARCH_PER_MIN": 100,
                 "get": lambda k, default: 100 if "SEARCH" in k else default,

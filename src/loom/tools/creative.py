@@ -683,7 +683,6 @@ async def research_ai_detect(
             max_tokens=300,
             temperature=0.1,
         )
-        import json
 
         analysis = _parse_llm_json(result.get("text", "{}"), fallback={})
         prob = analysis.get("ai_probability", 50) / 100.0

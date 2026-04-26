@@ -47,7 +47,7 @@ class TestGeminiProvider:
     async def test_chat_success_message_format_conversion(self):
         """Test chat with correct OpenAI-to-Gemini message format conversion."""
         mock_response = AsyncMock()
-        mock_response.json.return_value = {
+        mock_response.json = AsyncMock(return_value={
             "candidates": [
                 {
                     "content": {
@@ -60,7 +60,7 @@ class TestGeminiProvider:
                 "promptTokenCount": 20,
                 "candidatesTokenCount": 10,
             },
-        }
+        })
 
         with patch.dict("os.environ", {"GOOGLE_AI_KEY": "AIzaSy_test"}), patch(
             "httpx.AsyncClient.post",
@@ -87,7 +87,7 @@ class TestGeminiProvider:
     async def test_chat_system_message_mapped_to_user(self):
         """Test that system messages are mapped to user role."""
         mock_response = AsyncMock()
-        mock_response.json.return_value = {
+        mock_response.json = AsyncMock(return_value={
             "candidates": [
                 {
                     "content": {"parts": [{"text": "Response"}]},
@@ -98,7 +98,7 @@ class TestGeminiProvider:
                 "promptTokenCount": 5,
                 "candidatesTokenCount": 1,
             },
-        }
+        })
 
         with patch.dict("os.environ", {"GOOGLE_AI_KEY": "AIzaSy_test"}), patch(
             "httpx.AsyncClient.post",
@@ -181,13 +181,13 @@ class TestGeminiProvider:
     async def test_chat_with_empty_candidates(self):
         """Test chat response with empty candidates list."""
         mock_response = AsyncMock()
-        mock_response.json.return_value = {
+        mock_response.json = AsyncMock(return_value={
             "candidates": [],
             "usageMetadata": {
                 "promptTokenCount": 10,
                 "candidatesTokenCount": 0,
             },
-        }
+        })
 
         with patch.dict("os.environ", {"GOOGLE_AI_KEY": "AIzaSy_test"}), patch(
             "httpx.AsyncClient.post",

@@ -49,12 +49,11 @@ class TestSearchCrypto:
         mock_response.raise_for_status = MagicMock()
 
         with patch.dict("os.environ", {"COINMARKETCAP_API_KEY": "test-key"}), patch(
-            "httpx.Client"
-        ) as mock_client_cls:
-            mock_ctx = MagicMock()
-            mock_ctx.get.return_value = mock_response
-            mock_client_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
-            mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
+            "loom.providers.coinmarketcap._get_cmc_client"
+        ) as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.get.return_value = mock_response
+            mock_get_client.return_value = mock_client
 
             from loom.providers.coinmarketcap import search_crypto
 
@@ -101,12 +100,11 @@ class TestSearchCrypto:
         mock_response.raise_for_status = MagicMock()
 
         with patch.dict("os.environ", {"COINMARKETCAP_API_KEY": "key"}), patch(
-            "httpx.Client"
-        ) as mock_client_cls:
-            mock_ctx = MagicMock()
-            mock_ctx.get.return_value = mock_response
-            mock_client_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
-            mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
+            "loom.providers.coinmarketcap._get_cmc_client"
+        ) as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.get.return_value = mock_response
+            mock_get_client.return_value = mock_client
 
             from loom.providers.coinmarketcap import search_crypto
 
@@ -131,12 +129,11 @@ class TestSearchCrypto:
         mock_response.raise_for_status = MagicMock()
 
         with patch.dict("os.environ", {"COINMARKETCAP_API_KEY": "key"}), patch(
-            "httpx.Client"
-        ) as mock_client_cls:
-            mock_ctx = MagicMock()
-            mock_ctx.get.return_value = mock_response
-            mock_client_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
-            mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
+            "loom.providers.coinmarketcap._get_cmc_client"
+        ) as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.get.return_value = mock_response
+            mock_get_client.return_value = mock_client
 
             from loom.providers.coinmarketcap import search_crypto
 
@@ -153,12 +150,11 @@ class TestSearchCrypto:
         )
 
         with patch.dict("os.environ", {"COINMARKETCAP_API_KEY": "invalid"}), patch(
-            "httpx.Client"
-        ) as mock_client_cls:
-            mock_ctx = MagicMock()
-            mock_ctx.get.return_value = mock_response
-            mock_client_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
-            mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
+            "loom.providers.coinmarketcap._get_cmc_client"
+        ) as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.get.return_value = mock_response
+            mock_get_client.return_value = mock_client
 
             from loom.providers.coinmarketcap import search_crypto
 
@@ -176,12 +172,11 @@ class TestSearchCrypto:
         )
 
         with patch.dict("os.environ", {"COINMARKETCAP_API_KEY": "key"}), patch(
-            "httpx.Client"
-        ) as mock_client_cls:
-            mock_ctx = MagicMock()
-            mock_ctx.get.return_value = mock_response
-            mock_client_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
-            mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
+            "loom.providers.coinmarketcap._get_cmc_client"
+        ) as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.get.return_value = mock_response
+            mock_get_client.return_value = mock_client
 
             from loom.providers.coinmarketcap import search_crypto
 
@@ -196,12 +191,11 @@ class TestSearchCrypto:
         mock_response.raise_for_status = MagicMock()
 
         with patch.dict("os.environ", {"COINMARKETCAP_API_KEY": "key"}), patch(
-            "httpx.Client"
-        ) as mock_client_cls:
-            mock_ctx = MagicMock()
-            mock_ctx.get.return_value = mock_response
-            mock_client_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
-            mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
+            "loom.providers.coinmarketcap._get_cmc_client"
+        ) as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.get.return_value = mock_response
+            mock_get_client.return_value = mock_client
 
             from loom.providers.coinmarketcap import search_crypto
 
@@ -212,12 +206,11 @@ class TestSearchCrypto:
     def test_connection_error(self):
         """Test handling of connection error."""
         with patch.dict("os.environ", {"COINMARKETCAP_API_KEY": "key"}), patch(
-            "httpx.Client"
-        ) as mock_client_cls:
-            mock_ctx = MagicMock()
-            mock_ctx.get.side_effect = httpx.ConnectError("Network error")
-            mock_client_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
-            mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
+            "loom.providers.coinmarketcap._get_cmc_client"
+        ) as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.get.side_effect = httpx.ConnectError("Network error")
+            mock_get_client.return_value = mock_client
 
             from loom.providers.coinmarketcap import search_crypto
 
