@@ -31,7 +31,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 logger = logging.getLogger("loom.config")
 
 # ─── Module-level config dict ────────────────────────────────────────────────
-# Callers read from this dict directly (e.g. CONFIG.get("SPIDER_CONCURRENCY", 5)).
+# Callers read from this dict directly (e.g. CONFIG.get("SPIDER_CONCURRENCY", 10)).
 # It starts empty; load_config() populates it on first call.
 CONFIG: dict[str, Any] = {}
 
@@ -47,7 +47,7 @@ class ConfigModel(BaseModel):
     model_config = ConfigDict(extra="allow", validate_assignment=True)
 
     # Scraping
-    SPIDER_CONCURRENCY: int = Field(default=5, ge=1, le=20)
+    SPIDER_CONCURRENCY: int = Field(default=10, ge=1, le=20)
     EXTERNAL_TIMEOUT_SECS: int = Field(default=30, ge=5, le=120)
     MAX_CHARS_HARD_CAP: int = Field(default=200_000, ge=1_000, le=2_000_000)
     MAX_SPIDER_URLS: int = Field(default=100, ge=1, le=500)

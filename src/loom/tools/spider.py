@@ -12,6 +12,13 @@ from loom.validators import EXTERNAL_TIMEOUT_SECS, MAX_SPIDER_URLS, SPIDER_CONCU
 
 log = logging.getLogger("loom.tools.spider")
 
+# Timeout hierarchy for spider fetches:
+# - INNER_FETCH_TIMEOUT: timeout passed to research_fetch (executor thread)
+# - OUTER_WAIT_FOR_TIMEOUT: timeout for asyncio.wait_for (task cancellation)
+# Inner must be strictly less than outer to allow threads to terminate naturally.
+INNER_FETCH_TIMEOUT = max(1, EXTERNAL_TIMEOUT_SECS - 10)  # 20s when EXTERNAL_TIMEOUT_SECS=30
+OUTER_WAIT_FOR_TIMEOUT = EXTERNAL_TIMEOUT_SECS * 2  # 60s
+
 
 async def research_spider(
     urls: list[str],
@@ -35,6 +42,13 @@ async def research_spider(
     to enforce per-fetch timeout. Each fetch runs in a thread executor so
     Scrapling's sync API doesn't block the FastMCP event loop.
 
+    Timeout hierarchy:
+    - If timeout is provided, clamp it to INNER_FETCH_TIMEOUT.
+    - INNER_FETCH_TIMEOUT is passed to research_fetch (thread timeout).
+    - OUTER_WAIT_FOR_TIMEOUT wraps asyncio.wait_for to catch escaped threads.
+    - Inner timeout must be < outer timeout to ensure thread termination before
+      asyncio task cancellation, preventing thread leaks.
+
     Args:
         urls: list of URLs to fetch
         mode: 'http' | 'stealthy' | 'dynamic' (passed to each fetch)
@@ -49,7 +63,7 @@ async def research_spider(
         proxy: proxy URL
         cookies: cookies dict
         accept_language: header value
-        timeout: per-fetch timeout override (capped)
+        timeout: per-fetch timeout override (clamped to INNER_FETCH_TIMEOUT)
 
     Returns:
         List of fetch result dicts (one per URL), with error fields for
@@ -94,8 +108,21 @@ async def research_spider(
     sem = asyncio.Semaphore(concurrency)
     loop = asyncio.get_running_loop()
 
+    # Clamp user-provided timeout to INNER_FETCH_TIMEOUT to prevent thread leaks.
+    # The inner timeout must fire before the outer asyncio.wait_for timeout so
+    # the executor thread terminates naturally instead of being abandoned.
+    inner_timeout = INNER_FETCH_TIMEOUT
+    if params.timeout is not None and params.timeout > 0:
+        inner_timeout = min(params.timeout, INNER_FETCH_TIMEOUT)
+
     async def _one(u: str) -> dict[str, Any]:
-        """Fetch a single URL with timeout."""
+        """Fetch a single URL with timeout.
+
+        Enforces timeout hierarchy:
+        - Inner timeout (inner_timeout): passed to research_fetch for thread timeout
+        - Outer timeout (OUTER_WAIT_FOR_TIMEOUT): asyncio.wait_for for task cancellation
+        Inner < outer ensures the thread completes before the task is cancelled.
+        """
         async with sem:
             try:
                 return await asyncio.wait_for(
@@ -111,10 +138,10 @@ async def research_spider(
                             proxy=params.proxy,
                             cookies=params.cookies,
                             accept_language=params.accept_language,
-                            timeout=params.timeout,
+                            timeout=inner_timeout,
                         ),
                     ),
-                    timeout=EXTERNAL_TIMEOUT_SECS * 2,
+                    timeout=OUTER_WAIT_FOR_TIMEOUT,
                 )
             except TimeoutError:
                 log.warning("spider_fetch_timeout url=%s", u)

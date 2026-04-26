@@ -97,6 +97,27 @@ with suppress(ImportError):
     _optional_tools["document"] = document_tools
 
 
+with suppress(ImportError):
+    from loom.tools import metrics as metrics_tools
+
+    _optional_tools["metrics"] = metrics_tools
+
+with suppress(ImportError):
+    from loom.tools import slack as slack_tools
+
+    _optional_tools["slack"] = slack_tools
+
+with suppress(ImportError):
+    from loom.tools import gcp as gcp_tools
+
+    _optional_tools["gcp"] = gcp_tools
+
+with suppress(ImportError):
+    from loom.tools import vercel as vercel_tools
+
+    _optional_tools["vercel"] = vercel_tools
+
+
 _start_time = time.time()
 
 
@@ -294,6 +315,35 @@ def _register_tools(mcp: FastMCP) -> None:
         document_mod = _optional_tools["document"]
         if hasattr(document_mod, "research_convert_document"):
             mcp.tool()(_wrap_tool(document_mod.research_convert_document, "fetch"))
+
+    # Metrics collection tool (if available)
+    if "metrics" in _optional_tools:
+        metrics_mod = _optional_tools["metrics"]
+        if hasattr(metrics_mod, "research_metrics"):
+            mcp.tool()(_wrap_tool(metrics_mod.research_metrics))
+
+    # Slack notification tool (if available)
+    if "slack" in _optional_tools:
+        slack_mod = _optional_tools["slack"]
+        if hasattr(slack_mod, "research_slack_notify"):
+            mcp.tool()(_wrap_tool(slack_mod.research_slack_notify))
+
+    # Google Cloud tools (if available)
+    if "gcp" in _optional_tools:
+        gcp_mod = _optional_tools["gcp"]
+        if hasattr(gcp_mod, "research_image_analyze"):
+            mcp.tool()(_wrap_tool(gcp_mod.research_image_analyze))
+        if hasattr(gcp_mod, "research_text_to_speech"):
+            mcp.tool()(_wrap_tool(gcp_mod.research_text_to_speech))
+        if hasattr(gcp_mod, "research_tts_voices"):
+            mcp.tool()(_wrap_tool(gcp_mod.research_tts_voices))
+
+    # Vercel deployment tool (if available)
+    if "vercel" in _optional_tools:
+        vercel_mod = _optional_tools["vercel"]
+        if hasattr(vercel_mod, "research_vercel_status"):
+            mcp.tool()(_wrap_tool(vercel_mod.research_vercel_status))
+
 
 
 def create_app() -> FastMCP:

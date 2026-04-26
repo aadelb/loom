@@ -20,7 +20,7 @@ logger = logging.getLogger("loom.validators")
 # Security & capacity constants
 MAX_CHARS_HARD_CAP = 200_000
 MAX_SPIDER_URLS = 100
-SPIDER_CONCURRENCY = 5
+SPIDER_CONCURRENCY = 10
 EXTERNAL_TIMEOUT_SECS = 30
 MAX_REQ_TIMEOUT = 120
 

@@ -266,12 +266,12 @@ async def close_session(name: str) -> dict[str, Any]:
         _metadata.pop(name, None)
         _delete_metadata(name)
 
-    try:
-        await session.close()
-        return {"name": name, "status": "closed"}
-    except Exception as e:
-        logger.warning("session_close_failed name=%s error=%s", name, e)
-        return {"name": name, "status": "error", "error": str(e)}
+        try:
+            await session.close()
+            return {"name": name, "status": "closed"}
+        except Exception as e:
+            logger.warning("session_close_failed name=%s error=%s", name, e)
+            return {"name": name, "status": "error", "error": str(e)}
 
 
 async def get_session(name: str) -> BrowserContext | None:

@@ -117,7 +117,11 @@ class CostTracker:
         return self.logs_dir / f"llm_cost_{date_str}.json"
 
     def _read_locked(self, cost_file: Path) -> dict[str, Any]:
-        """Read the cost file under a shared fcntl lock. Returns {} on missing/corrupt."""
+        """Read the cost file under a shared fcntl lock. Returns {} on missing/corrupt.
+
+        On JSON parse failure, backs up the corrupted file to .backup
+        (only if no .backup already exists) before returning {}.
+        """
         if not cost_file.exists():
             return {}
         try:
@@ -125,6 +129,14 @@ class CostTracker:
             return data if isinstance(data, dict) else {}
         except Exception as e:
             logger.warning("cost_file_load_failed path=%s error=%s", cost_file, e)
+            # Backup corrupted file to .backup if it doesn't already exist
+            backup_file = cost_file.with_suffix(cost_file.suffix + ".backup")
+            if not backup_file.exists():
+                try:
+                    cost_file.replace(backup_file)
+                    logger.info("cost_file_backed_up original=%s backup=%s", cost_file, backup_file)
+                except Exception as backup_error:
+                    logger.warning("cost_file_backup_failed path=%s error=%s", backup_file, backup_error)
             return {}
 
     def _write_atomic(self, cost_file: Path, data: dict[str, Any]) -> None:

@@ -449,6 +449,7 @@ async def research_temporal_diff(
         Dict with ``changes_summary``, ``archive_date``, ``current_date``.
     """
     from loom.tools.enrich import research_wayback
+    from loom.validators import UrlSafetyError, validate_url
 
     wayback = research_wayback(url, limit=1)
     snapshots = wayback.get("snapshots", [])
@@ -457,6 +458,13 @@ async def research_temporal_diff(
 
     archive_url = snapshots[0]["archive_url"]
     archive_timestamp = snapshots[0]["timestamp"]
+
+    # Validate archive_url before passing to extract_with_trafilatura
+    try:
+        validate_url(archive_url)
+    except UrlSafetyError as e:
+        logger.warning("temporal_diff_archive_url_invalid: %s", e)
+        return {"url": url, "error": f"archive URL validation failed: {e}"}
 
     try:
         from loom.providers.trafilatura_extract import extract_with_trafilatura
