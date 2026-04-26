@@ -49,12 +49,11 @@ class TestSearchNewsAPI:
         mock_response.raise_for_status = MagicMock()
 
         with patch.dict("os.environ", {"NEWS_API_KEY": "test-key"}), patch(
-            "httpx.Client"
-        ) as mock_client_cls:
-            mock_ctx = MagicMock()
-            mock_ctx.get.return_value = mock_response
-            mock_client_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
-            mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
+            "loom.providers.newsapi_search._get_newsapi_client"
+        ) as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.get.return_value = mock_response
+            mock_get_client.return_value = mock_client
 
             from loom.providers.newsapi_search import search_newsapi
 
@@ -73,18 +72,17 @@ class TestSearchNewsAPI:
         mock_response.raise_for_status = MagicMock()
 
         with patch.dict("os.environ", {"NEWS_API_KEY": "key"}), patch(
-            "httpx.Client"
-        ) as mock_client_cls:
-            mock_ctx = MagicMock()
-            mock_ctx.get.return_value = mock_response
-            mock_client_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
-            mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
+            "loom.providers.newsapi_search._get_newsapi_client"
+        ) as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.get.return_value = mock_response
+            mock_get_client.return_value = mock_client
 
             from loom.providers.newsapi_search import search_newsapi
 
             search_newsapi("test", n=500)
 
-            call_args = mock_ctx.get.call_args
+            call_args = mock_client.get.call_args
             assert call_args.kwargs["params"]["pageSize"] == 100
 
     def test_snippet_truncation(self):
@@ -104,12 +102,11 @@ class TestSearchNewsAPI:
         mock_response.raise_for_status = MagicMock()
 
         with patch.dict("os.environ", {"NEWS_API_KEY": "key"}), patch(
-            "httpx.Client"
-        ) as mock_client_cls:
-            mock_ctx = MagicMock()
-            mock_ctx.get.return_value = mock_response
-            mock_client_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
-            mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
+            "loom.providers.newsapi_search._get_newsapi_client"
+        ) as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.get.return_value = mock_response
+            mock_get_client.return_value = mock_client
 
             from loom.providers.newsapi_search import search_newsapi
 
@@ -126,18 +123,17 @@ class TestSearchNewsAPI:
         )
 
         with patch.dict("os.environ", {"NEWS_API_KEY": "key"}), patch(
-            "httpx.Client"
-        ) as mock_client_cls:
-            mock_ctx = MagicMock()
-            mock_ctx.get.return_value = mock_response
-            mock_client_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
-            mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
+            "loom.providers.newsapi_search._get_newsapi_client"
+        ) as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.get.return_value = mock_response
+            mock_get_client.return_value = mock_client
 
             from loom.providers.newsapi_search import search_newsapi
 
             result = search_newsapi("test")
 
-            assert "HTTP 429" in result["error"]
+            assert "search failed" in result["error"]
             assert result["results"] == []
 
     def test_http_error_401(self):
@@ -149,28 +145,26 @@ class TestSearchNewsAPI:
         )
 
         with patch.dict("os.environ", {"NEWS_API_KEY": "invalid"}), patch(
-            "httpx.Client"
-        ) as mock_client_cls:
-            mock_ctx = MagicMock()
-            mock_ctx.get.return_value = mock_response
-            mock_client_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
-            mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
+            "loom.providers.newsapi_search._get_newsapi_client"
+        ) as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.get.return_value = mock_response
+            mock_get_client.return_value = mock_client
 
             from loom.providers.newsapi_search import search_newsapi
 
             result = search_newsapi("test")
 
-            assert "HTTP 401" in result["error"]
+            assert "search failed" in result["error"]
 
     def test_connection_error(self):
         """Test handling of connection error."""
         with patch.dict("os.environ", {"NEWS_API_KEY": "key"}), patch(
-            "httpx.Client"
-        ) as mock_client_cls:
-            mock_ctx = MagicMock()
-            mock_ctx.get.side_effect = httpx.ConnectError("DNS failed")
-            mock_client_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
-            mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
+            "loom.providers.newsapi_search._get_newsapi_client"
+        ) as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.get.side_effect = httpx.ConnectError("DNS failed")
+            mock_get_client.return_value = mock_client
 
             from loom.providers.newsapi_search import search_newsapi
 
@@ -195,12 +189,11 @@ class TestSearchNewsAPI:
         mock_response.raise_for_status = MagicMock()
 
         with patch.dict("os.environ", {"NEWS_API_KEY": "key"}), patch(
-            "httpx.Client"
-        ) as mock_client_cls:
-            mock_ctx = MagicMock()
-            mock_ctx.get.return_value = mock_response
-            mock_client_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
-            mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
+            "loom.providers.newsapi_search._get_newsapi_client"
+        ) as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.get.return_value = mock_response
+            mock_get_client.return_value = mock_client
 
             from loom.providers.newsapi_search import search_newsapi
 

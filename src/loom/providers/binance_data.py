@@ -74,7 +74,7 @@ def search_binance(
 
     # Handle "top crypto" queries
     if "top" in query_lower and ("crypto" in query_lower or "cryptocurrencies" in query_lower):
-        return _get_top_crypto(n)
+        return _get_top_crypto(n, query)
 
     # Try to map query to a trading pair
     pair = _QUERY_TO_PAIR.get(query_lower)
@@ -84,15 +84,16 @@ def search_binance(
             pair = query_upper if query_upper.endswith("USDT") else f"{query_upper}USDT"
 
     if pair:
-        return _get_single_ticker(pair)
+        return _get_single_ticker(pair, query)
 
     return {
         "error": "search failed",
+        "query": query,
         "results": [],
     }
 
 
-def _get_single_ticker(pair: str) -> dict[str, Any]:
+def _get_single_ticker(pair: str, query: str) -> dict[str, Any]:
     """Fetch 24hr ticker for a single pair."""
     try:
         client = _get_binance_client()
@@ -115,19 +116,19 @@ def _get_single_ticker(pair: str) -> dict[str, Any]:
             "high_24h": float(data.get("highPrice", 0)),
             "low_24h": float(data.get("lowPrice", 0)),
         }
-        return {"results": [result], "query": pair}
+        return {"results": [result], "query": query}
 
     except httpx.HTTPStatusError as exc:
         code = exc.response.status_code
         logger.warning("binance_ticker_http_error pair=%s status=%d", pair, code)
-        return {"results": [], "error": f"HTTP {code}"}
+        return {"results": [], "query": query, "error": f"HTTP {code}"}
 
     except Exception as exc:
         logger.error("binance_ticker_failed pair=%s: %s", pair, type(exc).__name__)
-        return {"results": [], "error": "search failed"}
+        return {"results": [], "query": query, "error": "search failed"}
 
 
-def _get_top_crypto(limit: int) -> dict[str, Any]:
+def _get_top_crypto(limit: int, query: str) -> dict[str, Any]:
     """Fetch top cryptocurrencies by 24hr quote asset volume."""
     limit = min(max(limit, 1), 50)
 
@@ -156,13 +157,13 @@ def _get_top_crypto(limit: int) -> dict[str, Any]:
                 }
             )
 
-        return {"results": results, "query": "top crypto"}
+        return {"results": results, "query": query}
 
     except httpx.HTTPStatusError as exc:
         code = exc.response.status_code
         logger.warning("binance_top_http_error status=%d", code)
-        return {"results": [], "error": f"HTTP {code}"}
+        return {"results": [], "query": query, "error": f"HTTP {code}"}
 
     except Exception as exc:
         logger.error("binance_top_failed: %s", type(exc).__name__)
-        return {"results": [], "error": "search failed"}
+        return {"results": [], "query": query, "error": "search failed"}

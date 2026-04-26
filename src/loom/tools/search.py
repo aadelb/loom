@@ -27,7 +27,7 @@ def research_search(
     Args:
         query: search query
         provider: exa, tavily, firecrawl, brave, ddgs, arxiv, wikipedia,
-            hackernews, or reddit
+            hackernews, reddit, ummro
         n: max number of results (1-50)
         include_domains: list of domains to include
         exclude_domains: list of domains to exclude
@@ -246,6 +246,17 @@ def research_search(
                 **provider_config,
             )
             result["provider"] = "darksearch"
+            return result  # type: ignore[no-any-return]
+
+        elif provider == "ummro":
+            from loom.providers.ummro_rag import search_ummro_rag
+
+            result = search_ummro_rag(
+                query=query,
+                n=n,
+                **provider_config,
+            )
+            result["provider"] = "ummro"
             return result  # type: ignore[no-any-return]
 
         else:

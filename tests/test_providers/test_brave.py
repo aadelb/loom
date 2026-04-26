@@ -43,11 +43,11 @@ class TestSearchBrave:
 
         with (
             patch.dict("os.environ", {"BRAVE_API_KEY": "test-key"}),
-            patch("httpx.Client") as mock_client_cls,
+            patch("loom.providers.brave._get_brave_client") as mock_get_client,
         ):
-            mock_client_cls.return_value.__enter__ = MagicMock(return_value=MagicMock())
-            mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
-            mock_client_cls.return_value.__enter__.return_value.get.return_value = mock_response
+            mock_client = MagicMock()
+            mock_client.get.return_value = mock_response
+            mock_get_client.return_value = mock_client
 
             from loom.providers.brave import search_brave
 
@@ -66,18 +66,17 @@ class TestSearchBrave:
 
         with (
             patch.dict("os.environ", {"BRAVE_API_KEY": "key"}),
-            patch("httpx.Client") as mock_client_cls,
+            patch("loom.providers.brave._get_brave_client") as mock_get_client,
         ):
-            mock_ctx = MagicMock()
-            mock_ctx.get.return_value = mock_response
-            mock_client_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
-            mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
+            mock_client = MagicMock()
+            mock_client.get.return_value = mock_response
+            mock_get_client.return_value = mock_client
 
             from loom.providers.brave import search_brave
 
             search_brave("test", n=50)
 
-        call_args = mock_ctx.get.call_args
+        call_args = mock_client.get.call_args
         assert call_args.kwargs.get("params", {}).get("count") == 20
 
     def test_http_error(self):
@@ -89,12 +88,11 @@ class TestSearchBrave:
 
         with (
             patch.dict("os.environ", {"BRAVE_API_KEY": "key"}),
-            patch("httpx.Client") as mock_client_cls,
+            patch("loom.providers.brave._get_brave_client") as mock_get_client,
         ):
-            mock_ctx = MagicMock()
-            mock_ctx.get.return_value = mock_response
-            mock_client_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
-            mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
+            mock_client = MagicMock()
+            mock_client.get.return_value = mock_response
+            mock_get_client.return_value = mock_client
 
             from loom.providers.brave import search_brave
 
@@ -111,12 +109,11 @@ class TestSearchBrave:
 
         with (
             patch.dict("os.environ", {"BRAVE_API_KEY": "key"}),
-            patch("httpx.Client") as mock_client_cls,
+            patch("loom.providers.brave._get_brave_client") as mock_get_client,
         ):
-            mock_ctx = MagicMock()
-            mock_ctx.get.return_value = mock_response
-            mock_client_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
-            mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
+            mock_client = MagicMock()
+            mock_client.get.return_value = mock_response
+            mock_get_client.return_value = mock_client
 
             from loom.providers.brave import search_brave
 
@@ -127,12 +124,11 @@ class TestSearchBrave:
     def test_connection_error(self):
         with (
             patch.dict("os.environ", {"BRAVE_API_KEY": "key"}),
-            patch("httpx.Client") as mock_client_cls,
+            patch("loom.providers.brave._get_brave_client") as mock_get_client,
         ):
-            mock_ctx = MagicMock()
-            mock_ctx.get.side_effect = httpx.ConnectError("DNS failed")
-            mock_client_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
-            mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
+            mock_client = MagicMock()
+            mock_client.get.side_effect = httpx.ConnectError("DNS failed")
+            mock_get_client.return_value = mock_client
 
             from loom.providers.brave import search_brave
 

@@ -22,10 +22,13 @@ def _clear_billing_module():
 class TestResearchUsageReport:
     async def test_no_logs_directory(self):
         """Test handling when logs directory doesn't exist."""
-        with patch("pathlib.Path.home") as mock_home, patch(
-            "pathlib.Path.exists",
-            return_value=False,
-        ):
+        with patch("loom.tools.billing.Path") as mock_path_cls:
+            # Create a mock that returns itself for all / operations
+            mock_path = MagicMock()
+            mock_path.exists.return_value = False
+            mock_path.__truediv__.return_value = mock_path
+            mock_path_cls.home.return_value = mock_path
+
             from loom.tools.billing import research_usage_report
 
             result = await research_usage_report(days=7)
@@ -43,12 +46,7 @@ class TestResearchUsageReport:
             '{"cost_usd": 0.02, "provider": "openai", "model": "gpt-3.5", "timestamp": "2024-01-15T12:00:00"}\n'
         )
 
-        with patch("pathlib.Path.home") as mock_home, patch(
-            "pathlib.Path.exists",
-            return_value=True,
-        ), patch("pathlib.Path.glob") as mock_glob, patch(
-            "pathlib.Path.stat",
-        ) as mock_stat, patch(
+        with patch("loom.tools.billing.Path") as mock_path_cls, patch(
             "builtins.open",
             create=True,
         ) as mock_open:
@@ -58,13 +56,20 @@ class TestResearchUsageReport:
             # Create mock file
             mock_stat_result = MagicMock()
             mock_stat_result.st_mtime = datetime.now().timestamp()
-            mock_stat.return_value = mock_stat_result
+
+            # Setup mock Path instance that will be returned by Path.home()
+            mock_cache_dir = MagicMock()
+            mock_cache_dir.exists.return_value = True
+            mock_cache_dir.__truediv__.return_value = mock_cache_dir
 
             # Setup glob to return mock files
             mock_file = MagicMock()
             mock_file.stat.return_value = mock_stat_result
             mock_file.name = "llm_cost_2024-01-15.json"
-            mock_glob.return_value = [mock_file]
+            mock_cache_dir.glob.return_value = [mock_file]
+
+            # Path.home() returns the mock cache dir
+            mock_path_cls.home.return_value = mock_cache_dir
 
             mock_open.return_value.__enter__.return_value = MagicMock(
                 __iter__=lambda self: iter(log_content.split("\n")[:-1])
@@ -127,7 +132,7 @@ class TestResearchStripeBalance:
 
     async def test_success(self):
         """Test successful Stripe balance retrieval."""
-        mock_response = AsyncMock()
+        mock_response = MagicMock()
         mock_response.json.return_value = {
             "available": [
                 {

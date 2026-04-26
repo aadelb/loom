@@ -60,7 +60,12 @@ def _get_session_dir() -> Path:
 
 
 def _load_metadata(name: str) -> SessionMetadata | None:
-    """Load session metadata from disk."""
+    """Load session metadata from disk.
+
+    Note: Uses sync Path.read_text() which is blocking I/O. This is called
+    from list_sessions() (sync context), so wrapping in executor would be
+    complex. Acceptable here since JSON files are small (<10KB typically).
+    """
     meta_path = _get_session_dir() / f"{name}.json"
     if not meta_path.exists():
         return None
@@ -279,6 +284,9 @@ async def get_session(name: str) -> BrowserContext | None:
         BrowserContext if found and valid, else None.
     """
     async with _lock:
+        # Cleanup expired sessions first (Issue #182)
+        await _cleanup_expired()
+
         if name not in _sessions:
             return None
 
@@ -603,72 +611,71 @@ class SessionManager:
         lock = self._get_session_lock(name)
         async with lock:
             conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            now = datetime.now(UTC)
-            expires_at = now + timedelta(seconds=ttl_seconds)
-            now_iso = now.isoformat()
-            expires_iso = expires_at.isoformat()
+                now = datetime.now(UTC)
+                expires_at = now + timedelta(seconds=ttl_seconds)
+                now_iso = now.isoformat()
+                expires_iso = expires_at.isoformat()
 
-            # Check if session exists
-            cursor.execute("SELECT * FROM sessions WHERE name = ?", (name,))
-            existing = cursor.fetchone()
+                # Check if session exists
+                cursor.execute("SELECT * FROM sessions WHERE name = ?", (name,))
+                existing = cursor.fetchone()
 
-            if existing:
-                # Schema order (matches INSERT below):
-                #   [0]=name, [1]=browser, [2]=profile_dir, [3]=session_id,
-                #   [4]=created_at, [5]=last_used_at, [6]=expires_at
-                browser_existing = existing[1]
-                profile_dir = existing[2]
-                session_id = existing[3]
-                created_at = existing[4]
-                try:
+                if existing:
+                    # Schema order (matches INSERT below):
+                    #   [0]=name, [1]=browser, [2]=profile_dir, [3]=session_id,
+                    #   [4]=created_at, [5]=last_used_at, [6]=expires_at
+                    browser_existing = existing[1]
+                    profile_dir = existing[2]
+                    session_id = existing[3]
+                    created_at = existing[4]
                     cursor.execute(
                         "UPDATE sessions SET last_used_at = ?, expires_at = ? WHERE name = ?",
                         (now_iso, expires_iso, name),
                     )
                     conn.commit()
-                finally:
-                    conn.close()
+                    return {
+                        "name": name,
+                        "session_id": session_id,
+                        "created_at": created_at,
+                        "expires_at": expires_iso,
+                        "browser": browser_existing,
+                        "profile_dir": profile_dir,
+                    }
+
+                # Create new session
+                session_id = str(uuid.uuid4())
+                profile_dir_path = self.base_dir / name
+                profile_dir_path.mkdir(mode=0o700, exist_ok=True)
+                profile_dir = str(profile_dir_path)
+
+                cursor.execute(
+                    """INSERT INTO sessions
+                       (name, browser, profile_dir, session_id, created_at, last_used_at, expires_at)
+                       VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                    (name, browser, profile_dir, session_id, now_iso, now_iso, expires_iso),
+                )
+                conn.commit()
+
+                # Check LRU eviction (max 8 sessions)
+                sessions = self.list()
+                if len(sessions) > 8:
+                    # Evict oldest (first in list, sorted by last_used_at DESC)
+                    oldest = sessions[-1]["name"]
+                    await self.close(oldest)
+
                 return {
                     "name": name,
                     "session_id": session_id,
-                    "created_at": created_at,
+                    "created_at": now_iso,
                     "expires_at": expires_iso,
-                    "browser": browser_existing,
+                    "browser": browser,
                     "profile_dir": profile_dir,
                 }
-
-            # Create new session
-            session_id = str(uuid.uuid4())
-            profile_dir_path = self.base_dir / name
-            profile_dir_path.mkdir(mode=0o700, exist_ok=True)
-            profile_dir = str(profile_dir_path)
-
-            cursor.execute(
-                """INSERT INTO sessions
-                   (name, browser, profile_dir, session_id, created_at, last_used_at, expires_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                (name, browser, profile_dir, session_id, now_iso, now_iso, expires_iso),
-            )
-            conn.commit()
-            conn.close()
-
-            # Check LRU eviction (max 8 sessions)
-            sessions = self.list()
-            if len(sessions) > 8:
-                # Evict oldest (first in list, sorted by last_used_at DESC)
-                oldest = sessions[-1]["name"]
-                await self.close(oldest)
-
-            return {
-                "name": name,
-                "session_id": session_id,
-                "created_at": now_iso,
-                "expires_at": expires_iso,
-                "browser": browser,
-                "profile_dir": profile_dir,
-            }
+            finally:
+                conn.close()
 
     async def close(self, name: str) -> dict[str, Any]:
         """Close a session, delete profile_dir and DB row.

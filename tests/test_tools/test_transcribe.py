@@ -27,7 +27,8 @@ class TestResearchTranscribe:
     @pytest.mark.asyncio
     async def test_invalid_model_size(self):
         """Test error for invalid model_size."""
-        with patch("loom.tools.transcribe.whisper"):
+        import sys
+        with patch.dict(sys.modules, {"whisper": MagicMock()}):
             from loom.tools.transcribe import research_transcribe
 
             result = await research_transcribe(
@@ -41,7 +42,8 @@ class TestResearchTranscribe:
     @pytest.mark.asyncio
     async def test_invalid_url(self):
         """Test error for invalid URL."""
-        with patch("loom.tools.transcribe.whisper"):
+        import sys
+        with patch.dict(sys.modules, {"whisper": MagicMock()}):
             from loom.tools.transcribe import research_transcribe
 
             result = await research_transcribe("not a valid url")
@@ -52,8 +54,9 @@ class TestResearchTranscribe:
     @pytest.mark.asyncio
     async def test_download_audio_failure(self):
         """Test error when audio download fails."""
+        import sys
         with (
-            patch("loom.tools.transcribe.whisper"),
+            patch.dict(sys.modules, {"whisper": MagicMock()}),
             patch("loom.tools.transcribe._download_audio", new_callable=AsyncMock) as mock_download,
         ):
             mock_download.return_value = None
@@ -68,8 +71,9 @@ class TestResearchTranscribe:
     @pytest.mark.asyncio
     async def test_file_size_exceeds_limit(self):
         """Test error when audio file exceeds size limit."""
+        import sys
         with (
-            patch("loom.tools.transcribe.whisper"),
+            patch.dict(sys.modules, {"whisper": MagicMock()}),
             patch("loom.tools.transcribe._download_audio", new_callable=AsyncMock) as mock_download,
             patch("os.path.getsize") as mock_getsize,
         ):
@@ -95,8 +99,9 @@ class TestResearchTranscribe:
     @pytest.mark.asyncio
     async def test_transcription_success(self):
         """Test successful transcription."""
+        import sys
         with (
-            patch("loom.tools.transcribe.whisper"),
+            patch.dict(sys.modules, {"whisper": MagicMock()}),
             patch(
                 "loom.tools.transcribe._download_audio", new_callable=AsyncMock
             ) as mock_download,
@@ -146,14 +151,19 @@ class TestResearchTranscribe:
                 assert result["duration_seconds"] == 5
                 assert result["model_size"] == "base"
             finally:
-                if os.path.exists(temp_path):
-                    os.unlink(temp_path)
+                # Clean up temp file only if it still exists (mocking may have deleted)
+                try:
+                    if os.path.exists(temp_path):
+                        os.unlink(temp_path)
+                except (OSError, FileNotFoundError):
+                    pass
 
     @pytest.mark.asyncio
     async def test_transcription_with_language(self):
         """Test transcription with specified language."""
+        import sys
         with (
-            patch("loom.tools.transcribe.whisper"),
+            patch.dict(sys.modules, {"whisper": MagicMock()}),
             patch(
                 "loom.tools.transcribe._download_audio", new_callable=AsyncMock
             ) as mock_download,
@@ -192,14 +202,19 @@ class TestResearchTranscribe:
                 assert result["language"] == "tr"
                 assert result["model_size"] == "small"
             finally:
-                if os.path.exists(temp_path):
-                    os.unlink(temp_path)
+                # Clean up temp file only if it still exists (mocking may have deleted)
+                try:
+                    if os.path.exists(temp_path):
+                        os.unlink(temp_path)
+                except (OSError, FileNotFoundError):
+                    pass
 
     @pytest.mark.asyncio
     async def test_cleanup_on_exception(self):
         """Test temp file is cleaned up on exception."""
+        import sys
         with (
-            patch("loom.tools.transcribe.whisper"),
+            patch.dict(sys.modules, {"whisper": MagicMock()}),
             patch(
                 "loom.tools.transcribe._download_audio", new_callable=AsyncMock
             ) as mock_download,
@@ -284,15 +299,17 @@ class TestDownloadYoutubeAudio:
     @pytest.mark.asyncio
     async def test_yt_dlp_download_success(self):
         """Test successful yt-dlp download."""
-        with patch("loom.tools.transcribe.yt_dlp") as mock_yt_dlp:
-            mock_ydl = MagicMock()
-            mock_ydl.extract_info.return_value = {"id": "test"}
-            mock_ydl.prepare_filename.return_value = "/tmp/audio.wav"
-            mock_ydl.__enter__ = MagicMock(return_value=mock_ydl)
-            mock_ydl.__exit__ = MagicMock(return_value=False)
+        import sys
+        mock_yt_dlp = MagicMock()
+        mock_ydl = MagicMock()
+        mock_ydl.extract_info.return_value = {"id": "test"}
+        mock_ydl.prepare_filename.return_value = "/tmp/audio.wav"
+        mock_ydl.__enter__ = MagicMock(return_value=mock_ydl)
+        mock_ydl.__exit__ = MagicMock(return_value=False)
 
-            mock_yt_dlp.YoutubeDL.return_value = mock_ydl
+        mock_yt_dlp.YoutubeDL.return_value = mock_ydl
 
+        with patch.dict(sys.modules, {"yt_dlp": mock_yt_dlp}):
             from loom.tools.transcribe import _download_youtube_audio
 
             result = await _download_youtube_audio("https://www.youtube.com/watch?v=test")
@@ -301,14 +318,16 @@ class TestDownloadYoutubeAudio:
     @pytest.mark.asyncio
     async def test_yt_dlp_download_failure(self):
         """Test yt-dlp download failure."""
-        with patch("loom.tools.transcribe.yt_dlp") as mock_yt_dlp:
-            mock_ydl = MagicMock()
-            mock_ydl.extract_info.side_effect = Exception("Download failed")
-            mock_ydl.__enter__ = MagicMock(return_value=mock_ydl)
-            mock_ydl.__exit__ = MagicMock(return_value=False)
+        import sys
+        mock_yt_dlp = MagicMock()
+        mock_ydl = MagicMock()
+        mock_ydl.extract_info.side_effect = Exception("Download failed")
+        mock_ydl.__enter__ = MagicMock(return_value=mock_ydl)
+        mock_ydl.__exit__ = MagicMock(return_value=False)
 
-            mock_yt_dlp.YoutubeDL.return_value = mock_ydl
+        mock_yt_dlp.YoutubeDL.return_value = mock_ydl
 
+        with patch.dict(sys.modules, {"yt_dlp": mock_yt_dlp}):
             from loom.tools.transcribe import _download_youtube_audio
 
             result = await _download_youtube_audio("https://www.youtube.com/watch?v=test")
@@ -382,30 +401,36 @@ class TestTranscribeAudio:
 
     def test_invalid_audio_path(self):
         """Test handling of invalid audio path."""
-        from loom.tools.transcribe import _transcribe_audio
+        import sys
+        mock_whisper = MagicMock()
+        mock_model = MagicMock()
+        mock_model.transcribe.side_effect = FileNotFoundError("File not found")
+        mock_whisper.load_model.return_value = mock_model
 
-        with patch("loom.tools.transcribe.whisper") as mock_whisper:
-            mock_model = MagicMock()
-            mock_model.transcribe.side_effect = FileNotFoundError("File not found")
-            mock_whisper.load_model.return_value = mock_model
+        with patch.dict(sys.modules, {"whisper": mock_whisper}):
+            from loom.tools.transcribe import _transcribe_audio
 
             result = _transcribe_audio("/nonexistent/audio.mp3", "base", None)
             assert "error" in result
 
     def test_audio_too_long(self):
         """Test handling of audio exceeding max duration."""
-        from loom.tools.transcribe import _transcribe_audio, MAX_AUDIO_DURATION_SECS
+        import sys
+        from loom.tools.transcribe import MAX_AUDIO_DURATION_SECS
+
+        mock_whisper = MagicMock()
+        mock_model = MagicMock()
+        mock_model.transcribe.return_value = {"text": "test", "language": "en"}
+        mock_whisper.load_model.return_value = mock_model
+
+        mock_librosa = MagicMock()
+        # Set duration to exceed limit (2 hours)
+        mock_librosa.get_duration.return_value = MAX_AUDIO_DURATION_SECS + 3600
 
         with (
-            patch("loom.tools.transcribe.whisper") as mock_whisper,
-            patch("loom.tools.transcribe.librosa") as mock_librosa,
+            patch.dict(sys.modules, {"whisper": mock_whisper, "librosa": mock_librosa}),
         ):
-            mock_model = MagicMock()
-            mock_model.transcribe.return_value = {"text": "test", "language": "en"}
-            mock_whisper.load_model.return_value = mock_model
-
-            # Set duration to exceed limit (2 hours)
-            mock_librosa.get_duration.return_value = MAX_AUDIO_DURATION_SECS + 3600
+            from loom.tools.transcribe import _transcribe_audio
 
             result = _transcribe_audio("/tmp/audio.wav", "base", None)
             assert "error" in result

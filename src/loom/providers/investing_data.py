@@ -145,8 +145,8 @@ def search_investing(
         n: max results to return (capped at 20)
 
     Returns:
-        Dict with ``results`` list (each with symbol, price, change, volume, name)
-        and ``query_original``, or ``error`` on failure.
+        Dict with ``results`` list (each with symbol, price, change, volume, name),
+        ``query``, and ``symbol``, or ``error`` on failure.
     """
     n = min(n, MAX_RESULTS)
 
@@ -184,6 +184,7 @@ def search_investing(
                 logger.warning("investing_api_error symbol=%s error=%s", symbol, error_msg)
                 return {
                     "query": query,
+                    "symbol": symbol,
                     "error": "search failed",
                     "results": [],
                 }
@@ -193,6 +194,7 @@ def search_investing(
         if not results_data:
                 return {
                     "query": query,
+                    "symbol": symbol,
                     "error": "No data returned from Yahoo Finance",
                     "results": [],
                 }
@@ -217,6 +219,7 @@ def search_investing(
         if current_price is None:
                 return {
                     "query": query,
+                    "symbol": symbol,
                     "error": "No price data available",
                     "results": [],
                 }
@@ -264,6 +267,7 @@ def search_investing(
         logger.warning("investing_http_error symbol=%s status=%d", symbol, exc.response.status_code)
         return {
         "query": query,
+        "symbol": symbol,
         "error": "search failed",
         "results": [],
         }

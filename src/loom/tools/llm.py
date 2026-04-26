@@ -694,6 +694,14 @@ async def research_llm_translate(
             - provider: provider used
             - cost_usd: estimated cost
     """
+    # Ensure config is loaded
+    if not CONFIG:
+        load_config()
+
+    # Resolve default model if 'auto'
+    if model == "auto":
+        model = CONFIG.get("LLM_DEFAULT_TRANSLATE_MODEL", "moonshotai/kimi-k2-instruct")
+
     wrapped_text = _wrap_untrusted_content(text, max_chars=20000)
 
     source_hint = f" from {source_lang}" if source_lang else ""

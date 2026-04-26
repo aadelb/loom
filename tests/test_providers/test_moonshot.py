@@ -46,7 +46,7 @@ class TestMoonshotProvider:
 
     async def test_chat_success(self):
         """Test successful chat call with mocked httpx."""
-        mock_response = AsyncMock()
+        mock_response = MagicMock()
         mock_response.json.return_value = {
             "choices": [
                 {
@@ -84,7 +84,7 @@ class TestMoonshotProvider:
 
     async def test_chat_with_custom_model(self):
         """Test chat with custom model override."""
-        mock_response = AsyncMock()
+        mock_response = MagicMock()
         mock_response.json.return_value = {
             "choices": [
                 {"message": {"content": "response"}, "finish_reason": "stop"}
@@ -190,7 +190,7 @@ class TestMoonshotProvider:
 
     async def test_default_timeout_120s(self):
         """Test that default timeout is 120 seconds."""
-        mock_response = AsyncMock()
+        mock_response = MagicMock()
         mock_response.json.return_value = {
             "choices": [
                 {"message": {"content": "test"}, "finish_reason": "stop"}

@@ -105,6 +105,16 @@ class SpiderParams(BaseModel):
         # Validate each URL individually
         return [validate_url(url) for url in v]
 
+    @field_validator("proxy")
+    @classmethod
+    def validate_proxy(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        # Basic proxy URL format check
+        if not v.startswith(("http://", "https://", "socks5://", "socks5h://")):
+            raise ValueError("proxy must start with http://, https://, socks5://, or socks5h://")
+        return v
+
     @field_validator("headers")
     @classmethod
     def validate_headers(cls, v: dict[str, str] | None) -> dict[str, str] | None:
@@ -143,6 +153,16 @@ class MarkdownParams(BaseModel):
     def validate_url_field(cls, v: str) -> str:
         return validate_url(v)
 
+    @field_validator("proxy")
+    @classmethod
+    def validate_proxy(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        # Basic proxy URL format check
+        if not v.startswith(("http://", "https://", "socks5://", "socks5h://")):
+            raise ValueError("proxy must start with http://, https://, socks5://, or socks5h://")
+        return v
+
     @field_validator("headers")
     @classmethod
     def validate_headers(cls, v: dict[str, str] | None) -> dict[str, str] | None:
@@ -179,6 +199,7 @@ class SearchParams(BaseModel):
         "investing",
         "ahmia",
         "darksearch",
+        "ummro",
     ] = "exa"
     n: int = 10
     include_domains: list[str] | None = None
@@ -227,6 +248,7 @@ class DeepParams(BaseModel):
         "investing",
         "ahmia",
         "darksearch",
+        "ummro",
     ] = "exa"
     search_providers: list[str] | None = None
     expand_queries: bool = True

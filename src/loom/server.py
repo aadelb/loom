@@ -329,6 +329,18 @@ def create_app() -> FastMCP:
     # Register all tools
     _register_tools(mcp)
 
+    # Startup cache cleanup: Remove cache entries older than TTL (Issue #188)
+    try:
+        from loom.cache import get_cache
+
+        cache = get_cache()
+        config_ttl = config.get("CACHE_TTL_DAYS", 30)
+        removed = cache.clear_older_than(days=config_ttl)
+        if removed:
+            log.info("startup_cache_cleanup removed=%d files", removed)
+    except Exception as exc:
+        log.warning("startup_cache_cleanup_failed: %s", exc)
+
     log.info(
         "Loom MCP server initialized: name=%s host=%s port=%d",
         "loom",

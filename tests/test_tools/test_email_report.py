@@ -91,30 +91,29 @@ class TestResearchEmailReport:
 
     async def test_success_plain_text(self):
         """Test successful email send with plain text."""
-        mock_executor = MagicMock()
-        mock_executor.return_value = (True, "email sent successfully")
-
+        import asyncio
         with patch.dict("os.environ", {"SMTP_USER": "sender@test.com", "SMTP_APP_PASSWORD": "pass"}), patch(
             "asyncio.get_running_loop"
         ) as mock_loop:
-            mock_loop.return_value.run_in_executor = MagicMock(
-                return_value=asyncio.coroutine(lambda: (True, "email sent successfully"))()
+            # Create an AsyncMock for run_in_executor that returns success
+            async def async_success():
+                return (True, "email sent successfully")
+
+            mock_loop.return_value.run_in_executor = AsyncMock(
+                return_value=(True, "email sent successfully")
             )
 
             from loom.tools.email_report import research_email_report
 
-            # Mock the executor to return success
-            with patch.object(
-                mock_loop.return_value,
-                "run_in_executor",
-                return_value=asyncio.coroutine(lambda: (True, "email sent successfully"))(),
-            ):
-                result = await research_email_report(
-                    to="test@example.com",
-                    subject="Test Subject",
-                    body="Test body content",
-                    html=False,
-                )
+            result = await research_email_report(
+                to="test@example.com",
+                subject="Test Subject",
+                body="Test body content",
+                html=False,
+            )
+
+            # Verify the result contains expected fields
+            assert result is not None
 
     async def test_fallback_gmail_credentials(self):
         """Test that fallback to GMAIL_USER and GMAIL_APP_PASSWORD works."""

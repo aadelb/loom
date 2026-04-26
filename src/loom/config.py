@@ -73,6 +73,7 @@ class ConfigModel(BaseModel):
         "investing",
         "ahmia",
         "darksearch",
+        "ummro",
     ] = "exa"
     DEFAULT_ACCEPT_LANGUAGE: str = "en-US,en;q=0.9,ar;q=0.8"
 

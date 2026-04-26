@@ -251,7 +251,7 @@ async def research_deep(
     warnings: list[dict[str, str]] = []
 
     if max_cost_usd is None:
-        max_cost_usd = config.get("RESEARCH_MAX_COST_USD", 0.50)
+        max_cost_usd = float(config.get("RESEARCH_MAX_COST_USD", 0.50))
     if search_providers is None:
         search_providers = list(config.get("RESEARCH_SEARCH_PROVIDERS", ["exa", "brave"]))
     expand_queries = expand_queries and config.get("RESEARCH_EXPAND_QUERIES", True)
@@ -396,10 +396,15 @@ async def research_deep(
                 except Exception as exc:
                     logger.warning("youtube_transcript_extraction_failed url=%s error=%s", url, exc)
             else:
+                # Auto-set Tor proxy for .onion URLs
+                proxy = None
+                if url.endswith(".onion"):
+                    proxy = config.get("TOR_SOCKS5_PROXY", "socks5h://127.0.0.1:9050")
+
                 try:
                     fetch_result = await loop.run_in_executor(
                         None,
-                        lambda: research_fetch(url, mode="http", auto_escalate=True),
+                        lambda: research_fetch(url, mode="http", auto_escalate=True, proxy=proxy),
                     )
                 except Exception as exc:
                     logger.warning("deep_fetch_fail url=%s error=%s", url, exc)

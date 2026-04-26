@@ -134,9 +134,24 @@ class CacheStore:
         Returns:
             Dict with file_count, total_bytes, and recent days.
         """
-        files = list(self.base_dir.rglob("*.json"))
-        total = sum(f.stat().st_size for f in files)
-        days = sorted({f.parent.name for f in files})
+        files = []
+        for f in self.base_dir.rglob("*.json"):
+            try:
+                # File may be deleted by another process; skip if gone
+                if f.is_file():
+                    files.append(f)
+            except FileNotFoundError:
+                continue
+
+        total = 0
+        for f in files:
+            try:
+                total += f.stat().st_size
+            except FileNotFoundError:
+                # File deleted between is_file() check and stat(); skip
+                continue
+
+        days = sorted({f.parent.name for f in files if f.parent.name})
         return {
             "file_count": len(files),
             "total_bytes": total,
@@ -169,6 +184,9 @@ class CacheStore:
                     try:
                         f.unlink()
                         removed += 1
+                    except FileNotFoundError:
+                        # File deleted by another process; skip
+                        continue
                     except Exception as e:
                         log.warning("failed to remove cache file %s: %s", f, e)
 

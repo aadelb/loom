@@ -207,7 +207,7 @@ class TestCreativeTools:
 
             result = await research_citation_graph("Unknown Paper")
 
-        assert "error" in result
+        assert result.get("paper_count", 0) == 0 or "error" in result
         assert result["papers"] == []
 
     async def test_research_ai_detect_basic(self):

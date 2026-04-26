@@ -2,14 +2,22 @@
 
 from loom.providers.anthropic_provider import AnthropicProvider
 from loom.providers.base import LLMProvider, LLMResponse, _estimate_cost
+from loom.providers.deepseek_provider import DeepSeekProvider
+from loom.providers.gemini_provider import GeminiProvider
+from loom.providers.groq_provider import GroqProvider
+from loom.providers.moonshot_provider import MoonshotProvider
 from loom.providers.nvidia_nim import NvidiaNimProvider
 from loom.providers.openai_provider import OpenAIProvider
 from loom.providers.vllm_local import VllmLocalProvider
 
 __all__ = [
     "AnthropicProvider",
+    "DeepSeekProvider",
+    "GeminiProvider",
+    "GroqProvider",
     "LLMProvider",
     "LLMResponse",
+    "MoonshotProvider",
     "NvidiaNimProvider",
     "OpenAIProvider",
     "VllmLocalProvider",
@@ -26,6 +34,14 @@ _search_providers = {
     "arxiv_search": "search_arxiv",
     "wikipedia_search": "search_wikipedia",
     "hn_reddit": "search_hackernews",
+    "newsapi_search": "search_newsapi_news",
+    "coindesk_search": "search_coindesk_news",
+    "binance_data": "search_binance",
+    "investing_data": "search_investing",
+    "coinmarketcap": "search_coinmarketcap",
+    "ahmia_search": "search_ahmia",
+    "darksearch_search": "search_darksearch",
+    "ummro_rag": "search_ummro_rag",
     "youtube_transcripts": "fetch_youtube_transcript",
     "trafilatura_extract": "extract_with_trafilatura",
 }

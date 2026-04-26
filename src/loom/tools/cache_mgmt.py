@@ -39,10 +39,14 @@ def research_cache_stats() -> dict[str, Any]:
     timestamps = []
 
     for f in cache_dir.rglob("*.json"):
-        if f.is_file():
-            total_bytes += f.stat().st_size
-            entry_count += 1
-            timestamps.append(f.stat().st_mtime)
+        try:
+            if f.is_file():
+                total_bytes += f.stat().st_size
+                entry_count += 1
+                timestamps.append(f.stat().st_mtime)
+        except FileNotFoundError:
+            # File deleted by another process between is_file() and stat()
+            continue
 
     size_mb = total_bytes / (1024 * 1024)
 
@@ -85,13 +89,16 @@ def research_cache_clear(older_than_days: int | None = None) -> dict[str, Any]:
     freed_bytes = 0
 
     for f in cache_dir.rglob("*.json"):
-        if f.is_file() and f.stat().st_mtime < cutoff:
-            try:
+        try:
+            if f.is_file() and f.stat().st_mtime < cutoff:
                 freed_bytes += f.stat().st_size
                 f.unlink()
                 deleted_count += 1
-            except OSError:
-                logger.warning("cache_clear_failed path=%s", f)
+        except FileNotFoundError:
+            # File deleted by another process between is_file()/stat() and unlink()
+            continue
+        except OSError as e:
+            logger.warning("cache_clear_failed path=%s: %s", f, e)
 
     freed_mb = freed_bytes / (1024 * 1024)
 

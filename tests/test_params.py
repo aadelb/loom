@@ -56,9 +56,9 @@ class TestFetchParams:
             FetchParams(url="https://example.com", user_agent="x" * 257)
 
     def test_fetch_rejects_invalid_proxy(self) -> None:
-        """Proxy without http(s) prefix raises ValidationError."""
+        """Proxy without http(s)/socks5 prefix raises ValidationError."""
         with pytest.raises(ValidationError):
-            FetchParams(url="https://example.com", proxy="socks5://proxy:1080")
+            FetchParams(url="https://example.com", proxy="ftp://proxy:1080")
 
     def test_fetch_rejects_invalid_retries(self) -> None:
         """Retries < 0 or > 3 raises ValidationError."""

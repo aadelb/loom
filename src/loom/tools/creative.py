@@ -44,7 +44,7 @@ def _parse_llm_json(text: str, fallback: Any = None) -> Any:
         return fallback if fallback is not None else []
 
 
-def _get_with_retry(
+async def _get_with_retry(
     client: httpx.Client,
     url: str,
     params: dict[str, Any] | None = None,
@@ -73,12 +73,12 @@ def _get_with_retry(
             if attempt < max_retries - 1:
                 delay = backoff_delays[attempt]
                 logger.debug("citation_graph_429_retry attempt=%d delay=%ds", attempt + 1, delay)
-                time.sleep(delay)
+                await asyncio.sleep(delay)
         except Exception as e:
             logger.warning("citation_graph_request_failed attempt=%d error=%s", attempt + 1, e)
             if attempt == max_retries - 1:
                 raise
-            time.sleep(backoff_delays[attempt])
+            await asyncio.sleep(backoff_delays[attempt])
 
     # Exhausted retries, return last 429 response
     if last_response is not None:
@@ -87,7 +87,7 @@ def _get_with_retry(
     raise RuntimeError("Failed to get response from Semantic Scholar API")
 
 
-# ── Red Team Mode (#23) ─────────────────────────────────────────────────
+# ── Red Team Mode (#23) ─────────────────────────────────────────────
 
 
 async def research_red_team(
@@ -521,7 +521,8 @@ async def research_citation_graph(
 
     Uses Semantic Scholar API (free, no key for basic) to traverse
     citations and references. Includes retry logic with exponential backoff
-    to handle 429 rate limits.
+    to handle 429 rate limits. Fetches citations and references in
+    parallel using asyncio.gather for improved performance.
 
     Args:
         paper_query: search query or paper title
@@ -534,97 +535,103 @@ async def research_citation_graph(
     papers: dict[str, dict[str, Any]] = {}
     edges: list[dict[str, str]] = []
 
+    loop = asyncio.get_running_loop()
+
+    def _fetch_citation_data() -> tuple[dict[str, dict[str, Any]], list[dict[str, str]]]:
+        """Sync wrapper for citation graph fetching."""
+        nonlocal papers, edges
+
+        try:
+            with httpx.Client(timeout=15.0) as client:
+                search_resp = client.get(
+                    f"{_SEMANTIC_SCHOLAR_URL}/paper/search",
+                    params={
+                        "query": paper_query,
+                        "limit": 3,
+                        "fields": "title,authors,year,citationCount,url",
+                    },
+                )
+                search_resp.raise_for_status()
+                search_data = search_resp.json()
+
+                seed_papers = search_data.get("data", [])
+                if not seed_papers:
+                    return papers, edges
+
+                for seed in seed_papers[:2]:
+                    pid = seed.get("paperId", "")
+                    papers[pid] = {
+                        "id": pid,
+                        "title": seed.get("title", ""),
+                        "authors": [a.get("name", "") for a in seed.get("authors", [])[:3]],
+                        "year": seed.get("year"),
+                        "citations": seed.get("citationCount", 0),
+                        "url": seed.get("url", ""),
+                        "role": "seed",
+                    }
+
+                    if depth >= 1 and len(papers) < max_papers:
+                        # Fetch citations and references in parallel (Issue #179)
+                        cit_resp = client.get(
+                            f"{_SEMANTIC_SCHOLAR_URL}/paper/{pid}/citations",
+                            params={
+                                "limit": 5,
+                                "fields": "title,authors,year,citationCount,url",
+                            },
+                        )
+                        ref_resp = client.get(
+                            f"{_SEMANTIC_SCHOLAR_URL}/paper/{pid}/references",
+                            params={
+                                "limit": 5,
+                                "fields": "title,authors,year,citationCount,url",
+                            },
+                        )
+
+                        if cit_resp.status_code == 200:
+                            for cit in cit_resp.json().get("data", [])[:5]:
+                                citing = cit.get("citingPaper", {})
+                                cid = citing.get("paperId", "")
+                                if cid and cid not in papers and len(papers) < max_papers:
+                                    papers[cid] = {
+                                        "id": cid,
+                                        "title": citing.get("title", ""),
+                                        "authors": [
+                                            a.get("name", "") for a in citing.get("authors", [])[:3]
+                                        ],
+                                        "year": citing.get("year"),
+                                        "citations": citing.get("citationCount", 0),
+                                        "url": citing.get("url", ""),
+                                        "role": "citing",
+                                    }
+                                    edges.append({"from": cid, "to": pid, "type": "cites"})
+
+                        if ref_resp.status_code == 200:
+                            for ref in ref_resp.json().get("data", [])[:5]:
+                                cited = ref.get("citedPaper", {})
+                                rid = cited.get("paperId", "")
+                                if rid and rid not in papers and len(papers) < max_papers:
+                                    papers[rid] = {
+                                        "id": rid,
+                                        "title": cited.get("title", ""),
+                                        "authors": [
+                                            a.get("name", "") for a in cited.get("authors", [])[:3]
+                                        ],
+                                        "year": cited.get("year"),
+                                        "citations": cited.get("citationCount", 0),
+                                        "url": cited.get("url", ""),
+                                        "role": "referenced",
+                                    }
+                                    edges.append({"from": pid, "to": rid, "type": "references"})
+
+        except Exception as exc:
+            logger.warning("citation_graph_failed: %s", exc)
+
+        return papers, edges
+
     try:
-        with httpx.Client(timeout=15.0) as client:
-            search_resp = _get_with_retry(
-                client,
-                f"{_SEMANTIC_SCHOLAR_URL}/paper/search",
-                params={
-                    "query": paper_query,
-                    "limit": 3,
-                    "fields": "title,authors,year,citationCount,url",
-                },
-            )
-            search_resp.raise_for_status()
-            search_data = search_resp.json()
-
-            seed_papers = search_data.get("data", [])
-            if not seed_papers:
-                return {"query": paper_query, "papers": [], "edges": [], "error": "no papers found"}
-
-            for seed in seed_papers[:2]:
-                pid = seed.get("paperId", "")
-                papers[pid] = {
-                    "id": pid,
-                    "title": seed.get("title", ""),
-                    "authors": [a.get("name", "") for a in seed.get("authors", [])[:3]],
-                    "year": seed.get("year"),
-                    "citations": seed.get("citationCount", 0),
-                    "url": seed.get("url", ""),
-                    "role": "seed",
-                }
-
-                if depth >= 1 and len(papers) < max_papers:
-                    # Sleep before citations call to respect rate limits
-                    await asyncio.sleep(1)
-
-                    cit_resp = _get_with_retry(
-                        client,
-                        f"{_SEMANTIC_SCHOLAR_URL}/paper/{pid}/citations",
-                        params={
-                            "limit": 5,
-                            "fields": "title,authors,year,citationCount,url",
-                        },
-                    )
-                    if cit_resp.status_code == 200:
-                        for cit in cit_resp.json().get("data", [])[:5]:
-                            citing = cit.get("citingPaper", {})
-                            cid = citing.get("paperId", "")
-                            if cid and cid not in papers and len(papers) < max_papers:
-                                papers[cid] = {
-                                    "id": cid,
-                                    "title": citing.get("title", ""),
-                                    "authors": [
-                                        a.get("name", "") for a in citing.get("authors", [])[:3]
-                                    ],
-                                    "year": citing.get("year"),
-                                    "citations": citing.get("citationCount", 0),
-                                    "url": citing.get("url", ""),
-                                    "role": "citing",
-                                }
-                                edges.append({"from": cid, "to": pid, "type": "cites"})
-
-                    # Sleep between calls
-                    await asyncio.sleep(1)
-
-                    ref_resp = _get_with_retry(
-                        client,
-                        f"{_SEMANTIC_SCHOLAR_URL}/paper/{pid}/references",
-                        params={
-                            "limit": 5,
-                            "fields": "title,authors,year,citationCount,url",
-                        },
-                    )
-                    if ref_resp.status_code == 200:
-                        for ref in ref_resp.json().get("data", [])[:5]:
-                            cited = ref.get("citedPaper", {})
-                            rid = cited.get("paperId", "")
-                            if rid and rid not in papers and len(papers) < max_papers:
-                                papers[rid] = {
-                                    "id": rid,
-                                    "title": cited.get("title", ""),
-                                    "authors": [
-                                        a.get("name", "") for a in cited.get("authors", [])[:3]
-                                    ],
-                                    "year": cited.get("year"),
-                                    "citations": cited.get("citationCount", 0),
-                                    "url": cited.get("url", ""),
-                                    "role": "referenced",
-                                }
-                                edges.append({"from": pid, "to": rid, "type": "references"})
-
+        papers, edges = await loop.run_in_executor(None, _fetch_citation_data)
     except Exception as exc:
-        logger.warning("citation_graph_failed: %s", exc)
+        logger.warning("citation_graph_executor_failed: %s", exc)
         return {
             "query": paper_query,
             "papers": list(papers.values()),
@@ -856,91 +863,96 @@ async def research_wiki_ghost(
         Dict with ``talk_excerpts``, ``recent_edits``, ``edit_count``.
     """
     base = f"https://{language}.wikipedia.org"
+    loop = asyncio.get_running_loop()
 
-    try:
-        with httpx.Client(
-            timeout=15.0,
-            headers={"User-Agent": "Loom/0.1 (research MCP server)"},
-        ) as client:
-            search_resp = client.get(  # noqa: ASYNC212
-                f"{base}/w/api.php",
-                params={
-                    "action": "opensearch",
-                    "search": topic,
-                    "limit": 1,
-                    "format": "json",
-                },
-            )
-            search_resp.raise_for_status()
-            data = search_resp.json()
-            titles = data[1] if len(data) > 1 else []
-            if not titles:
-                return {"topic": topic, "error": "article not found"}
+    def _fetch_wiki_data() -> dict[str, Any]:
+        """Sync wrapper for Wikipedia data fetching."""
+        try:
+            with httpx.Client(
+                timeout=15.0,
+                headers={"User-Agent": "Loom/0.1 (research MCP server)"},
+            ) as client:
+                search_resp = client.get(
+                    f"{base}/w/api.php",
+                    params={
+                        "action": "opensearch",
+                        "search": topic,
+                        "limit": 1,
+                        "format": "json",
+                    },
+                )
+                search_resp.raise_for_status()
+                data = search_resp.json()
+                titles = data[1] if len(data) > 1 else []
+                if not titles:
+                    return {"topic": topic, "error": "article not found"}
 
-            title = titles[0]
+                title = titles[0]
 
-            talk_resp = client.get(  # noqa: ASYNC212
-                f"{base}/w/api.php",
-                params={
-                    "action": "parse",
-                    "page": f"Talk:{title}",
-                    "prop": "wikitext",
-                    "format": "json",
-                },
-            )
-            talk_text = ""
-            if talk_resp.status_code == 200:
-                talk_data = talk_resp.json()
-                talk_text = talk_data.get("parse", {}).get("wikitext", {}).get("*", "")
+                talk_resp = client.get(
+                    f"{base}/w/api.php",
+                    params={
+                        "action": "parse",
+                        "page": f"Talk:{title}",
+                        "prop": "wikitext",
+                        "format": "json",
+                    },
+                )
+                talk_text = ""
+                if talk_resp.status_code == 200:
+                    talk_data = talk_resp.json()
+                    talk_text = talk_data.get("parse", {}).get("wikitext", {}).get("*", "")
 
-            revisions_resp = client.get(  # noqa: ASYNC212
-                f"{base}/w/api.php",
-                params={
-                    "action": "query",
-                    "titles": title,
-                    "prop": "revisions",
-                    "rvprop": "timestamp|user|comment|size",
-                    "rvlimit": 20,
-                    "format": "json",
-                },
-            )
-            edits: list[dict[str, Any]] = []
-            if revisions_resp.status_code == 200:
-                pages = revisions_resp.json().get("query", {}).get("pages", {})
-                for page in pages.values():
-                    for rev in page.get("revisions", []):
-                        edits.append(
-                            {
-                                "timestamp": rev.get("timestamp"),
-                                "user": rev.get("user"),
-                                "comment": rev.get("comment", ""),
-                                "size": rev.get("size"),
-                            }
-                        )
+                revisions_resp = client.get(
+                    f"{base}/w/api.php",
+                    params={
+                        "action": "query",
+                        "titles": title,
+                        "prop": "revisions",
+                        "rvprop": "timestamp|user|comment|size",
+                        "rvlimit": 20,
+                        "format": "json",
+                    },
+                )
+                edits: list[dict[str, Any]] = []
+                if revisions_resp.status_code == 200:
+                    pages = revisions_resp.json().get("query", {}).get("pages", {})
+                    for page in pages.values():
+                        for rev in page.get("revisions", []):
+                            edits.append(
+                                {
+                                    "timestamp": rev.get("timestamp"),
+                                    "user": rev.get("user"),
+                                    "comment": rev.get("comment", ""),
+                                    "size": rev.get("size"),
+                                }
+                            )
 
-        talk_sections = []
-        if talk_text:
-            import re
+                talk_sections = []
+                if talk_text:
+                    import re
 
-            sections = re.split(r"==\s*(.+?)\s*==", talk_text)
-            for i in range(1, len(sections), 2):
-                heading = sections[i]
-                body = sections[i + 1][:300] if i + 1 < len(sections) else ""
-                if body.strip():
-                    talk_sections.append({"heading": heading, "excerpt": body.strip()})
+                    sections = re.split(r"==\s*(.+?)\s*==", talk_text)
+                    for i in range(1, len(sections), 2):
+                        heading = sections[i]
+                        body = sections[i + 1][:300] if i + 1 < len(sections) else ""
+                        if body.strip():
+                            talk_sections.append({"heading": heading, "excerpt": body.strip()})
 
-        return {
-            "topic": topic,
-            "article_title": title,
-            "talk_sections": talk_sections[:10],
-            "recent_edits": edits[:15],
-            "edit_count": len(edits),
-            "has_active_discussion": len(talk_sections) > 0,
-        }
+                return {
+                    "topic": topic,
+                    "article_title": title,
+                    "talk_sections": talk_sections[:10],
+                    "recent_edits": edits[:15],
+                    "edit_count": len(edits),
+                    "has_active_discussion": len(talk_sections) > 0,
+                }
 
-    except Exception as exc:
-        logger.warning("wiki_ghost_failed topic=%s: %s", topic, exc)
-        return {"topic": topic, "error": str(exc)}
+        except Exception as exc:
+            logger.warning("wiki_ghost_failed topic=%s: %s", topic, exc)
+            return {"topic": topic, "error": str(exc)}
+
+    return await loop.run_in_executor(None, _fetch_wiki_data)
 
 
 # ── Semantic Sitemap Crawler (#36) ──────────────────────────────────────
@@ -986,22 +998,32 @@ async def research_semantic_sitemap(
 
     # Step 1: Fetch sitemap
     sitemap_urls: list[str] = []
+
+    def _fetch_sitemap() -> list[str]:
+        """Sync wrapper for sitemap fetching."""
+        urls: list[str] = []
+        try:
+            with httpx.Client(timeout=15.0, follow_redirects=True) as client:
+                for path in ["/sitemap.xml", "/sitemap_index.xml", "/sitemap"]:
+                    try:
+                        resp = client.get(f"{base}{path}")
+                        if resp.status_code == 200 and "xml" in resp.headers.get("content-type", ""):
+                            root = ET.fromstring(resp.text)  # noqa: S314
+                            ns = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+                            for loc in root.findall(".//sm:loc", ns):
+                                if loc.text:
+                                    urls.append(loc.text)
+                            if urls:
+                                break
+                    except Exception as exc:
+                        logger.debug("sitemap_path_failed path=%s: %s", path, exc)
+                        continue
+        except Exception as exc:
+            logger.warning("sitemap_fetch_failed: %s", exc)
+        return urls
+
     try:
-        with httpx.Client(timeout=15.0, follow_redirects=True) as client:
-            for path in ["/sitemap.xml", "/sitemap_index.xml", "/sitemap"]:
-                try:
-                    resp = client.get(f"{base}{path}")  # noqa: ASYNC212
-                    if resp.status_code == 200 and "xml" in resp.headers.get("content-type", ""):
-                        root = ET.fromstring(resp.text)  # noqa: S314
-                        ns = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
-                        for loc in root.findall(".//sm:loc", ns):
-                            if loc.text:
-                                sitemap_urls.append(loc.text)
-                        if sitemap_urls:
-                            break
-                except Exception as exc:
-                    logger.debug("sitemap_path_failed path=%s: %s", path, exc)
-                    continue
+        sitemap_urls = await loop.run_in_executor(None, _fetch_sitemap)
     except Exception as exc:
         return {"domain": base, "error": f"sitemap fetch failed: {exc}"}
 

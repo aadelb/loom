@@ -23,7 +23,7 @@ except ImportError:  # pragma: no cover — optional HTML parser
 
 from loom.cache import get_cache
 from loom.params import FetchParams
-from loom.validators import EXTERNAL_TIMEOUT_SECS, MAX_FETCH_CHARS
+from loom.validators import EXTERNAL_TIMEOUT_SECS, MAX_FETCH_CHARS, get_validated_dns
 
 logger = logging.getLogger("loom.tools.fetch")
 
@@ -315,7 +315,14 @@ def _fetch_http_scrapling(params: FetchParams, Fetcher: Any) -> FetchResult:
 
 
 def _fetch_http_httpx(params: FetchParams) -> FetchResult:
-    """Fetch using httpx (fallback)."""
+    """Fetch using httpx (fallback).
+
+    Uses validated DNS resolution from get_validated_dns() to prevent
+    TOCTOU DNS rebinding attacks between validation and request time.
+    When validated IPs are available, constructs a URL with the IP address
+    directly while preserving the original hostname in the Host header for
+    virtual hosting / SNI.
+    """
     # Build headers
     headers = params.headers or {}
     if params.user_agent:
@@ -338,8 +345,35 @@ def _fetch_http_httpx(params: FetchParams) -> FetchResult:
         else:
             client = _get_http_client()
 
+        # Attempt to use validated DNS resolution to prevent TOCTOU rebinding.
+        from urllib.parse import urlparse, urlunparse
+        parsed = urlparse(params.url)
+        hostname = parsed.hostname
+        port = parsed.port
+        request_url = params.url
+
+        if hostname:
+            validated_ips = get_validated_dns(hostname)
+            if validated_ips:
+                # Reconstruct URL using the first validated IP as the netloc,
+                # while preserving the original hostname in the Host header.
+                # This forces the connection to use the validated IP while
+                # still supporting virtual hosting and SNI.
+                ip = validated_ips[0]
+                # Preserve port if present
+                netloc_with_ip = f"{ip}:{port}" if port else ip
+                new_parsed = parsed._replace(netloc=netloc_with_ip)
+                request_url = urlunparse(new_parsed)
+                # Ensure Host header uses original hostname for virtual hosting
+                headers["Host"] = hostname if not port else f"{hostname}:{port}"
+                logger.debug(
+                    "dns_rebinding_prevention original_url=%s request_url=%s "
+                    "hostname=%s ip=%s",
+                    params.url, request_url, hostname, ip
+                )
+
         resp = client.get(
-            params.url,
+            request_url,
             headers=headers,
             cookies=cookies,
             timeout=params.timeout or EXTERNAL_TIMEOUT_SECS,
