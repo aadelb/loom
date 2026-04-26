@@ -85,7 +85,7 @@ class TestSearchHackerNews:
 
         assert result["results"] == []
         assert result["query"] == "error test"
-        assert "API down" in result["error"]
+        assert "search failed" in result["error"]
 
 
 class TestSearchReddit:
@@ -165,4 +165,4 @@ class TestSearchReddit:
 
         assert result["results"] == []
         assert result["query"] == "error test"
-        assert "Reddit API down" in result["error"]
+        assert "search failed" in result["error"]

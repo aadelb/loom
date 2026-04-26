@@ -93,6 +93,12 @@ class ConfigModel(BaseModel):
     # Fetch
     FETCH_AUTO_ESCALATE: bool = True
 
+    # Rate limits (per-minute sliding window)
+    RATE_LIMIT_SEARCH_PER_MIN: int = Field(default=30, ge=1, le=200)
+    RATE_LIMIT_DEEP_PER_MIN: int = Field(default=5, ge=1, le=50)
+    RATE_LIMIT_LLM_PER_MIN: int = Field(default=20, ge=1, le=200)
+    RATE_LIMIT_FETCH_PER_MIN: int = Field(default=60, ge=1, le=500)
+
     # Advanced pipeline stages (off by default — enable for thorough research)
     RESEARCH_COMMUNITY_SENTIMENT: bool = False
     RESEARCH_RED_TEAM: bool = False

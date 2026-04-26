@@ -99,6 +99,8 @@ class OpenAIProvider(LLMProvider):
         Returns:
             LLMResponse with text, tokens, cost, latency
         """
+        # Validate timeout to prevent abuse (HIGH #8)
+        timeout = max(1, min(int(timeout), 600))
         model = model or self.default_model
         client = self._get_client()
         start = time.time()
@@ -176,6 +178,8 @@ class OpenAIProvider(LLMProvider):
         Returns:
             List of embedding vectors
         """
+        # Validate timeout to prevent abuse (HIGH #6)
+        timeout = max(1, min(int(timeout), 600))
         model = model or "text-embedding-3-small"
         client = self._get_client()
         start = time.time()

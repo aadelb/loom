@@ -69,5 +69,6 @@ def search_ddgs(
         return {"results": results, "query": query}
 
     except Exception as exc:
-        logger.exception("ddgs_search_failed query=%s", query[:50])
-        return {"results": [], "query": query, "error": str(exc)}
+        # Don't log full exception to avoid leaking data (HIGH #9)
+        logger.error("ddgs_search_failed query=%s: %s", query[:50], type(exc).__name__)
+        return {"results": [], "query": query, "error": "search failed"}

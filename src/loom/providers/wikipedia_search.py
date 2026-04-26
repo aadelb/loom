@@ -30,6 +30,12 @@ def search_wikipedia(
     Returns:
         Normalized result dict with ``results`` list and ``query``.
     """
+    # Validate language code to prevent URL injection (HIGH #7)
+    if not language or not all(c.isalnum() or c == "-" for c in language):
+        language = "en"
+    if len(language) > 5:  # Language codes are typically 2-5 chars
+        language = "en"
+
     n = min(n, 10)
     base = f"https://{language}.wikipedia.org"
 

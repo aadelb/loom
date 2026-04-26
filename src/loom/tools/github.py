@@ -46,8 +46,9 @@ def research_github(
     if kind == "repos":
         kind = "repo"
 
-    # Reject shell injection and flag injection patterns
-    if any(pattern in query for pattern in ["$", "(", ")", "`", "--", "&&", "||", ";"]):
+    from loom.validators import GH_QUERY_RE
+
+    if not GH_QUERY_RE.match(query) or "--" in query:
         return {"error": "Query contains disallowed characters (allow-list violated)"}
 
     limit = max(1, min(limit, 100))

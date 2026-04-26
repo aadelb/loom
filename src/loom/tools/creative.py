@@ -16,6 +16,7 @@ Tools:
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import time
 from functools import partial
@@ -26,6 +27,21 @@ import httpx
 logger = logging.getLogger("loom.tools.creative")
 
 _SEMANTIC_SCHOLAR_URL = "https://api.semanticscholar.org/graph/v1"
+
+
+def _parse_llm_json(text: str, fallback: Any = None) -> Any:
+    """Parse JSON from LLM output, stripping markdown code fences."""
+    text = text.strip()
+    if text.startswith("```json"):
+        text = text[7:]
+    elif text.startswith("```"):
+        text = text[3:]
+    if text.endswith("```"):
+        text = text[:-3]
+    try:
+        return json.loads(text.strip())
+    except (json.JSONDecodeError, ValueError):
+        return fallback if fallback is not None else []
 
 
 def _get_with_retry(
@@ -114,9 +130,7 @@ async def research_red_team(
         )
         total_cost += chat_result.get("cost_usd", 0.0)
 
-        import json
-
-        counter_claims = json.loads(chat_result.get("text", "[]"))
+        counter_claims = _parse_llm_json(chat_result.get("text", "[]"), fallback=[])
         if not isinstance(counter_claims, list):
             counter_claims = []
     except Exception:
@@ -212,7 +226,12 @@ async def research_multilingual(
         except Exception as exc:
             per_lang_results[lang] = [{"error": str(exc)}]
 
-    await asyncio.gather(*[_search_lang(lang) for lang in languages])
+    gather_results = await asyncio.gather(
+        *[_search_lang(lang) for lang in languages], return_exceptions=True
+    )
+    for r in gather_results:
+        if isinstance(r, BaseException):
+            logger.warning("multilingual_search_failed: %s", r)
 
     all_urls: set[str] = set()
     unique_per_lang: dict[str, list[str]] = {}
@@ -293,7 +312,12 @@ async def research_consensus(
         except Exception as exc:
             logger.debug("creative_tool_error: %s", exc)
 
-    await asyncio.gather(*[_search_provider(p) for p in providers])
+    consensus_results = await asyncio.gather(
+        *[_search_provider(p) for p in providers], return_exceptions=True
+    )
+    for r in consensus_results:
+        if isinstance(r, BaseException):
+            logger.warning("consensus_search_failed: %s", r)
 
     total_providers = len(providers_used)
     scored = list(url_votes.values())
@@ -354,9 +378,7 @@ async def research_misinfo_check(
             max_tokens=300,
             temperature=0.3,
         )
-        import json
-
-        false_claims = json.loads(chat_result.get("text", "[]"))
+        false_claims = _parse_llm_json(chat_result.get("text", "[]"), fallback=[])
         if not isinstance(false_claims, list):
             false_claims = []
     except Exception:
@@ -663,7 +685,7 @@ async def research_ai_detect(
         )
         import json
 
-        analysis = json.loads(result.get("text", "{}"))
+        analysis = _parse_llm_json(result.get("text", "{}"), fallback={})
         prob = analysis.get("ai_probability", 50) / 100.0
 
         return {
@@ -724,11 +746,15 @@ async def research_curriculum(
         except Exception as exc:
             logger.debug("creative_tool_error: %s", exc)
 
-    await asyncio.gather(
+    curriculum_results = await asyncio.gather(
         _search_level("beginner", "wikipedia", "introduction basics"),
         _search_level("intermediate", "ddgs", "tutorial guide explained"),
         _search_level("advanced", "ddgs", "research paper technical deep dive"),
+        return_exceptions=True,
     )
+    for r in curriculum_results:
+        if isinstance(r, BaseException):
+            logger.warning("curriculum_search_failed: %s", r)
 
     try:
         from loom.providers.arxiv_search import search_arxiv
@@ -948,8 +974,14 @@ async def research_semantic_sitemap(
 
     loop = asyncio.get_running_loop()
 
+    from loom.validators import UrlSafetyError, validate_url
+
     if not domain.startswith("http"):
         domain = f"https://{domain}"
+    try:
+        validate_url(domain)
+    except UrlSafetyError as e:
+        return {"domain": domain, "error": f"SSRF blocked: {e}", "clusters": []}
     parsed = urlparse(domain)
     base = f"{parsed.scheme}://{parsed.netloc}"
 

@@ -40,11 +40,12 @@ def research_search(
         Dict with keys: provider, query, results (list of dicts), error (if any)
     """
     from loom.config import get_config
+    from loom.validators import filter_provider_config
 
     config = get_config()
     if provider is None:
         provider = config.get("DEFAULT_SEARCH_PROVIDER", "exa")
-    provider_config = provider_config or {}
+    provider_config = filter_provider_config(provider, provider_config)
 
     # Validate and normalize
     n = max(1, min(n, 50))

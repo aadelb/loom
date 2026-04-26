@@ -7,6 +7,7 @@ import logging
 import subprocess
 import sys
 from typing import Any
+from urllib.parse import urlparse
 
 logger = logging.getLogger("loom.providers.youtube_transcripts")
 
@@ -28,6 +29,16 @@ def fetch_youtube_transcript(
     Returns:
         Dict with ``transcript`` (text), ``title``, ``duration``, ``url``.
     """
+    # Validate URL to prevent subprocess injection (CRITICAL #1)
+    try:
+        parsed = urlparse(url)
+        if parsed.scheme not in ("http", "https"):
+            return {"url": url, "transcript": "", "error": "invalid URL scheme"}
+        if not parsed.netloc:
+            return {"url": url, "transcript": "", "error": "invalid URL"}
+    except Exception:
+        return {"url": url, "transcript": "", "error": "invalid URL format"}
+
     try:
         result = subprocess.run(
             [
@@ -43,6 +54,7 @@ def fetch_youtube_transcript(
                 "--dump-json",
                 "--no-warnings",
                 "--quiet",
+                "--",
                 url,
             ],
             capture_output=True,
@@ -119,5 +131,6 @@ def fetch_youtube_transcript(
     except subprocess.TimeoutExpired:
         return {"url": url, "transcript": "", "error": "yt-dlp timed out"}
     except Exception as exc:
-        logger.exception("youtube_transcript_failed url=%s", url)
-        return {"url": url, "transcript": "", "error": str(exc)}
+        # Don't log full exception to avoid leaking data (HIGH #9)
+        logger.error("youtube_transcript_failed url=%s: %s", url, type(exc).__name__)
+        return {"url": url, "transcript": "", "error": "transcript extraction failed"}

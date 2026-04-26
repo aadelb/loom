@@ -137,7 +137,7 @@ class TestSearchExa:
 
             result = search_exa("test")
 
-        assert "API down" in result["error"]
+        assert "search failed" in result["error"]
         assert result["results"] == []
 
 

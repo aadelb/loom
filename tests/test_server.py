@@ -78,6 +78,7 @@ class TestServerCreateApp:
             "research_llm_answer",
             "research_llm_embed",
             "research_llm_chat",
+            "research_health_check",
         }
         missing = expected - names
         assert not missing, f"missing tools: {missing}"

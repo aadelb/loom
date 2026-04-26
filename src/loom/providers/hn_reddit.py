@@ -52,8 +52,9 @@ def search_hackernews(
         return {"results": results, "query": query, "source": "hackernews"}
 
     except Exception as exc:
-        logger.exception("hn_search_failed query=%s", query[:50])
-        return {"results": [], "query": query, "source": "hackernews", "error": str(exc)}
+        # Don't log full exception to avoid leaking data (HIGH #9)
+        logger.error("hn_search_failed query=%s: %s", query[:50], type(exc).__name__)
+        return {"results": [], "query": query, "source": "hackernews", "error": "search failed"}
 
 
 def search_reddit(
@@ -76,6 +77,17 @@ def search_reddit(
     Returns:
         Normalized result dict.
     """
+    # Validate sort and time_filter to prevent parameter injection (MEDIUM #11)
+    valid_sorts = {"relevance", "hot", "top", "new"}
+    valid_times = {"hour", "day", "week", "month", "year", "all"}
+    sort = sort if sort in valid_sorts else "relevance"
+    time_filter = time_filter if time_filter in valid_times else "all"
+
+    # Validate subreddit to prevent traversal
+    if subreddit:
+        if not all(c.isalnum() or c == "_" for c in subreddit):
+            subreddit = None
+
     if subreddit:
         url = f"https://www.reddit.com/r/{subreddit}/search.json"
     else:
@@ -117,5 +129,6 @@ def search_reddit(
         return {"results": results, "query": query, "source": "reddit"}
 
     except Exception as exc:
-        logger.exception("reddit_search_failed query=%s", query[:50])
-        return {"results": [], "query": query, "source": "reddit", "error": str(exc)}
+        # Don't log full exception to avoid leaking data (HIGH #9)
+        logger.error("reddit_search_failed query=%s: %s", query[:50], type(exc).__name__)
+        return {"results": [], "query": query, "source": "reddit", "error": "search failed"}

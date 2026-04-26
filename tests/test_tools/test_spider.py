@@ -61,16 +61,15 @@ async def test_spider_respects_concurrency_limit() -> None:
     max_concurrent = 0
     lock = asyncio.Lock()
 
-    async def slow_fetch(*args, **kwargs):  # type: ignore
+    def slow_fetch(*args, **kwargs):  # type: ignore
         nonlocal concurrent_count, max_concurrent
-        async with lock:
-            concurrent_count += 1
-            max_concurrent = max(max_concurrent, concurrent_count)
+        concurrent_count += 1
+        max_concurrent = max(max_concurrent, concurrent_count)
 
-        await asyncio.sleep(0.01)
+        import time
+        time.sleep(0.01)
 
-        async with lock:
-            concurrent_count -= 1
+        concurrent_count -= 1
 
         return {
             "url": kwargs.get("url", ""),

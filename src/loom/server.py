@@ -1,23 +1,36 @@
 """FastMCP server entrypoint for Loom MCP service.
 
-Exports the FastMCP instance with all 23 research tools registered
+Exports the FastMCP instance with all research tools registered
 via dynamic tool discovery from the loom.tools namespace.
 """
 
 from __future__ import annotations
 
+import asyncio
+import functools
 import logging
 import os
+import signal
+import time
+from collections.abc import Callable
 from contextlib import suppress
+from datetime import UTC, datetime
 from typing import Any
 
 from mcp.server import FastMCP
 
 from loom.config import load_config, research_config_get, research_config_set
-from loom.sessions import research_session_close, research_session_list, research_session_open
+from loom.rate_limiter import rate_limited
+from loom.sessions import (
+    cleanup_all_sessions,
+    research_session_close,
+    research_session_list,
+    research_session_open,
+)
 
 # Import tool modules to register their functions
 from loom.tools import cache_mgmt, deep, fetch, github, markdown, search, spider, stealth
+from loom.tracing import install_tracing, new_request_id
 
 log = logging.getLogger("loom.server")
 
@@ -49,6 +62,49 @@ with suppress(ImportError):
     _optional_tools["youtube"] = yt_tools
 
 
+_start_time = time.time()
+
+
+async def research_health_check() -> dict[str, Any]:
+    """Return server health status for monitoring."""
+    from loom.sessions import _sessions
+
+    return {
+        "status": "healthy",
+        "timestamp": datetime.now(UTC).isoformat(),
+        "uptime_seconds": int(time.time() - _start_time),
+        "active_sessions": len(_sessions),
+    }
+
+
+def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callable[..., Any]:
+    """Wrap tool with tracing and optional rate limiting.
+
+    Handles both sync and async tool functions correctly.
+    """
+    import inspect
+
+    is_async = inspect.iscoroutinefunction(func)
+
+    if is_async:
+        if category:
+            func = rate_limited(category)(func)
+
+        @functools.wraps(func)
+        async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
+            new_request_id()
+            return await func(*args, **kwargs)
+
+        return async_wrapper
+    else:
+        @functools.wraps(func)
+        def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
+            new_request_id()
+            return func(*args, **kwargs)
+
+        return sync_wrapper
+
+
 def _register_tools(mcp: FastMCP) -> None:
     """Register all MCP tools from tool modules.
 
@@ -59,35 +115,38 @@ def _register_tools(mcp: FastMCP) -> None:
         mcp: FastMCP instance to register tools with
     """
     # Core tools: fetch, spider, markdown, search, deep, github, stealth, cache
-    mcp.tool()(fetch.research_fetch)
-    mcp.tool()(spider.research_spider)
-    mcp.tool()(markdown.research_markdown)
-    mcp.tool()(search.research_search)
-    mcp.tool()(deep.research_deep)
-    mcp.tool()(github.research_github)
-    mcp.tool()(stealth.research_camoufox)
-    mcp.tool()(stealth.research_botasaurus)
-    mcp.tool()(cache_mgmt.research_cache_stats)
-    mcp.tool()(cache_mgmt.research_cache_clear)
+    mcp.tool()(_wrap_tool(fetch.research_fetch, "fetch"))
+    mcp.tool()(_wrap_tool(spider.research_spider, "fetch"))
+    mcp.tool()(_wrap_tool(markdown.research_markdown, "fetch"))
+    mcp.tool()(_wrap_tool(search.research_search, "search"))
+    mcp.tool()(_wrap_tool(deep.research_deep, "deep"))
+    mcp.tool()(_wrap_tool(github.research_github, "search"))
+    mcp.tool()(_wrap_tool(stealth.research_camoufox, "fetch"))
+    mcp.tool()(_wrap_tool(stealth.research_botasaurus, "fetch"))
+    mcp.tool()(_wrap_tool(cache_mgmt.research_cache_stats))
+    mcp.tool()(_wrap_tool(cache_mgmt.research_cache_clear))
 
     # Session tools
-    mcp.tool()(research_session_open)
-    mcp.tool()(research_session_list)
-    mcp.tool()(research_session_close)
+    mcp.tool()(_wrap_tool(research_session_open))
+    mcp.tool()(_wrap_tool(research_session_list))
+    mcp.tool()(_wrap_tool(research_session_close))
 
     # Config tools
-    mcp.tool()(research_config_get)
-    mcp.tool()(research_config_set)
+    mcp.tool()(_wrap_tool(research_config_get))
+    mcp.tool()(_wrap_tool(research_config_set))
+
+    # Health check
+    mcp.tool()(_wrap_tool(research_health_check))
 
     # GitHub enhanced tools
-    mcp.tool()(github.research_github_readme)
-    mcp.tool()(github.research_github_releases)
+    mcp.tool()(_wrap_tool(github.research_github_readme, "fetch"))
+    mcp.tool()(_wrap_tool(github.research_github_releases, "fetch"))
 
     # Exa find_similar (if exa provider exists)
     try:
         from loom.providers.exa import find_similar_exa
 
-        mcp.tool()(find_similar_exa)
+        mcp.tool()(_wrap_tool(find_similar_exa, "search"))
     except ImportError:
         pass
 
@@ -95,35 +154,35 @@ def _register_tools(mcp: FastMCP) -> None:
     if "llm" in _optional_tools:
         llm_mod = _optional_tools["llm"]
         if hasattr(llm_mod, "research_llm_summarize"):
-            mcp.tool()(llm_mod.research_llm_summarize)
+            mcp.tool()(_wrap_tool(llm_mod.research_llm_summarize, "llm"))
         if hasattr(llm_mod, "research_llm_extract"):
-            mcp.tool()(llm_mod.research_llm_extract)
+            mcp.tool()(_wrap_tool(llm_mod.research_llm_extract, "llm"))
         if hasattr(llm_mod, "research_llm_classify"):
-            mcp.tool()(llm_mod.research_llm_classify)
+            mcp.tool()(_wrap_tool(llm_mod.research_llm_classify, "llm"))
         if hasattr(llm_mod, "research_llm_translate"):
-            mcp.tool()(llm_mod.research_llm_translate)
+            mcp.tool()(_wrap_tool(llm_mod.research_llm_translate, "llm"))
         if hasattr(llm_mod, "research_llm_query_expand"):
-            mcp.tool()(llm_mod.research_llm_query_expand)
+            mcp.tool()(_wrap_tool(llm_mod.research_llm_query_expand, "llm"))
         if hasattr(llm_mod, "research_llm_answer"):
-            mcp.tool()(llm_mod.research_llm_answer)
+            mcp.tool()(_wrap_tool(llm_mod.research_llm_answer, "llm"))
         if hasattr(llm_mod, "research_llm_embed"):
-            mcp.tool()(llm_mod.research_llm_embed)
+            mcp.tool()(_wrap_tool(llm_mod.research_llm_embed, "llm"))
         if hasattr(llm_mod, "research_llm_chat"):
-            mcp.tool()(llm_mod.research_llm_chat)
+            mcp.tool()(_wrap_tool(llm_mod.research_llm_chat, "llm"))
 
     # Enrichment tools (if available)
     if "enrich" in _optional_tools:
         enrich_mod = _optional_tools["enrich"]
         if hasattr(enrich_mod, "research_detect_language"):
-            mcp.tool()(enrich_mod.research_detect_language)
+            mcp.tool()(_wrap_tool(enrich_mod.research_detect_language))
         if hasattr(enrich_mod, "research_wayback"):
-            mcp.tool()(enrich_mod.research_wayback)
+            mcp.tool()(_wrap_tool(enrich_mod.research_wayback, "fetch"))
 
     # Expert finder (if available)
     if "experts" in _optional_tools:
         experts_mod = _optional_tools["experts"]
         if hasattr(experts_mod, "research_find_experts"):
-            mcp.tool()(experts_mod.research_find_experts)
+            mcp.tool()(_wrap_tool(experts_mod.research_find_experts, "llm"))
 
     # Creative research tools (if available)
     if "creative" in _optional_tools:
@@ -143,13 +202,13 @@ def _register_tools(mcp: FastMCP) -> None:
         ]
         for tool_name in _creative_tools:
             if hasattr(creative_mod, tool_name):
-                mcp.tool()(getattr(creative_mod, tool_name))
+                mcp.tool()(_wrap_tool(getattr(creative_mod, tool_name), "llm"))
 
     # YouTube transcript tool (if yt-dlp available)
     if "youtube" in _optional_tools:
         yt_mod = _optional_tools["youtube"]
         if hasattr(yt_mod, "fetch_youtube_transcript"):
-            mcp.tool()(yt_mod.fetch_youtube_transcript)
+            mcp.tool()(_wrap_tool(yt_mod.fetch_youtube_transcript, "fetch"))
 
 
 def create_app() -> FastMCP:
@@ -164,12 +223,13 @@ def create_app() -> FastMCP:
     # Load runtime config
     config = load_config()
 
-    # Set up logging
+    # Set up logging with request_id support
     log_level = config.get("LOG_LEVEL", "INFO")
     logging.basicConfig(
         level=getattr(logging, log_level),
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        format="%(asctime)s - %(name)s - %(levelname)s - [%(request_id)s] %(message)s",
     )
+    install_tracing()
 
     # Create FastMCP instance
     host = os.environ.get("LOOM_HOST", "127.0.0.1")
@@ -194,12 +254,67 @@ def create_app() -> FastMCP:
     return mcp
 
 
+async def _shutdown() -> None:
+    """Graceful shutdown: close all browser sessions, HTTP clients, and providers."""
+    log.info("shutdown_signal_received")
+    try:
+        result = await cleanup_all_sessions()
+        log.info(
+            "shutdown_sessions_closed=%d errors=%d",
+            len(result.get("closed", [])),
+            len(result.get("errors", [])),
+        )
+    except Exception as exc:
+        log.error("shutdown_sessions_error: %s", exc)
+
+    # Close httpx connection pool
+    try:
+        from loom.tools.fetch import _http_client
+
+        if _http_client is not None:
+            _http_client.close()
+            log.info("shutdown_http_client_closed")
+    except Exception as exc:
+        log.error("shutdown_http_client_error: %s", exc)
+
+    # Close LLM provider clients
+    try:
+        if "llm" in _optional_tools:
+            from loom.tools.llm import close_all_providers
+
+            await close_all_providers()
+            log.info("shutdown_providers_closed")
+    except Exception as exc:
+        log.error("shutdown_providers_error: %s", exc)
+
+    log.info("shutdown_complete")
+
+
+_background_tasks: set[asyncio.Task[None]] = set()
+
+
+def _handle_signal(sig: int, _frame: Any) -> None:
+    """Signal handler that runs the async shutdown in a new event loop."""
+    log.info("received_signal=%s", signal.Signals(sig).name)
+    try:
+        loop = asyncio.get_running_loop()
+        task = loop.create_task(_shutdown())
+        _background_tasks.add(task)
+        task.add_done_callback(_background_tasks.discard)
+    except RuntimeError:
+        asyncio.run(_shutdown())
+
+
 def main() -> None:
     """Console script entry point. Creates the app and runs the MCP server.
 
     Invoked by the 'loom-server' console script registered in pyproject.toml.
     """
     app = create_app()
+
+    signal.signal(signal.SIGTERM, _handle_signal)
+    signal.signal(signal.SIGINT, _handle_signal)
+
     log.info("Starting Loom MCP server on streamable-http transport")
     app.run(transport="streamable-http")
 

@@ -69,12 +69,19 @@ class CacheStore:
     def get(self, key: str) -> dict[str, Any] | None:
         """Retrieve cached value by key.
 
+        Searches today's directory first, then all date directories
+        so entries from previous days still produce cache hits.
+
         Args:
             key: cache key
 
         Returns:
             Cached dict if found and valid JSON, None otherwise.
         """
+        h = hashlib.sha256(key.encode("utf-8")).hexdigest()[:32]
+        filename = f"{h}.json"
+
+        # Fast path: check today's directory
         p = self._cache_path(key)
         if p.exists():
             try:
@@ -82,6 +89,18 @@ class CacheStore:
             except Exception as e:
                 log.debug("cache_get_failed key=%s: %s", key, e)
                 return None
+
+        # Slow path: search all date directories (newest first)
+        try:
+            matches = sorted(self.base_dir.glob(f"*/{filename}"), reverse=True)
+            for match in matches:
+                try:
+                    return cast(dict[str, Any] | None, json.loads(match.read_text(encoding="utf-8")))
+                except Exception:
+                    continue
+        except Exception as e:
+            log.debug("cache_glob_failed key=%s: %s", key, e)
+
         return None
 
     def put(self, key: str, value: dict[str, Any]) -> None:

@@ -73,4 +73,4 @@ class TestTrafilaturaExtract:
 
             result = extract_with_trafilatura(url="https://example.com")
 
-        assert "network error" in result["error"]
+        assert "extraction failed" in result["error"]

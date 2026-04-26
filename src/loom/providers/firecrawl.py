@@ -91,5 +91,6 @@ def search_firecrawl(
         return {"results": results, "query": query}
 
     except Exception as exc:
-        logger.exception("firecrawl_search_failed query=%s", query[:50])
-        return {"results": [], "query": query, "error": str(exc)}
+        # Don't log full exception to avoid leaking API keys (HIGH #4)
+        logger.error("firecrawl_search_failed query=%s: %s", query[:50], type(exc).__name__)
+        return {"results": [], "query": query, "error": "search failed"}

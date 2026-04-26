@@ -198,6 +198,10 @@ markers = [
   "live: marks tests that hit the live network",
   "integration: marks integration tests",
 ]
+filterwarnings = [
+  "ignore:Use `streamable_http_client`:DeprecationWarning",
+  "ignore:coroutine.*was never awaited:RuntimeWarning",
+]
 
 [tool.coverage.run]
 branch = true

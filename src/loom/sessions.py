@@ -111,11 +111,11 @@ async def _get_browser(
     """Launch or reuse a Playwright browser instance."""
     # Import here to avoid circular imports
     if browser_type == "camoufox":
-        from camoufox import Camoufox
+        from camoufox.async_api import AsyncNewBrowser
 
         # camoufox is untyped third-party — narrow to Any at the boundary
-        camou: Any = Camoufox()
-        launched: Browser = await camou.launch()
+        playwright = await async_playwright().start()
+        launched: Browser = await AsyncNewBrowser(playwright)  # type: ignore[no-untyped-call]
         return launched
     else:
         playwright = await async_playwright().start()
@@ -175,8 +175,15 @@ async def open_session(
             # onto the browser engine literal (camoufox|chromium|firefox) that
             # _get_browser accepts. Both patchright and playwright drive
             # Chromium under the hood, so they map to "chromium".
-            engine: Literal["camoufox", "chromium", "firefox"] = (
-                "camoufox" if params.browser == "camoufox" else "chromium"
+            _engine_map: dict[str, Literal["camoufox", "chromium", "firefox"]] = {
+                "camoufox": "camoufox",
+                "playwright": "chromium",
+                "patchright": "chromium",
+                "chromium": "chromium",
+                "firefox": "firefox",
+            }
+            engine: Literal["camoufox", "chromium", "firefox"] = _engine_map.get(
+                params.browser, "chromium"
             )
             browser_instance = await _get_browser(engine)
 
@@ -250,15 +257,16 @@ async def close_session(name: str) -> dict[str, Any]:
             return {"name": name, "status": "not_found"}
 
         logger.info("session_close name=%s", name)
-        try:
-            await _sessions[name].close()
-            del _sessions[name]
-            _metadata.pop(name, None)
-            _delete_metadata(name)
-            return {"name": name, "status": "closed"}
-        except Exception as e:
-            logger.warning("session_close_failed name=%s error=%s", name, e)
-            return {"name": name, "status": "error", "error": str(e)}
+        session = _sessions.pop(name)
+        _metadata.pop(name, None)
+        _delete_metadata(name)
+
+    try:
+        await session.close()
+        return {"name": name, "status": "closed"}
+    except Exception as e:
+        logger.warning("session_close_failed name=%s error=%s", name, e)
+        return {"name": name, "status": "error", "error": str(e)}
 
 
 async def get_session(name: str) -> BrowserContext | None:
@@ -415,6 +423,26 @@ async def cleanup_sessions(max_sessions: int = 10) -> dict[str, Any]:
             "closed_count": len(closed),
             "status": "cleanup_complete",
         }
+
+
+async def cleanup_all_sessions() -> dict[str, Any]:
+    """Close ALL active sessions. Called during server shutdown."""
+    async with _lock:
+        names = list(_sessions.keys())
+    closed: list[str] = []
+    errors: list[str] = []
+    for name in names:
+        try:
+            result = await close_session(name)
+            if result.get("status") == "closed":
+                closed.append(name)
+            elif result.get("error"):
+                errors.append(f"{name}: {result['error']}")
+        except Exception as e:
+            logger.error("session_cleanup_failed name=%s error=%s", name, e)
+            errors.append(f"{name}: {e}")
+    logger.info("cleanup_all_sessions closed=%d errors=%d", len(closed), len(errors))
+    return {"closed": closed, "errors": errors}
 
 
 def tool_session_open(

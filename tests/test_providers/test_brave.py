@@ -138,4 +138,4 @@ class TestSearchBrave:
 
             result = search_brave("test")
 
-        assert "DNS failed" in result["error"]
+        assert "search failed" in result["error"]

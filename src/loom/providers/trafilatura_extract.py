@@ -67,5 +67,6 @@ def extract_with_trafilatura(
         }
 
     except Exception as exc:
-        logger.exception("trafilatura_extract_failed url=%s", url or "html")
-        return {"text": "", "error": str(exc)}
+        # Don't log full exception to avoid leaking data (HIGH #9)
+        logger.error("trafilatura_extract_failed url=%s: %s", url or "html", type(exc).__name__)
+        return {"text": "", "error": "extraction failed"}

@@ -20,6 +20,16 @@ import pytest
 from httpx import MockTransport, Response
 
 
+@pytest.fixture(autouse=True)
+def _reset_rate_limiters() -> None:
+    """Reset rate limiter state between tests to prevent cross-test contamination."""
+    from loom.rate_limiter import reset_all
+
+    reset_all()
+    yield
+    reset_all()
+
+
 @pytest.fixture
 def tmp_cache_dir() -> Path:
     """Temporary cache directory for isolated tests."""

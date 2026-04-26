@@ -79,4 +79,4 @@ class TestSearchArxiv:
 
             result = search_arxiv("test")
 
-        assert "API error" in result["error"]
+        assert "search failed" in result["error"]

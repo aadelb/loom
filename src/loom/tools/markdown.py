@@ -85,8 +85,12 @@ async def research_markdown(
         wait_for=wait_for,
     )
 
+    import hashlib as _hl
+
     cache = _get_cache()
-    cache_key = f"markdown::{params.url}"
+    params_sig = f"{params.css_selector}|{params.js_before_scrape}|{params.remove_selectors}"
+    params_hash = _hl.sha256(params_sig.encode()).hexdigest()[:8]
+    cache_key = f"markdown::{params.url}::{params_hash}"
 
     if not params.bypass_cache:
         cached = cache.get(cache_key)

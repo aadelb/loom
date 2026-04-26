@@ -127,7 +127,7 @@ class TestSearchFirecrawl:
 
             result = search_firecrawl("test")
 
-        assert "API down" in result["error"]
+        assert "search failed" in result["error"]
 
     def test_snippet_truncation(self):
         mock_app_cls = MagicMock()

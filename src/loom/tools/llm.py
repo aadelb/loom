@@ -47,6 +47,18 @@ def _get_provider(name: str) -> Any:
     return _PROVIDERS[name]
 
 
+async def close_all_providers() -> None:
+    """Close all initialized LLM provider clients. Called during shutdown."""
+    for name, provider in list(_PROVIDERS.items()):
+        try:
+            if hasattr(provider, "close"):
+                await provider.close()
+                logger.info("provider_closed name=%s", name)
+        except Exception as exc:
+            logger.warning("provider_close_failed name=%s error=%s", name, exc)
+    _PROVIDERS.clear()
+
+
 class CostTracker:
     """Track and enforce daily LLM cost limits.
 
@@ -80,7 +92,16 @@ class CostTracker:
         self._lock = _threading.Lock()
 
     def _cost_file(self, date_str: str) -> Path:
-        """Get cost log file for a given date."""
+        """Get cost log file for a given date.
+
+        Validates date_str format to prevent path traversal (CRITICAL #3a).
+        """
+        # Validate date_str is ISO format YYYY-MM-DD to prevent traversal
+        if len(date_str) != 10 or date_str[4] != "-" or date_str[7] != "-":
+            raise ValueError(f"invalid date format: {date_str}")
+        # Only allow alphanumeric and hyphens
+        if not all(c.isdigit() or c == "-" for c in date_str):
+            raise ValueError(f"invalid date format: {date_str}")
         return self.logs_dir / f"llm_cost_{date_str}.json"
 
     def _read_locked(self, cost_file: Path) -> dict[str, Any]:
@@ -130,7 +151,12 @@ class CostTracker:
                 import fcntl as _fcntl
 
                 lock_path = cost_file.with_suffix(cost_file.suffix + ".lock")
-                lock_fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o600)
+                # Use os.O_EXCL to atomically create lock file (CRITICAL #3b)
+                lock_fd = os.open(
+                    str(lock_path),
+                    os.O_CREAT | os.O_RDWR,
+                    0o600,
+                )
                 try:
                     _fcntl.flock(lock_fd, _fcntl.LOCK_EX)
                     self._add_cost_locked(cost_file, today, cost_usd, provider, model, daily_cap)
@@ -138,7 +164,7 @@ class CostTracker:
                     with contextlib.suppress(Exception):
                         _fcntl.flock(lock_fd, _fcntl.LOCK_UN)
                     os.close(lock_fd)
-            except ImportError:
+            except (ImportError, AttributeError, OSError):
                 # fcntl not available (e.g. Windows) — fall back to in-process
                 # threading lock only; document the limitation.
                 self._add_cost_locked(cost_file, today, cost_usd, provider, model, daily_cap)
@@ -223,14 +249,18 @@ def _safe_error_str(exc: Exception | None) -> str:
 
 
 def _sanitize_error(error_str: str) -> str:
-    """Remove API keys from error messages.
-
-    Strips patterns like:
-    - sk-[A-Za-z0-9_-]{10,} (OpenAI)
-    - nvapi-[A-Za-z0-9_-]{10,} (NVIDIA NIM)
-    """
-    error_str = re.sub(r"sk-[A-Za-z0-9_\-]{10,}", "[OPENAI_KEY_REDACTED]", error_str)
-    error_str = re.sub(r"nvapi-[A-Za-z0-9_\-]{10,}", "[NVIDIA_KEY_REDACTED]", error_str)
+    """Remove API keys and tokens from error messages."""
+    # Use bounded quantifiers to prevent ReDoS (MEDIUM #13)
+    error_str = re.sub(r"sk-[A-Za-z0-9_\-]{10,50}", "[OPENAI_KEY_REDACTED]", error_str)
+    error_str = re.sub(r"nvapi-[A-Za-z0-9_\-]{10,50}", "[NVIDIA_KEY_REDACTED]", error_str)
+    error_str = re.sub(r"ghp_[A-Za-z0-9]{36}", "[GITHUB_TOKEN_REDACTED]", error_str)
+    error_str = re.sub(r"AKIA[0-9A-Z]{16}", "[AWS_KEY_REDACTED]", error_str)
+    error_str = re.sub(
+        r"Bearer\s+[A-Za-z0-9_\-\.]{10,50}",
+        "Bearer [TOKEN_REDACTED]",
+        error_str,
+        flags=re.IGNORECASE,
+    )
     return error_str
 
 
@@ -329,8 +359,8 @@ async def _call_with_cascade(
     if model == "auto":
         model = CONFIG.get("LLM_DEFAULT_CHAT_MODEL", "meta/llama-4-maverick-17b-128e-instruct")
 
-    last_error: Exception | None = None
     attempts: list[str] = []
+    all_errors: list[dict[str, str]] = []
 
     for provider in chain:
         if not provider.available():
@@ -374,17 +404,19 @@ async def _call_with_cascade(
             return response
 
         except (TimeoutError, Exception) as e:
+            error_msg = _sanitize_error(_safe_error_str(e))
+            all_errors.append({"provider": provider.name, "error": error_msg})
             logger.warning(
                 "llm_provider_failed provider=%s attempt=%d error=%s",
                 provider.name,
                 len(attempts),
-                _sanitize_error(_safe_error_str(e)),
+                error_msg,
             )
-            last_error = e
             continue
 
+    error_detail = "; ".join(f"{e['provider']}: {e['error']}" for e in all_errors)
     raise RuntimeError(
-        f"all providers failed (attempted {', '.join(attempts)}); last error: {_sanitize_error(_safe_error_str(last_error))}"
+        f"all providers failed (attempted {', '.join(attempts)}): {error_detail}"
     )
 
 

@@ -102,6 +102,8 @@ class NvidiaNimProvider(LLMProvider):
         Returns:
             LLMResponse with text, tokens, cost, latency
         """
+        # Validate timeout to prevent abuse (HIGH #8)
+        timeout = max(1, min(int(timeout), 600))
         model = model or self.default_model
         async with self.semaphore:
             return await self._chat_impl(

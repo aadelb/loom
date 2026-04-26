@@ -10,7 +10,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
-from loom.validators import validate_url
+from loom.validators import filter_headers, validate_js_script, validate_url
 
 
 class FetchParams(BaseModel):
@@ -59,6 +59,11 @@ class FetchParams(BaseModel):
             raise ValueError("proxy must start with http:// or https://")
         return v
 
+    @field_validator("headers")
+    @classmethod
+    def validate_headers(cls, v: dict[str, str] | None) -> dict[str, str] | None:
+        return filter_headers(v)
+
     @field_validator("retries")
     @classmethod
     def validate_retries(cls, v: int) -> int:
@@ -100,6 +105,11 @@ class SpiderParams(BaseModel):
         # Validate each URL individually
         return [validate_url(url) for url in v]
 
+    @field_validator("headers")
+    @classmethod
+    def validate_headers(cls, v: dict[str, str] | None) -> dict[str, str] | None:
+        return filter_headers(v)
+
     @field_validator("concurrency")
     @classmethod
     def validate_concurrency(cls, v: int) -> int:
@@ -133,11 +143,18 @@ class MarkdownParams(BaseModel):
     def validate_url_field(cls, v: str) -> str:
         return validate_url(v)
 
+    @field_validator("headers")
+    @classmethod
+    def validate_headers(cls, v: dict[str, str] | None) -> dict[str, str] | None:
+        return filter_headers(v)
+
     @field_validator("js_before_scrape")
     @classmethod
     def validate_js(cls, v: str | None) -> str | None:
-        if v is not None and len(v) > 2048:
-            raise ValueError("js_before_scrape max 2 KB")
+        if v is not None:
+            if len(v) > 2048:
+                raise ValueError("js_before_scrape max 2 KB")
+            validate_js_script(v)
         return v
 
 
@@ -279,8 +296,10 @@ class CamoufoxParams(BaseModel):
     @field_validator("js_before_scrape")
     @classmethod
     def validate_js(cls, v: str | None) -> str | None:
-        if v is not None and len(v) > 2048:
-            raise ValueError("js_before_scrape max 2 KB")
+        if v is not None:
+            if len(v) > 2048:
+                raise ValueError("js_before_scrape max 2 KB")
+            validate_js_script(v)
         return v
 
 
@@ -306,8 +325,10 @@ class BotasaurusParams(BaseModel):
     @field_validator("js_before_scrape")
     @classmethod
     def validate_js(cls, v: str | None) -> str | None:
-        if v is not None and len(v) > 2048:
-            raise ValueError("js_before_scrape max 2 KB")
+        if v is not None:
+            if len(v) > 2048:
+                raise ValueError("js_before_scrape max 2 KB")
+            validate_js_script(v)
         return v
 
 
@@ -339,6 +360,15 @@ class SessionOpenParams(BaseModel):
     def validate_login_url(cls, v: str | None) -> str | None:
         if v is not None:
             return validate_url(v)
+        return v
+
+    @field_validator("login_script")
+    @classmethod
+    def validate_login_script(cls, v: str | None) -> str | None:
+        if v is not None:
+            if len(v) > 2048:
+                raise ValueError("login_script max 2 KB")
+            validate_js_script(v)
         return v
 
     @field_validator("ttl_seconds")

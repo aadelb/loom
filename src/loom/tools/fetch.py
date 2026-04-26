@@ -27,6 +27,21 @@ from loom.validators import EXTERNAL_TIMEOUT_SECS, MAX_FETCH_CHARS
 
 logger = logging.getLogger("loom.tools.fetch")
 
+# Module-level connection pool for httpx (reused across calls).
+_http_client: httpx.Client | None = None
+
+
+def _get_http_client() -> httpx.Client:
+    """Return a shared httpx client with connection pooling."""
+    global _http_client
+    if _http_client is None:
+        _http_client = httpx.Client(
+            timeout=EXTERNAL_TIMEOUT_SECS,
+            follow_redirects=True,
+            limits=httpx.Limits(max_keepalive_connections=20, max_connections=100),
+        )
+    return _http_client
+
 
 class FetchResult(BaseModel):
     """Result from a fetch operation.
@@ -311,61 +326,66 @@ def _fetch_http_httpx(params: FetchParams) -> FetchResult:
     # Build cookies
     cookies = params.cookies or {}
 
-    # Configure client
-    client_kwargs: dict[str, Any] = {
-        "timeout": params.timeout or EXTERNAL_TIMEOUT_SECS,
-        "follow_redirects": True,
-    }
-    if params.proxy:
-        client_kwargs["proxy"] = params.proxy
-
+    proxy_client: httpx.Client | None = None
     try:
-        with httpx.Client(**client_kwargs) as client:
-            resp = client.get(
-                params.url,
-                headers=headers,
-                cookies=cookies,
+        if params.proxy:
+            proxy_client = httpx.Client(
+                timeout=params.timeout or EXTERNAL_TIMEOUT_SECS,
+                follow_redirects=True,
+                proxy=params.proxy,
             )
-            resp.raise_for_status()
+            client = proxy_client
+        else:
+            client = _get_http_client()
 
-            # Determine content type
-            content_type = resp.headers.get("content-type", "").lower()
+        resp = client.get(
+            params.url,
+            headers=headers,
+            cookies=cookies,
+            timeout=params.timeout or EXTERNAL_TIMEOUT_SECS,
+        )
+        resp.raise_for_status()
 
-            # Extract based on format
-            if params.return_format == "json" or "application/json" in content_type:
-                try:
-                    parsed_json = resp.json()
-                    return FetchResult(
-                        url=params.url,
-                        status_code=resp.status_code,
-                        content_type=content_type,
-                        json_data=parsed_json,
-                        tool="httpx",
-                    )
-                except ValueError:
-                    # Fall back to text
-                    pass
+        content_type = resp.headers.get("content-type", "").lower()
 
-            # HTML/text handling
-            html = resp.text if params.return_format == "html" else None
-            text = (
-                resp.text
-                if params.return_format == "text"
-                else _extract_text(resp.text, params.max_chars)
-            )
+        if params.return_format == "json" or "application/json" in content_type:
+            try:
+                parsed_json = resp.json()
+                return FetchResult(
+                    url=params.url,
+                    status_code=resp.status_code,
+                    content_type=content_type,
+                    json_data=parsed_json,
+                    tool="httpx",
+                )
+            except ValueError:
+                pass
 
-            return FetchResult(
-                url=params.url,
-                status_code=resp.status_code,
-                content_type=content_type,
-                text=text[: params.max_chars] if text else "",
-                html=html[: params.max_chars] if html else None,
-                tool="httpx",
-            )
+        html = resp.text if params.return_format == "html" else None
+        text = (
+            resp.text
+            if params.return_format == "text"
+            else _extract_text(resp.text, params.max_chars)
+        )
+
+        return FetchResult(
+            url=params.url,
+            status_code=resp.status_code,
+            content_type=content_type,
+            text=text[: params.max_chars] if text else "",
+            html=html[: params.max_chars] if html else None,
+            tool="httpx",
+        )
 
     except Exception as e:
         logger.warning("httpx_fetch_failed url=%s error=%s", params.url, e)
         return FetchResult(url=params.url, error=str(e), tool="httpx")
+    finally:
+        if proxy_client is not None:
+            try:
+                proxy_client.close()
+            except Exception as e:
+                logger.debug("proxy_client_close_error error=%s", e)
 
 
 def _fetch_stealthy(params: FetchParams) -> FetchResult:

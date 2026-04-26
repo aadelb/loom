@@ -107,6 +107,8 @@ class AnthropicProvider(LLMProvider):
         Returns:
             LLMResponse with text, tokens, cost, latency
         """
+        # Validate timeout to prevent abuse (HIGH #8)
+        timeout = max(1, min(int(timeout), 600))
         model = model or self.default_model
         client = self._get_client()
         start = time.time()

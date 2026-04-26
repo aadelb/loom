@@ -112,7 +112,7 @@ class TestSearchTavily:
 
             result = search_tavily("test")
 
-        assert "rate limited" in result["error"]
+        assert "search failed" in result["error"]
 
     def test_snippet_truncation(self):
         mock_client_cls = MagicMock()

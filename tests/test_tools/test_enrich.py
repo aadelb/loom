@@ -11,10 +11,11 @@ class TestDetectLanguage:
         mock_lang.prob = 0.99
         mock_lang.__str__ = lambda self: "en:0.99"
 
-        with (
-            patch("langdetect.detect", return_value="en"),
-            patch("langdetect.detect_langs", return_value=[mock_lang]),
-        ):
+        mock_langdetect = MagicMock()
+        mock_langdetect.detect = MagicMock(return_value="en")
+        mock_langdetect.detect_langs = MagicMock(return_value=[mock_lang])
+
+        with patch.dict("sys.modules", {"langdetect": mock_langdetect}):
             from loom.tools.enrich import research_detect_language
 
             result = research_detect_language("This is a test sentence in English.")

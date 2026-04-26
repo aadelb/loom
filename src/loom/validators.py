@@ -9,6 +9,7 @@ from __future__ import annotations
 import ipaddress
 import re
 import socket
+from typing import Any
 from urllib.parse import urlparse
 
 # Security & capacity constants
@@ -26,6 +27,101 @@ STEALTH_TIMEOUT = 60
 
 # GitHub CLI query allow-list regex (prevents flag injection)
 GH_QUERY_RE = re.compile(r"^[\w\s\-./:@#'\"?!()+,=\[\]&*~|<>]+$")
+
+# Header names that are safe for user-provided fetch requests.
+# Security-sensitive headers (Authorization, Host, Cookie, etc.) are excluded.
+SAFE_REQUEST_HEADERS: frozenset[str] = frozenset({
+    "accept",
+    "accept-encoding",
+    "accept-language",
+    "cache-control",
+    "dnt",
+    "pragma",
+    "referer",
+    "user-agent",
+    "x-requested-with",
+})
+
+# Per-provider allowlists for provider_config kwargs in research_search.
+PROVIDER_CONFIG_ALLOWLIST: dict[str, frozenset[str]] = {
+    "exa": frozenset({"include_domains", "exclude_domains", "start_date", "end_date", "type", "category"}),
+    "tavily": frozenset({"include_domains", "exclude_domains", "search_depth", "topic", "include_answer"}),
+    "firecrawl": frozenset({"include_domains", "exclude_domains"}),
+    "brave": frozenset({"spellcheck", "country", "search_lang", "ui_lang"}),
+    "ddgs": frozenset({"region", "time_range", "search_type"}),
+    "arxiv": frozenset({"sort_by", "sort_order"}),
+    "wikipedia": frozenset({"language"}),
+    "hackernews": frozenset({"tags", "numeric_filters"}),
+    "reddit": frozenset({"subreddit", "sort", "time_filter"}),
+}
+
+# Dangerous JavaScript APIs blocked in login_script / js_before_scrape.
+_JS_BLOCKED_PATTERNS: list[re.Pattern[str]] = [
+    re.compile(r"\bfetch\s*\(", re.IGNORECASE),
+    re.compile(r"\bXMLHttpRequest\b", re.IGNORECASE),
+    re.compile(r"\beval\s*\(", re.IGNORECASE),
+    re.compile(r"\bFunction\s*\(", re.IGNORECASE),
+    re.compile(r"\brequire\s*\(", re.IGNORECASE),
+    re.compile(r"\bimport\s*\(", re.IGNORECASE),
+    re.compile(r"\bWebSocket\b", re.IGNORECASE),
+    re.compile(r"\bWorker\b", re.IGNORECASE),
+    re.compile(r"\bnavigator\.sendBeacon\b", re.IGNORECASE),
+    # Bracket-notation bypasses for eval/fetch
+    re.compile(r"""window\s*\[\s*["']eval["']\s*\]""", re.IGNORECASE),
+    re.compile(r"""window\s*\[\s*["']fetch["']\s*\]""", re.IGNORECASE),
+    re.compile(r"\.constructor\s*\.\s*constructor\s*\(", re.IGNORECASE),
+]
+
+
+def validate_js_script(script: str) -> str:
+    """Validate a JS script does not use dangerous browser APIs.
+
+    Raises ValueError if a blocked pattern is found.
+    """
+    for pattern in _JS_BLOCKED_PATTERNS:
+        if pattern.search(script):
+            raise ValueError(
+                f"JavaScript contains disallowed API matching {pattern.pattern!r}"
+            )
+    return script
+
+
+def filter_headers(headers: dict[str, str] | None) -> dict[str, str] | None:
+    """Filter headers to the safe allowlist, logging any rejections."""
+    if not headers:
+        return headers
+    import logging
+
+    _log = logging.getLogger("loom.validators")
+    filtered: dict[str, str] = {}
+    for name, value in headers.items():
+        if name.lower() in SAFE_REQUEST_HEADERS:
+            if len(value) <= 512:
+                filtered[name] = value
+            else:
+                _log.warning("header_value_too_long name=%s len=%d", name, len(value))
+        else:
+            _log.warning("header_rejected name=%s", name)
+    return filtered or None
+
+
+def filter_provider_config(
+    provider: str, config: dict[str, Any] | None
+) -> dict[str, Any]:
+    """Filter provider_config to the per-provider allowlist."""
+    if not config:
+        return {}
+    import logging
+
+    _log = logging.getLogger("loom.validators")
+    allowed = PROVIDER_CONFIG_ALLOWLIST.get(provider, frozenset())
+    filtered = {k: v for k, v in config.items() if k in allowed}
+    rejected = set(config.keys()) - set(filtered.keys())
+    if rejected:
+        _log.warning(
+            "provider_config_rejected provider=%s keys=%s", provider, rejected
+        )
+    return filtered
 
 
 class UrlSafetyError(ValueError):

@@ -181,6 +181,7 @@ async def research_deep(
     start_time = time.time()
     config = get_config()
     total_cost = 0.0
+    warnings: list[dict[str, str]] = []
 
     if max_cost_usd is None:
         max_cost_usd = config.get("RESEARCH_MAX_COST_USD", 0.50)
@@ -219,6 +220,7 @@ async def research_deep(
                 total_cost += expand_result.get("cost_usd", 0.0)
         except Exception as exc:
             logger.warning("query_expand_skipped: %s", exc)
+            warnings.append({"stage": "expand", "error": str(exc)})
 
     # ── STAGE 2: Multi-Provider Search ───────────────────────────────────
     async def _run_search(q: str, provider: str) -> dict[str, Any]:
@@ -246,6 +248,7 @@ async def research_deep(
         )
     except TimeoutError:
         logger.warning("deep_search_timeout query=%s", query)
+        warnings.append({"stage": "search", "error": "timeout"})
         search_responses = []
 
     all_search_results: list[dict[str, Any]] = []
@@ -253,8 +256,11 @@ async def research_deep(
     for resp in search_responses:
         if isinstance(resp, dict):
             pname = resp.get("provider", "unknown")
-            if pname not in providers_used and "error" not in resp:
-                providers_used.append(pname)
+            if "error" in resp:
+                warnings.append({"stage": "search", "provider": pname, "error": resp["error"]})
+            else:
+                if pname not in providers_used:
+                    providers_used.append(pname)
             all_search_results.extend(resp.get("results", []))
 
     pages_searched = len(all_search_results)
@@ -270,6 +276,7 @@ async def research_deep(
             "top_pages": [],
             "synthesis": None,
             "github_repos": None,
+            "warnings": warnings,
             "total_cost_usd": total_cost,
             "elapsed_ms": int((time.time() - start_time) * 1000),
             "error": "no search results",
@@ -370,6 +377,7 @@ async def research_deep(
         )
     except TimeoutError:
         logger.warning("deep_fetch_timeout query=%s", query)
+        warnings.append({"stage": "fetch", "error": "timeout"})
         fetch_results = []
 
     pages: list[dict[str, Any]] = [
@@ -396,11 +404,14 @@ async def research_deep(
                         data = result.get("data", {})
                         page["extracted"] = data
                         page["relevance_score"] = data.get("relevance_score")
-                        total_cost += result.get("cost_usd", 0.0)
+                    else:
+                        warnings.append({"stage": "extract", "url": page["url"], "error": result["error"]})
+                    total_cost += result.get("cost_usd", 0.0)
                 except Exception as exc:
                     logger.warning("extract_fail url=%s error=%s", page["url"], exc)
+                    warnings.append({"stage": "extract", "url": page["url"], "error": str(exc)})
         except ImportError:
-            pass
+            warnings.append({"stage": "extract", "error": "llm module not available"})
 
     # ── STAGE 5: Relevance Ranking ───────────────────────────────────────
     def _sort_key(p: dict[str, Any]) -> float:
@@ -436,9 +447,10 @@ async def research_deep(
                 synthesis_result = answer_result
                 total_cost += answer_result.get("cost_usd", 0.0)
         except ImportError:
-            pass
+            warnings.append({"stage": "synthesis", "error": "llm module not available"})
         except Exception as exc:
             logger.warning("synthesis_fail: %s", exc)
+            warnings.append({"stage": "synthesis", "error": str(exc)})
 
     # ── STAGE 7: GitHub Enrichment ───────────────────────────────────────
     github_repos: list[dict[str, Any]] | None = None
@@ -471,6 +483,7 @@ async def research_deep(
                     github_repos = repos
             except Exception as exc:
                 logger.warning("github_enrichment_fail: %s", exc)
+                warnings.append({"stage": "github", "error": str(exc)})
 
     # ── STAGE 8: Language Detection ─────────────────────────────────────
     language_stats: dict[str, int] = {}
@@ -499,6 +512,7 @@ async def research_deep(
                 community_sentiment = await research_community_sentiment(query, n=5)
             except Exception as exc:
                 logger.warning("community_sentiment_fail: %s", exc)
+                warnings.append({"stage": "community_sentiment", "error": str(exc)})
 
     # ── STAGE 10: Red Team (optional) ───────────────────────────────────
     red_team_report: dict[str, Any] | None = None
@@ -514,6 +528,7 @@ async def research_deep(
                 total_cost += red_team_report.get("total_cost_usd", 0.0)
         except Exception as exc:
             logger.warning("red_team_fail: %s", exc)
+            warnings.append({"stage": "red_team", "error": str(exc)})
 
     # ── STAGE 11: Misinfo Check (optional) ──────────────────────────────
     misinfo_report: dict[str, Any] | None = None
@@ -528,6 +543,7 @@ async def research_deep(
                 )
         except Exception as exc:
             logger.warning("misinfo_check_fail: %s", exc)
+            warnings.append({"stage": "misinfo_check", "error": str(exc)})
 
     # ── STAGE 12: Build Response ─────────────────────────────────────────
     for p in top_pages:
@@ -547,6 +563,7 @@ async def research_deep(
         "community_sentiment": community_sentiment,
         "red_team_report": red_team_report,
         "misinfo_report": misinfo_report,
+        "warnings": warnings,
         "total_cost_usd": total_cost,
         "elapsed_ms": int((time.time() - start_time) * 1000),
     }
