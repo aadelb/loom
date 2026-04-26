@@ -81,3 +81,4 @@ tests/fixtures/journey/report.md
 # Check and audit scripts
 audit.py
 check_*.py
+.claude/worktrees/

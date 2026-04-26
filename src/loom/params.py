@@ -200,6 +200,10 @@ class SearchParams(BaseModel):
         "ahmia",
         "darksearch",
         "ummro",
+        "onionsearch",
+        "torcrawl",
+        "darkweb_cti",
+        "robin_osint",
     ] = "exa"
     n: int = 10
     include_domains: list[str] | None = None
@@ -249,6 +253,10 @@ class DeepParams(BaseModel):
         "ahmia",
         "darksearch",
         "ummro",
+        "onionsearch",
+        "torcrawl",
+        "darkweb_cti",
+        "robin_osint",
     ] = "exa"
     search_providers: list[str] | None = None
     expand_queries: bool = True

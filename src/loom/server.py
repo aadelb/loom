@@ -117,6 +117,31 @@ with suppress(ImportError):
 
     _optional_tools["vercel"] = vercel_tools
 
+with suppress(ImportError):
+    from loom.tools import cipher_mirror as cipher_mirror_tools
+
+    _optional_tools["cipher_mirror"] = cipher_mirror_tools
+
+with suppress(ImportError):
+    from loom.tools import forum_cortex as forum_cortex_tools
+
+    _optional_tools["forum_cortex"] = forum_cortex_tools
+
+with suppress(ImportError):
+    from loom.tools import onion_spectra as onion_spectra_tools
+
+    _optional_tools["onion_spectra"] = onion_spectra_tools
+
+with suppress(ImportError):
+    from loom.tools import ghost_weave as ghost_weave_tools
+
+    _optional_tools["ghost_weave"] = ghost_weave_tools
+
+with suppress(ImportError):
+    from loom.tools import dead_drop_scanner as dead_drop_scanner_tools
+
+    _optional_tools["dead_drop_scanner"] = dead_drop_scanner_tools
+
 
 _start_time = time.time()
 
@@ -344,6 +369,31 @@ def _register_tools(mcp: FastMCP) -> None:
         if hasattr(vercel_mod, "research_vercel_status"):
             mcp.tool()(_wrap_tool(vercel_mod.research_vercel_status))
 
+    # Darkweb tools (if available)
+    if "cipher_mirror" in _optional_tools:
+        cipher_mirror_mod = _optional_tools["cipher_mirror"]
+        if hasattr(cipher_mirror_mod, "research_cipher_mirror"):
+            mcp.tool()(_wrap_tool(cipher_mirror_mod.research_cipher_mirror, "fetch"))
+
+    if "forum_cortex" in _optional_tools:
+        forum_cortex_mod = _optional_tools["forum_cortex"]
+        if hasattr(forum_cortex_mod, "research_forum_cortex"):
+            mcp.tool()(_wrap_tool(forum_cortex_mod.research_forum_cortex, "fetch"))
+
+    if "onion_spectra" in _optional_tools:
+        onion_spectra_mod = _optional_tools["onion_spectra"]
+        if hasattr(onion_spectra_mod, "research_onion_spectra"):
+            mcp.tool()(_wrap_tool(onion_spectra_mod.research_onion_spectra, "fetch"))
+
+    if "ghost_weave" in _optional_tools:
+        ghost_weave_mod = _optional_tools["ghost_weave"]
+        if hasattr(ghost_weave_mod, "research_ghost_weave"):
+            mcp.tool()(_wrap_tool(ghost_weave_mod.research_ghost_weave, "fetch"))
+
+    if "dead_drop_scanner" in _optional_tools:
+        dead_drop_scanner_mod = _optional_tools["dead_drop_scanner"]
+        if hasattr(dead_drop_scanner_mod, "research_dead_drop_scanner"):
+            mcp.tool()(_wrap_tool(dead_drop_scanner_mod.research_dead_drop_scanner, "fetch"))
 
 
 def create_app() -> FastMCP:

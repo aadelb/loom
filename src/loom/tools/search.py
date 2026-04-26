@@ -27,7 +27,7 @@ def research_search(
     Args:
         query: search query
         provider: exa, tavily, firecrawl, brave, ddgs, arxiv, wikipedia,
-            hackernews, reddit, ummro
+            hackernews, reddit, ummro, onionsearch, torcrawl, darkweb_cti, robin_osint
         n: max number of results (1-50)
         include_domains: list of domains to include
         exclude_domains: list of domains to exclude
@@ -257,6 +257,49 @@ def research_search(
                 **provider_config,
             )
             result["provider"] = "ummro"
+            return result  # type: ignore[no-any-return]
+
+        elif provider == "onionsearch":
+            from loom.providers.onionsearch import search_onionsearch
+
+            result = search_onionsearch(
+                query=query,
+                n=n,
+                **provider_config,
+            )
+            result["provider"] = "onionsearch"
+            return result  # type: ignore[no-any-return]
+
+        elif provider == "torcrawl":
+            from loom.providers.torcrawl import crawl_onion
+
+            result = crawl_onion(
+                url=query,
+                **provider_config,
+            )
+            result["provider"] = "torcrawl"
+            return result  # type: ignore[no-any-return]
+
+        elif provider == "darkweb_cti":
+            from loom.providers.darkweb_cti import search_darkweb_cti
+
+            result = search_darkweb_cti(
+                query=query,
+                n=n,
+                **provider_config,
+            )
+            result["provider"] = "darkweb_cti"
+            return result  # type: ignore[no-any-return]
+
+        elif provider == "robin_osint":
+            from loom.providers.robin_osint import search_robin_osint
+
+            result = search_robin_osint(
+                query=query,
+                n=n,
+                **provider_config,
+            )
+            result["provider"] = "robin_osint"
             return result  # type: ignore[no-any-return]
 
         else:

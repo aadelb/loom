@@ -71,6 +71,10 @@ PROVIDER_CONFIG_ALLOWLIST: dict[str, frozenset[str]] = {
     "ahmia": frozenset({"language"}),
     "darksearch": frozenset({"page"}),
     "ummro": frozenset({"index", "context", "retrieval_mode"}),
+    "onionsearch": frozenset(),
+    "torcrawl": frozenset({"depth", "max_pages"}),
+    "darkweb_cti": frozenset({"category"}),
+    "robin_osint": frozenset({"min_relevance"}),
 }
 
 # Dangerous JavaScript APIs blocked in login_script / js_before_scrape.
