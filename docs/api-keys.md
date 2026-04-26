@@ -4,67 +4,25 @@ Complete reference for all environment variables, API keys, and configuration op
 
 ---
 
-## Search Providers
-
-### EXA_API_KEY
-
-**Service:** Exa semantic search  
-**Signup:** https://dashboard.exa.ai  
-**Free Tier:** 10 queries/month  
-**Paid Tiers:** $9-$999/month  
-**What it unlocks:** Neural semantic search across the web; required for `research_search(provider="exa")`
-
-```bash
-export EXA_API_KEY="your-exa-api-key"
-```
-
----
-
-### TAVILY_API_KEY
-
-**Service:** Tavily agent-native search  
-**Signup:** https://tavily.com  
-**Free Tier:** 100 queries/month  
-**Paid Tiers:** $30-$3000/month  
-**What it unlocks:** Structured web search with agent-friendly output; required for `research_search(provider="tavily")`
-
-```bash
-export TAVILY_API_KEY="your-tavily-api-key"
-```
-
----
-
-### FIRECRAWL_API_KEY
-
-**Service:** Firecrawl web intelligence search  
-**Signup:** https://app.firecrawl.dev  
-**Free Tier:** 500 credits/month  
-**Paid Tiers:** $99+/month  
-**What it unlocks:** Web search + page extraction; required for `research_search(provider="firecrawl")`
-
-```bash
-export FIRECRAWL_API_KEY="your-firecrawl-api-key"
-```
-
----
-
-### BRAVE_API_KEY
-
-**Service:** Brave Search REST API  
-**Signup:** https://api.search.brave.com  
-**Free Tier:** Unlimited for personal use (20 results/query max, no domain filters)  
-**Paid Tiers:** $10-$100/month for premium features  
-**What it unlocks:** Privacy-focused web search; required for `research_search(provider="brave")`
-
-```bash
-export BRAVE_API_KEY="your-brave-api-key"
-```
-
----
 
 ## LLM Providers
 
-All LLM tools use cascade routing. Set up at least one of the following:
+All LLM tools use cascade routing. Set up at least one of the following. Default cascade order: Groq → NVIDIA NIM → DeepSeek → Gemini → Moonshot → OpenAI → Anthropic → vLLM.
+
+### GROQ_API_KEY
+
+**Service:** Groq API  
+**Signup:** https://console.groq.com  
+**Free Tier:** 30,000 requests/month (extremely fast inference)  
+**Paid Tiers:** $0.0005-$0.05 per 1K tokens  
+**Default Model:** `mixtral-8x7b-32768`  
+**What it unlocks:** Fastest LLM option; excellent for production  
+
+```bash
+export GROQ_API_KEY="gsk-your-key"
+```
+
+---
 
 ### NVIDIA_NIM_API_KEY
 
@@ -73,11 +31,58 @@ All LLM tools use cascade routing. Set up at least one of the following:
 **Free Tier:** 25,000 requests/month (roughly $0.04/1K tokens)  
 **Paid Tiers:** Custom enterprise pricing  
 **Default Model:** `meta/llama-4-maverick-17b-128e-instruct`  
-**What it unlocks:** Fastest cascade option; free tier is excellent for development  
+**What it unlocks:** Excellent free tier; good cascade fallback option  
 
 ```bash
 export NVIDIA_NIM_API_KEY="nvapi-your-key"
 export NVIDIA_NIM_ENDPOINT="https://integrate.api.nvidia.com/v1"  # optional, has default
+```
+
+---
+
+### DEEPSEEK_API_KEY
+
+**Service:** DeepSeek API  
+**Signup:** https://platform.deepseek.com  
+**Free Tier:** Variable (check pricing)  
+**Paid Tiers:** Pay-per-token  
+**Default Model:** `deepseek-chat`  
+**What it unlocks:** Advanced reasoning capabilities  
+
+```bash
+export DEEPSEEK_API_KEY="sk-your-key"
+export DEEPSEEK_BASE_URL="https://api.deepseek.com"  # optional, has default
+```
+
+---
+
+### GOOGLE_AI_KEY
+
+**Service:** Google Gemini API  
+**Signup:** https://ai.google.dev  
+**Free Tier:** Limited (check quotas)  
+**Paid Tiers:** Pay-per-token  
+**Default Model:** `gemini-pro`  
+**What it unlocks:** Google's multimodal LLM capabilities  
+
+```bash
+export GOOGLE_AI_KEY="your-gemini-key"
+```
+
+---
+
+### MOONSHOT_API_KEY
+
+**Service:** Moonshot (Kimi) API  
+**Signup:** https://kimi.moonshot.cn  
+**Free Tier:** Limited credits  
+**Paid Tiers:** Pay-per-token  
+**Default Model:** `moonshot-v1-128k`  
+**What it unlocks:** Long-context multilingual LLM  
+
+```bash
+export MOONSHOT_API_KEY="sk-your-key"
+export MOONSHOT_BASE_URL="https://api.moonshot.cn/v1"  # optional, has default
 ```
 
 ---
@@ -89,7 +94,7 @@ export NVIDIA_NIM_ENDPOINT="https://integrate.api.nvidia.com/v1"  # optional, ha
 **Free Trial:** $5 credit (expires 3 months)  
 **Paid Tiers:** Pay-per-token ($0.003-$0.03 per 1K tokens depending on model)  
 **Default Model:** `gpt-4-mini`  
-**What it unlocks:** Fallback when NVIDIA NIM is rate-limited; highest quality models  
+**What it unlocks:** Highest quality models; reliable cascade fallback  
 
 ```bash
 export OPENAI_API_KEY="sk-your-key"
@@ -105,7 +110,7 @@ export OPENAI_BASE_URL="https://api.openai.com/v1"  # optional, has default
 **Free Trial:** None (pay-per-token)  
 **Paid Tiers:** $0.003-$0.03 per 1K tokens  
 **Default Model:** `claude-opus-4-6`  
-**What it unlocks:** Third cascade option; Claude models for specialized tasks  
+**What it unlocks:** Claude models for specialized tasks; strong reasoning  
 
 ```bash
 export ANTHROPIC_API_KEY="sk-ant-your-key"
@@ -113,9 +118,145 @@ export ANTHROPIC_API_KEY="sk-ant-your-key"
 
 ---
 
-## GitHub Integration
+### vLLM_LOCAL_ENDPOINT
 
-### GITHUB_TOKEN
+**Service:** Local vLLM server  
+**Signup:** Self-hosted (https://github.com/vllm-project/vllm)  
+**Cost:** Free (hardware costs only)  
+**Default Model:** Configurable (e.g., `meta-llama/Llama-2-70b-hf`)  
+**What it unlocks:** Offline LLM inference; full control over models  
+
+```bash
+export VLLM_BASE_URL="http://localhost:8000/v1"  # vLLM API endpoint
+export VLLM_MODEL="meta-llama/Llama-2-70b-hf"  # Model to use
+```
+
+---
+
+## Search Providers (17 total)
+
+### Standard Web Search (4 providers)
+
+#### EXA_API_KEY
+
+**Service:** Exa semantic search  
+**Signup:** https://dashboard.exa.ai  
+**Free Tier:** 10 queries/month  
+**Paid Tiers:** $9-$999/month  
+**What it unlocks:** Neural semantic search; required for `research_search(provider="exa")`  
+
+```bash
+export EXA_API_KEY="your-exa-api-key"
+```
+
+#### TAVILY_API_KEY
+
+**Service:** Tavily agent-native search  
+**Signup:** https://tavily.com  
+**Free Tier:** 100 queries/month  
+**Paid Tiers:** $30-$3000/month  
+**What it unlocks:** Structured web search; required for `research_search(provider="tavily")`  
+
+```bash
+export TAVILY_API_KEY="your-tavily-api-key"
+```
+
+#### FIRECRAWL_API_KEY
+
+**Service:** Firecrawl web intelligence  
+**Signup:** https://app.firecrawl.dev  
+**Free Tier:** 500 credits/month  
+**Paid Tiers:** $99+/month  
+**What it unlocks:** Web search + page extraction; required for `research_search(provider="firecrawl")`  
+
+```bash
+export FIRECRAWL_API_KEY="your-firecrawl-api-key"
+```
+
+#### BRAVE_API_KEY
+
+**Service:** Brave Search REST API  
+**Signup:** https://api.search.brave.com  
+**Free Tier:** Unlimited for personal use (20 results/query max, no domain filters)  
+**Paid Tiers:** $10-$100/month  
+**What it unlocks:** Privacy-focused search; required for `research_search(provider="brave")`  
+
+```bash
+export BRAVE_API_KEY="your-brave-api-key"
+```
+
+### Academic & Community (3 providers)
+
+#### Arxiv (No API key)
+Search academic papers. Used by `research_search(provider="arxiv")`. Free and unlimited.
+
+#### Wikipedia (No API key)
+Knowledge base search. Used by `research_search(provider="wikipedia")`. Free and unlimited.
+
+#### Hacker News & Reddit (No API key)
+Community sentiment and discussions. Free and unlimited.
+
+### Data & Finance (4 providers)
+
+#### NEWS_API_KEY
+
+**Service:** NewsAPI  
+**Signup:** https://newsapi.org  
+**Free Tier:** 100 requests/day  
+**Paid Tiers:** $39+/month  
+**What it unlocks:** News article search; required for `research_search(provider="newsapi")`  
+
+```bash
+export NEWS_API_KEY="your-newsapi-key"
+```
+
+#### COINDESK_API_KEY
+
+**Service:** CoinDesk API  
+**Signup:** https://www.coindesk.com/api  
+**Free Tier:** Limited  
+**Paid Tiers:** Contact sales  
+**What it unlocks:** Cryptocurrency news; required for `research_search(provider="coindesk")`  
+
+```bash
+export COINDESK_API_KEY="your-coindesk-key"
+```
+
+#### COINMARKETCAP_API_KEY
+
+**Service:** CoinMarketCap API  
+**Signup:** https://coinmarketcap.com/api  
+**Free Tier:** 333 calls/day  
+**Paid Tiers:** $99-$999/month  
+**What it unlocks:** Crypto market data; used for `research_search(provider="coinmarketcap")`  
+
+```bash
+export COINMARKETCAP_API_KEY="your-cmc-key"
+```
+
+#### Binance Data (No API key)
+Live crypto price data and trading info. Free and unlimited via public API.
+
+### Darkweb & Specialized (3 providers)
+
+#### Ahmia (No API key)
+Tor hidden services search. Free and unlimited.
+
+#### Darksearch (No API key)
+Alternative darkweb search. Free and unlimited.
+
+#### UMMRO_RAG_URL
+
+**Service:** UMMRO RAG endpoint  
+**What it unlocks:** Custom knowledge base search  
+
+```bash
+export UMMRO_RAG_URL="https://your-ummro-endpoint/api/query"
+```
+
+### GitHub Integration
+
+#### GITHUB_TOKEN
 
 **Service:** GitHub API  
 **Signup:** https://github.com/settings/tokens  
@@ -126,6 +267,95 @@ export ANTHROPIC_API_KEY="sk-ant-your-key"
 ```bash
 export GITHUB_TOKEN="ghp_your-token"
 ```
+
+---
+
+## Infrastructure & Services
+
+### VASTAI_API_KEY
+
+**Service:** VastAI GPU compute marketplace  
+**Signup:** https://www.vast.ai  
+**What it unlocks:** Search GPU instances and check compute market prices via `research_vastai_search` and `research_vastai_status`  
+
+```bash
+export VASTAI_API_KEY="your-vastai-key"
+```
+
+---
+
+### STRIPE_LIVE_KEY
+
+**Service:** Stripe payment API  
+**Signup:** https://stripe.com  
+**What it unlocks:** Check billing and payment data via `research_stripe_balance`  
+
+```bash
+export STRIPE_LIVE_KEY="sk_live_your-key"
+```
+
+---
+
+### Email Service (SMTP)
+
+#### SMTP_USER
+
+**Type:** Email address (e.g., your Gmail address)  
+**What it unlocks:** Email sending via `research_email_report`  
+
+```bash
+export SMTP_USER="your-email@gmail.com"
+```
+
+---
+
+#### SMTP_APP_PASSWORD
+
+**Type:** Application password (not your main password)  
+**Gmail:** Generate at https://myaccount.google.com/apppasswords  
+**What it unlocks:** SMTP authentication for `research_email_report`  
+
+```bash
+export SMTP_APP_PASSWORD="your-16-char-app-password"
+```
+
+---
+
+### JOPLIN_TOKEN
+
+**Service:** Joplin note-taking API  
+**Signup:** https://joplinapp.org (self-hosted or cloud)  
+**What it unlocks:** Save and list notes via `research_save_note` and `research_list_notebooks`  
+
+```bash
+export JOPLIN_TOKEN="your-joplin-api-token"
+export JOPLIN_BASE_URL="http://localhost:41184"  # optional, has default
+```
+
+---
+
+## Tor & Darkweb
+
+### TOR_CONTROL_PASSWORD
+
+**Service:** Tor control port authentication  
+**Setup:** Configure in Tor config file  
+**What it unlocks:** Check Tor status and request new identity via `research_tor_status` and `research_tor_new_identity`  
+
+```bash
+export TOR_CONTROL_PASSWORD="your-tor-password"
+export TOR_CONTROL_HOST="127.0.0.1"  # optional, default localhost
+export TOR_CONTROL_PORT="9051"  # optional, default 9051
+```
+
+---
+
+## Media Processing
+
+No API keys required for:
+
+- `research_transcribe` — Audio to text (uses local speech recognition)
+- `research_convert_document` — Document format conversion (uses local libraries)
 
 ---
 
@@ -541,25 +771,33 @@ export STEALTH_TIMEOUT="120"
 
 ## Minimum Viable Key Set
 
-For a functional Loom installation with all features:
+For a functional Loom installation with all 53 tools:
 
 ```bash
-# Required: At least ONE search provider
-export EXA_API_KEY="your-exa-key"                    # Best: semantic search
+# REQUIRED: At least ONE LLM provider (try in this order)
+export GROQ_API_KEY="gsk-your-key"                   # Best: fastest + free
+# OR
+export NVIDIA_NIM_API_KEY="nvapi-your-key"           # Free tier option
+# OR
+export OPENAI_API_KEY="sk-your-key"                  # High quality
 
-# Required: At least ONE LLM provider
-export NVIDIA_NIM_API_KEY="your-nim-key"             # Best: free tier
+# REQUIRED: At least ONE search provider
+export EXA_API_KEY="your-exa-key"                    # Best: semantic
+# OR
+export BRAVE_API_KEY="your-brave-key"                # Free: privacy-focused
 
-# Optional: GitHub support
-export GITHUB_TOKEN="your-github-token"              # Increases rate limits
+# OPTIONAL: GitHub (for code search)
+export GITHUB_TOKEN="ghp_your-token"
 
-# Optional: Fallback search provider
-export BRAVE_API_KEY="your-brave-key"                # Free tier available
+# OPTIONAL: Specialized services (one-by-one)
+export VASTAI_API_KEY="your-vastai-key"              # GPU pricing
+export STRIPE_LIVE_KEY="sk_live_your-key"            # Billing
+export JOPLIN_TOKEN="your-joplin-token"              # Notes
+export TOR_CONTROL_PASSWORD="your-tor-password"      # Darkweb
+export SMTP_USER="your-email@gmail.com"              # Email
+export SMTP_APP_PASSWORD="your-16-char-password"     # Email auth
 
-# Optional: Fallback LLM provider
-export OPENAI_API_KEY="your-openai-key"              # If NIM rate-limited
-
-# Recommended: Performance tuning
+# RECOMMENDED: Performance tuning
 export SPIDER_CONCURRENCY="10"
 export LOG_LEVEL="INFO"
 export LLM_DAILY_COST_CAP_USD="10.00"

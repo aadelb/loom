@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What is Loom
 
-Loom is a Python MCP (Model Context Protocol) server that exposes 45+ research tools over streamable-HTTP (port 8787). It wraps scraping (Scrapling, Crawl4AI, Camoufox, Botasaurus), search across 9 providers (Exa, Tavily, Firecrawl, Brave, DuckDuckGo, Arxiv, Wikipedia, Hacker News, Reddit), LLM providers (NVIDIA NIM, OpenAI, Anthropic, vLLM), GitHub CLI, persistent browser sessions, 11 creative research tools (red team analysis, multilingual, consensus building, misinformation detection, temporal diffs, citation graphs, AI detection, curriculum generation, community sentiment, wiki ghost articles, semantic sitemaps), and a content-hash cache into a single MCP service. It also ships a Typer CLI (`loom`) that calls the MCP server as a client.
+Loom is a Python MCP (Model Context Protocol) server that exposes 53 research tools over streamable-HTTP (port 8787). It wraps scraping (Scrapling, Crawl4AI, Camoufox, Botasaurus), search across 17 providers (Exa, Tavily, Firecrawl, Brave, DuckDuckGo, Arxiv, Wikipedia, Hacker News, Reddit, NewsAPI, Binance, CoinMarketCap, CoinDesk, Ahmia, Darksearch, and UMMRO RAG), 8 LLM providers (Groq, NVIDIA NIM, DeepSeek, Gemini, Moonshot, OpenAI, Anthropic, vLLM), infrastructure tools (VastAI, Stripe, Billing), communication tools (Email, Joplin notes), media tools (Audio transcription, Document conversion), Tor/darkweb tools (Tor status, new identity), GitHub CLI, persistent browser sessions, 11 creative research tools, and a content-hash cache into a single MCP service. It also ships a Typer CLI (`loom`) that calls the MCP server as a client.
 
 ## Commands
 
@@ -50,11 +50,11 @@ src/loom/
   cache.py         Content-hash CacheStore (SHA-256, daily dirs, atomic writes, singleton)
   sessions.py      Persistent browser session management (in-memory registry + SQLite SessionManager)
   journey.py       End-to-end journey test runner (mocked/live/record modes)
-  tools/           One module per tool family:
+  tools/           One module per tool family (53 tools total):
     fetch.py       research_fetch (Scrapling 3-tier: http/stealthy/dynamic + Cloudflare auto-escalation)
     spider.py      research_spider (concurrent multi-URL fetch)
     markdown.py    research_markdown (Crawl4AI + Trafilatura fallback for HTML-to-markdown)
-    search.py      research_search (multi-provider: exa/tavily/firecrawl/brave/ddgs/arxiv/wikipedia/hackernews/reddit)
+    search.py      research_search (multi-provider: 16 search engines including exa/tavily/firecrawl/brave/ddgs/arxiv/wikipedia/hackernews/reddit/newsapi/crypto/ummro)
     deep.py        research_deep (12-stage pipeline: query detection → search → fetch → escalation → markdown → extraction)
     github.py      research_github (gh CLI wrapper)
     stealth.py     research_camoufox + research_botasaurus
@@ -63,13 +63,29 @@ src/loom/
     enrich.py      research_wayback (Wayback Machine recovery)
     experts.py     research_expertise (expertise finder)
     llm.py         8 LLM tools (summarize/extract/classify/translate/expand/answer/embed/chat)
-  providers/       LLM provider abstraction:
+    vastai.py      research_vastai_search + research_vastai_status (GPU compute marketplace)
+    billing.py     research_usage_report + research_stripe_balance (billing and usage tracking)
+    email_report.py research_email_report (email delivery)
+    joplin.py      research_save_note + research_list_notebooks (note-taking)
+    tor.py         research_tor_status + research_tor_new_identity (Tor network management)
+    transcribe.py  research_transcribe (audio to text)
+    document.py    research_convert_document (document format conversion)
+  providers/       8 LLM providers + 17 search providers + specialized data providers:
     base.py        Abstract LLMProvider + LLMResponse dataclass + _estimate_cost
+    groq_provider.py GROQ API
     nvidia_nim.py  NVIDIA NIM free tier (integrate.api.nvidia.com)
-    openai_provider.py
-    anthropic_provider.py
+    deepseek_provider.py DeepSeek API
+    gemini_provider.py Google Gemini API
+    moonshot_provider.py Moonshot (Kimi) API
+    openai_provider.py OpenAI API
+    anthropic_provider.py Anthropic Claude API
     vllm_local.py  Local vLLM endpoint
-    youtube_transcripts.py  YouTube transcript extraction
+    exa.py, tavily.py, firecrawl.py, brave.py, ddgs.py - Search providers (6)
+    arxiv_search.py, wikipedia_search.py, hn_reddit.py - Academic/community (3)
+    newsapi_search.py, coindesk_search.py, coinmarketcap.py, binance_data.py - Data APIs (4)
+    ahmia_search.py, darksearch_search.py, ummro_rag.py - Specialized search (3)
+    investing_data.py - Financial data
+    youtube_transcripts.py - YouTube transcript extraction
 ```
 
 ### Key patterns
@@ -108,30 +124,48 @@ src/loom/
 | `LOOM_CONFIG_PATH` | `./config.json` | Config file location |
 | `LOOM_CACHE_DIR` | `~/.cache/loom` | Cache storage root |
 | `LOOM_SESSIONS_DIR` | `~/.loom/sessions` | Session storage root |
+| **LLM Providers** | | |
+| `GROQ_API_KEY` | - | Groq API key |
 | `NVIDIA_NIM_API_KEY` | - | NVIDIA NIM API key |
+| `DEEPSEEK_API_KEY` | - | DeepSeek API key |
+| `GOOGLE_AI_KEY` | - | Google Gemini API key |
+| `MOONSHOT_API_KEY` | - | Moonshot (Kimi) API key |
 | `OPENAI_API_KEY` | - | OpenAI API key |
 | `ANTHROPIC_API_KEY` | - | Anthropic API key |
-| `EXA_API_KEY` | - | Exa search API key |
-| `TAVILY_API_KEY` | - | Tavily search API key |
+| **Search Providers** | | |
+| `EXA_API_KEY` | - | Exa semantic search key |
+| `TAVILY_API_KEY` | - | Tavily search key |
 | `FIRECRAWL_API_KEY` | - | Firecrawl API key |
-| `ARXIV_API_KEY` | - | Arxiv API key (optional) |
-| `SEMANTIC_SCHOLAR_API_KEY` | - | Semantic Scholar API key (optional) |
+| `BRAVE_API_KEY` | - | Brave search key |
+| `NEWS_API_KEY` | - | NewsAPI key |
+| `UMMRO_RAG_URL` | - | UMMRO RAG endpoint |
+| **Infrastructure & Services** | | |
+| `VASTAI_API_KEY` | - | VastAI API key |
+| `STRIPE_LIVE_KEY` | - | Stripe live API key |
+| `SMTP_USER` | - | Email service user |
+| `SMTP_APP_PASSWORD` | - | Email service password |
+| `JOPLIN_TOKEN` | - | Joplin API token |
+| **Specialized** | | |
+| `TOR_CONTROL_PASSWORD` | - | Tor control port password |
+| `COINMARKETCAP_API_KEY` | - | CoinMarketCap API key (optional) |
+| `COINDESK_API_KEY` | - | CoinDesk API key (optional) |
 
 ## Testing
 
 - Framework: pytest with pytest-asyncio (`asyncio_mode = "auto"`)
 - Coverage target: 80%+ (`--cov=src/loom`)
+- Test count: 892 tests passing (0 failures)
 - Markers: `slow`, `live` (real network), `integration`
 - Test structure mirrors source: `tests/test_tools/`, `tests/test_providers/`, `tests/test_integration/`
 - Fixtures in `tests/conftest.py` provide temp dirs, mock HTTP transport, and sample API responses
-- Journey tests (`tests/journey_e2e.py`) run the full 45+ tool scenario in mocked/live/record modes
+- Journey tests (`tests/journey_e2e.py`) run the full 53 tool scenario in mocked/live/record modes
 
 ## Documentation
 
 Four comprehensive documentation files in `docs/`:
 
-- **tools-reference.md** — Complete reference for all 45+ tools, parameters, and examples
-- **api-keys.md** — API key setup for all 9 search providers + LLM providers
+- **tools-reference.md** — Complete reference for all 53 tools, parameters, and examples
+- **api-keys.md** — API key setup for all 8 LLM providers + 17 search providers + infrastructure/communication/media services
 - **architecture.md** — Deep dive into pipeline design, escalation strategy, and tool composition
 - **help.md** — Troubleshooting, common patterns, and FAQ
 

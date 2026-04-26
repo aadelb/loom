@@ -1,10 +1,10 @@
 # Loom MCP Tools Reference
 
-Complete documentation of all 23+ MCP tools exposed by the Loom research server. Tools are organized by category and include parameters, return types, and usage examples.
+Complete documentation of all 53 MCP tools exposed by the Loom research server. Tools are organized by category and include parameters, return types, and usage examples.
 
 ## Overview
 
-Loom provides a comprehensive research toolkit split into 8 categories:
+Loom provides a comprehensive research toolkit split into 12 categories:
 
 - **Core** (6 tools) — fundamental fetching, searching, and content extraction
 - **GitHub** (3 tools) — GitHub API integration and README/releases retrieval
@@ -16,6 +16,10 @@ Loom provides a comprehensive research toolkit split into 8 categories:
 - **Session Management** (3 tools) — persistent browser contexts
 - **Config** (2 tools) — runtime configuration management
 - **Cache** (2 tools) — cache statistics and cleanup
+- **Infrastructure** (4 tools) — compute, billing, and payment services
+- **Communication** (2 tools) — email and note-taking
+- **Media** (2 tools) — audio transcription and document conversion
+- **Darkweb** (2 tools) — Tor network management
 
 ---
 
@@ -194,14 +198,14 @@ print(result["markdown"][:1000])
 
 ### research_search
 
-Unified web search across 8 providers (Exa, Tavily, Firecrawl, Brave, DuckDuckGo, arXiv, Wikipedia, HackerNews, Reddit).
+Unified web search across 17 providers (Exa, Tavily, Firecrawl, Brave, DuckDuckGo, arXiv, Wikipedia, HackerNews, Reddit, NewsAPI, CoinDesk, CoinMarketCap, Binance, Ahmia, Darksearch, UMMRO RAG, and more).
 
 **Parameters:**
 
 | Name | Type | Default | Description |
 |------|------|---------|-------------|
 | `query` | string | required | Search query |
-| `provider` | string | from config (default "exa") | Search provider: `"exa"`, `"tavily"`, `"firecrawl"`, `"brave"`, `"ddgs"`, `"arxiv"`, `"wikipedia"`, `"hackernews"`, `"reddit"` |
+| `provider` | string | from config (default "exa") | Search provider: `"exa"`, `"tavily"`, `"firecrawl"`, `"brave"`, `"ddgs"`, `"arxiv"`, `"wikipedia"`, `"hackernews"`, `"reddit"`, `"newsapi"`, `"coindesk"`, `"coinmarketcap"`, `"binance"`, `"ahmia"`, `"darksearch"`, `"ummro"` |
 | `n` | integer | 10 | Max results (1-50, capped) |
 | `include_domains` | list[string] | `null` | Only search these domains |
 | `exclude_domains` | list[string] | `null` | Exclude these domains |
@@ -1547,6 +1551,371 @@ Remove cache entries older than N days.
 
 ---
 
+## Infrastructure Tools
+
+### research_vastai_search
+
+Search GPU instances on the VastAI compute marketplace.
+
+**Parameters:**
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `query` | string | `null` | Search query (e.g., "A100 GPUs under $2/hr") |
+| `gpu_name` | string | `null` | GPU model filter |
+| `min_ram` | integer | `null` | Minimum RAM in GB |
+| `max_price` | float | `null` | Max hourly price in USD |
+
+**Returns:**
+
+```json
+{
+  "provider": "vastai",
+  "results": [
+    {
+      "instance_id": "12345",
+      "gpu": "A100",
+      "ram": 32,
+      "price_per_hour": 1.50,
+      "location": "USA",
+      "availability": true
+    }
+  ],
+  "error": null
+}
+```
+
+**API Key:** `VASTAI_API_KEY`
+
+**Example Usage:**
+
+```python
+result = await research_vastai_search(
+    gpu_name="A100",
+    max_price=2.0
+)
+```
+
+---
+
+### research_vastai_status
+
+Check compute marketplace status and pricing.
+
+**Parameters:**
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `gpu_name` | string | `null` | GPU model to check pricing |
+
+**Returns:**
+
+```json
+{
+  "total_instances": 5432,
+  "available_instances": 3200,
+  "avg_price_per_hour": 1.25,
+  "price_range": {"min": 0.50, "max": 5.00},
+  "error": null
+}
+```
+
+**API Key:** `VASTAI_API_KEY`
+
+---
+
+### research_usage_report
+
+Get usage statistics and resource consumption data.
+
+**Parameters:**
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `period` | string | `"month"` | Time period: `"day"`, `"week"`, `"month"`, `"year"` |
+
+**Returns:**
+
+```json
+{
+  "period": "month",
+  "llm_calls": 1250,
+  "llm_cost_usd": 12.50,
+  "fetch_calls": 450,
+  "search_calls": 320,
+  "total_api_calls": 2020,
+  "error": null
+}
+```
+
+**API Key:** None — local tracking
+
+---
+
+### research_stripe_balance
+
+Check billing account balance and recent charges.
+
+**Parameters:** None
+
+**Returns:**
+
+```json
+{
+  "account_id": "acct_xxxxx",
+  "balance_usd": 150.75,
+  "available_usd": 145.20,
+  "pending_charges": [
+    {
+      "description": "API usage",
+      "amount_usd": 5.55,
+      "created_at": "2026-04-27T10:00:00Z"
+    }
+  ],
+  "error": null
+}
+```
+
+**API Key:** `STRIPE_LIVE_KEY`
+
+---
+
+## Communication Tools
+
+### research_email_report
+
+Send a research report or summary via email.
+
+**Parameters:**
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `to_email` | string | required | Recipient email address |
+| `subject` | string | required | Email subject line |
+| `body` | string | required | Email body (plain text or markdown) |
+| `include_summary` | boolean | `false` | Auto-summarize body with LLM |
+
+**Returns:**
+
+```json
+{
+  "to_email": "recipient@example.com",
+  "subject": "Research Report: AI Safety",
+  "status": "sent",
+  "sent_at": "2026-04-27T10:30:00Z",
+  "error": null
+}
+```
+
+**API Keys:** `SMTP_USER`, `SMTP_APP_PASSWORD`
+
+**Example Usage:**
+
+```python
+result = await research_email_report(
+    to_email="colleague@example.com",
+    subject="Weekly Research Summary",
+    body="Key findings on AI safety...",
+    include_summary=True
+)
+```
+
+---
+
+### research_save_note
+
+Save text or research results to Joplin notebook.
+
+**Parameters:**
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `notebook_name` | string | `"Research"` | Target notebook name |
+| `title` | string | required | Note title |
+| `content` | string | required | Note body (markdown) |
+| `tags` | list[string] | `null` | Tags to add to note |
+
+**Returns:**
+
+```json
+{
+  "note_id": "abc123",
+  "title": "Machine Learning Papers",
+  "notebook": "Research",
+  "tags": ["ml", "papers"],
+  "created_at": "2026-04-27T10:30:00Z",
+  "error": null
+}
+```
+
+**API Key:** `JOPLIN_TOKEN`
+
+---
+
+### research_list_notebooks
+
+List all Joplin notebooks.
+
+**Parameters:** None
+
+**Returns:**
+
+```json
+{
+  "notebooks": [
+    {
+      "id": "notebook1",
+      "title": "Research",
+      "note_count": 45
+    },
+    {
+      "id": "notebook2",
+      "title": "Projects",
+      "note_count": 12
+    }
+  ],
+  "error": null
+}
+```
+
+**API Key:** `JOPLIN_TOKEN`
+
+---
+
+## Media Tools
+
+### research_transcribe
+
+Convert audio file to text (speech-to-text).
+
+**Parameters:**
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `audio_url` | string | required | URL to audio file or local path |
+| `language` | string | `"en"` | ISO 639-1 language code |
+| `model` | string | `"base"` | Whisper model: `"tiny"`, `"base"`, `"small"`, `"medium"`, `"large"` |
+
+**Returns:**
+
+```json
+{
+  "text": "Hello, this is a test transcription...",
+  "language": "en",
+  "confidence": 0.95,
+  "duration_seconds": 25.5,
+  "model": "base",
+  "error": null
+}
+```
+
+**API Key:** None — free (local Whisper)
+
+**Example Usage:**
+
+```python
+result = await research_transcribe(
+    audio_url="https://example.com/podcast.mp3",
+    language="en",
+    model="base"
+)
+print(result["text"])
+```
+
+---
+
+### research_convert_document
+
+Convert between document formats (PDF, DOCX, MD, TXT, HTML, etc.).
+
+**Parameters:**
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `input_file` | string | required | Input file path or URL |
+| `output_format` | string | required | Target format: `"pdf"`, `"docx"`, `"md"`, `"txt"`, `"html"`, `"xlsx"` |
+| `optimize` | boolean | `false` | Optimize file size/quality |
+
+**Returns:**
+
+```json
+{
+  "input_file": "document.pdf",
+  "output_format": "md",
+  "output_file": "/tmp/document.md",
+  "size_bytes": 5420,
+  "conversion_time_ms": 342,
+  "error": null
+}
+```
+
+**API Key:** None — free (local conversion)
+
+**Example Usage:**
+
+```python
+result = await research_convert_document(
+    input_file="research_paper.pdf",
+    output_format="md",
+    optimize=True
+)
+```
+
+---
+
+## Darkweb Tools
+
+### research_tor_status
+
+Check Tor network connection status.
+
+**Parameters:** None
+
+**Returns:**
+
+```json
+{
+  "is_connected": true,
+  "exit_ip": "203.0.113.45",
+  "country": "USA",
+  "connected_at": "2026-04-27T10:30:00Z",
+  "circuit_info": "3 hops (entry → middle → exit)",
+  "error": null
+}
+```
+
+**API Key:** `TOR_CONTROL_PASSWORD` (optional)
+
+---
+
+### research_tor_new_identity
+
+Request a new Tor identity (new exit IP).
+
+**Parameters:**
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `wait_seconds` | integer | `5` | Wait time for identity change |
+
+**Returns:**
+
+```json
+{
+  "old_ip": "203.0.113.45",
+  "new_ip": "198.51.100.42",
+  "country_changed": true,
+  "old_country": "USA",
+  "new_country": "Netherlands",
+  "changed_at": "2026-04-27T10:30:05Z",
+  "error": null
+}
+```
+
+**API Key:** `TOR_CONTROL_PASSWORD` (optional)
+
+---
+
 ## Summary Table
 
 | Category | Count | Key Tools | Free? |
@@ -1561,6 +1930,10 @@ Remove cache entries older than N days.
 | Sessions | 3 | `research_session_open`, `research_session_list`, `research_session_close` | Yes |
 | Config | 2 | `research_config_get`, `research_config_set` | Yes |
 | Cache | 2 | `research_cache_stats`, `research_cache_clear` | Yes |
+| Infrastructure | 4 | `research_vastai_search`, `research_vastai_status`, `research_usage_report`, `research_stripe_balance` | Mostly |
+| Communication | 2 | `research_email_report`, `research_save_note`, `research_list_notebooks` | Mostly |
+| Media | 2 | `research_transcribe`, `research_convert_document` | Yes |
+| Darkweb | 2 | `research_tor_status`, `research_tor_new_identity` | Yes |
 
-**Total: 40+ tools**
+**Total: 53 tools**
 
