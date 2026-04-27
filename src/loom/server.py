@@ -33,10 +33,14 @@ from loom.tools import (
     cache_mgmt,
     deception_detect,
     deep,
+    domain_intel,
     fetch,
     github,
     markdown,
+    pdf_extract,
+    rss_monitor,
     search,
+    social_intel,
     spider,
     stealth,
     stylometry,
@@ -172,6 +176,17 @@ with suppress(ImportError):
 
     _optional_tools["network_persona"] = network_persona_tools
 
+with suppress(ImportError):
+    from loom.tools import text_analyze as text_analyze_tools
+
+    _optional_tools["text_analyze"] = text_analyze_tools
+
+with suppress(ImportError):
+    from loom.tools import screenshot as screenshot_tools
+
+    _optional_tools["screenshot"] = screenshot_tools
+
+
 
 
 _start_time = time.time()
@@ -242,9 +257,26 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(cache_mgmt.research_cache_stats))
     mcp.tool()(_wrap_tool(cache_mgmt.research_cache_clear))
 
-    # Psychology & deception analysis tools
+    # Psychology & behavioral analysis tools
     mcp.tool()(_wrap_tool(stylometry.research_stylometry))
     mcp.tool()(_wrap_tool(deception_detect.research_deception_detect))
+
+    # Domain intelligence tools
+    mcp.tool()(_wrap_tool(domain_intel.research_whois, "fetch"))
+    mcp.tool()(_wrap_tool(domain_intel.research_dns_lookup, "fetch"))
+    mcp.tool()(_wrap_tool(domain_intel.research_nmap_scan, "fetch"))
+
+    # PDF extraction tools
+    mcp.tool()(_wrap_tool(pdf_extract.research_pdf_extract, "fetch"))
+    mcp.tool()(_wrap_tool(pdf_extract.research_pdf_search, "fetch"))
+
+    # RSS feed tools
+    mcp.tool()(_wrap_tool(rss_monitor.research_rss_fetch, "fetch"))
+    mcp.tool()(_wrap_tool(rss_monitor.research_rss_search, "search"))
+
+    # Social intelligence tools
+    mcp.tool()(_wrap_tool(social_intel.research_social_search))
+    mcp.tool()(_wrap_tool(social_intel.research_social_profile, "fetch"))
 
     # Session tools
     mcp.tool()(_wrap_tool(research_session_open))
@@ -455,6 +487,19 @@ def _register_tools(mcp: FastMCP) -> None:
         if hasattr(network_persona_mod, "research_network_persona"):
             mcp.tool()(_wrap_tool(network_persona_mod.research_network_persona, "analysis"))
 
+
+
+    # Text analysis tool (if nltk available)
+    if "text_analyze" in _optional_tools:
+        text_analyze_mod = _optional_tools["text_analyze"]
+        if hasattr(text_analyze_mod, "research_text_analyze"):
+            mcp.tool()(_wrap_tool(text_analyze_mod.research_text_analyze, "analysis"))
+
+    # Screenshot tool (if playwright available)
+    if "screenshot" in _optional_tools:
+        screenshot_mod = _optional_tools["screenshot"]
+        if hasattr(screenshot_mod, "research_screenshot"):
+            mcp.tool()(_wrap_tool(screenshot_mod.research_screenshot, "fetch"))
 
 def create_app() -> FastMCP:
     """Create and configure the FastMCP server instance.

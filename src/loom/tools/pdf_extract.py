@@ -1,0 +1,384 @@
+"""PDF extraction tools — Extract text from PDF URLs and search within PDFs."""
+
+from __future__ import annotations
+
+import io
+import logging
+import subprocess
+import tempfile
+from typing import Any
+from urllib.parse import urlparse
+
+import httpx
+
+logger = logging.getLogger("loom.tools.pdf_extract")
+
+# Max PDF file size: 50 MB
+MAX_PDF_SIZE_BYTES = 50 * 1024 * 1024
+
+# Max extracted text length
+MAX_EXTRACTED_TEXT = 50000
+
+
+def _validate_url(url: str) -> str:
+    """Validate URL is http(s) and well-formed.
+
+    Args:
+        url: URL to validate
+
+    Returns:
+        The validated URL
+
+    Raises:
+        ValueError: if URL is invalid
+    """
+    if not url or len(url) > 4096:
+        raise ValueError("url missing or too long")
+
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        raise ValueError(f"scheme '{parsed.scheme}' not allowed (http/https only)")
+
+    if not parsed.netloc:
+        raise ValueError("url missing hostname")
+
+    return url
+
+
+def _parse_pages_arg(pages: str | None) -> tuple[int | None, int | None]:
+    """Parse page range string into (start, end) tuple.
+
+    Args:
+        pages: page range like "1-5" or "1" or None
+
+    Returns:
+        Tuple of (start_page, end_page) or (None, None) if pages is None
+        Pages are 1-indexed.
+
+    Raises:
+        ValueError: if pages format is invalid
+    """
+    if pages is None:
+        return None, None
+
+    pages = pages.strip()
+    if not pages:
+        return None, None
+
+    # Check for range format "1-5"
+    if "-" in pages:
+        parts = pages.split("-")
+        if len(parts) != 2:
+            raise ValueError("pages format must be 'N' or 'N-M'")
+
+        try:
+            start = int(parts[0].strip())
+            end = int(parts[1].strip())
+        except ValueError:
+            raise ValueError("pages must be integers")
+
+        if start < 1 or end < start:
+            raise ValueError("pages must be positive and start <= end")
+
+        return start, end
+    else:
+        # Single page
+        try:
+            page = int(pages)
+        except ValueError:
+            raise ValueError("pages must be an integer or range")
+
+        if page < 1:
+            raise ValueError("page must be positive")
+
+        return page, page
+
+
+def research_pdf_extract(
+    url: str, pages: str | None = None
+) -> dict[str, Any]:
+    """Extract text from a PDF URL.
+
+    Downloads the PDF, extracts text using PyPDF2 or pdftotext CLI.
+    Optionally extracts only specified pages.
+
+    Args:
+        url: URL to PDF file
+        pages: page range to extract, e.g., "1-5" or "1" (1-indexed)
+               If None, extracts all pages.
+
+    Returns:
+        Dict with:
+        - url: the input URL
+        - text: extracted text (max 50000 chars)
+        - page_count: total pages in PDF
+        - pages_extracted: "all" or range like "1-5"
+        - extraction_method: "pypdf2" or "pdftotext"
+        - file_size_bytes: downloaded file size
+        - error: error message if extraction failed
+    """
+    try:
+        url = _validate_url(url)
+    except ValueError as exc:
+        return {"url": url, "error": str(exc)}
+
+    try:
+        start_page, end_page = _parse_pages_arg(pages)
+    except ValueError as exc:
+        return {"url": url, "error": str(exc)}
+
+    output: dict[str, Any] = {"url": url}
+
+    try:
+        # Download PDF
+        with httpx.stream("GET", url, timeout=30.0) as response:
+            response.raise_for_status()
+
+            # Check content-type
+            content_type = response.headers.get("content-type", "").lower()
+            if "pdf" not in content_type:
+                logger.warning(
+                    "pdf_download_wrong_type url=%s content_type=%s",
+                    url, content_type
+                )
+                # Continue anyway, might still be a PDF
+
+            # Stream to temp file with size check
+            pdf_data = io.BytesIO()
+            for chunk in response.iter_bytes(chunk_size=65536):
+                pdf_data.write(chunk)
+                if pdf_data.tell() > MAX_PDF_SIZE_BYTES:
+                    return {
+                        **output,
+                        "error": f"PDF exceeds max size ({MAX_PDF_SIZE_BYTES} bytes)",
+                    }
+
+            pdf_bytes = pdf_data.getvalue()
+            output["file_size_bytes"] = len(pdf_bytes)
+
+        logger.info("pdf_downloaded url=%s size=%d", url, len(pdf_bytes))
+
+        # Try PyPDF2 first
+        extracted_text = None
+        extraction_method = None
+        page_count = None
+
+        try:
+            from PyPDF2 import PdfReader  # type: ignore
+
+            reader = PdfReader(io.BytesIO(pdf_bytes))
+            page_count = len(reader.pages)
+
+            # Determine which pages to extract
+            if start_page is not None:
+                # Convert 1-indexed to 0-indexed
+                pages_to_extract = range(start_page - 1, min(end_page, page_count))
+            else:
+                pages_to_extract = range(page_count)
+
+            text_parts = []
+            for page_num in pages_to_extract:
+                page = reader.pages[page_num]
+                text = page.extract_text()
+                if text:
+                    text_parts.append(text)
+
+            extracted_text = "\n".join(text_parts)
+            extraction_method = "pypdf2"
+            logger.info("pdf_extraction_pypdf2_success url=%s pages=%d", url, len(pages_to_extract))
+
+        except ImportError:
+            logger.debug("PyPDF2 not available, falling back to pdftotext")
+        except Exception as exc:
+            logger.debug("PyPDF2 extraction failed: %s, trying pdftotext", exc)
+
+        # Fall back to pdftotext CLI
+        if extracted_text is None:
+            try:
+                with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+                    tmp.write(pdf_bytes)
+                    tmp_path = tmp.name
+
+                cmd = ["pdftotext"]
+
+                # Add page range if specified
+                if start_page is not None:
+                    cmd.extend(["-f", str(start_page), "-l", str(end_page)])
+
+                cmd.extend([tmp_path, "-"])
+
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                )
+
+                if result.returncode != 0:
+                    logger.warning(
+                        "pdftotext_failed url=%s returncode=%d",
+                        url, result.returncode
+                    )
+                    return {
+                        **output,
+                        "error": f"pdftotext failed: {result.stderr}",
+                    }
+
+                extracted_text = result.stdout
+                extraction_method = "pdftotext"
+
+                # Get page count from pdftotext if we don't have it
+                if page_count is None:
+                    # pdftotext doesn't report page count, try to estimate or use 0
+                    page_count = 0
+
+                logger.info("pdf_extraction_pdftotext_success url=%s", url)
+
+            except FileNotFoundError:
+                logger.error("pdftotext_not_found")
+                return {
+                    **output,
+                    "error": "pdftotext command not found (install poppler-utils)",
+                }
+            except subprocess.TimeoutExpired:
+                logger.warning("pdftotext_timeout url=%s", url)
+                return {**output, "error": "pdftotext command timed out (>30s)"}
+            except Exception as exc:
+                logger.exception("pdf_extraction_failed url=%s", url)
+                return {**output, "error": str(exc)}
+
+        # Cap extracted text
+        if len(extracted_text) > MAX_EXTRACTED_TEXT:
+            extracted_text = extracted_text[:MAX_EXTRACTED_TEXT]
+            logger.warning("pdf_text_truncated url=%s", url)
+
+        output["text"] = extracted_text
+        output["page_count"] = page_count or 0
+        output["extraction_method"] = extraction_method or "unknown"
+
+        # Set pages_extracted field
+        if start_page is not None:
+            output["pages_extracted"] = f"{start_page}-{end_page}"
+        else:
+            output["pages_extracted"] = "all"
+
+        logger.info(
+            "pdf_extract_success url=%s method=%s pages=%s",
+            url, extraction_method, output["pages_extracted"]
+        )
+
+        return output
+
+    except httpx.HTTPError as exc:
+        logger.warning("pdf_download_failed url=%s: %s", url, exc)
+        return {**output, "error": f"HTTP error: {exc}"}
+    except Exception as exc:
+        logger.exception("pdf_extract_failed url=%s", url)
+        return {**output, "error": str(exc)}
+
+
+def research_pdf_search(url: str, query: str) -> dict[str, Any]:
+    """Search for text within a PDF.
+
+    Downloads and extracts all pages from the PDF, then searches for the
+    query string (case-insensitive).
+
+    Args:
+        url: URL to PDF file
+        query: text to search for (case-insensitive)
+
+    Returns:
+        Dict with:
+        - url: the input URL
+        - query: the search query
+        - matches: list of dicts with page number and context
+        - total_matches: total count of matches
+        - error: error message if search failed
+    """
+    try:
+        url = _validate_url(url)
+    except ValueError as exc:
+        return {"url": url, "query": query, "error": str(exc)}
+
+    if not query or len(query) > 1000:
+        return {
+            "url": url,
+            "query": query,
+            "error": "query must be 1-1000 characters",
+        }
+
+    output: dict[str, Any] = {
+        "url": url,
+        "query": query,
+        "matches": [],
+        "total_matches": 0,
+    }
+
+    try:
+        # Download and extract PDF
+        extract_result = research_pdf_extract(url)
+
+        if "error" in extract_result:
+            return {**output, "error": extract_result["error"]}
+
+        text = extract_result.get("text", "")
+        if not text:
+            logger.warning("pdf_search_empty_text url=%s", url)
+            return output
+
+        # Search for query (case-insensitive)
+        query_lower = query.lower()
+        matches = []
+        total_matches = 0
+
+        # Split text into lines for context
+        lines = text.split("\n")
+        line_num = 0
+
+        # Simple context window: 200 chars before and after match
+        context_window = 200
+
+        for line_idx, line in enumerate(lines):
+            line_lower = line.lower()
+            if query_lower in line_lower:
+                # Count occurrences in this line
+                count = line_lower.count(query_lower)
+                total_matches += count
+
+                # Build context: previous line + this line + next line
+                context_parts = []
+                if line_idx > 0:
+                    context_parts.append(lines[line_idx - 1][-context_window:])
+                context_parts.append(line)
+                if line_idx < len(lines) - 1:
+                    context_parts.append(lines[line_idx + 1][:context_window])
+
+                context = " ... ".join(context_parts)
+
+                # Truncate context to reasonable length
+                if len(context) > 500:
+                    context = context[:500] + "..."
+
+                matches.append({
+                    "line": line_idx + 1,
+                    "context": context,
+                    "count": count,
+                })
+
+                # Limit matches returned
+                if len(matches) >= 100:
+                    break
+
+        output["matches"] = matches
+        output["total_matches"] = total_matches
+
+        logger.info(
+            "pdf_search_success url=%s query=%s matches=%d",
+            url, query, total_matches
+        )
+
+        return output
+
+    except Exception as exc:
+        logger.exception("pdf_search_failed url=%s query=%s", url, query)
+        return {**output, "error": str(exc)}
