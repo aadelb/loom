@@ -29,7 +29,18 @@ from loom.sessions import (
 )
 
 # Import tool modules to register their functions
-from loom.tools import cache_mgmt, deep, fetch, github, markdown, search, spider, stealth
+from loom.tools import (
+    cache_mgmt,
+    deception_detect,
+    deep,
+    fetch,
+    github,
+    markdown,
+    search,
+    spider,
+    stealth,
+    stylometry,
+)
 from loom.tracing import install_tracing, new_request_id
 
 log = logging.getLogger("loom.server")
@@ -142,6 +153,26 @@ with suppress(ImportError):
 
     _optional_tools["dead_drop_scanner"] = dead_drop_scanner_tools
 
+with suppress(ImportError):
+    from loom.tools import persona_profile as persona_profile_tools
+
+    _optional_tools["persona_profile"] = persona_profile_tools
+
+with suppress(ImportError):
+    from loom.tools import radicalization_detect as radicalization_detect_tools
+
+    _optional_tools["radicalization_detect"] = radicalization_detect_tools
+with suppress(ImportError):
+    from loom.tools import sentiment_deep as sentiment_deep_tools
+
+    _optional_tools["sentiment_deep"] = sentiment_deep_tools
+
+with suppress(ImportError):
+    from loom.tools import network_persona as network_persona_tools
+
+    _optional_tools["network_persona"] = network_persona_tools
+
+
 
 _start_time = time.time()
 
@@ -210,6 +241,10 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(stealth.research_botasaurus, "fetch"))
     mcp.tool()(_wrap_tool(cache_mgmt.research_cache_stats))
     mcp.tool()(_wrap_tool(cache_mgmt.research_cache_clear))
+
+    # Psychology & deception analysis tools
+    mcp.tool()(_wrap_tool(stylometry.research_stylometry))
+    mcp.tool()(_wrap_tool(deception_detect.research_deception_detect))
 
     # Session tools
     mcp.tool()(_wrap_tool(research_session_open))
@@ -398,6 +433,27 @@ def _register_tools(mcp: FastMCP) -> None:
         dead_drop_scanner_mod = _optional_tools["dead_drop_scanner"]
         if hasattr(dead_drop_scanner_mod, "research_dead_drop_scanner"):
             mcp.tool()(_wrap_tool(dead_drop_scanner_mod.research_dead_drop_scanner, "fetch"))
+
+    if "persona_profile" in _optional_tools:
+        persona_profile_mod = _optional_tools["persona_profile"]
+        if hasattr(persona_profile_mod, "research_persona_profile"):
+            mcp.tool()(_wrap_tool(persona_profile_mod.research_persona_profile, "llm"))
+
+    if "radicalization_detect" in _optional_tools:
+        radicalization_detect_mod = _optional_tools["radicalization_detect"]
+        if hasattr(radicalization_detect_mod, "research_radicalization_detect"):
+            mcp.tool()(_wrap_tool(radicalization_detect_mod.research_radicalization_detect, "llm"))
+
+
+    if "sentiment_deep" in _optional_tools:
+        sentiment_deep_mod = _optional_tools["sentiment_deep"]
+        if hasattr(sentiment_deep_mod, "research_sentiment_deep"):
+            mcp.tool()(_wrap_tool(sentiment_deep_mod.research_sentiment_deep, "analysis"))
+
+    if "network_persona" in _optional_tools:
+        network_persona_mod = _optional_tools["network_persona"]
+        if hasattr(network_persona_mod, "research_network_persona"):
+            mcp.tool()(_wrap_tool(network_persona_mod.research_network_persona, "analysis"))
 
 
 def create_app() -> FastMCP:
