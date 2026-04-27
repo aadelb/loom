@@ -930,3 +930,253 @@ class SocialProfileParams(BaseModel):
     @classmethod
     def validate_url_field(cls, v: str) -> str:
         return validate_url(v)
+
+class IPReputationParams(BaseModel):
+    """Parameters for research_ip_reputation tool."""
+
+    ip: str
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("ip")
+    @classmethod
+    def validate_ip(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("ip must be non-empty")
+        return v.strip()
+
+
+class IPGeolocationParams(BaseModel):
+    """Parameters for research_ip_geolocation tool."""
+
+    ip: str
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("ip")
+    @classmethod
+    def validate_ip(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("ip must be non-empty")
+        return v.strip()
+
+
+class CVELookupParams(BaseModel):
+    """Parameters for research_cve_lookup tool."""
+
+    query: str
+    limit: int = 10
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("query")
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("query must be non-empty")
+        return v.strip()
+
+    @field_validator("limit")
+    @classmethod
+    def validate_limit(cls, v: int) -> int:
+        if v < 1 or v > 100:
+            raise ValueError("limit must be 1-100")
+        return v
+
+
+class CVEDetailParams(BaseModel):
+    """Parameters for research_cve_detail tool."""
+
+    cve_id: str
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("cve_id")
+    @classmethod
+    def validate_cve_id(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("cve_id must be non-empty")
+        return v.strip().upper()
+
+
+class URLHausCheckParams(BaseModel):
+    """Parameters for research_urlhaus_check tool."""
+
+    url: str
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def validate_url_field(cls, v: str) -> str:
+        return validate_url(v)
+
+
+class URLHausSearchParams(BaseModel):
+    """Parameters for research_urlhaus_search tool."""
+
+    query: str
+    search_type: Literal["tag", "signature", "hash"] = "tag"
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("query")
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("query must be non-empty")
+        return v.strip()
+
+
+class CertAnalyzeParams(BaseModel):
+    """Parameters for research_cert_analyze tool."""
+
+    hostname: str
+    port: int = 443
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("hostname")
+    @classmethod
+    def validate_hostname(cls, v: str) -> str:
+        if not v or not isinstance(v, str):
+            raise ValueError("hostname must be non-empty string")
+        # Allow alphanumeric, dots, hyphens only
+        allowed = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-")
+        if not all(c in allowed for c in v):
+            raise ValueError("hostname must contain only alphanumeric, dots, hyphens")
+        if v.startswith("-") or v.endswith("-") or v.startswith(".") or v.endswith("."):
+            raise ValueError("hostname cannot start or end with hyphen or dot")
+        if len(v) > 255:
+            raise ValueError("hostname max 255 characters")
+        return v
+
+    @field_validator("port")
+    @classmethod
+    def validate_port(cls, v: int) -> int:
+        if v < 1 or v > 65535:
+            raise ValueError("port must be 1-65535")
+        return v
+
+
+class SecurityHeadersParams(BaseModel):
+    """Parameters for research_security_headers tool."""
+
+    url: str
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def validate_url_field(cls, v: str) -> str:
+        return validate_url(v)
+
+
+class BreachCheckParams(BaseModel):
+    """Parameters for research_breach_check tool."""
+
+    email: str
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        import re
+        if not v or not isinstance(v, str):
+            raise ValueError("email must be non-empty string")
+        if len(v) > 254:
+            raise ValueError("email max 254 characters")
+        # Basic email pattern
+        pattern = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
+        if not re.match(pattern, v.strip()):
+            raise ValueError("email must be valid format")
+        return v.strip()
+
+
+class PasswordCheckParams(BaseModel):
+    """Parameters for research_password_check tool."""
+
+    password: str
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        if not v or not isinstance(v, str):
+            raise ValueError("password must be non-empty string")
+        if len(v) > 256:
+            raise ValueError("password max 256 characters")
+        return v
+
+
+class GeoIPLocalParams(BaseModel):
+    """Parameters for research_geoip_local tool."""
+
+    ip: str
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("ip")
+    @classmethod
+    def validate_ip(cls, v: str) -> str:
+        if not v or not isinstance(v, str):
+            raise ValueError("ip must be non-empty string")
+        v = v.strip()
+        if len(v) > 45:  # Max IPv6 length
+            raise ValueError("ip max 45 characters")
+        return v
+
+
+class ExifExtractParams(BaseModel):
+    """Parameters for research_exif_extract tool."""
+
+    url_or_path: str
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("url_or_path")
+    @classmethod
+    def validate_url_or_path(cls, v: str) -> str:
+        if not v or not isinstance(v, str):
+            raise ValueError("url_or_path must be non-empty string")
+        v = v.strip()
+        if len(v) > 2048:
+            raise ValueError("url_or_path max 2048 characters")
+        # Validate if it's a URL
+        if v.startswith(("http://", "https://")):
+            return validate_url(v)
+        return v
+
+
+class OCRExtractParams(BaseModel):
+    """Parameters for research_ocr_extract tool."""
+
+    url_or_path: str
+    language: str = "eng"
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("url_or_path")
+    @classmethod
+    def validate_url_or_path(cls, v: str) -> str:
+        if not v or not isinstance(v, str):
+            raise ValueError("url_or_path must be non-empty string")
+        v = v.strip()
+        if len(v) > 2048:
+            raise ValueError("url_or_path max 2048 characters")
+        # Validate if it's a URL
+        if v.startswith(("http://", "https://")):
+            return validate_url(v)
+        return v
+
+    @field_validator("language")
+    @classmethod
+    def validate_language(cls, v: str) -> str:
+        if not v or not isinstance(v, str):
+            raise ValueError("language must be non-empty string")
+        v = v.strip().lower()
+        if len(v) > 10:
+            raise ValueError("language max 10 characters")
+        return v

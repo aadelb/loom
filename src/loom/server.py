@@ -30,7 +30,9 @@ from loom.sessions import (
 
 # Import tool modules to register their functions
 from loom.tools import (
+    breach_check,
     cache_mgmt,
+    cert_analyzer,
     deception_detect,
     deep,
     domain_intel,
@@ -40,6 +42,7 @@ from loom.tools import (
     pdf_extract,
     rss_monitor,
     search,
+    security_headers,
     social_intel,
     spider,
     stealth,
@@ -186,38 +189,16 @@ with suppress(ImportError):
 
     _optional_tools["screenshot"] = screenshot_tools
 
-with suppress(ImportError):
-    from loom.tools import cert_analyzer as cert_analyzer_tools
-
-    _optional_tools["cert_analyzer"] = cert_analyzer_tools
 
 with suppress(ImportError):
-    from loom.tools import security_headers as security_headers_tools
+    from loom.tools import geoip_local as geoip_local_tools
 
-    _optional_tools["security_headers"] = security_headers_tools
-
-with suppress(ImportError):
-    from loom.tools import breach_check as breach_check_tools
-
-    _optional_tools["breach_check"] = breach_check_tools
+    _optional_tools["geoip_local"] = geoip_local_tools
 
 with suppress(ImportError):
-    from loom.tools import ip_intel as ip_intel_tools
+    from loom.tools import image_intel as image_intel_tools
 
-    _optional_tools["ip_intel"] = ip_intel_tools
-
-with suppress(ImportError):
-    from loom.tools import cve_lookup as cve_lookup_tools
-
-    _optional_tools["cve_lookup"] = cve_lookup_tools
-
-with suppress(ImportError):
-    from loom.tools import urlhaus_lookup as urlhaus_lookup_tools
-
-    _optional_tools["urlhaus_lookup"] = urlhaus_lookup_tools
-
-
-
+    _optional_tools["image_intel"] = image_intel_tools
 
 _start_time = time.time()
 
@@ -295,6 +276,12 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(domain_intel.research_whois, "fetch"))
     mcp.tool()(_wrap_tool(domain_intel.research_dns_lookup, "fetch"))
     mcp.tool()(_wrap_tool(domain_intel.research_nmap_scan, "fetch"))
+
+    # Security tools (cert analysis, headers, breach checking)
+    mcp.tool()(_wrap_tool(cert_analyzer.research_cert_analyze, "fetch"))
+    mcp.tool()(_wrap_tool(security_headers.research_security_headers, "fetch"))
+    mcp.tool()(_wrap_tool(breach_check.research_breach_check))
+    mcp.tool()(_wrap_tool(breach_check.research_password_check))
 
     # PDF extraction tools
     mcp.tool()(_wrap_tool(pdf_extract.research_pdf_extract, "fetch"))
@@ -567,6 +554,20 @@ def _register_tools(mcp: FastMCP) -> None:
         if hasattr(cve_lookup_mod, "research_cve_detail"):
             mcp.tool()(_wrap_tool(cve_lookup_mod.research_cve_detail, "fetch"))
 
+    # GeoIP local lookup tools (if available)
+    if "geoip_local" in _optional_tools:
+        geoip_local_mod = _optional_tools["geoip_local"]
+        if hasattr(geoip_local_mod, "research_geoip_local"):
+            mcp.tool()(_wrap_tool(geoip_local_mod.research_geoip_local))
+
+    # Image intelligence tools (EXIF, OCR; if available)
+    if "image_intel" in _optional_tools:
+        image_intel_mod = _optional_tools["image_intel"]
+        if hasattr(image_intel_mod, "research_exif_extract"):
+            mcp.tool()(_wrap_tool(image_intel_mod.research_exif_extract))
+        if hasattr(image_intel_mod, "research_ocr_extract"):
+            mcp.tool()(_wrap_tool(image_intel_mod.research_ocr_extract))
+
     # URLhaus lookup tools (if available)
     if "urlhaus_lookup" in _optional_tools:
         urlhaus_lookup_mod = _optional_tools["urlhaus_lookup"]
@@ -574,6 +575,20 @@ def _register_tools(mcp: FastMCP) -> None:
             mcp.tool()(_wrap_tool(urlhaus_lookup_mod.research_urlhaus_check, "fetch"))
         if hasattr(urlhaus_lookup_mod, "research_urlhaus_search"):
             mcp.tool()(_wrap_tool(urlhaus_lookup_mod.research_urlhaus_search, "search"))
+
+    # GeoIP local lookup
+    if "geoip_local" in _optional_tools:
+        geoip_mod = _optional_tools["geoip_local"]
+        if hasattr(geoip_mod, "research_geoip_local"):
+            mcp.tool()(_wrap_tool(geoip_mod.research_geoip_local, "fetch"))
+
+    # Image intelligence (EXIF + OCR)
+    if "image_intel" in _optional_tools:
+        image_mod = _optional_tools["image_intel"]
+        if hasattr(image_mod, "research_exif_extract"):
+            mcp.tool()(_wrap_tool(image_mod.research_exif_extract, "fetch"))
+        if hasattr(image_mod, "research_ocr_extract"):
+            mcp.tool()(_wrap_tool(image_mod.research_ocr_extract, "fetch"))
 
 def create_app() -> FastMCP:
     """Create and configure the FastMCP server instance.
