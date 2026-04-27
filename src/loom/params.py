@@ -10,7 +10,11 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
+from loom.config import CONFIG
 from loom.validators import filter_headers, validate_js_script, validate_url
+
+# Default Accept-Language header sourced from config
+_DEFAULT_ACCEPT_LANG = CONFIG.get("DEFAULT_ACCEPT_LANGUAGE", "en-US,en;q=0.9,ar;q=0.8")
 
 
 class FetchParams(BaseModel):
@@ -30,7 +34,7 @@ class FetchParams(BaseModel):
     retries: int = 0
     timeout: int | None = None
     wait_for: str | None = None
-    accept_language: str = "en-US,en;q=0.9,ar;q=0.8"
+    accept_language: str = _DEFAULT_ACCEPT_LANG
     session: str | None = None
     return_format: Literal["text", "html", "json", "screenshot"] = "text"
     extract_selector: str | None = None
@@ -94,7 +98,7 @@ class SpiderParams(BaseModel):
     user_agent: str | None = None
     proxy: str | None = None
     cookies: dict[str, str] | None = None
-    accept_language: str = "en-US,en;q=0.9,ar;q=0.8"
+    accept_language: str = _DEFAULT_ACCEPT_LANG
     timeout: int | None = None
 
     model_config = {"extra": "forbid", "strict": True}
@@ -141,7 +145,7 @@ class MarkdownParams(BaseModel):
     user_agent: str | None = None
     proxy: str | None = None
     cookies: dict[str, str] | None = None
-    accept_language: str = "en-US,en;q=0.9,ar;q=0.8"
+    accept_language: str = _DEFAULT_ACCEPT_LANG
     timeout: int | None = None
     extract_selector: str | None = None
     wait_for: str | None = None
@@ -382,7 +386,7 @@ class SessionOpenParams(BaseModel):
     name: str
     browser: Literal["camoufox", "playwright", "patchright"] = "camoufox"
     headless: bool = True
-    accept_language: str = "en-US,en;q=0.9,ar;q=0.8"
+    accept_language: str = _DEFAULT_ACCEPT_LANG
     login_url: str | None = None
     login_script: str | None = None
     initial_cookies: dict[str, str] | None = None

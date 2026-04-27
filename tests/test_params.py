@@ -75,6 +75,35 @@ class TestFetchParams:
             FetchParams(url="https://example.com", unknown_field="value")
 
 
+class TestProxySchemes:
+    """Proxy scheme validation tests (SOCKS5 and variants)."""
+
+    def test_fetch_params_socks5_proxy_valid(self) -> None:
+        """SOCKS5 proxy passes validation."""
+        p = FetchParams(url="https://example.com", proxy="socks5://127.0.0.1:9050")
+        assert p.proxy == "socks5://127.0.0.1:9050"
+
+    def test_fetch_params_socks5h_proxy_valid(self) -> None:
+        """SOCKS5h proxy passes validation."""
+        p = FetchParams(url="https://example.com", proxy="socks5h://127.0.0.1:9050")
+        assert p.proxy == "socks5h://127.0.0.1:9050"
+
+    def test_spider_params_socks5_proxy_valid(self) -> None:
+        """SOCKS5h proxy in SpiderParams passes validation."""
+        p = SpiderParams(urls=["https://example.com"], proxy="socks5h://127.0.0.1:9050")
+        assert p.proxy == "socks5h://127.0.0.1:9050"
+
+    def test_markdown_params_socks5_proxy_valid(self) -> None:
+        """SOCKS5 proxy in MarkdownParams passes validation."""
+        p = MarkdownParams(url="https://example.com", proxy="socks5://127.0.0.1:1080")
+        assert p.proxy == "socks5://127.0.0.1:1080"
+
+    def test_fetch_params_socks4_proxy_rejected(self) -> None:
+        """SOCKS4 proxy is rejected (not in allowed schemes)."""
+        with pytest.raises(ValidationError):
+            FetchParams(url="https://example.com", proxy="socks4://127.0.0.1:9050")
+
+
 class TestSearchParams:
     """SearchParams validation tests."""
 

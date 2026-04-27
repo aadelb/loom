@@ -118,3 +118,22 @@ class TestGitHubQueryValidator:
         query = "normal query with 'quotes'"
         assert GH_QUERY_RE.match(query)
         assert not query.lstrip().startswith("-")
+
+
+class TestOnionUrlValidation:
+    """Test .onion URL validation with Tor config."""
+
+    def test_onion_url_accepted_when_tor_enabled(self) -> None:
+        """Accept .onion URLs when TOR_ENABLED is true."""
+        from unittest.mock import patch
+
+        with patch("loom.config.get_config", return_value={"TOR_ENABLED": True}):
+            result = validate_url("http://exampleonion.onion/path")
+            assert result == "http://exampleonion.onion/path"
+
+    def test_onion_url_rejected_when_tor_disabled(self) -> None:
+        """Reject .onion URLs when TOR_ENABLED is false."""
+        from unittest.mock import patch
+
+        with patch("loom.config.get_config", return_value={"TOR_ENABLED": False}), pytest.raises(UrlSafetyError):
+            validate_url("http://exampleonion.onion/path")
