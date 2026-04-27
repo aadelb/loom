@@ -1916,24 +1916,158 @@ Request a new Tor identity (new exit IP).
 
 ---
 
+## research_cipher_mirror
+
+Audits text for leaked credentials using Shannon entropy detection and known API key patterns.
+
+**Parameters:** `text` (str), `min_confidence` (float, default 0.6)
+**Returns:** `{"credentials": [...], "total_found": int, "high_confidence": int}`
+
+---
+
+## research_forum_cortex
+
+Analyzes dark forum discourse using search providers and LLM-powered classification.
+
+**Parameters:** `query` (str), `providers` (list, default ["ahmia"]), `max_posts` (int, default 20)
+**Returns:** `{"posts": [...], "topics": [...], "sentiment": str}`
+
+---
+
+## research_onion_spectra
+
+Classifies multilingual .onion content by safety category with language detection heuristics.
+
+**Parameters:** `url` (str), `proxy` (str, optional)
+**Returns:** `{"category": str, "language": str, "confidence": float, "content_preview": str}`
+
+---
+
+## research_ghost_weave
+
+Builds temporal hyperlink graphs of hidden services using BFS traversal.
+
+**Parameters:** `seed_urls` (list[str]), `depth` (int, default 2), `proxy` (str, optional)
+**Returns:** `{"nodes": [...], "edges": [...], "stats": {...}}`
+
+---
+
+## research_dead_drop_scanner
+
+Monitors ephemeral .onion sites for content changes using k-gram shingling and Jaccard similarity.
+
+**Parameters:** `urls` (list[str]), `proxy` (str, optional), `similarity_threshold` (float, default 0.3)
+**Returns:** `{"sites": [...], "changes_detected": int}`
+
+---
+
+## research_find_experts
+
+Finds domain experts for a given topic using search and LLM analysis.
+
+**Parameters:** `topic` (str), `n` (int, default 5)
+**Returns:** `{"experts": [...], "topic": str}`
+
+---
+
+## find_similar_exa
+
+Finds similar pages to a given URL using Exa's neural similarity search.
+
+**Parameters:** `url` (str), `n` (int, default 10)
+**Returns:** `{"results": [...], "url": str}`
+**API Key:** `EXA_API_KEY`
+
+---
+
+## research_health_check
+
+Returns server health status including uptime and active session count.
+
+**Parameters:** None
+**Returns:** `{"status": "healthy", "timestamp": str, "uptime_seconds": int, "active_sessions": int}`
+
+---
+
+## research_metrics
+
+Exports Prometheus-compatible metrics for tool latency, cost, and error rates.
+
+**Parameters:** None
+**Returns:** `{"metrics": str}` (Prometheus text format)
+
+---
+
+## research_slack_notify
+
+Sends a notification message to a Slack channel via bot token.
+
+**Parameters:** `channel` (str), `message` (str)
+**Returns:** `{"sent": bool, "channel": str}`
+**API Key:** `SLACK_BOT_TOKEN`
+
+---
+
+## research_image_analyze
+
+Analyzes images using Google Cloud Vision API.
+
+**Parameters:** `image_url` (str), `features` (list, default ["labels", "text"])
+**Returns:** `{"labels": [...], "text": str, "objects": [...]}`
+**API Key:** `GOOGLE_CLOUD_API_KEY`
+
+---
+
+## research_text_to_speech
+
+Converts text to speech using Google Cloud TTS.
+
+**Parameters:** `text` (str), `language` (str, default "en-US"), `voice` (str, optional)
+**Returns:** `{"audio_base64": str, "duration_ms": int}`
+**API Key:** `GOOGLE_CLOUD_API_KEY`
+
+---
+
+## research_tts_voices
+
+Lists available text-to-speech voices.
+
+**Parameters:** `language` (str, optional)
+**Returns:** `{"voices": [...]}`
+**API Key:** `GOOGLE_CLOUD_API_KEY`
+
+---
+
+## research_vercel_status
+
+Checks Vercel deployment status.
+
+**Parameters:** None
+**Returns:** `{"status": str, "url": str}`
+
+---
+
 ## Summary Table
 
 | Category | Count | Key Tools | Free? |
 |----------|-------|-----------|-------|
-| Core | 6 | `research_fetch`, `research_spider`, `research_markdown`, `research_search`, `research_deep` | Mostly |
+| Core | 6 | `research_fetch`, `research_spider`, `research_markdown`, `research_search`, `research_deep`, `research_health_check` | Mostly |
 | GitHub | 3 | `research_github`, `research_github_readme`, `research_github_releases` | Yes |
 | Stealth | 2 | `research_camoufox`, `research_botasaurus` | Yes |
 | LLM | 8 | All tools with LLM in name | No (cascade routing) |
-| Enrichment | 2 | `research_detect_language`, `research_wayback` | Yes |
+| Enrichment | 3 | `research_detect_language`, `research_wayback`, `research_find_experts` | Yes |
 | Creative | 11 | Red-team, multilingual, consensus, misinfo, temporal-diff, citation-graph, AI-detect, curriculum, sentiment, wiki-ghost, semantic-sitemap | Mostly |
 | YouTube | 1 | `fetch_youtube_transcript` | Yes |
+| Exa | 1 | `find_similar_exa` | No |
 | Sessions | 3 | `research_session_open`, `research_session_list`, `research_session_close` | Yes |
 | Config | 2 | `research_config_get`, `research_config_set` | Yes |
 | Cache | 2 | `research_cache_stats`, `research_cache_clear` | Yes |
-| Infrastructure | 4 | `research_vastai_search`, `research_vastai_status`, `research_usage_report`, `research_stripe_balance` | Mostly |
-| Communication | 2 | `research_email_report`, `research_save_note`, `research_list_notebooks` | Mostly |
-| Media | 2 | `research_transcribe`, `research_convert_document` | Yes |
-| Darkweb | 2 | `research_tor_status`, `research_tor_new_identity` | Yes |
+| Infrastructure | 5 | `research_vastai_search`, `research_vastai_status`, `research_usage_report`, `research_stripe_balance`, `research_vercel_status` | Mostly |
+| Communication | 4 | `research_email_report`, `research_save_note`, `research_list_notebooks`, `research_slack_notify` | Mostly |
+| Media | 4 | `research_transcribe`, `research_convert_document`, `research_image_analyze`, `research_text_to_speech`, `research_tts_voices` | Mostly |
+| Monitoring | 1 | `research_metrics` | Yes |
+| Darkweb Core | 2 | `research_tor_status`, `research_tor_new_identity` | Yes |
+| Darkweb Advanced | 5 | `research_cipher_mirror`, `research_forum_cortex`, `research_onion_spectra`, `research_ghost_weave`, `research_dead_drop_scanner` | Yes |
 
-**Total: 53 tools**
+**Total: 64 tools**
 

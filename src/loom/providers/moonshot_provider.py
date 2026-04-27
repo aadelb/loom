@@ -73,6 +73,7 @@ class MoonshotProvider(LLMProvider):
         timeout: int = 120,  # noqa: ASYNC109
     ) -> LLMResponse:
         model = model or self.default_model
+        timeout = max(1, min(int(timeout), 600))
         async with self.semaphore:
             client = await self._get_client()
             start = time.time()

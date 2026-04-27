@@ -535,7 +535,6 @@ async def research_citation_graph(
                     }
 
                     if depth >= 1 and len(papers) < max_papers:
-                        # Fetch citations and references in parallel (Issue #179)
                         cit_resp = client.get(
                             f"{_SEMANTIC_SCHOLAR_URL}/paper/{pid}/citations",
                             params={
