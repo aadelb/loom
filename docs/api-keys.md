@@ -133,7 +133,7 @@ export VLLM_MODEL="meta-llama/Llama-2-70b-hf"  # Model to use
 
 ---
 
-## Search Providers (17 total)
+## Search Providers (21 total)
 
 ### Standard Web Search (4 providers)
 
@@ -237,13 +237,25 @@ export COINMARKETCAP_API_KEY="your-cmc-key"
 #### Binance Data (No API key)
 Live crypto price data and trading info. Free and unlimited via public API.
 
-### Darkweb & Specialized (3 providers)
+### Darkweb & Specialized (7 providers)
 
 #### Ahmia (No API key)
 Tor hidden services search. Free and unlimited.
 
 #### Darksearch (No API key)
 Alternative darkweb search. Free and unlimited.
+
+#### OnionSearch (No API key)
+Tor onion crawler. Uses SOCKS5 proxy. Free and unlimited.
+
+#### TorCrawl (No API key)
+Tor crawling pattern. Uses SOCKS5 proxy. Free and unlimited.
+
+#### deepdarkCTI (No API key)
+Dark web threat intelligence sources. Free and unlimited.
+
+#### robin OSINT (No API key)
+AI-powered dark web OSINT tool. Free and unlimited.
 
 #### UMMRO_RAG_URL
 
@@ -330,6 +342,32 @@ export SMTP_APP_PASSWORD="your-16-char-app-password"
 ```bash
 export JOPLIN_TOKEN="your-joplin-api-token"
 export JOPLIN_BASE_URL="http://localhost:41184"  # optional, has default
+```
+
+---
+
+## Communication & Notifications
+
+### SLACK_BOT_TOKEN
+
+**Service:** Slack Bot API  
+**Signup:** https://api.slack.com/apps  
+**What it unlocks:** Send notifications via `research_slack_notify`  
+
+```bash
+export SLACK_BOT_TOKEN="xoxb-your-bot-token"
+```
+
+---
+
+### GOOGLE_CLOUD_API_KEY
+
+**Service:** Google Cloud (Vision, TTS)  
+**Signup:** https://console.cloud.google.com  
+**What it unlocks:** Image analysis and text-to-speech via `research_gcp_vision`, `research_gcp_tts`  
+
+```bash
+export GOOGLE_CLOUD_API_KEY="your-gcloud-api-key"
 ```
 
 ---
@@ -771,7 +809,7 @@ export STEALTH_TIMEOUT="120"
 
 ## Minimum Viable Key Set
 
-For a functional Loom installation with all 53 tools:
+For a functional Loom installation with all 64 tools:
 
 ```bash
 # REQUIRED: At least ONE LLM provider (try in this order)
