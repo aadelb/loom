@@ -569,20 +569,22 @@ class SessionManager:
     def _init_db(self) -> None:
         """Create sessions table if not exists."""
         conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS sessions (
-                name TEXT PRIMARY KEY,
-                browser TEXT NOT NULL,
-                profile_dir TEXT NOT NULL,
-                session_id TEXT NOT NULL,
-                created_at TEXT NOT NULL,
-                last_used_at TEXT NOT NULL,
-                expires_at TEXT NOT NULL
-            )
-        """)
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS sessions (
+                    name TEXT PRIMARY KEY,
+                    browser TEXT NOT NULL,
+                    profile_dir TEXT NOT NULL,
+                    session_id TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    last_used_at TEXT NOT NULL,
+                    expires_at TEXT NOT NULL
+                )
+            """)
+            conn.commit()
+        finally:
+            conn.close()
 
     def _get_session_lock(self, name: str) -> asyncio.Semaphore:
         """Get or create a semaphore for a session name (for serializing access)."""
@@ -730,28 +732,30 @@ class SessionManager:
             List of session dicts with name, browser, profile_dir, session_id, etc.
         """
         conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT name, browser, profile_dir, session_id, created_at, last_used_at, expires_at "
-            "FROM sessions ORDER BY last_used_at DESC"
-        )
-        rows = cursor.fetchall()
-        conn.close()
-
-        result = []
-        for row in rows:
-            result.append(
-                {
-                    "name": row[0],
-                    "browser": row[1],
-                    "profile_dir": row[2],
-                    "session_id": row[3],
-                    "created_at": row[4],
-                    "last_used_at": row[5],
-                    "expires_at": row[6],
-                }
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT name, browser, profile_dir, session_id, created_at, last_used_at, expires_at "
+                "FROM sessions ORDER BY last_used_at DESC"
             )
-        return result
+            rows = cursor.fetchall()
+
+            result = []
+            for row in rows:
+                result.append(
+                    {
+                        "name": row[0],
+                        "browser": row[1],
+                        "profile_dir": row[2],
+                        "session_id": row[3],
+                        "created_at": row[4],
+                        "last_used_at": row[5],
+                        "expires_at": row[6],
+                    }
+                )
+            return result
+        finally:
+            conn.close()
 
     def get_context(self, name: str) -> dict[str, Any] | None:
         """Get session metadata by name, or None if not found.
@@ -763,27 +767,29 @@ class SessionManager:
             Session dict or None
         """
         conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT name, browser, profile_dir, session_id, created_at, last_used_at, expires_at "
-            "FROM sessions WHERE name = ?",
-            (name,),
-        )
-        row = cursor.fetchone()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT name, browser, profile_dir, session_id, created_at, last_used_at, expires_at "
+                "FROM sessions WHERE name = ?",
+                (name,),
+            )
+            row = cursor.fetchone()
 
-        if not row:
-            return None
+            if not row:
+                return None
 
-        return {
-            "name": row[0],
-            "browser": row[1],
-            "profile_dir": row[2],
-            "session_id": row[3],
-            "created_at": row[4],
-            "last_used_at": row[5],
-            "expires_at": row[6],
-        }
+            return {
+                "name": row[0],
+                "browser": row[1],
+                "profile_dir": row[2],
+                "session_id": row[3],
+                "created_at": row[4],
+                "last_used_at": row[5],
+                "expires_at": row[6],
+            }
+        finally:
+            conn.close()
 
 
 def get_session_manager() -> SessionManager:
