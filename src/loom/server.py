@@ -186,6 +186,36 @@ with suppress(ImportError):
 
     _optional_tools["screenshot"] = screenshot_tools
 
+with suppress(ImportError):
+    from loom.tools import cert_analyzer as cert_analyzer_tools
+
+    _optional_tools["cert_analyzer"] = cert_analyzer_tools
+
+with suppress(ImportError):
+    from loom.tools import security_headers as security_headers_tools
+
+    _optional_tools["security_headers"] = security_headers_tools
+
+with suppress(ImportError):
+    from loom.tools import breach_check as breach_check_tools
+
+    _optional_tools["breach_check"] = breach_check_tools
+
+with suppress(ImportError):
+    from loom.tools import ip_intel as ip_intel_tools
+
+    _optional_tools["ip_intel"] = ip_intel_tools
+
+with suppress(ImportError):
+    from loom.tools import cve_lookup as cve_lookup_tools
+
+    _optional_tools["cve_lookup"] = cve_lookup_tools
+
+with suppress(ImportError):
+    from loom.tools import urlhaus_lookup as urlhaus_lookup_tools
+
+    _optional_tools["urlhaus_lookup"] = urlhaus_lookup_tools
+
 
 
 
@@ -500,6 +530,50 @@ def _register_tools(mcp: FastMCP) -> None:
         screenshot_mod = _optional_tools["screenshot"]
         if hasattr(screenshot_mod, "research_screenshot"):
             mcp.tool()(_wrap_tool(screenshot_mod.research_screenshot, "fetch"))
+
+    # SSL/TLS certificate analyzer
+    if "cert_analyzer" in _optional_tools:
+        cert_mod = _optional_tools["cert_analyzer"]
+        if hasattr(cert_mod, "research_cert_analyze"):
+            mcp.tool()(_wrap_tool(cert_mod.research_cert_analyze, "fetch"))
+
+    # HTTP security headers checker
+    if "security_headers" in _optional_tools:
+        sec_headers_mod = _optional_tools["security_headers"]
+        if hasattr(sec_headers_mod, "research_security_headers"):
+            mcp.tool()(_wrap_tool(sec_headers_mod.research_security_headers, "fetch"))
+
+    # Breach/password check tools
+    if "breach_check" in _optional_tools:
+        breach_mod = _optional_tools["breach_check"]
+        if hasattr(breach_mod, "research_breach_check"):
+            mcp.tool()(_wrap_tool(breach_mod.research_breach_check, "fetch"))
+        if hasattr(breach_mod, "research_password_check"):
+            mcp.tool()(_wrap_tool(breach_mod.research_password_check))
+
+    # IP intelligence tools (if available)
+    if "ip_intel" in _optional_tools:
+        ip_intel_mod = _optional_tools["ip_intel"]
+        if hasattr(ip_intel_mod, "research_ip_reputation"):
+            mcp.tool()(_wrap_tool(ip_intel_mod.research_ip_reputation, "fetch"))
+        if hasattr(ip_intel_mod, "research_ip_geolocation"):
+            mcp.tool()(_wrap_tool(ip_intel_mod.research_ip_geolocation, "fetch"))
+
+    # CVE lookup tools (if available)
+    if "cve_lookup" in _optional_tools:
+        cve_lookup_mod = _optional_tools["cve_lookup"]
+        if hasattr(cve_lookup_mod, "research_cve_lookup"):
+            mcp.tool()(_wrap_tool(cve_lookup_mod.research_cve_lookup, "search"))
+        if hasattr(cve_lookup_mod, "research_cve_detail"):
+            mcp.tool()(_wrap_tool(cve_lookup_mod.research_cve_detail, "fetch"))
+
+    # URLhaus lookup tools (if available)
+    if "urlhaus_lookup" in _optional_tools:
+        urlhaus_lookup_mod = _optional_tools["urlhaus_lookup"]
+        if hasattr(urlhaus_lookup_mod, "research_urlhaus_check"):
+            mcp.tool()(_wrap_tool(urlhaus_lookup_mod.research_urlhaus_check, "fetch"))
+        if hasattr(urlhaus_lookup_mod, "research_urlhaus_search"):
+            mcp.tool()(_wrap_tool(urlhaus_lookup_mod.research_urlhaus_search, "search"))
 
 def create_app() -> FastMCP:
     """Create and configure the FastMCP server instance.
