@@ -200,6 +200,21 @@ with suppress(ImportError):
 
     _optional_tools["image_intel"] = image_intel_tools
 
+with suppress(ImportError):
+    from loom.tools import ip_intel as ip_intel_tools
+
+    _optional_tools["ip_intel"] = ip_intel_tools
+
+with suppress(ImportError):
+    from loom.tools import cve_lookup as cve_lookup_tools
+
+    _optional_tools["cve_lookup"] = cve_lookup_tools
+
+with suppress(ImportError):
+    from loom.tools import urlhaus_lookup as urlhaus_lookup_tools
+
+    _optional_tools["urlhaus_lookup"] = urlhaus_lookup_tools
+
 _start_time = time.time()
 
 
@@ -518,26 +533,6 @@ def _register_tools(mcp: FastMCP) -> None:
         if hasattr(screenshot_mod, "research_screenshot"):
             mcp.tool()(_wrap_tool(screenshot_mod.research_screenshot, "fetch"))
 
-    # SSL/TLS certificate analyzer
-    if "cert_analyzer" in _optional_tools:
-        cert_mod = _optional_tools["cert_analyzer"]
-        if hasattr(cert_mod, "research_cert_analyze"):
-            mcp.tool()(_wrap_tool(cert_mod.research_cert_analyze, "fetch"))
-
-    # HTTP security headers checker
-    if "security_headers" in _optional_tools:
-        sec_headers_mod = _optional_tools["security_headers"]
-        if hasattr(sec_headers_mod, "research_security_headers"):
-            mcp.tool()(_wrap_tool(sec_headers_mod.research_security_headers, "fetch"))
-
-    # Breach/password check tools
-    if "breach_check" in _optional_tools:
-        breach_mod = _optional_tools["breach_check"]
-        if hasattr(breach_mod, "research_breach_check"):
-            mcp.tool()(_wrap_tool(breach_mod.research_breach_check, "fetch"))
-        if hasattr(breach_mod, "research_password_check"):
-            mcp.tool()(_wrap_tool(breach_mod.research_password_check))
-
     # IP intelligence tools (if available)
     if "ip_intel" in _optional_tools:
         ip_intel_mod = _optional_tools["ip_intel"]
@@ -553,20 +548,6 @@ def _register_tools(mcp: FastMCP) -> None:
             mcp.tool()(_wrap_tool(cve_lookup_mod.research_cve_lookup, "search"))
         if hasattr(cve_lookup_mod, "research_cve_detail"):
             mcp.tool()(_wrap_tool(cve_lookup_mod.research_cve_detail, "fetch"))
-
-    # GeoIP local lookup tools (if available)
-    if "geoip_local" in _optional_tools:
-        geoip_local_mod = _optional_tools["geoip_local"]
-        if hasattr(geoip_local_mod, "research_geoip_local"):
-            mcp.tool()(_wrap_tool(geoip_local_mod.research_geoip_local))
-
-    # Image intelligence tools (EXIF, OCR; if available)
-    if "image_intel" in _optional_tools:
-        image_intel_mod = _optional_tools["image_intel"]
-        if hasattr(image_intel_mod, "research_exif_extract"):
-            mcp.tool()(_wrap_tool(image_intel_mod.research_exif_extract))
-        if hasattr(image_intel_mod, "research_ocr_extract"):
-            mcp.tool()(_wrap_tool(image_intel_mod.research_ocr_extract))
 
     # URLhaus lookup tools (if available)
     if "urlhaus_lookup" in _optional_tools:
