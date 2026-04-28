@@ -980,7 +980,8 @@ async def research_semantic_sitemap(
         """Sync wrapper for sitemap fetching."""
         urls: list[str] = []
         try:
-            with httpx.Client(timeout=15.0, follow_redirects=True) as client:
+            # Fix H9: Disable follow_redirects to prevent SSRF via redirect chains
+            with httpx.Client(timeout=15.0, follow_redirects=False) as client:
                 for path in ["/sitemap.xml", "/sitemap_index.xml", "/sitemap"]:
                     try:
                         resp = client.get(f"{base}{path}")
@@ -989,7 +990,13 @@ async def research_semantic_sitemap(
                             ns = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
                             for loc in root.findall(".//sm:loc", ns):
                                 if loc.text:
-                                    urls.append(loc.text)
+                                    # Fix H10: Validate each URL from sitemap before using
+                                    try:
+                                        validate_url(loc.text)
+                                        urls.append(loc.text)
+                                    except UrlSafetyError as exc:
+                                        logger.debug("sitemap_url_rejected url=%s: %s", loc.text, exc)
+                                        continue
                             if urls:
                                 break
                     except Exception as exc:

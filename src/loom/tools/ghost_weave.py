@@ -189,6 +189,10 @@ async def research_ghost_weave(
 
             # Add edges and queue new URLs
             for link in links:
+                # Fix H12: Cap edges to prevent unbounded memory growth
+                if len(edges) > max_pages * 20:
+                    break
+                    
                 link_normalized = _normalize_url(link)
                 edges.append(
                     {

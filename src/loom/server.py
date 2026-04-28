@@ -284,8 +284,8 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(cache_mgmt.research_cache_clear))
 
     # Psychology & behavioral analysis tools
-    mcp.tool()(_wrap_tool(stylometry.research_stylometry))
-    mcp.tool()(_wrap_tool(deception_detect.research_deception_detect))
+    mcp.tool()(_wrap_tool(stylometry.research_stylometry))  # CPU-only, no category
+    mcp.tool()(_wrap_tool(deception_detect.research_deception_detect))  # CPU-only, no category
 
     # Domain intelligence tools
     mcp.tool()(_wrap_tool(domain_intel.research_whois, "fetch"))
@@ -295,7 +295,7 @@ def _register_tools(mcp: FastMCP) -> None:
     # Security tools (cert analysis, headers, breach checking)
     mcp.tool()(_wrap_tool(cert_analyzer.research_cert_analyze, "fetch"))
     mcp.tool()(_wrap_tool(security_headers.research_security_headers, "fetch"))
-    mcp.tool()(_wrap_tool(breach_check.research_breach_check))
+    mcp.tool()(_wrap_tool(breach_check.research_breach_check, "fetch"))
     mcp.tool()(_wrap_tool(breach_check.research_password_check))
 
     # PDF extraction tools
@@ -307,7 +307,7 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(rss_monitor.research_rss_search, "search"))
 
     # Social intelligence tools
-    mcp.tool()(_wrap_tool(social_intel.research_social_search))
+    mcp.tool()(_wrap_tool(social_intel.research_social_search, "fetch"))
     mcp.tool()(_wrap_tool(social_intel.research_social_profile, "fetch"))
 
     # Session tools
