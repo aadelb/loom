@@ -282,6 +282,113 @@ export GITHUB_TOKEN="ghp_your-token"
 
 ---
 
+## Security & Intelligence Tools
+
+### HIBP_API_KEY (Optional)
+
+**Service:** Have I Been Pwned (HIBP)  
+**Signup:** https://haveibeenpwned.com/API/v3  
+**Free Tier:** k-anonymity password check (no key needed)  
+**Paid Tier:** $3.50/month for full API access  
+**What it unlocks:** Breach detection via `research_breach_check` (works without key, limited)  
+
+```bash
+export HIBP_API_KEY="your-hibp-api-key"
+```
+
+---
+
+### ABUSEIPDB_API_KEY (Optional)
+
+**Service:** AbuseIPDB IP reputation  
+**Signup:** https://www.abuseipdb.com/register  
+**Free Tier:** 1,500 requests/day (IP reputation basic)  
+**Paid Tiers:** $9.99+/month (advanced features)  
+**What it unlocks:** IP reputation lookup via `research_ip_reputation` (ip-api.com works without key)  
+
+```bash
+export ABUSEIPDB_API_KEY="your-abuseipdb-api-key"
+```
+
+---
+
+### NVD_API (No Key Required)
+
+**Service:** National Vulnerability Database  
+**Signup:** Free, no registration needed  
+**Rate Limit:** 5 requests per 30 seconds  
+**What it unlocks:** CVE vulnerability lookup via `research_cve_lookup` and `research_cve_detail`  
+
+Free and unlimited (rate-limited).
+
+---
+
+### URLhaus API (No Key Required)
+
+**Service:** URLhaus (abuse.ch)  
+**Signup:** Free, no registration needed  
+**Rate Limit:** Reasonable limits for automated queries  
+**What it unlocks:** Malicious URL detection via `research_urlhaus_check` and `research_urlhaus_search`  
+
+Free and unlimited.
+
+---
+
+## System Tools (No API Keys)
+
+The following tools require CLI tools or local data files:
+
+### research_nmap_scan
+**Requires:** `nmap` CLI installed (`brew install nmap` or `apt install nmap`)  
+**What it does:** Network scanning and port enumeration  
+**No API key needed**
+
+---
+
+### research_text_analyze
+**Requires:** NLTK (installed via pip)  
+**Setup:** Runs `nltk.download('punkt', 'averaged_perceptron_tagger')` automatically on first use  
+**What it does:** Natural language processing and text analysis  
+**No API key needed**
+
+---
+
+### research_screenshot
+**Requires:** Playwright browsers installed (`playwright install chromium`)  
+**What it does:** Capture webpage screenshots and render visual content  
+**No API key needed**
+
+---
+
+### research_geoip_local
+**Requires:** GeoLite2-City.mmdb (MaxMind GeoIP database)  
+**Setup:** Download from https://www.maxmind.com/en/geolite2-freegeoip (free registration)  
+**Location:** `~/.maxmind/GeoLite2-City.mmdb`  
+**What it does:** Local IP geolocation (no internet requests, fully offline)  
+**No API key needed**
+
+```bash
+# After downloading from MaxMind:
+mkdir -p ~/.maxmind
+mv GeoLite2-City.mmdb ~/.maxmind/
+```
+
+---
+
+### research_ocr_extract
+**Requires:** Tesseract OCR CLI (`brew install tesseract` or `apt install tesseract-ocr`)  
+**What it does:** Extract text from images using optical character recognition  
+**No API key needed**
+
+---
+
+### research_exif_extract
+**Requires:** Pillow (installed via pip, already included)  
+**What it does:** Extract metadata (EXIF) from images  
+**No API key needed**
+
+---
+
 ## Infrastructure & Services
 
 ### VASTAI_API_KEY
@@ -809,7 +916,7 @@ export STEALTH_TIMEOUT="120"
 
 ## Minimum Viable Key Set
 
-For a functional Loom installation with all 64 tools:
+For a functional Loom installation with all tools:
 
 ```bash
 # REQUIRED: At least ONE LLM provider (try in this order)
@@ -967,4 +1074,3 @@ docker run -e NVIDIA_NIM_API_KEY="$(cat /run/secrets/nvidia_key)" loom-server
 # Or environment file
 docker run --env-file .env.prod loom-server
 ```
-

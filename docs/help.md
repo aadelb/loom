@@ -1,6 +1,6 @@
 # Loom MCP Research Server — Complete Help Guide
 
-Loom is a comprehensive research orchestration system with 42+ tools, 9 search providers, intelligent provider cascading, and a 12-stage deep research pipeline.
+Loom is a comprehensive research orchestration system with 94 tools, 17 search providers, intelligent provider cascading, and a 12-stage deep research pipeline.
 
 ## Quick Start
 
@@ -62,7 +62,7 @@ curl http://127.0.0.1:8787/mcp/status
 
 ---
 
-## Tool Catalog (42+ Tools)
+## Tool Catalog (94 Tools)
 
 ### Core Search & Fetch (8 tools)
 
@@ -365,6 +365,42 @@ Returns:
 ```
 
 API key needed: **Free**
+
+---
+
+#### find_similar_exa
+**Find semantically similar pages to a reference URL**
+
+Uses Exa's semantic similarity to find pages semantically related to a given URL. Useful for finding competitors, related content, or similar resources.
+
+Parameters:
+- `url` (required, string): reference URL to find similar pages for
+- `n` (optional, int, default 10): max results (1-100)
+- Additional kwargs passed to Exa SDK
+
+Returns:
+```json
+{
+  "url": "https://reference-site.com",
+  "similar_pages": [
+    {
+      "url": "...",
+      "title": "...",
+      "similarity_score": 0.92
+    }
+  ]
+}
+```
+
+API key needed: **PAID** (Exa API key required)
+
+Example:
+```python
+result = find_similar_exa(
+    url="https://example.com",
+    n=10
+)
+```
 
 ---
 
@@ -788,6 +824,630 @@ Returns:
 ```
 
 API key needed: **Free**
+
+---
+
+### Psychology & Behavioral Analysis (6 tools)
+
+#### research_stylometry
+**Author fingerprinting via writing style analysis**
+
+Analyzes text for authorship patterns including vocabulary richness, sentence structure, function word frequencies, and stylistic markers. Useful for identifying ghostwritten content, literary attribution, or clustering similar authors.
+
+Cost: **FREE**
+Rate limit: No external API calls
+
+Example:
+```python
+result = research_stylometry(
+    text="Sample text to analyze",
+    compare_texts=["comparison_text_1", "comparison_text_2"]
+)
+```
+
+---
+
+#### research_deception_detect
+**Linguistic deception and fraud detection**
+
+Detects fraudulent or deceptive content using linguistic cues including hedging language, distancing patterns, superlative overuse, and LLM-enhanced classification.
+
+Cost: **FREE/PAID** (optional LLM)
+Rate limit: None
+
+---
+
+#### research_persona_profile
+**Cross-platform persona reconstruction from text**
+
+Builds behavioral and linguistic profiles from text samples, identifying personality traits, communication style, interests, and platform behavior patterns.
+
+Cost: **FREE**
+Rate limit: No API
+
+---
+
+#### research_radicalization_detect
+**Radicalization indicator detection in text**
+
+Monitors text for indicators of radicalization including extremist rhetoric, ideological keywords, us-vs-them framing, and dehumanization language.
+
+Cost: **FREE**
+Rate limit: None
+
+---
+
+#### research_sentiment_deep
+**Deep sentiment and emotion analysis with manipulation detection**
+
+Provides nuanced emotion analysis beyond binary sentiment, detecting sarcasm, manipulation tactics, emotional manipulation patterns, and underlying sentiment drivers.
+
+Cost: **FREE/PAID** (optional LLM enhancement)
+Rate limit: None
+
+---
+
+#### research_network_persona
+**Social network analysis and author interaction mapping**
+
+Analyzes community and forum interaction graphs, identifying author network position, influence, interaction patterns, and social roles.
+
+Cost: **FREE**
+Rate limit: Depends on data source
+
+---
+
+### Domain & Network Intelligence (3 tools)
+
+#### research_whois
+**WHOIS domain registration lookup**
+
+Retrieves domain registration information including registrant, registrar, nameservers, creation date, and expiration.
+
+Cost: **FREE**
+Rate limit: No API
+
+Example:
+```python
+result = research_whois(domain="example.com")
+```
+
+---
+
+#### research_dns_lookup
+**DNS record resolution and analysis**
+
+Performs DNS lookups for A, AAAA, MX, TXT, CNAME, NS, SOA records. Falls back to socket if dnspython unavailable.
+
+Cost: **FREE**
+Rate limit: System dependent
+
+Parameters:
+- `domain` (required): domain name
+- `record_types` (optional): list of record types to query
+
+---
+
+#### research_nmap_scan
+**Network port scanning via nmap**
+
+Scans specified ports on target using nmap CLI. Supports basic port scan (SYN) and service version detection. Requires nmap binary installed.
+
+Cost: **FREE**
+Rate limit: None (local execution)
+
+Parameters:
+- `target`: host or IP to scan
+- `ports`: comma-separated ports (default "80,443,8080,8443")
+- `scan_type`: "basic"|"version"|"aggressive" (default "basic")
+
+---
+
+### Image Analysis (2 tools)
+
+#### research_exif_extract
+**Extract EXIF metadata from images**
+
+Extracts EXIF, IPTC, XMP metadata including GPS coordinates, camera settings, timestamps, and embedded text.
+
+Cost: **FREE**
+Rate limit: None
+
+Example:
+```python
+result = research_exif_extract(url_or_path="https://example.com/photo.jpg")
+```
+
+---
+
+#### research_ocr_extract
+**Optical character recognition (OCR) on images**
+
+Extracts text from images using Tesseract OCR. Supports multi-language text detection and extraction from screenshots, documents, and photos.
+
+Cost: **FREE** (requires Tesseract binary)
+Rate limit: None (local)
+
+---
+
+#### research_image_analyze
+**Image analysis using Google Cloud Vision API**
+
+Analyzes images for labels, text, faces, landmarks, logos, objects, and safety attributes. Supports label detection, OCR, face detection, landmark recognition, logo detection, safe search scoring, and web detection.
+
+Cost: **PAID** (Google Cloud Vision API)
+Rate limit: Google Cloud rate limits
+
+Parameters:
+- `image_url` (required): public HTTPS URL or local file path
+- `features` (optional): list of feature types
+  - Default: ["LABEL_DETECTION", "TEXT_DETECTION"]
+  - Options: LABEL_DETECTION, TEXT_DETECTION, FACE_DETECTION, LANDMARK_DETECTION, LOGO_DETECTION, SAFE_SEARCH_DETECTION, IMAGE_PROPERTIES, OBJECT_LOCALIZATION, WEB_DETECTION
+- `max_results` (optional, int, default 10): max results per feature
+
+Example:
+```python
+result = research_image_analyze(
+    image_url="https://example.com/photo.jpg",
+    features=["LABEL_DETECTION", "SAFE_SEARCH_DETECTION"]
+)
+```
+
+---
+
+### PDF Tools (2 tools)
+
+#### research_pdf_extract
+**Extract text from PDF documents**
+
+Extracts structured text from PDF files with layout preservation, table detection, and optional section-level extraction.
+
+Cost: **FREE**
+Rate limit: None
+
+Parameters:
+- `url`: PDF document URL
+- `include_images` (optional): extract image descriptions
+
+---
+
+#### research_pdf_search
+**Full-text search within PDF content**
+
+Searches for text, phrases, or keywords within a PDF document. Returns page numbers and context snippets.
+
+Cost: **FREE**
+Rate limit: None
+
+Example:
+```python
+result = research_pdf_search(
+    url="https://example.com/document.pdf",
+    query="machine learning"
+)
+```
+
+---
+
+### Text & NLP Analysis (1 tool)
+
+#### research_text_analyze
+**NLP text analysis with entity extraction and readability metrics**
+
+Performs named entity recognition (NER), keyword extraction, sentiment analysis, readability metrics (Flesch-Kincaid, Gunning Fog), and linguistic feature extraction.
+
+Cost: **FREE**
+Rate limit: None (local NLTK)
+
+---
+
+### Media & Screenshots (2 tools)
+
+#### research_screenshot
+**Capture webpage screenshots**
+
+Captures full-page, element-level, or viewport-sized screenshots using Playwright with customizable viewport size, wait conditions, and format options.
+
+Cost: **FREE** (requires Playwright)
+Rate limit: None
+
+Parameters:
+- `url`: webpage URL
+- `element_selector` (optional): CSS selector for specific element
+- `viewport_width/height` (optional): custom viewport size
+- `full_page` (optional): capture full page (default true)
+- `format` (optional): "png"|"jpeg" (default "png")
+
+---
+
+#### research_text_to_speech
+**Convert text to speech with multiple voices**
+
+Synthesizes speech from text using multiple TTS providers and voices. Returns audio format selection.
+
+Cost: **FREE/PAID** (provider dependent)
+Rate limit: Provider dependent
+
+---
+
+### RSS & Feed Monitoring (2 tools)
+
+#### research_rss_fetch
+**Fetch and parse RSS/Atom feed entries**
+
+Fetches RSS/Atom feeds and parses latest entries with optional filtering by date range or keyword.
+
+Cost: **FREE**
+Rate limit: None (feed provider dependent)
+
+Parameters:
+- `feed_url`: RSS or Atom feed URL
+- `limit` (optional): max entries to return
+- `parse_html_content` (optional): extract HTML from entries
+
+---
+
+#### research_rss_search
+**Search RSS feeds by keyword and date**
+
+Searches across multiple RSS feeds by keyword, date range, author, or category.
+
+Cost: **FREE**
+Rate limit: None
+
+---
+
+### Social Media Intelligence (2 tools)
+
+#### research_social_search
+**Discover social media profiles and usernames**
+
+Searches for user profiles across social platforms (Twitter, LinkedIn, GitHub, etc.) by username, email, or name.
+
+Cost: **FREE**
+Rate limit: Platform dependent
+
+---
+
+#### research_social_profile
+**Extract and analyze social media profiles**
+
+Analyzes social profile pages including follower counts, engagement metrics, bio analysis, and linked accounts.
+
+Cost: **FREE**
+Rate limit: Platform rate limits
+
+---
+
+### Security & Vulnerability Analysis (5 tools)
+
+#### research_cert_analyze
+**SSL/TLS certificate extraction and analysis**
+
+Extracts certificate information from remote servers including subject, issuer, validity dates, SANs, and expiry warnings.
+
+Cost: **FREE**
+Rate limit: None
+
+Example:
+```python
+result = research_cert_analyze(hostname="example.com", port=443)
+```
+
+---
+
+#### research_security_headers
+**Analyze HTTP security headers**
+
+Evaluates HTTP security headers (HSTS, CSP, X-Frame-Options, etc.) and provides security posture scoring.
+
+Cost: **FREE**
+Rate limit: None
+
+---
+
+#### research_breach_check
+**Query data breach databases**
+
+Checks if an email appears in known data breaches using HaveIBeenPwned API (requires API key for full results).
+
+Cost: **FREE/PAID** (HIBP API key recommended)
+Rate limit: HaveIBeenPwned rate limits
+
+---
+
+#### research_password_check
+**Check password breach history**
+
+Verifies if a password has been exposed in known breaches using k-anonymity (no password sent to server). Requires no API key.
+
+Cost: **FREE**
+Rate limit: HaveIBeenPwned free tier
+
+---
+
+### IP Intelligence (2 tools)
+
+#### research_ip_reputation
+**IP address reputation and threat scoring**
+
+Queries IP reputation databases for malicious activity, blocklists, botnet associations, and threat scores.
+
+Cost: **FREE**
+Rate limit: No API required (local database or free tier)
+
+---
+
+#### research_ip_geolocation
+**IP geolocation lookup with accuracy metrics**
+
+Performs geolocation lookup returning country, city, coordinates, ISP, and ASN with accuracy information.
+
+Cost: **FREE** (via MaxMind GeoLite2 or local database)
+Rate limit: None
+
+Example:
+```python
+result = research_ip_geolocation(ip="8.8.8.8")
+```
+
+---
+
+### Vulnerability & Threat Research (2 tools)
+
+#### research_cve_lookup
+**CVE database search via NVD**
+
+Searches National Vulnerability Database (NVD) by keyword for CVE entries with severity, vector, and affected product info.
+
+Cost: **FREE**
+Rate limit: NVD rate limited (free tier: ~120 req/min)
+
+---
+
+#### research_cve_detail
+**Detailed CVE information retrieval**
+
+Retrieves complete details for a specific CVE ID including CVSS scores, descriptions, affected versions, and fix information.
+
+Cost: **FREE**
+Rate limit: NVD rate limits
+
+---
+
+### Malware & URL Threat Intelligence (2 tools)
+
+#### research_urlhaus_check
+**URLhaus malware database lookup**
+
+Checks if a URL appears in URLhaus malware database with threat classification and detection history.
+
+Cost: **FREE**
+Rate limit: URLhaus free API
+
+---
+
+#### research_urlhaus_search
+**Search URLhaus for malicious URLs**
+
+Searches URLhaus database by domain, date range, or malware family. Returns threat metadata.
+
+Cost: **FREE**
+Rate limit: URLhaus free tier
+
+---
+
+### GeoIP & Location (1 tool)
+
+#### research_geoip_local
+**Local GeoIP lookup using MaxMind database**
+
+Performs offline GeoIP lookup using MaxMind GeoLite2 database. No API key required, instant local queries.
+
+Cost: **FREE**
+Rate limit: None (local)
+
+Example:
+```python
+result = research_geoip_local(ip="1.1.1.1")
+```
+
+---
+
+### Darkweb & Onion Intelligence (4 tools)
+
+#### research_ghost_weave
+**Build temporal hyperlink graph of .onion services**
+
+Maps .onion site structure and link relationships over time using Tor. Returns network graph and temporal changes.
+
+Cost: **FREE** (requires Tor)
+Rate limit: Tor network dependent
+
+---
+
+#### research_onion_spectra
+**Classify .onion sites by content and safety**
+
+Analyzes .onion site content for language, classification (forums, markets, hosting), and safety scoring.
+
+Cost: **FREE**
+Rate limit: Tor network dependent
+
+---
+
+#### research_cipher_mirror
+**Monitor paste sites for leaked credentials**
+
+Monitors paste sites, GitHub pastes, and code repositories for exposed credentials, API keys, and private keys. Uses entropy analysis to detect leaks.
+
+Cost: **FREE/PAID** (LLM optional for analysis)
+Rate limit: Paste site dependent
+
+---
+
+#### research_dead_drop_scanner
+**Probe ephemeral .onion sites with reuse detection**
+
+Monitors ephemeral .onion sites for content changes using shingling-based content deduplication.
+
+Cost: **FREE** (requires Tor)
+Rate limit: Tor network dependent
+
+---
+
+### Communication & Notifications (2 tools)
+
+#### research_email_report
+**Send research results via email**
+
+Sends structured reports via SMTP with optional HTML formatting.
+
+Cost: **FREE** (requires SMTP configuration)
+Rate limit: SMTP provider limits
+
+Parameters:
+- `to`: recipient email
+- `subject`: email subject
+- `body`: email body text
+- `html` (optional): treat body as HTML
+
+---
+
+#### research_slack_notify
+**Send notifications to Slack channel**
+
+Posts research findings to Slack with formatting and threaded replies.
+
+Cost: **FREE** (requires Slack webhook)
+Rate limit: Slack rate limits
+
+---
+
+### Note-Taking Integration (2 tools)
+
+#### research_save_note
+**Save research to Joplin notes**
+
+Saves text, markdown, or structured data to Joplin note-taking application.
+
+Cost: **FREE** (requires Joplin + API token)
+Rate limit: Joplin API limits
+
+---
+
+#### research_list_notebooks
+**List Joplin notebooks and recent notes**
+
+Lists available notebooks and recent notes from Joplin.
+
+Cost: **FREE** (requires Joplin API)
+Rate limit: None (local)
+
+---
+
+### Infrastructure & Monitoring (4 tools)
+
+#### research_metrics
+**Return Prometheus-compatible metrics**
+
+Exports metrics in Prometheus format for monitoring dashboards (requests, latency, error rates, costs).
+
+Cost: **FREE**
+Rate limit: None
+
+---
+
+#### research_health_check
+**System health status and API availability**
+
+Returns health status of MCP server, external APIs, and resource usage.
+
+Cost: **FREE**
+Rate limit: None
+
+---
+
+#### research_vercel_status
+**Check Vercel deployment status**
+
+Returns deployment status and analytics from Vercel CI/CD platform.
+
+Cost: **FREE** (requires Vercel API token)
+Rate limit: Vercel API limits
+
+---
+
+#### research_vastai_status
+**Check VastAI GPU compute status**
+
+Queries VastAI API for current GPU availability, pricing, and machine status.
+
+Cost: **FREE** (requires API key, read-only)
+Rate limit: VastAI API limits
+
+---
+
+### Video & Audio (2 tools)
+
+#### research_transcribe
+**Audio transcription with speech-to-text**
+
+Transcribes audio files or URLs to text using Whisper or configurable transcription engine.
+
+Cost: **FREE/PAID** (provider dependent)
+Rate limit: Provider dependent
+
+Parameters:
+- `audio_url`: URL or path to audio file
+- `language` (optional): ISO language code
+- `output_format` (optional): "text"|"json"|"vtt"
+
+---
+
+#### research_tts_voices
+**List available text-to-speech voices**
+
+Returns available voices for TTS synthesis including language, gender, and provider information.
+
+Cost: **FREE**
+Rate limit: None
+
+---
+
+### Document Conversion (1 tool)
+
+#### research_convert_document
+**Convert documents to markdown or text**
+
+Converts PDF, DOCX, HTML, and other formats to markdown or plain text with formatting preservation.
+
+Cost: **FREE**
+Rate limit: None (local)
+
+---
+
+### GPU Compute & Infrastructure (1 tool)
+
+#### research_vastai_search
+**Search VastAI GPU compute marketplace**
+
+Searches available GPUs on VastAI marketplace by specs, price, and availability. Returns machine listings with rental pricing.
+
+Cost: **FREE** (read-only, requires API key)
+Rate limit: VastAI API limits
+
+---
+
+### Analytics & Forum Analysis (2 tools)
+
+#### research_forum_cortex
+**Analyze dark web forum discourse**
+
+Analyzes forum discussions on darknet markets for topic trends, sentiment, and key participants.
+
+Cost: **PAID** (LLM required)
+Rate limit: Tor network dependent
 
 ---
 
@@ -1294,7 +1954,7 @@ API key needed: **Free**
 
 ---
 
-## Search Providers Guide (9 Providers)
+## Search Providers Guide (21 Providers)
 
 ### 1. Exa (Recommended for semantic search)
 - **Cost**: Paid ($1 per 10,000 requests for basic)
@@ -1367,6 +2027,159 @@ API key needed: **Free**
 - **Domain filtering**: N/A
 - **Rate limit**: Dependent on Reddit's robots.txt
 - **Signup**: None (built-in provider)
+
+### 10. NewsAPI (News articles)
+- **Cost**: Free tier (500 req/day), Paid ($99+/mo)
+- **Best for**: News articles, press releases, media coverage
+- **Date range**: Supported
+- **Domain filtering**: Supported
+- **Rate limit**: 500 req/day (free tier)
+- **Signup**: https://newsapi.org
+
+### 11. CoinMarketCap (Cryptocurrency data)
+- **Cost**: Free tier (monthly data), Paid ($99+/mo)
+- **Best for**: Crypto price tracking, market data, coin rankings
+- **Date range**: Not supported
+- **Domain filtering**: N/A
+- **Rate limit**: Free tier limits
+- **Signup**: https://coinmarketcap.com/api
+
+### 12. CoinDesk (Crypto news)
+- **Cost**: Free
+- **Best for**: Cryptocurrency news, blockchain articles
+- **Date range**: Supported
+- **Domain filtering**: Client-side
+- **Rate limit**: Soft limits
+- **Signup**: None (public API)
+
+### 13. Binance (Crypto data)
+- **Cost**: Free
+- **Best for**: Trading data, market metrics, cryptocurrency prices
+- **Date range**: Not applicable
+- **Domain filtering**: N/A
+- **Rate limit**: Binance API rate limits
+- **Signup**: https://www.binance.com/api
+
+### 14. Investing.com (Financial data)
+- **Cost**: Free
+- **Best for**: Stock prices, economic indicators, financial news
+- **Date range**: Supported
+- **Domain filtering**: Client-side
+- **Rate limit**: Soft limits
+- **Signup**: None (public data)
+
+### 15. Ahmia (Darknet search)
+- **Cost**: Free
+- **Best for**: .onion site discovery, darknet content
+- **Date range**: Not supported
+- **Domain filtering**: N/A
+- **Rate limit**: Soft limits
+- **Signup**: None (Tor network)
+
+### 16. Darksearch (Darknet search)
+- **Cost**: Free
+- **Best for**: .onion site search, darknet markets
+- **Date range**: Not supported
+- **Domain filtering**: N/A
+- **Rate limit**: Tor network dependent
+- **Signup**: None (Tor network)
+
+### 17. UMMRO RAG (Custom knowledge base)
+- **Cost**: Free/Paid (depends on deployment)
+- **Best for**: Organization-specific knowledge retrieval
+- **Date range**: Not supported
+- **Domain filtering**: N/A
+- **Rate limit**: Custom (configurable)
+- **Signup**: https://ummro.alderai.uk (if deployed)
+
+### 18. Onion Search (Tor multi-search)
+- **Cost**: Free
+- **Best for**: Multi-engine .onion search (Ahmia + Darksearch)
+- **Date range**: Not supported
+- **Domain filtering**: N/A
+- **Rate limit**: Tor network dependent
+- **Signup**: None (Tor network)
+
+### 19. TorCrawl (Tor crawler)
+- **Cost**: Free
+- **Best for**: Deep crawling of .onion sites
+- **Date range**: Not supported
+- **Domain filtering**: N/A
+- **Rate limit**: Tor network dependent
+- **Signup**: None (Tor network)
+
+### 20. Darkweb CTI (Darknet threat intelligence)
+- **Cost**: Free
+- **Best for**: Threat intelligence, breach data, malware tracking
+- **Date range**: Not supported
+- **Domain filtering**: N/A
+- **Rate limit**: API dependent
+- **Signup**: Custom endpoint (self-hosted or hosted)
+
+### 21. Robin OSINT (Multi-source OSINT)
+- **Cost**: Free
+- **Best for**: OSINT aggregation, multi-source intelligence
+- **Date range**: Not supported
+- **Domain filtering**: N/A
+- **Rate limit**: Varies by source
+- **Signup**: None (aggregates public sources)
+
+---
+
+### Billing & Usage (2 tools)
+
+#### research_usage_report
+**Aggregate LLM usage and costs from local logs**
+
+Reads cost tracker JSON files and summarizes total cost, calls by provider, calls by day, and top models used over the past N days.
+
+Cost: **FREE**
+Rate limit: None (local logs)
+
+Parameters:
+- `days` (optional, int, default 7): number of days to aggregate
+
+Example:
+```python
+result = research_usage_report(days=7)
+```
+
+---
+
+#### research_stripe_balance
+**Get Stripe account balance and usage**
+
+Retrieves current Stripe account balance, pending charges, and available funds. Requires Stripe API key.
+
+Cost: **FREE** (requires Stripe API key)
+Rate limit: Stripe API limits
+
+---
+
+### Tor Network Tools (2 tools)
+
+#### research_tor_status
+**Check Tor network and connection status**
+
+Returns current Tor connection status, exit node IP, country, and connection health metrics.
+
+Cost: **FREE** (requires Tor daemon)
+Rate limit: None (local)
+
+Example:
+```python
+result = research_tor_status()
+```
+
+---
+
+#### research_tor_new_identity
+**Request new Tor identity and exit node**
+
+Requests a new Tor identity from the control port, changing the exit node IP. Useful for anonymity rotation.
+
+Cost: **FREE** (requires Tor daemon + control port password)
+Rate limit: None (Tor daemon controls)
 
 ---
 

@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
@@ -23,11 +24,16 @@ from httpx import MockTransport, Response
 @pytest.fixture(autouse=True)
 def _reset_rate_limiters() -> None:
     """Reset rate limiter state between tests to prevent cross-test contamination."""
-    from loom.rate_limiter import reset_all
+    try:
+        from loom.rate_limiter import reset_all
 
-    reset_all()
-    yield
-    reset_all()
+        reset_all()
+        yield
+        reset_all()
+    except ModuleNotFoundError:
+        # loom package not installed (e.g., running verify_completeness test)
+        # Just yield without any rate limiter reset
+        yield
 
 
 @pytest.fixture

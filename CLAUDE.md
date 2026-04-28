@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What is Loom
 
-Loom is a Python MCP (Model Context Protocol) server that exposes 64 research tools over streamable-HTTP (port 8787). It wraps scraping (Scrapling, Crawl4AI, Camoufox, Botasaurus), search across 21 providers (Exa, Tavily, Firecrawl, Brave, DuckDuckGo, Arxiv, Wikipedia, Hacker News, Reddit, NewsAPI, Binance, CoinMarketCap, CoinDesk, Ahmia, Darksearch, UMMRO RAG, OnionSearch, TorCrawl, DarkWeb CTI, Robin OSINT, and Investing), 8 LLM providers (Groq, NVIDIA NIM, DeepSeek, Gemini, Moonshot, OpenAI, Anthropic, vLLM), infrastructure tools (VastAI, Stripe, Billing), communication tools (Email, Joplin notes), media tools (Audio transcription, Document conversion), Tor/darkweb tools (Tor status, new identity, cipher mirror, forum cortex, onion spectra, ghost weave, dead drop scanner), GitHub CLI, persistent browser sessions, 11 creative research tools, and a content-hash cache into a single MCP service. It also ships a Typer CLI (`loom`) that calls the MCP server as a client.
+Loom is a Python MCP (Model Context Protocol) server that exposes 94 research tools over streamable-HTTP (port 8787). It wraps scraping (Scrapling, Crawl4AI, Camoufox, Botasaurus), search across 21 providers (Exa, Tavily, Firecrawl, Brave, DuckDuckGo, Arxiv, Wikipedia, Hacker News, Reddit, NewsAPI, Binance, CoinMarketCap, CoinDesk, Ahmia, Darksearch, UMMRO RAG, OnionSearch, TorCrawl, DarkWeb CTI, Robin OSINT, and Investing), 8 LLM providers (Groq, NVIDIA NIM, DeepSeek, Gemini, Moonshot, OpenAI, Anthropic, vLLM), infrastructure tools (VastAI, Stripe, Billing), communication tools (Email, Joplin notes), media tools (Audio transcription, Document conversion), Tor/darkweb tools (Tor status, new identity, cipher mirror, forum cortex, onion spectra, ghost weave, dead drop scanner), GitHub CLI, persistent browser sessions, 11 creative research tools, and a content-hash cache into a single MCP service. It also ships a Typer CLI (`loom`) that calls the MCP server as a client.
 
 ## Commands
 
@@ -50,7 +50,7 @@ src/loom/
   cache.py         Content-hash CacheStore (SHA-256, daily dirs, atomic writes, singleton)
   sessions.py      Persistent browser session management (in-memory registry + SQLite SessionManager)
   journey.py       End-to-end journey test runner (mocked/live/record modes)
-  tools/           One module per tool family (64 tools total):
+  tools/           One module per tool family (94 tools total):
     fetch.py       research_fetch (Scrapling 3-tier: http/stealthy/dynamic + Cloudflare auto-escalation)
     spider.py      research_spider (concurrent multi-URL fetch)
     markdown.py    research_markdown (Crawl4AI + Trafilatura fallback for HTML-to-markdown)
@@ -70,6 +70,26 @@ src/loom/
     tor.py         research_tor_status + research_tor_new_identity (Tor network management)
     transcribe.py  research_transcribe (audio to text)
     document.py    research_convert_document (document format conversion)
+    stylometry.py    research_stylometry (author fingerprinting)
+    deception_detect.py  research_deception_detect (linguistic deception cues)
+    persona_profile.py   research_persona_profile (Big Five personality)
+    radicalization_detect.py  research_radicalization_detect (extremism NLP)
+    sentiment_deep.py    research_sentiment_deep (8-emotion detection)
+    network_persona.py   research_network_persona (forum social graph)
+    domain_intel.py      research_whois + research_dns_lookup + research_nmap_scan
+    pdf_extract.py       research_pdf_extract + research_pdf_search
+    text_analyze.py      research_text_analyze (NLTK NER/keywords/readability)
+    screenshot.py        research_screenshot (Playwright page capture)
+    rss_monitor.py       research_rss_fetch + research_rss_search
+    social_intel.py      research_social_search + research_social_profile
+    cert_analyzer.py     research_cert_analyze (SSL/TLS inspection)
+    security_headers.py  research_security_headers (HTTP header audit)
+    breach_check.py      research_breach_check + research_password_check
+    ip_intel.py          research_ip_reputation + research_ip_geolocation
+    cve_lookup.py        research_cve_lookup + research_cve_detail
+    urlhaus_lookup.py    research_urlhaus_check + research_urlhaus_search
+    geoip_local.py       research_geoip_local (MaxMind offline)
+    image_intel.py       research_exif_extract + research_ocr_extract
   providers/       8 LLM providers + 21 search providers + specialized data providers:
     base.py        Abstract LLMProvider + LLMResponse dataclass + _estimate_cost
     groq_provider.py GROQ API
@@ -157,17 +177,17 @@ src/loom/
 
 - Framework: pytest with pytest-asyncio (`asyncio_mode = "auto"`)
 - Coverage target: 80%+ (`--cov=src/loom`)
-- Test count: 892 tests passing (0 failures)
+- Test count: 1260+ test functions across 80+ files
 - Markers: `slow`, `live` (real network), `integration`
 - Test structure mirrors source: `tests/test_tools/`, `tests/test_providers/`, `tests/test_integration/`
 - Fixtures in `tests/conftest.py` provide temp dirs, mock HTTP transport, and sample API responses
-- Journey tests (`tests/journey_e2e.py`) run the full 64 tool scenario in mocked/live/record modes
+- Journey tests (`tests/journey_e2e.py`) run the full 94 tool scenario in mocked/live/record modes
 
 ## Documentation
 
 Four comprehensive documentation files in `docs/`:
 
-- **tools-reference.md** — Complete reference for all 64 tools, parameters, and examples
+- **tools-reference.md** — Complete reference for all 94 tools, parameters, and examples
 - **api-keys.md** — API key setup for all 8 LLM providers + 21 search providers + infrastructure/communication/media services
 - **architecture.md** — Deep dive into pipeline design, escalation strategy, and tool composition
 - **help.md** — Troubleshooting, common patterns, and FAQ
@@ -179,3 +199,12 @@ Four comprehensive documentation files in `docs/`:
 - mypy strict mode with `pydantic.mypy` plugin
 - Line length: 100
 - Quote style: double
+
+### Adding new tools
+
+Every new tool requires ALL of:
+1. Implementation in src/loom/tools/
+2. Tests in tests/
+3. Entry in docs/tools-reference.md with params, examples, cost
+4. Entry in docs/help.md
+5. Run scripts/verify_completeness.py to confirm 0 drift

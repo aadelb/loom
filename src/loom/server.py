@@ -574,7 +574,7 @@ def _register_tools(mcp: FastMCP) -> None:
 def create_app() -> FastMCP:
     """Create and configure the FastMCP server instance.
 
-    Loads runtime config, sets up logging, registers all 23 tools,
+    Loads runtime config, sets up logging, registers all 94 tools,
     and prepares the server to listen on LOOM_HOST:LOOM_PORT.
 
     Returns:

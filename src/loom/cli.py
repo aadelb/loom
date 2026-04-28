@@ -740,6 +740,107 @@ def journey_test(
         raise typer.Exit(code=1)
 
 
+
+# ─── TOOLS subcommand ────────────────────────────────────────────────────────
+
+
+@app.command()
+def tools(
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Show parameter details"),
+    json_mode: bool = OutputJSON,
+    category: str | None = typer.Option(None, "--category", "-c", help="Filter by category"),
+) -> None:
+    """List all available MCP tools on the server.
+
+    By default displays tool names and descriptions in a formatted table.
+    Use --verbose to show parameter details for each tool.
+    Use --category to filter tools by prefix (e.g., 'llm', 'search', 'fetch').
+    """
+    import asyncio
+
+    from rich.table import Table
+
+    from loom.server import create_app
+
+    # Create app and load tools
+    app_instance = create_app()
+    tool_list = asyncio.run(app_instance.list_tools())
+
+    # Build category map by extracting prefix from tool name
+    # e.g., "research_llm_summarize" -> category "llm"
+    tool_map: dict[str, list[Any]] = {}
+    for tool in tool_list:
+        parts = tool.name.split("_")
+        if len(parts) >= 3:
+            cat = parts[1]  # "research_<category>_..."
+        elif len(parts) >= 2:
+            cat = parts[1]  # "research_<category>"
+        else:
+            cat = "other"
+
+        if cat not in tool_map:
+            tool_map[cat] = []
+        tool_map[cat].append(tool)
+
+    # Filter by category if specified
+    if category:
+        if category not in tool_map:
+            err_console.print(f"[yellow]No tools found in category '{category}'[/yellow]")
+            raise typer.Exit(code=0)
+        filtered_tools = tool_map[category]
+        category_display = f" (category: {category})"
+    else:
+        filtered_tools = tool_list
+        category_display = ""
+
+    # Output as JSON if requested
+    if json_mode:
+        tools_data = []
+        for tool in sorted(filtered_tools, key=lambda t: t.name):
+            tool_dict = {
+                "name": tool.name,
+                "description": tool.description or "No description",
+                "title": tool.title or tool.name,
+            }
+            if verbose and hasattr(tool, "inputSchema"):
+                tool_dict["parameters"] = tool.inputSchema.get("properties", {})
+            tools_data.append(tool_dict)
+        console.print_json(data={"tools": tools_data, "count": len(tools_data)})
+        return
+
+    # Display as formatted table
+    table = Table(title=f"Loom MCP Tools{category_display}")
+    table.add_column("Tool Name", style="cyan", no_wrap=False)
+    table.add_column("Description", style="white")
+    if verbose:
+        table.add_column("Parameters", style="dim")
+
+    for tool in sorted(filtered_tools, key=lambda t: t.name):
+        desc = (tool.description or "No description")[:70]
+        if len(tool.description or "") > 70:
+            desc += "..."
+
+        if verbose:
+            params = ""
+            if hasattr(tool, "inputSchema"):
+                props = tool.inputSchema.get("properties", {})
+                if props:
+                    params = ", ".join(props.keys())[:50]
+            table.add_row(tool.name, desc, params)
+        else:
+            table.add_row(tool.name, desc)
+
+    console.print(table)
+    console.print(f"\n[dim]Total: {len(filtered_tools)} tools[/dim]")
+
+    # Show category summary if not filtered
+    if not category:
+        console.print("\n[dim]Categories:[/dim]")
+        for cat in sorted(tool_map.keys()):
+            count = len(tool_map[cat])
+            console.print(f"  {cat:<15} {count:>3} tools")
+
+
 # ─── REPL subcommand ─────────────────────────────────────────────────────────
 
 
@@ -768,6 +869,7 @@ class LoopCompleter(Completer):
             "config",
             "cache",
             "llm",
+            "tools",
             "journey-test",
             "exit",
             "help",
@@ -811,6 +913,7 @@ def repl(server_url: str = ServerURL) -> None:
   config [get|set]         View/set config
   cache [stats|clear]      Cache management
   llm [action]             LLM tools
+  tools                    List available tools
   journey-test             Run journey test
   exit                     Exit REPL
 """

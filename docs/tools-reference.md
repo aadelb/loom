@@ -2845,3 +2845,147 @@ Mine Wikipedia talk pages and edit history for contested knowledge and controver
 - **"A survey on extremism analysis using NLP"** — Comprehensive survey of NLP methods for detecting extremist content ([Springer](https://link.springer.com/article/10.1007/s12652-021-03658-z))
 - **Whonix Stylometry Guide** — Practical guide to deanonymization via writing style ([whonix.org](https://www.whonix.org/wiki/Stylometry))
 
+
+---
+
+### research_breach_check
+
+Check email against known data breaches (HaveIBeenPwned k-anonymity).
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| email | str | - | Email address to check |
+
+**Returns:** `{"email": "...", "breaches_found": 0, "breaches": [...], "api_available": true}`
+**Cost:** FREE (HIBP_API_KEY optional for full API)
+**Rate Limit:** fetch 60/min
+
+---
+
+### research_cert_analyze
+
+Extract SSL/TLS certificate details from a hostname.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| hostname | str | - | Domain or IP to check |
+| port | int | `443` | TLS port |
+
+**Returns:** `{"hostname": "...", "subject": {...}, "issuer": {...}, "not_after": "...", "days_until_expiry": 90, "is_expired": false}`
+**Cost:** FREE
+**Rate Limit:** fetch 60/min
+
+---
+
+### research_cve_lookup
+
+Search CVE vulnerability database by keyword.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| query | str | - | Search keywords |
+| limit | int | `10` | Max results |
+
+**Returns:** `{"query": "...", "total_results": 5, "cves": [{"id": "CVE-2024-1234", "cvss": 7.5, "severity": "HIGH"}]}`
+**Cost:** FREE (NVD public API, rate limited 5/30s)
+**Rate Limit:** search 30/min
+
+---
+
+### research_cve_detail
+
+Get detailed info for a specific CVE ID.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| cve_id | str | - | CVE identifier (e.g., CVE-2024-1234) |
+
+**Returns:** `{"id": "...", "description": "...", "cvss": 7.5, "severity": "HIGH", "references": [...]}`
+**Cost:** FREE
+**Rate Limit:** fetch 60/min
+
+---
+
+### research_deception_detect
+
+Detect deceptive or fraudulent content using linguistic cues.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| text | str | - | Text to analyze (min 100 chars) |
+
+**Returns:** `{"deception_score": 0.65, "verdict": "uncertain", "indicators": {...}, "red_flags": [...]}`
+**Cost:** FREE (OPTIONAL_PAID for LLM enhancement)
+**Rate Limit:** None
+
+---
+
+### research_dns_lookup
+
+DNS record lookup for a domain.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| domain | str | - | Domain name |
+| record_types | list[str] \| None | `["A","AAAA","MX","NS","TXT"]` | DNS record types |
+
+**Returns:** `{"domain": "...", "records": {"A": ["1.2.3.4"], "MX": [...]}, "ip_addresses": [...]}`
+**Cost:** FREE
+**Rate Limit:** fetch 60/min
+
+---
+
+### research_exif_extract
+
+Extract EXIF metadata and GPS coordinates from images.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| url_or_path | str | - | Image URL or local path |
+
+**Returns:** `{"source": "...", "format": "JPEG", "size": [1920,1080], "exif": {...}, "gps": {"latitude": 51.5, "longitude": -0.1}, "has_gps": true}`
+**Cost:** FREE
+**Rate Limit:** fetch 60/min
+
+---
+
+### research_geoip_local
+
+Offline IP geolocation using MaxMind GeoLite2 database.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| ip | str | - | IPv4 or IPv6 address |
+
+**Returns:** `{"ip": "...", "country": "US", "city": "New York", "latitude": 40.7, "longitude": -74.0, "timezone": "America/New_York"}`
+**Cost:** FREE (requires GeoLite2-City.mmdb)
+**Rate Limit:** fetch 60/min
+
+---
+
+### research_ip_geolocation
+
+IP geolocation via public API (ip-api.com).
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| ip | str | - | IPv4 or IPv6 address |
+
+**Returns:** `{"ip": "...", "country": "US", "city": "...", "lat": 40.7, "lon": -74.0, "isp": "...", "org": "..."}`
+**Cost:** FREE (ip-api.com, 45 req/min)
+**Rate Limit:** fetch 60/min
+
+---
+
+### research_ip_reputation
+
+Check IP reputation and abuse score.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| ip | str | - | IPv4 or IPv6 address |
+
+**Returns:** `{"ip": "...", "geolocation": {...}, "abuse_score": 25, "is_tor_exit": false, "reverse_dns": "..."}`
+**Cost:** FREE (ABUSEIPDB_API_KEY optional for detailed scores)
+**Rate Limit:** fetch 60/min
+
