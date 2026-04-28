@@ -492,7 +492,9 @@ def _ocr_blocking(image_data: bytes, language: str) -> dict[str, Any]:
             tmp.write(image_data)
             temp_image = tmp.name
 
-        temp_output = tempfile.mktemp(suffix=".txt")
+        temp_output_file = tempfile.NamedTemporaryFile(suffix=".txt", delete=False)
+        temp_output = temp_output_file.name.replace(".txt", "")
+        temp_output_file.close()
 
         # Try tesseract first
         try:

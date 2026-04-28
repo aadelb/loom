@@ -8,10 +8,10 @@ import pytest
 
 from loom.tools.pdf_extract import (
     _parse_pages_arg,
-    _validate_url,
     research_pdf_extract,
     research_pdf_search,
 )
+from loom.validators import validate_url as _validate_url
 
 
 class TestValidateUrl:
@@ -45,7 +45,7 @@ class TestValidateUrl:
 
     def test_url_empty(self) -> None:
         """Empty URL raises error."""
-        with pytest.raises(ValueError, match="missing"):
+        with pytest.raises(ValueError, match="scheme"):
             _validate_url("")
 
 

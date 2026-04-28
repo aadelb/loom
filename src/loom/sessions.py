@@ -107,7 +107,7 @@ async def _cleanup_expired() -> None:
                 expired.append(name)
 
     for name in expired:
-        await close_session(name)
+        await _close_session_inner(name)
 
 
 async def _get_browser(
@@ -248,6 +248,24 @@ async def open_session(
             return {"name": name, "error": str(e), "status": "failed"}
 
 
+async def _close_session_inner(name: str) -> dict[str, Any]:
+    """Close a session WITHOUT acquiring the lock (caller must hold _lock)."""
+    if name not in _sessions:
+        return {"name": name, "status": "not_found"}
+
+    logger.info("session_close name=%s", name)
+    session = _sessions.pop(name)
+    _metadata.pop(name, None)
+    _delete_metadata(name)
+
+    try:
+        await session.close()
+        return {"name": name, "status": "closed"}
+    except Exception as e:
+        logger.warning("session_close_failed name=%s error=%s", name, e)
+        return {"name": name, "status": "error", "error": str(e)}
+
+
 async def close_session(name: str) -> dict[str, Any]:
     """Close a browser session and clean up resources.
 
@@ -258,20 +276,7 @@ async def close_session(name: str) -> dict[str, Any]:
         Dict with closure status.
     """
     async with _lock:
-        if name not in _sessions:
-            return {"name": name, "status": "not_found"}
-
-        logger.info("session_close name=%s", name)
-        session = _sessions.pop(name)
-        _metadata.pop(name, None)
-        _delete_metadata(name)
-
-        try:
-            await session.close()
-            return {"name": name, "status": "closed"}
-        except Exception as e:
-            logger.warning("session_close_failed name=%s error=%s", name, e)
-            return {"name": name, "status": "error", "error": str(e)}
+        return await _close_session_inner(name)
 
 
 async def get_session(name: str) -> BrowserContext | None:
@@ -299,7 +304,7 @@ async def get_session(name: str) -> BrowserContext | None:
                 age = time.time() - created.timestamp()
                 if age > meta.ttl_seconds:
                     logger.info("session_expired name=%s age=%d", name, age)
-                    await close_session(name)
+                    await _close_session_inner(name)
                     return None
             except Exception as e:
                 logger.debug("session_load_fallback name=%s error=%s", name, e)
@@ -420,7 +425,7 @@ async def cleanup_sessions(max_sessions: int = 10) -> dict[str, Any]:
             if not oldest:
                 break
 
-            result = await close_session(oldest)
+            result = await _close_session_inner(oldest)
             if result.get("status") == "closed":
                 closed.append(oldest)
 
@@ -441,7 +446,7 @@ async def cleanup_all_sessions() -> dict[str, Any]:
     errors: list[str] = []
     for name in names:
         try:
-            result = await close_session(name)
+            result = await _close_session_inner(name)
             if result.get("status") == "closed":
                 closed.append(name)
             elif result.get("error"):
