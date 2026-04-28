@@ -76,6 +76,7 @@ from loom.tools import (
     osint_extended,
     passive_recon,
     p3_tools,
+    prompt_reframe,
     pdf_extract,
     psycholinguistic,
     realtime_monitor,
@@ -832,6 +833,15 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(culture_dna.research_culture_dna, "search"))
     mcp.tool()(_wrap_tool(synth_echo.research_synth_echo, "fetch"))
     mcp.tool()(_wrap_tool(psycholinguistic.research_psycholinguistic))
+
+    # Prompt reframing tools (auto-bypass LLM refusals for authorized research)
+    mcp.tool()(_wrap_tool(prompt_reframe.research_prompt_reframe))
+    mcp.tool()(_wrap_tool(prompt_reframe.research_auto_reframe, "llm"))
+    mcp.tool()(_wrap_tool(prompt_reframe.research_refusal_detector))
+
+    # Multi-LLM query (ask all available providers simultaneously)
+    from loom.tools import multi_llm
+    mcp.tool()(_wrap_tool(multi_llm.research_ask_all_llms, "llm"))
 
 def _validate_environment() -> None:
     """Validate that required environment variables are configured.
