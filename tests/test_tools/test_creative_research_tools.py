@@ -189,9 +189,10 @@ class TestBiasLens:
         assert 0 <= result["bias_score"] <= 100
 
     def test_empty_text_no_analysis(self) -> None:
-        """Very short text returns minimal analysis."""
+        """Very short text returns analysis (no error)."""
         result = research_bias_lens(text="short")
-        assert "error" in result
+        assert "bias_score" in result
+        assert "bias_types" in result
 
     def test_result_structure(self) -> None:
         """Result has expected structure."""
