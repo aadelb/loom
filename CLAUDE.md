@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What is Loom
 
-Loom is a Python MCP (Model Context Protocol) server that exposes 141 research tools over streamable-HTTP (port 8787). It wraps scraping (Scrapling, Crawl4AI, Camoufox, Botasaurus), search across 21 providers, 8 LLM providers, infrastructure tools (VastAI, Stripe, Billing), communication tools (Email, Joplin notes), media tools (Audio transcription, Document conversion), Tor/darkweb tools (Tor status, new identity, cipher mirror, forum cortex, onion spectra, ghost weave, dead drop scanner, onion discover, dark forum), GitHub CLI, persistent browser sessions, 11 creative research tools, 17 killer research tools (dead content resurrection, invisible web discovery, JS intelligence, multi-engine search fusion, passive recon, metadata forensics, identity resolution, change monitoring, social graph, competitive intel, infrastructure correlation, leak scanning, vulnerability intelligence, cryptocurrency tracing, steganography detection, threat profiling, onion discovery), and a content-hash cache into a single MCP service. It also ships a Typer CLI (`loom`) that calls the MCP server as a client.
+Loom is a Python MCP (Model Context Protocol) server that exposes 160 research tools over streamable-HTTP (port 8787). It wraps scraping (Scrapling, Crawl4AI, Camoufox, Botasaurus), search across 21 providers, 8 LLM providers, infrastructure tools (VastAI, Stripe, Billing), communication tools (Email, Joplin notes), media tools (Audio transcription, Document conversion), Tor/darkweb tools, GitHub CLI, persistent browser sessions, creative research tools, killer research tools, dark research tools, intelligence tools, revolutionary tools, AI safety tools, academic integrity tools, career intelligence tools, signal detection tools, and supply chain intelligence tools, plus a content-hash cache into a single MCP service. It also ships a Typer CLI (`loom`) that calls the MCP server as a client.
 
 ## Commands
 
@@ -50,46 +50,145 @@ src/loom/
   cache.py         Content-hash CacheStore (SHA-256, daily dirs, atomic writes, singleton)
   sessions.py      Persistent browser session management (in-memory registry + SQLite SessionManager)
   journey.py       End-to-end journey test runner (mocked/live/record modes)
-  tools/           One module per tool family (94 tools total):
+  tools/           One module per tool family (160 tools total):
     fetch.py       research_fetch (Scrapling 3-tier: http/stealthy/dynamic + Cloudflare auto-escalation)
     spider.py      research_spider (concurrent multi-URL fetch)
     markdown.py    research_markdown (Crawl4AI + Trafilatura fallback for HTML-to-markdown)
     search.py      research_search (multi-provider: 21 search engines including exa/tavily/firecrawl/brave/ddgs/arxiv/wikipedia/hackernews/reddit/newsapi/crypto/ummro/onionsearch/torcrawl/darkweb_cti/robin_osint)
     deep.py        research_deep (12-stage pipeline: query detection → search → fetch → escalation → markdown → extraction)
-    github.py      research_github (gh CLI wrapper)
+    github.py      research_github (gh CLI wrapper + research_github_readme + research_github_releases)
     stealth.py     research_camoufox + research_botasaurus
     cache_mgmt.py  research_cache_stats + research_cache_clear
-    creative.py    11 creative research tools (red_team, multilingual, consensus, misinfo_check, temporal_diff, citation_graph, ai_detect, curriculum, community_sentiment, wiki_ghost, semantic_sitemap)
-    enrich.py      research_wayback (Wayback Machine recovery)
-    experts.py     research_expertise (expertise finder)
-    llm.py         8 LLM tools (summarize/extract/classify/translate/expand/answer/embed/chat)
-    vastai.py      research_vastai_search + research_vastai_status (GPU compute marketplace)
-    billing.py     research_usage_report + research_stripe_balance (billing and usage tracking)
-    email_report.py research_email_report (email delivery)
-    joplin.py      research_save_note + research_list_notebooks (note-taking)
-    tor.py         research_tor_status + research_tor_new_identity (Tor network management)
-    transcribe.py  research_transcribe (audio to text)
-    document.py    research_convert_document (document format conversion)
-    stylometry.py    research_stylometry (author fingerprinting)
-    deception_detect.py  research_deception_detect (linguistic deception cues)
-    persona_profile.py   research_persona_profile (Big Five personality)
+    
+    Killer Research Tools (20 tools — Loom's unfair advantage):
+    dead_content.py           research_dead_content (recover archived/shadow-banned content)
+    invisible_web.py          research_invisible_web (dark web, intranets, API-only sites)
+    js_intel.py               research_js_intel (JavaScript runtime introspection)
+    multi_search.py           research_multi_search (parallel search across 21+ providers)
+    dark_forum.py             research_dark_forum (search 24M+ darkweb forum posts)
+    infra_correlator.py       research_infra_correlator (link domains/IPs via infrastructure)
+    passive_recon.py          research_passive_recon (DNS/WHOIS/ASN enrichment)
+    infra_analysis.py         research_registry_graveyard + research_subdomain_temporal + research_commit_analyzer
+    onion_discover.py         research_onion_discover (crawl Tor exit node directories)
+    metadata_forensics.py     research_metadata_forensics (EXIF/PDF/document metadata extraction)
+    crypto_trace.py           research_crypto_trace (blockchain address clustering)
+    stego_detect.py           research_stego_detect (steganography & covert channel detection)
+    threat_profile.py         research_threat_profile (adversary infrastructure profiling)
+    leak_scan.py              research_leak_scan (breach database + paste site scanning)
+    social_graph.py           research_social_graph (relationship mapping across platforms)
+
+    Dark Research Tools (5 tools):
+    dark_forum.py             research_dark_forum (forum post search & metadata)
+    onion_discover.py         research_onion_discover (Tor directory enumeration)
+    leak_scan.py              research_leak_scan (breach corpus scanning)
+    infra_correlator.py       research_infra_correlator (infrastructure correlation)
+    darkweb_early_warning.py  research_darkweb_early_warning (emerging threat detection)
+
+    Intelligence Tools (12 tools):
+    identity_resolve.py       research_identity_resolve (cross-platform identity linking)
+    change_monitor.py         research_change_monitor (website delta detection)
+    social_graph.py           research_social_graph (network analysis)
+    competitive_intel.py      research_competitive_intel (competitor research)
+    crypto_trace.py           research_crypto_trace (blockchain tracing)
+    stego_detect.py           research_stego_detect (hidden content detection)
+    threat_profile.py         research_threat_profile (threat actor profiling)
+    company_intel.py          research_company_diligence + research_salary_intelligence
+    supply_chain_intel.py     research_supply_chain_risk + research_patent_landscape + research_dependency_audit
+    signal_detection.py       research_ghost_protocol + research_temporal_anomaly + research_sec_tracker
+
+    Revolutionary Tools (4 tools):
+    knowledge_graph.py        research_knowledge_graph (semantic entity extraction)
+    fact_checker.py           research_fact_checker (claim verification)
+    trend_predictor.py        research_trend_predict (signal→trend forecasting)
+    report_generator.py       research_generate_report (structured intelligence reports)
+
+    AI Safety Tools (7 tools — EU AI Act Article 15 compliance):
+    ai_safety.py              research_prompt_injection_test + research_model_fingerprint + research_bias_probe + research_safety_filter_map + research_compliance_check
+    ai_safety_extended.py     research_hallucination_benchmark + research_adversarial_robustness
+
+    Academic Integrity Tools (11 tools):
+    academic_integrity.py     research_citation_analysis + research_retraction_check + research_predatory_journal_check
+    hcs10_academic.py         research_grant_forensics + research_monoculture_detect + research_review_cartel + research_data_fabrication + research_institutional_decay + research_shell_funding + research_conference_arbitrage + research_preprint_manipulation
+
+    Career Intelligence Tools (6 tools):
+    job_signals.py            research_funding_signal + research_stealth_hire_scanner + research_interviewer_profiler
+    career_intel.py           research_map_research_to_product + research_translate_academic_skills
+    career_trajectory.py      research_career_trajectory + research_market_velocity
+    resume_intel.py           research_optimize_resume + research_interview_prep
+
+    Signal Detection Tools (3 tools):
+    signal_detection.py       research_ghost_protocol + research_temporal_anomaly + research_sec_tracker
+
+    Supply Chain Intelligence (3 tools):
+    supply_chain_intel.py     research_supply_chain_risk + research_patent_landscape + research_dependency_audit
+
+    Creative Research Tools (11 tools):
+    creative.py               research_red_team + research_multilingual + research_consensus + research_misinfo_check + research_temporal_diff + research_citation_graph + research_ai_detect + research_curriculum + research_community_sentiment + research_wiki_ghost + research_semantic_sitemap
+
+    Psychology & Behavioral Analysis (2 tools):
+    stylometry.py             research_stylometry (author fingerprinting)
+    deception_detect.py       research_deception_detect (linguistic deception cues)
+
+    Domain Intelligence (3 tools):
+    domain_intel.py           research_whois + research_dns_lookup + research_nmap_scan
+
+    Security & Infrastructure (8 tools):
+    cert_analyzer.py          research_cert_analyze (SSL/TLS inspection)
+    security_headers.py       research_security_headers (HTTP header audit)
+    breach_check.py           research_breach_check + research_password_check
+    ip_intel.py               research_ip_reputation + research_ip_geolocation
+    cve_lookup.py             research_cve_lookup + research_cve_detail
+    vuln_intel.py             research_vuln_intel (vulnerability intelligence)
+    urlhaus_lookup.py         research_urlhaus_check + research_urlhaus_search
+
+    Research & Extraction Tools (10 tools):
+    pdf_extract.py            research_pdf_extract + research_pdf_search
+    text_analyze.py           research_text_analyze (NLTK NER/keywords/readability)
+    screenshot.py             research_screenshot (Playwright page capture)
+    rss_monitor.py            research_rss_fetch + research_rss_search
+    social_intel.py           research_social_search + research_social_profile
+    image_intel.py            research_exif_extract + research_ocr_extract
+    geoip_local.py            research_geoip_local (MaxMind offline)
+
+    Advanced Analysis Tools (8 tools):
+    persona_profile.py        research_persona_profile (Big Five personality)
     radicalization_detect.py  research_radicalization_detect (extremism NLP)
-    sentiment_deep.py    research_sentiment_deep (8-emotion detection)
-    network_persona.py   research_network_persona (forum social graph)
-    domain_intel.py      research_whois + research_dns_lookup + research_nmap_scan
-    pdf_extract.py       research_pdf_extract + research_pdf_search
-    text_analyze.py      research_text_analyze (NLTK NER/keywords/readability)
-    screenshot.py        research_screenshot (Playwright page capture)
-    rss_monitor.py       research_rss_fetch + research_rss_search
-    social_intel.py      research_social_search + research_social_profile
-    cert_analyzer.py     research_cert_analyze (SSL/TLS inspection)
-    security_headers.py  research_security_headers (HTTP header audit)
-    breach_check.py      research_breach_check + research_password_check
-    ip_intel.py          research_ip_reputation + research_ip_geolocation
-    cve_lookup.py        research_cve_lookup + research_cve_detail
-    urlhaus_lookup.py    research_urlhaus_check + research_urlhaus_search
-    geoip_local.py       research_geoip_local (MaxMind offline)
-    image_intel.py       research_exif_extract + research_ocr_extract
+    sentiment_deep.py         research_sentiment_deep (8-emotion detection)
+    network_persona.py        research_network_persona (forum social graph)
+    threat_intel.py           research_threat_intel (threat actor tracking)
+    osint_extended.py         research_social_engineering_score + research_behavioral_fingerprint
+
+    LLM & Language Tools (9 tools):
+    llm.py                    research_llm_summarize + research_llm_extract + research_llm_classify + research_llm_translate + research_llm_query_expand + research_llm_answer + research_llm_embed + research_llm_chat
+    enrich.py                 research_detect_language + research_wayback
+
+    Infrastructure & Services (12 tools):
+    vastai.py                 research_vastai_search + research_vastai_status (GPU compute)
+    billing.py                research_usage_report + research_stripe_balance
+    email_report.py           research_email_report (delivery)
+    joplin.py                 research_save_note + research_list_notebooks (notes)
+    tor.py                    research_tor_status + research_tor_new_identity (Tor management)
+    transcribe.py             research_transcribe (audio to text)
+    document.py               research_convert_document (format conversion)
+    metrics.py                research_metrics (usage tracking)
+    slack.py                  research_slack_notify (Slack integration)
+    gcp.py                    research_image_analyze + research_text_to_speech + research_tts_voices
+    vercel.py                 research_vercel_status (deployment status)
+
+    Darkweb & Specialized Tools (9 tools):
+    cipher_mirror.py          research_cipher_mirror (cipher suite analysis)
+    forum_cortex.py           research_forum_cortex (forum metadata extraction)
+    onion_spectra.py          research_onion_spectra (Tor hidden service analysis)
+    ghost_weave.py            research_ghost_weave (ghost protocol detection)
+    dead_drop_scanner.py      research_dead_drop_scanner (dead drop sites scanning)
+    job_research.py           research_job_search + research_job_market
+    experts.py                research_find_experts (expertise finder)
+    youtube_transcripts.py    fetch_youtube_transcript (YouTube transcription)
+
+    Session & Config Tools (6 tools):
+    sessions.py               research_session_open + research_session_list + research_session_close
+    config.py                 research_config_get + research_config_set
+    server.py                 research_health_check (server status)
   providers/       8 LLM providers + 21 search providers + specialized data providers:
     base.py        Abstract LLMProvider + LLMResponse dataclass + _estimate_cost
     groq_provider.py GROQ API
@@ -181,13 +280,13 @@ src/loom/
 - Markers: `slow`, `live` (real network), `integration`
 - Test structure mirrors source: `tests/test_tools/`, `tests/test_providers/`, `tests/test_integration/`
 - Fixtures in `tests/conftest.py` provide temp dirs, mock HTTP transport, and sample API responses
-- Journey tests (`tests/journey_e2e.py`) run the full 94 tool scenario in mocked/live/record modes
+- Journey tests (`tests/journey_e2e.py`) run the full 160 tool scenario in mocked/live/record modes
 
 ## Documentation
 
 Four comprehensive documentation files in `docs/`:
 
-- **tools-reference.md** — Complete reference for all 94 tools, parameters, and examples
+- **tools-reference.md** — Complete reference for all 160 tools, parameters, and examples
 - **api-keys.md** — API key setup for all 8 LLM providers + 21 search providers + infrastructure/communication/media services
 - **architecture.md** — Deep dive into pipeline design, escalation strategy, and tool composition
 - **help.md** — Troubleshooting, common patterns, and FAQ
@@ -203,8 +302,11 @@ Four comprehensive documentation files in `docs/`:
 ### Adding new tools
 
 Every new tool requires ALL of:
-1. Implementation in src/loom/tools/
-2. Tests in tests/
-3. Entry in docs/tools-reference.md with params, examples, cost
-4. Entry in docs/help.md
-5. Run scripts/verify_completeness.py to confirm 0 drift
+1. Implementation in src/loom/tools/ (module per tool family, 160+ tools across ~60 modules)
+2. Tool function registration in `server.py:_register_tools()` with `mcp.tool()(_wrap_tool(...))`
+3. Parameter validation model in `params.py` with Pydantic v2 (`extra="forbid"`, `strict=True`)
+4. Comprehensive tests in `tests/test_tools/` with 80%+ coverage target
+5. Entry in `docs/tools-reference.md` with parameters, examples, and cost estimation
+6. Entry in `docs/help.md` with troubleshooting and use cases
+7. Optional: Handle ImportError in `server.py` if tool depends on external packages
+8. Run `scripts/verify_completeness.py` to confirm zero documentation drift

@@ -1712,3 +1712,74 @@ class SecTrackerParams(BaseModel):
             if ft not in valid_types:
                 raise ValueError(f"filing_type '{ft}' not in {valid_types}")
         return v
+
+
+class RegistryGraveyardParams(BaseModel):
+    """Parameters for research_registry_graveyard tool."""
+
+    package_name: str
+    ecosystem: Literal["pypi", "npm", "rubygems"] = "pypi"
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("package_name")
+    @classmethod
+    def validate_package_name(cls, v: str) -> str:
+        if not v or len(v) > 255:
+            raise ValueError("package_name must be 1-255 characters")
+        # Allow alphanumeric, hyphens, underscores, dots
+        if not re.match(r"^[a-zA-Z0-9_.-]+$", v):
+            raise ValueError("package_name contains disallowed characters")
+        return v
+
+
+class SubdomainTemporalParams(BaseModel):
+    """Parameters for research_subdomain_temporal tool."""
+
+    domain: str
+    days_back: int = 90
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("domain")
+    @classmethod
+    def validate_domain(cls, v: str) -> str:
+        if not v or len(v) > 255:
+            raise ValueError("domain must be 1-255 characters")
+        if not re.match(r"^[a-zA-Z0-9._-]+$", v):
+            raise ValueError("domain contains disallowed characters")
+        return v
+
+    @field_validator("days_back")
+    @classmethod
+    def validate_days_back(cls, v: int) -> int:
+        if v < 1 or v > 365:
+            raise ValueError("days_back must be 1-365")
+        return v
+
+
+class CommitAnalyzerParams(BaseModel):
+    """Parameters for research_commit_analyzer tool."""
+
+    repo: str
+    days_back: int = 30
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("repo")
+    @classmethod
+    def validate_repo(cls, v: str) -> str:
+        if not v or len(v) > 100:
+            raise ValueError("repo must be 1-100 characters")
+        if "/" not in v:
+            raise ValueError("repo must be in 'owner/name' format")
+        if not re.match(r"^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$", v):
+            raise ValueError("repo contains disallowed characters")
+        return v
+
+    @field_validator("days_back")
+    @classmethod
+    def validate_days_back(cls, v: int) -> int:
+        if v < 1 or v > 365:
+            raise ValueError("days_back must be 1-365")
+        return v

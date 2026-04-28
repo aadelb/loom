@@ -54,7 +54,9 @@ from loom.tools import (
     fact_checker,
     fetch,
     github,
+    hcs10_academic,
     identity_resolve,
+    infra_analysis,
     infra_correlator,
     invisible_web,
     job_signals,
@@ -85,6 +87,7 @@ from loom.tools import (
     supply_chain_intel,
     synth_echo,
     threat_profile,
+    threat_intel,
     trend_predictor,
 )
 from loom.tracing import install_tracing, new_request_id
@@ -356,11 +359,22 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(dark_forum.research_dark_forum, "search"))
     mcp.tool()(_wrap_tool(infra_correlator.research_infra_correlator, "fetch"))
     mcp.tool()(_wrap_tool(passive_recon.research_passive_recon, "fetch"))
+    mcp.tool()(_wrap_tool(infra_analysis.research_registry_graveyard, "fetch"))
+    mcp.tool()(_wrap_tool(infra_analysis.research_subdomain_temporal, "fetch"))
+    mcp.tool()(_wrap_tool(infra_analysis.research_commit_analyzer, "fetch"))
     mcp.tool()(_wrap_tool(onion_discover.research_onion_discover, "fetch"))
     mcp.tool()(_wrap_tool(metadata_forensics.research_metadata_forensics, "fetch"))
     mcp.tool()(_wrap_tool(crypto_trace.research_crypto_trace, "fetch"))
     mcp.tool()(_wrap_tool(stego_detect.research_stego_detect))
     mcp.tool()(_wrap_tool(threat_profile.research_threat_profile, "fetch"))
+    # Threat intelligence tools (7 tools for dark market, ransomware, phishing, botnets, malware, domains, IOCs)
+    mcp.tool()(_wrap_tool(threat_intel.research_dark_market_monitor))
+    mcp.tool()(_wrap_tool(threat_intel.research_ransomware_tracker))
+    mcp.tool()(_wrap_tool(threat_intel.research_phishing_mapper))
+    mcp.tool()(_wrap_tool(threat_intel.research_botnet_tracker))
+    mcp.tool()(_wrap_tool(threat_intel.research_malware_intel))
+    mcp.tool()(_wrap_tool(threat_intel.research_domain_reputation))
+    mcp.tool()(_wrap_tool(threat_intel.research_ioc_enrich))
     mcp.tool()(_wrap_tool(leak_scan.research_leak_scan, "fetch"))
     mcp.tool()(_wrap_tool(social_graph.research_social_graph, "fetch"))
 
@@ -425,6 +439,16 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(academic_integrity.research_citation_analysis, "fetch"))
     mcp.tool()(_wrap_tool(academic_integrity.research_retraction_check, "fetch"))
     mcp.tool()(_wrap_tool(academic_integrity.research_predatory_journal_check, "fetch"))
+
+    # HCS-10 academic research tools (8 tools for research integrity & anomaly detection)
+    mcp.tool()(_wrap_tool(hcs10_academic.research_grant_forensics))
+    mcp.tool()(_wrap_tool(hcs10_academic.research_monoculture_detect))
+    mcp.tool()(_wrap_tool(hcs10_academic.research_review_cartel, "fetch"))
+    mcp.tool()(_wrap_tool(hcs10_academic.research_data_fabrication))
+    mcp.tool()(_wrap_tool(hcs10_academic.research_institutional_decay, "fetch"))
+    mcp.tool()(_wrap_tool(hcs10_academic.research_shell_funding, "fetch"))
+    mcp.tool()(_wrap_tool(hcs10_academic.research_conference_arbitrage, "fetch"))
+    mcp.tool()(_wrap_tool(hcs10_academic.research_preprint_manipulation, "fetch"))
 
     # Creative research tools (4 tools for advanced research scenarios)
     mcp.tool()(_wrap_tool(darkweb_early_warning.research_darkweb_early_warning, "search"))

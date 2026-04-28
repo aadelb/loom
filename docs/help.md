@@ -62,7 +62,7 @@ curl http://127.0.0.1:8787/mcp/status
 
 ---
 
-## Tool Catalog (94 Tools)
+## Tool Catalog (160 Tools)
 
 ### Core Search & Fetch (8 tools)
 
