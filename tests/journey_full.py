@@ -750,7 +750,7 @@ class TestImageTools:
     @pytest.mark.asyncio
     async def test_research_image_analyze(self) -> None:
         """Test research_image_analyze."""
-        from loom.tools.image_intel import research_image_analyze
+        from loom.tools.gcp import research_image_analyze
 
         with patch("loom.tools.llm.research_llm_chat") as mock_chat:
             mock_chat.return_value = {"text": "Image analysis"}
@@ -758,7 +758,8 @@ class TestImageTools:
             result = await research_image_analyze("https://example.com/image.jpg")
             assert isinstance(result, dict)
 
-    def test_research_exif_extract(self) -> None:
+    @pytest.mark.asyncio
+    async def test_research_exif_extract(self) -> None:
         """Test research_exif_extract."""
         from loom.tools.image_intel import research_exif_extract
 
@@ -767,10 +768,11 @@ class TestImageTools:
             mock_response.content = b"JPEG"
             mock_get.return_value = mock_response
 
-            result = research_exif_extract("https://example.com/photo.jpg")
+            result = await research_exif_extract("https://example.com/photo.jpg")
             assert isinstance(result, dict)
 
-    def test_research_ocr_extract(self) -> None:
+    @pytest.mark.asyncio
+    async def test_research_ocr_extract(self) -> None:
         """Test research_ocr_extract."""
         from loom.tools.image_intel import research_ocr_extract
 
@@ -779,7 +781,7 @@ class TestImageTools:
             mock_response.content = b"PNG"
             mock_get.return_value = mock_response
 
-            result = research_ocr_extract("https://example.com/screenshot.png")
+            result = await research_ocr_extract("https://example.com/screenshot.png")
             assert isinstance(result, dict)
 
     def test_research_pdf_extract(self) -> None:
@@ -1063,7 +1065,7 @@ class TestInfrastructureTools:
 
     def test_research_health_check(self) -> None:
         """Test research_health_check."""
-        from loom.tools.network import research_health_check
+        from loom.tools.domain_intel import research_health_check
 
         with patch("httpx.get") as mock_get:
             mock_response = MagicMock()
@@ -1110,7 +1112,7 @@ class TestPsychologyTools:
 
     def test_research_network_persona(self) -> None:
         """Test research_network_persona."""
-        from loom.tools.social_intel import research_network_persona
+        from loom.tools.network_persona import research_network_persona
 
         with patch("loom.tools.search.research_search") as mock_search:
             mock_search.return_value = {"results": []}
@@ -1140,7 +1142,7 @@ class TestPsychologyTools:
 
     def test_research_forum_cortex(self) -> None:
         """Test research_forum_cortex."""
-        from loom.tools.social_intel import research_forum_cortex
+        from loom.tools.forum_cortex import research_forum_cortex
 
         with patch("loom.tools.search.research_search") as mock_search:
             mock_search.return_value = {"results": []}

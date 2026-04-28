@@ -1246,3 +1246,128 @@ class JobMarketParams(BaseModel):
         if len(v) > 100:
             raise ValueError("location max 100 characters")
         return v
+
+class CompanyDiligenceParams(BaseModel):
+    """Parameters for research_company_diligence tool."""
+
+    company_name: str
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("company_name")
+    @classmethod
+    def validate_company_name(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("company_name must be non-empty")
+        v = v.strip()
+        if len(v) > 200:
+            raise ValueError("company_name max 200 characters")
+        return v
+
+
+class SalaryIntelligenceParams(BaseModel):
+    """Parameters for research_salary_intelligence tool."""
+
+    role: str
+    location: str | None = None
+    experience_years: int = 0
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("role")
+    @classmethod
+    def validate_role(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("role must be non-empty")
+        v = v.strip()
+        if len(v) > 200:
+            raise ValueError("role max 200 characters")
+        return v
+
+    @field_validator("location")
+    @classmethod
+    def validate_location(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        v = v.strip()
+        if len(v) > 100:
+            raise ValueError("location max 100 characters")
+        return v
+
+    @field_validator("experience_years")
+    @classmethod
+    def validate_experience_years(cls, v: int) -> int:
+        if v < 0 or v > 70:
+            raise ValueError("experience_years must be 0-70")
+        return v
+
+class OptimizeResumeParams(BaseModel):
+    """Parameters for research_optimize_resume tool."""
+
+    resume_text: str
+    job_description: str
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("resume_text")
+    @classmethod
+    def validate_resume(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("resume_text must be non-empty")
+        if len(v.strip()) < 100:
+            raise ValueError("resume_text must be at least 100 characters")
+        if len(v) > 50000:
+            raise ValueError("resume_text max 50000 characters")
+        return v
+
+    @field_validator("job_description")
+    @classmethod
+    def validate_jd(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("job_description must be non-empty")
+        if len(v.strip()) < 50:
+            raise ValueError("job_description must be at least 50 characters")
+        if len(v) > 30000:
+            raise ValueError("job_description max 30000 characters")
+        return v
+
+
+class InterviewPrepParams(BaseModel):
+    """Parameters for research_interview_prep tool."""
+
+    job_description: str
+    company: str | None = None
+    interview_type: str = "behavioral"
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("job_description")
+    @classmethod
+    def validate_jd(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("job_description must be non-empty")
+        if len(v.strip()) < 100:
+            raise ValueError("job_description must be at least 100 characters")
+        if len(v) > 30000:
+            raise ValueError("job_description max 30000 characters")
+        return v
+
+    @field_validator("company")
+    @classmethod
+    def validate_company(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        if not v.strip():
+            return None
+        v = v.strip()
+        if len(v) > 200:
+            raise ValueError("company max 200 characters")
+        return v
+
+    @field_validator("interview_type")
+    @classmethod
+    def validate_interview_type(cls, v: str) -> str:
+        valid_types = ["behavioral", "technical", "mixed"]
+        if v.lower() not in valid_types:
+            raise ValueError(f"interview_type must be one of {valid_types}")
+        return v.lower()

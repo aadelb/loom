@@ -35,6 +35,7 @@ from loom.tools import (
     breach_check,
     cache_mgmt,
     cert_analyzer,
+    company_intel,
     deception_detect,
     deep,
     domain_intel,
@@ -222,6 +223,17 @@ with suppress(ImportError):
 
     _optional_tools["job_research"] = job_research_tools
 
+
+with suppress(ImportError):
+    from loom.tools import career_intel as career_intel_tools
+
+    _optional_tools["career_intel"] = career_intel_tools
+
+with suppress(ImportError):
+    from loom.tools import resume_intel as resume_intel_tools
+
+    _optional_tools["resume_intel"] = resume_intel_tools
+
 _start_time = time.time()
 
 
@@ -293,6 +305,10 @@ def _register_tools(mcp: FastMCP) -> None:
     # Psychology & behavioral analysis tools
     mcp.tool()(_wrap_tool(stylometry.research_stylometry))  # CPU-only, no category
     mcp.tool()(_wrap_tool(deception_detect.research_deception_detect))  # CPU-only, no category
+
+    # Company intelligence tools
+    mcp.tool()(_wrap_tool(company_intel.research_company_diligence, "search"))
+    mcp.tool()(_wrap_tool(company_intel.research_salary_intelligence, "search"))
 
     # Domain intelligence tools
     mcp.tool()(_wrap_tool(domain_intel.research_whois, "fetch"))
@@ -430,6 +446,15 @@ def _register_tools(mcp: FastMCP) -> None:
             mcp.tool()(_wrap_tool(job_research_mod.research_job_search, "search"))
         if hasattr(job_research_mod, "research_job_market"):
             mcp.tool()(_wrap_tool(job_research_mod.research_job_market, "search"))
+
+    # Career intelligence tools (if available)
+    if "career_intel" in _optional_tools:
+        career_intel_mod = _optional_tools["career_intel"]
+        if hasattr(career_intel_mod, "research_map_research_to_product"):
+            mcp.tool()(_wrap_tool(career_intel_mod.research_map_research_to_product, "llm"))
+        if hasattr(career_intel_mod, "research_translate_academic_skills"):
+            mcp.tool()(_wrap_tool(career_intel_mod.research_translate_academic_skills, "llm"))
+
 
     # Joplin note tools (if available)
     if "joplin" in _optional_tools:
@@ -585,6 +610,14 @@ def _register_tools(mcp: FastMCP) -> None:
             mcp.tool()(_wrap_tool(image_mod.research_exif_extract, "fetch"))
         if hasattr(image_mod, "research_ocr_extract"):
             mcp.tool()(_wrap_tool(image_mod.research_ocr_extract, "fetch"))
+
+    # Resume and interview prep tools (if available)
+    if "resume_intel" in _optional_tools:
+        resume_intel_mod = _optional_tools["resume_intel"]
+        if hasattr(resume_intel_mod, "research_optimize_resume"):
+            mcp.tool()(_wrap_tool(resume_intel_mod.research_optimize_resume, "llm"))
+        if hasattr(resume_intel_mod, "research_interview_prep"):
+            mcp.tool()(_wrap_tool(resume_intel_mod.research_interview_prep, "llm"))
 
 
 def _validate_environment() -> None:
