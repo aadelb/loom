@@ -310,18 +310,16 @@ def research_realtime_monitor(
 
             # Sort by timestamp (newest first)
             # Handle both ISO format and date-only format
-            def parse_timestamp(ts: str) -> datetime:
-                epoch = datetime(1970, 1, 1, tzinfo=UTC)
+            def parse_timestamp(ts: str) -> float:
                 if not ts:
-                    return epoch
+                    return 0.0
                 try:
-                    return datetime.fromisoformat(ts.replace("Z", "+00:00"))
+                    dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+                    if dt.tzinfo is None:
+                        dt = dt.replace(tzinfo=UTC)
+                    return dt.timestamp()
                 except (ValueError, AttributeError):
-                    try:
-                        dt = datetime.fromisoformat(ts)
-                        return dt.replace(tzinfo=UTC) if dt.tzinfo is None else dt
-                    except (ValueError, AttributeError):
-                        return epoch
+                    return 0.0
 
             all_items.sort(key=lambda x: parse_timestamp(x.get("timestamp", "")), reverse=True)
 
