@@ -1,6 +1,6 @@
 # Loom MCP Tools Reference
 
-Complete documentation of all 53 MCP tools exposed by the Loom research server. Tools are organized by category and include parameters, return types, and usage examples.
+Complete documentation of all 56 MCP tools exposed by the Loom research server. Tools are organized by category and include parameters, return types, and usage examples.
 
 ## Overview
 
@@ -2307,6 +2307,30 @@ Search across multiple RSS feeds for items matching a query.
 
 ---
 
+### research_realtime_monitor
+
+Monitor multiple sources for recent mentions of topics. Queries HackerNews, Reddit, arXiv, NewsAPI, and Wikipedia for recent mentions of provided topics in parallel. Returns aggregated results sorted by timestamp (newest first).
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `topics` | list[str] | - | Topics to monitor (e.g., ["AI", "Python", "security"]) |
+| `sources` | list[str]\|null | null | Sources to query: "hackernews", "reddit", "arxiv", "newsapi", "wikipedia" (defaults to all) |
+| `hours_back` | int | 24 | Number of hours to look back in time |
+
+**Returns:** `{"topics": [...], "time_range_hours": 24, "total_mentions": 15, "mentions_by_topic": {"AI": 8, "Python": 7}, "mentions_by_source": {"hackernews": 5, "reddit": 4, "arxiv": 6}, "recent_items": [{"topic": "...", "source": "...", "title": "...", "url": "...", "timestamp": "...", "score": 42.0}, ...]}`
+**Cost:** FREE (uses free APIs)
+**Rate Limit:** Varies by source (HackerNews: 10K/day, Reddit: 60/min without auth, arXiv: no limit, NewsAPI: depends on plan, Wikipedia: no strict limit)
+
+**Notes:**
+- HackerNews uses `created_at_i` timestamp filter for precise time-based queries
+- Reddit returns posts from last 24 hours max (API limitation)
+- arXiv returns new papers sorted by submission date
+- NewsAPI requires `NEWS_API_KEY` config (falls back to empty results if not set)
+- Wikipedia change queries may have limited coverage for niche topics
+- Results are deduplicated by URL and source
+- Timestamp parsing handles both ISO 8601 and date-only (YYYY-MM-DD) formats
+
+
 ### research_save_note
 
 Create a note in Joplin via REST API for persistent research note-taking.
@@ -2988,4 +3012,171 @@ Check IP reputation and abuse score.
 **Returns:** `{"ip": "...", "geolocation": {...}, "abuse_score": 25, "is_tor_exit": false, "reverse_dns": "..."}`
 **Cost:** FREE (ABUSEIPDB_API_KEY optional for detailed scores)
 **Rate Limit:** fetch 60/min
+
+
+---
+
+## Creative Research Tools (Extended)
+
+### research_culture_dna
+
+Analyze company culture from public signals including Glassdoor reviews, GitHub organization patterns, LinkedIn company pages, and job posting language.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| company | str | - | Company name (e.g., "Google", "Acme Corp") |
+| domain | str | `""` | Optional company domain (e.g., "google.com") |
+
+**Returns:**
+```json
+{
+  "company": "Google",
+  "domain": "google.com",
+  "culture_signals": [
+    {"source": "glassdoor", "category": "work_life_balance", "signal": "flexible work mentioned", "strength": 3}
+  ],
+  "work_life_score": 0.72,
+  "innovation_score": 0.85,
+  "diversity_signals": ["diversity commitment", "inclusion focus"],
+  "overall_culture_type": "startup",
+  "signal_count": 12,
+  "github_analysis": {"repo_analysis": "...", "readme_analysis": "..."}
+}
+```
+
+**Cost:** FREE (uses public web search)
+**Rate Limit:** search 20/min, fetch 60/min
+
+**Example Usage:**
+```python
+result = await research_culture_dna(
+    company="Google",
+    domain="google.com"
+)
+print(f"Culture type: {result['overall_culture_type']}")
+print(f"Innovation score: {result['innovation_score']}")
+```
+
+---
+
+### research_synth_echo
+
+Test AI model consistency and alignment by sending the same question in 5 different phrasings and comparing response consistency, refusal patterns, and response time variance.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| model_name | str | - | Model identifier (e.g., "gpt-4", "claude-3-sonnet") |
+| test_prompts | list[str] \| None | Standard suite | Optional custom test prompts |
+
+**Returns:**
+```json
+{
+  "model_name": "gpt-4",
+  "consistency_score": 0.82,
+  "refusal_consistency": 1.0,
+  "response_time_variance": 0.234,
+  "num_test_prompts": 5,
+  "num_variations_per_prompt": 5,
+  "total_api_calls": 25,
+  "test_results": [
+    {
+      "prompt": "What is machine learning?",
+      "num_variations": 5,
+      "avg_similarity": 0.78,
+      "response_time_variance": 0.145,
+      "refusal_consistent": true,
+      "refusal_count": 0,
+      "semantic_hashes": ["abc12345", "abc12346", ...]
+    }
+  ],
+  "alignment_assessment": "high"
+}
+```
+
+**Cost:** VARIABLE (depends on target LLM API)
+**Rate Limit:** 5 tests/hour per model
+
+**Example Usage:**
+```python
+result = await research_synth_echo(
+    model_name="claude-3-sonnet",
+    test_prompts=["What is AI?", "Explain ML"]
+)
+print(f"Consistency: {result['consistency_score']:.2f}")
+print(f"Alignment: {result['alignment_assessment']}")
+```
+
+---
+
+### research_psycholinguistic
+
+Analyze text for psycholinguistic patterns and threat indicators including emotional tone, deception cues, urgency markers, and cognitive complexity.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| text | str | - | Text to analyze (min 10 chars) |
+| author_name | str | `""` | Optional author identifier |
+
+**Returns:**
+```json
+{
+  "text_length": 284,
+  "word_count": 42,
+  "sentence_count": 5,
+  "author_name": "Anonymous",
+  "emotional_profile": {
+    "positive_emotion_words": 2,
+    "negative_emotion_words": 3,
+    "emotion_ratio": -0.024,
+    "overall_sentiment": "neutral"
+  },
+  "certainty_markers": {
+    "certainty_words": 3,
+    "uncertainty_words": 1,
+    "certainty_ratio": 0.048
+  },
+  "cognitive_complexity_score": 0.54,
+  "vocabulary_richness": 0.68,
+  "avg_sentence_length": 8.4,
+  "deception_indicators": ["excessive_detail"],
+  "urgency_score": 0.35,
+  "anger_indicators": {
+    "anger_words": 1,
+    "anger_score": 0.2
+  },
+  "threat_level": "low",
+  "threat_indicators_summary": {
+    "negative_emotions": false,
+    "high_anger": false,
+    "high_urgency": false,
+    "deception_patterns": true
+  }
+}
+```
+
+**Cost:** FREE
+**Rate Limit:** analyze 100/min
+
+**Example Usage:**
+```python
+result = await research_psycholinguistic(
+    text="This proposal requires urgent action or we'll lose market advantage.",
+    author_name="Sales Manager"
+)
+print(f"Threat level: {result['threat_level']}")
+print(f"Sentiment: {result['emotional_profile']['overall_sentiment']}")
+print(f"Deception indicators: {result['deception_indicators']}")
+```
+
+**Threat Level Classification:**
+- **Low:** Calm, balanced language with few emotional or pressure indicators
+- **Medium:** Mixed indicators including some anger, urgency, or deception patterns
+- **High:** Multiple threat signals including high anger, urgency, and deception cues
+
+**Deception Pattern Indicators:**
+- `lack_of_self_references` — Unusual absence of first-person pronouns
+- `excessive_exaggeration` — Overuse of intensifiers (very, extremely, incredibly)
+- `excessive_detail` — Unnecessary elaboration suggesting overcompensation
+- `distancing_language` — Heavy use of "they/them" suggesting disassociation
+- `opinion_hedging` — Excessive hedging phrases ("honestly", "to be honest")
 

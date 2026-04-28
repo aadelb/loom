@@ -409,6 +409,14 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(ai_safety.research_safety_filter_map, "fetch"))
     mcp.tool()(_wrap_tool(ai_safety.research_compliance_check, "fetch"))
 
+    # Extended AI Safety tools (2 tools for advanced compliance testing)
+    mcp.tool()(_wrap_tool(ai_safety_extended.research_hallucination_benchmark, "fetch"))
+    mcp.tool()(_wrap_tool(ai_safety_extended.research_adversarial_robustness, "fetch"))
+
+    # Extended OSINT tools (2 tools for social engineering assessment)
+    mcp.tool()(_wrap_tool(osint_extended.research_social_engineering_score, "fetch"))
+    mcp.tool()(_wrap_tool(osint_extended.research_behavioral_fingerprint, "fetch"))
+
     # PDF extraction tools
     mcp.tool()(_wrap_tool(pdf_extract.research_pdf_extract, "fetch"))
     mcp.tool()(_wrap_tool(pdf_extract.research_pdf_search, "fetch"))
@@ -418,6 +426,11 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(academic_integrity.research_retraction_check, "fetch"))
     mcp.tool()(_wrap_tool(academic_integrity.research_predatory_journal_check, "fetch"))
 
+    # Creative research tools (4 tools for advanced research scenarios)
+    mcp.tool()(_wrap_tool(darkweb_early_warning.research_darkweb_early_warning, "search"))
+    mcp.tool()(_wrap_tool(deception_job_scanner.research_deception_job_scan))
+    mcp.tool()(_wrap_tool(bias_lens.research_bias_lens, "fetch"))
+    mcp.tool()(_wrap_tool(salary_synthesizer.research_salary_synthesize, "search"))
 
     # Real-time monitoring tools
     mcp.tool()(_wrap_tool(realtime_monitor.research_realtime_monitor, "fetch"))

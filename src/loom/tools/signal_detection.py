@@ -203,7 +203,7 @@ def research_ghost_protocol(
 
             # Distribute results back to platforms
             idx = 0
-            for keyword in keywords:
+            for _keyword in keywords:
                 for platform in ["GitHub", "HackerNews", "Reddit"]:
                     if idx < len(results) and isinstance(results[idx], list):
                         all_events[platform].extend(results[idx])
@@ -225,11 +225,11 @@ def research_ghost_protocol(
                         timestamp_to_events[ts].append(
                             {**event, "platform": platform}
                         )
-                    except Exception:
+                    except Exception:  # noqa: S110
                         pass
 
             # Find time-correlated events
-            for ts, events in timestamp_to_events.items():
+            for _ts, events in timestamp_to_events.items():
                 if len(events) >= 2:
                     # Multiple platforms at same time = coordinated
                     platforms_in_cluster = {e["platform"] for e in events}
@@ -241,7 +241,7 @@ def research_ghost_protocol(
                             seen_clusters.add(cluster_hash)
                             clusters.append(
                                 {
-                                    "platforms": sorted(list(platforms_in_cluster)),
+                                    "platforms": sorted(platforms_in_cluster),
                                     "events": events,
                                     "time_diff_seconds": 0,
                                     "count": len(events),
@@ -291,7 +291,7 @@ def research_ghost_protocol(
                         seen_clusters.add(cluster_hash)
                         clusters.append(
                             {
-                                "platforms": sorted(list(platform_set)),
+                                "platforms": sorted(platform_set),
                                 "events": time_window_cluster[:5],
                                 "time_diff_seconds": max(
                                     [
@@ -455,7 +455,7 @@ def research_temporal_anomaly(
 
             results = await asyncio.gather(*task_coros, return_exceptions=True)
 
-            for name, result in zip(task_names, results):
+            for name, result in zip(task_names, results, strict=False):
                 if not isinstance(result, Exception):
                     results_map[name] = result
 
@@ -468,11 +468,10 @@ def research_temporal_anomaly(
                             [
                                 {
                                     "type": "cert_timing",
-                                    "description": f"{cert['anomaly']} at {cert['timestamp']}",
+                                    "description": f"{cert_anom} at {cert['timestamp']}",
                                     "severity": "medium",
                                 }
                                 for cert_anom in cert.get("anomalies", [])
-                                for anomaly in [cert_anom]
                             ]
                         )
 

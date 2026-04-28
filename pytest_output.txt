@@ -1,0 +1,136 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.3, pytest-9.0.2, pluggy-1.6.0
+rootdir: /Users/aadel/projects/loom
+configfile: pyproject.toml
+plugins: anyio-4.12.1, hypothesis-6.151.6, Faker-40.4.0, asyncio-1.3.0, cov-7.0.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 564 items
+
+tests/test_cache.py .........                                            [  1%]
+tests/test_cli.py ........                                               [  3%]
+tests/test_cli_smoke.py .................                                [  6%]
+tests/test_cli_tools.py ...........                                      [  7%]
+tests/test_config.py ....................                                [ 11%]
+tests/test_deception_detect.py ...........................               [ 16%]
+tests/test_deep_darkweb.py ............................                  [ 21%]
+tests/test_hardening.py ...........................................      [ 28%]
+tests/test_journey.py ...                                                [ 29%]
+tests/test_journey_extended.py ......                                    [ 30%]
+tests/test_params.py ................................................... [ 39%]
+.....                                                                    [ 40%]
+tests/test_persona_profile.py ..................                         [ 43%]
+tests/test_production_simulation.py .................................... [ 50%]
+.....................................................................    [ 62%]
+tests/test_radicalization_detect.py .............................        [ 67%]
+tests/test_rate_limiter.py ..............................                [ 72%]
+tests/test_rate_limiter_sync.py ................                         [ 75%]
+tests/test_server.py .....                                               [ 76%]
+tests/test_server_extended.py ..................................         [ 82%]
+tests/test_sessions.py ......................                            [ 86%]
+tests/test_sessions_extended.py ....................................     [ 92%]
+tests/test_stylometry.py ....................                            [ 96%]
+tests/test_validators.py ....................                            [ 99%]
+tests/test_verify_completeness.py .                                      [100%]
+
+================================ tests coverage ================================
+_______________ coverage: platform darwin, python 3.14.3-final-0 _______________
+
+Name                                        Stmts   Miss Branch BrPart  Cover   Missing
+---------------------------------------------------------------------------------------
+src/loom/__init__.py                            6      0      0      0   100%
+src/loom/__main__.py                            1      1      0      0     0%   6
+src/loom/cache.py                             100     22     24      3    78%   24, 97-102, 124-129, 141->138, 143-144, 150-152, 175, 187-191
+src/loom/cli.py                               414    256    190     20    34%   102-110, 112-114, 133, 139-142, 160-166, 180-202, 234-235, 239-240, 249, 251, 253, 255, 256->258, 259, 261, 266-267, 289-307, 325-337, 362-377, 394-401, 423-438, 455-465, 481-489, 509-542, 560-561, 565-566, 581-582, 603-615, 642-693, 713-740, 779, 821, 825->829, 827->829, 852-879, 885-986
+src/loom/config.py                            156     23     32     10    81%   130, 137, 145, 147-148, 152, 173, 205-207, 211-213, 242-246, 256, 259, 270, 297, 305
+src/loom/journey.py                           208     42     20      4    79%   102, 131, 145-148, 257, 269-304, 342-355, 368-383, 412-414, 426-443, 452-454
+src/loom/params.py                            813    220    226     13    62%   54, 60, 116, 119, 125, 164, 167, 173, 178->182, 180, 347->351, 349, 376->380, 378, 418, 567-569, 574-580, 593-595, 609-611, 616-618, 632-636, 641-643, 656-665, 670-677, 691-697, 702-708, 720-724, 738-742, 747-755, 770-774, 779-783, 797, 802-810, 824, 829-831, 844, 849-851, 866-868, 873-877, 882-884, 898-903, 908-919, 932, 944-946, 959-961, 975-977, 982-984, 997-999, 1012, 1026-1028, 1042-1052, 1057-1059, 1072, 1085-1094, 1107-1111, 1124-1129, 1142-1150, 1164-1172, 1177-1182
+src/loom/providers/__init__.py                 18      0      2      0   100%
+src/loom/providers/ahmia_search.py             56     46     12      0    15%   26-33, 55-75, 91-145
+src/loom/providers/anthropic_provider.py       68     43     12      1    32%   25, 50-62, 73-79, 83-85, 111-156
+src/loom/providers/arxiv_search.py             23     18      2      0    20%   28-70
+src/loom/providers/base.py                     77     49     26      0    27%   61-126, 174, 197, 208, 217
+src/loom/providers/binance_data.py             58     46     12      0    17%   47-52, 73-89, 98-128, 133-169
+src/loom/providers/brave.py                    36     26      8      0    23%   22-27, 52-92
+src/loom/providers/coindesk_search.py          42     31      6      0    23%   23-28, 49-104
+src/loom/providers/coinmarketcap.py            51     39     16      0    18%   47-52, 73-148
+src/loom/providers/darksearch_search.py        31     22      4      0    26%   25-30, 52-90
+src/loom/providers/darkweb_cti.py              30     30     12      0     0%   8-218
+src/loom/providers/ddgs.py                     23     18      4      0    19%   32-74
+src/loom/providers/deepseek_provider.py        62     33      6      1    44%   28->30, 57-66, 78-80, 106-109, 126-180
+src/loom/providers/exa.py                      47     40     12      0    12%   35-78, 96-122
+src/loom/providers/firecrawl.py                50     43     22      0    10%   35-96
+src/loom/providers/gemini_provider.py          76     47     16      1    33%   28->30, 57-61, 73-75, 101-104, 121-199
+src/loom/providers/groq_provider.py            62     33      6      1    44%   28->30, 57-66, 78-80, 106-109, 126-180
+src/loom/providers/hn_reddit.py                50     38     10      0    20%   22-27, 33-39, 58-84, 108-156
+src/loom/providers/investing_data.py           87     72     30      0    13%   83-88, 95, 107-131, 151-293
+src/loom/providers/moonshot_provider.py        60     32      6      1    44%   26->28, 46-55, 61-63, 75-120
+src/loom/providers/newsapi_search.py           32     22      4      0    28%   22-27, 45-86
+src/loom/providers/nvidia_nim.py               73     44      6      1    38%   28->30, 57-66, 78-80, 106-109, 126-180, 211-232
+src/loom/providers/onionsearch.py              64     64     12      0     0%   7-145
+src/loom/providers/openai_provider.py          74     50      8      0    29%   23, 48-63, 75-77, 103-153, 182-211
+src/loom/providers/robin_osint.py              87     87     30      0     0%   7-209
+src/loom/providers/tavily.py                   36     30     14      0    12%   35-80
+src/loom/providers/torcrawl.py                 72     72     20      0     0%   7-177
+src/loom/providers/trafilatura_extract.py      23     18      6      0    17%   35-72
+src/loom/providers/ummro_rag.py                49     42     14      0    11%   49-185
+src/loom/providers/vllm_local.py               79     53      6      0    31%   39-44, 56, 63-65, 91-147, 176-216
+src/loom/providers/wikipedia_search.py         23     14      2      0    36%   21-26, 44-70
+src/loom/providers/youtube_transcripts.py      60     51     24      0    11%   33-136
+src/loom/rate_limiter.py                      104      2     18      2    97%   44, 137
+src/loom/server.py                            401     36    178     82    79%   334-335, 338->358, 340->342, 342->344, 344->346, 346->348, 348->350, 350->352, 352->354, 354->358, 358->366, 360->362, 362->366, 366->372, 368->372, 372->392, 388->387, 392->398, 394->398, 398->406, 400->402, 402->406, 406->414, 408->410, 410->414, 414->420, 416->420, 420->428, 422->424, 424->428, 428->436, 430->432, 432->436, 436->442, 438->442, 442->448, 444->448, 448->454, 450->454, 454->460, 456->460, 460->470, 462->464, 464->466, 466->470, 470->476, 472->476, 476->481, 478->481, 481->486, 483->486, 486->491, 488->491, 491->496, 493->496, 496->501, 498->501, 501->506, 503->506, 506->512, 508->512, 512->517, 514->517, 517->525, 519->525, 525->531, 527->531, 531->537, 533->537, 537->545, 539->541, 541->545, 545->553, 547->549, 549->553, 553->561, 555->557, 557->561, 561->567, 563->567, 567->exit, 569->571, 571->exit, 631-662, 670-677, 685-691
+src/loom/sessions.py                          356    131     82     11    59%   99->98, 105-107, 110, 126-130, 166-168, 207-231, 244-245, 256-266, 291-314, 327-328, 342-366, 375-398, 410-432, 443-458, 469-478, 483-484, 489-490, 564, 716-723, 726->731, 728-729, 806-808
+src/loom/tools/__init__.py                      0      0      0      0   100%
+src/loom/tools/billing.py                      85     73     24      0    11%   37-122, 142-200
+src/loom/tools/breach_check.py                 94     81     34      0    10%   39-121, 146-244, 255-264
+src/loom/tools/cache_mgmt.py                   57     43     14      0    20%   25-53, 77-105, 114-115, 120-121
+src/loom/tools/cert_analyzer.py                92     80     34      0    10%   42-158, 177-202, 210-226, 234-246, 254-258
+src/loom/tools/cipher_mirror.py                84     71     30      0    11%   56-75, 87-105, 118-130, 160-250
+src/loom/tools/creative.py                    420    395    130      0     5%   35-41, 46-56, 80-132, 162-212, 248-299, 331-387, 420-480, 512-620, 647-681, 703-760, 783-806, 842-933, 961-1108
+src/loom/tools/cve_lookup.py                  112    102     56      0     6%   18, 34-120, 136-226
+src/loom/tools/dead_drop_scanner.py            77     65     24      0    12%   32-41, 54-61, 88-242
+src/loom/tools/deception_detect.py            107     11     30      2    89%   134, 243-252, 256-257, 314, 321-322
+src/loom/tools/deep.py                        319    231    124     13    27%   172-173, 178-180, 187-193, 253->255, 255->257, 268, 270, 272-275, 277-280, 282, 283->286, 291-302, 328-331, 336->335, 339, 365-654
+src/loom/tools/document.py                    172    152     64      0     8%   53-118, 130-162, 176-208, 225-280, 294-341, 355-378
+src/loom/tools/domain_intel.py                171    158     72      0     5%   30-37, 52-66, 93-204, 226-312, 336-421
+src/loom/tools/email_report.py                 57     40     12      0    25%   34, 61-149
+src/loom/tools/enrich.py                       39     31      6      0    18%   28-52, 72-108
+src/loom/tools/experts.py                      35     29     14      0    12%   28-99
+src/loom/tools/fetch.py                       234    192     66      0    14%   19, 37-43, 75-104, 113-135, 140-141, 146-149, 190-269, 277-283, 288-314, 327-422, 427-466, 471-541, 557-569
+src/loom/tools/forum_cortex.py                 84     74     22      0     9%   47-89, 121-236
+src/loom/tools/gcp.py                         126    109     50      0    10%   47, 61-66, 101-293, 331-441, 454
+src/loom/tools/geoip_local.py                  75     61     14      0    16%   30-35, 44-52, 66-93, 124-150, 163-197
+src/loom/tools/ghost_weave.py                 103     90     36      0     9%   33-52, 64-69, 98-251
+src/loom/tools/github.py                       86     73     30      0    11%   43-151, 169-191, 205-233, 247-257
+src/loom/tools/image_intel.py                 206    186     48      0     8%   163-184, 196-245, 261-296, 319-365, 395-474, 487-556, 569-600
+src/loom/tools/ip_intel.py                     62     49     12      0    18%   21-26, 44-107, 122-170
+src/loom/tools/joplin.py                       99     83     24      0    13%   33, 38, 58-154, 168-235
+src/loom/tools/llm.py                         344    240     88      8    31%   58, 64-71, 93-104, 112-117, 125-140, 144-152, 167-194, 206-237, 253-255, 265, 268-272, 307-308, 324, 327, 335-336, 378, 383, 386->389, 397-442, 482-517, 544-604, 632-684, 713-750, 776-816, 847-893, 915-973, 1016
+src/loom/tools/markdown.py                     84     72     26      0    11%   23-25, 71-196
+src/loom/tools/metrics.py                     110     98     36      0     8%   37-83, 92-140, 153-157, 184-244
+src/loom/tools/network_persona.py             126    114     66      0     6%   19-21, 26-30, 35-39, 46-72, 84-107, 131-327
+src/loom/tools/onion_spectra.py                77     64     12      0    15%   49-76, 92-127, 145-151, 182-271
+src/loom/tools/pdf_extract.py                 180    165     56      0     6%   48-212, 233-319, 335-368
+src/loom/tools/persona_profile.py             138     18     44     12    82%   109, 124, 152, 179, 212, 231, 244-251, 254, 265, 269, 357->361, 378-380
+src/loom/tools/radicalization_detect.py        94      6     24      4    92%   82, 115, 149, 250, 298-300
+src/loom/tools/rss_monitor.py                 157    141     60      0     7%   22-28, 41-171, 182-187, 203-227, 248-307
+src/loom/tools/screenshot.py                   85     71     16      0    14%   17-18, 54-220
+src/loom/tools/search.py                      133    125     48      0     4%   42-316, 334-343
+src/loom/tools/security_headers.py             78     70     42      0     7%   49-165
+src/loom/tools/sentiment_deep.py               63     48     16      0    19%   90-96, 101-108, 121-131, 153-229
+src/loom/tools/slack.py                        73     59     30      0    14%   39-41, 75-236
+src/loom/tools/social_intel.py                125    108     52      0    10%   43-45, 59-81, 102-175, 198-247, 266-285, 297-323
+src/loom/tools/spider.py                       56     45     24      0    14%   73-182
+src/loom/tools/stealth.py                      59     39      2      0    33%   45-72, 92-124, 149-159, 169-170
+src/loom/tools/stylometry.py                   94      8     34      5    88%   85, 189->188, 191->185, 236-243, 253-256, 275-276
+src/loom/tools/text_analyze.py                181    163     62      0     7%   14-19, 33-44, 56-72, 84-141, 153-195, 207-266, 283-340, 373-430
+src/loom/tools/tor.py                          78     63      8      0    17%   29-38, 60-112, 126-148, 170-204
+src/loom/tools/transcribe.py                  128    113     34      0     9%   49-128, 143-150, 162-206, 218-252, 268-301, 313-336
+src/loom/tools/urlhaus_lookup.py               55     47     22      0    10%   27-85, 111-183
+src/loom/tools/vastai.py                       53     44     10      0    14%   37-94, 104-149
+src/loom/tools/vercel.py                        5      1      0      0    80%   25
+src/loom/tracing.py                            21      0      2      0   100%
+src/loom/validators.py                        120     24     44      6    78%   122-123, 145->149, 165-173, 212, 216-217, 225, 239-240, 247-248, 252-254, 274->277, 294, 308-309
+---------------------------------------------------------------------------------------
+TOTAL                                        9951   6411   2968    201    31%
+Coverage XML written to file coverage.xml
+============================= 564 passed in 24.87s =============================
