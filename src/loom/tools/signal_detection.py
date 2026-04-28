@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from urllib.parse import quote
 
@@ -66,7 +66,7 @@ async def _search_github(
             return []
 
         events = []
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         keyword_lower = keyword.lower()
 
         for event in data[:100]:  # Limit to recent events
@@ -104,7 +104,7 @@ async def _search_hackernews(
         return []
 
     events = []
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     for hit in data.get("hits", [])[:50]:
         created_at = hit.get("created_at")
@@ -136,7 +136,7 @@ async def _search_reddit(
         return []
 
     events = []
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     posts = data.get("data", {}).get("children", [])
 
     for post in posts:
@@ -145,7 +145,7 @@ async def _search_reddit(
 
         if created:
             try:
-                created_dt = datetime.fromtimestamp(created, tz=timezone.utc)
+                created_dt = datetime.fromtimestamp(created, tz=UTC)
                 events.append(
                     {
                         "platform": "Reddit",
@@ -405,7 +405,7 @@ async def _check_server_clock_skew(
                     server_date.replace("GMT", "+00:00")
                     .replace("UTC", "+00:00")
                 )
-                local_dt = datetime.now(timezone.utc)
+                local_dt = datetime.now(UTC)
                 skew_ms = int(abs((server_dt - local_dt).total_seconds() * 1000))
                 return skew_ms
             except (ValueError, AttributeError):
@@ -557,7 +557,7 @@ def research_sec_tracker(
 
                 # Parse CSV
                 filings = []
-                now = datetime.now(timezone.utc)
+                now = datetime.now(UTC)
                 ninety_days_ago = now - timedelta(days=90)
 
                 for line in lines[1:]:  # Skip header
@@ -572,7 +572,7 @@ def research_sec_tracker(
                                 try:
                                     filing_dt = datetime.strptime(
                                         filing_date, "%Y-%m-%d"
-                                    ).replace(tzinfo=timezone.utc)
+                                    ).replace(tzinfo=UTC)
                                     if filing_dt >= ninety_days_ago:
                                         filings.append(
                                             {
