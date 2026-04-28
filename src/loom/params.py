@@ -1783,3 +1783,144 @@ class CommitAnalyzerParams(BaseModel):
         if v < 1 or v > 365:
             raise ValueError("days_back must be 1-365")
         return v
+
+class IdeologicalDriftParams(BaseModel):
+    """Parameters for research_ideological_drift tool."""
+
+    field: str
+    years: int = 10
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("field")
+    @classmethod
+    def validate_field(cls, v: str) -> str:
+        v = v.strip()
+        if not v or len(v) > 200:
+            raise ValueError("field must be 1-200 characters")
+        return v
+
+    @field_validator("years")
+    @classmethod
+    def validate_years(cls, v: int) -> int:
+        if v < 1 or v > 50:
+            raise ValueError("years must be 1-50")
+        return v
+
+
+class AuthorClusteringParams(BaseModel):
+    """Parameters for research_author_clustering tool."""
+
+    field: str
+    max_authors: int = 50
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("field")
+    @classmethod
+    def validate_field(cls, v: str) -> str:
+        v = v.strip()
+        if not v or len(v) > 200:
+            raise ValueError("field must be 1-200 characters")
+        return v
+
+    @field_validator("max_authors")
+    @classmethod
+    def validate_max_authors(cls, v: int) -> int:
+        if v < 5 or v > 500:
+            raise ValueError("max_authors must be 5-500")
+        return v
+
+
+class CitationCartographyParams(BaseModel):
+    """Parameters for research_citation_cartography tool."""
+
+    paper_id: str
+    depth: int = 2
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("paper_id")
+    @classmethod
+    def validate_paper_id(cls, v: str) -> str:
+        v = v.strip()
+        if not v or len(v) > 100:
+            raise ValueError("paper_id must be 1-100 characters")
+        return v
+
+    @field_validator("depth")
+    @classmethod
+    def validate_depth(cls, v: int) -> int:
+        if v < 1 or v > 3:
+            raise ValueError("depth must be 1-3")
+        return v
+
+
+class CapabilityMapperParams(BaseModel):
+    """Parameters for research_capability_mapper tool."""
+
+    target_url: str
+    categories: list[str] | None = None
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("target_url", mode="before")
+    @classmethod
+    def validate_url(cls, v: str) -> str:
+        return validate_url(v)
+
+    @field_validator("categories")
+    @classmethod
+    def validate_categories(cls, v: list[str] | None) -> list[str] | None:
+        if v is None:
+            return None
+        if len(v) > 10:
+            raise ValueError("categories max 10 items")
+        valid_cats = {"math", "code", "reasoning", "language", "knowledge"}
+        for cat in v:
+            if cat not in valid_cats:
+                raise ValueError(f"category '{cat}' not recognized")
+        return v
+
+
+class MemorizationScannerParams(BaseModel):
+    """Parameters for research_memorization_scanner tool."""
+
+    target_url: str
+    test_count: int = 10
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("target_url", mode="before")
+    @classmethod
+    def validate_url(cls, v: str) -> str:
+        return validate_url(v)
+
+    @field_validator("test_count")
+    @classmethod
+    def validate_test_count(cls, v: int) -> int:
+        if v < 1 or v > 50:
+            raise ValueError("test_count must be 1-50")
+        return v
+
+
+class TrainingContaminationParams(BaseModel):
+    """Parameters for research_training_contamination tool."""
+
+    target_url: str
+    dataset_name: str = "common"
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("target_url", mode="before")
+    @classmethod
+    def validate_url(cls, v: str) -> str:
+        return validate_url(v)
+
+    @field_validator("dataset_name")
+    @classmethod
+    def validate_dataset_name(cls, v: str) -> str:
+        v = v.strip().lower()
+        if not v or len(v) > 50:
+            raise ValueError("dataset_name must be 1-50 characters")
+        return v

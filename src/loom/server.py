@@ -53,6 +53,7 @@ from loom.tools import (
     domain_intel,
     fact_checker,
     fetch,
+    gap_tools_infra,
     github,
     hcs10_academic,
     identity_resolve,
@@ -359,6 +360,10 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(dark_forum.research_dark_forum, "search"))
     mcp.tool()(_wrap_tool(infra_correlator.research_infra_correlator, "fetch"))
     mcp.tool()(_wrap_tool(passive_recon.research_passive_recon, "fetch"))
+    mcp.tool()(_wrap_tool(gap_tools_infra.research_cloud_enum, "fetch"))
+    mcp.tool()(_wrap_tool(gap_tools_infra.research_github_secrets, "search"))
+    mcp.tool()(_wrap_tool(gap_tools_infra.research_whois_correlator, "fetch"))
+    mcp.tool()(_wrap_tool(gap_tools_infra.research_output_consistency, "fetch"))
     mcp.tool()(_wrap_tool(infra_analysis.research_registry_graveyard, "fetch"))
     mcp.tool()(_wrap_tool(infra_analysis.research_subdomain_temporal, "fetch"))
     mcp.tool()(_wrap_tool(infra_analysis.research_commit_analyzer, "fetch"))

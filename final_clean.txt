@@ -1,0 +1,851 @@
+IDEA: research_acquire | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_aggregate_domain_reputation | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_aggregate_forums | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_analytics_id_correlator | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_analyze_cik | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_analyze_company | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_analyze_domain | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_analyze_image | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_analyze_js | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_analyze_repo | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_analyze_site | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_analyze_text_homoglyphs | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_analyze_whitespace | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_architecture_overview | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_astroturf_scanner | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_async_dns_query | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_bot_network_detector | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_breach_timeline | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_build_timeline | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_censorship_circumvention_tester | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_cert_timeline | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_certificate_intelligence | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_certificate_timeline | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_change_monitor | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_classify_change | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_cloud_resource_enumerator | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_commit_pattern_analyzer | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_common_crawl | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_common_crawl_deep_search | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_common_crawl_miner | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_competitive_intel | STATUS: IMPLEMENTED | COVERED_BY: research_competitive_intel
+IDEA: research_content_authenticity_verifier | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_crawl_and_correlate | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_cross_reference_hashes | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_cryptocurrency_flow_analyzer | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_cryptocurrency_transaction_tracer | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_culturecatcher | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_dark_forum_aggregator | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_dark_forum_intelligence_aggregator | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_dark_market_intelligence | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_dark_market_intelligence_monitor | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_dark_web_market_monitor | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_dark_web_surface_bridge | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_data_exposure_intelligence | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_dead_content | STATUS: IMPLEMENTED | COVERED_BY: research_dead_content
+IDEA: research_deanonymize | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_deep_archive_necromancer | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_deep_archive_recovery | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_deepfake_media_checker | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_deleted_social_media_recovery | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_detect_stego | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_discover_onions | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_diversitydetector | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_dns_full_profile | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_dns_profile | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_dns_takeover_detector | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_domain_soa_email | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_domain_whois | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_download_js | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_email_infrastructure_mapper | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_email_osint | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_email_to_github_commits | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_email_to_gravatar | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_email_to_pgp | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_enrich | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_enrich_ioc | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_excavate | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_exploit_vulnerability_fusion | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_exploit_vulnerability_intelligence | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_extract | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_favicon_hash_correlator | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_fetch | STATUS: IMPLEMENTED | COVERED_BY: research_fetch
+IDEA: research_gap_1_temporal_intelligence | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_gap_2_network_topology | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_gap_3_content_intelligence | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_gap_4_identity_intelligence | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_gap_5_threat_intelligence | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_generate_compliance_report | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_geo_content_comparator | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_github_secret_scanner | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_hidden_service_enumerator | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_hirepulse | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_http_deep_probe | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_http_probe | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_http_response_fingerprinter | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_identity_resolve | STATUS: IMPLEMENTED | COVERED_BY: research_identity_resolve
+IDEA: research_influence_operation_detector | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_information_cascade_mapper | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_information_half_life_calculator | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_infrastructure_fingerprint_correlator | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_initialize | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_invisible_web | STATUS: IMPLEMENTED | COVERED_BY: research_invisible_web
+IDEA: research_job_posting_dark_signal | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_js_analysis | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_js_deep_analysis | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_js_intel | STATUS: IMPLEMENTED | COVERED_BY: research_js_intel
+IDEA: research_layofflens | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_leaked_data_intelligence_scanner | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_legal_takedown_tracker | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_levenshtein_distance | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_map_phishing_campaign | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_map_research_to_product | STATUS: IMPLEMENTED | COVERED_BY: research_map_research_to_product
+IDEA: research_market_watch | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_metadata_forensics | STATUS: IMPLEMENTED | COVERED_BY: research_metadata_forensics
+IDEA: research_monitor_package_registries | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_narrative_sentiment_timeline | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_narrative_tracker | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_onion_service_enumerator | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_orchestrate_all | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_passive_recon | STATUS: IMPLEMENTED | COVERED_BY: research_passive_recon
+IDEA: research_paste_and_leak_monitor | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_paste_leak | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_paste_leak_monitor | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_paste_site_monitor | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_paywalled_content_accessor | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_profile | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_profile_actor | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_propaganda_language_detector | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_query_common_crawl | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_query_github_leaks | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_query_hibp | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_query_memento | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_query_wayback_cdx | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_rate_limiting_production_notes | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_reconstruct | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_recover | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_recover_archives | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_registry_graveyard_scanner | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_request | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_resolve | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_reviewradar | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_robots_sitemap | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_robots_sitemap_intelligence | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_robots_txt_archaeology | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_salarysynthesizer | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_scan | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_scan_all | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_scan_exposure | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_scan_registry | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_search | STATUS: IMPLEMENTED | COVERED_BY: research_search
+IDEA: research_search_engine_discrepancy_detector | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_search_shodan_favicon | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_search_urlscan_trackers | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_search_wayback | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_sec_filing_anomaly_detector | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_shannon_entropy | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_shodan_free | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_shodan_free_recon | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_shodan_passive_intel | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_skillshiftscanner | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_social_graph | STATUS: IMPLEMENTED | COVERED_BY: research_social_graph
+IDEA: research_source_credibility_scorer | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_source_map_excavator | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_ssl_certificate_timeline | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_steganography_covert_channel_detector | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_steganography_hidden_channel_detector | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_subdomain_temporal_analyzer | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_summary | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_technology_stack_deep_profiler | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_threat_actor_profiler | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_titletrender | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_tor_hidden_service_enumerator | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_trace_btc | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_trace_eth | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_track_c2_infrastructure | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_track_dark_web_mentions | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_track_ransomware_activity | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_translate_academic_skills | STATUS: IMPLEMENTED | COVERED_BY: research_translate_academic_skills
+IDEA: research_trendtelescope | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_usage_example | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_username_check | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_vuln_fusion | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_vulnerability_intelligence | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_wayback_deep_crawler | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_wayback_deep_diff | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_wayback_full_history | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_wayback_history | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_web_technology_timeline | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_whois_history_correlator | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+
+
+--- NOT_IMPLEMENTED IDEAS ---
+--- research_aggregate_domain_reputation ---
+Aggregate domain reputation from 8+ sources.
+
+--- research_analyze_whitespace ---
+Detect whitespace steganography (binary encoding in spaces/tabs).
+
+--- research_architecture_overview ---
+All tools use:
+- `aiohttp` for async HTTP with connection pooling
+- `asyncio` for concurrent operations
+- `typing` and `TypedDict` for structured outputs
+- `backoff` retry decorators for transient failures
+- `asyncio. Semaphore` for API rate limits
+- `logging` for structured error reporting
+
+---.
+
+--- research_async_dns_query ---
+Perform an async DNS query for given record type. Returns list of answer strings.
+
+--- research_breach_timeline ---
+- Correlate breach dates with public disclosures, patent filings, funding rounds
+- Build timeline of data exposure windows
+- Unavailable: Requires access to breach databases (HIBP, LeakedSource archives) + correlative analysis.
+
+--- research_cert_timeline ---
+Build complete certificate issuance timeline from CT logs. Extracts subdomains, internal hostnames from SANs, detects pre-launch patterns.
+
+--- research_certificate_intelligence ---
+async def certificate_intelligence(self, domain: str) -> List[CertInfo]:
+        """Query crt. sh for all certificate information"""
+        certs = []
+        
+        async with self. semaphore:
+            try:
+                url = f"https://crt.
+
+--- research_certificate_timeline ---
+class CertTimelineResult(TypedDict):
+    domain: str
+    total_certs: int
+    subdomains_found: List[str]
+    internal_hostnames: List[str]
+    timeline: List[Dict[str, str]]
+    pre_launch_certs: List[Dict[str, str]].
+
+--- research_change_monitor ---
+================================================================================
+"""Predictive Change Intelligence — Job diffs, ToS changes, SSL timing, DNS changes. """.
+
+--- research_classify_change ---
+Classify the type of content change using difflib + TF-IDF similarity.
+
+--- research_cloud_resource_enumerator ---
+class CloudResourceStatus(TypedDict):
+    resource_url: str
+    status: int
+    cloud_provider: str.
+
+--- research_common_crawl ---
+Search ALL Common Crawl indices for a URL/domain. Enumerates indices via collinfo. json, queries each CDX endpoint.
+
+--- research_common_crawl_deep_search ---
+class CommonCrawlResult(TypedDict):
+    url: str
+    indices_searched: int
+    total_matches: int
+    pages: List[Dict[str, str]].
+
+--- research_common_crawl_miner ---
+async def common_crawl_miner(self, domain: str) -> List[Dict]:
+        """Query ALL Common Crawl indices and extract page content"""
+        results = []
+        
+        async with self. semaphore:
+            try:
+                # Get available indices
+                async with self. session.
+
+--- research_content_authenticity_verifier ---
+async def content_authenticity_verifier(session: aiohttp. ClientSession, url: str) -> ContentAuthenticityVerifierResult:
+    """
+    Verify if content has been modified from its earliest Wayback snapshot. """
+    # Get current content
+    current_text = await fetch_url(session, url, timeout=15)
+    current_hash = compute_hash(current_text) if current_text else "".
+
+--- research_cross_reference_hashes ---
+Cross-reference file hashes across multiple sources.
+
+--- research_cryptocurrency_flow_analyzer ---
+**Description**
+The Cryptocurrency Flow Analyzer is a specialized ledger intelligence tool designed to trace, cluster, and attribute financial transactions on public blockchains (primarily Bitcoin and Ethereum). Dark web marketplaces, ransomware operators, and illicit AI service providers rely heavily on cryptocurrencies. However, because blockchains are fundamentally public ledgers, anonymity is only pseudo-anonymity.
+
+--- research_cryptocurrency_transaction_tracer ---
+# ================================================================
+class CryptoTracer:
+    """Trace Bitcoin/Ethereum transactions via public APIs. """
+    async def trace_btc(self, address: str) -> Dict:
+        async with AsyncSession() as session:
+            # Blockchain. info
+            url = f"https://blockchain.
+
+--- research_culturecatcher ---
+**Workaround Technique:** Sentiment analysis on employee-generated content + Glassdoor’s open-access reviews (not API) + Reddit/Blind/Twitter scraping  
+**Free Data Source:** Scraped Glassdoor/Indeed public reviews, Reddit threads (e. g. r/cscareerquestions), Blind, Twitter/X  
+**Why it Works BETTER:** Paid APIs limit reviews and can't link sentiment trends to viral controversies.
+
+--- research_dark_forum_aggregator ---
+**Description**
+The Dark Forum Aggregator is a unified threat intelligence siphon that interfaces with public gateways, security research platforms, and indexed archives of dark web communications. Threat actors coordinate, sell exploits, and discuss AI-jailbreaking methodologies on ephemeral forums that are difficult to track. By aggregating data from platforms that have *already* indexed these forums ethically (such as IntelX, AlienVault OTX, and MISP threat feeds), Loom constructs a saniti...
+
+--- research_dark_forum_intelligence_aggregator ---
+# ================================================================
+class ForumIntelligence:
+    """Aggregate posts from dark web forums using public sources. """
+    async def search(self, keyword: str) -> List[Dict]:
+        posts = []
+        async with AsyncSession() as session:
+            # Ahmia forum search
+            posts. extend(await self.
+
+--- research_dark_market_intelligence_monitor ---
+**Description**
+The Dark Market Intelligence Monitor is a specialized OSINT aggregator that tracks the macroeconomic trends, vendor statuses, and product listings of illicit marketplaces without ever executing an authenticated session on a dark web market. Direct engagement with these markets violates operational security and ethical boundaries. Therefore, this tool relies entirely on secondary intelligence feeds, published law enforcement datasets, caching engines, and threat intelligence sh...
+
+--- research_dark_web_market_monitor ---
+# ================================================================
+class MarketMonitor:
+    """Track darknet marketplace listings from public/academic sources. """
+    async def get_listings(self, category: str = "drugs") -> List[Dict]:
+        results = []
+        async with AsyncSession() as session:
+            # OTX pulses related to markets
+            url = f"https://otx. alienvault.
+
+--- research_dark_web_surface_bridge ---
+async def dark_web_surface_bridge(session: aiohttp. ClientSession, keyword: str) -> DarkWebSurfaceBridgeResult:
+    """
+    Find clearnet references to dark web content. """
+    onion_urls = []
+    clearnet_mirrors = []
+    academic_references = []
+    archived_onion = [].
+
+--- research_data_exposure_intelligence ---
+**Description**
+The Data Exposure Intelligence tool is a comprehensive scanner designed to detect the inadvertent leakage of credentials, API keys, intellectual property, and PII across the public internet. Rather than exploiting vulnerabilities, this tool passively monitors public repositories, paste sites, and indexed IoT infrastructure to identify where data has already been exposed. In the realm of cyber security research, understanding the volume and velocity of exposed data is crucial f...
+
+--- research_deep_archive_necromancer ---
+# ================================================================
+class ArchiveNecromancer:
+    """
+    Aggregates archival snapshots from 15+ sources. See class docstring for complete list. """
+    SOURCES = {
+        'wayback_cdx': 'http://web.
+
+--- research_deleted_social_media_recovery ---
+async def deleted_social_media_recovery(session: aiohttp. ClientSession, url: str, platform: str) -> DeletedContentRecoveryResult:
+    """
+    Recover deleted content from public caches: Wayback, Archive. today, Google Cache, Pushshift.
+
+--- research_diversitydetector ---
+**Workaround Technique:** Analyze pronouns, D&I mentions, ERG group signals, and leadership diversity in bios/posts  
+**Free Data Source:** Company websites, public Team/Leadership bios, jobs, Twitter/X accounts, open LinkedIn profiles  
+**Why it Works BETTER:** Goes beyond just stats—captures real stories, community programs, and policy signals, making the picture more nuanced than Glassdoor’s diversity ratings. ---.
+
+--- research_dns_full_profile ---
+async def dns_full_profile(self, domain: str) -> DNSProfile:
+        """Complete DNS enumeration"""
+        profile = {
+            'a_records': [],
+            'aaaa_records': [],
+            'mx_records': [],
+            'ns_records': [],
+            'txt_records': [],
+            'cname_records': [],
+            'soa_record': None,
+            'caa_records': [],
+            'spf_mechanisms': [],
+            'dmarc_policy': None,
+            'dkim_records': {},
+            'dnssec_enabled':...
+
+--- research_dns_profile ---
+Complete DNS enumeration with SPF/DKIM/DMARC parsing.
+
+--- research_domain_whois ---
+Get WHOIS registrant info (simplified RDAP).
+
+--- research_email_infrastructure_mapper ---
+class EmailInfrastructure(TypedDict):
+    domain: str
+    mx_records: List[str]
+    spf_record: str
+    spf_includes: List[str]
+    dkim_selectors: List[str]
+    dmarc_record: str
+    misconfigurations: List[str].
+
+--- research_email_osint ---
+async def email_osint(self, email: str, domain: Optional[str] = None) -> EmailIntel:
+        """Email intelligence gathering"""
+        intel = {
+            'gravatar_url': None,
+            'pwned_count': None,
+            'pgp_keys': [],
+            'github_commits': [],
+            'services_found': []
+        }
+        
+        async with self. semaphore:
+            # Check Gravatar
+            email_hash = hashlib. md5(email.
+
+--- research_enrich_ioc ---
+Enrich an IOC from all available sources simultaneously.
+
+--- research_exploit_vulnerability_fusion ---
+**Description**
+The Exploit & Vulnerability Fusion engine is a comprehensive aggregator of global vulnerability data, Proof-of-Concept (PoC) code, and active exploitation metrics. The dark web thrives on the commodification of zero-days and 1-days. To understand the threat landscape, researchers must have a real-time, unified view of what vulnerabilities exist, which ones have public exploits available, and which are actively being abused by Advanced Persistent Threats (APTs).
+
+--- research_exploit_vulnerability_intelligence ---
+# ================================================================
+class VulnIntelligence:
+    """Aggregate CVE/exploit data from multiple free sources. """
+    async def search(self, keyword: str) -> List[Dict]:
+        results = []
+        async with AsyncSession() as session:
+            # NVD
+            url = f"https://services. nvd.
+
+Reconstructs a URL's complete history from multiple web archives and classifies content changes. ```python
+import aiohttp
+import asyncio
+from typing import TypedDict, List, Optional, Dict
+from datetime import datetime
+import difflib
+from sklearn. feature_extraction.
+
+Finds all related domains/IPs using multiple correlation techniques. ```python
+class RelatedAsset(TypedDict):
+    type: str  # "domain", "ip", "subdomain"
+    value: str
+    source: str  # "crt. sh", "reverse_ip", "google_analytics", "favicon", etc.
+
+Extracts and analyzes all JavaScript files on a website. ```python
+class DiscoveredEndpoint(TypedDict):
+    type: str  # "api", "websocket", "graphql"
+    url: str
+    source_file: str
+
+class DiscoveredSecret(TypedDict):
+    type: str  # "api_key", "password", "token"
+    value: str
+    context: str
+
+class DiscoveredFeatureFlag(TypedDict):
+    name: str
+    value: str
+
+class JSIntelligenceResult(TypedDict):
+    domain: str
+    js_files: List[str]
+   ...
+
+Builds a complete identity graph from email, username, or domain. ```python
+class IdentityNode(TypedDict):
+    type: str  # "email", "username", "domain", "gravatar", "pgp_key", "github_account"
+    value: str
+    source: str
+
+class IdentityGraph(TypedDict):
+    root: str
+    nodes: List[IdentityNode]
+    edges: List[dict]  # optional
+
+class DeepIdentityResolver:
+    def __init__(self, session, rate_limit=1. 0):
+        self.
+
+Aggregates threat data from multiple free sources into a unified score. ```python
+class ThreatVerdict(TypedDict):
+    source: str
+    malicious: bool  # True if indicator is flagged
+    confidence: float  # 0. 0 to 1.
+
+--- research_generate_compliance_report ---
+Generate full EU AI Act Article 15 compliance report.
+
+--- research_geo_content_comparator ---
+async def geo_content_comparator(session: aiohttp. ClientSession, url: str) -> GeoComparisonResult:
+    """
+    Compare how the same URL renders from different geographic locations. Uses multiple DoH providers and public proxies.
+
+--- research_github_secret_scanner ---
+class GitHubSecret(TypedDict):
+    repo_name: str
+    file_path: str
+    secret_type: str
+    snippet: str.
+
+--- research_hirepulse ---
+**Workaround Technique:** Monitoring surge in job postings, career page changes, LinkedIn public posts (not API), and tracking recruiter activity on hiring boards  
+**Free Data Source:** Scraped company career pages, Google Jobs, public LinkedIn updates, Twitter/X recruiter accounts  
+**Why it Works BETTER:** Paid APIs only show structured ads. This tool detects "hidden" hires (e. g.
+
+--- research_http_deep_probe ---
+async def http_deep_probe(self, url: str) -> HTTPProfile:
+        """Deep HTTP analysis of a URL"""
+        profile = {
+            'headers': {},
+            'cookies': {},
+            'parsed_csp': [],
+            'cors_headers': {},
+            'cache_strategy': 'not-set',
+            'security_score': {
+                'hsts': False,
+                'x_frame_options': False,
+                'x_content_type_options': False,
+                'x_xss_protection': False,
+                'conten...
+
+--- research_http_probe ---
+Deep HTTP response analysis for technology and security fingerprinting.
+
+--- research_http_response_fingerprinter ---
+class HTTPFingerprint(TypedDict):
+    status: int
+    server: str
+    x_powered_by: str
+    set_cookie_patterns: List[str]
+    csp: str
+    cors: str
+    cache_control: str
+    custom_headers: Dict[str, str].
+
+--- research_information_half_life_calculator ---
+async def information_half_life_calculator(session: aiohttp. ClientSession, urls: List[str]) -> InformationHalfLifeCalculaterResult:
+    """
+    Estimate survival time of URLs based on Wayback availability. """
+    survival_scores = {}
+    high_risk_urls = [].
+
+--- research_infrastructure_fingerprint_correlator ---
+# ================================================================
+class InfraCorrelator:
+    """Link hidden services to clearnet through shared fingerprints. """
+    async def correlate(self, onion_url: str) -> Dict:
+        """Return potential clearnet domains associated with the onion. """
+        async with AsyncSession() as session:
+            # Get favicon hash
+            fav_hash = await self.
+
+--- research_initialize ---
+Initialize all tools.
+
+--- research_js_analysis ---
+Extract intelligence from JavaScript bundles.
+
+--- research_js_deep_analysis ---
+async def js_deep_analysis(self, url: str) -> List[JSData]:
+        """Deep JavaScript analysis"""
+        js_data = []
+        
+        async with self. semaphore:
+            try:
+                # Fetch main page
+                async with self. session.
+
+--- research_layofflens ---
+**Workaround Technique:** NLP mining of web news, employee LinkedIn post trends, and layoff tracker sites  
+**Free Data Source:** Layoffs. fyi, news sites RSS, public LinkedIn post feeds, Blind/Reddit layoff threads  
+**Why it Works BETTER:** Can aggregate tiny layoffs or stealth "quiet" cuts missed by mainstream trackers. Faster to pick up on subtext and rumor, catching layoffs before official confirmation.
+
+--- research_leaked_data_intelligence_scanner ---
+# ================================================================
+class LeakScanner:
+    """Aggregate breach/leak data from public APIs and resources. """
+    async def scan(self, email_or_username: str) -> List[LeakResult]:
+        results = []
+        async with AsyncSession() as session:
+            if Config. HAVE_I_BEEN_PWNED_KEY:
+                results.
+
+--- research_legal_takedown_tracker ---
+async def legal_takedown_tracker(session: aiohttp. ClientSession, urls: List[str]) -> LegalTakedownTrackerResult:
+    """
+    Monitor DMCA and legal takedowns via Lumen Database, GitHub DMCA, etc. """
+    dmca_notices = []
+    github_dmca = []
+    lumen_notices = [].
+
+--- research_levenshtein_distance ---
+Compute Levenshtein distance between two strings.
+
+--- research_map_phishing_campaign ---
+Detect phishing campaigns via multiple sources.
+
+--- research_monitor_package_registries ---
+Monitor package registries for suspicious activity.
+
+--- research_onion_service_enumerator ---
+**Description**
+The Onion Service Enumerator is a non-intrusive, purely passive discovery engine for mapping the Tor hidden service ecosystem. Because the Tor network is designed to obfuscate routing and hosting infrastructure, discovering `. onion` domains requires scraping the edges of the network where it intersects with the clearnet.
+
+--- research_paste_and_leak_monitor ---
+async def paste_and_leak_monitor(self, target: str) -> Dict[str, List[str]]:
+        """Monitor various paste sites and code repositories"""
+        leaks = {
+            'github': [],
+            'pastebin': [],
+            'trello': [],
+            'gist': [],
+            'other_paste_sites': []
+        }
+        
+        async with self. semaphore:
+            # GitHub Code Search
+            try:
+                github_url = f"https://api. github.
+
+--- research_paste_leak ---
+Search for target mentions across paste sites and code repos.
+
+--- research_paste_leak_monitor ---
+class PasteLeakResult(TypedDict):
+    target: str
+    sources_checked: int
+    mentions_found: int
+    results: List[Dict[str, str]].
+
+--- research_paste_site_monitor ---
+class PasteResult(TypedDict):
+    site: str
+    url: str
+    title: str
+    snippet: str.
+
+--- research_paywalled_content_accessor ---
+async def paywalled_content_accessor(session: aiohttp. ClientSession, url: str, doi: Optional[str] = None) -> PaywalledContentAccessorResult:
+    """
+    Find legal open access versions of paywalled content. """
+    open_access_urls = []
+    preprint_urls = []
+    free_version_found = False.
+
+--- research_query_common_crawl ---
+Query Common Crawl index for URL history.
+
+--- research_query_memento ---
+Query Memento aggregator for multiple archives.
+
+--- research_query_wayback_cdx ---
+Query a single Wayback CDX index.
+
+--- research_rate_limiting_production_notes ---
+- All API calls use `asyncio. Semaphore` to limit concurrency. - Retry decorators (not shown for brevity) should be added for transient errors.
+
+--- research_reconstruct ---
+Main method: reconstruct full timeline.
+
+--- research_recover ---
+Recover deleted posts from patterns in base URL.
+
+--- research_reviewradar ---
+**Workaround Technique:** LLM-powered review aggregation from all public sources (news, Reddit, forums, employer/consumer review sites)  
+**Free Data Source:** Glassdoor/Indeed/Comparably reviews, Reddit, Blind, Quora, Product Hunt, Twitter/X  
+**Why it Works BETTER:** Breaks out of the walled garden to get a unified, bias-corrected culture/brand score, factoring sentiment drift and viral crises that paid APIs can't pick up quickly enough. ---
+
+**Core Platform Strength:**  
+By combining scrap...
+
+--- research_robots_sitemap ---
+Analyze robots. txt + sitemaps to find hidden and ghost content.
+
+--- research_robots_sitemap_intelligence ---
+async def robots_sitemap_intelligence(self, domain: str) -> Dict:
+        """Analyze robots. txt and sitemaps"""
+        intelligence = {
+            'robots_rules': {},
+            'sitemap_urls': [],
+            'hidden_content': [],
+            'missing_paths': []
+        }
+        
+        async with self. semaphore:
+            robots_url = f"https://{domain}/robots.
+
+--- research_robots_txt_archaeology ---
+async def robots_txt_archaeology(session: aiohttp. ClientSession, domain: str) -> RobotsTxtArchaeologyResult:
+    """
+    Track robots. txt changes over time via Wayback Machine.
+
+--- research_salarysynthesizer ---
+**Workaround Technique:** Multi-site web scraping + LLM normalization  
+**Free Data Source:** Scraped job postings from Indeed, remoteok, careers pages, Google Jobs widget, and forums like Reddit r/Salary. **Why it Works BETTER:** Paid APIs have static or delayed data. This tool dynamically pulls fresh listings, captures fine-grained location/role/sector context, and LLMs clean & join messy titles for accurate medians—even in emerging fields not covered by Glassdoor.
+
+--- research_search_engine_discrepancy_detector ---
+async def search_engine_discrepancy_detector(session: aiohttp. ClientSession, query: str) -> SearchEngineDiscrepancyResult:
+    """
+    Compare results for same query across 10+ search engines. This is a simplified simulation using available public APIs.
+
+--- research_search_wayback ---
+Get latest snapshot from Wayback.
+
+--- research_shannon_entropy ---
+Calculate Shannon entropy of a string.
+
+--- research_shodan_free ---
+Free Shodan recon via InternetDB (no API key needed).
+
+--- research_shodan_free_recon ---
+async def shodan_free_recon(self, domain: str) -> Dict:
+        """Free Shodan InternetDB recon"""
+        recon = {
+            'domain': domain,
+            'ips': [],
+            'shodan_data': []
+        }
+        
+        async with self. semaphore:
+            # Resolve domain to IPs
+            try:
+                answers = await self. dns_resolver.
+
+--- research_shodan_passive_intel ---
+class ShodanIntel(TypedDict):
+    ip: str
+    ports: List[int]
+    hostnames: List[str]
+    vulns: List[str]
+    tags: List[str].
+
+--- research_skillshiftscanner ---
+**Workaround Technique:** NLP extraction of skills/tools frequency from job postings over time  
+**Free Data Source:** Scraped job boards, company blogs, GitHub repo skills, Stack Overflow tags  
+**Why it Works BETTER:** Real-time, fine-grained skill analysis—far beyond what legacy salary/career sites offer. Surfaces early in-demand tools/skills in seconds. ---.
+
+--- research_ssl_certificate_timeline ---
+class CertEntry(TypedDict):
+    issuer: str
+    serial: str
+    not_before: str
+    not_after: str
+    common_name: str
+    sans: List[str]
+    cert_sha256: str.
+
+--- research_steganography_covert_channel_detector ---
+**Description**
+The Steganography & Covert Channel Detector addresses the highly sophisticated methods threat actors use to exfiltrate data, communicate command-and-control (C2) instructions, or distribute malicious payloads within seemingly benign files. Steganography is the practice of concealing a file, message, image, or video within another file. For AI safety research, it is critical to determine if generative AI models (like image generators or code assistants) are being manipulated in...
+
+--- research_steganography_hidden_channel_detector ---
+# ================================================================
+class StegDetector:
+    """Detect hidden data in images, text, DNS, etc. """
+    async def analyze_image(self, image_path: str) -> Dict:
+        if not Image:
+            return {'error': 'Pillow not installed'}
+        try:
+            img = Image. open(image_path)
+            pixels = img.
+
+--- research_summary ---
+These 10 modules form a **legitimate open-source intelligence (OSINT) and dark web situational-awareness suite**, operating on **public, ethical data sources** for **defensive cybersecurity research**. No private data or illegal access is involved, maintaining compliance with laws and provider terms.
+
+--- research_technology_stack_deep_profiler ---
+class TechnologyProfile(TypedDict):
+    url: str
+    generator: str
+    js_frameworks: List[str]
+    server_header: str
+    x_powered_by: str
+    cookie_indicators: List[str]
+    cdn: Optional[str].
+
+--- research_threat_actor_profiler ---
+# ================================================================
+class ThreatProfiler:
+    """Build profiles from OSINT clues (stylometry, timezone, PGP). """
+    async def profile(self, username: str) -> Dict:
+        async with AsyncSession() as session:
+            # Search for username across platforms (simplified sherlock)
+            platforms = {
+                'reddit': f"https://www. reddit.
+
+--- research_titletrender ---
+**Workaround Technique:** Extract new/changed job titles from job boards and company pages, cluster with LLMs for new-emerging roles  
+**Free Data Source:** Scraped Indeed, Google Jobs, LinkedIn public postings, GitHub job boards  
+**Why it Works BETTER:** Paid APIs miss novel titles/roles in hot new fields (e. g. “Prompt Engineer”/“AI Operations”).
+
+--- research_tor_hidden_service_enumerator ---
+# ================================================================
+class OnionEnumerator:
+    """
+    Discovers. onion services using multiple public sources. """
+    async def discover(self, keyword: str = "") -> List[OnionService]:
+        services = [].
+
+--- research_track_c2_infrastructure ---
+Monitor known C2 infrastructure.
+
+--- research_track_dark_web_mentions ---
+Track mentions of a target on dark web and surface web.
+
+--- research_track_ransomware_activity ---
+Monitor ransomware groups via multiple sources.
+
+--- research_trendtelescope ---
+**Workaround Technique:** Cross-platform entity tracking + LLM trend scoring  
+**Free Data Source:** Google Trends, Hacker News, Reddit, Twitter/X, news RSS, Stack Overflow Q&A  
+**Why it Works BETTER:** Paid APIs gate niche/long-tail topics. This tool spots grassroots traction, viral themes, and new skills before they’re mainstream, mapping true momentum (not just past volume). ---.
+
+--- research_usage_example ---
+```python
+async def main():
+    async with aiohttp. ClientSession() as session:
+        # Example: web_time_machine
+        wm = WebTimeMachine(session)
+        history = await wm. reconstruct("https://example.
+
+--- research_username_check ---
+Check 200+ platforms (simplified example).
+
+--- research_wayback_deep_crawler ---
+print("\n📦 Tool 1: Wayback Deep Crawler")
+        wayback_data = await tools. wayback_deep_crawler(target_domain)
+        print(f"Found {len(wayback_data)} unique archived pages")
+        
+        # Tool 2: Common Crawl Miner
+        print("\n📦 Tool 2: Common Crawl Miner")
+        cc_data = await tools. common_crawl_miner(target_domain)
+        print(f"Found {len(cc_data)} Common Crawl entries")
+        
+        # Tool 3: Certificate Intelligence
+        print("\n📦 Tool 3: Certificate Intelli...
+
+--- research_wayback_deep_diff ---
+async def wayback_deep_diff(session: aiohttp. ClientSession, url: str, max_snapshots: int = 50) -> WaybackDatedDiffResult:
+    """
+    Track how a page changed over time using Wayback Machine CDX API. Groups by content digest and fetches unique versions for diffing.
+
+--- research_wayback_full_history ---
+class WaybackHistoryResult(TypedDict):
+    url: str
+    total_snapshots: int
+    unique_versions: int
+    first_archived: str
+    last_archived: str
+    snapshots: List[Dict[str, str]].
+
+--- research_wayback_history ---
+Get COMPLETE archive history for a URL from Wayback Machine CDX API. Deduplicates by content digest to show only unique versions.
+
+--- research_web_technology_timeline ---
+class TechSnapshot(TypedDict):
+    timestamp: str
+    technology: List[str]
+    server: str.
+
+--- research_whois_history_correlator ---
+class WhoisHistoryCorrelation(TypedDict):
+    domain: str
+    registrant_email: str
+    other_domains_same_email: List[str]
+    soa_email: str
+    ownership_graph: Dict[str, List[str]]  # simplified.
+
