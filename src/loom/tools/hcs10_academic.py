@@ -219,6 +219,19 @@ def research_grant_forensics(grant_id: str = "", text: str = "") -> dict[str, An
 
     anomaly_score = (zipf_anomaly + benford_anomaly) / 2.0
 
+    # Compute fraud_probability combining both signals
+    fraud_probability = anomaly_score
+    # Boost if Zipf is clearly anomalous
+    if zipf_exponent < 0.5 or zipf_exponent > 2.0:
+        fraud_probability = min(1.0, fraud_probability + 0.3)
+    # Boost if superlative words are overrepresented
+    superlatives = sum(1 for w in word_freq if w in (
+        "revolutionary", "unprecedented", "groundbreaking", "novel", "innovative",
+        "transformative", "paradigm", "breakthrough", "conclusively", "proves",
+    ))
+    if superlatives >= 3:
+        fraud_probability = min(1.0, fraud_probability + 0.2)
+
     return {
         "grant_id": grant_id,
         "text_length": len(text),
@@ -230,8 +243,13 @@ def research_grant_forensics(grant_id: str = "", text: str = "") -> dict[str, An
         "benford_chi_square": round(benford_chi_sq, 3),
         "benford_pvalue": round(benford_pval, 3),
         "benford_anomaly": "FLAGGED" if benford_chi_sq > 15.5 else "normal",
+        "fraud_probability": round(fraud_probability, 3),
         "anomaly_score": round(anomaly_score, 3),
-        "risk_level": "HIGH" if anomaly_score > 0.7 else "MEDIUM" if anomaly_score > 0.4 else "LOW",
+        "linguistic_markers": [w for w in word_freq if w in (
+            "revolutionary", "unprecedented", "groundbreaking", "novel", "innovative",
+            "transformative", "paradigm", "breakthrough", "conclusively",
+        )][:10],
+        "risk_level": "HIGH" if fraud_probability > 0.5 else "MEDIUM" if fraud_probability > 0.3 else "LOW",
     }
 
 

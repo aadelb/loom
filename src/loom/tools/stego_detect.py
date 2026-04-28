@@ -63,9 +63,9 @@ def _check_whitespace_stego(text: str) -> dict[str, Any]:
         "zero_width_characters_found": len(zero_width_chars),
         "zero_width_details": zero_width_chars[:20],
         "trailing_whitespace_lines": trailing_spaces,
-        "suspicious": len(zero_width_chars) > 5 or trailing_spaces > 10,
+        "suspicious": len(zero_width_chars) >= 3 or trailing_spaces > 10,
         "description": "Multiple zero-width characters detected — possible hidden message"
-        if len(zero_width_chars) > 5
+        if len(zero_width_chars) >= 3
         else "No significant whitespace anomalies",
     }
 

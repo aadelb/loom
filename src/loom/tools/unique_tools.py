@@ -101,44 +101,53 @@ def research_propaganda_detector(text: str) -> dict[str, Any]:
 
     # Loaded language patterns (emotional, extreme adjectives)
     loaded_language = [
-        r"\b(absolutely|completely|utterly|totally|entirely|definitely)\b",
-        r"\b(amazing|terrible|horrible|fantastic|dreadful|evil|evil|good)\b",
-        r"\b(must|always|never|only|worst|best)\b",
-        r"\b(unbelievable|outrageous|shocking|stunning)\b",
+        r"\b(absolutely|completely|utterly|totally|entirely|definitely|clearly)\b",
+        r"\b(amazing|terrible|horrible|fantastic|dreadful|evil|incredible|unprecedented)\b",
+        r"\b(must|always|never|only|worst|best|greatest|perfect)\b",
+        r"\b(unbelievable|outrageous|shocking|stunning|disgusting|brilliant)\b",
+        r"\b(truth|lies|exposed|revealed|secret|hidden|suppressed)\b",
+        r"\b(destroy|radical|extreme|revolution|transform|groundbreaking)\b",
     ]
 
     # Appeal to authority patterns
     authority_patterns = [
-        r"\b(experts? (?:say|claim|agree))",
-        r"\b(doctors? (?:say|recommend|warn))",
-        r"\b(scientists? (?:prove|confirm|show))",
-        r"\b(according to experts?)",
-        r"\b(research shows?)",
-        r"\b(studies (?:prove|show|indicate))",
+        r"\b(experts? (?:say|claim|agree|confirm|warn|prove))",
+        r"\b(doctors? (?:say|recommend|warn|confirm))",
+        r"\b(scientists? (?:prove|confirm|show|agree|unanimously))",
+        r"\b(according to (?:experts?|studies|research|science))",
+        r"\b(research (?:shows?|proves?|confirms?))",
+        r"\b(studies (?:prove|show|indicate|confirm))",
+        r"\b(unanimously|consensus|undeniable|indisputable)",
     ]
 
     # Bandwagon patterns (everyone/majority)
     bandwagon_patterns = [
-        r"\b(everyone|everyone knows|all people|the majority)\b",
-        r"\b(most (?:people|americans|experts))",
-        r"\b(joining the|following the) (?:movement|trend)",
-        r"\b(growing (?:movement|trend|consensus))",
+        r"\b(everyone|everyone knows|all people|the majority|millions)\b",
+        r"\b(most (?:people|americans|experts|citizens))",
+        r"\b(joining the|following the|join the) (?:movement|trend|side|winning)",
+        r"\b(growing (?:movement|trend|consensus|number))",
+        r"\b(don't be left|left behind|get on board|common sense)",
+        r"\b(right side of history|winning side)",
     ]
 
     # False dichotomy patterns (either/or)
     dichotomy_patterns = [
         r"\b(either\.\.\. ?or)\b",
         r"\b(you're (?:either|with us|against us))",
-        r"\b(no (?:middle ground|alternatives|choice))",
-        r"\b(only (?:choice|option|way))",
+        r"\b(no (?:middle ground|alternatives|choice|other))",
+        r"\b(only (?:choice|option|way|solution|answer))",
+        r"\b(if you're not .* you're)",
+        r"\b(those who (?:disagree|oppose|refuse))",
     ]
 
     # Emotional manipulation
     emotion_patterns = [
-        r"\b(fear|danger|threat|risk|crisis)\b",
-        r"\b(heartbreaking|tragic|devastating|heartbroken)\b",
-        r"\b(defend|protect|save|fight for)\b",
-        r"\b(us vs them|enemies|outsiders)\b",
+        r"\b(fear|danger|threat|risk|crisis|emergency)\b",
+        r"\b(heartbreaking|tragic|devastating|heartbroken|victims)\b",
+        r"\b(defend|protect|save|fight for|stand up)\b",
+        r"\b(us vs them|enemies|outsiders|against the people)\b",
+        r"\b(act now|last chance|before it's too late|urgent|immediately)\b",
+        r"\b(don't (?:wait|miss|ignore|let them))",
     ]
 
     techniques_found: list[str] = []
@@ -181,14 +190,17 @@ def research_propaganda_detector(text: str) -> dict[str, Any]:
             techniques_found.append({"technique": technique, "count": count})
 
     # Calculate propaganda score (0-100)
-    # Normalize by text length (word count)
     word_count = len(text_lower.split())
     if word_count == 0:
         propaganda_score = 0
     else:
         total_markers = sum(technique_counts.values())
-        # Score: 0-100, capped at 100. Formula: min(100, (markers / word_count) * 1000)
-        propaganda_score = min(100, int((total_markers / word_count) * 1000))
+        techniques_used = sum(1 for v in technique_counts.values() if v > 0)
+        # Score combines: marker density + technique diversity
+        # Each technique used adds 15 points, each marker adds proportional density
+        density_score = min(50, int((total_markers / max(1, word_count)) * 500))
+        diversity_score = techniques_used * 15
+        propaganda_score = min(100, density_score + diversity_score)
 
     # Find dominant technique
     dominant_technique = None
