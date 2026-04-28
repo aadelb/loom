@@ -18,8 +18,10 @@ from datetime import UTC, datetime
 from typing import Any
 
 from mcp.server import FastMCP
+from mcp.server.auth.settings import AuthSettings
 
 from loom.config import load_config, research_config_get, research_config_set
+from loom.logging_config import setup_logging
 from loom.rate_limiter import rate_limited
 from loom.sessions import (
     cleanup_all_sessions,
@@ -214,6 +216,11 @@ with suppress(ImportError):
     from loom.tools import urlhaus_lookup as urlhaus_lookup_tools
 
     _optional_tools["urlhaus_lookup"] = urlhaus_lookup_tools
+
+with suppress(ImportError):
+    from loom.tools import job_research as job_research_tools
+
+    _optional_tools["job_research"] = job_research_tools
 
 _start_time = time.time()
 
@@ -416,6 +423,14 @@ def _register_tools(mcp: FastMCP) -> None:
         if hasattr(email_mod, "research_email_report"):
             mcp.tool()(_wrap_tool(email_mod.research_email_report))
 
+    # Job research tools (if available)
+    if "job_research" in _optional_tools:
+        job_research_mod = _optional_tools["job_research"]
+        if hasattr(job_research_mod, "research_job_search"):
+            mcp.tool()(_wrap_tool(job_research_mod.research_job_search, "search"))
+        if hasattr(job_research_mod, "research_job_market"):
+            mcp.tool()(_wrap_tool(job_research_mod.research_job_market, "search"))
+
     # Joplin note tools (if available)
     if "joplin" in _optional_tools:
         joplin_mod = _optional_tools["joplin"]
@@ -571,6 +586,67 @@ def _register_tools(mcp: FastMCP) -> None:
         if hasattr(image_mod, "research_ocr_extract"):
             mcp.tool()(_wrap_tool(image_mod.research_ocr_extract, "fetch"))
 
+
+def _validate_environment() -> None:
+    """Validate that required environment variables are configured.
+
+    Checks for:
+    1. At least one LLM provider key
+    2. At least one search provider key (or ddgs which needs no key)
+    3. Logs warnings for optional missing keys
+
+    Does NOT crash — server still boots if validation fails.
+    """
+    llm_keys = [
+        "GROQ_API_KEY",
+        "NVIDIA_NIM_API_KEY",
+        "DEEPSEEK_API_KEY",
+        "GOOGLE_AI_KEY",
+        "MOONSHOT_API_KEY",
+        "OPENAI_API_KEY",
+        "ANTHROPIC_API_KEY",
+    ]
+
+    search_keys = [
+        "EXA_API_KEY",
+        "TAVILY_API_KEY",
+        "FIRECRAWL_API_KEY",
+        "BRAVE_API_KEY",
+        "NEWS_API_KEY",
+        "UMMRO_RAG_URL",
+    ]
+
+    optional_keys = [
+        "GITHUB_TOKEN",
+        "VASTAI_API_KEY",
+        "STRIPE_LIVE_KEY",
+        "SMTP_USER",
+        "SMTP_APP_PASSWORD",
+        "JOPLIN_TOKEN",
+        "TOR_CONTROL_PASSWORD",
+    ]
+
+    # Check for at least one LLM provider
+    llm_configured = any(os.environ.get(key) for key in llm_keys)
+    if not llm_configured:
+        log.warning(
+            "no_llm_provider_configured. Set at least one of: %s",
+            ", ".join(llm_keys),
+        )
+
+    # Check for at least one search provider (ddgs doesn't need a key)
+    search_configured = any(os.environ.get(key) for key in search_keys)
+    if not search_configured:
+        log.warning(
+            "no_search_provider_configured. Set at least one of: %s (or use ddgs)",
+            ", ".join(search_keys),
+        )
+
+    # Log warnings for missing optional keys
+    for key in optional_keys:
+        if not os.environ.get(key):
+            log.debug("optional_key_not_set key=%s", key)
+
 def create_app() -> FastMCP:
     """Create and configure the FastMCP server instance.
 
@@ -585,20 +661,40 @@ def create_app() -> FastMCP:
 
     # Set up logging with request_id support
     log_level = config.get("LOG_LEVEL", "INFO")
-    logging.basicConfig(
-        level=getattr(logging, log_level),
-        format="%(asctime)s - %(name)s - %(levelname)s - [%(request_id)s] %(message)s",
-    )
+    log_format = os.environ.get("LOG_FORMAT", config.get("LOG_FORMAT", "text"))
+    setup_logging(log_level=log_level, log_format=log_format)
     install_tracing()
+
+    # Validate environment
+    _validate_environment()
 
     # Create FastMCP instance
     host = os.environ.get("LOOM_HOST", "127.0.0.1")
     port = int(os.environ.get("LOOM_PORT", "8787"))
 
+    # Set up authentication if LOOM_API_KEY is configured
+    api_key = os.environ.get("LOOM_API_KEY", "")
+    token_verifier = None
+    auth = None
+    if api_key:
+        from loom.auth import ApiKeyVerifier
+        token_verifier = ApiKeyVerifier()
+        # AuthSettings requires issuer_url and resource_server_url for OAuth compliance
+        # For simple bearer token verification, provide minimal URLs
+        auth = AuthSettings(
+            issuer_url="http://loom.local",
+            resource_server_url="http://loom.local",
+        )
+        log.info("auth_enabled LOOM_API_KEY_LENGTH=%d", len(api_key))
+    else:
+        log.warning("auth_disabled no_LOOM_API_KEY_set")
+
     mcp = FastMCP(
         name="loom",
         host=host,
         port=port,
+        auth=auth,
+        token_verifier=token_verifier,
     )
 
     # Register all tools

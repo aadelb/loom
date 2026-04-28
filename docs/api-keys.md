@@ -4,6 +4,56 @@ Complete reference for all environment variables, API keys, and configuration op
 
 ---
 
+---
+
+## Server Authentication
+
+### LOOM_API_KEY
+
+**Purpose:** Bearer token authentication for MCP server access  
+**Type:** string (alphanumeric token)  
+**Default:** None (authentication disabled, anonymous access allowed)  
+**Required for:** Restricted deployments where client authentication is needed  
+
+When `LOOM_API_KEY` is set, the MCP server requires clients to provide a valid Bearer token in the Authorization header:
+
+```bash
+# Set the server API key
+export LOOM_API_KEY="your-secret-api-key-12345"
+
+# Start the server
+loom serve
+
+# Clients must authenticate with the key
+curl -H "Authorization: Bearer your-secret-api-key-12345" \
+  http://127.0.0.1:8787/mcp
+```
+
+**How it works:**
+- If `LOOM_API_KEY` is set: Only requests with matching Bearer token are authenticated (full scopes: `["*"]`)
+- If `LOOM_API_KEY` is NOT set: All requests are allowed with anonymous client_id (no authentication required)
+
+**Security notes:**
+- Use a strong, random token (e.g., 32+ character alphanumeric)
+- Never hardcode API keys in source code
+- Always transmit over HTTPS in production
+- Rotate keys periodically
+- Store in environment variables or secret manager, never in config files
+
+**Example token generation:**
+
+```bash
+# Generate a random token (example)
+openssl rand -base64 24
+# Output: a8B3kZ9mL2xQ7pV5nW6yT8cD9eF4gH1j
+```
+
+```bash
+export LOOM_API_KEY="a8B3kZ9mL2xQ7pV5nW6yT8cD9eF4gH1j"
+```
+
+---
+
 
 ## LLM Providers
 
