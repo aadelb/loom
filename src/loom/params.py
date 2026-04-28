@@ -162,17 +162,19 @@ class MarkdownParams(BaseModel):
     """Parameters for research_markdown tool."""
 
     url: str
-    mode: Literal["crawl4ai", "trafilatura"] = "crawl4ai"
-    extract_links: bool = True
-    extract_images: bool = False
-    extract_tables: bool = True
-    max_chars: int = 50000
-    timeout: int | None = None
+    bypass_cache: bool = False
+    css_selector: str | None = None
+    js_before_scrape: str | None = None
+    screenshot: bool = False
+    remove_selectors: list[str] | None = None
     headers: dict[str, str] | None = None
     user_agent: str | None = None
     proxy: str | None = None
+    cookies: dict[str, str] | None = None
     accept_language: str = _DEFAULT_ACCEPT_LANG
-    session: str | None = None
+    timeout: int | None = None
+    extract_selector: str | None = None
+    wait_for: str | None = None
 
     model_config = {"extra": "forbid", "strict": True}
 
