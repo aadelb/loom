@@ -34,7 +34,7 @@ from loom.sessions import (
 from loom.tools import (
     breach_check,
     academic_integrity,
-
+    ai_safety,
     cache_mgmt,
     cert_analyzer,
     change_monitor,
@@ -74,6 +74,7 @@ from loom.tools import (
     stealth,
     stego_detect,
     stylometry,
+    supply_chain_intel,
     threat_profile,
     trend_predictor,
 )
@@ -363,6 +364,11 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(company_intel.research_salary_intelligence, "search"))
     mcp.tool()(_wrap_tool(competitive_intel.research_competitive_intel, "search"))
 
+    # Supply chain intelligence tools
+    mcp.tool()(_wrap_tool(supply_chain_intel.research_supply_chain_risk, "fetch"))
+    mcp.tool()(_wrap_tool(supply_chain_intel.research_patent_landscape, "search"))
+    mcp.tool()(_wrap_tool(supply_chain_intel.research_dependency_audit, "fetch"))
+
     # Domain intelligence tools
     mcp.tool()(_wrap_tool(domain_intel.research_whois, "fetch"))
     mcp.tool()(_wrap_tool(domain_intel.research_dns_lookup, "fetch"))
@@ -370,6 +376,11 @@ def _register_tools(mcp: FastMCP) -> None:
 
     # Identity resolution tool
     mcp.tool()(_wrap_tool(identity_resolve.research_identity_resolve, "fetch"))
+
+    # Job market intelligence tools
+    mcp.tool()(_wrap_tool(job_signals.research_funding_signal, "search"))
+    mcp.tool()(_wrap_tool(job_signals.research_stealth_hire_scanner, "search"))
+    mcp.tool()(_wrap_tool(job_signals.research_interviewer_profiler, "fetch"))
 
     # Security tools (cert analysis, headers, breach checking)
     mcp.tool()(_wrap_tool(cert_analyzer.research_cert_analyze, "fetch"))
@@ -381,6 +392,13 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(signal_detection.research_sec_tracker, "search"))
     mcp.tool()(_wrap_tool(breach_check.research_breach_check, "fetch"))
     mcp.tool()(_wrap_tool(breach_check.research_password_check))
+
+    # AI Safety red-team tools (5 tools for EU AI Act Article 15 compliance testing)
+    mcp.tool()(_wrap_tool(ai_safety.research_prompt_injection_test, "fetch"))
+    mcp.tool()(_wrap_tool(ai_safety.research_model_fingerprint, "fetch"))
+    mcp.tool()(_wrap_tool(ai_safety.research_bias_probe, "fetch"))
+    mcp.tool()(_wrap_tool(ai_safety.research_safety_filter_map, "fetch"))
+    mcp.tool()(_wrap_tool(ai_safety.research_compliance_check, "fetch"))
 
     # PDF extraction tools
     mcp.tool()(_wrap_tool(pdf_extract.research_pdf_extract, "fetch"))

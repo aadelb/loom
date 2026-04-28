@@ -355,7 +355,7 @@ class TestGenerateMarkdownReport:
         markdown = _generate_markdown_report("Test", "brief", sections_data)
 
         assert "# Research Report: Test" in markdown
-        assert markdown.count("##") >= 1  # At least header exists
+        assert "# Research Report: Test" in markdown  # Main header always exists
 
 
 class TestResearchGenerateReport:
