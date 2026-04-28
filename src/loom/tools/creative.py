@@ -18,6 +18,8 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import re
+import xml.etree.ElementTree as ET
 from functools import partial
 from typing import Any
 
@@ -26,6 +28,17 @@ import httpx
 logger = logging.getLogger("loom.tools.creative")
 
 _SEMANTIC_SCHOLAR_URL = "https://api.semanticscholar.org/graph/v1"
+
+# Safe XML parsing with XXE protection
+try:
+    from defusedxml.ElementTree import fromstring as safe_fromstring
+except ImportError:
+    from xml.etree.ElementTree import fromstring as _unsafe_fromstring
+
+    def safe_fromstring(text: str) -> Any:
+        """Fallback safe XML parsing by stripping DOCTYPE declarations."""
+        text = re.sub(r"<!DOCTYPE[^>]*>", "", text, flags=re.IGNORECASE)
+        return _unsafe_fromstring(text)
 
 
 def _parse_llm_json(text: str, fallback: Any = None) -> Any:
@@ -820,11 +833,15 @@ async def research_wiki_ghost(
 
     Args:
         topic: Wikipedia article title or search term
-        language: Wikipedia language code
+        language: Wikipedia language code (2-3 lowercase letters, e.g. 'en', 'ar')
 
     Returns:
         Dict with ``talk_excerpts``, ``recent_edits``, ``edit_count``.
     """
+    # Validate language parameter to prevent SSRF via subdomain manipulation
+    if not re.match(r"^[a-z]{2,3}$", language):
+        return {"topic": topic, "error": "language must be 2-3 lowercase letters (e.g., 'en', 'ar')"}
+
     base = f"https://{language}.wikipedia.org"
     loop = asyncio.get_running_loop()
 
@@ -893,8 +910,6 @@ async def research_wiki_ghost(
 
                 talk_sections = []
                 if talk_text:
-                    import re
-
                     sections = re.split(r"==\s*(.+?)\s*==", talk_text)
                     for i in range(1, len(sections), 2):
                         heading = sections[i]
@@ -943,7 +958,6 @@ async def research_semantic_sitemap(
         Dict with ``clusters`` (each with representative URL + members),
         ``total_urls``, ``clusters_found``.
     """
-    import xml.etree.ElementTree as ET
     from urllib.parse import urlparse
 
     loop = asyncio.get_running_loop()
@@ -971,7 +985,7 @@ async def research_semantic_sitemap(
                     try:
                         resp = client.get(f"{base}{path}")
                         if resp.status_code == 200 and "xml" in resp.headers.get("content-type", ""):
-                            root = ET.fromstring(resp.text)  # noqa: S314
+                            root = safe_fromstring(resp.text)
                             ns = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
                             for loc in root.findall(".//sm:loc", ns):
                                 if loc.text:

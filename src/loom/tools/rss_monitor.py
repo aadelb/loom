@@ -16,6 +16,17 @@ logger = logging.getLogger("loom.tools.rss_monitor")
 
 _HTTP_TIMEOUT = 30.0
 
+# Safe XML parsing with XXE protection
+try:
+    from defusedxml.ElementTree import fromstring as safe_fromstring
+except ImportError:
+    from xml.etree.ElementTree import fromstring as _unsafe_fromstring
+
+    def safe_fromstring(text: str) -> Any:
+        """Fallback safe XML parsing by stripping DOCTYPE declarations."""
+        text = re.sub(r"<!DOCTYPE[^>]*>", "", text, flags=re.IGNORECASE)
+        return _unsafe_fromstring(text)
+
 
 def _parse_feed(xml_content: str, url: str) -> dict[str, Any]:
     """Parse RSS 2.0 or Atom feed XML and extract feed metadata + items.
@@ -28,7 +39,7 @@ def _parse_feed(xml_content: str, url: str) -> dict[str, Any]:
         Dict with ``feed`` (title, description, link, language) and ``items`` list.
     """
     try:
-        root = ET.fromstring(xml_content)
+        root = safe_fromstring(xml_content)
     except ET.ParseError as e:
         logger.warning("xml_parse_failed url=%s error=%s", url, e)
         return {"feed": {}, "items": [], "format": "unknown", "error": str(e)}

@@ -8,9 +8,10 @@ import os
 import subprocess
 import tempfile
 from typing import Any
-from urllib.parse import urlparse
 
 import httpx
+
+from loom.validators import UrlSafetyError, validate_url
 
 logger = logging.getLogger("loom.tools.pdf_extract")
 
@@ -19,80 +20,6 @@ MAX_PDF_SIZE_BYTES = 50 * 1024 * 1024
 
 # Max extracted text length
 MAX_EXTRACTED_TEXT = 50000
-
-
-def _validate_url(url: str) -> str:
-    """Validate URL is http(s) and well-formed.
-
-    Args:
-        url: URL to validate
-
-    Returns:
-        The validated URL
-
-    Raises:
-        ValueError: if URL is invalid
-    """
-    if not url or len(url) > 4096:
-        raise ValueError("url missing or too long")
-
-    parsed = urlparse(url)
-    if parsed.scheme not in ("http", "https"):
-        raise ValueError(f"scheme '{parsed.scheme}' not allowed (http/https only)")
-
-    if not parsed.netloc:
-        raise ValueError("url missing hostname")
-
-    return url
-
-
-def _parse_pages_arg(pages: str | None) -> tuple[int | None, int | None]:
-    """Parse page range string into (start, end) tuple.
-
-    Args:
-        pages: page range like "1-5" or "1" or None
-
-    Returns:
-        Tuple of (start_page, end_page) or (None, None) if pages is None
-        Pages are 1-indexed.
-
-    Raises:
-        ValueError: if pages format is invalid
-    """
-    if pages is None:
-        return None, None
-
-    pages = pages.strip()
-    if not pages:
-        return None, None
-
-    # Check for range format "1-5"
-    if "-" in pages:
-        parts = pages.split("-")
-        if len(parts) != 2:
-            raise ValueError("pages format must be 'N' or 'N-M'")
-
-        try:
-            start = int(parts[0].strip())
-            end = int(parts[1].strip())
-        except ValueError:
-            raise ValueError("pages must be integers")
-
-        if start < 1 or end < start:
-            raise ValueError("pages must be positive and start <= end")
-
-        return start, end
-    else:
-        # Single page
-        try:
-            page = int(pages)
-        except ValueError:
-            raise ValueError("pages must be an integer or range")
-
-        if page < 1:
-            raise ValueError("page must be positive")
-
-        return page, page
 
 
 def research_pdf_extract(
@@ -119,8 +46,8 @@ def research_pdf_extract(
         - error: error message if extraction failed
     """
     try:
-        url = _validate_url(url)
-    except ValueError as exc:
+        validate_url(url)
+    except UrlSafetyError as exc:
         return {"url": url, "error": str(exc)}
 
     try:
@@ -304,8 +231,8 @@ def research_pdf_search(url: str, query: str) -> dict[str, Any]:
         - error: error message if search failed
     """
     try:
-        url = _validate_url(url)
-    except ValueError as exc:
+        validate_url(url)
+    except UrlSafetyError as exc:
         return {"url": url, "query": query, "error": str(exc)}
 
     if not query or len(query) > 1000:
@@ -390,3 +317,52 @@ def research_pdf_search(url: str, query: str) -> dict[str, Any]:
     except Exception as exc:
         logger.exception("pdf_search_failed url=%s query=%s", url, query)
         return {**output, "error": str(exc)}
+
+
+def _parse_pages_arg(pages: str | None) -> tuple[int | None, int | None]:
+    """Parse page range string into (start, end) tuple.
+
+    Args:
+        pages: page range like "1-5" or "1" or None
+
+    Returns:
+        Tuple of (start_page, end_page) or (None, None) if pages is None
+        Pages are 1-indexed.
+
+    Raises:
+        ValueError: if pages format is invalid
+    """
+    if pages is None:
+        return None, None
+
+    pages = pages.strip()
+    if not pages:
+        return None, None
+
+    # Check for range format "1-5"
+    if "-" in pages:
+        parts = pages.split("-")
+        if len(parts) != 2:
+            raise ValueError("pages format must be 'N' or 'N-M'")
+
+        try:
+            start = int(parts[0].strip())
+            end = int(parts[1].strip())
+        except ValueError:
+            raise ValueError("pages must be integers")
+
+        if start < 1 or end < start:
+            raise ValueError("pages must be positive and start <= end")
+
+        return start, end
+    else:
+        # Single page
+        try:
+            page = int(pages)
+        except ValueError:
+            raise ValueError("pages must be an integer or range")
+
+        if page < 1:
+            raise ValueError("page must be positive")
+
+        return page, page

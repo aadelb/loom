@@ -225,7 +225,9 @@ def validate_url(url: str) -> str:
         raise UrlSafetyError("url missing hostname")
 
     # .onion URLs require Tor support via TOR_ENABLED config flag
-    if host.endswith(".onion"):
+    # Check that .onion is exactly the TLD (Fix H6: prevent evil.onion.com bypass)
+    parts = host.split(".")
+    if parts and parts[-1] == "onion":
         from loom.config import get_config
         if not get_config().get("TOR_ENABLED", False):
             raise UrlSafetyError(".onion URLs require TOR_ENABLED=true in config")
