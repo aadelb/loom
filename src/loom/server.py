@@ -41,6 +41,7 @@ from loom.tools import (
     company_intel,
     competitive_intel,
     crypto_trace,
+    culture_dna,
     dark_forum,
     dead_content,
     deception_detect,
@@ -62,6 +63,7 @@ from loom.tools import (
     onion_discover,
     passive_recon,
     pdf_extract,
+    psycholinguistic,
     realtime_monitor,
     report_generator,
     rss_monitor,
@@ -75,6 +77,7 @@ from loom.tools import (
     stego_detect,
     stylometry,
     supply_chain_intel,
+    synth_echo,
     threat_profile,
     trend_predictor,
 )

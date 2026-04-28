@@ -1629,3 +1629,86 @@ class PredatoryJournalCheckParams(BaseModel):
         if not v or len(v) > 500:
             raise ValueError("journal_name must be 1-500 characters")
         return v
+
+
+class GhostProtocolParams(BaseModel):
+    """Parameters for research_ghost_protocol tool."""
+
+    keywords: list[str]
+    time_window_minutes: int = 30
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("keywords")
+    @classmethod
+    def validate_keywords(cls, v: list[str]) -> list[str]:
+        if not v or len(v) == 0:
+            raise ValueError("keywords must be non-empty list")
+        if len(v) > 50:
+            raise ValueError("keywords max 50 items")
+        for kw in v:
+            if not kw or not kw.strip():
+                raise ValueError("each keyword must be non-empty")
+            if len(kw) > 100:
+                raise ValueError("each keyword max 100 characters")
+        return [kw.strip() for kw in v]
+
+    @field_validator("time_window_minutes")
+    @classmethod
+    def validate_time_window(cls, v: int) -> int:
+        if v < 1 or v > 1440:  # 1 minute to 24 hours
+            raise ValueError("time_window_minutes must be 1-1440")
+        return v
+
+
+class TemporalAnomalyParams(BaseModel):
+    """Parameters for research_temporal_anomaly tool."""
+
+    domain: str
+    check_type: Literal["all", "certs", "dns", "clock"] = "all"
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("domain", mode="before")
+    @classmethod
+    def validate_domain_field(cls, v: str) -> str:
+        return validate_url(f"https://{v}")
+
+    @field_validator("check_type")
+    @classmethod
+    def validate_check_type(cls, v: str) -> str:
+        if v not in ("all", "certs", "dns", "clock"):
+            raise ValueError("check_type must be 'all', 'certs', 'dns', or 'clock'")
+        return v
+
+
+class SecTrackerParams(BaseModel):
+    """Parameters for research_sec_tracker tool."""
+
+    company: str
+    filing_types: list[str] | None = None
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("company")
+    @classmethod
+    def validate_company(cls, v: str) -> str:
+        v = v.strip()
+        if not v or len(v) > 500:
+            raise ValueError("company must be 1-500 characters")
+        return v
+
+    @field_validator("filing_types")
+    @classmethod
+    def validate_filing_types(cls, v: list[str] | None) -> list[str] | None:
+        if v is None:
+            return v
+        if len(v) == 0:
+            raise ValueError("filing_types must be non-empty or None")
+        if len(v) > 20:
+            raise ValueError("filing_types max 20 items")
+        valid_types = {"10-K", "10-Q", "8-K", "S-1", "S-4", "DEF 14A", "20-F", "424B5"}
+        for ft in v:
+            if ft not in valid_types:
+                raise ValueError(f"filing_type '{ft}' not in {valid_types}")
+        return v
