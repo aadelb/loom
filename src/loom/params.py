@@ -1565,6 +1565,30 @@ class CitationGraphParams(BaseModel):
         return v
 
 
+
+class CitationAnalysisParams(BaseModel):
+    """Parameters for research_citation_analysis tool."""
+
+    paper_id: str
+    depth: int = 2
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("paper_id")
+    @classmethod
+    def validate_paper_id(cls, v: str) -> str:
+        v = v.strip()
+        if not v or len(v) > 100:
+            raise ValueError("paper_id must be 1-100 characters")
+        return v
+
+    @field_validator("depth")
+    @classmethod
+    def validate_depth(cls, v: int) -> int:
+        if v < 1 or v > 3:
+            raise ValueError("depth must be 1-3")
+        return v
+
 class RetractionCheckParams(BaseModel):
     """Parameters for research_retraction_check tool."""
 
