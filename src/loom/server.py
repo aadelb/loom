@@ -34,22 +34,39 @@ from loom.sessions import (
 from loom.tools import (
     breach_check,
     cache_mgmt,
+    change_monitor,
     cert_analyzer,
+    competitive_intel,
     company_intel,
+    crypto_trace,
+    dark_forum,
+    dead_content,
     deception_detect,
     deep,
     domain_intel,
     fetch,
     github,
+    identity_resolve,
+    infra_correlator,
+    invisible_web,
+    js_intel,
+    leak_scan,
     markdown,
+    metadata_forensics,
+    multi_search,
+    onion_discover,
+    passive_recon,
     pdf_extract,
     rss_monitor,
     search,
     security_headers,
+    social_graph,
     social_intel,
     spider,
     stealth,
+    stego_detect,
     stylometry,
+    threat_profile,
 )
 from loom.tracing import install_tracing, new_request_id
 
@@ -214,6 +231,11 @@ with suppress(ImportError):
     _optional_tools["cve_lookup"] = cve_lookup_tools
 
 with suppress(ImportError):
+    from loom.tools import vuln_intel as vuln_intel_tools
+
+    _optional_tools["vuln_intel"] = vuln_intel_tools
+
+with suppress(ImportError):
     from loom.tools import urlhaus_lookup as urlhaus_lookup_tools
 
     _optional_tools["urlhaus_lookup"] = urlhaus_lookup_tools
@@ -302,6 +324,22 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(cache_mgmt.research_cache_stats))
     mcp.tool()(_wrap_tool(cache_mgmt.research_cache_clear))
 
+    # Killer research tools (20 tools — Loom's unfair advantage)
+    mcp.tool()(_wrap_tool(dead_content.research_dead_content, "fetch"))
+    mcp.tool()(_wrap_tool(invisible_web.research_invisible_web, "fetch"))
+    mcp.tool()(_wrap_tool(js_intel.research_js_intel, "fetch"))
+    mcp.tool()(_wrap_tool(multi_search.research_multi_search, "search"))
+    mcp.tool()(_wrap_tool(dark_forum.research_dark_forum, "search"))
+    mcp.tool()(_wrap_tool(infra_correlator.research_infra_correlator, "fetch"))
+    mcp.tool()(_wrap_tool(passive_recon.research_passive_recon, "fetch"))
+    mcp.tool()(_wrap_tool(onion_discover.research_onion_discover, "fetch"))
+    mcp.tool()(_wrap_tool(metadata_forensics.research_metadata_forensics, "fetch"))
+    mcp.tool()(_wrap_tool(crypto_trace.research_crypto_trace, "fetch"))
+    mcp.tool()(_wrap_tool(stego_detect.research_stego_detect))
+    mcp.tool()(_wrap_tool(threat_profile.research_threat_profile, "fetch"))
+    mcp.tool()(_wrap_tool(leak_scan.research_leak_scan, "fetch"))
+    mcp.tool()(_wrap_tool(social_graph.research_social_graph, "fetch"))
+
     # Psychology & behavioral analysis tools
     mcp.tool()(_wrap_tool(stylometry.research_stylometry))  # CPU-only, no category
     mcp.tool()(_wrap_tool(deception_detect.research_deception_detect))  # CPU-only, no category
@@ -309,11 +347,15 @@ def _register_tools(mcp: FastMCP) -> None:
     # Company intelligence tools
     mcp.tool()(_wrap_tool(company_intel.research_company_diligence, "search"))
     mcp.tool()(_wrap_tool(company_intel.research_salary_intelligence, "search"))
+    mcp.tool()(_wrap_tool(competitive_intel.research_competitive_intel, "search"))
 
     # Domain intelligence tools
     mcp.tool()(_wrap_tool(domain_intel.research_whois, "fetch"))
     mcp.tool()(_wrap_tool(domain_intel.research_dns_lookup, "fetch"))
     mcp.tool()(_wrap_tool(domain_intel.research_nmap_scan, "fetch"))
+
+    # Identity resolution tool
+    mcp.tool()(_wrap_tool(identity_resolve.research_identity_resolve, "fetch"))
 
     # Security tools (cert analysis, headers, breach checking)
     mcp.tool()(_wrap_tool(cert_analyzer.research_cert_analyze, "fetch"))
@@ -588,6 +630,12 @@ def _register_tools(mcp: FastMCP) -> None:
             mcp.tool()(_wrap_tool(cve_lookup_mod.research_cve_lookup, "search"))
         if hasattr(cve_lookup_mod, "research_cve_detail"):
             mcp.tool()(_wrap_tool(cve_lookup_mod.research_cve_detail, "fetch"))
+
+    # Vulnerability intelligence tools (if available)
+    if "vuln_intel" in _optional_tools:
+        vuln_intel_mod = _optional_tools["vuln_intel"]
+        if hasattr(vuln_intel_mod, "research_vuln_intel"):
+            mcp.tool()(_wrap_tool(vuln_intel_mod.research_vuln_intel, "search"))
 
     # URLhaus lookup tools (if available)
     if "urlhaus_lookup" in _optional_tools:

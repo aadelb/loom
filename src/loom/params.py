@@ -6,6 +6,7 @@ proxies, etc. All models forbid extra fields and use strict mode.
 
 from __future__ import annotations
 
+import re
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
@@ -1371,3 +1372,71 @@ class InterviewPrepParams(BaseModel):
         if v.lower() not in valid_types:
             raise ValueError(f"interview_type must be one of {valid_types}")
         return v.lower()
+
+class CompetitiveIntelParams(BaseModel):
+    """Parameters for research_competitive_intel tool."""
+
+    company: str
+    domain: str | None = None
+    github_org: str | None = None
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("company")
+    @classmethod
+    def validate_company(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("company must be provided")
+        v = v.strip()
+        if len(v) > 256:
+            raise ValueError("company max 256 characters")
+        return v
+
+    @field_validator("domain")
+    @classmethod
+    def validate_domain(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        v = v.strip()
+        if len(v) > 255:
+            raise ValueError("domain max 255 characters")
+        if not re.match(r"^[a-z0-9.-]+\.[a-z]{2,}$", v.lower()):
+            raise ValueError("domain must be a valid domain format")
+        return v
+
+    @field_validator("github_org")
+    @classmethod
+    def validate_github_org(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        v = v.strip()
+        if len(v) > 100:
+            raise ValueError("github_org max 100 characters")
+        if not re.match(r"^[a-z0-9-]+$", v.lower()):
+            raise ValueError("github_org must be alphanumeric and hyphens only")
+        return v
+
+class OnionDiscoverParams(BaseModel):
+    """Parameters for research_onion_discover tool."""
+
+    query: str
+    max_results: int = 50
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("query")
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("query must be non-empty")
+        v = v.strip()
+        if len(v) > 500:
+            raise ValueError("query max 500 characters")
+        return v
+
+    @field_validator("max_results")
+    @classmethod
+    def validate_max_results(cls, v: int) -> int:
+        if v < 1 or v > 100:
+            raise ValueError("max_results must be 1-100")
+        return v
