@@ -1,0 +1,6 @@
+    # P3 research tools (4 tools for model comparison, data poisoning detection, Wiki event correlation, and FOIA tracking)
+    mcp.tool()(_wrap_tool(p3_tools.research_model_comparator, "fetch"))
+    mcp.tool()(_wrap_tool(p3_tools.research_data_poisoning, "fetch"))
+    mcp.tool()(_wrap_tool(p3_tools.research_wiki_event_correlator, "fetch"))
+    mcp.tool()(_wrap_tool(p3_tools.research_foia_tracker, "search"))
+

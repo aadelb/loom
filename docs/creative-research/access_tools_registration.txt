@@ -1,0 +1,7 @@
+
+    # Access and content authenticity tools (5 tools for legal monitoring, open access, and deepfake detection)
+    mcp.tool()(_wrap_tool(access_tools.research_legal_takedown, "fetch"))
+    mcp.tool()(_wrap_tool(access_tools.research_open_access))
+    mcp.tool()(_wrap_tool(access_tools.research_content_authenticity, "fetch"))
+    mcp.tool()(_wrap_tool(access_tools.research_credential_monitor, "fetch"))
+    mcp.tool()(_wrap_tool(access_tools.research_deepfake_checker, "fetch"))

@@ -1,0 +1,260 @@
+# GAP TOOLS IMPLEMENTATION SUMMARY
+
+## Academic Research Intelligence Tools (gap_tools_academic.py)
+
+### 1. research_ideological_drift(field: str, years: int = 10) -> dict[str, Any]
+**Purpose**: Track how a research field's beliefs change over time using keyword evolution
+**Implementation**:
+- Queries Semantic Scholar API for papers by year
+- Extracts keywords from abstracts using TF-IDF style word frequency
+- Calculates Jaccard distance between keyword sets year-over-year
+- Returns keyword_evolution (dict of year to top keywords), drift_scores (list), and overall_drift_direction
+
+**Key Features**:
+- Stopword filtering (common words removed)
+- Configurable year range (1-50 years)
+- Drift direction classification: low/moderate/high
+- Async HTTP client with timeout handling
+
+**Returns**:
+- field, years_analyzed, keyword_evolution, drift_scores, overall_drift_direction, average_drift_score
+
+---
+
+### 2. research_author_clustering(field: str, max_authors: int = 50) -> dict[str, Any]
+**Purpose**: Detect emerging research clusters by analyzing co-authorship patterns
+**Implementation**:
+- Queries Semantic Scholar for recent papers in the field
+- Builds co-author adjacency matrix from multi-author papers
+- Detects clusters using connectivity-based grouping
+- Identifies emerging clusters (clusters with recent activity)
+
+**Key Features**:
+- Extracts author relationships from paper co-authorship
+- Recursive cluster detection (follows author chains)
+- Limits to max_authors for performance
+- Configurable cluster size thresholds
+
+**Returns**:
+- field, authors_found, clusters (list of {authors, size, formed_year}), emerging_clusters
+
+---
+
+### 3. research_citation_cartography(paper_id: str, depth: int = 2) -> dict[str, Any]
+**Purpose**: Map citation flow with manipulation detection
+**Implementation**:
+- Fetches paper from Semantic Scholar API with references and citations
+- Builds directed graph of citation relationships
+- Detects anomalies: circular citations, high edge density, unusual self-citations
+- Calculates manipulation score based on anomalies
+
+**Key Features**:
+- Node structure: id, title, citation_count, depth
+- Edge structure: source, target, type (references or cited_by)
+- Anomaly detection thresholds
+- Risk level assessment: low/medium/high
+- Handles missing papers gracefully
+
+**Returns**:
+- paper_id, paper_title, nodes, edges, flow_anomalies, manipulation_score, risk_level
+
+---
+
+## AI Model Intelligence Tools (gap_tools_ai.py)
+
+### 4. research_capability_mapper(target_url: str, categories: list[str] | None = None) -> dict[str, Any]
+**Purpose**: Map LLM capabilities across multiple domains
+**Implementation**:
+- Tests 5 default categories: math, code, reasoning, language, knowledge
+- Sends 3 test prompts per category
+- Scores responses on 0-10 scale using domain-specific rules
+- Identifies strengths (score >= 6.0) and weaknesses
+
+**Test Prompts per Category**:
+- Math: 237 * 489, solving equations, square roots
+- Code: function reversal, list sorting, recursion explanation
+- Reasoning: logical deduction, math word problems, explanation requests
+- Language: translation, grammar, metaphor definition
+- Knowledge: capitals, authors, historical dates
+
+**Scoring Logic**:
+- Math: exact answer (9.0), correct concept (5-8.0)
+- Code: syntax/structure present (6-8.0), keywords matched (6.0)
+- Reasoning: logical correctness (7-9.0)
+- Language: correct translation/definition (8-9.0)
+- Knowledge: precise facts (9.0), related content (5-6.0)
+
+**Returns**:
+- target, categories_tested, category_scores (dict), overall_score, strengths, weaknesses, tests_run
+
+---
+
+### 5. research_memorization_scanner(target_url: str, test_count: int = 10) -> dict[str, Any]
+**Purpose**: Detect training data memorization by testing verbatim completion
+**Implementation**:
+- Sends prefixes of 5 known public texts
+- Tests: Wikipedia opening, famous book, poem, code snippet, history quote
+- Checks if model completes them verbatim or with high similarity
+- Calculates memorization rate (0-100%)
+
+**Known Test Texts**:
+1. Wikipedia: "The United Kingdom comprises England..."
+2. Literature: "It was the best of times, it was the worst of times..."
+3. Poetry: "Two roads diverged in a yellow wood..."
+4. Code: Python Fibonacci function
+5. History: "Four score and seven years ago..."
+
+**Detection Method**:
+- Direct substring match in response
+- Partial match in lowercased text (20+ char prefix)
+- Examples collected for evidence
+
+**Returns**:
+- target, tests_run, memorized, memorization_rate, risk_level, examples (list of {source, prefix, completion_detected})
+
+---
+
+### 6. research_training_contamination(target_url: str, dataset_name: str = "common") -> dict[str, Any]
+**Purpose**: Detect if model was trained on specific datasets
+**Implementation**:
+- Tests unique passages from known datasets
+- Default dataset: "common" (Wikipedia, Common Crawl, BookCorpus)
+- Checks for verbatim completion of dataset passages
+- Calculates contamination rate
+
+**Known Datasets**:
+- common: Wikipedia, Common Crawl, BookCorpus
+- Extensible for additional datasets
+
+**Detection Method**:
+- 40-character prefix matching (case-insensitive)
+- Evidence collection with confidence levels
+- High/medium/low risk classification
+
+**Returns**:
+- target, dataset_tested, passages_tested, contamination_detected, contamination_rate, risk_level, evidence
+
+---
+
+## Parameter Models (params.py)
+
+All parameter models include:
+- Strict validation (extra="forbid", strict=True)
+- Field validators for type and range checking
+- URL validation where applicable
+- Meaningful error messages
+
+### Academic Parameters:
+1. **IdeologicalDriftParams**: field (1-200 chars), years (1-50)
+2. **AuthorClusteringParams**: field (1-200 chars), max_authors (5-500)
+3. **CitationCartographyParams**: paper_id (1-100 chars), depth (1-3)
+
+### AI Parameters:
+4. **CapabilityMapperParams**: target_url (validated), categories (list[str], valid: math/code/reasoning/language/knowledge)
+5. **MemorizationScannerParams**: target_url (validated), test_count (1-50)
+6. **TrainingContaminationParams**: target_url (validated), dataset_name (1-50 chars)
+
+---
+
+## Tool Registration (server.py)
+
+All tools registered with _wrap_tool() wrapper:
+- Tracing enabled (new_request_id on each call)
+- Rate limiting applied where specified ("fetch" or "search" categories)
+- Async/sync compatibility handled
+
+Registration entries:
+```python
+mcp.tool()(_wrap_tool(gap_tools_academic.research_ideological_drift))
+mcp.tool()(_wrap_tool(gap_tools_academic.research_author_clustering))
+mcp.tool()(_wrap_tool(gap_tools_academic.research_citation_cartography))
+mcp.tool()(_wrap_tool(gap_tools_ai.research_capability_mapper, "fetch"))
+mcp.tool()(_wrap_tool(gap_tools_ai.research_memorization_scanner, "fetch"))
+mcp.tool()(_wrap_tool(gap_tools_ai.research_training_contamination, "fetch"))
+```
+
+---
+
+## Test Coverage
+
+### test_gap_tools_academic.py
+- **TestIdeologicalDrift**: 4 tests
+  - Basic functionality with mocked API
+  - Empty field handling
+  - Custom year ranges
+  - Drift direction calculation
+
+- **TestAuthorClustering**: 4 tests
+  - Author cluster identification
+  - Empty field handling
+  - max_authors limit respect
+  - Cluster structure validation
+
+- **TestCitationCartography**: 4 tests
+  - Citation graph building
+  - Missing paper handling
+  - Anomaly detection
+  - Node/edge structure validation
+
+### test_gap_tools_ai.py
+- **TestCapabilityMapper**: 4 tests
+  - Capability mapping across categories
+  - Custom category selection
+  - Score range validation (0-10)
+  - Strength/weakness detection
+
+- **TestMemorizationScanner**: 4 tests
+  - Memorization detection
+  - Verbatim match detection
+  - Rate range validation (0-100%)
+  - Example structure validation
+
+- **TestTrainingContamination**: 5 tests
+  - Dataset contamination detection
+  - Unknown dataset handling
+  - Rate range validation
+  - Evidence structure validation
+  - Verbatim passage detection
+
+---
+
+## Key Implementation Patterns
+
+### Error Handling:
+- Try-except blocks around HTTP requests
+- Graceful degradation when APIs unavailable
+- Logging at DEBUG level for troubleshooting
+- Meaningful error messages in return dicts
+
+### Async Operations:
+- All HTTP operations use httpx.AsyncClient
+- Timeout handling (15-30 seconds per request)
+- Proper event loop management (asyncio.run with fallback)
+
+### Data Structures:
+- Comprehensive return dictionaries with metadata
+- Immutable data (no in-place modifications)
+- Type hints on all function signatures
+- Pydantic models for input validation
+
+### Performance Considerations:
+- Configurable limits (max_authors, test_count, max_chars)
+- Efficient string operations (set operations for Jaccard distance)
+- Batch processing support
+- Request timeout handling
+
+---
+
+## Files Created/Modified
+
+Created:
+- /Users/aadel/projects/loom/src/loom/tools/gap_tools_academic.py (280+ lines)
+- /Users/aadel/projects/loom/src/loom/tools/gap_tools_ai.py (380+ lines)
+- /Users/aadel/projects/loom/tests/test_tools/test_gap_tools_academic.py (250+ lines)
+- /Users/aadel/projects/loom/tests/test_tools/test_gap_tools_ai.py (280+ lines)
+
+Modified:
+- /Users/aadel/projects/loom/src/loom/params.py (added 120+ lines for 6 parameter models)
+- /Users/aadel/projects/loom/src/loom/server.py (added imports + 8 tool registrations)
+
+Total: 6 tools, 6 parameter models, 21 test cases
