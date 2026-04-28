@@ -2006,3 +2006,96 @@ class SearchDiscrepancyParams(BaseModel):
         if not v or len(v) > 200:
             raise ValueError("query must be 1-200 characters")
         return v
+
+class ModelComparatorParams(BaseModel):
+    """Parameters for research_model_comparator tool."""
+
+    prompt: str
+    endpoints: list[str]
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("prompt")
+    @classmethod
+    def validate_prompt(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("prompt must be non-empty")
+        if len(v) > 2000:
+            raise ValueError("prompt max 2000 characters")
+        return v
+
+    @field_validator("endpoints")
+    @classmethod
+    def validate_endpoints(cls, v: list[str]) -> list[str]:
+        if not v or len(v) < 2:
+            raise ValueError("endpoints must have at least 2 items")
+        if len(v) > 10:
+            raise ValueError("endpoints max 10 items")
+        return [validate_url(url) for url in v]
+
+
+class DataPoisoningParams(BaseModel):
+    """Parameters for research_data_poisoning tool."""
+
+    target_url: str
+    canary_phrases: list[str] | None = None
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("target_url", mode="before")
+    @classmethod
+    def validate_url_field(cls, v: str) -> str:
+        return validate_url(v)
+
+    @field_validator("canary_phrases")
+    @classmethod
+    def validate_canaries(cls, v: list[str] | None) -> list[str] | None:
+        if v is not None:
+            if len(v) > 50:
+                raise ValueError("canary_phrases max 50 items")
+            for phrase in v:
+                if not phrase or len(phrase) > 500:
+                    raise ValueError("each phrase must be 1-500 characters")
+        return v
+
+
+class WikiEventCorrelatorParams(BaseModel):
+    """Parameters for research_wiki_event_correlator tool."""
+
+    page_title: str
+    days_back: int = 30
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("page_title")
+    @classmethod
+    def validate_page_title(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("page_title must be non-empty")
+        if len(v) > 200:
+            raise ValueError("page_title max 200 characters")
+        return v
+
+    @field_validator("days_back")
+    @classmethod
+    def validate_days_back(cls, v: int) -> int:
+        if v < 1 or v > 365:
+            raise ValueError("days_back must be 1-365")
+        return v
+
+
+class FOIATrackerParams(BaseModel):
+    """Parameters for research_foia_tracker tool."""
+
+    query: str
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("query")
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("query must be non-empty")
+        if len(v) > 100:
+            raise ValueError("query max 100 characters")
+        return v
