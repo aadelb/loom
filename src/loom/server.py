@@ -32,6 +32,7 @@ from loom.sessions import (
 
 # Import tool modules to register their functions
 from loom.tools import (
+    access_tools,
     academic_integrity,
     ai_safety,
     ai_safety_extended,
@@ -54,11 +55,15 @@ from loom.tools import (
     fact_checker,
     fetch,
     gap_tools_infra,
+    gap_tools_advanced,
+    gap_tools_academic,
+    gap_tools_ai,
     github,
     hcs10_academic,
     identity_resolve,
     infra_analysis,
     infra_correlator,
+    infowar_tools,
     invisible_web,
     job_signals,
     js_intel,
@@ -364,6 +369,19 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(gap_tools_infra.research_github_secrets, "search"))
     mcp.tool()(_wrap_tool(gap_tools_infra.research_whois_correlator, "fetch"))
     mcp.tool()(_wrap_tool(gap_tools_infra.research_output_consistency, "fetch"))
+    mcp.tool()(_wrap_tool(gap_tools_advanced.research_talent_migration, "fetch"))
+    mcp.tool()(_wrap_tool(gap_tools_advanced.research_funding_pipeline, "search"))
+    mcp.tool()(_wrap_tool(gap_tools_advanced.research_jailbreak_library))
+    mcp.tool()(_wrap_tool(gap_tools_advanced.research_patent_embargo, "fetch"))
+    # Academic research intelligence tools
+    mcp.tool()(_wrap_tool(gap_tools_academic.research_ideological_drift))
+    mcp.tool()(_wrap_tool(gap_tools_academic.research_author_clustering))
+    mcp.tool()(_wrap_tool(gap_tools_academic.research_citation_cartography))
+
+    # AI model intelligence tools
+    mcp.tool()(_wrap_tool(gap_tools_ai.research_capability_mapper, "fetch"))
+    mcp.tool()(_wrap_tool(gap_tools_ai.research_memorization_scanner, "fetch"))
+    mcp.tool()(_wrap_tool(gap_tools_ai.research_training_contamination, "fetch"))
     mcp.tool()(_wrap_tool(infra_analysis.research_registry_graveyard, "fetch"))
     mcp.tool()(_wrap_tool(infra_analysis.research_subdomain_temporal, "fetch"))
     mcp.tool()(_wrap_tool(infra_analysis.research_commit_analyzer, "fetch"))
@@ -402,8 +420,21 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(domain_intel.research_dns_lookup, "fetch"))
     mcp.tool()(_wrap_tool(domain_intel.research_nmap_scan, "fetch"))
 
+    # Access and content authenticity tools (5 tools for legal monitoring, open access, and deepfake detection)
+    mcp.tool()(_wrap_tool(access_tools.research_legal_takedown, "fetch"))
+    mcp.tool()(_wrap_tool(access_tools.research_open_access))
+    mcp.tool()(_wrap_tool(access_tools.research_content_authenticity, "fetch"))
+    mcp.tool()(_wrap_tool(access_tools.research_credential_monitor, "fetch"))
+    mcp.tool()(_wrap_tool(access_tools.research_deepfake_checker, "fetch"))
     # Identity resolution tool
     mcp.tool()(_wrap_tool(identity_resolve.research_identity_resolve, "fetch"))
+
+    # Information warfare tools (5 tools for narrative tracking, bot detection, censorship)
+    mcp.tool()(_wrap_tool(infowar_tools.research_narrative_tracker, "search"))
+    mcp.tool()(_wrap_tool(infowar_tools.research_bot_detector, "search"))
+    mcp.tool()(_wrap_tool(infowar_tools.research_censorship_detector, "fetch"))
+    mcp.tool()(_wrap_tool(infowar_tools.research_deleted_social, "fetch"))
+    mcp.tool()(_wrap_tool(infowar_tools.research_robots_archaeology, "fetch"))
 
     # Job market intelligence tools
     mcp.tool()(_wrap_tool(job_signals.research_funding_signal, "search"))

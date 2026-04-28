@@ -108,7 +108,7 @@ class TestCheckCloudResource:
         """Network timeout returns error."""
         async with httpx.AsyncClient() as client:
             with patch.object(client, "head", new_callable=AsyncMock) as mock_head:
-                mock_head.side_effect = httpx.TimeoutException()
+                mock_head.side_effect = Exception("Timeout")
                 result = await _check_cloud_resource(client, "https://example.s3.amazonaws.com")
 
         assert result["status"] is None
@@ -254,7 +254,7 @@ class TestGetRdapData:
         """RDAP timeout returns empty dict."""
         async with httpx.AsyncClient() as client:
             with patch.object(client, "get", new_callable=AsyncMock) as mock_get:
-                mock_get.side_effect = httpx.TimeoutException()
+                mock_get.side_effect = Exception("Timeout")
                 result = await _get_rdap_data(client, "example.com")
 
         assert result == {}
@@ -358,7 +358,7 @@ class TestQueryLlmEndpoint:
         """Timeout returns empty string."""
         async with httpx.AsyncClient() as client:
             with patch.object(client, "post", new_callable=AsyncMock) as mock_post:
-                mock_post.side_effect = httpx.TimeoutException()
+                mock_post.side_effect = Exception("Timeout")
                 result = await _query_llm_endpoint(
                     client, "https://api.example.com/chat", "test prompt"
                 )

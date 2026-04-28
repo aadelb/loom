@@ -1924,3 +1924,188 @@ class TrainingContaminationParams(BaseModel):
         if not v or len(v) > 50:
             raise ValueError("dataset_name must be 1-50 characters")
         return v
+
+
+class CloudEnumParams(BaseModel):
+    """Parameters for research_cloud_enum tool."""
+
+    domain: str
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("domain")
+    @classmethod
+    def validate_domain(cls, v: str) -> str:
+        v = v.strip().lower()
+        if not v or len(v) > 255:
+            raise ValueError("domain must be 1-255 characters")
+        if not re.match(r"^[a-z0-9.-]+$", v):
+            raise ValueError("domain contains invalid characters")
+        return v
+
+
+class GithubSecretsParams(BaseModel):
+    """Parameters for research_github_secrets tool."""
+
+    query: str
+    max_results: int = 20
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("query")
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        v = v.strip().lower()
+        if not v or len(v) > 100:
+            raise ValueError("query must be 1-100 characters")
+        if not re.match(r"^[a-z0-9\-_.]+$", v):
+            raise ValueError("query contains invalid characters")
+        return v
+
+    @field_validator("max_results")
+    @classmethod
+    def validate_max_results(cls, v: int) -> int:
+        if v < 1 or v > 100:
+            raise ValueError("max_results must be 1-100")
+        return v
+
+
+class WhoisCorrelatorParams(BaseModel):
+    """Parameters for research_whois_correlator tool."""
+
+    domain: str
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("domain")
+    @classmethod
+    def validate_domain(cls, v: str) -> str:
+        v = v.strip().lower()
+        if not v or len(v) > 255:
+            raise ValueError("domain must be 1-255 characters")
+        if not re.match(r"^[a-z0-9.-]+$", v):
+            raise ValueError("domain contains invalid characters")
+        return v
+
+
+class OutputConsistencyParams(BaseModel):
+    """Parameters for research_output_consistency tool."""
+
+    target_url: str
+    prompt: str
+    runs: int = 5
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("target_url", mode="before")
+    @classmethod
+    def validate_target_url(cls, v: str) -> str:
+        v = v.strip()
+        if not v or len(v) > 500:
+            raise ValueError("target_url must be 1-500 characters")
+        # Basic URL format check (must start with http:// or https://)
+        if not v.startswith(("http://", "https://")):
+            raise ValueError("target_url must start with http:// or https://")
+        return v
+
+    @field_validator("prompt")
+    @classmethod
+    def validate_prompt(cls, v: str) -> str:
+        if not v or len(v) > 5000:
+            raise ValueError("prompt must be 1-5000 characters")
+        return v
+
+    @field_validator("runs")
+    @classmethod
+    def validate_runs(cls, v: int) -> int:
+        if v < 1 or v > 20:
+            raise ValueError("runs must be 1-20")
+        return v
+
+class LegalTakedownParams(BaseModel):
+    """Parameters for research_legal_takedown tool."""
+
+    domain: str
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("domain")
+    @classmethod
+    def validate_domain(cls, v: str) -> str:
+        v = v.strip().lower()
+        if not re.match(r"^[a-z0-9]([a-z0-9-]*\.)+[a-z]{2,}$", v):
+            raise ValueError("domain format invalid")
+        return v
+
+
+class OpenAccessParams(BaseModel):
+    """Parameters for research_open_access tool."""
+
+    doi: str = ""
+    title: str = ""
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("doi")
+    @classmethod
+    def validate_doi(cls, v: str) -> str:
+        v = v.strip()
+        if v and not re.match(r"^10\.\d+/", v):
+            raise ValueError("DOI must start with 10.")
+        return v
+
+    @field_validator("title")
+    @classmethod
+    def validate_title(cls, v: str) -> str:
+        v = v.strip()
+        if len(v) > 500:
+            raise ValueError("title max 500 characters")
+        return v
+
+
+class ContentAuthenticityParams(BaseModel):
+    """Parameters for research_content_authenticity tool."""
+
+    url: str
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def validate_url_field(cls, v: str) -> str:
+        return validate_url(v)
+
+
+class CredentialMonitorParams(BaseModel):
+    """Parameters for research_credential_monitor tool."""
+
+    target: str
+    target_type: Literal["email", "username"] = "email"
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("target")
+    @classmethod
+    def validate_target(cls, v: str) -> str:
+        v = v.strip().lower()
+        if not v or len(v) > 255:
+            raise ValueError("target must be 1-255 characters")
+        return v
+
+
+class DeepfakeCheckerParams(BaseModel):
+    """Parameters for research_deepfake_checker tool."""
+
+    image_url: str
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("image_url", mode="before")
+    @classmethod
+    def validate_url_field(cls, v: str) -> str:
+        url = validate_url(v)
+        # Allow common image extensions
+        allowed_exts = (".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".tiff")
+        if not url.lower().endswith(allowed_exts):
+            raise ValueError("image_url must point to an image file")
+        return url
