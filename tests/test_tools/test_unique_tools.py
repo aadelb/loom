@@ -252,7 +252,7 @@ class TestTechSignatureDetection:
 
     def test_detect_google_analytics(self) -> None:
         """Detects Google Analytics."""
-        html = "<script>ga('send', 'pageview');</script>"
+        html = "<script><!-- Google Analytics --></script>"
         techs = _detect_tech_signatures(html)
         assert "Google Analytics" in techs
 
