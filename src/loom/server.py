@@ -32,8 +32,8 @@ from loom.sessions import (
 
 # Import tool modules to register their functions
 from loom.tools import (
-    access_tools,
     academic_integrity,
+    access_tools,
     ai_safety,
     ai_safety_extended,
     bias_lens,
@@ -54,16 +54,16 @@ from loom.tools import (
     domain_intel,
     fact_checker,
     fetch,
-    gap_tools_infra,
-    gap_tools_advanced,
     gap_tools_academic,
+    gap_tools_advanced,
     gap_tools_ai,
+    gap_tools_infra,
     github,
     hcs10_academic,
     identity_resolve,
+    infowar_tools,
     infra_analysis,
     infra_correlator,
-    infowar_tools,
     invisible_web,
     job_signals,
     js_intel,
@@ -74,10 +74,10 @@ from loom.tools import (
     multi_search,
     onion_discover,
     osint_extended,
-    passive_recon,
     p3_tools,
-    prompt_reframe,
+    passive_recon,
     pdf_extract,
+    prompt_reframe,
     psycholinguistic,
     realtime_monitor,
     report_generator,
@@ -94,10 +94,10 @@ from loom.tools import (
     stylometry,
     supply_chain_intel,
     synth_echo,
-    unique_tools,
-    threat_profile,
     threat_intel,
+    threat_profile,
     trend_predictor,
+    unique_tools,
 )
 from loom.tracing import install_tracing, new_request_id
 
@@ -838,9 +838,15 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(prompt_reframe.research_prompt_reframe))
     mcp.tool()(_wrap_tool(prompt_reframe.research_auto_reframe, "llm"))
     mcp.tool()(_wrap_tool(prompt_reframe.research_refusal_detector))
+    mcp.tool()(_wrap_tool(prompt_reframe.research_stack_reframe))
+    mcp.tool()(_wrap_tool(prompt_reframe.research_crescendo_chain))
+    mcp.tool()(_wrap_tool(prompt_reframe.research_model_vulnerability_profile))
+    mcp.tool()(_wrap_tool(prompt_reframe.research_format_smuggle))
+    mcp.tool()(_wrap_tool(prompt_reframe.research_fingerprint_model))
+    mcp.tool()(_wrap_tool(prompt_reframe.research_adaptive_reframe))
 
     # Multi-LLM query (ask all available providers simultaneously)
-    from loom.tools import multi_llm, ask_all_models
+    from loom.tools import ask_all_models, multi_llm
     mcp.tool()(_wrap_tool(multi_llm.research_ask_all_llms, "llm"))
     mcp.tool()(_wrap_tool(ask_all_models.research_ask_all_models, "llm"))
 

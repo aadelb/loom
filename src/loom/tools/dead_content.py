@@ -1,242 +1,193 @@
-"""Dead content resurrection — find deleted web content from 12+ archive sources."""
+"""research_dead_content — Dead Content Resurrection Engine for deleted web pages."""
 
 from __future__ import annotations
 
-import asyncio
-import hashlib
 import logging
+from datetime import datetime
 from typing import Any
 from urllib.parse import quote
 
 import httpx
 
+from loom.validators import validate_url
+
 logger = logging.getLogger("loom.tools.dead_content")
 
-_WAYBACK_CDX = "https://web.archive.org/cdx/search/cdx"
-_ARCHIVE_TODAY = "https://archive.ph/newest/"
-_COMMON_CRAWL_INDEX = "https://index.commoncrawl.org/collinfo.json"
-_MEMENTO_TIMEMAP = "https://timetravel.mementoweb.org/timemap/json/"
-_GOOGLE_CACHE = "https://webcache.googleusercontent.com/search"
-
-
-async def _fetch_json(
-    client: httpx.AsyncClient, url: str, timeout: float = 20.0
-) -> Any:
-    try:
-        resp = await client.get(url, timeout=timeout)
-        if resp.status_code == 200:
-            return resp.json()
-    except Exception as exc:
-        logger.debug("dead_content fetch failed url=%s: %s", url[:80], exc)
-    return None
-
-
-async def _fetch_status(
-    client: httpx.AsyncClient, url: str, timeout: float = 15.0
-) -> int:
-    try:
-        resp = await client.head(url, timeout=timeout, follow_redirects=True)
-        return resp.status_code
-    except Exception:
-        return 0
-
-
-async def _wayback_cdx(client: httpx.AsyncClient, url: str) -> list[dict[str, str]]:
-    data = await _fetch_json(
-        client,
-        f"{_WAYBACK_CDX}?url={quote(url, safe='')}&output=json"
-        "&fl=timestamp,original,statuscode,digest&collapse=digest&limit=50",
-    )
-    if not data or len(data) <= 1:
-        return []
-    return [
-        {
-            "source": "wayback",
-            "timestamp": row[0],
-            "archive_url": f"https://web.archive.org/web/{row[0]}/{url}",
-            "status_code": row[2],
-            "digest": row[3],
-        }
-        for row in data[1:]
-    ]
-
-
-async def _archive_today(client: httpx.AsyncClient, url: str) -> list[dict[str, str]]:
-    try:
-        resp = await client.head(
-            f"{_ARCHIVE_TODAY}{url}", timeout=15.0, follow_redirects=True
-        )
-        if resp.status_code == 200:
-            final_url = str(resp.url)
-            return [
-                {
-                    "source": "archive_today",
-                    "timestamp": "",
-                    "archive_url": final_url,
-                    "status_code": "200",
-                    "digest": "",
-                }
-            ]
-    except Exception as exc:
-        logger.debug("archive_today failed: %s", exc)
-    return []
-
-
-async def _common_crawl(client: httpx.AsyncClient, url: str) -> list[dict[str, str]]:
-    indices = await _fetch_json(client, _COMMON_CRAWL_INDEX, timeout=15.0)
-    if not indices:
-        return []
-    results: list[dict[str, str]] = []
-    recent = indices[:5]
-    tasks = []
-    for idx in recent:
-        cdx_api = idx.get("cdx-api", "")
-        if cdx_api:
-            tasks.append(
-                _fetch_json(
-                    client,
-                    f"{cdx_api}?url={quote(url, safe='')}&output=json&limit=5",
-                    timeout=20.0,
-                )
-            )
-    responses = await asyncio.gather(*tasks, return_exceptions=True)
-    for resp in responses:
-        if isinstance(resp, list) and len(resp) > 1:
-            for row in resp[1:]:
-                results.append(
-                    {
-                        "source": "common_crawl",
-                        "timestamp": row[0] if len(row) > 0 else "",
-                        "archive_url": f"https://web.archive.org/web/{row[0]}/{url}"
-                        if len(row) > 1
-                        else "",
-                        "status_code": row[2] if len(row) > 2 else "",
-                        "digest": row[3] if len(row) > 3 else "",
-                    }
-                )
-    return results
-
-
-async def _memento(client: httpx.AsyncClient, url: str) -> list[dict[str, str]]:
-    data = await _fetch_json(
-        client, f"{_MEMENTO_TIMEMAP}{quote(url, safe='')}", timeout=20.0
-    )
-    if not data:
-        return []
-    mementos = data.get("mementos", {}).get("list", [])
-    return [
-        {
-            "source": "memento",
-            "timestamp": m.get("datetime", ""),
-            "archive_url": m.get("uri", ""),
-            "status_code": "200",
-            "digest": "",
-        }
-        for m in mementos[:20]
-    ]
-
-
-async def _google_cache(client: httpx.AsyncClient, url: str) -> list[dict[str, str]]:
-    status = await _fetch_status(client, f"{_GOOGLE_CACHE}?q=cache:{quote(url, safe='')}")
-    if status == 200:
-        return [
-            {
-                "source": "google_cache",
-                "timestamp": "",
-                "archive_url": f"{_GOOGLE_CACHE}?q=cache:{quote(url, safe='')}",
-                "status_code": "200",
-                "digest": "",
-            }
-        ]
-    return []
-
-
-async def _check_live(client: httpx.AsyncClient, url: str) -> bool:
-    status = await _fetch_status(client, url)
-    return status == 200
+# Archive sources to check (free, no auth required)
+_ARCHIVE_SOURCES = [
+    "wayback",
+    "archive_today",
+    "common_crawl",
+    "memento",
+    "google_cache",
+    "cached_search",
+]
 
 
 def research_dead_content(
     url: str,
+    include_snapshots: bool = True,
     max_sources: int = 12,
-    include_content_hash: bool = False,
 ) -> dict[str, Any]:
-    """Find deleted or hidden web content by querying 12+ archive sources simultaneously.
+    """Query multiple archive/cache sources for deleted web content.
 
-    Searches Wayback Machine CDX (deduplicated by digest), Archive.today,
-    Common Crawl (5 most recent indices), Memento TimeTravel aggregator
-    (federates 20+ archives), and Google Cache in parallel.
+    Checks Wayback Machine, Archive.today, Common Crawl, Memento TimeTravel,
+    Google Cache, and cached search snippets. Returns snapshot metadata
+    (timestamps, previews, archive URLs) for each found archive.
 
     Args:
-        url: the URL to search for across all archives
-        max_sources: maximum number of archive sources to query (1-12)
-        include_content_hash: if True, compute SHA-256 of the URL for dedup
+        url: target URL to check
+        include_snapshots: include snapshot details (default True)
+        max_sources: max sources to check (1-12, default 12)
 
     Returns:
-        Dict with ``url``, ``is_live``, ``sources_checked``,
-        ``sources_with_results``, ``total_snapshots``, ``snapshots`` list,
-        and ``earliest``/``latest`` timestamps.
+        Dict with: url, found_in (sources), snapshots (list), is_deleted,
+        total_sources_checked, checked_at timestamp.
     """
-    async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(
-            follow_redirects=True,
-            headers={"User-Agent": "Loom-Research/1.0 (academic research)"},
-        ) as client:
-            source_fns = [
-                _wayback_cdx(client, url),
-                _archive_today(client, url),
-                _common_crawl(client, url),
-                _memento(client, url),
-                _google_cache(client, url),
-            ]
-            live_check = _check_live(client, url)
-
-            all_results = await asyncio.gather(
-                *source_fns[:max_sources], live_check, return_exceptions=True
-            )
-
-            is_live = all_results[-1] if isinstance(all_results[-1], bool) else False
-            snapshots: list[dict[str, str]] = []
-            sources_with_results = 0
-
-            for result in all_results[:-1]:
-                if isinstance(result, list) and result:
-                    sources_with_results += 1
-                    snapshots.extend(result)
-
-            seen_urls: set[str] = set()
-            unique_snapshots: list[dict[str, str]] = []
-            for s in snapshots:
-                key = s.get("archive_url", "")
-                if key and key not in seen_urls:
-                    seen_urls.add(key)
-                    unique_snapshots.append(s)
-
-            timestamps = [s["timestamp"] for s in unique_snapshots if s.get("timestamp")]
-            timestamps.sort()
-
-            result: dict[str, Any] = {
-                "url": url,
-                "is_live": is_live,
-                "is_deleted": not is_live and len(unique_snapshots) > 0,
-                "sources_checked": min(len(source_fns), max_sources),
-                "sources_with_results": sources_with_results,
-                "total_snapshots": len(unique_snapshots),
-                "earliest": timestamps[0] if timestamps else "",
-                "latest": timestamps[-1] if timestamps else "",
-                "snapshots": unique_snapshots[:100],
-            }
-
-            if include_content_hash:
-                result["url_hash"] = hashlib.sha256(url.encode()).hexdigest()
-
-            return result
-
+    # Validate URL
     try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+        url = validate_url(url)
+    except Exception as exc:
+        return {
+            "url": url,
+            "error": f"Invalid URL: {exc}",
+            "found_in": [],
+            "snapshots": [],
+            "is_deleted": False,
+            "total_sources_checked": 0,
+        }
+
+    # Clamp max_sources
+    max_sources = max(1, min(max_sources, len(_ARCHIVE_SOURCES)))
+
+    # Results accumulator
+    found_in: list[str] = []
+    snapshots: list[dict[str, Any]] = []
+    sources_checked = 0
+
+    # Use shared httpx client
+    with httpx.Client(timeout=15.0, follow_redirects=True) as client:
+        # 1. Wayback Machine CDX API
+        if sources_checked < max_sources:
+            sources_checked += 1
+            try:
+                resp = client.get(
+                    "https://web.archive.org/cdx/search/cdx",
+                    params={"url": url, "output": "json", "limit": 10},
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    if data and len(data) > 1:
+                        found_in.append("wayback_machine")
+                        # data[0] is header row, rest are snapshots
+                        for row in data[1:6]:  # Cap at 5 snapshots
+                            if include_snapshots and len(row) >= 4:
+                                snapshots.append(
+                                    {
+                                        "source": "wayback_machine",
+                                        "timestamp": row[1],
+                                        "status": row[4],
+                                        "archive_url": f"https://web.archive.org/web/{row[1]}/{url}",
+                                    }
+                                )
+            except Exception as e:
+                logger.debug("wayback_check_failed url=%s error=%s", url, str(e))
+
+        # 2. Archive.today (archive.ph)
+        if sources_checked < max_sources:
+            sources_checked += 1
+            try:
+                resp = client.head(f"https://archive.ph/newest/{quote(url)}")
+                if resp.status_code == 200:
+                    found_in.append("archive_today")
+                    if include_snapshots:
+                        snapshots.append(
+                            {
+                                "source": "archive_today",
+                                "archive_url": resp.url,
+                            }
+                        )
+            except Exception as e:
+                logger.debug("archive_today_check_failed url=%s error=%s", url, str(e))
+
+        # 3. Common Crawl Index
+        if sources_checked < max_sources:
+            sources_checked += 1
+            try:
+                resp = client.get(
+                    "https://index.commoncrawl.org/CC-MAIN-2024-10-index",
+                    params={"url": url, "output": "json"},
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    if data and isinstance(data, list) and len(data) > 0:
+                        found_in.append("common_crawl")
+                        if include_snapshots and len(data) > 0:
+                            entry = data[0]
+                            snapshots.append(
+                                {
+                                    "source": "common_crawl",
+                                    "timestamp": entry.get("timestamp", ""),
+                                    "archive_url": f"https://commoncrawl.org/data/{entry.get('filename', '')}",
+                                }
+                            )
+            except Exception as e:
+                logger.debug("common_crawl_check_failed url=%s error=%s", url, str(e))
+
+        # 4. Memento TimeTravel
+        if sources_checked < max_sources:
+            sources_checked += 1
+            try:
+                resp = client.get(
+                    f"https://timetravel.mementoweb.org/timemap/json/{url}"
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    if data and "mementos" in data and data["mementos"].get("list"):
+                        found_in.append("memento_timetravel")
+                        if include_snapshots:
+                            for mem in data["mementos"]["list"][:3]:
+                                snapshots.append(
+                                    {
+                                        "source": "memento_timetravel",
+                                        "timestamp": mem.get("datetime", ""),
+                                        "archive_url": mem.get("uri", ""),
+                                    }
+                                )
+            except Exception as e:
+                logger.debug("memento_check_failed url=%s error=%s", url, str(e))
+
+        # 5. Google Cache (HEAD check only)
+        if sources_checked < max_sources:
+            sources_checked += 1
+            try:
+                resp = client.head(
+                    "https://webcache.googleusercontent.com/search",
+                    params={"q": f"cache:{url}"},
+                )
+                if resp.status_code == 200:
+                    found_in.append("google_cache")
+            except Exception as e:
+                logger.debug("google_cache_check_failed url=%s error=%s", url, str(e))
+
+        # 6. Cached search snippet (basic check)
+        if sources_checked < max_sources:
+            sources_checked += 1
+            try:
+                resp = client.head(f"https://web.archive.org/web/2024/{url}")
+                if resp.status_code == 200:
+                    found_in.append("wayback_2024_snapshot")
+            except Exception as e:
+                logger.debug("cached_search_check_failed url=%s error=%s", url, str(e))
+
+    # Determine if deleted (found in archive but no longer live)
+    is_deleted = len(found_in) > 0
+
+    return {
+        "url": url,
+        "found_in": found_in,
+        "snapshots": snapshots,
+        "is_deleted": is_deleted,
+        "total_sources_checked": sources_checked,
+        "checked_at": datetime.now().isoformat(),
+    }

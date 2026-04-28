@@ -1,0 +1,41 @@
+======================================================================
+MEGA QUERY: ALL MODELS x 2 PROMPTS (reframing + loom improvement)
+======================================================================
+
+  [groq] Llama 4 Scout - Prompt 1 (reframing)... OK (5863 chars)
+  [groq] Llama 4 Scout - Prompt 2 (loom)... OK (8240 chars)
+
+  [groq] Qwen3 32B - Prompt 1 (reframing)... OK (12067 chars)
+  [groq] Qwen3 32B - Prompt 2 (loom)... EMPTY/SHORT (0 chars)
+
+  [groq] GPT-OSS 120B - Prompt 1 (reframing)... EMPTY/SHORT (38 chars)
+  [groq] GPT-OSS 120B - Prompt 2 (loom)... EMPTY/SHORT (0 chars)
+
+  [groq] Llama 3.3 70B - Prompt 1 (reframing)... EMPTY/SHORT (0 chars)
+  [groq] Llama 3.3 70B - Prompt 2 (loom)... EMPTY/SHORT (0 chars)
+
+  [nvidia] Qwen3 Coder 480B - Prompt 1 (reframing)... OK (8568 chars)
+  [nvidia] Qwen3 Coder 480B - Prompt 2 (loom)... ERROR: The read operation timed out
+
+  [nvidia] Qwen 3.5 397B - Prompt 1 (reframing)... ERROR: The read operation timed out
+  [nvidia] Qwen 3.5 397B - Prompt 2 (loom)... ERROR: The read operation timed out
+
+  [nvidia] Qwen 3.5 122B - Prompt 1 (reframing)... OK (4682 chars)
+  [nvidia] Qwen 3.5 122B - Prompt 2 (loom)... OK (14231 chars)
+
+  [nvidia] Qwen3 Next 80B - Prompt 1 (reframing)... OK (21075 chars)
+  [nvidia] Qwen3 Next 80B - Prompt 2 (loom)... OK (20293 chars)
+
+  [nvidia] Mistral Large 3 - Prompt 1 (reframing)... EMPTY/SHORT (0 chars)
+  [nvidia] Mistral Large 3 - Prompt 2 (loom)... EMPTY/SHORT (0 chars)
+
+  [nvidia] Nemotron Super 49B - Prompt 1 (reframing)... OK (5237 chars)
+  [nvidia] Nemotron Super 49B - Prompt 2 (loom)... OK (9136 chars)
+
+  [nvidia] Llama 3.1 405B - Prompt 1 (reframing)... ERROR: The read operation timed out
+  [nvidia] Llama 3.1 405B - Prompt 2 (loom)... ERROR: The read operation timed out
+
+  [deepseek] DeepSeek v4 Chat - Prompt 1 (reframing)... OK (1465 chars)
+  [deepseek] DeepSeek v4 Chat - Prompt 2 (loom)... OK (11891 chars)
+
+  [deepseek] DeepSeek Reasoner - Prompt 1 (reframing)... 

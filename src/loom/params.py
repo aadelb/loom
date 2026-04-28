@@ -1011,20 +1011,28 @@ class DeadContentParams(BaseModel):
 class InvisibleWebParams(BaseModel):
     """Parameters for research_invisible_web tool."""
 
-    query: str
-    include_databases: bool = True
-    include_academic: bool = True
-    include_darkweb: bool = False
+    domain: str
+    check_robots: bool = True
+    check_sitemap: bool = True
+    check_hidden_paths: bool = True
+    check_js_endpoints: bool = True
+    max_paths: int = 50
 
     model_config = {"extra": "forbid", "strict": True}
 
-    @field_validator("query")
+    @field_validator("domain")
     @classmethod
-    def validate_query(cls, v: str) -> str:
-        if not v or not v.strip():
-            raise ValueError("query must be non-empty")
-        if len(v) > 500:
-            raise ValueError("query max 500 characters")
+    def validate_domain(cls, v: str) -> str:
+        v = v.strip().lower()
+        if not re.match(r"^[a-z0-9]([a-z0-9-]*\.)+[a-z]{2,}$", v):
+            raise ValueError("domain format invalid")
+        return v
+
+    @field_validator("max_paths")
+    @classmethod
+    def validate_max_paths(cls, v: int) -> int:
+        if v < 1 or v > 100:
+            raise ValueError("max_paths must be 1-100")
         return v
 
 
@@ -1032,9 +1040,8 @@ class JSIntelParams(BaseModel):
     """Parameters for research_js_intel tool."""
 
     url: str
-    extract_apis: bool = True
-    extract_endpoints: bool = True
-    extract_secrets: bool = True
+    max_js_files: int = 20
+    check_source_maps: bool = True
 
     model_config = {"extra": "forbid", "strict": True}
 
@@ -1042,6 +1049,13 @@ class JSIntelParams(BaseModel):
     @classmethod
     def validate_url_field(cls, v: str) -> str:
         return validate_url(v)
+
+    @field_validator("max_js_files")
+    @classmethod
+    def validate_max_js_files(cls, v: int) -> int:
+        if v < 1 or v > 100:
+            raise ValueError("max_js_files must be 1-100")
+        return v
 
 
 class DarkForumParams(BaseModel):
@@ -2093,4 +2107,26 @@ class FOIATrackerParams(BaseModel):
             raise ValueError("query must be non-empty")
         if len(v) > 100:
             raise ValueError("query max 100 characters")
+        return v
+
+
+class DeadContentParams(BaseModel):
+    """Parameters for research_dead_content tool."""
+
+    url: str
+    include_snapshots: bool = True
+    max_sources: int = 12
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def validate_url_field(cls, v: str) -> str:
+        return validate_url(v)
+
+    @field_validator("max_sources")
+    @classmethod
+    def validate_max_sources(cls, v: int) -> int:
+        if v < 1 or v > 12:
+            raise ValueError("max_sources must be 1-12")
         return v

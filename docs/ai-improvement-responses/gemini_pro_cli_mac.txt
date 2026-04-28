@@ -1,0 +1,1 @@
+MCP issues detected. Run /mcp list for status.I have documented the 8 prompt reframing strategies in `docs/prompt-reframing-strategies.md` as requested.
