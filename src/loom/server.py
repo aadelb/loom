@@ -75,6 +75,7 @@ from loom.tools import (
     onion_discover,
     osint_extended,
     passive_recon,
+    p3_tools,
     pdf_extract,
     psycholinguistic,
     realtime_monitor,
@@ -818,6 +819,11 @@ def _register_tools(mcp: FastMCP) -> None:
         if hasattr(resume_intel_mod, "research_interview_prep"):
             mcp.tool()(_wrap_tool(resume_intel_mod.research_interview_prep, "llm"))
 
+    # P3 research tools (4 tools for model comparison, data poisoning detection, Wiki event correlation, and FOIA tracking) 
+    mcp.tool()(_wrap_tool(p3_tools.research_model_comparator, "fetch")) 
+    mcp.tool()(_wrap_tool(p3_tools.research_data_poisoning, "fetch")) 
+    mcp.tool()(_wrap_tool(p3_tools.research_wiki_event_correlator, "fetch")) 
+    mcp.tool()(_wrap_tool(p3_tools.research_foia_tracker, "search"))
 
 def _validate_environment() -> None:
     """Validate that required environment variables are configured.
