@@ -27,8 +27,11 @@ async def _get_tor_client() -> httpx.AsyncClient:
     """Get or create async HTTP client configured for Tor proxy."""
     global _tor_client
     if _tor_client is None:
+        from loom.config import CONFIG
+
+        proxy = CONFIG.get("TOR_SOCKS5_PROXY", "socks5h://127.0.0.1:9050")
         _tor_client = httpx.AsyncClient(
-            proxy="socks5h://127.0.0.1:9050",
+            proxy=proxy,
             timeout=10.0,
             limits=httpx.Limits(max_connections=5),
         )
@@ -38,14 +41,15 @@ async def _get_tor_client() -> httpx.AsyncClient:
 async def research_tor_status() -> dict[str, Any]:
     """Check Tor daemon status and get current exit node IP.
 
-    Attempts to connect to the Tor SOCKS5 proxy (127.0.0.1:9050) and
-    fetches the current exit node IP from check.torproject.org API.
+    Attempts to connect to the Tor SOCKS5 proxy (from TOR_SOCKS5_PROXY config,
+    default 127.0.0.1:9050) and fetches the current exit node IP from
+    check.torproject.org API.
 
     Returns:
         Dict with keys:
         - tor_running (bool): Tor SOCKS5 proxy is accessible
         - exit_ip (str): Current exit node IP address (empty if Tor not running)
-        - socks5_proxy (str): SOCKS5 proxy URL ("socks5h://127.0.0.1:9050")
+        - socks5_proxy (str): SOCKS5 proxy URL configured
         - error (str, optional): Error message if any step fails
 
     Examples:
@@ -53,7 +57,11 @@ async def research_tor_status() -> dict[str, Any]:
         >>> if status["tor_running"]:
         ...     print(f"Exit IP: {status['exit_ip']}")
     """
+    from loom.config import CONFIG
+
     logger.info("tor_status_check_start")
+
+    proxy = CONFIG.get("TOR_SOCKS5_PROXY", "socks5h://127.0.0.1:9050")
 
     try:
         client = await _get_tor_client()
@@ -68,7 +76,7 @@ async def research_tor_status() -> dict[str, Any]:
         result = {
             "tor_running": True,
             "exit_ip": exit_ip,
-            "socks5_proxy": "socks5h://127.0.0.1:9050",
+            "socks5_proxy": proxy,
         }
         logger.info("tor_status_check_success exit_ip=%s", exit_ip)
         return result
@@ -78,7 +86,7 @@ async def research_tor_status() -> dict[str, Any]:
         return {
             "tor_running": False,
             "exit_ip": "",
-            "socks5_proxy": "socks5h://127.0.0.1:9050",
+            "socks5_proxy": proxy,
             "error": "Tor SOCKS5 proxy not accessible (is Tor running?)",
         }
 
@@ -87,7 +95,7 @@ async def research_tor_status() -> dict[str, Any]:
         return {
             "tor_running": False,
             "exit_ip": "",
-            "socks5_proxy": "socks5h://127.0.0.1:9050",
+            "socks5_proxy": proxy,
             "error": "Timeout connecting to check.torproject.org",
         }
 
@@ -95,7 +103,7 @@ async def research_tor_status() -> dict[str, Any]:
         return {
             "tor_running": False,
             "exit_ip": "",
-            "socks5_proxy": "socks5h://127.0.0.1:9050",
+            "socks5_proxy": proxy,
             "error": "socksio not installed (pip install socksio) — required for SOCKS5 proxy",
         }
 
@@ -104,7 +112,7 @@ async def research_tor_status() -> dict[str, Any]:
         return {
             "tor_running": False,
             "exit_ip": "",
-            "socks5_proxy": "socks5h://127.0.0.1:9050",
+            "socks5_proxy": proxy,
             "error": "unexpected error",
         }
 

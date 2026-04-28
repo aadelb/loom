@@ -70,10 +70,18 @@ async def _classify_post(
 
         # Parse result
         if "classification" in result:
+            category = result.get("classification", {}).get("label", "other")
+            confidence = result.get("classification", {}).get("confidence", 0.5)
+
+            # Extract sentiment from result if available, else default to neutral
+            sentiment = result.get("classification", {}).get("sentiment", "neutral")
+            if not sentiment:
+                sentiment = "neutral"
+
             return {
-                "category": result.get("classification", {}).get("label", "other"),
-                "confidence": result.get("classification", {}).get("confidence", 0.5),
-                "sentiment": "neutral",  # Placeholder; sentiment analysis could be separate
+                "category": category,
+                "confidence": confidence,
+                "sentiment": sentiment,
             }
     except Exception as exc:
         logger.debug("forum_post_classification_failed: %s", exc)

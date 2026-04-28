@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import io
 import logging
+import os
 import subprocess
 import tempfile
 from typing import Any
@@ -194,6 +195,7 @@ def research_pdf_extract(
 
         # Fall back to pdftotext CLI
         if extracted_text is None:
+            tmp_path = None
             try:
                 with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
                     tmp.write(pdf_bytes)
@@ -246,6 +248,12 @@ def research_pdf_extract(
             except Exception as exc:
                 logger.exception("pdf_extraction_failed url=%s", url)
                 return {**output, "error": str(exc)}
+            finally:
+                if tmp_path and os.path.exists(tmp_path):
+                    try:
+                        os.unlink(tmp_path)
+                    except OSError:
+                        pass
 
         # Cap extracted text
         if len(extracted_text) > MAX_EXTRACTED_TEXT:

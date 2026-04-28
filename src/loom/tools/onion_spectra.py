@@ -10,6 +10,7 @@ import asyncio
 import logging
 from functools import partial
 from typing import Any
+from urllib.parse import urlparse
 
 logger = logging.getLogger("loom.tools.onion_spectra")
 
@@ -193,7 +194,9 @@ async def research_onion_spectra(
             "summary": "",
         }
 
-    if not validated_url.endswith(".onion"):
+    # Check hostname ends with .onion (proper hostname check)
+    parsed = urlparse(validated_url)
+    if not (parsed.hostname and parsed.hostname.endswith(".onion")):
         return {
             "url": url,
             "error": "URL must be a .onion address",

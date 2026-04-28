@@ -19,12 +19,12 @@ from loom.validators import validate_url
 logger = logging.getLogger("loom.tools.dead_drop_scanner")
 
 
-def _shingle_text(text: str, k: int = 5) -> set[str]:
+def _shingle_text(text: str, k: int = 10) -> set[str]:
     """Generate k-gram shingles from text.
 
     Args:
         text: input text to shingle
-        k: shingle size (5-char substrings by default)
+        k: shingle size (10-char substrings by default for better discrimination)
 
     Returns:
         Set of k-gram shingles as strings.
@@ -176,8 +176,8 @@ async def research_dead_drop_scanner(
             # Compute content hash
             content_hash = hashlib.sha256(content.encode()).hexdigest()[:16]
 
-            # Generate shingles
-            shingles = _shingle_text(content, k=5)
+            # Generate shingles (k=10 for better discrimination)
+            shingles = _shingle_text(content, k=10)
 
             # Store for reuse analysis
             content_by_url[url] = {

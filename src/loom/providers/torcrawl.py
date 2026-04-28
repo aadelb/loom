@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 import re
 from typing import Any
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 import httpx
 
@@ -55,8 +55,9 @@ def _extract_links(html: str, base_url: str) -> list[str]:
             # Resolve relative URLs
             try:
                 full_url = urljoin(base_url, url)
-                # Only include .onion URLs
-                if ".onion" in full_url:
+                # Only include .onion URLs (proper hostname check)
+                parsed = urlparse(full_url)
+                if parsed.hostname and parsed.hostname.endswith(".onion"):
                     links.append(full_url)
             except Exception:
                 continue

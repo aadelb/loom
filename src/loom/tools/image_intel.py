@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import subprocess
 import tempfile
 from typing import Any
@@ -538,18 +539,19 @@ def _ocr_blocking(image_data: bytes, language: str) -> dict[str, Any]:
         }
     finally:
         # Cleanup temp files
-        import os
-
         if temp_image and os.path.exists(temp_image):
             try:
                 os.unlink(temp_image)
             except Exception:
                 pass
-        if temp_output and os.path.exists(f"{temp_output}.txt"):
-            try:
-                os.unlink(f"{temp_output}.txt")
-            except Exception:
-                pass
+        if temp_output:
+            for ext in ['', '.txt']:
+                path = f"{temp_output}{ext}"
+                if os.path.exists(path):
+                    try:
+                        os.unlink(path)
+                    except OSError:
+                        pass
 
 
 def _ocr_pytesseract_blocking(image_data: bytes, language: str) -> dict[str, Any]:
