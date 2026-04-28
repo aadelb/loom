@@ -92,6 +92,7 @@ from loom.tools import (
     stylometry,
     supply_chain_intel,
     synth_echo,
+    unique_tools,
     threat_profile,
     threat_intel,
     trend_predictor,
@@ -506,6 +507,16 @@ def _register_tools(mcp: FastMCP) -> None:
     # Trend prediction and report generation tools
     mcp.tool()(_wrap_tool(trend_predictor.research_trend_predict, "search"))
     mcp.tool()(_wrap_tool(report_generator.research_generate_report, "search"))
+
+    # Unique research tools (8 tools for propaganda, credibility, cascades, etc.)
+    mcp.tool()(_wrap_tool(unique_tools.research_propaganda_detector))
+    mcp.tool()(_wrap_tool(unique_tools.research_source_credibility, "fetch"))
+    mcp.tool()(_wrap_tool(unique_tools.research_information_cascade, "search"))
+    mcp.tool()(_wrap_tool(unique_tools.research_web_time_machine, "fetch"))
+    mcp.tool()(_wrap_tool(unique_tools.research_influence_operation, "search"))
+    mcp.tool()(_wrap_tool(unique_tools.research_dark_web_bridge, "search"))
+    mcp.tool()(_wrap_tool(unique_tools.research_info_half_life, "fetch"))
+    mcp.tool()(_wrap_tool(unique_tools.research_search_discrepancy, "search"))
 
     # Session tools
     mcp.tool()(_wrap_tool(research_session_open))
