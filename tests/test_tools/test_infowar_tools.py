@@ -359,6 +359,7 @@ class TestDeletedSocialHelper:
         client = httpx.AsyncClient()
         with patch("loom.tools.infowar_tools._fetch_json") as mock_fetch:
             mock_fetch.return_value = [
+                ["timestamp", "original", "statuscode"],  # Header row
                 ["20260101000000", "https://example.com/robots.txt", "200"],
                 ["20260102000000", "https://example.com/robots.txt", "200"],
             ]
