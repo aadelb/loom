@@ -183,13 +183,6 @@ class MarkdownParams(BaseModel):
     def validate_url_field(cls, v: str) -> str:
         return validate_url(v)
 
-    @field_validator("max_chars")
-    @classmethod
-    def validate_max_chars(cls, v: int) -> int:
-        if v < 1000 or v > 500000:
-            raise ValueError("max_chars must be 1000-500000")
-        return v
-
     @field_validator("timeout")
     @classmethod
     def validate_timeout(cls, v: int | None) -> int | None:
