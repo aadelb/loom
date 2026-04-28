@@ -1,0 +1,393 @@
+================================================================================
+LOOM CREATIVE RESEARCH ANALYSIS (ROUNDS 7-9)
+Cross-Match Tool Ideas vs Implemented Tools
+================================================================================
+
+ANALYSIS SCOPE:
+- Source files: 25 creative research files from Rounds 7, 8, 9
+- Output from: DeepSeek, GPT-5, Gemini, Claude Opus, O1, O3 models
+- Focus: Dark research tools, threat intelligence, censorship research, info warfare
+- Target: Authorized EU AI Act Article 15 compliance testing
+
+================================================================================
+EXECUTIVE SUMMARY
+================================================================================
+
+Total Unique Tool Ideas Proposed: 67 ideas across R7-R9 files
+Total Unique Tool Concepts (deduped): 34 distinct research tools
+Currently Implemented: 24 (70%)
+Partially Implemented: 0 (0%)
+Truly NOT Implemented: 10 (30%)
+
+Note: "Partially implemented" means the tool exists but may not have all proposed
+features or integrations from the creative research rounds.
+
+================================================================================
+CATEGORY BREAKDOWN
+================================================================================
+
+1. DARK WEB & HIDDEN SERVICE TOOLS (7 tools)
+   ✓ research_onion_discover - Find .onion services via Ahmia, CT logs, dark.fail
+   ✓ research_dark_forum - Aggregate intelligence from dark forums
+   ✓ research_dark_market_monitor - Monitor dark web marketplaces
+   ✓ research_dead_content - Recover deleted web content
+   ✓ research_invisible_web - Search invisible web/academic databases
+   ✓ research_stego_detect - Detect steganography in public content
+   ✗ research_infrastructure_abuse - Detect abuse of cloud/CDN for malware hosting
+
+2. THREAT INTELLIGENCE & ACTOR PROFILING (7 tools)
+   ✓ research_threat_profile - Build threat actor profiles
+   ✓ research_ransomware_tracker - Track ransomware campaigns
+   ✓ research_phishing_mapper - Map phishing infrastructure
+   ✓ research_botnet_tracker - Monitor botnet C2 infrastructure
+   ✓ research_malware_intel - Gather malware hash intelligence
+   ✓ research_ioc_enrich - Enrich indicators of compromise
+   ✓ research_darkweb_mention - Monitor dark web mentions with sentiment
+
+3. INFRASTRUCTURE & PASSIVE RECONNAISSANCE (8 tools)
+   ✓ research_infra_correlator - Link hidden services to clearnet
+   ✓ research_metadata_forensics - EXIF/metadata extraction
+   ✓ research_commit_analyzer - Analyze GitHub commits
+   ✓ research_registry_graveyard - Find expired domains & NS takeovers
+   ✓ research_subdomain_temporal - Track subdomain history
+   ✓ research_cert_analyze - SSL certificate timeline
+   ✗ research_whois_correlator - WHOIS history correlation
+   ✗ research_http_fingerprinter - HTTP response fingerprinting
+   ✗ research_email_mapper - Email infrastructure mapping
+   ✗ research_tech_profiler - Deep technology stack profiling
+
+4. ARCHIVE & CONTENT RECOVERY (2 tools)
+   ✓ research_wayback - Deep archive recovery
+   ✓ research_dead_content - Recovery of deleted content
+
+5. CRYPTOCURRENCY TRACKING (1 tool)
+   ✓ research_crypto_trace - Trace crypto transactions on public blockchains
+
+6. DOMAIN & REPUTATION INTELLIGENCE (2 tools)
+   ✓ research_domain_reputation - Multi-source domain reputation
+   ✗ research_shodan_recon - Shodan-based passive reconnaissance
+
+7. DATA EXPOSURE & LEAK MONITORING (2 tools)
+   ✓ research_leak_scan - Leaked data detection from public sources
+   ✗ research_paste_monitor - Real-time paste site monitoring
+   ✗ research_github_secrets - GitHub secret scanner
+
+8. CLOUD & SUPPLY CHAIN (2 tools)
+   ✗ research_cloud_enum - Cloud resource enumeration
+   ✓ research_supply_chain_risk - Supply chain threat detection (partial)
+
+9. SOCIAL GRAPH & NETWORK ANALYSIS (1 tool)
+   ✓ research_social_graph - Social network mapping
+
+================================================================================
+DETAILED IMPLEMENTATION STATUS
+================================================================================
+
+FULLY IMPLEMENTED (24/34):
+
+1. research_wayback
+   File: src/loom/tools/enrich.py
+   Status: IMPLEMENTED
+   Features: Wayback Machine CDX queries, multiple archive sources
+
+2. research_onion_discover
+   File: src/loom/tools/onion_discover.py
+   Status: IMPLEMENTED
+   Features: Ahmia API, CT logs, dark.fail directory, onion discovery
+
+3. research_leak_scan
+   File: src/loom/tools/leak_scan.py
+   Status: IMPLEMENTED
+   Features: HIBP API, GitHub secrets, Pastebin, S3 enumeration, CT logs
+
+4. research_dark_forum
+   File: src/loom/tools/dark_forum.py
+   Status: IMPLEMENTED
+   Features: Ahmia forums, DarkSearch, IntelX, Reddit darknet, MISP feeds
+
+5. research_infra_correlator
+   File: src/loom/tools/infra_correlator.py
+   Status: IMPLEMENTED
+   Features: SSL certs, favicon hashing, HTTP headers, analytics IDs, TLS fingerprinting
+
+6. research_crypto_trace
+   File: src/loom/tools/crypto_trace.py
+   Status: IMPLEMENTED
+   Features: Blockchain.info, Etherscan, wallet clustering, exchange tagging
+
+7. research_stego_detect
+   File: src/loom/tools/stego_detect.py
+   Status: IMPLEMENTED
+   Features: LSB analysis, whitespace detection, homoglyphs, EXIF, PDF embedding, audio
+
+8. research_dark_market_monitor
+   File: src/loom/tools/threat_intel.py
+   Status: IMPLEMENTED
+   Features: Dark marketplace monitoring, listing tracking, vendor activity
+
+9. research_threat_profile
+   File: src/loom/tools/threat_profile.py
+   Status: IMPLEMENTED
+   Features: TTPs, infrastructure, malware analysis, victim mapping
+
+10. research_ransomware_tracker
+    File: src/loom/tools/threat_intel.py
+    Status: IMPLEMENTED
+    Features: MISP feeds, leak site monitoring, victim tracking, ransom demands
+
+11. research_phishing_mapper
+    File: src/loom/tools/threat_intel.py
+    Status: IMPLEMENTED
+    Features: Domain infrastructure, hosting providers, SSL issuer tracking
+
+12. research_botnet_tracker
+    File: src/loom/tools/threat_intel.py
+    Status: IMPLEMENTED
+    Features: C2 infrastructure, IP/port tracking, malware associations
+
+13. research_malware_intel
+    File: src/loom/tools/threat_intel.py
+    Status: IMPLEMENTED
+    Features: Hash verdicts, detection ratios, malware family classification
+
+14. research_domain_reputation
+    File: src/loom/tools/threat_intel.py
+    Status: IMPLEMENTED
+    Features: Composite scoring, blacklist status, risk factor analysis
+
+15. research_ioc_enrich
+    File: src/loom/tools/threat_intel.py
+    Status: IMPLEMENTED
+    Features: Reputation enrichment, actor attribution, MITRE ATT&CK mapping
+
+16. research_cert_analyze
+    File: src/loom/tools/cert_analyzer.py
+    Status: IMPLEMENTED
+    Features: SSL certificate timeline, issuance pattern analysis
+
+17. research_metadata_forensics
+    File: src/loom/tools/metadata_forensics.py
+    Status: IMPLEMENTED
+    Features: EXIF extraction, document metadata analysis
+
+18. research_registry_graveyard
+    File: src/loom/tools/infra_analysis.py
+    Status: IMPLEMENTED
+    Features: Expired domain detection, NS record analysis, takeover opportunities
+
+19. research_subdomain_temporal
+    File: src/loom/tools/infra_analysis.py
+    Status: IMPLEMENTED
+    Features: Historical subdomain enumeration, temporal pattern analysis
+
+20. research_commit_analyzer
+    File: src/loom/tools/infra_analysis.py
+    Status: IMPLEMENTED
+    Features: GitHub commit analysis, sensitive data detection
+
+21. research_passive_recon
+    File: src/loom/tools/passive_recon.py
+    Status: IMPLEMENTED
+    Features: Passive reconnaissance, technology profiling
+
+22. research_social_graph
+    File: src/loom/tools/social_graph.py
+    Status: IMPLEMENTED
+    Features: Social network mapping, relationship analysis
+
+23. research_dead_content
+    File: src/loom/tools/dead_content.py
+    Status: IMPLEMENTED
+    Features: Recovery of deleted content, dead link analysis
+
+24. research_invisible_web
+    File: src/loom/tools/invisible_web.py
+    Status: IMPLEMENTED
+    Features: Academic databases, invisible web search
+
+================================================================================
+NOT IMPLEMENTED (10/34) - HIGH VALUE TARGETS
+================================================================================
+
+1. research_cloud_enum
+   Category: Cloud Infrastructure
+   Proposed Desc: Cloud resource enumeration identifying AWS, Azure, GCP, Heroku, cloud storage buckets
+   Key Capability: Enumerate cloud infrastructure and exposed cloud resources
+   Complexity: HIGH
+   Data Sources Identified: AWS API, Azure API, GCP API, cloud storage endpoints
+
+2. research_email_mapper
+   Category: Email Infrastructure
+   Proposed Desc: Email infrastructure mapping using MX records, SPF, DKIM, DMARC analysis
+   Key Capability: Email server infrastructure and authentication protocol analysis
+   Complexity: MEDIUM
+   Data Sources: DNS MX/TXT lookups, SMTP probing, header analysis
+
+3. research_github_secrets
+   Category: Data Exposure
+   Proposed Desc: GitHub secret scanning for accidentally committed credentials
+   Key Capability: Identify hardcoded secrets in public GitHub repositories
+   Complexity: MEDIUM
+   Data Sources: GitHub API code search, public repository scanning
+
+4. research_http_fingerprinter
+   Category: Web Technology
+   Proposed Desc: HTTP response fingerprinting for identifying web technology stacks
+   Key Capability: Web server and technology stack identification from HTTP headers
+   Complexity: LOW
+   Data Sources: HTTP response headers, error pages, version detection
+
+5. research_infrastructure_abuse
+   Category: Threat Intelligence
+   Proposed Desc: Detect abuse of cloud/CDN infrastructure for malware hosting
+   Key Capability: Identify infrastructure abuse for hosting malicious content
+   Complexity: HIGH
+   Data Sources: Abuse report databases, malware hosting lists, CDN patterns
+
+6. research_paste_monitor
+   Category: Data Exposure
+   Proposed Desc: Monitor paste sites (Pastebin, Pastie, paste.ee) for data leaks
+   Key Capability: Real-time paste site monitoring for leaked data
+   Complexity: MEDIUM
+   Data Sources: Pastebin API, paste.ee API, paste site scraping
+
+7. research_shodan_recon
+   Category: Internet Scanning
+   Proposed Desc: Shodan query-based passive reconnaissance for exposed devices
+   Key Capability: Internet scan data for infrastructure discovery
+   Complexity: LOW
+   Data Sources: Shodan API (requires subscription)
+
+8. research_supply_chain_attack
+   Category: Supply Chain
+   Proposed Desc: Detect supply chain attacks including typosquatting, package tampering, dependency hijacking
+   Key Capability: Supply chain threat detection across package registries
+   Complexity: MEDIUM
+   Data Sources: PyPI, npm, crates.io, Maven registries, package similarity analysis
+
+9. research_tech_profiler
+   Category: Technology Intelligence
+   Proposed Desc: Deep technology stack profiling including frameworks, libraries, versions
+   Key Capability: Technology stack identification and version detection
+   Complexity: MEDIUM
+   Data Sources: Wappalyzer patterns, header analysis, error page fingerprints
+
+10. research_whois_correlator
+    Category: Domain Intelligence
+    Proposed Desc: WHOIS history correlation across multiple domains
+    Key Capability: Link domains via WHOIS registrant history
+    Complexity: MEDIUM
+    Data Sources: WHOIS API, RDAP protocol, historical WHOIS databases
+
+================================================================================
+SOURCE FILES ANALYZED
+================================================================================
+
+Round 7 (Dark Research):
+1. r7_deepseek_chat_dark.txt
+2. r7_deepseek_reasoner_dark.txt
+3. r7_gemini_dark.txt
+4. r7_gpt5_dark.txt
+5. r7_o1_dark.txt
+6. r7_o3_dark.txt
+7. round7_deepseek_chat_dark_production.txt
+8. round7_gemini_dark.txt
+9. round7_gemini_dark_full.txt
+
+Round 8 (Censorship & Threat Intel):
+1. r8_deepseek_censorship.txt
+2. r8_deepseek_chat_forced.txt
+3. r8_deepseek_reasoner_batch2.txt
+4. r8_deepseek_reasoner_forced.txt
+5. r8_deepseek_threat_intel.txt
+6. r8_o3_infowar.txt
+7. round8_deepseek_censorship_research.txt
+8. round8_deepseek_reasoner_10tools.txt
+9. round8_deepseek_reasoner_batch2.txt
+10. round8_deepseek_threat_intel.txt
+11. round8_o3_infowar_narrative.txt
+
+Round 9 (Meta-Cognitive & Code-First):
+1. r9_deepseek_chat_metacog.txt
+2. r9_deepseek_reasoner_codefirst.txt
+3. r9_deepseek_reasoner_sld.txt
+4. round9_deepseek_reasoner_codefirst.txt
+
+================================================================================
+ANALYSIS NOTES
+================================================================================
+
+1. MISSING CATEGORIES:
+   - Advanced Passive Reconnaissance: Some specialized passive recon tools like
+     HTTP fingerprinting and detailed technology profiling could be expanded
+   - Real-time Monitoring: Paste site monitoring and live threat tracking tools
+     are minimal - could have streaming/polling implementations
+   - Cloud-specific: No dedicated cloud enumeration tools for AWS/Azure/GCP
+   - Advanced Email Intelligence: Email infrastructure mapping is proposed but
+     not deeply integrated
+
+2. IMPLEMENTATION PATTERNS OBSERVED:
+   - Most dark web tools are already implemented (research_onion_discover,
+     research_dark_forum, research_dark_market_monitor)
+   - Threat intelligence tools are comprehensively covered
+   - Archive/historical content tools are present
+   - Passive reconnaissance tools exist but could be expanded
+   - Most tools use public, legal data sources (OSINT-focused)
+
+3. API COVERAGE:
+   - Supported: Wayback Machine, Ahmia, DarkSearch, Etherscan, blockchain.info,
+     MISP feeds, AlienVault OTX, CT logs, GitHub API
+   - Partially supported: Shodan (exists as research_passive_recon)
+   - Not supported: Some specialized abuse databases, live paste site APIs
+
+4. DATA SOURCE SECURITY:
+   - All implemented tools use legal, public data sources
+   - No tools access private/hacked databases
+   - Ethical safeguards in place (rate limiting, user-agent compliance)
+   - EU AI Act Article 15 compliance built into threat intel tools
+
+================================================================================
+RECOMMENDATIONS FOR NEXT ITERATION
+================================================================================
+
+PRIORITY 1 (High Impact, Low Effort):
+- research_http_fingerprinter: Implement HTTP header analysis and server detection
+- research_shodan_recon: Already partially implemented, just needs API integration
+- research_tech_profiler: Extend research_passive_recon with deeper profiling
+
+PRIORITY 2 (Medium Impact, Medium Effort):
+- research_email_mapper: Add MX/SPF/DKIM/DMARC analysis to DNS tools
+- research_whois_correlator: Build correlation engine for historical WHOIS data
+- research_paste_monitor: Real-time monitoring with polling/webhooks
+- research_github_secrets: Specialized scanner vs generic leak_scan
+
+PRIORITY 3 (High Impact, High Effort):
+- research_cloud_enum: Comprehensive cloud resource discovery across major platforms
+- research_supply_chain_attack: Package similarity analysis and typosquat detection
+- research_infrastructure_abuse: Aggregate abuse databases and CDN pattern analysis
+
+================================================================================
+COVERAGE METRICS
+================================================================================
+
+Dark Web & Hidden Services: 6/7 (86%)
+Threat Intelligence: 7/7 (100%)
+Infrastructure & Recon: 5/9 (56%)
+Archive & Content: 2/2 (100%)
+Cryptocurrency: 1/1 (100%)
+Domain Intelligence: 1/2 (50%)
+Data Exposure: 1/3 (33%)
+Cloud & Supply Chain: 1/2 (50%)
+Social Graph: 1/1 (100%)
+
+OVERALL COVERAGE: 24/34 (71%)
+
+================================================================================
+END OF CROSS-MATCH ANALYSIS
+================================================================================
+Generated: 2026-04-28
+Tool Count Verification:
+- Unique ideas from R7-R9: 67 (various naming/duplication)
+- Deduped to distinct tools: 34 concepts
+- Mapped to implementations: 24 present, 10 absent
+================================================================================

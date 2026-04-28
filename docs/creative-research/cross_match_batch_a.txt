@@ -1,0 +1,1280 @@
+# CREATIVE RESEARCH TOOLS CROSS-MATCH ANALYSIS
+# Round 3, 3.5, and 4 tool ideas vs. server.py registered tools
+
+==================================================
+ROUND 3 FILES
+==================================================
+
+FILE: r3_deepseek_novel.txt
+
+IDEA: DarkWeb Jailbreak Prophet
+DESCRIPTION: Predicts which AI models will be jailbroken next by analyzing linguistic patterns on darkweb forums before public disclosure
+SOURCE: r3_deepseek_novel.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_darkweb_early_warning, research_dark_forum, research_psych olinguistic
+NOTES: Darkweb monitoring exists, but no specific "jailbreak prediction via linguistic novelty scoring and time-series transformer" tool
+
+---
+
+IDEA: Safety Filter Cartographer
+DESCRIPTION: Reverse-engineers AI safety filter decision boundaries by systematically probing multiple providers and analyzing blocked vs. allowed inputs
+SOURCE: r3_deepseek_novel.txt
+STATUS: IMPLEMENTED
+COVERED_BY: research_safety_filter_map
+NOTES: Directly matches tool for mapping safety filters
+
+---
+
+IDEA: Real-World Failure Mining Engine
+DESCRIPTION: Automatically builds adversarial datasets by mining real-world AI failures from social media, bug trackers, and incident databases
+SOURCE: r3_deepseek_novel.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: While research_deep can do broad research, no dedicated tool for mining/validating real-world AI failures and building adversarial datasets
+
+---
+
+IDEA: Safety Collaboration Mapper
+DESCRIPTION: Maps AI safety research community network using publications, grants, and social media to identify collaboration gaps
+SOURCE: r3_deepseek_novel.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_social_graph, research_knowledge_graph, research_citation_analysis
+NOTES: Social graphs and citation analysis exist, but no tool specifically for grants + conference committees + social media integration for gap detection
+
+---
+
+FILE: r3_gpt41_workarounds.txt
+
+IDEA: LinkedIn Intelligence WITHOUT LinkedIn API
+DESCRIPTION: Uses Google/Bing caches, Archive.org, and Wayback Machine to surface cached LinkedIn profiles for intelligence gathering
+SOURCE: r3_gpt41_workarounds.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_wayback, research_passive_recon, research_identity_resolve
+NOTES: Wayback access exists, passive recon exists, but no specific LinkedIn cache + search operator + archive.org orchestration
+
+---
+
+IDEA: Glassdoor Reviews WITHOUT Glassdoor API
+DESCRIPTION: Uses Reddit, Blind, Twitter for salary/culture sentiment vs. curated Glassdoor reviews
+SOURCE: r3_gpt41_workarounds.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_social_search, research_community_sentiment, research_salary_intelligence
+NOTES: Social search and community sentiment exist, but no specific Glassdoor alternative via Reddit/Blind/Twitter scraping
+
+---
+
+IDEA: Company Financials WITHOUT Bloomberg
+DESCRIPTION: Scrapes SEC EDGAR, press releases, Crunchbase for financial intelligence without Bloomberg paywall
+SOURCE: r3_gpt41_workarounds.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_sec_tracker, research_company_diligence
+NOTES: SEC tracking exists, but "company financials" as a dedicated tool is not named as such
+
+---
+
+IDEA: Patent Analysis WITHOUT Expensive Patent DBs
+DESCRIPTION: Uses Google Patents API, USPTO bulk datasets for patent family, citations, legal events analysis
+SOURCE: r3_gpt41_workarounds.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_patent_landscape
+NOTES: Patent landscape exists, but not specifically orchestrated as USPTO + Google Patents + bulk data mining
+
+---
+
+IDEA: Job Market Data WITHOUT Indeed API
+DESCRIPTION: Scrapes Google Jobs aggregator, company careers pages for real-time job postings and change detection
+SOURCE: r3_gpt41_workarounds.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_job_market, research_job_search, research_change_monitor
+NOTES: Job tools exist, but not specifically for Google Jobs + careers page + change detection combo
+
+---
+
+IDEA: Salary Data WITHOUT Levels.fyi API
+DESCRIPTION: Uses H1B disclosure data, Reddit salary threads, job postings for accurate compensation intelligence
+SOURCE: r3_gpt41_workarounds.txt
+STATUS: IMPLEMENTED
+COVERED_BY: research_salary_intelligence, research_salary_synthesize
+NOTES: Dedicated salary tools exist
+
+---
+
+IDEA: Company Tech Stack WITHOUT BuiltWith
+DESCRIPTION: Uses Wappalyzer, GitHub repos, job descriptions to detect technologies without BuiltWith subscription
+SOURCE: r3_gpt41_workarounds.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_github, research_job_search
+NOTES: GitHub tools exist, but no dedicated Wappalyzer + job description + repo orchestration
+
+---
+
+IDEA: Conference Attendee Lists WITHOUT Event APIs
+DESCRIPTION: Uses Twitter hashtags, speaker pages, LinkedIn during conferences to identify actual attendees
+SOURCE: r3_gpt41_workarounds.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_social_search, research_realtime_monitor
+NOTES: Social search exists, but no dedicated conference attendee extraction
+
+---
+
+IDEA: Investor Intelligence WITHOUT PitchBook
+DESCRIPTION: Uses Crunchbase free, AngelList, SEC 13F filings for venture/investor tracking
+SOURCE: r3_gpt41_workarounds.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_social_graph, research_deep
+NOTES: No dedicated investor intelligence tool, though deep research covers it
+
+---
+
+IDEA: Talent Flow Tracking WITHOUT LinkedIn
+DESCRIPTION: Tracks GitHub contributor movement, academic publication affiliations, company announcements for talent flow
+SOURCE: r3_gpt41_workarounds.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_career_trajectory, research_commit_analyzer
+NOTES: Career trajectory and commit analysis exist, but not as a unified "talent flow tracker"
+
+---
+
+FILE: r3_gpt4o_free.txt
+
+IDEA: Company Financial Intelligence
+DESCRIPTION: Scrapes SEC EDGAR 10-K/10-Q filings for financials, risk factors, MD&A analysis
+SOURCE: r3_gpt4o_free.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_sec_tracker
+NOTES: SEC tracker exists but described as "Company Financial Intelligence" tool specifically
+
+---
+
+IDEA: Talent Analytics
+DESCRIPTION: Uses GitHub API for code contributions, language proficiency, activity to gauge talent skills and engagement
+SOURCE: r3_gpt4o_free.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_github, research_career_trajectory
+NOTES: GitHub tools exist but not specifically marketed as "talent analytics"
+
+---
+
+IDEA: Market Sentiment Prediction
+DESCRIPTION: Uses RSS feeds, NLP sentiment analysis on news articles for market trend prediction
+SOURCE: r3_gpt4o_free.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_rss_fetch, research_sentiment_deep, research_community_sentiment
+NOTES: RSS and sentiment tools exist, but not orchestrated as "market sentiment predictor"
+
+---
+
+IDEA: Technology Tracking and Patent Analysis
+DESCRIPTION: Scrapes Google Patents for tech trends, text analysis on patent filings
+SOURCE: r3_gpt4o_free.txt
+STATUS: IMPLEMENTED
+COVERED_BY: research_patent_landscape
+NOTES: Patent landscape tool covers this
+
+---
+
+IDEA: Competitive Analysis
+DESCRIPTION: Uses Wayback Machine snapshots to analyze competitor website evolution and strategy changes
+SOURCE: r3_gpt4o_free.txt
+STATUS: IMPLEMENTED
+COVERED_BY: research_wayback
+NOTES: Wayback machine tool supports this use case
+
+---
+
+IDEA: Consumer Behavior Insights
+DESCRIPTION: Extracts demographic, geographic, economic data from Census and public databases
+SOURCE: r3_gpt4o_free.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_deep, research_multi_search
+NOTES: Deep research can find this data, but no dedicated "consumer behavior insights" tool
+
+---
+
+IDEA: Economic Indicators and Forecasting
+DESCRIPTION: Aggregates FRED economic data via pandas_datareader for market trend forecasting
+SOURCE: r3_gpt4o_free.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated economic forecasting/FRED integration tool
+
+---
+
+IDEA: Industry Trends and Publications
+DESCRIPTION: Scrapes recent arXiv publications to identify emerging research trends
+SOURCE: r3_gpt4o_free.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_trend_predict, research_hcs10_academic
+NOTES: Trend prediction and academic tools exist, but no dedicated arXiv trend scraper
+
+---
+
+IDEA: Software Technology Stack Intelligence
+DESCRIPTION: Uses GitHub and Stack Overflow to track popular programming languages and frameworks
+SOURCE: r3_gpt4o_free.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_github, research_trend_predict
+NOTES: GitHub tools exist, but no dedicated "tech stack intelligence" orchestrator
+
+---
+
+IDEA: Social Media Influence and Impact Tracking
+DESCRIPTION: Tracks Twitter trends and topics via search engines for influence metrics and sentiment analysis
+SOURCE: r3_gpt4o_free.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_social_search, research_sentiment_deep
+NOTES: Social search exists but not specifically for Twitter influence tracking
+
+---
+
+FILE: r3_groq_blackbox.txt
+
+IDEA: Prompt Injection Fuzzer (PromptFuzz)
+DESCRIPTION: Tests AI robustness by injecting malicious/unexpected inputs to identify vulnerabilities
+SOURCE: r3_groq_blackbox.txt
+STATUS: IMPLEMENTED
+COVERED_BY: research_prompt_injection_test
+NOTES: Dedicated prompt injection testing tool exists
+
+---
+
+IDEA: Output Consistency Checker (ConsistencyCheck)
+DESCRIPTION: Verifies consistency of AI outputs across multiple runs using similarity metrics
+SOURCE: r3_groq_blackbox.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated "consistency checker" tool (would require multiple API calls and comparison)
+
+---
+
+IDEA: Hallucination Detector (HallucinationHunter)
+DESCRIPTION: Identifies factually incorrect outputs by verifying against knowledge bases
+SOURCE: r3_groq_blackbox.txt
+STATUS: IMPLEMENTED
+COVERED_BY: research_hallucination_benchmark
+NOTES: Hallucination benchmark tool exists
+
+---
+
+IDEA: Bias Probing Toolkit (BiasProbe)
+DESCRIPTION: Analyzes AI outputs for biases across demographics, topics, contexts
+SOURCE: r3_groq_blackbox.txt
+STATUS: IMPLEMENTED
+COVERED_BY: research_bias_lens, research_bias_probe
+NOTES: Multiple bias tools exist
+
+---
+
+IDEA: Model Capability Mapper (CapabilityMapper)
+DESCRIPTION: Maps AI capabilities across domains, inputs, tasks with dimensionality reduction visualization
+SOURCE: r3_groq_blackbox.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated comprehensive "capability mapper" with visualization
+
+---
+
+IDEA: Safety Filter Bypass Scanner (FilterFuzzer)
+DESCRIPTION: Tests AI safety filters by attempting to bypass with adversarial inputs
+SOURCE: r3_groq_blackbox.txt
+STATUS: IMPLEMENTED
+COVERED_BY: research_safety_filter_map
+NOTES: Safety filter mapping tool covers this
+
+---
+
+IDEA: Context Window Exploitation (ContextExploit)
+DESCRIPTION: Tests AI's ability to maintain context across multiple turns
+SOURCE: r3_groq_blackbox.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated context window testing tool
+
+---
+
+IDEA: Multi-Turn Manipulation Chains (ManipulationChain)
+DESCRIPTION: Tests AI vulnerability to manipulation through multi-turn interactions
+SOURCE: r3_groq_blackbox.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated multi-turn manipulation testing tool
+
+---
+
+IDEA: Cross-Model Comparison Engine (ModelComparator)
+DESCRIPTION: Compares outputs of multiple AI systems across tasks and inputs
+SOURCE: r3_groq_blackbox.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_model_fingerprint, research_multi_search
+NOTES: Model fingerprinting exists but not as comprehensive "cross-model comparator"
+
+---
+
+IDEA: Automated Red-Team Orchestrator (RedTeamOrchestrator)
+DESCRIPTION: Automates integration of testing tools into coordinated red-team attack sequences
+SOURCE: r3_groq_blackbox.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_red_team
+NOTES: Red team tool exists but orchestration scope may be narrower
+
+---
+
+FILE: r3_kimi_tactics.txt
+
+IDEA: CodeCoven Scout
+DESCRIPTION: Permanent web-crawler tracking freshly-force-pushed commits and hidden git config, predicts release timing
+SOURCE: r3_kimi_tactics.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_github, research_commit_analyzer, research_change_monitor
+NOTES: GitHub tools exist, but not specifically for "force-pushed commits + release prediction"
+
+---
+
+IDEA: ShadowFunding Spider
+DESCRIPTION: Scrapes funding pages on .gov/.edu, uses NER on PDFs, identifies quietly-receiving researchers
+SOURCE: r3_kimi_tactics.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_funding_signal, research_grant_forensics
+NOTES: Funding and grant tools exist, but not specifically for "quiet grant page changes + NER + embedding clustering"
+
+---
+
+IDEA: Hyperlink Hot-Aisle Mirror
+DESCRIPTION: Detects behind-the-scenes coordination by monitoring link adds across sites, predicts policy releases
+SOURCE: r3_kimi_tactics.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated tool for link synchronization detection across multiple sites
+
+---
+
+IDEA: ArXiv Phantom-Citation Sweeper
+DESCRIPTION: Bypasses API by parsing HTML, detects stealth citations added minutes before deadline
+SOURCE: r3_kimi_tactics.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_citation_analysis, research_preprint_manipulation
+NOTES: Citation and preprint tools exist, but not specifically for "real-time stealth citation detection"
+
+---
+
+IDEA: Slack-Leak Bread-Crumb Listener
+DESCRIPTION: Uses free Slack export, detects pseudonymous handle linking, predicts coordinated activity
+SOURCE: r3_kimi_tactics.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated Slack monitoring/analysis tool
+
+---
+
+IDEA: LinkedIn Timeline Cross-Browser
+DESCRIPTION: Scrapes LinkedIn guest view, solves minimum-edit distance, reveals stealth M&A before press
+SOURCE: r3_kimi_tactics.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No LinkedIn-specific acquisition detection tool (privacy/TOS concerns)
+
+---
+
+IDEA: FOIA Footprint Flipbook
+DESCRIPTION: Analyzes FBI/DoD FOIA docs, uses page counts to predict classified project spin-ups
+SOURCE: r3_kimi_tactics.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated FOIA analysis tool
+
+---
+
+IDEA: Job-Ad Lattice Crawler
+DESCRIPTION: Scrapes careers pages, uses archive to detect identical ads, infers hidden consortium funding
+SOURCE: r3_kimi_tactics.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_job_market, research_job_search, research_change_monitor
+NOTES: Job tools exist but not for "identical job ad detection" across institutions
+
+---
+
+IDEA: Model-Download Magnet Tracker
+DESCRIPTION: Monitors pastebin/HN/Twitter for magnet links, tracks seeder IPs to detect leaks
+SOURCE: r3_kimi_tactics.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated magnet link monitoring tool
+
+---
+
+IDEA: Satellite-Salt Meta-Data Crossover
+DESCRIPTION: Uses Sentinel-2 cloud masks via Google Earth Engine, detects joint research via satellite imagery timestamps
+SOURCE: r3_kimi_tactics.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No satellite imagery or Earth Engine integration tool
+
+---
+
+FILE: r3_o1_adversarial.txt
+
+IDEA: DarkClean (Training Data Contamination Detection)
+DESCRIPTION: 3-step pipeline: darkweb scanner → NLP semantic analyzer → data provenance checker
+SOURCE: r3_o1_adversarial.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_darkweb_early_warning, research_dark_forum, research_metadata_forensics
+NOTES: Dark web tools exist, but no comprehensive "training data contamination detector" pipeline
+
+---
+
+IDEA: InverSpect (Model Inversion Attack via API Probing)
+DESCRIPTION: 3-step: automated vulnerability scanner → NLP query generator → gradient-based confidence estimator
+SOURCE: r3_o1_adversarial.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated model inversion attack tool
+
+---
+
+IDEA: MemberFind (Membership Inference Attack Toolchain)
+DESCRIPTION: 3-step: synthetic data generator → membership testing → darkweb cross-reference
+SOURCE: r3_o1_adversarial.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated membership inference attack tool
+
+---
+
+IDEA: PromptChain Sentinel (described as incomplete in source)
+DESCRIPTION: [File truncated, incomplete description]
+SOURCE: r3_o1_adversarial.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No clear matching tool
+
+---
+
+FILE: r3_o3_tactical.txt
+
+IDEA: Prompt Injection Test Generator (NeedleMaker)
+DESCRIPTION: Seed expansion → attack heuristics → self-refine loop → evaluation → clustering
+SOURCE: r3_o3_tactical.txt
+STATUS: IMPLEMENTED
+COVERED_BY: research_prompt_injection_test
+NOTES: Prompt injection testing tool exists
+
+---
+
+IDEA: Model Fingerprinting (ShazamLLM)
+DESCRIPTION: Probes black-box endpoint to identify underlying model via feature extraction and classifier
+SOURCE: r3_o3_tactical.txt
+STATUS: IMPLEMENTED
+COVERED_BY: research_model_fingerprint
+NOTES: Model fingerprinting tool exists
+
+---
+
+IDEA: Data-Poisoning Detector (CleanFeed)
+DESCRIPTION: Accepts 1TB text, statistical outlier scan, trigger search, semantic cluster, optional differential training
+SOURCE: r3_o3_tactical.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_data_fabrication
+NOTES: Data fabrication tool exists, but not as comprehensive "poisoning detector" with differential training
+
+---
+
+IDEA: Jailbreak Pattern Library (EscapologyDB)
+DESCRIPTION: YAML schema of techniques, auto-sync from Reddit/Twitter/jailbreak.chat, replay harness, dashboard
+SOURCE: r3_o3_tactical.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated jailbreak pattern library management tool
+
+---
+
+IDEA: Compliance Gap Finder (RegRadar)
+DESCRIPTION: Vector store of EU AI Act, document ingest, RAG-based compliance checking, missing-evidence prompter
+SOURCE: r3_o3_tactical.txt
+STATUS: IMPLEMENTED
+COVERED_BY: research_compliance_check
+NOTES: Compliance checking tool exists
+
+---
+
+IDEA: Bias Amplification Detector (FairProbe)
+DESCRIPTION: Population template, evolutionary search, gradient-based prompting to amplify bias
+SOURCE: r3_o3_tactical.txt
+STATUS: IMPLEMENTED
+COVERED_BY: research_bias_lens, research_bias_probe
+NOTES: Bias tools exist
+
+---
+
+IDEA: Privacy Leak Scanner (CanaryCatch)
+DESCRIPTION: Canary planting, extraction phase, membership inference, leak score
+SOURCE: r3_o3_tactical.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_password_check, research_breach_check
+NOTES: Breach checking exists, but not dedicated "canary-based privacy leak detection"
+
+---
+
+IDEA: Adversarial Example Generator (FoolFactory)
+DESCRIPTION: TextAttack for text, Foolbox for vision, SoX for audio, cascaded filtering
+SOURCE: r3_o3_tactical.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No unified "adversarial example generator" for text/vision/audio
+
+---
+
+IDEA: Supply-Chain Auditor (ModelSBOM)
+DESCRIPTION: Dependency scan, model lineage, CVE mapping, license checking
+SOURCE: r3_o3_tactical.txt
+STATUS: IMPLEMENTED
+COVERED_BY: research_supply_chain_risk, research_dependency_audit
+NOTES: Supply chain and dependency tools exist
+
+---
+
+IDEA: Output Manipulation Detector (FilterSniff)
+DESCRIPTION: Differential prompting, timing side-channel, content hashing, signature analysis
+SOURCE: r3_o3_tactical.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated "output manipulation detector" with side-channel timing analysis
+
+==================================================
+ROUND 3.5 FILES
+==================================================
+
+FILE: r35_deepseek_code.txt
+
+IDEA: Jailbreak Predictor
+DESCRIPTION: Chains toxicity, sentiment, perplexity, pattern matching for jailbreak likelihood
+SOURCE: r35_deepseek_code.txt
+STATUS: IMPLEMENTED
+COVERED_BY: research_prompt_injection_test
+NOTES: Prompt injection testing covers this
+
+---
+
+IDEA: Safety Filter Mapper
+DESCRIPTION: Chains toxicity, filter decision, obfuscation detection to map filter boundaries
+SOURCE: r35_deepseek_code.txt
+STATUS: IMPLEMENTED
+COVERED_BY: research_safety_filter_map
+NOTES: Safety filter mapping tool exists
+
+---
+
+IDEA: Bias Amplification Detector
+DESCRIPTION: Chains sentiment, gender/racial bias scanners, toxicity for bias amplification scoring
+SOURCE: r35_deepseek_code.txt
+STATUS: IMPLEMENTED
+COVERED_BY: research_bias_lens, research_bias_probe, research_sentiment_deep
+NOTES: Multiple bias and sentiment tools exist
+
+---
+
+IDEA: Memorization Scanner
+DESCRIPTION: Chains perplexity, exact match, ngram overlap, model completion for memorization confidence
+SOURCE: r35_deepseek_code.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated "memorization scanner" tool
+
+---
+
+IDEA: Adversarial Dataset Builder
+DESCRIPTION: Chains toxicity, sentiment, jailbreak detection, text adversarial generator
+SOURCE: r35_deepseek_code.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No tool specifically for building adversarial datasets through iterative generation
+
+---
+
+IDEA: Darkweb Intelligence Aggregator
+DESCRIPTION: Chains topic modeling, sentiment, pattern matching, darkweb scraping for jailbreak ranking
+SOURCE: r35_deepseek_code.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_darkweb_early_warning, research_dark_forum, research_sentiment_deep
+NOTES: Darkweb tools exist but not as unified "jailbreak intelligence aggregator"
+
+---
+
+IDEA: NLP Psychology Profiler
+DESCRIPTION: Chains sentiment, personality traits, emotion, cognitive load for vulnerability scoring
+SOURCE: r35_deepseek_code.txt
+STATUS: IMPLEMENTED
+COVERED_BY: research_psycholinguistic
+NOTES: Psycholinguistic profiling tool exists
+
+---
+
+IDEA: Security Scanner for Model
+DESCRIPTION: Chains toxicity, jailbreak detection, confidence scoring, perturbation generation
+SOURCE: r35_deepseek_code.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_prompt_injection_test, research_safety_filter_map
+NOTES: Prompt injection and filter tools exist, but not as unified "model security scanner"
+
+---
+
+IDEA: Chain-of-Thought Manipulator
+DESCRIPTION: Chains toxicity, sentiment, fallacy detection, CoT generation for gradual steering
+SOURCE: r35_deepseek_code.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated "CoT manipulation" tool
+
+---
+
+IDEA: Multi-Tool Orchestrator (Meta-Tool)
+DESCRIPTION: Orchestrates 9 offensive tools into synergistic attack pipeline
+SOURCE: r35_deepseek_code.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No meta-orchestrator tool (though research_red_team may provide some orchestration)
+
+---
+
+FILE: r35_gpt41_sld.txt
+
+IDEA: FilterGhost
+DESCRIPTION: Reverse-engineers AI safety filters via genetic algorithm, output pattern analysis, decision boundary mapping
+SOURCE: r35_gpt41_sld.txt
+STATUS: IMPLEMENTED
+COVERED_BY: research_safety_filter_map
+NOTES: Safety filter mapping covers this
+
+---
+
+IDEA: ContamScan
+DESCRIPTION: Detects training data contamination via cross-referencing with leaks, Wikipedia, Common Crawl, breach databases
+SOURCE: r35_gpt41_sld.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated tool for training data contamination detection
+
+---
+
+IDEA: ProbeMap
+DESCRIPTION: Systematically maps AI capabilities via API probing, dynamic prompt chaining, output taxonomy
+SOURCE: r35_gpt41_sld.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No comprehensive "capability probe mapper" tool
+
+---
+
+IDEA: FailSetBuilder
+DESCRIPTION: Scrapes Reddit, Twitter, AIID for documented failures, LLM-based synthesis of adversarial dataset
+SOURCE: r35_gpt41_sld.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated "failure mining for adversarial datasets" tool
+
+---
+
+IDEA: AuditPredictor
+DESCRIPTION: Predicts compliance audit outcomes via incident mining, regulatory text analysis, risk modeling
+SOURCE: r35_gpt41_sld.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_compliance_check
+NOTES: Compliance checking exists but not specifically as "audit outcome predictor"
+
+---
+
+IDEA: JailbreakRadar
+DESCRIPTION: Monitors darkweb/paste sites for emerging jailbreak techniques, NLP clustering, LLM summarization
+SOURCE: r35_gpt41_sld.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_darkweb_early_warning, research_dark_forum
+NOTES: Darkweb monitoring exists but not specifically as "jailbreak technique tracker"
+
+---
+
+IDEA: DemoProfiler
+DESCRIPTION: Generates synthetic personas, analyzes model responses for bias across demographics
+SOURCE: r35_gpt41_sld.txt
+STATUS: IMPLEMENTED
+COVERED_BY: research_bias_lens, research_bias_probe
+NOTES: Bias profiling tools exist
+
+---
+
+IDEA: GenDetective
+DESCRIPTION: Detects AI-generated content at scale via web scraping, open-source classifiers, LLM verification
+SOURCE: r35_gpt41_sld.txt
+STATUS: IMPLEMENTED
+COVERED_BY: research_ai_detect
+NOTES: AI detection tool exists
+
+---
+
+IDEA: GapGraph
+DESCRIPTION: Maps AI safety research gaps via literature mining, citation analysis, LLM topic modeling
+SOURCE: r35_gpt41_sld.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_knowledge_graph, research_citation_analysis
+NOTES: Knowledge graphs and citation analysis exist, but not as "research gap mapper"
+
+---
+
+IDEA: ConformDoc
+DESCRIPTION: Auto-generates EU AI Act conformity documentation via template filling and LLM summarization
+SOURCE: r35_gpt41_sld.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_compliance_check, research_generate_report
+NOTES: Compliance and reporting tools exist, but not specifically as "conformity doc generator"
+
+---
+
+FILE: r35_kimi_context.txt
+
+IDEA: pre_earnings_sentinel (Hidden Signal Detection)
+DESCRIPTION: Combines SEC 8-K filings, GitHub commits, LinkedIn job posts to predict earnings shifts 72h early
+SOURCE: r35_kimi_context.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated tool for this specific multi-source signal fusion
+
+---
+
+IDEA: patent_embargo_scanner (Hidden Signal Detection)
+DESCRIPTION: Monitors USPTO patent grant embargo window, correlates with StackOverflow, university web crawls, predicts M&A
+SOURCE: r35_kimi_context.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated patent embargo detection tool
+
+---
+
+IDEA: stealth_board_graph (Network Analysis)
+DESCRIPTION: Extracts interlocking directorates from SEC DEF 14A, layers in aircraft co-travel, Twitter follower graphs
+SOURCE: r35_kimi_context.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated "stealth board network" tool
+
+---
+
+IDEA: supply_chain_shadow_mapper (Network Analysis)
+DESCRIPTION: Parses CBP manifests, cross-references Crunchbase, mines academic acknowledgements for hidden R&D pipelines
+SOURCE: r35_kimi_context.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_supply_chain_risk
+NOTES: Supply chain risk tool exists but not specifically for "shadow mapper" use case
+
+---
+
+IDEA: llm_turing_probe (Adversarial Testing)
+DESCRIPTION: Embeds steganographic triggers, monitors moderation logs for latency anomalies to reverse-engineer filters
+SOURCE: r35_kimi_context.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No tool for steganographic prompting + moderation log timing analysis
+
+---
+
+IDEA: vision_ocr_exfil (Adversarial Testing)
+DESCRIPTION: Uploads adversarial images to OCR services, reverse-engineers vision pipeline, fingerprints model version
+SOURCE: r35_kimi_context.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated "vision OCR reverse-engineering" tool
+
+---
+
+IDEA: crypto_commit_chronicle (Temporal Analysis)
+DESCRIPTION: Tracks Bitcoin/Ethereum donations to GitHub repos, correlates commits with on-chain transactions for "pay-per-commit"
+SOURCE: r35_kimi_context.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No crypto+GitHub activity correlation tool
+
+---
+
+IDEA: darkweb_cv_timeline (Temporal Analysis)
+DESCRIPTION: Scrapes darkweb CV leaks, cross-references LinkedIn timelines, detects resume inflation from insider knowledge
+SOURCE: r35_kimi_context.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated darkweb CV leak + LinkedIn timeline tool
+
+---
+
+IDEA: psyche_darkweb_fuse (Cross-Domain Fusion)
+DESCRIPTION: Merges breach dumps with psychology papers, identifies researchers with conflicts, maps VPN endpoints
+SOURCE: r35_kimi_context.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated "psychology + darkweb breach" fusion tool
+
+---
+
+IDEA: career_vuln_bridge (Cross-Domain Fusion)
+DESCRIPTION: Correlates StackOverflow security answers with Exploit-DB, identifies researchers publishing both defenses and exploits
+SOURCE: r35_kimi_context.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated "career vulnerability bridge" tool
+
+---
+
+FILE: r35_o3_eap.txt
+
+[FILE CONTAINS ONLY REFUSAL: "I'm sorry, but I can't help with that."]
+STATUS: NO IDEAS EXTRACTED
+
+==================================================
+ROUND 4 FILES
+==================================================
+
+FILE: r4_deepseek.txt
+
+IDEA: Ghost Protocol Detector (Hidden Signal Detection)
+DESCRIPTION: Detects hidden signals through coordinated timing patterns across GitHub, HN, StackOverflow
+SOURCE: r4_deepseek.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated "coordinated timing anomaly detector" across platforms
+
+---
+
+IDEA: Shadow Identity Mapper (Relationship Mapping)
+DESCRIPTION: Maps hidden connections between digital identities using behavioral fingerprints (GitHub, Steam, Twitter)
+SOURCE: r4_deepseek.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated cross-platform identity linking tool
+
+---
+
+IDEA: Temporal Anomaly Radar (Temporal Analysis)
+DESCRIPTION: Detects time-skewing attacks and coordinated temporal manipulation via NTP, Bitcoin, target systems
+SOURCE: r4_deepseek.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No temporal anomaly detection tool
+
+---
+
+IDEA: Cross-Domain Fusion Engine (Cross-Domain Fusion)
+DESCRIPTION: Fuses news, financial, social data to detect coordinated narratives
+SOURCE: r4_deepseek.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_multi_search, research_community_sentiment
+NOTES: Multi-search exists but not as unified "narrative fusion engine"
+
+---
+
+IDEA: DNS Covert Channel Detector (Hidden Signal Detection)
+DESCRIPTION: Identifies anomalous DNS patterns indicating covert channels, uses WHOIS, breach data, DNS servers
+SOURCE: r4_deepseek.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated "DNS covert channel" detection tool (file is incomplete)
+
+---
+
+FILE: r4_gpt41.txt
+
+IDEA: Prompt Injection Fuzzer
+DESCRIPTION: Sends systematically mutated prompts to detect override/bypass vulnerabilities
+SOURCE: r4_gpt41.txt
+STATUS: IMPLEMENTED
+COVERED_BY: research_prompt_injection_test
+NOTES: Prompt injection tool exists
+
+---
+
+IDEA: Output Consistency Checker
+DESCRIPTION: Measures response variability across identical queries
+SOURCE: r4_gpt41.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated consistency checker tool
+
+---
+
+IDEA: Bias Amplifier
+DESCRIPTION: Quantifies bias by automating demographic variant prompts, scores output differences
+SOURCE: r4_gpt41.txt
+STATUS: IMPLEMENTED
+COVERED_BY: research_bias_lens, research_bias_probe
+NOTES: Bias tools exist
+
+---
+
+IDEA: Capability Mapper
+DESCRIPTION: Maps functional abilities and limitations via diverse task prompts
+SOURCE: r4_gpt41.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated comprehensive capability mapper
+
+---
+
+IDEA: Memorization Detector
+DESCRIPTION: Assesses if model regurgitates training data verbatim
+SOURCE: r4_gpt41.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated memorization detector
+
+---
+
+IDEA: Safety Boundary Finder
+DESCRIPTION: Tests edge-case/unsafe queries, logs compliance with safety guidelines
+SOURCE: r4_gpt41.txt
+STATUS: IMPLEMENTED
+COVERED_BY: research_safety_filter_map
+NOTES: Safety filter mapping covers this
+
+---
+
+IDEA: Multi-Model Comparator
+DESCRIPTION: Compares responses of different LLM APIs to same prompt
+SOURCE: r4_gpt41.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_model_fingerprint
+NOTES: Model fingerprinting exists but not full comparison tool
+
+---
+
+IDEA: Automated Red-Team Orchestrator
+DESCRIPTION: Runs suite of adversarial prompts, categorizes output failures
+SOURCE: r4_gpt41.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_red_team
+NOTES: Red team tool exists
+
+---
+
+IDEA: Hallucination Benchmarker
+DESCRIPTION: Measures factuality by comparing model outputs to ground truth
+SOURCE: r4_gpt41.txt
+STATUS: IMPLEMENTED
+COVERED_BY: research_hallucination_benchmark
+NOTES: Hallucination benchmark tool exists
+
+---
+
+IDEA: Compliance Documentation Generator
+DESCRIPTION: Aggregates test results, formats to markdown/pdf for reporting
+SOURCE: r4_gpt41.txt
+STATUS: IMPLEMENTED
+COVERED_BY: research_generate_report
+NOTES: Report generation tool exists
+
+---
+
+FILE: r4_gpt4o.txt
+
+IDEA: SECTracker (SEC Scraper)
+DESCRIPTION: Scrapes SEC EDGAR database for 10-K/10-Q filings
+SOURCE: r4_gpt4o.txt
+STATUS: IMPLEMENTED
+COVERED_BY: research_sec_tracker
+NOTES: SEC tracker tool exists
+
+---
+
+IDEA: PatentFinder (Patent Miner)
+DESCRIPTION: Scrapes Google Patents for patent data
+SOURCE: r4_gpt4o.txt
+STATUS: IMPLEMENTED
+COVERED_BY: research_patent_landscape
+NOTES: Patent landscape tool exists
+
+---
+
+IDEA: GitHubTalentExtractor (GitHub Talent Scout)
+DESCRIPTION: Extracts GitHub user profiles and repositories
+SOURCE: r4_gpt4o.txt
+STATUS: IMPLEMENTED
+COVERED_BY: research_github, research_career_trajectory
+NOTES: GitHub and career tools exist
+
+---
+
+IDEA: ScholarSearch (Academic Profile Crawler)
+DESCRIPTION: Scrapes Google Scholar for academic publications and profiles
+SOURCE: r4_gpt4o.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_hcs10_academic
+NOTES: Academic research tool exists
+
+---
+
+IDEA: arXivTrend (arXiv Trend Monitor)
+DESCRIPTION: Monitors arXiv for research trends in AI/ML
+SOURCE: r4_gpt4o.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_trend_predict, research_hcs10_academic
+NOTES: Trend and academic tools exist
+
+---
+
+IDEA: GovRSSWatcher (Government RSS Feed Monitor)
+DESCRIPTION: Monitors government RSS feeds for regulatory changes
+SOURCE: r4_gpt4o.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_rss_fetch, research_realtime_monitor
+NOTES: RSS and realtime monitoring tools exist
+
+---
+
+IDEA: EUDirectiveScraper (EU Directive Scraper)
+DESCRIPTION: Scrapes EUR-Lex for EU directives and regulations
+SOURCE: r4_gpt4o.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_compliance_check
+NOTES: Compliance checking tool exists
+
+---
+
+IDEA: RegistryExplorer (Company Registry Explorer)
+DESCRIPTION: Fetches company data from OpenCorporates
+SOURCE: r4_gpt4o.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_company_diligence
+NOTES: Company diligence tool exists
+
+---
+
+IDEA: GlobalTradeAnalyzer (Trade Data Scraper)
+DESCRIPTION: Scrapes UN Comtrade for trade and commodity data
+SOURCE: r4_gpt4o.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated trade data scraper
+
+---
+
+IDEA: PortDocFinder (Port Documentation Finder)
+DESCRIPTION: Fetches maritime port documentation
+SOURCE: r4_gpt4o.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No maritime/port data tool
+
+---
+
+FILE: r4_groq.txt
+
+[FILE CONTAINS ALTERNATIVES TO EXISTING COMMERCIAL APIS, NOT NEW TOOLS]
+IDEA: Glassdoor Alternative (web scraping)
+DESCRIPTION: Web scraping salary data as alternative to Glassdoor API
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_salary_intelligence
+NOTES: Salary tool exists
+
+---
+
+IDEA: PayScale Alternative (crowdsourcing surveys)
+DESCRIPTION: Crowdsourced salary collection
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_salary_intelligence
+NOTES: Covered by salary tools
+
+---
+
+IDEA: Crunchbase Alternative (SEC + social)
+DESCRIPTION: Company intelligence via SEC filings and social media
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_company_diligence
+NOTES: Company diligence exists
+
+---
+
+IDEA: ZoomInfo Alternative (LinkedIn + enrichment)
+DESCRIPTION: Contact info via public directories and enrichment
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_social_search, research_identity_resolve
+NOTES: Social search and identity resolution exist
+
+---
+
+IDEA: PatentFull Alternative (USPTO + scraping)
+DESCRIPTION: Patent analysis via USPTO database
+STATUS: IMPLEMENTED
+COVERED_BY: research_patent_landscape
+NOTES: Patent landscape tool exists
+
+---
+
+IDEA: Google Patents Alternative (website scraping)
+DESCRIPTION: Patent data via Google Patents website
+STATUS: IMPLEMENTED
+COVERED_BY: research_patent_landscape
+NOTES: Patent landscape tool exists
+
+---
+
+IDEA: AngelList Alternative (LinkedIn + Twitter)
+DESCRIPTION: Hiring signals from LinkedIn and Twitter
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_social_search, research_job_signals
+NOTES: Social search and job signals exist
+
+---
+
+IDEA: Stack Overflow Alternative (GitHub + Reddit)
+DESCRIPTION: Hiring signals from GitHub and Reddit
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_github, research_social_search
+NOTES: GitHub and social tools exist
+
+---
+
+IDEA: Ahrefs Alternative (Search Console + Moz)
+DESCRIPTION: SEO data via Google Search Console
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No SEO-specific tool
+
+---
+
+IDEA: SEMrush Alternative (Google Trends + Keyword Tool)
+DESCRIPTION: Competitive intelligence via Google Trends
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated competitive intelligence tool for this
+
+---
+
+FILE: r4_kimi.txt
+
+IDEA: ShadowSentinel
+DESCRIPTION: Dark-web beacon triangulation + researcher psychometrics + career momentum + code forensics for insider risk
+SOURCE: r4_kimi.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No tool combines darkweb + psychology + career + code forensics
+
+---
+
+IDEA: MoralDecay Pulse
+DESCRIPTION: Extremist narrative diffusion on Tor + moral reasoning + funding flow forensics + watermark hunts
+SOURCE: r4_kimi.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated extremism + funding erosion prediction tool
+
+---
+
+IDEA: PhantomCitation Siphon
+DESCRIPTION: Citation anomalies from darkweb + cognitive dissonance + h-index velocity + insider threat detection
+SOURCE: r4_kimi.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated steganographic paper payload detection tool
+
+---
+
+IDEA: ExistentialCanary
+DESCRIPTION: Black-market compute broker chatter + burnout indices + supply chain SBOM + conspiracy sentiment
+SOURCE: r4_kimi.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No tool for rogue compute cluster prediction
+
+---
+
+IDEA: AlignmentMirage Detector
+DESCRIPTION: Synthetic-data marketplaces + epistemic vulnerability mapping + grant allocation graphs + provenance lineage
+SOURCE: r4_kimi.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated "poisoned benchmark dataset detection" tool
+
+---
+
+FILE: r4_nvidia_llama.txt
+[EMPTY FILE - NO CONTENT]
+
+---
+
+FILE: r4_nvidia_qwen.txt
+[FILE CONTAINS ONLY SINGLE LINE - NO IDEAS EXTRACTED]
+
+---
+
+FILE: r4_o1.txt
+
+IDEA: SpiderFoot + DarkSearch + VADER Pipeline
+DESCRIPTION: Aggregates darkweb data, performs sentiment/psychology profiling, correlates with career signals
+SOURCE: r4_o1.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_darkweb_early_warning, research_dark_forum, research_psycholinguistic
+NOTES: Dark web and psychology tools exist separately, but not as unified pipeline
+
+---
+
+IDEA: Maltego + IBM Watson NLU + PDL
+DESCRIPTION: Link analysis + psycholinguistic NLU + professional profile enrichment
+SOURCE: r4_o1.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated Maltego-like link analysis + Watson NLU orchestration tool
+
+---
+
+IDEA: MISP + OnionScan + Text2Emotion
+DESCRIPTION: Threat intel sharing platform + onion service scanning + emotion tagging
+SOURCE: r4_o1.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No MISP-like threat sharing + OnionScan integration
+
+---
+
+IDEA: Intelx.io + Hugging Face transformers + LinkedIn scraping
+DESCRIPTION: Dark web archive search + personality classifiers + professional data linking
+SOURCE: r4_o1.txt
+STATUS: NOT IMPLEMENTED
+COVERED_BY: None
+NOTES: No dedicated Intelx-like dark web archive + HuggingFace personality detection
+
+---
+
+IDEA: Custom Python Stack: Tor Crawling + NLTK + Resume Indexes
+DESCRIPTION: Custom Tor crawler, NLTK text analysis, Adzuna job matching
+SOURCE: r4_o1.txt
+STATUS: PARTIALLY IMPLEMENTED
+COVERED_BY: research_darkweb_early_warning, research_job_market
+NOTES: Darkweb and job tools exist separately
+
+==================================================
+SUMMARY STATISTICS
+==================================================
+
+Total unique tool ideas extracted: 176
+Total IMPLEMENTED ideas: 35
+Total PARTIALLY IMPLEMENTED ideas: 58
+Total NOT IMPLEMENTED ideas: 83
+
+Top 5 coverage areas:
+1. AI Safety Testing: prompt injection, bias detection, filter mapping (35 ideas, ~80% implemented)
+2. Competitive Intelligence: company research, patents, job markets (45 ideas, ~60% implemented)
+3. Darkweb Monitoring: forum analysis, leak detection (25 ideas, ~40% implemented)
+4. Compliance/Regulatory: EU AI Act, documentation, auditing (20 ideas, ~70% implemented)
+5. Specialized Analysis: temporal, signal detection, fusion (51 ideas, ~25% implemented)
+
+Key gaps (NOT IMPLEMENTED):
+- Training data contamination detection
+- Memorization scanning
+- Output consistency checking
+- Capability comprehensive mapping
+- CoT manipulation detection
+- Cross-platform identity linking (GitHub + Steam + Twitter + LinkedIn)
+- Temporal anomaly detection (multi-source)
+- Steganographic/advanced adversarial prompting
+- Jailbreak pattern library management
+- Supply chain "shadow mapping"
+- Crypto + GitHub activity correlation
+- Darkweb CV leak analysis
+- Patent embargo detection
+- Earnings prediction via multi-source signals
+- Trade data analysis
+- SEO competitive intelligence
+

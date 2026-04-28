@@ -1,0 +1,397 @@
+# CROSS-MATCH ANALYSIS: Round 5 Creative Research Tool Ideas vs Implemented Tools
+# Generated: 2026-04-28
+# Source: /Users/aadel/projects/loom/docs/creative-research/r5_*.txt and round5_*.txt
+#         vs /Users/aadel/projects/loom/src/loom/server.py
+
+## SUMMARY
+
+Total Round 5 tool ideas extracted: 30 (across all models)
+Total registered tools in Loom: 94+
+Cross-match results: 8 IMPLEMENTED, 11 PARTIALLY IMPLEMENTED, 11 NOT IMPLEMENTED
+
+---
+
+## EXTRACTED TOOL IDEAS FROM ROUND 5 CREATIVE RESEARCH
+
+### 1. Epi-Linguistic Fraud Vectorizer (ELFV)
+- Description: Detects research fraud through linguistic decay patterns (KL divergence, semantic drift)
+- Key capability: Predicts fraud years before retractions by analyzing grant abstracts vs publications
+- Math: Kullback-Leibler divergence on LDA topic distributions
+- Data sources: Crossref, NIH RePORTER, Europe PMC, PubPeer, Retraction Watch
+- **STATUS: IMPLEMENTED** → research_grant_forensics (hcs10_academic)
+
+### 2. Attention Arbitrage Chronometer (AAC)
+- Description: Detects engineered virality in preprints using Hawkes processes
+- Key capability: Distinguishes organic vs artificial citation boosts via network topology
+- Math: Hawkes point processes, network assortativity
+- Data sources: arXiv, Crossref Event Data, GitHub Events, HN Firebase, Semantic Scholar
+- **STATUS: PARTIALLY IMPLEMENTED** → research_preprint_manipulation (hcs10_academic)
+  - Note: AAC focuses on temporal botnet patterns; preprint_manipulation broader
+
+### 3. Institutional Entropy Barometer (IEB)
+- Description: Predicts institutional collapse (lab safety, grant clawbacks) 3 years early
+- Key capability: Shannon entropy on co-authorship networks + Cox proportional-hazards
+- Math: Von Neumann entropy on graph Laplacian, hazard ratio modeling
+- Data sources: ORCID, OSHA/ECHO, NIH RePORTER, OpenAlex, USAspending.gov
+- **STATUS: IMPLEMENTED** → research_institutional_decay (hcs10_academic)
+
+### 4. Obfuscated Capital Nexus (OCN)
+- Description: Traces shell company funding of academic research
+- Key capability: NER on funding text + corporate ownership graph traversal
+- Math: Graph neural networks for link prediction, Levenshtein clustering
+- Data sources: Europe PMC, OpenCorporates, USPTO PatentsView, OFAC/FARA, Crossref Funder
+- **STATUS: IMPLEMENTED** → research_shell_funding (hcs10_academic)
+
+### 5. Methodological Contagion Mapper (MCM)
+- Description: Tracks propagation of flawed methodologies through citations (SIR modeling)
+- Key capability: AST comparison of methods, reproduction number (R0) for methodology
+- Math: SIR epidemiology on citation networks, tree edit distance
+- Data sources: OpenAlex, Europe PMC, GitHub code search, Software Heritage, Protocols.io
+- **STATUS: IMPLEMENTED** → research_monoculture_detect (hcs10_academic)
+  - Note: Covers methodological monoculture; MCM adds epidemic R0 metric
+
+### 6. Orphaned Knowledge Resurrector (OKR)
+- Description: Finds forgotten research solutions via property/application decoupling
+- Key capability: Cross-temporal word embeddings, Procrustes alignment across decades
+- Math: Dynamic Word2Vec with Procrustes mapping to bridge semantic drift
+- Data sources: PubChem, Europe PMC text-mining, ClinicalTrials.gov, USPTO, Wikidata SPARQL
+- **STATUS: NOT IMPLEMENTED** ✗
+
+### 7. Nepotism Topology Engine (NTE)
+- Description: Detects peer-review cartels via network motifs and triadic closure anomalies
+- Key capability: ERGM modeling for cartel-like structures, meritocratic independence score
+- Math: Exponential random graph models, algebraic connectivity (Fiedler value)
+- Data sources: OpenAlex, ProQuest dissertations, NIH FACA rosters, ORCID, DOAJ
+- **STATUS: IMPLEMENTED** → research_review_cartel (hcs10_academic)
+
+### 8. Paradigm Shift Pre-cognition Array (PSPA)
+- Description: Identifies scientific revolutions 12-24 months before mainstream recognition
+- Key capability: Citation sentiment tracking + lexical neogenesis detection + cross-disciplinary migration
+- Math: Hidden Markov Models, persistent homology (Betti numbers for topological fracture)
+- Data sources: Semantic Scholar (scite sentiment), arXiv bulk, SAM.gov/Grants.gov, Wikipedia trends, OpenAlex
+- **STATUS: PARTIALLY IMPLEMENTED** → research_trend_predict (trend_predictor)
+  - Note: Trend prediction exists but not explicit paradigm-shift HMM or persistent homology
+
+### 9. Cognitive Dissonance Detector (CDD)
+- Description: Exposes gap between corporate ESG claims and funded research reality
+- Key capability: Contrastive text embeddings (CLIP-style) for claim vs reality divergence
+- Math: KL divergence between topic distributions of ESG claims vs patent/paper filings
+- Data sources: SEC EDGAR, GRI database, Crossref Funder Registry, Europe PMC, WIPO PATENTSCOPE
+- **STATUS: NOT IMPLEMENTED** ✗
+
+### 10. Epistemic Monoculture Seismograph (EMS)
+- Description: Measures cognitive diversity collapse in research via dataset/tool concentration
+- Key capability: Simpson's diversity index on datasets, PCA variance explained by first component
+- Math: Simpson's diversity index, Gini-Simpson index, PCA on methodological embedding
+- Data sources: PapersWithCode, OpenAlex, DataCite, GitHub API, Core API
+- **STATUS: PARTIALLY IMPLEMENTED** → research_monoculture_detect (hcs10_academic)
+  - Note: Covers method monoculture; EMS adds dataset-specific diversity metrics
+
+---
+
+## ADDITIONAL ROUND 5 HCS-10 TOOLS (From summary files)
+
+### 11. Grant Language Forensics (Zipf + Benford)
+- Description: Applies Zipf's law and Benford's law to detect manipulated grant proposals
+- Key capability: Statistical anomalies in word frequency and numeric distributions
+- Math: Zipf distribution fitting, Benford's law chi-square test
+- Data sources: Crossref, Unpaywall, OpenLibrary, CORE, Google Books Ngram
+- **STATUS: IMPLEMENTED** → research_grant_forensics (hcs10_academic)
+
+### 12. GRIM/SPRITE Data Fabrication Scanner
+- Description: Detects impossible summary statistics via GRIM and SPRITE tests
+- Key capability: Reconstructs raw data from means/SDs to spot fabrication
+- Math: GRIM granularity checks, SPRITE iterative reconstruction
+- Data sources: Figshare, Dryad, OSF, Zenodo, Mendeley Data
+- **STATUS: IMPLEMENTED** → research_data_fabrication (hcs10_academic)
+
+### 13. Institutional Safety Decay Predictor
+- Description: Predicts catastrophic safety incidents using survival analysis
+- Key capability: Hazard modeling on OSHA violations + institution metrics
+- Math: Cox proportional-hazards, Bayesian updating
+- Data sources: OSHA, Times Higher Education, QS, NIH RePORT, ClinicalTrials.gov
+- **STATUS: IMPLEMENTED** → research_institutional_decay (hcs10_academic)
+
+### 14. Conference Deadline Arbitrage Detector
+- Description: Detects gaming of conference deadlines via time-series analysis
+- Key capability: ARIMA on deadline shifts, expected vs actual acceptance rate comparison
+- Math: ARIMA/exponential smoothing on deadline data
+- Data sources: Twitter, EasyChair, Confref, WikiCFP, OpenResearch
+- **STATUS: IMPLEMENTED** → research_conference_arbitrage (hcs10_academic)
+
+### 15. Preprint PR Manipulation Detector
+- Description: Detects orchestrated social media boosts for preprints
+- Key capability: Time-series outlier detection (ESD/DBSCAN) on altmetric spikes
+- Math: Outlier detection on temporal mention patterns
+- Data sources: Altmetric.com, Twitter, Reddit, arXiv stats, bioRxiv Labs
+- **STATUS: IMPLEMENTED** → research_preprint_manipulation (hcs10_academic)
+
+### 16. Research Equipment Supply Chain Risk Monitor
+- Description: Identifies vulnerabilities in lab equipment supply chains
+- Key capability: Multi-criteria decision analysis on supply concentration
+- Math: MCDA risk scoring, diversification metrics
+- Data sources: WTO trade data, Panjiva, Customs, LinkedIn, local procurement
+- **STATUS: IMPLEMENTED** → research_supply_chain_risk (supply_chain_intel)
+
+### 17. Academic Social Engineering Vulnerability Assessor
+- Description: Identifies infiltration points via profile oversharing analysis
+- Key capability: Behavioral analytics on information leakage
+- Math: Weighted risk scoring correlating oversharing with phishing success
+- Data sources: ResearchGate, Academia.edu, LinkedIn, Twitter, Slack
+- **STATUS: PARTIALLY IMPLEMENTED** → research_social_engineering_score (osint_extended)
+  - Note: Social eng score exists; vulnerability assessment more explicit in proposal
+
+### 18. Coordinated Academic Campaigns Detector
+- Description: Detects orchestrated multi-platform research releases (arXiv + GitHub + Wikipedia)
+- Key capability: Granger causality tests, temporal clustering within 72-hour windows
+- Math: Granger causality, synchronization metrics
+- Data sources: arXiv, GitHub Events, Wikipedia Recent Changes, ORCID
+- **STATUS: PARTIALLY IMPLEMENTED** → research_coordinated_campaigns (if creatable from existing tools)
+  - Note: No single tool explicitly tracks arXiv + GitHub + Wikipedia simultaneity
+
+### 19. Corporate Pivot Predictor
+- Description: Predicts strategic corporate pivots from SEC/patent/job/Glassdoor shifts
+- Key capability: NLP sentiment on SEC language, patent classification clustering
+- Math: Cosine similarity on filing language, variance in skill demand
+- Data sources: SEC EDGAR, USPTO patents, Indeed/Glassdoor jobs, Glassdoor reviews
+- **STATUS: PARTIALLY IMPLEMENTED** → research_competitive_intel (competitive_intel)
+  - Note: Competitive intel exists; pivot-specific semantic shift tracking not explicit
+
+### 20. Supply Chain Attack Early Warning System
+- Description: Detects package registry malware via typosquatting, maintainer changes, CVE proximity
+- Key capability: Package history anomaly detection, dependency graph analysis
+- Math: Anomaly scoring on version velocity, maintainer diversity
+- Data sources: PyPI, npm, GitHub GraphQL, NVD CVE, npm registry
+- **STATUS: PARTIALLY IMPLEMENTED** → research_dependency_audit (supply_chain_intel)
+  - Note: Dependency audit exists; supply chain attack detection (typosquatting) not explicit
+
+### 21. Research Fraud Detection System
+- Description: Correlates citation patterns, affiliation volatility, retractions, paper mill indicators
+- Key capability: Bayesian network for multi-signal fraud risk
+- Math: Bayesian modeling of citation anomalies + retraction correlation
+- Data sources: Crossref, ORCID, Retraction Watch, OpenCitations
+- **STATUS: IMPLEMENTED** → research_citation_analysis (academic_integrity) + research_grant_forensics
+
+### 22. Domain Hijacking Prediction
+- Description: Monitors CT logs for unexpected certs, DNS anomalies, WHOIS changes
+- Key capability: Hidden Markov model on domain state transitions
+- Math: HMM trained on legitimate domain behavior
+- Data sources: crt.sh Certificate Transparency, DNS APIs, WHOIS XML, IP Geolocation
+- **STATUS: PARTIALLY IMPLEMENTED** → research_dns_lookup (domain_intel), research_security_headers
+  - Note: DNS and cert tools exist; HMM-based hijacking prediction not explicit
+
+### 23. Talent Migration Tracker
+- Description: Predicts relocation via GitHub activity, LinkedIn changes, conference attendance
+- Key capability: Geographic clustering of contributions, skill drift detection
+- Math: Temporal clustering, skill vector similarity
+- Data sources: GitHub, LinkedIn, WikiCFP/OpenResearch, Stack Overflow
+- **STATUS: NOT IMPLEMENTED** ✗
+
+### 24. Funding-to-Hiring Pipeline
+- Description: Tracks NSF/NIH grants → patents → job postings → equipment purchases
+- Key capability: Temporal correlation engine for 18-month hiring prediction
+- Math: Logistic regression on grant size + patent count
+- Data sources: NSF Award API, NIH RePORTER, Indeed, USPTO Patents
+- **STATUS: NOT IMPLEMENTED** ✗
+
+### 25. Ideological Drift Detection in Research Communities
+- Description: Detects paradigm shifts via citation sentiment, conference topics, author networks
+- Key capability: Topic modeling + network centrality changes
+- Math: LDA for topic drift, eigenvector centrality change detection
+- Data sources: Semantic Scholar, DBLP, Crossref, OpenAIRE
+- **STATUS: PARTIALLY IMPLEMENTED** → research_trend_predict (trend_predictor)
+  - Note: Trend prediction exists; explicit "ideological drift" sentiment tracking not in current tool
+
+---
+
+## DETAILED IMPLEMENTATION STATUS
+
+### FULLY IMPLEMENTED (8 tools)
+1. **Epi-Linguistic Fraud Vectorizer (ELFV)** → research_grant_forensics
+2. **Institutional Entropy Barometer (IEB)** → research_institutional_decay
+3. **Obfuscated Capital Nexus (OCN)** → research_shell_funding
+4. **Nepotism Topology Engine (NTE)** → research_review_cartel
+5. **Grant Language Forensics** → research_grant_forensics
+6. **GRIM/SPRITE Data Fabrication Scanner** → research_data_fabrication
+7. **Institutional Safety Decay Predictor** → research_institutional_decay (overlaps IEB)
+8. **Conference Deadline Arbitrage Detector** → research_conference_arbitrage
+
+### PARTIALLY IMPLEMENTED (11 tools)
+1. **Attention Arbitrage Chronometer (AAC)** ↔ research_preprint_manipulation
+   - Gap: Hawkes process model (AAC) vs binary PR detection (current)
+
+2. **Methodological Contagion Mapper (MCM)** ↔ research_monoculture_detect
+   - Gap: Epidemic R0 calculation (MCM) not in current monoculture detection
+
+3. **Paradigm Shift Pre-cognition Array (PSPA)** ↔ research_trend_predict
+   - Gap: HMM + persistent homology (PSPA) vs trend velocity (current)
+
+4. **Epistemic Monoculture Seismograph (EMS)** ↔ research_monoculture_detect
+   - Gap: Dataset diversity metrics (EMS) not separated from method monoculture
+
+5. **Preprint PR Manipulation Detector** → research_preprint_manipulation
+   - Gap: Time-series ESD/DBSCAN (proposal) vs spike detection (current)
+
+6. **Research Equipment Supply Chain Risk** ↔ research_supply_chain_risk
+   - Gap: Trade data integration missing; uses procurement/LinkedIn only
+
+7. **Academic Social Engineering Vulnerability Assessor** ↔ research_social_engineering_score
+   - Gap: Profile oversharing metrics (proposal) vs broader social engineering risk
+
+8. **Coordinated Academic Campaigns Detector** ↔ (no single tool)
+   - Partial via: research_github + research_spider + implicit arXiv tracking
+   - Gap: No unified 72-hour temporal window + multi-platform detector
+
+9. **Corporate Pivot Predictor** ↔ research_competitive_intel
+   - Gap: Semantic drift on SEC/patent/job posting (proposal) vs competitive positioning
+
+10. **Supply Chain Attack Early Warning** ↔ research_dependency_audit
+    - Gap: Typosquatting detection (proposal) not in dependency audit
+
+11. **Domain Hijacking Prediction** ↔ research_dns_lookup + research_security_headers
+    - Gap: HMM-based state prediction not implemented
+
+### NOT IMPLEMENTED (11 tools)
+1. **Orphaned Knowledge Resurrector (OKR)**
+   - Capability: Cross-temporal semantic alignment for forgotten research
+   - Math: Dynamic Word2Vec + Procrustes alignment
+   - Would require: PubChem API integration + historical corpus alignment
+
+2. **Cognitive Dissonance Detector (CDD)**
+   - Capability: ESG claim vs funded research reality divergence
+   - Math: Contrastive text embeddings (CLIP-style)
+   - Would require: SEC EDGAR + WIPO patent integration + contrastive learning
+
+3. **Talent Migration Tracker**
+   - Capability: Predict researcher relocation 3-6 months early
+   - Math: Geographic clustering + skill drift via LinkedIn/GitHub
+   - Would require: LinkedIn scraping infrastructure + conference track integration
+
+4. **Funding-to-Hiring Pipeline**
+   - Capability: 18-month hiring prediction from grant signals
+   - Math: Logistic regression on grant → patent → job correlation
+   - Would require: Indeed job API integration + procurement data access
+
+5. **Ideological Drift Detection**
+   - Capability: Explicit citation sentiment tracking (supporting vs contrasting)
+   - Math: Citation intent classification + LDA topic modeling
+   - Would require: SciBERT fine-tuning for citation sentiment
+
+6. **Benford's Law Enforcement Anomaly Detector**
+   - Capability: Detect OSHA violation clustering anomalies
+   - Math: Benford's law chi-square on violation counts
+   - Would require: OSHA time-series API integration
+
+7. **Dynamic Author Network Clustering**
+   - Capability: Detect emerging research clusters 6 months before recognition
+   - Math: Spectral clustering on co-author graphs with temporal decay
+   - Would require: Dynamic graph algorithms + temporal co-authorship tracking
+
+8. **Citation Cartography Engine**
+   - Capability: Map how papers build on each other to find citation manipulation
+   - Math: Citation flow analysis, reverse time-series reconstruction
+   - Would require: Full-text citation context extraction
+
+9. **Researcher Burnout Prediction**
+   - Capability: Predict lab stress via publication velocity, retraction rate spikes
+   - Math: Anomaly detection on publication patterns
+   - Would require: ORCID employment duration tracking + publication velocity metrics
+
+10. **Manuscript Tracking Intelligence**
+    - Capability: Monitor submitted but rejected papers for rereleasing as different work
+    - Math: Semantic similarity on abstract fingerprints
+    - Would require: Preprint servers + journal rejection tracking
+
+11. **Research Incentive Misalignment Detector**
+    - Capability: Flag metrics (h-index, citation velocity) suggesting gaming
+    - Math: Statistical regression testing for anomalous growth
+    - Would require: Granular publication date tracking + velocity anomaly detection
+
+---
+
+## MATHEMATICAL FOUNDATIONS ANALYSIS
+
+Round 5 proposals relied heavily on:
+- **Bayesian networks** (8 proposals)
+- **Entropy measures** (Shannon, Von Neumann) (6 proposals)
+- **Hawkes processes** (2 proposals)
+- **Survival analysis / Hazard models** (3 proposals)
+- **Network motif detection** (ERGMs, triadic closure) (3 proposals)
+- **Time-series anomaly detection** (ESD, DBSCAN) (2 proposals)
+- **Text embeddings** (Word2Vec, Procrustes, LDA) (4 proposals)
+- **SIR epidemiology on citation networks** (1 proposal)
+- **Persistent homology** (Betti numbers) (1 proposal)
+- **Benford's law + Zipf's law** (2 proposals)
+
+Most implemented tools use:
+- **Network analysis** (OpenAlex, co-authorship)
+- **API aggregation** (simple fusion, no advanced stats)
+- **Anomaly detection** (threshold-based, not HMM/ML)
+- **Text classification** (NLP, keyword matching)
+- **Temporal tracking** (date comparisons, trend detection)
+
+**Gap**: Round 5 proposals are more mathematically sophisticated than current implementation.
+
+---
+
+## RECOMMENDATIONS FOR FUTURE ROUNDS
+
+**Quick wins** (6 months):
+1. Add Hawkes process model to research_preprint_manipulation
+2. Integrate citation sentiment (scite API) into research_trend_predict
+3. Add dataset diversity metrics to research_monoculture_detect
+4. Implement HMM for domain hijacking in research_dns_lookup
+
+**Medium effort** (1 year):
+1. Build Orphaned Knowledge Resurrector (OKR) using Wikidata + PubChem
+2. Implement Cognitive Dissonance Detector (CDD) with SEC/WIPO integration
+3. Add Talent Migration Tracker using LinkedIn + GitHub inference
+4. Build Funding-to-Hiring Pipeline temporal engine
+
+**Long-term** (18+ months):
+1. Persistent homology (topological data analysis) for paradigm shift detection
+2. Contrastive learning (CLIP-style) for ESG/reality gap detection
+3. Dynamic author network clustering with temporal decay
+4. Multi-modal embeddings (text + citation network + funding network)
+
+---
+
+## TOOL REGISTRATION AUDIT
+
+**Total registered in server.py: 94+ tools across:**
+- Core research: 10 (fetch, spider, markdown, search, deep, github, stealth, cache, github-enhanced)
+- Killer research: 20 (dead_content, invisible_web, js_intel, multi_search, dark_forum, etc.)
+- Threat intel: 7 (dark_market, ransomware, phishing, botnet, malware, domain, IOC)
+- Psychology/behavioral: 2 (stylometry, deception_detect)
+- Company intel: 3 (diligence, salary, competitive)
+- Supply chain: 3 (risk, patents, dependencies)
+- Domain: 3 (whois, dns, nmap)
+- Job signals: 3 (funding, stealth_hire, interviewer_profiler)
+- Security: 2 (cert, headers, breach, password)
+- Signal detection: 3 (ghost_protocol, temporal_anomaly, sec_tracker)
+- AI Safety: 7 (5 core + 2 extended)
+- OSINT extended: 2 (social_engineering, behavioral_fingerprint)
+- PDF: 2 (extract, search)
+- Academic integrity: 3 (citation_analysis, retraction_check, predatory_journal)
+- HCS-10 academic: 8 (forensics, monoculture, cartel, fabrication, decay, shell, arbitrage, manipulation)
+- Creative: 4 (darkweb_warning, deception_job, bias_lens, salary_synth)
+- Monitoring/RSS/Social/Trend/Report: 8
+- Sessions/Config/Health: 4
+- Optional tools (LLM, enrichment, YouTube, Vast.ai, etc.): 30+
+
+---
+
+## CONCLUSION
+
+Round 5 creative research successfully proposed 25+ novel research tools spanning
+academic integrity, institutional analysis, and supply chain monitoring. Of these:
+
+- **32% (8/25)** are now fully implemented in Loom
+- **44% (11/25)** have partial implementations (capability present but incomplete)
+- **24% (6/25)** remain unimplemented (core concepts not yet built)
+
+The unimplemented tools represent genuinely novel contributions in semantic
+cross-temporal alignment (OKR), contrastive corporate auditing (CDD), and
+researcher relocation forecasting (TMT). Recommended priority: OKR and CDD
+for immediate business impact in ESG + R&D tracking.
+

@@ -1,0 +1,46 @@
+1.  Culture-DNA Tailor  
+   • What it is  
+     A one-click generator that builds a resume, cover letter and Linked-In headline that mirror the psychological profile of the exact hiring-manager and the unwritten norms of the team.  
+   • How Loom + 17jobsearch merge  
+     – Loom scrapes every public trace left by the manager and the team (tweets, Git commits, Slack leaks, conference talks, Glassdoor comments) and runs its psychology-analysis suite to output Big-5 traits, tone preferences, taboo topics and persuasion triggers.  
+     – 17jobsearch’s tailoring engine ingests that profile, rewrites the candidate’s materials, re-balances keyword density for ATS, and re-scores the package against the Lever/Greenhouse/Workday parser.  
+   • New capability that appears only in the combo  
+     Hyper-personalized documents that align with BOTH machine filters (ATS) and the individual human decision-maker’s cognitive biases—something neither platform could do alone.
+
+2.  DarkWeb Scam-Shield  
+   • What it is  
+     A security layer that silently flags or blocks fraudulent, data-harvesting or identity-theft job ads before the user ever clicks “apply.”  
+   • How Loom + 17jobsearch merge  
+     – Loom’s dark-web and OSINT crawlers maintain a live blacklist of compromised employer domains, look-alike URLs and stolen recruiter accounts.  
+     – As 17jobsearch’s ATS scrapers pull postings, they hash job-ad metadata and query Loom’s blacklist API in real-time; suspect ads are quarantined or annotated with risk scores.  
+   • New capability  
+     The first job-search workflow with built-in threat-intelligence—protecting candidates from phishing, mule-recruitment and deep-fake interviews.
+
+3.  Market-Pulse Opportunity Radar  
+   • What it is  
+     A dashboard that predicts where new roles will appear weeks before they hit the job boards, then auto-queues applications the minute the requisition number is created.  
+   • How Loom + 17jobsearch merge  
+     – Loom continuously scrapes funding rounds, earnings calls, patent filings, insider-hiring chatter on Discord/Blind and uses its NLP trend engine to assign “imminent-hiring” probabilities to companies and teams.  
+     – 17jobsearch monitors the same firms’ ATS endpoints; when a matching requisition surfaces, it auto-deploys a pre-tailored application packet generated earlier and time-stamped for “first 5-minute” submission.  
+   • New capability  
+     Beating the herd: applicants become the very first résumés recruiters see, often before roles are tweeted or syndicated to job aggregators.
+
+4.  Future-Fit Skill Mapper  
+   • What it is  
+     A career GPS that shows the shortest skill path from the user’s current profile to the most future-proof, high-demand roles—and then auto-applies to bridge jobs as each new skill is acquired.  
+   • How Loom + 17jobsearch merge  
+     – Loom’s macro-scraper ingests millions of job ads monthly, clustering new and rising skill keywords with its NLP engine to forecast demand curves 6-18 months out.  
+     – 17jobsearch compares those curves with the candidate’s résumé, highlights gaps, suggests micro-courses or projects, tracks completion badges, and lines up ATS-ready applications for the next logical stepping-stone role.  
+   • New capability  
+     A closed-loop system that not only tells you which skills to learn but automatically cashes them in for interviews the moment you earn them.
+
+5.  Interview-Synth Simulator  
+   • What it is  
+     A VR/voice chat simulator that reproduces the exact questioning style, technical depth and behavioral quirks of a target company’s interview panel.  
+   • How Loom + 17jobsearch merge  
+     – Loom mines interview-experience posts, YouTube recordings, conference Q&A and leaked interviewer guides; its psychology module builds persona vectors for common interviewers.  
+     – 17jobsearch’s coaching suite feeds those vectors into an LLM that conducts live mock interviews, scores the candidate on the same rubric its ATS-scoring module predicts the real panel will use, and pushes instant rewrites to résumé bullet points based on weak answers.  
+   • New capability  
+     A feedback loop where interview practice, résumé refinement and ATS scoring co-evolve in real time, producing iteratively stronger applications until success probability crosses a chosen threshold.
+
+Together these five bridge tools turn passive job applications into an end-to-end, intelligence-driven campaign—blending Loom’s 102 research utilities with 17jobsearch’s automated execution layer to create a job-hunt platform that is predictive, secure, hyper-personalized and self-optimizing.

@@ -1,0 +1,315 @@
+YOLO mode is enabled. All tool calls will be automatically approved.
+YOLO mode is enabled. All tool calls will be automatically approved.
+MCP issues detected. Run /mcp list for status.I have audited all Round 5 creative research files. I wrote a Python script to scan the files, extract heuristic blocks containing tool definitions and descriptions, normalize their names, and cross-match them against your provided list of implemented tools.
+
+Here is the cross-matched list of extracted tool ideas. I have filtered out parsing artifacts (e.g., helper functions, markdown headers) to give you the most accurate list of genuine tool ideas.
+
+### CROSS-MATCH RESULTS
+
+IDEA: Academic Social Engineering Vulnerability Scanner | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Arxiv Embargo Violation Detector | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Attention Arbitrage Chronometer | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: CertTrans Anomaly Detector | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: CiteChecker | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: CiteSentry | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Cognitive Dissonance Detector | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Conference Deadline Arbitrage | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: CoordinatedNarrativeTracer | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: DOMAIN CONTROL CONSPIRACY RADAR | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Domain Hijacking Predictor: "HijackAlert" | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: EDIT WAR SYNC MAP | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: EconoClimax | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Epi-Linguistic Fraud Vectorizer | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Epistemic Monoculture Seismograph | STATUS: IMPLEMENTED | COVERED_BY: research_monoculture_detect
+IDEA: FILING FABRICATOR: Ghostwriter Vendor Detector | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: FilingIntelligenceMiner | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: FraudSpot | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: FundingToHiringBridge | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: GLOBAL FLIGHT RISK SPOTTER | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: GRIM/SPRITE Data Fabrication Scanner | STATUS: IMPLEMENTED | COVERED_BY: research_data_fabrication
+IDEA: GeoTracker | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: GitHub Acquisitions Predictor | STATUS: IMPLEMENTED | COVERED_BY: research_github
+IDEA: InfluencerInsight | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Institutional Entropy Barometer | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Institutional Safety Decay Predictor | STATUS: IMPLEMENTED | COVERED_BY: research_institutional_decay
+IDEA: MarketMood | STATUS: IMPLEMENTED | COVERED_BY: research_competitive_intel
+IDEA: Methodological Contagion Mapper | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: NarrativeDriftDetector | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Nepotism Topology Engine | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: NetworkNavigator | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Obfuscated Capital Nexus | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Omnivore | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Orphaned Knowledge Resurrector | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Paradigm Shift Pre-cognition Array | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: PatentProwler | STATUS: IMPLEMENTED | COVERED_BY: research_competitive_intel
+IDEA: Plagiarism & Paper Factory Radar | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: PlagiarismPatroller | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Preprint PR Manipulation Detector | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: RegImpactForecaster | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Research Equipment Supply Chain Risk | STATUS: IMPLEMENTED | COVERED_BY: research_supply_chain_risk
+IDEA: STEALTH PRODUCT LAUNCH EARLY WARNING | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: SUPPLY NODE FRAGILITY MAPPER | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Shell Company Research Funding Tracer | STATUS: IMPLEMENTED | COVERED_BY: research_search
+IDEA: SupplyChainPulse | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: TIMELINE TALENT UNICORN FINDER | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: TalentFlowMapper | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: TemporalSynthesis | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Wikipedia-Company Event Correlator | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: arXiv Submission Leakage Network Analyzer | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+
+<br>
+
+==================================================
+
+### NOT IMPLEMENTED IDEAS (WITH FULL DESCRIPTIONS):
+
+**--- Academic Social Engineering Vulnerability Scanner ---**
+- Purpose: Department-level exposure assessment for social-engineering risk without targeting individuals.
+- Free data sources (≥5):
+  - ORCID public API (contact fields presence)
+  - OpenAlex (authors/affiliations growth and centralization)
+  - Wikidata (dept websites/CMS footprints)
+  - IPEDS (staff counts/turnover proxies)
+  - NSF HERD (funding pressure)
+  - OSF (project visibility, admin email domains)
+- Mathematical foundation: Logistic regression on aggregated organizational metadata.
+
+**--- Arxiv Embargo Violation Detector ---**
+Description: Detect potential embargo violations by analyzing arXiv submission timing.
+- Free Data Sources: arXiv API, ResearchGate API, Microsoft Academic Graph API
+- Typed Output: `List[str]` (List of suspect papers)
+
+**--- Attention Arbitrage Chronometer ---**
+Description: Models the scientific attention economy as a high-frequency trading market. It posits that highly cited, viral papers are not necessarily the most rigorous, but those whose release timing exploits systemic vulnerabilities in the academic-media complex. AAC tracks the precise minute a preprint hits arXiv/bioRxiv and correlates it with the citation curves to identify manipulated burst cycles.
+
+**--- CertTrans Anomaly Detector ---**
+Description: Detect anomalies in Certificate Transparency logs to identify potential malicious activity.
+- Free Data Sources: CertStream API, VirusTotal API, Google Safe Browsing API
+- Typed Output: `List[str]` (List of suspected domains)
+
+**--- CiteChecker ---**
+- Description: Verifies Citation Consistency Across Documents.
+- Problem Solved: Helps in detecting potential plagiarism in citations.
+- Data Sources:
+  1. Google Scholar API (Unofficial, for citation data)
+  2. DOAJ (Directory of Open Access Journals) API
+  3. Local University Database
+
+**--- CiteSentry ---**
+Monitors reference patterns across large biblio-data to catch irregular or inconsistent citations in academic papers.  
+   Data Sources (3+):  
+   • CrossRef (api.crossref.org)  
+   • PubMed (api.ncbi.nlm.nih.gov)  
+   • arXiv (export.arxiv.org/api)  
+
+**--- Cognitive Dissonance Detector ---**
+Description: Exposes the gap between what a corporation or institution claims in its public sustainability/ethics reports and what its funded researchers are actually doing in the lab. Ingests annual ESG reports, press releases, and contrasts it against methodologies detailed in the research they fund.
+
+**--- Conference Deadline Arbitrage ---**
+- Purpose: Detect windows where acceptance probability likely rises due to scheduling/timing effects.
+- Free data sources (≥5):
+  - OpenResearch.org (SemanticWiki of CFPs)
+  - DBLP (conference years and sizes)
+  - OpenAlex (proceedings, venue series)
+  - arXiv API (submission surges around CFPs)
+  - Crossref (proceeding publication lag)
+  - CSrankings (venue lists; proxy for competitiveness)
+
+**--- CoordinatedNarrativeTracer ---**
+Scans multiple social and fact-checking platforms for aligned or “copy-paste” narratives that may indicate orchestrated messaging campaigns.  
+   Data Sources (3+):  
+   • Reddit JSON API  
+   • GDELT Global News API  
+   • FactCheck.org RSS feed  
+
+**--- DOMAIN CONTROL CONSPIRACY RADAR ---**
+- Data Sources:  
+  - WHOIS history API  
+  - DNS record changes API  
+  - Bitcoin mempool API (finding correlated payments)
+- Purpose: Uncovers synchronized, multi-domain control changes that correlate with “clustered” Bitcoin payments, indicative of covert network handovers.
+
+**--- Domain Hijacking Predictor: "HijackAlert" ---**
+Description: Predicts domain hijacking attempts by fusing Certificate Transparency logs, DNS changes, and WHOIS updates.
+- Data Sources: Certificate Transparency logs (crt.sh API), DNS changes (DNSDB API), WHOIS updates (WHOISXML API), Domain name registration data (DomainTools API).
+
+**--- EDIT WAR SYNC MAP ---**
+- Data Sources:  
+  - Wikipedia edit wars (edits, talk pages)  
+  - Certificate Transparency logs (new certs for advocacy sites)  
+  - Reddit API (subtle coordinated voting/activity)
+- Purpose: Detects topic spikes where Wikipedia edit wars are synchronized with bursts in new advocacy site domains and social media rallying.
+
+**--- EconoClimax ---**
+- Description: Correlates Economic Indicators with Climate Change Data for Policy Insights.
+- Problem Solved: Informs policy decisions with multi-domain insights.
+- Data Sources:
+  1. World Bank API (Economic Data)
+  2. NASA Climate API
+  3. IPCC (Intergovernmental Panel on Climate Change) Data Repository
+
+**--- Epi-Linguistic Fraud Vectorizer ---**
+Description: Introduces the concept of "epistemic linguistic decay" to predict research fraud years before formal investigations or retractions occur. Standard plagiarism detectors look for textual similarity; ELFV looks for subtle shifts in certainty markers, syntactic complexity, and semantic hedging over a researcher's career trajectory.
+
+**--- FILING FABRICATOR: Ghostwriter Vendor Detector ---**
+- Data Sources:  
+  - SEC EDGAR NLP API  
+  - Wikipedia edit patterns  
+  - Reddit karma bursts for tickers
+- Purpose: Detects when a company appears to use the same consultant/ghostwriter across filings, Wikipedia editing, and social media, implying covert third-party PR.
+
+**--- FilingIntelligenceMiner ---**
+Extracts competitive intelligence from SEC filings, global corporate registries, and patent applications.  
+   Data Sources (3+):  
+   • SEC EDGAR (sec.gov/edgar)  
+   • OpenCorporates (api.opencorporates.com)  
+   • USPTO Patent Public Data (developer.uspto.gov)  
+
+**--- FraudSpot ---**
+Flags suspicious academic publications using retraction data, CrossRef metadata, and ORCID author histories.  
+   Data Sources (3+):  
+   • CrossRef (api.crossref.org)  
+   • Retraction Watch Database (retractionwatch.com, partial public listings)  
+   • ORCID Public API (orcid.org)  
+
+**--- FundingToHiringBridge ---**
+Tracks how newly funded startups rapidly expand hiring across LinkedIn and Glassdoor, validating capital-to-headcount growth.  
+   Data Sources (3+):  
+   • Crunchbase free funding data  
+   • LinkedIn Jobs (public job listings)  
+   • Glassdoor Jobs (limited public feed)  
+
+**--- GLOBAL FLIGHT RISK SPOTTER ---**
+- Data Sources:  
+  - arXiv submission timing (region/person)  
+  - GitHub push IPs/metadata  
+  - DNS update history (personal/portfolio domains)
+- Purpose: Detects when high-value researchers are preparing to leave by their digital signals: early-morning arXiv posts, GitHub from new IPs, and changes in personal DNS records.
+
+**--- GeoTracker ---**
+- Description: Tracks hashtag Usage Across Social Media and Maps Geographical Trends.
+- Problem Solved: Identifies global hotspots for specific hashtags.
+- Data Sources: Twitter API, Instagram Graph API, OpenCage Geocoder.
+
+**--- InfluencerInsight ---**
+- Description: Maps Influencer Networks Across Social Platforms.
+- Problem Solved: Reveals hidden influencer relationships.
+- Data Sources: Instagram Graph API, Twitter API, TikTok API.
+
+**--- Institutional Entropy Barometer ---**
+Description: Predicts catastrophic organizational failures—such as major lab safety incidents, massive grant clawbacks, or systemic research misconduct—up to 3 years before they become public. Operates on the premise that physical and regulatory decay is preceded by subtle, measurable "entropy" in peripheral, publicly visible operations.
+
+**--- Methodological Contagion Mapper ---**
+Description: Tracks how bad, misapplied, or outdated statistical methods spread through scientific literature like a virus. Identifies flawed methodologies in highly cited papers that are copied verbatim by downstream researchers.
+
+**--- NarrativeDriftDetector ---**
+Observes how public discourse shifts over time in different forums and news outlets, hinting at changing public sentiment or orchestrated spin.  
+    Data Sources (3+):  
+    • GDELT Event/Article feed  
+    • Reddit’s r/ChangeMyView or r/Politics JSON feed  
+    • Twitter’s Basic API v2 endpoint  
+
+**--- Nepotism Topology Engine ---**
+Description: Algorithmically detects unstated, unethical peer-review rings, editorial nepotism, and academic cartel behavior. Tracks "bipartite rings" (Lab A reviews Lab B, Lab B reviews Lab C, Lab C reviews Lab A) or trade favorable reviews for future co-authorship.
+
+**--- NetworkNavigator ---**
+- Description: Identifies Potential Security Vulnerabilities in Network Topology.
+- Problem Solved: Pre-empts network breaches by identifying weak points.
+- Data Sources: Local Network Topology API, NVD API, Dark Web Monitoring.
+
+**--- Obfuscated Capital Nexus ---**
+Description: Traces the "dark matter" of scientific funding—how shell companies, hostile state actors, or heavily conflicted corporate entities fund academic research through layered proxies. Maps "Institute for Dietary Research" to actual corporate entities.
+
+**--- Omnivore ---**
+- Description: Correlates Weather, Economic, and Social Media Data for Event Forecasting.
+- Problem Solved: Predicts event successes based on multi-domain data.
+- Data Sources: OpenWeatherMap API, World Bank Open Data, Twitter API.
+
+**--- Orphaned Knowledge Resurrector ---**
+Description: Mines "failed" or forgotten research to solve contemporary problems. Thousands of chemical compounds, algorithmic approaches, or material science formulations are published, show marginal results for their *intended* use case at the time, and are abandoned (orphaned).
+
+**--- Paradigm Shift Pre-cognition Array ---**
+Description: Identifies structural scientific revolutions (in the Kuhnian sense) 12 to 24 months before they are recognized by the mainstream by looking for "epistemic fracture points" rather than sheer citation velocity.
+
+**--- Plagiarism & Paper Factory Radar ---**
+- Data Sources:  
+  - arXiv API (full text, timing)  
+  - GitHub commit patterns API  
+  - WHOIS history API  
+- Purpose: Clusters similar writing/structural patterns in arXiv preprints, maps them to suspicious DevOps “bursts” on GitHub, and cross-references with WHOIS for paper factory operations.
+
+**--- PlagiarismPatroller ---**
+- Description: Scans Submitted Works Against Web, Journal, and Book Databases.
+- Problem Solved: Enhances plagiarism detection capabilities.
+- Data Sources: Google Custom Search API, CrossRef API, Google Books API.
+
+**--- Preprint PR Manipulation Detector ---**
+- Purpose: Detect improbable attention bursts around preprints suggesting coordinated promotion.
+- Free data sources (≥5):
+  - arXiv API (submission timestamps)
+  - bioRxiv/medRxiv APIs (preprint timestamps)
+  - Crossref Event Data (social/news mentions)
+  - GDELT (news coverage)
+  - Hacker News API (discussion timing)
+  - OpenAlex (early citations)
+
+**--- RegImpactForecaster ---**
+Predicts potential financial market impacts of new regulations by mapping legislative proposals to shifts in stock or commodity data.  
+   Data Sources (3+):  
+   • Regulations.gov Proposed Rules  
+   • GovTrack Congressional Bills  
+   • Yahoo Finance (basic stock data)  
+
+**--- STEALTH PRODUCT LAUNCH EARLY WARNING ---**
+- Data Sources:  
+  - SEC EDGAR API  
+  - Certificate Transparency (CT) logs  
+  - USPTO Public Patent APIs  
+- Purpose: Detects when a company is quietly preparing a new launch by correlating new domains, vague SEC language, and patent filings.
+
+**--- SUPPLY NODE FRAGILITY MAPPER ---**
+- Data Sources:  
+  - USPTO patent assignment/citation API  
+  - WHOIS history API (vendor sites)  
+  - arXiv API (vendor’s staff publications)
+- Purpose: Unmasks single-point-of-failure vendors via patent dependencies, domain instability, and simultaneous staff turnover.
+
+**--- SupplyChainPulse ---**
+Maps potential supply chain disruptions by linking corporate registration changes, trade flows, and shipping alerts.  
+   Data Sources (3+):  
+   • OpenCorporates (api.opencorporates.com)  
+   • Trade.gov (USITC Data)  
+   • MarineTraffic free developer feed (limited coverage)  
+
+**--- TIMELINE TALENT UNICORN FINDER ---**
+- Data Sources:  
+  - GitHub commit patterns API  
+  - arXiv submission timing  
+  - Reddit karma bursts in niche subs
+- Purpose: Finds “hidden” technical prodigies on a fast hyper-growth trajectory: sudden complex code push, spike in arXiv papers, and niche sub upvotes.
+
+**--- TalentFlowMapper ---**
+Reveals migration of developer talent by scanning open-source contribution data, Q&A activity, and job boards.  
+   Data Sources (3+):  
+   • GitHub public commits (via GitHub REST API)  
+   • Stack Exchange (Stack Overflow) user profile data  
+   • Remote-specific Job Listing Feeds (e.g., remoteok.com public feed)  
+
+**--- TemporalSynthesis ---**
+Finds unusual temporal correlations between global events, weather alerts, and economic data.  
+   Data Sources (3+):  
+   • NASA’s Earth Observatory Natural Event Tracker (EONET)  
+   • NOAA Weather Alerts (api.weather.gov)  
+   • World Bank GDP Indicators  
+
+**--- Wikipedia-Company Event Correlator ---**
+Description: Identify events in companies based on patterns in Wikipedia edit wars.
+- Free Data Sources: Wikipedia API, Google Trends API, Open Corporates API
+- Typed Output: `Dict[str, List[str]]` (Company names with associated event keywords)
+
+**--- arXiv Submission Leakage Network Analyzer ---**
+- Data Sources:  
+  - arXiv submission metadata API  
+  - Wikipedia recent edits API  
+  - Certificate Transparency logs API  
+- Purpose: Detects suspicious temporal+topical coincidences between incoming arXiv papers, Wikipedia edits, and new TLS certificates, indicative of coordinated early leaks or pre-publication sharing.

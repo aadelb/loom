@@ -1,0 +1,159 @@
+=== PSYCHOLOGY-FOCUSED DARK WEB RESEARCH TOOLS CREATED ===
+
+## Tool 1: research_persona_profile
+Location: /Users/aadel/projects/loom/src/loom/tools/persona_profile.py
+Lines: 389
+Type: Async MCP tool
+
+Features:
+- Cross-platform persona reconstruction from text samples
+- Linguistic analysis: formality level (0-1), vocabulary tier (basic/intermediate/advanced)
+- Big Five personality indicators:
+  * Openness: diverse vocabulary, abstract thinking
+  * Conscientiousness: structured sentences, precise language
+  * Extraversion: social words, exclamation marks, informal tone
+  * Agreeableness: positive sentiment, inclusive pronouns, hedging
+  * Neuroticism: negative emotion words, anxiety markers
+- Temporal pattern analysis: peak hours, timezone estimate, activity patterns
+- Topic extraction: top 10 distinctive nouns/noun phrases
+- Education level estimation: high_school, undergraduate, graduate, unknown
+- Optional LLM assessment for personality overview
+
+Return signature:
+{
+  "profile": {
+    "formality": float,  # 0-1
+    "vocabulary_tier": str,  # basic|intermediate|advanced
+    "personality": {
+      "openness": float,
+      "conscientiousness": float,
+      "extraversion": float,
+      "agreeableness": float,
+      "neuroticism": float,
+    },
+    "top_topics": [str],
+    "estimated_education": str,
+  },
+  "temporal": {  # optional, if metadata with timestamps provided
+    "peak_hours": [int],
+    "timezone_estimate": str,
+    "activity_pattern": str,  # nocturnal|diurnal|irregular
+  } | None,
+  "text_count": int,
+  "total_words": int,
+  "llm_assessment": str | None,
+}
+
+## Tool 2: research_radicalization_detect
+Location: /Users/aadel/projects/loom/src/loom/tools/radicalization_detect.py
+Lines: 328
+Type: Async MCP tool
+
+Features:
+- Radicalization indicator detection using NLP heuristics
+- Six indicator categories with individual scoring (0-1):
+  1. Us-vs-them framing: pronoun ratio analysis + group identity markers
+  2. Extremist vocabulary: keywords like jihad, crusade, martyr, liberation, etc.
+  3. Escalation language: destroy, eliminate, kill, bomb, attack, etc.
+  4. Moral absolutism: binary language (always/never), absolute judgments
+  5. Dehumanization: animal/disease metaphors (vermin, plague, parasite, etc.)
+  6. Call to action: imperative verbs + urgency words (must/now/immediately)
+
+- Overall risk score: weighted average (0-1)
+- Risk level classification: low (<0.2), moderate (0.2-0.4), elevated (0.4-0.7), high (>0.7)
+- Optional context parameter for background information
+- Optional LLM assessment for nuanced analysis
+
+Return signature:
+{
+  "risk_score": float,  # 0-1
+  "risk_level": str,  # low|moderate|elevated|high
+  "indicators": {
+    "us_vs_them": {"score": float, "examples": [str]},
+    "extremist_vocabulary": {"score": float, "terms_found": [str]},
+    "escalation_language": {"score": float, "terms_found": [str]},
+    "moral_absolutism": {"score": float, "terms_found": [str]},
+    "dehumanization": {"score": float, "terms_found": [str]},
+    "call_to_action": {"score": float, "examples": [str]},
+  },
+  "llm_assessment": str | None,
+  "word_count": int,
+  "context": str | None,
+}
+
+## Implementation Details
+
+Both tools:
+- Use async/await pattern for MCP integration
+- Handle errors gracefully (min 50 char validation)
+- Optional LLM integration (try/except ImportError fallback)
+- Comprehensive logging for debugging
+- Type hints on all function signatures
+- Pure NLP approach (no external ML models required)
+- Stdlib-only dependencies (re, logging, collections, asyncio)
+
+## Server Integration
+
+Updated /Users/aadel/projects/loom/src/loom/server.py:
+- Fixed duplicate tool imports (lines 32-46)
+- Added optional tool imports for persona_profile (lines 157-159)
+- Added optional tool imports for radicalization_detect (lines 162-164)
+- Registered tools in _register_tools() function (lines 437-445)
+- Rate-limited as "llm" category tools
+
+## Parameter Models
+
+Added to /Users/aadel/projects/loom/src/loom/params.py:
+- PersonaProfileParams: validates texts list, metadata dict
+- RadicalizationDetectParams: validates text string, context string
+
+Both with strict Pydantic v2 validation, extra="forbid"
+
+## Test Coverage
+
+Created comprehensive test suites:
+
+test_persona_profile.py (290 lines):
+- 15+ unit tests covering:
+  * Valid/invalid inputs
+  * Personality trait detection
+  * Vocabulary tier detection
+  * Education level estimation
+  * Temporal pattern analysis
+  * Unicode and special character handling
+  * Edge cases (large inputs, mixed valid/invalid)
+
+test_radicalization_detect.py (530+ lines):
+- 40+ unit tests covering:
+  * Risk level classification (low/moderate/elevated/high)
+  * Indicator detection (extremism, dehumanization, etc.)
+  * Edge cases (sarcasm, academic discussion, mixed sentiment)
+  * Input validation
+  * Unicode and special formatting
+  * Boundary testing
+
+## Files Created/Modified
+
+1. /Users/aadel/projects/loom/src/loom/tools/persona_profile.py [NEW]
+2. /Users/aadel/projects/loom/src/loom/tools/radicalization_detect.py [NEW]
+3. /Users/aadel/projects/loom/src/loom/server.py [MODIFIED - fixed imports, added tool registration]
+4. /Users/aadel/projects/loom/src/loom/params.py [MODIFIED - added parameter models]
+5. /Users/aadel/projects/loom/tests/test_persona_profile.py [NEW]
+6. /Users/aadel/projects/loom/tests/test_radicalization_detect.py [NEW]
+
+## Validation
+
+✓ All files compile successfully
+✓ Syntax verified with Python AST parser
+✓ Parameter models validated with Pydantic
+✓ Quick functional test passed
+✓ LLM integration gracefully handles errors
+
+## Notes
+
+- Tools are designed for dark web research in compliance context
+- Can detect linguistic patterns in online communities
+- Personality profiling aids in behavior analysis
+- Radicalization detection supports threat assessment
+- Both tools integrate with optional LLM for enhanced analysis
+- Falls back gracefully if LLM providers unavailable

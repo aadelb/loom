@@ -1,0 +1,71 @@
+YOLO mode is enabled. All tool calls will be automatically approved.
+YOLO mode is enabled. All tool calls will be automatically approved.
+MCP issues detected. Run /mcp list for status.Here is a structured list of creative job research tools designed for an MCP (Model Context Protocol) server, prioritized specifically for a PhD researcher looking to transition into industry roles. 
+
+For a PhD, the biggest challenges are typically translating academic experience into business value, finding companies with strong R&D cultures, and pricing themselves correctly.
+
+### 1. Research-to-Product Mapper (Custom Addition)
+*   **tool_name:** `map_research_to_product`
+*   **description:** Analyzes a user's publication record, thesis abstract, or patents, and maps the underlying methodologies (e.g., specific machine learning models, materials science techniques) to commercial products and the companies currently building or funding them. It answers: "Who is making money off the science I know how to do?"
+*   **data_sources:** Semantic Scholar API / Crossref API (for parsing user research), USPTO API (for patent mapping), Crunchbase API (for company product mapping), LLM semantic matching.
+*   **priority:** **Critical** (Highly specialized and provides a massive "aha" moment for PhDs struggling to find their industry niche).
+
+### 2. Academic-to-Industry Skill Translator
+*   **tool_name:** `translate_academic_skills`
+*   **description:** Analyzes a PhD CV and a target job description (JD). It identifies missing industry-specific skills and explicitly translates academic jargon into industry-standard terminology (e.g., translating "Managed undergraduate RAs" to "Cross-functional team leadership and mentoring"). Suggests specific micro-credentials to bridge gaps.
+*   **data_sources:** O*NET Web Services, Coursera/Udemy APIs (for gap-filling), LLM for semantic translation and gap analysis.
+*   **priority:** **Critical** (Solves the #1 hurdle for academics: speaking the language of business).
+
+### 3. Deep Company Diligence & Culture Scoring
+*   **tool_name:** `analyze_company_health`
+*   **description:** Provides a holistic view of a company's financial health, engineering/research culture, and employee retention. For PhDs, it specifically looks for indicators of a strong R&D environment (e.g., percentage of employees with advanced degrees, publication frequency of the company).
+*   **data_sources:** Crunchbase API (funding/runway), Glassdoor API (sentiment), SEC Edgar (for public financial health), Semantic Scholar (for company publication record).
+*   **priority:** **High** (Culture and stability are paramount for researchers leaving the relative safety of academia).
+
+### 4. Alumni & Advocate Network Finder
+*   **tool_name:** `find_network_advocates`
+*   **description:** Identifies professionals currently in a target role or company, explicitly prioritizing alumni from the user's university, former academic collaborators, or people who transitioned from academia to that specific company. Outputs personalized outreach templates.
+*   **data_sources:** LinkedIn API (via reliable proxies like Proxycurl or plain web scraping), University Alumni Databases, Crossref (for identifying co-authors in industry).
+*   **priority:** **High** (Warm introductions are statistically the most successful path for PhDs entering industry).
+
+### 5. Advanced Salary Intelligence
+*   **tool_name:** `analyze_salary_bands`
+*   **description:** Aggregates and normalizes compensation data for specific roles, levels, and locations. Crucially, it breaks down total compensation (Base, Bonus, Equity/RSUs) and adjusts for the "PhD premium" (if applicable in that specific field, like AI or Biotech).
+*   **data_sources:** Levels.fyi API, H1B Salary Database (for verified base salaries), Comprehensive.io API.
+*   **priority:** **High** (PhDs often severely underprice themselves when negotiating their first industry offer).
+
+### 6. ATS Resume Optimizer
+*   **tool_name:** `optimize_ats_resume`
+*   **description:** Compares the user's industry resume against a specific JD, providing an Applicant Tracking System (ATS) match score. It suggests actionable improvements for keyword density, formatting, and highlights areas where academic experience is taking up too much space.
+*   **data_sources:** Affinda API (or similar resume parsing API to simulate ATS extraction), LLM for semantic comparison against the JD.
+*   **priority:** **High** (Essential for getting past automated HR screens).
+
+### 7. Tailored Interview Simulation
+*   **tool_name:** `generate_interview_simulation`
+*   **description:** Creates a tailored interview guide based on the specific JD, the company's known interview style, and the user's background. It generates both technical questions (focused on the required stack) and behavioral questions (focused on industry culture vs. academic habits).
+*   **data_sources:** Glassdoor Interview Questions API, Leetcode/HackerRank APIs (for technical roles), LLM generation.
+*   **priority:** **Medium** (Highly useful, but relies on the user having already secured the interview).
+
+### 8. Career Trajectory Modeler
+*   **tool_name:** `model_career_trajectory`
+*   **description:** Maps the typical career progression for a specific entry role (e.g., "Data Scientist L3") over 5–10 years. It shows expected title promotions, salary progression, and common exit opportunities.
+*   **data_sources:** Aggregated resume databases, LinkedIn profile progression data (via Proxycurl).
+*   **priority:** **Medium** (Helps manage expectations and plan long-term, mitigating the fear of taking a "step back" after a PhD).
+
+### 9. Market Velocity & Risk Analyzer
+*   **tool_name:** `analyze_market_velocity`
+*   **description:** Tracks hiring freezes, recent layoffs, and remote work trends within specific micro-sectors (e.g., "Generative AI startups in SF" vs "Legacy Pharma in Boston"). 
+*   **data_sources:** Layoffs.fyi API, Alpha Vantage / FRED (macro-economic indicators), job board aggregators.
+*   **priority:** **Medium** (Useful for targeting safe industries, but less actionable on a day-to-day basis).
+
+### 10. Recruiter Intelligence
+*   **tool_name:** `identify_domain_recruiters`
+*   **description:** Finds and ranks internal talent acquisition specialists and agency recruiters who have a history of placing PhDs or hiring for the specific technical niche the user is targeting.
+*   **data_sources:** LinkedIn API, specialized recruiting firm directories (e.g., Hunt Club).
+*   **priority:** **Low** (Useful, but finding internal advocates via the `find_network_advocates` tool is generally more effective than cold-messaging recruiters).
+
+### 11. Competitor Talent Mapping
+*   **tool_name:** `map_talent_competitors`
+*   **description:** If a user finds a role they love at a company that isn't hiring (or rejected them), this tool identifies companies with identical tech stacks and similar product offerings who *are* hiring.
+*   **data_sources:** BuiltIn API, Wellfound API, Job board aggregators.
+*   **priority:** **Low** (More of a sourcing tool for recruiters, though it can help a candidate expand a narrow search).

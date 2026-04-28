@@ -1,0 +1,143 @@
+Below is a design for an “Ultimate Hidden Job Market Discovery System” that leverages five detection signals—all using free data sources/APIs. Each signal is built as a modular “MCP tool” that ingests data from a free API endpoint, processes it through a defined data flow, and outputs a confidence score indicating the signal’s strength for potential hiring activity. Note that the implementation details assume that you use standard programming libraries (for RSS/JSON parsing, HTTP requests, etc.) as well as available free endpoints. You may need to build lightweight wrappers if the free endpoints return raw XML/JSON. Here’s the detailed design:
+
+──────────────────────────────
+1. Funding Signal Detector  
+──────────────────────────────
+Objective: Detect fresh funding events from companies—since funding rounds (seed → Series A/B/C) are strongly correlated with upcoming hiring spurts.
+
+Data Source & API:
+• Crunchbase (or an equivalent) funding events RSS feed. (Many platforms offer free RSS for “recent funding” news or you can consume partner blogs that aggregate Crunchbase news.)  
+• Example endpoint (assumed free):  
+  http://api.crunchbase.com/rss/funding-events.xml  
+  (or a similar free feed URL offered by business news aggregators)
+
+Data Flow:
+a. Poll the RSS feed every few hours.  
+b. Parse the XML feed using a free RSS parser library.  
+c. For each new feed entry, extract:  
+  • Company name  
+  • Funding type and amount  
+  • Date and round details  
+d. Map the company name to public profiles (if needed, cross-check via a free company directory API).  
+e. Apply a prediction heuristic: Companies receiving larger rounds or certain types of funding (e.g., Series B and later) are more likely to expand their teams.  
+f. Store the event with metadata in your system for further trigger actions.
+
+Confidence Scoring:
+• Base Score = (Funding Amount / Normalization Factor) + (Weight for Round Type: e.g., +10 for Series B/C)  
+• Time Decay: Multiply by a factor that declines as the event ages (e.g., if within 7 days, factor 1.0; within 14 days, factor 0.8, etc.)  
+• Final Confidence = Base Score × Time Factor  
+A high final score (say > threshold T) indicates a high probability that the company might be hiring soon.
+
+──────────────────────────────
+2. LinkedIn Growth Tracker  
+──────────────────────────────
+Objective: Monitor changes in company team size as reported on LinkedIn profiles. Rapid headcount growth (or even an anomaly in reported numbers) can be a precursor to additional hiring or restructuring.
+
+Data Source & API:
+• LinkedIn does not offer a completely “free” enterprise API, but many company pages are public. You can use publicly accessible endpoints (or use Google’s “site:linkedin.com/company/…” search queries) to scrape employee counts.  
+• Alternatively, leverage free tools like the “LinkedIn Company Profiles” scraper API (there are open-source scrapers available, respecting robots.txt and legal limits).
+
+Data Flow:
+a. Maintain a list of target companies.  
+b. For each company, query the public LinkedIn page via a free API/scraper—e.g., by fetching https://www.linkedin.com/company/{company-identifier}/about/ and parsing the “Employee count” field.  
+c. Store the historical employee counts in a time series database.  
+d. Compare the latest count with the previous snapshot.  
+e. If there is a statistically significant jump (e.g., an increase above a threshold % within a specific time window), flag the event as a potential new-hiring signal.
+
+Confidence Scoring:
+• Growth Delta Score = (Current Count – Previous Count) / Previous Count  
+• Historical Variance Adjustment: Compare against the average growth rate over the past few months.  
+• Final Confidence = (Delta Score – baseline growth rate) × Weight  
+• A bump significantly above the baseline growth yields a high score, indicating active recruitment or recent hires expansion.
+
+──────────────────────────────
+3. Tech Stack Shift Detector  
+──────────────────────────────
+Objective: Detect shifts in technology usage that might signal a company’s new initiatives. When a company updates its GitHub repositories with integrations of new libraries or when its public website’s tech stack changes (as shown by BuiltWith), it may indicate new product directions or scaling efforts that require new roles.
+
+Data Sources & APIs:
+• GitHub API (https://api.github.com) – free for public data on repository changes.  
+• BuiltWith free API (or free lookup endpoint) – for tech stack detection of a company’s website (note: BuiltWith has a limited free tier).
+
+Data Flow:
+a. For a target company’s projects:  
+  i. Periodically poll GitHub repositories (using the “commits” and “code search” endpoints) for signals of dependency changes.  
+  ii. Example: Run a search query for changes in package.json files, new dependency imports, or major branch changes.  
+b. Separately, call the BuiltWith API endpoint for the company’s website (e.g., https://api.builtwith.com/free/?KEY=yourapikey&LOOKUP=companywebsite.com) to obtain a snapshot of the current tech stack.  
+c. Compare the new tech stack snapshot with the previous one stored in your system.  
+d. If discrepancies are detected (e.g., newly adopted frameworks, cloud providers, or analytics tools), then note a “tech shift signal.”
+
+Confidence Scoring:
+• GitHub Signal: Increase in dependency changes weighted by commit frequency.  
+• BuiltWith Signal: A binary score (1 if detected change, 0 if not) multiplied by factor if the new tool appears in a hot category (e.g., cloud orchestration).  
+• Final Confidence = (GitHub Change Score × 0.6) + (BuiltWith Change Score × 0.4)  
+Combine both signals to score the likelihood that the shift will result in new roles to support the tech shift.
+
+──────────────────────────────
+4. Conference Pipeline  
+──────────────────────────────
+Objective: Use conference speaker lineups and session topics to spot companies that are investing in new areas, which may then require new hires.
+
+Data Source & API:
+• Many conferences post speaker lists and session schedules in easily parseable formats or provide RSS feeds.  
+• Use free APIs like Eventbrite’s public events feed (if companies are hosting events) or direct RSS feeds from conference websites.  
+• Alternatively, use platforms such as Meetup’s public API (https://www.meetup.com/meetup_api/) for event details in tech hubs.
+
+Data Flow:
+a. Subscribe to RSS feeds or free API endpoints from key industry conferences and technology events.  
+b. Parse the speaker lists to extract company names and topics (via NLP on session titles/descriptions).  
+c. Build a mapping: For each listed company, tag the technical area (e.g., AI, IoT, cybersecurity).  
+d. Monitor if a company appears for the first time or if a company suddenly emphasizes new technology areas (e.g., a company known for finance technology now featuring AI sessions).  
+e. Flag such events as potential indicators of internal shifts or investments.
+
+Confidence Scoring:
+• Frequency Factor: How often does the company appear over a rolling window?  
+• New Area Factor: If the company is talking about technologies outside its historical baseline (calculated via past appearances), add additional weight.  
+• Final Confidence = (Frequency Score × 0.5) + (New-Area Score × 0.5)  
+Score high if a company is both active and novel in its conference participation, suggesting likely recruiting for these new initiatives.
+
+──────────────────────────────
+5. Patent Filing Analyzer  
+──────────────────────────────
+Objective: Leverage publicly filed patents (via USPTO databases) as an early indicator that a company is ramping up R&D—and likely hiring specialized talent soon.
+
+Data Source & API:
+• USPTO Open Data API (https://developer.uspto.gov) – offers free access to recent patent filings, typically in JSON or XML.  
+• There are endpoints for published patent applications and grant details.
+
+Data Flow:
+a. Use USPTO’s API to query for recent filings. For example:  
+  Endpoint: https://developer.uspto.gov/endpoint/patents/application (or whichever is available in free tier)  
+b. Filter results by filing date (e.g., past 30 days) and by applicant (company name).  
+c. Cluster filings by company, and further parse the technology classification codes (CPC codes) to detect R&D trends.  
+d. If a company shows a sudden surge or a new focus in its patent filings (e.g., a new technology class never seen before), tag that event as a “patent signal” for expansion and hiring.
+
+Confidence Scoring:
+• Filing Volume Score: Simply count the number of filings in the period relative to their historical baseline.  
+• Novelty Score: If the CPC classification is new compared to prior filings, add a bonus.  
+• Final Confidence = (Filing Volume Score + Novelty Bonus) × (Recency Factor)  
+A high score indicates that the company is ramping up R&D, suggesting upcoming talent needs.
+
+──────────────────────────────
+Integration & Overall System Architecture
+──────────────────────────────
+A. Scheduler Module  
+ • Runs each MCP tool at set intervals (e.g., every 4–6 hours for funding signals, daily for patent filings).
+
+B. Data Aggregation Layer  
+ • All signals are ingested into a central datastore, with unique identifiers per company  
+ • Time series data is stored to track historical trends.
+
+C. Analytics Engine  
+ • Combine individual signal scores to rank companies across multiple signals.  
+ • Apply thresholds or weighted aggregates to “flag” companies as high potential for hidden job openings.
+
+D. User Dashboard/API  
+ • Present a ranked list of companies, along with the confidence score breakdown (e.g., Funding: 80, Growth: 60, Tech: 40, Conference: 20, Patent: 10)  
+ • Users can drill down per company to see the raw signal details and timelines.
+
+──────────────────────────────
+Example Confidence Calculation (for a given company):
+• Funding: Series B $10MM received → Base Score 70 × Time Factor 0.9 = 63  
+• LinkedIn: 25% spike vs. 5% baseline → Score 50  
+• Tech Shift: Mild changes

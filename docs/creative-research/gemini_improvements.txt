@@ -1,0 +1,94 @@
+YOLO mode is enabled. All tool calls will be automatically approved.
+YOLO mode is enabled. All tool calls will be automatically approved.
+MCP issues detected. Run /mcp list for status.This is a solid foundation for a supermarket system. You've already tackled the hardest parts of onboarding (data migration, barcode mapping, and initial OCR/photo automation workflows). 
+
+Since you are operating in Ajman, UAE, and dealing with fast-moving consumer goods (FMCG), your priorities should focus on **tax compliance, inventory accuracy (shrinkage/expiry), real-time POS deduction, and automated replenishment**.
+
+Here is a prioritized roadmap of improvements, specific Odoo modules to install, and exact configuration steps to take your system to the next level.
+
+---
+
+### Phase 1: Core Sales & UAE Compliance (Immediate Priority)
+
+Before you scale your purchasing and inventory, you must ensure money is coming in correctly and taxes are compliant with the UAE Federal Tax Authority (FTA).
+
+**1. Point of Sale (POS) Integration**
+*   **Modules to Install:** `point_of_sale`, `pos_hr` (for cashier logins).
+*   **Configuration Steps:**
+    *   Go to **Point of Sale > Configuration > Settings**.
+    *   Enable **Real-Time Inventory Management** so stock is deducted the moment a barcode is scanned.
+    *   Enable **Cash Control** to require opening and closing cash drawer amounts (crucial for retail).
+    *   Set up **Hardware:** Configure your USB/Bluetooth barcode scanners and receipt printers via the Odoo IoT Box or direct browser printing.
+    *   *Best Practice:* Restrict the ability to apply discounts or void lines to the "Manager" role only.
+
+**2. UAE Accounting & VAT (5%) Compliance**
+*   **Modules to Install:** `account_accountant` (Enterprise) or `account`, `l10n_ae` (UAE Localization).
+*   **Configuration Steps:**
+    *   Installing `l10n_ae` automatically sets up the UAE Chart of Accounts and the standard 5% VAT tax rates.
+    *   Go to **Accounting > Configuration > Settings** and ensure the main currency is **AED**.
+    *   Ensure all 934 imported products have the "Customer Taxes" field set to `VAT 5%` and "Vendor Taxes" set to `VAT 5%`.
+    *   *Best Practice:* Configure the FTA Tax Report dashboard so you can generate your quarterly VAT returns with one click.
+
+---
+
+### Phase 2: Inventory Automation & Loss Prevention (High Priority)
+
+Supermarkets run on razor-thin margins; shrinkage (theft/loss) and expired goods can destroy profitability.
+
+**3. Automated Reordering (Min/Max Rules)**
+*   **Modules to Install:** `stock` (already installed), `purchase`.
+*   **Configuration Steps:**
+    *   For your top 20% fast-moving items (e.g., dairy, bread, water), go to the Product form > **Inventory tab**.
+    *   Click **Reordering Rules**. Set a **Min Quantity** (trigger point) and **Max Quantity** (target stock level).
+    *   *Result:* Odoo will automatically generate Draft Purchase Orders (RFQs) for your suppliers when stock dips below the minimum.
+
+**4. Expiry Management & Discount Workflows**
+*   **Modules to Install:** `product_expiry` (already installed).
+*   **Configuration Steps:**
+    *   You have lot tracking enabled. Now, go to **Inventory > Configuration > Settings** and ensure **Expiration Dates** and **Alerts** are checked.
+    *   Set up a custom filter/dashboard in Inventory for "Products Expiring in < 30 Days".
+    *   *Action:* Use this report to move these items to a "Discount Bin" and use the POS `loyalty` module to apply a 30% discount to clear them out before they become a total loss.
+
+**5. Shrinkage & Loss Prevention (CCTV Integration)**
+*   **Modules to Install:** Core `stock` module.
+*   **Configuration Steps:**
+    *   Create a specific Virtual Location called `Virtual Locations/Shrinkage` and another called `Virtual Locations/Expired`.
+    *   When doing cycle counts (Inventory Adjustments), force staff to categorize the loss into these specific locations rather than generic "Inventory Loss". This gives you a report on exactly *how* you are losing money.
+    *   *CCTV Hack:* Your Dahua DH-XVR1B04-I supports **POS Text Overlay**. You can configure Odoo POS (often requires a third-party module from the Odoo app store, or a simple Python script on your local network) to send the scanned item text directly to the Dahua camera overlay via TCP/IP. This prevents "sweet-hearting" (cashiers ringing up a cheap item while bagging an expensive one).
+
+---
+
+### Phase 3: Purchasing Workflow & 3-Way Matching (Medium Priority)
+
+You have a great WhatsApp -> OCR -> PO workflow. Now we need to tie it to accounting.
+
+**6. The 3-Way Match (PO -> Receipt -> Vendor Bill)**
+*   **Modules to Install:** `purchase`, `account`.
+*   **Configuration Steps:**
+    *   Go to **Purchase > Configuration > Settings** and set **Bill Control** to `On received quantities`.
+    *   *Workflow:* 
+        1. WhatsApp OCR creates the PO. 
+        2. Staff unloads the truck and validates the Receipt (`stock.picking`) in Odoo, entering the exact Expiry Dates and Lots.
+        3. Accounting generates the Vendor Bill from the PO. Odoo will *only* let you pay for the quantities the staff actually received, preventing you from overpaying suppliers for missing items.
+
+**7. Vendor Pricelists**
+*   **Configuration Steps:**
+    *   On the Product forms, populate the **Purchase** tab with the specific Supplier and their price. 
+    *   This ensures your automated Reordering Rules (from Step 3) generate POs with the correct expected cost, allowing you to instantly spot if a supplier has quietly raised their prices on an invoice.
+
+---
+
+### Phase 4: Customer Retention & Growth (Ongoing)
+
+**8. Loyalty Programs & Promotions**
+*   **Modules to Install:** `loyalty`.
+*   **Configuration Steps:**
+    *   Supermarkets thrive on repeat local customers. Go to **POS > Products > Discount & Loyalty**.
+    *   Create a "Points Program" (e.g., 1 AED = 1 Point. 500 Points = 10 AED discount).
+    *   Capture customer phone numbers at the POS to link them to their loyalty account. You can later use your WhatsApp OpenClaw integration to send them automated weekly specials.
+
+### Summary of Next Technical Steps for You:
+1. **Install `l10n_ae`** and bulk-update all 982 products to have the 5% VAT tax applied.
+2. **Install `point_of_sale`** and configure your barcode scanners and cash control rules.
+3. **Configure Reordering Rules** for your top 100 fastest-selling products.
+4. **Create specific Inventory Loss locations** (Theft, Damaged, Expired) to get clean shrinkage reporting.

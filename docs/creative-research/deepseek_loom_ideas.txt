@@ -1,0 +1,105 @@
+This is a brilliant exercise in **Research Intelligence MCP Expansion**.
+
+You have the fundamentals (search, scrape, NLP, darkweb). The **102-tool ceiling** means you need *systemic* tools, not just more search endpoints. You need tools that **synthesize**, **verify**, **predict**, and **regulate**.
+
+Here are 10 innovative MCP tools designed to be implemented using **free/public APIs**, each with a specific protocol signature, logic, and code snippet.
+
+---
+
+### 1. Automated Fact-Checker (Triangulation Engine)
+**Why Missing:** NLP gives you entities; search gives you pages. But nobody is scoring *truth*. This tool cross-references a claim against multiple sources and assigns a confidence score.
+
+- **Implementation:**
+    - **Input:** `claim: String`
+    - **Process:** Uses `Google Fact Check API` (free, no key needed for basic use) to search for existing fact-checks. Then uses your existing scraping tools to grab top 5 news articles. Sends the claim + snippets to a **local hallucination-detection model** (e.g., `BART-Large-MNLI` via HuggingFace inference API, free tier).
+    - **Output:** `{ "claim": "...", "verdict": "True/Misleading/False", "sources": [], "confidence": 0.92 }`
+- **Tool Signature:**
+    ```json
+    {
+      "name": "fact_check_claim",
+      "arguments": { "text": "string", "strict_mode": "boolean" },
+      "implementation": "async function: const googleCheck = await fetch('https://toolbox.google.com/factcheck/api/v1/claimsearch?query='+text); const nli = await hfInference.zeroShotClassification(text, ['entailment','contradiction']); return synthesize(...);"
+    }
+    ```
+
+### 2. Dynamic Knowledge Graph Builder (Context Mapper)
+**Why Missing:** Traditional graphs are static. This tool takes a research topic and **builds a live graph** of entities (people, orgs, events) weighted by recency and connection strength.
+
+- **Implementation:**
+    - **Input:** `topic: String`, `depth: Integer`
+    - **Process:** Uses `DBpedia Spotlight` (free, open) or `Wikidata Query Service` (SPARQL) to extract entities. Then uses `HuggingFace BART` to generate relation triples (e.g., `[CEO] - works_for - [Company]`). Visualizes via `vis-network` (client-side, free).
+    - **Output:** JSON graph `{ nodes: [{id, label, weight}], edges: [{from, to, label}] }`.
+- **Innovation:** *Time-based decay*: older connections fade.
+
+### 3. Regulatory Compliance Monitor (Live Policy Scanner)
+**Why Missing:** Security tools watch *intruders*; this tool watches *lawmakers*. Essential for corporate research.
+
+- **Implementation:**
+    - **Input:** `jurisdiction: String (e.g., 'GDPR', 'CCPA', 'SEC')`
+    - **Process:** Uses `GovTrack.us API` (free) for US bills or `EUR-Lex SPARQL` for EU. Scrapes official government gazettes (free via `data.gov`). Uses NLP to compare new regulation text against a **local vector database** of your company's policies.
+    - **Output:** `{ "new_regulation": "SEC Rule 10b5-1 amendment", "impact_score": 8.5, "affected_departments": ["Legal","Compliance"] }`.
+
+### 4. Patent Landscape Analyzer (Prior Art Wizard)
+**Why Missing:** Job research is about *people*; patent tools are about *invention*. This tool identifies whitespace.
+
+- **Implementation:**
+    - **Input:** `keywords: Array[String]`
+    - **Process:** Uses `Google Patents Public Datasets` via BigQuery (free tier, 1TB/month) or `Espacenet API` (free, OPS). Analyzes patent abstracts for **citations** and **claims overlap**.
+    - **Output:** `{ "hot_zones": ["AI in drug discovery"], "white_space": ["Edge computing for wearables"], "key_assignees": [{"name":"IBM", "count":42}] }`.
+- **Code Snippet:**
+    ```python
+    # Free query via Google BigQuery
+    def analyze_patents(keywords):
+        query = f"""SELECT publication_number, title, assignee_harmonized
+                    FROM `patents-public-data.patents.publications`
+                    WHERE REGEXP_CONTAINS(title, r'({'|'.join(keywords)})')"""
+        return bigquery.Client().query(query)
+    ```
+
+### 5. Social Network OSINT Mapper (Graph of Influence)
+**Why Missing:** You have “psychology” tools for sentiment; but you need *relationship mapping* across platforms.
+
+- **Implementation:**
+    - **Input:** `seed_handle: String` (e.g., Twitter/X username)
+    - **Process:** While X/Twitter API has become paid, use **Nitter** (free, open-source front-end) via your own scraping instance, or use **Reddit API** (free, OAuth) to map who interacts with whom. For LinkedIn, use **Google Dorking** (site:linkedin.com/in/ "seed_name") via your scraping tool.
+    - **Output:** `{ "influence_graph": {"central_nodes": ["@elonmusk"], "communities": ["AI_Community", "FinTwit"]} }`.
+
+### 6. Academic Peer Review Automation (Methodology Critic)
+**Why Missing:** “Academic research” tools scrape papers; they don’t *critique* them.
+
+- **Implementation:**
+    - **Input:** `pdf_url: String` (pre-print)
+    - **Process:** Extract text via `PyMuPDF` (free). Then feed to **Grobid** (free, local server) for structure parsing. Use `HuggingFace SciBERT` to detect methodological flaws (e.g., "no control group", "small sample size").
+    - **Output:** `{ "confidence": 0.87, "identified_issues": ["p-value misuse"], "suggested_reviewers": ["Jane Doe, MIT"] }`.
+
+### 7. Intelligent Data Visualization Engine (Auto-Chart)
+**Why Missing:** MCP servers return JSON; researchers want *insight*.
+
+- **Implementation:**
+    - **Input:** `data: JSON Array` or `query: String` (SQL or natural language)
+    - **Process:** Uses **Vega-Lite** (free, open-source) to auto-detect data types (numeric, categorical, temporal) and generate the best chart (bar, scatter, heatmap). For NLP-driven visualizations, use **Rasa NLU** (free) to parse intent.
+    - **Output:** `{ "chart_spec": { "mark": "bar", "encoding": {"x":...} }, "insight": "Sales dropped 30% in Q3" }`.
+
+### 8. API Health & Webhook Alert System (Digital Pulse)
+**Why Missing:** Security tools monitor *attacks*; this monitors *downtime*.
+
+- **Implementation:**
+    - **Input:** `endpoints: Array[URL]`, `webhook_url: String`
+    - **Process:** Uses `curl` or `axios` to ping endpoints every 5 minutes. Stores latency in a free **InfluxDB** (cloud, free tier). Triggers a **Discord/Slack webhook** (free) on 4xx/5xx errors.
+    - **Output:** `{ "status": "DOWN", "response_time_ms": 5023, "alert_sent": true }`.
+
+### 9. Scheduled Research Cron (Automated Deep Dig)
+**Why Missing:** All tools are *reactive*; researchers need *proactive* dossiers.
+
+- **Implementation:**
+    - **Input:** `schedule: cron_expression`, `topic: String`, `toolchain: Array[String]` (e.g., ["fact_check", "patent_analyzer"])
+    - **Process:** Uses a **serverless cron** (e.g., GitHub Actions scheduled workflow, free) to call your own MCP server daily. The server chains multiple tools together automatically.
+    - **Output:** `{ "report": {"date":"2024-01-15", "new_patents": 5, "new_regulations": 1, "key_tweets": 10} }`.
+
+### 10. Dark Web Correlation Engine (Silhouette Matcher)
+**Why Missing:** You have darkweb scraping; but it’s untethered. This tool *links* darkweb posts to known LinkedIn profiles.
+
+- **Implementation:**
+    - **Input:** `darkweb_post_text: String`
+    - **Process:** Uses `spaCy` (free, local) NER to extract phone numbers, emails, and usernames. Cross-references against **Have I Been Pwned API** (free, no key for email range queries) or **Hunter.io** (free tier, 25 requests/month) to find associated names.
+    - **Output

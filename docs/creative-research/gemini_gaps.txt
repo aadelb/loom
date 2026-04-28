@@ -1,0 +1,45 @@
+YOLO mode is enabled. All tool calls will be automatically approved.
+YOLO mode is enabled. All tool calls will be automatically approved.
+MCP issues detected. Run /mcp list for status.Based on the audit, here is a report of the missing tools that should be added to the Loom MCP server.
+
+### Registered Tools
+
+The server currently has 91 registered tools.
+
+### Analysis of Missing Tools
+
+1.  **IP Geolocation**: The `geoip2` and `maxminddb` Python libraries are installed, but there is no corresponding tool to perform GeoIP lookups. The existing `research_ip_geolocation` tool appears to use an external service, so a local version using the installed libraries would be a valuable addition for offline use and to reduce reliance on external APIs.
+
+2.  **Security and OSINT Search Engines**:
+    *   **Shodan**: There is no integration for Shodan, a critical tool for discovering and analyzing internet-connected devices.
+    *   **Censys**: Similarly, there is no tool for Censys, which provides valuable data on hosts and networks.
+    *   **VirusTotal**: No tool exists for querying VirusTotal to check file hashes or URLs for malicious content.
+
+3.  **Social Media and Communication Platforms**: There are no tools for searching or retrieving data from major platforms like:
+    *   Twitter
+    *   Mastodon
+    *   Telegram
+    *   Discord
+
+4.  **Blockchain and Cryptocurrency**: The server lacks tools for interacting with blockchain technologies, such as:
+    *   Ethereum (e.g., checking wallet balances, transaction details)
+    *   General Web3 interactions.
+
+5.  **File and Image Analysis**: While there are some tools for handling files, there is a lack of deep analysis capabilities. The following CLI tools are not integrated:
+    *   **exiftool**: For extracting detailed metadata (EXIF) from images and other files.
+    *   **tesseract**: For performing Optical Character Recognition (OCR) on images.
+    *   **ImageMagick (`magick`)**: For image manipulation and conversion.
+
+### Summary of Missing Tools
+
+The following tools are still missing and should be added to the Loom MCP server:
+
+*   **GeoIP Lookup Tool**: Utilizing the installed `geoip2` and `maxminddb` libraries.
+*   **Shodan Integration**: For searching and analyzing data from Shodan.
+*   **Censys Integration**: For accessing host and network information from Censys.
+*   **VirusTotal Tool**: For checking files and URLs against the VirusTotal database.
+*   **Social Media Tools**: For searching and retrieving data from Twitter, Mastodon, Telegram, and Discord.
+*   **Blockchain/Web3 Tools**: For interacting with the Ethereum blockchain and other Web3 services.
+*   **EXIF Data Extraction Tool**: To read metadata from files using `exiftool`.
+*   **OCR Tool**: For text extraction from images using `tesseract`.
+*   **ImageMagick Tool**: For performing image manipulation tasks.

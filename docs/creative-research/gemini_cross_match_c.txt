@@ -1,0 +1,92 @@
+YOLO mode is enabled. All tool calls will be automatically approved.
+YOLO mode is enabled. All tool calls will be automatically approved.
+MCP issues detected. Run /mcp list for status.Attempt 1 failed: You have exhausted your capacity on this model. Your quota will reset after 0s.. Retrying after 5533ms...
+Here is the complete audit extracting every unique tool idea from the Round 6 creative research files, cross-matched against the provided 167 implemented tools.
+
+IDEA: research_dead_content | STATUS: IMPLEMENTED | COVERED_BY: research_dead_content
+IDEA: dead_content_resurrect | STATUS: IMPLEMENTED | COVERED_BY: research_dead_content
+IDEA: ChronoResurrect | STATUS: IMPLEMENTED | COVERED_BY: research_dead_content
+IDEA: TimeMesh | STATUS: IMPLEMENTED | COVERED_BY: research_dead_content
+IDEA: Resurrection Hydra | STATUS: IMPLEMENTED | COVERED_BY: research_dead_content
+IDEA: NecroWeb | STATUS: IMPLEMENTED | COVERED_BY: research_dead_content
+IDEA: Resurrect | STATUS: IMPLEMENTED | COVERED_BY: research_dead_content
+IDEA: Dead Internet Archaeologist | STATUS: IMPLEMENTED | COVERED_BY: research_dead_content
+IDEA: research_invisible_web | STATUS: IMPLEMENTED | COVERED_BY: research_invisible_web
+IDEA: invisible_web_spider | STATUS: IMPLEMENTED | COVERED_BY: research_invisible_web
+IDEA: ShadowPath | STATUS: IMPLEMENTED | COVERED_BY: research_invisible_web
+IDEA: PhantomPath Hunter | STATUS: IMPLEMENTED | COVERED_BY: research_invisible_web
+IDEA: PhantomPath Finder | STATUS: IMPLEMENTED | COVERED_BY: research_invisible_web
+IDEA: PhantomIndex | STATUS: IMPLEMENTED | COVERED_BY: research_invisible_web
+IDEA: InvisibleWeb | STATUS: IMPLEMENTED | COVERED_BY: research_invisible_web
+IDEA: Invisible Web Cartographer | STATUS: IMPLEMENTED | COVERED_BY: research_invisible_web
+IDEA: SchemaBreaker | STATUS: IMPLEMENTED | COVERED_BY: research_invisible_web
+IDEA: research_js_intel | STATUS: IMPLEMENTED | COVERED_BY: research_js_intel
+IDEA: extract_js_intelligence | STATUS: IMPLEMENTED | COVERED_BY: research_js_intel
+IDEA: JSBloodhound | STATUS: IMPLEMENTED | COVERED_BY: research_js_intel
+IDEA: SourceMap Seer | STATUS: IMPLEMENTED | COVERED_BY: research_js_intel
+IDEA: BundleEye | STATUS: IMPLEMENTED | COVERED_BY: research_js_intel
+IDEA: JSReconX | STATUS: IMPLEMENTED | COVERED_BY: research_js_intel
+IDEA: JSBundleIntel | STATUS: IMPLEMENTED | COVERED_BY: research_js_intel
+IDEA: TraceBackMiner | STATUS: IMPLEMENTED | COVERED_BY: research_js_intel
+IDEA: JavaScript Intelligence Miner | STATUS: IMPLEMENTED | COVERED_BY: research_js_intel
+IDEA: research_multi_search | STATUS: IMPLEMENTED | COVERED_BY: research_multi_search
+IDEA: multi_engine_search | STATUS: IMPLEMENTED | COVERED_BY: research_multi_search
+IDEA: OmniQuery | STATUS: IMPLEMENTED | COVERED_BY: research_multi_search
+IDEA: Fusion30 | STATUS: IMPLEMENTED | COVERED_BY: research_multi_search
+IDEA: SearchFusion | STATUS: IMPLEMENTED | COVERED_BY: research_multi_search
+IDEA: Multi-Dimensional Search Fusion | STATUS: IMPLEMENTED | COVERED_BY: research_multi_search
+IDEA: research_passive_recon | STATUS: IMPLEMENTED | COVERED_BY: research_passive_recon
+IDEA: network_topology_mapper | STATUS: IMPLEMENTED | COVERED_BY: research_passive_recon
+IDEA: InfraPanopticon | STATUS: IMPLEMENTED | COVERED_BY: research_passive_recon
+IDEA: GhostSubdomain Reviver | STATUS: IMPLEMENTED | COVERED_BY: research_passive_recon
+IDEA: AtlasSubrosa | STATUS: IMPLEMENTED | COVERED_BY: research_passive_recon
+IDEA: PassiveMesh | STATUS: IMPLEMENTED | COVERED_BY: research_passive_recon
+IDEA: PassiveInfra | STATUS: IMPLEMENTED | COVERED_BY: research_passive_recon
+IDEA: Passive Infrastructure Mapper | STATUS: IMPLEMENTED | COVERED_BY: research_passive_recon
+IDEA: research_identity_resolve | STATUS: IMPLEMENTED | COVERED_BY: research_identity_resolve
+IDEA: resolve_identity | STATUS: IMPLEMENTED | COVERED_BY: research_identity_resolve
+IDEA: PersonaWeave | STATUS: IMPLEMENTED | COVERED_BY: research_identity_resolve
+IDEA: IdentityZero | STATUS: IMPLEMENTED | COVERED_BY: research_identity_resolve
+IDEA: CrossPlatformID | STATUS: IMPLEMENTED | COVERED_BY: research_identity_resolve
+IDEA: Cross-Platform Identity Weaver | STATUS: IMPLEMENTED | COVERED_BY: research_identity_resolve
+IDEA: research_change_monitor | STATUS: IMPLEMENTED | COVERED_BY: research_temporal_diff
+IDEA: monitor_web_diff | STATUS: IMPLEMENTED | COVERED_BY: research_temporal_diff
+IDEA: PolicyShift Diff | STATUS: IMPLEMENTED | COVERED_BY: research_temporal_diff
+IDEA: ChangeOracle | STATUS: IMPLEMENTED | COVERED_BY: research_temporal_diff
+IDEA: ChangePulse | STATUS: IMPLEMENTED | COVERED_BY: research_temporal_diff
+IDEA: Predictive Web Intelligence | STATUS: IMPLEMENTED | COVERED_BY: research_trend_predict
+IDEA: PredictiveChange | STATUS: IMPLEMENTED | COVERED_BY: research_trend_predict
+IDEA: research_metadata_forensics | STATUS: IMPLEMENTED | COVERED_BY: research_metadata_forensics
+IDEA: metadata_forensics | STATUS: IMPLEMENTED | COVERED_BY: research_metadata_forensics
+IDEA: DeepProbe Extractor | STATUS: IMPLEMENTED | COVERED_BY: research_metadata_forensics
+IDEA: MetaMiner | STATUS: IMPLEMENTED | COVERED_BY: research_metadata_forensics
+IDEA: DeepMetadata | STATUS: IMPLEMENTED | COVERED_BY: research_metadata_forensics
+IDEA: Metadata Forensics Lab | STATUS: IMPLEMENTED | COVERED_BY: research_metadata_forensics
+IDEA: research_social_graph | STATUS: IMPLEMENTED | COVERED_BY: research_social_graph
+IDEA: social_graph_reconstructor | STATUS: IMPLEMENTED | COVERED_BY: research_social_graph
+IDEA: GraphForge | STATUS: IMPLEMENTED | COVERED_BY: research_social_graph
+IDEA: SocialGraph | STATUS: IMPLEMENTED | COVERED_BY: research_social_graph
+IDEA: Social Graph Cartographer | STATUS: IMPLEMENTED | COVERED_BY: research_social_graph
+IDEA: research_competitive_intel | STATUS: IMPLEMENTED | COVERED_BY: research_competitive_intel
+IDEA: competitive_intelligence_fusion | STATUS: IMPLEMENTED | COVERED_BY: research_competitive_intel
+IDEA: IntelliFusion | STATUS: IMPLEMENTED | COVERED_BY: research_competitive_intel
+IDEA: CompetitiveIntel | STATUS: IMPLEMENTED | COVERED_BY: research_competitive_intel
+IDEA: Competitive Intelligence Synthesizer | STATUS: IMPLEMENTED | COVERED_BY: research_competitive_intel
+IDEA: RepoPhantom | STATUS: IMPLEMENTED | COVERED_BY: research_commit_analyzer
+IDEA: ChainTrace | STATUS: IMPLEMENTED | COVERED_BY: research_crypto_trace
+IDEA: CryptoLinker | STATUS: IMPLEMENTED | COVERED_BY: research_crypto_trace
+IDEA: WHOIS Constellation | STATUS: IMPLEMENTED | COVERED_BY: research_whois
+IDEA: CertDNS Foresight | STATUS: IMPLEMENTED | COVERED_BY: research_cert_analyze
+IDEA: CertScope | STATUS: IMPLEMENTED | COVERED_BY: research_cert_analyze
+IDEA: DNS-TimeMachine | STATUS: IMPLEMENTED | COVERED_BY: research_dns_lookup
+IDEA: BreachWeaver | STATUS: IMPLEMENTED | COVERED_BY: research_breach_check
+IDEA: RenderReader | STATUS: IMPLEMENTED | COVERED_BY: research_ocr_extract
+IDEA: OriginStriker | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: ShadowBucket | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: research_breach_timeline | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+
+### NOT_IMPLEMENTED IDEAS
+
+- **OriginStriker** (WAF/CDN Bypass & True IP Revealer using historic DNS / Cert matching to unmask origin servers)
+- **ShadowBucket** (Heuristic Cloud Storage Enumerator mapping public unlinked buckets based on domain variations)
+- **research_breach_timeline** (Correlate breach dates with public disclosures, patent filings, funding rounds to build a timeline of data exposure windows)

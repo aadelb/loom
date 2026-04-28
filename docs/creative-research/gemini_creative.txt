@@ -1,0 +1,23 @@
+YOLO mode is enabled. All tool calls will be automatically approved.
+YOLO mode is enabled. All tool calls will be automatically approved.
+MCP issues detected. Run /mcp list for status.Based on the audit of `src/loom/tools/creative.py`, here are the **FAIL** items:
+
+### 1. LLM prompt injection in red_team/misinfo prompts: **FAIL**
+- **`research_red_team`**: The `claim` parameter is injected directly into the LLM prompt using an f-string (`f"Claim: {claim}"`) without any escaping, sanitization, or delimiter isolation.
+- **`research_misinfo_check`**: Similarly, the `claim` parameter is directly appended to the prompt (`f"True claim: {claim}"`), leaving it completely vulnerable to prompt injection attacks where a user could override the system prompt.
+
+### 2. JSON parsing safety: **FAIL**
+- **`research_ai_detect`**: The result of `_parse_llm_json` is immediately used with a dictionary method (`analysis.get(...)`). Because `_parse_llm_json` uses standard `json.loads()` and doesn't enforce that the parsed output is actually a dictionary, an LLM returning a valid JSON list, integer, or string will cause a fatal `AttributeError` and crash the execution.
+
+### 3. URL validation before fetch: **FAIL**
+- **`research_temporal_diff`**: While the archived Wayback Machine URL is properly validated using `validate_url(archive_url)`, the primary `url` parameter passed into the function is completely unvalidated before being sent to `extract_with_trafilatura(url=url)`.
+- **`research_semantic_sitemap`**: The individual URLs extracted from the XML `<loc>` tags in the sitemap are directly sent to `extract_with_trafilatura` without being checked against `validate_url()`.
+
+### 4. SSRF in semantic_sitemap (sitemap URL construction): **FAIL**
+- **Unsafe Redirects**: The `httpx.Client` used to fetch the sitemap is initialized with `follow_redirects=True`. While the initial `domain` is passed through `validate_url()`, the client will blindly follow HTTP redirects (e.g., redirecting to `http://169.254.169.254` or `http://localhost`), completely bypassing the safety check and allowing SSRF.
+- **Unsafe XML Loc Extraction**: The URLs parsed from the sitemap (`loc.text`) could be maliciously constructed by the server to point to internal IP ranges, which are then queued up and fetched without validation.
+
+### 5. Wikipedia API safety: **FAIL**
+- **`research_wiki_ghost`**: The `language` parameter is interpolated directly into the API base URL (`base = f"https://{language}.wikipedia.org"`) with zero validation. An attacker could provide a malicious language code like `en.wikipedia.org@127.0.0.1#` which would evaluate to `https://en.wikipedia.org@127.0.0.1#.wikipedia.org`, altering the host and causing a direct SSRF vulnerability.
+
+*(Note: The "httpx blocking in async" check PASSED, as all `httpx.Client` instances are correctly wrapped and executed inside `await loop.run_in_executor()`.)*

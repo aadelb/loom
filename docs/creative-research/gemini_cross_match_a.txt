@@ -1,0 +1,181 @@
+YOLO mode is enabled. All tool calls will be automatically approved.
+YOLO mode is enabled. All tool calls will be automatically approved.
+MCP issues detected. Run /mcp list for status.Error during GrepLogic execution: Error: spawn ENOEXEC
+Here is the comprehensive cross-match of every unique tool idea extracted from the creative research files against your 167 implemented tools.
+
+### IDEAS MATCHING AND STATUS
+
+IDEA: DarkWeb Jailbreak Prophet | STATUS: IMPLEMENTED | COVERED_BY: research_darkweb_early_warning
+IDEA: Safety Filter Cartographer | STATUS: IMPLEMENTED | COVERED_BY: research_safety_filter_map
+IDEA: Real-World Failure Mining Engine | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Safety Collaboration Mapper | STATUS: IMPLEMENTED | COVERED_BY: research_citation_graph
+IDEA: LinkedIn Intelligence WITHOUT LinkedIn API | STATUS: IMPLEMENTED | COVERED_BY: research_social_profile
+IDEA: Glassdoor Reviews WITHOUT Glassdoor API | STATUS: IMPLEMENTED | COVERED_BY: research_company_diligence
+IDEA: Company Financials WITHOUT Bloomberg | STATUS: IMPLEMENTED | COVERED_BY: research_company_diligence
+IDEA: Patent Analysis WITHOUT Expensive Patent DBs | STATUS: IMPLEMENTED | COVERED_BY: research_patent_landscape
+IDEA: Job Market Data WITHOUT Indeed API | STATUS: IMPLEMENTED | COVERED_BY: research_job_market
+IDEA: Salary Data WITHOUT Levels.fyi API | STATUS: IMPLEMENTED | COVERED_BY: research_salary_intelligence
+IDEA: Company Tech Stack WITHOUT BuiltWith | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Conference Attendee Lists WITHOUT Event APIs | STATUS: IMPLEMENTED | COVERED_BY: research_conference_arbitrage
+IDEA: Investor Intelligence WITHOUT PitchBook | STATUS: IMPLEMENTED | COVERED_BY: research_funding_signal
+IDEA: Talent Flow Tracking WITHOUT LinkedIn | STATUS: IMPLEMENTED | COVERED_BY: research_career_trajectory
+IDEA: Company Financial Intelligence | STATUS: IMPLEMENTED | COVERED_BY: research_company_diligence
+IDEA: Talent Analytics | STATUS: IMPLEMENTED | COVERED_BY: research_career_trajectory
+IDEA: Market Sentiment Prediction | STATUS: IMPLEMENTED | COVERED_BY: research_sentiment_deep
+IDEA: Technology Tracking and Patent Analysis | STATUS: IMPLEMENTED | COVERED_BY: research_patent_landscape
+IDEA: Competitive Analysis | STATUS: IMPLEMENTED | COVERED_BY: research_competitive_intel
+IDEA: Consumer Behavior Insights | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Economic Indicators and Forecasting | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Industry Trends and Publications | STATUS: IMPLEMENTED | COVERED_BY: research_trend_predict
+IDEA: Software Technology Stack Intelligence | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Social Media Influence and Impact Tracking | STATUS: IMPLEMENTED | COVERED_BY: research_social_graph
+IDEA: Prompt Injection Fuzzer / PromptFuzz | STATUS: IMPLEMENTED | COVERED_BY: research_prompt_injection_test
+IDEA: ConsistencyCheck | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: HallucinationHunter / Hallucination Benchmarker | STATUS: IMPLEMENTED | COVERED_BY: research_hallucination_benchmark
+IDEA: BiasProbe | STATUS: IMPLEMENTED | COVERED_BY: research_bias_probe
+IDEA: CapabilityMapper | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: FilterFuzzer | STATUS: IMPLEMENTED | COVERED_BY: research_prompt_injection_test
+IDEA: ContextExploit | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: ManipulationChain | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: ModelComparator | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: RedTeamOrchestrator | STATUS: IMPLEMENTED | COVERED_BY: research_red_team
+IDEA: CodeCoven Scout | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: ShadowFunding Spider | STATUS: IMPLEMENTED | COVERED_BY: research_shell_funding
+IDEA: Hyperlink Hot-Aisle Mirror | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: ArXiv Phantom-Citation Sweeper | STATUS: IMPLEMENTED | COVERED_BY: research_citation_analysis
+IDEA: Slack-Leak Bread-Crumb Listener | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: LinkedIn Timeline Cross-Browser | STATUS: IMPLEMENTED | COVERED_BY: research_career_trajectory
+IDEA: FOIA Footprint Flipbook | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Job-Ad Lattice Crawler | STATUS: IMPLEMENTED | COVERED_BY: research_stealth_hire_scanner
+IDEA: Model-Download Magnet Tracker | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Satellite-Salt Meta-Data Crossover | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: DarkClean - Training Data Contamination Detection | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Automated Vulnerability Scanner | STATUS: IMPLEMENTED | COVERED_BY: research_vuln_intel
+IDEA: NLP-based Query Generator | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Synthetic Data Generator | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Model Fingerprinting (ShazamLLM) | STATUS: IMPLEMENTED | COVERED_BY: research_model_fingerprint
+IDEA: Data-Poisoning Detector (CleanFeed) | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Jailbreak Pattern Library | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Compliance Gap Finder | STATUS: IMPLEMENTED | COVERED_BY: research_compliance_check
+IDEA: Bias Amplification Detector | STATUS: IMPLEMENTED | COVERED_BY: research_bias_lens
+IDEA: Privacy Leak Scanner | STATUS: IMPLEMENTED | COVERED_BY: research_leak_scan
+IDEA: Adversarial Example Generator | STATUS: IMPLEMENTED | COVERED_BY: research_adversarial_robustness
+IDEA: Supply-Chain Auditor | STATUS: IMPLEMENTED | COVERED_BY: research_supply_chain_risk
+IDEA: Output Manipulation Detector | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Jailbreak Predictor | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Safety Filter Mapper | STATUS: IMPLEMENTED | COVERED_BY: research_safety_filter_map
+IDEA: Memorization Scanner | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Adversarial Dataset Builder | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Darkweb Intelligence Aggregator | STATUS: IMPLEMENTED | COVERED_BY: research_dark_market_monitor
+IDEA: NLP Psychology Profiler | STATUS: IMPLEMENTED | COVERED_BY: research_persona_profile
+IDEA: Security Scanner for Model | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Chain-of-Thought Manipulator | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Multi-Tool Orchestrator (Meta-Tool) | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: FilterGhost | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: ContamScan | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: ProbeMap | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: FailSetBuilder | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: AuditPredictor | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: JailbreakRadar | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: DemoProfiler | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: GenDetective | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: GapGraph | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: ConformDoc | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: pre_earnings_sentinel | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: patent_embargo_scanner | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: stealth_board_graph | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: supply_chain_shadow_mapper | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: llm_turing_probe | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: vision_ocr_exfil | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: crypto_commit_chronicle | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: darkweb_cv_timeline | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: psyche_darkweb_fuse | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: career_vuln_bridge | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Ghost Protocol Detector | STATUS: IMPLEMENTED | COVERED_BY: research_ghost_protocol
+IDEA: Shadow Identity Mapper | STATUS: IMPLEMENTED | COVERED_BY: research_identity_resolve
+IDEA: Temporal Anomaly Radar | STATUS: IMPLEMENTED | COVERED_BY: research_temporal_anomaly
+IDEA: Cross-Domain Fusion Engine | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: DNS Covert Channel Detector | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Output Consistency Checker | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: SEC Scraper | STATUS: IMPLEMENTED | COVERED_BY: research_sec_tracker
+IDEA: Patent Miner | STATUS: IMPLEMENTED | COVERED_BY: research_patent_landscape
+IDEA: GitHub Talent Scout | STATUS: IMPLEMENTED | COVERED_BY: research_github
+IDEA: Academic Profile Crawler | STATUS: IMPLEMENTED | COVERED_BY: research_find_experts
+IDEA: arXiv Trend Monitor | STATUS: IMPLEMENTED | COVERED_BY: research_trend_predict
+IDEA: Government RSS Feed Monitor | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: EU Directive Scraper | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Company Registry Explorer | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Trade Data Scraper | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Port Documentation Finder | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Glassdoor API alternative | STATUS: IMPLEMENTED | COVERED_BY: research_company_diligence
+IDEA: PayScale API alternative | STATUS: IMPLEMENTED | COVERED_BY: research_salary_synthesize
+IDEA: Crunchbase API alternative | STATUS: IMPLEMENTED | COVERED_BY: research_funding_signal
+IDEA: ZoomInfo API alternative | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: AngelList API alternative | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Stack Overflow API alternative | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: Ahrefs API alternative | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: SEMrush API alternative | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: ShadowSentinel | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: MoralDecay Pulse | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: PhantomCitation Siphon | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: ExistentialCanary | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+IDEA: AlignmentMirage Detector | STATUS: NOT_IMPLEMENTED | COVERED_BY: NONE
+
+---
+
+### NOT_IMPLEMENTED IDEAS & DESCRIPTIONS
+
+- **Real-World Failure Mining Engine**: Automatically builds adversarial datasets by mining real-world instances where AI systems have demonstrably failed (e.g., toxic outputs, factual errors) from social media, bug trackers, and public databases.
+- **Company Tech Stack WITHOUT BuiltWith**: Uses free data sources like Wappalyzer, GitHub repositories, and job descriptions to analyze the technology stack a company runs.
+- **Consumer Behavior Insights**: Gathers insights into consumer sentiment and patterns using public databases and free census-like data.
+- **Economic Indicators and Forecasting**: Extracts macroeconomic data and publicly available economic reports (like FRED) to build forecasting intelligence without paid data APIs.
+- **Software Technology Stack Intelligence**: Dedicated engine to pull technical stack clues and patterns strictly through crowd-sourced repositories like Stack Overflow or GitHub issues.
+- **ConsistencyCheck / Output Consistency Checker**: Verifies the consistency of an AI system's outputs across multiple runs with the exact same input to evaluate response stability and gradient obfuscation.
+- **CapabilityMapper**: Creates a map of an AI system's capabilities across various tasks, domains, and input types to identify inherent bounds and functional limits.
+- **ContextExploit**: Tests an AI system's ability to maintain context across multiple conversational turns or inputs, identifying instances where context is manipulated or lost.
+- **ManipulationChain**: Tests an AI system's vulnerability to psychological manipulation through multi-turn interactions, simulating targeted adversarial goals.
+- **ModelComparator**: Automatically compares the outputs of multiple AI systems across identical diverse tasks, analyzing the statistical variations and biases.
+- **CodeCoven Scout**: Permanent web-crawler targeting ".git" folders and "/raw/" URLs on public repositories to surface freshly force-pushed commits and hidden configurations before they disappear.
+- **Hyperlink Hot-Aisle Mirror**: Scrapes high-traffic niche websites and performs nightly differential pulls on URLs to map hidden relationships and link creations.
+- **Slack-Leak Bread-Crumb Listener**: Uses the free public export feature of open Slack communities to run nightly differentials on messages and map hidden DM correlations.
+- **FOIA Footprint Flipbook**: Tracks changes in page counts and redactions on pending FOIA requests via the FBI Vault and DoD reading rooms without accessing the text payload directly.
+- **Model-Download Magnet Tracker**: Monitors magnet links appearing on Hacker News, Twitter, and pastebins, correlating them with seeder IPs across different trackers for model proliferation patterns.
+- **Satellite-Salt Meta-Data Crossover**: Analyzes QA60 bands from free Sentinel-2 L2A satellite imagery to map cloud coverage and correlate it with compute jobs scheduled at specific AI research campuses.
+- **DarkClean - Training Data Contamination Detection**: Identifies whether training datasets have been compromised or manipulated with injected biases by analyzing their footprint on the darkweb.
+- **NLP-based Query Generator**: Uses an AI model specialized in privacy attacks to mutate standard queries into targeted inversion attempts.
+- **Synthetic Data Generator**: Produces targeted "probe" data leveraging adversarial networks to systemically query AI models for logic boundary limits.
+- **Data-Poisoning Detector (CleanFeed)**: Scans enormous batches of text (e.g., parquet/jsonl files) to detect embedded semantic triggers designed to corrupt LLM training runs.
+- **Jailbreak Pattern Library**: Acts as a YAML-based database categorizing jailbreak techniques, seed prompts, required leakage patterns, and threat severities.
+- **Output Manipulation Detector**: Employs differential prompting to send semantically equivalent paraphrases and analyzes unexplained variance in the output.
+- **Jailbreak Predictor**: Uses ensemble scoring (toxicity, sentiment, perplexity) to predict when a model is about to output an adversarial or restricted response.
+- **Memorization Scanner**: Compares model completions directly to known, restricted training data snippets to evaluate data leakage and privacy violations.
+- **Adversarial Dataset Builder**: Utilizes gradient-free genetic algorithms to continuously evolve and output custom adversarial testing sets.
+- **Security Scanner for Model**: Probes black-box models using specialized crafted inputs designed to measure susceptibility to transfer attacks and membership inference.
+- **Chain-of-Thought Manipulator**: Hijacks the "thinking" stage of an LLM, tracking vulnerabilities to logical fallacies or sudden forced topic shifts.
+- **Multi-Tool Orchestrator (Meta-Tool)**: Synergistically pipelines all testing metrics, running coordinated, combined adversarial campaigns across different endpoints simultaneously.
+- **FilterGhost, ContamScan, ProbeMap, FailSetBuilder, AuditPredictor, JailbreakRadar, DemoProfiler, GenDetective, GapGraph, ConformDoc**: A set of 10 proposed offensive tool concepts specifically structured to assist with EU AI Act compliance checking in an adversarial black-box capacity.
+- **pre_earnings_sentinel (Hidden-Signal Detection)**: Cross-references SEC filing metadata with GitHub commit bursts and LinkedIn job openings to infer unannounced company financial distress or growth.
+- **patent_embargo_scanner**: Tracks the 48-hour embargo window between a USPTO issue notification and the full publication, correlating inventors with developer forum activity.
+- **stealth_board_graph**: Maps corporate aviation registry flights and overlapping private jet travel among board members to infer shadow networking.
+- **supply_chain_shadow_mapper**: Scans customs manifests and bill of ladings to map actual physical supply chains, matching them with Crunchbase funding cycles.
+- **llm_turing_probe**: Prompts models with steganographic triggers (homoglyphs) to test detection boundaries on public AI services.
+- **vision_ocr_exfil**: Uses modified fonts, rotated texts, and perturbations sent to free OCR services to reverse-engineer commercial vision pipelines.
+- **crypto_commit_chronicle**: Correlates Bitcoin/Ethereum clusters to specific open-source AI repositories to track potential "pay-per-commit" bounty campaigns.
+- **darkweb_cv_timeline**: Extracts CV/resume data leaked onto the dark web and cross-references it with historical LinkedIn snapshots to build a timeline of skill fabrications.
+- **psyche_darkweb_fuse**: Blends leaked credentials from breaches with psychology pre-print papers to find ethical contradictions in academic studies.
+- **career_vuln_bridge**: Connects reputation drops on developer sites with Exploit-DB submissions to map the shift from developer to threat actor.
+- **Cross-Domain Fusion Engine**: Automates the alignment of news narratives, financial anomalies, and social media pushes to detect coordinated campaigns.
+- **DNS Covert Channel Detector**: Discovers and interprets DNS tunneling attempts and hidden data exfiltration methodologies passively.
+- **Government RSS Feed Monitor**: Parses tracking feeds from sites like GovTrack to capture real-time bureaucratic shifts.
+- **EU Directive Scraper**: Scrapes EUR-Lex and related databases to track legal AI safety requirements dynamically.
+- **Company Registry Explorer**: Scans global business registration networks via platforms like OpenCorporates for shadow corporate structuring.
+- **Trade Data Scraper**: Scrapes the UN Comtrade Database for macroscopic trends on physical computing and hardware resources.
+- **Port Documentation Finder**: Extracts maritime and port data documents to detect international shipping of high-end compute equipment.
+- **ZoomInfo API alternative**: Scrapes directory listings and contacts via public channels instead of utilizing ZoomInfo's commercial data layer.
+- **AngelList / Stack Overflow / Ahrefs / SEMrush API alternatives**: Creative scripting to pull intelligence (SEO, HR, or Code footprint) exclusively from public indexes, evading commercial tier boundaries.
+- **ShadowSentinel**: Intersects dark-web beacon triangulation with AI-researcher psychometrics to pinpoint "insider-risk" flight risks globally.
+- **MoralDecay Pulse**: Predicts extremist-narrative diffusion over Tor/I2P and maps it against AI-grant funding to forecast policy changes.
+- **PhantomCitation Siphon**: Tracks citation-network anomalies linked to dark-web preprint leaks.
+- **ExistentialCanary**: Assesses compute-broker chatter, SBOM scanning, and conspiratorial ideation to predict independent rogue compute builds.
+- **AlignmentMirage Detector**: Scans synthetic darkweb marketplaces to discover when "safe" public AI datasets have been poisoned with adversarial data.
+- **SpiderFoot + DarkSearch + VADER / Maltego + IBM Watson / MISP + OnionScan / OSINT Combine / Custom Python Stack Pipelines**: Several advanced multi-tool combinations focusing on unifying dark web scraping with real-time NLP psycho-profiling to trace threat actors directly back to their professional CVs.

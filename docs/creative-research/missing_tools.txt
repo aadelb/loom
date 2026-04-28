@@ -1,0 +1,40 @@
+Documented so far:
+- Core Search & Fetch: research_search, research_fetch, research_spider, research_markdown, research_github, research_github_readme, research_github_releases
+- Deep Research: research_deep
+- LLM Tools: 8 tools (summarize, extract, classify, translate, query_expand, answer, embed, chat)
+- Stealth: research_camoufox, research_botasaurus
+- Content Enrichment: research_detect_language, research_wayback
+- Expert Discovery: research_find_experts
+- Creative (11): red_team, multilingual, consensus, misinfo_check, temporal_diff, citation_graph, ai_detect, curriculum, community_sentiment, wiki_ghost, semantic_sitemap
+- YouTube: fetch_youtube_transcript
+- Session: research_session_open, research_session_list, research_session_close
+- Cache: research_cache_stats, research_cache_clear
+- Config: research_config_get, research_config_set
+- Psychology (6): stylometry, deception_detect, persona_profile, radicalization_detect, sentiment_deep, network_persona
+- Domain Intel (3): whois, dns_lookup, nmap_scan
+- Image (2): exif_extract, ocr_extract
+- PDF (2): pdf_extract, pdf_search
+- NLP (1): text_analyze
+- Media (2): screenshot, text_to_speech
+- RSS (2): rss_fetch, rss_search
+- Social (2): social_search, social_profile
+- Security (5): cert_analyze, security_headers, breach_check, password_check
+- IP (2): ip_reputation, ip_geolocation
+- CVE (2): cve_lookup, cve_detail
+- Malware (2): urlhaus_check, urlhaus_search
+- GeoIP (1): geoip_local
+- Darkweb (4): ghost_weave, onion_spectra, cipher_mirror, dead_drop_scanner
+- Comms (2): email_report, slack_notify
+- Notes (2): save_note, list_notebooks
+- Infrastructure (4): metrics, health_check, vercel_status, vastai_status
+- Audio/Video (2): transcribe, tts_voices
+- Document (1): convert_document
+- GPU (1): vastai_search
+- Forum (2): forum_cortex, onion_spectra (duplicate)
+- Billing (2): usage_report, stripe_balance
+- Tor (2): tor_status, tor_new_identity
+- Find: find_similar_exa
+
+Still to add:
+- find_similar_exa
+- research_health_check (already added but not fully done)

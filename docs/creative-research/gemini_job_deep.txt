@@ -1,0 +1,177 @@
+YOLO mode is enabled. All tool calls will be automatically approved.
+YOLO mode is enabled. All tool calls will be automatically approved.
+MCP issues detected. Run /mcp list for status.Attempt 1 failed: You have exhausted your capacity on this model. Your quota will reset after 1s.. Retrying after 5911ms...
+Attempt 1 failed: You have exhausted your capacity on this model. Your quota will reset after 0s.. Retrying after 5416ms...
+Error executing tool read_file: Path not in workspace: Attempted path "/Users/aadel/projects/17jobsearch/CLAUDE.md" resolves outside the allowed workspace directories: /Users/aadel/projects/loom or the project temp directory: /Users/aadel/.gemini/tmp/loom
+Attempt 1 failed with status 429. Retrying with backoff... _GaxiosError: [{
+  "error": {
+    "code": 429,
+    "message": "No capacity available for model gemini-3.1-pro-preview on the server",
+    "errors": [
+      {
+        "message": "No capacity available for model gemini-3.1-pro-preview on the server",
+        "domain": "global",
+        "reason": "rateLimitExceeded"
+      }
+    ],
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+        "reason": "MODEL_CAPACITY_EXHAUSTED",
+        "domain": "cloudcode-pa.googleapis.com",
+        "metadata": {
+          "model": "gemini-3.1-pro-preview"
+        }
+      }
+    ]
+  }
+}
+]
+    at Gaxios._request (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:8800:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async _OAuth2Client.requestAsync (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:10763:16)
+    at async CodeAssistServer.requestStreamingPost (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:277779:17)
+    at async CodeAssistServer.generateContentStream (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:277579:23)
+    at async file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:278424:19
+    at async file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:255329:23
+    at async retryWithBackoff (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:275301:23)
+    at async GeminiChat.makeApiCallAndProcessStream (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:312614:28)
+    at async GeminiChat.streamWithRetries (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:312452:29) {
+  config: {
+    url: 'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse',
+    method: 'POST',
+    params: { alt: 'sse' },
+    headers: {
+      'Content-Type': 'application/json',
+      'User-Agent': 'GeminiCLI/0.39.1/gemini-3.1-pro-preview (darwin; arm64; terminal) google-api-nodejs-client/9.15.1',
+      Authorization: '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+      'x-goog-api-client': 'gl-node/22.21.1'
+    },
+    responseType: 'stream',
+    body: '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+    signal: AbortSignal { aborted: false },
+    retry: false,
+    paramsSerializer: [Function: paramsSerializer],
+    validateStatus: [Function: validateStatus],
+    errorRedactor: [Function: defaultErrorRedactor]
+  },
+  response: {
+    config: {
+      url: 'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse',
+      method: 'POST',
+      params: [Object],
+      headers: [Object],
+      responseType: 'stream',
+      body: '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+      signal: [AbortSignal],
+      retry: false,
+      paramsSerializer: [Function: paramsSerializer],
+      validateStatus: [Function: validateStatus],
+      errorRedactor: [Function: defaultErrorRedactor]
+    },
+    data: '[{\n' +
+      '  "error": {\n' +
+      '    "code": 429,\n' +
+      '    "message": "No capacity available for model gemini-3.1-pro-preview on the server",\n' +
+      '    "errors": [\n' +
+      '      {\n' +
+      '        "message": "No capacity available for model gemini-3.1-pro-preview on the server",\n' +
+      '        "domain": "global",\n' +
+      '        "reason": "rateLimitExceeded"\n' +
+      '      }\n' +
+      '    ],\n' +
+      '    "status": "RESOURCE_EXHAUSTED",\n' +
+      '    "details": [\n' +
+      '      {\n' +
+      '        "@type": "type.googleapis.com/google.rpc.ErrorInfo",\n' +
+      '        "reason": "MODEL_CAPACITY_EXHAUSTED",\n' +
+      '        "domain": "cloudcode-pa.googleapis.com",\n' +
+      '        "metadata": {\n' +
+      '          "model": "gemini-3.1-pro-preview"\n' +
+      '        }\n' +
+      '      }\n' +
+      '    ]\n' +
+      '  }\n' +
+      '}\n' +
+      ']',
+    headers: {
+      'alt-svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000',
+      'content-length': '630',
+      'content-type': 'application/json; charset=UTF-8',
+      date: 'Tue, 28 Apr 2026 02:17:58 GMT',
+      server: 'ESF',
+      'server-timing': 'gfet4t7; dur=5270',
+      vary: 'Origin, X-Origin, Referer',
+      'x-cloudaicompanion-trace-id': 'f16a0d4908d80f4f',
+      'x-content-type-options': 'nosniff',
+      'x-frame-options': 'SAMEORIGIN',
+      'x-xss-protection': '0'
+    },
+    status: 429,
+    statusText: 'Too Many Requests',
+    request: {
+      responseURL: 'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse'
+    }
+  },
+  error: undefined,
+  status: 429,
+  [Symbol(gaxios-gaxios-error)]: '6.7.1'
+}
+Here is a comprehensive research report on the current state of innovative job research tools (2025-2026), incorporating findings from the web and your local `17jobsearch` project.
+
+---
+
+### 1. Latest AI-Powered Job Platforms (2025–2026)
+The landscape has shifted from basic resume optimizers to **Agentic AI**—autonomous systems that handle end-to-end applications, networking, and direct outreach.
+
+*   **Emerging Tools:**
+    *   **Chiaro:** Direct-to-founder outreach that bypasses HR by automating personalized cold emails directly from your inbox.
+    *   **PitchMeAI / Sonara:** "Full Autopilot" systems that continuously scan job boards, tailor your resume per role, and automatically submit applications or email hiring managers.
+    *   **ApplyArc / Hirebee:** Unified pipelines with Agentic orchestration that manage the entire lifecycle, incorporating real-time interview prep.
+*   **MCP Server Implementation:**
+    *   **Approach:** Build an "Agentic Outreach MCP." It would expose a tool `auto_pitch_founder(industry, startup_size)` that fetches recent startup fundings, finds the CEO's contact, and drafts a hyper-personalized pitch based on the user's local resume.
+    *   **Free APIs:** **Crunchbase/Clearbit API** (free tiers) for startup discovery, **Hunter.io API** (50 free searches/mo) for finding founder emails, and local **Anthropic/OpenAI APIs** via MCP for crafting the pitch.
+
+### 2. Hidden Job Market Tools for PhD Researchers
+For PhDs, 70-80% of jobs are "hidden" (filled via referrals). Standard job boards are ineffective compared to targeted networking.
+
+*   **Tools & Approaches:**
+    *   **LinkedIn Alumni Search:** Filtering alumni by "what they studied" to find PhDs who successfully transitioned to industry for informational interviews.
+    *   **myIDP (STEM) / ImaginePhD (Humanities):** Tools designed to map specific lab/research skills to industry "Job Families" (e.g., mapping qualitative research to Strategic Analysis).
+    *   **Lunchclub:** AI-driven matching for 1-on-1 video calls to build a "cold" network outside of academia.
+*   **MCP Server Implementation:**
+    *   **Approach:** An "Informational Interview Copilot MCP." It would expose a tool `find_alumni_transition(university, phd_field, target_industry)` that retrieves matching profiles and generates a non-transactional networking script (e.g., asking for 15 mins to learn about their transition, *not* asking for a job).
+    *   **Free APIs:** **Proxycurl / RapidAPI OpenWeb Ninja** (freemium) for LinkedIn profile extraction without scraping bans, and **O*NET Web Services** to map academic skillsets to industry terminology.
+
+### 3. Features of Your Local `17jobsearch` Project
+Based on the `CLAUDE.md` analysis of your local `job-search-runner` codebase, your project is a highly advanced, multi-agent AI job search platform.
+
+*   **Core Architecture:** A massive Python 3.11+ ecosystem (~350+ files) utilizing an async SQLite database (WAL mode) and Pydantic validation.
+*   **Agentic System:** Orchestrates 18 specialized agents (e.g., Job Discovery, Application, Outreach) with built-in circuit breakers to handle failures and rate limits.
+*   **10-Phase Pipeline:** Automates Discover $\rightarrow$ Resolve $\rightarrow$ Extract $\rightarrow$ Score $\rightarrow$ Detect $\rightarrow$ Tailor $\rightarrow$ Apply $\rightarrow$ Track $\rightarrow$ Alert $\rightarrow$ Outreach.
+*   **Advanced ML Intelligence:** Includes modules for **Ghost Job Detection**, Visa sponsorship detection, and salary benchmarking.
+*   **Automated Apply:** Built-in ATS handlers for Workday, Lever, Greenhouse using Browser (Playwright) and API executors.
+
+### 4. Career Intelligence & Salary APIs
+Getting accurate, real-time market data is crucial for evaluating offers and identifying growth sectors.
+
+*   **Top Platforms:**
+    *   **Adzuna API:** Excellent for historical salary trends, histograms, and regional vacancy counts.
+    *   **USAJOBS API:** The gold standard for structured pay grades and US public sector roles.
+    *   **Reed.co.uk API:** Best for UK market data and minimum/maximum salary filtering.
+    *   **O\*NET Web Services:** Deep career intelligence, 10-year growth outlooks, and wage percentiles (10th to 90th).
+*   **MCP Server Implementation:**
+    *   **Approach:** A "Market Value Benchmarker MCP." It exposes `evaluate_offer(job_title, location, offered_salary)` to pull historical histograms and percentile data, advising the user if they are being lowballed.
+    *   **Free APIs:** **Adzuna API** (generous free tier with `app_id/app_key`), **USAJOBS API** (completely free with developer key), and **O\*NET Web Services** (free).
+
+### 5. Best Career Tools & Practices for PhD $\rightarrow$ Industry Transitions
+The biggest hurdle for PhDs is translating "academic prestige" into "business value / ROI."
+
+*   **Tools & Approaches:**
+    *   **Translation over Listing:** Instead of "Published 5 papers," saying "Communicated complex technical findings to diverse stakeholders." Instead of "Secured Grant," saying "Pitched and secured \$200k in funding."
+    *   **The T-Shaped Professional:** Showcasing deep niche expertise combined with cross-functional collaboration.
+    *   **Resumly.ai / FirstResume.ai:** AI tools specifically designed to strip academic jargon and optimize for standard industry ATS systems (Jobscan). Strict 1-2 page limits are enforced over 5-page CVs.
+*   **MCP Server Implementation:**
+    *   **Approach:** An "Academic CV Translator MCP." Exposes a tool `translate_cv_to_industry(pdf_path, target_job_desc)` that automatically converts a multi-page academic CV into a 1-page bulleted resume, mathematically quantifying research impact (e.g., "Optimized pipelines, reducing analysis time by 30%").
+    *   **Free APIs:** **O*NET API** to find standard industry keywords, combined with local AI models (via Anthropic/OpenAI) to perform the semantic translation and formatting.

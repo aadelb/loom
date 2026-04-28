@@ -1,0 +1,168 @@
+YOLO mode is enabled. All tool calls will be automatically approved.
+YOLO mode is enabled. All tool calls will be automatically approved.
+MCP issues detected. Run /mcp list for status.Attempt 1 failed with status 429. Retrying with backoff... _GaxiosError: [{
+  "error": {
+    "code": 429,
+    "message": "No capacity available for model gemini-3.1-pro-preview on the server",
+    "errors": [
+      {
+        "message": "No capacity available for model gemini-3.1-pro-preview on the server",
+        "domain": "global",
+        "reason": "rateLimitExceeded"
+      }
+    ],
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+        "reason": "MODEL_CAPACITY_EXHAUSTED",
+        "domain": "cloudcode-pa.googleapis.com",
+        "metadata": {
+          "model": "gemini-3.1-pro-preview"
+        }
+      }
+    ]
+  }
+}
+]
+    at Gaxios._request (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:8800:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async _OAuth2Client.requestAsync (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:10763:16)
+    at async CodeAssistServer.requestStreamingPost (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:277779:17)
+    at async CodeAssistServer.generateContentStream (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:277579:23)
+    at async file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:278424:19
+    at async file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:255329:23
+    at async retryWithBackoff (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:275301:23)
+    at async GeminiChat.makeApiCallAndProcessStream (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:312614:28)
+    at async GeminiChat.streamWithRetries (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:312452:29) {
+  config: {
+    url: 'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse',
+    method: 'POST',
+    params: { alt: 'sse' },
+    headers: {
+      'Content-Type': 'application/json',
+      'User-Agent': 'GeminiCLI/0.39.1/gemini-3.1-pro-preview (darwin; arm64; terminal) google-api-nodejs-client/9.15.1',
+      Authorization: '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+      'x-goog-api-client': 'gl-node/22.21.1'
+    },
+    responseType: 'stream',
+    body: '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+    signal: AbortSignal { aborted: false },
+    retry: false,
+    paramsSerializer: [Function: paramsSerializer],
+    validateStatus: [Function: validateStatus],
+    errorRedactor: [Function: defaultErrorRedactor]
+  },
+  response: {
+    config: {
+      url: 'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse',
+      method: 'POST',
+      params: [Object],
+      headers: [Object],
+      responseType: 'stream',
+      body: '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+      signal: [AbortSignal],
+      retry: false,
+      paramsSerializer: [Function: paramsSerializer],
+      validateStatus: [Function: validateStatus],
+      errorRedactor: [Function: defaultErrorRedactor]
+    },
+    data: '[{\n' +
+      '  "error": {\n' +
+      '    "code": 429,\n' +
+      '    "message": "No capacity available for model gemini-3.1-pro-preview on the server",\n' +
+      '    "errors": [\n' +
+      '      {\n' +
+      '        "message": "No capacity available for model gemini-3.1-pro-preview on the server",\n' +
+      '        "domain": "global",\n' +
+      '        "reason": "rateLimitExceeded"\n' +
+      '      }\n' +
+      '    ],\n' +
+      '    "status": "RESOURCE_EXHAUSTED",\n' +
+      '    "details": [\n' +
+      '      {\n' +
+      '        "@type": "type.googleapis.com/google.rpc.ErrorInfo",\n' +
+      '        "reason": "MODEL_CAPACITY_EXHAUSTED",\n' +
+      '        "domain": "cloudcode-pa.googleapis.com",\n' +
+      '        "metadata": {\n' +
+      '          "model": "gemini-3.1-pro-preview"\n' +
+      '        }\n' +
+      '      }\n' +
+      '    ]\n' +
+      '  }\n' +
+      '}\n' +
+      ']',
+    headers: {
+      'alt-svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000',
+      'content-length': '630',
+      'content-type': 'application/json; charset=UTF-8',
+      date: 'Tue, 28 Apr 2026 02:32:11 GMT',
+      server: 'ESF',
+      'server-timing': 'gfet4t7; dur=457',
+      vary: 'Origin, X-Origin, Referer',
+      'x-cloudaicompanion-trace-id': '4ae39b55dd73f618',
+      'x-content-type-options': 'nosniff',
+      'x-frame-options': 'SAMEORIGIN',
+      'x-xss-protection': '0'
+    },
+    status: 429,
+    statusText: 'Too Many Requests',
+    request: {
+      responseURL: 'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse'
+    }
+  },
+  error: undefined,
+  status: 429,
+  [Symbol(gaxios-gaxios-error)]: '6.7.1'
+}
+Here are 10 paradigm-shifting tools created by creatively chaining together domains like the darkweb, psychology, NLP, security, and career tracking. These tools move beyond standard analytics into deep behavioral and predictive intelligence.
+
+### 1. `insider_threat_canary` (Corporate Espionage Predictor)
+*   **Why it is revolutionary:** It shifts insider threat detection from reactive internal network logs to proactive external behavioral signals. It predicts corporate espionage by correlating a key employee's sudden, aggressive career networking with anonymous darkweb forum posts seeking to sell specific corporate data, verifying the leaker's identity via writing style analysis.
+*   **Existing Tools Chained:** `career_profile_scraper` + `darkweb_forum_monitor` + `stylometry_analyzer`
+*   **Free API Implementation:** LinkedIn public profile scraping (via a free tier API like Proxycurl or OSS scrapers) combined with Tor2Web APIs (for darkweb access without a Tor daemon) and HuggingFace Transformers (RoBERTa fine-tuned for authorship attribution).
+
+### 2. `astroturf_nexus_mapper` (Narrative Manipulation Unmasker)
+*   **Why it is revolutionary:** Unmasks coordinated corporate or state-sponsored disinformation campaigns masquerading as grassroots movements. It maps seemingly disconnected accounts pushing a specific narrative, analyzes their shift towards radical/extreme rhetoric to drive engagement, and proves they are controlled by a central entity.
+*   **Existing Tools Chained:** `network_persona_mapper` + `radicalization_detector` + `ghost_weave_link_analysis`
+*   **Free API Implementation:** Reddit API (PRAW) or X/Twitter Free API for data ingestion, NetworkX (Python) for graph analysis, and HuggingFace zero-shot classification pipelines for detecting radicalization markers.
+
+### 3. `vaporware_polygraph` (Venture Capital Due Diligence Engine)
+*   **Why it is revolutionary:** Automates extreme due diligence for startups. It analyzes founders' interviews and pitch decks for linguistic markers of deception, cross-references their claimed technical stack against actual open-source contributions, and psychologically profiles the team's execution capability to detect "vaporware."
+*   **Existing Tools Chained:** `deception_detector` + `github_repo_analyzer` + `psychological_profiler`
+*   **Free API Implementation:** YouTube Transcript API (for analyzing founder interviews), GitHub GraphQL API (for code reality checks), and IBM Watson NLU (Free tier) or an open-source linguistic deception model looking for cognitive load markers (e.g., distancing language, over-justification).
+
+### 4. `supply_chain_hostage_oracle` (Geopolitical Risk Forecaster)
+*   **Why it is revolutionary:** Predicts which critical nodes in a physical or software supply chain are most likely to be hit by ransomware or geopolitical sanctions *before* it happens. It does this by finding overlapping darkweb chatter about specific vendors and mapping the fragility of those links to enterprise targets.
+*   **Existing Tools Chained:** `ghost_weave_link_analysis` + `darkweb_ransomware_tracker` + `global_news_sentiment`
+*   **Free API Implementation:** OpenCorporates API (to map corporate structures/subsidiaries), Ransomwatch (open-source darkweb tracker data feeds), and the GDELT Project API (for real-time global news and event sentiment).
+
+### 5. `coercive_control_detector` (Cult & MLM Early Warning System)
+*   **Why it is revolutionary:** Protects vulnerable individuals by algorithmically identifying Multi-Level Marketing (MLM) schemes, extreme financial cults, or high-control groups in their nascent stages. It looks for psychological "love-bombing," impossible financial promises, and isolationist rhetoric in recruiting materials.
+*   **Existing Tools Chained:** `radicalization_detector` + `deception_detector` + `career_network_monitor`
+*   **Free API Implementation:** Pushshift API (for historical Reddit/forum archives), HuggingFace (fine-tuned BERT models for coercive/manipulative language), and basic web scraping for recruiting landing pages.
+
+### 6. `ai_persona_fuzzer` (Algorithmic Toxicity Auditor)
+*   **Why it is revolutionary:** Instead of standard security fuzzing (looking for code crashes), it performs *psychological fuzzing* on other AI agents or customer service bots. It interrogates the target AI, applies stylometry to reverse-engineer its hidden system prompts, and measures its propensity to output biased or radicalized content under adversarial pressure.
+*   **Existing Tools Chained:** `psychological_profiler` + `stylometry_analyzer` + `conversational_security_fuzzer`
+*   **Free API Implementation:** Local LLMs via Ollama (to act as the automated adversarial interrogator) and the Perspective API (by Google/Jigsaw) for real-time toxicity and bias scoring of the target's responses.
+
+### 7. `executive_flight_risk_radar` (Corporate Shakeup Predictor)
+*   **Why it is revolutionary:** Predicts major corporate shakeups or CEO departures before they are publicly announced. It analyzes an executive's public communications (earnings calls, interviews) for increasing linguistic signs of cognitive load, stress, and psychological detachment, correlating this with passive updates to their professional networks.
+*   **Existing Tools Chained:** `stylometry_analyzer` + `psychological_profiler` + `career_profile_scraper`
+*   **Free API Implementation:** SEC EDGAR API (to fetch raw earnings call transcripts), VADER Sentiment Analysis (via NLTK for tracking emotional polarity over time), and open-source linguistic frameworks like LIWC (Linguistic Inquiry and Word Count) translated into Python.
+
+### 8. `digital_ghost_unmasker` (Anonymous Harasser De-anonymizer)
+*   **Why it is revolutionary:** Provides enterprise or personal security by de-anonymizing stalkers or corporate harassers. It takes anonymous threatening emails/messages, builds a highly specific stylometric fingerprint, scans darkweb dead-drops or public forums to find matching linguistic profiles, and maps the network to their real identity.
+*   **Existing Tools Chained:** `stylometry_analyzer` + `dead_drop_scanner` + `network_persona_mapper`
+*   **Free API Implementation:** JStylo (open-source stylometry library), Shodan API (Free tier for finding open dead-drops, pastebins, or exposed databases), and the HaveIBeenPwned API (to link exposed handles to email addresses).
+
+### 9. `hype_orchestration_scanner` (Pump-and-Dump Forensics)
+*   **Why it is revolutionary:** Goes beyond simple trading volume spikes. It analyzes crypto, NFT, or penny stock forums for the coordinated injection of deceptive "FOMO" language that mimics radicalization tactics ("us vs. them," absolute loyalty to the asset). It then uses link analysis to trace the wallets funding the bot accounts.
+*   **Existing Tools Chained:** `deception_detector` + `radicalization_detector` + `crypto_wallet_tracer`
+*   **Free API Implementation:** Telegram API / Discord API (for real-time forum data ingestion), Etherscan/BscScan free APIs (for blockchain link analysis), and HuggingFace emotion classification models.
+
+### 10. `regulatory_capture_mapper` (Lobbying Influence Prover)
+*   **Why it is revolutionary:** Automatically proves when a corporation or special interest group has literally written a law. It uses stylometry to compare the text of proposed legislation against whitepapers and internal documents from lobbying firms. It then maps the career paths of the politicians and lobbyists (the "revolving door") to show the full web of influence.
+*   **Existing Tools Chained:** `stylometry_analyzer` + `ghost_weave_link_analysis` + `career_profile_scraper`
+*   **Free API Implementation:** ProPublica Congress API (for raw bill text), OpenSecrets API (for lobbying and campaign finance data), and Scikit-learn (using TF-IDF and Cosine Similarity to find verbatim overlaps between corporate whitepapers and legal statutes).
