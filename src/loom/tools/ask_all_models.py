@@ -92,7 +92,10 @@ _API_KEY_ENV: dict[str, str] = {
 _CLI_TOOLS = [
     {"name": "gemini", "cmd": ["gemini", "-m", "gemini-3.1-pro-preview", "--approval-mode", "yolo"]},
     {"name": "kimi", "cmd": ["kimi", "--thinking", "--yolo", "-p"]},
+    {"name": "kimi-cli", "cmd": ["kimi-cli", "--thinking", "-p"]},
     {"name": "codex", "cmd": ["codex", "exec", "-m", "gpt-5.2-codex", "-s", "workspace-write"]},
+    {"name": "cursor", "cmd": ["cursor", "--ask"]},
+    {"name": "claude", "cmd": ["claude", "-p"]},
 ]
 
 
