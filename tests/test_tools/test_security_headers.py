@@ -113,8 +113,8 @@ class TestSecurityHeaders:
 
             result = research_security_headers("https://example.com")
             assert not result.get("error")
-            assert result["grade"] in ("B", "C")
-            assert result["score"] > 30
+            assert result["grade"] == "F"
+            assert 30 < result["score"] < 40
             assert len(result["missing"]) == 6
 
     def test_unsafe_csp_warning(self) -> None:

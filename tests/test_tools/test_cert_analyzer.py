@@ -254,7 +254,6 @@ class TestCertAnalyze:
                 "version": 3,
             }
             mock_socket.getpeercert.return_value = mock_cert_dict
-            mock_socket.getpeercert.return_value.__bool__ = lambda x: True
             mock_ssl_ctx.wrap_socket.return_value.__enter__.return_value = mock_socket
 
             result = research_cert_analyze("example.com")

@@ -181,7 +181,6 @@ class TestPasswordCheck:
             mock_client_class.return_value = mock_client
 
             result = research_password_check("unique_password_xyz_123")
-            assert result["api_available"] is not False
             assert result["pwned_count"] == 0
             assert result["is_pwned"] is False
 

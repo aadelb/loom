@@ -51,7 +51,7 @@ class TestToolsCommand:
 
     def test_tools_command_exists(self, cli_runner: CliRunner) -> None:
         """loom tools command is registered."""
-        with patch("loom.cli.create_app") as mock_create_app:
+        with patch("loom.server.create_app") as mock_create_app:
             mock_app = MagicMock()
             mock_app.list_tools = AsyncMock(return_value=[])
             mock_create_app.return_value = mock_app
@@ -67,7 +67,7 @@ class TestToolsCommand:
         tool1 = _create_mock_tool("research_fetch", "Fetch a URL")
         tool2 = _create_mock_tool("research_search", "Search across providers")
 
-        with patch("loom.cli.create_app") as mock_create_app:
+        with patch("loom.server.create_app") as mock_create_app:
             mock_app = MagicMock()
             mock_app.list_tools = AsyncMock(return_value=[tool1, tool2])
             mock_create_app.return_value = mock_app
@@ -84,7 +84,7 @@ class TestToolsCommand:
         tool1 = _create_mock_tool("research_fetch", "Fetch a URL")
         tool2 = _create_mock_tool("research_search", "Search across providers")
 
-        with patch("loom.cli.create_app") as mock_create_app:
+        with patch("loom.server.create_app") as mock_create_app:
             mock_app = MagicMock()
             mock_app.list_tools = AsyncMock(return_value=[tool1, tool2])
             mock_create_app.return_value = mock_app
@@ -107,7 +107,7 @@ class TestToolsCommand:
         llm_tool2 = _create_mock_tool("research_llm_extract", "Extract structured data")
         fetch_tool = _create_mock_tool("research_fetch", "Fetch a URL")
 
-        with patch("loom.cli.create_app") as mock_create_app:
+        with patch("loom.server.create_app") as mock_create_app:
             mock_app = MagicMock()
             mock_app.list_tools = AsyncMock(return_value=[llm_tool1, llm_tool2, fetch_tool])
             mock_create_app.return_value = mock_app
@@ -125,7 +125,7 @@ class TestToolsCommand:
         llm_tool = _create_mock_tool("research_llm_summarize", "Summarize text")
         fetch_tool = _create_mock_tool("research_fetch", "Fetch a URL")
 
-        with patch("loom.cli.create_app") as mock_create_app:
+        with patch("loom.server.create_app") as mock_create_app:
             mock_app = MagicMock()
             mock_app.list_tools = AsyncMock(return_value=[llm_tool, fetch_tool])
             mock_create_app.return_value = mock_app
@@ -145,7 +145,7 @@ class TestToolsCommand:
             parameters={"url": {"type": "string"}, "mode": {"type": "string"}},
         )
 
-        with patch("loom.cli.create_app") as mock_create_app:
+        with patch("loom.server.create_app") as mock_create_app:
             mock_app = MagicMock()
             mock_app.list_tools = AsyncMock(return_value=[tool])
             mock_create_app.return_value = mock_app
@@ -165,7 +165,7 @@ class TestToolsCommand:
             parameters={"url": {"type": "string"}, "mode": {"type": "string"}},
         )
 
-        with patch("loom.cli.create_app") as mock_create_app:
+        with patch("loom.server.create_app") as mock_create_app:
             mock_app = MagicMock()
             mock_app.list_tools = AsyncMock(return_value=[tool])
             mock_create_app.return_value = mock_app
@@ -183,7 +183,7 @@ class TestToolsCommand:
         """loom tools --category with nonexistent category prints message."""
         tool = _create_mock_tool("research_fetch", "Fetch a URL")
 
-        with patch("loom.cli.create_app") as mock_create_app:
+        with patch("loom.server.create_app") as mock_create_app:
             mock_app = MagicMock()
             mock_app.list_tools = AsyncMock(return_value=[tool])
             mock_create_app.return_value = mock_app
@@ -191,7 +191,7 @@ class TestToolsCommand:
             result = cli_runner.invoke(app, ["tools", "--category", "nonexistent"])
 
             assert result.exit_code == 0
-            assert "No tools found in category" in result.stdout
+            assert "No tools found in category" in result.stderr
 
     def test_tools_shows_category_summary(self, cli_runner: CliRunner) -> None:
         """loom tools displays category summary when no filter."""
@@ -199,7 +199,7 @@ class TestToolsCommand:
         spider_tool = _create_mock_tool("research_spider", "Spider")
         llm_tool = _create_mock_tool("research_llm_summarize", "Summarize")
 
-        with patch("loom.cli.create_app") as mock_create_app:
+        with patch("loom.server.create_app") as mock_create_app:
             mock_app = MagicMock()
             mock_app.list_tools = AsyncMock(return_value=[fetch_tool, spider_tool, llm_tool])
             mock_create_app.return_value = mock_app
@@ -212,7 +212,7 @@ class TestToolsCommand:
 
     def test_tools_empty_list(self, cli_runner: CliRunner) -> None:
         """loom tools handles empty tool list gracefully."""
-        with patch("loom.cli.create_app") as mock_create_app:
+        with patch("loom.server.create_app") as mock_create_app:
             mock_app = MagicMock()
             mock_app.list_tools = AsyncMock(return_value=[])
             mock_create_app.return_value = mock_app

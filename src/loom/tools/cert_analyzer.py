@@ -177,9 +177,12 @@ def _is_valid_hostname(hostname: str) -> bool:
     if not hostname or not isinstance(hostname, str):
         return False
 
-    # Strip whitespace and check length
-    hostname = hostname.strip()
-    if not hostname or len(hostname) > 255:
+    # Check for whitespace before processing
+    if hostname != hostname.strip():
+        return False
+
+    # Check length
+    if len(hostname) > 255:
         return False
 
     # Check character set
@@ -187,9 +190,14 @@ def _is_valid_hostname(hostname: str) -> bool:
     if not all(c in allowed for c in hostname):
         return False
 
-    # Hyphens/dots should not be at start/end
+    # Hyphens/dots should not be at start/end of entire hostname
     if hostname.startswith("-") or hostname.startswith(".") or hostname.endswith("-") or hostname.endswith("."):
         return False
+
+    # Each label (part between dots) should not start or end with hyphen
+    for label in hostname.split("."):
+        if label.startswith("-") or label.endswith("-"):
+            return False
 
     return True
 
