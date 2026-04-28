@@ -1,0 +1,41 @@
+# Bug Fix Audit Report
+
+## Bug Fix #1: Mock setups for tests
+- Location: tests/test_tools/test_transcribe.py, test_document.py, test_billing.py, test_email_report.py
+- Expected: Mock patterns for httpx, whisper, pandoc, SMTP, stripe
+- Check: Look for @patch, Mock, AsyncMock usage
+
+## Bug Fix #2: Lambda capture in deep.py  
+- Location: src/loom/tools/deep.py, line ~308
+- Expected: Lambda capturing loop variables correctly
+- Check: lambda within list comprehension for _run_search
+
+## Bug Fix #3: DNS cache with IP pinning
+- Location: src/loom/validators.py
+- Expected: _dns_cache dict, threading.Lock, get_validated_dns function
+- Check: Look for _dns_cache, _dns_cache_lock, threading.Lock
+
+## Bug Fix #4: Thread leak prevention in spider
+- Location: src/loom/tools/spider.py
+- Expected: INNER_FETCH_TIMEOUT < OUTER_WAIT_FOR_TIMEOUT hierarchy
+- Check: Lines 19-20 should show timeout hierarchy
+
+## Bug Fix #5: Concurrent deletion in cache.py
+- Location: src/loom/cache.py stats() and clear_older_than()
+- Expected: FileNotFoundError exceptions caught
+- Check: look for 'except FileNotFoundError'
+
+## Bug Fix #6: SQLite connections in sessions.py
+- Location: src/loom/sessions.py
+- Expected: try/finally wrapping all sqlite3.connect() calls
+- Check: All conn instances wrapped in try/finally
+
+## Bug Fix #7: httpx wrapped in run_in_executor
+- Location: src/loom/tools/creative.py
+- Expected: Sync wrapper functions calling httpx.Client, wrapped in run_in_executor
+- Check: _fetch_citation_data, _fetch_wiki_data, _fetch_sitemap with run_in_executor
+
+## Bug Fix #8: asyncio.sleep instead of time.sleep
+- Location: src/loom/tools/creative.py
+- Expected: No 'import time', use asyncio.sleep
+- Check: No import time statement, only asyncio usage

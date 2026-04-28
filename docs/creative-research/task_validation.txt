@@ -1,0 +1,118 @@
+VALIDATE EACH COMPLETED TASK — Find gaps between expected and actual outcome:
+
+TASK #10: Collect all AI model results and consolidate
+EXPECTED: One document consolidating ALL 30+ AI model outputs
+ACTUAL FILE: COMPREHENSIVE_MASTER_RESEARCH.md (35KB) + GEMINI_COMPREHENSIVE_MASTER.md (28KB)
+QUESTION: Does it include findings from ALL models? Any model output missing?
+
+TASK #11: Update formal notice with bribery evidence
+EXPECTED: formal_notice.md contains bribery paragraph, Marim identity, bank account, 2026 precedents
+ACTUAL: formal_notice.md (18.8KB)
+QUESTION: Does it reference ADIB 28553659, Marim, audio evidence, whistleblower law?
+
+TASK #25: Executive email to Rizwan Sajan
+EXPECTED: Ready-to-send email under 300 words, professional, references police complaints
+ACTUAL: email_rizwan_sajan.md (2.4KB)
+QUESTION: Does it include bribery evidence reference? Both police complaint references?
+
+TASK #26: Investigate whistleblower reward
+EXPECTED: Research on Decree-Law 56/2023 Art 27, how to claim, expected reward
+ACTUAL: whistleblower_claim.md (9.5KB) + gpt41_web_research.md findings
+QUESTION: Is the claim document ready to submit? Does it reference the correct law?
+
+TASK #27: AML report
+EXPECTED: Ready-to-submit SAR for UAE FIU, references cash bribery + ADIB account
+ACTUAL: aml_report.md (13.7KB)
+QUESTION: Does it include ADIB 28553659, cash amount calculations, Decree-Law 20/2018?
+
+TASK #28: Media pitches
+EXPECTED: Two ready-to-send emails for Gulf News and Khaleej Times
+ACTUAL: media_pitch_gulfnews.md (3.5KB) + media_pitch_khaleejtimes.md (4.6KB)
+QUESTION: Are they factual, non-defamatory, and do they reference bribery evidence?
+
+TASK #30: Regenerate PDFs
+EXPECTED: All documents as individual PDFs + combined PDF
+ACTUAL: 32 PDFs, 1.2MB, combined PDF 462KB
+QUESTION: Does combined PDF include ALL documents including bribery + comprehensive master?
+
+TASK #33: Opus full spectrum strategies
+EXPECTED: Complete GREEN/YELLOW/ORANGE/RED taxonomy with AED amounts
+ACTUAL: ULTIMATE_STRATEGY.md (35.8KB)
+QUESTION: Does it cover all 4 tiers? Are AED amounts specific? Does it include bribery evidence?
+
+TASK #34: Correlate all research
+EXPECTED: DEFINITIVE_ASSESSMENT with consensus ranking, realistic paths, model credibility
+ACTUAL: DEFINITIVE_ASSESSMENT.md (35KB) + ASSESSMENT_QUICK_REFERENCE.md (10.7KB)
+QUESTION: Does it show model disagreements? Settlement prediction? Week-by-week plan?
+
+TASK #35: All options including gray/black
+EXPECTED: Every approach across full spectrum with risk classification
+ACTUAL: MAXIMUM_RECOVERY_STRATEGY.md (13.4KB) + multiple BLACK files (155KB+)
+QUESTION: Are all 10 GREEN, 8 YELLOW, 12 ORANGE, 10 BLACK listed?
+
+TASK #36: OpenAI best models research
+EXPECTED: O1, O3, GPT-4o, GPT-4.1 outputs with AED amounts and precedents
+ACTUAL: 27 OpenAI research files
+QUESTION: Were ALL available models used (O1, O1-Pro, O3, O3-Pro, O4-mini, GPT-4o, GPT-4.1)?
+
+TASK #38: Audio transcription
+EXPECTED: Full Arabic transcription + English translation of both recordings
+ACTUAL: audio_evidence_translated.md (7.6KB)
+QUESTION: Does it include both files (47s voice note + 3m50s call)? Timestamps?
+
+TASK #39: Update all docs with bribery
+EXPECTED: All complaint docs updated with Marim identity, ADIB account, audio evidence
+ACTUAL: 7 complaint docs updated
+QUESTION: Do ALL 7 reference Marim, ADIB 28553659, and audio evidence?
+
+TASK #40: Final PDFs
+EXPECTED: All documents as PDFs including bribery documents
+ACTUAL: 32 PDFs, 1.2MB
+QUESTION: Are newest docs included (STEP_BY_STEP, RECOVERY_MATH, QUALITY_REVIEW)?
+
+TASK #52: Save master plan to PDF
+EXPECTED: MASTER_PLAN.md exists and is in PDF collection
+ACTUAL: MASTER_PLAN.md (73KB)
+QUESTION: Is it current with bribery evidence and all strategy updates?
+
+TASK #53: O1 gray/black analysis
+EXPECTED: O1 output covering gray and black approaches
+ACTUAL: o1_full_spectrum.md (25KB) + o1_deep_spectrum.md (26KB) + o1_BLACK_forensic.md (20KB)
+QUESTION: Did O1 cover all 10 black schemes?
+
+TASK #54: GPT-4.1 web search
+EXPECTED: Web research findings with URLs for precedents, settlements, NDA pricing
+ACTUAL: 8 GPT-4.1 files (35KB+)
+QUESTION: Did it find real AED amounts? Real case URLs?
+
+TASK #55: Kimi K2.5
+EXPECTED: Creative strategies from Kimi
+ACTUAL: kimi_k25_creative.md (10.3KB)
+QUESTION: Did it provide the escrow audit nuclear option?
+
+TASK #56: ORANGE strategies deep-dive
+EXPECTED: Each ORANGE strategy with execution steps
+ACTUAL: DEEP_SPECTRUM_ANALYSIS.md (10.6KB) + o3_full_hcs10.md (9.9KB) + gpt4o_hcs10_deep.md (6.9KB)
+QUESTION: Are NDA pricing, escrow audit, media leverage, wasta all covered with AED amounts?
+
+TASK #57: NDA pricing research
+EXPECTED: Specific AED ranges for NDA premiums in corruption settlements
+ACTUAL: Covered in o3_deep_research_hcs10.md, gpt4o_hcs10_deep.md, DEEP_SPECTRUM_ANALYSIS.md
+QUESTION: Do we have the NDA pricing formula and AED tiers?
+
+TASK #58: Recovery math
+EXPECTED: Detailed mathematical calculation with all legal theories
+ACTUAL: RECOVERY_MATH_FINAL.md (28.2KB)
+QUESTION: Does it show 3 scenarios with step-by-step math? Settlement negotiation table?
+
+TASK #59: Final PDF regeneration
+EXPECTED: All docs including latest in PDF format
+ACTUAL: 32 PDFs
+QUESTION: Same as #40 validation
+
+TASK #60: Quality review
+EXPECTED: Review of all 17 legal docs for consistency, accuracy, completeness
+ACTUAL: QUALITY_REVIEW.md (25.1KB)
+QUESTION: Did it find any critical issues? Were they fixed?
+
+For EACH task: state whether the ACTUAL outcome fully meets the EXPECTED outcome. If there's a gap, describe what's missing.

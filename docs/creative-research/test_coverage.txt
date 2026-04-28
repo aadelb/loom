@@ -1,0 +1,91 @@
+COMPREHENSIVE LOOM MCP TOOL TEST COVERAGE
+==========================================
+
+The deep_research_test.py script tests ALL 42+ Loom MCP tools:
+
+CONFIG & CACHE TOOLS (5):
+✓ research_config_get() - Get all config
+✓ research_config_get("SPIDER_CONCURRENCY") - Get specific config
+✓ research_config_set("SPIDER_CONCURRENCY", 5) - Set config value
+✓ research_cache_stats() - Get cache statistics
+✓ research_cache_clear(365) - Clear old cache entries
+
+FETCH & EXTRACT TOOLS (4):
+✓ research_fetch("https://example.com", mode="http") - Basic HTTP fetch
+✓ research_fetch("https://httpbin.org/html", mode="http", auto_escalate=True, return_format="text") - With escalation
+✓ research_markdown("https://en.wikipedia.org/wiki/Python_(programming_language)") - Extract markdown
+✓ research_spider(["https://example.com", "https://httpbin.org"], mode="http", concurrency=2, dedupe=True) - Batch fetch
+
+SEARCH TOOLS (9 PROVIDERS):
+✓ research_search("AI ethics", provider="exa", n=5, include_domains=["nature.com"])
+✓ research_search("quantum computing", provider="tavily", n=5)
+✓ research_search("web scraping", provider="firecrawl", n=3)
+✓ research_search("privacy browsers", provider="brave", n=5)
+✓ research_search("artificial intelligence", provider="ddgs", n=5, provider_config={"region": "us-en"})
+✓ research_search("transformer attention", provider="arxiv", n=3)
+✓ research_search("machine learning", provider="wikipedia", n=3)
+✓ research_search("startup YC", provider="hackernews", n=3)
+✓ research_search("python tips", provider="reddit", n=3)
+
+GITHUB TOOLS (5):
+✓ research_github("repo", "python web framework", limit=5, sort="stars") - Repo search
+✓ research_github("code", "async await python", limit=3, language="python") - Code search
+✓ research_github("issues", "memory leak", limit=3) - Issue search
+✓ research_github_readme("pallets", "flask") - Get README
+✓ research_github_releases("python", "cpython", limit=3) - Get releases
+
+LLM TOOLS (8):
+✓ research_llm_summarize(text, max_tokens=100) - Summarization
+✓ research_llm_extract(text, schema={...}) - Data extraction
+✓ research_llm_classify(text, labels=[...]) - Single-label classification
+✓ research_llm_classify(text, labels=[...], multi_label=True) - Multi-label classification
+✓ research_llm_translate("Hello...", target_lang="ar") - Translation
+✓ research_llm_query_expand("climate change solutions", n=5) - Query expansion
+✓ research_llm_answer("What is photosynthesis?", sources=[...], style="cited") - Answered question
+✓ research_llm_embed(["hello world", "machine learning", ...]) - Embeddings
+✓ research_llm_chat(messages=[...], max_tokens=10, temperature=0.0) - Chat conversation
+
+ENRICHMENT TOOLS (2):
+✓ research_detect_language("The quick brown fox...") - English detection
+✓ research_detect_language("هذا نص باللغة العربية") - Arabic detection
+✓ research_wayback("https://example.com", limit=2) - Wayback Machine snapshots
+
+EXPERT TOOLS (1):
+✓ research_find_experts("machine learning", n=5) - Find experts
+
+EXA SIMILAR (1):
+✓ find_similar_exa("https://en.wikipedia.org/wiki/Artificial_intelligence", n=3) - Similar pages
+
+CREATIVE TOOLS (11):
+✓ research_red_team("AI will replace all human jobs within 10 years", n_counter=3) - Counter arguments
+✓ research_multilingual("bitcoin cryptocurrency", languages=["ar", "es", "de", "zh"], n_per_lang=2) - Multilingual search
+✓ research_consensus("renewable energy benefits", providers=["ddgs", "wikipedia", "brave"], n=5) - Consensus across providers
+✓ research_misinfo_check("The Earth is approximately 4.5 billion years old", n_sources=3) - Misinformation verification
+✓ research_temporal_diff("https://en.wikipedia.org/wiki/Artificial_intelligence") - Temporal comparison
+✓ research_citation_graph("attention is all you need", depth=1, max_papers=10) - Citation graph
+✓ research_ai_detect("Artificial intelligence is revolutionizing..." * 5) - AI-generated text detection
+✓ research_curriculum("quantum computing") - Learning curriculum
+✓ research_community_sentiment("Rust programming language", n=5) - Community sentiment
+✓ research_wiki_ghost("Climate change") - Wikipedia ghost mode
+✓ research_semantic_sitemap("docs.python.org", max_pages=10) - Semantic sitemap
+
+YOUTUBE TOOLS (1):
+✓ fetch_youtube_transcript("https://www.youtube.com/watch?v=dQw4w9WgXcQ") - Video transcript
+
+SESSION TOOLS (2):
+✓ research_session_list() - List all sessions
+
+DEEP RESEARCH TOOL (1):
+✓ research_deep("transformer attention mechanism", depth=1, expand=True, extract=True) - Deep research
+
+TOTAL: 45+ TOOLS TESTED
+
+FEATURES:
+- Real API calls with realistic inputs
+- Validates response structure (dict type, expected keys)
+- Graceful error handling (skips on API key not found, logs failures)
+- Timing measurement for each tool
+- JSON report generation with statistics
+- Summary table with pass/fail/skip status
+- Proper async/await pattern throughout
+- Type hints on all functions

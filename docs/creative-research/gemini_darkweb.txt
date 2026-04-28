@@ -1,0 +1,21 @@
+YOLO mode is enabled. All tool calls will be automatically approved.
+YOLO mode is enabled. All tool calls will be automatically approved.
+MCP issues detected. Run /mcp list for status.Based on the audit of the requested files, here are the **FAIL** items categorized by your checks:
+
+**1. `.onion` URL handling: FAIL**
+*   **`src/loom/tools/onion_spectra.py`**: The validation checks if the URL ends with the extension via `if not validated_url.endswith(".onion"):`. This breaks entirely on valid `.onion` URLs that contain a trailing slash or a path (e.g., `http://address.onion/` or `http://address.onion/index.html`).
+*   **`src/loom/providers/torcrawl.py`**: The extraction logic relies on the weak condition `if ".onion" in full_url:`. This insecurely accepts clearnet URLs containing `.onion` as a substring (e.g., `http://clearnet.com/?q=.onion`), potentially leaking Tor crawls onto the public web.
+
+**2. SOCKS5 proxy config: FAIL**
+*   **`src/loom/tools/tor.py`**: The proxy configuration is hardcoded to `socks5h://127.0.0.1:9050` inside `_get_tor_client()` and `research_tor_status()`. It completely ignores the global/environment `TOR_SOCKS5_PROXY` configuration that the rest of the application respects. 
+
+**3. Content classification accuracy: FAIL**
+*   **`src/loom/tools/forum_cortex.py`**: The sentiment analysis feature is incomplete and inaccurate. It ignores the LLM response regarding sentiment and explicitly hardcodes a placeholder: `"sentiment": "neutral"`. 
+
+**4. BFS graph correctness: FAIL**
+*   **`src/loom/providers/torcrawl.py`**: The BFS queue limits itself using `if link not in visited and len(queue) < max_pages`. Capping the *size of the queue* rather than the total number of scheduled pages arbitrarily truncates the graph's branching factor at shallow depths, breaking the breadth-first search traversal.
+
+**5. Shingling algorithm: FAIL**
+*   **`src/loom/tools/dead_drop_scanner.py`**: The `_shingle_text` function implements character-level k-grams with an aggressively small size of `k=5`. Five characters is far too small for document similarity and will result in massive false positives across completely unrelated sites due to common English substrings (e.g., `" the "`, `" and "`, `"ing "`).
+
+*(Note: Stem library safety and Tor control command injection checks were fully verified and passed, so they are excluded from this failure report).*

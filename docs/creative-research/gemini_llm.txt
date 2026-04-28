@@ -1,0 +1,20 @@
+YOLO mode is enabled. All tool calls will be automatically approved.
+YOLO mode is enabled. All tool calls will be automatically approved.
+MCP issues detected. Run /mcp list for status.### AUDIT RESULTS: FAIL ITEMS
+
+**1. Cascade Fallback Logic**
+- **Model Bleed-Over:** In `_call_with_cascade` and `research_llm_embed`, if `model="auto"`, it eagerly resolves to a provider-specific default string (e.g., `"meta/llama-4-maverick-17b-128e-instruct"`). When the primary provider (NVIDIA) fails, this exact model string is passed down the chain to fallback providers (OpenAI, Anthropic, etc.). They will reject it as an unknown model (400/404 errors), causing the entire cascade to fail instead of gracefully falling back to each provider's native `default_model`.
+
+**2. API Key Handling**
+- **Gemini Key Exposure in Logs:** In `gemini_provider.py`, the API key is passed directly in the URL query string (`?key={self.api_key}`). If an HTTP error or timeout occurs, `httpx` exceptions embed the full request URL in their default string representation. Because Gemini keys begin with `AIza` (which is not covered by the token redaction logic), the key will be completely exposed in the application logs.
+
+**3. Timeout Clamping**
+- **Missing Clamp in NVIDIA NIM:** In `nvidia_nim.py`, the `embed()` method accepts a `timeout` argument but fails to clamp it (missing the `timeout = max(1, min(int(timeout), 600))` check) before passing it to `client.post()`. This bypasses the abuse-prevention limits enforced across all other provider methods.
+
+**4. Cost Tracking Accuracy**
+- **Amnesia on Cap Hit (Infinite Spend):** In `CostTracker.add_cost()`, if a call's cost causes `new_total > daily_cap`, a `RuntimeError` is raised *before* the new total is saved to the JSON log. Since the API call has already executed and incurred a real-world charge, refusing to write the log means the system forgets the money was spent. This allows attackers to make unbounded API calls that individually skirt under the remaining cap, continuously discarding the ledger update on failure.
+- **Unrecorded Embeddings:** In `llm.py`, `research_llm_embed()` bypasses `_call_with_cascade` entirely. It always returns `"cost_usd": 0.0` and never invokes `_get_cost_tracker().add_cost()`. All paid embeddings (e.g., via OpenAI) bypass the daily cost budget completely.
+
+**5. Token Redaction Completeness**
+- **Upper-Bound Truncation:** In `llm.py`'s `_sanitize_error()`, the regex for `sk-`, `nvapi-`, and `Bearer` limits matches to `{10,50}` characters. Tokens exceeding 50 characters (e.g., Anthropic keys which are ~108 chars, OpenAI project keys, or long JWT Bearer tokens) will only have their first 50 characters redacted, leaving the trailing portion of the secrets explicitly exposed in the logs.
+- **Missing GitHub PATs:** The redaction logic strictly searches for 36-character classic GitHub tokens (`ghp_[A-Za-z0-9]{36}`). It completely fails to match and redact modern fine-grained GitHub Personal Access Tokens (which start with `github_pat_`).

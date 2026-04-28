@@ -1,0 +1,26 @@
+MCP issues detected. Run /mcp list for status.I will read the requested files to audit them for configuration and session management vulnerabilities.
+Here is the security audit report for the requested files based on the specified checks:
+
+### Pydantic validation gaps
+- **FAIL** `src/loom/config.py:35` - `ConfigModel` specifies `extra="allow"`. This permits arbitrary fields to bypass validation and be saved into the configuration.
+- **FAIL** `src/loom/params.py:272` - `ConfigSetParams` takes `key: str` without any validation (e.g., checking against a known list of valid keys), making it overly permissive.
+- **FAIL** `src/loom/params.py:23` - `FetchParams.cookies`, `SpiderParams.cookies`, and `MarkdownParams.cookies` are typed as `dict[str, str] | None` but have no field validators to enforce limits on size or content, risking memory/payload abuse.
+
+### SQLite connection safety (try/finally)
+- **PASS** `src/loom/sessions.py` - The `SessionManager` correctly wraps all `sqlite3.connect(self.db_path)` usages (e.g., `_init_db`, `open`, `close`, `list`, `get_context`) in `try...finally: conn.close()` blocks to ensure connections are properly closed even on errors.
+
+### Session TTL enforcement
+- **FAIL** `src/loom/sessions.py:621` - `SessionManager.get_context()` reads session data directly from SQLite without validating whether `expires_at` is in the past. It will return an expired session.
+- **FAIL** `src/loom/sessions.py:595` - `SessionManager.list()` performs a `SELECT` on all sessions but fails to filter out expired records using a `WHERE expires_at > now` clause.
+- **FAIL** `src/loom/sessions.py:82` and `247` - `_cleanup_expired()` and `get_session()` enforce TTL by checking `age` against `created_at` (`created.timestamp()`) rather than `last_used`, meaning sessions hit a hard deadline and are killed even if actively in use, rendering TTL extension ineffective.
+
+### Cache atomic writes
+- **PASS** `src/loom/cache.py:97` - `CacheStore.put()` correctly implements atomic writes by writing to a randomly generated temporary file (`uuid.uuid4().hex`) and swapping it into place using `os.replace(tmp, p)`, preventing file corruption across concurrent tool executions.
+
+### Config injection
+- **FAIL** `src/loom/config.py:173` - `set(key, value)` blindly assigns `candidate[key] = value` and instantiates `ConfigModel`. Because `ConfigModel` has `extra="allow"`, any arbitrary key passed by a user is persisted into `config.json` without rejection.
+
+### File permissions
+- **FAIL** `src/loom/sessions.py:49` - `_get_session_dir()` creates the base sessions directory `~/.loom/sessions` using `mkdir(parents=True, exist_ok=True)` with default umask permissions (e.g., 755), making browser profiles readable by other local users.
+- **FAIL** `src/loom/sessions.py:149` - `user_data_dir.mkdir(exist_ok=True)` creates specific browser session profile directories with default permissions.
+- **FAIL** `src/loom/config.py:151` - `save_config()` creates the config file and directory without strictly enforcing `0o600`/`0o700` permissions, potentially leaking sensitive items such as `TOR_SOCKS5_PROXY` or custom providers.

@@ -1,0 +1,199 @@
+================================================================================
+PhD CAREER INTELLIGENCE TOOLS - IMPLEMENTATION SUMMARY
+================================================================================
+
+TOOL 1: research_map_research_to_product
+Location: /Users/aadel/projects/loom/src/loom/tools/career_intel.py (line 234)
+
+Signature:
+  async def research_map_research_to_product(research_description: str, n: int = 10) -> dict[str, Any]
+
+Purpose:
+  Maps PhD research expertise to commercial products and companies that use those techniques
+
+Implementation Steps:
+  1. Extract key research methodologies using LLM (with keyword fallback)
+  2. Search companies/products using those techniques (via research_search with ddgs)
+  3. Search GitHub repos implementing those techniques (via research_github)
+  4. Build comprehensive mapping of research areas → companies → products → jobs
+
+Returns:
+  {
+    "research_areas": ["area1", "area2", ...],
+    "commercial_mappings": [
+      {
+        "area": "reinforcement learning",
+        "companies": ["DeepMind", "OpenAI"],
+        "products": ["AlphaGo", "ChatGPT"],
+        "result_count": 10
+      }
+    ],
+    "github_repos": {
+      "area": [{"name": "repo", "url": "...", "stars": N, "language": "..."}]
+    },
+    "total_companies": int,
+    "total_opportunities": int
+  }
+
+Features:
+  - Async function with graceful error handling
+  - Rate limiting (llm category)
+  - Caches research areas to avoid re-extraction
+  - Supports n=1-50 results per area
+  - Fallback to keyword-based analysis if LLM unavailable
+  - Handles search errors gracefully
+
+---
+
+TOOL 2: research_translate_academic_skills
+Location: /Users/aadel/projects/loom/src/loom/tools/career_intel.py (line 500)
+
+Signature:
+  async def research_translate_academic_skills(cv_text: str, job_description: str) -> dict[str, Any]
+
+Purpose:
+  Translates academic CV language into industry terminology and identifies skill gaps
+
+Implementation Steps:
+  1. Extract academic skills from CV using LLM
+  2. Extract required skills from job description using LLM
+  3. Match academic skills to industry equivalents using semantic mapping
+  4. Identify gaps and suggest learning resources
+  5. Calculate overall match percentage
+
+Returns:
+  {
+    "academic_skills": [
+      {"skill": "machine learning", "industry_translation": "AI/ML modeling & implementation"}
+    ],
+    "required_skills": ["Python", "system design", "leadership"],
+    "matched_skills": [
+      {"academic": "mentoring", "industry": "leadership", "match_score": 0.8}
+    ],
+    "skill_gaps": [
+      {
+        "skill": "Python",
+        "importance": "critical|nice_to_have",
+        "learning_resource": "Codecademy Python Course"
+      }
+    ],
+    "match_percentage": 75.0
+  }
+
+Features:
+  - Async function with comprehensive error handling
+  - Rate limiting (llm category)
+  - Semantic skill mapping (mentoring → leadership, teaching → communication, etc.)
+  - Learning resource recommendations for gaps
+  - Importance classification (critical vs nice_to_have)
+  - Match percentage calculation
+
+---
+
+HELPER FUNCTIONS
+Location: /Users/aadel/projects/loom/src/loom/tools/career_intel.py
+
+1. _extract_research_areas_simple(research_description: str) -> list[str]
+   - Keyword-based research area extraction (15+ common areas)
+   - Case-insensitive pattern matching
+   - Fallback when LLM unavailable
+
+2. _extract_research_areas_llm(research_description: str) -> list[str] [ASYNC]
+   - LLM-powered semantic extraction
+   - JSON response parsing
+   - Automatic fallback to keyword analysis on error
+
+3. _extract_skills_simple(text: str, context: str) -> list[str]
+   - Keyword-based skill extraction
+   - Context-aware (academic vs industry)
+
+4. _extract_skills_llm(text: str, context: str) -> list[str] [ASYNC]
+   - LLM-powered semantic skill extraction
+   - Fallback to keyword analysis
+
+5. _search_companies_for_areas(areas: list[str], n: int) -> dict[str, Any] [ASYNC]
+   - Searches for companies using research techniques
+   - Uses research_search with DuckDuckGo provider (cost-effective)
+   - Extracts company/product mentions using regex patterns
+
+6. _search_github_repos(areas: list[str], n: int) -> dict[str, list] [ASYNC]
+   - Searches GitHub for implementations
+   - Uses research_github tool
+
+7. _match_skills(academic_skills: list[str], required_skills: list[str]) -> list[dict]
+   - Direct and semantic skill matching
+   - Provides match scores (1.0 for direct, 0.8 for semantic)
+
+---
+
+SERVER INTEGRATION
+Location: /Users/aadel/projects/loom/src/loom/server.py
+
+Import (line 228-230):
+  with suppress(ImportError):
+      from loom.tools import career_intel as career_intel_tools
+      _optional_tools["career_intel"] = career_intel_tools
+
+Registration (line 451-456):
+  if "career_intel" in _optional_tools:
+      career_intel_mod = _optional_tools["career_intel"]
+      if hasattr(career_intel_mod, "research_map_research_to_product"):
+          mcp.tool()(_wrap_tool(career_intel_mod.research_map_research_to_product, "llm"))
+      if hasattr(career_intel_mod, "research_translate_academic_skills"):
+          mcp.tool()(_wrap_tool(career_intel_mod.research_translate_academic_skills, "llm"))
+
+Rate Limiting Category: "llm" (same as other LLM-intensive tools)
+
+---
+
+TESTS
+Location: /Users/aadel/projects/loom/tests/test_tools/test_career_intel.py
+
+Test Classes:
+  - TestMapResearchToProduct (8 tests)
+  - TestTranslateAcademicSkills (8 tests)
+  - TestExtractResearchAreasSimple (5 tests)
+  - TestExtractSkillsSimple (3 tests)
+  - TestMatchSkills (4 tests)
+  - TestIntegration (2 tests)
+
+Total: 30 unit/integration tests covering:
+  - Input validation (n parameter clamping)
+  - Required field presence
+  - Error handling and graceful fallbacks
+  - Helper function behavior
+  - Skill/area extraction and matching
+  - Integration workflows
+
+---
+
+IMPLEMENTATION NOTES
+
+1. All functions are async (required for server context)
+2. Type hints on all parameters and returns
+3. Comprehensive docstrings (Google style)
+4. Error handling:
+   - Try/except with logging
+   - Graceful fallbacks (LLM → keyword analysis)
+   - Returns error dict on failure
+5. Logging:
+   - Structured logging with context
+   - Debug level for skipped providers
+   - Warning level for errors
+6. LLM Integration:
+   - Uses research_llm_chat from loom.tools.llm
+   - Supports cascade fallback (nvidia → openai → anthropic → vllm)
+   - Respects daily cost caps
+7. Search Integration:
+   - Uses research_search (DuckDuckGo for cost)
+   - Uses research_github (GitHub search)
+   - Handles rate limiting automatically
+8. Immutability:
+   - All helper functions return new lists/dicts
+   - No in-place modifications
+9. Input Validation:
+   - Parameter clamping (n = 1-50)
+   - String length limits
+   - Character capping for untrusted content
+
+================================================================================

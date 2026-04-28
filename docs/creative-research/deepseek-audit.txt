@@ -1,0 +1,484 @@
+I'll conduct a thorough production readiness audit of the Loom MCP server. Let me analyze each file systematically.
+
+## CRITICAL ISSUES
+
+### 1. SSRF via URL Injection in fetch.py
+
+**File:** `src/loom/tools/fetch.py:185-190`
+**Severity:** CRITICAL
+**Issue:** No URL validation before fetching. An attacker can provide `file://`, `ftp://`, or internal network URLs (e.g., `http://169.254.169.254/` for cloud metadata, `http://localhost:8080/` for internal services).
+
+**Fix:**
+```python
+from urllib.parse import urlparse
+import re
+
+def _validate_url(url: str) -> None:
+    """Validate URL to prevent SSRF attacks."""
+    parsed = urlparse(url)
+    
+    # Block non-HTTP schemes
+    if parsed.scheme not in ('http', 'https'):
+        raise ValueError(f"Invalid URL scheme: {parsed.scheme}. Only http/https allowed.")
+    
+    # Block internal IPs
+    host = parsed.hostname or ''
+    
+    # Block localhost and loopback
+    if host in ('localhost', '127.0.0.1', '::1', '0.0.0.0'):
+        raise ValueError(f"Internal host blocked: {host}")
+    
+    # Block private IP ranges
+    private_patterns = [
+        r'^10\.',           # 10.0.0.0/8
+        r'^172\.(1[6-9]|2\d|3[01])\.',  # 172.16.0.0/12
+        r'^192\.168\.',     # 192.168.0.0/16
+        r'^169\.254\.',     # 169.254.0.0/16 (link-local)
+        r'^127\.',          # 127.0.0.0/8
+        r'^0\.',            # 0.0.0.0/8
+        r'^fc00:',          # IPv6 unique local
+        r'^fe80:',          # IPv6 link-local
+        r'^::1$',           # IPv6 loopback
+    ]
+    
+    for pattern in private_patterns:
+        if re.match(pattern, host):
+            raise ValueError(f"Private/internal IP blocked: {host}")
+    
+    # Block AWS metadata endpoint
+    if '169.254.169.254' in host or 'instance-data' in host:
+        raise ValueError("Cloud metadata endpoint blocked")
+
+# Add validation call at the beginning of research_fetch
+def research_fetch(...):
+    _validate_url(url)  # Add this line
+    ...
+```
+
+### 2. Command Injection in YouTube Transcript Provider
+
+**File:** `src/loom/providers/youtube_transcripts.py` (referenced in `deep.py:215`)
+**Severity:** CRITICAL
+**Issue:** If `fetch_youtube_transcript` uses `yt-dlp` via subprocess without proper sanitization, an attacker can inject commands through the URL parameter.
+
+**Fix (if using subprocess):**
+```python
+import subprocess
+import shlex
+
+def fetch_youtube_transcript(url: str) -> dict:
+    # Validate URL format
+    if not re.match(r'^https?://(www\.)?(youtube\.com|youtu\.be)/', url):
+        return {"error": "Invalid YouTube URL"}
+    
+    # Use shlex.quote to prevent injection
+    result = subprocess.run(
+        ['yt-dlp', '--skip-download', '--write-auto-sub', '--sub-lang', 'en', 
+         '--convert-subs', 'srt', '-o', '%(id)s.%(ext)s', shlex.quote(url)],
+        capture_output=True,
+        text=True,
+        timeout=30
+    )
+    ...
+```
+
+### 3. Race Condition in CostTracker
+
+**File:** `src/loom/tools/llm.py:100-130`
+**Severity:** CRITICAL
+**Issue:** The `_read_locked` and `_write_atomic` methods have a TOCTOU (Time-of-Check Time-of-Use) race condition. Between reading the cost file and writing the updated value, another process can modify the file, leading to cost limit bypass.
+
+**Fix:**
+```python
+import fcntl
+
+def _update_cost(self, cost: float) -> bool:
+    """Atomically update cost with proper file locking."""
+    date_str = datetime.now(UTC).strftime("%Y-%m-%d")
+    cost_file = self._cost_file(date_str)
+    
+    with self._lock:  # In-process lock
+        # Open file with exclusive lock
+        with open(cost_file, 'a+') as f:
+            fcntl.flock(f, fcntl.LOCK_EX)
+            try:
+                f.seek(0)
+                try:
+                    data = json.load(f)
+                except (json.JSONDecodeError, ValueError):
+                    data = {}
+                
+                daily_cost = data.get('total_cost', 0.0)
+                daily_cost += cost
+                
+                # Check cap
+                cap = CONFIG.get("LLM_DAILY_COST_CAP_USD", 10.0)
+                if daily_cost > cap:
+                    return False
+                
+                # Write updated data
+                data['total_cost'] = daily_cost
+                data['updated_at'] = datetime.now(UTC).isoformat()
+                
+                f.seek(0)
+                f.truncate()
+                json.dump(data, f)
+                f.flush()
+                os.fsync(f.fileno())
+                
+                return True
+            finally:
+                fcntl.flock(f, fcntl.LOCK_UN)
+```
+
+### 4. Unvalidated Provider Configuration Injection
+
+**File:** `src/loom/tools/search.py:50-55`
+**Severity:** CRITICAL
+**Issue:** `provider_config` is passed directly to provider functions with `**provider_config`, allowing arbitrary parameter injection. An attacker could override internal parameters like API keys, timeouts, or endpoints.
+
+**Fix:**
+```python
+# Define allowed parameters per provider
+ALLOWED_PROVIDER_PARAMS = {
+    'exa': {'api_key', 'base_url', 'max_retries'},
+    'tavily': {'api_key', 'max_retries'},
+    'brave': {'api_key', 'country', 'search_lang'},
+    'firecrawl': {'api_key', 'base_url'},
+    'ddgs': {'region', 'safe_search'},
+    'arxiv': {'sort_by', 'sort_order'},
+    'wikipedia': {'language', 'auto_suggest'},
+    'hackernews': {'sort_by', 'site'},
+    'reddit': {'sort_by', 'time_filter'},
+}
+
+def _validate_provider_config(provider: str, config: dict) -> dict:
+    """Validate and sanitize provider configuration."""
+    allowed = ALLOWED_PROVIDER_PARAMS.get(provider, set())
+    sanitized = {}
+    for key, value in config.items():
+        if key in allowed:
+            sanitized[key] = value
+        else:
+            logger.warning(f"Ignoring unauthorized provider param: {key}")
+    return sanitized
+
+# In research_search:
+provider_config = _validate_provider_config(provider, provider_config or {})
+```
+
+## HIGH SEVERITY ISSUES
+
+### 5. Missing Input Validation in research_deep
+
+**File:** `src/loom/tools/deep.py:100-110`
+**Severity:** HIGH
+**Issue:** No validation of `depth` parameter (1-10 range), `max_cost_usd` (negative values), or `search_providers` (empty list).
+
+**Fix:**
+```python
+def research_deep(
+    query: str,
+    depth: int = 2,
+    ...
+) -> dict[str, Any]:
+    # Validate inputs
+    if not query or not query.strip():
+        return {"error": "Query cannot be empty"}
+    
+    depth = max(1, min(depth, 10))
+    
+    if max_cost_usd is not None and max_cost_usd < 0:
+        max_cost_usd = 0.0
+    
+    if search_providers is not None and len(search_providers) == 0:
+        search_providers = None  # Use defaults
+```
+
+### 6. Unbounded Memory Growth in Search Results
+
+**File:** `src/loom/tools/deep.py:170-175`
+**Severity:** HIGH
+**Issue:** `all_search_results` can grow unboundedly with multiple search variations and providers. For depth=10 with 5 providers and 3 query variations, this could be 150+ results.
+
+**Fix:**
+```python
+MAX_SEARCH_RESULTS = 100  # Global limit
+
+# After collecting results:
+all_search_results = all_search_results[:MAX_SEARCH_RESULTS]
+```
+
+### 7. Missing Timeout on Individual Fetch Operations
+
+**File:** `src/loom/tools/deep.py:200-230`
+**Severity:** HIGH
+**Issue:** Individual fetch operations in `_fetch_and_markdown` don't have per-URL timeouts. A single slow URL can block the entire pipeline.
+
+**Fix:**
+```python
+async def _fetch_and_markdown(hit: dict[str, Any]) -> dict[str, Any] | None:
+    url = hit.get("url", "")
+    if not url:
+        return None
+    
+    try:
+        async with asyncio.timeout(30):  # 30 second per-URL timeout
+            async with sem:
+                # ... existing code ...
+    except asyncio.TimeoutError:
+        logger.warning(f"Timeout fetching {url}")
+        return None
+```
+
+### 8. Unvalidated Domain Lists
+
+**File:** `src/loom/tools/search.py:55-60`
+**Severity:** HIGH
+**Issue:** `include_domains` and `exclude_domains` are not validated for malicious patterns (e.g., regex injection, wildcard abuse).
+
+**Fix:**
+```python
+import re
+
+def _validate_domain(domain: str) -> bool:
+    """Validate domain format."""
+    # Allow only valid domain characters
+    if not re.match(r'^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$', domain):
+        return False
+    # Block TLD-only domains
+    if domain.count('.') == 0:
+        return False
+    return True
+
+# In research_search:
+if include_domains is not None:
+    include_domains = [d.lower().strip() for d in include_domains if _validate_domain(d)]
+if exclude_domains is not None:
+    exclude_domains = [d.lower().strip() for d in exclude_domains if _validate_domain(d)]
+```
+
+### 9. Missing Rate Limiting
+
+**File:** `src/loom/server.py:1-100` (entire file)
+**Severity:** HIGH
+**Issue:** No rate limiting on any tool endpoints. An attacker can flood the server with requests, causing resource exhaustion and high API costs.
+
+**Fix:**
+```python
+# Add to server.py
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+
+limiter = Limiter(key_func=get_remote_address)
+
+def create_app() -> FastMCP:
+    config = load_config()
+    
+    # Rate limiting configuration
+    rate_limit = config.get("RATE_LIMIT", "100/minute")
+    
+    # Apply rate limiter to expensive operations
+    @limiter.limit(rate_limit)
+    async def rate_limited_research_deep(*args, **kwargs):
+        return await research_deep(*args, **kwargs)
+    
+    # Register rate-limited versions
+    mcp.tool()(rate_limited_research_deep)
+```
+
+## MEDIUM SEVERITY ISSUES
+
+### 10. Missing Health Check Endpoint
+
+**File:** `src/loom/server.py:1-100`
+**Severity:** MEDIUM
+**Issue:** No health check endpoint for load balancers, Kubernetes probes, or monitoring systems.
+
+**Fix:**
+```python
+# Add to server.py
+from mcp.types import TextContent
+
+def health_check() -> list[TextContent]:
+    """Health check endpoint for monitoring."""
+    import time
+    from loom.cache import get_cache
+    
+    status = {
+        "status": "healthy",
+        "timestamp": time.time(),
+        "version": "1.0.0",  # Should come from package version
+        "tools_registered": len(mcp._tools) if hasattr(mcp, '_tools') else 0,
+        "cache_available": get_cache() is not None,
+    }
+    
+    # Check critical dependencies
+    try:
+        from loom.config import get_config
+        config = get_config()
+        status["config_loaded"] = True
+    except Exception as e:
+        status["config_loaded"] = False
+        status["config_error"] = str(e)
+        status["status"] = "degraded"
+    
+    return [TextContent(type="text", text=json.dumps(status, indent=2))]
+
+# Register health check
+mcp.tool()(health_check)
+```
+
+### 11. Missing Graceful Shutdown
+
+**File:** `src/loom/server.py:95-100`
+**Severity:** MEDIUM
+**Issue:** No signal handlers for graceful shutdown. Active connections and in-flight requests will be abruptly terminated.
+
+**Fix:**
+```python
+import signal
+import asyncio
+
+def main() -> None:
+    app = create_app()
+    
+    # Graceful shutdown handler
+    shutdown_event = asyncio.Event()
+    
+    def signal_handler(signum, frame):
+        logger.info(f"Received signal {signum}, initiating graceful shutdown...")
+        shutdown_event.set()
+    
+    signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler)
+    
+    async def run_with_shutdown():
+        # Start server
+        server_task = asyncio.create_task(
+            app.run(transport="streamable-http")
+        )
+        
+        # Wait for shutdown signal
+        await shutdown_event.wait()
+        
+        # Graceful shutdown
+        logger.info("Shutting down...")
+        server_task.cancel()
+        try:
+            await server_task
+        except asyncio.CancelledError:
+            pass
+        
+        # Cleanup resources
+        from loom.cache import get_cache
+        cache = get_cache()
+        if cache:
+            cache.close()
+        
+        logger.info("Shutdown complete")
+    
+    asyncio.run(run_with_shutdown())
+```
+
+### 12. Missing Request Logging
+
+**File:** `src/loom/server.py:60-70`
+**Severity:** MEDIUM
+**Issue:** No structured logging of requests, responses, or errors for debugging and monitoring.
+
+**Fix:**
+```python
+import time
+import uuid
+
+# Add request logging middleware
+def _log_request(tool_name: str, args: dict, result: Any, duration_ms: float):
+    """Log tool invocation with structured data."""
+    log_data = {
+        "event": "tool_invocation",
+        "tool": tool_name,
+        "request_id": str(uuid.uuid4()),
+        "args": {k: v for k, v in args.items() if k not in ('api_key', 'password', 'secret')},
+        "duration_ms": duration_ms,
+        "success": "error" not in (result if isinstance(result, dict) else {}),
+        "timestamp": datetime.now(UTC).isoformat(),
+    }
+    
+    if isinstance(result, dict) and "error" in result:
+        log_data["error"] = result["error"]
+        logger.error(json.dumps(log_data))
+    else:
+        logger.info(json.dumps(log_data))
+
+# Wrap tool registration
+def _register_tools(mcp: FastMCP) -> None:
+    """Register all MCP tools with logging wrapper."""
+    
+    def wrap_tool(func):
+        async def wrapper(*args, **kwargs):
+            start = time.time()
+            try:
+                result = await func(*args, **kwargs)
+                duration = (time.time() - start) * 1000
+                _log_request(func.__name__, kwargs, result, duration)
+                return result
+            except Exception as e:
+                duration = (time.time() - start) * 1000
+                _log_request(func.__name__, kwargs, {"error": str(e)}, duration)
+                raise
+        return wrapper
+    
+    # Apply wrapper to all tools
+    mcp.tool()(wrap_tool(fetch.research_fetch))
+    # ... etc for all tools
+```
+
+### 13. Missing Connection Pool Reuse
+
+**File:** `src/loom/tools/fetch.py:250-280`
+**Severity:** MEDIUM
+**Issue:** Creates a new `httpx.Client()` for each request, preventing connection reuse and causing socket exhaustion under load.
+
+**Fix:**
+```python
+# Global connection pool
+_http_client: httpx.AsyncClient | None = None
+
+def _get_http_client() -> httpx.AsyncClient:
+    """Get or create a reusable HTTP client with connection pooling."""
+    global _http_client
+    if _http_client is None or _http_client.is_closed:
+        limits = httpx.Limits(
+            max_keepalive_connections=20,
+            max_connections=100,
+            keepalive_expiry=30.0,
+        )
+        _http_client = httpx.AsyncClient(
+            limits=limits,
+            timeout=httpx.Timeout(30.0),
+            follow_redirects=True,
+        )
+    return _http_client
+
+async def _fetch_http_httpx_async(params: FetchParams) -> FetchResult:
+    """Async version using connection pool."""
+    client = _get_http_client()
+    
+    headers = params.headers or {}
+    if params.user_agent:
+        headers["User-Agent"] = params.user_agent
+    
+    try:
+        resp = await client.get(
+            params.url,
+            headers=headers,
+            cookies=params.cookies or {},
+        )
+        # ... process response
+    except Exception as e:
+        return FetchResult(url=params.url, error=str(e), tool="httpx")
+```
+
+###

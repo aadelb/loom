@@ -1,0 +1,103 @@
+IMPLEMENTATION SUMMARY: research_social_graph tool for Loom MCP Server
+=====================================================================
+
+FILES CREATED:
+1. /Users/aadel/projects/loom/src/loom/tools/social_graph.py (635 lines)
+2. /Users/aadel/projects/loom/tests/test_tools/test_social_graph.py (505 lines)
+
+CORE FUNCTIONALITY:
+- Builds relationship graphs from public data across 4 platforms:
+  * GitHub: Co-contributor relationships (analyzes repos and contributors)
+  * Reddit: Community engagement and user mentions 
+  * HackerNews: Topic interests based on submission history
+  * Semantic Scholar: Co-authorship networks
+
+FUNCTION SIGNATURE:
+  research_social_graph(username: str, platforms: list[str] | None = None) -> dict[str, Any]
+
+PARAMETERS:
+- username: Username/identifier to analyze (interpreted per platform)
+- platforms: Defaults to ["github", "reddit", "hackernews"]
+            Supports: "github", "reddit", "hackernews", "semanticscholar"
+
+RETURN VALUE:
+{
+  "username": str,
+  "nodes": [{"id": str, "platform": str, "name": str}, ...],
+  "edges": [{"source": str, "target": str, "relationship": str, "weight": int}, ...],
+  "platforms_analyzed": list[str],
+  "total_connections": int
+}
+
+IMPLEMENTATION DETAILS:
+- Async HTTP client using httpx with rate limiting (1 req/sec for GitHub)
+- 15-second timeout per request
+- Comprehensive error handling with graceful degradation
+- Node deduplication by ID
+- Edge deduplication by (source, target, relationship)
+- Structured logging with loom.tools.social_graph logger
+
+HELPER FUNCTIONS:
+- _get_json(): Safe JSON fetching with error handling
+- _get_text(): Safe text fetching with error handling  
+- _fetch_github_data(): GitHub API (repos, contributors, co-contributor edges)
+- _fetch_reddit_data(): Reddit API (comments, subreddits, mentions)
+- _fetch_hackernews_data(): HackerNews API (user profile, submissions, topics)
+- _fetch_semanticscholar_data(): Semantic Scholar API (author, papers, co-authors)
+- _extract_hn_topics(): Topic extraction from HN submissions
+
+TEST COVERAGE:
+- 28 test cases, 100% passing
+- 73% code coverage (excluding uncovered error paths for external APIs)
+- Test classes:
+  * TestExtractHnTopics (6 tests)
+  * TestFetchGithubData (4 tests)
+  * TestFetchRedditData (4 tests)
+  * TestFetchHackernewsData (3 tests)
+  * TestFetchSemanticScholarData (2 tests)
+  * TestResearchSocialGraph (9 tests)
+
+CODE QUALITY:
+- Type hints on all functions (mypy --strict passes)
+- Ruff linting passes (no errors)
+- Follows passive_recon.py conventions
+- PEP 8 compliant
+- Immutable data patterns used throughout
+- Proper async/await handling
+
+PLATFORMS ANALYZED:
+1. GitHub: Uses public GitHub API v3
+   - Fetches user repos (limit: 50)
+   - Fetches repo contributors (limit: 30 per repo)
+   - Builds edges: user->contributor, co-contributor pairs
+
+2. Reddit: Uses public Reddit JSON API
+   - Fetches recent comments (limit: 100)
+   - Extracts subreddit activity counts
+   - Extracts u/ mentions from comment text
+   - Builds edges: user->subreddit (activity count), user->mentioned user
+
+3. HackerNews: Uses Firebase API
+   - Fetches user profile and karma
+   - Fetches submissions (limit: 50)
+   - Extracts topics from titles and URLs
+   - Builds edges: user->topic (interest count)
+
+4. Semantic Scholar: Uses public API
+   - Searches for author by name
+   - Fetches author papers (limit: 30)
+   - Extracts co-authors from papers
+   - Builds edges: author->co-author (paper count)
+
+LIMITATIONS:
+- HN and Reddit rate limits: No built-in delays (public APIs)
+- GitHub: 1 req/sec enforced (public API limit)
+- Semantic Scholar: Internal rate limiting
+- Missing live API testing (uses mocked tests)
+- Large networks may be truncated to prevent timeout
+
+PERFORMANCE CONSIDERATIONS:
+- Async processing for multiple platforms
+- Configurable platform selection to reduce latency
+- Result limits on API pagination to control response time
+- Deduplication reduces output size for multi-platform analysis

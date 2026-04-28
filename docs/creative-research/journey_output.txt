@@ -1,0 +1,126 @@
+
+API Key Status:
+  ✓ NVIDIA_NIM_API_KEY: SET (LLM (free))
+  ✓ EXA_API_KEY: SET (Exa search)
+  ✓ TAVILY_API_KEY: SET (Tavily search)
+  ✓ BRAVE_API_KEY: SET (Brave search)
+  ✓ FIRECRAWL_API_KEY: SET (Firecrawl search)
+  ✓ GITHUB_TOKEN: SET (GitHub (higher rate limits))
+
+============================================================
+LOOM E2E USER JOURNEY — ALL TOOLS
+Started: 2026-04-25T00:05:54.491189+00:00
+============================================================
+
+── Group 1: Config & Cache ──
+  [ 1] config_get ........................................ ✓ PASS (1ms) — keys=['SPIDER_CONCURRENCY', 'EXTERNAL_TIMEOUT_SECS', 'MAX_CHARS_HARD_CAP', 'MAX_SPIDER_URLS', 'CACHE_TTL_DAYS', 'DEFAULT_SEARCH_PROVIDER', 'DEFAULT_ACCEPT_LANGUAGE', 'LOG_LEVEL', 'LLM_DEFAULT_CHAT_MODEL', 'LLM_DEFAULT_EMBED_MODEL', 'LLM_DEFAULT_TRANSLATE_MODEL', 'LLM_MAX_PARALLEL', 'LLM_DAILY_COST_CAP_USD', 'LLM_CASCADE_ORDER', 'RESEARCH_SEARCH_PROVIDERS', 'RESEARCH_EXPAND_QUERIES', 'RESEARCH_EXTRACT', 'RESEARCH_SYNTHESIZE', 'RESEARCH_GITHUB_ENRICHMENT', 'RESEARCH_MAX_COST_USD', 'FETCH_AUTO_ESCALATE', 'RESEARCH_COMMUNITY_SENTIMENT', 'RESEARCH_RED_TEAM', 'RESEARCH_MISINFO_CHECK']
+  [ 2] config_set ........................................ ✓ PASS (0ms) — keys=['key', 'old', 'new', 'persisted_at']
+  [ 3] config_get_key .................................... ✓ PASS (0ms) — keys=['SPIDER_CONCURRENCY']
+  [ 4] cache_stats ....................................... ✓ PASS (0ms) — keys=['size_mb', 'entry_count', 'oldest', 'newest', 'cache_dir']
+  [ 5] cache_clear ....................................... ✓ PASS (0ms) — keys=['deleted_count', 'freed_mb', 'older_than_days']
+
+── Group 2: Enrichment ──
+  [ 6] detect_language_en ................................ ✗ FAIL (0ms) — langdetect not installed
+  [ 7] detect_language_ar ................................ ✗ FAIL (0ms) — langdetect not installed
+  [ 8] wayback ........................................... ✓ PASS (1733ms) — keys=['original_url', 'snapshots']
+
+── Group 3: Fetch & Markdown ──
+  [ 9] fetch_http ........................................ ✓ PASS (15ms) — keys=['url', 'tool', 'title', 'text', 'html_len', 'fetched_at', 'status_code', 'elapsed_ms']
+  [10] fetch_escalate .................................... ✓ PASS (1ms) — keys=['url', 'tool', 'title', 'text', 'html_len', 'fetched_at', 'status_code', 'elapsed_ms']
+  [11] markdown .......................................... ✓ PASS (10ms) — keys=['url', 'title', 'markdown', 'tool']
+  [12] spider ............................................ ✓ PASS (3ms) — keys=<class 'list'>
+
+── Group 4: Free Search ──
+  [13] search_ddgs ....................................... ✗ FAIL (7ms) — ddgs not installed (pip install ddgs)
+  [14] search_wikipedia .................................. ✓ PASS (15440ms) — keys=['results', 'query', 'provider']
+  [15] search_arxiv ...................................... ✗ FAIL (0ms) — arxiv not installed (pip install arxiv)
+  [16] search_hackernews ................................. ✓ PASS (609ms) — keys=['results', 'query', 'source', 'provider']
+  [17] search_reddit ..................................... ✓ PASS (327ms) — keys=['results', 'query', 'source', 'provider']
+
+── Group 5: GitHub ──
+  [18] github_repo ....................................... ✗ FAIL (239ms) — Client error '401 Unauthorized' for url 'https://api.github.com/search/repositor
+  [19] github_code ....................................... ✗ FAIL (227ms) — Client error '401 Unauthorized' for url 'https://api.github.com/search/code?q=as
+  [20] github_issues ..................................... ✗ FAIL (228ms) — Client error '401 Unauthorized' for url 'https://api.github.com/search/issues?q=
+  [21] github_readme ..................................... ✗ FAIL (255ms) — Client error '401 Unauthorized' for url 'https://api.github.com/repos/pallets/fl
+  [22] github_releases ................................... ✗ FAIL (232ms) — Client error '401 Unauthorized' for url 'https://api.github.com/repos/python/cpy
+
+── Group 6: Expert & Citation ──
+  [23] find_experts ...................................... ✓ PASS (578ms) — keys=['query', 'experts', 'total_found']
+  [24] citation_graph .................................... ✗ FAIL (881ms) — Client error '429 ' for url 'https://api.semanticscholar.org/graph/v1/paper/sear
+  [25] community_sentiment ............................... ✓ PASS (596ms) — keys=['query', 'hackernews', 'reddit', 'combined_engagement']
+  [26] wiki_ghost ........................................ ✓ PASS (18134ms) — keys=['topic', 'article_title', 'talk_sections', 'recent_edits', 'edit_count', 'has_active_discussion']
+  [27] multilingual ...................................... ✓ PASS (0ms) — keys=['query', 'languages_searched', 'results_per_language', 'unique_per_language', 'total_unique_urls']
+  [28] consensus ......................................... ✓ PASS (15710ms) — keys=['query', 'providers_queried', 'providers_responded', 'results', 'high_consensus', 'singular_results']
+  [29] curriculum ........................................ ✓ PASS (15376ms) — keys=['topic', 'levels', 'total_resources']
+
+── Group 7: YouTube ──
+  [30] youtube_transcript ................................ ✗ FAIL (52ms) — yt-dlp failed: /opt/homebrew/opt/python@3.14/bin/python3.14: No module named yt_
+  [31] youtube_transcript ................................ ○ SKIP (0ms) — yt-dlp not installed
+
+── Group 8: Paid Search ──
+  [32] search_exa ........................................ ✗ FAIL (0ms) — exa-py not installed
+  [33] search_tavily ..................................... ✗ FAIL (0ms) — tavily-python not installed
+  [34] search_firecrawl .................................. ✗ FAIL (0ms) — firecrawl-py not installed
+  [35] search_brave ...................................... ✗ FAIL (814ms) — HTTP 422
+  [36] exa_find_similar .................................. ✗ FAIL (0ms) — exa-py not installed
+
+── Group 9: LLM Tools ──
+  [37] llm_summarize ..................................... ✗ FAIL (775ms) — all providers failed (attempted nvidia, openai); last error: APIStatusError.__in
+  [38] llm_extract ....................................... ✗ FAIL (318ms) — all providers failed (attempted nvidia, openai); last error: APIStatusError.__in
+  [39] llm_classify ...................................... ✗ FAIL (298ms) — all providers failed (attempted nvidia, openai); last error: APIStatusError.__in
+  [40] llm_translate ..................................... ✗ FAIL (320ms) — all providers failed (attempted nvidia, openai); last error: APIStatusError.__in
+  [41] llm_query_expand .................................. ✗ FAIL (268ms) — all providers failed (attempted nvidia, openai); last error: APIStatusError.__in
+  [42] llm_answer ........................................ ✗ FAIL (283ms) — all providers failed (attempted nvidia, openai); last error: APIStatusError.__in
+  [43] llm_embed ......................................... ✗ FAIL (492ms) — APIStatusError.__init__() missing 2 required keyword-only arguments: 'response' 
+  [44] llm_chat .......................................... ✗ FAIL (285ms) — all providers failed (attempted nvidia, openai); last error: APIStatusError.__in
+
+── Group 10: Creative Tools ──
+  [45] red_team .......................................... ✓ PASS (262ms) — keys=['claim', 'counter_arguments', 'total_cost_usd']
+  [46] misinfo_check ..................................... ✓ PASS (259ms) — keys=['claim', 'stress_score', 'true_sources', 'flagged_sources', 'false_variants_tested', 'verdict']
+  [47] ai_detect ......................................... ✓ PASS (294ms) — keys=['ai_probability', 'indicators', 'reasoning', 'verdict', 'cost_usd']
+  [48] temporal_diff ..................................... ✗ FAIL (30517ms) — no archived versions found
+  [49] semantic_sitemap .................................. ✓ PASS (497ms) — keys=['domain', 'urls_found', 'clusters', 'clusters_found', 'note']
+
+── Group 11: Full Pipeline ──
+  [50] deep_academic ..................................... ✗ FAIL (1247ms) — no search results
+  [51] deep_knowledge .................................... ✗ FAIL (15341ms) — no search results
+  [52] deep_code ......................................... ✗ FAIL (817ms) — no search results
+
+── Group 12: Sessions ──
+  [53] session_list ...................................... ✓ PASS (0ms) — keys=['sessions', 'count']
+
+============================================================
+JOURNEY COMPLETE — 124.2s
+  PASS: 24  |  FAIL: 27  |  SKIP: 1  |  TOTAL: 52
+============================================================
+
+FAILED TOOLS:
+  ✗ detect_language_en: langdetect not installed
+  ✗ detect_language_ar: langdetect not installed
+  ✗ search_ddgs: ddgs not installed (pip install ddgs)
+  ✗ search_arxiv: arxiv not installed (pip install arxiv)
+  ✗ github_repo: Client error '401 Unauthorized' for url 'https://api.github.com/search/repositor
+  ✗ github_code: Client error '401 Unauthorized' for url 'https://api.github.com/search/code?q=as
+  ✗ github_issues: Client error '401 Unauthorized' for url 'https://api.github.com/search/issues?q=
+  ✗ github_readme: Client error '401 Unauthorized' for url 'https://api.github.com/repos/pallets/fl
+  ✗ github_releases: Client error '401 Unauthorized' for url 'https://api.github.com/repos/python/cpy
+  ✗ citation_graph: Client error '429 ' for url 'https://api.semanticscholar.org/graph/v1/paper/sear
+  ✗ search_exa: exa-py not installed
+  ✗ search_tavily: tavily-python not installed
+  ✗ search_firecrawl: firecrawl-py not installed
+  ✗ search_brave: HTTP 422
+  ✗ exa_find_similar: exa-py not installed
+  ✗ llm_summarize: all providers failed (attempted nvidia, openai); last error: APIStatusError.__in
+  ✗ llm_extract: all providers failed (attempted nvidia, openai); last error: APIStatusError.__in
+  ✗ llm_classify: all providers failed (attempted nvidia, openai); last error: APIStatusError.__in
+  ✗ llm_translate: all providers failed (attempted nvidia, openai); last error: APIStatusError.__in
+  ✗ llm_query_expand: all providers failed (attempted nvidia, openai); last error: APIStatusError.__in
+  ✗ llm_answer: all providers failed (attempted nvidia, openai); last error: APIStatusError.__in
+  ✗ llm_embed: APIStatusError.__init__() missing 2 required keyword-only arguments: 'response' 
+  ✗ llm_chat: all providers failed (attempted nvidia, openai); last error: APIStatusError.__in
+  ✗ temporal_diff: no archived versions found
+  ✗ deep_academic: no search results
+  ✗ deep_knowledge: no search results
+  ✗ deep_code: no search results
+
+Report saved: journey-out/e2e_report.json

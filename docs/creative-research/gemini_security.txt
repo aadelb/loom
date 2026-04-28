@@ -1,0 +1,8 @@
+YOLO mode is enabled. All tool calls will be automatically approved.
+YOLO mode is enabled. All tool calls will be automatically approved.
+MCP issues detected. Run /mcp list for status.Error executing tool read_file: File not found.
+1. src/loom/validators.py: Yes, IPv4-mapped IPv6 addresses (e.g., `::ffff:127.0.0.1`) bypass the `is_private` and `is_loopback` checks in Python's `ipaddress` module, allowing SSRF.
+2. src/loom/tools/domain_intel.py: No command injection (since `shell=False`), but argument injection is possible because `_validate_domain` allows leading hyphens (e.g., `-oNfile` for nmap).
+3. src/loom/tools/llm.py: Yes, the regex `sk-[A-Za-z0-9_\-]{10,50}` only redacts up to 50 characters, leaking the remainder of longer API keys (like Anthropic keys) in error messages.
+4. src/loom/tools/breach_check.py: No vulnerabilities found.
+5. src/loom/server.py: Yes, several tools (like `breach_check`, `stylometry`) are registered without a `category` parameter in `_wrap_tool()`, bypassing rate limits entirely.

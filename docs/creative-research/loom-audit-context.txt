@@ -1,0 +1,326 @@
+=== FULL SOURCE FILE INVENTORY ===
+  src/loom/__init__.py: 0
+0 functions,       25 lines
+  src/loom/__main__.py: 0
+0 functions,        9 lines
+  src/loom/cache.py: 2 functions,      175 lines
+  src/loom/cli.py: 18 functions,      845 lines
+  src/loom/config.py: 8 functions,      285 lines
+  src/loom/journey.py: 4 functions,      469 lines
+  src/loom/params.py: 0
+0 functions,      452 lines
+  src/loom/providers/__init__.py: 0
+0 functions,       35 lines
+  src/loom/providers/anthropic_provider.py: 1 functions,      185 lines
+  src/loom/providers/arxiv_search.py: 1 functions,       69 lines
+  src/loom/providers/base.py: 1 functions,      193 lines
+  src/loom/providers/brave.py: 1 functions,       78 lines
+  src/loom/providers/ddgs.py: 1 functions,       74 lines
+  src/loom/providers/exa.py: 2 functions,      121 lines
+  src/loom/providers/firecrawl.py: 1 functions,       95 lines
+  src/loom/providers/hn_reddit.py: 2 functions,      121 lines
+  src/loom/providers/nvidia_nim.py: 1 functions,      247 lines
+  src/loom/providers/openai_provider.py: 1 functions,      207 lines
+  src/loom/providers/tavily.py: 1 functions,       79 lines
+  src/loom/providers/trafilatura_extract.py: 1 functions,       71 lines
+  src/loom/providers/vllm_local.py: 0
+0 functions,      212 lines
+  src/loom/providers/wikipedia_search.py: 1 functions,       90 lines
+  src/loom/providers/youtube_transcripts.py: 1 functions,      123 lines
+  src/loom/server.py: 3 functions,      197 lines
+  src/loom/sessions.py: 20 functions,      754 lines
+  src/loom/tools/__init__.py: 0
+0 functions,        1 lines
+  src/loom/tools/cache_mgmt.py: 4 functions,      112 lines
+  src/loom/tools/creative.py: 11 functions,     1015 lines
+  src/loom/tools/deep.py: 4 functions,      412 lines
+  src/loom/tools/enrich.py: 2 functions,      108 lines
+  src/loom/tools/experts.py: 1 functions,      103 lines
+  src/loom/tools/fetch.py: 11 functions,      508 lines
+  src/loom/tools/github.py: 4 functions,      256 lines
+  src/loom/tools/llm.py: 14 functions,      943 lines
+  src/loom/tools/markdown.py: 2 functions,      192 lines
+  src/loom/tools/search.py: 2 functions,      187 lines
+  src/loom/tools/spider.py: 1 functions,      155 lines
+  src/loom/tools/stealth.py: 4 functions,      170 lines
+  src/loom/validators.py: 2 functions,      111 lines
+
+=== server.py TOOL REGISTRATIONS ===
+    Dynamically discovers and registers tool functions decorated with @mcp.tool()
+    mcp.tool()(fetch.research_fetch)
+    mcp.tool()(spider.research_spider)
+    mcp.tool()(markdown.research_markdown)
+    mcp.tool()(search.research_search)
+    mcp.tool()(deep.research_deep)
+    mcp.tool()(github.research_github)
+    mcp.tool()(stealth.research_camoufox)
+    mcp.tool()(stealth.research_botasaurus)
+    mcp.tool()(cache_mgmt.research_cache_stats)
+    mcp.tool()(cache_mgmt.research_cache_clear)
+    mcp.tool()(research_session_open)
+    mcp.tool()(research_session_list)
+    mcp.tool()(research_session_close)
+    mcp.tool()(research_config_get)
+    mcp.tool()(research_config_set)
+    mcp.tool()(github.research_github_readme)
+    mcp.tool()(github.research_github_releases)
+        mcp.tool()(find_similar_exa)
+            mcp.tool()(llm_mod.research_llm_summarize)
+            mcp.tool()(llm_mod.research_llm_extract)
+            mcp.tool()(llm_mod.research_llm_classify)
+            mcp.tool()(llm_mod.research_llm_translate)
+            mcp.tool()(llm_mod.research_llm_query_expand)
+            mcp.tool()(llm_mod.research_llm_answer)
+            mcp.tool()(llm_mod.research_llm_embed)
+            mcp.tool()(llm_mod.research_llm_chat)
+            mcp.tool()(enrich_mod.research_detect_language)
+            mcp.tool()(enrich_mod.research_wayback)
+            mcp.tool()(experts_mod.research_find_experts)
+                mcp.tool()(getattr(creative_mod, tool_name))
+
+=== search.py PROVIDER ROUTING ===
+        if provider == "exa":
+        elif provider == "tavily":
+        elif provider == "firecrawl":
+        elif provider == "brave":
+        elif provider == "ddgs":
+        elif provider == "arxiv":
+        elif provider == "wikipedia":
+
+=== ALL Literal TYPES ===
+src/loom/config.py:    DEFAULT_SEARCH_PROVIDER: Literal["exa", "tavily", "firecrawl", "brave", "ddgs", "arxiv", "wikipedia"] = "exa"
+src/loom/config.py:    LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
+src/loom/params.py:    mode: Literal["http", "stealthy", "dynamic"] = "stealthy"
+src/loom/params.py:    return_format: Literal["text", "html", "json", "screenshot"] = "text"
+src/loom/params.py:    mode: Literal["http", "stealthy", "dynamic"] = "stealthy"
+src/loom/params.py:    order: Literal["input", "domain", "size"] = "input"
+src/loom/params.py:    provider: Literal["exa", "tavily", "firecrawl", "brave", "ddgs", "arxiv", "wikipedia"] = "exa"
+src/loom/params.py:    provider: Literal["exa", "tavily", "firecrawl", "brave", "ddgs", "arxiv", "wikipedia"] = "exa"
+src/loom/params.py:    kind: Literal["repos", "code", "issues"]
+src/loom/params.py:    sort: Literal["best-match", "stars", "forks", "updated"] = "best-match"
+src/loom/params.py:    order: Literal["desc", "asc"] = "desc"
+src/loom/params.py:    browser: Literal["camoufox", "playwright", "patchright"] = "camoufox"
+
+=== providers/__init__.py ===
+"""LLM and search provider implementations for Loom."""
+
+from loom.providers.anthropic_provider import AnthropicProvider
+from loom.providers.base import LLMProvider, LLMResponse, _estimate_cost
+from loom.providers.nvidia_nim import NvidiaNimProvider
+from loom.providers.openai_provider import OpenAIProvider
+from loom.providers.vllm_local import VllmLocalProvider
+
+__all__ = [
+    "AnthropicProvider",
+    "LLMProvider",
+    "LLMResponse",
+    "NvidiaNimProvider",
+    "OpenAIProvider",
+    "VllmLocalProvider",
+    "_estimate_cost",
+]
+
+# Search providers — optional, may fail if SDKs not installed
+_search_providers = {
+    "exa": "search_exa",
+    "tavily": "search_tavily",
+    "firecrawl": "search_firecrawl",
+    "brave": "search_brave",
+    "ddgs": "search_ddgs",
+    "arxiv_search": "search_arxiv",
+    "wikipedia_search": "search_wikipedia",
+}
+for _mod_name, _func_name in _search_providers.items():
+    try:
+        _mod = __import__(f"loom.providers.{_mod_name}", fromlist=[_func_name])
+        globals()[_func_name] = getattr(_mod, _func_name)
+        __all__.append(_func_name)
+    except (ImportError, AttributeError):
+        pass
+
+=== deep.py STAGES ===
+_CODE_KEYWORDS = frozenset(
+_ACADEMIC_KEYWORDS = frozenset(
+_KNOWLEDGE_KEYWORDS = frozenset(
+def _detect_query_type(query: str) -> set[str]:
+    if query_words & _CODE_KEYWORDS:
+    if query_words & _ACADEMIC_KEYWORDS:
+    for phrase in _KNOWLEDGE_KEYWORDS:
+    query_types = _detect_query_type(query)
+    # ── STAGE 1: Query Expansion ─────────────────────────────────────────
+    # ── STAGE 2: Multi-Provider Search ───────────────────────────────────
+    # ── STAGE 3: Parallel Fetch + Markdown ───────────────────────────────
+    # ── STAGE 4: LLM Extraction ──────────────────────────────────────────
+    # ── STAGE 5: Relevance Ranking ───────────────────────────────────────
+    # ── STAGE 6: Synthesis ───────────────────────────────────────────────
+    # ── STAGE 7: GitHub Enrichment ───────────────────────────────────────
+        if query_words & _CODE_KEYWORDS:
+
+=== creative.py ALL FUNCTIONS ===
+async def research_red_team(
+async def research_multilingual(
+async def research_consensus(
+async def research_misinfo_check(
+async def research_temporal_diff(
+async def research_citation_graph(
+async def research_ai_detect(
+async def research_curriculum(
+async def research_community_sentiment(
+async def research_wiki_ghost(
+async def research_semantic_sitemap(
+
+=== enrich.py ALL FUNCTIONS ===
+def research_detect_language(text: str) -> dict[str, Any]:
+def research_wayback(
+
+=== experts.py ALL FUNCTIONS ===
+async def research_find_experts(
+
+=== github.py ALL FUNCTIONS ===
+def research_github(
+def research_github_readme(owner: str, repo: str) -> dict[str, Any]:
+def research_github_releases(owner: str, repo: str, limit: int = 5) -> dict[str, Any]:
+
+=== ALL TEST FILES ===
+__init__.py
+test_anthropic.py
+test_arxiv_search.py
+test_base.py
+test_brave.py
+test_cascade.py
+test_ddgs.py
+test_exa.py
+test_firecrawl.py
+test_nvidia_nim.py
+test_openai.py
+test_tavily.py
+test_trafilatura.py
+test_vllm.py
+test_wikipedia_search.py
+__init__.py
+test_cache_mgmt.py
+test_deep.py
+test_deep_v2.py
+test_enrich.py
+test_fetch.py
+test_github.py
+test_llm.py
+test_llm_extended.py
+test_markdown.py
+test_search.py
+test_spider.py
+test_spider_extended.py
+test_stealth.py
+
+=== pyproject.toml DEPS ===
+dependencies = [
+  "mcp[cli]>=1.27",
+  "fastapi>=0.135",
+  "uvicorn[standard]>=0.44",
+  "pydantic>=2.12",
+  "pydantic-settings>=2.13",
+  "httpx>=0.28",
+  "orjson>=3.11",
+  "typer>=0.24",
+  "rich>=14.3",
+  "scrapling>=0.4.5",
+  "crawl4ai>=0.8.6",
+  "firecrawl-py>=4.22",
+  "exa-py>=2.11",
+  "tavily-python>=0.7",
+  "openai>=2.31",
+  "python-dotenv>=1.2",
+  "ddgs>=3.9",
+  "trafilatura>=1.6",
+  "langdetect>=1.0",
+]
+
+[project.optional-dependencies]
+stealth = [
+  "botasaurus>=4.0",
+
+=== pyproject.toml OPTIONAL DEPS ===
+[project.optional-dependencies]
+stealth = [
+  "botasaurus>=4.0",
+  "camoufox[geoip]>=0.4",
+  "patchright>=1.58",
+  "tf-playwright-stealth>=1.2",
+]
+anthropic = ["anthropic>=0.40"]
+academic = ["arxiv>=2.1"]
+dev = [
+  "pytest>=8",
+  "pytest-asyncio>=0.24",
+  "pytest-cov>=5",
+  "pytest-mock>=3.14",
+  "ruff>=0.7",
+  "mypy>=1.13",
+  "pre-commit>=4",
+  "types-requests",
+]
+all = ["loom-mcp[stealth,anthropic,academic,dev]"]
+
+=== LAZY IMPORTS IN DEEP.PY ===
+from loom.validators import EXTERNAL_TIMEOUT_SECS
+    from loom.config import get_config
+    from loom.tools.search import research_search
+            from loom.tools.llm import research_llm_query_expand
+    from loom.tools.fetch import research_fetch
+    from loom.tools.markdown import research_markdown
+            from loom.tools.llm import research_llm_extract
+            from loom.tools.llm import research_llm_answer
+                from loom.tools.github import research_github
+
+=== LAZY IMPORTS IN CREATIVE.PY ===
+        from loom.tools.llm import research_llm_chat
+    from loom.tools.search import research_search
+    from loom.tools.search import research_search
+    from loom.tools.deep import _normalize_url
+    from loom.tools.search import research_search
+        from loom.tools.llm import research_llm_chat
+    from loom.tools.search import research_search
+    from loom.tools.enrich import research_wayback
+        from loom.providers.trafilatura_extract import extract_with_trafilatura
+        from loom.tools.llm import research_llm_chat
+        from loom.tools.llm import research_llm_chat
+    from loom.tools.search import research_search
+        from loom.providers.arxiv_search import search_arxiv
+        from loom.providers.hn_reddit import search_hackernews, search_reddit
+        from loom.providers.trafilatura_extract import extract_with_trafilatura
+        from loom.tools.llm import research_llm_embed
+
+=== LAZY IMPORTS IN SERVER.PY ===
+from loom.config import load_config, research_config_get, research_config_set
+from loom.sessions import research_session_close, research_session_list, research_session_open
+from loom.tools import cache_mgmt, deep, fetch, github, markdown, search, spider, stealth
+    from loom.tools import llm as llm_tools
+    from loom.tools import enrich as enrich_tools
+    from loom.tools import experts as experts_tools
+    from loom.tools import creative as creative_tools
+        from loom.providers.exa import find_similar_exa
+
+=== fetch.py KEY FEATURES ===
+from loom.cache import get_cache
+def _is_cloudflare_block(result: FetchResult) -> bool:
+    bypass_cache: bool = False,
+    auto_escalate: bool = False,
+        bypass_cache: skip cache read/write when True
+        "fetch_start url=%s mode=%s return=%s bypass_cache=%s",
+        bypass_cache,
+    if not bypass_cache:
+        cached = get_cache().get(cache_key)
+    if auto_escalate and params.mode == "http" and _is_cloudflare_block(result):
+
+=== markdown.py FALLBACK ===
+    # Import Crawl4AI lazily; fall back to trafilatura if unavailable
+        from crawl4ai import AsyncWebCrawler
+        log.info("crawl4ai not available, falling back to trafilatura")
+            from loom.providers.trafilatura_extract import extract_with_trafilatura
+            traf_result = extract_with_trafilatura(url=params.url)
+                "tool": "trafilatura",
+            log.warning("trafilatura fallback failed: %s", traf_exc)
+                "error": "crawl4ai and trafilatura both unavailable",
+                "tool": "crawl4ai",
+        return {"url": params.url, "error": "timeout", "tool": "crawl4ai"}
+        return {"url": params.url, "error": str(e), "tool": "crawl4ai"}

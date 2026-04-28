@@ -1,0 +1,11 @@
+
+with suppress(ImportError):
+    from loom.tools import geoip_local as geoip_local_tools
+
+    _optional_tools["geoip_local"] = geoip_local_tools
+
+with suppress(ImportError):
+    from loom.tools import image_intel as image_intel_tools
+
+    _optional_tools["image_intel"] = image_intel_tools
+

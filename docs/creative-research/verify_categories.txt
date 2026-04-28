@@ -1,0 +1,10 @@
+Required Categories:
+1. Killer Research Tools ✓
+2. Dark Research Tools ✓
+3. Intelligence Tools ✓
+4. Revolutionary Tools ✓
+5. AI Safety Tools ✓
+6. Academic Integrity ✓
+7. Career Intelligence ✓
+8. Signal Detection ✓
+9. Supply Chain ✓

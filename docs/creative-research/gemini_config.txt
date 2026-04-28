@@ -1,0 +1,25 @@
+YOLO mode is enabled. All tool calls will be automatically approved.
+YOLO mode is enabled. All tool calls will be automatically approved.
+MCP issues detected. Run /mcp list for status.Based on a line-by-line audit of the specified files, here are the **FAIL** items:
+
+**1. Pydantic validation completeness: FAIL**
+*   **`params.py`:** Multiple models lack field validators for size limits, bounds, or content. For example, `LLMChatParams.messages`, `LLMAnswerParams.question`/`context`, `LLMEmbedParams.text`, and `LLMTranslateParams.text` have no restrictions, opening vectors for payload abuse. `ConfigSetParams` lacks validation for `key` and `value`.
+*   **`config.py`:** Fields like `TOR_SOCKS5_PROXY` lack the URL format validation that is present elsewhere in the codebase.
+
+**2. session TTL enforcement: FAIL**
+*   **`sessions.py` (Async API):** Both `get_session()` and `_cleanup_expired()` calculate session age against `created_at` rather than `last_used`. This means active, recently used sessions will be abruptly terminated once their age exceeds the TTL.
+*   **`sessions.py` (`SessionManager`):** Fails to enforce TTL completely. While it updates an `expires_at` column, it never queries or enforces it during reads (`get_context`) or listings, relying solely on an 8-session LRU eviction limit.
+
+**3. thread safety: FAIL**
+*   **`config.py`:** `load_config()` and `set()` mutate the global dictionary non-atomically using `CONFIG.clear(); CONFIG.update(validated)`. Concurrent readers accessing `CONFIG.get(...)` during this brief window will encounter an empty configuration.
+*   **`sessions.py`:** `list_sessions()` iterates over the `_sessions` and `_metadata` globals without acquiring the `_lock`. If another coroutine creates or closes a session concurrently, it will trigger a `RuntimeError: dictionary changed size during iteration`.
+*   **`cache.py`:** `get_cache()` lacks synchronization for initializing the `_cache_singleton`, creating a race condition if multiple threads request the cache simultaneously.
+
+**4. config injection: FAIL**
+*   **`config.py`:** `_resolve_path()` prevents directory traversal by rejecting `..`, but it completely fails to block arbitrary **absolute paths**. A manipulated `$LOOM_CONFIG_PATH` (e.g., `/root/.ssh/id_rsa` or `/etc/passwd`) would be executed upon, leading to arbitrary file reads/writes on the host.
+
+**5. file permission issues: FAIL**
+*   **`sessions.py` (Async API):** `open_session()` creates the session's `user_data_dir` without enforcing secure permissions (`mkdir(exist_ok=True)` defaults to umask, typically `0o755`). This leaves sensitive browser cookies, auth tokens, and local storage readable by any other user on the host system.
+*   **`config.py`:** `save_config()` writes the `config.json` file using default permissions. Since the configuration can contain API keys and proxy credentials, it should be restricted to the owner (e.g., `0o600`).
+
+*(Note: SQLite try/finally on ALL paths and Cache atomic writes passed the audit and are intentionally omitted as requested.)*

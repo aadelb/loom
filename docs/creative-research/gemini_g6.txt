@@ -1,0 +1,23 @@
+MCP issues detected. Run /mcp list for status.**AUDIT REPORT: G6 New Intel Tools**
+
+**1. Command Injection (subprocess calls)**: **[PASS]**
+*   `src/loom/tools/domain_intel.py`: `whois` checks strictly allowlist alphanumeric/hyphen/dot/underscore characters. `nmap` target is validated and `ports` regex only allows digits, commas, and hyphens. 
+*   `src/loom/tools/pdf_extract.py`: `pdftotext` inputs (`start_page`, `end_page`) are strictly converted to integers.
+
+**2. Input Validation**: **[PASS]**
+*   `src/loom/tools/social_intel.py`: `_validate_username` strictly allows `^[a-zA-Z0-9_-]+$`.
+*   `src/loom/tools/text_analyze.py`: Enforces `MIN_TEXT_CHARS` and `MAX_TEXT_CHARS`.
+*   `src/loom/tools/screenshot.py`: `selector` length is enforced.
+
+**3. URL Validation**: **[PASS]**
+*   `src/loom/tools/pdf_extract.py`: `_validate_url` explicitly requires `http` or `https` and valid hostnames.
+*   Other tools (screenshot, rss_monitor, social_intel) consistently utilize the centralized `loom.validators.validate_url`.
+
+**4. File Size Limits**: **[PASS]**
+*   `src/loom/tools/pdf_extract.py`: A `MAX_PDF_SIZE_BYTES` constraint is enforced during download. The file is streamed in chunks, successfully breaking early if it goes above the 50MB limit.
+
+**5. Temp File Cleanup**: **[FAIL] src/loom/tools/pdf_extract.py:175**
+*   In `pdf_extract.py`, a temporary file is created using `NamedTemporaryFile(suffix=".pdf", delete=False)`. However, there is no subsequent `os.remove(tmp_path)` or `os.unlink(tmp_path)` within the function or `finally` block. This leads to leftover temporary files accumulating on the filesystem.
+
+**6. XML Parsing Security**: **[FAIL] src/loom/tools/rss_monitor.py:24**
+*   In `rss_monitor.py`, `xml.etree.ElementTree.fromstring(xml_content)` is used. The standard library `xml.etree` is vulnerable to XML vulnerabilities (such as XXE, billion laughs attacks) when parsing untrusted data. A safe alternative like `defusedxml` should be utilized.

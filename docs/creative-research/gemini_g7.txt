@@ -1,0 +1,50 @@
+MCP issues detected. Run /mcp list for status.**SECURITY INTEL AUDIT REPORT**
+
+### `src/loom/tools/cert_analyzer.py`
+- [PASS] Input Validation (Hostname/Port validated): src/loom/tools/cert_analyzer.py:46
+- [PASS] SSL Verification (Uses default secure context): src/loom/tools/cert_analyzer.py:64
+- [FAIL] Error Message Leaks (Returns raw exception): src/loom/tools/cert_analyzer.py:119
+
+### `src/loom/tools/security_headers.py`
+- [PASS] Input Validation (URL validation): src/loom/tools/security_headers.py:41
+- [PASS] SSL Verification (httpx secure defaults): src/loom/tools/security_headers.py:51
+- [FAIL] Error Message Leaks (Returns raw exception): src/loom/tools/security_headers.py:67
+
+### `src/loom/tools/breach_check.py`
+- [PASS] Input Validation (Email regex): src/loom/tools/breach_check.py:32
+- [PASS] API Key Handling (Env var used securely in headers): src/loom/tools/breach_check.py:39
+- [PASS] SSL Verification (httpx secure defaults): src/loom/tools/breach_check.py:49
+- [PASS] Password Hash Safety (k-anonymity protocol, 5-char prefix): src/loom/tools/breach_check.py:126
+- [FAIL] Error Message Leaks (Returns raw exception): src/loom/tools/breach_check.py:99
+- [FAIL] Error Message Leaks (Returns raw exception): src/loom/tools/breach_check.py:186
+
+### `src/loom/tools/ip_intel.py`
+- [PASS] Input Validation (Blocks private IPs, enforces v4/v6): src/loom/tools/ip_intel.py:36
+- [PASS] API Key Handling (Env var used securely in headers): src/loom/tools/ip_intel.py:51
+- [PASS] SSL Verification (httpx secure defaults): src/loom/tools/ip_intel.py:54
+- [FAIL] Error Message Leaks (Returns raw exception): src/loom/tools/ip_intel.py:144
+
+### `src/loom/tools/cve_lookup.py`
+- [PASS] Input Validation (CVE regex enforcement): src/loom/tools/cve_lookup.py:105
+- [PASS] SSL Verification (httpx secure defaults): src/loom/tools/cve_lookup.py:34
+- [FAIL] Error Message Leaks (Returns raw exception): src/loom/tools/cve_lookup.py:94
+- [FAIL] Error Message Leaks (Returns raw exception): src/loom/tools/cve_lookup.py:173
+
+### `src/loom/tools/urlhaus_lookup.py`
+- [PASS] Input Validation (Enforces http/https prefixes): src/loom/tools/urlhaus_lookup.py:28
+- [PASS] SSL Verification (httpx secure defaults): src/loom/tools/urlhaus_lookup.py:40
+- [FAIL] Error Message Leaks (Returns raw exception): src/loom/tools/urlhaus_lookup.py:78
+- [FAIL] Error Message Leaks (Returns raw exception): src/loom/tools/urlhaus_lookup.py:155
+
+### `src/loom/tools/geoip_local.py`
+- [PASS] Input Validation (Blocks private IPs, enforces structure): src/loom/tools/geoip_local.py:98
+- [FAIL] Error Message Leaks (Returns raw exception): src/loom/tools/geoip_local.py:148
+
+### `src/loom/tools/image_intel.py`
+- [PASS] Input Validation (URL scheme enforcement): src/loom/tools/image_intel.py:232
+- [PASS] SSL Verification (httpx async secure defaults): src/loom/tools/image_intel.py:115
+- [FAIL] Error Message Leaks (Returns raw exception): src/loom/tools/image_intel.py:186
+- [FAIL] Error Message Leaks (Returns raw exception): src/loom/tools/image_intel.py:247
+- [FAIL] Error Message Leaks (Returns raw exception): src/loom/tools/image_intel.py:315
+- [FAIL] Error Message Leaks (Returns raw exception): src/loom/tools/image_intel.py:386
+- [FAIL] Error Message Leaks (Returns raw exception): src/loom/tools/image_intel.py:442

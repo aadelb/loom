@@ -1,0 +1,343 @@
+================================================================================
+LOOM MCP SERVER - 3 NEW SECURITY RESEARCH TOOLS
+================================================================================
+
+## TOOL 1: Certificate Analyzer (cert_analyzer.py)
+────────────────────────────────────────────────────────────────────────────────
+
+FILE: src/loom/tools/cert_analyzer.py
+
+FUNCTIONS:
+  • research_cert_analyze(hostname: str, port: int = 443) -> dict
+    
+    Extracts SSL/TLS certificate information from a remote server using Python's
+    ssl stdlib module.
+    
+    FEATURES:
+    - Connects to remote server on specified port
+    - Extracts X.509 certificate fields (subject, issuer, validity dates)
+    - Parses Subject Alternative Names (SANs)
+    - Computes days until expiration and expiration status
+    - Detects self-signed certificates
+    - Hostname validation (alphanumeric + dots + hyphens only)
+    - Port validation (1-65535)
+    - Comprehensive error handling (timeout, DNS, SSL errors)
+    
+    RETURN FIELDS:
+    - hostname, port: input parameters
+    - subject: dict (CN, O, C, ST, L, OU, EMAIL)
+    - issuer: dict (same structure)
+    - not_before, not_after: ISO 8601 timestamp strings (UTC)
+    - days_until_expiry: integer (negative if expired)
+    - is_expired: boolean
+    - is_self_signed: boolean
+    - san: list of SAN strings (e.g., "DNS:example.com", "IP Address:1.2.3.4")
+    - serial: hexadecimal certificate serial number
+    - version: X.509 version (1, 2, or 3)
+    - error: error string (if connection/parsing failed)
+
+PARAMETER MODEL: CertAnalyzeParams
+  - hostname: str (validated for allowed characters)
+  - port: int = 443 (validated 1-65535)
+
+HELPER FUNCTIONS:
+  - _is_valid_hostname(hostname: str) -> bool
+  - _parse_dn(dn_tuple) -> dict (Distinguished Name parsing)
+  - _parse_cert_date(date_str: str) -> datetime | None
+  - _extract_san(san_tuple) -> list[str]
+
+
+## TOOL 2: Security Headers Analyzer (security_headers.py)
+────────────────────────────────────────────────────────────────────────────────
+
+FILE: src/loom/tools/security_headers.py
+
+FUNCTION:
+  • research_security_headers(url: str) -> dict
+    
+    Analyzes HTTP security headers of a given URL. Scores presence and quality
+    of critical security headers and assigns letter grades.
+    
+    HEADERS CHECKED (9 total):
+    1. Strict-Transport-Security (HSTS) - weight: 12
+    2. Content-Security-Policy (CSP) - weight: 12
+    3. X-Frame-Options - weight: 11
+    4. X-Content-Type-Options - weight: 11
+    5. X-XSS-Protection - weight: 9
+    6. Referrer-Policy - weight: 10
+    7. Permissions-Policy - weight: 10
+    8. Cross-Origin-Opener-Policy - weight: 8
+    9. Cross-Origin-Resource-Policy - weight: 8
+    
+    FEATURES:
+    - Fetches URL with httpx (follows redirects)
+    - Case-insensitive header matching
+    - Quality checks:
+      * CSP: penalty for unsafe-inline/unsafe-eval
+      * HSTS: penalty if missing max-age directive
+    - Scoring: points earned / total possible * 100
+    - Letter grading: A (90-100), B (80-89), C (60-79), D (40-59), F (<40)
+    - Generates actionable recommendations
+    
+    RETURN FIELDS:
+    - url: input URL
+    - headers_found: dict {header_name: {present, value, grade}}
+    - score: float (0-100, rounded to 1 decimal)
+    - grade: "A" | "B" | "C" | "D" | "F"
+    - missing: list of missing header names
+    - recommendations: list of security improvement suggestions
+    - error: error string (if fetch failed)
+
+PARAMETER MODEL: SecurityHeadersParams
+  - url: str (validated via validate_url)
+
+CONSTANTS:
+  - SECURITY_HEADERS: dict of {header_name: weight}
+
+
+## TOOL 3: Breach Checking (breach_check.py)
+────────────────────────────────────────────────────────────────────────────────
+
+FILE: src/loom/tools/breach_check.py
+
+FUNCTIONS:
+  • research_breach_check(email: str) -> dict
+    
+    Checks if an email address appears in known data breaches using
+    HaveIBeenPwned API v3 (requires HIBP_API_KEY environment variable).
+    
+    FEATURES:
+    - Email format validation (basic regex check)
+    - Requires HIBP_API_KEY env variable for full functionality
+    - Returns instructions if API key not configured
+    - Queries breach database for email
+    - Returns list of breaches with metadata
+    
+    RETURN FIELDS:
+    - email: input email
+    - breaches_found: integer count
+    - breaches: list of dicts {name, date, data_classes}
+    - api_available: boolean
+    - message: setup instructions (if no API key)
+    - error: error string (if API/network error)
+
+  • research_password_check(password: str) -> dict
+    
+    Checks if a password appears in known password databases using
+    HaveIBeenPwned k-anonymity API (NO API KEY REQUIRED - privacy-preserving).
+    
+    ALGORITHM:
+    - Computes SHA-1 hash of password
+    - Sends only first 5 hex chars (prefix) to API
+    - Receives list of matching suffixes with breach counts
+    - Matches locally for privacy
+    
+    FEATURES:
+    - No plaintext password sent over network
+    - Strength assessment based on length and complexity
+    - Detects complexity components:
+      * Uppercase letters
+      * Lowercase letters
+      * Digits
+      * Special characters
+    - Length categories:
+      * <8 chars: very weak
+      * 8-11 chars: weak
+      * 12-15 chars: moderate
+      * 16-19 chars: strong
+      * 20+ chars: very strong
+      * 4/4 complexity + length: very strong
+    
+    RETURN FIELDS:
+    - password_length: integer
+    - hash_prefix_sent: first 5 hex chars of SHA-1 (for verification)
+    - pwned_count: integer (how many times in breaches)
+    - is_pwned: boolean
+    - strength_hint: string assessment
+    - complexity_components: dict {has_uppercase, has_lowercase, has_digit, has_special}
+    - error: error string (if request failed)
+
+PARAMETER MODELS:
+  - BreachCheckParams (email: str)
+  - PasswordCheckParams (password: str)
+
+HELPER FUNCTION:
+  - _is_valid_email(email: str) -> bool
+
+
+================================================================================
+PARAMETER MODELS (added to src/loom/params.py)
+================================================================================
+
+1. CertAnalyzeParams
+   - hostname: str (validated, alphanumeric + dots + hyphens)
+   - port: int = 443 (validated 1-65535)
+
+2. SecurityHeadersParams
+   - url: str (validated via validate_url)
+
+3. BreachCheckParams
+   - email: str (validated regex pattern)
+
+4. PasswordCheckParams
+   - password: str (validated length 1-256)
+
+
+================================================================================
+TESTS (added to tests/test_tools/)
+================================================================================
+
+1. tests/test_tools/test_cert_analyzer.py
+   - TestIsValidHostname (8 tests)
+   - TestParseDN (4 tests)
+   - TestParseCertDate (4 tests)
+   - TestExtractSAN (4 tests)
+   - TestCertAnalyze (6 tests, with mocked socket/ssl)
+   TOTAL: 26 unit tests
+
+2. tests/test_tools/test_security_headers.py
+   - TestSecurityHeaders (11 tests)
+     * Invalid URL
+     * Request timeout/error
+     * All headers present (grade A)
+     * No headers present (grade F)
+     * Partial headers (grade B/C)
+     * Unsafe CSP detection
+     * HSTS validation
+     * Recommendations generation
+     * Score calculation
+   TOTAL: 11 unit tests
+
+3. tests/test_tools/test_breach_check.py
+   - TestIsValidEmail (7 tests)
+   - TestBreachCheck (7 tests)
+   - TestPasswordCheck (11 tests)
+     * Empty password validation
+     * Length validation
+     * Pwned/not-pwned detection
+     * Strength assessment (very weak to strong)
+     * Complexity component detection
+     * Timeout handling
+     * Hash prefix verification
+   TOTAL: 25 unit tests
+
+TOTAL NEW TESTS: 62 unit tests
+
+
+================================================================================
+INTEGRATION WITH SERVER
+================================================================================
+
+Modified: src/loom/server.py
+- Added imports for three new tool modules
+- Tools are automatically registered as MCP tools via FastMCP
+
+Import statement added (line 33-35):
+```python
+from loom.tools import (
+    breach_check,
+    cert_analyzer,
+    security_headers,
+    # ... existing tools ...
+)
+```
+
+MCP TOOL NAMES (exposed to clients):
+  - research_cert_analyze
+  - research_security_headers
+  - research_breach_check
+  - research_password_check
+
+
+================================================================================
+ENVIRONMENT VARIABLES
+================================================================================
+
+OPTIONAL (for breach checking):
+  - HIBP_API_KEY: HaveIBeenPwned API key for email breach lookups
+    (not required for password k-anonymity checks)
+
+
+================================================================================
+VALIDATION & ERROR HANDLING
+================================================================================
+
+ALL TOOLS:
+- Type hints on all function signatures
+- Structured logging via logging module
+- Comprehensive error handling and reporting
+- Input validation at boundaries
+- No hardcoded secrets
+- SSRF-safe (URL validator from loom.validators)
+
+HOSTNAME VALIDATION:
+- Alphanumeric, dots, hyphens only
+- Length: 1-255 characters
+- No leading/trailing hyphens or dots
+
+URL VALIDATION:
+- Uses existing loom.validators.validate_url()
+- SSRF-safe validation
+
+EMAIL VALIDATION:
+- Basic regex: ^[^@\s]+@[^@\s]+\.[^@\s]+$
+- Length: 1-254 characters
+- No whitespace
+
+PASSWORD VALIDATION:
+- Length: 1-256 characters
+- No other restrictions (supports any character)
+
+
+================================================================================
+CODING STANDARDS COMPLIANCE
+================================================================================
+
+✓ Python 3.11+
+✓ Type hints on all signatures
+✓ PEP 8 compliant (formatted with ruff)
+✓ Docstrings for all public functions
+✓ from __future__ import annotations
+✓ Pydantic v2 for validation
+✓ Error handling comprehensive
+✓ No mutation of inputs
+✓ ~350-450 lines per file (maintainable size)
+✓ Structured logging (not print statements)
+✓ No hardcoded secrets
+
+
+================================================================================
+TESTING COVERAGE
+================================================================================
+
+Test Framework: pytest with pytest-asyncio
+Mocking: unittest.mock (MagicMock, patch)
+Coverage Target: 80%+ of new code
+
+CERT ANALYZER TESTS:
+- Hostname validation (8 cases)
+- DN parsing (4 cases)
+- Date parsing (4 cases)
+- SAN extraction (4 cases)
+- Real certificate handling with mocks (6 cases)
+
+SECURITY HEADERS TESTS:
+- URL validation
+- HTTP error handling
+- All headers / no headers / partial headers
+- Quality checks (CSP, HSTS)
+- Grade assignment accuracy
+- Recommendation generation
+- Score calculation
+
+BREACH CHECK TESTS:
+- Email validation
+- API key handling
+- Breach detection
+- Password validation
+- Strength assessment
+- Complexity detection
+- K-anonymity protocol verification
+
+
+================================================================================

@@ -1,0 +1,52 @@
+YOLO mode is enabled. All tool calls will be automatically approved.
+YOLO mode is enabled. All tool calls will be automatically approved.
+MCP issues detected. Run /mcp list for status.Here is the comprehensive audit report for the Loom MCP server CLI help system and documentation:
+
+### 1. CLI Help Command (`src/loom/cli.py` & Execution)
+*   **Help Command Exists:** **FAIL**
+    *   Running `python3 -m loom --help` unexpectedly starts the FastMCP server (resulting in an "Address already in use" error) instead of displaying the CLI help. This indicates an issue with `__main__.py` not correctly delegating to Typer before initializing the server.
+    *   There is no explicit `help` subcommand in `src/loom/cli.py` (other than a hardcoded `help` inside the interactive `repl` subcommand).
+*   **Tool Listing (`loom tools` or `loom list`):** **FAIL**
+    *   There is no command to dynamically list the tools available on the MCP server.
+*   **Per-Tool Help (`loom tool <name> --help`):** **FAIL**
+    *   The CLI hardcodes wrappers for ~15 specific commands (`fetch`, `spider`, `search`, etc.) but lacks a generic tool runner or a way to inspect the parameters of arbitrary tools via the CLI.
+
+### 2. `docs/help.md` Audit
+*   **Lists ALL 94 tools:** **FAIL**
+    *   The document explicitly claims "Tool Catalog (42+ Tools)" and proceeds to list roughly 40 tools. It is missing over 50 tools.
+*   **Includes parameters for each tool:** **PASS** (for the tools present)
+    *   The listed tools have well-formatted parameter lists with types and defaults.
+*   **Includes usage examples:** **PASS** (for the tools present)
+    *   Python dictionary-style usage examples and JSON return structures are provided.
+*   **Includes cost estimates per tool:** **PASS** (for the tools present)
+    *   The document does a good job explaining API key requirements and has a dedicated "Cost Estimates" section.
+
+### 3. `docs/tools-reference.md` Audit
+*   **Lists ALL 94 tools:** **FAIL**
+    *   The document explicitly claims "Complete documentation of all 53 MCP tools", missing 41 of the registered tools.
+*   **Includes parameters, return types, and examples:** **PARTIAL / FAIL**
+    *   The first ~44 tools are well-documented with markdown tables for parameters, JSON return examples, and Python usage snippets.
+    *   However, the last 9 tools (e.g., `research_cipher_mirror`, `research_ghost_weave`, `research_health_check`) regress into a one-line summary format. They lack parameter tables, JSON return examples, and Python usage examples.
+*   **Includes cost estimates:** **PARTIAL**
+    *   Most tools list an "API Key" requirement, but explicit cost estimates (like those found in `help.md`) are largely missing from the individual tool entries, and entirely missing for the poorly-documented final 9 tools.
+
+### What is MISSING
+1.  **CLI Entrypoint Fix:** The CLI `--help` flag is hijacked by the server startup sequence.
+2.  **CLI Discoverability:** There is no way for a user to discover the 94 tools from the terminal. The CLI acts as a hardcoded wrapper for a small subset rather than a dynamic MCP client.
+3.  **Documentation Gap:** Between 41 and 54 tools are completely undocumented across both markdown files.
+4.  **Consistency in Reference:** The `tools-reference.md` file abandons its formatting halfway through, leaving the Darkweb and Infrastructure tools severely under-documented.
+
+### Specific Recommendations to Add
+
+*   **a. Complete tool listing with all 94 tools:**
+    *   Update `docs/help.md` and `docs/tools-reference.md` to comprehensively cover all 94 tools.
+    *   Add a `loom tools` command to `src/loom/cli.py` that queries the MCP server (`session.list_tools()`) and prints the full catalog dynamically.
+*   **b. Parameter documentation for each:**
+    *   Ensure the 9 abbreviated tools at the bottom of `tools-reference.md` (and all newly added tools) are expanded to include full markdown tables detailing parameter names, types, defaults, and descriptions.
+    *   Implement a CLI command like `loom tool info <tool_name>` to dynamically print a tool's JSON schema parameters.
+*   **c. Usage examples:**
+    *   Add Python and CLI usage examples for the missing 50+ tools in the documentation.
+*   **d. Cost estimates (which tools cost money, which are free):**
+    *   Standardize a "Cost" badge or row in the parameter tables of `tools-reference.md` so users know immediately if a tool drains their LLM/API budget or relies on a free local resource (like `research_transcribe`).
+*   **e. Rate limit info per tool:**
+    *   Add a "Rate Limit" field to the documentation of every tool. While `help.md` covers some provider limits (e.g., Exa is 100 req/min), this needs to be mapped explicitly to the individual tools (e.g., GitHub tools vs. scraping tools) so users don't encounter unexpected HTTP 429s during deep research.

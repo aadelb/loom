@@ -1,0 +1,83 @@
+YOLO mode is enabled. All tool calls will be automatically approved.
+YOLO mode is enabled. All tool calls will be automatically approved.
+MCP issues detected. Run /mcp list for status.Error executing tool write_file: Path not in workspace: Attempted path "/tmp/audit_script.py" resolves outside the allowed workspace directories: /Users/aadel/projects/supermarketIntSys or the project temp directory: /Users/aadel/.gemini/tmp/supermarketintsys
+Here is the structured audit report for your Odoo supermarket system based on the provided CSV files. 
+
+### 🚨 CRITICAL ISSUES
+These issues prevent items from being sold, cause immediate financial loss, or break the supply chain flow.
+
+**1. Zero Cost & Zero Sale Price (Data Missing Completely)**
+These products have neither a cost nor a sale price configured. They cannot be sold or valued in inventory.
+*   **Affected Products (5):** 915 (0012000063992...), 801 (LABAN UP), 804 (MILCO FRESH YOGHURT), 946 (NATURAL GUM A.M), 718 (SHUROOQ PURE SUNFLOWER OIL)
+*   **Recommended Fix:** Immediately update the cost and sale price for these items, or archive them if they are obsolete.
+
+**2. Zero Sale Price (100% Margin Loss)**
+These products have a cost but their sale price is 0. If sold through the POS, they will ring up as free.
+*   **Affected Products (15):** 619 (ALTIVO NATURAL HONEY), 622 (AMAR MUSHROOM PIECES), 620 (AMERICANA CHICK PEAS), 621 (AMERICANA PLAIN FAVE BEANS), 613 (BIANCO PURE TABLE SALT), 863 (BREAK BIG), 624 (CALIFORNIA GARDEN FAVA BEANS), 897 (DORCO TWIN BLADE RAZOR), 615 (FRESH FOOD SALT), 623 (FRESHO BAKED BEANS), 618 (FRUITY TOFFEE), 523 (HALAWA ELSHANAWANY), 652 (JENAN CANOLA OIL), 625 (MAHRA SWEET CORN), 614 (OLSENMARK ELECTRIC KETTLE)
+*   **Recommended Fix:** Halt sales of these items immediately and set their correct retail prices.
+
+**3. Cost >= Sale Price (Negative/Zero Margin)**
+These items are being sold at or below their purchase cost, guaranteeing a loss on every sale.
+*   **Affected Products (2):** 
+    *   154 (DORITOS S) - Cost: 1.0, Price: 1.0
+    *   344 (LIPTON TEA BAG 25) - Cost: 7.51, Price: 7.51
+*   **Recommended Fix:** Review supplier pricing and adjust the retail price to ensure a profitable margin.
+
+**4. Purchase Order Lines Not Linked to Products**
+These PO lines have text descriptions but aren't linked to a proper Odoo product record. This breaks inventory receiving and cost tracking.
+*   **Affected PO Lines (9):** 
+    *   PO 3383 (Item: ZAARA BASMATI RICE 5KG)
+    *   PO M209062 (Item: OMAN FAMILY)
+    *   PO M208652 (Item: OMAN FAMILY)
+    *   PO M207400 (Items: STAR JUICE 1 LTR, STAR JUICE 250ML, OMAN FAMILY, STING 30*250ML)
+    *   PO M208312 (Item: OMAN FAMILY)
+    *   PO HMDY-CR-148161 (Item: BUGLES 50X10.5G)
+*   **Recommended Fix:** Edit these Draft/Confirmed POs and map the descriptions to actual products in the Odoo database before receiving the shipments.
+
+---
+
+### ⚠️ HIGH ISSUES
+These issues affect profitability reporting, inventory valuation, and scanning at the checkout.
+
+**1. Zero Cost Configured**
+These items have a retail price but no cost recorded, which falsely inflates your profit margins to 100% in reporting.
+*   **Affected Products (32 items, highlighting a few):** 680 (7UP 1.5L), 606 (ALDAMAR HENNA), 599 (ALMARAI JUICE APPLE), 605 (ALWAFI HALVA), 753 (BESLEZ SHORT CUT), 921 (CAKE), 826 (CHEETOS), 754 (DOMESSTOS WIPES), etc.
+*   **Recommended Fix:** Update the `Standard Price` (Cost) field on the product template.
+
+**2. Unrealistic Low Margins (< 5%)**
+The markup on these items is dangerously low for a supermarket and might not cover overhead costs.
+*   **Affected Products (19 items):** 
+    *   592 (ALMARAI JUICE ORANGE 1.4 L) - Margin: 0.8%
+    *   345 (PRAN MUSTARD OIL) - Margin: 1.3%
+    *   534 (ALOKOZAY BLACK TEA CTC LOOSE) - Margin: 1.8%
+    *   532 (ALOKOZAY BLACK TEA 100 BAGS) - Margin: 2.2%
+    *   688 (ROOHAFZA SYRUP 800ml) - Margin: 2.9%
+    *   640 (ALMARAI GISHTA 100g) - Margin: 3.4%
+    *   *Also applies to Marlboro cigarettes (3.5%), Kiri Cheese (3.8%), etc.*
+*   **Recommended Fix:** Verify if the entered cost reflects a bulk package price rather than a per-unit price. If accurate, consider raising the retail price.
+
+**3. Unrealistic High Margins (> 80%)**
+Extremely high margins usually indicate a data entry error (e.g., setting the cost for a single unit but the retail price for a carton).
+*   **Affected Products (1):** 20 (RedBull) - Margin: 90.0%
+*   **Recommended Fix:** Check if the price is for a pack of RedBull while the cost was entered for a single can, and correct the unit of measure/pricing accordingly.
+
+**4. Invalid / Duplicate Barcodes & SKUs ("False")**
+A massive number of products have their Barcode and SKU fields set to the literal text string `'False'`. This will cause the POS barcode scanner to fail or ring up the wrong item.
+*   **Affected Products:** 42 items share the exact SKU `'False'`, and 76 items share the exact Barcode `'False'`. 
+*   **Recommended Fix:** Export products where Barcode/SKU equals "False". Clear these fields so Odoo treats them as properly empty/null, then scan and assign their actual physical barcodes.
+
+---
+
+### 🟡 MEDIUM ISSUES
+These are data hygiene issues that can cause confusion for cashiers and purchasing managers.
+
+**1. Duplicate Product Names**
+Multiple product records exist with the exact same name. This can lead to purchasing the wrong item or cashier confusion if searching by name instead of scanning.
+*   **Affected Products (6 sets):**
+    *   'Extra 14G': IDs 15, 123
+    *   'FAIRY DISHWASH LEMON 600ml': IDs 877, 362
+    *   'KITCO STIX': IDs 105, 107, 106
+    *   'LAYS 14G': IDs 101, 100, 102, 104, 103
+    *   'TAISUN NUTS 15 G': IDs 108, 109
+    *   'TIFFANY FARO 40G': IDs 113, 111, 112
+*   **Recommended Fix:** Determine if these are truly duplicates. If they are, archive the duplicate records. If they are different flavors/variants, rename them to be specific (e.g., "Lays 14g Salt" vs "Lays 14g Chili").

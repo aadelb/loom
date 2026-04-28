@@ -1,0 +1,17 @@
+MCP issues detected. Run /mcp list for status.**AUDIT RESULTS**
+
+[FAIL] src/loom/tools/fetch.py:214 — security issue (SSRF): Missing DNS validation in Scrapling fetcher (`Fetcher.get` is called directly without `get_validated_dns`).
+[FAIL] src/loom/tools/fetch.py:318 — security issue (SSRF): Missing DNS validation in Camoufox stealth fetcher (`fox.get(url)` is called directly).
+[FAIL] src/loom/tools/fetch.py:351 — security issue (SSRF): Missing DNS validation in Botasaurus dynamic fetcher (`driver.get(url)` is called directly).
+[FAIL] src/loom/tools/fetch.py:318 — missing timeouts: Camoufox `fox.get` and `wait_for_page_load` are invoked without enforcing the requested `timeout` parameter.
+[FAIL] src/loom/tools/fetch.py:351 — missing timeouts: Botasaurus `scrape_page` does not propagate or enforce the `timeout` parameter.
+[FAIL] src/loom/tools/spider.py:103 — resource leak / thread leak: Because `research_fetch` lacks timeout support for stealth/dynamic modes, the executor threads will hang indefinitely in the background when the outer `asyncio.wait_for` cancels the task.
+[FAIL] src/loom/tools/markdown.py:125 — security issue (SSRF): Missing DNS validation before `crawler.arun(...)` fetches the URL, directly contradicting the docstring's safety claim.
+[FAIL] src/loom/tools/markdown.py:90 — blocking I/O in async: The `extract_with_trafilatura(url)` fallback performs a synchronous blocking network request directly on the async event loop.
+[PASS] src/loom/tools/search.py:1 — File is clean. Exceptions are broadly handled, and synchronous SDK requests are properly isolated.
+[FAIL] src/loom/tools/deep.py:316 — blocking I/O in async: `research_wayback(url)` performs a synchronous blocking network request directly inside the `async def _fetch_and_markdown` coroutine (missing `run_in_executor`).
+[FAIL] src/loom/tools/stealth.py:46 — security issue (SSRF): Camoufox `fox.get(url)` is missing DNS validation, exposing the system to SSRF.
+[FAIL] src/loom/tools/stealth.py:46 — missing timeouts: No timeout controls are applied to the Camoufox `get` and `wait_for_page_load` operations.
+[FAIL] src/loom/tools/stealth.py:107 — blocking I/O in async: `async def research_botasaurus` calls the heavily synchronous network-bound `research_fetch` function directly on the event loop without utilizing `run_in_executor`.
+
+Score: 1/6 files passed perfectly.

@@ -1,0 +1,111 @@
+YOLO mode is enabled. All tool calls will be automatically approved.
+YOLO mode is enabled. All tool calls will be automatically approved.
+MCP issues detected. Run /mcp list for status.I have verified all the security fixes across the codebase. Additionally, I successfully executed the `verify_completeness.py` script which returned `PASSED: 0 issues found`.
+
+Here are the results for each requested check with the corresponding line evidence:
+
+1. **`validators.py`: IPv6 mapped address check (`ipv4_mapped`)**
+   - **PASS** 
+   - *Evidence* (`src/loom/validators.py`):
+     ```python
+     248:        # Check for IPv4-mapped IPv6 addresses (Fix C2)
+     249:        if hasattr(ip, 'ipv4_mapped') and ip.ipv4_mapped:
+     250:            mapped = ip.ipv4_mapped
+     ```
+
+2. **`validators.py`: CRLF rejection in header values**
+   - **PASS**
+   - *Evidence* (`src/loom/validators.py`):
+     ```python
+     121:            if "\r" in value or "\n" in value:
+     122:                _log.warning("header_crlf_rejected name=%s", name)
+     123:                continue
+     ```
+
+3. **`domain_intel.py`: nmap target rejects leading hyphens**
+   - **PASS**
+   - *Evidence* (`src/loom/tools/domain_intel.py`):
+     ```python
+     54:    # Fix C3: Reject targets starting with "-" to prevent nmap flag injection
+     55:    if target.startswith("-"):
+     56:        raise ValueError("target cannot start with '-'")
+     ```
+
+4. **`llm.py`: token regex now {10,200} + sk-ant + gsk_ + AIzaSy patterns**
+   - **PASS**
+   - *Evidence* (`src/loom/tools/llm.py`):
+     ```python
+     278:    error_str = re.sub(r"sk-ant-[A-Za-z0-9_\-]{10,200}", "[ANTHROPIC_KEY_REDACTED]", error_str)
+     279:    error_str = re.sub(r"sk-[A-Za-z0-9_\-]{10,200}", "[OPENAI_KEY_REDACTED]", error_str)
+     280:    error_str = re.sub(r"nvapi-[A-Za-z0-9_\-]{10,200}", "[NVIDIA_KEY_REDACTED]", error_str)
+     281:    error_str = re.sub(r"gsk_[A-Za-z0-9_\-]{10,200}", "[GROQ_KEY_REDACTED]", error_str)
+     282:    error_str = re.sub(r"AIzaSy[A-Za-z0-9_\-]{30,50}", "[GOOGLE_KEY_REDACTED]", error_str)
+     ```
+
+5. **`torcrawl.py`: uses urlparse hostname for .onion check**
+   - **PASS**
+   - *Evidence* (`src/loom/providers/torcrawl.py`):
+     ```python
+     58:                # Only include .onion URLs (proper hostname check)
+     59:                parsed = urlparse(full_url)
+     60:                if parsed.hostname and parsed.hostname.endswith(".onion"):
+     ```
+
+6. **`onion_spectra.py`: uses urlparse hostname**
+   - **PASS**
+   - *Evidence* (`src/loom/tools/onion_spectra.py`):
+     ```python
+     197:    # Check hostname ends with .onion (proper hostname check)
+     198:    parsed = urlparse(validated_url)
+     199:    if not (parsed.hostname and parsed.hostname.endswith(".onion")):
+     ```
+
+7. **`tor.py`: reads TOR_SOCKS5_PROXY from CONFIG**
+   - **PASS**
+   - *Evidence* (`src/loom/providers/tor.py`):
+     ```python
+     32:        proxy = CONFIG.get("TOR_SOCKS5_PROXY", "socks5h://127.0.0.1:9050")
+     ...
+     64:    proxy = CONFIG.get("TOR_SOCKS5_PROXY", "socks5h://127.0.0.1:9050")
+     ```
+
+8. **`forum_cortex.py`: uses LLM sentiment not hardcoded**
+   - **PASS**
+   - *Evidence* (`src/loom/tools/forum_cortex.py`):
+     ```python
+     76:            # Extract sentiment from result if available, else default to neutral
+     77:            sentiment = result.get("classification", {}).get("sentiment", "neutral")
+     78:            if not sentiment:
+     79:                sentiment = "neutral"
+     ```
+
+9. **`dead_drop_scanner.py`: shingle k=10 not k=5**
+   - **PASS**
+   - *Evidence* (`src/loom/tools/dead_drop_scanner.py`):
+     ```python
+     22:def _shingle_text(text: str, k: int = 10) -> set[str]:
+     ...
+     179:            # Generate shingles (k=10 for better discrimination)
+     180:            shingles = _shingle_text(content, k=10)
+     ```
+
+10. **`pdf_extract.py`: temp file cleanup in finally**
+    - **PASS**
+    - *Evidence* (`src/loom/tools/pdf_extract.py`):
+      ```python
+      251:            finally:
+      252:                if tmp_path and os.path.exists(tmp_path):
+      253:                    try:
+      254:                        os.unlink(tmp_path)
+      ```
+
+11. **`image_intel.py`: OCR temp cleanup for base file**
+    - **PASS**
+    - *Evidence* (`src/loom/tools/image_intel.py`):
+      ```python
+      540:    finally:
+      541:        # Cleanup temp files
+      542:        if temp_image and os.path.exists(temp_image):
+      543:            try:
+      544:                os.unlink(temp_image)
+      ```

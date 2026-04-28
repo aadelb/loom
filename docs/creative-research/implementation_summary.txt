@@ -1,0 +1,112 @@
+=== INFRASTRUCTURE ANALYSIS TOOLS IMPLEMENTATION ===
+
+Three new tools have been successfully implemented and integrated into the Loom MCP server:
+
+1. RESEARCH_REGISTRY_GRAVEYARD
+   Location: /Users/aadel/projects/loom/src/loom/tools/infra_analysis.py
+   
+   Scans package registries for deleted/yanked packages and typosquatting risks:
+   - PyPI: Checks for yanked versions
+   - NPM: Checks for deprecated versions
+   - RubyGems: Checks for yanked packages
+   
+   Features:
+   - Shannon entropy calculation for package names (detects random/suspicious names)
+   - Typosquatting candidate detection using Levenshtein distance
+   - Risk level assessment (critical/high/medium/low)
+   - Returns: package exists status, yanked count, entropy score, similar names
+   
+   Parameters: package_name (str), ecosystem (Literal["pypi", "npm", "rubygems"])
+
+2. RESEARCH_SUBDOMAIN_TEMPORAL
+   Location: /Users/aadel/projects/loom/src/loom/tools/infra_analysis.py
+   
+   Tracks subdomain births/deaths over time via Certificate Transparency logs:
+   - Uses crt.sh to retrieve all certificates
+   - Groups certificates by date and detects patterns
+   - Flags internal tool exposure (jira, jenkins, grafana, etc.)
+   - Detects certificate issuance bursts (potential infrastructure changes)
+   
+   Features:
+   - Monthly distribution tracking
+   - Internal tools detection (critical risk indicator)
+   - Burst pattern detection (>2.5x average certs in a month)
+   - Geographic diversity analysis via certificate issuers
+   - Returns: subdomain count, burst detection, internal tools exposed, monthly stats
+   
+   Parameters: domain (str), days_back (int, 1-365, default 90)
+
+3. RESEARCH_COMMIT_ANALYZER
+   Location: /Users/aadel/projects/loom/src/loom/tools/infra_analysis.py
+   
+   Analyzes GitHub commit patterns for intelligence signals:
+   - Detects security-focused commits (CVE, fix, patch, vuln patterns)
+   - Calculates crunch score (% commits on weekends/nights)
+   - Tracks author churn (new vs returning developers)
+   - Analyzes sentiment from commit messages
+   - Detects tech direction changes (dependencies, CI/CD, containerization)
+   
+   Features:
+   - GitHub API integration (no auth required for public repos)
+   - Multiple signal detection (security, infrastructure, dependencies)
+   - Risk assessment based on security incidents and crunch patterns
+   - Returns: security incidents, crunch score, sentiment trend, tech direction
+   
+   Parameters: repo (str, "owner/name"), days_back (int, 1-365, default 30)
+
+INTEGRATION DETAILS:
+
+Files Created:
+- /Users/aadel/projects/loom/src/loom/tools/infra_analysis.py (750+ lines)
+- /Users/aadel/projects/loom/tests/test_infra_analysis.py (480+ lines, 35 tests)
+
+Files Modified:
+- /Users/aadel/projects/loom/src/loom/server.py (added import + 3 tool registrations)
+- /Users/aadel/projects/loom/src/loom/params.py (added 3 parameter models)
+
+TESTING:
+- 35 comprehensive unit tests covering all functions
+- 80% code coverage on infra_analysis.py
+- Tests include:
+  * Registry validation (PyPI, NPM, RubyGems)
+  * Typosquatting detection
+  * Internal tool exposure detection
+  * Burst pattern recognition
+  * Security commit identification
+  * Crunch score calculation
+  * Author churn analysis
+  * Sentiment analysis
+  * Tech direction detection
+  * String similarity (Levenshtein distance)
+  * Shannon entropy calculation
+
+HELPER FUNCTIONS:
+- _get_json(): Async JSON fetching with error handling
+- _calculate_entropy(): Shannon entropy calculation for randomness detection
+- _detect_typosquatting_candidates(): Uses entropy + name matching
+- _find_similar_packages(): Levenshtein distance-based similarity matching
+- _levenshtein_distance(): String similarity algorithm
+
+API ENDPOINTS (Real):
+- PyPI: https://pypi.org/pypi/{package}/json
+- NPM: https://registry.npmjs.org/{package}
+- RubyGems: https://rubygems.org/api/v1/versions/{package}.json
+- crt.sh: https://crt.sh/?q=%25.{domain}&output=json
+- GitHub: https://api.github.com/repos/{repo}/commits
+
+CONVENTIONS FOLLOWED:
+- Async/await patterns from passive_recon.py
+- httpx.AsyncClient for HTTP requests
+- Proper error handling with try/except
+- Input validation at function boundaries
+- Logging via logging module
+- Type hints on all signatures
+- Docstrings with Args/Returns sections
+- Error handling with dict returns on failure
+- Tool registration with _wrap_tool() pattern
+
+RISK LEVELS:
+- critical: Multiple security issues, exposed internal tools (3+), many yanked versions (>5)
+- high: 2-3 internal tools exposed, 1-5 security incidents, high crunch score (>40%)
+- medium: Some internal tools, deprecated packages, moderate patterns
+- low: Normal patterns, no security concerns

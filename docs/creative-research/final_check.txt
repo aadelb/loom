@@ -1,0 +1,41 @@
+TOOLS AND TEST COVERAGE:
+Tools: cache_mgmt, creative, deep, enrich, experts, fetch, github, llm, markdown, search, spider, stealth
+Tests: cache_mgmt, deep, deep_v2, enrich, fetch, github, llm, llm_extended, markdown, search, spider, spider_extended, stealth
+
+MISSING TEST FILES:
+- test_creative.py (11 functions: red_team, multilingual, consensus, misinfo_check, temporal_diff, citation_graph, ai_detect, curriculum, community_sentiment, wiki_ghost, semantic_sitemap)
+- test_experts.py (1 function: research_find_experts)
+
+REGISTERED TOOLS IN SERVER.PY:
+Lines 57-66: Core tools (fetch, spider, markdown, search, deep, github, camoufox, botasaurus, cache_stats, cache_clear)
+Lines 69-75: Session and config tools
+Lines 78-79: GitHub enhanced tools (readme, releases)
+Lines 82-87: Exa find_similar (conditional)
+Lines 90-107: LLM tools (8 functions, all with hasattr checks)
+Lines 110-115: Enrichment tools (2 functions: detect_language, wayback)
+Lines 118-121: Expert finder (1 function)
+Lines 124-141: Creative tools (11 tools in list)
+
+TOTAL REGISTERED: ~33-34 functions
+
+SOURCE FUNCTIONS IN TOOLS:
+- tools/cache_mgmt.py: 2 (research_cache_stats, research_cache_clear)
+- tools/search.py: 1 (research_search)
+- tools/deep.py: 1 (research_deep)
+- tools/fetch.py: 1 (research_fetch)
+- tools/spider.py: 1 (research_spider)
+- tools/markdown.py: 1 (research_markdown)
+- tools/github.py: 3 (research_github, research_github_readme, research_github_releases)
+- tools/stealth.py: 2 (research_camoufox, research_botasaurus)
+- tools/llm.py: 8 (summarize, extract, classify, translate, query_expand, answer, embed, chat)
+- tools/enrich.py: 2 (research_detect_language, research_wayback)
+- tools/experts.py: 1 (research_find_experts)
+- tools/creative.py: 11 (red_team, multilingual, consensus, misinfo_check, temporal_diff, citation_graph, ai_detect, curriculum, community_sentiment, wiki_ghost, semantic_sitemap)
+- sessions.py: 3 (research_session_open, research_session_list, research_session_close)
+- config.py: 2 (research_config_get, research_config_set)
+TOTAL: 39 functions
+
+PROVIDERS:
+Files: 16 provider files
+- Search providers routable in search.py: exa, tavily, firecrawl, brave, ddgs, arxiv, wikipedia (7 total)
+- Search providers in files but NOT routable: hn_reddit (search_hackernews, search_reddit), youtube_transcripts

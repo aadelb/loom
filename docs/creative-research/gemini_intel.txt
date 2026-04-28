@@ -1,0 +1,12 @@
+YOLO mode is enabled. All tool calls will be automatically approved.
+YOLO mode is enabled. All tool calls will be automatically approved.
+MCP issues detected. Run /mcp list for status.**FAIL Items Found:**
+
+1. **`src/loom/tools/pdf_extract.py` — SSRF Vulnerability**
+   - The tool uses its own weak `_validate_url` function that only verifies the presence of an `http`/`https` scheme and a hostname. It fails to restrict resolution to internal, private, or cloud metadata IP addresses (e.g., `169.254.169.254`), making the `httpx.stream` fetch susceptible to Server-Side Request Forgery (SSRF). It should import and use `validate_url` from `loom.validators` instead.
+
+2. **`src/loom/tools/pdf_extract.py` — Temp File Cleanup Missing**
+   - When falling back to the `pdftotext` CLI, the tool creates a temporary file using `tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)`. However, there is no subsequent `os.unlink(tmp_path)` or `os.remove()` in a `finally` block to delete the file after execution, which will lead to temporary directory storage exhaustion over time.
+
+3. **`src/loom/tools/rss_monitor.py` — XXE (XML External Entity) Vulnerability**
+   - The `_parse_feed` function parses untrusted external XML payloads using the standard library's `xml.etree.ElementTree.fromstring(xml_content)`. This native XML parser is susceptible to XXE injection attacks. It should be replaced with `defusedxml.ElementTree` to safely parse untrusted feeds.

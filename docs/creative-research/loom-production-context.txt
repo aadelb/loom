@@ -1,0 +1,104 @@
+=== ALL SOURCE FILES WITH LINE COUNTS ===
+      25 src/loom/__init__.py
+       9 src/loom/__main__.py
+     175 src/loom/cache.py
+     887 src/loom/cli.py
+     300 src/loom/config.py
+     469 src/loom/journey.py
+     475 src/loom/params.py
+      38 src/loom/providers/__init__.py
+     185 src/loom/providers/anthropic_provider.py
+      69 src/loom/providers/arxiv_search.py
+     193 src/loom/providers/base.py
+      77 src/loom/providers/brave.py
+      73 src/loom/providers/ddgs.py
+     121 src/loom/providers/exa.py
+      95 src/loom/providers/firecrawl.py
+     121 src/loom/providers/hn_reddit.py
+     230 src/loom/providers/nvidia_nim.py
+     207 src/loom/providers/openai_provider.py
+      79 src/loom/providers/tavily.py
+      71 src/loom/providers/trafilatura_extract.py
+     212 src/loom/providers/vllm_local.py
+      90 src/loom/providers/wikipedia_search.py
+     123 src/loom/providers/youtube_transcripts.py
+     208 src/loom/server.py
+     762 src/loom/sessions.py
+       1 src/loom/tools/__init__.py
+     114 src/loom/tools/cache_mgmt.py
+    1078 src/loom/tools/creative.py
+     552 src/loom/tools/deep.py
+     108 src/loom/tools/enrich.py
+     103 src/loom/tools/experts.py
+     515 src/loom/tools/fetch.py
+     256 src/loom/tools/github.py
+     960 src/loom/tools/llm.py
+     192 src/loom/tools/markdown.py
+     211 src/loom/tools/search.py
+     155 src/loom/tools/spider.py
+     170 src/loom/tools/stealth.py
+     111 src/loom/validators.py
+
+=== ALL TEST FILES ===
+     257 tests/conftest.py
+    1698 tests/deep_research_test.py
+     410 tests/journey_e2e.py
+     143 tests/test_cache.py
+      90 tests/test_cli.py
+     145 tests/test_cli_smoke.py
+     267 tests/test_config.py
+      46 tests/test_integration/test_mcp_roundtrip.py
+      60 tests/test_journey.py
+     123 tests/test_journey_extended.py
+     356 tests/test_params.py
+     107 tests/test_providers/test_anthropic.py
+      82 tests/test_providers/test_arxiv_search.py
+      75 tests/test_providers/test_base.py
+     141 tests/test_providers/test_brave.py
+     234 tests/test_providers/test_cascade.py
+      84 tests/test_providers/test_ddgs.py
+     172 tests/test_providers/test_exa.py
+     148 tests/test_providers/test_firecrawl.py
+     168 tests/test_providers/test_hn_reddit.py
+      62 tests/test_providers/test_nvidia_nim.py
+      61 tests/test_providers/test_openai.py
+     133 tests/test_providers/test_tavily.py
+      76 tests/test_providers/test_trafilatura.py
+     121 tests/test_providers/test_vllm.py
+      85 tests/test_providers/test_wikipedia_search.py
+      95 tests/test_providers/test_youtube_transcripts.py
+      83 tests/test_server.py
+     291 tests/test_sessions.py
+     101 tests/test_tools/test_cache_mgmt.py
+     391 tests/test_tools/test_creative.py
+     145 tests/test_tools/test_deep.py
+     481 tests/test_tools/test_deep_v2.py
+      91 tests/test_tools/test_enrich.py
+     100 tests/test_tools/test_experts.py
+     246 tests/test_tools/test_fetch.py
+     167 tests/test_tools/test_github.py
+     119 tests/test_tools/test_llm.py
+     124 tests/test_tools/test_llm_extended.py
+     148 tests/test_tools/test_markdown.py
+     162 tests/test_tools/test_search.py
+     165 tests/test_tools/test_spider.py
+      68 tests/test_tools/test_spider_extended.py
+      90 tests/test_tools/test_stealth.py
+     120 tests/test_validators.py
+
+=== CURRENT E2E RESULTS ===
+PASS:51 FAIL:1 SKIP:0
+
+=== FAILED TOOLS ===
+  citation_graph: Client error '429 ' for url 'https://api.semanticscholar.org/graph/v1/paper/sear
+
+=== RUFF CHECK ===
+All checks passed!
+
+=== MYPY ===
+Success: no issues found in 4 source files
+
+=== GIT STATUS ===
+e5647a6 fix: NIM embeddings working — nvidia/nv-embedqa-e5-v5 (1024 dims, free)
+9a9cb20 docs: comprehensive help page covering all 42+ tools
+5de850a feat: comprehensive deep research test — all 42+ tools with real APIs

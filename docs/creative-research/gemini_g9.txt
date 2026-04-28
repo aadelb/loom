@@ -1,0 +1,21 @@
+MCP issues detected. Run /mcp list for status.Here is the quality audit for the 10 random test files:
+
+**[PASS] tests/test_hardening.py** — Good coverage of security features. Mocks are realistic (e.g., patching `logging.LogRecord` to test tracing filters) and assertions are specific when validating allowed/rejected HTTP headers and JavaScript elements. No obvious false passes.
+
+**[FAIL] tests/test_config.py** — `test_save_config_validates_before_writing` contains a missing assertion. The test expects that a file should not be modified on validation failure, but merely uses an empty `pass` statement inside `if tmp_config_path.exists():` instead of actually asserting that the file content remains unchanged or doesn't exist.
+
+**[FAIL] tests/test_validators.py** — `TestGitHubQueryValidator` creates a high risk of false passes. Instead of calling the validator function used by the main application, tests like `test_gh_query_rejects_long_flag` re-implement the boolean logic and regex checks inline (`result = bool(GH_QUERY_RE.match(query)) and not query.lstrip().startswith("-")`). This guarantees the test passes even if the application's actual implementation is broken or missing.
+
+**[PASS] tests/test_tools/test_creative.py** — Realistic and detailed mock quality for various APIs (Semantic Scholar, Wikipedia, Tor endpoints). Uses specific assertions to check complex nested JSON results and gracefully handles simulated network timeouts and absent modules.
+
+**[FAIL] tests/test_tools/test_tor.py** — `test_tor_new_identity_concurrent_rate_limit` claims to test rate-limiting under concurrent requests but calls the asynchronous functions sequentially (`await call1` then `await call2`). Because it doesn't use `asyncio.gather()`, it completely fails to test concurrency and is essentially a duplicate of the standard sequential rate-limit test.
+
+**[PASS] tests/test_deep_darkweb.py** — Effective keyword-based testing for deep research query detection. Includes strong negative edge case checks (e.g., verifying that the word "marketplace" doesn't falsely trigger the "finance" query classification unless specific financial keywords are present).
+
+**[FAIL] tests/test_rate_limiter_sync.py** — `test_sync_rate_limiter_boundary_condition` contains an incredibly vague assertion. After waiting exactly 1 second to hit the window edge, the test just checks `assert isinstance(result, bool)`. Because the method always returns a boolean, this assertion neuters the test, resulting in a false pass regardless of the rate limiter's functional accuracy.
+
+**[FAIL] tests/test_stylometry.py** — In `test_verdict_different_author`, the comment states that low textual similarity should yield a `'different_author'` verdict. However, the assertion checks `assert verdict in ("likely_same_author", "possible_match", "different_author")`, blindly accepting *any* possible verdict and guaranteeing a false pass even if the algorithm incorrectly identifies them as the same author.
+
+**[PASS] tests/test_tools/test_domain_intel.py** — Thorough test isolation with accurate representations of `subprocess` outputs for `nmap` and `whois`. Specific assertions correctly validate that the system trims excessively large raw text outputs and parses service properties properly.
+
+**[FAIL] tests/test_tools/test_breach_check.py** — In `test_password_pwned`, the docstring states "Pwned password returns pwned_count > 0", but the assertion is written as `assert result["pwned_count"] >= 0`. This accepts `0` (which implies the password was not found in a breach), thereby creating a massive false pass window for false negatives.

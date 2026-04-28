@@ -1,0 +1,38 @@
+MCP issues detected. Run /mcp list for status.**AUDIT REPORT: G5 PSYCHOLOGY TOOLS**
+
+I have thoroughly reviewed the requested 6 files (`stylometry.py`, `deception_detect.py`, `persona_profile.py`, `radicalization_detect.py`, `sentiment_deep.py`, `network_persona.py`), as well as adjacent files to locate all requested algorithms. 
+
+Here are the audit results:
+
+### 1. Algorithm Correctness
+* **Cosine Similarity**: Mathematically correct. Handles 0 magnitude vectors safely.
+  `[PASS] src/loom/tools/stylometry.py:128`
+* **Yule's K**: Formula correctly implemented using sum of squared frequencies: `10000 * (m1 - N) / N^2`. 
+  `[PASS] src/loom/tools/stylometry.py:94`
+* **Shannon Entropy**: Found in adjacent tool `cipher_mirror.py`. The formula calculates `p * (p ** 0.5)` instead of the correct `p * math.log2(p)`. This is a complete mathematical failure for Shannon entropy.
+  `[FAIL] src/loom/tools/cipher_mirror.py:72` 
+* **Jaccard Similarity**: Found in adjacent tool `dead_drop_scanner.py`. Correctly calculates intersection over union.
+  `[PASS] src/loom/tools/dead_drop_scanner.py:44`
+
+### 2. Scoring Thresholds
+* **Deception Score Discontinuity**: The calculation penalizing avoidance of first-person pronouns is broken. It drops from a contribution of `0.25` (if ratio `< 0.01`) down to `0.0` (at `0.01`), and then pushes the score into negative numbers as pronoun usage increases.
+  `[FAIL] src/loom/tools/deception_detect.py:182`
+* **Radicalization Density**: Safely normalizes to 0-1 range and thresholds logic works as expected. 
+  `[PASS] src/loom/tools/radicalization_detect.py:74`
+* **Formality Limits**: Handles normalizations beautifully and cleanly constraints limits to 0-1 values.
+  `[PASS] src/loom/tools/persona_profile.py:120`
+* **Sentiment Valence**: Correctly bounds positive and negative emotional states to prevent division by zero.
+  `[PASS] src/loom/tools/sentiment_deep.py:143`
+
+### 3. Edge Cases (Empty Text, Single Word, No Sentences)
+* **Stylometry**: Safely handles zero sentences (`avg_sentence_length` division guard) and empty words list returning safe dictionary defaults. 
+  `[PASS] src/loom/tools/stylometry.py:76`
+* **Deception Detection**: Enforces minimum chars limits and safely defaults `sentence_count` to 1 to avoid `ZeroDivisionError` when processing single words.
+  `[PASS] src/loom/tools/deception_detect.py:84`
+* **Network Persona**: Safely handles zero data networks or single edges by overriding default values and checking graph limits correctly before division.
+  `[PASS] src/loom/tools/network_persona.py:202`
+
+### 4. Keyword Lists Completeness
+* **Function Words**: Covers the top 20 prepositions, articles, and 'be' verbs (`stylometry.py:14`). While extremely minimal, it functions adequately for crude analysis. `[PASS]`
+* **Emotion Lexicon**: Comprehensive breakdown across 8 core emotional ranges along with relevant manipulation pattern regex groups (`sentiment_deep.py:15`). `[PASS]`
+* **Radicalization Terminology**: Robust arrays covering dehumanization, moral absolutism, escalation language, and extremism identifiers (`radicalization_detect.py:13`). `[PASS]`

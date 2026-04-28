@@ -1,0 +1,10 @@
+
+    if "sentiment_deep" in _optional_tools:
+        sentiment_deep_mod = _optional_tools["sentiment_deep"]
+        if hasattr(sentiment_deep_mod, "research_sentiment_deep"):
+            mcp.tool()(_wrap_tool(sentiment_deep_mod.research_sentiment_deep, "analysis"))
+
+    if "network_persona" in _optional_tools:
+        network_persona_mod = _optional_tools["network_persona"]
+        if hasattr(network_persona_mod, "research_network_persona"):
+            mcp.tool()(_wrap_tool(network_persona_mod.research_network_persona, "analysis"))

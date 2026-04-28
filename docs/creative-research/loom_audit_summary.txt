@@ -1,0 +1,267 @@
+LOOM MCP SERVER - DEEP GAP DISCOVERY AUDIT REPORT
+==================================================
+
+DATE: 2026-04-28
+SCOPE: Very Thorough Analysis
+
+═══════════════════════════════════════════════════════════════════════════════
+1. UNREGISTERED FUNCTIONS AUDIT
+═══════════════════════════════════════════════════════════════════════════════
+
+Defined research_ functions:      86 (in src/loom/tools/*.py)
+Registered research_ functions:   92 (in server.py)
+Total tool count at runtime:      94 (includes exa find_similar + yt_dlp)
+
+FINDING: No unregistered functions detected. All 86 defined functions are 
+         properly registered. The registration count exceeds defined count
+         due to:
+         - Optional tools (yt-dlp, exa) injecting additional functions
+         - Session/config/health management functions
+         
+STATUS: ✓ CLEAN
+
+
+═══════════════════════════════════════════════════════════════════════════════
+2. UNROUTED SEARCH PROVIDERS AUDIT
+═══════════════════════════════════════════════════════════════════════════════
+
+Search provider functions defined (20):
+  - ahmia, arxiv, binance, brave, coindesk_news, crypto, darksearch,
+    darkweb_cti, ddgs, exa, firecrawl, hackernews, investing, newsapi,
+    onionsearch, reddit, robin_osint, tavily, ummro_rag, wikipedia
+
+Routed in research_search():
+  - ahmia, arxiv, binance, brave, coindesk, crypto, darksearch,
+    darkweb_cti, ddgs, exa, firecrawl, hackernews, investing, newsapi,
+    onionsearch, reddit, robin_osint, tavily, torcrawl, ummro, wikipedia
+
+FUNCTION NAME MISMATCHES FOUND:
+  1. coindesk_news() → routed as "coindesk" ✓ (intentional aliasing)
+  2. ummro_rag() → routed as "ummro" ✓ (intentional aliasing)
+
+ROUTING STATUS: All 20 providers properly routed (with appropriate aliases)
+                 Extra route "torcrawl" maps to torcrawl.crawl_onion()
+
+STATUS: ✓ CLEAN
+
+
+═══════════════════════════════════════════════════════════════════════════════
+3. BROKEN IMPORTS AUDIT
+═══════════════════════════════════════════════════════════════════════════════
+
+Module initialization check:
+  - Registered tools:       94 ✓
+  - Optional tools loaded:  32 ✓
+  - All optional tools:     Accessible (no missing modules)
+  
+Tested imports:
+  ✓ from loom.server import create_app, _optional_tools
+  ✓ All 32 optional tool modules properly imported or gracefully skipped
+  
+STATUS: ✓ CLEAN
+
+
+═══════════════════════════════════════════════════════════════════════════════
+4. TEST COMPILATION AUDIT
+═══════════════════════════════════════════════════════════════════════════════
+
+Test files scanned: 20+
+Compilation errors: 0
+
+All test files compile successfully with Python 3.11+
+
+STATUS: ✓ CLEAN
+
+
+═══════════════════════════════════════════════════════════════════════════════
+5. DEAD CONFIG KEYS AUDIT
+═══════════════════════════════════════════════════════════════════════════════
+
+Config keys defined in ConfigModel (30):
+  SPIDER_CONCURRENCY, EXTERNAL_TIMEOUT_SECS, MAX_CHARS_HARD_CAP,
+  MAX_SPIDER_URLS, CACHE_TTL_DAYS, DEFAULT_SEARCH_PROVIDER,
+  DEFAULT_ACCEPT_LANGUAGE, LOG_LEVEL, LLM_DEFAULT_CHAT_MODEL,
+  LLM_DEFAULT_EMBED_MODEL, LLM_DEFAULT_TRANSLATE_MODEL, LLM_MAX_PARALLEL,
+  LLM_DAILY_COST_CAP_USD, LLM_CASCADE_ORDER, RESEARCH_SEARCH_PROVIDERS,
+  RESEARCH_EXPAND_QUERIES, RESEARCH_EXTRACT, RESEARCH_SYNTHESIZE,
+  RESEARCH_GITHUB_ENRICHMENT, RESEARCH_MAX_COST_USD, FETCH_AUTO_ESCALATE,
+  TOR_ENABLED, TOR_SOCKS5_PROXY, ALLOW_ONION_URLS,
+  RATE_LIMIT_SEARCH_PER_MIN, RATE_LIMIT_DEEP_PER_MIN, RATE_LIMIT_LLM_PER_MIN,
+  RATE_LIMIT_FETCH_PER_MIN, RESEARCH_COMMUNITY_SENTIMENT, RESEARCH_RED_TEAM,
+  RESEARCH_MISINFO_CHECK
+
+Config keys ACTUALLY USED in src/loom/ (24):
+  CACHE_TTL_DAYS, DEFAULT_ACCEPT_LANGUAGE, DEFAULT_SEARCH_PROVIDER,
+  LLM_CASCADE_ORDER, LLM_DAILY_COST_CAP_USD, LLM_DEFAULT_CHAT_MODEL,
+  LLM_DEFAULT_EMBED_MODEL, LLM_DEFAULT_TRANSLATE_MODEL, LLM_MAX_PARALLEL,
+  LOG_LEVEL, RESEARCH_COMMUNITY_SENTIMENT, RESEARCH_EXPAND_QUERIES,
+  RESEARCH_EXTRACT, RESEARCH_GITHUB_ENRICHMENT, RESEARCH_MAX_COST_USD,
+  RESEARCH_MISINFO_CHECK, RESEARCH_RED_TEAM, RESEARCH_SEARCH_PROVIDERS,
+  RESEARCH_SYNTHESIZE, SPIDER_CONCURRENCY, TOR_ENABLED,
+  LLM_EXTRACT_CONCURRENCY, SESSION_DIR
+
+UNUSED CONFIG KEYS (6):
+  ⚠ EXTERNAL_TIMEOUT_SECS       (defined but not read anywhere)
+  ⚠ MAX_CHARS_HARD_CAP           (defined but not read anywhere)
+  ⚠ MAX_SPIDER_URLS              (defined but not read anywhere)
+  ⚠ FETCH_AUTO_ESCALATE          (defined but not read anywhere)
+  ⚠ TOR_SOCKS5_PROXY             (defined but not read anywhere)
+  ⚠ ALLOW_ONION_URLS             (defined but not read anywhere)
+
+RATE LIMIT KEYS NOT READ:
+  ⚠ RATE_LIMIT_SEARCH_PER_MIN    (defined but not read)
+  ⚠ RATE_LIMIT_DEEP_PER_MIN      (defined but not read)
+  ⚠ RATE_LIMIT_LLM_PER_MIN       (defined but not read)
+  ⚠ RATE_LIMIT_FETCH_PER_MIN     (defined but not read)
+
+REFERENCED BUT NOT DEFINED:
+  ⚠ LLM_EXTRACT_CONCURRENCY      (used in deep.py but not in ConfigModel)
+  ⚠ SESSION_DIR                  (used in sessions.py but not in ConfigModel)
+
+STATUS: ⚠ FOUND 12 ISSUES (6 dead keys + 4 unused rate limits + 2 undeclared)
+
+
+═══════════════════════════════════════════════════════════════════════════════
+6. PYPROJECT.TOML CONSISTENCY AUDIT
+═══════════════════════════════════════════════════════════════════════════════
+
+Version consistency:
+  pyproject.toml:    0.1.0a1
+  src/loom/__init__.py: 0.1.0a1
+  ✓ MATCH
+
+Entry point correctness:
+  1. loom = "loom.cli:app"
+     - loom.cli has: app = typer.Typer(...) ✓
+  
+  2. loom-server = "loom.server:main"
+     - loom.server has: def main() -> None: ✓
+
+Build configuration:
+  - Version sourcing: src/loom/__init__.py ✓
+  - Package location: src/loom ✓
+  - Distribution includes: src/, tests/, examples/, deploy/, docs/ ✓
+
+STATUS: ✓ CLEAN
+
+
+═══════════════════════════════════════════════════════════════════════════════
+7. MISSING __init__.py AUDIT
+═══════════════════════════════════════════════════════════════════════════════
+
+Directory structure:
+  src/loom/                     ✓ __init__.py present
+  src/loom/tools/               ✓ __init__.py present (but empty)
+  src/loom/providers/           ✓ __init__.py present
+
+All required __init__.py files in place.
+
+STATUS: ✓ CLEAN
+
+
+═══════════════════════════════════════════════════════════════════════════════
+8. PROVIDER COVERAGE AUDIT
+═══════════════════════════════════════════════════════════════════════════════
+
+Provider modules (29 total, excluding base/__init__):
+  Search providers (20): ahmia_search, arxiv_search, binance_data, brave,
+    coindesk_search, coinmarketcap, darksearch_search, darkweb_cti, ddgs,
+    exa, firecrawl, hn_reddit, investing_data, newsapi_search,
+    onionsearch, robin_osint, tavily, torcrawl, ummro_rag, wikipedia_search
+  
+  LLM providers (6): anthropic_provider, deepseek_provider, gemini_provider,
+    groq_provider, moonshot_provider, nvidia_nim, openai_provider, vllm_local
+  
+  Media (2): youtube_transcripts, trafilatura_extract
+
+All 29 providers are actively imported and used in loom.tools.*
+
+STATUS: ✓ CLEAN
+
+
+═══════════════════════════════════════════════════════════════════════════════
+SUMMARY OF FINDINGS
+═══════════════════════════════════════════════════════════════════════════════
+
+✓ CLEAN (6 audits):
+  - Unregistered functions
+  - Unrouted providers
+  - Broken imports
+  - Test compilation
+  - __init__.py files
+  - Provider coverage
+
+⚠ ISSUES FOUND (1 audit):
+  - Dead/unused config keys: 12 total issues
+    * 6 defined but never read (dead keys)
+    * 4 rate limit keys defined but not used
+    * 2 keys used but not defined in ConfigModel
+
+═══════════════════════════════════════════════════════════════════════════════
+DETAILED ISSUE BREAKDOWN
+═══════════════════════════════════════════════════════════════════════════════
+
+CRITICAL CONFIG ISSUES:
+
+1. Undefined Config Keys (2) - Will cause KeyError if accessed with wrong defaults
+   ⚠ LLM_EXTRACT_CONCURRENCY  
+     Location: src/loom/tools/deep.py:extract_concurrency = config.get("LLM_EXTRACT_CONCURRENCY", 3)
+     Status: Safely has default value (3), but not declared in ConfigModel
+   
+   ⚠ SESSION_DIR
+     Location: src/loom/sessions.py:base = Path(config.get("SESSION_DIR", "~/.loom/sessions")).expanduser()
+     Status: Safely has default value, but not declared in ConfigModel
+
+2. Unused Rate Limit Keys (4) - Never consulted in code
+   ⚠ RATE_LIMIT_SEARCH_PER_MIN  (defined with default=30, ge=1, le=200)
+   ⚠ RATE_LIMIT_DEEP_PER_MIN    (defined with default=5, ge=1, le=50)
+   ⚠ RATE_LIMIT_LLM_PER_MIN     (defined with default=20, ge=1, le=200)
+   ⚠ RATE_LIMIT_FETCH_PER_MIN   (defined with default=60, ge=1, le=500)
+   Status: Rate limiting exists but doesn't use these config keys
+
+3. Dead Config Keys (6) - Defined but never read
+   ⚠ EXTERNAL_TIMEOUT_SECS      (int, 5-120, default=30)
+   ⚠ MAX_CHARS_HARD_CAP         (int, 1000-2M, default=200K)
+   ⚠ MAX_SPIDER_URLS            (int, 1-500, default=100)
+   ⚠ FETCH_AUTO_ESCALATE        (bool, default=True)
+   ⚠ TOR_SOCKS5_PROXY           (str, default="socks5h://127.0.0.1:9050")
+   ⚠ ALLOW_ONION_URLS           (bool, default=False)
+   Status: These are vestigial config values not used by current implementation
+
+═══════════════════════════════════════════════════════════════════════════════
+RISK ASSESSMENT
+═══════════════════════════════════════════════════════════════════════════════
+
+Low Risk Issues:
+  - Undefined keys with safe defaults (LLM_EXTRACT_CONCURRENCY, SESSION_DIR)
+    Impact: None if defaults are acceptable
+    Action: Add to ConfigModel for consistency and validation
+
+Medium Risk Issues:
+  - Unused rate limit config
+    Impact: Users cannot control rate limiting via config (hardcoded only)
+    Action: Either integrate rate limiting configs or remove them
+
+Low Risk Issues:
+  - Dead config keys
+    Impact: Config clutter; breaks contract of expected keys
+    Action: Document as deprecated or remove
+
+═══════════════════════════════════════════════════════════════════════════════
+RECOMMENDATIONS
+═══════════════════════════════════════════════════════════════════════════════
+
+Priority 1 (Fix config declaration):
+  1. Add LLM_EXTRACT_CONCURRENCY to ConfigModel with default=3, bounds [1-32]
+  2. Add SESSION_DIR to ConfigModel with type=str, default="~/.loom/sessions"
+
+Priority 2 (Resolve rate limiting):
+  1. Integrate RATE_LIMIT_* keys into rate_limiter.py or
+  2. Document as deprecated and remove from ConfigModel
+
+Priority 3 (Clean up dead keys):
+  1. Review EXTERNAL_TIMEOUT_SECS, MAX_CHARS_HARD_CAP, MAX_SPIDER_URLS
+  2. Remove or document as deprecated
+  3. Remove TOR_SOCKS5_PROXY, ALLOW_ONION_URLS if not used
+
+═══════════════════════════════════════════════════════════════════════════════

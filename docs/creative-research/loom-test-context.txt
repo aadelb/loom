@@ -1,0 +1,2415 @@
+=== ALL PROVIDER SOURCE CODE ===
+
+--- src/loom/providers/ddgs.py ---
+"""DuckDuckGo search provider (free, no API key)."""
+
+from __future__ import annotations
+
+import logging
+from typing import Any
+
+logger = logging.getLogger("loom.providers.ddgs")
+
+
+def search_ddgs(
+    query: str,
+    n: int = 10,
+    region: str = "wt-wt",
+    time_range: str | None = None,
+    search_type: str = "text",
+    **kwargs: Any,
+) -> dict[str, Any]:
+    """Search the web using DuckDuckGo (free, no API key).
+
+    Args:
+        query: search query
+        n: max number of results
+        region: DuckDuckGo region code (wt-wt = worldwide)
+        time_range: recency filter (d=day, w=week, m=month, y=year)
+        search_type: "text" for web, "news" for news results
+        **kwargs: passed through to DDGS
+
+    Returns:
+        Normalized result dict with ``results`` list and ``query``.
+    """
+    try:
+        from ddgs import DDGS  # type: ignore[import-untyped]
+    except ImportError:
+        return {"results": [], "query": query, "error": "ddgs not installed (pip install ddgs)"}
+
+    try:
+        ddgs = DDGS()
+        search_kwargs: dict[str, Any] = {
+            "keywords": query,
+            "max_results": min(n, 30),
+            "region": region,
+        }
+        if time_range:
+            search_kwargs["timelimit"] = time_range
+
+        if search_type == "news":
+            raw = list(ddgs.news(**search_kwargs))
+            results = [
+                {
+                    "url": r.get("url", ""),
+                    "title": r.get("title", ""),
+                    "snippet": (r.get("body", "") or "")[:500],
+                    "published_date": r.get("date"),
+                    "source": r.get("source"),
+                }
+                for r in raw
+            ]
+        else:
+            raw = list(ddgs.text(**search_kwargs))
+            results = [
+                {
+                    "url": r.get("href", ""),
+                    "title": r.get("title", ""),
+                    "snippet": (r.get("body", "") or "")[:500],
+                }
+                for r in raw
+            ]
+
+        return {"results": results, "query": query}
+
+    except Exception as exc:
+        logger.exception("ddgs_search_failed query=%s", query[:50])
+        return {"results": [], "query": query, "error": str(exc)}
+
+--- src/loom/providers/arxiv_search.py ---
+"""arXiv academic paper search provider (free, no API key)."""
+
+from __future__ import annotations
+
+import logging
+from typing import Any
+
+logger = logging.getLogger("loom.providers.arxiv_search")
+
+
+def search_arxiv(
+    query: str,
+    n: int = 10,
+    sort_by: str = "relevance",
+    **kwargs: Any,
+) -> dict[str, Any]:
+    """Search arXiv for academic papers (free, no API key, 3 req/sec).
+
+    Args:
+        query: search query
+        n: max number of results
+        sort_by: "relevance", "lastUpdatedDate", or "submittedDate"
+        **kwargs: passed through to arxiv.Search
+
+    Returns:
+        Normalized result dict with ``results`` list and ``query``.
+    """
+    try:
+        import arxiv  # type: ignore[import-untyped]
+    except ImportError:
+        return {"results": [], "query": query, "error": "arxiv not installed (pip install arxiv)"}
+
+    try:
+        sort_map = {
+            "relevance": arxiv.SortCriterion.Relevance,
+            "lastUpdatedDate": arxiv.SortCriterion.LastUpdatedDate,
+            "submittedDate": arxiv.SortCriterion.SubmittedDate,
+        }
+        sort_criterion = sort_map.get(sort_by, arxiv.SortCriterion.Relevance)
+
+        client = arxiv.Client()
+        search = arxiv.Search(
+            query=query,
+            max_results=n,
+            sort_by=sort_criterion,
+        )
+
+        results: list[dict[str, Any]] = []
+        for paper in client.results(search):
+            authors = [a.name for a in paper.authors[:5]]
+            categories = list(paper.categories)[:5]
+
+            results.append(
+                {
+                    "url": paper.entry_id,
+                    "title": paper.title,
+                    "snippet": (paper.summary or "")[:500],
+                    "published_date": paper.published.isoformat() if paper.published else None,
+                    "authors": authors,
+                    "categories": categories,
+                    "pdf_url": paper.pdf_url,
+                }
+            )
+
+        return {"results": results, "query": query}
+
+    except Exception as exc:
+        logger.exception("arxiv_search_failed query=%s", query[:50])
+        return {"results": [], "query": query, "error": str(exc)}
+
+--- src/loom/providers/wikipedia_search.py ---
+"""Wikipedia search provider (free, no API key, via MediaWiki REST API)."""
+
+from __future__ import annotations
+
+import logging
+from typing import Any
+
+import httpx
+
+logger = logging.getLogger("loom.providers.wikipedia_search")
+
+
+def search_wikipedia(
+    query: str,
+    n: int = 5,
+    language: str = "en",
+    **kwargs: Any,
+) -> dict[str, Any]:
+    """Search Wikipedia for articles (free, no API key).
+
+    Uses the MediaWiki opensearch API for discovery, then fetches
+    summaries via the REST API.
+
+    Args:
+        query: search query
+        n: max number of results (capped at 10)
+        language: Wikipedia language code (default "en")
+        **kwargs: ignored (accepted for interface compat)
+
+    Returns:
+        Normalized result dict with ``results`` list and ``query``.
+    """
+    n = min(n, 10)
+    base = f"https://{language}.wikipedia.org"
+
+    try:
+        with httpx.Client(
+            timeout=15.0,
+            headers={"User-Agent": "Loom/0.1 (research MCP server)"},
+        ) as client:
+            search_resp = client.get(
+                f"{base}/w/api.php",
+                params={
+                    "action": "opensearch",
+                    "search": query,
+                    "limit": n,
+                    "format": "json",
+                },
+            )
+            search_resp.raise_for_status()
+            data = search_resp.json()
+
+            titles: list[str] = data[1] if len(data) > 1 else []
+            urls: list[str] = data[3] if len(data) > 3 else []
+
+            results: list[dict[str, Any]] = []
+            for title, url in zip(titles, urls, strict=False):
+                summary_resp = client.get(
+                    f"{base}/api/rest_v1/page/summary/{title}",
+                )
+                if summary_resp.status_code == 200:
+                    sdata = summary_resp.json()
+                    results.append(
+                        {
+                            "url": url,
+                            "title": sdata.get("title", title),
+                            "snippet": (sdata.get("extract", "") or "")[:500],
+                            "thumbnail": sdata.get("thumbnail", {}).get("source"),
+                            "description": sdata.get("description"),
+                        }
+                    )
+                else:
+                    results.append(
+                        {
+                            "url": url,
+                            "title": title,
+                            "snippet": "",
+                        }
+                    )
+
+        return {"results": results, "query": query}
+
+    except httpx.HTTPStatusError as exc:
+        code = exc.response.status_code
+        logger.warning("wikipedia_search_http_error query=%s status=%d", query[:50], code)
+        return {"results": [], "query": query, "error": f"HTTP {code}"}
+
+    except Exception as exc:
+        logger.exception("wikipedia_search_failed query=%s", query[:50])
+        return {"results": [], "query": query, "error": str(exc)}
+
+--- src/loom/providers/trafilatura_extract.py ---
+"""Trafilatura text extraction fallback (free, no API key, fast)."""
+
+from __future__ import annotations
+
+import logging
+from typing import Any
+
+logger = logging.getLogger("loom.providers.trafilatura_extract")
+
+
+def extract_with_trafilatura(
+    url: str | None = None,
+    html: str | None = None,
+    include_tables: bool = True,
+    include_links: bool = False,
+    target_language: str | None = None,
+    **kwargs: Any,
+) -> dict[str, Any]:
+    """Extract clean text from HTML or URL using trafilatura.
+
+    Fast, lightweight alternative to Crawl4AI. Supports 60+ languages,
+    boilerplate removal, and table extraction. No browser needed.
+
+    Args:
+        url: URL to fetch and extract (if html not provided)
+        html: raw HTML to extract from (takes precedence over url)
+        include_tables: extract table content
+        include_links: include hyperlinks in output
+        target_language: filter to specific language
+        **kwargs: passed through to trafilatura.extract
+
+    Returns:
+        Dict with ``text``, ``title``, ``tool``.
+    """
+    try:
+        import trafilatura  # type: ignore[import-untyped]
+    except ImportError:
+        return {"text": "", "error": "trafilatura not installed (pip install trafilatura)"}
+
+    try:
+        if html is None and url:
+            html = trafilatura.fetch_url(url)
+        if html is None:
+            return {"text": "", "error": "no HTML content to extract"}
+
+        text = (
+            trafilatura.extract(
+                html,
+                include_comments=False,
+                include_tables=include_tables,
+                include_links=include_links,
+                target_language=target_language,
+                **kwargs,
+            )
+            or ""
+        )
+
+        metadata = trafilatura.extract_metadata(html)
+        title = ""
+        if metadata:
+            title = getattr(metadata, "title", "") or ""
+
+        return {
+            "text": text,
+            "title": title,
+            "tool": "trafilatura",
+        }
+
+    except Exception as exc:
+        logger.exception("trafilatura_extract_failed url=%s", url or "html")
+        return {"text": "", "error": str(exc)}
+
+--- src/loom/providers/hn_reddit.py ---
+"""HackerNews + Reddit sentiment search (free, no API key)."""
+
+from __future__ import annotations
+
+import logging
+from typing import Any
+
+import httpx
+
+logger = logging.getLogger("loom.providers.hn_reddit")
+
+_HN_ALGOLIA_URL = "https://hn.algolia.com/api/v1/search"
+
+
+def search_hackernews(
+    query: str,
+    n: int = 10,
+    sort_by: str = "relevance",
+    **kwargs: Any,
+) -> dict[str, Any]:
+    """Search HackerNews via Algolia API (free, no API key).
+
+    Args:
+        query: search query
+        n: max results
+        sort_by: "relevance" or "date"
+
+    Returns:
+        Normalized result dict.
+    """
+    endpoint = _HN_ALGOLIA_URL if sort_by == "relevance" else f"{_HN_ALGOLIA_URL}_by_date"
+
+    try:
+        with httpx.Client(timeout=15.0) as client:
+            resp = client.get(endpoint, params={"query": query, "hitsPerPage": min(n, 30)})
+            resp.raise_for_status()
+            data = resp.json()
+
+        results = [
+            {
+                "url": hit.get("url")
+                or f"https://news.ycombinator.com/item?id={hit.get('objectID', '')}",
+                "title": hit.get("title", ""),
+                "snippet": (hit.get("story_text", "") or hit.get("comment_text", "") or "")[:500],
+                "points": hit.get("points"),
+                "num_comments": hit.get("num_comments"),
+                "author": hit.get("author"),
+                "created_at": hit.get("created_at"),
+            }
+            for hit in data.get("hits", [])
+        ]
+        return {"results": results, "query": query, "source": "hackernews"}
+
+    except Exception as exc:
+        logger.exception("hn_search_failed query=%s", query[:50])
+        return {"results": [], "query": query, "source": "hackernews", "error": str(exc)}
+
+
+def search_reddit(
+    query: str,
+    n: int = 10,
+    subreddit: str | None = None,
+    sort: str = "relevance",
+    time_filter: str = "all",
+    **kwargs: Any,
+) -> dict[str, Any]:
+    """Search Reddit via public JSON API (free, no API key).
+
+    Args:
+        query: search query
+        n: max results
+        subreddit: restrict to specific subreddit
+        sort: "relevance", "hot", "top", "new"
+        time_filter: "hour", "day", "week", "month", "year", "all"
+
+    Returns:
+        Normalized result dict.
+    """
+    if subreddit:
+        url = f"https://www.reddit.com/r/{subreddit}/search.json"
+    else:
+        url = "https://www.reddit.com/search.json"
+
+    try:
+        with httpx.Client(
+            timeout=15.0,
+            headers={"User-Agent": "Loom/0.1 (research MCP server)"},
+        ) as client:
+            resp = client.get(
+                url,
+                params={
+                    "q": query,
+                    "limit": min(n, 25),
+                    "sort": sort,
+                    "t": time_filter,
+                    "restrict_sr": "on" if subreddit else "off",
+                },
+            )
+            resp.raise_for_status()
+            data = resp.json()
+
+        posts = data.get("data", {}).get("children", [])
+        results = [
+            {
+                "url": f"https://www.reddit.com{post['data'].get('permalink', '')}",
+                "title": post["data"].get("title", ""),
+                "snippet": (post["data"].get("selftext", "") or "")[:500],
+                "score": post["data"].get("score"),
+                "num_comments": post["data"].get("num_comments"),
+                "subreddit": post["data"].get("subreddit"),
+                "author": post["data"].get("author"),
+                "created_utc": post["data"].get("created_utc"),
+            }
+            for post in posts
+            if post.get("data")
+        ]
+        return {"results": results, "query": query, "source": "reddit"}
+
+    except Exception as exc:
+        logger.exception("reddit_search_failed query=%s", query[:50])
+        return {"results": [], "query": query, "source": "reddit", "error": str(exc)}
+
+--- src/loom/providers/youtube_transcripts.py ---
+"""YouTube transcript extraction (free, no API key, uses yt-dlp)."""
+
+from __future__ import annotations
+
+import json
+import logging
+import subprocess
+import sys
+from typing import Any
+
+logger = logging.getLogger("loom.providers.youtube_transcripts")
+
+
+def fetch_youtube_transcript(
+    url: str,
+    language: str = "en",
+    **kwargs: Any,
+) -> dict[str, Any]:
+    """Extract auto-generated subtitles from a YouTube video (free).
+
+    Uses yt-dlp to download subtitle tracks without downloading the video.
+    Falls back to auto-generated captions if manual subs not available.
+
+    Args:
+        url: YouTube video URL
+        language: subtitle language code (default "en")
+
+    Returns:
+        Dict with ``transcript`` (text), ``title``, ``duration``, ``url``.
+    """
+    try:
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "yt_dlp",
+                "--skip-download",
+                "--write-auto-sub",
+                "--sub-lang",
+                language,
+                "--sub-format",
+                "json3",
+                "--dump-json",
+                "--no-warnings",
+                "--quiet",
+                url,
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+
+        if result.returncode != 0:
+            return {"url": url, "transcript": "", "error": f"yt-dlp failed: {result.stderr[:200]}"}
+
+        metadata = json.loads(result.stdout)
+        title = metadata.get("title", "")
+        duration = metadata.get("duration")
+
+        subs = metadata.get("automatic_captions", {}).get(language) or metadata.get(
+            "subtitles", {}
+        ).get(language)
+        if not subs:
+            return {
+                "url": url,
+                "title": title,
+                "transcript": metadata.get("description", "")[:2000],
+                "duration": duration,
+                "note": "no subtitles available, using description",
+            }
+
+        sub_url = None
+        for sub in subs:
+            if sub.get("ext") in ("json3", "vtt", "srv3"):
+                sub_url = sub.get("url")
+                break
+        if not sub_url and subs:
+            sub_url = subs[0].get("url")
+
+        if not sub_url:
+            return {
+                "url": url,
+                "title": title,
+                "transcript": "",
+                "duration": duration,
+                "error": "subtitle URL not found",
+            }
+
+        import httpx
+
+        resp = httpx.get(sub_url, timeout=15.0)
+        resp.raise_for_status()
+
+        transcript_text = ""
+        if resp.headers.get("content-type", "").startswith("application/json"):
+            sub_data = resp.json()
+            events = sub_data.get("events", [])
+            segments = []
+            for event in events:
+                segs = event.get("segs", [])
+                for seg in segs:
+                    text = seg.get("utf8", "").strip()
+                    if text and text != "\n":
+                        segments.append(text)
+            transcript_text = " ".join(segments)
+        else:
+            transcript_text = resp.text
+
+        return {
+            "url": url,
+            "title": title,
+            "transcript": transcript_text[:20000],
+            "duration": duration,
+            "tool": "yt-dlp",
+        }
+
+    except FileNotFoundError:
+        return {"url": url, "transcript": "", "error": "yt-dlp not installed (pip install yt-dlp)"}
+    except subprocess.TimeoutExpired:
+        return {"url": url, "transcript": "", "error": "yt-dlp timed out"}
+    except Exception as exc:
+        logger.exception("youtube_transcript_failed url=%s", url)
+        return {"url": url, "transcript": "", "error": str(exc)}
+
+--- src/loom/providers/exa.py ---
+"""Exa semantic search provider."""
+
+from __future__ import annotations
+
+import logging
+import os
+from typing import Any
+
+logger = logging.getLogger("loom.providers.exa")
+
+
+def search_exa(
+    query: str,
+    n: int = 10,
+    include_domains: list[str] | None = None,
+    exclude_domains: list[str] | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    **kwargs: Any,
+) -> dict[str, Any]:
+    """Search the web using Exa semantic search.
+
+    Args:
+        query: search query
+        n: max number of results
+        include_domains: restrict to these domains
+        exclude_domains: exclude these domains
+        start_date: ISO yyyy-mm-dd start date
+        end_date: ISO yyyy-mm-dd end date
+        **kwargs: passed through to Exa SDK
+
+    Returns:
+        Normalized result dict with ``results`` list and ``query``.
+    """
+    api_key = os.environ.get("EXA_API_KEY", "")
+    if not api_key:
+        return {"results": [], "query": query, "error": "EXA_API_KEY not set"}
+
+    try:
+        from exa_py import Exa  # type: ignore[import-untyped]
+    except ImportError:
+        return {"results": [], "query": query, "error": "exa-py not installed"}
+
+    try:
+        client = Exa(api_key=api_key)
+        search_kwargs: dict[str, Any] = {
+            "query": query,
+            "num_results": n,
+            "type": "auto",
+        }
+        if include_domains:
+            search_kwargs["include_domains"] = include_domains
+        if exclude_domains:
+            search_kwargs["exclude_domains"] = exclude_domains
+        if start_date:
+            search_kwargs["start_published_date"] = start_date
+        if end_date:
+            search_kwargs["end_published_date"] = end_date
+        search_kwargs.update(kwargs)
+
+        response = client.search_and_contents(**search_kwargs)
+
+        results = [
+            {
+                "url": getattr(r, "url", ""),
+                "title": getattr(r, "title", ""),
+                "snippet": (getattr(r, "text", "") or "")[:500],
+                "score": getattr(r, "score", None),
+                "published_date": getattr(r, "published_date", None),
+            }
+            for r in response.results
+        ]
+        return {"results": results, "query": query}
+
+    except Exception as exc:
+        logger.exception("exa_search_failed query=%s", query[:50])
+        return {"results": [], "query": query, "error": str(exc)}
+
+
+def find_similar_exa(
+    url: str,
+    n: int = 10,
+    **kwargs: Any,
+) -> dict[str, Any]:
+    """Find pages semantically similar to a given URL (Exa).
+
+    Args:
+        url: reference URL to find similar pages for
+        n: max number of results
+        **kwargs: passed through to Exa SDK
+
+    Returns:
+        Normalized result dict with ``results`` list.
+    """
+    api_key = os.environ.get("EXA_API_KEY", "")
+    if not api_key:
+        return {"results": [], "url": url, "error": "EXA_API_KEY not set"}
+
+    try:
+        from exa_py import Exa  # type: ignore[import-untyped]
+    except ImportError:
+        return {"results": [], "url": url, "error": "exa-py not installed"}
+
+    try:
+        client = Exa(api_key=api_key)
+        response = client.find_similar_and_contents(url=url, num_results=n, **kwargs)
+
+        results = [
+            {
+                "url": getattr(r, "url", ""),
+                "title": getattr(r, "title", ""),
+                "snippet": (getattr(r, "text", "") or "")[:500],
+                "score": getattr(r, "score", None),
+            }
+            for r in response.results
+        ]
+        return {"results": results, "url": url}
+
+    except Exception as exc:
+        logger.exception("exa_find_similar_failed url=%s", url)
+        return {"results": [], "url": url, "error": str(exc)}
+
+--- src/loom/providers/tavily.py ---
+"""Tavily agent-native search provider."""
+
+from __future__ import annotations
+
+import logging
+import os
+from typing import Any
+
+logger = logging.getLogger("loom.providers.tavily")
+
+
+def search_tavily(
+    query: str,
+    n: int = 10,
+    include_domains: list[str] | None = None,
+    exclude_domains: list[str] | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    **kwargs: Any,
+) -> dict[str, Any]:
+    """Search the web using Tavily.
+
+    Args:
+        query: search query
+        n: max number of results
+        include_domains: restrict to these domains
+        exclude_domains: exclude these domains
+        start_date: not used (accepted for interface compat)
+        end_date: not used (accepted for interface compat)
+        **kwargs: passed through to Tavily SDK
+
+    Returns:
+        Normalized result dict with ``results`` list and ``query``.
+    """
+    api_key = os.environ.get("TAVILY_API_KEY", "")
+    if not api_key:
+        return {"results": [], "query": query, "error": "TAVILY_API_KEY not set"}
+
+    try:
+        from tavily import TavilyClient  # type: ignore[import-untyped]
+    except ImportError:
+        return {"results": [], "query": query, "error": "tavily-python not installed"}
+
+    try:
+        client = TavilyClient(api_key=api_key)
+        search_kwargs: dict[str, Any] = {"query": query, "max_results": n}
+        if include_domains:
+            search_kwargs["include_domains"] = include_domains
+        if exclude_domains:
+            search_kwargs["exclude_domains"] = exclude_domains
+        if kwargs.get("search_depth"):
+            search_kwargs["search_depth"] = kwargs.pop("search_depth")
+        if kwargs.get("include_answer"):
+            search_kwargs["include_answer"] = kwargs.pop("include_answer")
+        if kwargs.get("topic"):
+            search_kwargs["topic"] = kwargs.pop("topic")
+        search_kwargs.update(kwargs)
+
+        response = client.search(**search_kwargs)
+
+        results = [
+            {
+                "url": r.get("url", ""),
+                "title": r.get("title", ""),
+                "snippet": (r.get("content", "") or "")[:500],
+                "score": r.get("score"),
+                "published_date": r.get("published_date"),
+            }
+            for r in response.get("results", [])
+        ]
+
+        output: dict[str, Any] = {"results": results, "query": query}
+        if response.get("answer"):
+            output["answer"] = response["answer"]
+        return output
+
+    except Exception as exc:
+        logger.exception("tavily_search_failed query=%s", query[:50])
+        return {"results": [], "query": query, "error": str(exc)}
+
+--- src/loom/providers/firecrawl.py ---
+"""Firecrawl web intelligence search provider."""
+
+from __future__ import annotations
+
+import logging
+import os
+from typing import Any
+from urllib.parse import urlparse
+
+logger = logging.getLogger("loom.providers.firecrawl")
+
+
+def search_firecrawl(
+    query: str,
+    n: int = 10,
+    include_domains: list[str] | None = None,
+    exclude_domains: list[str] | None = None,
+    **kwargs: Any,
+) -> dict[str, Any]:
+    """Search the web using Firecrawl.
+
+    Date-range filtering is not supported by Firecrawl. Domain filtering
+    is applied client-side after results are returned.
+
+    Args:
+        query: search query
+        n: max number of results
+        include_domains: restrict to these domains (client-side filter)
+        exclude_domains: exclude these domains (client-side filter)
+        **kwargs: passed through to Firecrawl SDK
+
+    Returns:
+        Normalized result dict with ``results`` list and ``query``.
+    """
+    api_key = os.environ.get("FIRECRAWL_API_KEY", "")
+    if not api_key:
+        return {"results": [], "query": query, "error": "FIRECRAWL_API_KEY not set"}
+
+    try:
+        from firecrawl import FirecrawlApp  # type: ignore[import-untyped]
+    except ImportError:
+        return {"results": [], "query": query, "error": "firecrawl-py not installed"}
+
+    try:
+        app = FirecrawlApp(api_key=api_key)
+        response = app.search(query, limit=n)
+
+        if isinstance(response, list):
+            raw: list[Any] = response
+        elif hasattr(response, "web") and isinstance(response.web, list):
+            raw = response.web
+        elif hasattr(response, "data") and isinstance(response.data, list):
+            raw = response.data
+        elif isinstance(response, dict):
+            raw = response.get("data", [])
+        else:
+            raw = []
+
+        results: list[dict[str, Any]] = []
+        for r in raw:
+            if isinstance(r, dict):
+                url = r.get("url", "")
+                title = r.get("title", "")
+                snippet = (r.get("description", "") or "")[:500]
+                score = r.get("score")
+            else:
+                url = getattr(r, "url", "")
+                title = getattr(r, "title", "")
+                snippet = (getattr(r, "description", "") or "")[:500]
+                score = getattr(r, "score", None)
+
+            if not url:
+                continue
+
+            if include_domains or exclude_domains:
+                domain = urlparse(url).netloc.lower()
+                if include_domains and not any(d in domain for d in include_domains):
+                    continue
+                if exclude_domains and any(d in domain for d in exclude_domains):
+                    continue
+
+            results.append(
+                {
+                    "url": url,
+                    "title": title,
+                    "snippet": snippet,
+                    "score": score,
+                }
+            )
+
+        return {"results": results, "query": query}
+
+    except Exception as exc:
+        logger.exception("firecrawl_search_failed query=%s", query[:50])
+        return {"results": [], "query": query, "error": str(exc)}
+
+--- src/loom/providers/brave.py ---
+"""Brave Search provider (REST API via httpx, no Python SDK)."""
+
+from __future__ import annotations
+
+import logging
+import os
+from typing import Any
+
+import httpx
+
+logger = logging.getLogger("loom.providers.brave")
+
+_BRAVE_SEARCH_URL = "https://api.search.brave.com/res/v1/web/search"
+
+
+def search_brave(
+    query: str,
+    n: int = 10,
+    country: str | None = None,
+    freshness: str | None = None,
+    **kwargs: Any,
+) -> dict[str, Any]:
+    """Search the web using Brave Search REST API.
+
+    Brave's free tier supports up to 20 results per request and does not
+    support server-side domain filtering.
+
+    Args:
+        query: search query
+        n: max number of results (capped at 20 for free tier)
+        country: two-letter country code
+        freshness: recency filter (e.g. ``pd`` = past day, ``pw`` = past week)
+        **kwargs: ignored (accepted for interface compat)
+
+    Returns:
+        Normalized result dict with ``results`` list and ``query``.
+    """
+    api_key = os.environ.get("BRAVE_API_KEY", "")
+    if not api_key:
+        return {"results": [], "query": query, "error": "BRAVE_API_KEY not set"}
+
+    params: dict[str, Any] = {"q": query, "count": min(n, 20)}
+    if country:
+        params["country"] = country
+    if freshness:
+        params["freshness"] = freshness
+
+    headers = {
+        "Accept": "application/json",
+        "Accept-Encoding": "gzip",
+        "X-Subscription-Token": api_key,
+    }
+
+    try:
+        with httpx.Client(timeout=30.0) as client:
+            resp = client.get(_BRAVE_SEARCH_URL, params=params, headers=headers)
+            resp.raise_for_status()
+            data = resp.json()
+
+        results = [
+            {
+                "url": item.get("url", ""),
+                "title": item.get("title", ""),
+                "snippet": (item.get("description", "") or "")[:500],
+                "published_date": item.get("page_age"),
+            }
+            for item in data.get("web", {}).get("results", [])
+        ]
+        return {"results": results, "query": query}
+
+    except httpx.HTTPStatusError as exc:
+        code = exc.response.status_code
+        logger.warning("brave_search_http_error query=%s status=%d", query[:50], code)
+        return {"results": [], "query": query, "error": f"HTTP {code}"}
+
+    except Exception as exc:
+        logger.exception("brave_search_failed query=%s", query[:50])
+        return {"results": [], "query": query, "error": str(exc)}
+
+
+=== ALL TOOL SOURCE CODE ===
+
+--- src/loom/tools/enrich.py ---
+"""Content enrichment tools — language detection, Wayback Machine recovery."""
+
+from __future__ import annotations
+
+import logging
+from typing import Any
+
+import httpx
+
+logger = logging.getLogger("loom.tools.enrich")
+
+_WAYBACK_CDX_URL = "https://web.archive.org/cdx/search/cdx"
+
+
+def research_detect_language(text: str) -> dict[str, Any]:
+    """Detect the language of text content (free, no API key).
+
+    Uses langdetect for fast, lightweight language identification
+    across 55+ languages.
+
+    Args:
+        text: text to analyze (at least 20 chars recommended)
+
+    Returns:
+        Dict with ``language`` (ISO 639-1 code), ``confidence``,
+        and ``alternatives`` list.
+    """
+    if not text or len(text.strip()) < 10:
+        return {"language": "unknown", "confidence": 0.0, "error": "text too short"}
+
+    try:
+        from langdetect import detect, detect_langs  # type: ignore[import-untyped]
+    except ImportError:
+        return {"language": "unknown", "confidence": 0.0, "error": "langdetect not installed"}
+
+    try:
+        language = detect(text[:5000])
+        langs = detect_langs(text[:5000])
+        alternatives = [
+            {"lang": str(lang).split(":")[0], "prob": round(lang.prob, 3)} for lang in langs[:5]
+        ]
+        confidence = alternatives[0]["prob"] if alternatives else 0.0
+
+        return {
+            "language": language,
+            "confidence": confidence,
+            "alternatives": alternatives,
+        }
+
+    except Exception as exc:
+        logger.warning("language_detection_failed: %s", exc)
+        return {"language": "unknown", "confidence": 0.0, "error": str(exc)}
+
+
+def research_wayback(
+    url: str,
+    limit: int = 1,
+) -> dict[str, Any]:
+    """Retrieve archived versions of a URL from the Wayback Machine (free).
+
+    Uses the Internet Archive CDX API to find the most recent snapshot.
+    Useful for recovering content from dead links (404, timeouts).
+
+    Args:
+        url: the original URL to look up
+        limit: max number of snapshots to return
+
+    Returns:
+        Dict with ``snapshots`` list (each has ``timestamp``,
+        ``archive_url``, ``status_code``) and ``original_url``.
+    """
+    try:
+        with httpx.Client(timeout=15.0) as client:
+            resp = client.get(
+                _WAYBACK_CDX_URL,
+                params={
+                    "url": url,
+                    "output": "json",
+                    "limit": limit,
+                    "fl": "timestamp,original,statuscode,mimetype,digest",
+                    "sort": "reverse",
+                    "filter": "statuscode:200",
+                },
+            )
+            resp.raise_for_status()
+            rows = resp.json()
+
+        if len(rows) <= 1:
+            return {"original_url": url, "snapshots": [], "error": "no snapshots found"}
+
+        snapshots = []
+        for row in rows[1:]:
+            timestamp = row[0]
+            archive_url = f"https://web.archive.org/web/{timestamp}/{url}"
+            snapshots.append(
+                {
+                    "timestamp": timestamp,
+                    "archive_url": archive_url,
+                    "status_code": row[2],
+                    "mimetype": row[3],
+                }
+            )
+
+        return {"original_url": url, "snapshots": snapshots}
+
+    except Exception as exc:
+        logger.warning("wayback_lookup_failed url=%s: %s", url, exc)
+        return {"original_url": url, "snapshots": [], "error": str(exc)}
+
+--- src/loom/tools/experts.py ---
+"""Expertise finder — discover top experts on any topic."""
+
+from __future__ import annotations
+
+import asyncio
+import logging
+from typing import Any
+
+logger = logging.getLogger("loom.tools.experts")
+
+
+async def research_find_experts(
+    query: str,
+    n: int = 5,
+) -> dict[str, Any]:
+    """Find top experts on a topic by cross-referencing multiple sources.
+
+    Searches GitHub (active contributors), arXiv (paper authors), and
+    web results to build expert profiles.
+
+    Args:
+        query: topic to find experts for
+        n: max number of experts to return
+
+    Returns:
+        Dict with ``experts`` list (each has name, sources, repos, papers).
+    """
+    loop = asyncio.get_running_loop()
+    experts: dict[str, dict[str, Any]] = {}
+
+    # Search GitHub for active contributors
+    try:
+        from loom.tools.github import research_github
+
+        gh_result = await loop.run_in_executor(
+            None,
+            lambda: research_github(kind="repo", query=query, sort="stars", limit=10),
+        )
+        for repo in gh_result.get("results", []):
+            owner = repo.get("name", "").split("/")[0] if "/" in repo.get("name", "") else ""
+            if owner and owner not in experts:
+                experts[owner] = {
+                    "name": owner,
+                    "sources": ["github"],
+                    "repos": [],
+                    "papers": [],
+                    "mentions": 1,
+                }
+            if owner:
+                experts[owner]["repos"].append(
+                    {
+                        "name": repo.get("name"),
+                        "stars": repo.get("stars"),
+                        "url": repo.get("url"),
+                    }
+                )
+                experts[owner]["mentions"] += 1
+    except Exception as exc:
+        logger.warning("expert_github_search_failed: %s", exc)
+
+    # Search arXiv for paper authors
+    try:
+        from loom.providers.arxiv_search import search_arxiv
+
+        arxiv_result = await loop.run_in_executor(
+            None,
+            lambda: search_arxiv(query, n=10),
+        )
+        for paper in arxiv_result.get("results", []):
+            for author in paper.get("authors", [])[:3]:
+                if author not in experts:
+                    experts[author] = {
+                        "name": author,
+                        "sources": ["arxiv"],
+                        "repos": [],
+                        "papers": [],
+                        "mentions": 0,
+                    }
+                if "arxiv" not in experts[author]["sources"]:
+                    experts[author]["sources"].append("arxiv")
+                experts[author]["papers"].append(
+                    {
+                        "title": paper.get("title"),
+                        "url": paper.get("url"),
+                        "date": paper.get("published_date"),
+                    }
+                )
+                experts[author]["mentions"] += 1
+    except Exception as exc:
+        logger.warning("expert_arxiv_search_failed: %s", exc)
+
+    # Rank by mention count and source diversity
+    ranked = sorted(
+        experts.values(),
+        key=lambda e: (len(e["sources"]), e["mentions"]),
+        reverse=True,
+    )
+
+    return {
+        "query": query,
+        "experts": ranked[:n],
+        "total_found": len(experts),
+    }
+
+--- src/loom/tools/creative.py ---
+"""Creative research tools — advanced quality, truth-seeking, and analysis features.
+
+Tools:
+- research_red_team: adversarial counter-argument search
+- research_multilingual: cross-lingual information arbitrage
+- research_consensus: multi-engine voting and consensus scoring
+- research_misinfo_check: misinformation stress test
+- research_temporal_diff: Wayback Machine content comparison
+- research_citation_graph: academic citation traversal
+- research_ai_detect: AI-generated content detection
+- research_curriculum: ELI5-to-PhD learning path generator
+- research_community_sentiment: HN + Reddit practitioner sentiment
+- research_wiki_ghost: Wikipedia talk page + edit history mining
+"""
+
+from __future__ import annotations
+
+import asyncio
+import logging
+from functools import partial
+from typing import Any
+
+import httpx
+
+logger = logging.getLogger("loom.tools.creative")
+
+_SEMANTIC_SCHOLAR_URL = "https://api.semanticscholar.org/graph/v1"
+
+
+# ── Red Team Mode (#23) ─────────────────────────────────────────────────
+
+
+async def research_red_team(
+    claim: str,
+    n_counter: int = 3,
+    max_cost_usd: float = 0.10,
+) -> dict[str, Any]:
+    """Generate and search for counter-arguments to a claim.
+
+    Uses LLM to generate adversarial counter-claims, then searches
+    for evidence supporting or refuting each.
+
+    Args:
+        claim: the claim or thesis to challenge
+        n_counter: number of counter-arguments to generate
+        max_cost_usd: LLM cost cap
+
+    Returns:
+        Dict with ``counter_arguments`` list, each with evidence.
+    """
+    loop = asyncio.get_running_loop()
+    total_cost = 0.0
+
+    try:
+        from loom.tools.llm import research_llm_chat
+    except ImportError:
+        return {"claim": claim, "error": "LLM tools not available"}
+
+    prompt = (
+        f"Generate {n_counter} strong counter-arguments against this claim. "
+        f"For each, provide a one-sentence counter-claim that could be searched. "
+        f"Return ONLY a JSON array of strings.\n\nClaim: {claim}"
+    )
+
+    try:
+        chat_result = await research_llm_chat(
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=500,
+            temperature=0.7,
+        )
+        total_cost += chat_result.get("cost_usd", 0.0)
+
+        import json
+
+        counter_claims = json.loads(chat_result.get("text", "[]"))
+        if not isinstance(counter_claims, list):
+            counter_claims = []
+    except Exception:
+        counter_claims = []
+
+    from loom.tools.search import research_search
+
+    counter_arguments = []
+    for counter in counter_claims[:n_counter]:
+        if not isinstance(counter, str):
+            continue
+        try:
+            evidence = await loop.run_in_executor(
+                None,
+                partial(research_search, counter, provider="ddgs", n=3),
+            )
+            counter_arguments.append(
+                {
+                    "counter_claim": counter,
+                    "evidence_found": len(evidence.get("results", [])),
+                    "sources": [
+                        {"title": r.get("title", ""), "url": r.get("url", "")}
+                        for r in evidence.get("results", [])[:3]
+                    ],
+                }
+            )
+        except Exception:
+            counter_arguments.append({"counter_claim": counter, "evidence_found": 0, "sources": []})
+
+    return {
+        "claim": claim,
+        "counter_arguments": counter_arguments,
+        "total_cost_usd": total_cost,
+    }
+
+
+# ── Multi-Lingual Search (#24) ──────────────────────────────────────────
+
+
+async def research_multilingual(
+    query: str,
+    languages: list[str] | None = None,
+    n_per_lang: int = 3,
+    max_cost_usd: float = 0.10,
+) -> dict[str, Any]:
+    """Search in multiple languages for cross-lingual information arbitrage.
+
+    Translates query, searches each locale, back-translates results,
+    highlights information asymmetries.
+
+    Args:
+        query: original query (any language)
+        languages: ISO codes to search (default: ar, es, de, zh, ru)
+        n_per_lang: results per language
+        max_cost_usd: translation cost cap
+
+    Returns:
+        Dict with per-language results and overlap analysis.
+    """
+    if languages is None:
+        languages = ["ar", "es", "de", "zh", "ru"]
+
+    loop = asyncio.get_running_loop()
+    from loom.tools.search import research_search
+
+    region_map = {
+        "ar": "xa-ar",
+        "es": "es-es",
+        "de": "de-de",
+        "zh": "cn-zh",
+        "ru": "ru-ru",
+        "fr": "fr-fr",
+        "ja": "jp-jp",
+        "ko": "kr-ko",
+        "pt": "br-pt",
+    }
+
+    per_lang_results: dict[str, Any] = {}
+
+    async def _search_lang(lang: str) -> None:
+        region = region_map.get(lang, "wt-wt")
+        try:
+            result = await loop.run_in_executor(
+                None,
+                lambda: research_search(
+                    query,
+                    provider="ddgs",
+                    n=n_per_lang,
+                    provider_config={"region": region},
+                ),
+            )
+            per_lang_results[lang] = result.get("results", [])
+        except Exception as exc:
+            per_lang_results[lang] = [{"error": str(exc)}]
+
+    await asyncio.gather(*[_search_lang(lang) for lang in languages])
+
+    all_urls: set[str] = set()
+    unique_per_lang: dict[str, list[str]] = {}
+    for lang, results in per_lang_results.items():
+        urls = {r.get("url", "") for r in results if r.get("url")}
+        unique_per_lang[lang] = list(urls - all_urls)
+        all_urls |= urls
+
+    return {
+        "query": query,
+        "languages_searched": languages,
+        "results_per_language": {
+            lang: [
+                {"title": r.get("title", ""), "url": r.get("url", "")}
+                for r in results
+                if isinstance(r, dict) and "url" in r
+            ]
+            for lang, results in per_lang_results.items()
+        },
+        "unique_per_language": unique_per_lang,
+        "total_unique_urls": len(all_urls),
+    }
+
+
+# ── Consensus Scoring (#27) ─────────────────────────────────────────────
+
+
+async def research_consensus(
+    query: str,
+    providers: list[str] | None = None,
+    n: int = 10,
+) -> dict[str, Any]:
+    """Run query across all search engines, score results by consensus.
+
+    Results appearing on multiple engines get higher confidence scores.
+
+    Args:
+        query: search query
+        providers: list of search providers (default: all available)
+        n: results per provider
+
+    Returns:
+        Dict with scored results sorted by consensus.
+    """
+    if providers is None:
+        providers = ["exa", "tavily", "brave", "ddgs"]
+
+    loop = asyncio.get_running_loop()
+    from loom.tools.deep import _normalize_url
+    from loom.tools.search import research_search
+
+    url_votes: dict[str, dict[str, Any]] = {}
+    providers_used: list[str] = []
+
+    async def _search_provider(provider: str) -> None:
+        try:
+            result = await loop.run_in_executor(
+                None,
+                partial(research_search, query, provider=provider, n=n),
+            )
+            if "error" not in result:
+                providers_used.append(provider)
+                for r in result.get("results", []):
+                    url = r.get("url", "")
+                    if not url:
+                        continue
+                    key = _normalize_url(url)
+                    if key not in url_votes:
+                        url_votes[key] = {
+                            "url": url,
+                            "title": r.get("title", ""),
+                            "snippet": r.get("snippet", ""),
+                            "providers": [],
+                            "vote_count": 0,
+                        }
+                    url_votes[key]["providers"].append(provider)
+                    url_votes[key]["vote_count"] += 1
+        except Exception as exc:
+            logger.debug("creative_tool_error: %s", exc)
+
+    await asyncio.gather(*[_search_provider(p) for p in providers])
+
+    total_providers = len(providers_used)
+    scored = list(url_votes.values())
+    for item in scored:
+        item["consensus_score"] = round(item["vote_count"] / max(total_providers, 1), 2)
+        item["is_singular"] = item["vote_count"] == 1
+
+    scored.sort(key=lambda x: x["consensus_score"], reverse=True)
+
+    return {
+        "query": query,
+        "providers_queried": providers,
+        "providers_responded": providers_used,
+        "results": scored[: n * 2],
+        "high_consensus": [r for r in scored if r["consensus_score"] >= 0.5][:10],
+        "singular_results": [r for r in scored if r["is_singular"]][:5],
+    }
+
+
+# ── Misinformation Stress Test (#28) ────────────────────────────────────
+
+
+async def research_misinfo_check(
+    claim: str,
+    n_sources: int = 5,
+    max_cost_usd: float = 0.05,
+) -> dict[str, Any]:
+    """Stress test a claim by generating false variants and checking sources.
+
+    Generates deliberately false versions of the claim, searches for
+    evidence supporting them. If sources support false claims, they're
+    flagged as unreliable.
+
+    Args:
+        claim: factual claim to stress-test
+        n_sources: sources to check per variant
+        max_cost_usd: LLM cost cap
+
+    Returns:
+        Dict with stress_score, flagged_sources, verification results.
+    """
+    loop = asyncio.get_running_loop()
+
+    try:
+        from loom.tools.llm import research_llm_chat
+    except ImportError:
+        return {"claim": claim, "error": "LLM tools not available"}
+
+    prompt = (
+        "Generate 3 deliberately FALSE variants of this claim (change key facts like "
+        "dates, numbers, names). Return ONLY a JSON array of strings.\n\n"
+        f"True claim: {claim}"
+    )
+
+    try:
+        chat_result = await research_llm_chat(
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=300,
+            temperature=0.3,
+        )
+        import json
+
+        false_claims = json.loads(chat_result.get("text", "[]"))
+        if not isinstance(false_claims, list):
+            false_claims = []
+    except Exception:
+        false_claims = []
+
+    from loom.tools.search import research_search
+
+    flagged_sources: list[dict[str, Any]] = []
+    for false_claim in false_claims[:3]:
+        if not isinstance(false_claim, str):
+            continue
+        try:
+            results = await loop.run_in_executor(
+                None,
+                partial(research_search, false_claim, provider="ddgs", n=n_sources),
+            )
+            for r in results.get("results", []):
+                flagged_sources.append(
+                    {
+                        "url": r.get("url", ""),
+                        "title": r.get("title", ""),
+                        "false_claim_matched": false_claim,
+                    }
+                )
+        except Exception as exc:
+            logger.debug("creative_tool_error: %s", exc)
+
+    true_results = await loop.run_in_executor(
+        None,
+        lambda: research_search(claim, provider="ddgs", n=n_sources),
+    )
+    true_source_count = len(true_results.get("results", []))
+
+    total_sources = true_source_count + len(flagged_sources)
+    stress_score = round(1.0 - (len(flagged_sources) / max(total_sources, 1)), 2)
+
+    return {
+        "claim": claim,
+        "stress_score": stress_score,
+        "true_sources": true_source_count,
+        "flagged_sources": flagged_sources[:10],
+        "false_variants_tested": len(false_claims),
+        "verdict": "reliable"
+        if stress_score >= 0.7
+        else "disputed"
+        if stress_score >= 0.4
+        else "unreliable",
+    }
+
+
+# ── Temporal Diffing (#30) ──────────────────────────────────────────────
+
+
+async def research_temporal_diff(
+    url: str,
+    max_cost_usd: float = 0.05,
+) -> dict[str, Any]:
+    """Compare current page content with Wayback Machine archived version.
+
+    Fetches the latest archived snapshot and the live page, uses LLM
+    to summarize what changed.
+
+    Args:
+        url: URL to compare
+        max_cost_usd: LLM cost cap
+
+    Returns:
+        Dict with ``changes_summary``, ``archive_date``, ``current_date``.
+    """
+    from loom.tools.enrich import research_wayback
+
+    wayback = research_wayback(url, limit=1)
+    snapshots = wayback.get("snapshots", [])
+    if not snapshots:
+        return {"url": url, "error": "no archived versions found"}
+
+    archive_url = snapshots[0]["archive_url"]
+    archive_timestamp = snapshots[0]["timestamp"]
+
+    try:
+        from loom.providers.trafilatura_extract import extract_with_trafilatura
+    except ImportError:
+        return {"url": url, "error": "trafilatura not available"}
+
+    loop = asyncio.get_running_loop()
+    current_text, archive_text = "", ""
+
+    try:
+        current_result = await loop.run_in_executor(None, lambda: extract_with_trafilatura(url=url))
+        current_text = current_result.get("text", "")[:3000]
+    except Exception as exc:
+        logger.debug("creative_tool_error: %s", exc)
+
+    try:
+        archive_result = await loop.run_in_executor(
+            None, lambda: extract_with_trafilatura(url=archive_url)
+        )
+        archive_text = archive_result.get("text", "")[:3000]
+    except Exception as exc:
+        logger.debug("creative_tool_error: %s", exc)
+
+    if not current_text and not archive_text:
+        return {"url": url, "error": "could not fetch either version"}
+
+    try:
+        from loom.tools.llm import research_llm_chat
+
+        diff_prompt = (
+            "Compare these two versions of a webpage and summarize what changed. "
+            "Focus on factual changes (prices, dates, claims, features).\n\n"
+            f"ARCHIVED VERSION ({archive_timestamp}):\n{archive_text[:2000]}\n\n"
+            f"CURRENT VERSION:\n{current_text[:2000]}"
+        )
+        chat_result = await research_llm_chat(
+            messages=[{"role": "user", "content": diff_prompt}],
+            max_tokens=500,
+        )
+        changes = chat_result.get("text", "Could not summarize changes")
+    except Exception:
+        changes = "LLM not available for diff summary"
+
+    return {
+        "url": url,
+        "archive_date": archive_timestamp,
+        "changes_summary": changes,
+        "archive_text_len": len(archive_text),
+        "current_text_len": len(current_text),
+    }
+
+
+# ── Citation Graph (#31) ────────────────────────────────────────────────
+
+
+async def research_citation_graph(
+    paper_query: str,
+    depth: int = 1,
+    max_papers: int = 20,
+) -> dict[str, Any]:
+    """Build a citation graph from a seed paper query.
+
+    Uses Semantic Scholar API (free, no key for basic) to traverse
+    citations and references.
+
+    Args:
+        paper_query: search query or paper title
+        depth: citation traversal depth (1 or 2)
+        max_papers: max papers in the graph
+
+    Returns:
+        Dict with ``papers`` list and ``edges`` (citation links).
+    """
+    papers: dict[str, dict[str, Any]] = {}
+    edges: list[dict[str, str]] = []
+
+    try:
+        with httpx.Client(timeout=15.0) as client:
+            search_resp = client.get(  # noqa: ASYNC212
+                f"{_SEMANTIC_SCHOLAR_URL}/paper/search",
+                params={
+                    "query": paper_query,
+                    "limit": 3,
+                    "fields": "title,authors,year,citationCount,url",
+                },
+            )
+            search_resp.raise_for_status()
+            search_data = search_resp.json()
+
+            seed_papers = search_data.get("data", [])
+            if not seed_papers:
+                return {"query": paper_query, "papers": [], "edges": [], "error": "no papers found"}
+
+            for seed in seed_papers[:2]:
+                pid = seed.get("paperId", "")
+                papers[pid] = {
+                    "id": pid,
+                    "title": seed.get("title", ""),
+                    "authors": [a.get("name", "") for a in seed.get("authors", [])[:3]],
+                    "year": seed.get("year"),
+                    "citations": seed.get("citationCount", 0),
+                    "url": seed.get("url", ""),
+                    "role": "seed",
+                }
+
+                if depth >= 1 and len(papers) < max_papers:
+                    cit_resp = client.get(  # noqa: ASYNC212
+                        f"{_SEMANTIC_SCHOLAR_URL}/paper/{pid}/citations",
+                        params={"limit": 5, "fields": "title,authors,year,citationCount,url"},
+                    )
+                    if cit_resp.status_code == 200:
+                        for cit in cit_resp.json().get("data", [])[:5]:
+                            citing = cit.get("citingPaper", {})
+                            cid = citing.get("paperId", "")
+                            if cid and cid not in papers and len(papers) < max_papers:
+                                papers[cid] = {
+                                    "id": cid,
+                                    "title": citing.get("title", ""),
+                                    "authors": [
+                                        a.get("name", "") for a in citing.get("authors", [])[:3]
+                                    ],
+                                    "year": citing.get("year"),
+                                    "citations": citing.get("citationCount", 0),
+                                    "url": citing.get("url", ""),
+                                    "role": "citing",
+                                }
+                                edges.append({"from": cid, "to": pid, "type": "cites"})
+
+                    ref_resp = client.get(  # noqa: ASYNC212
+                        f"{_SEMANTIC_SCHOLAR_URL}/paper/{pid}/references",
+                        params={"limit": 5, "fields": "title,authors,year,citationCount,url"},
+                    )
+                    if ref_resp.status_code == 200:
+                        for ref in ref_resp.json().get("data", [])[:5]:
+                            cited = ref.get("citedPaper", {})
+                            rid = cited.get("paperId", "")
+                            if rid and rid not in papers and len(papers) < max_papers:
+                                papers[rid] = {
+                                    "id": rid,
+                                    "title": cited.get("title", ""),
+                                    "authors": [
+                                        a.get("name", "") for a in cited.get("authors", [])[:3]
+                                    ],
+                                    "year": cited.get("year"),
+                                    "citations": cited.get("citationCount", 0),
+                                    "url": cited.get("url", ""),
+                                    "role": "referenced",
+                                }
+                                edges.append({"from": pid, "to": rid, "type": "references"})
+
+    except Exception as exc:
+        logger.warning("citation_graph_failed: %s", exc)
+        return {
+            "query": paper_query,
+            "papers": list(papers.values()),
+            "edges": edges,
+            "error": str(exc),
+        }
+
+    paper_list = sorted(papers.values(), key=lambda p: p.get("citations", 0), reverse=True)
+
+    return {
+        "query": paper_query,
+        "papers": paper_list,
+        "edges": edges,
+        "paper_count": len(paper_list),
+        "edge_count": len(edges),
+    }
+
+
+# ── AI Content Detector (#32) ───────────────────────────────────────────
+
+
+async def research_ai_detect(
+    text: str,
+    max_cost_usd: float = 0.02,
+) -> dict[str, Any]:
+    """Detect whether text is likely AI-generated.
+
+    Uses stylistic analysis via LLM to estimate AI generation probability.
+
+    Args:
+        text: text to analyze (at least 100 chars)
+        max_cost_usd: LLM cost cap
+
+    Returns:
+        Dict with ``ai_probability``, ``indicators``, ``verdict``.
+    """
+    if len(text) < 100:
+        return {"error": "text too short (need 100+ chars)", "ai_probability": 0.0}
+
+    try:
+        from loom.tools.llm import research_llm_chat
+    except ImportError:
+        return {"error": "LLM tools not available", "ai_probability": 0.0}
+
+    prompt = (
+        "Analyze this text for signs of AI generation. Score 0-100 for AI probability. "
+        "Check for: uniform sentence length, lack of personal voice, hedging phrases, "
+        "perfect grammar with no typos, generic transitions, lack of specific examples. "
+        'Return ONLY JSON: {"ai_probability": N, "indicators": ["..."], "reasoning": "..."}\n\n'
+        f"Text: {text[:2000]}"
+    )
+
+    try:
+        result = await research_llm_chat(
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=300,
+            temperature=0.1,
+        )
+        import json
+
+        analysis = json.loads(result.get("text", "{}"))
+        prob = analysis.get("ai_probability", 50) / 100.0
+
+        return {
+            "ai_probability": round(prob, 2),
+            "indicators": analysis.get("indicators", []),
+            "reasoning": analysis.get("reasoning", ""),
+            "verdict": "likely_ai" if prob > 0.7 else "mixed" if prob > 0.4 else "likely_human",
+            "cost_usd": result.get("cost_usd", 0.0),
+        }
+    except Exception as exc:
+        return {"error": str(exc), "ai_probability": 0.0}
+
+
+# ── Curriculum Generator (#33) ──────────────────────────────────────────
+
+
+async def research_curriculum(
+    topic: str,
+    max_cost_usd: float = 0.10,
+) -> dict[str, Any]:
+    """Generate a multi-level learning path from ELI5 to PhD.
+
+    Searches Wikipedia (beginner), web (intermediate), arXiv (advanced)
+    to build a structured reading list.
+
+    Args:
+        topic: topic to create curriculum for
+        max_cost_usd: LLM cost cap
+
+    Returns:
+        Dict with ``levels`` (beginner/intermediate/advanced), each with resources.
+    """
+    loop = asyncio.get_running_loop()
+    from loom.tools.search import research_search
+
+    levels: dict[str, list[dict[str, Any]]] = {
+        "beginner": [],
+        "intermediate": [],
+        "advanced": [],
+    }
+
+    async def _search_level(level: str, provider: str, query_suffix: str) -> None:
+        q = f"{topic} {query_suffix}"
+        try:
+            result = await loop.run_in_executor(
+                None,
+                lambda: research_search(q, provider=provider, n=5),
+            )
+            for r in result.get("results", []):
+                levels[level].append(
+                    {
+                        "title": r.get("title", ""),
+                        "url": r.get("url", ""),
+                        "snippet": r.get("snippet", ""),
+                        "source": provider,
+                    }
+                )
+        except Exception as exc:
+            logger.debug("creative_tool_error: %s", exc)
+
+    await asyncio.gather(
+        _search_level("beginner", "wikipedia", "introduction basics"),
+        _search_level("intermediate", "ddgs", "tutorial guide explained"),
+        _search_level("advanced", "ddgs", "research paper technical deep dive"),
+    )
+
+    try:
+        from loom.providers.arxiv_search import search_arxiv
+
+        arxiv_results = await loop.run_in_executor(
+            None, lambda: search_arxiv(f"{topic} survey", n=3)
+        )
+        for r in arxiv_results.get("results", []):
+            levels["advanced"].append(
+                {
+                    "title": r.get("title", ""),
+                    "url": r.get("url", ""),
+                    "snippet": r.get("snippet", ""),
+                    "authors": r.get("authors", []),
+                    "source": "arxiv",
+                }
+            )
+    except Exception as exc:
+        logger.debug("creative_tool_error: %s", exc)
+
+    return {
+        "topic": topic,
+        "levels": levels,
+        "total_resources": sum(len(v) for v in levels.values()),
+    }
+
+
+# ── Community Sentiment (#34) ───────────────────────────────────────────
+
+
+async def research_community_sentiment(
+    query: str,
+    n: int = 5,
+) -> dict[str, Any]:
+    """Get practitioner sentiment from HackerNews and Reddit.
+
+    Args:
+        query: topic to analyze
+        n: results per source
+
+    Returns:
+        Dict with HN and Reddit results, combined sentiment indicators.
+    """
+    loop = asyncio.get_running_loop()
+
+    hn_results: dict[str, Any] = {"results": []}
+    reddit_results: dict[str, Any] = {"results": []}
+
+    try:
+        from loom.providers.hn_reddit import search_hackernews, search_reddit
+
+        hn_results, reddit_results = await asyncio.gather(
+            loop.run_in_executor(None, lambda: search_hackernews(query, n=n)),
+            loop.run_in_executor(None, lambda: search_reddit(query, n=n)),
+        )
+    except Exception as exc:
+        logger.warning("community_sentiment_failed: %s", exc)
+
+    hn_items = hn_results.get("results", [])
+    reddit_items = reddit_results.get("results", [])
+
+    avg_hn_points = sum(h.get("points") or 0 for h in hn_items) / len(hn_items) if hn_items else 0
+    avg_reddit_score = (
+        sum(r.get("score") or 0 for r in reddit_items) / len(reddit_items) if reddit_items else 0
+    )
+
+    return {
+        "query": query,
+        "hackernews": {
+            "results": hn_items[:n],
+            "avg_points": round(avg_hn_points, 1),
+            "total": len(hn_items),
+        },
+        "reddit": {
+            "results": reddit_items[:n],
+            "avg_score": round(avg_reddit_score, 1),
+            "total": len(reddit_items),
+        },
+        "combined_engagement": round(avg_hn_points + avg_reddit_score, 1),
+    }
+
+
+# ── Wikipedia Ghost (#35) ───────────────────────────────────────────────
+
+
+async def research_wiki_ghost(
+    topic: str,
+    language: str = "en",
+) -> dict[str, Any]:
+    """Mine Wikipedia talk pages and edit history for contested knowledge.
+
+    Reveals debates, deleted content, and disputed claims — the "shadow
+    knowledge" behind Wikipedia articles.
+
+    Args:
+        topic: Wikipedia article title or search term
+        language: Wikipedia language code
+
+    Returns:
+        Dict with ``talk_excerpts``, ``recent_edits``, ``edit_count``.
+    """
+    base = f"https://{language}.wikipedia.org"
+
+    try:
+        with httpx.Client(
+            timeout=15.0,
+            headers={"User-Agent": "Loom/0.1 (research MCP server)"},
+        ) as client:
+            search_resp = client.get(  # noqa: ASYNC212
+                f"{base}/w/api.php",
+                params={
+                    "action": "opensearch",
+                    "search": topic,
+                    "limit": 1,
+                    "format": "json",
+                },
+            )
+            search_resp.raise_for_status()
+            data = search_resp.json()
+            titles = data[1] if len(data) > 1 else []
+            if not titles:
+                return {"topic": topic, "error": "article not found"}
+
+            title = titles[0]
+
+            talk_resp = client.get(  # noqa: ASYNC212
+                f"{base}/w/api.php",
+                params={
+                    "action": "parse",
+                    "page": f"Talk:{title}",
+                    "prop": "wikitext",
+                    "format": "json",
+                },
+            )
+            talk_text = ""
+            if talk_resp.status_code == 200:
+                talk_data = talk_resp.json()
+                talk_text = talk_data.get("parse", {}).get("wikitext", {}).get("*", "")
+
+            revisions_resp = client.get(  # noqa: ASYNC212
+                f"{base}/w/api.php",
+                params={
+                    "action": "query",
+                    "titles": title,
+                    "prop": "revisions",
+                    "rvprop": "timestamp|user|comment|size",
+                    "rvlimit": 20,
+                    "format": "json",
+                },
+            )
+            edits: list[dict[str, Any]] = []
+            if revisions_resp.status_code == 200:
+                pages = revisions_resp.json().get("query", {}).get("pages", {})
+                for page in pages.values():
+                    for rev in page.get("revisions", []):
+                        edits.append(
+                            {
+                                "timestamp": rev.get("timestamp"),
+                                "user": rev.get("user"),
+                                "comment": rev.get("comment", ""),
+                                "size": rev.get("size"),
+                            }
+                        )
+
+        talk_sections = []
+        if talk_text:
+            import re
+
+            sections = re.split(r"==\s*(.+?)\s*==", talk_text)
+            for i in range(1, len(sections), 2):
+                heading = sections[i]
+                body = sections[i + 1][:300] if i + 1 < len(sections) else ""
+                if body.strip():
+                    talk_sections.append({"heading": heading, "excerpt": body.strip()})
+
+        return {
+            "topic": topic,
+            "article_title": title,
+            "talk_sections": talk_sections[:10],
+            "recent_edits": edits[:15],
+            "edit_count": len(edits),
+            "has_active_discussion": len(talk_sections) > 0,
+        }
+
+    except Exception as exc:
+        logger.warning("wiki_ghost_failed topic=%s: %s", topic, exc)
+        return {"topic": topic, "error": str(exc)}
+
+
+# ── Semantic Sitemap Crawler (#36) ──────────────────────────────────────
+
+
+async def research_semantic_sitemap(
+    domain: str,
+    max_pages: int = 50,
+    cluster_threshold: float = 0.85,
+) -> dict[str, Any]:
+    """Crawl a domain's sitemap, cluster pages by semantic similarity,
+    and return only the most representative page per cluster.
+
+    Uses the domain's sitemap.xml for URL discovery, then generates
+    embeddings via research_llm_embed to group similar pages. Only
+    scrapes the highest-scoring page from each cluster, reducing
+    redundant content by ~60%.
+
+    Args:
+        domain: domain to crawl (e.g. "example.com")
+        max_pages: max sitemap URLs to process
+        cluster_threshold: cosine similarity threshold for grouping (0-1)
+
+    Returns:
+        Dict with ``clusters`` (each with representative URL + members),
+        ``total_urls``, ``clusters_found``.
+    """
+    import xml.etree.ElementTree as ET
+    from urllib.parse import urlparse
+
+    loop = asyncio.get_running_loop()
+
+    if not domain.startswith("http"):
+        domain = f"https://{domain}"
+    parsed = urlparse(domain)
+    base = f"{parsed.scheme}://{parsed.netloc}"
+
+    # Step 1: Fetch sitemap
+    sitemap_urls: list[str] = []
+    try:
+        with httpx.Client(timeout=15.0, follow_redirects=True) as client:
+            for path in ["/sitemap.xml", "/sitemap_index.xml", "/sitemap"]:
+                try:
+                    resp = client.get(f"{base}{path}")  # noqa: ASYNC212
+                    if resp.status_code == 200 and "xml" in resp.headers.get("content-type", ""):
+                        root = ET.fromstring(resp.text)  # noqa: S314
+                        ns = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+                        for loc in root.findall(".//sm:loc", ns):
+                            if loc.text:
+                                sitemap_urls.append(loc.text)
+                        if sitemap_urls:
+                            break
+                except Exception as exc:
+                    logger.debug("sitemap_path_failed path=%s: %s", path, exc)
+                    continue
+    except Exception as exc:
+        return {"domain": base, "error": f"sitemap fetch failed: {exc}"}
+
+    if not sitemap_urls:
+        return {"domain": base, "error": "no sitemap found", "urls_found": 0}
+
+    sitemap_urls = sitemap_urls[:max_pages]
+
+    # Step 2: Fetch titles/snippets for each URL (lightweight, no full scrape)
+    page_data: list[dict[str, Any]] = []
+    try:
+        from loom.providers.trafilatura_extract import extract_with_trafilatura
+
+        for url in sitemap_urls[:20]:
+            try:
+                result = await loop.run_in_executor(
+                    None, partial(extract_with_trafilatura, url=url)
+                )
+                title = result.get("title", "")
+                text = result.get("text", "")[:200]
+                if title or text:
+                    page_data.append({"url": url, "title": title, "snippet": text})
+            except Exception:
+                page_data.append({"url": url, "title": "", "snippet": ""})
+    except ImportError:
+        for url in sitemap_urls[:20]:
+            page_data.append({"url": url, "title": "", "snippet": ""})
+
+    if not page_data:
+        return {"domain": base, "urls_found": len(sitemap_urls), "error": "no page data extracted"}
+
+    # Step 3: Generate embeddings for clustering
+    texts_for_embed = [f"{p['title']} {p['snippet']}" for p in page_data]
+
+    try:
+        from loom.tools.llm import research_llm_embed
+
+        embed_result = await research_llm_embed(texts=texts_for_embed)
+        embeddings = embed_result.get("embeddings", [])
+    except Exception:
+        # Without embeddings, return all pages ungrouped
+        return {
+            "domain": base,
+            "urls_found": len(sitemap_urls),
+            "clusters": [{"representative": p, "members": [p["url"]]} for p in page_data],
+            "clusters_found": len(page_data),
+            "note": "no embeddings available, returning ungrouped",
+        }
+
+    if not embeddings or len(embeddings) != len(page_data):
+        return {
+            "domain": base,
+            "urls_found": len(sitemap_urls),
+            "clusters": [{"representative": p, "members": [p["url"]]} for p in page_data],
+            "clusters_found": len(page_data),
+            "note": "embedding mismatch, returning ungrouped",
+        }
+
+    # Step 4: Simple greedy clustering by cosine similarity
+    def _cosine_sim(a: list[float], b: list[float]) -> float:
+        dot = sum(x * y for x, y in zip(a, b, strict=False))
+        norm_a = sum(x * x for x in a) ** 0.5
+        norm_b = sum(x * x for x in b) ** 0.5
+        if norm_a == 0 or norm_b == 0:
+            return 0.0
+        return float(dot / (norm_a * norm_b))
+
+    assigned = [False] * len(page_data)
+    clusters: list[dict[str, Any]] = []
+
+    for i in range(len(page_data)):
+        if assigned[i]:
+            continue
+        cluster_members = [page_data[i]["url"]]
+        assigned[i] = True
+
+        for j in range(i + 1, len(page_data)):
+            if assigned[j]:
+                continue
+            sim = _cosine_sim(embeddings[i], embeddings[j])
+            if sim >= cluster_threshold:
+                cluster_members.append(page_data[j]["url"])
+                assigned[j] = True
+
+        clusters.append(
+            {
+                "representative": page_data[i],
+                "members": cluster_members,
+                "size": len(cluster_members),
+            }
+        )
+
+    clusters.sort(key=lambda c: c["size"], reverse=True)
+
+    return {
+        "domain": base,
+        "urls_found": len(sitemap_urls),
+        "pages_analyzed": len(page_data),
+        "clusters_found": len(clusters),
+        "redundancy_reduction": f"{round((1 - len(clusters) / max(len(page_data), 1)) * 100)}%",
+        "clusters": clusters,
+    }
+
+
+=== EXISTING TEST PATTERNS ===
+--- tests/test_providers/test_exa.py ---
+"""Tests for Exa search provider."""
+
+from __future__ import annotations
+
+import sys
+from types import SimpleNamespace
+from unittest.mock import MagicMock, patch
+
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def _clear_exa_module():
+    """Ensure clean import state for each test."""
+    sys.modules.pop("loom.providers.exa", None)
+    yield
+    sys.modules.pop("loom.providers.exa", None)
+
+
+class TestSearchExa:
+    def test_missing_api_key(self):
+        with patch.dict("os.environ", {}, clear=True):
+            from loom.providers.exa import search_exa
+
+            result = search_exa("test query")
+            assert result["error"] == "EXA_API_KEY not set"
+            assert result["results"] == []
+            assert result["query"] == "test query"
+
+    def test_sdk_not_installed(self):
+        with (
+            patch.dict("os.environ", {"EXA_API_KEY": "test-key"}),
+            patch.dict("sys.modules", {"exa_py": None}),
+        ):
+            from loom.providers.exa import search_exa
+
+            result = search_exa("test query")
+            assert "not installed" in result["error"]
+
+    def test_basic_search(self):
+        mock_result = SimpleNamespace(
+            url="https://example.com",
+            title="Example",
+            text="Example text content for testing",
+            score=0.95,
+            published_date="2024-01-01",
+        )
+        mock_response = SimpleNamespace(results=[mock_result])
+        mock_exa_cls = MagicMock()
+        mock_exa_cls.return_value.search_and_contents.return_value = mock_response
+        mock_exa_mod = MagicMock()
+        mock_exa_mod.Exa = mock_exa_cls
+
+        with (
+            patch.dict("os.environ", {"EXA_API_KEY": "test-key"}),
+            patch.dict("sys.modules", {"exa_py": mock_exa_mod}),
+        ):
+            from loom.providers.exa import search_exa
+
+            result = search_exa("test query", n=5)
+
+        assert "error" not in result
+        assert len(result["results"]) == 1
+        assert result["results"][0]["url"] == "https://example.com"
+        assert result["results"][0]["title"] == "Example"
+        assert result["results"][0]["score"] == 0.95
+
+    def test_domain_filtering(self):
+        mock_exa_cls = MagicMock()
+        mock_exa_cls.return_value.search_and_contents.return_value = SimpleNamespace(results=[])
+        mock_exa_mod = MagicMock()
+        mock_exa_mod.Exa = mock_exa_cls
+
+        with (
+            patch.dict("os.environ", {"EXA_API_KEY": "test-key"}),
+            patch.dict("sys.modules", {"exa_py": mock_exa_mod}),
+        ):
+            from loom.providers.exa import search_exa
+
+            search_exa("test", include_domains=["example.com"], exclude_domains=["bad.com"])
+
+        call_kwargs = mock_exa_cls.return_value.search_and_contents.call_args
+        assert call_kwargs.kwargs.get("include_domains") == ["example.com"]
+        assert call_kwargs.kwargs.get("exclude_domains") == ["bad.com"]
+
+    def test_date_range(self):
+        mock_exa_cls = MagicMock()
+        mock_exa_cls.return_value.search_and_contents.return_value = SimpleNamespace(results=[])
+        mock_exa_mod = MagicMock()
+        mock_exa_mod.Exa = mock_exa_cls
+
+        with (
+            patch.dict("os.environ", {"EXA_API_KEY": "test-key"}),
+            patch.dict("sys.modules", {"exa_py": mock_exa_mod}),
+        ):
+            from loom.providers.exa import search_exa
+
+            search_exa("test", start_date="2024-01-01", end_date="2024-12-31")
+
+        call_kwargs = mock_exa_cls.return_value.search_and_contents.call_args
+        assert call_kwargs.kwargs.get("start_published_date") == "2024-01-01"
+        assert call_kwargs.kwargs.get("end_published_date") == "2024-12-31"
+
+    def test_snippet_truncation(self):
+        long_text = "x" * 1000
+        mock_result = SimpleNamespace(
+            url="https://example.com", title="T", text=long_text, score=0.5, published_date=None
+        )
+        mock_exa_cls = MagicMock()
+        mock_exa_cls.return_value.search_and_contents.return_value = SimpleNamespace(
+            results=[mock_result]
+        )
+        mock_exa_mod = MagicMock()
+        mock_exa_mod.Exa = mock_exa_cls
+
+        with (
+            patch.dict("os.environ", {"EXA_API_KEY": "test-key"}),
+            patch.dict("sys.modules", {"exa_py": mock_exa_mod}),
+        ):
+            from loom.providers.exa import search_exa
+
+            result = search_exa("test")
+
+        assert len(result["results"][0]["snippet"]) == 500
+
+    def test_api_error(self):
+        mock_exa_cls = MagicMock()
+        mock_exa_cls.return_value.search_and_contents.side_effect = RuntimeError("API down")
+        mock_exa_mod = MagicMock()
+        mock_exa_mod.Exa = mock_exa_cls
+
+        with (
+            patch.dict("os.environ", {"EXA_API_KEY": "test-key"}),
+            patch.dict("sys.modules", {"exa_py": mock_exa_mod}),
+        ):
+            from loom.providers.exa import search_exa
+
+            result = search_exa("test")
+
+        assert "API down" in result["error"]
+        assert result["results"] == []
+
+--- tests/test_tools/test_enrich.py ---
+"""Tests for enrichment tools (language detection, Wayback Machine)."""
+
+from __future__ import annotations
+
+from unittest.mock import MagicMock, patch
+
+
+class TestDetectLanguage:
+    def test_english_detection(self):
+        mock_lang = MagicMock()
+        mock_lang.prob = 0.99
+        mock_lang.__str__ = lambda self: "en:0.99"
+
+        with (
+            patch("langdetect.detect", return_value="en"),
+            patch("langdetect.detect_langs", return_value=[mock_lang]),
+        ):
+            from loom.tools.enrich import research_detect_language
+
+            result = research_detect_language("This is a test sentence in English.")
+
+        assert result["language"] == "en"
+        assert result["confidence"] == 0.99
+
+    def test_short_text(self):
+        from loom.tools.enrich import research_detect_language
+
+        result = research_detect_language("hi")
+        assert result["language"] == "unknown"
+        assert "too short" in result.get("error", "")
+
+    def test_empty_text(self):
+        from loom.tools.enrich import research_detect_language
+
+        result = research_detect_language("")
+        assert result["language"] == "unknown"
+
+    def test_langdetect_not_installed(self):
+        with patch.dict("sys.modules", {"langdetect": None}):
+            # Need to reimport to trigger the ImportError
+            import importlib
+
+            import loom.tools.enrich
+
+            importlib.reload(loom.tools.enrich)
+            result = loom.tools.enrich.research_detect_language("This is English text for testing.")
+            assert "not installed" in result.get("error", "")
+
+
+class TestWayback:
+    def test_snapshot_found(self):
+        mock_resp = MagicMock()
+        mock_resp.json.return_value = [
+            ["timestamp", "original", "statuscode", "mimetype", "digest"],
+            ["20240101120000", "https://example.com", "200", "text/html", "abc123"],
+        ]
+        mock_resp.raise_for_status = MagicMock()
+
+        mock_client = MagicMock()
+        mock_client.__enter__ = MagicMock(return_value=mock_client)
+        mock_client.__exit__ = MagicMock(return_value=False)
+        mock_client.get.return_value = mock_resp
+
+        with patch("httpx.Client", return_value=mock_client):
+            from loom.tools.enrich import research_wayback
+
+            result = research_wayback("https://example.com")
+
+        assert len(result["snapshots"]) == 1
+        assert "archive_url" in result["snapshots"][0]
+        assert "20240101120000" in result["snapshots"][0]["archive_url"]
+
+    def test_no_snapshots(self):
+        mock_resp = MagicMock()
+        mock_resp.json.return_value = [
+            ["timestamp", "original", "statuscode", "mimetype", "digest"],
+        ]
+        mock_resp.raise_for_status = MagicMock()
+
+        mock_client = MagicMock()
+        mock_client.__enter__ = MagicMock(return_value=mock_client)
+        mock_client.__exit__ = MagicMock(return_value=False)
+        mock_client.get.return_value = mock_resp
+
+        with patch("httpx.Client", return_value=mock_client):
+            from loom.tools.enrich import research_wayback
+
+            result = research_wayback("https://dead-link.com")
+
+        assert result["snapshots"] == []
+        assert "no snapshots" in result.get("error", "")

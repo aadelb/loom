@@ -1,0 +1,10 @@
+YOLO mode is enabled. All tool calls will be automatically approved.
+YOLO mode is enabled. All tool calls will be automatically approved.
+MCP issues detected. Run /mcp list for status.FAIL: src/loom/tools/stylometry.py:46 - Algorithm correctness: Shannon entropy calculation is entirely missing from feature extraction.
+FAIL: src/loom/tools/stylometry.py:177 - Edge cases (empty/short text): Returns an incomplete dictionary schema (missing "features") which will cause KeyErrors downstream.
+FAIL: src/loom/tools/deception_detect.py:125 - Edge cases (empty/short text): Whitespace-only text results in avg_sentence_length of 0.0, incorrectly triggering the "unusually_short_sentences" red flag.
+FAIL: src/loom/tools/deception_detect.py:146 - Scoring normalization: First person ratio contribution logic is flawed and yields negative scores for normal ratios (e.g., 0.02).
+FAIL: src/loom/tools/persona_profile.py:138 - Big Five personality trait accuracy: Using `.split()` preserves punctuation on words, causing valid trait keywords to be missed entirely.
+FAIL: src/loom/tools/radicalization_detect.py:85 - Dehumanization detection patterns: Strict `\b` boundary prevents matching plural forms of dehumanizing nouns (e.g. "rats", "animals").
+FAIL: src/loom/tools/sentiment_deep.py:61 - Keyword list completeness: Typo "loose" instead of "lose" omits a critical fear appeal keyword.
+FAIL: src/loom/tools/network_persona.py:274 - Graph density calculation: Uses the undirected graph formula (dividing by 2) for directed interactions and fails to deduplicate edges, allowing density > 1.0.

@@ -1,0 +1,78 @@
+YOLO mode is enabled. All tool calls will be automatically approved.
+YOLO mode is enabled. All tool calls will be automatically approved.
+MCP issues detected. Run /mcp list for status.Error during GrepLogic execution: Error: spawn ENOEXEC
+Here is a comprehensive production readiness audit for the Loom MCP server. I have conducted a deep analysis across the codebase, identifying issues spanning security, logic flaws, race conditions, performance bottlenecks, and arbitrary hardcoded values.
+
+### 🛑 CRITICAL SEVERITY
+
+**1. Invalid Decorator Syntax / NameError in Dynamic Fetch**
+*   **Location:** `src/loom/tools/fetch.py:255`
+*   **Issue:** A refactoring/find-replace accident replaced the Botasaurus `@browser` decorator with `@scripts/install-browsers.sh(`. While this is parsed by Python 3.9+ as a valid expression `(scripts / install) - browsers.sh(...)`, it will immediately crash at runtime with `NameError: name 'scripts' is not defined` whenever `_fetch_dynamic` is invoked. This completely breaks the dynamic fetch mode and the auto-escalation fallback pipeline.
+
+**2. SSRF TOCTOU (Time-Of-Check to Time-Of-Use) Vulnerability via DNS Rebinding**
+*   **Location:** `src/loom/validators.py:65` -> `src/loom/tools/fetch.py:210`
+*   **Issue:** `validate_url` performs a DNS lookup (`socket.getaddrinfo`) to ensure the host does not resolve to an internal/private IP. However, the subsequent `httpx.Client.get(params.url)` call resolves the hostname a **second time**. This is a classic TOCTOU vulnerability enabling DNS rebinding attacks: an attacker's DNS server can return a safe IP during the check, and then return `127.0.0.1` (or an AWS metadata IP) during the actual HTTP request, completely bypassing the SSRF protection.
+
+**3. Premature Cache Wipe at Midnight (Logic Bug)**
+*   **Location:** `src/loom/cache.py:53`
+*   **Issue:** `_cache_path` generates the lookup path using `day = _dt.date.today().isoformat()`. Because `CacheStore.get()` uses this same method, it *only* looks for cached items in today's directory. Any item cached yesterday immediately results in a cache miss the moment the clock strikes midnight, rendering the intended `CACHE_TTL_DAYS=30` useless.
+
+---
+
+### 🚨 HIGH SEVERITY
+
+**4. Infinite Hang in Stealth Fetch (Missing Timeouts)**
+*   **Location:** `src/loom/tools/fetch.py:233-234`
+*   **Issue:** `fox.get(params.url)` and `fox.wait_for_page_load()` are called without any explicit timeout limits being passed from `params.timeout`. If a target server drops packets, hangs the socket, or trickles data slowly, the executing thread will block indefinitely, eventually exhausting the server's thread pool.
+
+**5. Silently Dropped YouTube Fallbacks**
+*   **Location:** `src/loom/tools/deep.py:251-255`
+*   **Issue:** If a YouTube URL is processed and `yt-dlp` is not installed, the `ImportError` block triggers but simply logs a debug message and leaves `markdown = ""`. The code skips the `else:` block entirely, meaning it never falls back to `research_fetch()`. The pipeline will silently discard all YouTube links instead of attempting a standard scrape.
+
+**6. Thread Pool Exhaustion in Multi-Provider Search**
+*   **Location:** `src/loom/tools/deep.py:178`
+*   **Issue:** `search_tasks` generates a Cartesian product of tasks (`len(search_variations) * len(search_providers)`), all scheduled simultaneously via `loop.run_in_executor(None, ...)`. A standard deep search (e.g., 4 queries × 5 providers = 20 tasks) will instantly saturate Python's default thread pool (`min(32, os.cpu_count() + 4)`), blocking all other concurrent requests to the MCP server.
+
+---
+
+### ⚠️ MEDIUM SEVERITY
+
+**7. Thread-Safety / Race Condition in Config Updates**
+*   **Location:** `src/loom/config.py:165-166`
+*   **Issue:** `set()` updates the live configuration using `CONFIG.clear()` followed by `CONFIG.update(validated)`. This sequence is not atomic. If another thread reads from `CONFIG` (or triggers `get_config()`) in the microsecond between these two operations, it will receive an empty dictionary, leading to unexpected application states or default overrides.
+
+**8. Sequential LLM Extraction Bottleneck**
+*   **Location:** `src/loom/tools/deep.py:331`
+*   **Issue:** In Stage 4, `research_llm_extract` is awaited inside a synchronous `for page in pages:` loop. For `depth * 3` pages, these API calls (which take seconds each) block each other sequentially. This significantly inflates latency. It should execute concurrently via `asyncio.gather`.
+
+**9. Missing Validation on Server Port Config**
+*   **Location:** `src/loom/server.py:111`
+*   **Issue:** `port = int(os.environ.get("LOOM_PORT", "8787"))` operates without a `try/except` block. If a user sets `LOOM_PORT` to a non-integer value, the server instantly crashes on boot with a `ValueError`.
+
+**10. Cache Failure Crashes the Fetch Pipeline**
+*   **Location:** `src/loom/tools/fetch.py:175` / `src/loom/cache.py:91`
+*   **Issue:** `get_cache().put()` intentionally raises an exception if disk I/O fails (e.g., no space left on device, permission errors). Because `research_fetch` does not wrap this in a `try/except`, a cache write failure will crash the entire fetch operation instead of gracefully degrading to an uncached successful response.
+
+**11. Arbitrary & Inconsistent Content Truncation**
+*   **Location:** `src/loom/tools/deep.py:445`, `458`, and `362`
+*   **Issue:** The synthesized answer is hard-sliced to `[:500]` for Red Teaming and `[:300]` for Misinfo Checks. If the actual controversial claim is at the end of a long response, the validation will silently miss it. Furthermore, limiting top page inputs to `[:500]` chars in the synthesis generation block heavily degrades answer quality.
+
+---
+
+### 🔍 LOW SEVERITY
+
+**12. Cache Stampede Risk**
+*   **Location:** `src/loom/tools/fetch.py:139`
+*   **Issue:** If multiple parallel research tasks hit the same URL, they will simultaneously miss the cache, fetch the data, and overwrite the cache entry. There is no locking mechanism to coalesce identical in-flight requests.
+
+**13. Unnormalized Provider Name Handling**
+*   **Location:** `src/loom/tools/search.py:131`
+*   **Issue:** The search tool does not normalize the `provider` string (e.g., `provider.lower()`). Passing `"EXA"` will fall through all `if provider == ...` branches, resulting in an "unknown provider" error.
+
+**14. JSON Memory Bloat**
+*   **Location:** `src/loom/tools/fetch.py:219`
+*   **Issue:** `parsed_json = resp.json()` loads the entirety of the payload into memory at once. If fetching an oversized API response, this can trigger significant memory bloat. It should check the `Content-Length` header before parsing.
+
+**15. Unsafe Assumption of LLM Output Array**
+*   **Location:** `src/loom/tools/deep.py:163`
+*   **Issue:** `extras = expand_result.get("queries", [])` assumes the LLM correctly returned a list. If the LLM hallucinates `{"queries": null}`, the subsequent `extras[:3]` slice will raise a `TypeError`, crashing the query expansion phase.

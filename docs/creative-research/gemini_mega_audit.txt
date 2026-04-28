@@ -1,0 +1,18 @@
+YOLO mode is enabled. All tool calls will be automatically approved.
+YOLO mode is enabled. All tool calls will be automatically approved.
+MCP issues detected. Run /mcp list for status.Error during GrepLogic execution: Error: spawn ENOEXEC
+**MEGA AUDIT FINDINGS**
+
+1. **SSRF/Injection (validators.py):** `validate_js_script` fails to block backtick string execution bypasses for dangerous APIs (e.g., `` eval`code` ``).
+2. **SSRF/Injection (validators.py):** `filter_headers` allows HTTP Request Smuggling / CRLF injection via unescaped newlines (`\r\n`) in header values.
+3. **Command/Argument Injection (domain_intel.py):** `_validate_domain` permits leading hyphens, allowing argument injection flags into `nmap` and `whois` subprocesses (e.g., `-oNfile`).
+4. **Token Leaks (llm.py):** `_sanitize_error` regex patterns fail to redact Gemini (`AIzaSy...`) and Groq (`gsk_...`) API keys.
+5. **SQLite Safety (sessions.py):** `SessionManager` relies on an in-process `asyncio.Semaphore` for SQLite locking, which fails to prevent database corruption across concurrent processes.
+6. **SQLite Safety (sessions.py):** TOCTOU race condition in `SessionManager.open()` between checking if a session exists (`SELECT`) and updating/inserting the record.
+7. **Async Blocking I/O:** `sessions.py` executes synchronous operations (`Path.mkdir`, `read_text`, `write_text`, `sqlite3.connect`) directly inside `async def` event loop threads.
+8. **Async Blocking I/O:** `transcribe.py` and `document.py` perform blocking file system calls (`os.path.getsize`, `os.unlink`, `os.path.exists`) directly in async functions.
+9. **Temp File Cleanup:** `transcribe.py` leaks `yt-dlp` partial download files if an exception is raised inside the executor before task completion.
+10. **Temp File Cleanup:** `document.py` leaks `NamedTemporaryFile` handles in `_download_document` if `f.write()` raises an exception.
+11. **Rate Limit Gaps:** `server.py` registers multiple tools (e.g., `breach_check`, `stylometry`, `deception_detect`, `social_search`) without passing a `category` to `_wrap_tool()`, completely bypassing the rate limiter.
+
+**Total Score: 11**

@@ -1,0 +1,39 @@
+MCP issues detected. Run /mcp list for status.Here are the results of the G10 Documentation & Architecture Audit:
+
+### 1. Verification of Tool Counts
+
+*   **Does `CLAUDE.md` say 94 tools?**
+    **Yes.** It states: *"Loom is a Python MCP... server that exposes 94 research tools..."*
+*   **Does `docs/help.md` say 94 tools?**
+    **Yes.** It states: *"Loom is a comprehensive research orchestration system with 94 tools..."* and has a section titled *"## Tool Catalog (94 Tools)"*. However, it also claims *"17 search providers"*, which contradicts `CLAUDE.md`.
+*   **Does `docs/tools-reference.md` say 94 tools?**
+    **Yes, but it contains a contradiction.**
+    Line 2765 says: *"## Summary Table (All 94 Tools)"*.
+    However, Line 3 incorrectly says: *"Complete documentation of all **53** MCP tools exposed by the Loom research server."*
+*   **Does `src/loom/server.py` register 94 tools?**
+    **Yes.** The docstring for `create_app` mentions it *"registers all 94 tools"*, and the programmatic check validates exactly 94 tools are registered.
+
+### 2. `scripts/verify_completeness.py` Execution
+The script successfully completed with the following output:
+```
+=== Loom Completeness Verification ===
+Registered tools (create_app): 94
+tools-reference.md claims: 94 tools, 94 documented sections
+help.md claims: 94 tools
+CLAUDE.md claims: 94 tools
+
+PASS: tools-reference.md count matches (94)
+PASS: help.md count matches (94)
+PASS: CLAUDE.md count matches (94)
+
+PASS: All 94 tools documented in tools-reference.md
+PASSED: 0 issues found
+```
+
+### 3. Architecture Description Accuracy
+**Inaccurate.** While the core structure and module layouts match `CLAUDE.md`, there is significant drift in the descriptive counts across the documentation:
+1.  **Tool Reference:** `docs/tools-reference.md` claims "53 MCP tools" in its introduction, contradicting its own table of contents and the actual codebase.
+2.  **Providers:** `docs/help.md` lists "17 search providers", whereas `CLAUDE.md` clearly lists "21 search providers" (and 21 are implemented).
+
+### Final Report
+**[FAIL]** - The test suite's `verify_completeness.py` passes because it only validates exact regex matches, missing the stale documentation text (53 tools, 17 search providers) that contradicts the actual state of the architecture.

@@ -1,0 +1,35 @@
+MCP issues detected. Run /mcp list for status.Here is the comprehensive G3 audit report for `src/loom/tools/llm.py` and `src/loom/tools/creative.py`, checking for the requested security, reliability, and concurrency issues:
+
+### 1. API Key Leaks in Errors
+**[FAIL] src/loom/tools/llm.py:48** - `exc` is logged directly in `close_all_providers` without using `_sanitize_error`.
+**[FAIL] src/loom/tools/llm.py:223** - `e` is logged directly in `_build_provider_chain` without using `_sanitize_error`.
+**[FAIL] src/loom/tools/creative.py:147** - `str(exc)` is returned raw in `research_multilingual` on line 147.
+**[FAIL] src/loom/tools/creative.py:153** - Exception is logged raw in `multilingual_search_failed` fallback.
+**[FAIL] src/loom/tools/creative.py:442** - `str(exc)` is returned raw in `research_citation_graph`.
+**[FAIL] src/loom/tools/creative.py:542** - `str(exc)` is returned raw in `research_ai_detect`.
+**[FAIL] src/loom/tools/creative.py:666** - Exception is logged raw in `community_sentiment_failed`.
+
+### 2. LLM Prompt Injection
+**[PASS]** `src/loom/tools/llm.py` correctly uses `_wrap_untrusted_content` across all relevant MCP tools to mitigate prompt injection.
+**[FAIL] src/loom/tools/creative.py:69** - `claim` is passed directly into the system prompt string in `research_red_team`.
+**[FAIL] src/loom/tools/creative.py:231** - `claim` is passed directly into the prompt in `research_misinfo_check`.
+**[FAIL] src/loom/tools/creative.py:316** - `archive_text` and `current_text` are placed directly into the prompt in `research_temporal_diff`.
+**[FAIL] src/loom/tools/creative.py:524** - Untrusted `text` is passed directly into the prompt in `research_ai_detect`.
+
+### 3. Cost Tracking Accuracy
+**[FAIL] src/loom/tools/llm.py:164** - `_add_cost_locked` raises a `RuntimeError` if the cost cap is exceeded without recording the cost. Because this happens *after* the LLM API call successfully executes (in `_call_with_cascade`), the actual accrued cost is dropped, causing a permanent divergence between tracked and actual spend. 
+**[FAIL] src/loom/tools/creative.py:60** - `max_cost_usd` is accepted as an argument but never utilized/passed to `research_llm_chat` in `research_red_team`.
+**[FAIL] src/loom/tools/creative.py:119** - `max_cost_usd` is ignored in `research_multilingual`.
+**[FAIL] src/loom/tools/creative.py:214** - `max_cost_usd` is ignored in `research_misinfo_check`.
+**[FAIL] src/loom/tools/creative.py:277** - `max_cost_usd` is ignored in `research_temporal_diff`.
+**[FAIL] src/loom/tools/creative.py:509** - `max_cost_usd` is ignored in `research_ai_detect`.
+**[FAIL] src/loom/tools/creative.py:552** - `max_cost_usd` is ignored in `research_curriculum`.
+
+### 4. Blocking I/O
+**[FAIL] src/loom/tools/llm.py:307** - The `_call_with_cascade` function is an `async def` that executes `cost_tracker.add_cost(...)` synchronously. This internal function performs direct disk I/O, `fcntl.flock`, and `os.replace`, which will completely block the asyncio event loop for all concurrent requests.
+
+### 5. Missing Error Handling
+**[FAIL] src/loom/tools/llm.py:104** - `_write_atomic` catches `Exception` but fails silently if the file write/replace encounters an error (e.g. disk full, permissions issue). Because it is suppressed and not bubbled up, the system proceeds thinking cost was securely tracked when it was actually dropped.
+
+### 6. Race Conditions
+**[FAIL] src/loom/tools/llm.py:140** - Despite the explicit comment `Use os.O_EXCL to atomically create lock file (CRITICAL #3b)`, the `os.open` call completely omits the `os.O_EXCL` flag, defeating the atomicity of lock file creation and opening the door for overlapping flock access conditions across processes.

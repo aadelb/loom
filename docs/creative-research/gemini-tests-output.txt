@@ -1,0 +1,750 @@
+"""Tests for HackerNews and Reddit search providers."""
+
+from __future__ import annotations
+
+import sys
+from unittest.mock import MagicMock, patch
+
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def _clear_module_cache():
+    """Ensure clean import state for each test."""
+    sys.modules.pop("loom.providers.hn_reddit", None)
+    yield
+    sys.modules.pop("loom.providers.hn_reddit", None)
+
+
+class TestSearchHackerNews:
+    def test_basic_search(self):
+        mock_resp = MagicMock()
+        mock_resp.json.return_value = {
+            "hits": [
+                {
+                    "url": "https://example.com",
+                    "title": "Example Post",
+                    "story_text": "This is a story.",
+                    "points": 100,
+                    "num_comments": 50,
+                    "author": "user1",
+                    "created_at": "2024-01-01T00:00:00Z",
+                }
+            ]
+        }
+        mock_resp.raise_for_status = MagicMock()
+
+        mock_client = MagicMock()
+        mock_client.__enter__ = MagicMock(return_value=mock_client)
+        mock_client.__exit__ = MagicMock(return_value=False)
+        mock_client.get.return_value = mock_resp
+
+        with patch("httpx.Client", return_value=mock_client):
+            from loom.providers.hn_reddit import search_hackernews
+
+            result = search_hackernews("test query")
+
+        assert "results" in result
+        assert "query" in result
+        assert "source" in result
+        assert result["query"] == "test query"
+        assert result["source"] == "hackernews"
+        assert len(result["results"]) == 1
+        assert result["results"][0]["title"] == "Example Post"
+        assert result["results"][0]["points"] == 100
+        assert "error" not in result
+
+    def test_empty_results(self):
+        mock_resp = MagicMock()
+        mock_resp.json.return_value = {"hits": []}
+        mock_resp.raise_for_status = MagicMock()
+
+        mock_client = MagicMock()
+        mock_client.__enter__ = MagicMock(return_value=mock_client)
+        mock_client.__exit__ = MagicMock(return_value=False)
+        mock_client.get.return_value = mock_resp
+
+        with patch("httpx.Client", return_value=mock_client):
+            from loom.providers.hn_reddit import search_hackernews
+
+            result = search_hackernews("empty test")
+
+        assert result["results"] == []
+        assert result["query"] == "empty test"
+
+    def test_error_handling(self):
+        mock_client = MagicMock()
+        mock_client.__enter__ = MagicMock(return_value=mock_client)
+        mock_client.__exit__ = MagicMock(return_value=False)
+        mock_client.get.side_effect = Exception("API down")
+
+        with patch("httpx.Client", return_value=mock_client):
+            from loom.providers.hn_reddit import search_hackernews
+
+            result = search_hackernews("error test")
+
+        assert result["results"] == []
+        assert result["query"] == "error test"
+        assert "API down" in result["error"]
+
+
+class TestSearchReddit:
+    def test_basic_search(self):
+        mock_resp = MagicMock()
+        mock_resp.json.return_value = {
+            "data": {
+                "children": [
+                    {
+                        "data": {
+                            "permalink": "/r/test/comments/123/example/",
+                            "title": "Reddit Post",
+                            "selftext": "Post content.",
+                            "score": 500,
+                            "num_comments": 100,
+                            "subreddit": "test",
+                            "author": "redditor1",
+                            "created_utc": 1600000000,
+                        }
+                    }
+                ]
+            }
+        }
+        mock_resp.raise_for_status = MagicMock()
+
+        mock_client = MagicMock()
+        mock_client.__enter__ = MagicMock(return_value=mock_client)
+        mock_client.__exit__ = MagicMock(return_value=False)
+        mock_client.get.return_value = mock_resp
+
+        with patch("httpx.Client", return_value=mock_client):
+            from loom.providers.hn_reddit import search_reddit
+
+            result = search_reddit("test query")
+
+        assert "results" in result
+        assert "query" in result
+        assert "source" in result
+        assert result["query"] == "test query"
+        assert result["source"] == "reddit"
+        assert len(result["results"]) == 1
+        assert result["results"][0]["title"] == "Reddit Post"
+        assert result["results"][0]["score"] == 500
+        assert result["results"][0]["url"] == "https://www.reddit.com/r/test/comments/123/example/"
+        assert "error" not in result
+
+    def test_subreddit_filter(self):
+        mock_resp = MagicMock()
+        mock_resp.json.return_value = {"data": {"children": []}}
+        mock_resp.raise_for_status = MagicMock()
+
+        mock_client = MagicMock()
+        mock_client.__enter__ = MagicMock(return_value=mock_client)
+        mock_client.__exit__ = MagicMock(return_value=False)
+        mock_client.get.return_value = mock_resp
+
+        with patch("httpx.Client", return_value=mock_client):
+            from loom.providers.hn_reddit import search_reddit
+
+            search_reddit("test query", subreddit="python")
+
+        mock_client.get.assert_called_once()
+        args, kwargs = mock_client.get.call_args
+        assert "r/python/search.json" in args[0]
+        assert kwargs["params"]["restrict_sr"] == "on"
+
+    def test_error_handling(self):
+        mock_client = MagicMock()
+        mock_client.__enter__ = MagicMock(return_value=mock_client)
+        mock_client.__exit__ = MagicMock(return_value=False)
+        mock_client.get.side_effect = Exception("Reddit API down")
+
+        with patch("httpx.Client", return_value=mock_client):
+            from loom.providers.hn_reddit import search_reddit
+
+            result = search_reddit("error test")
+
+        assert result["results"] == []
+        assert result["query"] == "error test"
+        assert "Reddit API down" in result["error"]
+--- FILE: tests/test_providers/test_youtube_transcripts.py ---
+"""Tests for YouTube transcript provider."""
+
+from __future__ import annotations
+
+import json
+import subprocess
+import sys
+from unittest.mock import MagicMock, patch
+
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def _clear_module_cache():
+    """Ensure clean import state for each test."""
+    sys.modules.pop("loom.providers.youtube_transcripts", None)
+    yield
+    sys.modules.pop("loom.providers.youtube_transcripts", None)
+
+
+class TestFetchYoutubeTranscript:
+    def test_basic_transcript(self):
+        mock_subprocess_run = MagicMock()
+        mock_subprocess_run.returncode = 0
+        mock_subprocess_run.stdout = json.dumps(
+            {
+                "title": "Test Video",
+                "duration": 120,
+                "subtitles": {"en": [{"ext": "json3", "url": "https://example.com/sub.json3"}]},
+            }
+        )
+
+        mock_resp = MagicMock()
+        mock_resp.headers = {"content-type": "application/json"}
+        mock_resp.json.return_value = {
+            "events": [{"segs": [{"utf8": "Hello "}]}, {"segs": [{"utf8": "World"}]}]
+        }
+        mock_resp.raise_for_status = MagicMock()
+
+        with (
+            patch("subprocess.run", return_value=mock_subprocess_run),
+            patch("httpx.get", return_value=mock_resp),
+        ):
+            from loom.providers.youtube_transcripts import fetch_youtube_transcript
+
+            result = fetch_youtube_transcript("https://youtube.com/watch?v=123")
+
+        assert "transcript" in result
+        assert "url" in result
+        assert "title" in result
+        assert "duration" in result
+        assert "error" not in result
+        assert result["title"] == "Test Video"
+        assert result["transcript"] == "Hello  World"
+        assert result["tool"] == "yt-dlp"
+
+    def test_no_subtitles(self):
+        mock_subprocess_run = MagicMock()
+        mock_subprocess_run.returncode = 0
+        mock_subprocess_run.stdout = json.dumps(
+            {
+                "title": "No Subs Video",
+                "duration": 60,
+                "description": "This is a description.",
+            }
+        )
+
+        with patch("subprocess.run", return_value=mock_subprocess_run):
+            from loom.providers.youtube_transcripts import fetch_youtube_transcript
+
+            result = fetch_youtube_transcript("https://youtube.com/watch?v=123")
+
+        assert result["transcript"] == "This is a description."
+        assert result["note"] == "no subtitles available, using description"
+        assert "error" not in result
+
+    def test_ytdlp_not_installed(self):
+        with patch("subprocess.run", side_effect=FileNotFoundError("command not found")):
+            from loom.providers.youtube_transcripts import fetch_youtube_transcript
+
+            result = fetch_youtube_transcript("https://youtube.com/watch?v=123")
+
+        assert result["transcript"] == ""
+        assert "not installed" in result["error"]
+
+    def test_timeout(self):
+        with patch(
+            "subprocess.run", side_effect=subprocess.TimeoutExpired(cmd="yt_dlp", timeout=30)
+        ):
+            from loom.providers.youtube_transcripts import fetch_youtube_transcript
+
+            result = fetch_youtube_transcript("https://youtube.com/watch?v=123")
+
+        assert result["transcript"] == ""
+        assert "timed out" in result["error"]
+--- FILE: tests/test_tools/test_experts.py ---
+"""Tests for experts research tool."""
+
+from __future__ import annotations
+
+import sys
+from unittest.mock import patch
+
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def _clear_module_cache():
+    """Ensure clean import state for each test."""
+    sys.modules.pop("loom.tools.experts", None)
+    yield
+    sys.modules.pop("loom.tools.experts", None)
+
+
+@pytest.mark.asyncio
+class TestResearchFindExperts:
+    async def test_basic_search(self):
+        mock_github_result = {
+            "results": [
+                {"name": "user1/repo1", "stars": 100, "url": "https://github.com/user1/repo1"},
+                {"name": "user2/repo2", "stars": 50, "url": "https://github.com/user2/repo2"},
+            ]
+        }
+
+        mock_arxiv_result = {
+            "results": [
+                {
+                    "title": "Paper 1",
+                    "authors": ["user1", "user3"],
+                    "url": "https://arxiv.org/1",
+                    "published_date": "2024-01-01",
+                }
+            ]
+        }
+
+        with (
+            patch("loom.tools.github.research_github", return_value=mock_github_result),
+            patch("loom.providers.arxiv_search.search_arxiv", return_value=mock_arxiv_result),
+        ):
+            from loom.tools.experts import research_find_experts
+
+            result = await research_find_experts("machine learning", n=5)
+
+        assert "query" in result
+        assert "experts" in result
+        assert "total_found" in result
+        assert result["query"] == "machine learning"
+        assert len(result["experts"]) == 3
+
+        # user1 should have 2 mentions and 2 sources (github, arxiv)
+        user1 = next(e for e in result["experts"] if e["name"] == "user1")
+        assert len(user1["sources"]) == 2
+        assert user1["mentions"] == 2
+
+    async def test_no_results_from_github(self):
+        mock_arxiv_result = {
+            "results": [
+                {
+                    "title": "Paper 1",
+                    "authors": ["author1"],
+                    "url": "https://arxiv.org/1",
+                    "published_date": "2024-01-01",
+                }
+            ]
+        }
+
+        with (
+            patch("loom.tools.github.research_github", return_value={"results": []}),
+            patch("loom.providers.arxiv_search.search_arxiv", return_value=mock_arxiv_result),
+        ):
+            from loom.tools.experts import research_find_experts
+
+            result = await research_find_experts("topic", n=5)
+
+        assert len(result["experts"]) == 1
+        assert result["experts"][0]["name"] == "author1"
+        assert result["experts"][0]["sources"] == ["arxiv"]
+
+    async def test_no_results_from_arxiv(self):
+        mock_github_result = {
+            "results": [
+                {"name": "user1/repo1", "stars": 100, "url": "https://github.com/user1/repo1"}
+            ]
+        }
+
+        with (
+            patch("loom.tools.github.research_github", return_value=mock_github_result),
+            patch("loom.providers.arxiv_search.search_arxiv", return_value={"results": []}),
+        ):
+            from loom.tools.experts import research_find_experts
+
+            result = await research_find_experts("topic", n=5)
+
+        assert len(result["experts"]) == 1
+        assert result["experts"][0]["name"] == "user1"
+        assert result["experts"][0]["sources"] == ["github"]
+--- FILE: tests/test_tools/test_creative.py ---
+"""Tests for creative research tools."""
+
+from __future__ import annotations
+
+import sys
+from unittest.mock import MagicMock, patch
+
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def _clear_module_cache():
+    """Ensure clean import state for each test."""
+    sys.modules.pop("loom.tools.creative", None)
+    yield
+    sys.modules.pop("loom.tools.creative", None)
+
+
+@pytest.mark.asyncio
+class TestCreativeTools:
+    async def test_research_red_team_basic(self):
+        mock_llm_result = {"text": '["Counter claim 1", "Counter claim 2"]', "cost_usd": 0.01}
+        mock_search_result = {
+            "results": [
+                {"title": "Source 1", "url": "http://source1.com"},
+                {"title": "Source 2", "url": "http://source2.com"},
+            ]
+        }
+
+        with (
+            patch("loom.tools.llm.research_llm_chat", return_value=mock_llm_result),
+            patch("loom.tools.search.research_search", return_value=mock_search_result),
+        ):
+            from loom.tools.creative import research_red_team
+
+            result = await research_red_team("Test claim")
+
+        assert "claim" in result
+        assert "counter_arguments" in result
+        assert "total_cost_usd" in result
+        assert len(result["counter_arguments"]) == 2
+        assert result["counter_arguments"][0]["evidence_found"] == 2
+        assert len(result["counter_arguments"][0]["sources"]) == 2
+
+    async def test_research_red_team_llm_not_available(self):
+        with patch.dict("sys.modules", {"loom.tools.llm": None}):
+            from loom.tools.creative import research_red_team
+
+            result = await research_red_team("Test claim")
+            assert "error" in result
+
+    async def test_research_multilingual_basic(self):
+        mock_search_result = {"results": [{"title": "Res 1", "url": "http://res1.com"}]}
+
+        with patch("loom.tools.search.research_search", return_value=mock_search_result):
+            from loom.tools.creative import research_multilingual
+
+            result = await research_multilingual("test query", languages=["ar", "es"])
+
+        assert "query" in result
+        assert "languages_searched" in result
+        assert "results_per_language" in result
+        assert "unique_per_language" in result
+        assert "total_unique_urls" in result
+        assert len(result["results_per_language"]["ar"]) == 1
+
+    async def test_research_consensus_basic(self):
+        mock_search_result = {
+            "results": [{"title": "Consensus Res", "url": "http://consensus.com", "snippet": "snip"}]
+        }
+
+        with patch("loom.tools.search.research_search", return_value=mock_search_result):
+            from loom.tools.creative import research_consensus
+
+            result = await research_consensus("test query", providers=["exa", "ddgs"])
+
+        assert "query" in result
+        assert "results" in result
+        assert len(result["results"]) == 1
+        assert result["results"][0]["consensus_score"] == 1.0
+        assert result["results"][0]["is_singular"] is False
+
+    async def test_research_misinfo_check_basic(self):
+        mock_llm_result = {"text": '["False claim 1"]'}
+        mock_search_result = {"results": [{"title": "Bad Source", "url": "http://bad.com"}]}
+
+        with (
+            patch("loom.tools.llm.research_llm_chat", return_value=mock_llm_result),
+            patch("loom.tools.search.research_search", return_value=mock_search_result),
+        ):
+            from loom.tools.creative import research_misinfo_check
+
+            result = await research_misinfo_check("True claim")
+
+        assert "stress_score" in result
+        assert "verdict" in result
+        assert result["false_variants_tested"] == 1
+
+    async def test_research_temporal_diff_basic(self):
+        mock_wayback = {
+            "snapshots": [{"archive_url": "http://archive.com", "timestamp": "20240101"}]
+        }
+        mock_extract = {"text": "some text content"}
+        mock_llm = {"text": "Summary of changes"}
+
+        with (
+            patch("loom.tools.enrich.research_wayback", return_value=mock_wayback),
+            patch(
+                "loom.providers.trafilatura_extract.extract_with_trafilatura", return_value=mock_extract
+            ),
+            patch("loom.tools.llm.research_llm_chat", return_value=mock_llm),
+        ):
+            from loom.tools.creative import research_temporal_diff
+
+            result = await research_temporal_diff("http://example.com")
+
+        assert "url" in result
+        assert "changes_summary" in result
+        assert result["changes_summary"] == "Summary of changes"
+
+    async def test_research_temporal_diff_no_archive(self):
+        with patch("loom.tools.enrich.research_wayback", return_value={"snapshots": []}):
+            from loom.tools.creative import research_temporal_diff
+
+            result = await research_temporal_diff("http://example.com")
+
+        assert "error" in result
+
+    async def test_research_citation_graph_basic(self):
+        mock_search_resp = MagicMock()
+        mock_search_resp.json.return_value = {
+            "data": [
+                {
+                    "paperId": "seed1",
+                    "title": "Seed Paper",
+                    "authors": [{"name": "A1"}],
+                    "year": 2024,
+                    "citationCount": 10,
+                    "url": "url1",
+                }
+            ]
+        }
+        mock_search_resp.raise_for_status = MagicMock()
+        mock_search_resp.status_code = 200
+
+        mock_cit_resp = MagicMock()
+        mock_cit_resp.json.return_value = {
+            "data": [
+                {
+                    "citingPaper": {
+                        "paperId": "cit1",
+                        "title": "Citing Paper",
+                        "authors": [{"name": "A2"}],
+                        "year": 2024,
+                        "citationCount": 5,
+                        "url": "url2",
+                    }
+                }
+            ]
+        }
+        mock_cit_resp.status_code = 200
+
+        mock_ref_resp = MagicMock()
+        mock_ref_resp.json.return_value = {"data": []}
+        mock_ref_resp.status_code = 200
+
+        mock_client = MagicMock()
+        mock_client.__enter__ = MagicMock(return_value=mock_client)
+        mock_client.__exit__ = MagicMock(return_value=False)
+
+        def mock_get(url, *args, **kwargs):
+            if "/paper/search" in url:
+                return mock_search_resp
+            if "/citations" in url:
+                return mock_cit_resp
+            if "/references" in url:
+                return mock_ref_resp
+            return MagicMock(status_code=404)
+
+        mock_client.get.side_effect = mock_get
+
+        with patch("httpx.Client", return_value=mock_client):
+            from loom.tools.creative import research_citation_graph
+
+            result = await research_citation_graph("Seed Paper")
+
+        assert "papers" in result
+        assert "edges" in result
+        assert len(result["papers"]) == 2
+        assert len(result["edges"]) == 1
+
+    async def test_research_citation_graph_no_papers(self):
+        mock_search_resp = MagicMock()
+        mock_search_resp.json.return_value = {"data": []}
+        mock_search_resp.raise_for_status = MagicMock()
+
+        mock_client = MagicMock()
+        mock_client.__enter__ = MagicMock(return_value=mock_client)
+        mock_client.__exit__ = MagicMock(return_value=False)
+        mock_client.get.return_value = mock_search_resp
+
+        with patch("httpx.Client", return_value=mock_client):
+            from loom.tools.creative import research_citation_graph
+
+            result = await research_citation_graph("Unknown Paper")
+
+        assert "error" in result
+        assert result["papers"] == []
+
+    async def test_research_ai_detect_basic(self):
+        mock_llm = {
+            "text": '{"ai_probability": 85, "indicators": ["generic"], "reasoning": "reads like AI"}'
+        }
+
+        with patch("loom.tools.llm.research_llm_chat", return_value=mock_llm):
+            from loom.tools.creative import research_ai_detect
+
+            result = await research_ai_detect("x" * 150)
+
+        assert "ai_probability" in result
+        assert "verdict" in result
+        assert result["ai_probability"] == 0.85
+        assert result["verdict"] == "likely_ai"
+
+    async def test_research_ai_detect_short_text(self):
+        from loom.tools.creative import research_ai_detect
+
+        result = await research_ai_detect("short")
+        assert "error" in result
+
+    async def test_research_curriculum_basic(self):
+        mock_search = {"results": [{"title": "Tutorial", "url": "http://tut.com", "snippet": "abc"}]}
+        mock_arxiv = {
+            "results": [
+                {"title": "Paper", "url": "http://arxiv.org/1", "snippet": "xyz", "authors": ["A1"]}
+            ]
+        }
+
+        with (
+            patch("loom.tools.search.research_search", return_value=mock_search),
+            patch("loom.providers.arxiv_search.search_arxiv", return_value=mock_arxiv),
+        ):
+            from loom.tools.creative import research_curriculum
+
+            result = await research_curriculum("Python")
+
+        assert "levels" in result
+        assert "beginner" in result["levels"]
+        assert "advanced" in result["levels"]
+
+    async def test_research_community_sentiment_basic(self):
+        mock_hn = {"results": [{"title": "HN Post", "points": 100}]}
+        mock_reddit = {"results": [{"title": "Reddit Post", "score": 200}]}
+
+        with (
+            patch("loom.providers.hn_reddit.search_hackernews", return_value=mock_hn),
+            patch("loom.providers.hn_reddit.search_reddit", return_value=mock_reddit),
+        ):
+            from loom.tools.creative import research_community_sentiment
+
+            result = await research_community_sentiment("Rust")
+
+        assert "hackernews" in result
+        assert "reddit" in result
+        assert "combined_engagement" in result
+
+    async def test_research_wiki_ghost_basic(self):
+        mock_search_resp = MagicMock()
+        mock_search_resp.json.return_value = ["Topic", ["Article Title"]]
+        mock_search_resp.raise_for_status = MagicMock()
+        mock_search_resp.status_code = 200
+
+        mock_talk_resp = MagicMock()
+        mock_talk_resp.json.return_value = {
+            "parse": {"wikitext": {"*": "== Topic 1 ==\nDiscussion here."}}
+        }
+        mock_talk_resp.status_code = 200
+
+        mock_rev_resp = MagicMock()
+        mock_rev_resp.json.return_value = {
+            "query": {
+                "pages": {
+                    "1": {
+                        "revisions": [{"timestamp": "2024", "user": "A", "comment": "fix", "size": 10}]
+                    }
+                }
+            }
+        }
+        mock_rev_resp.status_code = 200
+
+        mock_client = MagicMock()
+        mock_client.__enter__ = MagicMock(return_value=mock_client)
+        mock_client.__exit__ = MagicMock(return_value=False)
+
+        def mock_get(url, *args, **kwargs):
+            params = kwargs.get("params", {})
+            action = params.get("action")
+            if action == "opensearch":
+                return mock_search_resp
+            if action == "parse":
+                return mock_talk_resp
+            if action == "query":
+                return mock_rev_resp
+            return MagicMock(status_code=404)
+
+        mock_client.get.side_effect = mock_get
+
+        with patch("httpx.Client", return_value=mock_client):
+            from loom.tools.creative import research_wiki_ghost
+
+            result = await research_wiki_ghost("Test Topic")
+
+        assert "article_title" in result
+        assert "talk_sections" in result
+        assert "recent_edits" in result
+        assert len(result["talk_sections"]) == 1
+        assert len(result["recent_edits"]) == 1
+
+    async def test_research_wiki_ghost_not_found(self):
+        mock_search_resp = MagicMock()
+        mock_search_resp.json.return_value = ["Topic", []]
+        mock_search_resp.raise_for_status = MagicMock()
+
+        mock_client = MagicMock()
+        mock_client.__enter__ = MagicMock(return_value=mock_client)
+        mock_client.__exit__ = MagicMock(return_value=False)
+        mock_client.get.return_value = mock_search_resp
+
+        with patch("httpx.Client", return_value=mock_client):
+            from loom.tools.creative import research_wiki_ghost
+
+            result = await research_wiki_ghost("Unknown Topic")
+
+        assert "error" in result
+
+    async def test_research_semantic_sitemap_basic(self):
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.headers = {"content-type": "application/xml"}
+        mock_resp.text = (
+            '<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+            '<url><loc>http://example.com/page1</loc></url>'
+            '<url><loc>http://example.com/page2</loc></url>'
+            '</urlset>'
+        )
+
+        mock_client = MagicMock()
+        mock_client.__enter__ = MagicMock(return_value=mock_client)
+        mock_client.__exit__ = MagicMock(return_value=False)
+        mock_client.get.return_value = mock_resp
+
+        mock_extract = {"title": "Test Page", "text": "Content"}
+        mock_embed = {"embeddings": [[1.0, 0.0], [0.9, 0.1]]}
+
+        with (
+            patch("httpx.Client", return_value=mock_client),
+            patch(
+                "loom.providers.trafilatura_extract.extract_with_trafilatura", return_value=mock_extract
+            ),
+            patch("loom.tools.llm.research_llm_embed", return_value=mock_embed),
+        ):
+            from loom.tools.creative import research_semantic_sitemap
+
+            result = await research_semantic_sitemap("example.com", cluster_threshold=0.5)
+
+        assert "clusters" in result
+        assert len(result["clusters"]) == 1  # High similarity should cluster them
+
+    async def test_research_semantic_sitemap_no_sitemap(self):
+        mock_resp = MagicMock()
+        mock_resp.status_code = 404
+
+        mock_client = MagicMock()
+        mock_client.__enter__ = MagicMock(return_value=mock_client)
+        mock_client.__exit__ = MagicMock(return_value=False)
+        mock_client.get.return_value = mock_resp
+
+        with patch("httpx.Client", return_value=mock_client):
+            from loom.tools.creative import research_semantic_sitemap
+
+            result = await research_semantic_sitemap("example.com")
+
+        assert "error" in result
+        assert "no sitemap found" in result["error"]

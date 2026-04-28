@@ -1,0 +1,45 @@
+MCP issues detected. Run /mcp list for status.I will begin by reading the files you've specified to perform the audit on Tor and Darkweb related functionalities.
+I will now read the next batch of files related to Darkweb search providers and OSINT tools.
+Here is the audit report for the Tor and Darkweb components:
+
+### src/loom/tools/tor.py
+* **SOCKS5 Proxy Handling:** **[PASS]** Correctly hardcodes SOCKS5 proxy configuration to localhost (`socks5h://127.0.0.1:9050`).
+* **Command Injection via stem:** **[PASS]** No user-supplied input is passed to the Tor controller; uses constant string `"NEWNYM"`. 
+
+### src/loom/tools/cipher_mirror.py
+* **Content Safety:** **[PASS]** Safe scraping mechanism; snippet entropy checks do not execute or incorrectly log unsafe data.
+
+### src/loom/tools/forum_cortex.py
+* **Content Safety:** **[PASS]** Clean truncation and forwarding of darkweb text to LLM without risking structural prompt injection. 
+
+### src/loom/tools/onion_spectra.py
+* **.onion URL Safety:** **[FAIL]** file:145 (`if not validated_url.endswith(".onion"):`) — Improper validation. Since standard URLs end in `/` (e.g. `http://example.onion/`), this rejects valid darkweb domains and inherently permits clearnet spoofing like `http://example.com/test.onion`.
+* **Tor Circuit Leaks:** **[FAIL]** file:164 (`research_fetch` call) — Missing the `proxy=tor_proxy` parameter. It will attempt to resolve `.onion` addresses over the host's default clearnet DNS, causing a major circuit leak.
+
+### src/loom/tools/ghost_weave.py
+* **.onion URL Safety:** **[FAIL]** file:44 (`if parsed.scheme in ("http", "https") or...`) — Flawed boolean logic. The `or` condition dictates that *any* HTTP/HTTPS link will be crawled regardless of its domain, acting as an open proxy crawler across the clearnet.
+* **SOCKS5 Proxy Handling:** **[PASS]** Properly configures and forwards `proxy=tor_proxy` to `research_fetch`.
+
+### src/loom/tools/dead_drop_scanner.py
+* **.onion URL Safety:** **[FAIL]** file:96 (`validate_url(url)`) — It performs generic URL validation but completely fails to check if the address is actually an `.onion` domain, leaving it open to scanning any arbitrary clearnet target over the Tor network.
+* **SOCKS5 Proxy Handling:** **[PASS]** Correctly invokes fetches with `proxy=tor_proxy`.
+
+### src/loom/providers/ahmia_search.py
+* **.onion URL Safety / Content Safety:** **[PASS]** Clearnet site correctly parses structured HTML without leakage.
+
+### src/loom/providers/darksearch_search.py
+* **.onion URL Safety / Content Safety:** **[PASS]** Safely processes the JSON API without evaluation or unsafe resolution.
+
+### src/loom/providers/onionsearch.py
+* **.onion URL Safety:** **[FAIL]** file:46 (`pattern = r'href=["\']([^"\']*\.onion[^"\']*)["\']'`) — Weak regex matching permits any URL containing `.onion` anywhere in its string (e.g. `http://evil.com/fake.onion.html`).
+
+### src/loom/providers/torcrawl.py
+* **.onion URL Safety:** **[FAIL]** file:65 (`if ".onion" in full_url:`) — Simple substring matching allows non-onion URLs to be injected and crawled.
+* **.onion URL Safety:** **[FAIL]** file:89 (`if not url or ".onion" not in url:`) — Repeated flawed validation logic on the entrypoint method.
+* **Tor Circuit Leaks:** **[PASS]** Client correctly instantiates with SOCKS5 parameter. 
+
+### src/loom/providers/darkweb_cti.py
+* **Content Safety:** **[PASS]** Static curated list poses no dynamic scraping risks. 
+
+### src/loom/providers/robin_osint.py
+* **.onion URL Safety:** **[FAIL]** file:75 (`pattern = r'href=["\']([^"\']*\.onion[^"\']*)["\'][^>]*>([^<]*)<'`) — Weak regex parsing allows non-onion domains containing `.onion` in the URL string to bypass filters.

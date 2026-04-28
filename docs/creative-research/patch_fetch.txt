@@ -1,0 +1,21 @@
+# Changes to apply:
+
+1. test_fetch_http_httpx_handles_json_response:
+   - Change URL from https://api.example.com/data to https://example.com/api/data
+
+2. test_fetch_dynamic_basic:
+   - Skip or remove (async_playwright not directly imported)
+
+3. test_auto_escalate_respects_config:
+   - Patch loom.tools.fetch.get_config instead (it's imported inside function)
+
+4. test_fetch_unknown_mode:
+   - Remove or test with a different invalid param
+
+5. test_fetch_elapsed_ms_is_numeric:
+   - mode='http' transforms result to Scrapling schema
+   - Check for elapsed_ms in output dict
+
+6. test_fetch_return_html_mode:
+   - mode='http' transforms to Scrapling schema which may not include html
+   - Test with stealthy mode instead

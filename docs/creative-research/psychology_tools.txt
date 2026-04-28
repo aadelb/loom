@@ -1,0 +1,10 @@
+
+with suppress(ImportError):
+    from loom.tools import persona_profile as persona_profile_tools
+
+    _optional_tools["persona_profile"] = persona_profile_tools
+
+with suppress(ImportError):
+    from loom.tools import radicalization_detect as radicalization_detect_tools
+
+    _optional_tools["radicalization_detect"] = radicalization_detect_tools

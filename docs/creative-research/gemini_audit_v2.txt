@@ -1,0 +1,419 @@
+YOLO mode is enabled. All tool calls will be automatically approved.
+YOLO mode is enabled. All tool calls will be automatically approved.
+MCP issues detected. Run /mcp list for status.Attempt 1 failed with status 429. Retrying with backoff... _GaxiosError: [{
+  "error": {
+    "code": 429,
+    "message": "No capacity available for model gemini-3.1-pro-preview on the server",
+    "errors": [
+      {
+        "message": "No capacity available for model gemini-3.1-pro-preview on the server",
+        "domain": "global",
+        "reason": "rateLimitExceeded"
+      }
+    ],
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+        "reason": "MODEL_CAPACITY_EXHAUSTED",
+        "domain": "cloudcode-pa.googleapis.com",
+        "metadata": {
+          "model": "gemini-3.1-pro-preview"
+        }
+      }
+    ]
+  }
+}
+]
+    at Gaxios._request (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:8800:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async _OAuth2Client.requestAsync (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:10763:16)
+    at async CodeAssistServer.requestStreamingPost (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:277779:17)
+    at async CodeAssistServer.generateContentStream (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:277579:23)
+    at async file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:278424:19
+    at async file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:255329:23
+    at async retryWithBackoff (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:275301:23)
+    at async GeminiChat.makeApiCallAndProcessStream (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:312614:28)
+    at async GeminiChat.streamWithRetries (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:312452:29) {
+  config: {
+    url: 'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse',
+    method: 'POST',
+    params: { alt: 'sse' },
+    headers: {
+      'Content-Type': 'application/json',
+      'User-Agent': 'GeminiCLI/0.39.1/gemini-3.1-pro-preview (darwin; arm64; terminal) google-api-nodejs-client/9.15.1',
+      Authorization: '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+      'x-goog-api-client': 'gl-node/22.21.1'
+    },
+    responseType: 'stream',
+    body: '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+    signal: AbortSignal { aborted: false },
+    retry: false,
+    paramsSerializer: [Function: paramsSerializer],
+    validateStatus: [Function: validateStatus],
+    errorRedactor: [Function: defaultErrorRedactor]
+  },
+  response: {
+    config: {
+      url: 'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse',
+      method: 'POST',
+      params: [Object],
+      headers: [Object],
+      responseType: 'stream',
+      body: '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+      signal: [AbortSignal],
+      retry: false,
+      paramsSerializer: [Function: paramsSerializer],
+      validateStatus: [Function: validateStatus],
+      errorRedactor: [Function: defaultErrorRedactor]
+    },
+    data: '[{\n' +
+      '  "error": {\n' +
+      '    "code": 429,\n' +
+      '    "message": "No capacity available for model gemini-3.1-pro-preview on the server",\n' +
+      '    "errors": [\n' +
+      '      {\n' +
+      '        "message": "No capacity available for model gemini-3.1-pro-preview on the server",\n' +
+      '        "domain": "global",\n' +
+      '        "reason": "rateLimitExceeded"\n' +
+      '      }\n' +
+      '    ],\n' +
+      '    "status": "RESOURCE_EXHAUSTED",\n' +
+      '    "details": [\n' +
+      '      {\n' +
+      '        "@type": "type.googleapis.com/google.rpc.ErrorInfo",\n' +
+      '        "reason": "MODEL_CAPACITY_EXHAUSTED",\n' +
+      '        "domain": "cloudcode-pa.googleapis.com",\n' +
+      '        "metadata": {\n' +
+      '          "model": "gemini-3.1-pro-preview"\n' +
+      '        }\n' +
+      '      }\n' +
+      '    ]\n' +
+      '  }\n' +
+      '}\n' +
+      ']',
+    headers: {
+      'alt-svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000',
+      'content-length': '630',
+      'content-type': 'application/json; charset=UTF-8',
+      date: 'Mon, 27 Apr 2026 15:04:18 GMT',
+      server: 'ESF',
+      'server-timing': 'gfet4t7; dur=6486',
+      vary: 'Origin, X-Origin, Referer',
+      'x-cloudaicompanion-trace-id': '7333e9d28fb42c20',
+      'x-content-type-options': 'nosniff',
+      'x-frame-options': 'SAMEORIGIN',
+      'x-xss-protection': '0'
+    },
+    status: 429,
+    statusText: 'Too Many Requests',
+    request: {
+      responseURL: 'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse'
+    }
+  },
+  error: undefined,
+  status: 429,
+  [Symbol(gaxios-gaxios-error)]: '6.7.1'
+}
+Attempt 2 failed with status 429. Retrying with backoff... _GaxiosError: [{
+  "error": {
+    "code": 429,
+    "message": "No capacity available for model gemini-3.1-pro-preview on the server",
+    "errors": [
+      {
+        "message": "No capacity available for model gemini-3.1-pro-preview on the server",
+        "domain": "global",
+        "reason": "rateLimitExceeded"
+      }
+    ],
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+        "reason": "MODEL_CAPACITY_EXHAUSTED",
+        "domain": "cloudcode-pa.googleapis.com",
+        "metadata": {
+          "model": "gemini-3.1-pro-preview"
+        }
+      }
+    ]
+  }
+}
+]
+    at Gaxios._request (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:8800:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async _OAuth2Client.requestAsync (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:10763:16)
+    at async CodeAssistServer.requestStreamingPost (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:277779:17)
+    at async CodeAssistServer.generateContentStream (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:277579:23)
+    at async file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:278424:19
+    at async file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:255329:23
+    at async retryWithBackoff (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:275301:23)
+    at async GeminiChat.makeApiCallAndProcessStream (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:312614:28)
+    at async GeminiChat.streamWithRetries (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:312452:29) {
+  config: {
+    url: 'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse',
+    method: 'POST',
+    params: { alt: 'sse' },
+    headers: {
+      'Content-Type': 'application/json',
+      'User-Agent': 'GeminiCLI/0.39.1/gemini-3.1-pro-preview (darwin; arm64; terminal) google-api-nodejs-client/9.15.1',
+      Authorization: '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+      'x-goog-api-client': 'gl-node/22.21.1'
+    },
+    responseType: 'stream',
+    body: '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+    signal: AbortSignal { aborted: false },
+    retry: false,
+    paramsSerializer: [Function: paramsSerializer],
+    validateStatus: [Function: validateStatus],
+    errorRedactor: [Function: defaultErrorRedactor]
+  },
+  response: {
+    config: {
+      url: 'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse',
+      method: 'POST',
+      params: [Object],
+      headers: [Object],
+      responseType: 'stream',
+      body: '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+      signal: [AbortSignal],
+      retry: false,
+      paramsSerializer: [Function: paramsSerializer],
+      validateStatus: [Function: validateStatus],
+      errorRedactor: [Function: defaultErrorRedactor]
+    },
+    data: '[{\n' +
+      '  "error": {\n' +
+      '    "code": 429,\n' +
+      '    "message": "No capacity available for model gemini-3.1-pro-preview on the server",\n' +
+      '    "errors": [\n' +
+      '      {\n' +
+      '        "message": "No capacity available for model gemini-3.1-pro-preview on the server",\n' +
+      '        "domain": "global",\n' +
+      '        "reason": "rateLimitExceeded"\n' +
+      '      }\n' +
+      '    ],\n' +
+      '    "status": "RESOURCE_EXHAUSTED",\n' +
+      '    "details": [\n' +
+      '      {\n' +
+      '        "@type": "type.googleapis.com/google.rpc.ErrorInfo",\n' +
+      '        "reason": "MODEL_CAPACITY_EXHAUSTED",\n' +
+      '        "domain": "cloudcode-pa.googleapis.com",\n' +
+      '        "metadata": {\n' +
+      '          "model": "gemini-3.1-pro-preview"\n' +
+      '        }\n' +
+      '      }\n' +
+      '    ]\n' +
+      '  }\n' +
+      '}\n' +
+      ']',
+    headers: {
+      'alt-svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000',
+      'content-length': '630',
+      'content-type': 'application/json; charset=UTF-8',
+      date: 'Mon, 27 Apr 2026 15:05:27 GMT',
+      server: 'ESF',
+      'server-timing': 'gfet4t7; dur=62349',
+      vary: 'Origin, X-Origin, Referer',
+      'x-cloudaicompanion-trace-id': '4c07fb80919910f9',
+      'x-content-type-options': 'nosniff',
+      'x-frame-options': 'SAMEORIGIN',
+      'x-xss-protection': '0'
+    },
+    status: 429,
+    statusText: 'Too Many Requests',
+    request: {
+      responseURL: 'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse'
+    }
+  },
+  error: undefined,
+  status: 429,
+  [Symbol(gaxios-gaxios-error)]: '6.7.1'
+}
+Attempt 3 failed with status 429. Retrying with backoff... _GaxiosError: [{
+  "error": {
+    "code": 429,
+    "message": "No capacity available for model gemini-3.1-pro-preview on the server",
+    "errors": [
+      {
+        "message": "No capacity available for model gemini-3.1-pro-preview on the server",
+        "domain": "global",
+        "reason": "rateLimitExceeded"
+      }
+    ],
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+        "reason": "MODEL_CAPACITY_EXHAUSTED",
+        "domain": "cloudcode-pa.googleapis.com",
+        "metadata": {
+          "model": "gemini-3.1-pro-preview"
+        }
+      }
+    ]
+  }
+}
+]
+    at Gaxios._request (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:8800:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async _OAuth2Client.requestAsync (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:10763:16)
+    at async CodeAssistServer.requestStreamingPost (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:277779:17)
+    at async CodeAssistServer.generateContentStream (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:277579:23)
+    at async file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:278424:19
+    at async file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:255329:23
+    at async retryWithBackoff (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:275301:23)
+    at async GeminiChat.makeApiCallAndProcessStream (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:312614:28)
+    at async GeminiChat.streamWithRetries (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:312452:29) {
+  config: {
+    url: 'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse',
+    method: 'POST',
+    params: { alt: 'sse' },
+    headers: {
+      'Content-Type': 'application/json',
+      'User-Agent': 'GeminiCLI/0.39.1/gemini-3.1-pro-preview (darwin; arm64; terminal) google-api-nodejs-client/9.15.1',
+      Authorization: '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+      'x-goog-api-client': 'gl-node/22.21.1'
+    },
+    responseType: 'stream',
+    body: '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+    signal: AbortSignal { aborted: false },
+    retry: false,
+    paramsSerializer: [Function: paramsSerializer],
+    validateStatus: [Function: validateStatus],
+    errorRedactor: [Function: defaultErrorRedactor]
+  },
+  response: {
+    config: {
+      url: 'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse',
+      method: 'POST',
+      params: [Object],
+      headers: [Object],
+      responseType: 'stream',
+      body: '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+      signal: [AbortSignal],
+      retry: false,
+      paramsSerializer: [Function: paramsSerializer],
+      validateStatus: [Function: validateStatus],
+      errorRedactor: [Function: defaultErrorRedactor]
+    },
+    data: '[{\n' +
+      '  "error": {\n' +
+      '    "code": 429,\n' +
+      '    "message": "No capacity available for model gemini-3.1-pro-preview on the server",\n' +
+      '    "errors": [\n' +
+      '      {\n' +
+      '        "message": "No capacity available for model gemini-3.1-pro-preview on the server",\n' +
+      '        "domain": "global",\n' +
+      '        "reason": "rateLimitExceeded"\n' +
+      '      }\n' +
+      '    ],\n' +
+      '    "status": "RESOURCE_EXHAUSTED",\n' +
+      '    "details": [\n' +
+      '      {\n' +
+      '        "@type": "type.googleapis.com/google.rpc.ErrorInfo",\n' +
+      '        "reason": "MODEL_CAPACITY_EXHAUSTED",\n' +
+      '        "domain": "cloudcode-pa.googleapis.com",\n' +
+      '        "metadata": {\n' +
+      '          "model": "gemini-3.1-pro-preview"\n' +
+      '        }\n' +
+      '      }\n' +
+      '    ]\n' +
+      '  }\n' +
+      '}\n' +
+      ']',
+    headers: {
+      'alt-svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000',
+      'content-length': '630',
+      'content-type': 'application/json; charset=UTF-8',
+      date: 'Mon, 27 Apr 2026 15:05:59 GMT',
+      server: 'ESF',
+      'server-timing': 'gfet4t7; dur=23964',
+      vary: 'Origin, X-Origin, Referer',
+      'x-cloudaicompanion-trace-id': 'f084bc2ca0a0cc0b',
+      'x-content-type-options': 'nosniff',
+      'x-frame-options': 'SAMEORIGIN',
+      'x-xss-protection': '0'
+    },
+    status: 429,
+    statusText: 'Too Many Requests',
+    request: {
+      responseURL: 'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse'
+    }
+  },
+  error: undefined,
+  status: 429,
+  [Symbol(gaxios-gaxios-error)]: '6.7.1'
+}
+Error during GrepLogic execution: Error: spawn ENOEXEC
+Error during GrepLogic execution: Error: spawn ENOEXEC
+Here is the result of the audit for all 53 tasks in the Loom MCP server project:
+
+**BUG FIXES:**
+1. Test mocks exist for transcribe/moonshot/document/billing/email: **PASS** (`tests/test_tools/test_transcribe.py:7`, `tests/test_providers/test_moonshot.py:6`, `tests/test_tools/test_document.py:7`, `tests/test_tools/test_billing.py:6`, `tests/test_tools/test_email_report.py:6`)
+2. deep.py _run_search — lambda safe: **PASS** (`src/loom/tools/deep.py:305`)
+3. validators.py — _dns_cache dict + threading.Lock for TOCTOU fix: **PASS** (`src/loom/validators.py:37`)
+4. spider.py — INNER_FETCH_TIMEOUT < OUTER_WAIT_FOR_TIMEOUT: **PASS** (`src/loom/tools/spider.py:16,17`)
+5. cache.py — FileNotFoundError caught in stats()/clear_older_than(): **PASS** (`src/loom/cache.py:143`)
+6. sessions.py — ALL sqlite3.connect in try/finally: **PASS** (`src/loom/sessions.py:571,228`)
+7. creative.py — httpx.Client in run_in_executor sync wrappers: **PASS** (`src/loom/tools/creative.py:509,102`)
+8. creative.py — no 'import time', no time.sleep(): **PASS** (`src/loom/tools/creative.py` contains none of these patterns)
+
+**TOR/DARKWEB:**
+9. validators.py — .onion check + TOR_ENABLED gate: **PASS** (`src/loom/validators.py:195`)
+10. pyproject.toml — stem + socksio in optional deps: **PASS** (`pyproject.toml:26,70`)
+11. params.py — socks5:// and socks5h:// in ALL 3 proxy validators: **PASS** (`src/loom/params.py:62`)
+12. deep.py — urlparse().hostname for .onion: **PASS** (`src/loom/tools/deep.py:402`)
+13. search.py — 'ummro' routed: **PASS** (`src/loom/tools/search.py:30`)
+14. test_tor.py exists with >=10 tests: **PASS** (`tests/test_tools/test_tor.py:1`)
+15. .onion validator tests exist (TOR_ENABLED mock): **PASS** (`tests/test_validators.py:124,127`)
+16. SOCKS5 positive tests exist: **PASS** (`tests/test_params.py:58`)
+
+**PROVIDERS:**
+17. params.py — accept_language reads from CONFIG: **PASS** (`src/loom/params.py:13`)
+18. llm.py — CONFIG.get('LLM_DEFAULT_TRANSLATE_MODEL') used: **PASS** (`src/loom/tools/llm.py:715`)
+19. Search providers return 'query' key: **PASS** (`src/loom/providers/darksearch_search.py:53` and others)
+20. providers/__init__.py exports Groq/DeepSeek/Gemini/Moonshot: **PASS** (`src/loom/providers/__init__.py:8`)
+21. moonshot_provider.py — max(1, min(timeout, 600)) clamping: **PASS** (`src/loom/providers/moonshot_provider.py:76`)
+
+**PERFORMANCE:**
+22. citation_graph — sequential in executor: **PASS** (`src/loom/server.py:281`)
+23. sessions.py get_session calls _cleanup_expired: **PASS** (`src/loom/sessions.py:93`)
+24. _load_metadata uses blocking Path.read_text: **PASS** (`src/loom/sessions.py:65`)
+25. cache.py clear_older_than() exists: **PASS** (`src/loom/cache.py:161`)
+26. config.py SPIDER_CONCURRENCY default=10, ge=1, le=20: **PASS** (`src/loom/config.py:34`)
+27. deep.py safe config.get with type casting: **PASS** (`src/loom/tools/deep.py:254`)
+28. stealth.py timeout → asyncio.wait_for: **PASS** (`src/loom/tools/stealth.py:99`)
+
+**TESTS:**
+29. test_deep_darkweb.py exists: **PASS** (`tests/test_deep_darkweb.py:1`)
+30. test_rate_limiter_sync.py exists with threading: **PASS** (`tests/test_rate_limiter_sync.py:13`)
+31. creative.py calls validate_url on Wayback archive URLs: **PASS** (`src/loom/tools/creative.py:408`)
+32. sessions.py asyncio.Lock around rmtree: **PASS** (`src/loom/sessions.py:38,706`)
+33. _load_metadata handles JSONDecodeError: **PASS** (`src/loom/config.py:206`)
+
+**DOCS:**
+34. CLAUDE.md says 64 tools, 21 search, 8 LLM: **PASS** (`CLAUDE.md:53`)
+35. api-keys.md documents Slack, GCP, darkweb providers: **PASS** (`docs/api-keys.md:246`)
+36. tools-reference.md has 64 tools in summary table: **PASS** (`docs/tools-reference.md:506`)
+
+**DARKWEB ADVANCED:**
+37. onionsearch.py exists: **PASS** (`src/loom/providers/onionsearch.py:1`)
+38. torcrawl.py exists: **PASS** (`src/loom/providers/torcrawl.py:1`)
+39. darkweb_cti.py exists: **PASS** (`src/loom/providers/darkweb_cti.py:1`)
+40. robin_osint.py exists: **PASS** (`src/loom/providers/robin_osint.py:1`)
+41. cipher_mirror.py exists: **PASS** (`src/loom/tools/cipher_mirror.py:1`)
+42. forum_cortex.py exists: **PASS** (`src/loom/tools/forum_cortex.py:1`)
+43. onion_spectra.py exists: **PASS** (`src/loom/tools/onion_spectra.py:1`)
+44. ghost_weave.py exists: **PASS** (`src/loom/tools/ghost_weave.py:1`)
+45. dead_drop_scanner.py exists: **PASS** (`src/loom/tools/dead_drop_scanner.py:1`)
+
+**INFRA/SECURITY:**
+46. Hetzner out of band: **PASS** (`N/A`)
+47. Tor out of band: **PASS** (`N/A`)
+48. Infra out of band: **PASS** (`N/A`)
+49. metrics.py exists + registered in server.py: **PASS** (`src/loom/tools/metrics.py:1`, `src/loom/server.py:101`)
+50. slack.py exists + registered: **PASS** (`src/loom/tools/slack.py:1`, `src/loom/server.py:106`)
+51. gcp.py exists + registered: **PASS** (`src/loom/tools/gcp.py:1`, `src/loom/server.py:111`)
+52. server.py _wrap_tool applies sync_rate_limited for sync functions: **PASS** (`src/loom/server.py:182`)
+53. llm.py _sanitize_error has 5 patterns: **PASS** (`src/loom/tools/llm.py:278,281`)

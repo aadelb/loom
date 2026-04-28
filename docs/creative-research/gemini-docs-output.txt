@@ -1,0 +1,879 @@
+  "error": {
+    "code": 429,
+    "message": "No capacity available for model gemini-3.1-pro-preview on the server",
+    "errors": [
+      {
+        "message": "No capacity available for model gemini-3.1-pro-preview on the server",
+        "domain": "global",
+        "reason": "rateLimitExceeded"
+      }
+    ],
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+        "reason": "MODEL_CAPACITY_EXHAUSTED",
+        "domain": "cloudcode-pa.googleapis.com",
+        "metadata": {
+          "model": "gemini-3.1-pro-preview"
+        }
+      }
+    ]
+  }
+}
+]
+    at Gaxios._request (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:8800:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async _OAuth2Client.requestAsync (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:10763:16)
+    at async CodeAssistServer.requestStreamingPost (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:277779:17)
+    at async CodeAssistServer.generateContentStream (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:277579:23)
+    at async file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:278424:19
+    at async file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:255329:23
+    at async retryWithBackoff (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:275301:23)
+    at async GeminiChat.makeApiCallAndProcessStream (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:312614:28)
+    at async GeminiChat.streamWithRetries (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:312452:29) {
+  config: {
+    url: 'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse',
+    method: 'POST',
+    params: { alt: 'sse' },
+    headers: {
+      'Content-Type': 'application/json',
+      'User-Agent': 'GeminiCLI/0.39.1/gemini-3.1-pro-preview (darwin; arm64; terminal) google-api-nodejs-client/9.15.1',
+      Authorization: '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+      'x-goog-api-client': 'gl-node/22.21.1'
+    },
+    responseType: 'stream',
+    body: '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+    signal: AbortSignal { aborted: false },
+    retry: false,
+    paramsSerializer: [Function: paramsSerializer],
+    validateStatus: [Function: validateStatus],
+    errorRedactor: [Function: defaultErrorRedactor]
+  },
+  response: {
+    config: {
+      url: 'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse',
+      method: 'POST',
+      params: [Object],
+      headers: [Object],
+      responseType: 'stream',
+      body: '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+      signal: [AbortSignal],
+      retry: false,
+      paramsSerializer: [Function: paramsSerializer],
+      validateStatus: [Function: validateStatus],
+      errorRedactor: [Function: defaultErrorRedactor]
+    },
+    data: '[{\n' +
+      '  "error": {\n' +
+      '    "code": 429,\n' +
+      '    "message": "No capacity available for model gemini-3.1-pro-preview on the server",\n' +
+      '    "errors": [\n' +
+      '      {\n' +
+      '        "message": "No capacity available for model gemini-3.1-pro-preview on the server",\n' +
+      '        "domain": "global",\n' +
+      '        "reason": "rateLimitExceeded"\n' +
+      '      }\n' +
+      '    ],\n' +
+      '    "status": "RESOURCE_EXHAUSTED",\n' +
+      '    "details": [\n' +
+      '      {\n' +
+      '        "@type": "type.googleapis.com/google.rpc.ErrorInfo",\n' +
+      '        "reason": "MODEL_CAPACITY_EXHAUSTED",\n' +
+      '        "domain": "cloudcode-pa.googleapis.com",\n' +
+      '        "metadata": {\n' +
+      '          "model": "gemini-3.1-pro-preview"\n' +
+      '        }\n' +
+      '      }\n' +
+      '    ]\n' +
+      '  }\n' +
+      '}\n' +
+      ']',
+    headers: {
+      'alt-svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000',
+      'content-length': '630',
+      'content-type': 'application/json; charset=UTF-8',
+      date: 'Fri, 24 Apr 2026 21:05:23 GMT',
+      server: 'ESF',
+      'server-timing': 'gfet4t7; dur=7057',
+      vary: 'Origin, X-Origin, Referer',
+      'x-cloudaicompanion-trace-id': 'dda6cf5f5280aeb8',
+      'x-content-type-options': 'nosniff',
+      'x-frame-options': 'SAMEORIGIN',
+      'x-xss-protection': '0'
+    },
+    status: 429,
+    statusText: 'Too Many Requests',
+    request: {
+      responseURL: 'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse'
+    }
+  },
+  error: undefined,
+  status: 429,
+  [Symbol(gaxios-gaxios-error)]: '6.7.1'
+}
+  "error": {
+    "code": 429,
+    "message": "No capacity available for model gemini-3.1-pro-preview on the server",
+    "errors": [
+      {
+        "message": "No capacity available for model gemini-3.1-pro-preview on the server",
+        "domain": "global",
+        "reason": "rateLimitExceeded"
+      }
+    ],
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+        "reason": "MODEL_CAPACITY_EXHAUSTED",
+        "domain": "cloudcode-pa.googleapis.com",
+        "metadata": {
+          "model": "gemini-3.1-pro-preview"
+        }
+      }
+    ]
+  }
+}
+]
+    at Gaxios._request (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:8800:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async _OAuth2Client.requestAsync (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:10763:16)
+    at async CodeAssistServer.requestStreamingPost (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:277779:17)
+    at async CodeAssistServer.generateContentStream (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:277579:23)
+    at async file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:278424:19
+    at async file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:255329:23
+    at async retryWithBackoff (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:275301:23)
+    at async GeminiChat.makeApiCallAndProcessStream (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:312614:28)
+    at async GeminiChat.streamWithRetries (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:312452:29) {
+  config: {
+    url: 'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse',
+    method: 'POST',
+    params: { alt: 'sse' },
+    headers: {
+      'Content-Type': 'application/json',
+      'User-Agent': 'GeminiCLI/0.39.1/gemini-3.1-pro-preview (darwin; arm64; terminal) google-api-nodejs-client/9.15.1',
+      Authorization: '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+      'x-goog-api-client': 'gl-node/22.21.1'
+    },
+    responseType: 'stream',
+    body: '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+    signal: AbortSignal { aborted: false },
+    retry: false,
+    paramsSerializer: [Function: paramsSerializer],
+    validateStatus: [Function: validateStatus],
+    errorRedactor: [Function: defaultErrorRedactor]
+  },
+  response: {
+    config: {
+      url: 'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse',
+      method: 'POST',
+      params: [Object],
+      headers: [Object],
+      responseType: 'stream',
+      body: '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+      signal: [AbortSignal],
+      retry: false,
+      paramsSerializer: [Function: paramsSerializer],
+      validateStatus: [Function: validateStatus],
+      errorRedactor: [Function: defaultErrorRedactor]
+    },
+    data: '[{\n' +
+      '  "error": {\n' +
+      '    "code": 429,\n' +
+      '    "message": "No capacity available for model gemini-3.1-pro-preview on the server",\n' +
+      '    "errors": [\n' +
+      '      {\n' +
+      '        "message": "No capacity available for model gemini-3.1-pro-preview on the server",\n' +
+      '        "domain": "global",\n' +
+      '        "reason": "rateLimitExceeded"\n' +
+      '      }\n' +
+      '    ],\n' +
+      '    "status": "RESOURCE_EXHAUSTED",\n' +
+      '    "details": [\n' +
+      '      {\n' +
+      '        "@type": "type.googleapis.com/google.rpc.ErrorInfo",\n' +
+      '        "reason": "MODEL_CAPACITY_EXHAUSTED",\n' +
+      '        "domain": "cloudcode-pa.googleapis.com",\n' +
+      '        "metadata": {\n' +
+      '          "model": "gemini-3.1-pro-preview"\n' +
+      '        }\n' +
+      '      }\n' +
+      '    ]\n' +
+      '  }\n' +
+      '}\n' +
+      ']',
+    headers: {
+      'alt-svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000',
+      'content-length': '630',
+      'content-type': 'application/json; charset=UTF-8',
+      date: 'Fri, 24 Apr 2026 21:05:28 GMT',
+      server: 'ESF',
+      'server-timing': 'gfet4t7; dur=1151',
+      vary: 'Origin, X-Origin, Referer',
+      'x-cloudaicompanion-trace-id': '432702b0045c0ecb',
+      'x-content-type-options': 'nosniff',
+      'x-frame-options': 'SAMEORIGIN',
+      'x-xss-protection': '0'
+    },
+    status: 429,
+    statusText: 'Too Many Requests',
+    request: {
+      responseURL: 'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse'
+    }
+  },
+  error: undefined,
+  status: 429,
+  [Symbol(gaxios-gaxios-error)]: '6.7.1'
+}
+  "error": {
+    "code": 429,
+    "message": "No capacity available for model gemini-3.1-pro-preview on the server",
+    "errors": [
+      {
+        "message": "No capacity available for model gemini-3.1-pro-preview on the server",
+        "domain": "global",
+        "reason": "rateLimitExceeded"
+      }
+    ],
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+        "reason": "MODEL_CAPACITY_EXHAUSTED",
+        "domain": "cloudcode-pa.googleapis.com",
+        "metadata": {
+          "model": "gemini-3.1-pro-preview"
+        }
+      }
+    ]
+  }
+}
+]
+    at Gaxios._request (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:8800:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async _OAuth2Client.requestAsync (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:10763:16)
+    at async CodeAssistServer.requestStreamingPost (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:277779:17)
+    at async CodeAssistServer.generateContentStream (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:277579:23)
+    at async file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:278424:19
+    at async file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:255329:23
+    at async retryWithBackoff (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:275301:23)
+    at async GeminiChat.makeApiCallAndProcessStream (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:312614:28)
+    at async GeminiChat.streamWithRetries (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:312452:29) {
+  config: {
+    url: 'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse',
+    method: 'POST',
+    params: { alt: 'sse' },
+    headers: {
+      'Content-Type': 'application/json',
+      'User-Agent': 'GeminiCLI/0.39.1/gemini-3.1-pro-preview (darwin; arm64; terminal) google-api-nodejs-client/9.15.1',
+      Authorization: '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+      'x-goog-api-client': 'gl-node/22.21.1'
+    },
+    responseType: 'stream',
+    body: '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+    signal: AbortSignal { aborted: false },
+    retry: false,
+    paramsSerializer: [Function: paramsSerializer],
+    validateStatus: [Function: validateStatus],
+    errorRedactor: [Function: defaultErrorRedactor]
+  },
+  response: {
+    config: {
+      url: 'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse',
+      method: 'POST',
+      params: [Object],
+      headers: [Object],
+      responseType: 'stream',
+      body: '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+      signal: [AbortSignal],
+      retry: false,
+      paramsSerializer: [Function: paramsSerializer],
+      validateStatus: [Function: validateStatus],
+      errorRedactor: [Function: defaultErrorRedactor]
+    },
+    data: '[{\n' +
+      '  "error": {\n' +
+      '    "code": 429,\n' +
+      '    "message": "No capacity available for model gemini-3.1-pro-preview on the server",\n' +
+      '    "errors": [\n' +
+      '      {\n' +
+      '        "message": "No capacity available for model gemini-3.1-pro-preview on the server",\n' +
+      '        "domain": "global",\n' +
+      '        "reason": "rateLimitExceeded"\n' +
+      '      }\n' +
+      '    ],\n' +
+      '    "status": "RESOURCE_EXHAUSTED",\n' +
+      '    "details": [\n' +
+      '      {\n' +
+      '        "@type": "type.googleapis.com/google.rpc.ErrorInfo",\n' +
+      '        "reason": "MODEL_CAPACITY_EXHAUSTED",\n' +
+      '        "domain": "cloudcode-pa.googleapis.com",\n' +
+      '        "metadata": {\n' +
+      '          "model": "gemini-3.1-pro-preview"\n' +
+      '        }\n' +
+      '      }\n' +
+      '    ]\n' +
+      '  }\n' +
+      '}\n' +
+      ']',
+    headers: {
+      'alt-svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000',
+      'content-length': '630',
+      'content-type': 'application/json; charset=UTF-8',
+      date: 'Fri, 24 Apr 2026 21:05:45 GMT',
+      server: 'ESF',
+      'server-timing': 'gfet4t7; dur=8111',
+      vary: 'Origin, X-Origin, Referer',
+      'x-cloudaicompanion-trace-id': 'ef2ff8e64d16ecd1',
+      'x-content-type-options': 'nosniff',
+      'x-frame-options': 'SAMEORIGIN',
+      'x-xss-protection': '0'
+    },
+    status: 429,
+    statusText: 'Too Many Requests',
+    request: {
+      responseURL: 'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse'
+    }
+  },
+  error: undefined,
+  status: 429,
+  [Symbol(gaxios-gaxios-error)]: '6.7.1'
+}
+```markdown
+--- FILE: docs/tools-reference.md ---
+# Loom MCP Tools Reference
+
+Complete reference for all tools registered in the Loom MCP research server.
+
+## Search and Discovery Tools
+
+### research_search
+Web search via Exa, Tavily, Firecrawl, or Brave with provider cascade fallback.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `query` | string | *required* | Search query |
+| `provider` | string | `"exa"` | Preferred provider: `exa`, `tavily`, `firecrawl`, `brave` |
+| `n` | int | `10` | Number of results |
+| `include_domains` | array | `null` | Limit search to these domains |
+| `exclude_domains` | array | `null` | Exclude these domains |
+| `start_date` | string | `null` | ISO date (yyyy-mm-dd) |
+| `end_date` | string | `null` | ISO date (yyyy-mm-dd) |
+| `language` | string | `null` | Language hint (e.g., "en") |
+| `provider_config`| dict | `null` | Pass-through config (e.g., `{"semantic": true}`) |
+
+**Required API Key**: `EXA_API_KEY`, `TAVILY_API_KEY`, `FIRECRAWL_API_KEY`, or `BRAVE_API_KEY`
+
+**Example Usage**:
+```python
+await session.call_tool("research_search", {"query": "AI safety 2026", "provider": "exa"})
+```
+
+**Return Shape**:
+```json
+{
+  "provider": "exa",
+  "results": [
+    {"title": "Example", "url": "https://example.com", "score": 0.95}
+  ]
+}
+```
+
+---
+
+### find_similar_exa
+Find pages semantically similar to a given URL using Exa.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `url` | string | *required* | Target URL to find similarities for |
+| `n` | int | `10` | Number of results |
+
+**Required API Key**: `EXA_API_KEY`
+
+**Example Usage**:
+```python
+await session.call_tool("find_similar_exa", {"url": "https://example.com", "n": 5})
+```
+
+**Return Shape**:
+```json
+{
+  "provider": "exa",
+  "results": [
+    {"title": "Similar Page", "url": "https://example.com/similar", "score": 0.88}
+  ]
+}
+```
+
+---
+
+### research_deep
+One-shot deep research pipeline: search → fetch → extract markdown.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `query` | string | *required* | Search query |
+| `depth` | int | `2` | Depth of search/fetch pipeline |
+| `include_domains` | array | `null` | Domains to include |
+| `exclude_domains` | array | `null` | Domains to exclude |
+| `start_date` | string | `null` | Filter by start date |
+
+**Required API Key**: Any Search API Key + Any LLM API Key
+
+**Example Usage**:
+```python
+await session.call_tool("research_deep", {"query": "Next-gen battery tech"})
+```
+
+**Return Shape**:
+```json
+{
+  "query": "Next-gen battery tech",
+  "search_results": [...],
+  "extracted_markdown": "..."
+}
+```
+
+---
+
+## Fetch and Crawl Tools
+
+### research_fetch
+Scrapling 3-tier adaptive fetcher with URL validation, caching, and multiple rendering modes.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `url` | string | *required* | Target URL |
+| `mode` | string | `"stealthy"`| `http`, `stealthy`, `dynamic` |
+| `solve_cloudflare`| bool | `true` | Auto-solve challenges in dynamic mode |
+| `bypass_cache` | bool | `false` | Force refetch |
+| `max_chars` | int | `20000` | Truncate output |
+| `timeout` | int | `null` | Override timeout |
+
+**Required API Key**: None - free
+
+**Example Usage**:
+```python
+await session.call_tool("research_fetch", {"url": "https://example.com", "mode": "dynamic"})
+```
+
+**Return Shape**:
+```json
+{
+  "url": "https://example.com",
+  "title": "Example Domain",
+  "text": "Domain content...",
+  "tool": "scrapling.stealthy"
+}
+```
+
+---
+
+### research_spider
+Parallel bulk URL fetcher with bounded concurrency and deduplication.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `urls` | array | *required* | List of URLs to fetch |
+| `mode` | string | `"stealthy"`| Render mode for each fetch |
+| `concurrency` | int | `5` | Concurrent fetches |
+| `fail_fast` | bool | `false` | Stop on first error |
+
+**Required API Key**: None - free
+
+**Example Usage**:
+```python
+await session.call_tool("research_spider", {"urls": ["https://a.com", "https://b.com"], "concurrency": 2})
+```
+
+**Return Shape**:
+```json
+[
+  {"url": "https://a.com", "text": "Content...", "tool": "scrapling.stealthy"}
+]
+```
+
+---
+
+### research_markdown
+Crawl4AI async markdown extractor for LLM-ready content.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `url` | string | *required* | Target URL |
+| `css_selector` | string | `null` | Extract specific CSS subtree |
+| `js_before_scrape`| string | `null` | JS snippet to execute |
+| `screenshot` | bool | `false` | Capture screenshot |
+
+**Required API Key**: None - free
+
+**Example Usage**:
+```python
+await session.call_tool("research_markdown", {"url": "https://example.com", "css_selector": "main"})
+```
+
+**Return Shape**:
+```json
+{
+  "url": "https://example.com",
+  "markdown": "# Example...",
+  "tool": "crawl4ai"
+}
+```
+
+---
+
+### research_camoufox
+Firefox-based stealth fetcher with Camoufox fingerprint spoofing.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `url` | string | *required* | Target URL |
+| `timeout` | int | `null` | Timeout in seconds |
+
+**Required API Key**: None - free
+
+**Example Usage**:
+```python
+await session.call_tool("research_camoufox", {"url": "https://protected.com"})
+```
+
+**Return Shape**:
+```json
+{"url": "https://protected.com", "text": "...", "tool": "camoufox"}
+```
+
+---
+
+### research_botasaurus
+Chrome-based stealth fetcher with advanced anti-detection.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `url` | string | *required* | Target URL |
+
+**Required API Key**: None - free
+
+**Example Usage**:
+```python
+await session.call_tool("research_botasaurus", {"url": "https://highly-protected.com"})
+```
+
+**Return Shape**:
+```json
+{"url": "https://highly-protected.com", "text": "...", "tool": "botasaurus"}
+```
+
+---
+
+## GitHub Intelligence
+
+### research_github
+GitHub search via gh CLI with injection prevention.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `kind` | string | *required* | `repos`, `code`, or `issues` |
+| `query` | string | *required* | Search query |
+| `limit` | int | `20` | Max results |
+| `sort` | string | `"best-match"`| Sort order |
+
+**Required API Key**: `GITHUB_TOKEN` (optional, for higher rate limits)
+
+**Example Usage**:
+```python
+await session.call_tool("research_github", {"kind": "repos", "query": "async python", "limit": 5})
+```
+
+**Return Shape**:
+```json
+{
+  "kind": "repos",
+  "results": [{"name": "FastAPI", "stargazersCount": 75000}]
+}
+```
+
+---
+
+### research_github_readme
+Fetch a repository's README content.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `owner` | string | *required* | GitHub user or org |
+| `repo` | string | *required* | Repository name |
+
+**Required API Key**: `GITHUB_TOKEN` (optional)
+
+**Example Usage**:
+```python
+await session.call_tool("research_github_readme", {"owner": "tiangolo", "repo": "fastapi"})
+```
+
+**Return Shape**:
+```json
+{"content": "# FastAPI\n..."}
+```
+
+---
+
+### research_github_releases
+Fetch recent releases for a repository.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `owner` | string | *required* | GitHub user or org |
+| `repo` | string | *required* | Repository name |
+| `limit` | int | `5` | Number of releases |
+
+**Required API Key**: `GITHUB_TOKEN` (optional)
+
+**Example Usage**:
+```python
+await session.call_tool("research_github_releases", {"owner": "python", "repo": "cpython"})
+```
+
+**Return Shape**:
+```json
+{"releases": [{"tag_name": "v3.13.0", "published_at": "..."}]}
+```
+
+---
+
+## LLM Analysis Tools
+
+*All LLM tools require at least one provider key: `NVIDIA_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or `VLLM_API_BASE`.*
+
+### research_llm_summarize
+Generate a summary of the given text using an LLM.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `text` | string | *required* | Text to summarize |
+| `max_tokens` | int | `400` | Max response length |
+
+**Example Usage**:
+```python
+await session.call_tool("research_llm_summarize", {"text": "Long article content..."})
+```
+
+**Return Shape**: `{"summary": "...", "token_usage": {"prompt": 150, "completion": 50}}`
+
+### research_llm_extract
+Extract structured data from text according to a JSON schema.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `text` | string | *required* | Text to extract from |
+| `schema` | dict | *required* | JSON Schema describing the target data |
+
+**Example Usage**:
+```python
+await session.call_tool("research_llm_extract", {"text": "John is 30.", "schema": {"type": "object", "properties": {"age": {"type": "number"}}}})
+```
+
+**Return Shape**: `{"age": 30}`
+
+### research_llm_classify
+Classify text into one or more categories.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `text` | string | *required* | Text to classify |
+| `labels` | array | *required* | List of possible categories |
+
+**Example Usage**:
+```python
+await session.call_tool("research_llm_classify", {"text": "This is great!", "labels": ["positive", "negative"]})
+```
+
+**Return Shape**: `{"classification": ["positive"]}`
+
+### research_llm_translate
+Translate text into a target language.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `text` | string | *required* | Text to translate |
+| `target_lang` | string | `"en"` | Target language code |
+
+**Example Usage**:
+```python
+await session.call_tool("research_llm_translate", {"text": "Bonjour", "target_lang": "en"})
+```
+
+**Return Shape**: `{"translated_text": "Hello"}`
+
+### research_llm_query_expand
+Expand a search query into multiple variations.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `query` | string | *required* | Original query |
+| `n` | int | `5` | Number of variations |
+
+**Example Usage**:
+```python
+await session.call_tool("research_llm_query_expand", {"query": "AI regulation"})
+```
+
+**Return Shape**: `{"expanded_queries": ["AI policy", "artificial intelligence laws"]}`
+
+### research_llm_answer
+Answer a question using the provided source documents.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `question` | string | *required* | The question |
+| `sources` | array | *required* | List of dicts representing sources |
+
+**Example Usage**:
+```python
+await session.call_tool("research_llm_answer", {"question": "What is Loom?", "sources": [{"text": "Loom is..."}]})
+```
+
+**Return Shape**: `{"answer": "...", "citations": [...]}`
+
+### research_llm_embed
+Generate embeddings for semantic similarity.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `texts` | array | *required* | List of strings to embed |
+
+**Example Usage**:
+```python
+await session.call_tool("research_llm_embed", {"texts": ["Hello world"]})
+```
+
+**Return Shape**: `{"embeddings": [[0.01, -0.02, ...]]}`
+
+### research_llm_chat
+Direct chat interface with the LLM.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `messages` | array | *required* | Standard chat messages array |
+
+**Example Usage**:
+```python
+await session.call_tool("research_llm_chat", {"messages": [{"role": "user", "content": "Hi"}]})
+```
+
+**Return Shape**: `{"role": "assistant", "content": "Hello!"}`
+
+---
+
+## Enrichment Tools
+
+### research_detect_language
+Detect the language of text content (langdetect).
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `text` | string | *required* | Text to evaluate |
+
+**Required API Key**: None - free
+
+**Example Usage**:
+```python
+await session.call_tool("research_detect_language", {"text": "Hola mundo"})
+```
+
+**Return Shape**: `{"language": "es"}`
+
+### research_wayback
+Retrieve archived versions of a URL from the Wayback Machine.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `url` | string | *required* | Target URL |
+| `limit` | int | `1` | Number of snapshots |
+
+**Required API Key**: None - free
+
+**Example Usage**:
+```python
+await session.call_tool("research_wayback", {"url": "https://example.com"})
+```
+
+**Return Shape**: `{"snapshots": [{"timestamp": "...", "url": "..."}]}`
+
+---
+
+## Expert & Creative Tools
+
+*These tools utilize composite pipelines requiring both Search and LLM API keys.*
+
+| Tool Name | Parameters | Description |
+|---|---|---|
+| `research_find_experts` | `query`, `n` | Find top experts on a topic |
+| `research_red_team` | `claim`, `n_counter`, `max_cost_usd` | Generate counter-arguments |
+| `research_multilingual` | `query`, `languages`, `n_per_lang` | Run query across languages |
+| `research_consensus` | `query`, `providers`, `n` | Score results by consensus |
+| `research_misinfo_check`| `claim`, `n_sources`, `max_cost_usd`| Stress test a claim |
+| `research_temporal_diff`| `url`, `max_cost_usd` | Compare current page to Wayback |
+| `research_citation_graph`| `paper_query`, `depth`, `max_papers`| Build citation graph |
+| `research_ai_detect` | `text`, `max_cost_usd` | Detect AI-generated text |
+| `research_curriculum` | `topic`, `max_cost_usd` | Generate a learning path |
+| `research_community_sentiment`| `query`, `n` | Get HackerNews/Reddit sentiment |
+| `research_wiki_ghost` | `topic`, `language` | Mine Wikipedia talk pages |
+| `research_semantic_sitemap`| `domain`, `max_pages`, `cluster_threshold` | Cluster sitemap semantically |
+
+---
+
+## Session Management
+
+| Tool Name | Parameters | Description | API Key |
+|---|---|---|---|
+| `research_session_open` | `name`, `browser`, `headless`, `ttl_seconds` | Open a persistent browser session | None - free |
+| `research_session_list` | None | List all active sessions | None - free |
+| `research_session_close`| `name` | Close a session | None - free |
+
+---
+
+## Configuration & Cache Management
+
+| Tool Name | Parameters | Description | API Key |
+|---|---|---|---|
+| `research_config_get` | `key` | Retrieve runtime config value(s) | None - free |
+| `research_config_set` | `key`, `value` | Persist a configuration change | None - free |
+| `research_cache_stats`| None | Return cache sizes and metrics | None - free |
+| `research_cache_clear`| `older_than_days` | Delete old cache entries | None - free |
+
+
+--- FILE: docs/api-keys.md ---
+# API Keys and Environment Variables
+
+Loom operates using a provider cascade for its tools. You do not need to configure all of these keys. Core fetching, stealth browsers, and scraping tools are completely free. You only need API keys if you want to use the search capabilities or the LLM intelligence pipelines.
+
+## Search Providers
+
+Loom cascades through search providers automatically. Supplying at least one is recommended for search capabilities.
+
+| Environment Variable | Provider | Signup URL | Notes |
+|---|---|---|---|
+| `EXA_API_KEY` | Exa.ai | [https://exa.ai/](https://exa.ai/) | High-quality semantic search (Recommended default) |
+| `TAVILY_API_KEY` | Tavily | [https://tavily.com/](https://tavily.com/) | Built specifically for AI agents |
+| `FIRECRAWL_API_KEY` | Firecrawl | [https://firecrawl.dev/](https://firecrawl.dev/) | Advanced deep scraping and search |
+| `BRAVE_API_KEY` | Brave Search | [https://brave.com/search/api/](https://brave.com/search/api/) | Offers a free tier limit |
+
+## LLM Providers
+
+LLM providers power the intelligence tasks (`research_llm_*` tools, summaries, data extraction, and creative pipelines). Loom cascades failures automatically.
+
+| Environment Variable | Provider | Signup URL | Notes |
+|---|---|---|---|
+| `NVIDIA_API_KEY` | NVIDIA NIM | [https://build.nvidia.com/](https://build.nvidia.com/) | Features a generous free tier for top open models |
+| `OPENAI_API_KEY` | OpenAI | [https://platform.openai.com/](https://platform.openai.com/) | Access to GPT-4o and GPT-4o-mini |
+| `ANTHROPIC_API_KEY` | Anthropic | [https://console.anthropic.com/](https://console.anthropic.com/) | Access to the Claude 3.5 model family |
+| `VLLM_API_BASE` | vLLM (Local) | *Self-Hosted* | Base URL for self-hosted open-source models |
+
+## General Integrations
+
+| Environment Variable | Provider | Signup URL | Notes |
+|---|---|---|---|
+| `GITHUB_TOKEN` | GitHub | [https://github.com/settings/tokens](https://github.com/settings/tokens) | Optional. Unlocks higher rate limits for `research_github` commands |
+```
