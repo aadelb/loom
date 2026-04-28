@@ -96,6 +96,7 @@ _CLI_TOOLS = [
     {"name": "codex", "cmd": ["codex", "exec", "-m", "gpt-5.2-codex", "-s", "workspace-write"]},
     {"name": "cursor", "cmd": ["cursor", "--ask"]},
     {"name": "claude", "cmd": ["claude", "-p"]},
+    {"name": "kilo", "cmd": ["kilo", "run"]},
 ]
 
 
