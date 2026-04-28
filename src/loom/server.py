@@ -840,8 +840,9 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(prompt_reframe.research_refusal_detector))
 
     # Multi-LLM query (ask all available providers simultaneously)
-    from loom.tools import multi_llm
+    from loom.tools import multi_llm, ask_all_models
     mcp.tool()(_wrap_tool(multi_llm.research_ask_all_llms, "llm"))
+    mcp.tool()(_wrap_tool(ask_all_models.research_ask_all_models, "llm"))
 
 def _validate_environment() -> None:
     """Validate that required environment variables are configured.
