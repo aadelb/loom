@@ -86,6 +86,7 @@ class ConfigModel(BaseModel):
     LLM_DEFAULT_TRANSLATE_MODEL: str = "moonshotai/kimi-k2-instruct"
     LLM_MAX_PARALLEL: int = Field(default=12, ge=1, le=64)
     LLM_DAILY_COST_CAP_USD: float = Field(default=10.0, ge=0.0, le=1000.0)
+    LLM_EXTRACT_CONCURRENCY: int = Field(default=3, ge=1, le=16)
     LLM_CASCADE_ORDER: list[str] = Field(
         default_factory=lambda: ["groq", "nvidia", "deepseek", "gemini", "moonshot", "openai", "anthropic", "vllm"]
     )
@@ -101,16 +102,21 @@ class ConfigModel(BaseModel):
     # Fetch
     FETCH_AUTO_ESCALATE: bool = True
 
+    # Sessions
+    SESSION_DIR: str = "~/.loom/sessions"
+
     # Tor / Darkweb
     TOR_ENABLED: bool = False
     TOR_SOCKS5_PROXY: str = "socks5h://127.0.0.1:9050"
-    ALLOW_ONION_URLS: bool = False
 
     # Rate limits (per-minute sliding window)
     RATE_LIMIT_SEARCH_PER_MIN: int = Field(default=30, ge=1, le=200)
     RATE_LIMIT_DEEP_PER_MIN: int = Field(default=5, ge=1, le=50)
     RATE_LIMIT_LLM_PER_MIN: int = Field(default=20, ge=1, le=200)
     RATE_LIMIT_FETCH_PER_MIN: int = Field(default=60, ge=1, le=500)
+
+    # Rate limit persistence
+    RATE_LIMIT_PERSIST: bool = False
 
     # Advanced pipeline stages (off by default — enable for thorough research)
     RESEARCH_COMMUNITY_SENTIMENT: bool = False

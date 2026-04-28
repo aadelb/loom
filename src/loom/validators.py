@@ -17,15 +17,46 @@ from urllib.parse import urlparse
 
 logger = logging.getLogger("loom.validators")
 
-# Security & capacity constants
-MAX_CHARS_HARD_CAP = 200_000
-MAX_SPIDER_URLS = 100
-SPIDER_CONCURRENCY = 10
-EXTERNAL_TIMEOUT_SECS = 30
-MAX_REQ_TIMEOUT = 120
+# Helper functions to get config values (lazy-loaded to avoid import cycles)
+def _get_external_timeout_secs() -> int:
+    """Get EXTERNAL_TIMEOUT_SECS from config with fallback default."""
+    try:
+        from loom.config import get_config
+        return get_config().get("EXTERNAL_TIMEOUT_SECS", 30)
+    except (ImportError, RuntimeError):
+        return 30
+
+
+def _get_max_chars_hard_cap() -> int:
+    """Get MAX_CHARS_HARD_CAP from config with fallback default."""
+    try:
+        from loom.config import get_config
+        return get_config().get("MAX_CHARS_HARD_CAP", 200_000)
+    except (ImportError, RuntimeError):
+        return 200_000
+
+
+def _get_max_spider_urls() -> int:
+    """Get MAX_SPIDER_URLS from config with fallback default."""
+    try:
+        from loom.config import get_config
+        return get_config().get("MAX_SPIDER_URLS", 100)
+    except (ImportError, RuntimeError):
+        return 100
+
+
+# For backward compatibility, provide module-level accessor functions
+# These are used by validators internally; tools should call get_config() directly
+EXTERNAL_TIMEOUT_SECS = 30  # Default; actual value read from config at runtime
+MAX_CHARS_HARD_CAP = 200_000  # Default; actual value read from config at runtime
+MAX_SPIDER_URLS = 100  # Default; actual value read from config at runtime
 
 # Default cap for per-fetch text extraction (aliases MAX_CHARS_HARD_CAP for tools).
-MAX_FETCH_CHARS = MAX_CHARS_HARD_CAP
+def get_max_fetch_chars() -> int:
+    """Get max fetch chars from config."""
+    return _get_max_chars_hard_cap()
+
+MAX_FETCH_CHARS = 200_000  # Default; actual value should be read via get_max_fetch_chars()
 
 # Default timeout (seconds) for stealth browser tools (camoufox, botasaurus).
 STEALTH_TIMEOUT = 60
@@ -307,6 +338,7 @@ def cap_chars(n: int | None) -> int:
         n = int(n or 0)
     except (TypeError, ValueError):
         n = 0
-    if n <= 0 or n > MAX_CHARS_HARD_CAP:
-        return MAX_CHARS_HARD_CAP
+    max_cap = _get_max_chars_hard_cap()
+    if n <= 0 or n > max_cap:
+        return max_cap
     return n
