@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What is Loom
 
-Loom is a Python MCP (Model Context Protocol) server that exposes 160 research tools over streamable-HTTP (port 8787). It wraps scraping (Scrapling, Crawl4AI, Camoufox, Botasaurus), search across 21 providers, 8 LLM providers, infrastructure tools (VastAI, Stripe, Billing), communication tools (Email, Joplin notes), media tools (Audio transcription, Document conversion), Tor/darkweb tools, GitHub CLI, persistent browser sessions, creative research tools, killer research tools, dark research tools, intelligence tools, revolutionary tools, AI safety tools, academic integrity tools, career intelligence tools, signal detection tools, and supply chain intelligence tools, plus a content-hash cache into a single MCP service. It also ships a Typer CLI (`loom`) that calls the MCP server as a client.
+Loom is a Python MCP (Model Context Protocol) server that exposes 167 research tools over streamable-HTTP (port 8787). It wraps scraping (Scrapling, Crawl4AI, Camoufox, Botasaurus), search across 21 providers, 8 LLM providers, infrastructure tools (VastAI, Stripe, Billing), communication tools (Email, Joplin notes), media tools (Audio transcription, Document conversion), Tor/darkweb tools, GitHub CLI, persistent browser sessions, creative research tools, killer research tools, dark research tools, intelligence tools, revolutionary tools, AI safety tools, academic integrity tools, career intelligence tools, signal detection tools, and supply chain intelligence tools, plus a content-hash cache into a single MCP service. It also ships a Typer CLI (`loom`) that calls the MCP server as a client.
 
 ## Commands
 
@@ -50,7 +50,7 @@ src/loom/
   cache.py         Content-hash CacheStore (SHA-256, daily dirs, atomic writes, singleton)
   sessions.py      Persistent browser session management (in-memory registry + SQLite SessionManager)
   journey.py       End-to-end journey test runner (mocked/live/record modes)
-  tools/           One module per tool family (160 tools total):
+  tools/           One module per tool family (167 tools total):
     fetch.py       research_fetch (Scrapling 3-tier: http/stealthy/dynamic + Cloudflare auto-escalation)
     spider.py      research_spider (concurrent multi-URL fetch)
     markdown.py    research_markdown (Crawl4AI + Trafilatura fallback for HTML-to-markdown)
@@ -280,13 +280,13 @@ src/loom/
 - Markers: `slow`, `live` (real network), `integration`
 - Test structure mirrors source: `tests/test_tools/`, `tests/test_providers/`, `tests/test_integration/`
 - Fixtures in `tests/conftest.py` provide temp dirs, mock HTTP transport, and sample API responses
-- Journey tests (`tests/journey_e2e.py`) run the full 160 tool scenario in mocked/live/record modes
+- Journey tests (`tests/journey_e2e.py`) run the full 167 tool scenario in mocked/live/record modes
 
 ## Documentation
 
 Four comprehensive documentation files in `docs/`:
 
-- **tools-reference.md** — Complete reference for all 160 tools, parameters, and examples
+- **tools-reference.md** — Complete reference for all 167 tools, parameters, and examples
 - **api-keys.md** — API key setup for all 8 LLM providers + 21 search providers + infrastructure/communication/media services
 - **architecture.md** — Deep dive into pipeline design, escalation strategy, and tool composition
 - **help.md** — Troubleshooting, common patterns, and FAQ

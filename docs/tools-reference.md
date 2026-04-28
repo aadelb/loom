@@ -2823,7 +2823,7 @@ Mine Wikipedia talk pages and edit history for contested knowledge and controver
 | OCR | 1 | `research_ocr_extract` | FREE |
 | Network | 1 | `research_nmap_scan` | FREE |
 
-**Total: 94 tools**
+**Total: 167 tools**
 
 ---
 
