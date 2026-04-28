@@ -91,6 +91,8 @@ _API_MODELS: dict[str, list[dict[str, str]]] = {
     "openrouter": [
         {"id": "moonshotai/kimi-k2.6", "name": "Kimi K2.6 (OpenRouter)", "cost": "$0.55/$2.65 per 1M"},
         {"id": "anthropic/claude-opus-4.7", "name": "Claude Opus 4.7 (OpenRouter)", "cost": "$5/$25 per 1M"},
+        {"id": "qwen/qwen3.6-plus:free", "name": "Qwen 3.6 Plus (FREE!)", "cost": "$0/FREE"},
+        {"id": "x-ai/grok-4.1-fast", "name": "Grok 4.1 Fast (2M ctx!)", "cost": "$0.20/$0.50 per 1M"},
     ],
 }
 
