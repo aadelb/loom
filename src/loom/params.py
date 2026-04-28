@@ -1180,3 +1180,69 @@ class OCRExtractParams(BaseModel):
         if len(v) > 10:
             raise ValueError("language max 10 characters")
         return v
+
+class JobSearchParams(BaseModel):
+    """Parameters for research_job_search tool."""
+
+    query: str
+    location: str | None = None
+    remote_only: bool = False
+    limit: int = 20
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("query")
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("query must be non-empty")
+        v = v.strip()
+        if len(v) > 200:
+            raise ValueError("query max 200 characters")
+        return v
+
+    @field_validator("location")
+    @classmethod
+    def validate_location(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        v = v.strip()
+        if len(v) > 100:
+            raise ValueError("location max 100 characters")
+        return v
+
+    @field_validator("limit")
+    @classmethod
+    def validate_limit(cls, v: int) -> int:
+        if v < 1 or v > 100:
+            raise ValueError("limit must be 1-100")
+        return v
+
+
+class JobMarketParams(BaseModel):
+    """Parameters for research_job_market tool."""
+
+    role: str
+    location: str | None = None
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("role")
+    @classmethod
+    def validate_role(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("role must be non-empty")
+        v = v.strip()
+        if len(v) > 200:
+            raise ValueError("role max 200 characters")
+        return v
+
+    @field_validator("location")
+    @classmethod
+    def validate_location(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        v = v.strip()
+        if len(v) > 100:
+            raise ValueError("location max 100 characters")
+        return v

@@ -653,7 +653,7 @@ class TestSecurityTools:
 
     def test_research_password_check(self) -> None:
         """Test research_password_check."""
-        from loom.tools.pwd_check import research_password_check
+        from loom.tools.breach_check import research_password_check
 
         with patch("httpx.get") as mock_get:
             mock_response = MagicMock()
@@ -665,7 +665,7 @@ class TestSecurityTools:
 
     def test_research_breach_check(self) -> None:
         """Test research_breach_check."""
-        from loom.tools.pwd_check import research_breach_check
+        from loom.tools.breach_check import research_breach_check
 
         with patch("httpx.get") as mock_get:
             mock_response = MagicMock()
@@ -725,7 +725,7 @@ class TestSecurityTools:
 
     def test_research_cert_analyze(self) -> None:
         """Test research_cert_analyze."""
-        from loom.tools.cert_analyze import research_cert_analyze
+        from loom.tools.cert_analyzer import research_cert_analyze
 
         with patch("ssl.create_default_context") as mock_ssl:
             mock_ssl.return_value.wrap_socket = MagicMock()
@@ -750,7 +750,7 @@ class TestImageTools:
     @pytest.mark.asyncio
     async def test_research_image_analyze(self) -> None:
         """Test research_image_analyze."""
-        from loom.tools.image_analyze import research_image_analyze
+        from loom.tools.image_intel import research_image_analyze
 
         with patch("loom.tools.llm.research_llm_chat") as mock_chat:
             mock_chat.return_value = {"text": "Image analysis"}
@@ -760,7 +760,7 @@ class TestImageTools:
 
     def test_research_exif_extract(self) -> None:
         """Test research_exif_extract."""
-        from loom.tools.exif_extract import research_exif_extract
+        from loom.tools.image_intel import research_exif_extract
 
         with patch("httpx.get") as mock_get:
             mock_response = MagicMock()
@@ -772,7 +772,7 @@ class TestImageTools:
 
     def test_research_ocr_extract(self) -> None:
         """Test research_ocr_extract."""
-        from loom.tools.ocr_extract import research_ocr_extract
+        from loom.tools.image_intel import research_ocr_extract
 
         with patch("httpx.get") as mock_get:
             mock_response = MagicMock()
@@ -860,7 +860,7 @@ class TestRSSTools:
 
     def test_research_rss_fetch(self) -> None:
         """Test research_rss_fetch."""
-        from loom.tools.rss import research_rss_fetch
+        from loom.tools.rss_monitor import research_rss_fetch
 
         with patch("httpx.get") as mock_get:
             mock_response = MagicMock()
@@ -872,7 +872,7 @@ class TestRSSTools:
 
     def test_research_rss_search(self) -> None:
         """Test research_rss_search."""
-        from loom.tools.rss import research_rss_search
+        from loom.tools.rss_monitor import research_rss_search
 
         with patch("loom.tools.rss.research_rss_fetch") as mock_fetch:
             mock_fetch.return_value = {"items": []}
@@ -1092,7 +1092,7 @@ class TestPsychologyTools:
 
     def test_research_persona_profile(self) -> None:
         """Test research_persona_profile."""
-        from loom.tools.psychology import research_persona_profile
+        from loom.tools.persona_profile import research_persona_profile
 
         text = "This user enjoys technology and science. " * 20
 
