@@ -118,6 +118,9 @@ def filter_headers(headers: dict[str, str] | None) -> dict[str, str] | None:
     filtered: dict[str, str] = {}
     for name, value in headers.items():
         if name.lower() in SAFE_REQUEST_HEADERS:
+            if "\r" in value or "\n" in value:
+                _log.warning("header_crlf_rejected name=%s", name)
+                continue
             if len(value) <= 512:
                 filtered[name] = value
             else:
@@ -241,6 +244,14 @@ def validate_url(url: str) -> str:
             ip = ipaddress.ip_address(ip_str)
         except ValueError:
             raise UrlSafetyError(f"invalid resolved ip: {ip_str}") from None
+
+        # Check for IPv4-mapped IPv6 addresses (Fix C2)
+        if hasattr(ip, 'ipv4_mapped') and ip.ipv4_mapped:
+            mapped = ip.ipv4_mapped
+            if mapped.is_private or mapped.is_loopback or mapped.is_link_local:
+                raise UrlSafetyError(
+                    f"IPv4-mapped IPv6 resolves to private IP: {mapped}"
+                )
 
         if (
             ip.is_private

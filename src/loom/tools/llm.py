@@ -275,12 +275,15 @@ def _safe_error_str(exc: Exception | None) -> str:
 def _sanitize_error(error_str: str) -> str:
     """Remove API keys and tokens from error messages."""
     # Use bounded quantifiers to prevent ReDoS (MEDIUM #13)
-    error_str = re.sub(r"sk-[A-Za-z0-9_\-]{10,50}", "[OPENAI_KEY_REDACTED]", error_str)
-    error_str = re.sub(r"nvapi-[A-Za-z0-9_\-]{10,50}", "[NVIDIA_KEY_REDACTED]", error_str)
+    error_str = re.sub(r"sk-ant-[A-Za-z0-9_\-]{10,200}", "[ANTHROPIC_KEY_REDACTED]", error_str)
+    error_str = re.sub(r"sk-[A-Za-z0-9_\-]{10,200}", "[OPENAI_KEY_REDACTED]", error_str)
+    error_str = re.sub(r"nvapi-[A-Za-z0-9_\-]{10,200}", "[NVIDIA_KEY_REDACTED]", error_str)
+    error_str = re.sub(r"gsk_[A-Za-z0-9_\-]{10,200}", "[GROQ_KEY_REDACTED]", error_str)
+    error_str = re.sub(r"AIzaSy[A-Za-z0-9_\-]{30,50}", "[GOOGLE_KEY_REDACTED]", error_str)
     error_str = re.sub(r"ghp_[A-Za-z0-9]{36}", "[GITHUB_TOKEN_REDACTED]", error_str)
     error_str = re.sub(r"AKIA[0-9A-Z]{16}", "[AWS_KEY_REDACTED]", error_str)
     error_str = re.sub(
-        r"Bearer\s+[A-Za-z0-9_\-\.]{10,50}",
+        r"Bearer\s+[A-Za-z0-9_\-\.]{10,200}",
         "Bearer [TOKEN_REDACTED]",
         error_str,
         flags=re.IGNORECASE,

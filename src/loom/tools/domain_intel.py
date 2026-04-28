@@ -51,6 +51,10 @@ def _validate_ip_or_domain(target: str) -> str:
     """
     target = target.strip()
 
+    # Fix C3: Reject targets starting with "-" to prevent nmap flag injection
+    if target.startswith("-"):
+        raise ValueError("target cannot start with '-'")
+
     # Try to parse as IP address first
     try:
         ipaddress.ip_address(target)
