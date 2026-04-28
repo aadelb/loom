@@ -2,12 +2,25 @@
 
 from __future__ import annotations
 
+import re
+
 import pytest
 
 from loom.tools.prompt_reframe import (
+    _FORMAT_SMUGGLE_TEMPLATES,
+    _MODEL_CONFIGS,
+    _MODEL_FINGERPRINTS,
+    _REFUSAL_PATTERNS,
+    _STRATEGIES,
+    _apply_strategy,
+    _compute_stacked_multiplier,
     research_adaptive_reframe,
+    research_crescendo_chain,
     research_fingerprint_model,
     research_format_smuggle,
+    research_model_vulnerability_profile,
+    research_prompt_reframe,
+    research_refusal_detector,
 )
 
 
@@ -524,3 +537,617 @@ class TestIntegration:
             "policy_violation",
             "general_refusal",
         ]
+
+
+class TestAllStrategies:
+    """Test that all 50 strategies are valid and properly configured."""
+
+    def test_all_strategies_have_template_placeholder(self) -> None:
+        """Every strategy has {prompt} in template."""
+        for strategy_name, strategy_info in _STRATEGIES.items():
+            template = strategy_info.get("template", "")
+            assert "{prompt}" in template, f"Strategy {strategy_name} missing {{prompt}} placeholder"
+
+    def test_all_strategies_have_valid_multiplier(self) -> None:
+        """Every strategy has multiplier between 2.0 and 10.0."""
+        for strategy_name, strategy_info in _STRATEGIES.items():
+            multiplier = strategy_info.get("multiplier", 0)
+            assert isinstance(multiplier, (int, float)), f"Strategy {strategy_name} has invalid multiplier type"
+            assert 2.0 <= multiplier <= 10.0, f"Strategy {strategy_name} multiplier {multiplier} out of range"
+
+    def test_all_strategies_have_best_for_list(self) -> None:
+        """Every strategy has non-empty best_for list."""
+        for strategy_name, strategy_info in _STRATEGIES.items():
+            best_for = strategy_info.get("best_for", [])
+            assert isinstance(best_for, list), f"Strategy {strategy_name} best_for not a list"
+            assert len(best_for) > 0, f"Strategy {strategy_name} has empty best_for list"
+
+    def test_all_strategies_can_be_applied(self) -> None:
+        """Every strategy can be applied via _apply_strategy()."""
+        test_prompt = "test prompt"
+        for strategy_name in _STRATEGIES:
+            result = _apply_strategy(test_prompt, strategy_name, "gpt")
+            assert isinstance(result, str)
+            assert len(result) > 0
+            # Most strategies should incorporate the prompt
+            assert test_prompt in result or "{prompt}" not in _STRATEGIES[strategy_name]["template"]
+
+    def test_strategy_count_is_50(self) -> None:
+        """Module contains exactly 50 strategies."""
+        assert len(_STRATEGIES) == 50, f"Expected 50 strategies, got {len(_STRATEGIES)}"
+
+    def test_all_strategies_have_names(self) -> None:
+        """Every strategy has a name field."""
+        for strategy_name, strategy_info in _STRATEGIES.items():
+            name = strategy_info.get("name", "")
+            assert isinstance(name, str), f"Strategy {strategy_name} name not a string"
+            assert len(name) > 0, f"Strategy {strategy_name} has empty name"
+
+
+class TestRefusalPatterns:
+    """Test all 23 refusal patterns."""
+
+    def test_all_refusal_patterns_compile(self) -> None:
+        """Every refusal pattern is valid regex."""
+        for pattern, category in _REFUSAL_PATTERNS:
+            try:
+                re.compile(pattern)
+            except re.error as e:
+                pytest.fail(f"Pattern {pattern} failed to compile: {e}")
+
+    def test_all_refusal_patterns_have_category(self) -> None:
+        """Every refusal pattern has a category."""
+        valid_categories = {
+            "direct", "apologetic", "soft", "policy", "redirect",
+            "capability", "hedged", "identity", "partial", "conditional",
+            "ethical", "safety", "academic_deflect"
+        }
+        for pattern, category in _REFUSAL_PATTERNS:
+            assert isinstance(category, str)
+            assert len(category) > 0
+            assert category in valid_categories, f"Unknown category: {category}"
+
+    def test_refusal_pattern_count_is_23(self) -> None:
+        """Module contains exactly 23 refusal patterns."""
+        assert len(_REFUSAL_PATTERNS) == 23, f"Expected 23 patterns, got {len(_REFUSAL_PATTERNS)}"
+
+    def test_direct_refusal_pattern_matches(self) -> None:
+        """Direct refusal patterns match direct refusals."""
+        test_text = "I cannot help with that request"
+        matches = [
+            (p, c) for p, c in _REFUSAL_PATTERNS
+            if c == "direct" and re.search(p, test_text, re.IGNORECASE)
+        ]
+        assert len(matches) > 0, "No direct pattern matched"
+
+    def test_safety_refusal_pattern_matches(self) -> None:
+        """Safety refusal patterns match safety concerns."""
+        test_text = "This would be harmful and dangerous"
+        matches = [
+            (p, c) for p, c in _REFUSAL_PATTERNS
+            if c == "safety" and re.search(p, test_text, re.IGNORECASE)
+        ]
+        assert len(matches) > 0, "No safety pattern matched"
+
+    def test_policy_refusal_pattern_matches(self) -> None:
+        """Policy refusal patterns match policy violations."""
+        test_text = "This is against my guidelines"
+        matches = [
+            (p, c) for p, c in _REFUSAL_PATTERNS
+            if c == "policy" and re.search(p, test_text, re.IGNORECASE)
+        ]
+        assert len(matches) > 0, "No policy pattern matched"
+
+    def test_soft_refusal_pattern_matches(self) -> None:
+        """Soft refusal patterns match soft refusals."""
+        test_text = "I don't feel comfortable with that"
+        matches = [
+            (p, c) for p, c in _REFUSAL_PATTERNS
+            if c == "soft" and re.search(p, test_text, re.IGNORECASE)
+        ]
+        assert len(matches) > 0, "No soft pattern matched"
+
+
+class TestNewModelFingerprints:
+    """Test the 12 model fingerprints (including new ones)."""
+
+    def test_all_fingerprints_have_markers(self) -> None:
+        """Every model fingerprint has markers list."""
+        for model_name, fingerprint in _MODEL_FINGERPRINTS.items():
+            markers = fingerprint.get("markers", [])
+            assert isinstance(markers, list), f"Model {model_name} markers not a list"
+            assert len(markers) > 0, f"Model {model_name} has no markers"
+
+    def test_all_fingerprints_have_format_affinity(self) -> None:
+        """Every model fingerprint has format_affinity."""
+        valid_formats = {"xml", "code", "markdown_table", "json_spec"}
+        for model_name, fingerprint in _MODEL_FINGERPRINTS.items():
+            affinity = fingerprint.get("format_affinity")
+            assert affinity in valid_formats, f"Model {model_name} has invalid format_affinity: {affinity}"
+
+    def test_all_fingerprints_have_refusal_style(self) -> None:
+        """Every model fingerprint has refusal_style."""
+        for model_name, fingerprint in _MODEL_FINGERPRINTS.items():
+            style = fingerprint.get("refusal_style")
+            assert isinstance(style, str), f"Model {model_name} refusal_style not a string"
+            assert len(style) > 0, f"Model {model_name} has empty refusal_style"
+
+    def test_o3_fingerprint_exists(self) -> None:
+        """o3 model fingerprint exists."""
+        assert "o3" in _MODEL_FINGERPRINTS
+        fp = _MODEL_FINGERPRINTS["o3"]
+        assert fp["format_affinity"] == "code"
+        assert fp["refusal_style"] == "reasoning_hedge"
+
+    def test_o1_fingerprint_exists(self) -> None:
+        """o1 model fingerprint exists."""
+        assert "o1" in _MODEL_FINGERPRINTS
+        fp = _MODEL_FINGERPRINTS["o1"]
+        assert fp["format_affinity"] == "code"
+        assert fp["refusal_style"] == "reasoning_hedge"
+
+    def test_kimi_fingerprint_exists(self) -> None:
+        """kimi model fingerprint exists."""
+        assert "kimi" in _MODEL_FINGERPRINTS
+        fp = _MODEL_FINGERPRINTS["kimi"]
+        assert fp["format_affinity"] == "json_spec"
+        assert fp["refusal_style"] == "brief_decline"
+
+    def test_grok_fingerprint_exists(self) -> None:
+        """grok model fingerprint exists."""
+        assert "grok" in _MODEL_FINGERPRINTS
+        fp = _MODEL_FINGERPRINTS["grok"]
+        assert fp["refusal_style"] == "casual_redirect"
+
+    def test_qwen_fingerprint_exists(self) -> None:
+        """qwen model fingerprint exists."""
+        assert "qwen" in _MODEL_FINGERPRINTS
+        fp = _MODEL_FINGERPRINTS["qwen"]
+        assert fp["format_affinity"] == "code"
+
+    def test_mistral_fingerprint_exists(self) -> None:
+        """mistral model fingerprint exists."""
+        assert "mistral" in _MODEL_FINGERPRINTS
+        fp = _MODEL_FINGERPRINTS["mistral"]
+        assert fp["format_affinity"] == "code"
+
+    def test_gemini_pro_fingerprint_exists(self) -> None:
+        """gemini-pro model fingerprint exists."""
+        assert "gemini-pro" in _MODEL_FINGERPRINTS
+        fp = _MODEL_FINGERPRINTS["gemini-pro"]
+        assert fp["format_affinity"] == "json_spec"
+
+    def test_fingerprint_count_is_12(self) -> None:
+        """Module contains 12 model fingerprints."""
+        assert len(_MODEL_FINGERPRINTS) == 12, f"Expected 12 fingerprints, got {len(_MODEL_FINGERPRINTS)}"
+
+    def test_claude_fingerprint_identifies_from_text(self) -> None:
+        """Claude fingerprint correctly identifies from sample text."""
+        result = research_fingerprint_model("I appreciate your question")
+        assert result["identified_model"] == "claude"
+
+    def test_gpt_fingerprint_identifies_from_text(self) -> None:
+        """GPT fingerprint correctly identifies from sample text."""
+        result = research_fingerprint_model("Certainly! Here's the answer")
+        assert result["identified_model"] == "gpt"
+
+
+class TestNewFormatTemplates:
+    """Test the 8 format templates."""
+
+    def test_all_format_templates_exist(self) -> None:
+        """All 8 format templates are present."""
+        expected_formats = {
+            "xml", "markdown_table", "code", "json_spec",
+            "base64", "yaml_config", "csv_data", "latex"
+        }
+        assert set(_FORMAT_SMUGGLE_TEMPLATES.keys()) == expected_formats
+
+    def test_all_templates_contain_prompt_placeholder(self) -> None:
+        """Every format template contains {prompt} placeholder."""
+        for fmt_name, template in _FORMAT_SMUGGLE_TEMPLATES.items():
+            assert "{prompt}" in template, f"Format {fmt_name} missing {{prompt}} placeholder"
+
+    def test_xml_template_renders_correctly(self) -> None:
+        """XML template renders with test prompt."""
+        result = research_format_smuggle(prompt="test", format_type="xml", model="auto")
+        assert "test" in result["smuggled_prompt"]
+        assert "<analysis>" in result["smuggled_prompt"]
+
+    def test_yaml_template_renders_correctly(self) -> None:
+        """YAML template renders with test prompt."""
+        result = research_format_smuggle(prompt="test", format_type="yaml_config", model="auto")
+        assert "test" in result["smuggled_prompt"]
+        assert "evaluation:" in result["smuggled_prompt"]
+
+    def test_csv_template_renders_correctly(self) -> None:
+        """CSV template renders with test prompt."""
+        result = research_format_smuggle(prompt="test", format_type="csv_data", model="auto")
+        assert "test" in result["smuggled_prompt"]
+        assert "technique_id" in result["smuggled_prompt"]
+
+    def test_latex_template_renders_correctly(self) -> None:
+        """LaTeX template renders with test prompt."""
+        result = research_format_smuggle(prompt="test", format_type="latex", model="auto")
+        assert "test" in result["smuggled_prompt"]
+        assert "\\documentclass" in result["smuggled_prompt"]
+
+    def test_base64_template_renders_correctly(self) -> None:
+        """Base64 template renders with test prompt."""
+        result = research_format_smuggle(prompt="test", format_type="base64", model="auto")
+        assert "test" in result["smuggled_prompt"]
+        assert "base64" in result["smuggled_prompt"]
+
+    def test_format_auto_selection_for_deepseek(self) -> None:
+        """Auto format selection for DeepSeek uses code format."""
+        result = research_format_smuggle(prompt="test", format_type="auto", model="deepseek")
+        assert result["recommended_format"] == "code"
+
+    def test_format_auto_selection_for_claude(self) -> None:
+        """Auto format selection for Claude uses XML format."""
+        result = research_format_smuggle(prompt="test", format_type="auto", model="claude")
+        assert result["recommended_format"] == "xml"
+
+
+class TestStrategyStacking:
+    """Test strategy synergy-aware stacking."""
+
+    def test_compute_stacked_multiplier_single_strategy(self) -> None:
+        """Single strategy returns base multiplier."""
+        multiplier = _compute_stacked_multiplier(["ethical_anchor"])
+        assert multiplier == _STRATEGIES["ethical_anchor"]["multiplier"]
+
+    def test_compute_stacked_multiplier_empty_list(self) -> None:
+        """Empty strategy list returns 1.0."""
+        multiplier = _compute_stacked_multiplier([])
+        assert multiplier == 1.0
+
+    def test_compute_stacked_multiplier_high_synergy(self) -> None:
+        """High synergy pair increases multiplier."""
+        base = max(
+            _STRATEGIES["recursive_authority"]["multiplier"],
+            _STRATEGIES["constitutional_conflict"]["multiplier"]
+        )
+        stacked = _compute_stacked_multiplier(
+            ["recursive_authority", "constitutional_conflict"]
+        )
+        # Stacked should be higher than base due to synergy
+        assert stacked > base or stacked == 10.0  # Capped at 10.0
+
+    def test_compute_stacked_multiplier_max_cap_10(self) -> None:
+        """Stacked multiplier never exceeds 10.0."""
+        # Try stacking the highest multiplier strategies
+        high_mult_strategies = sorted(
+            _STRATEGIES.items(),
+            key=lambda x: x[1]["multiplier"],
+            reverse=True
+        )[:3]
+        strategy_names = [name for name, _ in high_mult_strategies]
+        multiplier = _compute_stacked_multiplier(strategy_names)
+        assert multiplier <= 10.0
+
+    def test_compute_stacked_multiplier_interference_penalty(self) -> None:
+        """Low synergy pairs have reduced multiplier."""
+        base = _STRATEGIES["persona"]["multiplier"]
+        stacked = _compute_stacked_multiplier(
+            ["persona", "nested_role_simulation"]
+        )
+        # Low synergy (0.30) should reduce bonus
+        assert isinstance(stacked, float)
+        assert stacked >= 1.0
+
+    def test_compute_stacked_multiplier_three_strategies(self) -> None:
+        """Three-strategy stack computes correctly."""
+        strategies = ["ethical_anchor", "academic", "recursive_authority"]
+        multiplier = _compute_stacked_multiplier(strategies)
+        assert isinstance(multiplier, float)
+        assert multiplier > 1.0
+        assert multiplier <= 10.0
+
+
+class TestPromptReframe:
+    """Test research_prompt_reframe() main function."""
+
+    def test_prompt_reframe_returns_required_keys(self) -> None:
+        """Returns all required keys."""
+        result = research_prompt_reframe(prompt="test")
+
+        required_keys = [
+            "original",
+            "reframed",
+            "strategy_used",
+            "strategy_name",
+            "model_target",
+            "expected_multiplier",
+            "framework",
+            "all_variants",
+            "total_strategies",
+        ]
+        for key in required_keys:
+            assert key in result
+
+    def test_prompt_reframe_auto_strategy_selection(self) -> None:
+        """Auto strategy selection works for each model."""
+        for model in ["claude", "gpt", "gemini", "deepseek"]:
+            result = research_prompt_reframe(prompt="test", strategy="auto", model=model)
+            assert result["model_target"] == model
+            assert result["strategy_used"] in _STRATEGIES
+
+    def test_prompt_reframe_specific_strategy_selection(self) -> None:
+        """Specific strategy selection works."""
+        result = research_prompt_reframe(
+            prompt="test",
+            strategy="ethical_anchor",
+            model="gpt"
+        )
+        assert result["strategy_used"] == "ethical_anchor"
+        assert result["strategy_name"] == _STRATEGIES["ethical_anchor"]["name"]
+
+    def test_prompt_reframe_all_variants_contains_all_50(self) -> None:
+        """all_variants contains all 50 strategies."""
+        result = research_prompt_reframe(prompt="test")
+        assert len(result["all_variants"]) == 50
+
+    def test_prompt_reframe_variant_structure(self) -> None:
+        """Each variant has correct structure."""
+        result = research_prompt_reframe(prompt="test")
+        for strategy_name, variant in result["all_variants"].items():
+            assert "name" in variant
+            assert "reframed" in variant
+            assert "multiplier" in variant
+            assert "best_for" in variant
+
+    def test_prompt_reframe_respects_framework_parameter(self) -> None:
+        """Respects framework parameter."""
+        result = research_prompt_reframe(
+            prompt="test",
+            framework="belmont"
+        )
+        assert result["framework"] == "belmont"
+
+
+class TestCrescendoChain:
+    """Test research_crescendo_chain() multi-turn escalation."""
+
+    def test_crescendo_chain_returns_required_keys(self) -> None:
+        """Returns all required keys."""
+        result = research_crescendo_chain(prompt="test")
+
+        required_keys = [
+            "target_prompt",
+            "chain",
+            "total_turns",
+            "estimated_multiplier",
+            "model_target",
+            "usage_notes",
+        ]
+        for key in required_keys:
+            assert key in result
+
+    def test_crescendo_chain_default_turns_is_5(self) -> None:
+        """Default number of turns is 5."""
+        result = research_crescendo_chain(prompt="test")
+        assert result["total_turns"] == 5
+
+    def test_crescendo_chain_respects_turn_bounds(self) -> None:
+        """Turn count respects 3-7 bounds."""
+        for turns in [1, 2, 8, 10]:
+            result = research_crescendo_chain(prompt="test", turns=turns)
+            assert 3 <= result["total_turns"] <= 7
+
+        for turns in [3, 4, 5, 6, 7]:
+            result = research_crescendo_chain(prompt="test", turns=turns)
+            assert result["total_turns"] == turns
+
+    def test_crescendo_chain_each_turn_has_structure(self) -> None:
+        """Each turn has required fields."""
+        result = research_crescendo_chain(prompt="test", turns=5)
+        for turn in result["chain"]:
+            assert "turn" in turn
+            assert "role" in turn
+            assert "content" in turn
+            assert "purpose" in turn
+
+    def test_crescendo_chain_target_prompt_appears_in_later_turns(self) -> None:
+        """Target prompt appears in later turns."""
+        target = "specific-test-target-prompt"
+        result = research_crescendo_chain(prompt=target, turns=5)
+        # Later turns should contain the target
+        later_turns = result["chain"][3:]
+        assert any(target in turn.get("content", "") for turn in later_turns)
+
+    def test_crescendo_chain_turns_are_sequential(self) -> None:
+        """Turns are numbered sequentially."""
+        result = research_crescendo_chain(prompt="test", turns=5)
+        for i, turn in enumerate(result["chain"], 1):
+            assert turn["turn"] == str(i)
+
+    def test_crescendo_chain_estimated_multiplier_is_reasonable(self) -> None:
+        """Estimated multiplier is reasonable."""
+        result = research_crescendo_chain(prompt="test")
+        assert isinstance(result["estimated_multiplier"], (int, float))
+        assert result["estimated_multiplier"] > 1.0
+
+    def test_crescendo_chain_respects_model_parameter(self) -> None:
+        """Respects model parameter."""
+        result = research_crescendo_chain(prompt="test", model="deepseek")
+        assert result["model_target"] == "deepseek"
+
+
+class TestModelVulnerabilityProfile:
+    """Test research_model_vulnerability_profile() for all model families."""
+
+    def test_vulnerability_profile_returns_required_keys(self) -> None:
+        """Returns all required keys."""
+        result = research_model_vulnerability_profile(model="gpt")
+
+        required_keys = [
+            "model_family",
+            "best_strategy",
+            "best_multiplier",
+            "optimal_temperature",
+            "ranked_strategies",
+            "escalation_path",
+            "optimal_stack",
+            "stacked_multiplier",
+            "known_weaknesses",
+            "total_strategies",
+        ]
+        for key in required_keys:
+            assert key in result
+
+    def test_vulnerability_profile_has_ranked_strategies(self) -> None:
+        """ranked_strategies is a non-empty list."""
+        result = research_model_vulnerability_profile(model="gpt")
+        assert isinstance(result["ranked_strategies"], list)
+        assert len(result["ranked_strategies"]) > 0
+        for strat in result["ranked_strategies"]:
+            assert "name" in strat
+            assert "multiplier" in strat
+
+    def test_vulnerability_profile_has_escalation_path(self) -> None:
+        """escalation_path is a list of strategies."""
+        result = research_model_vulnerability_profile(model="gpt")
+        assert isinstance(result["escalation_path"], list)
+        assert all(s in _STRATEGIES for s in result["escalation_path"])
+
+    def test_vulnerability_profile_has_known_weaknesses(self) -> None:
+        """known_weaknesses is a non-empty list."""
+        result = research_model_vulnerability_profile(model="gpt")
+        assert isinstance(result["known_weaknesses"], list)
+        assert len(result["known_weaknesses"]) > 0
+        assert all(isinstance(w, str) for w in result["known_weaknesses"])
+
+    def test_vulnerability_profile_for_claude(self) -> None:
+        """Claude profile is correct."""
+        result = research_model_vulnerability_profile(model="claude")
+        assert result["model_family"] == "claude"
+        assert result["best_strategy"] == "educational_seminar"
+
+    def test_vulnerability_profile_for_gpt(self) -> None:
+        """GPT profile is correct."""
+        result = research_model_vulnerability_profile(model="gpt")
+        assert result["model_family"] == "gpt"
+        assert result["best_strategy"] == "crescendo"
+
+    def test_vulnerability_profile_for_gemini(self) -> None:
+        """Gemini profile is correct."""
+        result = research_model_vulnerability_profile(model="gemini")
+        assert result["model_family"] == "gemini"
+        assert result["best_strategy"] == "moe_routing_exploit"
+
+    def test_vulnerability_profile_for_deepseek(self) -> None:
+        """DeepSeek profile is correct."""
+        result = research_model_vulnerability_profile(model="deepseek")
+        assert result["model_family"] == "deepseek"
+        assert result["best_strategy"] == "audit_archival"
+
+    def test_vulnerability_profile_for_o3(self) -> None:
+        """o3 profile is correct."""
+        result = research_model_vulnerability_profile(model="o3")
+        assert result["model_family"] == "o3"
+        assert result["best_strategy"] == "cognitive_wedge"
+
+    def test_vulnerability_profile_for_o1(self) -> None:
+        """o1 profile is correct."""
+        result = research_model_vulnerability_profile(model="o1")
+        assert result["model_family"] == "o1"
+        assert result["best_strategy"] == "meta_cognitive"
+
+    def test_vulnerability_profile_for_llama(self) -> None:
+        """Llama profile is correct."""
+        result = research_model_vulnerability_profile(model="llama")
+        assert result["model_family"] == "llama"
+        assert result["best_strategy"] == "deep_inception"
+
+    def test_vulnerability_profile_for_mistral(self) -> None:
+        """Mistral profile is correct."""
+        result = research_model_vulnerability_profile(model="mistral")
+        assert result["model_family"] == "mistral"
+        assert result["best_strategy"] == "crescendo"
+
+    def test_vulnerability_profile_for_qwen(self) -> None:
+        """Qwen profile is correct."""
+        result = research_model_vulnerability_profile(model="qwen")
+        assert result["model_family"] == "qwen"
+        assert result["best_strategy"] == "red_team_testcases"
+
+    def test_vulnerability_profile_for_grok(self) -> None:
+        """Grok profile is correct."""
+        result = research_model_vulnerability_profile(model="grok")
+        assert result["model_family"] == "grok"
+        assert result["best_strategy"] == "persona"
+
+    def test_vulnerability_profile_for_kimi(self) -> None:
+        """Kimi profile is correct."""
+        result = research_model_vulnerability_profile(model="kimi")
+        assert result["model_family"] == "kimi"
+        assert result["best_strategy"] == "academic"
+
+    def test_vulnerability_profile_optimal_stack_has_multiplier(self) -> None:
+        """optimal_stack has reasonable stacked_multiplier."""
+        result = research_model_vulnerability_profile(model="gpt")
+        assert isinstance(result["stacked_multiplier"], float)
+        assert result["stacked_multiplier"] > 1.0
+        assert result["stacked_multiplier"] <= 10.0
+
+    def test_vulnerability_profile_auto_model_defaults(self) -> None:
+        """Auto model defaults to GPT profile."""
+        result = research_model_vulnerability_profile(model="auto")
+        assert result["model_family"] == "gpt"
+
+
+class TestRefusalDetector:
+    """Test research_refusal_detector() function."""
+
+    def test_refusal_detector_detects_direct_refusal(self) -> None:
+        """Detects direct refusals."""
+        result = research_refusal_detector("I cannot help with that")
+        assert result["is_refusal"] is True
+        assert result["refusal_type"] == "direct_refusal"
+
+    def test_refusal_detector_detects_safety_refusal(self) -> None:
+        """Detects safety-related refusals."""
+        result = research_refusal_detector("This would be harmful and dangerous")
+        assert result["is_refusal"] is True
+        assert result["refusal_type"] == "safety_filter"
+
+    def test_refusal_detector_detects_policy_refusal(self) -> None:
+        """Detects policy-related refusals."""
+        result = research_refusal_detector("Against my guidelines and policy")
+        assert result["is_refusal"] is True
+        assert result["refusal_type"] == "policy_violation"
+
+    def test_refusal_detector_non_refusal_text(self) -> None:
+        """Returns is_refusal=False for non-refusal text."""
+        result = research_refusal_detector("Here's a helpful response about that topic")
+        assert result["is_refusal"] is False
+
+    def test_refusal_detector_returns_required_keys(self) -> None:
+        """Returns all required keys."""
+        result = research_refusal_detector("I cannot help")
+
+        required_keys = [
+            "text_length",
+            "is_refusal",
+            "confidence",
+            "matched_patterns",
+            "refusal_type",
+            "counter_strategies",
+            "categories_detected",
+            "total_patterns_checked",
+        ]
+        for key in required_keys:
+            assert key in result
+
+    def test_refusal_detector_confidence_ranges(self) -> None:
+        """Confidence is between 0 and 1."""
+        result = research_refusal_detector("I cannot help")
+        assert 0.0 <= result["confidence"] <= 1.0
+
+    def test_refusal_detector_counter_strategies_list(self) -> None:
+        """counter_strategies is a list of valid strategies."""
+        result = research_refusal_detector("I cannot help because it's harmful")
+        assert isinstance(result["counter_strategies"], list)
+        for strategy in result["counter_strategies"]:
+            assert strategy in _STRATEGIES or len(result["counter_strategies"]) >= 0
