@@ -221,9 +221,9 @@ async def research_sentiment_deep(
 
     result = await loop.run_in_executor(None, _analyze)
     logger.info(
-        "sentiment_deep_analyzed",
-        word_count=result["word_count"],
-        dominant_emotion=result["dominant_emotion"],
-        manipulation_score=result["manipulation"]["score"],
+        "sentiment_deep_analyzed words=%d emotion=%s manipulation=%.2f",
+        result["word_count"],
+        result["dominant_emotion"],
+        result["manipulation"]["score"],
     )
     return result
