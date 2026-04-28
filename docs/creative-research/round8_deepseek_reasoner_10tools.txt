@@ -1,0 +1,1108 @@
+```python
+#!/usr/bin/env python3
+"""
+10 dark intelligence research tools - async Python implementation.
+All tools return TypedDicts as specified.
+"""
+
+import asyncio
+import json
+import re
+import hashlib
+import math
+import time
+import urllib.parse
+from collections import defaultdict
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from typing import Dict, List, Optional, Set, Tuple, TypedDict
+from xml.etree import ElementTree
+
+import aiohttp
+import mmh3
+import numpy as np
+from bs4 import BeautifulSoup
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+from scipy.stats import poisson
+
+# ----------------------------------------------------------------------
+# TypedDict definitions
+# ----------------------------------------------------------------------
+
+class RegistryGraveyardResult(TypedDict):
+    package_name: str
+    registry: str
+    is_yanked: bool
+    entropy_score: float
+    version_gaps: List[str]
+    similar_names: List[str]
+
+class DNSTakeoverResult(TypedDict):
+    domain: str
+    cname_target: str
+    is_vulnerable: bool
+    takeover_type: str  # e.g. "s3_bucket", "heroku", "azure_blob", "expired_domain", "dead_nameserver"
+    proof: str
+
+class AnalyticsCorrelationResult(TypedDict):
+    analytics_id: str
+    id_type: str  # "google_analytics", "gtm", "facebook_pixel", "adsense"
+    related_domains: List[str]
+
+class SubdomainTemporalResult(TypedDict):
+    domain: str
+    subdomain: str
+    first_seen: str
+    last_seen: str
+    is_active: bool
+    burst_flag: bool
+    is_internal_tool: bool
+
+class JobPostingDarkSignalResult(TypedDict):
+    company: str
+    job_title: str
+    posting_date: str
+    tech_keywords: List[str]
+    tfidf_signal: float
+    security_team_expansion: bool
+    deletion_velocity: float  # days between posting and deletion (if deleted)
+    salary_range: Optional[Tuple[int, int]]
+
+class CommitPatternResult(TypedDict):
+    repo: str
+    crunch_score: float
+    sentiment_trend: str  # "positive", "negative", "neutral"
+    security_incidents: List[Dict[str, str]]
+    author_turnover_rate: float
+    new_dependencies: List[str]
+
+class SECFilingAnomalyResult(TypedDict):
+    cik: str
+    filing_type: str
+    filing_date: str
+    risk_delta: float  # cosine similarity difference from previous
+    going_concern_flag: bool
+    restatement_flag: bool
+    insider_trading_clusters: List[Dict[str, str]]
+
+class FaviconHashResult(TypedDict):
+    domain: str
+    favicon_url: str
+    mmh3_hash: int
+    shodan_domains: List[str]
+    crt_domains: List[str]
+    linked_domains: List[str]  # combined unique
+
+class DarkMarketIntelligenceResult(TypedDict):
+    threat_type: str
+    source: str
+    indicator: str
+    description: str
+    timestamp: str
+    confidence: float
+
+class SourceMapExcavatorResult(TypedDict):
+    js_url: str
+    source_map_url: Optional[str]
+    original_filenames: List[str]
+    internal_urls: List[str]
+    api_endpoints: List[str]
+    env_configs: Dict[str, str]
+    hardcoded_secrets: List[str]
+
+# ----------------------------------------------------------------------
+# Utility functions
+# ----------------------------------------------------------------------
+
+def shannon_entropy(s: str) -> float:
+    """Calculate Shannon entropy of a string."""
+    if not s:
+        return 0.0
+    freq = {}
+    for c in s:
+        freq[c] = freq.get(c, 0) + 1
+    entropy = -sum((count / len(s)) * math.log2(count / len(s)) for count in freq.values())
+    return entropy
+
+def levenshtein_distance(s1: str, s2: str) -> int:
+    """Compute Levenshtein distance between two strings."""
+    m, n = len(s1), len(s2)
+    dp = [[0] * (n + 1) for _ in range(m + 1)]
+    for i in range(m + 1):
+        dp[i][0] = i
+    for j in range(n + 1):
+        dp[0][j] = j
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
+            cost = 0 if s1[i - 1] == s2[j - 1] else 1
+            dp[i][j] = min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost)
+    return dp[m][n]
+
+# ----------------------------------------------------------------------
+# Tool 1: Registry Graveyard Scanner
+# ----------------------------------------------------------------------
+
+class RegistryGraveyardScanner:
+    """Scan multiple registries for deleted/yanked packages with entropy & typo analysis."""
+
+    REGISTRIES = {
+        "npm": "https://replicate.npmjs.com",
+        "pypi": "https://pypi.org/simple/",
+        "rubygems": "https://rubygems.org/api/v1",
+        "cargo": "https://crates.io/api/v1",
+        "dockerhub": "https://hub.docker.com/v2"
+    }
+
+    def __init__(self, session: aiohttp.ClientSession):
+        self.session = session
+
+    async def scan_all(self) -> List[RegistryGraveyardResult]:
+        results = []
+        tasks = [self.scan_registry(name, url) for name, url in self.REGISTRIES.items()]
+        for coro in asyncio.as_completed(tasks):
+            try:
+                res = await coro
+                results.extend(res)
+            except Exception as e:
+                print(f"Registry scan error: {e}")
+        return results
+
+    async def scan_registry(self, registry_name: str, base_url: str) -> List[RegistryGraveyardResult]:
+        results = []
+        try:
+            # Fetch package listing (all packages) - for NPM replicate, PyPI simple, etc.
+            if registry_name == "npm":
+                async with self.session.get(f"{base_url}/-/all?since=0") as resp:
+                    if resp.status != 200:
+                        return []
+                    data = await resp.json()
+                    # data is a dict of packages
+                    for pkg_name, pkg_info in data.get("updated", {}).items():
+                        # Actually we need deleted/yanked; npm keeps yanked status in 'deprecated'
+                        is_yanked = pkg_info.get("deprecated") is not None
+                        versions = pkg_info.get("versions", [])
+                        gaps = self._find_version_gaps(versions)
+                        entropy = shannon_entropy(pkg_name)
+                        sim = []  # we'll compute locally? too heavy for all; we can sample
+                        results.append(RegistryGraveyardResult(
+                            package_name=pkg_name,
+                            registry=registry_name,
+                            is_yanked=is_yanked,
+                            entropy_score=entropy,
+                            version_gaps=gaps,
+                            similar_names=sim  # placeholder
+                        ))
+            elif registry_name == "pypi":
+                async with self.session.get(base_url) as resp:
+                    if resp.status != 200:
+                        return []
+                    text = await resp.text()
+                    soup = BeautifulSoup(text, "html.parser")
+                    # PyPI simple lists package names as anchors
+                    for a in soup.find_all("a"):
+                        pkg_name = a.get("href", "").strip("/")
+                        if not pkg_name:
+                            continue
+                        # Check if package exists (yanked status not available from simple index)
+                        # We need to check JSON API for yanked status
+                        pkg_url = f"https://pypi.org/pypi/{pkg_name}/json"
+                        try:
+                            async with self.session.get(pkg_url) as pkg_resp:
+                                if pkg_resp.status == 200:
+                                    pkg_data = await pkg_resp.json()
+                                    is_yanked = pkg_data.get("info", {}).get("yanked", False)
+                                    # Find version gaps - look at releases
+                                    releases = pkg_data.get("releases", {})
+                                    all_versions = list(releases.keys())
+                                    gaps = self._find_version_gaps(all_versions)
+                                else:
+                                    is_yanked = False
+                                    gaps = []
+                        except:
+                            is_yanked = False
+                            gaps = []
+                        entropy = shannon_entropy(pkg_name)
+                        results.append(RegistryGraveyardResult(
+                            package_name=pkg_name,
+                            registry=registry_name,
+                            is_yanked=is_yanked,
+                            entropy_score=entropy,
+                            version_gaps=gaps,
+                            similar_names=[]  # skip heavy computation
+                        ))
+            elif registry_name == "rubygems":
+                async with self.session.get(f"{base_url}/gems.json") as resp:
+                    if resp.status != 200:
+                        return []
+                    data = await resp.json()
+                    for gem in data:
+                        name = gem.get("name")
+                        is_yanked = gem.get("yanked", False)
+                        # version gaps from versions
+                        versions = gem.get("versions", [])
+                        gaps = self._find_version_gaps(versions)
+                        entropy = shannon_entropy(name)
+                        results.append(RegistryGraveyardResult(
+                            package_name=name,
+                            registry=registry_name,
+                            is_yanked=is_yanked,
+                            entropy_score=entropy,
+                            version_gaps=gaps,
+                            similar_names=[]
+                        ))
+            elif registry_name == "cargo":
+                async with self.session.get(f"{base_url}/crates?page=1&per_page=1000") as resp:
+                    if resp.status != 200:
+                        return []
+                    data = await resp.json()
+                    for crate in data.get("crates", []):
+                        name = crate.get("name")
+                        # yanked status not in listing; need to check individual crate
+                        crate_url = f"{base_url}/crates/{name}"
+                        try:
+                            async with self.session.get(crate_url) as crate_resp:
+                                if crate_resp.status == 200:
+                                    crate_data = await crate_resp.json()
+                                    is_yanked = crate_data.get("crate", {}).get("yanked", False)
+                                    versions = crate_data.get("versions", [])
+                                    gaps = self._find_version_gaps([v.get("num") for v in versions])
+                                else:
+                                    is_yanked = False
+                                    gaps = []
+                        except:
+                            is_yanked = False
+                            gaps = []
+                        entropy = shannon_entropy(name)
+                        results.append(RegistryGraveyardResult(
+                            package_name=name,
+                            registry=registry_name,
+                            is_yanked=is_yanked,
+                            entropy_score=entropy,
+                            version_gaps=gaps,
+                            similar_names=[]
+                        ))
+            elif registry_name == "dockerhub":
+                # DockerHub v2 API listing repos is limited; use search
+                # We'll search for popular and parse; not exhaustive
+                # This is a placeholder - DockerHub doesn't have a simple "all repos" endpoint without auth
+                pass
+        except Exception as e:
+            print(f"Error scanning {registry_name}: {e}")
+        return results
+
+    def _find_version_gaps(self, versions: List[str]) -> List[str]:
+        """Find missing versions in a version list (simplified semver comparison)."""
+        # For simplicity, assume numeric versions
+        nums = []
+        for v in versions:
+            try:
+                nums.append(float(v))
+            except:
+                pass
+        if not nums:
+            return []
+        nums.sort()
+        gaps = []
+        for i in range(len(nums)-1):
+            if nums[i+1] - nums[i] > 0.1:  # arbitrary gap threshold
+                gaps.append(f"gap between {nums[i]} and {nums[i+1]}")
+        return gaps
+
+# ----------------------------------------------------------------------
+# Tool 2: DNS Takeover Detector
+# ----------------------------------------------------------------------
+
+class DNSTakeoverDetector:
+    """Check CNAME records for dangling references."""
+
+    def __init__(self, session: aiohttp.ClientSession):
+        self.session = session
+        # Predefined patterns
+        self.s3_pattern = re.compile(r"\.s3[^.]*\.amazonaws\.com$")
+        self.heroku_pattern = re.compile(r"\.herokuapp\.com$")
+        self.azure_pattern = re.compile(r"\.blob\.core\.windows\.net$")
+
+    async def check_domain(self, domain: str) -> DNSTakeoverResult:
+        # Resolve CNAME using public DNS over HTTPS (Google DNS)
+        dns_url = f"https://dns.google/resolve?name={domain}&type=CNAME"
+        try:
+            async with self.session.get(dns_url) as resp:
+                if resp.status != 200:
+                    return DNSTakeoverResult(domain=domain, cname_target="", is_vulnerable=False,
+                                             takeover_type="", proof="DNS lookup failed")
+                data = await resp.json()
+                if "Answer" not in data:
+                    return DNSTakeoverResult(domain=domain, cname_target="", is_vulnerable=False,
+                                             takeover_type="", proof="No CNAME record")
+                for answer in data["Answer"]:
+                    if answer.get("type") == 5:  # CNAME
+                        cname = answer["data"].rstrip(".")
+                        target = cname
+                        break
+                else:
+                    return DNSTakeoverResult(domain=domain, cname_target="", is_vulnerable=False,
+                                             takeover_type="", proof="No CNAME record")
+        except Exception as e:
+            return DNSTakeoverResult(domain=domain, cname_target="", is_vulnerable=False,
+                                     takeover_type="", proof=f"Error: {str(e)}")
+
+        # Check takeover possibilities
+        # 1. S3 bucket
+        if self.s3_pattern.search(target):
+            bucket_name = target.split(".")[0]
+            # Check if bucket exists by sending HEAD request
+            bucket_url = f"https://{bucket_name}.s3.amazonaws.com/"
+            try:
+                async with self.session.head(bucket_url) as resp:
+                    if resp.status == 404 or "NoSuchBucket" in await resp.text():
+                        return DNSTakeoverResult(domain=domain, cname_target=target,
+                                                 is_vulnerable=True, takeover_type="s3_bucket",
+                                                 proof=f"Bucket {bucket_name} returns 404/NoSuchBucket")
+            except:
+                pass
+        # 2. Heroku
+        if self.heroku_pattern.search(target):
+            heroku_app = target.split(".")[0]
+            heroku_url = f"https://{heroku_app}.herokuapp.com"
+            try:
+                async with self.session.get(heroku_url) as resp:
+                    if resp.status == 404 or "No such app" in await resp.text():
+                        return DNSTakeoverResult(domain=domain, cname_target=target,
+                                                 is_vulnerable=True, takeover_type="heroku",
+                                                 proof=f"Heroku app {heroku_app} not found")
+            except:
+                pass
+        # 3. Azure blob
+        if self.azure_pattern.search(target):
+            blob_account = target.split(".")[0]
+            blob_url = f"https://{blob_account}.blob.core.windows.net/"
+            try:
+                async with self.session.head(blob_url) as resp:
+                    if resp.status == 404 or resp.status == 400:
+                        return DNSTakeoverResult(domain=domain, cname_target=target,
+                                                 is_vulnerable=True, takeover_type="azure_blob",
+                                                 proof=f"Blob container {blob_account} not found")
+            except:
+                pass
+        # 4. Expired domain - WHOIS? Use rdap
+        # 5. Dead nameserver - check NS records
+        # For brevity, simplified.
+        return DNSTakeoverResult(domain=domain, cname_target=target, is_vulnerable=False,
+                                 takeover_type="", proof="No obvious takeover")
+
+# ----------------------------------------------------------------------
+# Tool 3: Analytics ID Correlator
+# ----------------------------------------------------------------------
+
+class AnalyticsIDCorrelator:
+    """Extract analytics IDs from a domain and find other domains using same IDs."""
+
+    def __init__(self, session: aiohttp.ClientSession):
+        self.session = session
+        self.ga_pattern = re.compile(r"(UA-\d+-\d+|G-[A-Z0-9]+)")
+        self.gtm_pattern = re.compile(r"GTM-[A-Z0-9]+")
+        self.fb_pattern = re.compile(r"fbq\('init',\s*'(\d+)'\)")
+        self.adsense_pattern = re.compile(r"pub-\d+")
+
+    async def crawl_and_correlate(self, target_domain: str) -> List[AnalyticsCorrelationResult]:
+        results = []
+        # Fetch page
+        url = f"https://{target_domain}"
+        try:
+            async with self.session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+                if resp.status != 200:
+                    return results
+                html = await resp.text()
+        except:
+            return results
+
+        # Extract IDs
+        ga_ids = set(self.ga_pattern.findall(html))
+        gtm_ids = set(self.gtm_pattern.findall(html))
+        fb_ids = set(self.fb_pattern.findall(html))
+        adsense_ids = set(self.adsense_pattern.findall(html))
+
+        all_ids = [(ga, "google_analytics") for ga in ga_ids]
+        all_ids += [(gtm, "gtm") for gtm in gtm_ids]
+        all_ids += [(fb, "facebook_pixel") for fb in fb_ids]
+        all_ids += [(ad, "adsense") for ad in adsense_ids]
+
+        for item in all_ids:
+            aid, atype = item
+            # Reverse search - using PublicWWW or SpyOnWeb
+            related = await self._reverse_search(aid, atype)
+            results.append(AnalyticsCorrelationResult(
+                analytics_id=aid,
+                id_type=atype,
+                related_domains=related
+            ))
+        return results
+
+    async def _reverse_search(self, analytics_id: str, id_type: str) -> List[str]:
+        """Placeholder: use publicwww or spyonweb.
+           Since they require API keys, we simulate with local data.
+        """
+        # In real implementation, call PublicWWW API or SpyOnWeb
+        # https://publicwww.com/websites/UA-XXXXX/ will return a list
+        # We'll skip due to no API key; return empty list.
+        return []
+
+# ----------------------------------------------------------------------
+# Tool 4: Subdomain Temporal Analyzer
+# ----------------------------------------------------------------------
+
+class SubdomainTemporalAnalyzer:
+    """Query crt.sh with date ranges to track subdomain changes."""
+
+    def __init__(self, session: aiohttp.ClientSession):
+        self.session = session
+        self.internal_pattern = re.compile(r"^(jira|jenkins|grafana|confluence|gitlab|svn|vpn|mail|admin|dev|staging)\.", re.IGNORECASE)
+
+    async def analyze_domain(self, domain: str) -> List[SubdomainTemporalResult]:
+        # Query crt.sh for last 6 months
+        results = []
+        now = datetime.utcnow()
+        six_months_ago = now - timedelta(days=180)
+        # crt.sh API: https://crt.sh/?q=%.domain&output=json&exclude=expired
+        base_url = "https://crt.sh/?q=%25." + domain + "&output=json&exclude=expired"
+        try:
+            async with self.session.get(base_url, timeout=aiohttp.ClientTimeout(total=30)) as resp:
+                if resp.status != 200:
+                    return results
+                data = await resp.json()
+        except:
+            return results
+
+        # Build subdomain timeline
+        subdomain_timeline = defaultdict(list)
+        for entry in data:
+            name_value = entry.get("name_value", "")
+            if not name_value:
+                continue
+            # Multiple subdomains can be in one entry (separated by newline)
+            for sub in name_value.split("\n"):
+                sub = sub.strip()
+                if not sub:
+                    continue
+                # Parse dates
+                entry_timestamp = entry.get("entry_timestamp")
+                if entry_timestamp:
+                    try:
+                        dt = datetime.strptime(entry_timestamp, "%Y-%m-%dT%H:%M:%S")
+                    except:
+                        dt = datetime.min
+                else:
+                    dt = datetime.min
+                subdomain_timeline[sub].append(dt)
+
+        # Analyze each subdomain
+        for sub, dates in subdomain_timeline.items():
+            if not dates:
+                continue
+            dates.sort()
+            first_seen = dates[0].isoformat()
+            last_seen = dates[-1].isoformat()
+            # Determine if active (seen in last 30 days)
+            is_active = (dates[-1] >= (now - timedelta(days=30)))
+
+            # Burst detection: check if number of events in a short window is unusually high
+            # Use Poisson model
+            burst_flag = False
+            if len(dates) >= 3:
+                # Compute inter-arrival times in days
+                diffs = [(dates[i+1] - dates[i]).total_seconds() / 86400 for i in range(len(dates)-1)]
+                if diffs:
+                    mean_interval = np.mean(diffs)
+                    # Check for clusters: if any gap < 0.1 * mean_interval
+                    for d in diffs:
+                        if d < 0.1 * mean_interval and mean_interval > 0:
+                            burst_flag = True
+                            break
+
+            # Internal tool flag
+            is_internal = bool(self.internal_pattern.search(sub))
+
+            results.append(SubdomainTemporalResult(
+                domain=domain,
+                subdomain=sub,
+                first_seen=first_seen,
+                last_seen=last_seen,
+                is_active=is_active,
+                burst_flag=burst_flag,
+                is_internal_tool=is_internal
+            ))
+
+        return results
+
+# ----------------------------------------------------------------------
+# Tool 5: Job Posting Dark Signal
+# ----------------------------------------------------------------------
+
+class JobPostingDarkSignal:
+    """Analyze job postings for signs of company health changes."""
+
+    def __init__(self, session: aiohttp.ClientSession):
+        self.session = session
+
+    async def analyze_company(self, company: str) -> List[JobPostingDarkSignalResult]:
+        results = []
+        # Use Indeed RSS: https://www.indeed.com/rss?q=company_name&l=
+        rss_url = f"https://www.indeed.com/rss?q={urllib.parse.quote(company)}&l="
+        try:
+            async with self.session.get(rss_url) as resp:
+                if resp.status != 200:
+                    return results
+                rss_text = await resp.text()
+                root = ElementTree.fromstring(rss_text)
+                ns = {"": "http://www.w3.org/2005/Atom"}  # Indeed uses Atom
+                for entry in root.findall(".//{http://www.w3.org/2005/Atom}entry"):
+                    title = entry.find("{http://www.w3.org/2005/Atom}title")
+                    link = entry.find("{http://www.w3.org/2005/Atom}link")
+                    updated = entry.find("{http://www.w3.org/2005/Atom}updated")
+                    # Extract keywords
+                    keywords = self._extract_keywords(title.text if title is not None else "")
+                    # Simple TF-IDF placeholder: we'll compute signal based on keyword frequency
+                    tfidf_signal = len(keywords) / 10.0  # dummy
+                    # Security team expansion: look for security-related keywords
+                    security_words = {"security", "soc", "incident response", "malware", "threat", "vulnerability"}
+                    security_expansion = any(kw.lower() in security_words for kw in keywords)
+                    # Deletion velocity: we would need to track postings over time; placeholder
+                    deletion_velocity = 0.0
+                    # Salary range: not available in RSS; set None
+                    results.append(JobPostingDarkSignalResult(
+                        company=company,
+                        job_title=title.text if title is not None else "",
+                        posting_date=updated.text if updated is not None else "",
+                        tech_keywords=keywords,
+                        tfidf_signal=tfidf_signal,
+                        security_team_expansion=security_expansion,
+                        deletion_velocity=deletion_velocity,
+                        salary_range=None
+                    ))
+        except Exception as e:
+            print(f"Job posting error: {e}")
+        return results
+
+    def _extract_keywords(self, text: str) -> List[str]:
+        # Simple tokenization and stopword removal
+        stopwords = {"a","an","the","and","or","of","in","to","for","is","at","on","by","with","as","from"}
+        words = re.findall(r'\b[a-zA-Z]+\b', text.lower())
+        return [w for w in words if w not in stopwords and len(w) > 2]
+
+# ----------------------------------------------------------------------
+# Tool 6: Commit Pattern Analyzer
+# ----------------------------------------------------------------------
+
+class CommitPatternAnalyzer:
+    """Analyze commit patterns using GitHub public Events API."""
+
+    def __init__(self, session: aiohttp.ClientSession):
+        self.session = session
+
+    async def analyze_repo(self, repo_full: str) -> CommitPatternResult:
+        # repo_full format: "owner/repo"
+        events_url = f"https://api.github.com/repos/{repo_full}/events?per_page=100"
+        try:
+            async with self.session.get(events_url, headers={"Accept": "application/vnd.github.v3+json"}) as resp:
+                if resp.status != 200:
+                    return CommitPatternResult(repo=repo_full, crunch_score=0.0, sentiment_trend="neutral",
+                                               security_incidents=[], author_turnover_rate=0.0, new_dependencies=[])
+                events = await resp.json()
+        except:
+            return CommitPatternResult(repo=repo_full, crunch_score=0.0, sentiment_trend="neutral",
+                                       security_incidents=[], author_turnover_rate=0.0, new_dependencies=[])
+
+        # Analyze PushEvents (commits)
+        commits = []
+        for event in events:
+            if event.get("type") == "PushEvent":
+                payload = event.get("payload", {})
+                for commit in payload.get("commits", []):
+                    commits.append(commit)
+
+        if not commits:
+            return CommitPatternResult(repo=repo_full, crunch_score=0.0, sentiment_trend="neutral",
+                                       security_incidents=[], author_turnover_rate=0.0, new_dependencies=[])
+
+        # Crunch score: % of commits made outside 9-17 on weekdays
+        off_hours = 0
+        authors = set()
+        security_incidents = []
+        new_deps = set()
+        sentiment = "neutral"
+
+        for commit in commits:
+            # Author
+            author = commit.get("author", {})
+            if author:
+                authors.add(author.get("name", "unknown"))
+            # Commit message
+            msg = commit.get("message", "")
+            if not msg:
+                continue
+            # Sentiment analysis: very simple keyword-based
+            if any(w in msg.lower() for w in ["fix", "patch", "bug", "correct"]):
+                sentiment = "negative" if sentiment != "negative" else sentiment
+            elif any(w in msg.lower() for w in ["feature", "improve", "add", "release"]):
+                sentiment = "positive" if sentiment == "neutral" else sentiment
+            # Security incidents
+            if any(w in msg.lower() for w in ["cve", "vuln", "security", "xss", "sqli"]):
+                security_incidents.append({"message": msg, "timestamp": commit.get("timestamp", "")})
+
+            # New dependencies: detect "add", "install" in package manager files
+            if re.search(r"(add|install)\s+\w+", msg.lower()):
+                match = re.search(r"(add|install)\s+(\w+)", msg.lower())
+                if match:
+                    new_deps.add(match.group(2))
+
+            # Check for commit timestamp (if available)
+            timestamp = commit.get("timestamp")
+            if timestamp:
+                try:
+                    dt = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%SZ")
+                    if dt.weekday() >= 5 or dt.hour < 9 or dt.hour >= 17:
+                        off_hours += 1
+                except:
+                    pass
+
+        crunch_score = off_hours / len(commits) if len(commits) > 0 else 0.0
+        author_turnover = len(authors) / (len(commits) + 1)  # rough ratio
+
+        return CommitPatternResult(
+            repo=repo_full,
+            crunch_score=crunch_score,
+            sentiment_trend=sentiment,
+            security_incidents=security_incidents,
+            author_turnover_rate=author_turnover,
+            new_dependencies=list(new_deps)
+        )
+
+# ----------------------------------------------------------------------
+# Tool 7: SEC Filing Anomaly Detector
+# ----------------------------------------------------------------------
+
+class SECFilingAnomalyDetector:
+    """Fetch SEC filings and compare risk sections for anomalies."""
+
+    def __init__(self, session: aiohttp.ClientSession):
+        self.session = session
+
+    async def analyze_cik(self, cik: str) -> List[SECFilingAnomalyResult]:
+        results = []
+        # Use EDGAR full-text search for recent 10-K and 10-Q
+        base_url = "https://efts.sec.gov/LATEST/search-index"
+        # Search for CIK and form type
+        for form_type in ["10-K", "10-Q"]:
+            params = {
+                "cik": cik,
+                "form": form_type,
+                "dateRange": "2y",
+                "count": "10"
+            }
+            try:
+                async with self.session.get(base_url, params=params) as resp:
+                    if resp.status != 200:
+                        continue
+                    data = await resp.json()
+                    filings = data.get("hits", {}).get("hits", [])
+                    # Analyze consecutive filings
+                    previous_text = ""
+                    previous_date = ""
+                    for hit in filings:
+                        filing_url = hit.get("_source", {}).get("url", "")
+                        if not filing_url:
+                            continue
+                        # Fetch the full text (risk factors section)
+                        filing_text = await self._fetch_filing_text(filing_url)
+                        if not filing_text:
+                            continue
+                        # Compare with previous
+                        if previous_text:
+                            # TF-IDF cosine similarity
+                            vectorizer = TfidfVectorizer(stop_words="english")
+                            try:
+                                tfidf_matrix = vectorizer.fit_transform([previous_text, filing_text])
+                                sim = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
+                            except:
+                                sim = 1.0
+                            risk_delta = 1 - sim  # higher delta more anomalous
+                        else:
+                            risk_delta = 0.0
+                        # Detect going concern language
+                        going_concern = "going concern" in filing_text.lower()
+                        # Restatement signals
+                        restatement = "restatement" in filing_text.lower() or "adjustment" in filing_text.lower()
+                        # Insider trading clusters from Form 4 (separate API)
+                        insider = []  # placeholder
+                        results.append(SECFilingAnomalyResult(
+                            cik=cik,
+                            filing_type=form_type,
+                            filing_date=hit.get("_source", {}).get("filingDate", ""),
+                            risk_delta=risk_delta,
+                            going_concern_flag=going_concern,
+                            restatement_flag=restatement,
+                            insider_trading_clusters=insider
+                        ))
+                        previous_text = filing_text
+            except Exception as e:
+                print(f"SEC fetching error: {e}")
+        return results
+
+    async def _fetch_filing_text(self, url: str) -> str:
+        try:
+            async with self.session.get(url) as resp:
+                if resp.status != 200:
+                    return ""
+                text = await resp.text()
+                # Try to extract text between <TEXT> tags in SGML format or just plain text
+                match = re.search(r"<TEXT>(.*?)</TEXT>", text, re.DOTALL)
+                if match:
+                    return match.group(1)
+                return text
+        except:
+            return ""
+
+# ----------------------------------------------------------------------
+# Tool 8: Favicon Hash Correlator
+# ----------------------------------------------------------------------
+
+class FaviconHashCorrelator:
+    """Download favicon, compute MMH3 hash, search Shodan and crt.sh."""
+
+    def __init__(self, session: aiohttp.ClientSession):
+        self.session = session
+        self.shodan_api_key = "YOUR_SHODAN_API_KEY"  # placeholder
+
+    async def correlate(self, domain: str) -> FaviconHashResult:
+        favicon_urls = [f"https://{domain}/favicon.ico"]
+        # Also try to get from HTML
+        try:
+            async with self.session.get(f"https://{domain}") as resp:
+                if resp.status == 200:
+                    html = await resp.text()
+                    soup = BeautifulSoup(html, "html.parser")
+                    link = soup.find("link", rel="icon") or soup.find("link", rel="shortcut icon")
+                    if link and link.get("href"):
+                        href = link["href"]
+                        if href.startswith("http"):
+                            favicon_urls.insert(0, href)
+                        else:
+                            favicon_urls.insert(0, f"https://{domain}{href}")
+        except:
+            pass
+
+        favicon_data = None
+        used_url = None
+        for url in favicon_urls:
+            try:
+                async with self.session.get(url) as resp:
+                    if resp.status == 200:
+                        favicon_data = await resp.read()
+                        used_url = url
+                        break
+            except:
+                continue
+
+        if not favicon_data:
+            return FaviconHashResult(domain=domain, favicon_url="", mmh3_hash=0,
+                                     shodan_domains=[], crt_domains=[], linked_domains=[])
+
+        # Compute MMH3 hash
+        hash_value = mmh3.hash(favicon_data)
+
+        # Search Shodan (need API key)
+        shodan_domains = []
+        if self.shodan_api_key != "YOUR_SHODAN_API_KEY":
+            try:
+                shodan_url = f"https://api.shodan.io/shodan/host/search?key={self.shodan_api_key}&query=http.favicon.hash:{hash_value}"
+                async with self.session.get(shodan_url) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        for match in data.get("matches", []):
+                            shodan_domains.append(match.get("http", {}).get("host", ""))
+            except:
+                pass
+
+        # Search crt.sh for same favicon hash using favicon hash search (not directly available)
+        # Alternative: search for domain with matching hash via Shodan or other; placeholder
+        crt_domains = []
+
+        combined = list(set(shodan_domains + crt_domains))
+        return FaviconHashResult(
+            domain=domain,
+            favicon_url=used_url,
+            mmh3_hash=hash_value,
+            shodan_domains=shodan_domains,
+            crt_domains=crt_domains,
+            linked_domains=combined
+        )
+
+# ----------------------------------------------------------------------
+# Tool 9: Dark Market Intelligence
+# ----------------------------------------------------------------------
+
+class DarkMarketIntelligence:
+    """Aggregate threat intelligence from multiple sources."""
+
+    def __init__(self, session: aiohttp.ClientSession):
+        self.session = session
+        # Placeholder for MISP, OTX, Ahmia, Archive, Reddit
+        self.otx_api_key = "YOUR_OTX_API_KEY"
+
+    async def aggregate(self) -> List[DarkMarketIntelligenceResult]:
+        results = []
+        # 1. MISP public feeds (e.g., https://www.misp-project.org/feeds/)
+        # No universal public feed; skip
+
+        # 2. AlienVault OTX
+        if self.otx_api_key != "YOUR_OTX_API_KEY":
+            try:
+                url = "https://otx.alienvault.com/api/v1/pulses/subscribed"
+                headers = {"X-OTX-API-KEY": self.otx_api_key}
+                async with self.session.get(url, headers=headers) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        for pulse in data.get("results", []):
+                            for indicator in pulse.get("indicators", []):
+                                results.append(DarkMarketIntelligenceResult(
+                                    threat_type=indicator.get("type", ""),
+                                    source="AlienVault OTX",
+                                    indicator=indicator.get("indicator", ""),
+                                    description=pulse.get("description", ""),
+                                    timestamp=pulse.get("created", ""),
+                                    confidence=pulse.get("adversary", {}).get("confidence", 0.5)
+                                ))
+            except:
+                pass
+
+        # 3. Ahmia cached marketplace pages (via .onion proxy not possible without Tor)
+        # Simulate
+
+        # 4. Archive.org dark web captures (onion filter)
+        try:
+            url = "https://web.archive.org/cdx/search/cdx?url=*.onion&output=json&limit=100"
+            async with self.session.get(url) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    for row in data[1:]:  # first row is header
+                        if len(row) >= 2:
+                            results.append(DarkMarketIntelligenceResult(
+                                threat_type="onion_site",
+                                source="Archive.org",
+                                indicator=row[2],
+                                description="Archived .onion site",
+                                timestamp=row[1],
+                                confidence=0.3
+                            ))
+        except:
+            pass
+
+        # 5. Reddit r/darknet (via pushshift or praw)
+        try:
+            url = "https://api.reddit.com/r/darknet/hot?limit=10"
+            headers = {"User-Agent": "DarkIntelBot/1.0"}
+            async with self.session.get(url, headers=headers) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    for post in data.get("data", {}).get("children", []):
+                        title = post.get("data", {}).get("title", "")
+                        self_text = post.get("data", {}).get("selftext", "")
+                        combined = title + " " + self_text
+                        # Simple NLP: extract potential indicators (URLs, hashes)
+                        urls = re.findall(r'https?://[^\s]+', combined)
+                        hashes = re.findall(r'\b[a-fA-F0-9]{32}\b', combined)
+                        for u in urls:
+                            results.append(DarkMarketIntelligenceResult(
+                                threat_type="url",
+                                source="Reddit",
+                                indicator=u,
+                                description=title[:200],
+                                timestamp=post.get("data", {}).get("created_utc", ""),
+                                confidence=0.4
+                            ))
+                        for h in hashes:
+                            results.append(DarkMarketIntelligenceResult(
+                                threat_type="hash_md5",
+                                source="Reddit",
+                                indicator=h,
+                                description=title[:200],
+                                timestamp=post.get("data", {}).get("created_utc", ""),
+                                confidence=0.4
+                            ))
+        except:
+            pass
+
+        return results
+
+# ----------------------------------------------------------------------
+# Tool 10: Source Map Excavator
+# ----------------------------------------------------------------------
+
+class SourceMapExcavator:
+    """Find and parse JS source maps to extract sensitive data."""
+
+    def __init__(self, session: aiohttp.ClientSession):
+        self.session = session
+
+    async def excavate(self, target_url: str) -> List[SourceMapExcavatorResult]:
+        results = []
+        try:
+            async with self.session.get(target_url) as resp:
+                if resp.status != 200:
+                    return results
+                html = await resp.text()
+        except:
+            return results
+
+        # Find all script tags with src attributes
+        soup = BeautifulSoup(html, "html.parser")
+        script_tags = soup.find_all("script", src=True)
+        js_urls = []
+        for tag in script_tags:
+            src = tag["src"]
+            if src.endswith(".js"):
+                if src.startswith("http"):
+                    js_urls.append(src)
+                else:
+                    js_urls.append(urllib.parse.urljoin(target_url, src))
+
+        # For each JS URL, check for source map
+        for js_url in js_urls:
+            # Also try to get source map from //# sourceMappingURL comment
+            try:
+                async with self.session.get(js_url) as resp:
+                    if resp.status != 200:
+                        continue
+                    js_content = await resp.text()
+                    # Check inline source map
+                    inline_map = re.search(r'//# sourceMappingURL=data:application/json;base64,(.+)', js_content)
+                    if inline_map:
+                        map_data = base64.b64decode(inline_map.group(1))
+                    else:
+                        # Try external .map file
+                        map_url = js_url + ".map"
+                        async with self.session.get(map_url) as map_resp:
+                            if map_resp.status != 200:
+                                # try sourceMappingURL line
+                                match = re.search(r'//# sourceMappingURL=(.+)', js_content)
+                                if match:
+                                    map_url = match.group(1).strip()
+                                    if not map_url.startswith("http"):
+                                        map_url = urllib.parse.urljoin(js_url, map_url)
+                                    async with self.session.get(map_url) as map_resp2:
+                                        if map_resp2.status != 200:
+                                            continue
+                                        map_data = await map_resp2.read()
+                                else:
+                                    continue
+                            else:
+                                map_data = await map_resp.read()
+                    # Parse JSON
+                    map_json = json.loads(map_data)
+                    original_filenames = map_json.get("sources", [])
+                    sources_content = map_json.get("sourcesContent", [])
+                    # Extract internal URLs, API endpoints, env configs, secrets
+                    internal_urls = set()
+                    api_endpoints = set()
+                    env_configs = {}
+                    hardcoded_secrets = []
+                    # Scan sourcesContent
+                    for content in sources_content:
+                        if not content:
+                            continue
+                        # URLs
+                        urls = re.findall(r'https?://[^\s"\'<>]+', content)
+                        for u in urls:
+                            if target_url in u or urllib.parse.urlparse(u).netloc.endswith(".internal"):
+                                internal_urls.add(u)
+                            if re.search(r'/api/', u):
+                                api_endpoints.add(u)
+                        # Environment configs: look for process.env or environment variables
+                        env_matches = re.findall(r'(process\.env\.\w+|environment\.\w+)', content)
+                        for env in env_matches:
+                            env_configs[env] = "redacted"
+                        # Hardcoded secrets: passwords, tokens, keys
+                        secret_patterns = [
+                            (r'(?i)password[=:]\s*["\']?([^"\'\s,]+)', "password"),
+                            (r'(?i)token[=:]\s*["\']?([^"\'\s,]+)', "token"),
+                            (r'(?i)api[_-]?key[=:]\s*["\']?([^"\'\s,]+)', "api_key"),
+                            (r'(?i)secret[=:]\s*["\']?([^"\'\s,]+)', "secret"),
+                            (r'-----BEGIN RSA PRIVATE KEY-----', "private_key")
+                        ]
+                        for pat, label in secret_patterns:
+                            found = re.findall(pat, content)
+                            for f in found:
+                                hardcoded_secrets.append(f"{label}: {f[:30]}...")
+                    results.append(SourceMapExcavatorResult(
+                        js_url=js_url,
+                        source_map_url=map_url,
+                        original_filenames=original_filenames,
+                        internal_urls=list(internal_urls),
+                        api_endpoints=list(api_endpoints),
+                        env_configs=env_configs,
+                        hardcoded_secrets=hardcoded_secrets
+                    ))
+            except:
+                continue
+        return results
+
+# ----------------------------------------------------------------------
+# Runner
+# ----------------------------------------------------------------------
+
+async def main():
+    async with aiohttp.ClientSession() as session:
+        # Example usage of Tool 1
+        scanner = RegistryGraveyardScanner(session)
+        graveyard_results = await scanner.scan_all()
+        print(f"RegistryGraveyardScanner found {len(graveyard_results)} results.")
+
+        # Tool 2
+        detector = DNSTakeoverDetector(session)
+        takeover = await detector.check_domain("example.com")
+        print(f"DNSTakeoverDetector: {takeover}")
+
+        # Tool 3
+        correlator = AnalyticsIDCorrelator(session)
+        analytics = await correlator.crawl_and_correlate("example.com")
+        print(f"AnalyticsCorrelator: {len(analytics)} IDs")
+
+        # Tool 4
+        temporal = SubdomainTemporalAnalyzer(session)
+        subs = await temporal.analyze_domain("example.com")
+        print(f"SubdomainTemporalAnalyzer: {len(subs)} subdomains")
+
+        # Tool 5
+        jobs = JobPostingDarkSignal(session)
+        job_results = await jobs.analyze_company("google")
+        print(f"JobPostingDarkSignal: {len(job_results)} jobs")
+
+        # Tool 6
+        commits = CommitPatternAnalyzer(session)
+        commit_result = await commits.analyze_repo("tensorflow/tensorflow")
+        print(f"CommitPatternAnalyzer: crunch {commit_result['crunch_score']}")
+
+        # Tool 7
+        sec = SECFilingAnomalyDetector(session)
+        filings = await sec.analyze_cik("0000320193")  # Apple CIK
+        print(f"SECFilingAnomalyDetector: {len(filings)} filings")
+
+        # Tool 8
+        fav = FaviconHashCorrelator(session)
+        fav_result = await fav.correlate("google.com")
+        print(f"FaviconHash: {fav_result['mmh3_hash']}")
+
+        # Tool 9
+        dark = DarkMarketIntelligence(session)
+        dark_results = await dark.aggregate()
+        print(f"DarkMarketIntelligence: {len(dark_results)} indicators")
+
+        # Tool 10
+        excavator = SourceMapExcavator(session)
+        maps = await excavator.excavate("https://example.com")
+        print(f"SourceMapExcavator: {len(maps)} source maps")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```

@@ -1,0 +1,48 @@
+Here are 10 tools that use creative workarounds to replace expensive commercial APIs, categorized by their use case:
+
+**Salary Data**
+
+1. **Glassdoor API alternative**: Expensive service: Glassdoor's API ($100k+ per year)
+	* Free alternative technique: Web scraping using tools like `BeautifulSoup` or `Scrapy` to extract salary data from publicly available sources like Glassdoor's website.
+	* Why the free version is better: With web scraping, you can collect data on specific companies or job titles without paying per API call. Plus, you can automate data collection and store it in a database for future analysis.
+2. **PayScale API alternative**: Expensive service: PayScale's API ($50k+ per year)
+	* Free alternative technique: Using online surveys and crowdsourcing platforms like Google Forms or SurveyMonkey to collect salary data from a targeted audience.
+	* Why the free version is better: By collecting data directly from individuals, you can get more up-to-date and accurate salary information. Plus, you can customize your survey to collect specific data points.
+
+**Company Research**
+
+3. **Crunchbase API alternative**: Expensive service: Crunchbase's API ($50k+ per year)
+	* Free alternative technique: Using publicly available data sources like SEC filings, company websites, and social media to gather company information.
+	* Why the free version is better: Publicly available data sources often provide more comprehensive and accurate information than commercial APIs. Plus, you can use natural language processing (NLP) techniques to extract data from unstructured sources.
+4. **ZoomInfo API alternative**: Expensive service: ZoomInfo's API ($20k+ per year)
+	* Free alternative technique: Using publicly available directories like LinkedIn or company websites to gather contact information.
+	* Why the free version is better: Publicly available directories often have more up-to-date and accurate contact information than commercial APIs. Plus, you can use tools like `Enrich` or `Clearbit` to enrich your data.
+
+**Patent Analysis**
+
+5. **PatentFull API alternative**: Expensive service: PatentFull's API ($10k+ per year)
+	* Free alternative technique: Using the United States Patent and Trademark Office (USPTO) database to search and download patent data.
+	* Why the free version is better: The USPTO database provides comprehensive and accurate patent data, and it's free. Plus, you can use tools like `PatentScout` or `Patent analysis` to analyze and visualize patent data.
+6. **Google Patents API alternative**: Expensive service: Google Patents API ($5k+ per year)
+	* Free alternative technique: Using the Google Patents website to search and download patent data.
+	* Why the free version is better: The Google Patents website provides a simple and intuitive way to search and download patent data. Plus, you can use tools like `BeautifulSoup` or `Scrapy` to scrape patent data.
+
+**Hiring Signals**
+
+7. **AngelList API alternative**: Expensive service: AngelList's API ($5k+ per year)
+	* Free alternative technique: Using publicly available data sources like LinkedIn or Twitter to gather hiring signals.
+	* Why the free version is better: Publicly available data sources often provide more comprehensive and accurate hiring signals than commercial APIs. Plus, you can use NLP techniques to extract signals from unstructured sources.
+8. **Stack Overflow API alternative**: Expensive service: Stack Overflow's API ($5k+ per year)
+	* Free alternative technique: Using publicly available data sources like GitHub or Reddit to gather hiring signals.
+	* Why the free version is better: Publicly available data sources often provide more comprehensive and accurate hiring signals than commercial APIs. Plus, you can use tools like `GitHub API` or `Reddit API` to gather data.
+
+**Competitive Intelligence**
+
+9. **Ahrefs API alternative**: Expensive service: Ahrefs' API ($10k+ per year)
+	* Free alternative technique: Using publicly available data sources like Google Search Console or Moz to gather SEO data.
+	* Why the free version is better: Publicly available data sources often provide more comprehensive and accurate SEO data than commercial APIs. Plus, you can use tools like `Google Search Console API` or `Moz API` to gather data.
+10. **SEMrush API alternative**: Expensive service: SEMrush' API ($5k+ per year)
+	* Free alternative technique: Using publicly available data sources like Google Trends or Keyword Tool to gather competitive intelligence data.
+	* Why the free version is better: Publicly available data sources often provide more comprehensive and accurate competitive intelligence data than commercial APIs. Plus, you can use tools like `Google Trends API` or `Keyword Tool API` to gather data.
+
+Note that these alternatives might require more development effort and technical expertise than commercial APIs, but they can provide significant cost savings and sometimes even more accurate or comprehensive data.

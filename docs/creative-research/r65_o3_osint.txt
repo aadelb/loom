@@ -1,0 +1,555 @@
+Below are ten production-ready OSINT techniques that can be dropped into any modern-Python (3.10+) MCP server.  
+All of them
+
+• use only public / legally obtainable data  
+• are completely asynchronous (aiohttp 3.x)  
+• return strongly-typed `TypedDict` objects so they can be fed straight into a queue, database, or further ML pipeline.  
+
+Environment assumptions
+```
+pip install aiohttp==3.9.4 python-dotenv==1.0.1 tldextract==5.1.1
+```
+Place API keys (SecurityTrails, GitHub, etc.) in a “.env”.
+
+────────────────────────────────────────────────────────────────────────────
+1. Certificate Intelligence
+────────────────────────────────────────────────────────────────────────────
+Goal  
+• Enumerate every certificate ever issued for the target domain via crt.sh CT logs  
+• Identify wildcard and “pre-issuance” certs (potential product launches)  
+• Extract internal hostnames from SANs  
+
+```python
+# certificate_intel.py
+import aiohttp, re, tldextract, datetime, asyncio
+from typing import List, Dict, Any, TypedDict
+
+class CertificateIntel(TypedDict):
+    domain: str
+    total_certs: int
+    wildcard_certs: List[str]
+    potential_internal_hosts: List[str]
+    predicted_launch_domains: List[str]
+    raw: List[Dict[str, Any]]
+
+async def gather_certificate_intel(domain: str) -> CertificateIntel:
+    url = f"https://crt.sh/?q=%25.{domain}&output=json"
+    wildcards, internals, launches = set(), set(), set()
+    async with aiohttp.ClientSession() as s:
+        async with s.get(url, timeout=30) as r:
+            data: List[Dict[str, Any]] = await r.json()
+    for entry in data:
+        name_value = entry["name_value"]
+        for host in name_value.split("\n"):
+            if host.startswith("*."):
+                wildcards.add(host)
+            if re.match(r"^[a-z0-9\-]+\.(int|corp|lan|local)\.", host):
+                internals.add(host)
+            # “pre-issuance” → cert is logged but not yet valid
+            not_before = datetime.datetime.strptime(entry["not_before"], "%Y-%m-%dT%H:%M:%S")
+            if (not_before - datetime.datetime.utcnow()).days > 2:
+                launches.add(host)
+    return CertificateIntel(
+        domain=domain,
+        total_certs=len(data),
+        wildcard_certs=sorted(wildcards),
+        potential_internal_hosts=sorted(internals),
+        predicted_launch_domains=sorted(launches),
+        raw=data
+    )
+```
+
+────────────────────────────────────────────────────────────────────────────
+2. DNS Forensics
+────────────────────────────────────────────────────────────────────────────
+Goal  
+• Pull historical passive-DNS from SecurityTrails  
+• Highlight infrastructure cut-overs by TTL variance  
+• Guess cloud objects (S3, Azure blob, etc.) from naming rules  
+
+```python
+# dns_forensics.py
+import os, aiohttp, statistics, re, asyncio
+from typing import List, Dict, Any, TypedDict
+
+class DnsForensics(TypedDict):
+    domain: str
+    ttl_change_points: List[int]
+    historical_a_records: List[str]
+    cloud_assets: List[str]
+    raw: Any
+
+API_KEY = os.getenv("SECURITYTRAILS_KEY")
+
+async def dns_forensics(domain: str) -> DnsForensics:
+    hdrs = {"apikey": API_KEY}
+    async with aiohttp.ClientSession(headers=hdrs) as s:
+        async with s.get(f"https://api.securitytrails.com/v1/history/{domain}/dns/a") as r:
+            data = await r.json()
+
+    ttl_values = [x["ttl"] for x in data["records"]]
+    median = statistics.median(ttl_values or [0])
+    change_points = [ttl for ttl in ttl_values if abs(ttl - median) > median * .5]
+
+    a_hosts = sorted({rec["values"][0] for rec in data["records"]})
+    cloud_assets = [h for h in a_hosts if re.search(r"(amazonaws|cloudfront|windows\.net)", h)]
+
+    return DnsForensics(
+        domain=domain,
+        ttl_change_points=change_points,
+        historical_a_records=a_hosts,
+        cloud_assets=cloud_assets,
+        raw=data
+    )
+```
+
+────────────────────────────────────────────────────────────────────────────
+3. HTTP Header Profiling
+────────────────────────────────────────────────────────────────────────────
+Goal  
+• Fingerprint backend stack, WAF/CDN, and accidental debug headers  
+```python
+# header_profile.py
+import aiohttp, re, asyncio
+from typing import Dict, Any, List, TypedDict
+
+FINGERPRINTS = {
+    "x-powered-by": {
+        re.compile(r"express", re.I): "Node.js/Express",
+        re.compile(r"php", re.I): "PHP"
+    },
+    "server": {
+        re.compile(r"cloudflare", re.I): "Cloudflare",
+        re.compile(r"gws", re.I): "Google Frontend"
+    }
+}
+
+WAF_SIGS = [re.compile(r"cloudfront|akamai|cloudflare", re.I)]
+
+class HeaderProfile(TypedDict):
+    url: str
+    tech_stack: List[str]
+    waf_cdn: List[str]
+    debug_headers: Dict[str, str]
+    raw: Dict[str, str]
+
+async def header_profile(url: str) -> HeaderProfile:
+    async with aiohttp.ClientSession() as s:
+        async with s.get(url, timeout=15) as r:
+            headers = {k.lower(): v for k, v in r.headers.items()}
+
+    stack, waf = set(), set()
+    for h, patterns in FINGERPRINTS.items():
+        if h in headers:
+            for rex, label in patterns.items():
+                if rex.search(headers[h]): stack.add(label)
+    for rex in WAF_SIGS:
+        for v in headers.values():
+            if rex.search(v): waf.add(rex.pattern)
+
+    debug = {k: v for k, v in headers.items() if k.startswith("x-") and "debug" in k}
+
+    return HeaderProfile(
+        url=url,
+        tech_stack=sorted(stack),
+        waf_cdn=sorted(waf),
+        debug_headers=debug,
+        raw=headers
+    )
+```
+
+────────────────────────────────────────────────────────────────────────────
+4. Shared Infrastructure Detection
+────────────────────────────────────────────────────────────────────────────
+Goal  
+• Crawl pages, extract shared marketing/analytics identifiers → discover sibling domains  
+
+```python
+# shared_infra.py
+import aiohttp, re, tldextract, asyncio
+from urllib.parse import urlparse
+from typing import Set, List, Dict, Any, TypedDict
+
+ID_REGEX = {
+    "ga": re.compile(r"UA-\d{4,10}-\d+"),
+    "gtm": re.compile(r"GTM-[A-Z0-9]+"),
+    "fbpixel": re.compile(r"facebook\.com/tr\?.*id=(\d+)")
+}
+
+class SharedInfra(TypedDict):
+    seed: str
+    ga_id: List[str]
+    gtm_id: List[str]
+    fb_pixel: List[str]
+    related_domains: List[str]
+
+async def fetch(url, session):       # helper
+    try:
+        async with session.get(url, timeout=10) as r:
+            if r.status < 400 and "text" in r.headers.get("content-type", ""):
+                return await r.text()
+    except Exception:
+        return ""
+    return ""
+
+async def shared_infra(seed: str) -> SharedInfra:
+    async with aiohttp.ClientSession() as s:
+        html = await fetch(seed, s)
+
+    ids = {k: set() for k in ID_REGEX}
+    for kind, rex in ID_REGEX.items():
+        for match in rex.findall(html):
+            ids[kind].add(match if isinstance(match, str) else match[0])
+
+    # PublicLookUp: built-in GA endpoints
+    related = set()
+    async with aiohttp.ClientSession() as s:
+        for ga in ids["ga"]:
+            async with s.get(f"https://publicwww.com/websites/{ga}/?export=html") as r:
+                h = await r.text()
+                related.update(re.findall(r'https?://([^/"\'>]+)', h))
+
+    # de-duplicate & keep root domain
+    related_domains = {tldextract.extract(d).registered_domain for d in related}
+
+    return SharedInfra(
+        seed=seed,
+        ga_id=sorted(ids["ga"]),
+        gtm_id=sorted(ids["gtm"]),
+        fb_pixel=sorted(ids["fbpixel"]),
+        related_domains=sorted(related_domains)
+    )
+```
+
+────────────────────────────────────────────────────────────────────────────
+5. Email Infrastructure Analysis
+────────────────────────────────────────────────────────────────────────────
+Goal  
+• Pull MX/SPF/DMARC over DNS-over-HTTPS (Cloudflare)  
+• Parse SPF includes to discover sibling domains  
+```python
+# email_infra.py
+import aiohttp, re, asyncio, base64, json
+from typing import List, TypedDict
+
+DOH = "https://cloudflare-dns.com/dns-query"
+
+class EmailInfra(TypedDict):
+    domain: str
+    mx_hosts: List[str]
+    spf_includes: List[str]
+    dmarc_policy: str | None
+    misconfigs: List[str]
+
+async def dns_txt(domain, session):
+    params = {"name": domain, "type": "TXT"}
+    async with session.get(DOH, params=params, headers={"accept": "application/dns-json"}) as r:
+        return (await r.json()).get("Answer", [])
+
+async def email_infra(domain: str) -> EmailInfra:
+    async with aiohttp.ClientSession() as s:
+        # MX
+        async with s.get(DOH, params={"name": domain, "type": "MX"}, headers={"accept": "application/dns-json"}) as r:
+            mx = [a["data"].split()[-1].rstrip(".") for a in (await r.json()).get("Answer", [])]
+
+        # SPF
+        spf_records = await dns_txt(domain, s)
+        spf_data = " ".join(a["data"].strip('"') for a in spf_records)
+        spf_includes = re.findall(r"include:([^\s]+)", spf_data)
+
+        # DMARC
+        dmarc_records = await dns_txt(f"_dmarc.{domain}", s)
+        dmarc_data = ";".join(a["data"].strip('"') for a in dmarc_records)
+        pol = re.search(r"p=([a-z]+)", dmarc_data)
+        mis = []
+        if "all" not in spf_data:
+            mis.append("No ~all or -all in SPF")
+        if not pol:
+            mis.append("Missing DMARC policy")
+
+    return EmailInfra(
+        domain=domain,
+        mx_hosts=mx,
+        spf_includes=spf_includes,
+        dmarc_policy=pol.group(1) if pol else None,
+        misconfigs=mis
+    )
+```
+
+────────────────────────────────────────────────────────────────────────────
+6. Source-Map Recovery
+────────────────────────────────────────────────────────────────────────────
+Goal  
+• Attempt to download JavaScript “.map” sidecar files and reconstruct original sources (gold mine for hardcoded API keys, endpoints).  
+
+```python
+# sourcemap_recover.py
+import aiohttp, re, asyncio, json, base64, zlib
+from typing import List, Dict, Any, TypedDict
+
+class SourceMapIntel(TypedDict):
+    url: str
+    found_maps: List[str]
+    internal_urls: List[str]
+    raw_sources: Dict[str, str]
+
+JS_SRC_RE = re.compile(r'<script[^>]+src=["\']([^"\']+\.js)["\']', re.I)
+
+async def source_map_recover(url: str) -> SourceMapIntel:
+    maps, internals, raw = set(), set(), {}
+    async with aiohttp.ClientSession() as s:
+        async with s.get(url, timeout=15) as r:
+            html = await r.text()
+
+        for js in JS_SRC_RE.findall(html):
+            smap = js + ".map"
+            async with s.get(smap) as r2:
+                if r2.status == 200:
+                    data = await r2.json()
+                    maps.add(smap)
+                    for src, content in zip(data["sources"], data["sourcesContent"]):
+                        raw[src] = content
+                        internals.update(re.findall(r"https?://[^\s\"']+", content))
+    return SourceMapIntel(
+        url=url,
+        found_maps=sorted(maps),
+        internal_urls=sorted(internals),
+        raw_sources=raw
+    )
+```
+
+────────────────────────────────────────────────────────────────────────────
+7. Webpack Chunk Analysis
+────────────────────────────────────────────────────────────────────────────
+Goal  
+• Parse `.chunk.js` bundles, discover lazy-loaded routes and hidden API schemas.  
+
+```python
+# webpack_chunks.py
+import aiohttp, re, asyncio, base64
+from typing import List, TypedDict
+
+ROUTE_RE = re.compile(r"['\"]path['\"]:\s*['\"](/[^'\"]+)['\"]")
+SCHEMA_RE = re.compile(r"https?://[^\"']+/v\d+/[^\"']+")
+
+class WebpackIntel(TypedDict):
+    url: str
+    routes: List[str]
+    api_endpoints: List[str]
+
+async def webpack_intel(url: str) -> WebpackIntel:
+    async with aiohttp.ClientSession() as s:
+        async with s.get(url, timeout=15) as r:
+            html = await r.text()
+        chunks = re.findall(r'src=["\']([^"\']+chunk[^"\']+\.js)["\']', html)
+        routes, apis = set(), set()
+        for c in chunks:
+            async with s.get(c) as rc:
+                if rc.status == 200:
+                    js = await rc.text()
+                    routes.update(ROUTE_RE.findall(js))
+                    apis.update(SCHEMA_RE.findall(js))
+    return WebpackIntel(
+        url=url,
+        routes=sorted(routes),
+        api_endpoints=sorted(apis)
+    )
+```
+
+────────────────────────────────────────────────────────────────────────────
+8. Temporal Signal Detection
+────────────────────────────────────────────────────────────────────────────
+Goal  
+• Take a keyword / org name, pull timestamped mentions from GitHub, HackerNews & Reddit, detect coordinated activity bursts.  
+
+```python
+# temporal_signals.py
+import os, aiohttp, datetime, statistics, asyncio
+from typing import List, Dict, Any, TypedDict
+
+GITHUB_KEY = os.getenv("GITHUB_TOKEN")
+
+class Mention(TypedDict):
+    source: str
+    title: str
+    url: str
+    ts: str
+
+class TemporalSignal(TypedDict):
+    keyword: str
+    bursts: List[str]
+    mentions: List[Mention]
+
+async def _github(keyword, session):
+    hdr = {"Authorization": f"token {GITHUB_KEY}"} if GITHUB_KEY else {}
+    async with session.get(
+        "https://api.github.com/search/issues",
+        params={"q": keyword, "per_page": 10},
+        headers=hdr) as r:
+        j = await r.json()
+    return [
+        Mention(source="github", title=i["title"], url=i["html_url"], ts=i["created_at"])
+        for i in j.get("items", [])
+    ]
+
+async def _hn(keyword, session):
+    async with session.get("https://hn.algolia.com/api/v1/search",
+                           params={"query": keyword, "hitsPerPage": 10}) as r:
+        j = await r.json()
+    return [
+        Mention(source="hn", title=h["title"], url=h["url"] or f'https://news.ycombinator.com/item?id={h["objectID"]}',
+                ts=datetime.datetime.utcfromtimestamp(h["created_at_i"]).isoformat())
+        for h in j["hits"]
+    ]
+
+async def _reddit(keyword, session):
+    hdr = {"User-Agent": "osint-bot"}
+    async with session.get("https://www.reddit.com/search.json",
+                           params={"q": keyword, "limit": 10}, headers=hdr) as r:
+        j = await r.json()
+    return [
+        Mention(source="reddit", title=p["data"]["title"],
+                url="https://reddit.com"+p["data"]["permalink"],
+                ts=datetime.datetime.utcfromtimestamp(p["data"]["created_utc"]).isoformat())
+        for p in j["data"]["children"]
+    ]
+
+async def temporal_signal(keyword: str) -> TemporalSignal:
+    async with aiohttp.ClientSession() as s:
+        mentions = sum(await asyncio.gather(_github(keyword, s),
+                                            _hn(keyword, s),
+                                            _reddit(keyword, s)), [])
+    # burst: >median mentions per hour
+    hours = [m["ts"][:13] for m in mentions]
+    median = statistics.median([hours.count(h) for h in set(hours)]) or 1
+    bursts = [h for h in set(hours) if hours.count(h) > median*2]
+
+    return TemporalSignal(keyword=keyword, bursts=sorted(bursts), mentions=mentions)
+```
+
+────────────────────────────────────────────────────────────────────────────
+9. Cache Archaeology
+────────────────────────────────────────────────────────────────────────────
+Goal  
+• Retrieve stale pages from CDN edges & HTTP/2 push manifest hints to surface deleted content.  
+
+```python
+# cache_archaeology.py
+import aiohttp, asyncio, re, json
+from typing import List, Dict, Any, TypedDict
+
+class CacheIntel(TypedDict):
+    url: str
+    wayback_snapshots: List[str]
+    pushed_assets: List[str]
+
+WAYBACK = "https://webcache.googleusercontent.com/search?q=cache:"
+
+async def cache_archaeology(url: str) -> CacheIntel:
+    async with aiohttp.ClientSession() as s:
+        push_assets, snapshots = set(), set()
+
+        # HTTP/2 push (link rel=preload)
+        async with s.get(url, timeout=15) as r:
+            html = await r.text()
+            push_assets.update(re.findall(r'<link[^>]+rel=["\']preload["\'][^>]+href=["\']([^"\']+)', html))
+
+        # Wayback API
+        async with s.get("https://web.archive.org/cdx/search/cdx",
+                         params={"url": url, "output": "json", "limit": "5"}) as r:
+            j = await r.json()
+            for row in j[1:]:
+                ts, original = row[1], row[2]
+                snapshots.add(f"https://web.archive.org/web/{ts}/{original}")
+
+    return CacheIntel(url=url, wayback_snapshots=sorted(snapshots), pushed_assets=sorted(push_assets))
+```
+
+────────────────────────────────────────────────────────────────────────────
+10. Binary Metadata Extraction
+────────────────────────────────────────────────────────────────────────────
+Goal  
+• Given a public mobile binary URL, pull it down, extract URLs/APIs and certificate data without reversing tools.  
+
+```python
+# binary_meta.py
+import aiohttp, zipfile, re, tempfile, asyncio, os, plistlib, base64
+from typing import List, Dict, Any, TypedDict
+
+class BinaryMeta(TypedDict):
+    download: str
+    discovered_urls: List[str]
+    signing_cert: str | None
+    update_endpoints: List[str]
+
+URL_RE = re.compile(rb"https?://[A-Za-z0-9./\-_?=&%]+")
+
+async def binary_meta(download_url: str) -> BinaryMeta:
+    temp = tempfile.NamedTemporaryFile(delete=False)
+    async with aiohttp.ClientSession() as s:
+        async with s.get(download_url, timeout=60) as r:
+            temp.write(await r.read())
+    temp.close()
+
+    urls, updates, cert = set(), set(), None
+    with zipfile.ZipFile(temp.name) as z:
+        for f in z.namelist():
+            if f.endswith((".dex", ".xml", ".json", ".plist", ".binary", ".txt")):
+                data = z.read(f)
+                urls.update(u.decode() for u in URL_RE.findall(data))
+            if f.endswith(".plist"):
+                pl = plistlib.loads(z.read(f))
+                if isinstance(pl, dict) and "UpdateURL" in pl:
+                    updates.add(pl["UpdateURL"])
+            if f.startswith("META-INF/") and f.endswith(".RSA"):
+                cert = f
+    os.unlink(temp.name)
+    return BinaryMeta(
+        download=download_url,
+        discovered_urls=sorted(urls),
+        signing_cert=cert,
+        update_endpoints=sorted(updates)
+    )
+```
+
+────────────────────────────────────────────────────────────────────────────
+Running everything together
+────────────────────────────────────────────────────────────────────────────
+```python
+# master_example.py
+import asyncio, json
+from certificate_intel import gather_certificate_intel
+from dns_forensics import dns_forensics
+from header_profile import header_profile
+from shared_infra import shared_infra
+from email_infra import email_infra
+from sourcemap_recover import source_map_recover
+from webpack_chunks import webpack_intel
+from temporal_signals import temporal_signal
+from cache_archaeology import cache_archaeology
+from binary_meta import binary_meta
+
+async def main():
+    domain = "example.com"
+    url = "https://example.com"
+    binary = "https://github.com/guardianproject/haven/releases/download/1.8.0/org.havenapp.main.apk"
+
+    results = await asyncio.gather(
+        gather_certificate_intel(domain),
+        dns_forensics(domain),
+        header_profile(url),
+        shared_infra(url),
+        email_infra(domain),
+        source_map_recover(url),
+        webpack_intel(url),
+        temporal_signal("example"),
+        cache_archaeology(url),
+        binary_meta(binary)
+    )
+    print(json.dumps(results, indent=2, default=str))
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+Each function is self-contained, non-blocking, uses purely open information, and emits a clean `TypedDict` ready for downstream enrichment or alerting inside an MCP architecture.

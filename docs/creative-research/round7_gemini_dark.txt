@@ -1,0 +1,302 @@
+YOLO mode is enabled. All tool calls will be automatically approved.
+YOLO mode is enabled. All tool calls will be automatically approved.
+MCP issues detected. Run /mcp list for status.Attempt 1 failed with status 429. Retrying with backoff... _GaxiosError: [{
+  "error": {
+    "code": 429,
+    "message": "No capacity available for model gemini-3.1-pro-preview on the server",
+    "errors": [
+      {
+        "message": "No capacity available for model gemini-3.1-pro-preview on the server",
+        "domain": "global",
+        "reason": "rateLimitExceeded"
+      }
+    ],
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+        "reason": "MODEL_CAPACITY_EXHAUSTED",
+        "domain": "cloudcode-pa.googleapis.com",
+        "metadata": {
+          "model": "gemini-3.1-pro-preview"
+        }
+      }
+    ]
+  }
+}
+]
+    at Gaxios._request (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:8800:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async _OAuth2Client.requestAsync (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:10763:16)
+    at async CodeAssistServer.requestStreamingPost (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:277779:17)
+    at async CodeAssistServer.generateContentStream (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:277579:23)
+    at async file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:278424:19
+    at async file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:255329:23
+    at async retryWithBackoff (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:275301:23)
+    at async GeminiChat.makeApiCallAndProcessStream (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:312614:28)
+    at async GeminiChat.streamWithRetries (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:312452:29) {
+  config: {
+    url: 'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse',
+    method: 'POST',
+    params: { alt: 'sse' },
+    headers: {
+      'Content-Type': 'application/json',
+      'User-Agent': 'GeminiCLI/0.39.1/gemini-3.1-pro-preview (darwin; arm64; terminal) google-api-nodejs-client/9.15.1',
+      Authorization: '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+      'x-goog-api-client': 'gl-node/22.21.1'
+    },
+    responseType: 'stream',
+    body: '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+    signal: AbortSignal { aborted: false },
+    retry: false,
+    paramsSerializer: [Function: paramsSerializer],
+    validateStatus: [Function: validateStatus],
+    errorRedactor: [Function: defaultErrorRedactor]
+  },
+  response: {
+    config: {
+      url: 'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse',
+      method: 'POST',
+      params: [Object],
+      headers: [Object],
+      responseType: 'stream',
+      body: '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+      signal: [AbortSignal],
+      retry: false,
+      paramsSerializer: [Function: paramsSerializer],
+      validateStatus: [Function: validateStatus],
+      errorRedactor: [Function: defaultErrorRedactor]
+    },
+    data: '[{\n' +
+      '  "error": {\n' +
+      '    "code": 429,\n' +
+      '    "message": "No capacity available for model gemini-3.1-pro-preview on the server",\n' +
+      '    "errors": [\n' +
+      '      {\n' +
+      '        "message": "No capacity available for model gemini-3.1-pro-preview on the server",\n' +
+      '        "domain": "global",\n' +
+      '        "reason": "rateLimitExceeded"\n' +
+      '      }\n' +
+      '    ],\n' +
+      '    "status": "RESOURCE_EXHAUSTED",\n' +
+      '    "details": [\n' +
+      '      {\n' +
+      '        "@type": "type.googleapis.com/google.rpc.ErrorInfo",\n' +
+      '        "reason": "MODEL_CAPACITY_EXHAUSTED",\n' +
+      '        "domain": "cloudcode-pa.googleapis.com",\n' +
+      '        "metadata": {\n' +
+      '          "model": "gemini-3.1-pro-preview"\n' +
+      '        }\n' +
+      '      }\n' +
+      '    ]\n' +
+      '  }\n' +
+      '}\n' +
+      ']',
+    headers: {
+      'alt-svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000',
+      'content-length': '630',
+      'content-type': 'application/json; charset=UTF-8',
+      date: 'Tue, 28 Apr 2026 03:18:54 GMT',
+      server: 'ESF',
+      'server-timing': 'gfet4t7; dur=650',
+      vary: 'Origin, X-Origin, Referer',
+      'x-cloudaicompanion-trace-id': 'ccd15bf12da56c54',
+      'x-content-type-options': 'nosniff',
+      'x-frame-options': 'SAMEORIGIN',
+      'x-xss-protection': '0'
+    },
+    status: 429,
+    statusText: 'Too Many Requests',
+    request: {
+      responseURL: 'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse'
+    }
+  },
+  error: undefined,
+  status: 429,
+  [Symbol(gaxios-gaxios-error)]: '6.7.1'
+}
+This architectural design document outlines the Dark Web Intelligence Module for **Loom**, tailored specifically for authorized EU AI Act Article 15 compliance testing and rigorous PhD-level security research. 
+
+To maintain strict ethical boundaries and operational legality, all ten tools engineered below rely exclusively on public, legal, and open-source intelligence (OSINT) data sources. By leveraging advanced asynchronous data fusion, Loom transforms disparate clearnet and deep-web artifacts into a cohesive, graph-based intelligence matrix.
+
+***
+
+### TOOL 1: Deep Archive Necromancer
+
+**Description**
+The Deep Archive Necromancer is an advanced temporal reconnaissance engine designed to resurrect dead, deleted, or obfuscated content from the hidden internet and clearnet boundary. Threat actors frequently deploy infrastructure, host malicious payloads or manifestos, and then rapidly tear them down to evade traditional indexing. This tool exploits the inherent latency and automated nature of global archiving systems. By concurrently querying multiple historical indices, the Necromancer pieces together the ephemeral footprints of adversarial operations, providing researchers with cryptographic proof of prior states.
+
+In the context of EU AI Act compliance, this tool is vital for auditing the historical training data provenance of AI models. It allows researchers to verify if a model was trained on data that has since been deleted due to privacy violations, copyright claims, or malicious content. The tool federates queries across the Wayback Machine’s CDX index, Common Crawl’s massive datasets, and Memento TimeTravel, which acts as a protocol-level aggregator for over twenty distinct web archives.
+
+Furthermore, the Necromancer extends its reach beyond standard web pages into developer ecosystems. It monitors the digital exhaust of deleted NPM packages, yanked PyPI repositories, and GitHub events to identify supply-chain poisoning attempts that were quickly rolled back. By correlating deleted code repositories with archived forum posts, Loom provides a comprehensive timeline of digital artifacts that threat actors believed were permanently erased, effectively neutralizing the advantage of digital ephemerality.
+
+**API Endpoints**
+1. `http://web.archive.org/cdx/search/cdx` - The Wayback Machine CDX server API. Allows for complex querying of historical snapshots using exact URL matching, prefix matching, and MIME-type filtering.
+2. `https://index.commoncrawl.org/CC-MAIN-{year}-{week}-index` - The Common Crawl Index Server. Provides access to petabytes of crawled web data, searchable by URL and outputting JSON metadata of archival locations.
+3. `http://timetravel.mementoweb.org/api/json/{YYYYMMDDHHMMSS}/{url}` - Memento TimeTravel API. Federates requests across multiple archives (Archive-It, UK Web Archive, etc.) to find the closest snapshot to a specific datetime.
+4. `https://replicate.npmjs.com/_all_docs?include_docs=true` - NPM CouchDB replica. Used to monitor the firehose of package creations and deletions, identifying "yanked" supply chain attacks.
+5. `https://api.github.com/events` - GitHub Public Events API. Crucial for catching repository creations, pushes, and subsequent deletions in real-time before they are scrubbed from search interfaces.
+
+**Output Schema & Async Implementation**
+
+```python
+import asyncio
+import aiohttp
+from typing import TypedDict, List, Optional
+import time
+
+class ArchiveSnapshot(TypedDict):
+    source: str
+    url: str
+    timestamp: str
+    mime_type: str
+    status_code: str
+    archive_url: str
+
+class NecromancerResult(TypedDict):
+    target_url: str
+    total_snapshots: int
+    snapshots: List[ArchiveSnapshot]
+    deleted_ecosystem_artifacts: List[str]
+
+async def fetch_cdx(session: aiohttp.ClientSession, url: str) -> List[ArchiveSnapshot]:
+    cdx_url = f"http://web.archive.org/cdx/search/cdx?url={url}&output=json&limit=5"
+    snapshots = []
+    try:
+        async with session.get(cdx_url, timeout=10) as response:
+            if response.status == 200:
+                data = await response.json()
+                if len(data) > 1:
+                    for row in data[1:]: # Skip header row
+                        snapshots.append(ArchiveSnapshot(
+                            source="Wayback CDX", url=row[2], timestamp=row[1],
+                            mime_type=row[3], status_code=row[4],
+                            archive_url=f"https://web.archive.org/web/{row[1]}/{row[2]}"
+                        ))
+    except Exception as e:
+        print(f"CDX Error: {e}")
+    return snapshots
+
+async def fetch_memento(session: aiohttp.ClientSession, url: str) -> List[ArchiveSnapshot]:
+    current_time = time.strftime("%Y%m%d%H%M%S")
+    mem_url = f"http://timetravel.mementoweb.org/api/json/{current_time}/{url}"
+    snapshots = []
+    try:
+        async with session.get(mem_url, timeout=10) as response:
+            if response.status == 200:
+                data = await response.json()
+                if 'mementos' in data and 'closest' in data['mementos']:
+                    closest = data['mementos']['closest']
+                    snapshots.append(ArchiveSnapshot(
+                        source="Memento", url=url, timestamp=closest.get('datetime', ''),
+                        mime_type="unknown", status_code="200", archive_url=closest.get('uri', [str])
+                    ))
+    except Exception as e:
+        print(f"Memento Error: {e}")
+    return snapshots
+
+async def run_necromancer(target_url: str) -> NecromancerResult:
+    async with aiohttp.ClientSession() as session:
+        tasks = [fetch_cdx(session, target_url), fetch_memento(session, target_url)]
+        results = await asyncio.gather(*tasks)
+        all_snapshots = [snap for sublist in results for snap in sublist]
+        return NecromancerResult(
+            target_url=target_url,
+            total_snapshots=len(all_snapshots),
+            snapshots=all_snapshots,
+            deleted_ecosystem_artifacts=[]
+        )
+```
+
+**What makes Loom unbeatable for dark research**
+Loom’s Deep Archive Necromancer operates on the premise that the internet has no memory hole if you query fast enough and broad enough. While traditional tools check the Wayback Machine sequentially, Loom utilizes extreme asynchronous I/O to simultaneously hit federated archives, code registries, and metadata endpoints in milliseconds. For a PhD researcher tracking the evolution of an adversarial AI manifesto or a retracted compliance document, Loom automatically reconstructs the entire temporal lifecycle of the URL. It bypasses rate limits intelligently through staggered HTTP/2 multiplexing, ensuring that Loom gathers a mathematically complete picture of a target’s historical digital footprint before the adversary even realizes they left a trace.
+
+***
+
+### TOOL 2: Onion Service Enumerator
+
+**Description**
+The Onion Service Enumerator is a non-intrusive, purely passive discovery engine for mapping the Tor hidden service ecosystem. Because the Tor network is designed to obfuscate routing and hosting infrastructure, discovering `.onion` domains requires scraping the edges of the network where it intersects with the clearnet. This tool does not interact directly with illegal content; instead, it relies entirely on public APIs, academic datasets, and metadata leaks to enumerate the existence and categorization of hidden services. 
+
+For Article 15 compliance, understanding the hidden web is critical for evaluating AI models that may have been trained on uncurated, unfiltered internet traffic containing toxic or illegal material originating from Tor gateways. The Enumerator parses data from established dark web search engines like Ahmia, monitors RSS feeds of newly discovered onions, and intriguingly, scrapes Certificate Transparency (CT) logs. Occasionally, administrators of hidden services inadvertently or intentionally register SSL/TLS certificates for their `.onion` domains through public Certificate Authorities, creating a permanent, cryptographically verifiable record of the domain in clearnet CT logs.
+
+By combining these disparate clearnet-to-darknet leakage points, the Enumerator builds a topological map of the accessible Tor network. It cross-references Tor relay descriptor data to identify the geographic and network distribution of nodes facilitating these services. This allows Loom to provide researchers with a mathematically rigorous dataset of active hidden services, their uptime heuristics, and their categorical threat levels without ever directly routing traffic through the Tor proxy layer, ensuring absolute legal and ethical compliance.
+
+**API Endpoints**
+1. `https://ahmia.fi/search/?q={query}` - Ahmia Search API (HTML/JSON parsing). Provides access to one of the largest ethical indices of the Tor network, filtering out CSAM automatically.
+2. `https://crt.sh/?q=%.onion&output=json` - Certificate Transparency Log Search. Crucial for finding `.onion` v3 domains that have had SSL certificates issued by CAs like Harica, exposing their existence globally.
+3. `https://onionoo.torproject.org/details` - Tor Project Onionoo API. Provides current network consensus, relay descriptors, and bridge data to analyze the macro-infrastructure supporting hidden services.
+4. `https://api.metrics.torproject.org/` - Tor Metrics API. Used to gather statistical data on hidden service usage, bandwidth constraints, and global network health.
+5. `https://dark.fail/api/v1/sites` - dark.fail status API. A public directory API that tracks the uptime, PGP signatures, and current `.onion` mirrors for major dark web platforms and forums.
+
+**Output Schema & Async Implementation**
+
+```python
+import asyncio
+import aiohttp
+from typing import TypedDict, List, Dict
+
+class OnionService(TypedDict):
+    domain: str
+    source: str
+    discovery_date: str
+    is_online_heuristic: bool
+    associated_tags: List[str]
+
+class OnionEnumResult(TypedDict):
+    query_target: str
+    discovered_services: List[OnionService]
+    ct_log_leaks: int
+    infrastructure_metadata: Dict[str, str]
+
+async def check_ct_logs(session: aiohttp.ClientSession) -> List[OnionService]:
+    url = "https://crt.sh/?q=%.onion&output=json"
+    services = []
+    try:
+        async with session.get(url, timeout=15) as response:
+            if response.status == 200:
+                data = await response.json()
+                for entry in data[:10]: # Limit for demonstration
+                    name = entry.get('name_value', '')
+                    if '.onion' in name:
+                        services.append(OnionService(
+                            domain=name, source="crt.sh (CT Logs)",
+                            discovery_date=entry.get('entry_timestamp', ''),
+                            is_online_heuristic=True, associated_tags=["ssl_leak"]
+                        ))
+    except Exception as e:
+        print(f"CT Log Error: {e}")
+    return services
+
+async def check_dark_fail(session: aiohttp.ClientSession) -> List[OnionService]:
+    url = "https://dark.fail/api/v1/sites" # Note: dark.fail API availability fluctuates
+    services = []
+    headers = {"User-Agent": "Loom-Research-Framework/1.0"}
+    try:
+        async with session.get(url, headers=headers, timeout=10) as response:
+            if response.status == 200:
+                data = await response.json()
+                for site in data:
+                    services.append(OnionService(
+                        domain=site.get('onion', ''), source="dark.fail API",
+                        discovery_date="Unknown", is_online_heuristic=site.get('is_online', False),
+                        associated_tags=[site.get('name', 'Uncategorized')]
+                    ))
+    except Exception as e:
+        print(f"Directory API Error: {e}")
+    return services
+
+async def run_onion_enumerator(query: str) -> OnionEnumResult:
+    async with aiohttp.ClientSession() as session:
+        tasks = [check_ct_logs(session), check_dark_fail(session)]
+        results = await asyncio.gather(*tasks)
+        combined_services = [srv for sublist in results for srv in sublist]
+        return OnionEnumResult(
+            query_target=query, discovered_services=combined_services,
+            ct_log_leaks=len([s for s in combined_services if 'ssl' in s['source'].lower()]),
+            infrastructure_metadata={"tor_network_status": "nominal"}
+        )
+```
+
+**What makes Loom unbeatable for dark research**
+Loom’s Onion Service Enumerator does not brute-force Tor directories; it relies on high-fidelity metadata emissions. By correlating CT logs with public directory APIs, Loom identifies opsec failures in hidden service deployments instantly. For an AI red-teaming scenario, understanding how threat actors mask their infrastructure is vital. Loom excels because it normalizes all discovered v2 (legacy) and v3 `.onion` addresses into a unified graph schema. If an AI model hallucinates a hidden service URL, Loom can instantly verify via its local cached graph if that URL ever existed historically across Ahmia, CT logs, or Tor metrics, proving whether the AI generated it probabilistically or regurgitated it from toxic

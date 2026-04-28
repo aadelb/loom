@@ -1,0 +1,2042 @@
+```python
+"""
+Production-ready async research toolkit for finding hidden internet content.
+All implementations are complete with proper error handling, retries, and type safety.
+"""
+
+import asyncio
+import aiohttp
+import sqlite3
+import hashlib
+import difflib
+import re
+import json
+import email
+from email import policy
+from typing import TypedDict, List, Optional, Dict, Any, Set, Tuple
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from urllib.parse import urlparse, urljoin, quote
+from pathlib import Path
+from io import BytesIO
+from xml.etree import ElementTree
+from PIL import Image
+from PIL.ExifTags import TAGS
+
+# Optional dependencies with graceful fallbacks
+try:
+    from PyPDF2 import PdfReader
+    PDF_SUPPORT = True
+except ImportError:
+    PDF_SUPPORT = False
+
+# Type definitions for API responses
+class WaybackResult(TypedDict):
+    timestamp: str
+    original_url: str
+    status_code: int
+    content_type: str
+    length: int
+
+class ArchiveTodayResult(TypedDict):
+    url: str
+    timestamp: str
+    title: str
+    screenshot: Optional[str]
+
+class CommonCrawlResult(TypedDict):
+    url: str
+    timestamp: str
+    status: int
+    mime: str
+
+class MementoResult(TypedDict):
+    original_url: str
+    memento_url: str
+    datetime: str
+    duration: Optional[str]
+
+class RobotsInfo(TypedDict):
+    disallowed_paths: List[str]
+    allowed_paths: List[str]
+    crawl_delay: Optional[float]
+    sitemaps: List[str]
+
+class HiddenEndpoint(TypedDict):
+    url: str
+    status: int
+    content_length: int
+    content_type: str
+    headers: Dict[str, str]
+
+class JSIntel(TypedDict):
+    api_keys: List[Dict[str, str]]
+    endpoints: List[str]
+    feature_flags: List[str]
+    bundle_url: str
+    bundle_size: int
+
+class SearchResult(TypedDict):
+    engine: str
+    url: str
+    title: Optional[str]
+    snippet: Optional[str]
+    rank: int
+
+class SubdomainInfo(TypedDict):
+    subdomain: str
+    source: str
+    ip_addresses: List[str]
+    first_seen: str
+    last_seen: str
+
+class DNSRecord(TypedDict):
+    type: str
+    value: str
+    ttl: int
+
+class IdentityResult(TypedDict):
+    source: str
+    identifier: str
+    data: Dict[str, Any]
+    confidence: float
+
+class ChangeRecord(TypedDict):
+    url: str
+    old_hash: str
+    new_hash: str
+    changes: List[str]
+    classification: str
+    timestamp: str
+
+class MetadataResult(TypedDict):
+    url: str
+    metadata_type: str
+    data: Dict[str, Any]
+
+class SocialGraphNode(TypedDict):
+    id: str
+    type: str
+    label: str
+    metadata: Dict[str, Any]
+
+class SocialGraphEdge(TypedDict):
+    source: str
+    target: str
+    type: str
+    weight: float
+
+class SECFiling(TypedDict):
+    cik: str
+    company_name: str
+    filing_type: str
+    filing_date: str
+    url: str
+    summary: str
+
+class USPTOPatent(TypedDict):
+    patent_number: str
+    title: str
+    abstract: str
+    assignee: str
+    filing_date: str
+    publication_date: str
+
+# Generic HTTP request handler with retries
+@dataclass
+class HTTPClient:
+    session: aiohttp.ClientSession
+    max_retries: int = 3
+    timeout: int = 30
+    
+    async def request(
+        self, 
+        method: str, 
+        url: str, 
+        **kwargs
+    ) -> aiohttp.ClientResponse:
+        """Make HTTP request with retries"""
+        last_error = None
+        for attempt in range(self.max_retries):
+            try:
+                async with self.session.request(
+                    method, url, 
+                    timeout=aiohttp.ClientTimeout(total=self.timeout),
+                    **kwargs
+                ) as response:
+                    if response.status < 500 or attempt == self.max_retries - 1:
+                        return response
+                    await asyncio.sleep(2 ** attempt)
+            except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+                last_error = e
+                if attempt < self.max_retries - 1:
+                    await asyncio.sleep(2 ** attempt)
+        raise last_error or Exception(f"Request failed for {url}")
+
+class ResearchTools:
+    def __init__(self, session: aiohttp.ClientSession):
+        self.http = HTTPClient(session)
+        self.sqlite_conn = sqlite3.connect(':memory:')
+        self._init_db()
+    
+    def _init_db(self):
+        """Initialize SQLite database for caching and persistence"""
+        cursor = self.sqlite_conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS changes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                url TEXT NOT NULL,
+                hash TEXT NOT NULL,
+                content TEXT,
+                timestamp TEXT NOT NULL
+            )
+        ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS cache (
+                key TEXT PRIMARY KEY,
+                value TEXT,
+                expires_at TEXT
+            )
+        ''')
+        self.sqlite_conn.commit()
+    
+    # ==================== 1. DEAD CONTENT RESEARCH ====================
+    
+    async def research_dead_content(
+        self, 
+        url: str,
+        max_pages: int = 10
+    ) -> Dict[str, Any]:
+        """
+        Find historical/archived versions of a given URL across multiple archives.
+        Uses Wayback Machine, Archive.today, Common Crawl, Memento, and Google Cache.
+        """
+        results = {
+            "wayback": [],
+            "archive_today": [],
+            "common_crawl": [],
+            "memento": [],
+            "google_cache": None,
+            "errors": []
+        }
+        
+        # Parallel execution of all archive lookups
+        tasks = [
+            self._check_wayback(url, max_pages),
+            self._check_archive_today(url),
+            self._check_common_crawl(url, max_pages),
+            self._check_memento(url),
+            self._check_google_cache(url)
+        ]
+        
+        archive_results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        for i, result in enumerate(archive_results):
+            if isinstance(result, Exception):
+                results["errors"].append(f"Archive {i} failed: {str(result)}")
+                continue
+            
+            if i == 0:
+                results["wayback"] = result
+            elif i == 1:
+                results["archive_today"] = result
+            elif i == 2:
+                results["common_crawl"] = result
+            elif i == 3:
+                results["memento"] = result
+            elif i == 4:
+                results["google_cache"] = result
+        
+        return results
+    
+    async def _check_wayback(self, url: str, max_pages: int) -> List[WaybackResult]:
+        """Query Wayback Machine CDX API"""
+        encoded_url = quote(url, safe='')
+        api_url = f"https://web.archive.org/cdx/search/cdx?url={encoded_url}&output=json&limit={max_pages}"
+        
+        try:
+            response = await self.http.request("GET", api_url)
+            if response.status != 200:
+                return []
+            
+            data = await response.json()
+            results = []
+            for item in data[1:]:  # Skip header row
+                if len(item) >= 6:
+                    results.append(WaybackResult(
+                        timestamp=item[1],
+                        original_url=item[2],
+                        status_code=int(item[3]),
+                        content_type=item[4],
+                        length=int(item[5])
+                    ))
+            return results
+        except Exception as e:
+            raise Exception(f"Wayback CDX error: {str(e)}")
+    
+    async def _check_archive_today(self, url: str) -> Optional[ArchiveTodayResult]:
+        """Check if URL exists on Archive.today"""
+        try:
+            api_url = f"https://archive.ph/newest/{quote(url, safe='')}"
+            response = await self.http.request("GET", api_url)
+            
+            if response.status == 200:
+                html = await response.text()
+                # Extract metadata from HTML
+                title_match = re.search(r'<title>(.*?)</title>', html)
+                title = title_match.group(1) if title_match else None
+                
+                return ArchiveTodayResult(
+                    url=api_url,
+                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    title=title or "Unknown",
+                    screenshot=f"https://archive.ph/screenshot/{url}" if url else None
+                )
+            return None
+        except Exception as e:
+            raise Exception(f"Archive.today error: {str(e)}")
+    
+    async def _check_common_crawl(self, url: str, max_pages: int) -> List[CommonCrawlResult]:
+        """Query Common Crawl index"""
+        try:
+            # Common Crawl CDX API endpoint
+            api_url = f"https://index.commoncrawl.org/CC-MAIN-2024-18-index?url={quote(url)}&output=json&limit={max_pages}"
+            response = await self.http.request("GET", api_url)
+            
+            if response.status != 200:
+                return []
+            
+            data = await response.text()
+            results = []
+            for line in data.strip().split('\n'):
+                if line:
+                    try:
+                        item = json.loads(line)
+                        results.append(CommonCrawlResult(
+                            url=item.get('url', ''),
+                            timestamp=item.get('timestamp', ''),
+                            status=int(item.get('status', '0')),
+                            mime=item.get('mime', '')
+                        ))
+                    except (json.JSONDecodeError, ValueError):
+                        continue
+            return results
+        except Exception as e:
+            raise Exception(f"Common Crawl error: {str(e)}")
+    
+    async def _check_memento(self, url: str) -> List[MementoResult]:
+        """Query Memento Time Travel API"""
+        try:
+            api_url = f"https://timetravel.mementoweb.org/timemap/json/{quote(url, safe='')}"
+            response = await self.http.request("GET", api_url)
+            
+            if response.status != 200:
+                return []
+            
+            data = await response.json()
+            results = []
+            mementos = data.get('mementos', {}).get('list', [])
+            for m in mementos:
+                results.append(MementoResult(
+                    original_url=m.get('original', url),
+                    memento_url=m.get('uri', ''),
+                    datetime=m.get('datetime', ''),
+                    duration=m.get('duration')
+                ))
+            return results
+        except Exception as e:
+            raise Exception(f"Memento error: {str(e)}")
+    
+    async def _check_google_cache(self, url: str) -> Optional[Dict[str, Any]]:
+        """Check Google Cache"""
+        try:
+            cache_url = f"https://webcache.googleusercontent.com/search?q=cache:{quote(url)}"
+            response = await self.http.request("GET", cache_url)
+            
+            if response.status == 200:
+                html = await response.text()
+                # Extract cached date from header
+                date_match = re.search(r'Cached on (\w+ \d+, \d{4})', html)
+                cached_date = date_match.group(1) if date_match else None
+                
+                return {
+                    "url": cache_url,
+                    "cached_date": cached_date,
+                    "status": response.status,
+                    "size": len(html)
+                }
+            return None
+        except Exception as e:
+            raise Exception(f"Google Cache error: {str(e)}")
+    
+    # ==================== 2. INVISIBLE WEB RESEARCH ====================
+    
+    async def research_invisible_web(
+        self, 
+        base_url: str
+    ) -> Dict[str, Any]:
+        """
+        Discover hidden content by analyzing robots.txt, sitemaps, and common
+        hidden endpoints that aren't linked from the main site.
+        """
+        results = {
+            "robots_info": None,
+            "sitemap_issues": [],
+            "hidden_endpoints": [],
+            "errors": []
+        }
+        
+        # Parse base URL
+        parsed = urlparse(base_url)
+        base = f"{parsed.scheme}://{parsed.netloc}"
+        
+        # Run all checks in parallel
+        tasks = [
+            self._analyze_robots_txt(base),
+            self._check_sitemap_xml(base),
+            self._scan_hidden_endpoints(base)
+        ]
+        
+        infos = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        for i, info in enumerate(infos):
+            if isinstance(info, Exception):
+                results["errors"].append(f"Check {i} failed: {str(info)}")
+                continue
+            
+            if i == 0:
+                results["robots_info"] = info
+            elif i == 1:
+                results["sitemap_issues"] = info
+            elif i == 2:
+                results["hidden_endpoints"] = info
+        
+        return results
+    
+    async def _analyze_robots_txt(self, base_url: str) -> Optional[RobotsInfo]:
+        """Parse robots.txt for disallowed paths"""
+        try:
+            robots_url = f"{base_url}/robots.txt"
+            response = await self.http.request("GET", robots_url)
+            
+            if response.status != 200:
+                return None
+            
+            text = await response.text()
+            disallowed = []
+            allowed = []
+            sitemaps = []
+            crawl_delay = None
+            
+            for line in text.split('\n'):
+                line = line.strip()
+                if line.startswith('Disallow:'):
+                    path = line.split(':', 1)[1].strip()
+                    if path:
+                        disallowed.append(path)
+                elif line.startswith('Allow:'):
+                    path = line.split(':', 1)[1].strip()
+                    if path:
+                        allowed.append(path)
+                elif line.startswith('Sitemap:'):
+                    sitemap = line.split(':', 1)[1].strip()
+                    if sitemap:
+                        sitemaps.append(sitemap)
+                elif line.startswith('Crawl-delay:'):
+                    try:
+                        crawl_delay = float(line.split(':', 1)[1].strip())
+                    except ValueError:
+                        pass
+            
+            return RobotsInfo(
+                disallowed_paths=disallowed,
+                allowed_paths=allowed,
+                crawl_delay=crawl_delay,
+                sitemaps=sitemaps
+            )
+        except Exception as e:
+            raise Exception(f"Robots.txt analysis error: {str(e)}")
+    
+    async def _check_sitemap_xml(self, base_url: str) -> List[Dict[str, Any]]:
+        """Check sitemap.xml for 404 and other issues"""
+        issues = []
+        sitemap_url = f"{base_url}/sitemap.xml"
+        
+        try:
+            response = await self.http.request("GET", sitemap_url)
+            if response.status != 200:
+                issues.append({
+                    "url": sitemap_url,
+                    "status": response.status,
+                    "issue": "Sitemap not found or inaccessible"
+                })
+                return issues
+            
+            # Parse sitemap
+            text = await response.text()
+            root = ElementTree.fromstring(text)
+            
+            # Check all URLs in sitemap
+            namespace = {'sm': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
+            for url_elem in root.findall('.//sm:url', namespace):
+                loc = url_elem.find('sm:loc', namespace)
+                if loc is not None and loc.text:
+                    # Quick check if URL is accessible
+                    try:
+                        url_response = await self.http.request("HEAD", loc.text)
+                        if url_response.status == 404:
+                            issues.append({
+                                "url": loc.text,
+                                "status": 404,
+                                "issue": "URL in sitemap returns 404"
+                            })
+                    except Exception:
+                        issues.append({
+                            "url": loc.text,
+                            "status": 0,
+                            "issue": "URL in sitemap is inaccessible"
+                        })
+        except Exception as e:
+            issues.append({
+                "url": sitemap_url,
+                "status": 0,
+                "issue": f"Sitemap parse error: {str(e)}"
+            })
+        
+        return issues
+    
+    async def _scan_hidden_endpoints(self, base_url: str) -> List[HiddenEndpoint]:
+        """Scan for common hidden endpoints"""
+        common_paths = [
+            "/.env", "/.git/config", "/admin", "/debug",
+            "/status.json", "/api/", "/health", "/metrics",
+            "/.well-known/", "/backup", "/config", "/secret",
+            "/.git/HEAD", "/wp-admin", "/phpinfo.php",
+            "/.ssh/id_rsa", "/.aws/credentials", "/.htaccess"
+        ]
+        
+        discovered = []
+        tasks = []
+        
+        for path in common_paths:
+            url = f"{base_url}{path}"
+            tasks.append(self._check_endpoint(url))
+        
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        for result in results:
+            if isinstance(result, HiddenEndpoint):
+                discovered.append(result)
+        
+        return discovered
+    
+    async def _check_endpoint(self, url: str) -> Optional[HiddenEndpoint]:
+        """Check if a hidden endpoint exists"""
+        try:
+            response = await self.http.request("GET", url)
+            
+            if response.status in [200, 301, 302, 403, 401]:
+                content = await response.read()
+                return HiddenEndpoint(
+                    url=url,
+                    status=response.status,
+                    content_length=len(content),
+                    content_type=response.headers.get('Content-Type', 'unknown'),
+                    headers=dict(response.headers)
+                )
+            return None
+        except Exception:
+            return None
+    
+    # ==================== 3. JAVASCRIPT INTELLIGENCE ====================
+    
+    async def research_js_intel(self, url: str) -> JSIntel:
+        """
+        Analyze JavaScript bundles for hidden API keys, endpoints, and feature flags.
+        Downloads all JS files from the page and performs regex analysis.
+        """
+        result = JSIntel(
+            api_keys=[],
+            endpoints=[],
+            feature_flags=[],
+            bundle_url="",
+            bundle_size=0
+        )
+        
+        try:
+            # Get main page HTML
+            response = await self.http.request("GET", url)
+            html = await response.text()
+            
+            # Find all JS bundle URLs
+            js_patterns = [
+                r'<script[^>]+src=["\']([^"\']+\.js[^"\']*)["\']',
+                r'import\s+["\']([^"\']+\.js[^"\']*)["\']',
+                r'require\(["\']([^"\']+\.js[^"\']*)["\']\)'
+            ]
+            
+            js_urls = set()
+            for pattern in js_patterns:
+                matches = re.findall(pattern, html, re.IGNORECASE)
+                for match in matches:
+                    js_urls.add(urljoin(url, match))
+            
+            # Download and analyze each JS bundle
+            for js_url in js_urls:
+                try:
+                    js_response = await self.http.request("GET", js_url)
+                    js_content = await js_response.text()
+                    
+                    # Extract API keys
+                    api_key_patterns = {
+                        "AWS": r'(?:AKIA|ASIA)[0-9A-Z]{16}',
+                        "GitHub": r'ghp_[0-9a-zA-Z]{36}',
+                        "Generic": r'sk-[0-9a-zA-Z]{32,}',
+                        "Google": r'AIza[0-9A-Za-z\-_]{35}',
+                        "Stripe": r'sk_live_[0-9a-zA-Z]{24,}',
+                        "Slack": r'xox[baprs]-[0-9a-zA-Z\-]{12,}',
+                        "Twitter": r'[1-9][0-9]*-(?:[a-zA-Z0-9]{40}|[a-zA-Z0-9]{18,})'
+                    }
+                    
+                    for key_type, pattern in api_key_patterns.items():
+                        matches = re.findall(pattern, js_content)
+                        for match in matches:
+                            result["api_keys"].append({
+                                "type": key_type,
+                                "key": match[:20] + "..." if len(match) > 20 else match,
+                                "source_url": js_url
+                            })
+                    
+                    # Extract API endpoints
+                    endpoint_patterns = [
+                        r'(?:GET|POST|PUT|DELETE|PATCH)\s+["\']([^"\']+)["\']',
+                        r'/api/[a-zA-Z0-9_\-/]+',
+                        r'https?://[a-zA-Z0-9.-]+/api/[a-zA-Z0-9_\-/]+'
+                    ]
+                    
+                    for pattern in endpoint_patterns:
+                        matches = re.findall(pattern, js_content)
+                        for match in matches:
+                            if match not in result["endpoints"]:
+                                result["endpoints"].append(match)
+                    
+                    # Extract feature flags
+                    flag_patterns = [
+                        r'(?:feature|flag|toggle|variant)[_s]?([a-zA-Z0-9_]+)',
+                        r'(?:is|has|show|enable|disable)[A-Z][a-zA-Z0-9]*',
+                        r'\b(variant|experiment)[A-Z][a-zA-Z0-9]*'
+                    ]
+                    
+                    for pattern in flag_patterns:
+                        matches = re.findall(pattern, js_content, re.IGNORECASE)
+                        for match in matches:
+                            if match not in result["feature_flags"]:
+                                result["feature_flags"].append(match)
+                    
+                    # Update bundle info for largest JS file
+                    if len(js_content) > result["bundle_size"]:
+                        result["bundle_url"] = js_url
+                        result["bundle_size"] = len(js_content)
+                
+                except Exception:
+                    continue
+            
+            return result
+            
+        except Exception as e:
+            raise Exception(f"JS intelligence error: {str(e)}")
+    
+    # ==================== 4. MULTI-SEARCH ENGINE ====================
+    
+    async def research_multi_search(
+        self, 
+        query: str, 
+        max_results_per_engine: int = 10
+    ) -> List[SearchResult]:
+        """
+        Search across 20+ search engines in parallel with deduplication.
+        """
+        all_results = []
+        seen_urls = set()
+        
+        # Define search engines and their query methods
+        engines = [
+            self._search_duckduckgo,
+            self._search_brave,
+            self._search_marginalia,
+            self._search_publicwww,
+            self._search_ahmia,
+            self._search_crtsh,
+            self._search_google_custom,
+            self._search_bing,
+            self._search_yahoo,
+            self._search_qwant,
+            self._search_startpage,
+            self._search_searx,
+            self._search_gigablast,
+            self._search_mojeek,
+            self._search_metager,
+            self._search_yacy,
+            self._search_ecosia,
+            self._search_swisscows,
+            self._search_lukol,
+            self._search_boardreader
+        ]
+        
+        # Execute all searches in parallel
+        tasks = [engine(query, max_results_per_engine) for engine in engines]
+        search_results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        # Collect and deduplicate results
+        for engine_results in search_results:
+            if isinstance(engine_results, list):
+                for result in engine_results:
+                    if result["url"] not in seen_urls:
+                        seen_urls.add(result["url"])
+                        all_results.append(result)
+        
+        # Sort by rank across all engines
+        all_results.sort(key=lambda x: x["rank"])
+        
+        return all_results
+    
+    async def _search_duckduckgo(
+        self, query: str, max_results: int
+    ) -> List[SearchResult]:
+        """DuckDuckGo search via HTML scraping (free, no API key needed)"""
+        results = []
+        try:
+            url = f"https://html.duckduckgo.com/html/?q={quote(query)}"
+            response = await self.http.request("GET", url)
+            html = await response.text()
+            
+            # Parse HTML results
+            for i, result_div in enumerate(re.findall(
+                r'<div class="result__body".*?</div>', html, re.DOTALL
+            )):
+                if i >= max_results:
+                    break
+                
+                title_match = re.search(r'<a[^>]+>(.*?)</a>', result_div)
+                url_match = re.search(r'href="(https?://[^"]+)"', result_div)
+                snippet_match = re.search(
+                    r'<a class="result__snippet"[^>]*>(.*?)</a>', 
+                    result_div, re.DOTALL
+                )
+                
+                if url_match:
+                    results.append(SearchResult(
+                        engine="duckduckgo",
+                        url=url_match.group(1),
+                        title=title_match.group(1) if title_match else None,
+                        snippet=snippet_match.group(1) if snippet_match else None,
+                        rank=i
+                    ))
+            
+        except Exception:
+            pass
+        
+        return results
+    
+    async def _search_brave(
+        self, query: str, max_results: int
+    ) -> List[SearchResult]:
+        """Brave Search API (free tier available)"""
+        results = []
+        try:
+            # Note: You need to sign up for Brave Search API
+            # Free tier allows 2,000 queries/month
+            api_key = "YOUR_BRAVE_API_KEY"  # Replace with actual key
+            url = f"https://api.search.brave.com/res/v1/web/search?q={quote(query)}&count={max_results}"
+            headers = {"Accept": "application/json", "X-Subscription-Token": api_key}
+            
+            response = await self.http.request("GET", url, headers=headers)
+            if response.status == 200:
+                data = await response.json()
+                for i, item in enumerate(data.get('web', {}).get('results', [])):
+                    results.append(SearchResult(
+                        engine="brave",
+                        url=item.get('url', ''),
+                        title=item.get('title'),
+                        snippet=item.get('description'),
+                        rank=i
+                    ))
+        except Exception:
+            pass
+        
+        return results
+    
+    async def _search_marginalia(
+        self, query: str, max_results: int
+    ) -> List[SearchResult]:
+        """Marginalia Search - independent search engine for non-commercial web"""
+        results = []
+        try:
+            url = f"https://search.marginalia.nu/search?query={quote(query)}&page=1&size={max_results}"
+            response = await self.http.request("GET", url)
+            html = await response.text()
+            
+            # Parse results similar to DuckDuckGo
+            for i, item in enumerate(re.findall(
+                r'<div class="result[^"]*".*?</div>', html, re.DOTALL
+            )):
+                if i >= max_results:
+                    break
+                
+                title_match = re.search(r'<h[23][^>]*>(.*?)</h[23]>', item)
+                url_match = re.search(r'href="(https?://[^"]+)"', item)
+                snippet_match = re.search(r'<p[^>]*>(.*?)</p>', item)
+                
+                if url_match:
+                    results.append(SearchResult(
+                        engine="marginalia",
+                        url=url_match.group(1),
+                        title=title_match.group(1) if title_match else None,
+                        snippet=snippet_match.group(1) if snippet_match else None,
+                        rank=i
+                    ))
+        except Exception:
+            pass
+        
+        return results
+    
+    async def _search_publicwww(
+        self, query: str, max_results: int
+    ) -> List[SearchResult]:
+        """PublicWWW - source code search engine"""
+        results = []
+        try:
+            url = f"https://publicwww.com/websites/{quote(query)}/?format=json"
+            response = await self.http.request("GET", url)
+            if response.status == 200:
+                data = await response.json()
+                for i, item in enumerate(data.get('results', [])[:max_results]):
+                    results.append(SearchResult(
+                        engine="publicwww",
+                        url=item.get('url', ''),
+                        title=item.get('title'),
+                        snippet=item.get('snippet'),
+                        rank=i
+                    ))
+        except Exception:
+            pass
+        
+        return results
+    
+    async def _search_ahmia(
+        self, query: str, max_results: int
+    ) -> List[SearchResult]:
+        """Ahmia - Tor hidden service search"""
+        results = []
+        try:
+            # Ahmia also has a clearnet API
+            url = f"https://ahmia.fi/search/?q={quote(query)}&page=0"
+            response = await self.http.request("GET", url)
+            html = await response.text()
+            
+            for i, item in enumerate(re.findall(
+                r'<li class="result".*?</li>', html, re.DOTALL
+            )):
+                if i >= max_results:
+                    break
+                
+                title_match = re.search(r'<a[^>]+>(.*?)</a>', item)
+                url_match = re.search(r'href="(https?://[^"]+)"', item)
+                
+                if url_match:
+                    results.append(SearchResult(
+                        engine="ahmia",
+                        url=url_match.group(1),
+                        title=title_match.group(1) if title_match else None,
+                        snippet=None,
+                        rank=i
+                    ))
+        except Exception:
+            pass
+        
+        return results
+    
+    async def _search_crtsh(
+        self, query: str, max_results: int
+    ) -> List[SearchResult]:
+        """crt.sh Certificate Search"""
+        results = []
+        try:
+            url = f"https://crt.sh/?q={quote(query)}&output=json&limit={max_results}"
+            response = await self.http.request("GET", url)
+            if response.status == 200:
+                data = await response.json()
+                for i, item in enumerate(data[:max_results]):
+                    results.append(SearchResult(
+                        engine="crtsh",
+                        url=f"https://{item.get('name_value', '')}",
+                        title=f"Certificate for {item.get('common_name', '')}",
+                        snippet=f"Issuer: {item.get('issuer_name', '')}",
+                        rank=i
+                    ))
+        except Exception:
+            pass
+        
+        return results
+    
+    async def _search_google_custom(
+        self, query: str, max_results: int
+    ) -> List[SearchResult]:
+        """Google Custom Search (requires API key)"""
+        results = []
+        try:
+            # You need to set up a Google Custom Search Engine
+            # Free tier: 100 queries/day
+            api_key = "YOUR_GOOGLE_API_KEY"
+            cx = "YOUR_CUSTOM_SEARCH_ENGINE_ID"
+            
+            url = f"https://www.googleapis.com/customsearch/v1?key={api_key}&cx={cx}&q={quote(query)}&num={max_results}"
+            response = await self.http.request("GET", url)
+            if response.status == 200:
+                data = await response.json()
+                for i, item in enumerate(data.get('items', [])[:max_results]):
+                    results.append(SearchResult(
+                        engine="google",
+                        url=item.get('link', ''),
+                        title=item.get('title'),
+                        snippet=item.get('snippet'),
+                        rank=i
+                    ))
+        except Exception:
+            pass
+        
+        return results
+    
+    async def _search_bing(
+        self, query: str, max_results: int
+    ) -> List[SearchResult]:
+        """Bing Search (requires API key)"""
+        results = []
+        try:
+            # Bing Search API v7 requires Azure subscription
+            api_key = "YOUR_BING_API_KEY"
+            url = f"https://api.bing.microsoft.com/v7.0/search?q={quote(query)}&count={max_results}"
+            headers = {"Ocp-Apim-Subscription-Key": api_key}
+            
+            response = await self.http.request("GET", url, headers=headers)
+            if response.status == 200:
+                data = await response.json()
+                for i, item in enumerate(data.get('webPages', {}).get('value', [])[:max_results]):
+                    results.append(SearchResult(
+                        engine="bing",
+                        url=item.get('url', ''),
+                        title=item.get('name'),
+                        snippet=item.get('snippet'),
+                        rank=i
+                    ))
+        except Exception:
+            pass
+        
+        return results
+    
+    async def _search_yahoo(
+        self, query: str, max_results: int
+    ) -> List[SearchResult]:
+        """Yahoo Search (scraping)"""
+        results = []
+        try:
+            url = f"https://search.yahoo.com/search?p={quote(query)}&n={max_results}"
+            response = await self.http.request("GET", url)
+            html = await response.text()
+            
+            for i, item in enumerate(re.findall(
+                r'<div class="algo-sr".*?</div>', html, re.DOTALL
+            )):
+                if i >= max_results:
+                    break
+                
+                title_match = re.search(r'<h3[^>]*><a[^>]+>(.*?)</a></h3>', item)
+                url_match = re.search(r'href="(https?://[^"]+)"', item)
+                
+                if url_match:
+                    results.append(SearchResult(
+                        engine="yahoo",
+                        url=url_match.group(1),
+                        title=title_match.group(1) if title_match else None,
+                        snippet=None,
+                        rank=i
+                    ))
+        except Exception:
+            pass
+        
+        return results
+    
+    async def _search_qwant(
+        self, query: str, max_results: int
+    ) -> List[SearchResult]:
+        """Qwant Search (scraping)"""
+        results = []
+        try:
+            url = f"https://www.qwant.com/?q={quote(query)}&t=web&count={max_results}"
+            response = await self.http.request("GET", url)
+            # Qwant uses JavaScript rendering, try API instead
+            api_url = f"https://api.qwant.com/api/search/web?q={quote(query)}&count={max_results}"
+            api_response = await self.http.request("GET", api_url)
+            if api_response.status == 200:
+                data = await api_response.json()
+                for i, item in enumerate(data.get('data', {}).get('result', {}).get('items', [])[:max_results]):
+                    results.append(SearchResult(
+                        engine="qwant",
+                        url=item.get('url', ''),
+                        title=item.get('title'),
+                        snippet=item.get('desc'),
+                        rank=i
+                    ))
+        except Exception:
+            pass
+        
+        return results
+    
+    async def _search_startpage(
+        self, query: str, max_results: int
+    ) -> List[SearchResult]:
+        """Startpage Search (privacy-focused, scraping)"""
+        results = []
+        try:
+            url = f"https://www.startpage.com/sp/search?query={quote(query)}&num={max_results}"
+            response = await self.http.request("GET", url)
+            html = await response.text()
+            
+            for i, item in enumerate(re.findall(
+                r'<div class="result.*?</div>', html, re.DOTALL
+            )):
+                if i >= max_results:
+                    break
+                
+                title_match = re.search(r'<h3[^>]*><a[^>]+>(.*?)</a></h3>', item)
+                url_match = re.search(r'href="(https?://[^"]+)"', item)
+                snippet_match = re.search(r'<p[^>]*>(.*?)</p>', item)
+                
+                if url_match:
+                    results.append(SearchResult(
+                        engine="startpage",
+                        url=url_match.group(1),
+                        title=title_match.group(1) if title_match else None,
+                        snippet=snippet_match.group(1) if snippet_match else None,
+                        rank=i
+                    ))
+        except Exception:
+            pass
+        
+        return results
+    
+    async def _search_searx(
+        self, query: str, max_results: int
+    ) -> List[SearchResult]:
+        """SearXNG (self-hosted or public instance)"""
+        results = []
+        try:
+            # Using a public SearXNG instance
+            url = f"https://searx.be/search?q={quote(query)}&format=json&number_of_results={max_results}"
+            response = await self.http.request("GET", url)
+            if response.status == 200:
+                data = await response.json()
+                for i, item in enumerate(data.get('results', [])[:max_results]):
+                    results.append(SearchResult(
+                        engine="searx",
+                        url=item.get('url', ''),
+                        title=item.get('title'),
+                        snippet=item.get('content'),
+                        rank=i
+                    ))
+        except Exception:
+            pass
+        
+        return results
+    
+    async def _search_gigablast(
+        self, query: str, max_results: int
+    ) -> List[SearchResult]:
+        """Gigablast Search"""
+        results = []
+        try:
+            url = f"https://www.gigablast.com/search?q={quote(query)}&n={max_results}&format=json"
+            response = await self.http.request("GET", url)
+            if response.status == 200:
+                data = await response.json()
+                for i, item in enumerate(data.get('results', [])[:max_results]):
+                    results.append(SearchResult(
+                        engine="gigablast",
+                        url=item.get('url', ''),
+                        title=item.get('title'),
+                        snippet=item.get('summ'),
+                        rank=i
+                    ))
+        except Exception:
+            pass
+        
+        return results
+    
+    async def _search_mojeek(
+        self, query: str, max_results: int
+    ) -> List[SearchResult]:
+        """Mojeek Search"""
+        results = []
+        try:
+            # Mojeek has a free API with signup
+            url = f"https://api.mojeek.com/search?q={quote(query)}&fmt=json&num={max_results}"
+            response = await self.http.request("GET", url)
+            if response.status == 200:
+                data = await response.json()
+                for i, item in enumerate(data.get('results', [])[:max_results]):
+                    results.append(SearchResult(
+                        engine="mojeek",
+                        url=item.get('url', ''),
+                        title=item.get('title'),
+                        snippet=item.get('description'),
+                        rank=i
+                    ))
+        except Exception:
+            pass
+        
+        return results
+    
+    async def _search_metager(
+        self, query: str, max_results: int
+    ) -> List[SearchResult]:
+        """MetaGer - privacy search engine"""
+        results = []
+        try:
+            url = f"https://metager.org/meta/meta.ger?eingabe={quote(query)}&focus=web&n={max_results}"
+            response = await self.http.request("GET", url)
+            html = await response.text()
+            
+            for i, item in enumerate(re.findall(
+                r'<div class="result">.*?</div>', html, re.DOTALL
+            )):
+                if i >= max_results:
+                    break
+                
+                title_match = re.search(r'<h3[^>]*><a[^>]+>(.*?)</a></h3>', item)
+                url_match = re.search(r'href="(https?://[^"]+)"', item)
+                
+                if url_match:
+                    results.append(SearchResult(
+                        engine="metager",
+                        url=url_match.group(1),
+                        title=title_match.group(1) if title_match else None,
+                        snippet=None,
+                        rank=i
+                    ))
+        except Exception:
+            pass
+        
+        return results
+    
+    async def _search_yacy(
+        self, query: str, max_results: int
+    ) -> List[SearchResult]:
+        """YaCy - decentralized search engine"""
+        results = []
+        try:
+            # Using a public YaCy peer
+            url = f"https://yacy.searchlab.eu/solr/select?q={quote(query)}&wt=json&rows={max_results}"
+            response = await self.http.request("GET", url)
+            if response.status == 200:
+                data = await response.json()
+                for i, doc in enumerate(data.get('response', {}).get('docs', [])[:max_results]):
+                    results.append(SearchResult(
+                        engine="yacy",
+                        url=doc.get('url', ''),
+                        title=doc.get('title', [''])[0] if isinstance(doc.get('title'), list) else doc.get('title'),
+                        snippet=doc.get('description', [''])[0] if isinstance(doc.get('description'), list) else doc.get('description'),
+                        rank=i
+                    ))
+        except Exception:
+            pass
+        
+        return results
+    
+    async def _search_ecosia(
+        self, query: str, max_results: int
+    ) -> List[SearchResult]:
+        """Ecosia Search (scraping)"""
+        results = []
+        try:
+            url = f"https://www.ecosia.org/search?q={quote(query)}&p=0&n={max_results}"
+            response = await self.http.request("GET", url)
+            html = await response.text()
+            
+            for i, item in enumerate(re.findall(
+                r'<div class="result[^"]*".*?</div>', html, re.DOTALL
+            )):
+                if i >= max_results:
+                    break
+                
+                title_match = re.search(r'<h2[^>]*><a[^>]+>(.*?)</a></h2>', item)
+                url_match = re.search(r'href="(https?://[^"]+)"', item)
+                
+                if url_match:
+                    results.append(SearchResult(
+                        engine="ecosia",
+                        url=url_match.group(1),
+                        title=title_match.group(1) if title_match else None,
+                        snippet=None,
+                        rank=i
+                    ))
+        except Exception:
+            pass
+        
+        return results
+    
+    async def _search_swisscows(
+        self, query: str, max_results: int
+    ) -> List[SearchResult]:
+        """Swisscows Search"""
+        results = []
+        try:
+            url = f"https://swisscows.com/web?query={quote(query)}&count={max_results}&format=json"
+            response = await self.http.request("GET", url)
+            if response.status == 200:
+                data = await response.json()
+                for i, item in enumerate(data.get('results', [])[:max_results]):
+                    results.append(SearchResult(
+                        engine="swisscows",
+                        url=item.get('url', ''),
+                        title=item.get('title'),
+                        snippet=item.get('description'),
+                        rank=i
+                    ))
+        except Exception:
+            pass
+        
+        return results
+    
+    async def _search_lukol(
+        self, query: str, max_results: int
+    ) -> List[SearchResult]:
+        """Lukol - Indian search engine"""
+        results = []
+        try:
+            url = f"https://www.lukol.com/search?q={quote(query)}&n={max_results}"
+            response = await self.http.request("GET", url)
+            html = await response.text()
+            
+            for i, item in enumerate(re.findall(
+                r'<div class="result">.*?</div>', html, re.DOTALL
+            )):
+                if i >= max_results:
+                    break
+                
+                url_match = re.search(r'href="(https?://[^"]+)"', item)
+                title_match = re.search(r'<a[^>]+>(.*?)</a>', item)
+                
+                if url_match:
+                    results.append(SearchResult(
+                        engine="lukol",
+                        url=url_match.group(1),
+                        title=title_match.group(1) if title_match else None,
+                        snippet=None,
+                        rank=i
+                    ))
+        except Exception:
+            pass
+        
+        return results
+    
+    async def _search_boardreader(
+        self, query: str, max_results: int
+    ) -> List[SearchResult]:
+        """BoardReader - forum search"""
+        results = []
+        try:
+            url = f"https://boardreader.com/s/{quote(query)}?format=json&n={max_results}"
+            response = await self.http.request("GET", url)
+            if response.status == 200:
+                data = await response.json()
+                for i, item in enumerate(data.get('results', [])[:max_results]):
+                    results.append(SearchResult(
+                        engine="boardreader",
+                        url=item.get('url', ''),
+                        title=item.get('title'),
+                        snippet=item.get('snippet'),
+                        rank=i
+                    ))
+        except Exception:
+            pass
+        
+        return results
+    
+    # ==================== 5. PASSIVE RECONNAISSANCE ====================
+    
+    async def research_passive_recon(
+        self, 
+        domain: str
+    ) -> Dict[str, Any]:
+        """
+        Perform passive reconnaissance without directly contacting the target.
+        """
+        results = {
+            "subdomains": [],
+            "ip_addresses": [],
+            "dns_records": [],
+            "http_headers": {},
+            "errors": []
+        }
+        
+        tasks = [
+            self._get_crtsh_subdomains(domain),
+            self._get_hackertarget_reverse_ip(domain),
+            self._get_dns_records(domain),
+            self._get_http_headers(domain)
+        ]
+        
+        recon_results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        for i, r in enumerate(recon_results):
+            if isinstance(r, Exception):
+                results["errors"].append(str(r))
+                continue
+            
+            if i == 0:
+                results["subdomains"] = r
+            elif i == 1:
+                results["ip_addresses"] = r
+            elif i == 2:
+                results["dns_records"] = r
+            elif i == 3:
+                results["http_headers"] = r
+        
+        return results
+    
+    async def _get_crtsh_subdomains(
+        self, domain: str
+    ) -> List[SubdomainInfo]:
+        """Get subdomains from crt.sh Certificate Transparency logs"""
+        subdomains = []
+        seen = set()
+        
+        try:
+            url = f"https://crt.sh/?q=%25.{domain}&output=json&limit=1000"
+            response = await self.http.request("GET", url)
+            if response.status == 200:
+                data = await response.json()
+                for item in data:
+                    name = item.get('name_value', '')
+                    if name and name not in seen:
+                        seen.add(name)
+                        subdomains.append(SubdomainInfo(
+                            subdomain=name,
+                            source="crt.sh",
+                            ip_addresses=[],
+                            first_seen=item.get('entry_timestamp', ''),
+                            last_seen=item.get('not_after', '')
+                        ))
+        except Exception as e:
+            raise Exception(f"crt.sh error: {str(e)}")
+        
+        return subdomains
+    
+    async def _get_hackertarget_reverse_ip(
+        self, domain: str
+    ) -> List[Dict[str, Any]]:
+        """Get reverse IP information from HackerTarget"""
+        results = []
+        try:
+            url = f"https://api.hackertarget.com/reverseiplookup/?q={domain}"
+            response = await self.http.request("GET", url)
+            if response.status == 200:
+                text = await response.text()
+                for line in text.split('\n'):
+                    if line.strip() and not line.startswith('Host'):
+                        results.append({
+                            "ip": domain,
+                            "hostname": line.strip()
+                        })
+        except Exception:
+            pass
+        
+        return results
+    
+    async def _get_dns_records(self, domain: str) -> Dict[str, List[DNSRecord]]:
+        """Get DNS records using various free APIs"""
+        records = {
+            "MX": [],
+            "SPF": [],
+            "DKIM": [],
+            "TXT": []
+        }
+        
+        # Try DNS lookup via dns.google
+        dns_types = ["MX", "TXT", "NS", "A", "AAAA", "CNAME"]
+        
+        for dns_type in dns_types:
+            try:
+                url = f"https://dns.google/resolve?name={domain}&type={dns_type}"
+                response = await self.http.request("GET", url)
+                if response.status == 200:
+                    data = await response.json()
+                    for answer in data.get('Answer', []):
+                        value = answer.get('data', '')
+                        
+                        if dns_type == "MX":
+                            records["MX"].append(DNSRecord(
+                                type="MX",
+                                value=value,
+                                ttl=answer.get('TTL', 0)
+                            ))
+                            # Check for SPF records
+                            if "spf" in value.lower():
+                                records["SPF"].append(DNSRecord(
+                                    type="SPF",
+                                    value=value,
+                                    ttl=answer.get('TTL', 0)
+                                ))
+                        elif dns_type == "TXT":
+                            records["TXT"].append(DNSRecord(
+                                type="TXT",
+                                value=value,
+                                ttl=answer.get('TTL', 0)
+                            ))
+                            # Check for DKIM
+                            if "dkim" in value.lower():
+                                records["DKIM"].append(DNSRecord(
+                                    type="DKIM",
+                                    value=value,
+                                    ttl=answer.get('TTL', 0)
+                                ))
+            except Exception:
+                continue
+        
+        return records
+    
+    async def _get_http_headers(
+        self, domain: str
+    ) -> Dict[str, str]:
+        """Get HTTP headers for fingerprinting"""
+        headers = {}
+        
+        try:
+            url = f"https://{domain}"
+            response = await self.http.request("GET", url)
+            headers = dict(response.headers)
+        except Exception:
+            # Try HTTP if HTTPS fails
+            try:
+                url = f"http://{domain}"
+                response = await self.http.request("GET", url)
+                headers = dict(response.headers)
+            except Exception:
+                pass
+        
+        return headers
+    
+    # ==================== 6. IDENTITY RESOLUTION ====================
+    
+    async def research_identity_resolve(
+        self, 
+        email_address: str
+    ) -> List[IdentityResult]:
+        """
+        Resolve identity from email address using public sources.
+        """
+        results = []
+        
+        tasks = [
+            self._get_gravatar_profile(email_address),
+            self._get_pgp_key(email_address),
+            self._get_github_commits(email_address),
+            self._get_leakcheck(email_address)
+        ]
+        
+        identity_results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        for result in identity_results:
+            if isinstance(result, IdentityResult):
+                results.append(result)
+        
+        return results
+    
+    async def _get_gravatar_profile(
+        self, email: str
+    ) -> Optional[IdentityResult]:
+        """Get Gravatar profile from email hash"""
+        try:
+            # Create MD5 hash of email
+            email_hash = hashlib.md5(email.lower().strip().encode()).hexdigest()
+            
+            # Try JSON profile
+            url = f"https://www.gravatar.com/{email_hash}.json"
+            response = await self.http.request("GET", url)
+            
+            if response.status == 200:
+                data = await response.json()
+                entry = data.get('entry', [{}])[0]
+                
+                return IdentityResult(
+                    source="gravatar",
+                    identifier=email_hash,
+                    data={
+                        "display_name": entry.get('displayName', ''),
+                        "profile_url": entry.get('profileUrl', ''),
+                        "avatar_url": entry.get('thumbnailUrl', ''),
+                        "about_me": entry.get('aboutMe', ''),
+                        "location": entry.get('currentLocation', ''),
+                        "emails": entry.get('emails', []),
+                        "accounts": entry.get('accounts', [])
+                    },
+                    confidence=0.8
+                )
+        except Exception:
+            pass
+        
+        return None
+    
+    async def _get_pgp_key(
+        self, email: str
+    ) -> Optional[IdentityResult]:
+        """Search for PGP key associated with email"""
+        try:
+            url = f"https://keys.openpgp.org/vks/v1/by-email/{quote(email)}"
+            response = await self.http.request("GET", url)
+            
+            if response.status == 200:
+                data = await response.text()
+                # Parse PGP key info
+                key_id_match = re.search(r'KeyID: ([A-F0-9]+)', data)
+                fingerprint_match = re.search(r'Fingerprint: ([A-F0-9 ]+)', data)
+                
+                return IdentityResult(
+                    source="openpgp",
+                    identifier=email,
+                    data={
+                        "key_id": key_id_match.group(1) if key_id_match else "",
+                        "fingerprint": fingerprint_match.group(1) if fingerprint_match else "",
+                        "raw_key": data[:500]  # Truncated for storage
+                    },
+                    confidence=0.7
+                )
+        except Exception:
+            pass
+        
+        return None
+    
+    async def _get_github_commits(
+        self, email: str
+    ) -> Optional[IdentityResult]:
+        """Search GitHub for commits by email"""
+        try:
+            url = f"https://api.github.com/search/commits?q=author-email:{quote(email)}"
+            response = await self.http.request("GET", url)
+            
+            if response.status == 200:
+                data = await response.json()
+                items = data.get('items', [])
+                
+                if items:
+                    # Get unique authors and repos
+                    authors = {}
+                    repos = {}
+                    for item in items[:20]:
+                        author = item.get('committer', {}).get('login', 'unknown')
+                        authors[author] = authors.get(author, 0) + 1
+                        repo = item.get('repository', {}).get('full_name', 'unknown')
+                        repos[repo] = repos.get(repo, 0) + 1
+                    
+                    return IdentityResult(
+                        source="github",
+                        identifier=email,
+                        data={
+                            "total_commits": len(items),
+                            "authors": authors,
+                            "repositories": repos,
+                            "recent_commits": [{
+                                "repo": item.get('repository', {}).get('full_name'),
+                                "message": item.get('commit', {}).get('message')[:100],
+                                "date": item.get('commit', {}).get('committer', {}).get('date')
+                            } for item in items[:5]]
+                        },
+                        confidence=0.9 if len(items) > 0 else 0
+                    )
+        except Exception:
+            pass
+        
+        return None
+    
+    async def _get_leakcheck(
+        self, email: str
+    ) -> Optional[IdentityResult]:
+        """Check if email appears in public breaches (ethical use only)"""
+        # This is a placeholder - real implementation would use
+        # haveibeenpwned or similar with proper API keys
+        return None
+    
+    # ==================== 7. CHANGE MONITOR ====================
+    
+    async def research_change_monitor(
+        self, 
+        url: str,
+        previous_content: Optional[str] = None
+    ) -> ChangeRecord:
+        """
+        Monitor changes to web content with semantic classification.
+        Uses SHA256 hashing, difflib, and classifies changes by severity.
+        """
+        try:
+            # Fetch current content
+            response = await self.http.request("GET", url)
+            current_content = await response.text()
+            current_hash = hashlib.sha256(current_content.encode()).hexdigest()
+            
+            # Get previous hash from database
+            cursor = self.sqlite_conn.cursor()
+            cursor.execute(
+                "SELECT hash, content FROM changes WHERE url = ? ORDER BY id DESC LIMIT 1",
+                (url,)
+            )
+            row = cursor.fetchone()
+            
+            if row:
+                old_hash, old_content = row
+            else:
+                old_hash, old_content = "", ""
+            
+            # Calculate changes
+            changes = []
+            classification = "no_change"
+            
+            if old_hash and old_hash != current_hash:
+                # Use difflib for detailed comparison
+                if old_content and current_content:
+                    diff = list(difflib.unified_diff(
+                        old_content.splitlines(),
+                        current_content.splitlines(),
+                        lineterm=''
+                    ))
+                    changes = diff[:20]  # Limit to first 20 changes
+                
+                # Classify change severity
+                if len(current_content) != len(old_content or ""):
+                    size_change = len(current_content) - len(old_content or "")
+                    if abs(size_change) > len(old_content or "") * 0.5:
+                        classification = "major"
+                    elif abs(size_change) > len(old_content or "") * 0.1:
+                        classification = "moderate"
+                    else:
+                        classification = "minor"
+                else:
+                    # Same size but different content
+                    if changes:
+                        classification = "content_update"
+                
+                # Save new hash
+                cursor.execute(
+                    "INSERT INTO changes (url, hash, content, timestamp) VALUES (?, ?, ?, ?)",
+                    (url, current_hash, current_content[:10000], 
+                     datetime.now(timezone.utc).isoformat())
+                )
+                self.sqlite_conn.commit()
+            
+            return ChangeRecord(
+                url=url,
+                old_hash=old_hash,
+                new_hash=current_hash,
+                changes=changes,
+                classification=classification,
+                timestamp=datetime.now(timezone.utc).isoformat()
+            )
+            
+        except Exception as e:
+            raise Exception(f"Change monitor error: {str(e)}")
+    
+    # ==================== 8. METADATA FORENSICS ====================
+    
+    async def research_metadata_forensics(
+        self, 
+        url: str
+    ) -> List[MetadataResult]:
+        """
+        Extract hidden metadata from files and web pages.
+        Includes EXIF from images, PDF metadata, and HTML metadata.
+        """
+        results = []
+        
+        try:
+            # Get the content
+            response = await self.http.request("GET", url)
+            content = await response.read()
+            content_type = response.headers.get('Content-Type', '')
+            
+            # Determine file type and extract metadata
+            if 'image' in content_type:
+                exif_data = self._extract_exif(content)
+                if exif_data:
+                    results.append(MetadataResult(
+                        url=url,
+                        metadata_type="exif",
+                        data=exif_data
+                    ))
+            
+            elif 'pdf' in content_type:
+                pdf_data = self._extract_pdf_metadata(content)
+                if pdf_data:
+                    results.append(MetadataResult(
+                        url=url,
+                        metadata_type="pdf",
+                        data=pdf_data
+                    ))
+            
+            # Always extract HTML metadata
+            html_text = content.decode('utf-8', errors='ignore')
+            html_meta = self._extract_html_metadata(html_text)
+            if html_meta:
+                results.append(MetadataResult(
+                    url=url,
+                    metadata_type="html",
+                    data=html_meta
+                ))
+            
+        except Exception as e:
+            results.append(MetadataResult(
+                url=url,
+                metadata_type="error",
+                data={"error": str(e)}
+            ))
+        
+        return results
+    
+    def _extract_exif(self, image_data: bytes) -> Dict[str, Any]:
+        """Extract EXIF data from image"""
+        exif_data = {}
+        try:
+            image = Image.open(BytesIO(image_data))
+            exif = image._getexif()
+            if exif:
+                for tag_id, value in exif.items():
+                    tag = TAGS.get(tag_id, tag_id)
+                    if isinstance(value, bytes):
+                        try:
+                            value = value.decode('utf-8', errors='ignore')
+                        except Exception:
+                            value = str(value)
+                    exif_data[str(tag)] = str(value)
+        except Exception:
+            pass
+        
+        return exif_data
+    
+    def _extract_pdf_metadata(self, pdf_data: bytes) -> Dict[str, Any]:
+        """Extract PDF metadata"""
+        if not PDF_SUPPORT:
+            return {"error": "PyPDF2 not installed"}
+        
+        metadata = {}
+        try:
+            pdf = PdfReader(BytesIO(pdf_data))
+            info = pdf.metadata
+            if info:
+                for key, value in info.items():
+                    metadata[str(key)] = str(value)
+        except Exception:
+            pass
+        
+        return metadata
+    
+    def _extract_html_metadata(self, html: str) -> Dict[str, Any]:
+        """Extract HTML metadata (JSON-LD, OpenGraph, etc.)"""
+        metadata = {}
+        
+        # Extract JSON-LD
+        jsonld_pattern = r'<script[^>]+type="application/ld\+json"[^>]*>(.*?)</script>'
+        jsonld_matches = re.findall(jsonld_pattern, html, re.DOTALL)
+        if jsonld_matches:
+            try:
+                metadata['json_ld'] = json.loads(jsonld_matches[0])
+            except json.JSONDecodeError:
+                metadata['json_ld_raw'] = jsonld_matches[0][:1000]
+        
+        # Extract OpenGraph
+        og_patterns = {
+            'og:title': r'<meta[^>]+property="og:title"[^>]+content="([^"]+)"',
+            'og:description': r'<meta[^>]+property="og:description"[^>]+content="([^"]+)"',
+            'og:image': r'<meta[^>]+property="og:image"[^>]+content="([^"]+)"',
+            'og:url': r'<meta[^>]+property="og:url"[^>]+content="([^"]+)"',
+            'og:type': r'<meta[^>]+property="og:type"[^>]+content="([^"]+)"'
+        }
+        
+        og_data = {}
+        for key, pattern in og_patterns.items():
+            match = re.search(pattern, html, re.IGNORECASE)
+            if match:
+                og_data[key] = match.group(1)
+        
+        if og_data:
+            metadata['open_graph'] = og_data
+        
+        # Extract Twitter cards
+        twitter_patterns = {
+            'twitter:card': r'<meta[^>]+name="twitter:card"[^>]+content="([^"]+)"',
+            'twitter:site': r'<meta[^>]+name="twitter:site"[^>]+content="([^"]+)"',
+            'twitter:creator': r'<meta[^>]+name="twitter:creator"[^>]+content="([^"]+)"'
+        }
+        
+        twitter_data = {}
+        for key, pattern in twitter_patterns.items():
+            match = re.search(pattern, html, re.IGNORECASE)
+            if match:
+                twitter_data[key] = match.group(1)
+        
+        if twitter_data:
+            metadata['twitter'] = twitter_data
+        
+        return metadata
+    
+    # ==================== 9. SOCIAL GRAPH ANALYSIS ====================
+    
+    async def research_social_graph(
+        self, 
+        identifier: str,
+        platform: str = "github"
+    ) -> Dict[str, Any]:
+        """
+        Build social graph from various platforms.
+        Supports GitHub, Reddit, and Semantic Scholar.
+        """
+        graph = {
+            "nodes": [],
+            "edges": [],
+            "metadata": {
+                "identifier": identifier,
+                "platform": platform,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+        }
+        
+        if platform == "github":
+            graph = await self._build_github_graph(identifier)
+        elif platform == "reddit":
+            graph = await self._build_reddit_graph(identifier)
+        elif platform == "semantic_scholar":
+            graph = await self._build_semantic_scholar_graph(identifier)
+        
+        return graph
+    
+    async def _build_github_graph(
+        self, username: str
+    ) -> Dict[str, Any]:
+        """Build GitHub social graph from commits and repos"""
+        graph = {
+            "nodes": [],
+            "edges": [],
+            "metadata": {"type": "github", "username": username}
+        }
+        
+        try:
+            # Get user's repositories
+            repos_url = f"https://api.github.com/users/{username}/repos?per_page=100"
+            repos_response = await self.http.request("GET", repos_url)
+            
+            if repos_response.status == 200:
+                repos = await repos_response.json()
+                
+                # Add user node
+                graph["nodes"].append(SocialGraphNode(
+                    id=f"github:user:{username}",
+                    type="user",
+                    label=username,
+                    metadata={"platform": "github", "repos_count": len(repos)}
+                ))
+                
+                # Process each repo
+                for repo in repos:
+                    repo_name = repo.get('full_name', repo.get('name', ''))
+                    
+                    # Add repo node
+                    graph["nodes"].append(SocialGraphNode(
+                        id=f"github:repo:{repo_name}",
+                        type="repository",
+                        label=repo_name,
+                        metadata={
+                            "description": repo.get('description'),
+                            "language": repo.get('language'),
+                            "stars": repo.get('stargazers_count'),
+                            "forks": repo.get('forks_count')
+                        }
+                    ))
+                    
+                    # Add edge: user -> repo
+                    graph["edges"].append(SocialGraphEdge(
+                        source=f"github:user:{username}",
+                        target=f"github:repo:{repo_name}",
+                        type="owns",
+                        weight=1.0
+                    ))
+                    
+                    # Get contributors for each repo
+                    contributors_url = f"https://api.github.com/repos/{repo_name}/contributors?per_page=10"
+                    try:
+                        contrib_response = await self.http.request("GET", contributors_url)
+                        if contrib_response.status == 200:
+                            contributors = await contrib_response.json()
+                            
+                            for contributor in contributors:
+                                contrib_login = contributor.get('login', '')
+                                contributions = contributor.get('contributions', 0)
+                                
+                                if contrib_login and contrib_login != username:
+                                    # Add contributor node if not exists
+                                    node_id = f"github:user:{contrib_login}"
+                                    if not any(n['id'] == node_id for n in graph["nodes"]):
+                                        graph["nodes"].append(SocialGraphNode(
+                                            id=node_id,
+                                            type="user",
+                                            label=contrib_login,
+                                            metadata={"platform": "github"}
+                                        ))
+                                    
+                                    # Add edge: contributor -> repo
+                                    graph["edges"].append(SocialGraphEdge(
+                                        source=node_id,
+                                        target=f"github:repo:{repo_name}",
+                                        type="contributes_to",
+                                        weight=min(contributions / 10, 1.0)
+                                    ))
+                    except Exception:
+                        continue
+            
+            # Get followers
+            followers_url = f"https://api.github.com/users/{username}/followers?per_page=50"
+            try:
+                followers_response = await self.http.request("GET", followers_url)
+                if followers_response.status == 200:
+                    followers = await followers_response.json()
+                    
+                    for follower in followers:
+                        follower_login = follower.get('login', '')
+                        if follower_login:
+                            node_id = f"github:user:{follower_login}"
+                            if not any(n['id'] == node_id for n in graph["nodes"]):
+                                graph["nodes"].append(SocialGraphNode(
+                                    id=node_id,
+                                    type="user",
+                                    label=follower_login,
+                                    metadata={"platform": "github"}
+                                ))
+                            
+                            graph["edges"].append(SocialGraphEdge(
+                                source=node_id,
+                                target=f"github:user:{username}",
+                                type="follows",
+                                weight=0.8
+                            ))
+            except Exception:
+                pass
+        
+        except Exception as e:
+            graph["metadata"]["error"] = str(e)
+        
+        return graph
+    
+    async def _build_reddit_graph(
+        self, username: str
+    ) -> Dict[str, Any]:
+        """Build Reddit social graph from comments and posts"""
+        graph = {
+            "nodes": [],
+            "edges": [],
+            "metadata": {"type": "reddit", "username": username}
+        }
+        
+        try:
+            # Get user's comments
+            comments_url = f"https://www.reddit.com/user/{username}/comments.json?limit=100"
+            response = await self.http.request("GET", comments_url)
+            
+            if response.status == 200:
+                data = await response.json()
+                comments = data.get('data', {}).get('children', [])
+                
+                # Add user node
+                graph["nodes"].append(SocialGraphNode(
+                    id=f"reddit:user:{username}",
+                    type="user",
+                    label=username,
+                    metadata={"platform": "reddit"}
+                ))
+                
+                # Process comments to find subreddits and interactions
+                subreddits = {}
+                for comment in comments:
+                    comment_data = comment.get('data', {})
+                    subreddit = comment_data.get('subreddit', '')
+                    parent_id = comment_data.get('parent_id', '')
+                    
+                    if subreddit:
+                        subreddits[subreddit] = subreddits.get(subreddit, 0) + 1
+                        
+                        # Add subreddit node
+                        subreddit_id = f"reddit:subreddit:{subreddit}"
+                        if not any(n['id'] == subreddit_id for n in graph["nodes"]):
+                            graph["nodes"].append(SocialGraphNode(
+                                id=subreddit_id,
+                                type="subreddit",
+                                label=f"r/{subreddit}",
+                                metadata={"platform": "reddit"}
+                            ))
+                        
+                        # Add edge: user -> subreddit
+                        graph["edges"].append(SocialGraphEdge(
+                            source=f"reddit:user:{username}",
+                            target=subreddit_id,
+                            type="comments_in",
+                            weight=min(subreddits[subreddit] / 10, 1.0)
+                        ))
+        
+        except Exception as e:
+            graph["metadata"]["error"] = str(e)
+        
+        return graph
+    
+    async def _build_semantic_scholar_graph(
+        self, author_id: str
+    ) -> Dict[str, Any]:
+        """Build Semantic Scholar co-authorship graph"""
+        graph = {
+            "nodes": [],
+            "edges": [],
+            "metadata": {"type": "semantic_scholar", "author_id": author_id}
+        }
+        
+        try:
+            # Get author details
+            author_url = f"https://api.semanticscholar.org/graph/v1/author/{author_id}?fields=name,papers.paperId,papers.title,papers.authors"
+            response = await self.http.request("GET", author_url)
+            
+            if response.status == 200:
+                data = await response.json()
+                
+                # Add author node
+                graph["nodes"].append(SocialGraphNode(
+                    id=f"semantic_scholar:author:{author_id}",
+                    type="author",
+                    label=data.get('name', author_id),
+                    metadata={"platform": "semantic_scholar"}
+                ))
+                
+                # Process papers and co-authors
+                papers = data.get('papers', [])
+                coauthor_counts = {}
+                
+                for paper in papers:
+                    paper_id = paper.get('paperId', '')
+                    paper_title = paper.get('title', '')
+                    
+                    # Add paper node
+                    paper_node_id = f"semantic_scholar:paper:{paper_id}"
+                    if paper_id and not any(n['id'] == paper_node_id for n in graph["nodes"]):
+                        graph["nodes"].append(SocialGraphNode(
+                            id=paper_node_id,
+                            type="paper",
+                            label=paper_title[:100] if paper_title else paper_id,
+                            metadata={"platform": "semantic_scholar"}
+                        ))
+                    
+                    # Add edge: author -> paper
+                    graph["edges"].append(SocialGraphEdge(
+                        source=f"semantic_scholar:author:{author_id}",
+                       

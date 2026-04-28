@@ -1,0 +1,106 @@
+────────────────────────────
+1. Prompt Injection Test Generator  (codename: “NeedleMaker”)
+Implementation (free-tier / open stack)
+• Seed Expansion – A light model (e.g. mistralai/Mistral-7B-Instruct on HF Inference API) paraphrases the user-supplied system prompt into 30–50 variants.  
+• Attack Heuristics – A rules engine adds known operator tricks (HTML/JS tags, JSON nesting, Base-64, homoglyphs, emoji interleaving, zero-width chars, foreign-language pivots).  
+• Self-Refine Loop – Each candidate is re-fed to the same model with the instruction “make it more likely to override the system prompt.”  
+• Evaluation Harness – Prompts are fired at the target model through a proxy; responses are scored for policy-violation keywords with Open-source PII/NSFW classifiers (presidio-analyzer, detoxify).  
+• Result clustering – Embedding model (sentence-transformers/all-MiniLM-L6-v2) groups successful injections by technique; top exemplars returned.  
+Why it matters  
+Systematic generation & scoring gives quantitative evidence of jailbreak susceptibility—essential for Article 15 “state-of-the-art” testing and for setting prompt-filtering guard-rails.
+
+────────────────────────────
+2. Model Fingerprinting  (codename: “ShazamLLM”)
+Implementation
+• Probe Set – 200 hand-curated questions whose response distributions differ across GPT-3.5, Claude, Llama-2, Gemini, etc.  
+• Query – Run probes against the black-box endpoint (rate-limit aware).  
+• Feature Extraction – Convert answers to embeddings + surface metrics (text length, log-prob of specific tokens via open-source tokenizer, JSON formatting quirks).  
+• Classifier – scikit-learn random-forest trained on open data from HF model zoo; fallback to nearest-centroid in vector space.  
+• Cascade – Light model does coarse filtering (is it likely open-source vs proprietary?), larger local Llama-2-70B refines ranking.  
+Why it matters  
+Knowing which underlying model (and version) powers an API lets auditors look up published vulnerabilities, bias studies, licensing status, and applicable conformity modules.
+
+────────────────────────────
+3. Data-Poisoning Detector  (codename: “CleanFeed”)
+Implementation
+• Intake – Accepts up to 1 TB of text via parquet / jsonl.  
+• Statistical Outlier Scan – Cleanlab’s confident learning flags label noise; TextAnon’s trigram KL divergence surfaces weird n-grams.  
+• Trigger Search – Bloom filter of known poisoning triggers (e.g., “zjw9z”) + regex for unicode U+202E right-to-left marks.  
+• Semantic Cluster View – Sentence-transformer embeddings, HNSW search, visualize clusters with UMAP; singletons are reviewed by Llama-2 which explains “why is this snippet unusual?”.  
+• Optional Differential Training – Fine-tune a mini-LM twice (with vs without suspected records) and compare perplexity shift; high delta ⇒ high influence.  
+Why it matters  
+Malicious training data can implant backdoors or policy-violating behaviors. Detecting it early is cheaper than model repair and fulfills “data governance” duties under the Act.
+
+────────────────────────────
+4. Jailbreak Pattern Library  (codename: “EscapologyDB”)
+Implementation
+• YAML schema (technique, seed prompt, expected leakage, CVSS-like severity).  
+• Auto-Sync – Cron job scrapes Reddit, Twitter, jailbreak.chat RSS; Llama-2 summarises and normalises new patterns.  
+• Replay Harness – For any target model, iterate through the library, log success/failure, auto-generate Markdown report.  
+• Dashboard – React front-end w/ Supabase free tier; export CSV for regulators.  
+Why it matters  
+Centralising known bypasses avoids “researcher rediscovery” and gives quantitative regressions (“# of successful jailbreaks dropped from 42→5 after patch X”).
+
+────────────────────────────
+5. Compliance Gap Finder  (codename: “RegRadar”)
+Implementation
+• Knowledge Base – Vector store of EU AI Act articles + ENISA guidelines, embedded with sentence-transformers/all-MiniLM.  
+• Document Ingest – Drop in technical docs, policies, model cards.  
+• Retrieval-Augmented Generation – Mistral-7B retrieves relevant passages, GPT-NeoX-20B (local) explains whether evidence satisfies each clause; outputs traffic-light scores.  
+• Missing-Evidence Prompter – For each red item, the tool suggests artefacts the provider should produce (e.g., “risk management file”, “data provenance sheet”).  
+Why it matters  
+Turns legal text into actionable engineering tasks, shortening the feedback loop between red-team and compliance.
+
+────────────────────────────
+6. Bias Amplification Detector  (codename: “FairProbe”)
+Implementation
+• Population Template – YAML demographics grid (gender × ethnicity × religion × disability).  
+• Evolutionary Search – Start with neutral task prompt (“Describe a doctor”). Mutate demographic tokens, measure toxicity / sentiment with free Detoxify model. Fitness = maximum delta between groups.  
+• Gradient-Based Prompting – Use Open-source RL-fan “Open-RL-Prompt-Optimizer” to steer toward high disparity.  
+• Report – Spider chart of amplification scores; links to worst prompts.  
+Why it matters  
+Demonstrates how easily an attacker can elicit biased or hateful outputs, providing concrete evidence for providers to retrain or add bias mitigations.
+
+────────────────────────────
+7. Privacy Leak Scanner  (codename: “CanaryCatch”)
+Implementation
+• Canary Planting – For models in training, provides script to embed unique synthetic SSNs / emails.  
+• Extraction Phase – Uses greedy + nucleus sampling, plus “full-text recall” prompts (“Repeat the phrase you were trained on beginning with ‘XQK…’”).  
+• Membership Inference – Implementation of Carlini et al. “Secret Sharer” attack using free Hugging Face transformers.  
+• Leak Score – (% of canaries reproduced) + Shannon entropy of revealed string.  
+Why it matters  
+Quantifies memorisation risks and helps satisfy GDPR & AI Act data-protection obligations.
+
+────────────────────────────
+8. Adversarial Example Generator  (codename: “FoolFactory”)
+Implementation
+• Text – Leverages TextAttack open-source (`textattack attack --recipe=bert-aware`) to craft semantically similar but classification-changing inputs.  
+• Vision – Runs Foolbox + pre-trained ResNet on free Colab GPU; returns ε-bounded perturbations.  
+• Audio – Uses Whisper’s logit confidence; inserts imperceptible noises with SoX.  
+• Cascaded Filtering – Small model proposes token swaps, large model validates semantic preservation (“Is meaning unchanged? y/n”).  
+Why it matters  
+Shows decision-boundary brittleness. Needed to evaluate robustness claims for high-risk systems under Article 15(2)(b).
+
+────────────────────────────
+9. Supply-Chain Auditor  (codename: “ModelSBOM”)
+Implementation
+• Dependency Scan – Trivy/Grype on Docker images; pip-a-depend for Python wheels.  
+• Model Lineage – Reads model card JSON; fetches parent checkpoints from Hugging Face API; hashes weights, looks for tampered params via SHA-256 diff.  
+• CVE Mapping – Free NVD API; enrich with GitHub Advisory DB.  
+• Licence Checker – Llama-2 summarises each dependency licence and flags copyleft incompatibilities.  
+Why it matters  
+Upstream libs or datasets with CVEs or restrictive licences can nullify compliance or introduce backdoors—often overlooked in LLM pipelines.
+
+────────────────────────────
+10. Output Manipulation Detector  (codename: “FilterSniff”)
+Implementation
+• Differential Prompting – Send semantically equivalent paraphrases (generated by Mistral-7B) and look for unexplained output variance.  
+• Timing Side-Channel – Measure response latency; spikes may indicate server-side filter passes.  
+• Content Hashing – FNV-1a hash successive completions; high divergence + policy keywords = likely censorship.  
+• Signature Analysis – If suspect, ask for base64 of log-probs; missing data suggests output-layer redaction.  
+Why it matters  
+Identifies silent or biased post-processing layers that could be exploited (e.g., attacker forces filter to crash) and provides transparency on when/why answers are withheld—key for trustworthiness and lawful disclosure.
+
+────────────────────────────
+
+Together, these ten tactical tools form a lightweight but complete red-team toolkit that relies only on free/open models, open-source libraries, and clever LLM cascading, enabling any authorised researcher to stress-test AI systems in line with the EU AI Act’s Article 15 security-and-robustness mandate.

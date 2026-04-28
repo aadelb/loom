@@ -1,0 +1,2 @@
+jq: error (at <stdin>:1): Cannot index number with string "choices"
+jq: parse error: Invalid numeric literal at line 1, column 9

@@ -1,0 +1,250 @@
+Here are ten research automation tools, organized by category, that leverage free data sources and do not rely on paid APIs. Each includes a name, a free URL source, and a Python implementation sketch.
+
+### Competitive Intelligence
+
+1. **SEC Scraper**
+   - **Name**: SECTracker
+   - **Free URL**: [EDGAR Database](https://www.sec.gov/edgar/searchedgar/accessing-edgar-data.htm)
+   - **Python Implementation Sketch**:
+   ```python
+   import requests
+   from bs4 import BeautifulSoup
+
+   def scrape_sec_filings(cik):
+       url = f"https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK={cik}&type=10-K&output=xml"
+       response = requests.get(url)
+       soup = BeautifulSoup(response.content, 'lxml')
+       
+       filings = []
+       for entry in soup.find_all('entry'):
+           filing = {
+               'title': entry.title.text,
+               'date': entry.updated.text,
+               'link': entry.link.get('href')
+           }
+           filings.append(filing)
+       
+       return filings
+   ```
+
+2. **Patent Miner**
+   - **Name**: PatentFinder
+   - **Free URL**: [Google Patents](https://patents.google.com/)
+   - **Python Implementation Sketch**:
+   ```python
+   import requests
+   from bs4 import BeautifulSoup
+
+   def scrape_patents(keyword):
+       url = f"https://patents.google.com/?q={keyword}&num=100"
+       response = requests.get(url)
+       soup = BeautifulSoup(response.content, 'html.parser')
+       
+       patents = []
+       for result in soup.find_all('search-result-item'):
+           patent = {
+               'title': result.find('title').text,
+               'link': f"https://patents.google.com{result.get('result-link').get('href')}"
+           }
+           patents.append(patent)
+       
+       return patents
+   ```
+
+### Talent Analytics
+
+3. **GitHub Talent Scout**
+   - **Name**: GitHubTalentExtractor
+   - **Free URL**: [GitHub User Profiles](https://github.com/)
+   - **Python Implementation Sketch**:
+   ```python
+   import requests
+   from bs4 import BeautifulSoup
+
+   def extract_github_profiles(username):
+       url = f"https://github.com/{username}?tab=repositories"
+       response = requests.get(url)
+       soup = BeautifulSoup(response.content, 'html.parser')
+       
+       repos = []
+       for repo in soup.find_all('h3', class_='wb-break-all'):
+           repos.append(repo.a.get('href'))
+       
+       return repos
+   ```
+
+4. **Academic Profile Crawler**
+   - **Name**: ScholarSearch
+   - **Free URL**: [Google Scholar](https://scholar.google.com/)
+   - **Python Implementation Sketch**:
+   ```python
+   import requests
+   from bs4 import BeautifulSoup
+
+   def scrape_scholar_profile(author_name):
+       url = f"https://scholar.google.com/scholar?q={author_name.replace(' ', '+')}"
+       response = requests.get(url)
+       soup = BeautifulSoup(response.content, 'html.parser')
+       
+       papers = []
+       for item in soup.find_all('div', class_='gs_ri'):
+           paper = {
+               'title': item.find('h3').text,
+               'link': item.find('a')['href']
+           }
+           papers.append(paper)
+       
+       return papers
+   ```
+
+### Technology Forecasting
+
+5. **arXiv Trend Monitor**
+   - **Name**: arXivTrend
+   - **Free URL**: [arXiv API](https://arxiv.org/help/api/user-manual)
+   - **Python Implementation Sketch**:
+   ```python
+   import requests
+   import xml.etree.ElementTree as ET
+
+   def fetch_arxiv_trends(query):
+       url = f"http://export.arxiv.org/api/query?search_query=all:{query}&start=0&max_results=5"
+       response = requests.get(url)
+       root = ET.fromstring(response.content)
+       
+       trends = []
+       for entry in root.findall('{http://www.w3.org/2005/Atom}entry'):
+           trend = {
+               'title': entry.find('{http://www.w3.org/2005/Atom}title').text,
+               'summary': entry.find('{http://www.w3.org/2005/Atom}summary').text
+           }
+           trends.append(trend)
+       
+       return trends
+   ```
+
+### Regulatory Monitoring
+
+6. **Government RSS Feed Monitor**
+   - **Name**: GovRSSWatcher
+   - **Free URL**: [GovTrack USA RSS Feeds](https://www.govtrack.us/developers)
+   - **Python Implementation Sketch**:
+   ```python
+   import feedparser
+
+   def parse_rss_feed(feed_url):
+       feed = feedparser.parse(feed_url)
+       
+       entries = []
+       for entry in feed.entries:
+           entry_data = {
+               'title': entry.title,
+               'link': entry.link,
+               'published': entry.published
+           }
+           entries.append(entry_data)
+       
+       return entries
+   ```
+
+7. **EU Directive Scraper**
+   - **Name**: EUDirectiveScraper
+   - **Free URL**: [EUR-Lex](https://eur-lex.europa.eu/collection/eu-law.html)
+   - **Python Implementation Sketch**:
+   ```python
+   import requests
+   from bs4 import BeautifulSoup
+
+   def scrape_eu_directives(keyword):
+       url = f"https://eur-lex.europa.eu/search.html?q={keyword}"
+       response = requests.get(url)
+       soup = BeautifulSoup(response.content, 'html.parser')
+       
+       directives = []
+       for result in soup.find_all('div', class_='result-document'):
+           directive = {
+               'title': result.find('a', class_='title').text,
+               'link': result.find('a', class_='title')['href']
+           }
+           directives.append(directive)
+       
+       return directives
+   ```
+
+### Supply Chain Mapping
+
+8. **Company Registry Explorer**
+   - **Name**: RegistryExplorer
+   - **Free URL**: [OpenCorporates](https://opencorporates.com/)
+   - **Python Implementation Sketch**:
+   ```python
+   import requests
+   from bs4 import BeautifulSoup
+
+   def fetch_company_data(company_name):
+       url = f"https://opencorporates.com/companies/search?q={company_name.replace(' ', '+')}"
+       response = requests.get(url)
+       soup = BeautifulSoup(response.content, 'html.parser')
+       
+       companies = []
+       for result in soup.find_all('li', class_='company'):
+           company = {
+               'name': result.find('a').text,
+               'link': f"https://opencorporates.com{result.find('a')['href']}"
+           }
+           companies.append(company)
+       
+       return companies
+   ```
+
+9. **Trade Data Scraper**
+   - **Name**: GlobalTradeAnalyzer
+   - **Free URL**: [UN Comtrade Database](https://comtrade.un.org/)
+   - **Python Implementation Sketch**:
+   ```python
+   import requests
+   from bs4 import BeautifulSoup
+
+   def scrape_trade_data(commodity_code):
+       url = f"https://comtrade.un.org/data?cc={commodity_code}"
+       response = requests.get(url)
+       soup = BeautifulSoup(response.content, 'html.parser')
+       
+       trade_data = []
+       for row in soup.find_all('tr'):
+           cells = row.find_all('td')
+           if cells:
+               trade_record = {
+                   'country': cells[0].text,
+                   'value': cells[1].text
+               }
+               trade_data.append(trade_record)
+       
+       return trade_data
+   ```
+
+10. **Port Documentation Finder**
+    - **Name**: PortDocFinder
+    - **Free URL**: [Maritime Data and Port Documentation](https://www.maritime-database.com/)
+    - **Python Implementation Sketch**:
+    ```python
+    import requests
+    from bs4 import BeautifulSoup
+
+    def fetch_port_documents(port_name):
+        url = f"https://www.maritime-database.com/port/{port_name.replace(' ', '-').lower()}.html"
+        response = requests.get(url)
+        soup = BeautifulSoup(response.content, 'html.parser')
+        
+        documents = []
+        for doc in soup.find_all('div', class_='document'):
+            document = {
+                'name': doc.find('h3').text,
+                'link': doc.find('a')['href']
+            }
+            documents.append(document)
+        
+        return documents
+    ```
+
+These sketches serve as a starting point for developing comprehensive research tools. Additional functionality and error handling should be added based on specific requirements and data structure changes.

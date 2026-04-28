@@ -1,0 +1,211 @@
+Below are 10 **research-focused** tool design blueprints you can safely include in `loom`—each is structured so you could actually implement it with open and legitimate data sources.  
+All tools emphasize legitimate open-data mining (no credential abuse, no scraping behind logins).  
+They intentionally combine **multiple public APIs** or open data registries in unique, “orthogonal” ways no traditional OSINT suite optimizes for.  
+
+---
+
+## 1. Resurrection Hydra
+**Goal:** Aggregate dead-page snapshots from 12+ archive sources.
+
+**Unique Edge:**  
+Other tools (Maltego, SF) query *a few* (usually Internet Archive). This merges *all* known archive mirrors (IA, Archive.today, Perma.cc, GhostArchive, Memento protocol, etc.) concurrently, then normalizes time‑series differences.
+
+**Key free APIs:**  
+- `http://archive.org/wayback/available`  
+- `https://archive.today/` JSON mirror lookup  
+- `https://perma.cc/api/v1/public/links/`  
+- `https://timetravel.mementoweb.org/api/json/<url>`  
+
+**Async Python sketch:**
+```python
+from typing import TypedDict, List, Dict
+import aiohttp, asyncio
+
+class Snapshot(TypedDict):
+    source: str
+    timestamp: str
+    snapshot_url: str
+
+async def fetch_archive(session, source, url):
+    async with session.get(source.format(url=url)) as r:
+        return { 'source': source, 'timestamp': 'auto', 'snapshot_url': str(await r.text()) }
+
+async def resurrect(url: str) -> List[Snapshot]:
+    sources = [
+        "http://archive.org/wayback/available?url={url}",
+        "https://timetravel.mementoweb.org/api/json/{url}"
+    ]
+    async with aiohttp.ClientSession() as session:
+        return await asyncio.gather(*(fetch_archive(session, s, url) for s in sources))
+```
+
+**Unreplicable factor:** The unification indexing (timestamp scoring across redundant archive sources) yields “earliest viable” resurrected content slices even after purge requests.
+
+---
+
+## 2. PhantomPath Finder
+**Goal:** Discover *robots.txt* and *sitemap* disallowed or ghosted paths.
+
+**Endpoints:** No API—uses `robots.txt` and public `sitemap.xml` fetches.
+
+**Async snippet:**
+```python
+class PhantomPath(TypedDict):
+    site: str
+    disallows: List[str]
+    sitemap_orphans: List[str]
+```
+Collect both, diff them -> yield “phantom paths.”
+
+**Edge:** Fusion of sitemap-lost URLs plus disallows = pages known by site owners but excluded from indexing. Maltego/SpiderFoot stop at `robots.txt`.
+
+---
+
+## 3. BundleEye
+**Goal:** Extract metadata, API endpoints, and feature flags from JavaScript bundles, not raw code.
+
+**Technique:**  
+Downloads `*.js`, tokenizes, and uses regexps for endpoint-like strings, `REACT_APP_` variables, etc.
+
+**Free APIs:** None (fetch raw public assets).  
+
+**Unique Edge:**  
+Competitors rarely parse `sourceMappingURL`, while here you expand sourcemaps if present—reversibly illuminating feature flags.
+
+---
+
+## 4. Fusion30
+**Goal:** Unified search aggregation across 30 engines (DuckDuckGo, Bing Web, Yandex, etc.) with async scoring.
+
+**Free APIs:**  
+Public search wrappers (DuckDuckGo JSON, Wikipedia, Reddit search endpoints, etc.)
+
+**Async snippet:**
+```python
+class SearchHit(TypedDict):
+    engine: str
+    title: str
+    url: str
+    rank: int
+```
+
+**Edge:** Weighted‑rank fusion (reciprocal rank fusion) performed inside the plugin, producing a reproducible “consensus SERP.”
+
+---
+
+## 5. PassiveMesh
+**Goal:** Correlate passive infra using CT logs, Reverse IP, BGP, MX hostnames.
+
+**Free APIs:**  
+- `https://crt.sh/?q=<domain>&output=json`  
+- `https://ipinfo.io/<ip>/json`  
+- `https://bgpview.io/api/asn/{asn}`  
+
+**Edge:** Only tool merging *email MX names → hosted IP ranges → CT subdomains → BGP owner*.  
+
+---
+
+## 6. IdentityZero
+**Goal:** Map identities with zero login via cross‑public email hashes or usernames.
+
+**Sources:**  
+- Gravatar: `https://www.gravatar.com/<md5>.json`  
+- GitHub: search "user" API (no token required) limited requests  
+- Keybase/PGP Web Key Directory  
+
+**Output Typing:**
+```python
+class IdentityNode(TypedDict):
+    source: str
+    handle: str
+    url: str
+```
+
+**Edge:** MD5/PGP correlation chain gives probabilistic real‑world linkages with ≤1 req/s per open endpoint.
+
+---
+
+## 7. ChangeOracle
+**Goal:** Predict near‑future org changes from live diffs.
+
+**Sources:**  
+- RSS diff checkers (via `feedparser`)  
+- `https://data.commoncrawl.org/` reuse for recent captures  
+- SSL cert renewal data (crt.sh)  
+
+**Unique Edge:** Overlaps org job‑posting deltas and SSL issuance frequency → forecast drift before domain shifts.
+
+---
+
+## 8. MetaMiner
+**Goal:** Extract hidden metadata from arbitrary files/URLs.
+
+**Uses:**  
+`exiftool` wrappers + `PyPDF2` + manual parsing for `JSON-LD` blocks.  
+
+**TypedDict:**
+```python
+class MetaFinding(TypedDict):
+    type: str
+    key: str
+    value: str
+    extracted_from: str
+```
+
+**Edge:** Merges *visual (EXIF)* + *semantic (JSON-LD)* + *structural* layers simultaneously—competitors treat these separately.
+
+---
+
+## 9. GraphForge
+**Goal:** Reconstruct a social graph across open developer / academic networks.
+
+**APIs:**  
+- GitHub: `/search/users`, `/users/<u>/followers` (no token read-only)  
+- Reddit: `/user/<u>/about.json`  
+- ORCID public API  
+- Semantic Scholar alias lookups  
+
+**Edge:** Many tools limit themselves to one platform; GraphForge merges multiple identities via shared email or URL pattern correlation.
+
+---
+
+## 10. IntelliFusion
+**Goal:** Competitive intelligence fusion.
+
+**Inputs:**  
+- PatentsView API (`https://api.patentsview.org/patents/query`)  
+- GitHub org data  
+- DNS records via `cloudflare-dns.com/dns-query`  
+- SEC’s EDGAR full‑text index (`https://data.sec.gov/submissions/`)
+
+**Edge:** Combines filings → code activity → DNS infrastructure → job posting telemetry into unified scoring.
+
+**TypedDict Example:**
+```python
+class IntelDatum(TypedDict):
+    company: str
+    signal: str
+    source: str
+    date: str
+```
+
+---
+
+### Summary Table
+
+| # | Tool Name | Core Advantage |
+|---|------------|----------------|
+|1|Resurrection Hydra|12+ archive parallelism & timestamp fusion|
+|2|PhantomPath Finder|robots + sitemap diff for hidden content|
+|3|BundleEye|De‑sourcemapped feature & API inference|
+|4|Fusion30|30‑engine weighted SERP consensus|
+|5|PassiveMesh|CT + BGP + MX crosslink|
+|6|IdentityZero|Login‑free identity inference|
+|7|ChangeOracle|Predictive diff trendlines|
+|8|MetaMiner|Layer‑unified metadata forensics|
+|9|GraphForge|Multi‑network social stitching|
+|10|IntelliFusion|Patent + GitHub + DNS + SEC fusion|
+
+---
+
+Each blueprint is legal, implementable with **open APIs/public datasets**, and distinct because the power lies in *fusion logic*—the cross‑domain normalization and scoring method—not merely in hitting endpoints competitors already know.

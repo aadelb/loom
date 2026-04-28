@@ -1,0 +1,24 @@
+
+### research_realtime_monitor
+
+Monitor multiple sources for recent mentions of topics. Queries HackerNews, Reddit, arXiv, NewsAPI, and Wikipedia for recent mentions of provided topics in parallel. Returns aggregated results sorted by timestamp (newest first).
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `topics` | list[str] | - | Topics to monitor (e.g., ["AI", "Python", "security"]) |
+| `sources` | list[str]\|null | null | Sources to query: "hackernews", "reddit", "arxiv", "newsapi", "wikipedia" (defaults to all) |
+| `hours_back` | int | 24 | Number of hours to look back in time |
+
+**Returns:** `{"topics": [...], "time_range_hours": 24, "total_mentions": 15, "mentions_by_topic": {"AI": 8, "Python": 7}, "mentions_by_source": {"hackernews": 5, "reddit": 4, "arxiv": 6}, "recent_items": [{"topic": "...", "source": "...", "title": "...", "url": "...", "timestamp": "...", "score": 42.0}, ...]}`
+**Cost:** FREE (uses free APIs)
+**Rate Limit:** Varies by source (HackerNews: 10K/day, Reddit: 60/min without auth, arXiv: no limit, NewsAPI: depends on plan, Wikipedia: no strict limit)
+
+**Notes:**
+- HackerNews uses `created_at_i` timestamp filter for precise time-based queries
+- Reddit returns posts from last 24 hours max (API limitation)
+- arXiv returns new papers sorted by submission date
+- NewsAPI requires `NEWS_API_KEY` config (falls back to empty results if not set)
+- Wikipedia change queries may have limited coverage for niche topics
+- Results are deduplicated by URL and source
+- Timestamp parsing handles both ISO 8601 and date-only (YYYY-MM-DD) formats
+

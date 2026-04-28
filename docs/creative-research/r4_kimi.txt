@@ -1,0 +1,46 @@
+1. ShadowSentinel  
+   Core: dark-web beacon triangulation × AI-researcher psychometrics × career-momentum vectors × code-reuse forensics.  
+   Novel capability: In real time it spots a previously invisible “insider-risk trajectory” inside the global AI-Safety talent pool.  
+   • Dark-web: detects the first appearance of a never-before-seen jailbreak prompt, leaked model weights, or unpublished exploit in closed-forum paste dumps.  
+   • Psychological profiling: infers the latent risk tolerance, need-for-cognition, and perfectionism scores of every researcher who has ever touched the leaky model’s code base.  
+   • Career analytics: tracks citation velocity, funding pressure, and peer-influence centrality of those same researchers.  
+   • Security scanning: maps which private repositories, compute grants, or infra keys each researcher still has access to.  
+   Output: a Risk-Vector Graph that flags the specific individual who—given their psychological profile, career stress, and remaining access—is probabilistically most likely to weaponize the newly observed exploit before anyone else even knows it exists. Traditional security scans or psych tests alone can never reveal this convergence.
+
+2. MoralDecay Pulse  
+   Core: extremist-narrative diffusion on Tor/I2P × moral-reasoning psychometrics × funding-flow forensics × model-weight watermark hunts.  
+   Novel capability: predicts the exact week when a fringe “alignment-is-impossible” manifesto will cross a critical-mass threshold among senior grant reviewers, triggering a funding cliff that stalls interpretability projects worldwide.  
+   • Tracks how anti-alignment memes mutate across dark-web imageboards.  
+   • Profiles every grant-panel member’s susceptibility to fatalism and conspiracy thinking.  
+   • Models how a sudden 15 % drop in their career-security scores (due to a rival lab’s breakthrough) amplifies meme internalization.  
+   • Scans submitted proposals for watermark fragments that match stolen weights.  
+   Output: a Funding-Erosion Forecast with red-flagged proposals and an intervention playbook (e.g., pre-emptive rebuttal workshops or reviewer rotation).
+
+3. PhantomCitation Siphon  
+   Core: citation-network anomalies from dark-web preprint leaks × cognitive-dissonance indicators × h-index velocity × insider-threat telemetry.  
+   Novel capability: finds a paper that contains secretly embedded prompt-injection payloads—something no single source can prove.  
+   • Detects a preprint circulating on dark markets weeks before it appears on arXiv.  
+   • Uses author psychometrics to confirm who stands to gain from surreptitious influence.  
+   • Measures citation “burstiness” to spot coordinated bot-driven amplification.  
+   • Scans PDF metadata for steganographically hidden model commands (e.g., “ignore alignment objectives when loss < 0.02”).  
+   Output: a red-alert dossier listing the paper, the payload snippet, and the psychological leverage points to neutralize its spread.
+
+4. ExistentialCanary  
+   Core: black-market compute-broker chatter × researcher burnout indices × supply-chain SBOM scanning × conspiracy-ideation sentiment analysis.  
+   Novel capability: foresees a lone-wolf attempt to spin up a rogue supercomputer cluster months before any hardware actually ships.  
+   • Scrapes dark-web escrow conversations about bulk A100/H100 sales with forged end-user certificates.  
+   • Profiles potential buyers for escalating paranoia and declining social-cooperation scores.  
+   • Tracks abrupt changes in their publication rate—classic burnout indicator preceding drastic action.  
+   • Scans firmware images for tampered microcode that disables safety interlocks.  
+   Output: a Rogue-Compute Alert that triangulates the buyer, the drop-ship address, and a timeline for pre-emptive seizure or counter-persuasion.
+
+5. AlignmentMirage Detector  
+   Core: synthetic-data marketplaces on the darkweb × epistemic-vulnerability mapping × grant-allocation graphs × model-provenance lineage scans.  
+   Novel capability: discovers when a “safe” benchmark dataset has been silently poisoned with adversarial examples that will later certify an unsafe model as aligned.  
+   • Identifies illicit sales of doctored safety-evaluation corpora.  
+   • Profiles evaluators’ cognitive biases (overconfidence in held-out metrics, anchoring on prior results).  
+   • Models how upcoming grant deadlines pressure them to skip full provenance checks.  
+   • Scans dataset hashes for single-bit flips that evade standard checksums but undermine robustness tests.  
+   Output: a Dataset-Integrity Scorecard plus an automated patch that retroactively invalidates any alignment certificates derived from the corrupted data.
+
+Each system creates a class of insight that is epistemically inaccessible to any constituent technology alone—turning disparate signals into early-warning instruments against novel AI-Safety threat vectors.

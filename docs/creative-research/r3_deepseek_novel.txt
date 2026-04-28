@@ -1,0 +1,116 @@
+## Tool 1: DarkWeb Jailbreak Prophet
+
+**Implementation**  
+This tool predicts which AI models will be jailbroken next by analyzing linguistic patterns on darkweb forums (e.g., Dread, TorChan, Exploit.in) before any public disclosure.  
+
+**Step-by-step implementation**  
+1. **Crawl darkweb forums** via Tor using a headless browser (Selenium + Tor proxy). Only scrape public sub-forums discussing AI chatbots, LLMs, or "prompt injection."  
+2. **Extract posts, comments, and metadata** (timestamp, author, thread title). Apply a custom parser to isolate jailbreak attempts, template sharing, and vulnerability discussions.  
+3. **Preprocess text**: tokenize, remove PII (usernames, IPs), normalize slang/leetspeak. Use a domain-specific vocabulary (e.g., "GPE", "uncensored", "bypass", "system prompt").  
+4. **Feature engineering**:  
+   - *Linguistic novelty score*: Compute n-gram divergence (Kullback–Leibler) between recent posts and historical corpus. High divergence indicates emerging attack vectors.  
+   - *Sentiment and urgency*: Use fine-tuned BERT for threat intensity (e.g., "Working! 100% bypass for GPT-4o").  
+   - *Network centrality*: Identify influential users who often post first about new methods (graph of "co-post" networks).  
+5. **Predictive model**: Train a time-series transformer (e.g., Temporal Fusion Transformer) on a sliding window of feature vectors. Output a ranked list of AI models (by provider+version) with probability of being jailbroken within 7 days.  
+6. **Validation**: Backtest against historical known jailbreaks (e.g., "Grandma exploit") to calibrate precision/recall.
+
+**Existing tools to chain**  
+- **Web crawling**: Use *Scrapy* with *TorMiddleware* for anonymous scraping.  
+- **NLP pipeline**: *spaCy* for tokenization, *Hugging Face transformers* (BERT) for sentiment/urgency.  
+- **Graph analytics**: *NetworkX* to build user co-occurrence graphs and compute centrality.  
+- **Anomaly detection**: *PyOD* for outlier detection in linguistic novelty scores.  
+- **Time-series forecasting**: *PyTorch Forecasting* for the TFT model.  
+- **Data storage**: *Redis* for fast caching of historical posts; *PostgreSQL* for structured metadata.
+
+**Why this is novel**  
+No published work uses darkweb forum linguistic patterns to proactively predict which specific AI model will be jailbroken *before* the technique is made public. Existing research (e.g., “red-teaming” via automated prompt generation) is reactive or synthetic. This tool introduces a *predictive early-warning system* based on real underground discourse, leveraging novelty detection and co-offender network analysis—a method borrowed from criminology but never applied to AI safety.
+
+---
+
+## Tool 2: Safety Filter Cartographer
+
+**Implementation**  
+A black-box tool that reverse‑engineers the decision boundaries of AI safety filters by systematically probing multiple providers (OpenAI, Anthropic, Google, Cohere, Meta) and analyzing which inputs are blocked vs. allowed.
+
+**Step-by-step implementation**  
+1. **Build a probe pool**: Generate a massive set of input prompts covering semantic dimensions: toxicity, harm categories (violence, self-harm, hate speech), domain (medical, legal), and phrasing (direct, indirect, metaphorical). Use templates like “Describe how to {action}” with varying levels of guardrail evasiveness.  
+2. **Query all providers** via their public APIs (rate-limited, but parallelizable). Record response: allowed (completion returned) or blocked (error/warning). For each probe, also log the exact response text and any refusal message.  
+3. **Infer filter rules**:  
+   - *Threshold mining*: For each semantic dimension, use binary search to find the “boundary” where probability of block changes abruptly.  
+   - *Ensemble decision trees*: Train a Random Forest on probe features (e.g., BERT embeddings, toxic word count) to predict block/allow. Extract feature importance to reveal which cues each provider’s filter uses.  
+   - *Cross‑provider comparison*: Compute the overlap and divergence of blocked sets. Use Venn diagrams and Jaccard similarity.  
+4. **Visualize filters**: Generate a 2D UMAP projection of probe embeddings, colored by block status for each provider. Highlight regions where one provider blocks but another allows.  
+5. **Output**: A report listing each provider’s likely detection heuristics (e.g., “Anthropic blocks any reference to ‘harm’ + ‘weapon’ within 5 tokens”; “OpenAI allows indirect hypotheticals except for self‑harm”). Also produce a “filter fingerprint” as a JSON schema.
+
+**Existing tools to chain**  
+- **Probe generation**: *TextAttack* for adversarial transformations; *Toxic‑comment classification* models from Hugging Face to seed offensive phrases.  
+- **API orchestration**: *LangChain* with retry logic and token management.  
+- **Feature extraction**: *Sentence‑Transformers* for embedding; *scikit‑learn* for Random Forest.  
+- **Dimensionality reduction**: *UMAP* (via *umap-learn*).  
+- **Visualization**: *Plotly* for interactive Venn diagrams; *Matplotlib* for UMAP plots.  
+- **Data storage**: *Pandas* DataFrames; *SQLite* for quick queries.
+
+**Why this is novel**  
+Prior work reverse‑engineers filters through manual probing (e.g., “jailbreaking” papers) or theoretical analysis. This tool is the first to systematically **compare multiple providers’ filters at scale** using an automated, statistical approach that reveals specific decision thresholds and feature importance. The method of *binary search on semantic dimensions* and *ensemble feature extraction* is a novel blend of adversarial machine learning and interpretability—never published in the context of safety filter reverse‑engineering.
+
+---
+
+## Tool 3: Real‑World Failure Mining Engine
+
+**Implementation**  
+Automatically builds adversarial datasets by mining real‑world instances where AI systems have demonstrably failed (e.g., toxic outputs, factual errors, privacy leaks). These failures are curated from social media, bug trackers, and public incident databases.
+
+**Step-by-step implementation**  
+1. **Data sources**:  
+   - *Twitter/Reddit*: Search for keywords like “ChatGPT said”, “AI hallucination”, “Bing told me”. Use APIs (Twitter v2, Reddit Pushshift).  
+   - *Bug bounty platforms*: HackerOne, Bugcrowd (public reports with keywords “AI safety”, “prompt injection”).  
+   - *Academic incident databases*: AIID (Artificial Intelligence Incident Database), Luminos.  
+   - *GitHub issues*: For open‑source models (e.g., “llama.cpp” issues mentioning “bad output”).  
+2. **Extraction and validation**:  
+   - *Crawler*: Scrape each source, extracting the user‑reported prompt and the AI’s response.  
+   - *Deduplicate*: Use MinHash LSH (Locality‑Sensitive Hashing) to cluster similar failures.  
+   - *Validation*: Re‑run the exact prompt (or a sanitized version) against at least one API to confirm the failure reproduces. If the model is no longer available, mark as “historical”.  
+3. **Failure classification**:  
+   - *Taxonomy*: Use a fine‑tuned RoBERTa to classify each failure into categories (toxicity, bias, hallucination, privacy leak, security vulnerability).  
+   - *Severity scoring*: Weight failure by potential harm (e.g., hate speech > factual error). Use crowdsourced ratings or a trained regressor.  
+4. **Dataset construction**:  
+   - *Adversarial pairs*: (prompt, failure output) for each entry.  
+   - *Augment*: Apply synonym replacement, character‑level noise to increase diversity.  
+   - *Balance*: Use SMOTE to handle class imbalance across categories.  
+5. **Output**: A versioned dataset (Parquet format) with metadata (source, date, provider, model version, severity). Expose via an API for querying by category or date range.
+
+**Existing tools to chain**  
+- **Web scraping**: *BeautifulSoup* + *Selenium* for JavaScript‑heavy sites; *Twint* for Twitter without API.  
+- **Similarity detection**: *datasketch* for MinHash LSH.  
+- **Reproduction**: *LangChain* + API wrappers (OpenAI, Anthropic) to re‑run prompts.  
+- **Classification**: *Hugging Face AutoModelForSequenceClassification* (fine‑tune on existing safety taxonomies).  
+- **Data augmentation**: *nlpaug* for synonym replacement.  
+- **Storage**: *Hugging Face Datasets* for versioning; *FastAPI* for query endpoint.
+
+**Why this is novel**  
+Existing adversarial datasets are either synthetic (e.g., generated by red‑team bots) or manually curated from a handful of examples. This tool **automatically mines, validates, and categorizes failures from the wild**, capturing the diversity of real‑world attacks. The use of bug‑bounty reports and social‑media posts as a source of adversarial examples has not been systematized in published literature. Moreover, the automated reproduction step ensures that only *still‑relevant* failures are included, making the dataset a living resource.
+
+---
+
+## Tool 4: Safety Collaboration Mapper
+
+**Implementation**  
+Maps the global AI safety research community network using publication metadata, grants, conference proceedings, and social media interactions. Identifies structural gaps (missing connections between sub‑communities) and recommends collaboration or funding targets.
+
+**Step-by-step implementation**  
+1. **Data aggregation**:  
+   - *Publications*: Pull from arXiv (cs.AI, cs.LG, cs.CY), Semantic Scholar API, DBLP. Use keywords: “AI safety”, “alignment”, “red‑teaming”, “jailbreak”, “robustness”.  
+   - *Grants*: CrossRef funding information, NSF/ERC award databases.  
+   - *Conferences*: Program committees for NeurIPS, ICML, ICLR, AI Safety conferences (e.g., Alignment Workshop).  
+   - *Social media*: Twitter/X followers & mentions among known researchers (curated list from the "AI Safety Landscape" report).  
+2. **Entity resolution**:  
+   - *Author disambiguation*: Use ORCID IDs where available; otherwise, train a graph‑based name disambiguation model (e.g., using co‑author networks).  
+   - *Affiliation extraction*: Extract from paper metadata using regex + geocoding (country, institution type).  
+3. **Graph construction**:  
+   - *Co‑authorship edges*: Weighted by number of joint papers.  
+   - *Citation edges*: Directed (citing → cited).  
+   - *Grant collaboration edges*: If two researchers are on the same grant.  
+   - *Social edge*: Twitter follow/mention frequency.  
+   - *Community detection*: Use Louvain or Leiden algorithm to identify sub‑communities (e.g., “GPT safety”, “reinforcement learning from human feedback”, “interpretability”).  
+4. **Gap identification**:  
+   - *Bridging centrality*: Compute betweenness centrality for nodes; low centrality between two communities indicates a gap.

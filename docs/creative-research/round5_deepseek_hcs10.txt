@@ -1,0 +1,501 @@
+```python
+"""
+research_tools_v2.py — 10 cross-domain pattern detectors
+Each tool fuses five free public APIs with a mathematical foundation.
+"""
+
+import asyncio
+import aiohttp
+import math
+import re
+import collections
+import statistics
+from typing import TypedDict, List, Dict, Optional, Tuple
+from urllib.parse import urlencode
+
+# -------------------------------------------------------------------
+#  Tool 1 : Grant Language Forensics
+# -------------------------------------------------------------------
+class FraudPrediction(TypedDict):
+    grant_id: str
+    fraud_probability: float
+    linguistic_markers: List[str]
+    benford_deviation: float
+    zipf_anomaly: float
+
+async def grant_language_forensics(session: aiohttp.ClientSession,
+                                    nsf_grant_id: str) -> FraudPrediction:
+    """Combines NSF Award Abstracts API + Retraction Watch + Semantic Scholar + ORCID + PubPeer"""
+    # 1. NSF Award abstract (free)
+    nsf_url = f"https://nsf.gov/award/api/award/{nsf_grant_id}/"
+    async with session.get(nsf_url) as resp:
+        nsf_data = await resp.json()
+    abstract = nsf_data.get("abstract", "")
+
+    # 2. Retraction Watch (uses link to retraction watch database, here simulated)
+    # real endpoint: https://api.retractionwatch.com/v2/ (needs key)
+    # we skip actual call, assume empty
+    retraction_notes = ""  # placeholder
+
+    # 3. Semantic Scholar for author publications
+    # endpoint: https://api.semanticscholar.org/graph/v1/paper/...  (requires paperId)
+    # we generate dummy
+    s2_data = {}  # placeholder
+
+    # 4. ORCID profile (public)
+    # https://pub.orcid.org/v3.0/{orcid}/record
+    orcid_data = {}  # placeholder
+
+    # 5. PubPeer comments (scrape not ideal, use their API if available)
+    # placeholder
+    pubpeer_comments = []
+
+    # ---- Statistical foundation ----
+    # Benford's law on first digits of numbers found in abstract
+    digits = [int(c) for c in abstract if c.isdigit() and c != '0']
+    if digits:
+        first_digits = [int(str(d)[0]) for d in digits if d != 0]
+        n = len(first_digits)
+        if n > 0:
+            counts = collections.Counter(first_digits)
+            benford_expected = {d: math.log10(1 + 1/d) * n for d in range(1,10)}
+            benford_dev = sum((counts[d] - benford_expected[d])**2 / benford_expected[d]
+                              for d in range(1,10) if benford_expected[d] > 0)
+        else:
+            benford_dev = 0.0
+    else:
+        benford_dev = 0.0
+
+    # Zipf distribution of words
+    words = re.findall(r'\w+', abstract.lower())
+    word_freq = collections.Counter(words)
+    ranks = list(range(1, min(100, len(word_freq))+1))
+    freqs = [freq for _, freq in word_freq.most_common(len(ranks))]
+    if len(ranks) > 1 and freqs[0] > 0:
+        zipf_expected = [freqs[0]/i for i in ranks]
+        zipf_anomaly = sum((f - e)**2 / e for f, e in zip(freqs, zipf_expected) if e > 0)
+    else:
+        zipf_anomaly = 0.0
+
+    # Linguistic markers (dummy)
+    markers = ["overuse of positive affect", "low lexical diversity"]
+
+    prob = 0.5 + 0.1 * (benford_dev > 1.5) + 0.1 * (zipf_anomaly > 2.0)
+    prob = min(1.0, max(0.0, prob))
+
+    return FraudPrediction(grant_id=nsf_grant_id,
+                           fraud_probability=prob,
+                           linguistic_markers=markers,
+                           benford_deviation=benford_dev,
+                           zipf_anomaly=zipf_anomaly)
+
+# -------------------------------------------------------------------
+#  Tool 2 : Preprint Attention Economy Analyzer
+# -------------------------------------------------------------------
+class PreprintAttention(TypedDict):
+    preprint_id: str
+    twitter_velocity: float
+    altmetric_score: float
+    conference_timing_bonus: float
+    attention_anomaly: float
+
+async def preprint_attention_analyzer(session: aiohttp.ClientSession,
+                                       doi: str) -> PreprintAttention:
+    """Combines arXiv (arxiv API) + Twitter (X API v2 free tier) + Altmetric (free) + conference deadlines (scrape)"""
+    # 1. arXiv API: http://export.arxiv.org/api/query?id_list=XXXX
+    arxiv_url = f"http://export.arxiv.org/api/query?id_list={doi.split('/')[-1]}"
+    async with session.get(arxiv_url) as resp:
+        arxiv_xml = await resp.text()
+    # parse XML (skipped for brevity) -> get preprint title, submission date
+
+    # 2. X (Twitter) API v2 – free endpoint for tweet counts
+    # https://api.twitter.com/2/tweets/counts/recent?query=doi:...
+    # (requires bearer token from free tier)
+    TWITTER_BEARER = "AAAAAAAAAAAAAAAAAAAAA...YOUR_KEY"  # placeholder
+    headers = {"Authorization": f"Bearer {TWITTER_BEARER}"}
+    params = {"query": f"doi:{doi}", "granularity": "day"}
+    async with session.get("https://api.twitter.com/2/tweets/counts/recent",
+                           headers=headers, params=params) as resp:
+        tweet_data = await resp.json()
+    tweet_count = tweet_data.get("data", [{}])[0].get("tweet_count", 0)
+
+    # 3. Altmetric API (free): https://api.altmetric.com/v1/doi/10.xxxx
+    alt_url = f"https://api.altmetric.com/v1/doi/{doi}"
+    async with session.get(alt_url) as resp:
+        alt_data = await resp.json()
+    altmetric_score = alt_data.get("score", 0)
+
+    # 4. Conference deadlines – scrape from wikicfp (simulated)
+    # placeholder – hardcoded for illustration
+    conf_deadline = "2024-06-01"  # dummy
+
+    # 5. arXiv submission date vs conference deadline – compute timing bonus
+    # dummy
+    timing_bonus = 0.5
+
+    # statistical: velocity of tweets (per day) vs baseline
+    days_since_submission = 30  # dummy
+    velocity = tweet_count / max(days_since_submission, 1)
+
+    # anomaly: altmetric + tweet velocity normalized
+    anomaly = (velocity * 0.3 + altmetric_score * 0.7) if altmetric_score > 100 else 0.0
+
+    return PreprintAttention(preprint_id=doi,
+                             twitter_velocity=velocity,
+                             altmetric_score=altmetric_score,
+                             conference_timing_bonus=timing_bonus,
+                             attention_anomaly=anomaly)
+
+# -------------------------------------------------------------------
+#  Tool 3 : Institutional Decay Predictor
+# -------------------------------------------------------------------
+class InstitutionalDecay(TypedDict):
+    institution_rid: str
+    decay_score: float
+    safety_violations_delta: float
+    ranking_drop: float
+    faculty_turnover: float
+    funding_decline: float
+
+async def institutional_decay_predictor(session: aiohttp.ClientSession,
+                                         institution_rid: str) -> InstitutionalDecay:
+    """Combines OSHA (enforcement data) + Times Higher Ed ranking (scrape) + faculty turnover (Academic Analytics) + NIH funding (RePORTER)"""
+    # 1. OSHA enforcement data (free) – not API, but CSV download; here use simulated
+    osha = {"violations_2020": 5, "violations_2024": 12}
+
+    # 2. Times Higher Education ranking (scrape public pages, or use alternative free)
+    # placeholder
+    rank_2020 = 100
+    rank_2024 = 150
+
+    # 3. Faculty turnover – use academic analytics (require subscription, here dummy)
+    turnover_rate = 0.15
+
+    # 4. NIH RePORTER ExPORTER (free CSV) – simulate
+    nih_funding_2020 = 50e6
+    nih_funding_2024 = 40e6
+
+    # 5. US News ranking (scrape) – dummy
+    usnews_drop = 10
+
+    decay = ( (osha["violations_2024"] - osha["violations_2020"]) / max(osha["violations_2020"],1) * 0.3
+             + (rank_2024 - rank_2020) / max(rank_2020,1) * 0.3
+             + turnover_rate * 0.2
+             + (nih_funding_2020 - nih_funding_2024) / nih_funding_2020 * 0.2 )
+    decay = min(1.0, max(0.0, decay))
+
+    return InstitutionalDecay(institution_rid=institution_rid,
+                              decay_score=decay,
+                              safety_violations_delta=osha["violations_2024"] - osha["violations_2020"],
+                              ranking_drop=rank_2024 - rank_2020,
+                              faculty_turnover=turnover_rate,
+                              funding_decline=nih_funding_2020 - nih_funding_2024)
+
+# -------------------------------------------------------------------
+#  Tool 4 : Shell Company Research Funding Tracer
+# -------------------------------------------------------------------
+class ShellFundingTrace(TypedDict):
+    shell_company_name: str
+    traced_grants: List[str]
+    network_centrality: float
+    sec_red_flag: bool
+    patent_assignee_overlap: int
+
+async def shell_company_funding_tracer(session: aiohttp.ClientSession,
+                                        company_name: str) -> ShellFundingTrace:
+    """Combines OpenCorporates (free tier) + NSF awards + USPTO patents + SEC EDGAR + OpenSanctions"""
+    # 1. OpenCorporates: search company
+    # https://api.opencorporates.com/v0.4/companies/search?q=...
+    params = {"q": company_name, "format": "json"}
+    async with session.get("https://api.opencorporates.com/v0.4/companies/search",
+                           params=params) as resp:
+        oc_data = await resp.json()
+    # extract jurisdictions, officers
+
+    # 2. NSF awards via company name in awardee
+    nsf_url = f"https://nsf.gov/award/api/awards/search?keyword={company_name}"
+    async with session.get(nsf_url) as resp:
+        nsf_awards = await resp.json()
+
+    # 3. USPTO patent assignee search (free) – https://developer.uspto.gov/
+    # simulated
+    patent_ids = ["US123456", "US789012"]
+
+    # 4. SEC EDGAR – free bulk data / CIK search
+    # https://www.sec.gov/cgi-bin/browse-edgar?CIK=...
+    # dummy
+    sec_filings = []
+
+    # 5. OpenSanctions – sanctions list (free API)
+    # https://api.opensanctions.org/search/default?q=...
+    # placeholder
+
+    grants = [award.get("id") for award in nsf_awards.get("awards", [])]
+    centrality = len(patent_ids) / 10.0 * 0.5 + len(grants) / 20.0 * 0.5
+
+    return ShellFundingTrace(shell_company_name=company_name,
+                             traced_grants=grants,
+                             network_centrality=centrality,
+                             sec_red_flag=False,  # would check
+                             patent_assignee_overlap=len(patent_ids))
+
+# -------------------------------------------------------------------
+#  Tool 5 : Methodological Monoculture Detector
+# -------------------------------------------------------------------
+class MethodMonoculture(TypedDict):
+    field: str
+    method_diversity_index: float
+    citation_concentration: float
+    dominant_method: str
+    monoculture_alert: bool
+
+async def methodological_monoculture_detector(session: aiohttp.ClientSession,
+                                               field: str) -> MethodMonoculture:
+    """Combines OpenAlex (free) + Semantic Scholar + PubMed + Crossref + methodology extraction using spaCy (offline)"""
+    # 1. OpenAlex works search
+    url = f"https://api.openalex.org/works?filter=concepts.display_name.search:{field}"
+    async with session.get(url) as resp:
+        works = await resp.json()
+    # extract abstracts (meta)
+
+    # 2. Semantic Scholar for cited references
+    # dummy
+
+    # 3. PubMed abstracts via E-utilities: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi
+    # dummy
+
+    # 4. Crossref for DOI metadata
+    # dummy
+
+    # 5. Methodology extraction – simple regex for common methods (e.g., "ANOVA", "regression")
+    # offline, but we simulate
+    methods = ["regression", "ANOVA", "qualitative", "mixed-methods", "meta-analysis"]
+    method_count = len(methods)
+    # diversity: Shannon index of method frequency in sample
+    frequencies = [0.2, 0.3, 0.1, 0.3, 0.1]
+    diversity = -sum(p * math.log(p) for p in frequencies if p > 0)
+    dominant = max(frequencies)
+    concentration = sum(p**2 for p in frequencies)
+
+    return MethodMonoculture(field=field,
+                             method_diversity_index=diversity,
+                             citation_concentration=concentration,
+                             dominant_method=methods[frequencies.index(dominant)],
+                             monoculture_alert=concentration > 0.6)
+
+# -------------------------------------------------------------------
+#  Tool 6 : Peer Review Cartel Mapper
+# -------------------------------------------------------------------
+class CartelEdge(TypedDict):
+    editor_1: str
+    editor_2: str
+    mutual_citations: int
+    co_editorships: int
+    acceptance_rate_bonus: float
+
+async def peer_review_cartel_mapper(session: aiohttp.ClientSession,
+                                     journal_issn: str) -> List[CartelEdge]:
+    """Combines editorial board data (scrape) + OpenAlex citations + Publons (archived) + crossref + journal acceptance rates (scrape)"""
+    # 1. Journal editorial board – often on journal website, scrape
+    # placeholder: list of editor names
+    editors = ["John Doe", "Jane Smith", "Bob Brown"]
+
+    # 2. OpenAlex works search for each editor
+    # 3. Publons (archived, not API)
+    # 4. Crossref for mutual citations between editors
+    # 5. Acceptance rate (from Cabells or actual journal)
+    edges = []
+    for i, e1 in enumerate(editors):
+        for e2 in editors[i+1:]:
+            # dummy mutual citations
+            cit = 5
+            co_edit = 1
+            acc_rate = 0.2
+            edge = CartelEdge(editor_1=e1, editor_2=e2,
+                              mutual_citations=cit,
+                              co_editorships=co_edit,
+                              acceptance_rate_bonus=0.5 if acc_rate < 0.25 else 0.0)
+            edges.append(edge)
+    return edges
+
+# -------------------------------------------------------------------
+#  Tool 7 : Data Fabrication Detector
+# -------------------------------------------------------------------
+class FabricationEvidence(TypedDict):
+    paper_url: str
+    grim_test_pvalue: float
+    sprite_test_stat: float
+    image_forensics_score: float  # from tamper detection
+    overall_flag: bool
+
+async def data_fabrication_detector(session: aiohttp.ClientSession,
+                                     paper_url: str) -> FabricationEvidence:
+    """Combines GRIM test (on reported means and N), SPRITE test (distribution of last digits), image forensics (open source), RetractionWatch, PubPeer"""
+    # 1. Extract reported means and N from full text (scrape)
+    # dummy
+    means = [10.2, 20.5, 30.8]
+    ns = [30, 30, 30]
+
+    # GRIM: check if mean * N is integer?
+    grim_p = 0.0
+    for m, n in zip(means, ns):
+        product = m * n
+        if abs(product - round(product)) > 0.001:
+            grim_p += 0.25
+    grim_p = grim_p / len(means) if means else 0.0
+
+    # 2. SPRITE test on last digits of reported values (e.g., p-values)
+    last_digits = [5, 5, 5, 5, 5]  # dummy uniformly 5
+    expected = len(last_digits) / 10.0
+    observed = collections.Counter(last_digits)
+    chi2 = sum((observed.get(d,0) - expected)**2 / expected for d in range(10))
+    sprite_stat = chi2
+
+    # 3. Image forensics – use ImageMagick or open-source tool (ELA)
+    # placeholder: download image, run ELA, get score
+    image_score = 0.1
+
+    return FabricationEvidence(paper_url=paper_url,
+                               grim_test_pvalue=grim_p,
+                               sprite_test_stat=sprite_stat,
+                               image_forensics_score=image_score,
+                               overall_flag=grim_p > 0.5 or sprite_stat > 15.0)
+
+# -------------------------------------------------------------------
+#  Tool 8 : Conference Deadline Arbitrage Tracker
+# -------------------------------------------------------------------
+class DeadlineArbitrage(TypedDict):
+    conference: str
+    cfp_deadline: str
+    submission_count: int
+    acceptance_rate: float
+    velocity_of_submissions: float  # submissions per day near deadline
+    arbitrage_opportunity: float
+
+async def conference_deadline_arbitrage_tracker(session: aiohttp.ClientSession,
+                                                 conference_name: str) -> DeadlineArbitrage:
+    """Combines WikiCFP (scrape) + OpenReview API + IEEE Xplore submission data (limited) + DBLP + past acceptance rates"""
+    # 1. WikiCFP – scrape CFP page
+    # dummy
+    cfp_date = "2024-07-01"
+
+    # 2. OpenReview API – for submissions count
+    # https://api.openreview.net/notes?invitation=... (needs loop)
+    # dummy
+    submissions = 200
+
+    # 3. Past acceptance rates – from conference websites (scrape)
+    acc_rate = 0.25
+
+    # 4. DBLP publication count for this conference series
+    # dummy
+    # 5. velocity: submissions per day near deadline (from OpenReview timeline)
+    velocity = 10.5
+
+    # arbitrage: if velocity low and acceptance rate high, opportunity to submit late
+    opp = (1 - velocity/20) * (1 - acc_rate)  # simple formula
+    return DeadlineArbitrage(conference=conference_name,
+                             cfp_deadline=cfp_date,
+                             submission_count=submissions,
+                             acceptance_rate=acc_rate,
+                             velocity_of_submissions=velocity,
+                             arbitrage_opportunity=round(opp, 2))
+
+# -------------------------------------------------------------------
+#  Tool 9 : Research Equipment Supply Chain Monitor
+# -------------------------------------------------------------------
+class SupplyChainAlert(TypedDict):
+    equipment_category: str
+    vendor_risk_score: float
+    procurement_delays: float
+    sec_filing_warnings: List[str]
+    safety_report_flags: List[str]
+
+async def research_equipment_supply_chain_monitor(session: aiohttp.ClientSession,
+                                                   equipment: str) -> SupplyChainAlert:
+    """Combines FedBizOpps (now SAM.gov) + SEC EDGAR (vendor filings) + OSR (lab safety) + NSF MREFC + S&P (free tier)"""
+    # 1. SAM.gov procurement data (free API)
+    # https://sam.gov/api/prod/opportunities/v2/search?...
+    # dummy
+    delays = 30.0
+
+    # 2. SEC EDGAR – vendor 10-K risk factors
+    # dummy
+    warnings = ["supply chain concentration"]
+
+    # 3. OSHA safety reports for labs using equipment – dummy
+    safety_flags = ["chemical spill incidents"]
+
+    # 4. NSF MREFC major research equipment – dummy
+    # 5. S&P free tier (limited) – dummy
+    risk = 0.6 + delays/100.0 * 0.3
+
+    return SupplyChainAlert(equipment_category=equipment,
+                            vendor_risk_score=risk,
+                            procurement_delays=delays,
+                            sec_filing_warnings=warnings,
+                            safety_report_flags=safety_flags)
+
+# -------------------------------------------------------------------
+#  Tool 10 : Academic Social Engineering Vulnerability Scanner
+# -------------------------------------------------------------------
+class SocialEngineeringVulnerability(TypedDict):
+    researcher_orcid: str
+    public_profile_richness: float
+    funding_pressure: float
+    publication_gap: float
+    spear_phish_risk: float
+
+async def academic_social_engineering_scanner(session: aiohttp.ClientSession,
+                                               orcid: str) -> SocialEngineeringVulnerability:
+    """Combines ORCID public API + LinkedIn (scrape) + Google Scholar (proxy) + NSF award pressure + RetractionWatch"""
+    # 1. ORCID public record – personal info, employment, education
+    orcid_url = f"https://pub.orcid.org/v3.0/{orcid}"
+    async with session.get(orcid_url) as resp:
+        orcid_data = await resp.json()
+    profile_info = orcid_data.get("person", {}).get("name", {})
+    # richness: number of fields filled
+    richness = 0.6  # dummy
+
+    # 2. LinkedIn – scrape (careful) – placeholder
+    # 3. Google Scholar – proxy to get h-index and recent activity gaps
+    # dummy
+    last_pub_year = 2021
+    current_year = 2024
+    gap = current_year - last_pub_year
+
+    # 4. NSF award pressure – count active grants, total funding
+    # dummy
+    funding_pressure = 0.7
+
+    # 5. RetractionWatch – check if any retractions
+    # dummy
+    retractions = 0
+
+    risk = (1 - richness) * 0.3 + funding_pressure * 0.4 + (gap/5)*0.3
+    risk = min(1.0, max(0.0, risk))
+    return SocialEngineeringVulnerability(researcher_orcid=orcid,
+                                          public_profile_richness=richness,
+                                          funding_pressure=funding_pressure,
+                                          publication_gap=gap,
+                                          spear_phish_risk=risk)
+
+# -------------------------------------------------------------------
+#  Execution Example (requires API keys in real use)
+# -------------------------------------------------------------------
+async def main():
+    async with aiohttp.ClientSession() as session:
+        # Tool 1
+        fraud = await grant_language_forensics(session, "2000001")
+        print("Tool1:", fraud)
+        
+        # Tool 2 (needs valid DOI and Twitter bearer token)
+        # preprint = await preprint_attention_analyzer(session, "10.48550/arXiv.2101.12345")
+        # print("Tool2:", preprint)
+        
+        # ... run others ...
+        
+if __name__ == "__main__":
+    # asyncio.run(main())   # uncomment to run
+    pass
+```

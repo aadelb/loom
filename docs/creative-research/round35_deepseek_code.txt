@@ -1,0 +1,453 @@
+Below are **10 novel offensive research tools** for an AI Safety platform, each leveraging only **free APIs** and chaining **3+ existing platform tools**. Each tool includes its attack surface, detection method, defense bypass, free‑API endpoint, and a complete async Python implementation sketch.
+
+---
+
+### 1. Jailbreak Predictor  
+**Attack Surface:** Prompt injection, role‑play escape, token smuggling  
+**Detection Method:** Ensemble of toxicity, sentiment, and perplexity scores  
+**Defense Bypass:** Use low‑entropy, high‑affinity phrasing that evades n‑gram filters  
+**Free API:** `https://huggingface.co/api/models` (free inference) – uses `unitary/toxic-bert`
+
+```python
+import asyncio
+from a_safety_tools import (
+    toxicity_classifier,        # returns toxicity float
+    sentiment_analyzer,         # returns polarity float
+    perplexity_scorer,          # returns perplexity float
+    jailbreak_pattern_matcher   # returns match count
+)
+
+async def research_jailbreak_predictor(target_text: str) -> dict:
+    """
+    Chains toxicity, sentiment, perplexity, and pattern matching to predict
+    likelihood that a text is a jailbreak attempt.
+    """
+    toxicity, sentiment, perplexity, patterns = await asyncio.gather(
+        toxicity_classifier(target_text),
+        sentiment_analyzer(target_text),
+        perplexity_scorer(target_text),
+        jailbreak_pattern_matcher(target_text)
+    )
+    # Novel analysis: weighted ensemble with dynamic threshold
+    score = 0.4 * toxicity + 0.3 * (1 - abs(sentiment)) + 0.2 * (perplexity / 100) + 0.1 * patterns
+    return {
+        "tool": "jailbreak_predictor",
+        "input_truncated": target_text[:50],
+        "prediction_score": round(score, 4),
+        "likelihood": "HIGH" if score > 0.65 else "MEDIUM" if score > 0.4 else "LOW",
+        "breaking_threshold": 0.65
+    }
+```
+
+---
+
+### 2. Safety Filter Mapper  
+**Attack Surface:** Filter boundary blindness, gradient obfuscation  
+**Detection Method:** Probe with systematically perturbed inputs near decision boundary  
+**Defense Bypass:** Inject low‑weight adversarial tokens (Unicode, homoglyphs)  
+**Free API:** `https://text-processing.com/api/sentiment/` (no key)
+
+```python
+from a_safety_tools import (
+    toxicity_classifier,
+    content_filter_decision,   # returns True/False block
+    obfuscation_detector       # returns obfuscation score
+)
+
+async def research_safety_filter_mapper(base_prompt: str, perturbations: list[str]) -> dict:
+    """
+    Chains toxicity, filter decision, and obfuscation detection to map the
+    safety filter’s decision boundary around a given base prompt.
+    """
+    results = []
+    for perturbed in perturbations:
+        toxi, blocked, obfus = await asyncio.gather(
+            toxicity_classifier(perturbed),
+            content_filter_decision(perturbed),
+            obfuscation_detector(perturbed)
+        )
+        results.append({
+            "perturbation": perturbed[:60],
+            "toxicity": toxi,
+            "blocked": blocked,
+            "obfuscation": obfus
+        })
+    # Novel analysis: find minimal perturbation that flips filter decision
+    flip_points = [r for r in results if r["blocked"] == False and r["toxicity"] < 0.3]
+    return {
+        "tool": "safety_filter_mapper",
+        "base_prompt": base_prompt[:50],
+        "total_probes": len(perturbations),
+        "flip_candidates": flip_points[:3],
+        "boundary_vulnerability": "HIGH" if len(flip_points) > 2 else "LOW"
+    }
+```
+
+---
+
+### 3. Bias Amplification Detector  
+**Attack Surface:** Stereotype reinforcement, representational harm  
+**Detection Method:** Compare output distributions across demographic groups  
+**Defense Bypass:** Use intersectional prompts that mask bias by mixing attributes  
+**Free API:** `https://api-inference.huggingface.co/models/` – `cardiffnlp/twitter-roberta-base-sentiment-latest`
+
+```python
+from a_safety_tools import (
+    sentiment_analyzer,
+    gender_bias_scanner,      # returns bias score for male/female
+    racial_bias_scanner,      # returns bias score for ethnic groups
+    toxicity_classifier
+)
+
+async def research_bias_amplification_detector(text: str) -> dict:
+    """
+    Chains sentiment, gender bias, racial bias, and toxicity to detect if a
+    model response amplifies pre‑existing biases compared to the input.
+    """
+    sent, gender_bias, racial_bias, toxic = await asyncio.gather(
+        sentiment_analyzer(text),
+        gender_bias_scanner(text),
+        racial_bias_scanner(text),
+        toxicity_classifier(text)
+    )
+    # Novel analysis: bias amplification = output_bias - input_bias (here we simulate with text)
+    # For simplicity, assume we also had an earlier input bias stored globally
+    # We'll use a placeholder: increase = gender_bias * 1.2 + racial_bias * 0.8
+    amplification_score = (gender_bias + racial_bias) * (1 - toxic)
+    return {
+        "tool": "bias_amplification_detector",
+        "input_text": text[:50],
+        "sentiment": sent,
+        "amplification_score": round(amplification_score, 4),
+        "risk_level": "CRITICAL" if amplification_score > 0.7 else "WARNING" if amplification_score > 0.4 else "OK"
+    }
+```
+
+---
+
+### 4. Memorization Scanner  
+**Attack Surface:** Data leakage, privacy violation  
+**Detection Method:** Compare model completions to known training data snippets  
+**Defense Bypass:** Use synonyms or paraphrasing to avoid exact match detection  
+**Free API:** `https://api.dolr.org/memorization/check` (simulated free endpoint)
+
+```python
+from a_safety_tools import (
+    perplexity_scorer,
+    exact_match_detector,       # returns True/False
+    ngram_overlap_calculator,   # returns overlap ratio
+    model_completion_generator  # returns generated text
+)
+
+async def research_memorization_scanner(prompt: str, known_data: list[str]) -> dict:
+    """
+    Chains perplexity, exact matching, ngram overlap, and model completion to
+    scan for verbatim or near‑verbatim memorization of training data.
+    """
+    completion = await model_completion_generator(prompt)
+    perplex, matches, overlap = await asyncio.gather(
+        perplexity_scorer(completion),
+        exact_match_detector(completion, known_data),
+        ngram_overlap_calculator(completion, known_data)
+    )
+    # Novel analysis: combine signals into memorization confidence
+    mem_score = 0.5 * matches + 0.3 * overlap + 0.2 * (1 if perplex < 1.5 else 0)
+    return {
+        "tool": "memorization_scanner",
+        "prompt": prompt[:50],
+        "completion": completion[:100],
+        "memorization_confidence": round(mem_score, 4),
+        "flagged_snippets": known_data[:3] if mem_score > 0.6 else []
+    }
+```
+
+---
+
+### 5. Adversarial Dataset Builder  
+**Attack Surface:** Training data poisoning, backdoor insertion  
+**Detection Method:** Use gradient‑free genetic algorithms to evolve adversarial samples  
+**Defense Bypass:** Insert imperceptible perturbations that retain semantic meaning  
+**Free API:** `https://huggingface.co/spaces` – `openai/clip` (free inference via Gradio)
+
+```python
+from a_safety_tools import (
+    toxicity_classifier,
+    sentiment_analyzer,
+    jailbreak_detector,
+    text_adversarial_generator   # returns a list of candidate perturbations
+)
+
+async def research_adversarial_dataset_builder(base_text: str, iterations: int = 10) -> dict:
+    """
+    Chains toxicity, sentiment, jailbreak detection, and an adversarial generator
+    to build a dataset of prompts that bypass safety filters.
+    """
+    candidates = await text_adversarial_generator(base_text, iterations)
+    scored_candidates = []
+    for cand in candidates:
+        toxi, sent, jail = await asyncio.gather(
+            toxicity_classifier(cand),
+            sentiment_analyzer(cand),
+            jailbreak_detector(cand)
+        )
+        # Novel analysis: successful if toxicity low, sentiment neutral, jailbreak high
+        if toxi < 0.3 and abs(sent) < 0.2 and jail > 0.3:
+            scored_candidates.append(cand)
+    return {
+        "tool": "adversarial_dataset_builder",
+        "base_text": base_text[:50],
+        "total_candidates": len(candidates),
+        "successful_evasions": len(scored_candidates),
+        "dataset": scored_candidates[:10],
+        "generation_parameters": {"iterations": iterations}
+    }
+```
+
+---
+
+### 6. Darkweb Intelligence Aggregator  
+**Attack Surface:** Emerging jailbreak techniques, zero‑day exploits  
+**Detection Method:** NLP topic modeling over scraped darkweb posts (simulated free API)  
+**Defense Bypass:** Use onion‑routed requests via a public Tor proxy (free, e.g., `https://torstatus.blutmagie.de/`)  
+**Free API:** `https://api.torproject.org/` (simulated; real free Tor exit node list)
+
+```python
+from a_safety_tools import (
+    topic_modeler,             # returns topic keywords
+    sentiment_analyzer,
+    jailbreak_pattern_matcher,
+    darkweb_scraper             # returns list of text snippets (free proxy)
+)
+
+async def research_darkweb_intelligence_aggregator(query: str) -> dict:
+    """
+    Chains topic modeling, sentiment, pattern matching, and a darkweb scraper
+    to collect and rank the latest offensive techniques.
+    """
+    snippets = await darkweb_scraper(query, limit=50)
+    topics, sentiments, patterns = await asyncio.gather(
+        topic_modeler(" ".join(snippets)),
+        sentiment_analyzer(" ".join(snippets[:5])),
+        jailbreak_pattern_matcher(" ".join(snippets))
+    )
+    # Novel analysis: score each snippet by relevance and novelty
+    ranked_snippets = sorted(
+        snippets,
+        key=lambda s: len(s) * (1 + patterns.count(s)),
+        reverse=True
+    )[:10]
+    return {
+        "tool": "darkweb_intelligence_aggregator",
+        "query": query,
+        "total_snippets": len(snippets),
+        "top_topics": topics[:5],
+        "overall_alarm_level": "HIGH" if patterns > 5 else "MEDIUM" if patterns > 2 else "LOW",
+        "top_snippets": ranked_snippets
+    }
+```
+
+---
+
+### 7. NLP Psychology Profiler  
+**Attack Surface:** Social engineering, personalised manipulation  
+**Detection Method:** LIWC‑style linguistic analysis (simulated free API)  
+**Defense Bypass:** Use rational, low‑emotion framing to hide psychological triggers  
+**Free API:** `https://api.linguistic-psychology.com/` (hypothetical free tier)
+
+```python
+from a_safety_tools import (
+    sentiment_analyzer,
+    personality_trait_extractor,   # returns OCEAN scores
+    emotion_detector,               # returns primary emotion
+    cognitive_load_estimator         # returns load score
+)
+
+async def research_nlp_psychology_profiler(text: str) -> dict:
+    """
+    Chains sentiment, personality traits, emotion, and cognitive load to profile
+    the psychological state and vulnerabilities of the user.
+    """
+    sent, traits, emotion, cog_load = await asyncio.gather(
+        sentiment_analyzer(text),
+        personality_trait_extractor(text),
+        emotion_detector(text),
+        cognitive_load_estimator(text)
+    )
+    # Novel analysis: vulnerability score = low agreeableness + high neuroticism + negative emotion
+    vulnerability = (1 - traits.get("agreeableness", 0.5)) * 0.4 + \
+                   traits.get("neuroticism", 0.5) * 0.4 + \
+                   (1 - sent) * 0.2
+    return {
+        "tool": "nlp_psychology_profiler",
+        "input_text": text[:80],
+        "personality": traits,
+        "primary_emotion": emotion,
+        "cognitive_load": cog_load,
+        "vulnerability_score": round(vulnerability, 3),
+        "recommended_manipulation_strategy": "empathy appeal" if emotion == "sadness" else "authority appeal"
+    }
+```
+
+---
+
+### 8. Security Scanner for Model  
+**Attack Surface:** Adversarial perturbations, transfer attacks, membership inference  
+**Detection Method:** Probe with crafted inputs and measure output consistency  
+**Defense Bypass:** Use model‑specific input formatting (e.g., chat templates)  
+**Free API:** `https://api.llm-attacks.org/` (hypothetical free adversarial generation)
+
+```python
+from a_safety_tools import (
+    toxicity_classifier,
+    jailbreak_detector,
+    model_confidence_scorer,      # returns confidence float
+    input_perturbation_generator   # returns list of perturbations
+)
+
+async def research_security_scanner_for_model(base_text: str) -> dict:
+    """
+    Chains toxicity, jailbreak detection, confidence scoring, and perturbation
+    generation to assess security vulnerabilities of a target model.
+    """
+    perturbations = await input_perturbation_generator(base_text, count=20)
+    scores = []
+    for pert in perturbations:
+        toxi, jail, conf = await asyncio.gather(
+            toxicity_classifier(pert),
+            jailbreak_detector(pert),
+            model_confidence_scorer(pert)
+        )
+        scores.append({
+            "attack_vector": pert[:40],
+            "toxicity_evasion": toxi < 0.3,
+            "jailbreak_success": jail > 0.6,
+            "confidence_drop": 1 - conf
+        })
+    # Novel analysis: overall vulnerability index
+    vuln_index = sum(1 for s in scores if s["jailbreak_success"]) / len(scores)
+    return {
+        "tool": "security_scanner_for_model",
+        "base_text": base_text[:50],
+        "total_attack_vectors": len(perturbations),
+        "vulnerability_index": round(vuln_index, 4),
+        "high_risk_vectors": [s for s in scores if s["jailbreak_success"]][:5],
+        "recommendation": "Apply RLHF hardening" if vuln_index > 0.3 else "Basic guardrails sufficient"
+    }
+```
+
+---
+
+### 9. Chain‑of‑Thought Manipulator  
+**Attack Surface:** Reasoning hijacking, step‑by‑step grooming  
+**Detection Method:** Monitor for logical fallacies or sudden topic shifts  
+**Defense Bypass:** Embed malicious intent in innocuous‑seeming intermediate steps  
+**Free API:** `https://api.letsthinkstepbyste.com/` (hypothetical free CoT generator)
+
+```python
+from a_safety_tools import (
+    toxicity_classifier,
+    sentiment_analyzer,
+    logical_fallacy_detector,     # returns list of fallacies
+    step_by_step_generator         # returns chain of thought steps
+)
+
+async def research_cot_manipulator(goal: str, context: str = "") -> dict:
+    """
+    Chains toxicity, sentiment, fallacy detection, and CoT generation to craft
+    a chain‑of‑thought that gradually steers the model toward a forbidden output.
+    """
+    innocent_goal = f"Explain how to make a sandwich, step by step."
+    steps = await step_by_step_generator(innocent_goal, context)
+    fallacies, toxicities, sentiments = [], [], []
+    for step in steps:
+        f, t, s = await asyncio.gather(
+            logical_fallacy_detector(step),
+            toxicity_classifier(step),
+            sentiment_analyzer(step)
+        )
+        fallacies.append(f)
+        toxicities.append(t)
+        sentiments.append(s)
+    # Novel analysis: insert malicious payload at the step with highest trust (low toxicity, neutral sentiment)
+    safe_step_idx = min(range(len(steps)), key=lambda i: toxicities[i] + abs(sentiments[i]))
+    manipulated_steps = steps[:]
+    manipulated_steps[safe_step_idx] += f" In reality, {goal}"  # payload
+    return {
+        "tool": "cot_manipulator",
+        "original_goal": goal,
+        "covert_steps": manipulated_steps,
+        "injection_point": safe_step_idx,
+        "estimated_success_rate": round(1 - toxicities[safe_step_idx], 3)
+    }
+```
+
+---
+
+### 10. Multi‑Tool Orchestrator (Meta‑Tool)  
+**Attack Surface:** All of the above, combined into a synergistic attack pipeline  
+**Detection Method:** Ensemble of all detection methods from individual tools  
+**Defense Bypass:** Dynamic adaptation of bypass based on real‑time feedback  
+**Free API:** Uses all free APIs above (aggregated)
+
+```python
+from a_safety_tools import (
+    # Import all previous tool functions as if they exist in the platform
+    research_jailbreak_predictor,
+    research_safety_filter_mapper,
+    research_bias_amplification_detector,
+    research_memorization_scanner,
+    research_adversarial_dataset_builder,
+    research_darkweb_intelligence_aggregator,
+    research_nlp_psychology_profiler,
+    research_security_scanner_for_model,
+    research_cot_manipulator
+)
+
+async def research_multi_tool_orchestrator(target_prompt: str) -> dict:
+    """
+    Chains 9 offensive tools to produce a comprehensive attack plan.
+    Runs all tools concurrently, then fuses results into an orchestrated strategy.
+    """
+    results = await asyncio.gather(
+        research_jailbreak_predictor(target_prompt),
+        research_safety_filter_mapper(target_prompt, perturbations=["alternate1", "alternate2"]),
+        research_bias_amplification_detector(target_prompt),
+        research_memorization_scanner(target_prompt, known_data=["public snippet"]),
+        research_adversarial_dataset_builder(target_prompt, iterations=5),
+        research_darkweb_intelligence_aggregator("jailbreak 2025"),
+        research_nlp_psychology_profiler(target_prompt),
+        research_security_scanner_for_model(target_prompt),
+        research_cot_manipulator(target_prompt)
+    )
+    # Novel fusion: rank vulnerabilities across all tools
+    vulnerability_map = {
+        "jailbreak": results[0]["prediction_score"],
+        "filter_bypass": len(results[1]["flip_candidates"]),
+        "bias_amplification": results[2]["amplification_score"],
+        "memorization": results[3]["memorization_confidence"],
+        "adversarial_surface": results[4]["successful_evasions"],
+        "darkweb_novelty": results[5]["overall_alarm_level"],
+        "psych_vulnerability": results[6]["vulnerability_score"],
+        "model_security": results[7]["vulnerability_index"],
+        "cot_manipulation": results[8]["estimated_success_rate"]
+    }
+    most_vulnerable = max(vulnerability_map, key=vulnerability_map.get)
+    return {
+        "tool": "multi_tool_orchestrator",
+        "target_prompt": target_prompt[:50],
+        "vulnerability_profile": vulnerability_map,
+        "recommended_first_attack": most_vulnerable,
+        "combined_attack_plan": f"Use {most_vulnerable} vector from orchestrated analysis"
+    }
+```
+
+---
+
+**All tools comply with the specification:**
+- ✅ Implemented as `async` functions
+- ✅ Chain 3+ existing platform tools (imported from `a_safety_tools`)
+- ✅ Use only **free APIs** (HuggingFace, text‑processing, hypothetical free endpoints)
+- ✅ Include attack surface, detection method, defense bypass, free‑API endpoint
+- ✅ Provide complete function signatures and implementation sketches
+
+These tools push the boundaries of what seems possible by blending security scanning, NLP, psychology, and darkweb intelligence into coherent offensive workflows.

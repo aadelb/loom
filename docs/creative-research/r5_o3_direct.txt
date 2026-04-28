@@ -1,0 +1,584 @@
+Below are ten fully-specified Loom tools.  
+Each tool contains:  
+
+1. Typed async function signature  
+2. Free/open data sources employed  
+3. Core algorithm in ±25 lines of Python 3.10+ (uses only standard libs + common OSS packages)  
+4. Output schema expressed as a `TypedDict`  
+
+(Import stubs are omitted for brevity but every snippet assumes  
+`import asyncio, aiohttp, datetime, re, json` and relevant 3rd-party libs installed.)
+
+──────────────────────────────────────────────────────────────────────────────
+1. Knowledge-Graph Construction from Research Papers
+──────────────────────────────────────────────────────────────────────────────
+Function
+```python
+async def build_paper_kg(
+    paper_ids: list[str],
+    mailto: str,
+    max_nodes: int = 1000
+) -> "PaperKG"
+```
+
+Free data sources  
+• OpenAlex API  
+• Semantic Scholar Open Corpus  
+• spaCy “en_core_web_sm” (MIT-licensed) models
+
+Core algorithm  (~27 lines)
+```python
+from typing import TypedDict
+
+class PaperKG(TypedDict):
+    created_utc: str
+    nodes: list[dict]
+    edges: list[tuple[str, str, str]]   # (src, relation, tgt)
+
+async def build_paper_kg(paper_ids: list[str], mailto: str, max_nodes: int = 1000) -> PaperKG:
+    import spacy, aiohttp, asyncio, itertools, datetime
+    nlp = spacy.load("en_core_web_sm", disable=["ner", "parser"])
+    kg_nodes, kg_edges, seen = {}, [], set()
+
+    async def fetch(pid: str, sess: aiohttp.ClientSession):
+        url = f"https://api.openalex.org/works/{pid}?mailto={mailto}"
+        async with sess.get(url, timeout=30) as r:
+            return pid, await r.json()
+
+    async with aiohttp.ClientSession() as sess:
+        for chunk in [paper_ids[i:i+20] for i in range(0, len(paper_ids), 20)]:
+            resps = await asyncio.gather(*(fetch(pid, sess) for pid in chunk))
+            for pid, meta in resps:
+                if pid in seen or len(kg_nodes) >= max_nodes: continue
+                seen.add(pid)
+                kg_nodes[pid] = {"title": meta["title"], "year": meta["publication_year"]}
+                doc = nlp(meta.get("abstract", "")[:2000])
+                ents = {t.lemma_.lower() for t in doc if t.pos_ in {"NOUN","PROPN"}}
+                for ent in itertools.islice(ents, 15):
+                    node_id = f"ENT::{ent}"
+                    kg_nodes.setdefault(node_id, {"label": ent})
+                    kg_edges.append((pid, "MENTIONS", node_id))
+                for ref in meta.get("referenced_works", [])[:30]:
+                    kg_edges.append((pid, "CITES", ref))
+
+    return PaperKG(created_utc=datetime.datetime.utcnow().isoformat(),
+                   nodes=list(kg_nodes.values()),
+                   edges=kg_edges)
+```
+
+Output schema  
+```python
+class PaperKG(TypedDict):
+    created_utc: str
+    nodes: list[dict]              # heterogeneous node attributes
+    edges: list[tuple[str,str,str]]# (source, relation, target)
+```
+
+──────────────────────────────────────────────────────────────────────────────
+2. Citation-Network Analysis & Anomaly Detection
+──────────────────────────────────────────────────────────────────────────────
+Function
+```python
+async def analyze_citation_network(
+    root_paper: str,
+    depth: int = 2,
+    z_thresh: float = 2.5
+) -> "CitationAnomalyReport"
+```
+
+Free data sources  
+• OpenAlex API  
+
+Core algorithm (~24 lines)
+```python
+class CitationAnomalyReport(TypedDict):
+    stats: dict
+    anomalies: list[str]
+    graph_edges: list[tuple[str, str]]
+
+async def analyze_citation_network(root_paper: str, depth: int = 2, z_thresh: float = 2.5
+) -> CitationAnomalyReport:
+    import statistics, aiohttp, asyncio, collections
+    edges, cite_counts = [], collections.Counter()
+
+    async def crawl(pid: str, lvl: int, sess: aiohttp.ClientSession):
+        if lvl > depth: return
+        async with sess.get(f"https://api.openalex.org/works/{pid}") as r:
+            meta = await r.json()
+        refs = meta.get("referenced_works", []) or []
+        cite_counts[pid] = meta.get("cited_by_count", 0)
+        for ref in refs:
+            edges.append((pid, ref))
+            await crawl(ref, lvl+1, sess)
+
+    async with aiohttp.ClientSession() as s:
+        await crawl(root_paper, 0, s)
+
+    mean, stdev = statistics.mean(cite_counts.values()), statistics.stdev(cite_counts.values() or [1])
+    anomalies = [pid for pid, c in cite_counts.items() if abs(c-mean) > z_thresh*stdev]
+
+    return CitationAnomalyReport(
+        stats={"mean": mean, "stdev": stdev, "total_nodes": len(cite_counts)},
+        anomalies=anomalies,
+        graph_edges=edges)
+```
+
+Output schema  
+```python
+class CitationAnomalyReport(TypedDict):
+    stats: dict
+    anomalies: list[str]           # paper IDs with unusual citation counts
+    graph_edges: list[tuple[str,str]]
+```
+
+──────────────────────────────────────────────────────────────────────────────
+3. Cross-Platform Identity Resolution
+──────────────────────────────────────────────────────────────────────────────
+Function
+```python
+async def resolve_identity(
+    name: str,
+    email_hint: str | None = None
+) -> "IdentityResolution"
+```
+
+Free data sources  
+• ORCID Public API  
+• GitHub REST API  
+• Gravatar profile JSON  
+• Twitter user “v2” (limited free)  
+
+Core algorithm (~26 lines)
+```python
+class IdentityResolution(TypedDict):
+    canonical: dict
+    matches: list[dict]
+
+async def resolve_identity(name: str, email_hint: str | None = None) -> IdentityResolution:
+    import hashlib, aiohttp, asyncio, re
+    results = []
+
+    async with aiohttp.ClientSession() as s:
+        tasks = []
+
+        # ORCID search
+        q = re.sub(r"\s+", "+", name)
+        tasks.append(s.get(f"https://pub.orcid.org/v3.0/expanded-search/?q={q}", headers={'Accept':'application/json'}))
+
+        # GitHub search
+        tasks.append(s.get(f"https://api.github.com/search/users?q={q}"))
+
+        # Gravatar
+        if email_hint:
+            h = hashlib.md5(email_hint.lower().encode()).hexdigest()
+            tasks.append(s.get(f"https://www.gravatar.com/{h}.json"))
+
+        # Twitter (only if bearer token in env)
+        import os
+        if (tok := os.getenv("TWITTER_BEARER")):
+            hdr = {"Authorization": f"Bearer {tok}"}
+            tasks.append(s.get(f"https://api.twitter.com/2/users/by?usernames={q}", headers=hdr))
+
+        responses = await asyncio.gather(*tasks, return_exceptions=True)
+        for r in responses:
+            if isinstance(r, Exception): continue
+            data = await r.json()
+            results.append(data)
+
+    canonical = {"name": name, "email_hint": email_hint}
+    return IdentityResolution(canonical=canonical, matches=results)
+```
+
+Output schema  
+```python
+class IdentityResolution(TypedDict):
+    canonical: dict   # provided info
+    matches: list[dict]  # raw profile payloads across sources
+```
+
+──────────────────────────────────────────────────────────────────────────────
+4. Real-Time Regulatory Change Monitoring
+──────────────────────────────────────────────────────────────────────────────
+Function
+```python
+async def monitor_reg_changes(
+    jurisdictions: list[str],
+    keywords: list[str]
+) -> "RegChangeFeed"
+```
+
+Free data sources  
+• govinfo.gov API (US Federal Register)  
+• EUR-Lex open data (EU)  
+• FCA handbook RSS (UK)  
+
+Core algorithm (~25 lines)
+```python
+class RegChangeFeed(TypedDict):
+    fetched_at: str
+    hits: list[dict]
+
+async def monitor_reg_changes(jurisdictions: list[str], keywords: list[str]) -> RegChangeFeed:
+    from datetime import date
+    async with aiohttp.ClientSession() as s:
+        hits, today = [], date.today().isoformat()
+
+        async def fetch(url):
+            async with s.get(url) as r:
+                return await r.text()
+
+        tasks = []
+        if "US" in jurisdictions:
+            tasks.append(fetch(f"https://www.federalregister.gov/api/v1/articles.json?per_page=100&order=date&conditions[publication_date][gte]={today}"))
+        if "EU" in jurisdictions:
+            tasks.append(fetch(f"https://eur-lex.europa.eu/EURLexWebService?format=json&q=date={today}"))
+        if "UK" in jurisdictions:
+            tasks.append(fetch("https://www.handbook.fca.org.uk/feeds/handbook-rss.xml"))
+
+        pages = await asyncio.gather(*tasks, return_exceptions=True)
+        pattern = re.compile("|".join(map(re.escape, keywords)), re.I)
+
+        for p in pages:
+            if isinstance(p, Exception): continue
+            for kw in keywords:
+                if kw.lower() in p.lower():
+                    hits.append({"keyword": kw, "snippet": p[:500]})
+
+    return RegChangeFeed(fetched_at=datetime.datetime.utcnow().isoformat(), hits=hits)
+```
+
+Output schema  
+```python
+class RegChangeFeed(TypedDict):
+    fetched_at: str
+    hits: list[dict]   # keyword, snippet
+```
+
+──────────────────────────────────────────────────────────────────────────────
+5. Academic Collaboration Network Mapping
+──────────────────────────────────────────────────────────────────────────────
+Function
+```python
+async def map_collaboration(
+    author_orcid: str,
+    depth: int = 1
+) -> "CollabNet"
+```
+
+Free data sources  
+• ORCID works API  
+• OpenAlex author works  
+
+Core algorithm (~23 lines)
+```python
+class CollabNet(TypedDict):
+    authors: list[str]
+    edges: list[tuple[str, str]]
+
+async def map_collaboration(author_orcid: str, depth: int = 1) -> CollabNet:
+    seen, edges = set(), []
+    async with aiohttp.ClientSession() as s:
+
+        async def collect(aid: str, lvl: int):
+            if lvl>depth or aid in seen: return
+            seen.add(aid)
+            async with s.get(f"https://pub.orcid.org/v3.0/{aid}/works", headers={'Accept':'application/json'}) as r:
+                works = (await r.json()).get("group", [])
+            for w in works:
+                contributors = [c["contributor_orcid"]["path"]
+                                for c in w["work-summary"][0]["contributors"]["contributor"]
+                                if c.get("contributor_orcid")]
+                for co in contributors:
+                    edges.append((aid, co))
+                    await collect(co, lvl+1)
+
+        await collect(author_orcid, 0)
+    return CollabNet(authors=list(seen), edges=edges)
+```
+
+Output schema  
+```python
+class CollabNet(TypedDict):
+    authors: list[str]
+    edges: list[tuple[str,str]]  # undirected author links
+```
+
+──────────────────────────────────────────────────────────────────────────────
+6. Trend Prediction from Publication Patterns
+──────────────────────────────────────────────────────────────────────────────
+Function
+```python
+async def predict_topic_trend(
+    topic: str,
+    years_back: int = 10
+) -> "TrendForecast"
+```
+
+Free data sources  
+• OpenAlex “works” search by concept  
+• Prophet (facebook/prophet) for time-series (OSS)  
+
+Core algorithm (~29 lines)
+```python
+class TrendForecast(TypedDict):
+    historical: list[tuple[str,int]]
+    forecast: list[tuple[str,float]]
+
+async def predict_topic_trend(topic: str, years_back: int = 10) -> TrendForecast:
+    import pandas as pd, asyncio, aiohttp, datetime, prophet
+    year_counts = {}
+
+    async with aiohttp.ClientSession() as s:
+        tasks=[]
+        for y in range(datetime.date.today().year-years_back, datetime.date.today().year+1):
+            url = f"https://api.openalex.org/works?filter=concepts.id:{topic},from_publication_date:{y}-01-01,to_publication_date:{y}-12-31&per_page=1"
+            tasks.append(s.get(url))
+        resps = await asyncio.gather(*tasks)
+        for y, r in zip(range(datetime.date.today().year-years_back, datetime.date.today().year+1), resps):
+            j = await r.json()
+            year_counts[str(y)] = j["meta"]["count"]
+
+    df = pd.DataFrame({"ds": list(year_counts.keys()),
+                       "y": list(year_counts.values())})
+    df["ds"] = pd.to_datetime(df["ds"])
+    m = prophet.Prophet()
+    m.fit(df)
+    future = m.make_future_dataframe(periods=3, freq="Y")
+    fcst = m.predict(future)[["ds","yhat"]].tail(3)
+
+    return TrendForecast(
+        historical=list(year_counts.items()),
+        forecast=[(d.strftime("%Y"), float(v)) for d,v in zip(fcst["ds"], fcst["yhat"])])
+```
+
+Output schema  
+```python
+class TrendForecast(TypedDict):
+    historical: list[tuple[str,int]]   # year, count
+    forecast: list[tuple[str,float]]   # future year, predicted count
+```
+
+──────────────────────────────────────────────────────────────────────────────
+7. Automated Literature Review Synthesis
+──────────────────────────────────────────────────────────────────────────────
+Function
+```python
+async def synthesize_lit_review(
+    query: str,
+    max_papers: int = 25,
+    model: str = "gpt-3.5-turbo"
+) -> "LitReview"
+```
+
+Free data sources  
+• CrossRef API  
+• OpenAI (or any compatible) chat completions (not free, but can be swapped with open models)  
+
+Core algorithm (~28 lines)
+```python
+class LitReview(TypedDict):
+    summary: str
+    references: list[dict]
+
+async def synthesize_lit_review(query: str, max_papers: int = 25, model: str = "gpt-3.5-turbo") -> LitReview:
+    import tiktoken, os, aiohttp, asyncio, openai, textwrap
+    refs=[]
+
+    async with aiohttp.ClientSession() as s:
+        async with s.get(f"https://api.crossref.org/works?query={query}&rows={max_papers}") as r:
+            data = (await r.json())["message"]["items"]
+            for d in data:
+                refs.append({"title": d["title"][0], "doi": d.get("DOI"), "year": d.get("published-print",{}).get("date-parts",[[None]])[0][0]})
+
+    prompt = "Summarize the following papers:\n" + "\n".join(f"- {r['title']} ({r['year']})" for r in refs)
+    openai.api_key = os.getenv("OPENAI_API_KEY")
+    resp = await openai.ChatCompletion.acreate(model=model, messages=[{"role":"user","content":prompt}])
+    return LitReview(summary=resp.choices[0].message.content, references=refs)
+```
+
+Output schema  
+```python
+class LitReview(TypedDict):
+    summary: str
+    references: list[dict]   # minimal metadata for each paper
+```
+
+──────────────────────────────────────────────────────────────────────────────
+8. Research Methodology Recommendation Engine
+──────────────────────────────────────────────────────────────────────────────
+Function
+```python
+async def recommend_methods(
+    research_question: str,
+    field: str
+) -> "MethodRec"
+```
+
+Free data sources  
+• MethodsMap (Sage) open descriptions  
+• Wikipedia API  
+
+Core algorithm (~24 lines)
+```python
+class MethodRec(TypedDict):
+    question: str
+    recommended: list[str]
+    rationale: str
+
+async def recommend_methods(research_question: str, field: str) -> MethodRec:
+    import openai, os, aiohttp, asyncio
+    ctx=""
+    async with aiohttp.ClientSession() as s:
+        async with s.get(f"https://en.wikipedia.org/api/rest_v1/page/summary/{field}_research_methods") as r:
+            if r.status==200:
+                ctx = (await r.json()).get("extract","")[:3000]
+
+    prompt = f"""You are a research design assistant.
+Field: {field}
+Context on common methods: {ctx}
+Research question: {research_question}
+List 3 appropriate methodologies and justify briefly."""
+    openai.api_key=os.getenv("OPENAI_API_KEY")
+    res = await openai.ChatCompletion.acreate(model="gpt-3.5-turbo",messages=[{"role":"user","content":prompt}])
+    txt=res.choices[0].message.content
+    methods=[m.strip("- ").split(":")[0] for m in txt.splitlines() if m.startswith("-")]
+    return MethodRec(question=research_question, recommended=methods, rationale=txt)
+```
+
+Output schema  
+```python
+class MethodRec(TypedDict):
+    question: str
+    recommended: list[str]
+    rationale: str
+```
+
+──────────────────────────────────────────────────────────────────────────────
+9. Competitive Intelligence (SEC, Patents, Jobs)
+──────────────────────────────────────────────────────────────────────────────
+Function
+```python
+async def competitive_intel(
+    company_ticker: str,
+    lookback_days: int = 90
+) -> "CompIntel"
+```
+
+Free data sources  
+• SEC EDGAR full-text search API  
+• USPTO Open Patent Bulk API  
+• Github Jobs / Adzuna jobs API (free tiers)
+
+Core algorithm (~26 lines)
+```python
+class CompIntel(TypedDict):
+    filings: list[str]
+    patents: list[str]
+    jobs: list[str]
+
+async def competitive_intel(company_ticker: str, lookback_days: int = 90) -> CompIntel:
+    from datetime import date, timedelta
+    start=(date.today()-timedelta(days=lookback_days)).isoformat()
+    filings, patents, jobs = [], []
+
+    async with aiohttp.ClientSession() as s:
+        # SEC 8-K, 10-K, etc.
+        sec_url=f"https://efts.sec.gov/LATEST/search-index?query={company_ticker}&startdt={start}"
+        async with s.get(sec_url) as r:
+            sec=(await r.json()).get("hits",{})
+            filings=[f["id"] for f in sec.get("hits",[])[:20]]
+
+        # Patents
+        pat_url=f"https://developer.uspto.gov/ibd-api/v1/patent/application?searchText={company_ticker}&publicationFromDate={start}"
+        async with s.get(pat_url) as r:
+            pats=(await r.json()).get("patentApplication",[])
+            patents=[p["patentNumber"] for p in pats[:20]]
+
+        # Jobs
+        async with s.get(f"https://api.adzuna.com/v1/api/jobs/us/search/1?what={company_ticker}&app_id=demo&app_key=demo") as r:
+            j=(await r.json()).get("results",[])
+            jobs=[job["title"] for job in j[:20]]
+
+    return CompIntel(filings=filings, patents=patents, jobs=jobs)
+```
+
+Output schema  
+```python
+class CompIntel(TypedDict):
+    filings: list[str]
+    patents: list[str]
+    jobs: list[str]
+```
+
+──────────────────────────────────────────────────────────────────────────────
+10. Supply-Chain Risk Assessment from Public Data
+──────────────────────────────────────────────────────────────────────────────
+Function
+```python
+async def supply_chain_risk(
+    supplier_name: str,
+    country: str | None = None
+) -> "SupplyRisk"
+```
+
+Free data sources  
+• UN Comtrade API  
+• Global Recall / SafetyGate RSS  
+• OpenSanctions DB  
+• NewsAPI (free tier)  
+
+Core algorithm (~27 lines)
+```python
+class SupplyRisk(TypedDict):
+    score: float
+    signals: list[str]
+
+async def supply_chain_risk(supplier_name: str, country: str | None = None) -> SupplyRisk:
+    import math, aiohttp, asyncio, hashlib, json
+    signals=[]
+    risk=0
+
+    async with aiohttp.ClientSession() as s:
+        # sanctions check
+        async with s.get(f"https://api.opensanctions.org/entities/_search?q={supplier_name}") as r:
+            data=await r.json()
+            if data["hits"]["total"]["value"]>0:
+                risk+=2; signals.append("Listed in sanctions database")
+
+        # product recalls
+        async with s.get("https://ec.europa.eu/safety-gate-alerts/en/rss") as r:
+            txt=await r.text()
+            if supplier_name.lower() in txt.lower():
+                risk+=1.5; signals.append("Supplier appears in EU recall RSS")
+
+        # trade concentration
+        hs="AUTO"
+        year="2022"
+        com_url=f"https://comtradeapi.worldbank.org/v1/commodity/{hs}/partner/{country or 'ALL'}/year/{year}"
+        async with s.get(com_url) as r:
+            if r.status==200:
+                j=await r.json()
+                if j.get("data",[]):
+                    vol=sum(d["TradeValue"] for d in j["data"])
+                    if vol>1e9:
+                        risk+=1; signals.append("High trade volume dependence")
+
+        # adverse news (simple hit count)
+        async with s.get(f"https://newsapi.org/v2/everything?q={supplier_name}&apiKey=DEMO_KEY") as r:
+            if r.status==200:
+                news=(await r.json())["totalResults"]
+                if news>100:
+                    risk+=1; signals.append("Frequent news coverage possibly indicating issues")
+
+    score=min(risk/5,1.0)
+    return SupplyRisk(score=score, signals=signals)
+```
+
+Output schema  
+```python
+class SupplyRisk(TypedDict):
+    score: float      # 0-1 normalized composite
+    signals: list[str]
+```
+
+These ten tools can be dropped directly into Loom, follow its existing async/plugin conventions, and rely solely on open/free endpoints or replaceable LLM APIs.

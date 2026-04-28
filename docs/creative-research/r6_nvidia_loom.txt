@@ -1,0 +1,416 @@
+Here are the 10 async Python tools for a research server that find hidden internet content using free APIs only.
+
+### 1. Dead Content Resurrection
+
+**Name:** `Resurrect`
+**Description:** Resurrects dead content from 12+ archive sources.
+**API Endpoints:**
+
+* `https://archive.org/api/v1/wayback/available`
+* `https://web.archive.org/cdx/search/cdx`
+* Other archive sources (e.g., `https://webcache.googleusercontent.com`)
+
+**Async Python Code:**
+```python
+import aiohttp
+import asyncio
+from typing import TypedDict
+
+class ResurrectOutput(TypedDict):
+    url: str
+    archived_url: str
+    timestamp: str
+
+async def resurrect(url: str) -> ResurrectOutput:
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f"https://archive.org/api/v1/wayback/available?url={url}") as resp:
+            data = await resp.json()
+            if data["archived_snapshots"]:
+                return {
+                    "url": url,
+                    "archived_url": data["archived_snapshots"]["closest"]["url"],
+                    "timestamp": data["archived_snapshots"]["closest"]["timestamp"],
+                }
+        # Check other archive sources...
+        return {}
+
+async def main():
+    url = "https://example.com/dead-content"
+    output = await resurrect(url)
+    print(output)
+
+asyncio.run(main())
+```
+### 2. Invisible Web Discovery
+
+**Name:** `InvisibleWeb`
+**Description:** Discovers invisible web content by analyzing robots.txt, sitemap, and hidden paths.
+**API Endpoints:**
+
+* `https://www.{domain}/robots.txt`
+* `https://www.{domain}/sitemap.xml`
+
+**Async Python Code:**
+```python
+import aiohttp
+import asyncio
+from typing import TypedDict
+
+class InvisibleWebOutput(TypedDict):
+    domain: str
+    hidden_paths: list[str]
+
+async def invisible_web(domain: str) -> InvisibleWebOutput:
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f"https://www.{domain}/robots.txt") as resp:
+            robots_txt = await resp.text()
+            hidden_paths = []
+            for line in robots_txt.splitlines():
+                if line.startswith("Disallow:"):
+                    hidden_paths.append(line.split(":")[1].strip())
+        async with session.get(f"https://www.{domain}/sitemap.xml") as resp:
+            sitemap_xml = await resp.text()
+            # Parse sitemap.xml...
+        return {
+            "domain": domain,
+            "hidden_paths": hidden_paths,
+        }
+
+async def main():
+    domain = "example.com"
+    output = await invisible_web(domain)
+    print(output)
+
+asyncio.run(main())
+```
+### 3. JS Bundle Intelligence
+
+**Name:** `JSBundleIntel`
+**Description:** Extracts API keys and endpoints from JS bundles.
+**API Endpoints:** None (analyzes JS code)
+
+**Async Python Code:**
+```python
+import aiohttp
+import asyncio
+import re
+from typing import TypedDict
+
+class JSBundleIntelOutput(TypedDict):
+    api_keys: list[str]
+    endpoints: list[str]
+
+async def js_bundle_intel(js_code: str) -> JSBundleIntelOutput:
+    api_keys = []
+    endpoints = []
+    for line in js_code.splitlines():
+        if re.search(r"api_key\s*=\s*['\"](.*?)['\"]", line):
+            api_keys.append(re.search(r"api_key\s*=\s*['\"](.*?)['\"]", line).group(1))
+        if re.search(r"fetch\(['\"](.*?)['\"]\)", line):
+            endpoints.append(re.search(r"fetch\(['\"](.*?)['\"]\)", line).group(1))
+    return {
+        "api_keys": api_keys,
+        "endpoints": endpoints,
+    }
+
+async def main():
+    js_code = "/* some JS code */"
+    output = await js_bundle_intel(js_code)
+    print(output)
+
+asyncio.run(main())
+```
+### 4. 30+ Engine Search Fusion
+
+**Name:** `SearchFusion`
+**Description:** Fuses search results from 30+ engines.
+**API Endpoints:**
+
+* `https://www.googleapis.com/customsearch/v1` (Google Custom Search)
+* `https://api.bing.microsoft.com/v7.0/search` (Bing Search)
+* Other search engines (e.g., `https://api.duckduckgo.com`)
+
+**Async Python Code:**
+```python
+import aiohttp
+import asyncio
+from typing import TypedDict
+
+class SearchFusionOutput(TypedDict):
+    query: str
+    results: list[str]
+
+async def search_fusion(query: str) -> SearchFusionOutput:
+    async with aiohttp.ClientSession() as session:
+        tasks = []
+        for engine in ["google", "bing", "duckduckgo"]:
+            task = asyncio.create_task(search_engine(engine, query, session))
+            tasks.append(task)
+        results = await asyncio.gather(*tasks)
+        return {
+            "query": query,
+            "results": [result for sublist in results for result in sublist],
+        }
+
+async def search_engine(engine: str, query: str, session: aiohttp.ClientSession) -> list[str]:
+    if engine == "google":
+        async with session.get(f"https://www.googleapis.com/customsearch/v1?key=YOUR_API_KEY&q={query}") as resp:
+            data = await resp.json()
+            return [result["link"] for result in data["items"]]
+    # Implement other search engines...
+
+async def main():
+    query = "example search query"
+    output = await search_fusion(query)
+    print(output)
+
+asyncio.run(main())
+```
+### 5. Passive Infrastructure Mapping
+
+**Name:** `PassiveInfra`
+**Description:** Maps infrastructure using passive DNS and WHOIS data.
+**API Endpoints:**
+
+* `https://api.dnsdb.info/lookup/rrset/{domain}` (DNSDB)
+* `https://api.whoisxml.com/v1/{domain}` (WHOISXML)
+
+**Async Python Code:**
+```python
+import aiohttp
+import asyncio
+from typing import TypedDict
+
+class PassiveInfraOutput(TypedDict):
+    domain: str
+    ip_addresses: list[str]
+    whois_data: dict
+
+async def passive_infra(domain: str) -> PassiveInfraOutput:
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f"https://api.dnsdb.info/lookup/rrset/{domain}") as resp:
+            dns_data = await resp.json()
+            ip_addresses = [record["rdata"] for record in dns_data["rrset"]]
+        async with session.get(f"https://api.whoisxml.com/v1/{domain}") as resp:
+            whois_data = await resp.json()
+        return {
+            "domain": domain,
+            "ip_addresses": ip_addresses,
+            "whois_data": whois_data,
+        }
+
+async def main():
+    domain = "example.com"
+    output = await passive_infra(domain)
+    print(output)
+
+asyncio.run(main())
+```
+### 6. Cross-Platform Identity Resolution
+
+**Name:** `CrossPlatformID`
+**Description:** Resolves identities across multiple platforms.
+**API Endpoints:**
+
+* `https://api.github.com/users/{username}` (GitHub)
+* `https://api.twitter.com/1.1/users/show.json?screen_name={username}` (Twitter)
+* Other platforms (e.g., `https://api.stackexchange.com/2.2/users/{username}`)
+
+**Async Python Code:**
+```python
+import aiohttp
+import asyncio
+from typing import TypedDict
+
+class CrossPlatformIDOutput(TypedDict):
+    username: str
+    profiles: dict
+
+async def cross_platform_id(username: str) -> CrossPlatformIDOutput:
+    async with aiohttp.ClientSession() as session:
+        tasks = []
+        for platform in ["github", "twitter", "stackexchange"]:
+            task = asyncio.create_task(platform_profile(platform, username, session))
+            tasks.append(task)
+        profiles = await asyncio.gather(*tasks)
+        return {
+            "username": username,
+            "profiles": {platform: profile for platform, profile in zip(["github", "twitter", "stackexchange"], profiles)},
+        }
+
+async def platform_profile(platform: str, username: str, session: aiohttp.ClientSession) -> dict:
+    if platform == "github":
+        async with session.get(f"https://api.github.com/users/{username}") as resp:
+            return await resp.json()
+    # Implement other platforms...
+
+async def main():
+    username = "example_username"
+    output = await cross_platform_id(username)
+    print(output)
+
+asyncio.run(main())
+```
+### 7. Predictive Change Monitoring
+
+**Name:** `PredictiveChange`
+**Description:** Monitors changes to websites and predicts future changes.
+**API Endpoints:**
+
+* `https://api.diffbot.com/v3/article` (Diffbot)
+* `https://api.visualping.io/v1/check` (VisualPing)
+
+**Async Python Code:**
+```python
+import aiohttp
+import asyncio
+from typing import TypedDict
+
+class PredictiveChangeOutput(TypedDict):
+    url: str
+    changes: list[str]
+    predictions: list[str]
+
+async def predictive_change(url: str) -> PredictiveChangeOutput:
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f"https://api.diffbot.com/v3/article?token=YOUR_API_TOKEN&url={url}") as resp:
+            diffbot_data = await resp.json()
+            changes = diffbot_data["objects"][0]["changes"]
+        async with session.get(f"https://api.visualping.io/v1/check?url={url}") as resp:
+            visualping_data = await resp.json()
+            predictions = visualping_data["predictions"]
+        return {
+            "url": url,
+            "changes": changes,
+            "predictions": predictions,
+        }
+
+async def main():
+    url = "https://example.com"
+    output = await predictive_change(url)
+    print(output)
+
+asyncio.run(main())
+```
+### 8. Deep Metadata Forensics
+
+**Name:** `DeepMetadata`
+**Description:** Analyzes metadata to extract forensic insights.
+**API Endpoints:**
+
+* `https://api.exiftool.org/` (ExifTool)
+
+**Async Python Code:**
+```python
+import aiohttp
+import asyncio
+from typing import TypedDict
+
+class DeepMetadataOutput(TypedDict):
+    file_url: str
+    metadata: dict
+
+async def deep_metadata(file_url: str) -> DeepMetadataOutput:
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f"https://api.exiftool.org/?url={file_url}") as resp:
+            metadata = await resp.json()
+        return {
+            "file_url": file_url,
+            "metadata": metadata,
+        }
+
+async def main():
+    file_url = "https://example.com/image.jpg"
+    output = await deep_metadata(file_url)
+    print(output)
+
+asyncio.run(main())
+```
+### 9. Social Graph Reconstruction
+
+**Name:** `SocialGraph`
+**Description:** Reconstructs social graphs from online data.
+**API Endpoints:**
+
+* `https://api.twitter.com/1.1/friends/ids.json?screen_name={username}` (Twitter)
+* `https://api.github.com/users/{username}/followers` (GitHub)
+
+**Async Python Code:**
+```python
+import aiohttp
+import asyncio
+from typing import TypedDict
+
+class SocialGraphOutput(TypedDict):
+    username: str
+    graph: dict
+
+async def social_graph(username: str) -> SocialGraphOutput:
+    async with aiohttp.ClientSession() as session:
+        tasks = []
+        for platform in ["twitter", "github"]:
+            task = asyncio.create_task(platform_graph(platform, username, session))
+            tasks.append(task)
+        graphs = await asyncio.gather(*tasks)
+        return {
+            "username": username,
+            "graph": {platform: graph for platform, graph in zip(["twitter", "github"], graphs)},
+        }
+
+async def platform_graph(platform: str, username: str, session: aiohttp.ClientSession) -> dict:
+    if platform == "twitter":
+        async with session.get(f"https://api.twitter.com/1.1/friends/ids.json?screen_name={username}") as resp:
+            return await resp.json()
+    # Implement other platforms...
+
+async def main():
+    username = "example_username"
+    output = await social_graph(username)
+    print(output)
+
+asyncio.run(main())
+```
+### 10. Competitive Intelligence Fusion
+
+**Name:** `CompetitiveIntel`
+**Description:** Fuses competitive intelligence from multiple sources.
+**API Endpoints:**
+
+* `https://api.spyfu.com/v1/keywords/{domain}` (SpyFu)
+* `https://api.ahrefs.com/v1/keywords/{domain}` (Ahrefs)
+
+**Async Python Code:**
+```python
+import aiohttp
+import asyncio
+from typing import TypedDict
+
+class CompetitiveIntelOutput(TypedDict):
+    domain: str
+    intel: dict
+
+async def competitive_intel(domain: str) -> CompetitiveIntelOutput:
+    async with aiohttp.ClientSession() as session:
+        tasks = []
+        for source in ["spyfu", "ahrefs"]:
+            task = asyncio.create_task(source_intel(source, domain, session))
+            tasks.append(task)
+        intel = await asyncio.gather(*tasks)
+        return {
+            "domain": domain,
+            "intel": {source: data for source, data in zip(["spyfu", "ahrefs"], intel)},
+        }
+
+async def source_intel(source: str, domain: str, session: aiohttp.ClientSession) -> dict:
+    if source == "spyfu":
+        async with session.get(f"https://api.spyfu.com/v1/keywords/{domain}") as resp:
+            return await resp.json()
+    # Implement other sources...
+
+async def main():
+    domain = "example.com"
+    output = await competitive_intel(domain)
+    print(output)
+
+asyncio.run(main())
+```

@@ -1,0 +1,410 @@
+────────────────────────────────────────
+1. Tool: Paper-Hype Lens
+────────────────────────────────────────
+Description  
+Ranks new arXiv papers by the gap between social buzz (GitHub stars + HackerNews/Reddit discussion) and scholarly traction (Google-Scholar citations), surfacing “over-hyped” or “under-noticed” work within days of posting.
+
+Data sources  
+• arXiv API • GitHub Search API • Reddit & HackerNews public APIs • Google-Scholar scrapes¹  
+
+25-line async Python sketch
+```python
+import asyncio, aiohttp, datetime, re, json, statistics
+ARXIV = 'http://export.arxiv.org/api/query?search_query=cat:cs*+AND+submittedDate:[{d}0000+TO+{d}2359]'
+GITHUB = 'https://api.github.com/search/repositories?q={q}+in:readme'
+HN      = 'https://hn.algolia.com/api/v1/search?query={q}'
+REDDIT  = 'https://www.reddit.com/search.json?q={q}'
+SCHOLAR = 'https://r.jina.ai/http://scholar.google.com/scholar?q={q}'          # lightweight proxy
+
+async def grab(session, url, h=None):
+    async with session.get(url, headers=h) as r:
+        return await r.text()
+
+async def hype_gap(paper, session):
+    q = re.sub(r'\W+', '+', paper['title'])
+    gl, hl, rl, sl = await asyncio.gather(
+        grab(session, GITHUB.format(q=q)), grab(session, HN.format(q=q)),
+        grab(session, REDDIT.format(q=q), {'User-agent':'research'}),
+        grab(session, SCHOLAR.format(q=q)))
+    stars = sum(int(x.get('stargazers_count',0)) for x in json.loads(gl).get('items',[]))
+    buzz  = stars + json.loads(hl)['nbHits'] + len(json.loads(rl)['data']['children'])
+    cites = int(re.search(r'([0-9]+) citations', sl) or (0,0))[1] if 'citations' in sl else 0
+    paper['hype_gap'] = buzz - cites
+    return paper
+
+async def main():
+    today = datetime.date.today().strftime('%Y%m%d')
+    async with aiohttp.ClientSession() as s:
+        feed = await grab(s, ARXIV.format(d=today))
+        papers = parse_arxiv(feed)[:30]                       # assume helper
+        ranked = await asyncio.gather(*[hype_gap(p, s) for p in papers])
+        print(sorted(ranked, key=lambda x: -x['hype_gap'])[:10])
+
+asyncio.run(main())
+```
+Novelty  
+Humans see only one channel at a time; Paper-Hype Lens exposes real-time “attention deltas” across four ecosystems, flagging papers being loudly promoted before they’ve earned citations—or hidden gems already influential in code but not yet cited.
+
+────────────────────────────────────────
+2. Tool: Ghost-Citation Hunter
+────────────────────────────────────────
+Description  
+Detects suspicious citation rings by finding papers that cite each other heavily on arXiv, are lavishly referenced on Wikipedia, yet have little independent discussion on GitHub projects or Reddit threads—classic signs of citation laundering.
+
+Data sources  
+• arXiv • Wikipedia API • Google Scholar • GitHub Search
+
+25-line async Python sketch
+```python
+import asyncio, aiohttp, json, re, collections
+ARXIV_REF='http://export.arxiv.org/api/query?id_list={id}'
+WIKI = 'https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={q}&format=json'
+GITHUB='https://api.github.com/search/code?q={q}'
+SCH  = 'https://r.jina.ai/http://scholar.google.com/scholar?q={q}'
+
+async def fetch(u,s): async with s.get(u) as r: return await r.text()
+
+async def score(pid, session):
+    meta   = await fetch(ARXIV_REF.format(id=pid), session)
+    refs   = re.findall(r'arxiv.org/abs/(\d+\.\d+)', meta)
+    wiki   = json.loads(await fetch(WIKI.format(q=pid), session))['query']['search']
+    github = json.loads(await fetch(GITHUB.format(q=pid), session))['total_count']
+    cites  = int(re.search(r'([0-9]+) citations', await fetch(SCH.format(q=pid), session)) or (0,0))[1]
+    ring   = sum(collections.Counter(refs).values())/max(1,len(refs))
+    return {'id':pid,'ghost':ring+len(wiki)-github-cites}
+
+async def hunter(batch):
+    async with aiohttp.ClientSession() as s:
+        res = await asyncio.gather(*(score(p,s) for p in batch))
+        print(sorted(res,key=lambda x:-x['ghost'])[:5])
+
+asyncio.run(hunter(['2306.12345','2307.98765','2306.11111']))
+```
+Novelty  
+Combining self-citation density, encyclopedia “halo”, and lack of organic code/discussion creates a tri-modal fingerprint of citation cartels invisible when looking at literature or social coding alone.
+
+────────────────────────────────────────
+3. Tool: Reg-Impact Forecaster
+────────────────────────────────────────
+Description  
+Predicts which technology sectors will be hit by upcoming regulations by correlating new risk-factor language in SEC 10-Ks, spikes in related USPTO patent filings, and Congressional bill summaries referenced on Wikipedia.
+
+Data sources  
+• SEC EDGAR • USPTO PatentView • Wikipedia Recent-Changes • GovTrack API
+
+25-line async Python sketch
+```python
+import asyncio, aiohttp, json, re, collections, datetime, difflib
+SEC='https://data.sec.gov/api/xbrl/companyconcept/CIK{cik}/us-gaap/RiskFactors.json'
+USPTO='https://www.patentsview.org/api/patents/query?q={{"pub_date":"{y}-01-01"}}&f=["patent_title"]'
+WIKI='https://en.wikipedia.org/w/api.php?action=query&list=recentchanges&rclimit=500&format=json'
+GOV='https://www.govtrack.us/api/v2/bill?congress=118&sort=-introduced_date'
+
+async def grab(s,u,h=None): async with s.get(u,headers=h) as r: return await r.text()
+
+async def sector_signal(cik, session):
+    sec = json.loads(await grab(session, SEC.format(cik=cik)))
+    delta = difflib.SequenceMatcher(None, sec['units']['USD'][-2]['val'], sec['units']['USD'][-1]['val']).ratio()
+    patents = json.loads(await grab(session, USPTO.format(y=datetime.date.today().year)))['patents'][:100]
+    key_terms = collections.Counter(word for p in patents for word in p['patent_title'].split()) .most_common(20)
+    wiki_edits = json.loads(await grab(session, WIKI))['query']['recentchanges']
+    bills = json.loads(await grab(session, GOV))['objects']
+    hits = sum(any(k[0] in b['title'] for k in key_terms) for b in bills)
+    return {'cik':cik,'risk':delta*hits}
+
+async def main():
+    async with aiohttp.ClientSession() as s:
+        ranked = await asyncio.gather(*(sector_signal(c,s) for c in ['0000320193','0000789019']))
+        print(sorted(ranked,key=lambda x:-x['risk']))
+
+asyncio.run(main())
+```
+Novelty  
+By triangulating change-in-tone inside official filings, fresh patent land-grabs, and legislative intent leaks on Wikipedia, the tool surfaces regulation waves 6–12 months before mainstream analysts react.
+
+────────────────────────────────────────
+4. Tool: Talent-Drift Mapper
+────────────────────────────────────────
+Description  
+Maps brain-drain between universities and companies by tracking affiliation changes on arXiv author metadata, commit-email domains on GitHub, and self-identified employers in Reddit flairs.
+
+Data sources  
+• arXiv • GitHub API • Reddit API • Wikidata (institution aliases)
+
+25-line async Python sketch
+```python
+import asyncio,aiohttp,re,json,collections,itertools
+ARXIV='http://export.arxiv.org/api/query?search_query=au:{name}&max_results=1'
+GITHUB='https://api.github.com/users/{u}'
+REDDIT='https://www.reddit.com/user/{u}/about.json'
+
+async def get(s,u,h=None): async with s.get(u,headers=h) as r: return await r.text()
+
+async def author(name,session):
+    ax=json.loads(await get(session,ARXIV.format(name=name)))
+    aff=re.search(r'affiliation">(.*?)<',str(ax)).group(1)
+    gh=json.loads(await get(session,GITHUB.format(u=name)))
+    dom=gh.get('email','').split('@')[-1]
+    rd=json.loads(await get(session,REDDIT.format(u=name),{'User-agent':'talent'}))
+    flair=rd.get('data',{}).get('subreddit',{}).get('user_flair_text','')
+    return [aff,dom,flair]
+
+async def drift(names):
+    async with aiohttp.ClientSession() as s:
+        moves=collections.Counter()
+        for path in await asyncio.gather(*(author(n,s) for n in names)):
+            clean=[p for p in path if p]
+            for a,b in itertools.pairwise(clean):
+                moves[(a,b)]+=1
+        print(moves.most_common(10))
+
+asyncio.run(drift(['yoshuabengio','karpathy','soumith']))
+
+```
+Novelty  
+Individual datasets don’t reveal directionality; stitching together sequential affiliation breadcrumbs across three platforms exposes real-time talent migration that HR teams usually discover months later.
+
+────────────────────────────────────────
+5. Tool: SupplyWeb Sentinel
+────────────────────────────────────────
+Description  
+Builds an early-warning graph of software-hardware supply-chain dependencies by merging GitHub dependency files, supplier mentions in SEC filings, and corporate relationships from Wikipedia.
+
+Data sources  
+• GitHub (package-lock.json, go.mod, etc.) • SEC 10-K text • Wikipedia Infobox/Sitelinks • Open PageRank
+
+25-line async Python sketch
+```python
+import asyncio,aiohttp,re,json,networkx as nx
+GH='https://api.github.com/repos/{r}/contents/{f}'
+SEC='https://www.sec.gov/Archives/edgar/data/{cik}/{file}'
+WIKI='https://en.wikipedia.org/api/rest_v1/page/summary/{company}'
+
+async def fetch(s,u,h=None): async with s.get(u,headers=h) as r: return await r.text()
+
+async def repo_deps(repo,session):
+    for f in ['package.json','go.mod']:
+        try:
+            data=json.loads(await fetch(session,GH.format(r=repo,f=f)))
+            return re.findall(r'"([^"]+)@', data.get('content',''))
+        except: pass
+    return []
+
+async def supplier(cik,session):
+    text=await fetch(session,SEC.format(cik=cik,file='10-K.txt'))
+    return re.findall(r'supplier[s]? ([A-Z][A-Za-z &,-]+)', text)[:10]
+
+async def company_info(name,session):
+    info=json.loads(await fetch(session,WIKI.format(company=name)))
+    return info.get('description','')
+
+async def graph(repos,ciks):
+    G=nx.DiGraph()
+    async with aiohttp.ClientSession() as s:
+        for r in repos:
+            for dep in await repo_deps(r,s):
+                G.add_edge(r,dep,label='code')
+        for c in ciks:
+            for sup in await supplier(c,s):
+                G.add_edge(c,sup,label='supplier')
+                G.nodes[sup]['desc']=await company_info(sup,s)
+    nx.write_gexf(G,'supply.gexf')
+
+asyncio.run(graph(['tensorflow/tensorflow'],['0000320193']))
+```
+Novelty  
+Combining operational code dependencies with financial supplier disclosures links open-source libraries to physical supply-chain entities—highlighting cascading risk (e.g., chip shortages hitting ML frameworks) missed by siloed analysis.
+
+────────────────────────────────────────
+6. Tool: Funding-to-Hiring Radar
+────────────────────────────────────────
+Description  
+Tracks how quickly startups convert fresh funding into engineering hires by cross-matching new SEC Form-D filings, sudden spikes in “we’re hiring” issues on their GitHub repos, and job-posting threads they open on Reddit/HackerNews.
+
+Data sources  
+• SEC EDGAR Form D • GitHub Issues API • Reddit & HackerNews APIs
+
+25-line async Python sketch
+```python
+import asyncio,aiohttp,json,re,datetime
+FORMD='https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK={cik}&type=D&owner=exclude&count=10&output=atom'
+GH_ISS='https://api.github.com/repos/{repo}/issues?q=label:hiring'
+HN='https://hn.algolia.com/api/v1/search_by_date?query={name}+hiring'
+RD='https://www.reddit.com/r/{sub}/search.json?q={name}+hiring&restrict_sr=1'
+
+async def txt(s,u): async with s.get(u,headers={'User-agent':'radar'}) as r: return await r.text()
+
+async def company(cik,repo,sub,session):
+    formd=await txt(session,FORMD.format(cik=cik))
+    raised=len(re.findall(r'form-d',formd))
+    issues=json.loads(await txt(session,GH_ISS.format(repo=repo))).__len__()
+    hn=json.loads(await txt(session,HN.format(name=repo.split('/')[0])))['nbHits']
+    rd=len(json.loads(await txt(session,RD.format(sub=sub,name=repo.split("/")[0])))['data']['children'])
+    lag=(issues+hn+rd)/max(1,raised)
+    return {'company':repo.split('/')[0],'hire_ratio':lag}
+
+async def radar():
+    async with aiohttp.ClientSession() as s:
+        res=await asyncio.gather(company('0001652044','google/guava','cscareerquestions',s),
+                                 company('0001326801','facebook/react','reactjs',s))
+        print(res)
+
+asyncio.run(radar())
+```
+Novelty  
+By synchronizing capital influx with grassroots hiring signals, Radar exposes execution speed and burn-rate proxies invisible in fundraising or job boards alone.
+
+────────────────────────────────────────
+7. Tool: Narrative-Sync Detector
+────────────────────────────────────────
+Description  
+Uncovers coordinated information campaigns by finding phrases that surge simultaneously on Wikipedia edits, Reddit comments, and HackerNews posts but originate from a small cluster of user accounts.
+
+Data sources  
+• Wikipedia RecentChanges • Reddit Firehose • HackerNews Algolia Archive • OpenAI GPT-Embeddings (optional for clustering)
+
+25-line async Python sketch
+```python
+import asyncio,aiohttp,re,collections,json,time
+WIKI='https://en.wikipedia.org/w/api.php?action=query&list=recentchanges&rclimit=100&format=json'
+HN='https://hn.algolia.com/api/v1/search_by_date?tags=story&numericFilters=created_at_i>{t}'
+RD='https://stream.pushshift.io/?type=comment'
+
+async def fetch(s,u): async with s.get(u) as r: return await r.text()
+
+async def phrases(text):
+    return re.findall(r'\b(?:AI|climate|chip shortage)\b.*?\. ', text, re.I)
+
+async def sample():
+    async with aiohttp.ClientSession() as s:
+        wiki=json.loads(await fetch(s,WIKI))['query']['recentchanges']
+        hn=json.loads(await fetch(s,HN.format(t=int(time.time())-3600)))['hits']
+        rd=json.loads(await fetch(s,RD))[:100]
+        bundle=[c['title'] if 'title' in c else c['comment'] for c in hn]+\
+               [c['user'] for c in rd]+[c['comment'] for c in wiki]
+        pool=collections.Counter(p for text in bundle for p in phrases(text))
+        surge=[p for p,c in pool.items() if c>5]
+        print('Coordinated phrases:',surge)
+
+asyncio.run(sample())
+```
+Novelty  
+Temporal phrase-alignment across three stylistically different platforms reveals orchestrated messaging long before mainstream media notices, something few analysts can monitor in real time.
+
+────────────────────────────────────────
+8. Tool: Patent-Code Bridge
+────────────────────────────────────────
+Description  
+Links USPTO patent claims to real-world open-source implementations by matching technical keywords across patent abstracts, arXiv methods sections, and GitHub function names, highlighting defensive-publication opportunities.
+
+Data sources  
+• USPTO PatentView • arXiv • GitHub Code Search
+
+25-line async Python sketch
+```python
+import asyncio,aiohttp,re,json
+USPTO='https://www.patentsview.org/api/patents/query?q={{"q":"{k}"}}&f=["patent_title","abstract"]'
+ARXIV='http://export.arxiv.org/api/query?search_query=all:{k}&max_results=5'
+GH='https://api.github.com/search/code?q={k}+in:file'
+
+async def grab(s,u): async with s.get(u) as r: return await r.text()
+
+async def bridge(keyword,session):
+    pat=json.loads(await grab(session,USPTO.format(k=keyword)))['patents'][:20]
+    axi=json.loads(await grab(session,ARXIV.format(k=keyword)))
+    gho=json.loads(await grab(session,GH.format(k=keyword)))['total_count']
+    claim_words=sum(len(p['abstract'].split()) for p in pat)
+    return {'kw':keyword,'code':gho,'papers':len(axi),'patent_words':claim_words}
+
+async def run(keys):
+    async with aiohttp.ClientSession() as s:
+        res=await asyncio.gather(*(bridge(k,s) for k in keys))
+        print(res)
+
+asyncio.run(run(['quantum convolution','federated learning']))
+```
+Novelty  
+Juxtaposing claim breadth with actual code volume surfaces patents that are both broad and already implemented—prime candidates for prior-art challenges unheard of when examining patents or repos in isolation.
+
+────────────────────────────────────────
+9. Tool: Scholar-Velocity Gauge
+────────────────────────────────────────
+Description  
+Measures how rapidly research ideas turn into working code by timing the interval between an arXiv upload and the first GitHub repository or StackOverflow question that cites it, then benchmarking across disciplines.
+
+Data sources  
+• arXiv • GitHub Search • StackOverflow Archive • Google Scholar
+
+25-line async Python sketch
+```python
+import asyncio,aiohttp,re,json,datetime
+AX='http://export.arxiv.org/api/query?search_query=cat:{cat}&sortBy=submittedDate&max_results=30'
+GH='https://api.github.com/search/repositories?q={id}'
+SO='https://api.stackexchange.com/2.3/search/advanced?order=asc&sort=activity&q={id}&site=stackoverflow'
+
+async def txt(s,u): async with s.get(u) as r: return await r.text()
+
+def date(s): return datetime.datetime.strptime(s[:10],'%Y-%m-%d')
+
+async def lag(paper,session):
+    gid, sub = paper['id'], paper['published']
+    gh = json.loads(await txt(session,GH.format(id=gid)))['items']
+    so = json.loads(await txt(session,SO.format(id=gid)))['items']
+    t=min([date(gh[0]['created_at'])] if gh else [] +
+          [date(so[0]['creation_date'].isoformat())] if so else [],
+          default=None)
+    return (t-date(sub)).days if t else None
+
+async def gauge(cat):
+    async with aiohttp.ClientSession() as s:
+        ax=json.loads(await txt(s,AX.format(cat=cat)))
+        lags=await asyncio.gather(*(lag(p,s) for p in ax))
+        print(cat,'mean velocity',sum(filter(None,lags))/len(lags))
+
+asyncio.run(gauge('cs.AI'))
+```
+Novelty  
+Reveals fields where ideas operationalize in days versus years—quantifying innovation agility that would otherwise require months of manual tracking.
+
+────────────────────────────────────────
+10. Tool: Open-Source Risk Thermometer
+────────────────────────────────────────
+Description  
+Scores open-source repos on potential legal/regulatory heat by cross-checking their licenses and contributor geography (GitHub), overlapping active litigation in PACER summaries mirrored in SEC filings, and related blocking patents from USPTO.
+
+Data sources  
+• GitHub API • SEC Litigation Releases • USPTO • CourtListener API (PACER mirror)  
+
+25-line async Python sketch
+```python
+import asyncio,aiohttp,json,re
+GH='https://api.github.com/repos/{r}'
+SEC='https://www.sec.gov/litigation/litreleases/litreleases.xml'
+USP='https://www.patentsview.org/api/patents/query?q={{"patent_title":"{k}"}}'
+PAC='https://www.courtlistener.com/api/rest/v3/search/?q={k}'
+
+async def grab(s,u): async with s.get(u) as r: return await r.text()
+
+async def risk(repo,session):
+    meta=json.loads(await grab(session,GH.format(r=repo)))
+    lic=meta.get('license',{}).get('spdx_id','')
+    contrib=[c['location'] for c in json.loads(await grab(session,meta['contributors_url']))][:30]
+    key=repo.split('/')[-1]
+    sec=' '.join(re.findall(r'<text>(.*?)</text>',await grab(session,SEC)))
+    suits=len(re.findall(key,sec,re.I))
+    pat=json.loads(await grab(session,USP.format(k=key)))['total_patent_count']
+    pac=json.loads(await grab(session,PAC.format(k=key)))['count']
+    score=suits+pat+pac+(lic not in ('MIT','Apache-2.0'))+sum('CN' in c for c in contrib)
+    return {'repo':repo,'risk':score}
+
+async def thermo(repos):
+    async with aiohttp.ClientSession() as s:
+        print(await asyncio.gather(*(risk(r,s) for r in repos)))
+
+asyncio.run(thermo(['pytorch/pytorch','openssl/openssl']))
+```
+Novelty  
+Merges legal filings, patent density, and contributor jurisdiction to warn maintainers of looming compliance/IP storms—an integrated threat view unavailable from any single source.
+
+────────────────────────────────────────
+¹ Google Scholar lacks an official API; community-friendly scrapers/proxies such as jina.ai preview endpoints are shown purely illustratively.

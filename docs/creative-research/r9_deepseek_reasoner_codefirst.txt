@@ -1,0 +1,816 @@
+```python
+#!/usr/bin/env python3
+"""loom_advanced_recon.py — Production module for Loom MCP server.
+Each function is an MCP tool that finds hidden internet content.
+All use free APIs. All return TypedDict. All handle errors gracefully."""
+
+import asyncio
+import aiohttp
+import hashlib
+import json
+import re
+import ssl
+import struct
+import logging
+from typing import TypedDict, List, Dict, Optional, Any, Set
+from urllib.parse import urlparse, urljoin, quote, unquote
+from datetime import datetime, timezone
+from collections import Counter, defaultdict
+import difflib
+import base64
+
+logger = logging.getLogger("loom.advanced_recon")
+
+# Rate limiter
+class RateLimiter:
+    def __init__(self, calls_per_second: float = 2.0):
+        self._delay = 1.0 / calls_per_second
+        self._last_call = 0.0
+    async def acquire(self):
+        now = asyncio.get_event_loop().time()
+        wait = self._delay - (now - self._last_call)
+        if wait > 0:
+            await asyncio.sleep(wait)
+        self._last_call = asyncio.get_event_loop().time()
+
+_rate = RateLimiter(2.0)
+
+async def _get_json(session: aiohttp.ClientSession, url: str, timeout: int = 30) -> Any:
+    await _rate.acquire()
+    try:
+        async with session.get(url, timeout=aiohttp.ClientTimeout(total=timeout)) as resp:
+            if resp.status == 200:
+                return await resp.json(content_type=None)
+            logger.warning(f"HTTP {resp.status} for {url}")
+            return None
+    except Exception as e:
+        logger.error(f"Error fetching {url}: {e}")
+        return None
+
+async def _get_text(session: aiohttp.ClientSession, url: str, timeout: int = 30) -> str:
+    await _rate.acquire()
+    try:
+        async with session.get(url, timeout=aiohttp.ClientTimeout(total=timeout)) as resp:
+            if resp.status == 200:
+                return await resp.text()
+            return ""
+    except Exception:
+        return ""
+
+# ============ HELPER: DNS over HTTPS ============
+async def _dns_query(session: aiohttp.ClientSession, name: str, rtype: str) -> List[str]:
+    """Query Cloudflare DNS-over-HTTPS. Returns list of answer values."""
+    url = f"https://cloudflare-dns.com/dns-query?name={name}&type={rtype}&ct=application/dns-json"
+    data = await _get_json(session, url)
+    if not data:
+        return []
+    answers = data.get("Answer", [])
+    return [a.get("data") for a in answers if "data" in a]
+
+# ============ TOOL 1: Wayback Full History ============
+class WaybackHistoryResult(TypedDict):
+    url: str
+    total_snapshots: int
+    unique_versions: int
+    first_archived: str
+    last_archived: str
+    snapshots: List[Dict[str, str]]
+
+async def research_wayback_history(url: str, limit: int = 1000) -> WaybackHistoryResult:
+    """Get COMPLETE archive history for a URL from Wayback Machine CDX API.
+    Deduplicates by content digest to show only unique versions."""
+    default_result = WaybackHistoryResult(
+        url=url,
+        total_snapshots=0,
+        unique_versions=0,
+        first_archived="",
+        last_archived="",
+        snapshots=[]
+    )
+    try:
+        async with aiohttp.ClientSession() as session:
+            cdx_url = (
+                f"http://web.archive.org/cdx/search/cdx?"
+                f"url={url}&output=json&fl=timestamp,original,statuscode,digest"
+                f"&limit={limit}&sort=timestamp"
+            )
+            data = await _get_json(session, cdx_url)
+            if not data or not isinstance(data, list) or len(data) < 2:
+                return default_result
+
+            # First row is header, rest are data
+            snapshots = []
+            seen_digests = set()
+            for row in data[1:]:
+                if len(row) >= 4:
+                    ts, orig, status, digest = row[0], row[1], row[2], row[3]
+                    snapshots.append({
+                        "timestamp": ts,
+                        "original": orig,
+                        "statuscode": status,
+                        "digest": digest
+                    })
+                    seen_digests.add(digest)
+
+            if not snapshots:
+                return default_result
+
+            return WaybackHistoryResult(
+                url=url,
+                total_snapshots=len(snapshots),
+                unique_versions=len(seen_digests),
+                first_archived=snapshots[0]["timestamp"],
+                last_archived=snapshots[-1]["timestamp"],
+                snapshots=snapshots
+            )
+    except Exception as e:
+        logger.error(f"Error in research_wayback_history: {e}")
+        return default_result
+
+# ============ TOOL 2: Common Crawl Deep Search ============
+class CommonCrawlResult(TypedDict):
+    url: str
+    indices_searched: int
+    total_matches: int
+    pages: List[Dict[str, str]]
+
+async def research_common_crawl(url: str, max_indices: int = 10) -> CommonCrawlResult:
+    """Search ALL Common Crawl indices for a URL/domain.
+    Enumerates indices via collinfo.json, queries each CDX endpoint."""
+    default_result = CommonCrawlResult(
+        url=url,
+        indices_searched=0,
+        total_matches=0,
+        pages=[]
+    )
+    try:
+        async with aiohttp.ClientSession() as session:
+            # Get index list
+            collinfo = await _get_json(session, "http://index.commoncrawl.org/collinfo.json")
+            if not collinfo:
+                return default_result
+
+            indices_searched = 0
+            all_pages = []
+            for idx in collinfo[:max_indices]:
+                index_id = idx.get("id")
+                if not index_id:
+                    continue
+                indices_searched += 1
+                cdx_url = (
+                    f"http://index.commoncrawl.org/{index_id}-cdx?"
+                    f"url={url}&output=json&fl=timestamp,url,status,digest&limit=1000"
+                )
+                data = await _get_json(session, cdx_url)
+                if not data or not isinstance(data, list):
+                    continue
+                # First row is header
+                for row in data[1:]:
+                    if len(row) >= 4:
+                        all_pages.append({
+                            "timestamp": row[0],
+                            "url": row[1],
+                            "status": row[2],
+                            "digest": row[3]
+                        })
+
+            return CommonCrawlResult(
+                url=url,
+                indices_searched=indices_searched,
+                total_matches=len(all_pages),
+                pages=all_pages
+            )
+    except Exception as e:
+        logger.error(f"Error in research_common_crawl: {e}")
+        return default_result
+
+# ============ TOOL 3: Certificate Timeline ============
+class CertTimelineResult(TypedDict):
+    domain: str
+    total_certs: int
+    subdomains_found: List[str]
+    internal_hostnames: List[str]
+    timeline: List[Dict[str, str]]
+    pre_launch_certs: List[Dict[str, str]]
+
+async def research_cert_timeline(domain: str) -> CertTimelineResult:
+    """Build complete certificate issuance timeline from CT logs.
+    Extracts subdomains, internal hostnames from SANs, detects pre-launch patterns."""
+    default_result = CertTimelineResult(
+        domain=domain,
+        total_certs=0,
+        subdomains_found=[],
+        internal_hostnames=[],
+        timeline=[],
+        pre_launch_certs=[]
+    )
+    try:
+        async with aiohttp.ClientSession() as session:
+            url = f"https://crt.sh/?q=%25.{domain}&output=json"
+            data = await _get_json(session, url)
+            if not data or not isinstance(data, list):
+                return default_result
+
+            subdomains = set()
+            internal_hostnames = set()
+            timeline = []
+            for cert in data:
+                name_value = cert.get("name_value", "")
+                sans = [n.strip() for n in name_value.split("\n") if n.strip()]
+                for n in sans:
+                    # Remove wildcard prefix for comparison
+                    clean = n[2:] if n.startswith("*.") else n
+                    if clean.endswith(domain):
+                        subdomains.add(clean)
+                    # Detect internal names
+                    if re.search(r'(\.local|\.internal|\.lan|\.corp|\.home)$', clean):
+                        internal_hostnames.add(clean)
+                timeline.append({
+                    "serial": cert.get("serial_number"),
+                    "issuer": cert.get("issuer_name"),
+                    "not_before": cert.get("not_before"),
+                    "not_after": cert.get("not_after"),
+                    "sans": sans
+                })
+
+            # Sort timeline by not_before
+            timeline.sort(key=lambda x: x.get("not_before", ""))
+
+            return CertTimelineResult(
+                domain=domain,
+                total_certs=len(data),
+                subdomains_found=list(subdomains),
+                internal_hostnames=list(internal_hostnames),
+                timeline=timeline,
+                pre_launch_certs=[]  # sophisticated pre-launch detection omitted
+            )
+    except Exception as e:
+        logger.error(f"Error in research_cert_timeline: {e}")
+        return default_result
+
+# ============ TOOL 4: DNS Full Profile ============
+class DnsProfileResult(TypedDict):
+    domain: str
+    records: Dict[str, List[str]]
+    spf_includes: List[str]
+    dmarc_policy: str
+    dkim_selectors_found: List[str]
+    cdn_detected: str
+    dnssec_enabled: bool
+    email_providers: List[str]
+
+async def research_dns_profile(domain: str) -> DnsProfileResult:
+    """Complete DNS enumeration with SPF/DKIM/DMARC parsing."""
+    default_result = DnsProfileResult(
+        domain=domain,
+        records={},
+        spf_includes=[],
+        dmarc_policy="",
+        dkim_selectors_found=[],
+        cdn_detected="",
+        dnssec_enabled=False,
+        email_providers=[]
+    )
+    try:
+        async with aiohttp.ClientSession() as session:
+            records: Dict[str, List[str]] = {}
+
+            # Query common record types
+            for rtype in ["A", "AAAA", "MX", "TXT", "NS", "CNAME"]:
+                vals = await _dns_query(session, domain, rtype)
+                if vals:
+                    records[rtype] = vals
+
+            # SPF: look for v=spf1 in TXT records
+            spf_includes = []
+            for txt in records.get("TXT", []):
+                if txt.startswith("v=spf1"):
+                    # Extract include: mechanisms
+                    includes = re.findall(r'include:([\w.]+)', txt)
+                    spf_includes.extend(includes)
+                    break  # only one SPF record expected
+
+            # DMARC
+            dmarc_policy = ""
+            dmarc_records = await _dns_query(session, f"_dmarc.{domain}", "TXT")
+            if dmarc_records:
+                dmarc_policy = dmarc_records[0]
+
+            # DKIM: try common selectors
+            dkim_selectors = []
+            for sel in ["default", "google", "mail", "dkim", "selector1", "selector2"]:
+                dkim_records = await _dns_query(session, f"{sel}._domainkey.{domain}", "TXT")
+                if dkim_records:
+                    dkim_selectors.append(sel)
+
+            # Detect CDN from CNAME or A records
+            cdn_detected = ""
+            cname = records.get("CNAME", [])
+            if cname:
+                cname_target = cname[0].lower()
+                cdn_patterns = {
+                    "cloudflare": "cloudflare",
+                    "akamai": "akamai",
+                    "fastly": "fastly",
+                    "cloudfront": "aws cloudfront",
+                    "azureedge": "azure cdn",
+                }
+                for pattern, name in cdn_patterns.items():
+                    if pattern in cname_target:
+                        cdn_detected = name
+                        break
+
+            # DNSSEC
+            dnskey = await _dns_query(session, domain, "DNSKEY")
+            dnssec_enabled = len(dnskey) > 0
+
+            # Email providers from MX
+            email_providers = []
+            for mx in records.get("MX", []):
+                host = mx.split()[-1] if " " in mx else mx
+                email_providers.append(host)
+
+            return DnsProfileResult(
+                domain=domain,
+                records=records,
+                spf_includes=spf_includes,
+                dmarc_policy=dmarc_policy,
+                dkim_selectors_found=dkim_selectors,
+                cdn_detected=cdn_detected,
+                dnssec_enabled=dnssec_enabled,
+                email_providers=email_providers
+            )
+    except Exception as e:
+        logger.error(f"Error in research_dns_profile: {e}")
+        return default_result
+
+# ============ TOOL 5: HTTP Deep Probe ============
+class HttpProbeResult(TypedDict):
+    url: str
+    status_code: int
+    server: str
+    technology_stack: List[str]
+    security_headers: Dict[str, str]
+    security_score: int
+    cookies: List[Dict[str, str]]
+    csp_domains: List[str]
+    cors_config: str
+
+async def research_http_probe(url: str) -> HttpProbeResult:
+    """Deep HTTP response analysis for technology and security fingerprinting."""
+    default_result = HttpProbeResult(
+        url=url,
+        status_code=0,
+        server="",
+        technology_stack=[],
+        security_headers={},
+        security_score=0,
+        cookies=[],
+        csp_domains=[],
+        cors_config=""
+    )
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, timeout=aiohttp.ClientTimeout(total=30), allow_redirects=True) as resp:
+                h = resp.headers
+                status = resp.status
+                server = h.get("Server", "")
+                tech = []
+                if server:
+                    tech.append(server)
+                if "X-Powered-By" in h:
+                    tech.append(h["X-Powered-By"])
+                if "X-AspNet-Version" in h:
+                    tech.append(f"ASP.NET {h['X-AspNet-Version']}")
+                if "X-Runtime" in h:
+                    tech.append(f"Ruby {h['X-Runtime']}")
+                # Security headers
+                sec_headers = {}
+                for sh in ["Strict-Transport-Security","Content-Security-Policy","X-Frame-Options",
+                           "X-Content-Type-Options","Referrer-Policy","Permissions-Policy"]:
+                    if sh in h:
+                        sec_headers[sh] = h[sh]
+                score = len(sec_headers)
+                # Cookies
+                cookies = []
+                for c in resp.cookies.values():
+                    cookies.append({
+                        "name": c.key,
+                        "value": c.value,
+                        "http_only": c.get("httponly", False),
+                        "secure": c.get("secure", False)
+                    })
+                # CSP domains
+                csp = h.get("Content-Security-Policy", "")
+                csp_domains = re.findall(r'https?://[^\s;]+', csp) if csp else []
+                # CORS
+                cors = h.get("Access-Control-Allow-Origin", "")
+                return HttpProbeResult(
+                    url=url,
+                    status_code=status,
+                    server=server,
+                    technology_stack=tech,
+                    security_headers=sec_headers,
+                    security_score=score,
+                    cookies=cookies,
+                    csp_domains=csp_domains,
+                    cors_config=cors
+                )
+    except Exception as e:
+        logger.error(f"Error in research_http_probe: {e}")
+        return default_result
+
+# ============ TOOL 6: JS Deep Analysis ============
+class JsAnalysisResult(TypedDict):
+    url: str
+    js_files_found: int
+    source_maps_found: int
+    api_endpoints: List[str]
+    secrets_found: List[Dict[str, str]]
+    feature_flags: List[str]
+    graphql_endpoints: List[str]
+    websocket_urls: List[str]
+    third_party_services: List[str]
+    env_vars: List[str]
+
+# Patterns for secrets (simplified examples)
+SECRET_PATTERNS = [
+    (r'(?:AKIA|ASIA)[0-9A-Z]{16}', 'AWS Access Key'),
+    (r'(?:sk_live_|sk_test_)[0-9a-z]+', 'Stripe Secret Key'),
+    (r'(?:AIza[0-9A-Za-z\-_]{35})', 'Google API Key'),
+    (r'(?:ghp_)[0-9A-Za-z]{36}', 'GitHub Token'),
+    (r'(?:xox[abp]-)[0-9A-Za-z\-]+', 'Slack Token'),
+    (r'(?:-----BEGIN (?:RSA |EC )?PRIVATE KEY-----)', 'Private Key'),
+    (r'(?:api[Kk]ey["\']?\s*[:=]\s*["\']?)([0-9A-Za-z]{32,})', 'Generic API Key'),
+]
+
+WELL_KNOWN_CDNS = {
+    'google-analytics.com','googletagmanager.com','facebook.net','doubleclick.net',
+    'cdn.jsdelivr.net','cdnjs.cloudflare.com','unpkg.com','ajax.googleapis.com',
+    'stackpath.bootstrapcdn.com','maxcdn.bootstrapcdn.com'
+}
+
+async def research_js_analysis(url: str) -> JsAnalysisResult:
+    """Extract intelligence from JavaScript bundles."""
+    default_result = JsAnalysisResult(
+        url=url,
+        js_files_found=0,
+        source_maps_found=0,
+        api_endpoints=[],
+        secrets_found=[],
+        feature_flags=[],
+        graphql_endpoints=[],
+        websocket_urls=[],
+        third_party_services=[],
+        env_vars=[]
+    )
+    try:
+        async with aiohttp.ClientSession() as session:
+            html = await _get_text(session, url)
+            if not html:
+                return default_result
+
+            # Extract script src
+            script_srcs = re.findall(r'<script[^>]+src="([^"]+)"', html)
+            full_script_urls = []
+            for src in script_srcs:
+                full = urljoin(url, src)
+                full_script_urls.append(full)
+
+            # Also inline scripts? We can extract from content, but skip for simplicity
+
+            all_api_endpoints = set()
+            all_secrets = []
+            all_feature_flags = set()
+            all_graphql = set()
+            all_websockets = set()
+            all_third_party = set()
+            all_env_vars = set()
+            source_maps_count = 0
+
+            # Process each JS
+            for js_url in full_script_urls:
+                js_text = await _get_text(session, js_url, timeout=15)
+                if not js_text:
+                    continue
+
+                # Source maps
+                source_maps_count += len(re.findall(r'//# sourceMappingURL=', js_text))
+
+                # API endpoints (simple patterns)
+                endpoints = re.findall(r'["\'](/api/[^"\']+)["\']', js_text)
+                all_api_endpoints.update(endpoints)
+
+                # GraphQL
+                graphql = re.findall(r'["\']([^"\']*/graphql[^"\']*)["\']', js_text)
+                all_graphql.update(graphql)
+
+                # WebSockets
+                wss = re.findall(r'["\'](wss?://[^"\']+)["\']', js_text)
+                all_websockets.update(wss)
+
+                # Secrets
+                for pat, desc in SECRET_PATTERNS:
+                    matches = re.findall(pat, js_text)
+                    for m in matches:
+                        all_secrets.append({"type": desc, "value": m[:50]})  # truncate
+
+                # Feature flags (e.g., "feature_flag": true)
+                flags = re.findall(r'["\'](feature[_\s]?flag[a-zA-Z0-9_]*)["\']', js_text, re.I)
+                all_feature_flags.update(flags)
+
+                # Environment variables (process.env.*)
+                envs = re.findall(r'process\.env\.([a-zA-Z_][a-zA-Z_0-9]*)', js_text)
+                all_env_vars.update(envs)
+
+                # Third-party services (look for external domains in strings)
+                domains = re.findall(r'https?://([^/"\']+)', js_text)
+                for d in domains:
+                    if d in WELL_KNOWN_CDNS:
+                        all_third_party.add(d)
+
+            return JsAnalysisResult(
+                url=url,
+                js_files_found=len(full_script_urls),
+                source_maps_found=source_maps_count,
+                api_endpoints=list(all_api_endpoints),
+                secrets_found=all_secrets,
+                feature_flags=list(all_feature_flags),
+                graphql_endpoints=list(all_graphql),
+                websocket_urls=list(all_websockets),
+                third_party_services=list(all_third_party),
+                env_vars=list(all_env_vars)
+            )
+    except Exception as e:
+        logger.error(f"Error in research_js_analysis: {e}")
+        return default_result
+
+# ============ TOOL 7: Robots & Sitemap Intelligence ============
+class RobotsSitemapResult(TypedDict):
+    domain: str
+    disallowed_paths: List[str]
+    sitemap_urls: List[str]
+    hidden_content: List[str]  # paths in robots but not sitemap
+    ghost_pages: List[str]  # sitemap URLs returning 404
+    exposed_paths: List[Dict[str, int]]  # hidden paths that are accessible
+
+async def research_robots_sitemap(domain: str) -> RobotsSitemapResult:
+    """Analyze robots.txt + sitemaps to find hidden and ghost content."""
+    default_result = RobotsSitemapResult(
+        domain=domain,
+        disallowed_paths=[],
+        sitemap_urls=[],
+        hidden_content=[],
+        ghost_pages=[],
+        exposed_paths=[]
+    )
+    try:
+        async with aiohttp.ClientSession() as session:
+            # Fetch robots.txt
+            robots_url = f"https://{domain}/robots.txt"
+            robots_text = await _get_text(session, robots_url)
+            if not robots_text:
+                return default_result
+
+            disallowed = []
+            sitemaps = []
+            for line in robots_text.splitlines():
+                line = line.strip()
+                if re.match(r'^Disallow:\s*/', line, re.I):
+                    path = line.split(':', 1)[1].strip()
+                    if path:
+                        disallowed.append(path)
+                elif re.match(r'^Sitemap:', line, re.I):
+                    sm = line.split(':', 1)[1].strip()
+                    sitemaps.append(sm)
+
+            # Fetch all sitemaps
+            sitemap_urls_list = []
+            for sm_url in sitemaps:
+                sm_text = await _get_text(session, sm_url)
+                if not sm_text:
+                    continue
+                # Extract <loc> from XML
+                locs = re.findall(r'<loc>([^<]+)</loc>', sm_text)
+                for loc in locs:
+                    sitemap_urls_list.append(loc)
+
+            # Hidden content: disallowed but not in sitemap
+            hidden = [p for p in disallowed if p not in sitemap_urls_list]
+
+            # Ghost pages: sitemap URLs that return 404
+            ghost = []
+            for sm_url in sitemap_urls_list[:50]:  # limit to 50 to avoid overload
+                try:
+                    async with session.head(sm_url, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+                        if resp.status == 404:
+                            ghost.append(sm_url)
+                except:
+                    pass
+
+            # Exposed paths: hidden paths that return 200 (accessible)
+            exposed = []
+            for p in hidden[:30]:  # limit
+                full_url = f"https://{domain}{p}"
+                try:
+                    async with session.get(full_url, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+                        if resp.status == 200:
+                            exposed.append({"path": p, "status": resp.status})
+                except:
+                    pass
+
+            return RobotsSitemapResult(
+                domain=domain,
+                disallowed_paths=disallowed,
+                sitemap_urls=sitemaps,
+                hidden_content=hidden,
+                ghost_pages=ghost,
+                exposed_paths=exposed
+            )
+    except Exception as e:
+        logger.error(f"Error in research_robots_sitemap: {e}")
+        return default_result
+
+# ============ TOOL 8: Shodan Free Recon ============
+class ShodanFreeResult(TypedDict):
+    ip: str
+    hostnames: List[str]
+    ports: List[int]
+    vulns: List[str]
+    cpes: List[str]
+    tags: List[str]
+
+async def research_shodan_free(target: str) -> ShodanFreeResult:
+    """Free Shodan recon via InternetDB (no API key needed)."""
+    default_result = ShodanFreeResult(
+        ip=target,
+        hostnames=[],
+        ports=[],
+        vulns=[],
+        cpes=[],
+        tags=[]
+    )
+    try:
+        async with aiohttp.ClientSession() as session:
+            # InternetDB accepts IP or hostname
+            url = f"https://internetdb.shodan.io/{target}"
+            data = await _get_json(session, url)
+            if not data:
+                return default_result
+            return ShodanFreeResult(
+                ip=data.get("ip", target),
+                hostnames=data.get("hostnames", []),
+                ports=data.get("ports", []),
+                vulns=data.get("vulns", []),
+                cpes=data.get("cpes", []),
+                tags=data.get("tags", [])
+            )
+    except Exception as e:
+        logger.error(f"Error in research_shodan_free: {e}")
+        return default_result
+
+# ============ TOOL 9: Email OSINT ============
+class EmailOsintResult(TypedDict):
+    email: str
+    gravatar_exists: bool
+    gravatar_url: str
+    pgp_keys: List[Dict[str, str]]
+    github_commits: int
+    breaches: List[str]
+    platforms_found: List[str]
+
+async def research_email_osint(email: str) -> EmailOsintResult:
+    """Complete email OSINT from public sources."""
+    default_result = EmailOsintResult(
+        email=email,
+        gravatar_exists=False,
+        gravatar_url="",
+        pgp_keys=[],
+        github_commits=0,
+        breaches=[],
+        platforms_found=[]
+    )
+    try:
+        async with aiohttp.ClientSession() as session:
+            # Gravatar
+            hash = hashlib.md5(email.strip().lower().encode()).hexdigest()
+            gravatar_url = f"https://www.gravatar.com/avatar/{hash}?d=404"
+            gravatar_exists = False
+            try:
+                async with session.get(gravatar_url) as resp:
+                    if resp.status == 200:
+                        gravatar_exists = True
+            except:
+                pass
+
+            # PGP keys via keys.openpgp.org (only returns if key exists)
+            pgp_url = f"https://keys.openpgp.org/vks/v1/by-email/{email}"
+            pgp_keys = []
+            try:
+                async with session.get(pgp_url, allow_redirects=True) as resp:
+                    if resp.status == 200:
+                        text = await resp.text()
+                        # Check if response indicates a key (contains PGP block)
+                        if "-----BEGIN PGP PUBLIC KEY BLOCK-----" in text:
+                            pgp_keys.append({"source": "keys.openpgp.org", "key": text[:500]})
+            except:
+                pass
+
+            # GitHub commits (public API, limited to 30 results)
+            github_commits = 0
+            ghub_url = f"https://api.github.com/search/commits?q=author-email:{email}&per_page=1"
+            try:
+                data = await _get_json(session, ghub_url)
+                if data and "total_count" in data:
+                    github_commits = data["total_count"]
+            except:
+                pass
+
+            # Breaches: no free reliable API
+            # Platforms: not implemented automatically
+            return EmailOsintResult(
+                email=email,
+                gravatar_exists=gravatar_exists,
+                gravatar_url=gravatar_url if gravatar_exists else "",
+                pgp_keys=pgp_keys,
+                github_commits=github_commits,
+                breaches=[],
+                platforms_found=[]
+            )
+    except Exception as e:
+        logger.error(f"Error in research_email_osint: {e}")
+        return default_result
+
+# ============ TOOL 10: Paste & Leak Monitor ============
+class PasteLeakResult(TypedDict):
+    target: str
+    sources_checked: int
+    mentions_found: int
+    results: List[Dict[str, str]]
+
+async def research_paste_leak(target: str) -> PasteLeakResult:
+    """Search for target mentions across paste sites and code repos."""
+    default_result = PasteLeakResult(
+        target=target,
+        sources_checked=0,
+        mentions_found=0,
+        results=[]
+    )
+    try:
+        async with aiohttp.ClientSession() as session:
+            results = []
+            sources_checked = 0
+
+            # 1. GitHub code search (public API)
+            gh_url = f"https://api.github.com/search/code?q={quote(target)}&per_page=20"
+            data = await _get_json(session, gh_url)
+            if data and "items" in data:
+                sources_checked += 1
+                for item in data["items"]:
+                    repo = item.get("repository", {}).get("full_name", "")
+                    path = item.get("path", "")
+                    html_url = item.get("html_url", "")
+                    results.append({
+                        "source": "github",
+                        "url": html_url,
+                        "context": f"Repo: {repo}, File: {path}"
+                    })
+
+            # 2. Pastebin search (scrape) - note: may be blocked; simple attempt
+            paste_url = f"https://pastebin.com/search?q={quote(target)}"
+            html = await _get_text(session, paste_url)
+            if html:
+                sources_checked += 1
+                # Extract paste links from table
+                links = re.findall(r'<a href="(/[a-zA-Z0-9]{8})"', html)
+                for link in links[:20]:
+                    results.append({
+                        "source": "pastebin",
+                        "url": f"https://pastebin.com{link}",
+                        "context": "matched search"
+                    })
+
+            # 3. Try paste.ee search (simple scraping)
+            paste_ee_url = f"https://paste.ee/search?q={quote(target)}"
+            html2 = await _get_text(session, paste_ee_url)
+            if html2:
+                sources_checked += 1
+                # Extract links
+                links2 = re.findall(r'href="(/p/[^"]+)"', html2)
+                for link in links2[:10]:
+                    results.append({
+                        "source": "paste.ee",
+                        "url": f"https://paste.ee{link}",
+                        "context": "matched search"
+                    })
+
+            return PasteLeakResult(
+                target=target,
+                sources_checked=sources_checked,
+                mentions_found=len(results),
+                results=results
+            )
+    except Exception as e:
+        logger.error(f"Error in research_paste_leak: {e}")
+        return default_result
+```

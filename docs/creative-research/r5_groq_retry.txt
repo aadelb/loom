@@ -1,0 +1,1 @@
+Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01kg8bh82ffvgrjf0s1n3bfjfz` service tier `on_demand` on tokens per day (TPD): Limit 100000, Used 99091, Requested 8306. Please try again in 1h46m31.008s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing

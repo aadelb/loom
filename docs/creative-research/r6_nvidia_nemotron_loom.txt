@@ -1,0 +1,302 @@
+Below are designs for 10 async Python research tools that leverage free APIs to find hidden internet content, each focusing on a different aspect as requested. Due to the complexity and the request for brevity (30-line implementations), some simplifications and suggestions for further development are included. **Real endpoints are used where publicly available and free; otherwise, placeholders or instructions for obtaining API keys are provided**.
+
+### 1. **Dead Content Resurrection (12 Archive Sources)**
+
+* **Focus**: Retrieve archived versions of dead web pages.
+* **APIs**: Internet Archive (archive.org), UK Web Archive (for example)
+* **Implementation** (Simplified, focusing on Internet Archive for brevity)
+
+```python
+from typing import TypedDict
+import aiohttp
+
+class ResurrectedContent(TypedDict):
+    url: str
+    archived_url: str
+    archive_date: str
+
+async def resurrect_content(url: str) -> ResurrectedContent | None:
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f"http://archive.org/wayback/available?url={url}") as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                if data['archived_snapshots'] and data['archived_snapshots']['closest']:
+                    return {
+                        "url": url,
+                        "archived_url": data['archived_snapshots']['closest']['url'],
+                        "archive_date": data['archived_snapshots']['closest']['timestamp']
+                    }
+            return None
+
+# Example Usage
+import asyncio
+print(asyncio.run(resurrect_content("http://example.com")))
+```
+
+### 2. **Invisible Web Discovery**
+
+* **Focus**: Discover content not indexed by traditional search engines.
+* **API**: Since most "invisible web" APIs are not free or publicly exposed, we'll simulate with a dark web directory scan (highly simplified, **NOT** accessing the dark web):
+* **Note**: Real implementation would require specific, often non-free, APIs or custom crawling solutions.
+
+```python
+from typing import TypedDict
+import aiohttp
+
+class InvisibleWebResource(TypedDict):
+    category: str
+    resource_url: str
+
+async def discover_invisible_web(category: str) -> list[InvisibleWebResource]:
+    # SIMULATION - Replace with actual API calls if/when available
+    resources = [
+        {"category": category, "resource_url": f"https://simulated-{category}.onion"},
+        # ...
+    ]
+    return resources
+
+# Example Usage
+import asyncio
+print(asyncio.run(discover_invisible_web(" forums")))
+```
+
+### 3. **JS Intelligence Extraction**
+
+* **Focus**: Extract insights from JavaScript files.
+* **API**: Custom parsing (no public API for this specific task)
+* **Implementation** (Simplified, focusing on function count extraction)
+
+```python
+from typing import TypedDict
+import aiohttp
+import js2py  # For JavaScript parsing
+
+class JSIntelligence(TypedDict):
+    url: str
+    function_count: int
+
+async def extract_js_intelligence(url: str) -> JSIntelligence:
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as resp:
+            if resp.status == 200:
+                js_code = await resp.text()
+                try:
+                    js2py.eval_js(js_code)  # Simple evaluation, NOT secure for untrusted code
+                    # SIMULATED FUNCTION COUNT FOR DEMO
+                    return {"url": url, "function_count": 10}
+                except Exception as e:
+                    print(f"Error parsing {url}: {e}")
+                    return {"url": url, "function_count": 0}
+
+# Example Usage
+import asyncio
+print(asyncio.run(extract_js_intelligence("http://example.com/script.js")))
+```
+
+### 4. **30+ Search Engine Fusion**
+
+* **Focus**: Aggregate results from multiple search engines.
+* **APIs**: Google Custom Search API (requires API key), Bing Search API (API key)
+* **Implementation** (Simplified, using Google Custom Search for demo)
+
+```python
+from typing import TypedDict
+import aiohttp
+import json
+
+class SearchResult(TypedDict):
+    engine: str
+    title: str
+    link: str
+
+async def fuse_search_engines(query: str, google_api_key: str, cse_id: str) -> list[SearchResult]:
+    async with aiohttp.ClientSession() as session:
+        params = {"q": query, "key": google_api_key, "cx": cse_id}
+        async with session.get("https://www.googleapis.com/customsearch/v1", params=params) as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                return [{"engine": "Google", "title": item['title'], "link": item['link']} for item in data['items']]
+
+# Example Usage
+import asyncio
+print(asyncio.run(fuse_search_engines("example search", "YOUR_API_KEY", "YOUR_CSE_ID")))
+```
+
+### 5. **Passive Recon**
+
+* **Focus**: Gather info without direct interaction.
+* **API**: WHOIS Lookup (e.g., httpbin for demo, as free WHOIS APIs are scarce)
+* **Implementation**
+
+```python
+from typing import TypedDict
+import aiohttp
+
+class WHOISInfo(TypedDict):
+    domain: str
+    owner: str
+
+async def passive_recon(domain: str) -> WHOISInfo:
+    # Using httpbin for demo; replace with a real WHOIS API
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f"https://httpbin.org/anything?domain={domain}") as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                # SIMULATED OWNER FOR DEMO
+                return {"domain": domain, "owner": "Simulated Owner"}
+
+# Example Usage
+import asyncio
+print(asyncio.run(passive_recon("example.com")))
+```
+
+### 6. **Identity Resolution**
+
+* **Focus**: Link online identities.
+* **API**: PIP (People Insights API) by Mozilla (or similar, requires API key)
+* **Implementation** (SIMULATED due to API requirements)
+
+```python
+from typing import TypedDict
+import aiohttp
+
+class ResolvedIdentity(TypedDict):
+    name: str
+    profiles: list[str]
+
+async def resolve_identity(name: str, api_key: str) -> ResolvedIdentity:
+    # SIMULATED - Replace with actual API calls
+    return {"name": name, "profiles": ["twitter.com/example", "linkedin.com/in/example"]}
+
+# Example Usage
+import asyncio
+print(asyncio.run(resolve_identity("John Doe", "YOUR_API_KEY")))
+```
+
+### 7. **Change Monitoring**
+
+* **Focus**: Detect changes in web content.
+* **API**: Custom (compare local snapshots)
+* **Implementation** (Simplified)
+
+```python
+from typing import TypedDict
+import aiohttp
+import hashlib
+
+class ChangeReport(TypedDict):
+    url: str
+    changed: bool
+
+async def monitor_for_changes(url: str, previous_hash: str) -> ChangeReport:
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as resp:
+            if resp.status == 200:
+                current_content = await resp.text()
+                current_hash = hashlib.md5(current_content.encode()).hexdigest()
+                return {"url": url, "changed": current_hash != previous_hash}
+
+# Example Usage
+import asyncio
+print(asyncio.run(monitor_for_changes("http://example.com", "previous_hash_value")))
+```
+
+### 8. **Metadata Forensics**
+
+* **Focus**: Extract and analyze metadata.
+* **API**: Custom (using `python-docx`, `PIL`, etc., for file analysis)
+* **Implementation** (Simplified for images using PIL)
+
+```python
+from typing import TypedDict
+from PIL import Image
+from PIL.ExifTags import TAGS
+
+class Metadata(TypedDict):
+    file: str
+    camera_model: str
+    timestamp: str
+
+def extract_image_metadata(file_path: str) -> Metadata:
+    try:
+        image = Image.open(file_path)
+        exifdata = image._getexif()
+        if exifdata:
+            camera_model = exifdata.get(0x130, "Unknown")
+            timestamp = exifdata.get(0x900, "Unknown")
+            return {"file": file_path, "camera_model": TAGS.get(camera_model, "Unknown"), "timestamp": TAGS.get(timestamp, "Unknown")}
+        else:
+            return {"file": file_path, "camera_model": "Unknown", "timestamp": "Unknown"}
+    except Exception as e:
+        print(f"Error processing {file_path}: {e}")
+        return {"file": file_path, "camera_model": "Unknown", "timestamp": "Unknown"}
+
+# Example Usage (Not async, as it's file I/O bound)
+print(extract_image_metadata("path/to/image.jpg"))
+```
+
+### 9. **Social Graphs**
+
+* **Focus**: Map social connections.
+* **API**: Twitter API (requires API key), Facebook Graph API (API key)
+* **Implementation** (SIMULATED due to API requirements)
+
+```python
+from typing import TypedDict
+import aiohttp
+
+class SocialConnection(TypedDict):
+    user: str
+    connections: list[str]
+
+async def build_social_graph(user_id: str, api_key: str) -> SocialConnection:
+    # SIMULATED - Replace with actual API calls
+    return {"user": user_id, "connections": ["friend1", "friend2"]}
+
+# Example Usage
+import asyncio
+print(asyncio.run(build_social_graph("user123", "YOUR_API_KEY")))
+```
+
+### 10. **Competitive Intelligence**
+
+* **Focus**: Gather intel on competitors.
+* **API**: Ahrefs API (for backlink analysis, requires API key), SEMrush API (for SEO insights, API key)
+* **Implementation** (SIMULATED)
+
+```python
+from typing import TypedDict
+import aiohttp
+
+class CompetitiveInsight(TypedDict):
+    domain: str
+    backlinks: int
+    ranking: int
+
+async def gather_competitive_intel(domain: str, ahrefs_api_key: str) -> CompetitiveInsight:
+    # SIMULATED - Replace with actual API calls
+    return {"domain": domain, "backlinks": 1000, "ranking": 5}
+
+# Example Usage
+import asyncio
+print(asyncio.run(gather_competitive_intel("competitor.com", "YOUR_API_KEY")))
+```
+
+### General Notes:
+
+- **API Keys**: Replace placeholders with actual API keys where required.
+- **Simplified Implementations**: Especially for tasks without publicly available free APIs, implementations are simplified or simulated.
+- **Error Handling**: Basic error handling is included; enhance based on production requirements.
+- **Dependencies**:
+  - `aiohttp` for async HTTP requests
+  - `js2py` for JavaScript parsing (in JS Intelligence Extraction)
+  - `PIL` (Pillow) for image metadata extraction (in Metadata Forensics)
+  - `typeddict` for type hints (Python 3.9+; otherwise, use `typing.TypedDict`)
+- **Running the Code**: Ensure you have Python and the required dependencies installed. Run each script individually, replacing placeholders as necessary.
+
+### To Run:
+
+1. Install dependencies: `pip install aiohttp js2py pillow`
+2. Save each tool in a separate `.py` file.
+3. Replace API keys and placeholders with actual values where necessary.
+4. Run each file using Python (e.g., `python tool1.py`)

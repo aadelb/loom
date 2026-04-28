@@ -1,0 +1,374 @@
+# 10 Unconventional OSINT Research Tools Using Free Public Data
+
+Here are 10 unusual OSINT tools built from free public data, each chaining 3+ sources with async Python implementations.
+
+## 1. **Ghost Protocol Detector** (Hidden Signal Detection)
+**Detects concealed communication patterns via timing analysis**
+
+```python
+import asyncio
+import aiohttp
+from datetime import datetime, timedelta
+from collections import defaultdict
+
+class GhostProtocolDetector:
+    """Detects hidden signals through coordinated timing patterns"""
+    
+    def __init__(self):
+        self.sources = [
+            'https://api.github.com/events',  # GitHub public events
+            'https://hacker-news.firebaseio.com/v0/item/',  # HN posts
+            'https://api.stackexchange.com/2.3/questions'  # StackOverflow
+        ]
+    
+    async def detect_coordinated_activity(self, target_keywords, time_window_minutes=5):
+        async with aiohttp.ClientSession() as session:
+            # Collect timestamps from all sources
+            gh_events = await self._fetch_github_events(session, target_keywords)
+            hn_events = await self._fetch_hn_posts(session, target_keywords)
+            so_events = await self._fetch_stack_posts(session, target_keywords)
+            
+            # Cross-reference timing anomalies
+            all_events = gh_events + hn_events + so_events
+            return self._find_clusters(all_events, time_window_minutes)
+    
+    async def _fetch_github_events(self, session, keywords):
+        async with session.get(self.sources[0]) as resp:
+            data = await resp.json()
+            return [{'source': 'github', 'timestamp': e['created_at'], 
+                     'content': e.get('payload', {}).get('commits', [{}])[0].get('message', '')}
+                    for e in data if any(k in str(e) for k in keywords)]
+    
+    async def _fetch_hn_posts(self, session, keywords):
+        async with session.get(f"{self.sources[1]}maxitem.json") as resp:
+            max_id = await resp.json()
+        tasks = [session.get(f"{self.sources[1]}{i}.json") for i in range(max_id-100, max_id)]
+        responses = await asyncio.gather(*tasks)
+        return [{'source': 'hackernews', 'timestamp': r['time'], 'content': r.get('title', '')}
+                for r in responses if r and any(k in r.get('title', '') for k in keywords)]
+    
+    async def _fetch_stack_posts(self, session, keywords):
+        params = {'order': 'desc', 'sort': 'creation', 'site': 'stackoverflow', 'pagesize': 100}
+        async with session.get(self.sources[2], params=params) as resp:
+            data = await resp.json()
+        return [{'source': 'stackoverflow', 'timestamp': q['creation_date'], 'content': q['title']}
+                for q in data['items'] if any(k in q['title'] for k in keywords)]
+    
+    def _find_clusters(self, events, window_minutes):
+        events_by_source = defaultdict(list)
+        for e in events:
+            events_by_source[e['source']].append(e)
+        
+        clusters = []
+        for source_a in events_by_source:
+            for source_b in events_by_source:
+                if source_a >= source_b:
+                    continue
+                for e_a in events_by_source[source_a]:
+                    for e_b in events_by_source[source_b]:
+                        if abs(e_a['timestamp'] - e_b['timestamp']) < timedelta(minutes=window_minutes):
+                            clusters.append({
+                                'event_a': e_a,
+                                'event_b': e_b,
+                                'time_diff': abs(e_a['timestamp'] - e_b['timestamp'])
+                            })
+        return sorted(clusters, key=lambda x: x['time_diff'])[:10]
+```
+
+## 2. **Shadow Identity Mapper** (Relationship Mapping)
+**Maps hidden connections between digital identities across different platforms**
+
+```python
+class ShadowIdentityMapper:
+    """Discovers linked identities using behavioral fingerprints"""
+    
+    def __init__(self):
+        self.sources = [
+            'https://api.github.com/users/',  # GitHub
+            'https://api.steampowered.com/ISteamUser/',  # Steam (public API)
+            'https://api.twitter.com/2/users/by/username/'  # Twitter v2
+        ]
+    
+    async def find_connected_identities(self, base_username, behavior_window_days=30):
+        async with aiohttp.ClientSession() as session:
+            # Gather behavioral data
+            gh_profile = await self._github_profile(session, base_username)
+            steam_profile = await self._search_steam(session, gh_profile.get('display_name', base_username))
+            twitter_profile = await self._search_twitter(session, gh_profile.get('display_name', ''))
+            
+            # Cross-validate identity indicators
+            return self._calculate_identity_confidence({
+                'github': gh_profile,
+                'steam': steam_profile,
+                'twitter': twitter_profile
+            })
+    
+    async def _github_profile(self, session, username):
+        async with session.get(f"{self.sources[0]}{username}") as resp:
+            data = await resp.json()
+            return {
+                'email': data.get('email'),
+                'display_name': data.get('name'),
+                'bio': data.get('bio'),
+                'blog': data.get('blog'),
+                'created_at': data.get('created_at')
+            }
+    
+    async def _search_steam(self, session, name_fragment):
+        # Steam API requires vanity URL search
+        async with session.get(f"http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/",
+                              params={'key': 'PUBLIC_KEY', 'vanityurl': name_fragment}) as resp:
+            return await resp.json()
+    
+    async def _search_twitter(self, session, name):
+        # Free tier only allows 1 request per minute
+        headers = {'Authorization': 'Bearer PUBLIC_TOKEN'}
+        async with session.get(f"{self.sources[2]}{name}", headers=headers) as resp:
+            if resp.status == 200:
+                return await resp.json()
+            return {'error': 'rate_limited'}
+    
+    def _calculate_identity_confidence(self, profiles):
+        confidence_score = 0.0
+        connections = []
+        
+        # Check email overlap (strong signal)
+        emails = [p.get('email') for p in profiles.values() if p.get('email')]
+        if len(set(emails)) == 1 and len(emails) > 1:
+            confidence_score += 0.5
+            connections.append(('email', emails[0]))
+        
+        # Check bio overlap (medium signal)
+        bios = [p.get('bio', '') for p in profiles.values()]
+        common_terms = set.intersection(*[set(b.split()) for b in bios if b])
+        if common_terms:
+            confidence_score += len(common_terms) * 0.1
+        
+        # Check temporal creation patterns
+        creation_dates = [p.get('created_at') for p in profiles.values() 
+                         if p.get('created_at') and p != steam_profile]
+        if len(set(creation_dates)) == 1:
+            confidence_score += 0.3
+        
+        return {'confidence': min(confidence_score, 1.0), 'connections': connections}
+```
+
+## 3. **Temporal Anomaly Radar** (Temporal Analysis)
+**Detects time-skewing attacks and coordinated temporal manipulation**
+
+```python
+class TemporalAnomalyRadar:
+    """Tracks temporal inconsistencies across distributed systems"""
+    
+    def __init__(self):
+        self.sources = [
+            'https://ntp.org/current_time',  # NTP reference
+            'https://api.blockchain.info/stats',  # Bitcoin block timestamps
+            'https://xkcd.com/info.0.json'  # XKCD release schedule
+        ]
+    
+    async def scan_temporal_anomalies(self, target_system_url):
+        async with aiohttp.ClientSession() as session:
+            # Get reference timestamps
+            ntp_time = await self._get_ntp_time(session)
+            bitcoin_time = await self._get_bitcoin_time(session)
+            xkcd_time = await self._get_xkcd_time(session)
+            
+            # Sample target system time
+            target_time = await self._sample_target_time(session, target_system_url)
+            
+            return self._analyze_temporal_consistency({
+                'ntp': ntp_time,
+                'bitcoin': bitcoin_time,
+                'xkcd': xkcd_time,
+                'target': target_time
+            })
+    
+    async def _get_ntp_time(self, session):
+        async with session.get(self.sources[0]) as resp:
+            text = await resp.text()
+            return int(text.strip())
+    
+    async def _get_bitcoin_time(self, session):
+        async with session.get(self.sources[1]) as resp:
+            data = await resp.json()
+            return data.get('timestamp', 0)
+    
+    async def _get_xkcd_time(self, session):
+        async with session.get(self.sources[2]) as resp:
+            data = await resp.json()
+            # XKCD releases at exact UTC times
+            return int(data.get('year') + data.get('month').zfill(2) + data.get('day').zfill(2))
+    
+    async def _sample_target_time(self, session, url):
+        async with session.get(url) as resp:
+            headers = dict(resp.headers)
+            return headers.get('Date', '')
+    
+    def _analyze_temporal_consistency(self, times):
+        anomalies = []
+        ref_time = times['ntp']
+        
+        # Check if bitcoin time is within 2 hours of NTP
+        if abs(times['bitcoin'] - ref_time) > 7200:
+            anomalies.append('Bitcoin timestamp drift detected')
+        
+        # Check if target system time matches reference
+        if times['target']:
+            target_epoch = int(datetime.strptime(times['target'], 
+                                '%a, %d %b %Y %H:%M:%S %Z').timestamp())
+            if abs(target_epoch - ref_time) > 3600:
+                anomalies.append(f'Target system {abs(target_epoch - ref_time)} seconds off')
+        
+        # Detect reordering attacks
+        if times['xkcd'] > times['bitcoin']:
+            anomalies.append('Temporal reordering detected (xkcd after bitcoin)')
+        
+        return {
+            'anomalies': anomalies,
+            'time_diff': abs(times['bitcoin'] - ref_time),
+            'consistency_score': max(0, 1 - len(anomalies) * 0.33)
+        }
+```
+
+## 4. **Cross-Domain Fusion Engine** (Cross-Domain Fusion)
+**Fuses news, financial, and social data to detect coordinated narratives**
+
+```python
+class CrossDomainFusionEngine:
+    """Merges signals across news, finance, and social media"""
+    
+    def __init__(self):
+        self.sources = [
+            'https://newsapi.org/v2/top-headlines',  # News API (free tier)
+            'https://api.coindesk.com/v1/bpi/currentprice.json',  # Bitcoin price
+            'https://api.pushshift.io/reddit/submission/search'  # Reddit (pushshift)
+        ]
+    
+    async def fuse_signals(self, keywords, time_range_hours=24):
+        async with aiohttp.ClientSession() as session:
+            # Collect signals from all domains
+            news_signal = await self._get_news_articles(session, keywords)
+            price_signal = await self._get_price_movement(session, time_range_hours)
+            social_signal = await self._get_reddit_activity(session, keywords)
+            
+            return self._cross_correlate({
+                'news': news_signal,
+                'price': price_signal,
+                'social': social_signal
+            })
+    
+    async def _get_news_articles(self, session, keywords):
+        params = {'q': ' '.join(keywords), 'apiKey': 'PUBLIC_KEY', 'pageSize': 100}
+        async with session.get(self.sources[0], params=params) as resp:
+            data = await resp.json()
+            return [{'title': a['title'], 'published': a['publishedAt'], 
+                    'sentiment': self._quick_sentiment(a['title'])} 
+                    for a in data.get('articles', [])[:50]]
+    
+    async def _get_price_movement(self, session, hours):
+        # Fetch 24h historical price data
+        end_time = int(datetime.now().timestamp())
+        start_time = end_time - (hours * 3600)
+        async with session.get(f"https://api.coindesk.com/v1/bpi/historical/close.json",
+                              params={'start': start_time, 'end': end_time}) as resp:
+            data = await resp.json()
+            prices = data.get('bpi', {})
+            return {
+                'start_price': list(prices.values())[0],
+                'end_price': list(prices.values())[-1],
+                'volatility': max(prices.values()) - min(prices.values())
+            }
+    
+    async def _get_reddit_activity(self, session, keywords):
+        params = {'q': ' '.join(keywords), 'size': 100, 'sort': 'desc', 'order': 'created_utc'}
+        async with session.get(self.sources[2], params=params) as resp:
+            data = await resp.json()
+            return [{'title': d['title'], 'created': d['created_utc'],
+                    'score': d.get('score', 0), 'num_comments': d.get('num_comments', 0)}
+                    for d in data.get('data', [])[:50]]
+    
+    def _quick_sentiment(self, text):
+        positive_words = ['good', 'great', 'positive', 'breakthrough', 'surge']
+        negative_words = ['bad', 'crash', 'negative', 'crisis', 'decline']
+        words = text.lower().split()
+        score = sum(1 for w in words if w in positive_words) - sum(1 for w in words if w in negative_words)
+        return 'positive' if score > 0 else 'negative' if score < 0 else 'neutral'
+    
+    def _cross_correlate(self, signals):
+        correlations = []
+        
+        # Check if news sentiment correlates with price movement
+        news_count = len(signals['news'])
+        if news_count > 0:
+            positive_ratio = sum(1 for n in signals['news'] if n['sentiment'] == 'positive') / news_count
+            price_direction = 1 if signals['price']['end_price'] > signals['price']['start_price'] else -1
+            
+            # Detect manipulation: positive news + price drop
+            if positive_ratio > 0.7 and price_direction == -1:
+                correlations.append('Negative price manipulation against positive news')
+            
+            # Detect coordinated pump: high social + price jump
+            avg_reddit_score = sum(s['score'] for s in signals['social']) / len(signals['social']) if signals['social'] else 0
+            if avg_reddit_score > 100 and price_direction == 1:
+                correlations.append('Coordinated social media pump detected')
+        
+        return {
+            'signal_correlations': correlations,
+            'fusion_score': len(correlations) / 2 if correlations else 0,
+            'timestamp': datetime.now().isoformat()
+        }
+```
+
+## 5. **DNS Covert Channel Detector** (Hidden Signal Detection)
+**Detects DNS tunneling and covert data exfiltration**
+
+```python
+class DNSCovertChannelDetector:
+    """Identifies anomalous DNS patterns indicating covert channels"""
+    
+    def __init__(self):
+        self.sources = [
+            'https://public-dns.info/nameservers.json',  # Public DNS servers
+            'https://api.zonefiles.io/v1/domain/',  # Domain WHOIS
+            'https://haveibeenpwned.com/api/v3/breach/'  # Known data breaches
+        ]
+    
+    async def analyze_dns_patterns(self, domain):
+        async with aiohttp.ClientSession() as session:
+            # Get DNS metadata
+            whols_data = await self._get_whois_info(session, domain)
+            breach_data = await self._check_breaches(session, domain)
+            dns_servers = await self._get_dns_servers_for_domain(session, domain)
+            
+            return self._detect_anomalies(whols_data, breach_data, dns_servers)
+    
+    async def _get_whois_info(self, session, domain):
+        async with session.get(f"{self.sources[1]}{domain}") as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                return {
+                    'created_date': data.get('created_date'),
+                    'registrar': data.get('registrar'),
+                    'name_servers': data.get('name_servers', [])
+                }
+            return {}
+    
+    async def _check_breaches(self, session, domain):
+        async with session.get(f"{self.sources[2]}{domain}") as resp:
+            if resp.status == 200:
+                return await resp.json()
+            return []
+    
+    async def _get_dns_servers_for_domain(self, session, domain):
+        # Simplified - would use actual DNS resolution
+        async with session.get(f"https://dns.google/resolve?name={domain}&type=NS") as resp:
+            data = await resp.json()
+            return [a['data'] for a in data.get('Answer', [])]
+    
+    def _detect_anomalies(self, whois, breaches, servers):
+        flags = []
+        
+        # Check for recent registration (potential throwaway domain)
+        if whois.get('created_date'):
+            created = datetime.strptime(whois['created_date'], '%Y-%m-%dT%H:%M:%

@@ -1,0 +1,693 @@
+Below are 10 Loom tools designed to close the five capability gaps you specified. Each tool includes:
+- Name and unique capability description
+- Exactly what Loom finds that Maltego, SpiderFoot, Shodan, Censys, Recon-ng, theHarvester, and OSINT Framework typically miss
+- 5 free data sources with real API endpoints
+- ~40-line async Python example with TypedDict output
+
+Note: All APIs chosen are free/public. Some enforce rate limits or intermittent blocking for scripted access; the code includes graceful fallbacks.
+
+1) Tool: TimeMesh (Multi-Archive Resurrection Engine)
+Unique capability:
+- Simultaneously fuses CDX (multiple indices), Memento, Archive.today reachability, and Google cache to resurrect pages (exact URLs) even when only a tiny fraction are preserved at any one archive. Includes Common Crawl historical URL manifests not replicated in Wayback.
+
+What Loom finds that others miss:
+- Snapshots that exist in some CC indexes but never made it to Wayback
+- Archive.today captures discoverable via canonicalized URL form
+- Time-thick timelines (Memento) beyond CDX’s compressed index
+- Quickly validates Google cache presence without scraping SERPs
+
+Free data sources (API endpoints):
+- Wayback CDX: http://web.archive.org/cdx/search/cdx?url={url}&output=json
+- Wayback available: http://archive.org/wayback/available?url={url}
+- Memento aggregator: http://timetravel.mementoweb.org/api/json/{url}
+- Common Crawl coll info: https://index.commoncrawl.org/collinfo.json and cdx-api per index
+- Google cache HEAD: http://webcache.googleusercontent.com/search?q=cache:{url}
+
+Python (~40 lines, async, TypedDict output):
+```python
+import asyncio, aiohttp, hashlib, json, urllib.parse
+from typing import TypedDict, List, Optional
+
+class ArchiveHit(TypedDict):
+    source: str
+    url: str
+    timestamp: Optional[str]
+
+class TimeMeshResult(TypedDict):
+    target: str
+    wayback_cdx: List[ArchiveHit]
+    memento: List[ArchiveHit]
+    commoncrawl: List[ArchiveHit]
+    google_cache: Optional[str]
+    archive_today: Optional[str]
+
+async def _get_json(s, url, headers=None):
+    try:
+        async with s.get(url, headers=headers, timeout=20) as r:
+            if r.status < 400:
+                return await r.json(content_type=None)
+    except: return None
+
+async def _head_ok(s, url):
+    try:
+        async with s.head(url, timeout=15, allow_redirects=True) as r:
+            return r.status < 400
+    except:
+        return False
+
+async def run_timemesh(url: str) -> TimeMeshResult:
+    tgt = url if url.startswith("http") else "http://" + url
+    enc = urllib.parse.quote(tgt, safe="")
+    async with aiohttp.ClientSession() as s:
+        cdx = await _get_json(s, f"http://web.archive.org/cdx/search/cdx?url={enc}&output=json") or []
+        cdx_hits = []
+        if isinstance(cdx, list) and len(cdx) > 1:
+            for row in cdx[1:][:40]:
+                ts, orig = row[1], row[2]
+                cdx_hits.append({"source":"wayback_cdx","url":f"http://web.archive.org/web/{ts}/{orig}","timestamp":ts})
+        memento = await _get_json(s, f"http://timetravel.mementoweb.org/api/json/{enc}") or {}
+        mem_hits = []
+        for k in ("first","last","mementos"):
+            v = memento.get("mementos",{}).get(k,[]) if k=="mementos" else ([memento.get(k)] if memento.get(k) else [])
+            for itm in v:
+                if not itm: continue
+                mem_hits.append({"source":"memento","url":itm.get("uri",""),"timestamp":itm.get("datetime")})
+        colls = await _get_json(s, "https://index.commoncrawl.org/collinfo.json") or []
+        cc_hits=[]
+        if colls:
+            for api in [c.get("cdx-api") for c in colls[-2:]]:
+                if not api: continue
+                j = await _get_json(s, f"{api}?url={enc}&output=json")
+                if isinstance(j, list):
+                    for it in j[:40]:
+                        cc_hits.append({"source":"commoncrawl","url":"http://"+it.get("url",""),"timestamp":it.get("timestamp")})
+        gcache_url = f"http://webcache.googleusercontent.com/search?q=cache:{enc}"
+        gcache = gcache_url if await _head_ok(s, gcache_url) else None
+        atoday = f"https://archive.today/{tgt if tgt.startswith('http') else 'http://'+tgt}"
+        atoday = atoday if await _head_ok(s, atoday) else None
+        return {"target": tgt, "wayback_cdx": cdx_hits, "memento": mem_hits, "commoncrawl": cc_hits, "google_cache": gcache, "archive_today": atoday}
+```
+
+2) Tool: GhostSubdomain Reviver (CT-guided resurrection of dead subdomains)
+Unique capability:
+- Mines CT logs for historical subdomains (including dead/parked), checks current DNS resolution, and selectively revives content from archives/CC when live host is gone.
+
+What Loom finds that others miss:
+- Content of dead subdomains that never appear in live scans
+- Archived artifacts of ephemeral hostnames (staging, canary) no longer resolvable
+
+Free data sources:
+- crt.sh JSON: https://crt.sh/?q=%25.{domain}&output=json
+- Google DNS JSON: https://dns.google/resolve?name={subdomain}&type=A
+- Wayback CDX: http://web.archive.org/cdx/search/cdx?url={subdomain}&output=json
+- Memento: http://timetravel.mementoweb.org/api/json/{subdomain}
+- Common Crawl coll info: https://index.commoncrawl.org/collinfo.json
+
+Python:
+```python
+import asyncio, aiohttp, urllib.parse
+from typing import TypedDict, List, Optional
+
+class SubRevive(TypedDict):
+    subdomain: str
+    alive: bool
+    snapshots: List[str]
+
+class GhostReviveResult(TypedDict):
+    domain: str
+    revived: List[SubRevive]
+
+async def _json(s,u): 
+    try:
+        async with s.get(u,timeout=20) as r:
+            if r.status<400: return await r.json(content_type=None)
+    except: return None
+
+async def _alive(s,host):
+    try:
+        j = await _json(s, f"https://dns.google/resolve?name={host}&type=A")
+        return bool(j and j.get("Answer"))
+    except: return False
+
+async def run_ghost_reviver(domain: str) -> GhostReviveResult:
+    async with aiohttp.ClientSession() as s:
+        js = await _json(s, f"https://crt.sh/?q=%25.{domain}&output=json") or []
+        subs = sorted({itm.get("name_value","").strip() for itm in js if itm.get("name_value")})[:60]
+        colls = await _json(s, "https://index.commoncrawl.org/collinfo.json") or []
+        revived=[]
+        for sub in subs:
+            sub = sub.replace("*.","").strip()
+            live = await _alive(s, sub)
+            snap_urls=[]
+            cdx = await _json(s, f"http://web.archive.org/cdx/search/cdx?url={urllib.parse.quote(sub)}&output=json")
+            if isinstance(cdx,list) and len(cdx)>1:
+                for row in cdx[1:5]:
+                    ts,orig=row[1],row[2]; snap_urls.append(f"http://web.archive.org/web/{ts}/{orig}")
+            m = await _json(s, f"http://timetravel.mementoweb.org/api/json/{urllib.parse.quote('http://'+sub)}")
+            if m and m.get("mementos",{}).get("last"):
+                snap_urls.append(m["mementos"]["last"].get("uri",""))
+            if colls:
+                api = colls[-1].get("cdx-api")
+                j = await _json(s, f"{api}?url={urllib.parse.quote(sub)}&output=json") if api else None
+                if isinstance(j,list):
+                    for it in j[:3]: snap_urls.append("http://"+it.get("url",""))
+            revived.append({"subdomain":sub,"alive":live,"snapshots":sorted({u for u in snap_urls if u})})
+        return {"domain":domain,"revived":revived}
+```
+
+3) Tool: PhantomPath Hunter (robots/sitemap ghost URL discovery)
+Unique capability:
+- Actively enumerates paths explicitly disallowed by robots.txt plus sitemap “ghost” URLs (indexed but unlinked), checking real-time reachability.
+
+What Loom finds that others miss:
+- 404/401/403-guarded but discoverable paths never exposed in SERPs or typical spidering
+- Siloed sitemaps (multiple branches) and orphan URLs
+
+Free data sources:
+- robots.txt: https://{host}/robots.txt
+- Sitemaps: https://{host}/sitemap.xml and https://{host}/sitemap_index.xml
+- security.txt: https://{host}/.well-known/security.txt
+- ads.txt: https://{host}/ads.txt
+- humans.txt: https://{host}/humans.txt
+
+Python:
+```python
+import asyncio, aiohttp, re, urllib.parse
+from typing import TypedDict, List
+
+class PhantomURL(TypedDict):
+    url: str
+    status: int
+
+class PhantomResult(TypedDict):
+    host: str
+    disallowed: List[PhantomURL]
+    sitemap_ghosts: List[PhantomURL]
+
+async def _get(s,u):
+    try:
+        async with s.get(u, timeout=20) as r:
+            return r.status, await r.text()
+    except: return 0,""
+
+async def _head(s,u):
+    try:
+        async with s.head(u, timeout=20, allow_redirects=True) as r:
+            return r.status
+    except: return 0
+
+async def run_phantom(host: str) -> PhantomResult:
+    base = host if host.startswith("http") else "https://" + host
+    async with aiohttp.ClientSession() as s:
+        st,rt = await _get(s, urllib.parse.urljoin(base,"/robots.txt"))
+        dis=[]
+        if st and rt:
+            for m in re.findall(r"(?i)disallow:\s*([^\s#]+)", rt):
+                u = urllib.parse.urljoin(base, m.strip())
+                dis.append({"url":u,"status":await _head(s,u)})
+        ghosts=[]
+        for sm in ["/sitemap.xml","/sitemap_index.xml"]:
+            st,tx = await _get(s, urllib.parse.urljoin(base,sm))
+            if st and tx:
+                urls = re.findall(r"<loc>(.*?)</loc>", tx)
+                for u in urls[:150]:
+                    ghosts.append({"url":u,"status":await _head(s,u)})
+        return {"host":base,"disallowed":dis,"sitemap_ghosts":ghosts}
+```
+
+4) Tool: SourceMap Seer (JS source map + GraphQL introspection)
+Unique capability:
+- Mines JavaScript bundles for referenced source maps, extracts internal file paths, endpoints, and tries GraphQL introspection on discovered endpoints.
+
+What Loom finds that others miss:
+- Developer-only code paths, internal API routes, buried GraphQL schemas present only in source maps
+- Endpoint URLs present only inside minified bundles
+
+Free data sources:
+- Root HTML: https://{host}/
+- JS assets: <script src=...> absolute URLs
+- Corresponding source maps: {script}.map
+- GraphQL introspection: POST {endpoint} with introspection query
+- robots.txt for hints: https://{host}/robots.txt
+
+Python:
+```python
+import asyncio, aiohttp, re, json, urllib.parse
+from typing import TypedDict, List
+
+class GQLEndpoint(TypedDict):
+    url: str
+    introspected: bool
+
+class SourceMapResult(TypedDict):
+    host: str
+    scripts: List[str]
+    sourcemap_paths: List[str]
+    endpoints: List[GQLEndpoint]
+
+INTROSPECT = {"query":"query IntrospectionQuery { __schema { queryType { name } mutationType { name } types { name } } }"}
+
+async def _fetch(s,u):
+    try:
+        async with s.get(u,timeout=20) as r:
+            return r.status, await r.text()
+    except: return 0,""
+
+async def _post_json(s,u,p):
+    try:
+        async with s.post(u,json=p,timeout=20) as r:
+            if r.status<400: 
+                j=await r.json(content_type=None)
+                return bool(j.get("data") or j.get("errors"))
+    except: return False
+
+async def run_sourcemap_seer(host: str) -> SourceMapResult:
+    base = host if host.startswith("http") else "https://" + host
+    async with aiohttp.ClientSession() as s:
+        st,html = await _fetch(s, base)
+        scripts = re.findall(r'<script[^>]+src=["\'](.*?)["\']', html or "")
+        abs_scripts=[u if u.startswith("http") else urllib.parse.urljoin(base,u) for u in scripts][:60]
+        sm_paths=[]
+        endpoints=set()
+        for js in abs_scripts[:20]:
+            st,tx = await _fetch(s, js)
+            cand = js+".map" if not js.endswith(".map") else js
+            st,sm = await _fetch(s, cand)
+            if st and sm and ("sources" in sm or "mappings" in sm):
+                sm_paths += re.findall(r'["\'](\/[A-Za-z0-9_\-\/\.]+)["\']', sm)[:100]
+                endpoints |= set(re.findall(r'https?://[^\s"\'\\)]+', sm))
+                endpoints |= set(re.findall(r'["\'](\/graphql|\/api\/[A-Za-z0-9_\-\/]+)["\']', sm))
+        gql=[]
+        for ep in list(endpoints)[:20]:
+            url = ep if ep.startswith("http") else urllib.parse.urljoin(base, ep)
+            ok = await _post_json(s, url, INTROSPECT)
+            gql.append({"url":url,"introspected":ok})
+        return {"host":base,"scripts":abs_scripts,"sourcemap_paths":sorted(set(sm_paths)),"endpoints":gql}
+```
+
+5) Tool: PersonaWeave (Zero-login identity correlation)
+Unique capability:
+- Cross-links identities using Gravatar hashes, PGP keyservers, GitHub commit emails (from public events), Keybase proofs, and domain RDAP contacts.
+
+What Loom finds that others miss:
+- Commit author emails leaked via public GitHub events
+- Gravatar profiles discoverable by hashing inferred emails
+- Keybase proofs tying social handles together
+
+Free data sources:
+- Gravatar profile: https://www.gravatar.com/{md5(email)}.json
+- OpenPGP keyserver: https://keys.openpgp.org/vks/v1/by-email?email={email}
+- GitHub public events: https://api.github.com/users/{username}/events/public
+- Keybase lookup: https://keybase.io/_/api/1.0/user/lookup.json?username={username}
+- RDAP domain: https://rdap.org/domain/{domain}
+
+Python:
+```python
+import asyncio, aiohttp, hashlib, urllib.parse
+from typing import TypedDict, List, Optional
+
+class Persona(TypedDict):
+    username: Optional[str]
+    emails: List[str]
+    gravatars: List[str]
+    pgp: List[str]
+    keybase: List[str]
+    rdap_emails: List[str]
+
+class PersonaWeaveResult(TypedDict):
+    query: str
+    persona: Persona
+
+async def _json(s,u):
+    try:
+        async with s.get(u,timeout=20) as r:
+            if r.status<400: return await r.json(content_type=None)
+    except: return None
+
+async def run_personaweave(username: Optional[str]=None, email: Optional[str]=None, domain: Optional[str]=None) -> PersonaWeaveResult:
+    async with aiohttp.ClientSession() as s:
+        emails=set()
+        gravatars=[]; pgp=[]; keyb=[]; rdap_em=[]
+        if username:
+            ev = await _json(s, f"https://api.github.com/users/{username}/events/public") or []
+            for e in ev[:50]:
+                try:
+                    for c in e.get("payload",{}).get("commits",[]):
+                        em=c.get("author",{}).get("email")
+                        if em and "@" in em: emails.add(em)
+                except: pass
+            kb = await _json(s, f"https://keybase.io/_/api/1.0/user/lookup.json?username={urllib.parse.quote(username)}")
+            if kb:
+                for p in kb.get("them",[{}])[0].get("proofs_summary",{}).get("all",[]):
+                    keyb.append(f"{p.get('proof_type')}: {p.get('service_url')}")
+        if email:
+            h=hashlib.md5(email.strip().lower().encode()).hexdigest()
+            g = await _json(s, f"https://www.gravatar.com/{h}.json")
+            if g: gravatars.append(f"https://www.gravatar.com/{h}")
+            k = await _json(s, f"https://keys.openpgp.org/vks/v1/by-email?email={urllib.parse.quote(email)}")
+            if k and k.get("addresses"): pgp += [a.get("email","") for a in k["addresses"]]
+            emails.add(email)
+        if domain:
+            rd = await _json(s, f"https://rdap.org/domain/{urllib.parse.quote(domain)}") or {}
+            for ent in rd.get("entities",[]):
+                for v in ent.get("vcardArray",[]):
+                    if isinstance(v,list):
+                        for r in v:
+                            if isinstance(r,list) and r[:2]==["email",{}] and "@" in r[-1]: rdap_em.append(r[-1])
+        for em in list(emails)[:10]:
+            h=hashlib.md5(em.strip().lower().encode()).hexdigest()
+            if await _json(s, f"https://www.gravatar.com/{h}.json"): gravatars.append(f"https://www.gravatar.com/{h}")
+        return {"query": username or email or domain or "", "persona":{"username":username,"emails":sorted(emails),"gravatars":sorted(set(gravatars)),"pgp":sorted(set(pgp)),"keybase":keyb,"rdap_emails":sorted(set(rdap_em))}}
+```
+
+6) Tool: ChainTrace (Blockchain identity linking without API keys)
+Unique capability:
+- Clusters blockchain identities across BTC/ETH, ENS names, and activity patterns using only public endpoints.
+
+What Loom finds that others miss:
+- Cross-chain identity footprints (ENS, tx patterns) without paid APIs
+- Ties repo commit emails/usernames to on-chain nicknames via ENS text records (if present)
+
+Free data sources:
+- Blockchair BTC: https://api.blockchair.com/bitcoin/dashboards/address/{address}
+- Blockchair ETH: https://api.blockchair.com/ethereum/dashboards/address/{address}
+- Blockscout ETH: https://blockscout.com/eth/mainnet/api?module=account&action=txlist&address={address}
+- ENS ideas resolve: https://api.ensideas.com/ens/resolve/{name_or_address}
+- BlockCypher ETH: https://api.blockcypher.com/v1/eth/main/addrs/{address}
+
+Python:
+```python
+import asyncio, aiohttp
+from typing import TypedDict, List, Optional
+
+class ChainProfile(TypedDict):
+    address: str
+    ens: Optional[str]
+    tx_count: int
+    labels: List[str]
+
+class ChainTraceResult(TypedDict):
+    query: str
+    profiles: List[ChainProfile]
+
+async def _json(s,u):
+    try:
+        async with s.get(u,timeout=25) as r:
+            if r.status<400: return await r.json(content_type=None)
+    except: return None
+
+async def _ens(s, addr):
+    j = await _json(s, f"https://api.ensideas.com/ens/resolve/{addr}")
+    return j.get("name") if j else None
+
+async def run_chaintrace(addresses: List[str]) -> ChainTraceResult:
+    async with aiohttp.ClientSession() as s:
+        out=[]
+        for addr in addresses[:10]:
+            ens = await _ens(s, addr)
+            bc = await _json(s, f"https://api.blockchair.com/ethereum/dashboards/address/{addr}") or {}
+            txc = 0
+            try:
+                txc = bc.get("data",{}).get(addr.lower(),{}).get("address",{}).get("transaction_count",0)
+            except: pass
+            bs = await _json(s, f"https://blockscout.com/eth/mainnet/api?module=account&action=txlist&address={addr}") or {}
+            if isinstance(bs.get("result"), list): txc = max(txc, len(bs["result"]))
+            bc_btc = await _json(s, f"https://api.blockchair.com/bitcoin/dashboards/address/{addr}")
+            labels=[]
+            if ens: labels.append("ens:"+ens)
+            if txc>100: labels.append("high-activity")
+            if bc_btc and bc_btc.get("data"): labels.append("looks-like-btc-format")  # unlikely; harmless hint
+            cy = await _json(s, f"https://api.blockcypher.com/v1/eth/main/addrs/{addr}")
+            if cy and cy.get("unconfirmed_n_tx",0)>0: labels.append("pending-tx")
+            out.append({"address":addr,"ens":ens,"tx_count":txc,"labels":labels})
+        return {"query":";".join(addresses),"profiles":out}
+```
+
+7) Tool: WHOIS Constellation (RDAP/DNS email-chain resolution)
+Unique capability:
+- Traverses RDAP across domain, IP, and ASN; harvests abuse/tech emails; cross-references subdomains via CT. Produces an “email -> assets” constellation.
+
+What Loom finds that others miss:
+- Hidden administrative/abuse contacts chained through hosting ASN and nameserver entities
+- Other domains tied to the same contacts via CT subdomain clusters
+
+Free data sources:
+- RDAP domain: https://rdap.org/domain/{domain}
+- RDAP IP: https://rdap.org/ip/{ip}
+- RDAP ASN: https://rdap.org/autnum/{asn}
+- DNS NS: https://dns.google/resolve?name={domain}&type=NS
+- crt.sh JSON: https://crt.sh/?q=%25.{domain}&output=json
+
+Python:
+```python
+import asyncio, aiohttp, re
+from typing import TypedDict, List
+
+class Constellation(TypedDict):
+    emails: List[str]
+    nameservers: List[str]
+    subdomains: List[str]
+
+class WhoisConstResult(TypedDict):
+    domain: str
+    constellation: Constellation
+
+async def _json(s,u):
+    try:
+        async with s.get(u,timeout=20) as r:
+            if r.status<400: return await r.json(content_type=None)
+    except: return None
+
+def _vcards_emails(rdap_obj):
+    out=set()
+    for ent in rdap_obj.get("entities",[]):
+        for va in ent.get("vcardArray",[]):
+            if isinstance(va,list):
+                for row in va:
+                    if isinstance(row,list) and row[:2]==["email",{}]:
+                        if "@" in row[-1]: out.add(row[-1])
+    return out
+
+async def run_whois_constellation(domain: str) -> WhoisConstResult:
+    async with aiohttp.ClientSession() as s:
+        rd = await _json(s, f"https://rdap.org/domain/{domain}") or {}
+        emails = set(_vcards_emails(rd))
+        nsr = await _json(s, f"https://dns.google/resolve?name={domain}&type=NS") or {}
+        nss = [a.get("data","") for a in nsr.get("Answer",[]) if a.get("data")]
+        subs = await _json(s, f"https://crt.sh/?q=%25.{domain}&output=json") or []
+        subnames = sorted({i.get("name_value","").replace("*.","").strip() for i in subs if i.get("name_value")})[:200]
+        return {"domain":domain,"constellation":{"emails":sorted(emails),"nameservers":sorted(set(nss)),"subdomains":subnames}}
+```
+
+8) Tool: CertDNS Foresight (Launch/acquisition predictor)
+Unique capability:
+- Predicts upcoming launches or ownership shifts by correlating fresh CT entries (NotBefore windows), DNS appearance/TTL anomalies, and NS transitions.
+
+What Loom finds that others miss:
+- Pre-launch subdomains (e.g., v2, beta, preprod) appearing in CT days/weeks before go-live
+- NS flips and TTL drops signaling migrations or acquisitions
+
+Free data sources:
+- crt.sh JSON: https://crt.sh/?q=%25.{domain}&output=json
+- Google DNS A: https://dns.google/resolve?name={name}&type=A
+- Google DNS NS: https://dns.google/resolve?name={domain}&type=NS
+- IPinfo (ASN): https://ipinfo.io/{ip}/json
+- RIPEstat prefix overview: https://stat.ripe.net/data/prefix-overview/data.json?resource={ip}
+
+Python:
+```python
+import asyncio, aiohttp, re
+from typing import TypedDict, List
+
+class Signal(TypedDict):
+    name: str
+    first_seen: str
+    ip: List[str]
+    asn: List[str]
+
+class ForesightResult(TypedDict):
+    domain: str
+    signals: List[Signal]
+
+async def _json(s,u):
+    try:
+        async with s.get(u,timeout=20) as r:
+            if r.status<400: return await r.json(content_type=None)
+    except: return None
+
+async def run_certdns_foresight(domain: str) -> ForesightResult:
+    async with aiohttp.ClientSession() as s:
+        ct = await _json(s, f"https://crt.sh/?q=%25.{domain}&output=json") or []
+        names={}
+        for i in ct[:400]:
+            n=i.get("name_value","").replace("*.","").strip()
+            if not n: continue
+            ts=i.get("not_before") or i.get("entry_timestamp") or ""
+            names.setdefault(n, ts if n not in names or ts<names[n] else names[n])
+        signals=[]
+        for name,ts in list(names.items())[:80]:
+            a = await _json(s, f"https://dns.google/resolve?name={name}&type=A") or {}
+            ips = [x.get("data") for x in a.get("Answer",[]) if x.get("data")]
+            asns=set()
+            for ip in ips[:5]:
+                ipi=await _json(s, f"https://ipinfo.io/{ip}/json") or {}
+                if ipi.get("org"): asns.add(ipi["org"])
+                ro=await _json(s, f"https://stat.ripe.net/data/prefix-overview/data.json?resource={ip}") or {}
+                p=ro.get("data",{}).get("asns",[])
+                for asn in p: asns.add(f"AS{asn.get('asn')} {asn.get('name','')}")
+            signals.append({"name":name,"first_seen":ts,"ip":ips,"asn":sorted(asns)})
+        return {"domain":domain,"signals":signals}
+```
+
+9) Tool: PolicyShift Diff (ToS/Privacy pivot predictor)
+Unique capability:
+- Diffs current ToS/Privacy vs last archived snapshots to flag material changes (e.g., data sharing, arbitration, pricing clauses), signaling pivots or new monetization.
+
+What Loom finds that others miss:
+- Legal-text deltas aligned to specific risk/strategy topics without needing internal change logs
+- Backfilled baselines via Wayback even if you never monitored historically
+
+Free data sources:
+- Current ToS: https://{domain}/terms (or /terms-of-service)
+- Current Privacy: https://{domain}/privacy
+- Wayback available ToS: http://archive.org/wayback/available?url=https://{domain}/terms
+- Wayback available Privacy: http://archive.org/wayback/available?url=https://{domain}/privacy
+- Memento: http://timetravel.mementoweb.org/api/json/https://{domain}/privacy
+
+Python:
+```python
+import asyncio, aiohttp, re, urllib.parse
+from typing import TypedDict, List
+
+class DocDelta(TypedDict):
+    url: str
+    added_keywords: List[str]
+    removed_keywords: List[str]
+
+class PolicyShiftResult(TypedDict):
+    domain: str
+    terms: DocDelta
+    privacy: DocDelta
+
+KEYS = ["arbitration","automatic renewal","data sharing","sale","tracking","advertising","personalization","pricing","cookies","AI","machine learning"]
+
+async def _get(s,u):
+    try:
+        async with s.get(u,timeout=20) as r:
+            return await r.text() if r.status<400 else ""
+    except: return ""
+
+async def _latest_wayback(s,u):
+    w = await _get(s, f"http://archive.org/wayback/available?url={urllib.parse.quote(u)}")
+    import json
+    try:
+        j=json.loads(w); spt=j.get("archived_snapshots",{}).get("closest",{}).get("url")
+        return await _get(s, spt) if spt else ""
+    except: return ""
+
+def _delta(old, new):
+    o=new.lower() if not old else old.lower()
+    n=new.lower()
+    add=[k for k in KEYS if k in n and k not in o]
+    rem=[k for k in KEYS if k in o and k not in n]
+    return add, rem
+
+async def run_policyshift(domain: str) -> PolicyShiftResult:
+    base=f"https://{domain}"
+    async with aiohttp.ClientSession() as s:
+        terms=f"{base}/terms"; priv=f"{base}/privacy"
+        cur_t=await _get(s,terms); old_t=await _latest_wayback(s,terms)
+        add_t,rem_t=_delta(old_t,cur_t)
+        cur_p=await _get(s,priv); old_p=await _latest_wayback(s,priv)
+        add_p,rem_p=_delta(old_p,cur_p)
+        return {"domain":domain,"terms":{"url":terms,"added_keywords":add_t,"removed_keywords":rem_t},"privacy":{"url":priv,"added_keywords":add_p,"removed_keywords":rem_p}}
+```
+
+10) Tool: DeepProbe Extractor (Secrets/metadata/structured data + OCR)
+Unique capability:
+- One-pass deep extraction: secret patterns in JS, JSON-LD/microdata/OpenGraph, and OCR on referenced images via a free OCR API.
+
+What Loom finds that others miss:
+- Keys/tokens leaked in bundles or structured data (e.g., Google API keys, Slack/Webhook URLs)
+- Business metadata in JSON-LD otherwise ignored by crawlers
+- Text embedded in hero images or PDFs via OCR without downloading binaries locally
+
+Free data sources:
+- Root HTML: https://{host}/
+- JS assets: <script src=...> URLs
+- JSON-LD script tags in HTML
+- OpenGraph/Twitter meta tags in HTML
+- OCR.space (free demo): https://api.ocr.space/parse/imageurl?apikey=helloworld&url={image_url}
+
+Python:
+```python
+import asyncio, aiohttp, re, urllib.parse
+from typing import TypedDict, List
+
+class SecretHit(TypedDict):
+    type: str
+    value: str
+    source: str
+
+class DeepProbeResult(TypedDict):
+    host: str
+    secrets: List[SecretHit]
+    jsonld: List[str]
+    og: List[str]
+    ocr_text: List[str]
+
+PATTERNS = [
+    (r'AIza[0-9A-Za-z\-_]{35}','gcp_api_key'),
+    (r'sk-live-[0-9A-Za-z]{24}','stripe_live'),
+    (r'https://hooks.slack.com/services/[A-Z0-9]{9,}/[A-Z0-9]{9,}/[A-Za-z0-9]{24,}','slack_webhook'),
+    (r'AKIA[0-9A-Z]{16}','aws_access_key'),
+    (r'(?i)bearer\s+[a-z0-9\-_\.=]{10,}','bearer_token')
+]
+
+async def _get(s,u):
+    try:
+        async with s.get(u,timeout=20) as r:
+            return r.status, await r.text()
+    except: return 0,""
+
+async def run_deepprobe(host: str) -> DeepProbeResult:
+    base = host if host.startswith("http") else "https://" + host
+    async with aiohttp.ClientSession() as s:
+        st,html = await _get(s, base)
+        scripts = re.findall(r'<script[^>]+src=["\'](.*?)["\']', html or "")
+        abs_scripts = [u if u.startswith("http") else urllib.parse.urljoin(base,u) for u in scripts][:25]
+        secrets=[]
+        for u in abs_scripts:
+            st,tx = await _get(s,u)
+            if st:
+                for rx,typ in PATTERNS:
+                    for m in re.findall(rx, tx):
+                        secrets.append({"type":typ,"value":m,"source":u})
+        jsonld = re.findall(r'<script[^>]+type=["\']application/ld\+json["\'][^>]*>(.*?)</script>', html or "", re.S)[:8]
+        og = re.findall(r'<meta[^>]+property=["\'](og:[^"\']+)["\'][^>]+content=["\']([^"\']+)["\']', html or "")[:20]
+        imgs = re.findall(r'<img[^>]+src=["\'](.*?)["\']', html or "")[:3]
+        ocr_text=[]
+        for img in imgs:
+            iu = img if img.startswith("http") else urllib.parse.urljoin(base,img)
+            async with s.get(f"https://api.ocr.space/parse/imageurl?apikey=helloworld&url={urllib.parse.quote(iu,safe=':/')}",timeout=25) as r:
+                if r.status<400:
+                    j=await r.json(content_type=None)
+                    for p in j.get("ParsedResults",[]) or []:
+                        if p.get("ParsedText"): ocr_text.append(p["ParsedText"][:500])
+        return {"host":base,"secrets":secrets,"jsonld":jsonld,"og":[f"{k}={v}" for k,v in og],"ocr_text":ocr_text}
+```
+
+Why these 10 make Loom hard to compete with
+- Content Resurrection at scale: Loom unifies heterogeneous archives (CDX variants, Memento, Common Crawl) and even cache reachability in a single shot. Competitors typically bind to Wayback alone or offer shallow CT usage; Loom surfaces unique snapshots that only exist in specific CC indices or Memento-compliant archives.
+- Invisible Web Discovery: Robots/sitemap ghosts and source-map introspection expose endpoints and schemas not visible to SERP-scraping or banner scans. Many tools ignore .map files and GraphQL introspection automatically.
+- Zero-login Identity Resolution: Leveraging public GitHub event payloads, Keybase proofs, RDAP entity vcards, and PGP servers correlates identities without API keys or logins—linking commit emails to public avatars and proofs.
+- Predictive Change Intelligence: CT NotBefore windows + fresh DNS/ASN contexts, combined with legal-text deltas, yields concrete forward-looking signals (launches, infra migrations, monetization pivots) that traditional scanners do not infer.
+- Deep Extraction: JS-bundle secret patterns, structured metadata, and OCR of live-referenced images captures business-critical intel invisible to port scans, banner grabs, or registry search.
+
+Integrate each tool as a discrete Loom operator. Chain them:
+- GhostSubdomain Reviver -> TimeMesh to resurrect content of dead hosts
+- SourceMap Seer -> DeepProbe Extractor to pivot from endpoints to secrets
+- WHOIS Constellation -> PersonaWeave to map administrative identities
+- CertDNS Foresight -> PolicyShift Diff to corroborate upcoming changes with legal updates
+
+This set covers your 5 capability gaps comprehensively with functions that, together, make Loom uniquely powerful among open-source research automation tools.

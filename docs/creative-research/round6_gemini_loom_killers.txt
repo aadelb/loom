@@ -1,0 +1,1112 @@
+YOLO mode is enabled. All tool calls will be automatically approved.
+YOLO mode is enabled. All tool calls will be automatically approved.
+MCP issues detected. Run /mcp list for status.Attempt 1 failed with status 429. Retrying with backoff... _GaxiosError: [{
+  "error": {
+    "code": 429,
+    "message": "No capacity available for model gemini-3.1-pro-preview on the server",
+    "errors": [
+      {
+        "message": "No capacity available for model gemini-3.1-pro-preview on the server",
+        "domain": "global",
+        "reason": "rateLimitExceeded"
+      }
+    ],
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+        "reason": "MODEL_CAPACITY_EXHAUSTED",
+        "domain": "cloudcode-pa.googleapis.com",
+        "metadata": {
+          "model": "gemini-3.1-pro-preview"
+        }
+      }
+    ]
+  }
+}
+]
+    at Gaxios._request (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:8800:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async _OAuth2Client.requestAsync (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:10763:16)
+    at async CodeAssistServer.requestStreamingPost (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:277779:17)
+    at async CodeAssistServer.generateContentStream (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:277579:23)
+    at async file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:278424:19
+    at async file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:255329:23
+    at async retryWithBackoff (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:275301:23)
+    at async GeminiChat.makeApiCallAndProcessStream (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:312614:28)
+    at async GeminiChat.streamWithRetries (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:312452:29) {
+  config: {
+    url: 'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse',
+    method: 'POST',
+    params: { alt: 'sse' },
+    headers: {
+      'Content-Type': 'application/json',
+      'User-Agent': 'GeminiCLI/0.39.1/gemini-3.1-pro-preview (darwin; arm64; terminal) google-api-nodejs-client/9.15.1',
+      Authorization: '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+      'x-goog-api-client': 'gl-node/22.21.1'
+    },
+    responseType: 'stream',
+    body: '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+    signal: AbortSignal { aborted: false },
+    retry: false,
+    paramsSerializer: [Function: paramsSerializer],
+    validateStatus: [Function: validateStatus],
+    errorRedactor: [Function: defaultErrorRedactor]
+  },
+  response: {
+    config: {
+      url: 'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse',
+      method: 'POST',
+      params: [Object],
+      headers: [Object],
+      responseType: 'stream',
+      body: '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+      signal: [AbortSignal],
+      retry: false,
+      paramsSerializer: [Function: paramsSerializer],
+      validateStatus: [Function: validateStatus],
+      errorRedactor: [Function: defaultErrorRedactor]
+    },
+    data: '[{\n' +
+      '  "error": {\n' +
+      '    "code": 429,\n' +
+      '    "message": "No capacity available for model gemini-3.1-pro-preview on the server",\n' +
+      '    "errors": [\n' +
+      '      {\n' +
+      '        "message": "No capacity available for model gemini-3.1-pro-preview on the server",\n' +
+      '        "domain": "global",\n' +
+      '        "reason": "rateLimitExceeded"\n' +
+      '      }\n' +
+      '    ],\n' +
+      '    "status": "RESOURCE_EXHAUSTED",\n' +
+      '    "details": [\n' +
+      '      {\n' +
+      '        "@type": "type.googleapis.com/google.rpc.ErrorInfo",\n' +
+      '        "reason": "MODEL_CAPACITY_EXHAUSTED",\n' +
+      '        "domain": "cloudcode-pa.googleapis.com",\n' +
+      '        "metadata": {\n' +
+      '          "model": "gemini-3.1-pro-preview"\n' +
+      '        }\n' +
+      '      }\n' +
+      '    ]\n' +
+      '  }\n' +
+      '}\n' +
+      ']',
+    headers: {
+      'alt-svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000',
+      'content-length': '630',
+      'content-type': 'application/json; charset=UTF-8',
+      date: 'Tue, 28 Apr 2026 03:05:46 GMT',
+      server: 'ESF',
+      'server-timing': 'gfet4t7; dur=1059',
+      vary: 'Origin, X-Origin, Referer',
+      'x-cloudaicompanion-trace-id': '4855abe2a505d5a2',
+      'x-content-type-options': 'nosniff',
+      'x-frame-options': 'SAMEORIGIN',
+      'x-xss-protection': '0'
+    },
+    status: 429,
+    statusText: 'Too Many Requests',
+    request: {
+      responseURL: 'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse'
+    }
+  },
+  error: undefined,
+  status: 429,
+  [Symbol(gaxios-gaxios-error)]: '6.7.1'
+}
+Attempt 2 failed with status 429. Retrying with backoff... _GaxiosError: [{
+  "error": {
+    "code": 429,
+    "message": "No capacity available for model gemini-3.1-pro-preview on the server",
+    "errors": [
+      {
+        "message": "No capacity available for model gemini-3.1-pro-preview on the server",
+        "domain": "global",
+        "reason": "rateLimitExceeded"
+      }
+    ],
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+        "reason": "MODEL_CAPACITY_EXHAUSTED",
+        "domain": "cloudcode-pa.googleapis.com",
+        "metadata": {
+          "model": "gemini-3.1-pro-preview"
+        }
+      }
+    ]
+  }
+}
+]
+    at Gaxios._request (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:8800:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async _OAuth2Client.requestAsync (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:10763:16)
+    at async CodeAssistServer.requestStreamingPost (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:277779:17)
+    at async CodeAssistServer.generateContentStream (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:277579:23)
+    at async file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:278424:19
+    at async file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:255329:23
+    at async retryWithBackoff (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:275301:23)
+    at async GeminiChat.makeApiCallAndProcessStream (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:312614:28)
+    at async GeminiChat.streamWithRetries (file:///Users/aadel/.nvm/versions/node/v22.21.1/lib/node_modules/@google/gemini-cli/bundle/chunk-UIBQS45C.js:312452:29) {
+  config: {
+    url: 'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse',
+    method: 'POST',
+    params: { alt: 'sse' },
+    headers: {
+      'Content-Type': 'application/json',
+      'User-Agent': 'GeminiCLI/0.39.1/gemini-3.1-pro-preview (darwin; arm64; terminal) google-api-nodejs-client/9.15.1',
+      Authorization: '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+      'x-goog-api-client': 'gl-node/22.21.1'
+    },
+    responseType: 'stream',
+    body: '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+    signal: AbortSignal { aborted: false },
+    retry: false,
+    paramsSerializer: [Function: paramsSerializer],
+    validateStatus: [Function: validateStatus],
+    errorRedactor: [Function: defaultErrorRedactor]
+  },
+  response: {
+    config: {
+      url: 'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse',
+      method: 'POST',
+      params: [Object],
+      headers: [Object],
+      responseType: 'stream',
+      body: '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+      signal: [AbortSignal],
+      retry: false,
+      paramsSerializer: [Function: paramsSerializer],
+      validateStatus: [Function: validateStatus],
+      errorRedactor: [Function: defaultErrorRedactor]
+    },
+    data: '[{\n' +
+      '  "error": {\n' +
+      '    "code": 429,\n' +
+      '    "message": "No capacity available for model gemini-3.1-pro-preview on the server",\n' +
+      '    "errors": [\n' +
+      '      {\n' +
+      '        "message": "No capacity available for model gemini-3.1-pro-preview on the server",\n' +
+      '        "domain": "global",\n' +
+      '        "reason": "rateLimitExceeded"\n' +
+      '      }\n' +
+      '    ],\n' +
+      '    "status": "RESOURCE_EXHAUSTED",\n' +
+      '    "details": [\n' +
+      '      {\n' +
+      '        "@type": "type.googleapis.com/google.rpc.ErrorInfo",\n' +
+      '        "reason": "MODEL_CAPACITY_EXHAUSTED",\n' +
+      '        "domain": "cloudcode-pa.googleapis.com",\n' +
+      '        "metadata": {\n' +
+      '          "model": "gemini-3.1-pro-preview"\n' +
+      '        }\n' +
+      '      }\n' +
+      '    ]\n' +
+      '  }\n' +
+      '}\n' +
+      ']',
+    headers: {
+      'alt-svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000',
+      'content-length': '630',
+      'content-type': 'application/json; charset=UTF-8',
+      date: 'Tue, 28 Apr 2026 03:05:53 GMT',
+      server: 'ESF',
+      'server-timing': 'gfet4t7; dur=1403',
+      vary: 'Origin, X-Origin, Referer',
+      'x-cloudaicompanion-trace-id': '2f3050ed9865f904',
+      'x-content-type-options': 'nosniff',
+      'x-frame-options': 'SAMEORIGIN',
+      'x-xss-protection': '0'
+    },
+    status: 429,
+    statusText: 'Too Many Requests',
+    request: {
+      responseURL: 'https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse'
+    }
+  },
+  error: undefined,
+  status: 429,
+  [Symbol(gaxios-gaxios-error)]: '6.7.1'
+}
+# Loom: The Apex Predator of Research Automation
+
+To make Loom the undisputed, unbeatable champion of research automation and OSINT (Open Source Intelligence), we must transcend traditional methodologies. Tools like Maltego, SpiderFoot, Shodan, and Recon-ng rely on sequential, siloed data gathering. They ping one API, wait, parse, and maybe pivot. Loom will operate as a parallelized, omniscient intelligence engine. It will not just query the current state of the internet; it will dredge its history, map its invisible contours, extract its hidden logic, and correlate its passive footprint.
+
+Here are the 10 "God-Mode" tools designed to establish Loom's absolute monopoly in the intelligence gathering space. These tools fulfill the 5 core capabilities requested, expanding them into highly specific, devastatingly effective modules.
+
+---
+
+## CAPABILITY 1: DEAD INTERNET RESURRECTION
+
+### Tool 1: `ChronoResurrect` (Omni-Archive Time-Traveler)
+
+**1. Creative Name:** `ChronoResurrect`
+
+**2. What it finds that competitors CANNOT:**
+Competitors typically check the Wayback Machine for a specific URL. `ChronoResurrect` parallelizes queries across every known public web archive, cache, and index simultaneously. It uncovers "scrubbed" data—pages that were live for only hours, deleted forum posts, retracted press releases, and compromised documents that PR firms have tried to erase. By correlating Memento protocol headers across multiple CDX APIs, it finds content that one archive missed but another caught. It beats competitors by finding the *deltas* between timestamps, automatically highlighting what was removed in a specific revision.
+
+**3. 5+ Free Data Sources with REAL API Endpoints:**
+1.  **Wayback Machine CDX API:** `http://web.archive.org/cdx/search/cdx` (The gold standard).
+2.  **Archive.today (via Memento):** `http://archive.md/timemap/json/{url}` (Crucial for bypassing paywalls and capturing dynamic content).
+3.  **Common Crawl Index (CDX API):** `https://index.commoncrawl.org/CC-MAIN-YYYY-WW-index` (Massive, underutilized raw web data).
+4.  **Google Web Cache:** `http://webcache.googleusercontent.com/search?q=cache:{url}` (For very recent deletions).
+5.  **Memento TimeTravel API:** `http://timetravel.mementoweb.org/timemap/json/{url}` (Aggregates multiple smaller archives like WebCite, Library of Congress).
+
+**4. 40-line Async Python Implementation (aiohttp):**
+```python
+import asyncio
+import aiohttp
+from typing import TypedDict, List, Dict, Any
+from urllib.parse import quote
+
+class ChronoResult(TypedDict):
+    source: str
+    timestamp: str
+    original_url: str
+    archive_url: str
+    status_code: str
+
+async def fetch_cdx(session: aiohttp.ClientSession, url: str, source_name: str, endpoint: str) -> List[ChronoResult]:
+    try:
+        params = {"url": url, "output": "json", "fl": "timestamp,original,statuscode", "limit": "10"}
+        async with session.get(endpoint, params=params, timeout=10) as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                if not data or len(data) <= 1: return []
+                # Skip the header row
+                return [{"source": source_name, "timestamp": row[0], "original_url": row[1], 
+                         "archive_url": f"https://web.archive.org/web/{row[0]}/{row[1]}", "status_code": row[2]} 
+                        for row in data[1:]]
+            return []
+    except Exception: return []
+
+async def chrono_resurrect(target_url: str) -> Dict[str, List[ChronoResult]]:
+    sources = [
+        ("Wayback", "http://web.archive.org/cdx/search/cdx"),
+        ("CommonCrawl", "https://index.commoncrawl.org/CC-MAIN-2023-50-index"), # Example recent index
+    ]
+    async with aiohttp.ClientSession() as session:
+        tasks = [fetch_cdx(session, target_url, name, endpoint) for name, endpoint in sources]
+        
+        # Memento aggregation
+        memento_url = f"http://timetravel.mementoweb.org/timemap/json/{target_url}"
+        async def fetch_memento():
+            try:
+                async with session.get(memento_url, timeout=10) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        return [{"source": "Memento", "timestamp": m['datetime'], "original_url": target_url, 
+                                 "archive_url": m['uri'], "status_code": "200"} for m in data.get('mementos', {}).get('list', [])[:10]]
+            except Exception: return []
+            return []
+        
+        tasks.append(fetch_memento())
+        results = await asyncio.gather(*tasks)
+        
+    flat_results = [item for sublist in results for item in sublist]
+    return {"target": target_url, "archives": sorted(flat_results, key=lambda x: x['timestamp'], reverse=True)}
+
+# Usage: asyncio.run(chrono_resurrect("example.com"))
+```
+
+**5. TypedDict Output Schema:**
+```python
+class ChronoResult(TypedDict):
+    source: str
+    timestamp: str
+    original_url: str
+    archive_url: str
+    status_code: str
+
+class ChronoResurrectOutput(TypedDict):
+    target: str
+    archives: List[ChronoResult]
+```
+
+**6. How it makes Loom THE #1 research tool with zero competitors:**
+No other OSINT framework queries the Common Crawl index concurrently with the Wayback Machine and Memento aggregators. Common Crawl requires specific index endpoints that change monthly, which `ChronoResurrect` would dynamically resolve. By automating the aggregation and timeline construction of *every* snapshot across *all* archives, Loom allows an analyst to resurrect a target's digital footprint instantly. If a threat actor deletes a C2 domain or a corporation scrubs a controversial PR statement, `ChronoResurrect` ensures Loom finds it while competitors are stuck rate-limited on a single archive.
+
+---
+
+### Tool 2: `RepoPhantom` (Deleted Code & Secret Exhumer)
+
+**1. Creative Name:** `RepoPhantom`
+
+**2. What it finds that competitors CANNOT:**
+While tools like TruffleHog scan active repositories, and some scan commit history, `RepoPhantom` specifically targets *deleted* repositories, *orphaned* commits, and *dangling* blobs across multiple code forges simultaneously. It exploits the fact that when a developer force-pushes (`git push --force`) to remove a secret, the original commit is often still accessible via the commit hash if you know how to query the GitHub/GitLab API correctly (via the Events API or cached payloads). It resurrects source code that the author believes is completely wiped from the internet.
+
+**3. 5+ Free Data Sources with REAL API Endpoints:**
+1.  **GitHub Events API:** `https://api.github.com/users/{username}/events/public` (Finds push events containing orphaned commit hashes).
+2.  **GHTorrent (via BigQuery/API):** `https://ghtorrent.org/api.html` (Historical repository data, even if deleted on GitHub).
+3.  **GitLab Public API:** `https://gitlab.com/api/v4/users/{user_id}/events` (Similar to GitHub events, finds pushed hashes).
+4.  **Software Heritage API:** `https://archive.softwareheritage.org/api/1/` (The universal source code archive; stores deleted repos).
+5.  **Libraries.io API:** `https://libraries.io/api/search` (Finds references to deleted packages or repos).
+
+**4. 40-line Async Python Implementation (aiohttp):**
+```python
+import asyncio
+import aiohttp
+import re
+from typing import TypedDict, List, Dict
+
+class PhantomCommit(TypedDict):
+    repo_name: str
+    commit_hash: str
+    message: str
+    author: str
+    is_orphaned: bool
+
+async def hunt_github_events(session: aiohttp.ClientSession, username: str) -> List[PhantomCommit]:
+    url = f"https://api.github.com/users/{username}/events/public"
+    commits = []
+    try:
+        async with session.get(url, timeout=10) as resp:
+            if resp.status == 200:
+                events = await resp.json()
+                for event in events:
+                    if event.get('type') == 'PushEvent':
+                        repo = event.get('repo', {}).get('name', 'unknown')
+                        for commit in event.get('payload', {}).get('commits', []):
+                            commits.append({
+                                "repo_name": repo,
+                                "commit_hash": commit.get('sha'),
+                                "message": commit.get('message'),
+                                "author": commit.get('author', {}).get('name'),
+                                "is_orphaned": True # Assumed potentially orphaned until verified
+                            })
+    except Exception: pass
+    return commits
+
+async def check_software_heritage(session: aiohttp.ClientSession, repo_url: str) -> bool:
+    # Check if a deleted repo is archived in SWH
+    url = f"https://archive.softwareheritage.org/api/1/origin/{repo_url}/get/"
+    try:
+        async with session.get(url, timeout=10) as resp:
+            return resp.status == 200
+    except Exception: return False
+
+async def repo_phantom(username: str) -> Dict[str, Any]:
+    async with aiohttp.ClientSession() as session:
+        github_commits = await hunt_github_events(session, username)
+        
+        # In a real scenario, we'd attempt to fetch the actual orphaned commit data
+        # via https://api.github.com/repos/{repo_name}/commits/{commit_hash}
+        # to see if it still exists despite not being in a branch.
+        
+    return {"target_user": username, "suspect_commits": github_commits}
+
+# Usage: asyncio.run(repo_phantom("torvalds"))
+```
+
+**5. TypedDict Output Schema:**
+```python
+class PhantomCommit(TypedDict):
+    repo_name: str
+    commit_hash: str
+    message: str
+    author: str
+    is_orphaned: bool
+
+class RepoPhantomOutput(TypedDict):
+    target_user: str
+    suspect_commits: List[PhantomCommit]
+    archived_in_swh: bool
+```
+
+**6. How it makes Loom THE #1 research tool with zero competitors:**
+Competitors rely heavily on what is *currently* available via the GitHub Search API. When an adversary or a panicked developer deletes a repository containing AWS keys or proprietary malware source code, standard tools go blind. `RepoPhantom` leverages the Software Heritage Foundation and public event streams to resurrect that code. By systematically gathering commit hashes from event logs and querying them directly, Loom can pull the diffs of "deleted" commits. This gives Loom a god-like view of a target's mistakes and history, rendering the "delete" button practically useless for Loom's targets.
+
+---
+
+## CAPABILITY 2: INVISIBLE WEB MAPPING
+
+### Tool 3: `ShadowPath` (404-Necromancy & Disallow Mapper)
+
+**1. Creative Name:** `ShadowPath`
+
+**2. What it finds that competitors CANNOT:**
+Standard directory brute-forcers (like DirBuster, ffuf, or gobuster) blindly throw wordlists at a server, causing massive noise and risking IP bans. `ShadowPath` is surgical and stealthy. It finds the "invisible web" by combining `robots.txt` parsing with dynamic `sitemap.xml` extraction, specifically looking for *discrepancies*. It isolates URLs in the sitemap that return a 404 (indicating recently deleted, but still architecturally relevant content) and automatically correlates them with Wayback Machine archives. Furthermore, it parses `security.txt` and `.well-known` directories, not just to read them, but to extract hidden paths they might inadvertently reference.
+
+**3. 5+ Free Data Sources with REAL API Endpoints:**
+1.  **robots.txt (Direct HTTP):** `https://{target}/robots.txt` (Extracts `Disallow` paths).
+2.  **sitemap.xml (Direct HTTP):** `https://{target}/sitemap.xml` (Or mapped via robots.txt).
+3.  **AlienVault OTX API:** `https://otx.alienvault.com/api/v1/indicators/hostname/{target}/url_list` (Finds historical URLs).
+4.  **URLScan.io API:** `https://urlscan.io/api/v1/search/?q=domain:{target}` (Finds paths accessed during sandbox execution).
+5.  **Wayback CDX (Path extraction):** `http://web.archive.org/cdx/search/cdx?url={target}/*&collapse=urlkey` (Finds all historical paths).
+
+**4. 40-line Async Python Implementation (aiohttp):**
+```python
+import asyncio
+import aiohttp
+import xml.etree.ElementTree as ET
+from typing import TypedDict, List
+
+class PathIntel(TypedDict):
+    path: str
+    source: str
+    status: int
+    is_sensitive: bool
+
+async def extract_robots(session: aiohttp.ClientSession, target: str) -> List[PathIntel]:
+    paths = []
+    try:
+        async with session.get(f"https://{target}/robots.txt", timeout=5) as resp:
+            if resp.status == 200:
+                text = await resp.text()
+                for line in text.splitlines():
+                    if line.lower().startswith('disallow:'):
+                        path = line.split(':', 1)[1].strip()
+                        if path:
+                            paths.append({"path": path, "source": "robots.txt", "status": 0, "is_sensitive": True})
+    except Exception: pass
+    return paths
+
+async def extract_alienvault(session: aiohttp.ClientSession, target: str) -> List[PathIntel]:
+    url = f"https://otx.alienvault.com/api/v1/indicators/hostname/{target}/url_list"
+    paths = []
+    try:
+        async with session.get(url, timeout=10) as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                for item in data.get('url_list', [])[:20]: # Limit for brevity
+                    paths.append({"path": item['url'], "source": "AlienVault", "status": item.get('httpcode', 0), "is_sensitive": False})
+    except Exception: pass
+    return paths
+
+async def shadow_path(target: str) -> List[PathIntel]:
+    async with aiohttp.ClientSession() as session:
+        robots_task = extract_robots(session, target)
+        otx_task = extract_alienvault(session, target)
+        
+        results = await asyncio.gather(robots_task, otx_task)
+        
+        # Flatten and deduplicate by path
+        all_paths = [item for sublist in results for item in sublist]
+        unique_paths = {p['path']: p for p in all_paths}.values()
+        
+        # In a real tool, we would now async check the HTTP status of these discovered paths
+        return list(unique_paths)
+
+# Usage: asyncio.run(shadow_path("example.com"))
+```
+
+**5. TypedDict Output Schema:**
+```python
+class PathIntel(TypedDict):
+    path: str
+    source: str
+    status: int
+    is_sensitive: bool
+
+class ShadowPathOutput(TypedDict):
+    target: str
+    discovered_paths: List[PathIntel]
+    total_found: int
+```
+
+**6. How it makes Loom THE #1 research tool with zero competitors:**
+Brute-forcing is a primitive technique. `ShadowPath` uses OSINT and historical data to map the file structure of a web application without ever sending a suspicious payload or hitting a rate limit. By leveraging AlienVault OTX and URLScan.io alongside standard crawler directives, it maps out the "Invisible Web"—administrative panels, forgotten API endpoints, and staging directories. A competitor might spend hours running `gobuster` and getting blocked by Cloudflare. Loom maps the entire hidden surface area in seconds by asking third-party platforms what paths they have *already* seen, rendering active defenses useless.
+
+---
+
+### Tool 4: `SchemaBreaker` (GraphQL & API Introspector)
+
+**1. Creative Name:** `SchemaBreaker`
+
+**2. What it finds that competitors CANNOT:**
+Modern applications rely heavily on GraphQL and undocumented REST APIs. Competitors like Burp Suite or ZAP require manual interaction to map these out. `SchemaBreaker` automatically hunts for common GraphQL endpoints (`/graphql`, `/api/graphql`, `/v1/graphql`), attempts Introspection queries, and if Introspection is disabled, it leverages Field Suggestion attacks (using slight typos to force the GraphQL engine to suggest the correct, hidden fields). It maps the entire data model, mutations, and queries of an application autonomously, finding hidden developer endpoints that expose PII or internal database structures.
+
+**3. 5+ Free Data Sources with REAL API Endpoints:**
+*(Note: These are techniques applied directly to the target's infrastructure rather than third-party OSINT APIs, which is necessary for live API mapping)*
+1.  **Target GraphQL Endpoint:** `https://{target}/graphql`
+2.  **Target Swagger/OpenAPI Definitions:** `https://{target}/swagger.json`, `/api-docs`
+3.  **APIs.guru Directory:** `https://api.apis.guru/v2/list.json` (Cross-reference public schemas).
+4.  **Wayback Machine (Schema extraction):** `http://web.archive.org/cdx/search/cdx?url={target}/*swagger.json` (Find old, permissive schemas).
+5.  **Postman API Network:** `https://api.getpostman.com/networks/public` (Search for the target's public Postman collections revealing API structure).
+
+**4. 40-line Async Python Implementation (aiohttp):**
+```python
+import asyncio
+import aiohttp
+from typing import TypedDict, List, Dict, Any
+
+class APIEndpoint(TypedDict):
+    url: str
+    type: str  # 'GraphQL', 'Swagger', 'Postman'
+    has_introspection: bool
+    schema_dump: Dict[str, Any]
+
+async def check_graphql_introspection(session: aiohttp.ClientSession, target_url: str) -> APIEndpoint:
+    endpoints = ["/graphql", "/api/graphql", "/v1/graphql"]
+    query = {"query": "\n    query IntrospectionQuery {\n      __schema {\n        queryType { name }\n        mutationType { name }\n      }\n    }\n  "}
+    
+    for ep in endpoints:
+        url = f"https://{target_url}{ep}"
+        try:
+            async with session.post(url, json=query, timeout=5) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    if 'data' in data and '__schema' in data['data']:
+                        return {"url": url, "type": "GraphQL", "has_introspection": True, "schema_dump": data['data']}
+        except Exception: continue
+    
+    return {"url": "", "type": "GraphQL", "has_introspection": False, "schema_dump": {}}
+
+async def search_apis_guru(session: aiohttp.ClientSession, target: str) -> List[str]:
+    try:
+        async with session.get("https://api.apis.guru/v2/list.json", timeout=5) as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                # Rough matching
+                return [k for k in data.keys() if target.split('.')[0] in k.lower()]
+    except Exception: return []
+    return []
+
+async def schema_breaker(target: str) -> Dict[str, Any]:
+    async with aiohttp.ClientSession() as session:
+        graphql_task = check_graphql_introspection(session, target)
+        public_api_task = search_apis_guru(session, target)
+        
+        gql_res, pub_res = await asyncio.gather(graphql_task, public_api_task)
+        
+    return {"target": target, "graphql": gql_res, "public_specs_found": pub_res}
+
+# Usage: asyncio.run(schema_breaker("example.com"))
+```
+
+**5. TypedDict Output Schema:**
+```python
+class APIEndpoint(TypedDict):
+    url: str
+    type: str
+    has_introspection: bool
+    schema_dump: Dict[str, Any]
+
+class SchemaBreakerOutput(TypedDict):
+    target: str
+    graphql: APIEndpoint
+    public_specs_found: List[str]
+```
+
+**6. How it makes Loom THE #1 research tool with zero competitors:**
+No existing reconnaissance tool automatically pivots from finding a domain to executing GraphQL introspection and Field Suggestion attacks asynchronously. If a developer leaves Introspection on (which happens constantly in staging environments), `SchemaBreaker` instantly maps the entire backend database architecture. If Introspection is off, it searches APIs.guru and the Postman Public Network to see if an employee accidentally uploaded the Postman collection. Loom will uncover the actual logic of the target application, allowing researchers to find BOLA (Broken Object Level Authorization) vulnerabilities or hidden data fields that traditional scanners entirely miss.
+
+---
+
+## CAPABILITY 3: JAVASCRIPT INTELLIGENCE
+
+### Tool 5: `JSBloodhound` (Regex Secret & Endpoint Extractor)
+
+**1. Creative Name:** `JSBloodhound`
+
+**2. What it finds that competitors CANNOT:**
+Modern single-page applications (SPAs) like React, Angular, and Vue compile all their routing logic and API endpoints into massive JavaScript bundles. Competitors look at the HTML. `JSBloodhound` downloads every `.js` file referenced in the DOM, unminifies them in memory, and unleashes a massive suite of high-fidelity regular expressions. It extracts hardcoded AWS keys, Stripe tokens, internal API endpoints (e.g., `https://dev-api.company.local`), feature flags, and staging URLs. It finds the "keys to the kingdom" that developers mistakenly believe are safe because they are "compiled" into frontend code.
+
+**3. 5+ Free Data Sources with REAL API Endpoints:**
+*(Note: Relies on live DOM parsing and OSINT code search)*
+1.  **Live Target DOM:** `https://{target}/` (Extracts `<script src="...">`).
+2.  **Wayback Machine (JS Archives):** `http://web.archive.org/cdx/search/cdx?url={target}/*.js` (Finds old bundles with old keys).
+3.  **PublicWWW API:** `https://publicwww.com/websites/{search_term}/` (Searches source code across the web for specific JS patterns associated with the target).
+4.  **URLScan.io DOM API:** `https://urlscan.io/api/v1/result/{uuid}/` (Downloads DOM and JS assets captured during sandbox runs).
+5.  **Censys Search:** `https://search.censys.io/api/v2/hosts/search` (Search for hosts serving specific JS file hashes).
+
+**4. 40-line Async Python Implementation (aiohttp):**
+```python
+import asyncio
+import aiohttp
+import re
+from typing import TypedDict, List, Set
+
+class JSIntel(TypedDict):
+    file_url: str
+    secrets_found: List[str]
+    endpoints_found: List[str]
+
+# High-fidelity regex for secrets and URLs
+SECRET_REGEX = re.compile(r'(?:api_key|apikey|secret|token|password)[\s:=]+["\']([a-zA-Z0-9_\-]{16,})["\']', re.IGNORECASE)
+URL_REGEX = re.compile(r'https?://[a-zA-Z0-9.\-_]+/[a-zA-Z0-9./\-_]*')
+
+async def extract_js_links(session: aiohttp.ClientSession, url: str) -> Set[str]:
+    js_links = set()
+    try:
+        async with session.get(url, timeout=5) as resp:
+            if resp.status == 200:
+                html = await resp.text()
+                # Extremely rudimentary regex for finding script tags
+                scripts = re.findall(r'<script[^>]+src=["\']([^"\']+\.js)["\']', html)
+                for script in scripts:
+                    if script.startswith('http'): js_links.add(script)
+                    elif script.startswith('/'): js_links.add(f"{url.rstrip('/')}{script}")
+                    else: js_links.add(f"{url.rstrip('/')}/{script}")
+    except Exception: pass
+    return js_links
+
+async def analyze_js(session: aiohttp.ClientSession, js_url: str) -> JSIntel:
+    intel: JSIntel = {"file_url": js_url, "secrets_found": [], "endpoints_found": []}
+    try:
+        async with session.get(js_url, timeout=10) as resp:
+            if resp.status == 200:
+                content = await resp.text()
+                intel["secrets_found"] = list(set(SECRET_REGEX.findall(content)))
+                intel["endpoints_found"] = list(set(URL_REGEX.findall(content)))
+    except Exception: pass
+    return intel
+
+async def js_bloodhound(target_url: str) -> List[JSIntel]:
+    async with aiohttp.ClientSession() as session:
+        js_urls = await extract_js_links(session, target_url)
+        tasks = [analyze_js(session, url) for url in js_urls]
+        results = await asyncio.gather(*tasks)
+        return [r for r in results if r['secrets_found'] or r['endpoints_found']]
+
+# Usage: asyncio.run(js_bloodhound("https://example.com"))
+```
+
+**5. TypedDict Output Schema:**
+```python
+class JSIntel(TypedDict):
+    file_url: str
+    secrets_found: List[str]
+    endpoints_found: List[str]
+
+class JSBloodhoundOutput(TypedDict):
+    target: str
+    analyzed_files: int
+    findings: List[JSIntel]
+```
+
+**6. How it makes Loom THE #1 research tool with zero competitors:**
+While competitors might parse HTML, few dynamically map and analyze every JavaScript chunk requested by an SPA in real-time. `JSBloodhound` automates what bug bounty hunters spend hours doing manually: reading minified Webpack bundles. By extracting internal endpoints, Loom instantly builds a map of the backend microservices architecture. Finding a hardcoded AWS Cognito token or a Firebase admin key in a `.js` file provides instant, total compromise. Loom does this asynchronously across all historical versions of the `.js` files via the Wayback Machine, finding keys that were committed yesterday and removed today, but remain valid.
+
+---
+
+### Tool 6: `TraceBackMiner` (Source Map Exploiter)
+
+**1. Creative Name:** `TraceBackMiner`
+
+**2. What it finds that competitors CANNOT:**
+When developers build React or Angular apps, a `.js.map` file is often generated. These files map the minified production code *back to the original, highly readable TypeScript/JavaScript source code*, complete with developer comments, original variable names, and directory structures. Competitors ignore these files or don't know how to reconstruct them. `TraceBackMiner` detects `.map` files, downloads them, and completely reconstructs the target's original local file system and source code repository structure. It turns a black-box target into a white-box target.
+
+**3. 5+ Free Data Sources with REAL API Endpoints:**
+1.  **Direct Map Discovery:** Append `.map` to discovered `.js` URLs.
+2.  **Wayback CDX (.map search):** `http://web.archive.org/cdx/search/cdx?url={target}/*.map`
+3.  **URLScan.io (Searching for maps):** `https://urlscan.io/api/v1/search/?q=page.url:*.map+AND+domain:{target}`
+4.  **Censys Data (Map headers):** `https://search.censys.io/api/v2/hosts/search` (Searching for `X-SourceMap` headers).
+5.  **GitHub Code Search API:** `https://api.github.com/search/code?q=sourceMappingURL+repo:{org}/{repo}` (Finding where maps might be exposed in public repos).
+
+**4. 40-line Async Python Implementation (aiohttp):**
+```python
+import asyncio
+import aiohttp
+import json
+from typing import TypedDict, List, Dict
+
+class SourceMapIntel(TypedDict):
+    map_url: str
+    original_files: List[str]
+    has_source_content: bool
+
+async def check_source_map(session: aiohttp.ClientSession, js_url: str) -> SourceMapIntel:
+    map_url = f"{js_url}.map"
+    intel: SourceMapIntel = {"map_url": map_url, "original_files": [], "has_source_content": False}
+    try:
+        async with session.get(map_url, timeout=10) as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                if 'sources' in data:
+                    intel['original_files'] = data['sources']
+                if 'sourcesContent' in data:
+                    intel['has_source_content'] = True
+    except Exception: pass
+    return intel
+
+async def traceback_miner(js_urls: List[str]) -> List[SourceMapIntel]:
+    async with aiohttp.ClientSession() as session:
+        tasks = [check_source_map(session, url) for url in js_urls]
+        results = await asyncio.gather(*tasks)
+        return [r for r in results if r['original_files']]
+
+# Usage: 
+# js_urls = ["https://example.com/static/js/main.12345.js"]
+# asyncio.run(traceback_miner(js_urls))
+```
+
+**5. TypedDict Output Schema:**
+```python
+class SourceMapIntel(TypedDict):
+    map_url: str
+    original_files: List[str]
+    has_source_content: bool
+
+class TraceBackMinerOutput(TypedDict):
+    target: str
+    maps_found: int
+    recovered_source_tree: List[SourceMapIntel]
+```
+
+**6. How it makes Loom THE #1 research tool with zero competitors:**
+Source map exposure is one of the most devastating, yet least systematically exploited, information disclosures on the web. A competitor looks at minified garbage like `a.b(c)`. `TraceBackMiner` downloads the `.map` file and reveals `PaymentGateway.processTransaction(creditCard)`. By checking current and historical `.map` files (via Wayback), Loom reconstructs the target's original Git repository structure in memory. This allows Loom's AI agents to read the target's source code exactly as the developers wrote it, including their comments (e.g., `// TODO: fix this SQL injection later`). This is god-mode intelligence.
+
+---
+
+## CAPABILITY 4: MULTI-ENGINE DEEP SEARCH
+
+### Tool 7: `OmniQuery` (Unified Multi-Engine Dredger)
+
+**1. Creative Name:** `OmniQuery`
+
+**2. What it finds that competitors CANNOT:**
+Standard search relies on Google, which aggressively filters, censors, and SEO-optimizes results. `OmniQuery` bypasses the Google monopoly by querying 30+ search engines simultaneously. It hits surface web (Bing, Yandex, Baidu), alternative non-corporate indexes (Marginalia, Wiby, Mojeek), and code search engines (Searchcode, PublicWWW). Yandex, for instance, has vastly different censorship rules and often indexes stolen databases or forum posts that Google scrubs. Marginalia indexes the "small web" (personal blogs, older forums). `OmniQuery` deduplicates, clusters, and ranks results globally, finding the obscure forum post from 2011 where the target CEO leaked his personal email.
+
+**3. 5+ Free Data Sources with REAL API Endpoints:**
+1.  **DuckDuckGo HTML (No API key needed, scraping allowed via UI):** `https://html.duckduckgo.com/html/?q={query}`
+2.  **Searchcode API:** `https://searchcode.com/api/codesearch_I/?q={query}` (Finds mentions of the target in open-source code globally).
+3.  **Mojeek API/Search:** `https://www.mojeek.com/search?q={query}&fmt=json` (Independent web index, vastly different results).
+4.  **Brave Search API (Free tier):** `https://api.search.brave.com/res/v1/web/search?q={query}` (Excellent independent index).
+5.  **Crossref API:** `https://api.crossref.org/works?query={query}` (Searches academic papers and journals for target associations).
+
+**4. 40-line Async Python Implementation (aiohttp):**
+```python
+import asyncio
+import aiohttp
+from typing import TypedDict, List, Dict
+
+class SearchResult(TypedDict):
+    title: str
+    url: str
+    source: str
+    snippet: str
+
+async def search_brave(session: aiohttp.ClientSession, query: str, api_key: str) -> List[SearchResult]:
+    url = f"https://api.search.brave.com/res/v1/web/search?q={query}"
+    headers = {"Accept": "application/json", "Accept-Encoding": "gzip", "X-Subscription-Token": api_key}
+    results = []
+    try:
+        async with session.get(url, headers=headers, timeout=10) as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                for item in data.get('web', {}).get('results', []):
+                    results.append({"title": item.get('title'), "url": item.get('url'), "source": "Brave", "snippet": item.get('description')})
+    except Exception: pass
+    return results
+
+async def search_searchcode(session: aiohttp.ClientSession, query: str) -> List[SearchResult]:
+    url = f"https://searchcode.com/api/codesearch_I/?q={query}"
+    results = []
+    try:
+        async with session.get(url, timeout=10) as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                for item in data.get('results', []):
+                    results.append({"title": item.get('name'), "url": item.get('url'), "source": "Searchcode", "snippet": str(item.get('lines', {}))[:100]})
+    except Exception: pass
+    return results
+
+async def omni_query(query: str, brave_key: str = "DEMO") -> List[SearchResult]:
+    async with aiohttp.ClientSession() as session:
+        brave_task = search_brave(session, query, brave_key)
+        code_task = search_searchcode(session, query)
+        
+        # In full version, add Yandex, Mojeek, Marginalia, DDG here
+        res = await asyncio.gather(brave_task, code_task)
+        
+    flat_results = [item for sublist in res for item in sublist]
+    # Simple deduplication by URL
+    seen = set()
+    unique = []
+    for r in flat_results:
+        if r['url'] not in seen:
+            seen.add(r['url'])
+            unique.append(r)
+    return unique
+
+# Usage: asyncio.run(omni_query("john.doe@example.com"))
+```
+
+**5. TypedDict Output Schema:**
+```python
+class SearchResult(TypedDict):
+    title: str
+    url: str
+    source: str
+    snippet: str
+
+class OmniQueryOutput(TypedDict):
+    query: str
+    total_results: int
+    results: List[SearchResult]
+```
+
+**6. How it makes Loom THE #1 research tool with zero competitors:**
+No competitor aggregates true alternative indices like Marginalia or Mojeek alongside code search and academic search. When a target tries to scrub their presence, they hire reputation managers who issue DMCA takedowns to Google and Bing. They *forget* to issue takedowns to independent crawlers or code repositories. `OmniQuery` ensures that if a string of text exists *anywhere* on the surface, deep, or academic web, Loom will find it. It breaks the Google filter bubble, giving Loom an unfiltered, unmanipulated view of the internet's raw data.
+
+---
+
+### Tool 8: `InfraPanopticon` (Infrastructure & IoT Metasearch)
+
+**1. Creative Name:** `InfraPanopticon`
+
+**2. What it finds that competitors CANNOT:**
+Competitors might query Shodan. `InfraPanopticon` queries Shodan, Censys, ZoomEye, FOFA, and GreyNoise *simultaneously*, correlating the results to build a complete IoT, exposed port, and vulnerability map of a target. Where Shodan might miss an IPv6 address or a transient cloud instance, FOFA (which is heavily focused on the Asian internet ecosystem) will catch it. GreyNoise tells Loom if the target IP is actually a honeypot or an internet-wide scanner. By merging these infrastructure engines, Loom uncovers exposed RDP ports, open MongoDB instances, and misconfigured Elasticsearch clusters that belong to the target but aren't indexed by standard web searches.
+
+**3. 5+ Free Data Sources with REAL API Endpoints:**
+1.  **Shodan API:** `https://api.shodan.io/shodan/host/{ip}?key={api_key}`
+2.  **Censys Search API:** `https://search.censys.io/api/v2/hosts/{ip}`
+3.  **GreyNoise Community API:** `https://api.greynoise.io/v3/community/{ip}` (Identifies background noise vs targeted threats).
+4.  **FOFA API:** `https://fofa.info/api/v1/search/all?email={email}&key={key}&qbase64={query}` (Massive Chinese-based infrastructure index).
+5.  **LeakIX API:** `https://leakix.net/api/v1/host/{ip}` (Specifically indexes leaked data, open databases, and exposed configs).
+
+**4. 40-line Async Python Implementation (aiohttp):**
+```python
+import asyncio
+import aiohttp
+from typing import TypedDict, List, Dict, Any
+
+class InfraResult(TypedDict):
+    source: str
+    ip: str
+    ports: List[int]
+    tags: List[str]
+    is_honeypot_or_scanner: bool
+
+async def query_shodan(session: aiohttp.ClientSession, ip: str, api_key: str) -> InfraResult:
+    url = f"https://api.shodan.io/shodan/host/{ip}?key={api_key}"
+    try:
+        async with session.get(url, timeout=10) as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                return {"source": "Shodan", "ip": ip, "ports": data.get('ports', []), "tags": data.get('tags', []), "is_honeypot_or_scanner": False}
+    except Exception: pass
+    return {"source": "Shodan", "ip": ip, "ports": [], "tags": [], "is_honeypot_or_scanner": False}
+
+async def query_greynoise(session: aiohttp.ClientSession, ip: str) -> InfraResult:
+    url = f"https://api.greynoise.io/v3/community/{ip}"
+    try:
+        async with session.get(url, timeout=10) as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                is_noise = data.get('noise', False)
+                tags = [data.get('classification', '')] if 'classification' in data else []
+                return {"source": "GreyNoise", "ip": ip, "ports": [], "tags": tags, "is_honeypot_or_scanner": is_noise}
+    except Exception: pass
+    return {"source": "GreyNoise", "ip": ip, "ports": [], "tags": [], "is_honeypot_or_scanner": False}
+
+async def infra_panopticon(ip: str, shodan_key: str = "DEMO") -> List[InfraResult]:
+    async with aiohttp.ClientSession() as session:
+        shodan_task = query_shodan(session, ip, shodan_key)
+        greynoise_task = query_greynoise(session, ip)
+        
+        # In a real scenario, add Censys, FOFA, LeakIX here
+        results = await asyncio.gather(shodan_task, greynoise_task)
+        return [r for r in results if r['ports'] or r['tags'] or r['is_honeypot_or_scanner']]
+
+# Usage: asyncio.run(infra_panopticon("8.8.8.8"))
+```
+
+**5. TypedDict Output Schema:**
+```python
+class InfraResult(TypedDict):
+    source: str
+    ip: str
+    ports: List[int]
+    tags: List[str]
+    is_honeypot_or_scanner: bool
+
+class InfraPanopticonOutput(TypedDict):
+    target_ip: str
+    findings: List[InfraResult]
+```
+
+**6. How it makes Loom THE #1 research tool with zero competitors:**
+When a penetration tester assesses a network, they usually rely on an active Nmap scan (which alerts the blue team) or a quick Shodan check. `InfraPanopticon` is entirely passive and exponentially more comprehensive. By cross-referencing FOFA (which excels at finding embedded IoT devices and Chinese-manufactured hardware) with LeakIX (which specifically indexes open databases), Loom instantly identifies the weakest, unmonitored link in a target's infrastructure. If a developer accidentally exposes a Redis cache to the internet for 10 minutes, one of these five engines will catch it. Loom orchestrates this god-level view instantly.
+
+---
+
+## CAPABILITY 5: PASSIVE INFRASTRUCTURE INTELLIGENCE
+
+### Tool 9: `AtlasSubrosa` (Total DNS & Subdomain Cartographer)
+
+**1. Creative Name:** `AtlasSubrosa`
+
+**2. What it finds that competitors CANNOT:**
+Competitors like Sublist3r or Amass are decent, but often slow and rely on active DNS brute-forcing. `AtlasSubrosa` achieves total subdomain enumeration *passively*. It mines Certificate Transparency (CT) logs, which mathematically guarantee that every SSL certificate issued for a subdomain is permanently recorded. It correlates CT logs with Rapid7's Forward DNS datasets, HackerTarget, and ThreatCrowd. It finds internal development domains (e.g., `jira.internal.target.com`), staging servers, and legacy infrastructure that doesn't have public DNS records but *does* have an SSL certificate.
+
+**3. 5+ Free Data Sources with REAL API Endpoints:**
+1.  **crt.sh (Certificate Transparency):** `https://crt.sh/?q=%.{domain}&output=json` (The absolute best source for subdomains).
+2.  **HackerTarget Host Search:** `https://api.hackertarget.com/hostsearch/?q={domain}`
+3.  **AlienVault OTX (Passive DNS):** `https://otx.alienvault.com/api/v1/indicators/domain/{domain}/passive_dns`
+4.  **CertSpotter API:** `https://api.certspotter.com/v1/issuances?domain={domain}&include_subdomains=true&expand=dns_names`
+5.  **ThreatMiner API:** `https://api.threatminer.org/v2/domain.php?q={domain}&rt=5` (Finds subdomains related to threat intelligence).
+
+**4. 40-line Async Python Implementation (aiohttp):**
+```python
+import asyncio
+import aiohttp
+from typing import TypedDict, List, Set
+
+class AtlasOutput(TypedDict):
+    domain: str
+    subdomains: List[str]
+    total_found: int
+
+async def query_crtsh(session: aiohttp.ClientSession, domain: str) -> Set[str]:
+    subdomains = set()
+    url = f"https://crt.sh/?q=%.{domain}&output=json"
+    try:
+        async with session.get(url, timeout=15) as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                for entry in data:
+                    name = entry.get('name_value', '').lower()
+                    if '\n' in name:
+                        for n in name.split('\n'):
+                            if n.endswith(domain) and '*' not in n: subdomains.add(n)
+                    elif name.endswith(domain) and '*' not in name: subdomains.add(name)
+    except Exception: pass
+    return subdomains
+
+async def query_hackertarget(session: aiohttp.ClientSession, domain: str) -> Set[str]:
+    subdomains = set()
+    url = f"https://api.hackertarget.com/hostsearch/?q={domain}"
+    try:
+        async with session.get(url, timeout=10) as resp:
+            if resp.status == 200:
+                text = await resp.text()
+                for line in text.splitlines():
+                    sub = line.split(',')[0]
+                    if sub.endswith(domain): subdomains.add(sub)
+    except Exception: pass
+    return subdomains
+
+async def atlas_subrosa(domain: str) -> AtlasOutput:
+    async with aiohttp.ClientSession() as session:
+        crtsh_task = query_crtsh(session, domain)
+        ht_task = query_hackertarget(session, domain)
+        
+        results = await asyncio.gather(crtsh_task, ht_task)
+        
+        all_subs = set()
+        for res in results:
+            all_subs.update(res)
+            
+        return {"domain": domain, "subdomains": sorted(list(all_subs)), "total_found": len(all_subs)}
+
+# Usage: asyncio.run(atlas_subrosa("example.com"))
+```
+
+**5. TypedDict Output Schema:**
+```python
+class AtlasOutput(TypedDict):
+    domain: str
+    subdomains: List[str]
+    total_found: int
+```
+
+**6. How it makes Loom THE #1 research tool with zero competitors:**
+Certificate Transparency logs are cryptographic proof of infrastructure existence. While an active DNS brute-forcer might guess `dev.target.com`, it will never guess `staging-api-v3-internal-auth.target.com`. `AtlasSubrosa` finds it instantly because a Let's Encrypt certificate was issued for it. By aggregating crt.sh, CertSpotter, and passive DNS sensors simultaneously, Loom instantly maps the complete external perimeter of an organization. This allows Loom's AI to pivot into these obscure subdomains, finding development environments with default passwords, rendering defensive obfuscation obsolete.
+
+---
+
+### Tool 10: `OriginStriker` (WAF/CDN Bypass & True IP Revealer)
+
+**1. Creative Name:** `OriginStriker`
+
+**2. What it finds that competitors CANNOT:**
+Nearly every modern target hides behind Cloudflare, Fastly, or AWS CloudFront. Standard tools scan the Cloudflare IP, hitting a brick wall. `OriginStriker` is dedicated to unmasking the *Origin Server* (the actual physical server hosting the data). It does this passively using historical DNS data (finding the IP before Cloudflare was enabled), Shodan SSL hash correlation (finding servers on the internet responding with the target's SSL certificate), and Censys body hash matching. Once the true origin IP is found, Loom can bypass the WAF (Web Application Firewall) entirely, attacking or mapping the backend directly.
+
+**3. 5+ Free Data Sources with REAL API Endpoints:**
+1.  **SecurityTrails API (Historical DNS):** `https://api.securitytrails.com/v1/domain/{domain}/history/a` (Finds the A records before the CDN was activated).
+2.  **Censys Search (SSL Hash matching):** `https://search.censys.io/api/v2/hosts/search?q=services.tls.certificates.leaf_data.names:{domain}` (Finds random IPs serving the target's cert).
+3.  **Shodan Search (http.html matching):** `https://api.shodan.io/shodan/host/search?key={key}&query=http.html_hash:{hash}` (Finds servers responding with identical HTML to the target).
+4.  **Crimeflare/Cloudflare Resolver Databases:** Open source databases tracking known Cloudflare origin leaks.
+5.  **DNSDumpster API/Web:** `https://dnsdumpster.com/` (Excellent graph-based DNS data often exposing origin IPs via misconfigured MX or TXT records).
+
+**4. 40-line Async Python Implementation (aiohttp):**
+```python
+import asyncio
+import aiohttp
+from typing import TypedDict, List, Dict
+
+class OriginIntel(TypedDict):
+    suspect_ip: str
+    confidence: str  # 'High', 'Medium', 'Low'
+    method: str      # 'Historical DNS', 'SSL Cert Match'
+    organization: str
+
+async def check_historical_dns(session: aiohttp.ClientSession, domain: str, api_key: str) -> List[OriginIntel]:
+    # Requires SecurityTrails API key
+    url = f"https://api.securitytrails.com/v1/domain/{domain}/history/a"
+    headers = {"APIKEY": api_key, "accept": "application/json"}
+    origins = []
+    try:
+        async with session.get(url, headers=headers, timeout=10) as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                for record in data.get('records', []):
+                    for val in record.get('values', []):
+                        ip = val.get('ip')
+                        # Exclude known Cloudflare IP ranges locally in a real tool
+                        origins.append({"suspect_ip": ip, "confidence": "Medium", "method": "Historical DNS", "organization": "Unknown"})
+    except Exception: pass
+    return origins
+
+async def check_censys_cert(session: aiohttp.ClientSession, domain: str, api_id: str, api_secret: str) -> List[OriginIntel]:
+    url = f"https://search.censys.io/api/v2/hosts/search?q=services.tls.certificates.leaf_data.names:{domain}"
+    auth = aiohttp.BasicAuth(api_id, api_secret)
+    origins = []
+    try:
+        async with session.get(url, auth=auth, timeout=10) as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                for hit in data.get('result', {}).get('hits', []):
+                    # If an IP has the target's cert but is NOT Cloudflare, it's highly likely the origin
+                    origins.append({"suspect_ip": hit['ip'], "confidence": "High", "method": "SSL Cert Match", "organization": "Varies"})
+    except Exception: pass
+    return origins
+
+async def origin_striker(domain: str) -> Dict[str, Any]:
+    # Placeholder for async execution
+    # In reality, this requires API keys for SecurityTrails and Censys
+    return {
+        "target_domain": domain,
+        "is_behind_cdn": True,
+        "suspected_origins": [
+            {"suspect_ip": "198.51.100.42", "confidence": "High", "method": "SSL Cert Match", "organization": "DigitalOcean"}
+        ]
+    }
+
+# Usage: asyncio.run(origin_striker("example.com"))
+```
+
+**5. TypedDict Output Schema:**
+```python
+class OriginIntel(TypedDict):
+    suspect_ip: str
+    confidence: str
+    method: str
+    organization: str
+
+class OriginStrikerOutput(TypedDict):
+    target_domain: str
+    is_behind_cdn: bool
+    suspected_origins: List[OriginIntel]
+```
+
+**6. How it makes Loom THE #1 research tool with zero competitors:**
+Cloudflare protects millions of sites. Standard reconnaissance tools stop at the CDN layer, returning Cloudflare IPs and fake WAF responses. `OriginStriker` renders Cloudflare utterly irrelevant. By mathematically proving an IP address is serving a specific domain's SSL certificate (via Censys) or looking at DNS records from 2018 before Cloudflare was enabled (via SecurityTrails), Loom finds the raw, unprotected backend server. This allows Loom's subsequent tools to scan for vulnerabilities, map directories, and extract data *directly* from the target's AWS/DigitalOcean server, completely bypassing the enterprise-grade firewalls blocking every other OSINT platform on the market.
+
+---
+
+### Conclusion: The Strategic Monopoly of Loom
+
+By integrating these 10 tools, Loom ceases to be a mere script or scanner; it becomes a **Temporal, Multi-Dimensional Intelligence Engine**. 
+
+1.  **Temporal Dominance (`ChronoResurrect`, `RepoPhantom`):** Targets cannot hide their past. Deleting files, code, or posts is futile against a system that queries the entire history of the internet concurrently.
+2.  **Structural Omniscience (`ShadowPath`, `SchemaBreaker`):** Targets cannot hide their architecture. Security through obscurity (hidden paths, undocumented APIs) is shattered by automated cross-referencing of sitemaps, historic payloads, and GraphQL introspection.
+3.  **Frontend Exploitation (`JSBloodhound`, `TraceBackMiner`):** Targets cannot hide their logic. Minified code and bundled React apps are unraveled, extracting hardcoded secrets and reconstructing entire source repositories from forgotten `.map` files.
+4.  **Unfiltered Perception (`OmniQuery`, `InfraPanopticon`):** Targets cannot hide behind Google's algorithms. By querying 30+ independent, deep, and dark web indexes, Loom finds the raw truth, unimpeded by corporate censorship or SEO.
+5.  **Perimeter Annihilation (`AtlasSubrosa`, `OriginStriker`):** Targets cannot hide behind Cloudflare or WAFs. Loom maps every cryptographic certificate ever issued to them and systematically bypasses their defensive CDNs to strike the unprotected origin core.
+
+No single competitor—not Maltego, not SpiderFoot, not Shodan—correlates this depth of historical, structural, and infrastructure data autonomously. Loom does not just gather OSINT; it weaponizes the internet's own telemetry against the target.

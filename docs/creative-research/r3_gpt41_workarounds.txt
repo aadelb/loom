@@ -1,0 +1,147 @@
+Certainly! Here's a competitive intelligence toolkit that uses **creative workarounds** so you can extract actionable insights—without expensive subscriptions:
+
+---
+
+## 1. LinkedIn Intelligence WITHOUT LinkedIn API
+
+- **Data Source:** Google/Bing caches, Archive.org (Wayback Machine), and cached LinkedIn profiles.
+- **Scraping Technique:**  
+  - Use Google search operators (`site:linkedin.com/in/` +"company name" +"job title") to surface public profiles cached by Google.
+  - Automate with Google/Bing Custom Search APIs.
+  - Use Archive.org's API to pull versions of profiles no longer live.
+  - Parse snapshots for experience, job changes, and skills.
+- **Why it’s better:**  
+  - **No rate limits or expensive API agreements.**
+  - **Finds deleted/updated profiles** for historical changes, which LinkedIn API doesn’t surface.
+  - **Bypasses** LinkedIn's paywalls and scraping protections.
+
+---
+
+## 2. Glassdoor Reviews WITHOUT Glassdoor API
+
+- **Data Source:** Reddit (r/cscareerquestions, r/AskEngineers, company-specific subreddits), Blind, Twitter.
+- **Scraping Technique:**  
+  - Use Reddit API or Pushshift to collect threads mentioning “[Company] + review/salary/culture”.
+  - Extract sentiment from Blind and Twitter (search for company name + "review" or relevant hashtags).
+  - Use NLP models (sentiment analysis, topic modeling) to summarize review sentiment.
+- **Why it’s better:**  
+  - **Unfiltered, real-time opinions** vs. curated Glassdoor reviews.
+  - **Detects emerging issues faster** (e.g., layoffs, cultural shifts).
+  - **Broader, more candid sources** (especially for tech and finance companies).
+
+---
+
+## 3. Company Financials WITHOUT Bloomberg
+
+- **Data Source:** SEC EDGAR, company press releases, Crunchbase free tier, Yahoo Finance.
+- **Scraping Technique:**  
+  - Scrape SEC EDGAR for 10-K, 10-Q, S-1 filings (use Edgar's XBRL APIs).
+  - Scrape and monitor investor relations and newsroom pages for earnings.
+  - Crunchbase allows limited free scraping for funding/valuation.
+- **Why it’s better:**  
+  - **Most timely and official data** (no Bloomberg data lag).
+  - **Catching non-public company signals** (funding rounds, layoffs, expansion plans).
+  - **Direct sourcing**—no paywall.
+
+---
+
+## 4. Patent Analysis WITHOUT Expensive Patent DBs
+
+- **Data Source:** Google Patents API, USPTO bulk datasets.
+- **Scraping Technique:**  
+  - Use Google Patents public API for patent family, citations, legal events.
+  - Download and parse USPTO bulk data for large-scale analysis.
+  - Data-mining on patent PDFs for assignee, inventor, status.
+- **Why it’s better:**  
+  - **Most comprehensive coverage**, often updated faster than paid DBs.
+  - **Bulk data access** for custom analytics (trend mapping, competitor tracking).
+  - **Google Patents’ machine learning** adds semantic search for free.
+
+---
+
+## 5. Job Market Data WITHOUT Indeed API
+
+- **Data Source:** Google Jobs ("Google for Jobs" aggregator), direct company careers pages.
+- **Scraping Technique:**  
+  - Scrape Google Jobs search results (structured posting schema in HTML).
+  - Crawl company careers pages on schedule; use change detection (Diffbot or custom).
+  - Extract job titles, locations, descriptions, posted dates.
+- **Why it’s better:**  
+  - **Aggregates across all sites, not just Indeed.**
+  - **Catches niche and exclusive listings** missed by Indeed.
+  - **Real-time detection** of new job postings/roles.
+
+---
+
+## 6. Salary Data WITHOUT Levels.fyi API
+
+- **Data Source:** US Department of Labor H1B Disclosure Data, Reddit (r/Salary, r/CSCareerQuestions), job postings.
+- **Scraping Technique:**  
+  - Download H1B data CSVs; filter by company, title, year.
+  - Scrape Reddit salary megathreads or run keyword search via API.
+  - Parse new job postings for included salary ranges; aggregate by role/location.
+- **Why it’s better:**  
+  - **Legally mandated, accurate comp data** for large companies (H1B).
+  - **User-reported, granular data** updated in real-time.
+  - **Job posting extraction** reveals up-to-date ranges, not just old self-reporting.
+
+---
+
+## 7. Company Tech Stack WITHOUT BuiltWith
+
+- **Data Source:** Public websites (via Wappalyzer), Github repositories, job descriptions.
+- **Scraping Technique:**  
+  - Run Wappalyzer (open-source browser extension) in headless mode or use open-source libraries.
+  - Crawl company Github orgs for README, repo tags, package.json, requirements.txt files.
+  - Parse company job listings for tech stack mentions (“React”, “AWS”, “Kubernetes”, etc.).
+- **Why it’s better:**  
+  - **Detects cutting-edge stacks** that may not be visible via BuiltWith.
+  - **Matches job openings to tech priorities** (e.g., hiring for Golang? They're likely adopting it).
+  - **Open-source, scriptable—no license fees.**
+
+---
+
+## 8. Conference Attendee Lists WITHOUT Event APIs
+
+- **Data Source:** Twitter hashtags, conference speaker/agenda pages, LinkedIn event posts.
+- **Scraping Technique:**  
+  - Scrape Twitter for official hashtags during conference dates; extract profiles tweeting.
+  - Scrape speaker pages and session lists from conference websites.
+  - Parse LinkedIn event participants/posts using Google search.
+- **Why it’s better:**  
+  - **Identifies informal attendees and key influencers**, not just speakers.
+  - **Real-time engagement**—see who actually attended/participated vs. just registered.
+  - **Works for virtual and hybrid events**, not just in-person.
+
+---
+
+## 9. Investor Intelligence WITHOUT PitchBook
+
+- **Data Source:** Crunchbase free tier, AngelList, SEC 13F filings.
+- **Scraping Technique:**  
+  - Use Crunchbase's free search endpoints and scrape profiles for funding rounds.
+  - Scrape AngelList syndicates, portfolios, and updates.
+  - Download SEC 13F filings for venture/public markets crossover investors.
+- **Why it’s better:**  
+  - **Covers early-stage and undisclosed deals** often missed by paid tools.
+  - **Fresher info** (AngelList updates quickly; 13F is legal requirement).
+  - **Cross-referencing multiple sources** ensures more comprehensive coverage.
+
+---
+
+## 10. Talent Flow Tracking WITHOUT LinkedIn
+
+- **Data Source:** Github contributor history, academic publication databases (Google Scholar, arXiv), company announcement pages.
+- **Scraping Technique:**  
+  - Track contributor movement across Github orgs using commit histories/email domains.
+  - Parse publication author lists over time for affiliation changes.
+  - Monitor companies’ newsrooms for “welcome” or “team update” posts.
+- **Why it’s better:**  
+  - **Uncovers stealth moves** (elite engineers, researchers) that aren’t public on LinkedIn.
+  - **Reveals hiring trends** in innovation-heavy sectors (AI, biotech).
+  - **Academic tracking** is essential for R&D and deeptech intelligence.
+
+---
+
+**Summary:**  
+By leveraging freely available data, creative scraping/parsing, and open APIs, you get **real-time, unfiltered, and often richer insights** than costly subscription tools—plus the flexibility to customize for niche requirements.

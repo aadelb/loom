@@ -1,0 +1,675 @@
+```python
+#!/usr/bin/env python3
+"""
+Deep Dark Intelligence Tools - Async Python implementation.
+
+Requires:
+- aiohttp
+- aiodns
+- beautifulsoup4 (bs4)
+- typing
+
+Install: pip install aiohttp aiodns beautifulsoup4
+"""
+
+import asyncio
+import json
+import re
+from collections import defaultdict
+from datetime import datetime, timezone
+from typing import Dict, List, Optional, TypedDict, Union
+
+import aiohttp
+import aiodns
+from bs4 import BeautifulSoup
+
+
+# ---------- Helper Functions ----------
+
+async def async_dns_query(domain: str, record_type: str) -> List[str]:
+    """Perform an async DNS query for given record type.
+    Returns list of answer strings.
+    """
+    resolver = aiodns.DNSResolver()
+    try:
+        if record_type == 'A':
+            result = await resolver.query(domain, 'A')
+            return [r.host for r in result]
+        elif record_type in ('MX', 'TXT', 'SOA'):
+            result = await resolver.query(domain, record_type)
+            if record_type == 'MX':
+                return [f"{r.preference} {r.host}" for r in result]
+            elif record_type == 'TXT':
+                texts = []
+                for r in result:
+                    texts.append(r.text)
+                return texts
+            elif record_type == 'SOA':
+                # SOA returns a single record with mname, rname, etc.
+                soa = result[0]
+                return [f"{soa.mname} {soa.rname}"]
+        # Fallback: use system resolver (could be extended)
+    except Exception as e:
+        # print(f"DNS query failed: {e}")
+        return []
+    return []
+
+
+async def fetch_url(session: aiohttp.ClientSession, url: str, headers: Optional[Dict] = None) -> Dict:
+    """Fetch a URL and return status, headers, text (if possible)."""
+    try:
+        async with session.get(url, timeout=aiohttp.ClientTimeout(total=15), headers=headers or {}) as resp:
+            text = await resp.text(errors='replace') if resp.content_type.startswith('text') else ''
+            return {
+                'status': resp.status,
+                'headers': dict(resp.headers),
+                'text': text,
+                'url': str(resp.url)
+            }
+    except Exception as e:
+        return {'status': 0, 'headers': {}, 'text': '', 'error': str(e)}
+
+
+# ---------- Tool 1: SSL Certificate Timeline ----------
+
+class CertEntry(TypedDict):
+    issuer: str
+    serial: str
+    not_before: str
+    not_after: str
+    common_name: str
+    sans: List[str]
+    cert_sha256: str
+
+class SSLCertificateTimeline(TypedDict):
+    domain: str
+    certificates: List[CertEntry]
+    pre_launch_certs: List[CertEntry]
+    internal_hostname_leaks: List[str]
+    ca_changes: List[str]
+    wildcard_expansion: bool
+
+async def ssl_certificate_timeline(domain: str) -> SSLCertificateTimeline:
+    """Build timeline of all SSL certificates from crt.sh."""
+    url = f"https://crt.sh/?q=%25.{domain}&output=json"
+    async with aiohttp.ClientSession() as session:
+        data = await fetch_url(session, url)
+        if not data['text']:
+            return SSLCertificateTimeline(
+                domain=domain, certificates=[], pre_launch_certs=[],
+                internal_hostname_leaks=[], ca_changes=[], wildcard_expansion=False
+            )
+        try:
+            certs = json.loads(data['text'])
+        except:
+            certs = []
+    # Parse entries
+    entries = []
+    for c in certs:
+        entry = CertEntry(
+            issuer=c.get('issuer_name', ''),
+            serial=c.get('serial_number', ''),
+            not_before=c.get('not_before', ''),
+            not_after=c.get('not_after', ''),
+            common_name=c.get('common_name', ''),
+            sans=c.get('name_value', '').split('\n') if c.get('name_value') else [],
+            cert_sha256=c.get('sha256_hash', '')
+        )
+        entries.append(entry)
+    # Sort by not_before
+    entries.sort(key=lambda x: x['not_before'])
+    # Analyze
+    pre_launch = []
+    internal_leaks = set()
+    ca_changes = []
+    wildcard = False
+    prev_ca = None
+    for e in entries:
+        # Pre-launch: cert issued before domain was resolvable? We'll check if not_before is before first DNS record? Hard.
+        # Simplified: treat any cert with not_before older than 7 days before current time as potentially pre-launch.
+        try:
+            nb = datetime.fromisoformat(e['not_before'].replace('Z', '+00:00'))
+            if nb < datetime.now(timezone.utc).replace(tzinfo=None) and (datetime.now(timezone.utc) - nb).days > 30:
+                pre_launch.append(e)
+        except:
+            pass
+        # Internal hostnames: look for non-public suffixes in SANs
+        for san in e['sans']:
+            if san.count('.') >= 2 and not san.endswith(domain):
+                internal_leaks.add(san)
+        # CA changes
+        issuer = e['issuer']
+        org_match = re.search(r'CN=([^,]+)', issuer)
+        ca_name = org_match.group(1) if org_match else ''
+        if prev_ca and ca_name != prev_ca:
+            ca_changes.append(f"{prev_ca} → {ca_name}")
+        prev_ca = ca_name
+        # Wildcard expansion
+        if '*.' + domain in e['sans']:
+            wildcard = True
+    return SSLCertificateTimeline(
+        domain=domain,
+        certificates=entries,
+        pre_launch_certs=pre_launch,
+        internal_hostname_leaks=list(internal_leaks),
+        ca_changes=ca_changes,
+        wildcard_expansion=wildcard
+    )
+
+
+# ---------- Tool 2: HTTP Response Fingerprinter ----------
+
+class HTTPFingerprint(TypedDict):
+    status: int
+    server: str
+    x_powered_by: str
+    set_cookie_patterns: List[str]
+    csp: str
+    cors: str
+    cache_control: str
+    custom_headers: Dict[str, str]
+
+class ClusteredFingerprints(TypedDict):
+    cluster_id: int
+    urls: List[str]
+    fingerprint: HTTPFingerprint
+
+async def http_response_fingerprinter(urls: List[str]) -> List[ClusteredFingerprints]:
+    """Collect HTTP response signatures and cluster by similarity."""
+    async with aiohttp.ClientSession() as session:
+        tasks = [fetch_url(session, u) for u in urls]
+        responses = await asyncio.gather(*tasks)
+    fingerprints = []
+    for idx, resp in enumerate(responses):
+        h = resp['headers']
+        fp = HTTPFingerprint(
+            status=resp['status'],
+            server=h.get('Server', ''),
+            x_powered_by=h.get('X-Powered-By', ''),
+            set_cookie_patterns=[h.get('Set-Cookie', '')] if 'Set-Cookie' in h else [],
+            csp=h.get('Content-Security-Policy', ''),
+            cors=h.get('Access-Control-Allow-Origin', ''),
+            cache_control=h.get('Cache-Control', ''),
+            custom_headers={k: v for k, v in h.items() if k.startswith('X-')}
+        )
+        fingerprints.append((urls[idx], fp))
+    # Simple clustering: group by exact same (server, x_powered_by, csp, cors)
+    clusters = defaultdict(list)
+    for url, fp in fingerprints:
+        key = (fp['server'], fp['x_powered_by'], fp['csp'], fp['cors'])
+        clusters[key].append(url)
+    result = []
+    for cid, (key, urls) in enumerate(clusters.items()):
+        # Use first fp as representative
+        rep_fp = next(fp for u, fp in fingerprints if u == urls[0])
+        result.append(ClusteredFingerprints(
+            cluster_id=cid,
+            urls=urls,
+            fingerprint=rep_fp
+        ))
+    return result
+
+
+# ---------- Tool 3: Email Infrastructure Mapper ----------
+
+class EmailInfrastructure(TypedDict):
+    domain: str
+    mx_records: List[str]
+    spf_record: str
+    spf_includes: List[str]
+    dkim_selectors: List[str]
+    dmarc_record: str
+    misconfigurations: List[str]
+
+DEFAULT_DKIM_SELECTORS = ['google', 'default', 'selector1', 'k1', 's1', 'dkim']
+
+async def email_infrastructure_mapper(domain: str) -> EmailInfrastructure:
+    """Map email infrastructure for a domain."""
+    misconfigs = []
+    # MX
+    mx = await async_dns_query(domain, 'MX')
+    # SPF (TXT records with "v=spf1")
+    txts = await async_dns_query(domain, 'TXT')
+    spf = ''
+    spf_includes = []
+    for t in txts:
+        if t.startswith('v=spf1'):
+            spf = t
+            includes = re.findall(r'include:(\S+)', spf)
+            spf_includes = includes
+            break
+    if not spf:
+        misconfigs.append('No SPF record')
+    elif '~all' in spf:
+        misconfigs.append('SPF ~all (softfail) – recommended: -all')
+    # DKIM
+    dkim_selectors = []
+    for sel in DEFAULT_DKIM_SELECTORS:
+        txts = await async_dns_query(f'{sel}._domainkey.{domain}', 'TXT')
+        for t in txts:
+            if t.startswith('v=DKIM1'):
+                dkim_selectors.append(sel)
+                break
+    # DMARC
+    dmarc_txts = await async_dns_query(f'_dmarc.{domain}', 'TXT')
+    dmarc = ''
+    for t in dmarc_txts:
+        if t.startswith('v=DMARC1'):
+            dmarc = t
+            break
+    if not dmarc:
+        misconfigs.append('No DMARC record')
+    elif 'p=none' in dmarc:
+        misconfigs.append('DMARC p=none (no enforcement)')
+    return EmailInfrastructure(
+        domain=domain,
+        mx_records=mx,
+        spf_record=spf,
+        spf_includes=spf_includes,
+        dkim_selectors=dkim_selectors,
+        dmarc_record=dmarc,
+        misconfigurations=misconfigs
+    )
+
+
+# ---------- Tool 4: Cloud Resource Enumerator ----------
+
+class CloudResourceStatus(TypedDict):
+    resource_url: str
+    status: int
+    cloud_provider: str
+
+async def cloud_resource_enumerator(domain: str) -> List[CloudResourceStatus]:
+    """Check common cloud resource patterns for a domain."""
+    patterns = [
+        (f"https://{domain}.s3.amazonaws.com", "AWS S3"),
+        (f"https://{domain}.blob.core.windows.net", "Azure Blob"),
+        (f"https://{domain}.firebaseio.com", "Firebase"),
+        (f"https://{domain}.herokuapp.com", "Heroku"),
+        (f"https://{domain}.netlify.app", "Netlify"),
+        (f"https://{domain}.vercel.app", "Vercel"),
+        (f"https://{domain}.pages.dev", "Cloudflare Pages"),
+    ]
+    async with aiohttp.ClientSession() as session:
+        tasks = []
+        for url, provider in patterns:
+            tasks.append(fetch_url(session, url, headers={'User-Agent': 'Mozilla/5.0'}))
+        results = await asyncio.gather(*tasks)
+    statuses = []
+    for (url, provider), resp in zip(patterns, results):
+        statuses.append(CloudResourceStatus(
+            resource_url=url,
+            status=resp['status'],
+            cloud_provider=provider
+        ))
+    return statuses
+
+
+# ---------- Tool 5: Technology Stack Deep Profiler ----------
+
+class TechnologyProfile(TypedDict):
+    url: str
+    generator: str
+    js_frameworks: List[str]
+    server_header: str
+    x_powered_by: str
+    cookie_indicators: List[str]
+    cdn: Optional[str]
+
+async def technology_stack_deep_profiler(url: str) -> TechnologyProfile:
+    """Deeply profile technology stack of a given URL."""
+    async with aiohttp.ClientSession() as session:
+        resp = await fetch_url(session, url)
+    headers = resp['headers']
+    text = resp['text']
+    # Generator meta
+    soup = BeautifulSoup(text, 'html.parser')
+    generator_tag = soup.find('meta', attrs={'name': 'generator'})
+    generator = generator_tag['content'] if generator_tag else ''
+    # JS frameworks
+    js_frameworks = []
+    if '__SECRET' in text or re.search(r'React\.createElement|react\.production', text, re.I):
+        js_frameworks.append('React')
+    if 'angular.version' in text or 'angular.module' in text or 'ng-app' in text:
+        js_frameworks.append('Angular')
+    if 'Vue.version' in text or 'vue' in text.lower():
+        js_frameworks.append('Vue')
+    if '__NEXT_DATA__' in text:
+        js_frameworks.append('Next.js')
+    # Server header
+    server = headers.get('Server', '')
+    x_powered = headers.get('X-Powered-By', '')
+    # Cookie indicators
+    cookie_indicators = []
+    set_cookie = headers.get('Set-Cookie', '')
+    if 'wp-settings' in set_cookie or 'wordpress_' in set_cookie:
+        cookie_indicators.append('WordPress')
+    if '_ga' in set_cookie:
+        cookie_indicators.append('Google Analytics')
+    if '__cf_bm' in set_cookie or '__cfduid' in set_cookie:
+        cookie_indicators.append('Cloudflare')
+    # CDN detection via DNS CNAME patterns (simplified: check by DNS A record? hard)
+    # We'll check if server contains "cloudflare", "akamai", "fastly"
+    cdn = None
+    if 'cloudflare' in server.lower():
+        cdn = 'Cloudflare'
+    elif 'akamai' in server.lower():
+        cdn = 'Akamai'
+    elif 'fastly' in server.lower():
+        cdn = 'Fastly'
+    elif 'x-served-by' in headers or 'x-cache' in headers or 'x-amz-cf' in headers:
+        cdn = 'Possibly CloudFront'
+    return TechnologyProfile(
+        url=url,
+        generator=generator,
+        js_frameworks=js_frameworks,
+        server_header=server,
+        x_powered_by=x_powered,
+        cookie_indicators=cookie_indicators,
+        cdn=cdn
+    )
+
+
+# ---------- Tool 6: Paste Site Monitor ----------
+
+class PasteResult(TypedDict):
+    site: str
+    url: str
+    title: str
+    snippet: str
+
+async def paste_site_monitor(target: str) -> List[PasteResult]:
+    """Search paste sites for mentions of target string.
+    (Implemented for pastebin.com as example.)
+    """
+    results = []
+    async with aiohttp.ClientSession(headers={'User-Agent': 'Mozilla/5.0'}) as session:
+        # Pastebin search page
+        search_url = f"https://pastebin.com/search?q={target}"
+        try:
+            resp = await fetch_url(session, search_url)
+            if resp['status'] == 200:
+                soup = BeautifulSoup(resp['text'], 'html.parser')
+                # Parse result items (structure may change)
+                for item in soup.find_all('div', class_='maintable'):
+                    link = item.find('a')
+                    if link and link.get('href'):
+                        full_url = 'https://pastebin.com' + link['href']
+                        title = link.get_text(strip=True)
+                        snippet = item.find('span', class_='expanded').get_text(strip=True) if item.find('span', class_='expanded') else ''
+                        results.append(PasteResult(site='pastebin.com', url=full_url, title=title, snippet=snippet))
+        except:
+            pass
+    return results
+
+
+# ---------- Tool 7: GitHub Secret Scanner ----------
+
+class GitHubSecret(TypedDict):
+    repo_name: str
+    file_path: str
+    secret_type: str
+    snippet: str
+
+async def github_secret_scanner(org_or_user: str, token: Optional[str] = None) -> List[GitHubSecret]:
+    """Search GitHub for secrets in public repos of an organization/user.
+    Requires GitHub token for higher rate limit.
+    """
+    secrets = []
+    headers = {}
+    if token:
+        headers['Authorization'] = f'token {token}'
+    # Patterns to search (simple examples)
+    queries = [
+        ('password', 'filename:.env'),
+        ('api_key', 'filename:config'),
+        ('AWS_SECRET', 'filename:.yml'),
+        ('AKIA', 'filename:.py'),
+        ('BEGIN RSA PRIVATE KEY', 'path:/')
+    ]
+    async with aiohttp.ClientSession(headers=headers) as session:
+        for keyword, qualifier in queries:
+            q = f'{keyword} {qualifier} org:{org_or_user}'
+            url = f'https://api.github.com/search/code?q={q}&per_page=10'
+            try:
+                resp = await fetch_url(session, url)
+                if resp['status'] == 200:
+                    data = json.loads(resp['text'])
+                    for item in data.get('items', []):
+                        secret = GitHubSecret(
+                            repo_name=item['repository']['full_name'],
+                            file_path=item['path'],
+                            secret_type=keyword,
+                            snippet=item.get('text_matches', [{}])[0].get('fragment', '')
+                        )
+                        secrets.append(secret)
+            except:
+                pass
+    return secrets
+
+
+# ---------- Tool 8: WHOIS History Correlator ----------
+
+class WhoisHistoryCorrelation(TypedDict):
+    domain: str
+    registrant_email: str
+    other_domains_same_email: List[str]
+    soa_email: str
+    ownership_graph: Dict[str, List[str]]  # simplified
+
+async def whois_history_correlator(domain: str) -> WhoisHistoryCorrelation:
+    """Correlate WHOIS data with other domains via RDAP and crt.sh."""
+    # RDAP current whois
+    rdap_url = f"https://rdap.org/domain/{domain}"
+    async with aiohttp.ClientSession() as session:
+        rdap_resp = await fetch_url(session, rdap_url)
+    registrant_email = ''
+    if rdap_resp['status'] == 200:
+        try:
+            rdap_data = json.loads(rdap_resp['text'])
+            for entity in rdap_data.get('entities', []):
+                for vcard in entity.get('vcardArray', []):
+                    if isinstance(vcard, list):
+                        for item in vcard:
+                            if isinstance(item, list) and len(item) > 3 and item[0] == 'email':
+                                registrant_email = item[3]
+        except:
+            pass
+    # crt.sh query by email
+    other_domains = []
+    if registrant_email:
+        crt_url = f"https://crt.sh/?q={registrant_email}&output=json"
+        async with aiohttp.ClientSession() as session:
+            crt_resp = await fetch_url(session, crt_url)
+        if crt_resp['status'] == 200:
+            try:
+                crt_data = json.loads(crt_resp['text'])
+                for item in crt_data:
+                    # Filter unique domains
+                    common_name = item.get('common_name', '')
+                    if common_name not in other_domains and common_name != domain:
+                        other_domains.append(common_name)
+            except:
+                pass
+    # DNS SOA email
+    soa = await async_dns_query(domain, 'SOA')
+    soa_email = soa[0] if soa else ''
+    # Build ownership graph (simple)
+    graph = {domain: other_domains}
+    if registrant_email:
+        graph['email:' + registrant_email] = other_domains + [domain]
+    return WhoisHistoryCorrelation(
+        domain=domain,
+        registrant_email=registrant_email,
+        other_domains_same_email=other_domains,
+        soa_email=soa_email,
+        ownership_graph=graph
+    )
+
+
+# ---------- Tool 9: Shodan Passive Intel ----------
+
+class ShodanIntel(TypedDict):
+    ip: str
+    ports: List[int]
+    hostnames: List[str]
+    vulns: List[str]
+    tags: List[str]
+
+async def shodan_passive_intel(domain_or_ip: str) -> ShodanIntel:
+    """Query Shodan InternetDB for IP information."""
+    # Resolve domain to IP if needed
+    ip = domain_or_ip
+    if not re.match(r'\d+\.\d+\.\d+\.\d+', domain_or_ip):
+        ips = await async_dns_query(domain_or_ip, 'A')
+        ip = ips[0] if ips else '0.0.0.0'
+    url = f"https://internetdb.shodan.io/{ip}"
+    async with aiohttp.ClientSession() as session:
+        resp = await fetch_url(session, url)
+    data = {}
+    if resp['status'] == 200:
+        try:
+            data = json.loads(resp['text'])
+        except:
+            pass
+    return ShodanIntel(
+        ip=ip,
+        ports=data.get('ports', []),
+        hostnames=data.get('hostnames', []),
+        vulns=data.get('vulns', []),
+        tags=data.get('tags', [])
+    )
+
+
+# ---------- Tool 10: Web Technology Timeline ----------
+
+class TechSnapshot(TypedDict):
+    timestamp: str
+    technology: List[str]
+    server: str
+
+class WebTechnologyTimeline(TypedDict):
+    url: str
+    snapshots: List[TechSnapshot]
+    changes_detected: List[str]
+
+async def web_technology_timeline(url: str, max_snapshots: int = 10) -> WebTechnologyTimeline:
+    """Track technology changes over time via Wayback Machine snapshots."""
+    # Use CDX API to get list of snapshot timestamps (in raw format)
+    cdx_url = f"http://web.archive.org/cdx/search/cdx?url={url}&output=json&limit={max_snapshots}"
+    async with aiohttp.ClientSession() as session:
+        resp = await fetch_url(session, cdx_url)
+    snapshots_meta = []
+    if resp['status'] == 200:
+        try:
+            # CDX returns list of lists; skip first row header
+            rows = json.loads(resp['text'])
+            for row in rows[1:]:
+                timestamp_str = row[1]  # e.g., "20230101000000"
+                snap_url = f"http://web.archive.org/web/{timestamp_str}/{url}"
+                snapshots_meta.append((timestamp_str, snap_url))
+        except:
+            pass
+    # Take N most recent
+    snapshots_meta = snapshots_meta[:max_snapshots]
+    # Fetch each snapshot and profile technology
+    snapshots = []
+    async with aiohttp.ClientSession() as session:
+        for ts, snap_url in snapshots_meta:
+            resp = await fetch_url(session, snap_url)
+            tech = await technology_stack_deep_profiler(resp.get('url', snap_url))  # reuse tool 5
+            # Extract technology names
+            tech_list = []
+            if tech['generator']:
+                tech_list.append(tech['generator'])
+            tech_list.extend(tech['js_frameworks'])
+            if tech['server_header']:
+                tech_list.append(f"Server: {tech['server_header']}")
+            if tech['cdn']:
+                tech_list.append(f"CDN: {tech['cdn']}")
+            snapshots.append(TechSnapshot(
+                timestamp=ts,
+                technology=tech_list,
+                server=tech['server_header']
+            ))
+    # Detect changes
+    changes = []
+    for i in range(1, len(snapshots)):
+        prev_tech = set(snapshots[i-1]['technology'])
+        curr_tech = set(snapshots[i]['technology'])
+        added = curr_tech - prev_tech
+        removed = prev_tech - curr_tech
+        if added:
+            changes.append(f"@{snapshots[i]['timestamp']} added: {', '.join(added)}")
+        if removed:
+            changes.append(f"@{snapshots[i]['timestamp']} removed: {', '.join(removed)}")
+    return WebTechnologyTimeline(
+        url=url,
+        snapshots=snapshots,
+        changes_detected=changes
+    )
+
+
+# ---------- Main Example ----------
+
+async def main():
+    domain = "example.com"
+    # Tool 1
+    print("=== SSL Certificate Timeline ===")
+    result = await ssl_certificate_timeline(domain)
+    print(f"Found {len(result['certificates'])} certs, {len(result['pre_launch_certs'])} pre-launch, wildcard: {result['wildcard_expansion']}")
+
+    # Tool 2
+    print("\n=== HTTP Response Fingerprinter ===")
+    urls = ["https://example.com", "https://example.org"]
+    clusters = await http_response_fingerprinter(urls)
+    for c in clusters:
+        print(f"Cluster {c['cluster_id']}: {c['urls']}, server={c['fingerprint']['server']}")
+
+    # Tool 3
+    print("\n=== Email Infrastructure Mapper ===")
+    email_info = await email_infrastructure_mapper(domain)
+    print(f"MX: {email_info['mx_records']}")
+    print(f"Misconfigs: {email_info['misconfigurations']}")
+
+    # Tool 4
+    print("\n=== Cloud Resource Enumerator ===")
+    cloud = await cloud_resource_enumerator(domain)
+    for c in cloud:
+        if c['status'] != 404:
+            print(f"{c['resource_url']} -> {c['status']}")
+
+    # Tool 5
+    print("\n=== Technology Stack Deep Profiler ===")
+    tech = await technology_stack_deep_profiler(f"https://{domain}")
+    print(f"Generator: {tech['generator']}, JS: {tech['js_frameworks']}, CDN: {tech['cdn']}")
+
+    # Tool 6
+    print("\n=== Paste Site Monitor ===")
+    pastes = await paste_site_monitor(domain)
+    print(f"Found {len(pastes)} paste results")
+
+    # Tool 7 (requires token)
+    # secrets = await github_secret_scanner('myorg', token='YOUR_TOKEN')
+    # print(f"Secrets: {secrets}")
+
+    # Tool 8
+    print("\n=== WHOIS History Correlator ===")
+    whois = await whois_history_correlator(domain)
+    print(f"Registrant email: {whois['registrant_email']}, other domains: {len(whois['other_domains_same_email'])}")
+
+    # Tool 9
+    print("\n=== Shodan Passive Intel ===")
+    shodan = await shodan_passive_intel(domain)
+    print(f"Ports: {shodan['ports']}, Vulns: {shodan['vulns']}")
+
+    # Tool 10
+    print("\n=== Web Technology Timeline ===")
+    timeline = await web_technology_timeline(f"https://{domain}", max_snapshots=5)
+    print(f"Snapshots: {len(timeline['snapshots'])}")
+    for c in timeline['changes_detected'][:5]:
+        print(c)
+
+if __name__ == '__main__':
+    asyncio.run(main())
+```
