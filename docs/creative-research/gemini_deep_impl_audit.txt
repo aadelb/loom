@@ -1,0 +1,455 @@
+YOLO mode is enabled. All tool calls will be automatically approved.
+YOLO mode is enabled. All tool calls will be automatically approved.
+MCP issues detected. Run /mcp list for status.Here is the implementation audit report for the requested Loom MCP server tools:
+
+FILE: src/loom/tools/dead_content.py
+FUNCTIONS: research_dead_content
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/invisible_web.py
+FUNCTIONS: research_invisible_web
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/js_intel.py
+FUNCTIONS: research_js_intel
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/multi_search.py
+FUNCTIONS: research_multi_search
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/passive_recon.py
+FUNCTIONS: research_passive_recon
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/metadata_forensics.py
+FUNCTIONS: research_metadata_forensics
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/dark_forum.py
+FUNCTIONS: research_dark_forum
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/infra_correlator.py
+FUNCTIONS: research_infra_correlator
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/crypto_trace.py
+FUNCTIONS: research_crypto_trace
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/stego_detect.py
+FUNCTIONS: research_stego_detect
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/threat_profile.py
+FUNCTIONS: research_threat_profile
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/social_graph.py
+FUNCTIONS: research_social_graph
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/leak_scan.py
+FUNCTIONS: research_leak_scan
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: HIBP_API_KEY
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/onion_discover.py
+FUNCTIONS: research_onion_discover
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/vuln_intel.py
+FUNCTIONS: research_vuln_intel
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/change_monitor.py
+FUNCTIONS: research_change_monitor
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: NO
+IMPORTABLE: YES
+VERDICT: FAIL [Not all functions registered in server.py]
+----------------------------------------
+FILE: src/loom/tools/identity_resolve.py
+FUNCTIONS: research_identity_resolve
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/competitive_intel.py
+FUNCTIONS: research_competitive_intel
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/knowledge_graph.py
+FUNCTIONS: research_knowledge_graph
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: httpx
+REGISTERED: NO
+IMPORTABLE: YES
+VERDICT: FAIL [Not all functions registered in server.py]
+----------------------------------------
+FILE: src/loom/tools/fact_checker.py
+FUNCTIONS: research_fact_check
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: httpx
+REGISTERED: NO
+IMPORTABLE: YES
+VERDICT: FAIL [Not all functions registered in server.py]
+----------------------------------------
+FILE: src/loom/tools/trend_predictor.py
+FUNCTIONS: research_trend_predict
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/report_generator.py
+FUNCTIONS: research_generate_report
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/realtime_monitor.py
+FUNCTIONS: research_realtime_monitor
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NEWS_API_KEY
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/ai_safety.py
+FUNCTIONS: research_prompt_injection_test, research_model_fingerprint, research_bias_probe, research_safety_filter_map, research_compliance_check
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/ai_safety_extended.py
+FUNCTIONS: research_hallucination_benchmark, research_adversarial_robustness
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/academic_integrity.py
+FUNCTIONS: research_citation_analysis, research_retraction_check, research_predatory_journal_check
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/career_trajectory.py
+FUNCTIONS: research_career_trajectory, research_market_velocity
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/job_signals.py
+FUNCTIONS: research_funding_signal, research_stealth_hire_scanner, research_interviewer_profiler
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/signal_detection.py
+FUNCTIONS: research_ghost_protocol, research_temporal_anomaly, research_sec_tracker
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/supply_chain_intel.py
+FUNCTIONS: research_supply_chain_risk, research_patent_landscape, research_dependency_audit
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/darkweb_early_warning.py
+FUNCTIONS: research_darkweb_early_warning
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/culture_dna.py
+FUNCTIONS: research_culture_dna
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: NO
+IMPORTABLE: YES
+VERDICT: FAIL [Not all functions registered in server.py]
+----------------------------------------
+FILE: src/loom/tools/synth_echo.py
+FUNCTIONS: research_synth_echo
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: NONE
+REGISTERED: NO
+IMPORTABLE: YES
+VERDICT: FAIL [research_synth_echo missing try/except block, Not all functions registered in server.py]
+----------------------------------------
+FILE: src/loom/tools/psycholinguistic.py
+FUNCTIONS: research_psycholinguistic
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5
+REGISTERED: NO
+IMPORTABLE: YES
+VERDICT: FAIL [research_psycholinguistic missing try/except block, Not all functions registered in server.py]
+----------------------------------------
+FILE: src/loom/tools/bias_lens.py
+FUNCTIONS: research_bias_lens
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/osint_extended.py
+FUNCTIONS: research_social_engineering_score, research_behavioral_fingerprint
+IMPLEMENTATION: PARTIAL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: FAIL [PARTIAL]
+----------------------------------------
+FILE: src/loom/tools/salary_synthesizer.py
+FUNCTIONS: research_salary_synthesize
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/deception_job_scanner.py
+FUNCTIONS: research_deception_job_scan
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: FAIL [research_deception_job_scan missing try/except block]
+----------------------------------------
+FILE: src/loom/tools/hcs10_academic.py
+FUNCTIONS: research_grant_forensics, research_monoculture_detect, research_review_cartel, research_data_fabrication, research_institutional_decay, research_shell_funding, research_conference_arbitrage, research_preprint_manipulation
+IMPLEMENTATION: PLACEHOLDER
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: FAIL [research_data_fabrication missing try/except block]
+----------------------------------------
+FILE: src/loom/tools/threat_intel.py
+FUNCTIONS: research_dark_market_monitor, research_ransomware_tracker, research_phishing_mapper, research_botnet_tracker, research_malware_intel, research_domain_reputation, research_ioc_enrich
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/infra_analysis.py
+FUNCTIONS: research_registry_graveyard, research_subdomain_temporal, research_commit_analyzer
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/gap_tools_infra.py
+FUNCTIONS: research_cloud_enum, research_github_secrets, research_whois_correlator, research_output_consistency
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/gap_tools_academic.py
+FUNCTIONS: research_ideological_drift, research_author_clustering, research_citation_cartography
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/gap_tools_ai.py
+FUNCTIONS: research_capability_mapper, research_memorization_scanner, research_training_contamination
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/gap_tools_advanced.py
+FUNCTIONS: research_talent_migration, research_funding_pipeline, research_jailbreak_library, research_patent_embargo
+IMPLEMENTATION: PLACEHOLDER
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: FAIL [research_jailbreak_library missing try/except block]
+----------------------------------------
+FILE: src/loom/tools/infowar_tools.py
+FUNCTIONS: research_narrative_tracker, research_bot_detector, research_censorship_detector, research_deleted_social, research_robots_archaeology
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/access_tools.py
+FUNCTIONS: research_legal_takedown, research_open_access, research_content_authenticity, research_credential_monitor, research_deepfake_checker
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: PIL, tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+----------------------------------------
+FILE: src/loom/tools/unique_tools.py
+FUNCTIONS: research_propaganda_detector, research_source_credibility, research_information_cascade, research_web_time_machine, research_influence_operation, research_dark_web_bridge, research_info_half_life, research_search_discrepancy
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: FAIL [research_propaganda_detector missing try/except block]
+----------------------------------------
+FILE: src/loom/tools/p3_tools.py
+FUNCTIONS: research_model_comparator, research_data_poisoning, research_wiki_event_correlator, research_foia_tracker
+IMPLEMENTATION: FULL
+API_KEYS_NEEDED: NONE
+SPECIAL_DEPS: tor/socks5, httpx
+REGISTERED: YES
+IMPORTABLE: YES
+VERDICT: PASS
+
+SUMMARY:
+Total PASS: 38
+Total FAIL: 11
+
+CRITICAL ISSUES:
+- 6 tools failed because they have functions not registered in `src/loom/server.py`.
+- 6 tools failed due to missing `try/except` error handling blocks in at least one function.
+- `osint_extended.py` contains placeholder code (`TODO` or `pass`).
+- `hcs10_academic.py` and `gap_tools_advanced.py` are fully flagged as placeholders.
+- The `PIL` module (Pillow) is required by `access_tools.py` which may not be a standard dependency if not present in `pyproject.toml`.

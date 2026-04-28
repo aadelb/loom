@@ -820,10 +820,18 @@ def _register_tools(mcp: FastMCP) -> None:
             mcp.tool()(_wrap_tool(resume_intel_mod.research_interview_prep, "llm"))
 
     # P3 research tools (4 tools for model comparison, data poisoning detection, Wiki event correlation, and FOIA tracking) 
-    mcp.tool()(_wrap_tool(p3_tools.research_model_comparator, "fetch")) 
-    mcp.tool()(_wrap_tool(p3_tools.research_data_poisoning, "fetch")) 
-    mcp.tool()(_wrap_tool(p3_tools.research_wiki_event_correlator, "fetch")) 
+    mcp.tool()(_wrap_tool(p3_tools.research_model_comparator, "fetch"))
+    mcp.tool()(_wrap_tool(p3_tools.research_data_poisoning, "fetch"))
+    mcp.tool()(_wrap_tool(p3_tools.research_wiki_event_correlator, "fetch"))
     mcp.tool()(_wrap_tool(p3_tools.research_foia_tracker, "search"))
+
+    # Previously missing registrations (found by Gemini audit)
+    mcp.tool()(_wrap_tool(change_monitor.research_change_monitor, "fetch"))
+    mcp.tool()(_wrap_tool(knowledge_graph.research_knowledge_graph, "search"))
+    mcp.tool()(_wrap_tool(fact_checker.research_fact_check, "search"))
+    mcp.tool()(_wrap_tool(culture_dna.research_culture_dna, "search"))
+    mcp.tool()(_wrap_tool(synth_echo.research_synth_echo, "fetch"))
+    mcp.tool()(_wrap_tool(psycholinguistic.research_psycholinguistic))
 
 def _validate_environment() -> None:
     """Validate that required environment variables are configured.
