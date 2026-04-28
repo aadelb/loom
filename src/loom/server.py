@@ -33,23 +33,28 @@ from loom.sessions import (
 # Import tool modules to register their functions
 from loom.tools import (
     breach_check,
+    academic_integrity,
+
     cache_mgmt,
-    change_monitor,
     cert_analyzer,
-    competitive_intel,
+    change_monitor,
     company_intel,
+    competitive_intel,
     crypto_trace,
     dark_forum,
     dead_content,
     deception_detect,
     deep,
     domain_intel,
+    fact_checker,
     fetch,
     github,
     identity_resolve,
+    job_signals,
     infra_correlator,
     invisible_web,
     js_intel,
+    knowledge_graph,
     leak_scan,
     markdown,
     metadata_forensics,
@@ -57,9 +62,12 @@ from loom.tools import (
     onion_discover,
     passive_recon,
     pdf_extract,
+    realtime_monitor,
+    report_generator,
     rss_monitor,
     search,
     security_headers,
+    signal_detection,
     social_graph,
     social_intel,
     spider,
@@ -67,6 +75,7 @@ from loom.tools import (
     stego_detect,
     stylometry,
     threat_profile,
+    trend_predictor,
 )
 from loom.tracing import install_tracing, new_request_id
 
@@ -256,6 +265,11 @@ with suppress(ImportError):
 
     _optional_tools["resume_intel"] = resume_intel_tools
 
+
+with suppress(ImportError):
+    from loom.tools import career_trajectory as career_trajectory_tools
+
+    _optional_tools["career_trajectory"] = career_trajectory_tools
 _start_time = time.time()
 
 
@@ -360,12 +374,26 @@ def _register_tools(mcp: FastMCP) -> None:
     # Security tools (cert analysis, headers, breach checking)
     mcp.tool()(_wrap_tool(cert_analyzer.research_cert_analyze, "fetch"))
     mcp.tool()(_wrap_tool(security_headers.research_security_headers, "fetch"))
+
+    # Signal detection tools
+    mcp.tool()(_wrap_tool(signal_detection.research_ghost_protocol, "search"))
+    mcp.tool()(_wrap_tool(signal_detection.research_temporal_anomaly, "fetch"))
+    mcp.tool()(_wrap_tool(signal_detection.research_sec_tracker, "search"))
     mcp.tool()(_wrap_tool(breach_check.research_breach_check, "fetch"))
     mcp.tool()(_wrap_tool(breach_check.research_password_check))
 
     # PDF extraction tools
     mcp.tool()(_wrap_tool(pdf_extract.research_pdf_extract, "fetch"))
     mcp.tool()(_wrap_tool(pdf_extract.research_pdf_search, "fetch"))
+
+    # Academic integrity tools
+    mcp.tool()(_wrap_tool(academic_integrity.research_citation_analysis, "fetch"))
+    mcp.tool()(_wrap_tool(academic_integrity.research_retraction_check, "fetch"))
+    mcp.tool()(_wrap_tool(academic_integrity.research_predatory_journal_check, "fetch"))
+
+
+    # Real-time monitoring tools
+    mcp.tool()(_wrap_tool(realtime_monitor.research_realtime_monitor, "fetch"))
 
     # RSS feed tools
     mcp.tool()(_wrap_tool(rss_monitor.research_rss_fetch, "fetch"))
@@ -374,6 +402,10 @@ def _register_tools(mcp: FastMCP) -> None:
     # Social intelligence tools
     mcp.tool()(_wrap_tool(social_intel.research_social_search, "fetch"))
     mcp.tool()(_wrap_tool(social_intel.research_social_profile, "fetch"))
+
+    # Trend prediction and report generation tools
+    mcp.tool()(_wrap_tool(trend_predictor.research_trend_predict, "search"))
+    mcp.tool()(_wrap_tool(report_generator.research_generate_report, "search"))
 
     # Session tools
     mcp.tool()(_wrap_tool(research_session_open))
@@ -496,6 +528,14 @@ def _register_tools(mcp: FastMCP) -> None:
             mcp.tool()(_wrap_tool(career_intel_mod.research_map_research_to_product, "llm"))
         if hasattr(career_intel_mod, "research_translate_academic_skills"):
             mcp.tool()(_wrap_tool(career_intel_mod.research_translate_academic_skills, "llm"))
+
+    # Career trajectory and market velocity tools (if available)
+    if "career_trajectory" in _optional_tools:
+        career_traj_mod = _optional_tools["career_trajectory"]
+        if hasattr(career_traj_mod, "research_career_trajectory"):
+            mcp.tool()(_wrap_tool(career_traj_mod.research_career_trajectory, "fetch"))
+        if hasattr(career_traj_mod, "research_market_velocity"):
+            mcp.tool()(_wrap_tool(career_traj_mod.research_market_velocity, "search"))
 
 
     # Joplin note tools (if available)

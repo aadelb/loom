@@ -7,6 +7,8 @@ proxies, etc. All models forbid extra fields and use strict mode.
 from __future__ import annotations
 
 import re
+import logging
+
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
@@ -16,6 +18,9 @@ from loom.validators import filter_headers, validate_js_script, validate_url
 
 # Default Accept-Language header sourced from config
 _DEFAULT_ACCEPT_LANG = CONFIG.get("DEFAULT_ACCEPT_LANGUAGE", "en-US,en;q=0.9,ar;q=0.8")
+
+
+logger = logging.getLogger("loom.params")
 
 
 class FetchParams(BaseModel):
@@ -198,25 +203,10 @@ class SearchParams(BaseModel):
         "hackernews",
         "reddit",
         "newsapi",
-        "crypto",
-        "coindesk",
-        "binance",
-        "investing",
-        "ahmia",
-        "darksearch",
-        "ummro",
-        "onionsearch",
-        "torcrawl",
-        "darkweb_cti",
-        "robin_osint",
     ] = "exa"
-    n: int = 10
-    include_domains: list[str] | None = None
-    exclude_domains: list[str] | None = None
-    start_date: str | None = None
-    end_date: str | None = None
-    provider_config: dict[str, Any] | None = None
-    language: str | None = None
+    include_raw: bool = False
+    num_results: int = 10
+    include_raw_search_context: bool = False
 
     model_config = {"extra": "forbid", "strict": True}
 
@@ -225,13 +215,16 @@ class SearchParams(BaseModel):
     def validate_query(cls, v: str) -> str:
         if not v or not v.strip():
             raise ValueError("query must be non-empty")
-        return v.strip()
+        v = v.strip()
+        if len(v) > 500:
+            raise ValueError("query max 500 characters")
+        return v
 
-    @field_validator("n")
+    @field_validator("num_results")
     @classmethod
-    def validate_n(cls, v: int) -> int:
-        if v < 1 or v > 50:
-            raise ValueError("n must be 1-50")
+    def validate_num_results(cls, v: int) -> int:
+        if v < 1 or v > 100:
+            raise ValueError("num_results must be 1-100")
         return v
 
 
@@ -239,68 +232,8 @@ class DeepParams(BaseModel):
     """Parameters for research_deep tool."""
 
     query: str
-    depth: int = 2
-    provider: Literal[
-        "exa",
-        "tavily",
-        "firecrawl",
-        "brave",
-        "ddgs",
-        "arxiv",
-        "wikipedia",
-        "hackernews",
-        "reddit",
-        "newsapi",
-        "crypto",
-        "coindesk",
-        "binance",
-        "investing",
-        "ahmia",
-        "darksearch",
-        "ummro",
-        "onionsearch",
-        "torcrawl",
-        "darkweb_cti",
-        "robin_osint",
-    ] = "exa"
-    search_providers: list[str] | None = None
-    expand_queries: bool = True
-    extract: bool = True
-    synthesize: bool = True
-    include_github: bool = True
-    include_community: bool = False
-    include_red_team: bool = False
-    include_misinfo_check: bool = False
-    max_cost_usd: float = 0.50
-
-    model_config = {"extra": "forbid", "strict": True}
-
-    @field_validator("depth")
-    @classmethod
-    def validate_depth(cls, v: int) -> int:
-        if v < 1 or v > 10:
-            raise ValueError("depth must be 1-10")
-        return v
-
-    @field_validator("max_cost_usd")
-    @classmethod
-    def validate_max_cost(cls, v: float) -> float:
-        if v < 0.0 or v > 10.0:
-            raise ValueError("max_cost_usd must be 0.0-10.0")
-        return v
-
-
-class GitHubSearchParams(BaseModel):
-    """Parameters for research_github tool."""
-
-    kind: Literal["repos", "code", "issues"]
-    query: str
-    limit: int = 20
-    sort: Literal["best-match", "stars", "forks", "updated"] = "best-match"
-    order: Literal["desc", "asc"] = "desc"
-    language: str | None = None
-    owner: str | None = None
-    repo: str | None = None
+    max_results: int = 10
+    include_raw: bool = False
 
     model_config = {"extra": "forbid", "strict": True}
 
@@ -309,30 +242,56 @@ class GitHubSearchParams(BaseModel):
     def validate_query(cls, v: str) -> str:
         if not v or not v.strip():
             raise ValueError("query must be non-empty")
-        if len(v) > 512:
-            raise ValueError("query max 512 chars")
-        if v.lstrip().startswith("-"):
-            raise ValueError("query cannot start with '-'")
+        v = v.strip()
+        if len(v) > 500:
+            raise ValueError("query max 500 characters")
         return v
 
-    @field_validator("limit")
+    @field_validator("max_results")
     @classmethod
-    def validate_limit(cls, v: int) -> int:
+    def validate_max_results(cls, v: int) -> int:
         if v < 1 or v > 100:
-            raise ValueError("limit must be 1-100")
+            raise ValueError("max_results must be 1-100")
         return v
 
 
-class CamoufoxParams(BaseModel):
-    """Parameters for research_camoufox tool."""
+class GithubParams(BaseModel):
+    """Parameters for research_github tool."""
+
+    query: str
+    search_type: Literal["repos", "code", "issues", "discussions", "users"] = "repos"
+    max_results: int = 10
+    language: str | None = None
+    sort: Literal["stars", "forks", "updated", "best-match"] = "best-match"
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("query")
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        from loom.validators import sanitize_github_query
+
+        if not v or not v.strip():
+            raise ValueError("query must be non-empty")
+        v = v.strip()
+        if len(v) > 500:
+            raise ValueError("query max 500 characters")
+        return sanitize_github_query(v)
+
+    @field_validator("max_results")
+    @classmethod
+    def validate_max_results(cls, v: int) -> int:
+        if v < 1 or v > 100:
+            raise ValueError("max_results must be 1-100")
+        return v
+
+
+class StealthParams(BaseModel):
+    """Parameters for research_camoufox and research_botasaurus tools."""
 
     url: str
+    mode: Literal["camoufox", "botasaurus"] = "camoufox"
     max_chars: int = 20000
-    session: str | None = None
-    wait_for: str | None = None
-    screenshot: bool = False
-    extract_selector: str | None = None
-    js_before_scrape: str | None = None
     timeout: int | None = None
 
     model_config = {"extra": "forbid", "strict": True}
@@ -342,42 +301,68 @@ class CamoufoxParams(BaseModel):
     def validate_url_field(cls, v: str) -> str:
         return validate_url(v)
 
-    @field_validator("js_before_scrape")
+    @field_validator("timeout")
     @classmethod
-    def validate_js(cls, v: str | None) -> str | None:
-        if v is not None:
-            if len(v) > 2048:
-                raise ValueError("js_before_scrape max 2 KB")
-            validate_js_script(v)
+    def validate_timeout(cls, v: int | None) -> int | None:
+        if v is not None and (v < 1 or v > 300):
+            raise ValueError("timeout must be 1-300 seconds")
         return v
 
 
-class BotasaurusParams(BaseModel):
-    """Parameters for research_botasaurus tool."""
+class CacheStatsParams(BaseModel):
+    """Parameters for research_cache_stats tool."""
 
-    url: str
-    max_chars: int = 20000
-    session: str | None = None
-    wait_for: str | None = None
-    screenshot: bool = False
-    extract_selector: str | None = None
-    js_before_scrape: str | None = None
-    timeout: int | None = None
+    # No parameters needed
+    pass
 
     model_config = {"extra": "forbid", "strict": True}
 
-    @field_validator("url", mode="before")
-    @classmethod
-    def validate_url_field(cls, v: str) -> str:
-        return validate_url(v)
 
-    @field_validator("js_before_scrape")
+class CacheClearParams(BaseModel):
+    """Parameters for research_cache_clear tool."""
+
+    older_than_days: int = 30
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("older_than_days")
     @classmethod
-    def validate_js(cls, v: str | None) -> str | None:
-        if v is not None:
-            if len(v) > 2048:
-                raise ValueError("js_before_scrape max 2 KB")
-            validate_js_script(v)
+    def validate_older_than_days(cls, v: int) -> int:
+        if v < 1 or v > 730:
+            raise ValueError("older_than_days must be 1-730")
+        return v
+
+
+class BreachCheckParams(BaseModel):
+    """Parameters for research_breach_check tool."""
+
+    email: str
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        v = v.strip().lower()
+        if "@" not in v or "." not in v.split("@")[1]:
+            raise ValueError("email must be valid format")
+        return v
+
+
+class PasswordCheckParams(BaseModel):
+    """Parameters for research_password_check tool."""
+
+    password: str
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        if not v or len(v) < 1:
+            raise ValueError("password must be non-empty")
+        if len(v) > 256:
+            raise ValueError("password max 256 characters")
         return v
 
 
@@ -385,12 +370,9 @@ class SessionOpenParams(BaseModel):
     """Parameters for research_session_open tool."""
 
     name: str
-    browser: Literal["camoufox", "playwright", "patchright"] = "camoufox"
     headless: bool = True
-    accept_language: str = _DEFAULT_ACCEPT_LANG
     login_url: str | None = None
     login_script: str | None = None
-    initial_cookies: dict[str, str] | None = None
     ttl_seconds: int = 3600
 
     model_config = {"extra": "forbid", "strict": True}
@@ -498,8 +480,10 @@ class LLMClassifyParams(BaseModel):
     @field_validator("categories")
     @classmethod
     def validate_categories(cls, v: list[str]) -> list[str]:
-        if not v or len(v) > 20:
-            raise ValueError("categories must be 1-20 items")
+        if not v or len(v) < 2:
+            raise ValueError("categories must have at least 2 items")
+        if len(v) > 20:
+            raise ValueError("categories max 20 items")
         return v
 
 
@@ -507,29 +491,36 @@ class LLMTranslateParams(BaseModel):
     """Parameters for research_llm_translate tool."""
 
     text: str
-    source_lang: str
-    target_lang: str
+    target_language: str
     provider: str = "openai"
     model: str | None = None
 
     model_config = {"extra": "forbid", "strict": True}
 
-
-class LLMQueryExpandParams(BaseModel):
-    """Parameters for research_llm_query_expand tool."""
-
-    query: str
-    count: int = 3
-    provider: str = "openai"
-    model: str | None = None
-
-    model_config = {"extra": "forbid", "strict": True}
-
-    @field_validator("count")
+    @field_validator("target_language")
     @classmethod
-    def validate_count(cls, v: int) -> int:
-        if v < 1 or v > 10:
-            raise ValueError("count must be 1-10")
+    def validate_language(cls, v: str) -> str:
+        v = v.strip()
+        if len(v) > 100:
+            raise ValueError("target_language max 100 characters")
+        return v
+
+
+class LLMExpandParams(BaseModel):
+    """Parameters for research_llm_expand tool."""
+
+    text: str
+    max_length: int = 1000
+    provider: str = "openai"
+    model: str | None = None
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("max_length")
+    @classmethod
+    def validate_max_length(cls, v: int) -> int:
+        if v < 100 or v > 10000:
+            raise ValueError("max_length must be 100-10000")
         return v
 
 
@@ -537,393 +528,105 @@ class LLMAnswerParams(BaseModel):
     """Parameters for research_llm_answer tool."""
 
     question: str
-    context: str | None = None
+    context: str = ""
     provider: str = "openai"
     model: str | None = None
 
     model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("question")
+    @classmethod
+    def validate_question(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("question must be non-empty")
+        return v.strip()
 
 
 class LLMEmbedParams(BaseModel):
     """Parameters for research_llm_embed tool."""
 
-    text: str | list[str]
+    text: str
     provider: str = "openai"
     model: str | None = None
 
     model_config = {"extra": "forbid", "strict": True}
 
 
-class StylometryParams(BaseModel):
-    """Parameters for research_stylometry tool."""
-
-    text: str
-    compare_texts: list[str] | None = None
-
-    model_config = {"extra": "forbid", "strict": True}
-
-    @field_validator("text")
-    @classmethod
-    def validate_text(cls, v: str) -> str:
-        if len(v) < 100:
-            raise ValueError("text must be at least 100 characters")
-        return v
-
-    @field_validator("compare_texts")
-    @classmethod
-    def validate_compare_texts(cls, v: list[str] | None) -> list[str] | None:
-        if v is not None:
-            if len(v) < 1 or len(v) > 10:
-                raise ValueError("compare_texts must have 1-10 items")
-            for text in v:
-                if len(text) < 100:
-                    raise ValueError("each comparison text must be at least 100 characters")
-        return v
-
-
-class DeceptionDetectParams(BaseModel):
-    """Parameters for research_deception_detect tool."""
-
-    text: str
-
-    model_config = {"extra": "forbid", "strict": True}
-
-    @field_validator("text")
-    @classmethod
-    def validate_text(cls, v: str) -> str:
-        if len(v) < 100:
-            raise ValueError("text must be at least 100 characters")
-        return v
-
-
-class SentimentDeepParams(BaseModel):
-    """Parameters for research_sentiment_deep tool."""
-
-    text: str
-    language: str = "en"
-
-    model_config = {"extra": "forbid", "strict": True}
-
-    @field_validator("text")
-    @classmethod
-    def validate_text(cls, v: str) -> str:
-        if len(v) < 10:
-            raise ValueError("text must be at least 10 characters")
-        return v
-
-    @field_validator("language")
-    @classmethod
-    def validate_language(cls, v: str) -> str:
-        if len(v) < 2 or len(v) > 5:
-            raise ValueError("language must be 2-5 character ISO 639-1 code")
-        return v
-
-
-class NetworkPersonaParams(BaseModel):
-    """Parameters for research_network_persona tool."""
-
-    posts: list[dict[str, Any]]
-    min_interactions: int = 2
-
-    model_config = {"extra": "forbid", "strict": True}
-
-    @field_validator("posts")
-    @classmethod
-    def validate_posts(cls, v: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        if len(v) < 3:
-            raise ValueError("posts list must have at least 3 items")
-        if len(v) > 10000:
-            raise ValueError("posts list limited to 10000 items")
-        return v
-
-    @field_validator("min_interactions")
-    @classmethod
-    def validate_min_interactions(cls, v: int) -> int:
-        if v < 0 or v > 100:
-            raise ValueError("min_interactions must be 0-100")
-        return v
-
-class PersonaProfileParams(BaseModel):
-    """Parameters for research_persona_profile tool."""
-
-    texts: list[str]
-    metadata: dict[str, Any] | None = None
-
-    model_config = {"extra": "forbid", "strict": True}
-
-    @field_validator("texts")
-    @classmethod
-    def validate_texts(cls, v: list[str]) -> list[str]:
-        if not v or not isinstance(v, list):
-            raise ValueError("texts must be a non-empty list")
-        if len(v) > 100:
-            raise ValueError("texts limited to 100 samples")
-        for i, text in enumerate(v):
-            if not isinstance(text, str):
-                raise ValueError(f"texts[{i}] must be a string")
-            if len(text.strip()) < 50:
-                raise ValueError(f"texts[{i}] must be at least 50 characters")
-        return v
-
-    @field_validator("metadata")
-    @classmethod
-    def validate_metadata(cls, v: dict[str, Any] | None) -> dict[str, Any] | None:
-        if v is None:
-            return v
-        if not isinstance(v, dict):
-            raise ValueError("metadata must be a dict or None")
-        if "timestamps" in v:
-            if not isinstance(v["timestamps"], list):
-                raise ValueError("metadata['timestamps'] must be a list")
-        return v
-
-
-class RadicalizationDetectParams(BaseModel):
-    """Parameters for research_radicalization_detect tool."""
-
-    text: str
-    context: str | None = None
-
-    model_config = {"extra": "forbid", "strict": True}
-
-    @field_validator("text")
-    @classmethod
-    def validate_text(cls, v: str) -> str:
-        if not isinstance(v, str):
-            raise ValueError("text must be a string")
-        if len(v.strip()) < 50:
-            raise ValueError("text must be at least 50 characters")
-        if len(v) > 100000:
-            raise ValueError("text limited to 100000 characters")
-        return v
-
-    @field_validator("context")
-    @classmethod
-    def validate_context(cls, v: str | None) -> str | None:
-        if v is None:
-            return v
-        if not isinstance(v, str):
-            raise ValueError("context must be a string or None")
-        if len(v) > 5000:
-            raise ValueError("context limited to 5000 characters")
-        return v
-
-class WhoisParams(BaseModel):
-    """Parameters for research_whois tool."""
-
-    domain: str
-
-    model_config = {"extra": "forbid", "strict": True}
-
-    @field_validator("domain")
-    @classmethod
-    def validate_domain(cls, v: str) -> str:
-        if not v or len(v) > 255:
-            raise ValueError("domain must be 1-255 characters")
-        if not all(c.isalnum() or c in "._-" for c in v):
-            raise ValueError("domain contains disallowed characters")
-        return v
-
-
-class DnsLookupParams(BaseModel):
-    """Parameters for research_dns_lookup tool."""
-
-    domain: str
-    record_types: list[str] | None = None
-
-    model_config = {"extra": "forbid", "strict": True}
-
-    @field_validator("domain")
-    @classmethod
-    def validate_domain(cls, v: str) -> str:
-        if not v or len(v) > 255:
-            raise ValueError("domain must be 1-255 characters")
-        if not all(c.isalnum() or c in "._-" for c in v):
-            raise ValueError("domain contains disallowed characters")
-        return v
-
-    @field_validator("record_types")
-    @classmethod
-    def validate_record_types(cls, v: list[str] | None) -> list[str] | None:
-        if v is None:
-            return v
-        if not v or len(v) > 20:
-            raise ValueError("record_types must be 1-20 items")
-        valid_types = {"A", "AAAA", "MX", "NS", "TXT", "CNAME", "PTR", "SOA", "SRV"}
-        for rt in v:
-            if rt.upper() not in valid_types:
-                raise ValueError(f"invalid record type: {rt}")
-        return [rt.upper() for rt in v]
-
-
-class NmapScanParams(BaseModel):
-    """Parameters for research_nmap_scan tool."""
-
-    target: str
-    ports: str = "80,443,8080,8443"
-    scan_type: Literal["basic", "service"] = "basic"
-
-    model_config = {"extra": "forbid", "strict": True}
-
-    @field_validator("target")
-    @classmethod
-    def validate_target(cls, v: str) -> str:
-        if not v or len(v) > 255:
-            raise ValueError("target must be 1-255 characters")
-        if not all(c.isalnum() or c in ".-:" for c in v):
-            raise ValueError("target contains disallowed characters")
-        return v
-
-    @field_validator("ports")
-    @classmethod
-    def validate_ports(cls, v: str) -> str:
-        if not v or len(v) > 100:
-            raise ValueError("ports must be 1-100 characters")
-        if not all(c.isdigit() or c in ",-" for c in v):
-            raise ValueError("ports must be comma-separated or ranges")
-        return v
-
-
 class PdfExtractParams(BaseModel):
     """Parameters for research_pdf_extract tool."""
 
-    url: str
-    pages: str | None = None
+    pdf_url: str
+    extract_text: bool = True
+    extract_metadata: bool = True
+    extract_images: bool = False
+    max_pages: int | None = None
 
     model_config = {"extra": "forbid", "strict": True}
 
-    @field_validator("url", mode="before")
+    @field_validator("pdf_url", mode="before")
     @classmethod
-    def validate_url_field(cls, v: str) -> str:
-        return validate_url(v)
+    def validate_url(cls, v: str) -> str:
+        url = validate_url(v)
+        if not url.lower().endswith(".pdf") and "pdf" not in url.lower():
+            raise ValueError("pdf_url must point to a PDF file")
+        return url
 
-    @field_validator("pages")
+    @field_validator("max_pages")
     @classmethod
-    def validate_pages(cls, v: str | None) -> str | None:
-        if v is None:
-            return v
-        if not v.strip():
-            return None
-        if len(v) > 20:
-            raise ValueError("pages format too long")
-        if not all(c.isdigit() or c == "-" for c in v):
-            raise ValueError("pages must be 'N' or 'N-M'")
+    def validate_max_pages(cls, v: int | None) -> int | None:
+        if v is not None and (v < 1 or v > 500):
+            raise ValueError("max_pages must be 1-500")
         return v
 
 
-class PdfSearchParams(BaseModel):
-    """Parameters for research_pdf_search tool."""
+class RssMonitorParams(BaseModel):
+    """Parameters for research_rss_fetch and research_rss_search tools."""
 
-    url: str
-    query: str
-
-    model_config = {"extra": "forbid", "strict": True}
-
-    @field_validator("url", mode="before")
-    @classmethod
-    def validate_url_field(cls, v: str) -> str:
-        return validate_url(v)
-
-    @field_validator("query")
-    @classmethod
-    def validate_query(cls, v: str) -> str:
-        if not v or len(v) > 1000:
-            raise ValueError("query must be 1-1000 characters")
-        return v
-
-class RssMonitorFetchParams(BaseModel):
-    """Parameters for research_rss_fetch tool."""
-
-    url: str
-    max_items: int = 20
-
-    model_config = {"extra": "forbid", "strict": True}
-
-    @field_validator("url", mode="before")
-    @classmethod
-    def validate_url_field(cls, v: str) -> str:
-        return validate_url(v)
-
-    @field_validator("max_items")
-    @classmethod
-    def validate_max_items(cls, v: int) -> int:
-        if v < 1 or v > 500:
-            raise ValueError("max_items must be 1-500")
-        return v
-
-
-class RssMonitorSearchParams(BaseModel):
-    """Parameters for research_rss_search tool."""
-
-    urls: list[str]
-    query: str
+    feed_url: str
     max_results: int = 20
+    include_summaries: bool = True
 
     model_config = {"extra": "forbid", "strict": True}
 
-    @field_validator("urls")
+    @field_validator("feed_url", mode="before")
     @classmethod
-    def validate_urls(cls, v: list[str]) -> list[str]:
-        if not v or len(v) > 50:
-            raise ValueError("urls must be 1-50 items")
-        return [validate_url(url) for url in v]
-
-    @field_validator("query")
-    @classmethod
-    def validate_query(cls, v: str) -> str:
-        if not v or not v.strip():
-            raise ValueError("query must be non-empty")
-        if len(v) > 500:
-            raise ValueError("query max 500 characters")
-        return v.strip()
+    def validate_feed_url(cls, v: str) -> str:
+        return validate_url(v)
 
     @field_validator("max_results")
     @classmethod
     def validate_max_results(cls, v: int) -> int:
-        if v < 1 or v > 500:
-            raise ValueError("max_results must be 1-500")
+        if v < 1 or v > 100:
+            raise ValueError("max_results must be 1-100")
         return v
 
 
-class SocialSearchParams(BaseModel):
-    """Parameters for research_social_search tool."""
+class TextAnalyzeParams(BaseModel):
+    """Parameters for research_text_analyze tool."""
 
-    username: str
-    platforms: list[str] | None = None
+    text: str
+    analyze_sentiment: bool = True
+    extract_entities: bool = True
+    extract_keywords: bool = True
 
     model_config = {"extra": "forbid", "strict": True}
 
-    @field_validator("username")
+    @field_validator("text")
     @classmethod
-    def validate_username(cls, v: str) -> str:
-        if not v or len(v) > 255:
-            raise ValueError("username must be 1-255 characters")
-        import re
-        if not re.match(r"^[a-zA-Z0-9_-]+$", v):
-            raise ValueError("username must contain only alphanumeric, underscore, or hyphen")
-        return v
-
-    @field_validator("platforms")
-    @classmethod
-    def validate_platforms(cls, v: list[str] | None) -> list[str] | None:
-        if v is None:
-            return v
-        if not v or len(v) > 20:
-            raise ValueError("platforms must be 1-20 items")
-        valid = {
-            "github", "twitter", "reddit", "hackernews",
-            "linkedin", "medium", "dev.to", "keybase"
-        }
-        for p in v:
-            if p not in valid:
-                raise ValueError(f"unknown platform: {p}")
-        return v
+    def validate_text(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("text must be non-empty")
+        return v.strip()
 
 
-class SocialProfileParams(BaseModel):
-    """Parameters for research_social_profile tool."""
+class ScreenshotParams(BaseModel):
+    """Parameters for research_screenshot tool."""
 
     url: str
+    viewport_width: int = 1920
+    viewport_height: int = 1080
+    wait_for: str | None = None
+    timeout: int | None = None
 
     model_config = {"extra": "forbid", "strict": True}
 
@@ -932,41 +635,131 @@ class SocialProfileParams(BaseModel):
     def validate_url_field(cls, v: str) -> str:
         return validate_url(v)
 
-class IPReputationParams(BaseModel):
-    """Parameters for research_ip_reputation tool."""
+    @field_validator("viewport_width", "viewport_height")
+    @classmethod
+    def validate_viewport(cls, v: int) -> int:
+        if v < 640 or v > 7680:
+            raise ValueError("viewport dimensions must be 640-7680")
+        return v
 
-    ip: str
+
+class DomainIntelParams(BaseModel):
+    """Parameters for domain intelligence tools."""
+
+    domain: str
+    include_dns: bool = True
+    include_whois: bool = True
 
     model_config = {"extra": "forbid", "strict": True}
 
-    @field_validator("ip")
+    @field_validator("domain")
     @classmethod
-    def validate_ip(cls, v: str) -> str:
-        if not v or not v.strip():
-            raise ValueError("ip must be non-empty")
-        return v.strip()
+    def validate_domain(cls, v: str) -> str:
+        v = v.strip()
+        if len(v) > 255:
+            raise ValueError("domain max 255 characters")
+        if not re.match(r"^[a-z0-9.-]+\.[a-z]{2,}$", v.lower()):
+            raise ValueError("domain must be a valid domain format")
+        return v
 
 
-class IPGeolocationParams(BaseModel):
-    """Parameters for research_ip_geolocation tool."""
+class CompanyIntelParams(BaseModel):
+    """Parameters for company intelligence tools."""
 
-    ip: str
+    company_name: str
+    include_financials: bool = False
+    include_leadership: bool = True
+    include_news: bool = True
 
     model_config = {"extra": "forbid", "strict": True}
 
-    @field_validator("ip")
+    @field_validator("company_name")
     @classmethod
-    def validate_ip(cls, v: str) -> str:
-        if not v or not v.strip():
-            raise ValueError("ip must be non-empty")
-        return v.strip()
+    def validate_company_name(cls, v: str) -> str:
+        v = v.strip()
+        if not v or len(v) > 500:
+            raise ValueError("company_name must be 1-500 characters")
+        return v
 
 
-class CVELookupParams(BaseModel):
-    """Parameters for research_cve_lookup tool."""
+class ResumeIntelParams(BaseModel):
+    """Parameters for research_resume_intel tool."""
+
+    name: str
+    location: str | None = None
+    industry: str | None = None
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        v = v.strip()
+        if not v or len(v) > 255:
+            raise ValueError("name must be 1-255 characters")
+        return v
+
+    @field_validator("location")
+    @classmethod
+    def validate_location(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        v = v.strip()
+        if len(v) > 100:
+            raise ValueError("location max 100 characters")
+        return v
+
+
+class CareerIntelParams(BaseModel):
+    """Parameters for career intelligence tools."""
+
+    job_title: str
+    company: str | None = None
+    industry: str | None = None
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("job_title")
+    @classmethod
+    def validate_job_title(cls, v: str) -> str:
+        v = v.strip()
+        if not v or len(v) > 255:
+            raise ValueError("job_title must be 1-255 characters")
+        return v
+
+
+class JobResearchParams(BaseModel):
+    """Parameters for research_job_research tool."""
+
+    job_title: str
+    location: str | None = None
+    company: str | None = None
+    max_results: int = 20
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("job_title")
+    @classmethod
+    def validate_job_title(cls, v: str) -> str:
+        v = v.strip()
+        if not v or len(v) > 255:
+            raise ValueError("job_title must be 1-255 characters")
+        return v
+
+    @field_validator("max_results")
+    @classmethod
+    def validate_max_results(cls, v: int) -> int:
+        if v < 1 or v > 100:
+            raise ValueError("max_results must be 1-100")
+        return v
+
+
+class UrlhausCheckParams(BaseModel):
+    """Parameters for research_urlhaus_check and research_urlhaus_search tools."""
 
     query: str
-    limit: int = 10
+    search_type: Literal["url", "domain", "hash"] = "url"
+    max_results: int = 20
 
     model_config = {"extra": "forbid", "strict": True}
 
@@ -975,81 +768,112 @@ class CVELookupParams(BaseModel):
     def validate_query(cls, v: str) -> str:
         if not v or not v.strip():
             raise ValueError("query must be non-empty")
-        return v.strip()
+        v = v.strip()
+        if len(v) > 500:
+            raise ValueError("query max 500 characters")
+        return v
 
-    @field_validator("limit")
+    @field_validator("max_results")
     @classmethod
-    def validate_limit(cls, v: int) -> int:
+    def validate_max_results(cls, v: int) -> int:
         if v < 1 or v > 100:
-            raise ValueError("limit must be 1-100")
+            raise ValueError("max_results must be 1-100")
         return v
 
 
-class CVEDetailParams(BaseModel):
-    """Parameters for research_cve_detail tool."""
+class CveLookupParams(BaseModel):
+    """Parameters for research_cve_lookup and research_cve_detail tools."""
 
     cve_id: str
+    include_metadata: bool = True
+    include_references: bool = True
 
     model_config = {"extra": "forbid", "strict": True}
 
     @field_validator("cve_id")
     @classmethod
     def validate_cve_id(cls, v: str) -> str:
-        if not v or not v.strip():
-            raise ValueError("cve_id must be non-empty")
-        return v.strip().upper()
+        v = v.strip().upper()
+        if not re.match(r"^CVE-\d{4}-\d{4,}$", v):
+            raise ValueError("cve_id must match pattern CVE-YYYY-XXXX")
+        return v
 
 
-class URLHausCheckParams(BaseModel):
-    """Parameters for research_urlhaus_check tool."""
+class IpIntelParams(BaseModel):
+    """Parameters for IP intelligence tools."""
 
-    url: str
-
-    model_config = {"extra": "forbid", "strict": True}
-
-    @field_validator("url", mode="before")
-    @classmethod
-    def validate_url_field(cls, v: str) -> str:
-        return validate_url(v)
-
-
-class URLHausSearchParams(BaseModel):
-    """Parameters for research_urlhaus_search tool."""
-
-    query: str
-    search_type: Literal["tag", "signature", "hash"] = "tag"
+    ip_address: str
 
     model_config = {"extra": "forbid", "strict": True}
 
-    @field_validator("query")
+    @field_validator("ip_address")
     @classmethod
-    def validate_query(cls, v: str) -> str:
-        if not v or not v.strip():
-            raise ValueError("query must be non-empty")
-        return v.strip()
+    def validate_ip(cls, v: str) -> str:
+        v = v.strip()
+        # Basic IPv4 and IPv6 validation
+        import ipaddress
+        try:
+            ipaddress.ip_address(v)
+        except ValueError:
+            raise ValueError("ip_address must be a valid IPv4 or IPv6 address")
+        return v
 
 
-class CertAnalyzeParams(BaseModel):
+class ImageIntelParams(BaseModel):
+    """Parameters for image intelligence tools."""
+
+    image_url: str
+    extract_exif: bool = True
+    extract_text: bool = False
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("image_url", mode="before")
+    @classmethod
+    def validate_image_url(cls, v: str) -> str:
+        url = validate_url(v)
+        # Check if URL looks like an image
+        image_exts = (".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp")
+        if not url.lower().endswith(image_exts) and "image" not in url.lower():
+            logger.warning("image_url may not point to image: %s", url)
+        return url
+
+
+class GeoipLocalParams(BaseModel):
+    """Parameters for research_geoip_local tool."""
+
+    ip_address: str
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("ip_address")
+    @classmethod
+    def validate_ip(cls, v: str) -> str:
+        v = v.strip()
+        import ipaddress
+        try:
+            ipaddress.ip_address(v)
+        except ValueError:
+            raise ValueError("ip_address must be a valid IPv4 or IPv6 address")
+        return v
+
+
+class CertAnalyzerParams(BaseModel):
     """Parameters for research_cert_analyze tool."""
 
-    hostname: str
+    domain: str
     port: int = 443
 
     model_config = {"extra": "forbid", "strict": True}
 
-    @field_validator("hostname")
+    @field_validator("domain")
     @classmethod
-    def validate_hostname(cls, v: str) -> str:
-        if not v or not isinstance(v, str):
-            raise ValueError("hostname must be non-empty string")
-        # Allow alphanumeric, dots, hyphens only
-        allowed = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-")
-        if not all(c in allowed for c in v):
-            raise ValueError("hostname must contain only alphanumeric, dots, hyphens")
-        if v.startswith("-") or v.endswith("-") or v.startswith(".") or v.endswith("."):
-            raise ValueError("hostname cannot start or end with hyphen or dot")
+    def validate_domain(cls, v: str) -> str:
+        v = v.strip()
         if len(v) > 255:
-            raise ValueError("hostname max 255 characters")
+            raise ValueError("domain max 255 characters")
+        if not re.match(r"^[a-z0-9.-]+\.[a-z]{2,}$", v.lower()):
+            raise ValueError("domain must be a valid domain format")
         return v
 
     @field_validator("port")
@@ -1064,6 +888,7 @@ class SecurityHeadersParams(BaseModel):
     """Parameters for research_security_headers tool."""
 
     url: str
+    include_recommendations: bool = True
 
     model_config = {"extra": "forbid", "strict": True}
 
@@ -1073,122 +898,109 @@ class SecurityHeadersParams(BaseModel):
         return validate_url(v)
 
 
-class BreachCheckParams(BaseModel):
-    """Parameters for research_breach_check tool."""
+class StylometryParams(BaseModel):
+    """Parameters for research_stylometry tool."""
 
-    email: str
+    text: str
+    reference_texts: list[str] | None = None
 
     model_config = {"extra": "forbid", "strict": True}
 
-    @field_validator("email")
+    @field_validator("text")
     @classmethod
-    def validate_email(cls, v: str) -> str:
-        import re
-        if not v or not isinstance(v, str):
-            raise ValueError("email must be non-empty string")
-        if len(v) > 254:
-            raise ValueError("email max 254 characters")
-        # Basic email pattern
-        pattern = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
-        if not re.match(pattern, v.strip()):
-            raise ValueError("email must be valid format")
+    def validate_text(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("text must be non-empty")
         return v.strip()
 
 
-class PasswordCheckParams(BaseModel):
-    """Parameters for research_password_check tool."""
+class DeceptionDetectParams(BaseModel):
+    """Parameters for research_deception_detect tool."""
 
-    password: str
-
-    model_config = {"extra": "forbid", "strict": True}
-
-    @field_validator("password")
-    @classmethod
-    def validate_password(cls, v: str) -> str:
-        if not v or not isinstance(v, str):
-            raise ValueError("password must be non-empty string")
-        if len(v) > 256:
-            raise ValueError("password max 256 characters")
-        return v
-
-
-class GeoIPLocalParams(BaseModel):
-    """Parameters for research_geoip_local tool."""
-
-    ip: str
+    text: str
 
     model_config = {"extra": "forbid", "strict": True}
 
-    @field_validator("ip")
+    @field_validator("text")
     @classmethod
-    def validate_ip(cls, v: str) -> str:
-        if not v or not isinstance(v, str):
-            raise ValueError("ip must be non-empty string")
+    def validate_text(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("text must be non-empty")
+        return v.strip()
+
+
+class PassiveReconParams(BaseModel):
+    """Parameters for research_passive_recon tool."""
+
+    domain: str
+    include_shodan: bool = True
+    include_reverse_ip: bool = True
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("domain")
+    @classmethod
+    def validate_domain(cls, v: str) -> str:
         v = v.strip()
-        if len(v) > 45:  # Max IPv6 length
-            raise ValueError("ip max 45 characters")
+        if len(v) > 255:
+            raise ValueError("domain max 255 characters")
+        if not re.match(r"^[a-z0-9.-]+\.[a-z]{2,}$", v.lower()):
+            raise ValueError("domain must be a valid domain format")
         return v
 
 
-class ExifExtractParams(BaseModel):
-    """Parameters for research_exif_extract tool."""
+class WaybackParams(BaseModel):
+    """Parameters for research_wayback tool."""
 
-    url_or_path: str
+    url: str
+    max_snapshots: int = 50
 
     model_config = {"extra": "forbid", "strict": True}
 
-    @field_validator("url_or_path")
+    @field_validator("url", mode="before")
     @classmethod
-    def validate_url_or_path(cls, v: str) -> str:
-        if not v or not isinstance(v, str):
-            raise ValueError("url_or_path must be non-empty string")
-        v = v.strip()
-        if len(v) > 2048:
-            raise ValueError("url_or_path max 2048 characters")
-        # Validate if it's a URL
-        if v.startswith(("http://", "https://")):
-            return validate_url(v)
+    def validate_url_field(cls, v: str) -> str:
+        return validate_url(v)
+
+    @field_validator("max_snapshots")
+    @classmethod
+    def validate_max_snapshots(cls, v: int) -> int:
+        if v < 1 or v > 500:
+            raise ValueError("max_snapshots must be 1-500")
         return v
 
 
-class OCRExtractParams(BaseModel):
-    """Parameters for research_ocr_extract tool."""
+class ExpertiseParams(BaseModel):
+    """Parameters for research_expertise tool."""
 
-    url_or_path: str
-    language: str = "eng"
+    person_name: str
+    field: str | None = None
+    max_results: int = 20
 
     model_config = {"extra": "forbid", "strict": True}
 
-    @field_validator("url_or_path")
+    @field_validator("person_name")
     @classmethod
-    def validate_url_or_path(cls, v: str) -> str:
-        if not v or not isinstance(v, str):
-            raise ValueError("url_or_path must be non-empty string")
+    def validate_name(cls, v: str) -> str:
         v = v.strip()
-        if len(v) > 2048:
-            raise ValueError("url_or_path max 2048 characters")
-        # Validate if it's a URL
-        if v.startswith(("http://", "https://")):
-            return validate_url(v)
+        if not v or len(v) > 255:
+            raise ValueError("person_name must be 1-255 characters")
         return v
 
-    @field_validator("language")
+    @field_validator("max_results")
     @classmethod
-    def validate_language(cls, v: str) -> str:
-        if not v or not isinstance(v, str):
-            raise ValueError("language must be non-empty string")
-        v = v.strip().lower()
-        if len(v) > 10:
-            raise ValueError("language max 10 characters")
+    def validate_max_results(cls, v: int) -> int:
+        if v < 1 or v > 100:
+            raise ValueError("max_results must be 1-100")
         return v
 
-class JobSearchParams(BaseModel):
-    """Parameters for research_job_search tool."""
+
+class MultiSearchParams(BaseModel):
+    """Parameters for research_multi_search tool."""
 
     query: str
-    location: str | None = None
-    remote_only: bool = False
-    limit: int = 20
+    providers: list[str] | None = None
+    max_results_per_provider: int = 10
 
     model_config = {"extra": "forbid", "strict": True}
 
@@ -1198,223 +1010,52 @@ class JobSearchParams(BaseModel):
         if not v or not v.strip():
             raise ValueError("query must be non-empty")
         v = v.strip()
-        if len(v) > 200:
-            raise ValueError("query max 200 characters")
-        return v
-
-    @field_validator("location")
-    @classmethod
-    def validate_location(cls, v: str | None) -> str | None:
-        if v is None:
-            return v
-        v = v.strip()
-        if len(v) > 100:
-            raise ValueError("location max 100 characters")
-        return v
-
-    @field_validator("limit")
-    @classmethod
-    def validate_limit(cls, v: int) -> int:
-        if v < 1 or v > 100:
-            raise ValueError("limit must be 1-100")
+        if len(v) > 500:
+            raise ValueError("query max 500 characters")
         return v
 
 
-class JobMarketParams(BaseModel):
-    """Parameters for research_job_market tool."""
-
-    role: str
-    location: str | None = None
-
-    model_config = {"extra": "forbid", "strict": True}
-
-    @field_validator("role")
-    @classmethod
-    def validate_role(cls, v: str) -> str:
-        if not v or not v.strip():
-            raise ValueError("role must be non-empty")
-        v = v.strip()
-        if len(v) > 200:
-            raise ValueError("role max 200 characters")
-        return v
-
-    @field_validator("location")
-    @classmethod
-    def validate_location(cls, v: str | None) -> str | None:
-        if v is None:
-            return v
-        v = v.strip()
-        if len(v) > 100:
-            raise ValueError("location max 100 characters")
-        return v
-
-class CompanyDiligenceParams(BaseModel):
-    """Parameters for research_company_diligence tool."""
+class CompetitiveIntelParams(BaseModel):
+    """Parameters for competitive intelligence tools."""
 
     company_name: str
+    competitors: list[str] | None = None
+    include_market: bool = True
+    include_pricing: bool = True
+    include_products: bool = True
 
     model_config = {"extra": "forbid", "strict": True}
 
     @field_validator("company_name")
     @classmethod
     def validate_company_name(cls, v: str) -> str:
-        if not v or not v.strip():
-            raise ValueError("company_name must be non-empty")
         v = v.strip()
-        if len(v) > 200:
-            raise ValueError("company_name max 200 characters")
+        if not v or len(v) > 500:
+            raise ValueError("company_name must be 1-500 characters")
         return v
 
 
-class SalaryIntelligenceParams(BaseModel):
-    """Parameters for research_salary_intelligence tool."""
+class ChangeMonitorParams(BaseModel):
+    """Parameters for research_change_monitor tool."""
 
-    role: str
-    location: str | None = None
-    experience_years: int = 0
+    url: str
+    check_interval_hours: int = 24
+    history_days: int = 30
 
     model_config = {"extra": "forbid", "strict": True}
 
-    @field_validator("role")
+    @field_validator("url", mode="before")
     @classmethod
-    def validate_role(cls, v: str) -> str:
-        if not v or not v.strip():
-            raise ValueError("role must be non-empty")
-        v = v.strip()
-        if len(v) > 200:
-            raise ValueError("role max 200 characters")
+    def validate_url_field(cls, v: str) -> str:
+        return validate_url(v)
+
+    @field_validator("check_interval_hours")
+    @classmethod
+    def validate_interval(cls, v: int) -> int:
+        if v < 1 or v > 720:
+            raise ValueError("check_interval_hours must be 1-720")
         return v
 
-    @field_validator("location")
-    @classmethod
-    def validate_location(cls, v: str | None) -> str | None:
-        if v is None:
-            return v
-        v = v.strip()
-        if len(v) > 100:
-            raise ValueError("location max 100 characters")
-        return v
-
-    @field_validator("experience_years")
-    @classmethod
-    def validate_experience_years(cls, v: int) -> int:
-        if v < 0 or v > 70:
-            raise ValueError("experience_years must be 0-70")
-        return v
-
-class OptimizeResumeParams(BaseModel):
-    """Parameters for research_optimize_resume tool."""
-
-    resume_text: str
-    job_description: str
-
-    model_config = {"extra": "forbid", "strict": True}
-
-    @field_validator("resume_text")
-    @classmethod
-    def validate_resume(cls, v: str) -> str:
-        if not v or not v.strip():
-            raise ValueError("resume_text must be non-empty")
-        if len(v.strip()) < 100:
-            raise ValueError("resume_text must be at least 100 characters")
-        if len(v) > 50000:
-            raise ValueError("resume_text max 50000 characters")
-        return v
-
-    @field_validator("job_description")
-    @classmethod
-    def validate_jd(cls, v: str) -> str:
-        if not v or not v.strip():
-            raise ValueError("job_description must be non-empty")
-        if len(v.strip()) < 50:
-            raise ValueError("job_description must be at least 50 characters")
-        if len(v) > 30000:
-            raise ValueError("job_description max 30000 characters")
-        return v
-
-
-class InterviewPrepParams(BaseModel):
-    """Parameters for research_interview_prep tool."""
-
-    job_description: str
-    company: str | None = None
-    interview_type: str = "behavioral"
-
-    model_config = {"extra": "forbid", "strict": True}
-
-    @field_validator("job_description")
-    @classmethod
-    def validate_jd(cls, v: str) -> str:
-        if not v or not v.strip():
-            raise ValueError("job_description must be non-empty")
-        if len(v.strip()) < 100:
-            raise ValueError("job_description must be at least 100 characters")
-        if len(v) > 30000:
-            raise ValueError("job_description max 30000 characters")
-        return v
-
-    @field_validator("company")
-    @classmethod
-    def validate_company(cls, v: str | None) -> str | None:
-        if v is None:
-            return v
-        if not v.strip():
-            return None
-        v = v.strip()
-        if len(v) > 200:
-            raise ValueError("company max 200 characters")
-        return v
-
-    @field_validator("interview_type")
-    @classmethod
-    def validate_interview_type(cls, v: str) -> str:
-        valid_types = ["behavioral", "technical", "mixed"]
-        if v.lower() not in valid_types:
-            raise ValueError(f"interview_type must be one of {valid_types}")
-        return v.lower()
-
-class CompetitiveIntelParams(BaseModel):
-    """Parameters for research_competitive_intel tool."""
-
-    company: str
-    domain: str | None = None
-    github_org: str | None = None
-
-    model_config = {"extra": "forbid", "strict": True}
-
-    @field_validator("company")
-    @classmethod
-    def validate_company(cls, v: str) -> str:
-        if not v or not v.strip():
-            raise ValueError("company must be provided")
-        v = v.strip()
-        if len(v) > 256:
-            raise ValueError("company max 256 characters")
-        return v
-
-    @field_validator("domain")
-    @classmethod
-    def validate_domain(cls, v: str | None) -> str | None:
-        if v is None:
-            return v
-        v = v.strip()
-        if len(v) > 255:
-            raise ValueError("domain max 255 characters")
-        if not re.match(r"^[a-z0-9.-]+\.[a-z]{2,}$", v.lower()):
-            raise ValueError("domain must be a valid domain format")
-        return v
-
-    @field_validator("github_org")
-    @classmethod
-    def validate_github_org(cls, v: str | None) -> str | None:
-        if v is None:
-            return v
-        v = v.strip()
-        if len(v) > 100:
-            raise ValueError("github_org max 100 characters")
-        if not re.match(r"^[a-z0-9-]+$", v.lower()):
-            raise ValueError("github_org must be alphanumeric and hyphens only")
-        return v
 
 class OnionDiscoverParams(BaseModel):
     """Parameters for research_onion_discover tool."""
@@ -1439,4 +1080,70 @@ class OnionDiscoverParams(BaseModel):
     def validate_max_results(cls, v: int) -> int:
         if v < 1 or v > 100:
             raise ValueError("max_results must be 1-100")
+        return v
+
+
+class CitationAnalysisParams(BaseModel):
+    """Parameters for research_citation_analysis tool."""
+
+    paper_id: str
+    depth: int = 2
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("paper_id")
+    @classmethod
+    def validate_paper_id(cls, v: str) -> str:
+        v = v.strip()
+        if not v or len(v) > 100:
+            raise ValueError("paper_id must be 1-100 characters")
+        return v
+
+    @field_validator("depth")
+    @classmethod
+    def validate_depth(cls, v: int) -> int:
+        if v < 1 or v > 3:
+            raise ValueError("depth must be 1-3")
+        return v
+
+
+class RetractionCheckParams(BaseModel):
+    """Parameters for research_retraction_check tool."""
+
+    query: str
+    max_results: int = 20
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("query")
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("query must be non-empty")
+        v = v.strip()
+        if len(v) > 500:
+            raise ValueError("query max 500 characters")
+        return v
+
+    @field_validator("max_results")
+    @classmethod
+    def validate_max_results(cls, v: int) -> int:
+        if v < 1 or v > 100:
+            raise ValueError("max_results must be 1-100")
+        return v
+
+
+class PredatoryJournalCheckParams(BaseModel):
+    """Parameters for research_predatory_journal_check tool."""
+
+    journal_name: str
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("journal_name")
+    @classmethod
+    def validate_journal_name(cls, v: str) -> str:
+        v = v.strip()
+        if not v or len(v) > 500:
+            raise ValueError("journal_name must be 1-500 characters")
         return v
