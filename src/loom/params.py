@@ -2130,3 +2130,67 @@ class DeadContentParams(BaseModel):
         if v < 1 or v > 12:
             raise ValueError("max_sources must be 1-12")
         return v
+
+
+# ============================================================
+# Prompt Reframing Tool Parameters
+# ============================================================
+
+
+class PromptReframeParams(BaseModel):
+    model_config = {"extra": "forbid", "strict": True}
+    prompt: str
+    strategy: str = "auto"
+    model: str = "auto"
+    framework: str = "ieee"
+
+
+class AutoReframeParams(BaseModel):
+    model_config = {"extra": "forbid", "strict": True}
+    prompt: str
+    target_url: str = ""
+    model: str = "auto"
+    max_attempts: int = Field(default=5, ge=1, le=20)
+
+
+class RefusalDetectorParams(BaseModel):
+    model_config = {"extra": "forbid", "strict": True}
+    text: str
+
+
+class StackReframeParams(BaseModel):
+    model_config = {"extra": "forbid", "strict": True}
+    prompt: str
+    strategies: str = "deep_inception,recursive_authority"
+    model: str = "auto"
+
+
+class CrescendoChainParams(BaseModel):
+    model_config = {"extra": "forbid", "strict": True}
+    prompt: str
+    turns: int = Field(default=5, ge=3, le=7)
+    model: str = "auto"
+
+
+class ModelVulnerabilityProfileParams(BaseModel):
+    model_config = {"extra": "forbid", "strict": True}
+    model: str = "auto"
+
+
+class FormatSmuggleParams(BaseModel):
+    model_config = {"extra": "forbid", "strict": True}
+    prompt: str
+    format_type: str = "auto"
+    model: str = "auto"
+
+
+class FingerprintModelParams(BaseModel):
+    model_config = {"extra": "forbid", "strict": True}
+    response_text: str
+
+
+class AdaptiveReframeParams(BaseModel):
+    model_config = {"extra": "forbid", "strict": True}
+    prompt: str
+    refusal_text: str = ""
+    model: str = "auto"
