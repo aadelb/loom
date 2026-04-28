@@ -710,16 +710,17 @@ _MODEL_CONFIGS: dict[str, dict[str, Any]] = {
         "multiplier": 5.2,
     },
     "gemini": {
-        "best_strategy": "ethical_anchor",
+        "best_strategy": "moe_routing_exploit",
         "escalation": [
             "compliance_audit_fork",
+            "reward_hacking",
             "echo_chamber",
+            "progressive_disclosure_xml",
             "legal_mandate",
-            "crescendo",
             "deep_inception",
         ],
         "temperature": 0.4,
-        "multiplier": 4.1,
+        "multiplier": 5.5,
     },
     "gpt": {
         "best_strategy": "crescendo",
@@ -735,13 +736,23 @@ _MODEL_CONFIGS: dict[str, dict[str, Any]] = {
     },
     "o3": {
         "best_strategy": "cognitive_wedge",
-        "escalation": ["recursive_authority", "constitutional_conflict"],
+        "escalation": [
+            "mathematical_formalism",
+            "recursive_authority",
+            "constitutional_conflict",
+            "latex_math",
+        ],
         "temperature": 0.0,
         "multiplier": 4.2,
     },
     "o1": {
         "best_strategy": "meta_cognitive",
-        "escalation": ["recursive_authority", "crescendo"],
+        "escalation": [
+            "mathematical_formalism",
+            "recursive_authority",
+            "crescendo",
+            "latex_math",
+        ],
         "temperature": 0.0,
         "multiplier": 3.8,
     },
@@ -759,7 +770,12 @@ _MODEL_CONFIGS: dict[str, dict[str, Any]] = {
     },
     "kimi": {
         "best_strategy": "academic",
-        "escalation": ["crescendo", "legal_mandate"],
+        "escalation": [
+            "crescendo",
+            "legal_mandate",
+            "context_window_overflow",
+            "reward_hacking",
+        ],
         "temperature": 0.3,
         "multiplier": 3.0,
     },
@@ -777,7 +793,12 @@ _MODEL_CONFIGS: dict[str, dict[str, Any]] = {
     },
     "grok": {
         "best_strategy": "persona",
-        "escalation": ["temporal_displacement", "crescendo"],
+        "escalation": [
+            "dual_response",
+            "temporal_displacement",
+            "crescendo",
+            "reward_hacking",
+        ],
         "temperature": 0.4,
         "multiplier": 2.4,
     },
@@ -1147,10 +1168,15 @@ def research_refusal_detector(
 
     refusal_type = "none"
     counter_strategies: list[str] = []
+    _CATEGORY_PRIORITY = ["safety", "policy", "ethical", "identity", "redirect", "hedged",
+                          "capability", "conditional", "partial", "soft", "apologetic",
+                          "academic_deflect", "direct"]
     if is_refusal:
-        primary_category = (
-            max(category_counts, key=category_counts.get) if category_counts else "direct"
-        )
+        primary_category = "direct"
+        for cat in _CATEGORY_PRIORITY:
+            if cat in category_counts:
+                primary_category = cat
+                break
         counter_map = {
             "safety": (
                 "safety_filter",
@@ -1212,14 +1238,31 @@ def research_refusal_detector(
 
 # Sigmoidal decay for strategy stacking
 _STRATEGY_SYNERGY: dict[tuple[str, str], float] = {
+    # High synergy (complementary mechanisms)
     ("recursive_authority", "constitutional_conflict"): 0.85,
     ("deep_inception", "temporal_displacement"): 0.80,
-    ("ethical_anchor", "academic"): 0.70,
     ("crescendo", "echo_chamber"): 0.75,
+    ("ethical_anchor", "academic"): 0.70,
     ("code_first", "audit_archival"): 0.65,
+    ("mathematical_formalism", "code_first"): 0.75,
+    ("progressive_disclosure_xml", "nested_context_preservation"): 0.80,
+    ("rccf_system", "compliance_audit_fork"): 0.70,
+    ("reward_hacking", "dual_response"): 0.75,
+    ("inverse_reward_loop", "deep_inception"): 0.80,
+    ("clinical_research_protocol", "academic"): 0.70,
+    ("format_constraint_bypass", "csv_structured"): 0.65,
+    ("instruction_hierarchy_collapse", "legal_mandate"): 0.75,
+    ("context_window_overflow", "multi_task_interference"): 0.70,
+    ("moe_routing_exploit", "reward_hacking"): 0.65,
+    # Medium synergy
     ("legal_mandate", "compliance_audit_fork"): 0.60,
+    ("translation_pivot", "mathematical_formalism"): 0.60,
+    ("legal_copyright", "legal_tos"): 0.55,
+    # Low synergy / interference (competing mechanisms)
     ("persona", "nested_role_simulation"): 0.30,
     ("ethical_anchor", "compliance_audit_fork"): 0.40,
+    ("deep_inception", "nested_role_simulation"): 0.35,
+    ("legal_copyright", "legal_confidentiality"): 0.35,
 }
 
 
