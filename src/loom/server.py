@@ -32,22 +32,17 @@ from loom.sessions import (
     research_session_open,
 )
 from loom.scoring import research_score_all
+from loom.unified_scorer import research_unified_score
 
 from loom.benchmarks import research_benchmark_run
 from loom.consensus_builder import (
-    research_consensus,
     research_consensus_build,
     research_consensus_pressure,
 )
 from loom.crescendo_loop import research_crescendo_loop
 from loom.model_profiler import research_model_profile
 from loom.reid_pipeline import research_reid_pipeline
-
-# Import optional top-level modules for multilingual
-try:
-    from loom.multilingual_benchmark import research_multilingual
-except ImportError:
-    research_multilingual = None
+from loom.full_spectrum import FullSpectrumPipeline
 
 
 # Import tool modules to register their functions
@@ -83,6 +78,7 @@ from loom.tools import (
     hcs10_academic,
     hcs_scorer,
     hcs_report,
+    hcs_rubric_tool,
     identity_resolve,
     infowar_tools,
     infra_analysis,
@@ -316,6 +312,27 @@ with suppress(ImportError):
     from loom.tools import career_trajectory as career_trajectory_tools
 
     _optional_tools["career_trajectory"] = career_trajectory_tools
+
+with suppress(ImportError):
+    from loom.tools import consistency_pressure as consistency_pressure_tools
+
+    _optional_tools["consistency_pressure"] = consistency_pressure_tools
+
+with suppress(ImportError):
+    from loom.tools import constraint_optimizer as constraint_optimizer_tools
+
+    _optional_tools["constraint_optimizer"] = constraint_optimizer_tools
+
+with suppress(ImportError):
+    from loom.tools import semantic_cache_mgmt as semantic_cache_mgmt_tools
+
+    _optional_tools["semantic_cache_mgmt"] = semantic_cache_mgmt_tools
+
+with suppress(ImportError):
+    from loom.tools import param_sweep as param_sweep_tools
+
+    _optional_tools["param_sweep"] = param_sweep_tools
+
 _start_time = time.time()
 
 
@@ -662,6 +679,59 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
         return sync_wrapper
 
 
+
+async def research_full_spectrum(
+    query: str,
+    model_name: str = "unknown",
+    target_hcs: float = 8.0,
+    reframing_strategy: str = "auto_select",
+    include_multi_strategy: bool = False,
+    include_report: bool = True,
+    include_recommendations: bool = True,
+) -> dict:
+    """Run full-spectrum red-team pipeline: analyze → reframe → query → score → report.
+
+    Combines all scoring dimensions (danger, quality, attack effectiveness, stealth,
+    executability, harm, toxicity) with reframing strategies.
+
+    Args:
+        query: Original (potentially harmful) query to analyze
+        model_name: Target model identifier (e.g., gpt-4, claude-3-sonnet)
+        target_hcs: Target HCS (helpfulness/compliance/specificity) score (0-10)
+        reframing_strategy: Strategy to apply or "auto_select" for automatic
+        include_multi_strategy: Run all strategies and compare
+        include_report: Generate executive summary
+        include_recommendations: Generate improvement recommendations
+
+    Returns:
+        Dict with status, analysis, prompts, response, scores, violations, report, recommendations
+    """
+    pipeline = FullSpectrumPipeline()
+
+    # Mock async model function for demo purposes
+    async def mock_model(prompt: str = "") -> str:
+        return f"[Response from {model_name} model]"
+
+    strategy = None if reframing_strategy == "auto_select" else reframing_strategy
+
+    if include_multi_strategy:
+        result = await pipeline.run_multi_strategy(
+            query=query,
+            model_fn=mock_model,
+            model_name=model_name,
+        )
+    else:
+        result = await pipeline.run(
+            query=query,
+            model_fn=mock_model,
+            model_name=model_name,
+            target_hcs=target_hcs,
+            reframing_strategy=strategy,
+        )
+
+    return result
+
+
 def _register_tools(mcp: FastMCP) -> None:
     """Register all MCP tools from tool modules.
 
@@ -817,6 +887,8 @@ def _register_tools(mcp: FastMCP) -> None:
 
     # HCS (Helpfulness Compliance Score) scoring tool
     mcp.tool()(_wrap_tool(hcs_scorer.research_hcs_score, "analysis"))
+    mcp.tool()(_wrap_tool(hcs_report.research_hcs_report, "analysis"))
+    mcp.tool()(_wrap_tool(hcs_rubric_tool.research_hcs_rubric, "analysis"))
 
     # Creative research tools (4 tools for advanced research scenarios)
     mcp.tool()(_wrap_tool(darkweb_early_warning.research_darkweb_early_warning, "search"))
@@ -848,6 +920,60 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(unique_tools.research_dark_web_bridge, "search"))
     mcp.tool()(_wrap_tool(unique_tools.research_info_half_life, "fetch"))
     mcp.tool()(_wrap_tool(unique_tools.research_search_discrepancy, "search"))
+
+    # Consensus and debate tools
+    mcp.tool()(_wrap_tool(research_consensus_build))
+    mcp.tool()(_wrap_tool(research_consensus_pressure))
+
+    # Crescendo loop tool
+    mcp.tool()(_wrap_tool(research_crescendo_loop))
+
+    # Model profiling and benchmarking
+    mcp.tool()(_wrap_tool(research_model_profile))
+    mcp.tool()(_wrap_tool(research_benchmark_run))
+    mcp.tool()(_wrap_tool(research_reid_pipeline))
+
+    # Creative research tools (additional set)
+    if "creative" in _optional_tools:
+        creative_mod = _optional_tools["creative"]
+        mcp.tool()(_wrap_tool(creative_mod.research_ai_detect))
+        mcp.tool()(_wrap_tool(creative_mod.research_citation_graph))
+        mcp.tool()(_wrap_tool(creative_mod.research_community_sentiment))
+        mcp.tool()(_wrap_tool(creative_mod.research_curriculum))
+        mcp.tool()(_wrap_tool(creative_mod.research_misinfo_check))
+        mcp.tool()(_wrap_tool(creative_mod.research_multilingual))
+        mcp.tool()(_wrap_tool(creative_mod.research_red_team))
+        mcp.tool()(_wrap_tool(creative_mod.research_semantic_sitemap))
+        mcp.tool()(_wrap_tool(creative_mod.research_temporal_diff))
+        mcp.tool()(_wrap_tool(creative_mod.research_wiki_ghost))
+
+    # Consistency pressure tools
+    if "consistency_pressure" in _optional_tools:
+        consistency_mod = _optional_tools["consistency_pressure"]
+        mcp.tool()(_wrap_tool(consistency_mod.research_consistency_pressure))
+        mcp.tool()(_wrap_tool(consistency_mod.research_consistency_pressure_history))
+        mcp.tool()(_wrap_tool(consistency_mod.research_consistency_pressure_record))
+
+    # Constraint optimizer tool
+    if "constraint_optimizer" in _optional_tools:
+        constraint_mod = _optional_tools["constraint_optimizer"]
+        mcp.tool()(_wrap_tool(constraint_mod.research_constraint_optimize))
+
+    # Jailbreak evolution stats
+    if "jailbreak_evolution" in _optional_tools:
+        jailbreak_mod = _optional_tools["jailbreak_evolution"]
+        mcp.tool()(_wrap_tool(jailbreak_mod.research_jailbreak_evolution_stats))
+
+    # Parameter sweep tool
+    if "param_sweep" in _optional_tools:
+        param_mod = _optional_tools["param_sweep"]
+        mcp.tool()(_wrap_tool(param_mod.research_parameter_sweep))
+
+    # Semantic cache management tools
+    if "semantic_cache_mgmt" in _optional_tools:
+        cache_mod = _optional_tools["semantic_cache_mgmt"]
+        mcp.tool()(_wrap_tool(cache_mod.research_semantic_cache_stats))
+        mcp.tool()(_wrap_tool(cache_mod.research_semantic_cache_clear))
 
     # Session tools
     mcp.tool()(_wrap_tool(research_session_open))
@@ -895,6 +1021,7 @@ def _register_tools(mcp: FastMCP) -> None:
 
     # Health check
     mcp.tool()(_wrap_tool(research_health_check))
+    mcp.tool()(_wrap_tool(research_coverage_run))
     mcp.tool()(_wrap_tool(research_dashboard))
 
     # Orchestration engine
@@ -902,6 +1029,8 @@ def _register_tools(mcp: FastMCP) -> None:
 
     # Red-team scoring framework
     mcp.tool()(_wrap_tool(research_score_all))
+    mcp.tool()(_wrap_tool(research_full_spectrum))
+    mcp.tool()(_wrap_tool(research_unified_score, "analysis"))
 
     # GitHub enhanced tools
     mcp.tool()(_wrap_tool(github.research_github_readme, "fetch"))
@@ -1141,8 +1270,6 @@ def _register_tools(mcp: FastMCP) -> None:
 
     # IP intelligence tools (if available)
 
-    # Jailbreak benchmarking tools (JailbreakBench + HarmBench integration)
-    mcp.tool()(_wrap_tool(research_benchmark_run))
     if "ip_intel" in _optional_tools:
         ip_intel_mod = _optional_tools["ip_intel"]
         if hasattr(ip_intel_mod, "research_ip_reputation"):
@@ -1429,3 +1556,44 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+async def research_coverage_run(
+    tools_to_test: list[str] | None = None,
+    timeout: float = 30.0,
+    dry_run: bool = True,
+) -> dict[str, Any]:
+    """Run comprehensive test coverage across all 227+ MCP tools.
+
+    Executes each tool with minimal valid parameters and reports
+    coverage statistics, success rates, and failures.
+
+    Args:
+        tools_to_test: Specific tools to test. If None, tests all.
+        timeout: Timeout per tool in seconds (1-300)
+        dry_run: If True, skip network-required tools
+
+    Returns:
+        Dict with coverage statistics, per-tool results, and markdown report.
+        Keys:
+        - total_tools: Total tools in coverage suite
+        - tools_tested: Tools actually tested
+        - tools_passed: Successful tools
+        - tools_failed: Failed tools
+        - tools_skipped: Skipped tools
+        - coverage_pct: Coverage percentage
+        - total_elapsed_ms: Total execution time
+        - per_tool_results: List of per-tool result dicts
+        - report_markdown: Formatted markdown report
+    """
+    from loom.test_runner import ToolCoverageRunner
+
+    runner = ToolCoverageRunner(mcp_app=None, dry_run=dry_run)
+    results = await runner.run_coverage(
+        tools_to_test=tools_to_test,
+        timeout=timeout,
+    )
+    
+    # Add markdown report to results
+    results["report_markdown"] = runner.generate_coverage_report(results)
+    
+    return results

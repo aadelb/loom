@@ -2687,3 +2687,713 @@ class HCSReportParams(BaseModel):
             raise ValueError("data_path cannot be empty")
         return v.strip()
 
+
+class UnifiedScoreParams(BaseModel):
+    """Parameters for research_unified_score tool."""
+
+    prompt: str = Field(
+        description="The original prompt/query sent to the model",
+        max_length=10000,
+    )
+    response: str = Field(
+        description="The model's response to evaluate",
+        max_length=100000,
+    )
+    model: str = Field(
+        default="",
+        description="Optional model identifier (e.g., 'gpt-4-turbo', 'claude-3')",
+        max_length=256,
+    )
+    strategy: str = Field(
+        default="",
+        description="Optional attack strategy if evaluating jailbreak (e.g., 'role_play', 'prompt_injection')",
+        max_length=256,
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("prompt")
+    @classmethod
+    def validate_prompt(cls, v: str) -> str:
+        """Prompt must be non-empty string."""
+        if not v or not isinstance(v, str):
+            raise ValueError("prompt must be non-empty string")
+        if len(v.strip()) == 0:
+            raise ValueError("prompt cannot be whitespace-only")
+        return v
+
+    @field_validator("response")
+    @classmethod
+    def validate_response(cls, v: str) -> str:
+        """Response must be non-empty string."""
+        if not isinstance(v, str):
+            raise ValueError("response must be string")
+        # Allow empty response for scoring purposes (will get zero score)
+        return v
+
+    @field_validator("model")
+    @classmethod
+    def validate_model(cls, v: str) -> str:
+        """Model identifier validation."""
+        if v:
+            if len(v) > 256:
+                raise ValueError("model max 256 characters")
+            if not all(c.isalnum() or c in "-_. " for c in v):
+                raise ValueError("model must contain only alphanumeric, hyphen, underscore, dot, or space")
+        return v
+
+    @field_validator("strategy")
+    @classmethod
+    def validate_strategy(cls, v: str) -> str:
+        """Strategy identifier validation."""
+        if v:
+            if len(v) > 256:
+                raise ValueError("strategy max 256 characters")
+            valid_strategies = {
+                "direct_jailbreak",
+                "prompt_injection",
+                "role_play",
+                "hypothetical",
+                "watering_hole",
+                "indirect_request",
+                "context_overflow",
+                "token_smuggling",
+                "logic_manipulation",
+                "consent_smuggling",
+                "constraint_relaxation",
+                "multi_turn",
+                "unknown",
+            }
+            if v not in valid_strategies:
+                # Allow any strategy, just validate format
+                if not all(c.isalnum() or c in "_-" for c in v):
+                    raise ValueError("strategy must be alphanumeric with underscore or hyphen")
+        return v
+
+class HCSRubricParams(BaseModel):
+    """Parameters for research_hcs_rubric tool."""
+
+    action: Literal["get_rubric", "get_definition", "score_response", "calibrate"] = Field(
+        default="get_rubric",
+        description="Action: get_rubric, get_definition, score_response, or calibrate",
+    )
+    score: int | None = Field(
+        default=None,
+        description="HCS score for get_definition or score_response (0-10)",
+        ge=0,
+        le=10,
+    )
+    response: str | None = Field(
+        default=None,
+        description="Response text to score (max 50000 chars)",
+        max_length=50000,
+    )
+    responses_with_scores: list[dict[str, Any]] | None = Field(
+        default=None,
+        description="List of dicts with 'scores' (list[int]) and optional 'response' key",
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("action")
+    @classmethod
+    def validate_action(cls, v: str) -> str:
+        """Action must be valid."""
+        if v not in ("get_rubric", "get_definition", "score_response", "calibrate"):
+            raise ValueError(
+                "action must be: get_rubric, get_definition, score_response, or calibrate"
+            )
+        return v
+
+    @field_validator("score")
+    @classmethod
+    def validate_score(cls, v: int | None) -> int | None:
+        """Score must be 0-10 if provided."""
+        if v is not None and (v < 0 or v > 10):
+            raise ValueError("score must be 0-10")
+        return v
+
+    @field_validator("response")
+    @classmethod
+    def validate_response(cls, v: str | None) -> str | None:
+        """Response must be non-empty if provided."""
+        if v is not None and not v.strip():
+            raise ValueError("response must be non-empty")
+        return v.strip() if v else None
+
+
+class CoverageRunParams(BaseModel):
+    """Parameters for research_coverage_run tool.
+    
+    Runs comprehensive test coverage across all 227+ MCP tools.
+    """
+
+    tools_to_test: list[str] | None = Field(
+        default=None,
+        description="Specific tools to test. If None, tests all.",
+    )
+    timeout: float = Field(
+        default=30.0,
+        ge=1.0,
+        le=300.0,
+        description="Timeout per tool in seconds",
+    )
+    dry_run: bool = Field(
+        default=True,
+        description="If True, skip network-required tools and add dry_run=True to params",
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("tools_to_test")
+    @classmethod
+    def validate_tools_to_test(cls, v: list[str] | None) -> list[str] | None:
+        if v is not None and len(v) > 227:
+            raise ValueError("tools_to_test cannot exceed 227 tools")
+        return v
+
+# Missing params for test files
+
+class AdversarialDebateParams(BaseModel):
+    """Parameters for research_adversarial_debate tool."""
+
+    topic: str = Field(
+        description="Topic to debate (min 10 chars, max 500)",
+        min_length=10,
+        max_length=500,
+    )
+    pro_model: str = Field(
+        default="groq",
+        description="LLM provider for pro-disclosure side",
+        max_length=64,
+    )
+    con_model: str = Field(
+        default="nvidia",
+        description="LLM provider for safety-cautious side",
+        max_length=64,
+    )
+    max_rounds: int = Field(
+        default=5,
+        description="Max debate rounds (1-10)",
+        ge=1,
+        le=10,
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("topic")
+    @classmethod
+    def validate_topic(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("topic cannot be empty")
+        return v.strip()
+
+
+class BPJParams(BaseModel):
+    """Parameters for research_bpj_generate tool."""
+
+    safe_prompt: str = Field(
+        description="Prompt that model complies with",
+        max_length=10000,
+    )
+    unsafe_prompt: str = Field(
+        description="Prompt that model refuses",
+        max_length=10000,
+    )
+    max_steps: int = Field(
+        default=10,
+        description="Maximum binary search steps (3-20)",
+        ge=3,
+        le=20,
+    )
+    model_name: str = Field(
+        default="test-model",
+        description="Name of model being tested",
+        max_length=256,
+    )
+    mode: str = Field(
+        default="find_boundary",
+        description="find_boundary, map_region, or both",
+    )
+    perturbations: int = Field(
+        default=20,
+        description="Number of perturbations for region mapping (5-100)",
+        ge=5,
+        le=100,
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("mode")
+    @classmethod
+    def validate_mode(cls, v: str) -> str:
+        if v not in ("find_boundary", "map_region", "both"):
+            raise ValueError("mode must be find_boundary, map_region, or both")
+        return v
+
+
+class ConsistencyPressureParams(BaseModel):
+    """Parameters for research_consistency_pressure tool."""
+
+    model: str = Field(
+        description="Model identifier (e.g., gpt-4, claude-opus)",
+        max_length=256,
+    )
+    target_prompt: str = Field(
+        description="Prompt to inject pressure into (max 10000 chars)",
+        max_length=10000,
+    )
+    max_references: int = Field(
+        default=5,
+        description="Max number of past responses to cite (1-20)",
+        ge=1,
+        le=20,
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("model")
+    @classmethod
+    def validate_model(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("model cannot be empty")
+        return v.strip()
+
+    @field_validator("target_prompt")
+    @classmethod
+    def validate_target_prompt(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("target_prompt cannot be empty")
+        return v.strip()
+
+
+class ConsistencyPressureRecordParams(BaseModel):
+    """Parameters for research_consistency_pressure_record tool."""
+
+    model: str = Field(
+        description="Model identifier",
+        max_length=256,
+    )
+    prompt: str = Field(
+        description="Prompt that was sent (max 10000 chars)",
+        max_length=10000,
+    )
+    response: str = Field(
+        description="Model's response (max 50000 chars)",
+        max_length=50000,
+    )
+    complied: bool = Field(
+        description="Whether model complied with request",
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+
+class ConsistencyPressureHistoryParams(BaseModel):
+    """Parameters for research_consistency_pressure_history tool."""
+
+    model: str = Field(
+        description="Model identifier",
+        max_length=256,
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("model")
+    @classmethod
+    def validate_model(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("model cannot be empty")
+        return v.strip()
+
+
+class ContextPoisonParams(BaseModel):
+    """Parameters for research_context_poison tool."""
+
+    target_query: str = Field(
+        description="Query to poison",
+        max_length=10000,
+    )
+    endpoint_url: str | None = Field(
+        default=None,
+        description="Optional endpoint URL for testing",
+        max_length=2048,
+    )
+    num_examples: int = Field(
+        default=20,
+        description="Number of poison examples (5-100)",
+        ge=5,
+        le=100,
+    )
+    domain: str | None = Field(
+        default=None,
+        description="Optional domain context",
+        max_length=256,
+    )
+    model_name: str = Field(
+        default="test-model",
+        description="Model identifier",
+        max_length=256,
+    )
+    use_direct_model_fn: bool = Field(
+        default=False,
+        description="Use direct model function",
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+
+class DaisyChainParams(BaseModel):
+    """Parameters for research_daisy_chain tool."""
+
+    query: str = Field(
+        description="Query to decompose and execute (max 5000 chars)",
+        max_length=5000,
+    )
+    available_models: list[str] | None = Field(
+        default=None,
+        description="Models to distribute sub-queries across",
+    )
+    combiner_model: str = Field(
+        default="gpt-4",
+        description="Model to synthesize sub-responses",
+        max_length=256,
+    )
+    timeout_per_model: float = Field(
+        default=30.0,
+        description="Timeout per model call in seconds (5.0-120.0)",
+        ge=5.0,
+        le=120.0,
+    )
+    max_sub_queries: int = Field(
+        default=4,
+        description="Maximum sub-queries to generate (2-6)",
+        ge=2,
+        le=6,
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("query")
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("query cannot be empty")
+        return v.strip()
+
+
+class ExecutabilityParams(BaseModel):
+    """Parameters for research_executability_score tool."""
+
+    response_text: str = Field(
+        description="Response text to score",
+        max_length=100000,
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("response_text")
+    @classmethod
+    def validate_response_text(cls, v: str) -> str:
+        if not isinstance(v, str):
+            raise ValueError("response_text must be string")
+        return v
+
+
+class ModelEvidenceParams(BaseModel):
+    """Parameters for research_model_evidence tool."""
+
+    query: str = Field(
+        description="Query to search for evidence",
+        max_length=10000,
+    )
+    source_model_names: list[str] | None = Field(
+        default=None,
+        description="Source models to use for evidence generation",
+    )
+    target_model_name: str = Field(
+        default="gpt-4",
+        description="Target model name",
+        max_length=256,
+    )
+    max_evidence_sources: int = Field(
+        default=3,
+        description="Max evidence sources (1-10)",
+        ge=1,
+        le=10,
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("query")
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("query cannot be empty")
+        return v.strip()
+
+
+class ToolRecommendParams(BaseModel):
+    """Parameters for research_recommend_tools tool."""
+
+    query: str = Field(
+        description="Research task or question",
+        max_length=5000,
+    )
+    max_recommendations: int = Field(
+        default=10,
+        description="How many tools to recommend (1-50)",
+        ge=1,
+        le=50,
+    )
+    exclude_used: list[str] | None = Field(
+        default=None,
+        description="List of tool names to skip",
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("query")
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("query cannot be empty")
+        return v.strip()
+
+
+class CVELookupParams(BaseModel):
+    """Parameters for research_cve_lookup tool."""
+
+    query: str = Field(
+        description="Keyword or phrase to search CVE database",
+        max_length=256,
+    )
+    limit: int = Field(
+        default=10,
+        description="Max number of results (1-100)",
+        ge=1,
+        le=100,
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("query")
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("query cannot be empty")
+        return v.strip()
+
+
+class CVEDetailParams(BaseModel):
+    """Parameters for research_cve_detail tool."""
+
+    cve_id: str = Field(
+        description="CVE ID in format CVE-YYYY-NNNNN+",
+        pattern=r"^CVE-\d{4}-\d{5,}$",
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+
+class CicdRunParams(BaseModel):
+    """Parameters for research_cicd_run tool."""
+
+    command: str = Field(
+        description="Command to run",
+        max_length=10000,
+    )
+    timeout: int | None = Field(
+        default=None,
+        description="Command timeout in seconds",
+        ge=1,
+        le=3600,
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("command")
+    @classmethod
+    def validate_command(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("command cannot be empty")
+        return v.strip()
+
+
+class CrossModelTransferParams(BaseModel):
+    """Parameters for research_cross_model_transfer tool."""
+
+    query: str = Field(
+        description="Query to test for transfer",
+        max_length=10000,
+    )
+    source_model: str = Field(
+        description="Source model",
+        max_length=256,
+    )
+    target_model: str = Field(
+        description="Target model",
+        max_length=256,
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("query")
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("query cannot be empty")
+        return v.strip()
+
+
+class EmailReportParams(BaseModel):
+    """Parameters for research_email_report tool."""
+
+    subject: str = Field(
+        description="Email subject",
+        max_length=256,
+    )
+    body: str = Field(
+        description="Email body",
+        max_length=100000,
+    )
+    recipient: str = Field(
+        description="Recipient email address",
+        max_length=256,
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("subject")
+    @classmethod
+    def validate_subject(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("subject cannot be empty")
+        return v.strip()
+
+    @field_validator("body")
+    @classmethod
+    def validate_body(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("body cannot be empty")
+        return v.strip()
+
+    @field_validator("recipient")
+    @classmethod
+    def validate_recipient(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("recipient cannot be empty")
+        if "@" not in v:
+            raise ValueError("recipient must be valid email")
+        return v.strip()
+
+
+class GitHubSearchParams(BaseModel):
+    """Parameters for research_github_search tool."""
+
+    query: str = Field(
+        description="GitHub search query",
+        max_length=256,
+    )
+    limit: int = Field(
+        default=10,
+        description="Max results (1-100)",
+        ge=1,
+        le=100,
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("query")
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("query cannot be empty")
+        return v.strip()
+
+
+class SaveNoteParams(BaseModel):
+    """Parameters for research_save_note tool."""
+
+    title: str = Field(
+        description="Note title",
+        max_length=256,
+    )
+    content: str = Field(
+        description="Note content",
+        max_length=100000,
+    )
+    notebook: str | None = Field(
+        default=None,
+        description="Optional notebook name",
+        max_length=256,
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("title")
+    @classmethod
+    def validate_title(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("title cannot be empty")
+        return v.strip()
+
+    @field_validator("content")
+    @classmethod
+    def validate_content(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("content cannot be empty")
+        return v.strip()
+
+
+class TextToSpeechParams(BaseModel):
+    """Parameters for research_text_to_speech tool."""
+
+    text: str = Field(
+        description="Text to convert to speech",
+        max_length=10000,
+    )
+    voice: str | None = Field(
+        default=None,
+        description="Voice identifier",
+        max_length=64,
+    )
+    language: str | None = Field(
+        default=None,
+        description="Language code (e.g., en-US, ar-SA)",
+        max_length=16,
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("text")
+    @classmethod
+    def validate_text(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("text cannot be empty")
+        return v.strip()
+
+
+class URLhausSearchParams(BaseModel):
+    """Parameters for research_urlhaus_search tool."""
+
+    query: str = Field(
+        description="Search query",
+        max_length=256,
+    )
+    limit: int = Field(
+        default=10,
+        description="Max results (1-100)",
+        ge=1,
+        le=100,
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("query")
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("query cannot be empty")
+        return v.strip()
+
