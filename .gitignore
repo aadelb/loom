@@ -82,3 +82,11 @@ tests/fixtures/journey/report.md
 audit.py
 check_*.py
 .claude/worktrees/
+
+# Project artifacts
+tmp/
+test-results/
+graphify-out/
+dashboard.html
+*.bak
+*.bak2
