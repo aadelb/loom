@@ -3913,3 +3913,476 @@ class MultiPageGraphParams(BaseModel):
         if len(v) > 5000:
             raise ValueError("query max 5000 chars")
         return v
+
+
+class SherlockLookupParams(BaseModel):
+    """Parameters for research_sherlock_lookup tool."""
+
+    username: str
+    platforms: list[str] | None = None
+    timeout: int = 30
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("username", mode="before")
+    @classmethod
+    def validate_username(cls, v: str) -> str:
+        v = v.strip() if isinstance(v, str) else ""
+        if not v or len(v) > 255:
+            raise ValueError("username must be 1-255 characters")
+        # Allow alphanumeric, underscore, hyphen, period, plus
+        if not re.match(r"^[a-z0-9._\-+]+$", v, re.IGNORECASE):
+            raise ValueError("username contains disallowed characters")
+        return v
+
+    @field_validator("platforms")
+    @classmethod
+    def validate_platforms(cls, v: list[str] | None) -> list[str] | None:
+        if v is None:
+            return v
+        if not isinstance(v, list):
+            raise ValueError("platforms must be a list of strings")
+        if len(v) > 50:
+            raise ValueError("platforms list cannot exceed 50 items")
+        for platform in v:
+            if not isinstance(platform, str):
+                raise ValueError("each platform must be a string")
+            if len(platform) > 100:
+                raise ValueError("platform name cannot exceed 100 characters")
+            if not re.match(r"^[a-z0-9_\-]+$", platform, re.IGNORECASE):
+                raise ValueError(f"platform '{platform}' contains disallowed characters")
+        return v
+
+    @field_validator("timeout")
+    @classmethod
+    def validate_timeout(cls, v: int) -> int:
+        if v < 1 or v > 300:
+            raise ValueError("timeout must be 1-300 seconds")
+        return v
+
+
+class SherlockBatchParams(BaseModel):
+    """Parameters for research_sherlock_batch tool."""
+
+    usernames: list[str]
+    platforms: list[str] | None = None
+    timeout: int = 30
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("usernames", mode="before")
+    @classmethod
+    def validate_usernames(cls, v: list[str]) -> list[str]:
+        if not isinstance(v, list):
+            raise ValueError("usernames must be a list")
+        if not v:
+            raise ValueError("usernames list cannot be empty")
+        if len(v) > 100:
+            raise ValueError("usernames list cannot exceed 100 items")
+        # Strip all usernames first
+        stripped = [u.strip() if isinstance(u, str) else u for u in v]
+        for username in stripped:
+            if not isinstance(username, str):
+                raise ValueError("each username must be a string")
+            if not username or len(username) > 255:
+                raise ValueError("each username must be 1-255 characters")
+            if not re.match(r"^[a-z0-9._\-+]+$", username, re.IGNORECASE):
+                raise ValueError(
+                    f"username '{username}' contains disallowed characters"
+                )
+        return stripped
+
+    @field_validator("platforms")
+    @classmethod
+    def validate_platforms(cls, v: list[str] | None) -> list[str] | None:
+        if v is None:
+            return v
+        if not isinstance(v, list):
+            raise ValueError("platforms must be a list of strings")
+        if len(v) > 50:
+            raise ValueError("platforms list cannot exceed 50 items")
+        for platform in v:
+            if not isinstance(platform, str):
+                raise ValueError("each platform must be a string")
+            if len(platform) > 100:
+                raise ValueError("platform name cannot exceed 100 characters")
+            if not re.match(r"^[a-z0-9_\-]+$", platform, re.IGNORECASE):
+                raise ValueError(f"platform '{platform}' contains disallowed characters")
+        return v
+
+    @field_validator("timeout")
+    @classmethod
+    def validate_timeout(cls, v: int) -> int:
+        if v < 1 or v > 300:
+            raise ValueError("timeout must be 1-300 seconds")
+        return v
+
+
+class SubfinderParams(BaseModel):
+    """Parameters for research_subfinder tool."""
+
+    domain: str
+    timeout: int = 60
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("domain")
+    @classmethod
+    def validate_domain(cls, v: str) -> str:
+        v = v.strip()
+        if not v or len(v) > 255:
+            raise ValueError("domain must be 1-255 characters")
+        # Allow alphanumeric, dots, hyphens, underscores
+        if not re.match(r"^[a-z0-9._-]+$", v, re.IGNORECASE):
+            raise ValueError("domain contains disallowed characters")
+        return v
+
+    @field_validator("timeout")
+    @classmethod
+    def validate_timeout(cls, v: int) -> int:
+        if v < 1 or v > 120:
+            raise ValueError("timeout must be 1-120 seconds")
+        return v
+
+
+class KatanaCrawlParams(BaseModel):
+    """Parameters for research_katana_crawl tool."""
+
+    url: str
+    depth: int = 3
+    max_pages: int = 100
+    timeout: int = 60
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def validate_url_field(cls, v: str) -> str:
+        return validate_url(v)
+
+    @field_validator("depth")
+    @classmethod
+    def validate_depth(cls, v: int) -> int:
+        if v < 0 or v > 5:
+            raise ValueError("depth must be 0-5")
+        return v
+
+    @field_validator("max_pages")
+    @classmethod
+    def validate_max_pages(cls, v: int) -> int:
+        if v < 1 or v > 1000:
+            raise ValueError("max_pages must be 1-1000")
+        return v
+
+    @field_validator("timeout")
+    @classmethod
+    def validate_timeout(cls, v: int) -> int:
+        if v < 1 or v > 300:
+            raise ValueError("timeout must be 1-300 seconds")
+        return v
+
+
+class HttpxProbeParams(BaseModel):
+    """Parameters for research_httpx_probe tool."""
+
+    targets: list[str]
+    ports: str = "80,443,8080,8443"
+    timeout: int = 60
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("targets")
+    @classmethod
+    def validate_targets(cls, v: list[str]) -> list[str]:
+        if not v:
+            raise ValueError("targets list cannot be empty")
+        if len(v) > 100:
+            raise ValueError("targets list max 100 items")
+        return v
+
+    @field_validator("ports")
+    @classmethod
+    def validate_ports(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("ports cannot be empty")
+        # Allow comma-separated port numbers
+        if not re.match(r"^[0-9,]+$", v):
+            raise ValueError("ports must be comma-separated numbers")
+        # Check each port is valid (1-65535)
+        ports = [p.strip() for p in v.split(",")]
+        for port_str in ports:
+            try:
+                port = int(port_str)
+                if port < 1 or port > 65535:
+                    raise ValueError(f"port {port} out of range 1-65535")
+            except ValueError:
+                raise ValueError(f"invalid port: {port_str}")
+        return v
+
+    @field_validator("timeout")
+    @classmethod
+    def validate_timeout(cls, v: int) -> int:
+        if v < 1 or v > 300:
+            raise ValueError("timeout must be 1-300 seconds")
+        return v
+
+
+class NucleiScanParams(BaseModel):
+    """Parameters for research_nuclei_scan tool."""
+
+    target: str
+    templates: str = "cves,exposures"
+    severity: str = "medium,high,critical"
+    timeout: int = 120
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("target", mode="before")
+    @classmethod
+    def validate_target(cls, v: str) -> str:
+        return validate_url(v)
+
+    @field_validator("templates")
+    @classmethod
+    def validate_templates(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("templates cannot be empty")
+        # Allow alphanumeric, commas, hyphens
+        if not re.match(r"^[a-z0-9,\-]+$", v.lower()):
+            raise ValueError("templates contains invalid characters")
+        return v
+
+    @field_validator("severity")
+    @classmethod
+    def validate_severity(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("severity cannot be empty")
+        # Allow alphanumeric, commas, hyphens
+        if not re.match(r"^[a-z0-9,\-]+$", v.lower()):
+            raise ValueError("severity contains invalid characters")
+        return v
+
+    @field_validator("timeout")
+    @classmethod
+    def validate_timeout(cls, v: int) -> int:
+        if v < 1 or v > 600:
+            raise ValueError("timeout must be 1-600 seconds")
+        return v
+
+
+class TorbotParams(BaseModel):
+    """Parameters for research_torbot tool."""
+
+    url: str
+    depth: int = 2
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def validate_url_field(cls, v: str) -> str:
+        return validate_url(v)
+
+    @field_validator("depth")
+    @classmethod
+    def validate_depth(cls, v: int) -> int:
+        if v < 1 or v > 5:
+            raise ValueError("depth must be 1-5")
+        return v
+
+
+class AmassEnumParams(BaseModel):
+    """Parameters for research_amass_enum tool."""
+
+    domain: str
+    passive: bool = True
+    timeout: int = 120
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("domain")
+    @classmethod
+    def validate_domain(cls, v: str) -> str:
+        if not v or len(v) > 255:
+            raise ValueError("domain must be 1-255 characters")
+        if not re.match(r"^[a-z0-9._-]+$", v, re.IGNORECASE):
+            raise ValueError("domain contains disallowed characters")
+        return v
+
+    @field_validator("timeout")
+    @classmethod
+    def validate_timeout(cls, v: int) -> int:
+        if v < 1 or v > 600:
+            raise ValueError("timeout must be 1-600 seconds")
+        return v
+
+
+class AmassIntelParams(BaseModel):
+    """Parameters for research_amass_intel tool."""
+
+    domain: str
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("domain")
+    @classmethod
+    def validate_domain(cls, v: str) -> str:
+        if not v or len(v) > 255:
+            raise ValueError("domain must be 1-255 characters")
+        if not re.match(r"^[a-z0-9._-]+$", v, re.IGNORECASE):
+            raise ValueError("domain contains disallowed characters")
+        return v
+
+
+class InstagramParams(BaseModel):
+    """Parameters for research_instagram tool."""
+
+    username: str
+    max_posts: int = 10
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v: str) -> str:
+        if not v or len(v) > 50:
+            raise ValueError("username must be 1-50 characters")
+        if "@" in v:
+            v = v.lstrip("@")
+        # Instagram usernames: alphanumeric, underscore, period
+        if not all(c.isalnum() or c in ("_", ".") for c in v):
+            raise ValueError("username must contain only alphanumeric, underscore, or period")
+        return v
+
+    @field_validator("max_posts")
+    @classmethod
+    def validate_max_posts(cls, v: int) -> int:
+        if v < 1 or v > 100:
+            raise ValueError("max_posts must be 1-100")
+        return v
+
+
+class ArticleExtractParams(BaseModel):
+    """Parameters for research_article_extract tool."""
+
+    url: str
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def validate_url_field(cls, v: str) -> str:
+        return validate_url(v)
+
+
+class ArticleBatchParams(BaseModel):
+    """Parameters for research_article_batch tool."""
+
+    urls: list[str]
+    max_concurrent: int = 5
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("urls")
+    @classmethod
+    def validate_urls(cls, v: list[str]) -> list[str]:
+        if not v:
+            raise ValueError("urls list cannot be empty")
+        if len(v) > 200:
+            raise ValueError("urls list max 200 items")
+        return [validate_url(url) for url in v]
+
+    @field_validator("max_concurrent")
+    @classmethod
+    def validate_max_concurrent(cls, v: int) -> int:
+        if v < 1 or v > 20:
+            raise ValueError("max_concurrent must be 1-20")
+        return v
+
+
+class OCRAdvancedParams(BaseModel):
+    """Parameters for research_ocr_advanced tool."""
+
+    image_path_or_url: str
+    languages: list[str] | None = Field(None, min_items=1, max_items=10)
+    detail: bool = True
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("image_path_or_url", mode="before")
+    @classmethod
+    def validate_image_path(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("image_path_or_url cannot be empty")
+        # Validate if it's a URL
+        if v.startswith(("http://", "https://")):
+            return validate_url(v)
+        # Otherwise, it's a local path - just validate it's a reasonable length
+        if len(v) > 500:
+            raise ValueError("image_path_or_url too long")
+        return v
+
+    @field_validator("languages")
+    @classmethod
+    def validate_languages(cls, v: list[str] | None) -> list[str] | None:
+        if v is None:
+            return None
+        # Validate each language code (2-5 chars)
+        for lang in v:
+            if not lang or len(lang) > 5:
+                raise ValueError(f"Invalid language code: {lang}")
+            # Language codes can be 2-3 chars (en, fr) or with underscore/hyphen (zh_CN, pt-BR)
+            if not all(c.isalnum() or c in ("_", "-") for c in lang):
+                raise ValueError(f"Invalid language code: {lang}")
+        return v
+
+
+class PDFAdvancedParams(BaseModel):
+    """Parameters for research_pdf_advanced tool."""
+
+    pdf_path_or_url: str
+    extract_images: bool = False
+    extract_tables: bool = True
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("pdf_path_or_url", mode="before")
+    @classmethod
+    def validate_pdf_path(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("pdf_path_or_url cannot be empty")
+        # Validate if it's a URL
+        if v.startswith(("http://", "https://")):
+            return validate_url(v)
+        # Otherwise, it's a local path - just validate it's a reasonable length
+        if len(v) > 500:
+            raise ValueError("pdf_path_or_url too long")
+        return v
+
+
+class DocumentAnalyzeParams(BaseModel):
+    """Parameters for research_document_analyze tool."""
+
+    file_path_or_url: str
+    analysis: Literal["full", "text", "fast"] = "full"
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("file_path_or_url", mode="before")
+    @classmethod
+    def validate_file_path(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("file_path_or_url cannot be empty")
+        # Validate if it's a URL
+        if v.startswith(("http://", "https://")):
+            return validate_url(v)
+        # Otherwise, it's a local path - just validate it's a reasonable length
+        if len(v) > 500:
+            raise ValueError("file_path_or_url too long")
+        return v

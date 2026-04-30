@@ -131,7 +131,7 @@ class TestStructuredCrawlParams:
         from pydantic import ValidationError
 
         with pytest.raises(ValidationError):
-            StructuredCrawlParams(url="https://example.com", schema={})
+            StructuredCrawlParams(url="https://example.com", schema_map={})
 
     def test_structured_crawl_params_rejects_long_selector(self) -> None:
         """StructuredCrawlParams rejects overly long CSS selectors."""
@@ -340,7 +340,7 @@ class TestResearchStructuredCrawl:
         """Structured crawl rejects empty schema."""
         result = await research_structured_crawl(
             url="https://example.com",
-            schema={},
+            schema_map={},
         )
 
         assert isinstance(result, StructuredCrawlResponse)

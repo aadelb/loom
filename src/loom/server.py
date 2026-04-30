@@ -859,6 +859,11 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(domain_intel.research_dns_lookup, "fetch"))
     mcp.tool()(_wrap_tool(domain_intel.research_nmap_scan, "fetch"))
 
+    # Dark reconnaissance tools (TorBot and OWASP Amass integration)
+    mcp.tool()(_wrap_tool(dark_recon.research_torbot, "fetch"))
+    mcp.tool()(_wrap_tool(dark_recon.research_amass_enum, "fetch"))
+    mcp.tool()(_wrap_tool(dark_recon.research_amass_intel, "fetch"))
+
     # Access and content authenticity tools (5 tools for legal monitoring, open access, and deepfake detection)
     mcp.tool()(_wrap_tool(access_tools.research_legal_takedown, "fetch"))
     mcp.tool()(_wrap_tool(access_tools.research_open_access))
