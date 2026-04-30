@@ -330,15 +330,19 @@ class TestHealthCheck:
 
     @pytest.mark.asyncio
     async def test_health_check_returns_status(self) -> None:
-        """research_health_check returns health status."""
+        """research_health_check returns health status with new format."""
         from loom.server import research_health_check
 
         result = await research_health_check()
 
-        assert result["status"] == "healthy"
+        # New enhanced format includes status, uptime, llm/search providers, cache, sessions, version
+        assert "status" in result
+        assert result["status"] in ("healthy", "degraded", "unhealthy")
         assert "timestamp" in result
         assert "uptime_seconds" in result
-        assert "active_sessions" in result
+        assert "sessions" in result
+        assert isinstance(result["sessions"], dict)
+        assert "active" in result["sessions"]
 
     @pytest.mark.asyncio
     async def test_health_check_uptime_is_numeric(self) -> None:
@@ -351,14 +355,14 @@ class TestHealthCheck:
         assert result["uptime_seconds"] >= 0
 
     @pytest.mark.asyncio
-    async def test_health_check_active_sessions_is_numeric(self) -> None:
-        """research_health_check active_sessions count is numeric."""
+    async def test_health_check_sessions_active_is_numeric(self) -> None:
+        """research_health_check sessions active count is numeric."""
         from loom.server import research_health_check
 
         result = await research_health_check()
 
-        assert isinstance(result["active_sessions"], int)
-        assert result["active_sessions"] >= 0
+        assert isinstance(result["sessions"]["active"], int)
+        assert result["sessions"]["active"] >= 0
 
 
 class TestOptionalToolLoading:

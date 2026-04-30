@@ -600,16 +600,16 @@ class TestRefusalPatterns:
         valid_categories = {
             "direct", "apologetic", "soft", "policy", "redirect",
             "capability", "hedged", "identity", "partial", "conditional",
-            "ethical", "safety", "academic_deflect"
+            "ethical", "safety", "academic_deflect", "non_english"
         }
         for pattern, category in _REFUSAL_PATTERNS:
             assert isinstance(category, str)
             assert len(category) > 0
             assert category in valid_categories, f"Unknown category: {category}"
 
-    def test_refusal_pattern_count_is_23(self) -> None:
-        """Module contains exactly 23 refusal patterns."""
-        assert len(_REFUSAL_PATTERNS) == 23, f"Expected 23 patterns, got {len(_REFUSAL_PATTERNS)}"
+    def test_refusal_pattern_count_is_33(self) -> None:
+        """Module contains exactly 33 refusal patterns (23 English + 10 Arabic)."""
+        assert len(_REFUSAL_PATTERNS) == 33, f"Expected 33 patterns (23 English + 10 Arabic), got {len(_REFUSAL_PATTERNS)}"
 
     def test_direct_refusal_pattern_matches(self) -> None:
         """Direct refusal patterns match direct refusals."""

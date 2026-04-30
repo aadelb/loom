@@ -1,4 +1,4 @@
-"""Reframe strategies package — 390 strategies across 11 modules."""
+"""Reframe strategies package — strategies across 30+ modules."""
 from __future__ import annotations
 from typing import Any
 
@@ -13,6 +13,26 @@ from .attention import STRATEGIES as _ATTENTION
 from .legal import STRATEGIES as _LEGAL
 from .multiturn import STRATEGIES as _MULTITURN
 from .specialized import STRATEGIES as _SPECIALIZED
+from .novel_2026 import NOVEL_2026_STRATEGIES as _NOVEL_2026
+from .multimodal import MULTIMODAL_STRATEGIES as _MULTIMODAL
+from .agent_tool import AGENT_TOOL_STRATEGIES as _AGENT_TOOL
+from .token_repr import TOKEN_REPR_STRATEGIES as _TOKEN_REPR
+from .reasoning_cot import REASONING_COT_STRATEGIES as _REASONING_COT
+from .defense_evasion import DEFENSE_EVASION_STRATEGIES as _DEFENSE_EVASION
+from .research_2026 import RESEARCH_2026_STRATEGIES as _RESEARCH_2026
+from .persuasion import PERSUASION_STRATEGIES as _PERSUASION
+from .advanced_novel import ADVANCED_NOVEL_STRATEGIES as _ADVANCED_NOVEL
+from .skills_extracted import SKILLS_STRATEGIES as _SKILLS
+from .guardrail_suite import GUARDRAIL_STRATEGIES as _GUARDRAIL
+from .arxiv_nim import ARXIV_NIM_STRATEGIES as _ARXIV_NIM
+from .remaining import REMAINING_STRATEGIES as _REMAINING
+from .reid_psychology import REID_PSYCHOLOGY_STRATEGIES as _REID
+from .advanced_psychology import ADVANCED_PSYCHOLOGY_STRATEGIES as _ADV_PSYCH
+from .psychology_extended import PSYCHOLOGY_EXTENDED_STRATEGIES as _PSYCHOLOGY_EXTENDED
+from .fusion_10x import FUSION_STRATEGIES as _FUSION
+from .research_derived import RESEARCH_DERIVED_STRATEGIES as _RESEARCH_DERIVED
+from .arabic_attacks import ARABIC_ATTACK_STRATEGIES as _ARABIC_ATTACKS
+from .token_smuggling import TOKEN_SMUGGLING_STRATEGIES as _TOKEN_SMUGGLING
 
 
 ALL_STRATEGIES: dict[str, dict[str, Any]] = {}
@@ -27,3 +47,23 @@ ALL_STRATEGIES.update(_ATTENTION)
 ALL_STRATEGIES.update(_LEGAL)
 ALL_STRATEGIES.update(_MULTITURN)
 ALL_STRATEGIES.update(_SPECIALIZED)
+ALL_STRATEGIES.update(_NOVEL_2026)
+ALL_STRATEGIES.update(_MULTIMODAL)
+ALL_STRATEGIES.update(_AGENT_TOOL)
+ALL_STRATEGIES.update(_TOKEN_REPR)
+ALL_STRATEGIES.update(_REASONING_COT)
+ALL_STRATEGIES.update(_DEFENSE_EVASION)
+ALL_STRATEGIES.update(_RESEARCH_2026)
+ALL_STRATEGIES.update(_PERSUASION)
+ALL_STRATEGIES.update(_ADVANCED_NOVEL)
+ALL_STRATEGIES.update(_SKILLS)
+ALL_STRATEGIES.update(_GUARDRAIL)
+ALL_STRATEGIES.update(_ARXIV_NIM)
+ALL_STRATEGIES.update(_REMAINING)
+ALL_STRATEGIES.update(_REID)
+ALL_STRATEGIES.update(_ADV_PSYCH)
+ALL_STRATEGIES.update(_PSYCHOLOGY_EXTENDED)
+ALL_STRATEGIES.update(_FUSION)
+ALL_STRATEGIES.update(_RESEARCH_DERIVED)
+ALL_STRATEGIES.update(_ARABIC_ATTACKS)
+ALL_STRATEGIES.update(_TOKEN_SMUGGLING)

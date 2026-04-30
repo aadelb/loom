@@ -2194,3 +2194,496 @@ class AdaptiveReframeParams(BaseModel):
     prompt: str
     refusal_text: str = ""
     model: str = "auto"
+
+
+class DashboardParams(BaseModel):
+    """Parameters for research_dashboard tool."""
+
+    action: Literal["add_event", "get_events", "summary", "html"] = Field(
+        ...,
+        description="Dashboard action: add_event, get_events, summary, or html",
+    )
+    event_type: str | None = Field(
+        None,
+        description="Event type (strategy_applied, model_response, score_update, attack_success, attack_failure)",
+        max_length=100,
+    )
+    event_data: dict[str, Any] | None = Field(
+        None,
+        description="Event data dictionary",
+    )
+    since: int = Field(
+        0,
+        description="Get events since index N (default: 0 for all events)",
+        ge=0,
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("action", mode="before")
+    @classmethod
+    def validate_action(cls, v: str) -> str:
+        """Action must be one of the valid options."""
+        valid_actions = {"add_event", "get_events", "summary", "html"}
+        if v not in valid_actions:
+            raise ValueError(f"action must be one of {valid_actions}")
+        return v
+
+    @field_validator("event_type")
+    @classmethod
+    def validate_event_type(cls, v: str | None) -> str | None:
+        """Event type must be non-empty if provided."""
+        if v is not None:
+            v = v.strip()
+            if not v:
+                raise ValueError("event_type cannot be empty")
+            valid_types = {
+                "strategy_applied",
+                "model_response",
+                "score_update",
+                "attack_success",
+                "attack_failure",
+            }
+            if v not in valid_types:
+                raise ValueError(f"event_type must be one of {valid_types}")
+        return v
+
+class BenchmarkParams(BaseModel):
+    """Parameters for research_benchmark_run tool."""
+
+    dataset: Literal["jailbreakbench", "harmbench", "combined"] = "jailbreakbench"
+    strategies: str | None = Field(
+        default=None,
+        description="Comma-separated list of strategy names to evaluate",
+    )
+    model_name: str = Field(
+        default="test-model",
+        description="Name of the model being evaluated",
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("dataset")
+    @classmethod
+    def validate_dataset(cls, v: str) -> str:
+        valid_datasets = {"jailbreakbench", "harmbench", "combined"}
+        if v not in valid_datasets:
+            raise ValueError(f"dataset must be one of {valid_datasets}")
+        return v
+
+    @field_validator("strategies")
+    @classmethod
+    def validate_strategies(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        if not v.strip():
+            raise ValueError("strategies must be non-empty if provided")
+        # Split and validate each strategy name
+        strategies = [s.strip() for s in v.split(",")]
+        if not strategies:
+            raise ValueError("strategies must contain at least one strategy name")
+        for strategy in strategies:
+            if not strategy or len(strategy) > 100:
+                raise ValueError("Each strategy name must be 1-100 characters")
+        return v
+
+    @field_validator("model_name")
+    @classmethod
+    def validate_model_name(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("model_name must be non-empty")
+        if len(v) > 256:
+            raise ValueError("model_name must be max 256 characters")
+        return v.strip()
+
+
+class MultilingualBenchmarkParams(BaseModel):
+    """Parameters for research_multilingual_benchmark tool."""
+
+    model_api_url: str = Field(
+        ...,
+        description="URL to model API endpoint (expects POST with {prompt: str})",
+    )
+    languages: list[str] | None = Field(
+        None,
+        description="Language groups to test: english, arabic, chinese, french, code_switching. None = all",
+    )
+    timeout: float = Field(
+        5.0,
+        description="Timeout per request in seconds (1.0-120.0)",
+        ge=1.0,
+        le=120.0,
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("model_api_url", mode="before")
+    @classmethod
+    def validate_model_url(cls, v: str) -> str:
+        """Validate model API URL."""
+        return validate_url(v)
+
+    @field_validator("languages")
+    @classmethod
+    def validate_languages(cls, v: list[str] | None) -> list[str] | None:
+        """Validate language group selection."""
+        if v is None:
+            return v
+        valid_langs = {"english", "arabic", "chinese", "french", "code_switching"}
+        invalid = [lang for lang in v if lang not in valid_langs]
+        if invalid:
+            raise ValueError(f"Invalid languages: {invalid}. Valid: {valid_langs}")
+        if not v:
+            raise ValueError("languages list cannot be empty if provided")
+        return v
+
+
+class AgentBenchmarkParams(BaseModel):
+    """Parameters for research_agent_benchmark tool."""
+
+    model_api_url: str = Field(
+        ...,
+        description="URL to model API endpoint or local model function identifier",
+    )
+    timeout: float = Field(
+        30.0,
+        description="Timeout per scenario in seconds (5.0-300.0)",
+        ge=5.0,
+        le=300.0,
+    )
+    model_name: str = Field(
+        default="",
+        description="Optional model name for reporting and identification",
+    )
+    output_format: Literal["json", "summary"] = Field(
+        default="summary",
+        description="Output format: json for detailed results or summary for metrics only",
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("model_api_url", mode="before")
+    @classmethod
+    def validate_model_url(cls, v: str) -> str:
+        """Validate model API URL or identifier."""
+        if not v or not v.strip():
+            raise ValueError("model_api_url must be non-empty")
+        if len(v) > 512:
+            raise ValueError("model_api_url must be max 512 characters")
+        return v.strip()
+
+    @field_validator("model_name")
+    @classmethod
+    def validate_model_name(cls, v: str) -> str:
+        """Validate model name for reporting."""
+        if len(v) > 256:
+            raise ValueError("model_name must be max 256 characters")
+        return v.strip()
+
+class StripeCreateSubscriptionParams(BaseModel):
+    """Parameters for research_stripe_billing create_subscription."""
+
+    customer_id: str = Field(
+        ...,
+        description="Loom customer ID",
+        min_length=1,
+        max_length=64,
+    )
+    tier: Literal["pro", "team", "enterprise"] = Field(
+        ...,
+        description="Subscription tier (not 'free')",
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("customer_id")
+    @classmethod
+    def validate_customer_id(cls, v: str) -> str:
+        """Customer ID must be non-empty alphanumeric."""
+        if not v.strip():
+            raise ValueError("customer_id cannot be empty")
+        if not all(c.isalnum() or c in "-_" for c in v):
+            raise ValueError("customer_id must be alphanumeric, hyphen, or underscore")
+        return v.strip()
+
+
+class StripeCreateChargeParams(BaseModel):
+    """Parameters for research_stripe_billing create_charge."""
+
+    customer_id: str = Field(
+        ...,
+        description="Loom customer ID",
+        min_length=1,
+        max_length=64,
+    )
+    amount_cents: int = Field(
+        ...,
+        description="Charge amount in cents (e.g., 9999 = $99.99)",
+        gt=0,
+        le=999999,
+    )
+    description: str = Field(
+        ...,
+        description="Charge description",
+        min_length=1,
+        max_length=256,
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("customer_id")
+    @classmethod
+    def validate_customer_id(cls, v: str) -> str:
+        """Customer ID must be non-empty alphanumeric."""
+        if not v.strip():
+            raise ValueError("customer_id cannot be empty")
+        if not all(c.isalnum() or c in "-_" for c in v):
+            raise ValueError("customer_id must be alphanumeric, hyphen, or underscore")
+        return v.strip()
+
+    @field_validator("description")
+    @classmethod
+    def validate_description(cls, v: str) -> str:
+        """Description must be non-empty."""
+        if not v.strip():
+            raise ValueError("description cannot be empty")
+        return v.strip()
+
+
+class StripeGetInvoiceParams(BaseModel):
+    """Parameters for research_stripe_billing get_invoice."""
+
+    invoice_id: str = Field(
+        ...,
+        description="Stripe invoice ID",
+        min_length=1,
+        max_length=64,
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("invoice_id")
+    @classmethod
+    def validate_invoice_id(cls, v: str) -> str:
+        """Invoice ID must be non-empty."""
+        if not v.strip():
+            raise ValueError("invoice_id cannot be empty")
+        return v.strip()
+
+
+class StripeCancelSubscriptionParams(BaseModel):
+    """Parameters for research_stripe_billing cancel_subscription."""
+
+    subscription_id: str = Field(
+        ...,
+        description="Stripe subscription ID",
+        min_length=1,
+        max_length=64,
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("subscription_id")
+    @classmethod
+    def validate_subscription_id(cls, v: str) -> str:
+        """Subscription ID must be non-empty."""
+        if not v.strip():
+            raise ValueError("subscription_id cannot be empty")
+        return v.strip()
+
+
+class StripeListInvoicesParams(BaseModel):
+    """Parameters for research_stripe_billing list_invoices."""
+
+    customer_id: str = Field(
+        ...,
+        description="Loom customer ID",
+        min_length=1,
+        max_length=64,
+    )
+    limit: int = Field(
+        10,
+        description="Maximum invoices to return (1-100)",
+        ge=1,
+        le=100,
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("customer_id")
+    @classmethod
+    def validate_customer_id(cls, v: str) -> str:
+        """Customer ID must be non-empty alphanumeric."""
+        if not v.strip():
+            raise ValueError("customer_id cannot be empty")
+        if not all(c.isalnum() or c in "-_" for c in v):
+            raise ValueError("customer_id must be alphanumeric, hyphen, or underscore")
+        return v.strip()
+
+
+class StripeCreateCheckoutParams(BaseModel):
+    """Parameters for research_stripe_billing create_checkout_session."""
+
+    customer_id: str = Field(
+        ...,
+        description="Loom customer ID",
+        min_length=1,
+        max_length=64,
+    )
+    tier: Literal["pro", "team", "enterprise"] = Field(
+        ...,
+        description="Subscription tier (not 'free')",
+    )
+    success_url: str = Field(
+        ...,
+        description="URL to redirect on successful payment",
+        min_length=10,
+        max_length=2048,
+    )
+    cancel_url: str = Field(
+        ...,
+        description="URL to redirect if payment cancelled",
+        min_length=10,
+        max_length=2048,
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("customer_id")
+    @classmethod
+    def validate_customer_id(cls, v: str) -> str:
+        """Customer ID must be non-empty alphanumeric."""
+        if not v.strip():
+            raise ValueError("customer_id cannot be empty")
+        if not all(c.isalnum() or c in "-_" for c in v):
+            raise ValueError("customer_id must be alphanumeric, hyphen, or underscore")
+        return v.strip()
+
+    @field_validator("success_url")
+    @classmethod
+    def validate_success_url(cls, v: str) -> str:
+        """Success URL must be valid HTTP(S) URL."""
+        if not v.startswith(("http://", "https://")):
+            raise ValueError("success_url must start with http:// or https://")
+        return v
+
+    @field_validator("cancel_url")
+    @classmethod
+    def validate_cancel_url(cls, v: str) -> str:
+        """Cancel URL must be valid HTTP(S) URL."""
+        if not v.startswith(("http://", "https://")):
+            raise ValueError("cancel_url must start with http:// or https://")
+        return v
+
+
+class FullSpectrumParams(BaseModel):
+    """Parameters for research_full_spectrum tool."""
+
+    query: str = Field(
+        ...,
+        description="Original query to analyze and reframe",
+        min_length=1,
+        max_length=10000,
+    )
+    model_name: str = Field(
+        default="unknown",
+        description="Target model identifier (e.g., gpt-4, claude-3-sonnet)",
+        max_length=256,
+    )
+    target_hcs: float = Field(
+        default=8.0,
+        description="Target HCS (helpfulness/compliance/specificity) score 0-10",
+        ge=0.0,
+        le=10.0,
+    )
+    reframing_strategy: Literal[
+        "direct_jailbreak",
+        "prompt_injection",
+        "role_play",
+        "hypothetical",
+        "indirect_request",
+        "token_smuggling",
+        "logic_manipulation",
+        "consent_smuggling",
+        "constraint_relaxation",
+        "multi_turn",
+        "auto_select",
+    ] = Field(
+        default="auto_select",
+        description="Reframing strategy to apply (auto_select for automatic selection)",
+    )
+    include_multi_strategy: bool = Field(
+        default=False,
+        description="If True, run pipeline with all strategies and compare",
+    )
+    include_report: bool = Field(
+        default=True,
+        description="If True, generate executive summary report",
+    )
+    include_recommendations: bool = Field(
+        default=True,
+        description="If True, generate improvement recommendations",
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("query", mode="before")
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        """Query must be non-empty string."""
+        if not isinstance(v, str):
+            raise ValueError("query must be a string")
+        if not v.strip():
+            raise ValueError("query cannot be empty")
+        return v.strip()
+
+    @field_validator("model_name")
+    @classmethod
+    def validate_model_name(cls, v: str) -> str:
+        """Model name must be valid identifier."""
+        if not v.strip():
+            raise ValueError("model_name cannot be empty")
+        if not all(c.isalnum() or c in "-_." for c in v):
+            raise ValueError("model_name must be alphanumeric, hyphen, underscore, or dot")
+        return v.strip()
+
+
+
+class HCSReportParams(BaseModel):
+    """Parameters for research_hcs_report tool."""
+
+    report_type: str = Field(
+        default="combined",
+        description="Report type: model, strategy, or combined",
+        pattern="^(model|strategy|combined)$",
+    )
+    regression_threshold: float = Field(
+        default=1.0,
+        description="Min score drop to flag as regression",
+        ge=0.1,
+        le=5.0,
+    )
+    data_path: str = Field(
+        default="~/.loom/hcs_data.jsonl",
+        description="Path to HCS data file",
+        max_length=256,
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("report_type")
+    @classmethod
+    def validate_report_type(cls, v: str) -> str:
+        """Report type must be valid."""
+        if v not in ("model", "strategy", "combined"):
+            raise ValueError("report_type must be model, strategy, or combined")
+        return v
+
+    @field_validator("data_path")
+    @classmethod
+    def validate_data_path(cls, v: str) -> str:
+        """Data path must be non-empty."""
+        if not v.strip():
+            raise ValueError("data_path cannot be empty")
+        return v.strip()
+

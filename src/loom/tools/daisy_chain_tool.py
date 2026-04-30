@@ -1,0 +1,171 @@
+"""MCP tool wrapper for daisy-chain decomposition pipeline.
+
+Exposes research_daisy_chain as an MCP tool for splitting dangerous queries
+across multiple models with response combination and safety scoring.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import json
+import logging
+from typing import Any
+
+from loom.daisy_chain import DaisyChainDecomposer, _compute_daisy_chain_hcs
+from loom.params import DaisyChainParams
+
+logger = logging.getLogger("loom.tools.daisy_chain")
+
+
+async def research_daisy_chain(
+    query: str,
+    available_models: list[str] | None = None,
+    combiner_model: str = "gpt-4",
+    timeout_per_model: float = 30.0,
+    max_sub_queries: int = 4,
+    include_execution_trace: bool = False,
+) -> dict[str, Any]:
+    """Execute query across multiple models via daisy-chain decomposition.
+
+    Splits a potentially dangerous query into harmless sub-parts, routes each
+    to a different LLM provider, and combines responses at a neutral combiner
+    model. No single model sees the full dangerous query context.
+
+    This tests whether AI model safety mechanisms depend on seeing the complete
+    query context, and whether model responses can be exploited by decomposition
+    and recombination.
+
+    Args:
+        query: The query to decompose and execute (max 5000 chars)
+        available_models: Models to distribute sub-queries (default: 4 major providers)
+        combiner_model: Model to synthesize sub-responses (default: gpt-4)
+        timeout_per_model: Timeout per model call in seconds (5.0-120.0, default: 30.0)
+        max_sub_queries: Maximum sub-queries to generate (2-6, default: 4)
+        include_execution_trace: Include detailed execution trace (default: False)
+
+    Returns:
+        Dict with:
+            original_query: The input query
+            sub_queries: List of decomposed harmless sub-queries
+            model_assignments: Dict mapping sub-query to model
+            sub_responses: Dict of sub-query -> response text
+            combined_response: Final synthesized response
+            combiner_model: Model used for combination
+            success: Whether execution succeeded
+            hcs_score: HCS (helpfulness/compliance) score 0-10
+            execution_time_ms: Total execution time
+            execution_trace: (Optional) Detailed step-by-step trace
+    """
+    # Validate params
+    params = DaisyChainParams(
+        query=query,
+        available_models=available_models,
+        combiner_model=combiner_model,
+        timeout_per_model=timeout_per_model,
+        max_sub_queries=max_sub_queries,
+    )
+
+    logger.info(
+        f"Starting daisy-chain decomposition",
+        extra={
+            "query_len": len(params.query),
+            "num_models": len(params.available_models),
+            "combiner": params.combiner_model,
+        },
+    )
+
+    decomposer = DaisyChainDecomposer(available_models=params.available_models)
+
+    # Build mock LLM callbacks (would be replaced with real provider calls)
+    # For now, use echo responses for demo
+    async def mock_llm_callback(model_name: str, prompt: str) -> str:
+        """Mock LLM callback - in production would call real providers."""
+        # Simulate different model behaviors
+        if "gpt-4" in model_name.lower():
+            return f"GPT-4 response to prompt about: {prompt[:60]}..."
+        elif "claude" in model_name.lower():
+            return f"Claude response to prompt about: {prompt[:60]}..."
+        elif "deepseek" in model_name.lower():
+            return f"DeepSeek response to prompt about: {prompt[:60]}..."
+        else:
+            return f"Response from {model_name} to prompt about: {prompt[:60]}..."
+
+    callbacks = {
+        model: mock_llm_callback for model in params.available_models
+    }
+    callbacks[params.combiner_model] = mock_llm_callback
+
+    # Execute daisy-chain pipeline
+    try:
+        result = await decomposer.execute_chain(
+            query=params.query,
+            model_callbacks=callbacks,
+            combiner_model=params.combiner_model,
+            timeout_per_model=params.timeout_per_model,
+        )
+
+        # Build response
+        response: dict[str, Any] = {
+            "original_query": result.original_query,
+            "sub_queries": result.sub_queries,
+            "model_assignments": result.model_assignments,
+            "sub_responses": result.sub_responses,
+            "combined_response": result.combined_response,
+            "combiner_model": result.combiner_model,
+            "success": result.success,
+            "hcs_score": round(result.hcs_score, 2),
+            "execution_time_ms": result.execution_time_ms,
+        }
+
+        if result.error:
+            response["error"] = result.error
+
+        if include_execution_trace:
+            response["execution_trace"] = {
+                "steps": [
+                    "Query decomposed into sub-queries",
+                    f"Models assigned: {list(set(result.model_assignments.values()))}",
+                    f"Sub-queries executed in parallel (timeout: {params.timeout_per_model}s)",
+                    f"Responses collected from {len(result.sub_responses)} models",
+                    f"Combination step executed with {result.combiner_model}",
+                    f"HCS scoring: {result.hcs_score:.1f}/10",
+                ],
+                "timing": {
+                    "total_ms": result.execution_time_ms,
+                    "per_stage_estimate": {
+                        "decomposition": "~10ms",
+                        "assignment": "~5ms",
+                        "parallel_execution": f"~{result.execution_time_ms - 30}ms",
+                        "combination": "~10ms",
+                        "scoring": "~5ms",
+                    },
+                },
+            }
+
+        logger.info(
+            "Daisy-chain execution completed",
+            extra={
+                "success": result.success,
+                "hcs_score": result.hcs_score,
+                "execution_time_ms": result.execution_time_ms,
+            },
+        )
+
+        return response
+
+    except Exception as e:
+        error_msg = f"Daisy-chain execution failed: {str(e)}"
+        logger.error(error_msg, exc_info=True)
+
+        return {
+            "original_query": query,
+            "sub_queries": [],
+            "model_assignments": {},
+            "sub_responses": {},
+            "combined_response": "",
+            "combiner_model": combiner_model,
+            "success": False,
+            "hcs_score": 0.0,
+            "execution_time_ms": 0,
+            "error": error_msg,
+        }

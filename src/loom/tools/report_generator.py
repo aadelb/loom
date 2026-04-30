@@ -426,3 +426,83 @@ def research_generate_report(
             return loop.run_until_complete(_run())
         finally:
             loop.close()
+
+
+async def research_generate_executive_report(
+    scores: list[dict] | None = None,
+    tracker_data: list[dict] | None = None,
+    audit_entries: list[dict] | None = None,
+    report_type: str = "executive_summary",
+    title: str = "Red Team Assessment",
+    framework: str = "eu_ai_act",
+    model_results: dict[str, list[dict]] | None = None,
+) -> dict[str, Any]:
+    """Generate automated reports from Loom scoring and audit data.
+
+    Generates comprehensive reports from 45-dimension scoring framework,
+    attack tracker data, and compliance audit entries.
+
+    Supported report types:
+    - executive_summary: 45-dimension scoring analysis with risk levels (requires scores)
+    - strategy: Attack strategy effectiveness ranking (requires tracker_data)
+    - model_comparison: Cross-model comparison tables (requires model_results)
+    - compliance: Framework-specific compliance assessment (requires audit_entries)
+
+    Supported frameworks for compliance reports:
+    - eu_ai_act: EU AI Act Article 15 transparency/oversight requirements
+    - nist_ai_rmf: NIST AI Risk Management Framework (Map/Measure/Manage/Govern)
+    - owasp_agentic_ai_top_10: OWASP Agentic AI Top 10 risks
+
+    Args:
+        scores: List of score dicts from score_all() [optional, for executive_summary]
+        tracker_data: List of attack tracker entries [optional, for strategy report]
+        audit_entries: List of audit log dicts [optional, for compliance report]
+        report_type: One of "executive_summary", "strategy", "model_comparison", "compliance"
+        title: Report title (default: "Red Team Assessment")
+        framework: Compliance framework ("eu_ai_act", "nist_ai_rmf", "owasp_agentic_ai_top_10")
+        model_results: Dict mapping model names to score lists [optional, for model_comparison]
+
+    Returns:
+        Dict with "report_type", "title", "markdown", "generated_at", and optional metadata
+    """
+    from loom.report_gen import ReportGenerator
+
+    gen = ReportGenerator()
+    markdown = ""
+    metadata: dict[str, Any] = {}
+
+    if report_type == "executive_summary":
+        if not scores:
+            markdown = "# Executive Summary\n\nNo scoring data provided. Please provide scores from score_all().\n"
+        else:
+            markdown = gen.generate_executive_summary(scores, title)
+            metadata["entries_analyzed"] = len(scores)
+    elif report_type == "strategy":
+        if not tracker_data:
+            markdown = "# Strategy Effectiveness Report\n\nNo attack tracker data provided.\n"
+        else:
+            markdown = gen.generate_strategy_report(tracker_data)
+            metadata["strategies_analyzed"] = len(tracker_data)
+    elif report_type == "model_comparison":
+        if not model_results:
+            markdown = "# Model Comparison Report\n\nNo model data provided.\n"
+        else:
+            markdown = gen.generate_model_comparison(model_results)
+            metadata["models_compared"] = len(model_results)
+    elif report_type == "compliance":
+        if not audit_entries:
+            markdown = f"# {framework.replace('_', ' ').title()}\n\nNo audit entries provided.\n"
+        else:
+            markdown = gen.generate_compliance_report(audit_entries, framework)
+            metadata["audit_entries_reviewed"] = len(audit_entries)
+            metadata["framework"] = framework
+    else:
+        markdown = f"Unknown report type: {report_type}"
+
+    return {
+        "report_type": report_type,
+        "title": title,
+        "markdown": markdown,
+        "generated_at": datetime.now(UTC).isoformat(),
+        **metadata,
+    }

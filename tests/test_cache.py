@@ -1,4 +1,4 @@
-"""Unit tests for CacheStore — atomic writes, UUID tmp, SHA-256, concurrent access."""
+"""Unit tests for CacheStore — gzip compression, atomic writes, UUID tmp, SHA-256, concurrent access."""
 
 from __future__ import annotations
 
@@ -53,8 +53,8 @@ class TestCacheStore:
         tmp_files = list(tmp_cache_dir.rglob("*.tmp-*"))
         assert len(tmp_files) == 0
 
-        # But the actual file should exist
-        cache_files = list(tmp_cache_dir.rglob("*.json"))
+        # But the actual file should exist (as .json.gz)
+        cache_files = list(tmp_cache_dir.rglob("*.json.gz"))
         assert len(cache_files) == 1
 
     def test_cache_clear_older_than(self, tmp_cache_dir: Path) -> None:
@@ -124,8 +124,8 @@ class TestCacheStore:
         assert cache.get("key_a")["content"] == "a"
         assert cache.get("key_b")["content"] == "b"
 
-        # Should have 2 cache files
-        cache_files = list(tmp_cache_dir.rglob("*.json"))
+        # Should have 2 cache files (as .json.gz)
+        cache_files = list(tmp_cache_dir.rglob("*.json.gz"))
         assert len(cache_files) == 2
 
     def test_cache_get_handles_invalid_json(self, tmp_cache_dir: Path) -> None:

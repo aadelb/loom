@@ -154,9 +154,10 @@ async def _fetch_newsapi(client: httpx.AsyncClient, topic: str) -> list[dict[str
         if not api_key:
             return []
 
-        url = f"https://newsapi.org/v2/everything?q={quote(topic)}&sortBy=publishedAt&pageSize={_MAX_RESULTS_PER_SOURCE}&apiKey={api_key}"
+        url = f"https://newsapi.org/v2/everything?q={quote(topic)}&sortBy=publishedAt&pageSize={_MAX_RESULTS_PER_SOURCE}"
+        headers = {"X-Api-Key": api_key}
 
-        resp = await client.get(url, timeout=_HTTP_TIMEOUT)
+        resp = await client.get(url, timeout=_HTTP_TIMEOUT, headers=headers)
         if resp.status_code != 200:
             return []
 

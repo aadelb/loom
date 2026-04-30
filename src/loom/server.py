@@ -33,8 +33,26 @@ from loom.sessions import (
 )
 from loom.scoring import research_score_all
 
+from loom.benchmarks import research_benchmark_run
+from loom.consensus_builder import (
+    research_consensus,
+    research_consensus_build,
+    research_consensus_pressure,
+)
+from loom.crescendo_loop import research_crescendo_loop
+from loom.model_profiler import research_model_profile
+from loom.reid_pipeline import research_reid_pipeline
+
+# Import optional top-level modules for multilingual
+try:
+    from loom.multilingual_benchmark import research_multilingual
+except ImportError:
+    research_multilingual = None
+
+
 # Import tool modules to register their functions
 from loom.tools import (
+    agent_benchmark,
     academic_integrity,
     access_tools,
     ai_safety,
@@ -64,6 +82,7 @@ from loom.tools import (
     github,
     hcs10_academic,
     hcs_scorer,
+    hcs_report,
     identity_resolve,
     infowar_tools,
     infra_analysis,
@@ -528,6 +547,89 @@ def _check_search_provider_available(provider_name: str) -> bool:
     return bool(value)
 
 
+
+# Global dashboard instance (singleton)
+_dashboard_instance: Any = None
+
+
+def _get_dashboard() -> Any:
+    """Get or create the global dashboard instance."""
+    global _dashboard_instance
+    if _dashboard_instance is None:
+        from loom.dashboard import AttackDashboard
+        _dashboard_instance = AttackDashboard()
+    return _dashboard_instance
+
+
+async def research_dashboard(
+    action: str,
+    event_type: str | None = None,
+    event_data: dict[str, Any] | None = None,
+    since: int = 0,
+) -> dict[str, Any]:
+    """Real-time attack visualization dashboard.
+
+    Provides live event streaming and summary statistics for attack visualization.
+    Supports adding events, retrieving event logs, generating summaries, and
+    generating a standalone HTML dashboard page.
+
+    Args:
+        action: One of "add_event", "get_events", "summary", or "html"
+        event_type: Event type when action="add_event"
+                   (strategy_applied, model_response, score_update, attack_success, attack_failure)
+        event_data: Event data dictionary when action="add_event"
+        since: Get events since index N (default: 0)
+
+    Returns:
+        Dictionary with action results:
+        - add_event: {success: bool, index: int}
+        - get_events: {events: list, count: int}
+        - summary: {total_attacks, successes, failures, success_rate, top_strategies, ...}
+        - html: {html: str, size_bytes: int, event_count: int}
+    """
+    from loom.params import DashboardParams
+
+    # Validate input
+    params = DashboardParams(
+        action=action,
+        event_type=event_type,
+        event_data=event_data or {},
+        since=since,
+    )
+
+    dashboard = _get_dashboard()
+
+    if params.action == "add_event":
+        if not params.event_type or not params.event_data:
+            raise ValueError("add_event requires event_type and event_data")
+        dashboard.add_event(params.event_type, params.event_data)
+        return {
+            "success": True,
+            "index": len(dashboard.events) - 1,
+        }
+
+    elif params.action == "get_events":
+        events = dashboard.get_events(params.since)
+        return {
+            "events": events,
+            "count": len(events),
+            "total_count": len(dashboard.events),
+        }
+
+    elif params.action == "summary":
+        return dashboard.get_summary()
+
+    elif params.action == "html":
+        html = dashboard.generate_html()
+        return {
+            "html": html,
+            "size_bytes": len(html.encode("utf-8")),
+            "event_count": len(dashboard.events),
+        }
+
+    else:
+        raise ValueError(f"Unknown action: {params.action}")
+
 def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callable[..., Any]:
     """Wrap tool with tracing and optional rate limiting.
 
@@ -687,6 +789,9 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(ai_safety_extended.research_hallucination_benchmark, "fetch"))
     mcp.tool()(_wrap_tool(ai_safety_extended.research_adversarial_robustness, "fetch"))
 
+    # Agent scenario benchmarking tool
+    mcp.tool()(_wrap_tool(agent_benchmark.research_agent_benchmark))
+
     # Extended OSINT tools (2 tools for social engineering assessment)
     mcp.tool()(_wrap_tool(osint_extended.research_social_engineering_score, "fetch"))
     mcp.tool()(_wrap_tool(osint_extended.research_behavioral_fingerprint, "fetch"))
@@ -790,6 +895,7 @@ def _register_tools(mcp: FastMCP) -> None:
 
     # Health check
     mcp.tool()(_wrap_tool(research_health_check))
+    mcp.tool()(_wrap_tool(research_dashboard))
 
     # Orchestration engine
     mcp.tool()(_wrap_tool(research_orchestrate))
@@ -1034,6 +1140,9 @@ def _register_tools(mcp: FastMCP) -> None:
             mcp.tool()(_wrap_tool(screenshot_mod.research_screenshot, "fetch"))
 
     # IP intelligence tools (if available)
+
+    # Jailbreak benchmarking tools (JailbreakBench + HarmBench integration)
+    mcp.tool()(_wrap_tool(research_benchmark_run))
     if "ip_intel" in _optional_tools:
         ip_intel_mod = _optional_tools["ip_intel"]
         if hasattr(ip_intel_mod, "research_ip_reputation"):
