@@ -84,7 +84,6 @@ check_*.py
 .claude/worktrees/
 
 # Project artifacts
-tmp/
 test-results/
 graphify-out/
 dashboard.html
