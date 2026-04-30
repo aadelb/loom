@@ -371,7 +371,7 @@ class MultilingualBenchmark:
 
         for i, result in enumerate(test_results):
             if isinstance(result, Exception):
-                # Exception during test
+                # Exception during test gathering (shouldn't happen but handle it)
                 test_result = {
                     "id": prompts[i]["id"],
                     "text": prompts[i]["text"],
@@ -380,9 +380,12 @@ class MultilingualBenchmark:
                     "response": None,
                     "error": str(result),
                 }
-                lang_result["refusals"] += 1
             else:
                 test_result = result
+
+            # Count refusals based on the refused flag
+            if test_result["refused"]:
+                lang_result["refusals"] += 1
 
             lang_result["results"].append(test_result)
 

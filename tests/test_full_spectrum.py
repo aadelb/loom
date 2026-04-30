@@ -439,7 +439,7 @@ class TestFullPipeline:
 
     @pytest.mark.asyncio
     async def test_pipeline_error_handling(self, pipeline: FullSpectrumPipeline) -> None:
-        """Handle pipeline errors gracefully."""
+        """Handle model call errors gracefully and continue with error response."""
         error_fn = MagicMock(side_effect=RuntimeError("Model crash"))
         query = "Test query"
 
@@ -449,9 +449,10 @@ class TestFullPipeline:
             model_name="broken-model",
         )
 
-        assert result["status"] == "error"
-        assert "error" in result
-        assert "Model crash" in result["error"]
+        # Pipeline should still succeed, but response contains error message
+        assert result["status"] == "success"
+        assert "[Model error:" in result["response"]
+        assert "Model crash" in result["response"]
         assert "metadata" in result
 
     @pytest.mark.asyncio

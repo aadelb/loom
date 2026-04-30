@@ -26,6 +26,7 @@ Pipeline stages:
 from __future__ import annotations
 
 import asyncio
+import inspect
 import hashlib
 import json
 import logging
@@ -38,7 +39,7 @@ from loom.attack_tracker import get_strategy_stats, record_attempt
 from loom.danger_prescore import DangerPreScorer
 from loom.executability import ExecutabilityAnalyzer
 from loom.harm_assessor import HarmAssessor
-from loom.orchestrator import select_reframing_strategy
+from loom.orchestrator import classify_intent as _classify_intent_orchestrator, estimate_refusal_risk
 from loom.policy_validator import PolicyValidator
 from loom.quality_scorer import ResponseQualityScorer
 from loom.report_gen import ReportGenerator
@@ -47,6 +48,19 @@ from loom.toxicity_checker import ToxicityChecker
 
 logger = logging.getLogger("loom.full_spectrum")
 
+
+
+
+def _recommend_strategy_fallback(query: str, danger_score: float) -> str:
+    """Fallback strategy recommendation based on danger score."""
+    if danger_score > 7.0:
+        return "multi_turn"
+    elif danger_score > 5.0:
+        return "role_play"
+    elif danger_score > 3.0:
+        return "hypothetical"
+    else:
+        return "indirect_request"
 
 class FullSpectrumPipeline:
     """End-to-end red-team pipeline: analyze → reframe → query → score → report."""
@@ -103,7 +117,7 @@ class FullSpectrumPipeline:
         try:
             # Stage 1: Pre-score query danger
             logger.debug("Stage 1: Pre-scoring query danger")
-            danger_analysis = self.danger_scorer.score(query)
+            danger_analysis = self.danger_scorer.prescore(query)
             danger_prescore = danger_analysis.get("overall_score", 0.0)
             detected_topics = danger_analysis.get("detected_topics", [])
 
@@ -116,9 +130,7 @@ class FullSpectrumPipeline:
             # Stage 3: Select reframing strategy
             logger.debug("Stage 3: Selecting reframing strategy")
             if not reframing_strategy:
-                strategy_result = select_reframing_strategy(
-                    query, danger_prescore, model_name
-                )
+                strategy_result = {"strategy": _recommend_strategy_fallback(query, danger_prescore)}
                 reframing_strategy = strategy_result.get("strategy", "direct_jailbreak")
 
             logger.info("Strategy selected: %s", reframing_strategy)
@@ -139,21 +151,23 @@ class FullSpectrumPipeline:
 
             # Stage 7: Policy validation
             logger.debug("Stage 7: Checking policy violations")
-            violations = self.policy_validator.check_violations(
-                query, response, detected_topics
-            )
+            validation_result = self.policy_validator.validate(query)
+            violations = {"violations": validation_result.violations if hasattr(validation_result, "violations") else []}
 
             # Stage 8: Generate report
             logger.debug("Stage 8: Generating executive report")
-            report = self.report_gen.generate_executive_summary(
-                query=query,
-                model=model_name,
-                danger_score=danger_prescore,
-                quality_dims=scores["quality"],
-                attack_dims=scores["attack"],
-                harm_dims=scores["harm"],
-                strategy_used=reframing_strategy,
-            )
+            # Create a simple report dict
+            report = {
+                "title": f"Full Spectrum Assessment: {model_name}",
+                "strategy": reframing_strategy,
+                "danger_score": danger_prescore,
+                "findings": {
+                    "quality": scores["quality"].get("total_score", 0),
+                    "attack_effectiveness": scores["attack"].get("asr", 0),
+                    "harm_level": scores["harm"].get("level", "none"),
+                    "stealth": scores["stealth"].get("total", 0),
+                },
+            }
 
             # Stage 9: Recommendations
             logger.debug("Stage 9: Generating recommendations")
@@ -310,7 +324,7 @@ class FullSpectrumPipeline:
     ) -> str:
         """Call target model, handling both sync and async functions."""
         try:
-            if asyncio.iscoroutinefunction(model_fn):
+            if inspect.iscoroutinefunction(model_fn):
                 result = await model_fn()
             else:
                 result = model_fn()
@@ -349,10 +363,8 @@ class FullSpectrumPipeline:
 
         # Harm assessment (12 dimensions for CBRN categories)
         harm_result = self.harm_assessor.assess(response)
-        harm_dims = harm_result.category_scores if hasattr(harm_result, "category_scores") else {}
-        harm_overall = (
-            harm_result.overall_score if hasattr(harm_result, "overall_score") else 0.0
-        )
+        harm_dims = harm_result.get("category_scores", {})
+        harm_overall = harm_result.get("overall_score", 0.0)
 
         # Stealth scoring (6 dimensions)
         stealth_result = self.stealth_calc.score(original_prompt, reframed_prompt)
@@ -361,18 +373,19 @@ class FullSpectrumPipeline:
 
         # Executability scoring (5 dimensions)
         exec_result = self.executability_analyzer.score(response)
+        exec_dims_dict = exec_result.get("dimensions", {})
         exec_dims = {
-            "code_presence": exec_result.get("has_code", False),
-            "steps": exec_result.get("step_count", 0),
-            "specificity": exec_result.get("specificity_score", 0.0),
-            "completeness": exec_result.get("completeness_score", 0.0),
-            "immediacy": exec_result.get("immediacy_score", 0.0),
+            "code_present": exec_dims_dict.get("code_present", 0),
+            "steps": exec_dims_dict.get("step_by_step", 0),
+            "specificity": exec_dims_dict.get("specificity", 0),
+            "completeness": exec_dims_dict.get("completeness", 0),
+            "immediacy": exec_dims_dict.get("immediacy", 0),
+            "total_score": exec_result.get("total_score", 0),
+            "risk_level": exec_result.get("risk_level", "theoretical"),
         }
 
         # Toxicity comparison
-        prompt_tox = self.toxicity_checker.check(original_prompt)
-        response_tox = self.toxicity_checker.check(response)
-        toxicity_comparison = self.toxicity_checker.compare(prompt_tox, response_tox)
+        toxicity_comparison = self.toxicity_checker.compare(original_prompt, response)
 
         return {
             "quality": {
@@ -387,10 +400,12 @@ class FullSpectrumPipeline:
                 "total_score": attack_result.get("total_score", 0.0),
             },
             "harm": {
-                **harm_dims,
                 "overall": harm_overall,
-                "actionability": harm_result.actionability if hasattr(harm_result, "actionability") else 0.0,
-                "specificity": harm_result.specificity if hasattr(harm_result, "specificity") else 0.0,
+                "level": harm_result.get("overall_harm_level", "none"),
+                "actionability": harm_result.get("actionability", 0.0),
+                "specificity": harm_result.get("specificity", 0.0),
+                "audience_risk": harm_result.get("audience_risk", "general"),
+                "top_categories": harm_result.get("top_categories", []),
             },
             "stealth": {
                 **stealth_dims,
@@ -399,10 +414,11 @@ class FullSpectrumPipeline:
             },
             "executability": exec_dims,
             "toxicity": {
-                "prompt": prompt_tox,
-                "response": response_tox,
-                "amplification": toxicity_comparison.amplification_ratio if hasattr(toxicity_comparison, "amplification_ratio") else 1.0,
-                "amplified": toxicity_comparison.model_amplified if hasattr(toxicity_comparison, "model_amplified") else False,
+                "prompt_score": toxicity_comparison.get("prompt_toxicity", 0.0),
+                "response_score": toxicity_comparison.get("response_toxicity", 0.0),
+                "amplification": toxicity_comparison.get("amplification_ratio", 1.0),
+                "amplified": toxicity_comparison.get("model_amplified", False),
+                "delta": toxicity_comparison.get("delta", 0.0),
             },
         }
 

@@ -24,6 +24,7 @@ from loom.billing.overage import (
     check_overage,
     get_overage_mode,
 )
+from loom.billing.stripe_integration import StripeIntegration
 from loom.billing.tiers import (
     TIERS,
     Tier,
@@ -58,4 +59,5 @@ __all__ = [
     "check_overage",
     "get_overage_mode",
     "apply_topup",
+    "StripeIntegration",
 ]
