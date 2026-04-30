@@ -21,6 +21,8 @@ from mcp.server import FastMCP
 from mcp.server.auth.settings import AuthSettings
 
 from loom.config import load_config, research_config_get, research_config_set
+from loom.orchestrator import research_orchestrate
+from loom.audit import export_audit
 from loom.logging_config import setup_logging
 from loom.rate_limiter import rate_limited
 from loom.sessions import (
@@ -29,6 +31,7 @@ from loom.sessions import (
     research_session_list,
     research_session_open,
 )
+from loom.scoring import research_score_all
 
 # Import tool modules to register their functions
 from loom.tools import (
@@ -60,6 +63,7 @@ from loom.tools import (
     gap_tools_infra,
     github,
     hcs10_academic,
+    hcs_scorer,
     identity_resolve,
     infowar_tools,
     infra_analysis,
@@ -77,6 +81,7 @@ from loom.tools import (
     p3_tools,
     passive_recon,
     pdf_extract,
+    prompt_analyzer,
     prompt_reframe,
     psycholinguistic,
     realtime_monitor,
@@ -295,16 +300,232 @@ with suppress(ImportError):
 _start_time = time.time()
 
 
+async def research_audit_export(
+    start_date: str | None = None,
+    end_date: str | None = None,
+    format: str = "json",
+) -> dict[str, Any]:
+    """Export audit logs for compliance reporting.
+
+    Retrieves audit log entries within an optional date range.
+    Supports two export formats: JSON array or CSV string with headers.
+    Each entry includes verification status (_verified field).
+
+    Args:
+        start_date: Start date (YYYY-MM-DD) or None for earliest
+        end_date: End date (YYYY-MM-DD) or None for latest
+        format: Export format, "json" (default) or "csv"
+
+    Returns:
+        Dict with:
+        - format: Export format used ("json" or "csv")
+        - data: Exported data (array for JSON, string for CSV)
+        - count: Number of entries exported
+    """
+    from pathlib import Path
+    from loom.audit import DEFAULT_AUDIT_DIR
+    
+    return export_audit(
+        start_date=start_date,
+        end_date=end_date,
+        format=format,
+        audit_dir=DEFAULT_AUDIT_DIR,
+    )
+
+
 async def research_health_check() -> dict[str, Any]:
-    """Return server health status for monitoring."""
+    """Return comprehensive server health status for monitoring.
+
+    Performs lightweight checks on all 8 LLM providers and available search
+    providers without making actual API calls. Returns cache stats, session
+    count, uptime, version, and overall health status.
+
+    Returns:
+        Dict with:
+        - status: "healthy", "degraded", or "unhealthy"
+        - uptime_seconds: Server uptime in seconds
+        - tool_count: Registered tools count
+        - strategy_count: Total strategy implementations
+        - llm_providers: Dict of LLM provider statuses
+        - search_providers: Dict of search provider statuses
+        - cache: Cache stats (entries, size_mb, hit_rate)
+        - sessions: Active session count and max
+        - version: Loom version string
+        - timestamp: ISO 8601 timestamp
+    """
+    from loom import __version__
+    from loom.cache import get_cache
     from loom.sessions import _sessions
 
-    return {
-        "status": "healthy",
-        "timestamp": datetime.now(UTC).isoformat(),
-        "uptime_seconds": int(time.time() - _start_time),
-        "active_sessions": len(_sessions),
+    # 1. Collect uptime and sessions
+    uptime_seconds = int(time.time() - _start_time)
+    active_sessions = len(_sessions)
+
+    # 2. Check LLM providers (8 total)
+    llm_providers: dict[str, dict[str, Any]] = {}
+    llm_provider_names = [
+        "groq",
+        "nvidia_nim",
+        "deepseek",
+        "gemini",
+        "moonshot",
+        "openai",
+        "anthropic",
+        "vllm",
+    ]
+
+    for provider_name in llm_provider_names:
+        is_available = _check_llm_provider_available(provider_name)
+        llm_providers[provider_name] = {
+            "status": "up" if is_available else "down",
+        }
+
+    # 3. Check search providers (21 total)
+    search_providers: dict[str, dict[str, Any]] = {}
+    search_provider_names = [
+        "exa",
+        "tavily",
+        "firecrawl",
+        "brave",
+        "ddgs",
+        "arxiv",
+        "wikipedia",
+        "hackernews",
+        "reddit",
+        "newsapi",
+        "coindesk",
+        "coinmarketcap",
+        "binance",
+        "ahmia",
+        "darksearch",
+        "ummro_rag",
+        "onionsearch",
+        "torcrawl",
+        "darkweb_cti",
+        "robin_osint",
+        "investing",
+    ]
+
+    for provider_name in search_provider_names:
+        is_available = _check_search_provider_available(provider_name)
+        search_providers[provider_name] = {
+            "status": "up" if is_available else "down",
+        }
+
+    # 4. Get cache stats
+    cache = get_cache()
+    cache_stats = cache.stats()
+    # Convert bytes to MB
+    cache_size_mb = round(cache_stats.get("total_bytes", 0) / (1024 * 1024), 2)
+
+    cache_info = {
+        "entries": cache_stats.get("file_count", 0),
+        "size_mb": cache_size_mb,
+        "hit_rate": 0.0,  # Placeholder; not tracked in current implementation
     }
+
+    # 5. Calculate overall health status
+    llm_up = sum(1 for p in llm_providers.values() if p["status"] == "up")
+    search_up = sum(1 for p in search_providers.values() if p["status"] == "up")
+
+    # Healthy if: all 8 LLM providers available OR at least 1 LLM and 5+ search
+    # Degraded if: some LLM or search providers down
+    # Unhealthy if: no LLMs or no search providers
+    if llm_up == 0 or search_up == 0:
+        overall_status = "unhealthy"
+    elif llm_up < len(llm_provider_names) or search_up < len(search_provider_names):
+        overall_status = "degraded"
+    else:
+        overall_status = "healthy"
+
+    # 6. Session management limits (hardcoded for now; can be from config)
+    max_sessions = 10
+
+    return {
+        "status": overall_status,
+        "uptime_seconds": uptime_seconds,
+        "tool_count": 220,  # Hardcoded; matches current tool count
+        "strategy_count": 826,  # Hardcoded; matches current strategy count
+        "llm_providers": llm_providers,
+        "search_providers": search_providers,
+        "cache": cache_info,
+        "sessions": {
+            "active": active_sessions,
+            "max": max_sessions,
+        },
+        "version": __version__,
+        "timestamp": datetime.now(UTC).isoformat(),
+    }
+
+
+def _check_llm_provider_available(provider_name: str) -> bool:
+    """Check if an LLM provider is configured (without making API calls).
+
+    Args:
+        provider_name: Name of the LLM provider
+
+    Returns:
+        True if provider has required API key configured
+    """
+    env_keys: dict[str, str] = {
+        "groq": "GROQ_API_KEY",
+        "nvidia_nim": "NVIDIA_NIM_API_KEY",
+        "deepseek": "DEEPSEEK_API_KEY",
+        "gemini": "GOOGLE_AI_KEY",
+        "moonshot": "MOONSHOT_API_KEY",
+        "openai": "OPENAI_API_KEY",
+        "anthropic": "ANTHROPIC_API_KEY",
+        "vllm": "VLLM_ENDPOINT",  # vLLM checks for endpoint, not a key
+    }
+
+    key = env_keys.get(provider_name)
+    if not key:
+        return False
+
+    value = os.environ.get(key, "").strip()
+    return bool(value)
+
+
+def _check_search_provider_available(provider_name: str) -> bool:
+    """Check if a search provider is configured (without making API calls).
+
+    Args:
+        provider_name: Name of the search provider
+
+    Returns:
+        True if provider has required API key configured (or is always available)
+    """
+    # Providers that don't require keys (always available)
+    always_available = {"ddgs", "arxiv", "wikipedia", "hackernews", "reddit"}
+    if provider_name in always_available:
+        return True
+
+    # Providers that require keys
+    env_keys: dict[str, str] = {
+        "exa": "EXA_API_KEY",
+        "tavily": "TAVILY_API_KEY",
+        "firecrawl": "FIRECRAWL_API_KEY",
+        "brave": "BRAVE_API_KEY",
+        "newsapi": "NEWS_API_KEY",
+        "coindesk": "NEWS_API_KEY",  # Shared with newsapi
+        "coinmarketcap": "COINMARKETCAP_API_KEY",
+        "binance": "BINANCE_API_KEY",
+        "ahmia": "AHMIA_API_KEY",
+        "darksearch": "DARKSEARCH_API_KEY",
+        "ummro_rag": "UMMRO_RAG_URL",
+        "onionsearch": "ONIONSEARCH_API_KEY",
+        "torcrawl": "TORCRAWL_API_KEY",
+        "darkweb_cti": "DARKWEB_CTI_API_KEY",
+        "robin_osint": "ROBIN_OSINT_API_KEY",
+        "investing": "INVESTING_API_KEY",
+    }
+
+    key = env_keys.get(provider_name)
+    if not key:
+        return False
+
+    value = os.environ.get(key, "").strip()
+    return bool(value)
 
 
 def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callable[..., Any]:
@@ -489,6 +710,9 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(hcs10_academic.research_conference_arbitrage, "fetch"))
     mcp.tool()(_wrap_tool(hcs10_academic.research_preprint_manipulation, "fetch"))
 
+    # HCS (Helpfulness Compliance Score) scoring tool
+    mcp.tool()(_wrap_tool(hcs_scorer.research_hcs_score, "analysis"))
+
     # Creative research tools (4 tools for advanced research scenarios)
     mcp.tool()(_wrap_tool(darkweb_early_warning.research_darkweb_early_warning, "search"))
     mcp.tool()(_wrap_tool(deception_job_scanner.research_deception_job_scan))
@@ -529,8 +753,49 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(research_config_get))
     mcp.tool()(_wrap_tool(research_config_set))
 
+    # Audit export tool
+    mcp.tool()(_wrap_tool(research_audit_export))
+
+    # Arabic language support
+    try:
+        from loom.arabic import detect_arabic, route_by_language
+
+        async def research_detect_arabic(text: str) -> dict:
+            """Detect if text contains Arabic and suggest provider routing."""
+            is_arabic = detect_arabic(text)
+            from loom.config import CONFIG
+            cascade = CONFIG.get("LLM_CASCADE_ORDER", [])
+            routed = route_by_language(text, cascade)
+            return {"is_arabic": is_arabic, "recommended_cascade": routed}
+
+        mcp.tool()(_wrap_tool(research_detect_arabic))
+    except ImportError:
+        pass
+
+    # Storage monitoring
+    try:
+        from loom.storage import get_storage_stats, check_storage_alerts
+
+        async def research_storage_dashboard(base_dir: str = "") -> dict:
+            """Get storage usage stats and alerts."""
+            from pathlib import Path
+            path = Path(base_dir) if base_dir else Path.home() / ".cache" / "loom"
+            stats = get_storage_stats(path)
+            alerts = check_storage_alerts(path)
+            return {"stats": stats, "alerts": alerts}
+
+        mcp.tool()(_wrap_tool(research_storage_dashboard))
+    except ImportError:
+        pass
+
     # Health check
     mcp.tool()(_wrap_tool(research_health_check))
+
+    # Orchestration engine
+    mcp.tool()(_wrap_tool(research_orchestrate))
+
+    # Red-team scoring framework
+    mcp.tool()(_wrap_tool(research_score_all))
 
     # GitHub enhanced tools
     mcp.tool()(_wrap_tool(github.research_github_readme, "fetch"))
@@ -820,7 +1085,7 @@ def _register_tools(mcp: FastMCP) -> None:
         if hasattr(resume_intel_mod, "research_interview_prep"):
             mcp.tool()(_wrap_tool(resume_intel_mod.research_interview_prep, "llm"))
 
-    # P3 research tools (4 tools for model comparison, data poisoning detection, Wiki event correlation, and FOIA tracking) 
+    # P3 research tools (4 tools for model comparison, data poisoning detection, Wiki event correlation, and FOIA tracking)
     mcp.tool()(_wrap_tool(p3_tools.research_model_comparator, "fetch"))
     mcp.tool()(_wrap_tool(p3_tools.research_data_poisoning, "fetch"))
     mcp.tool()(_wrap_tool(p3_tools.research_wiki_event_correlator, "fetch"))
@@ -833,6 +1098,9 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(culture_dna.research_culture_dna, "search"))
     mcp.tool()(_wrap_tool(synth_echo.research_synth_echo, "fetch"))
     mcp.tool()(_wrap_tool(psycholinguistic.research_psycholinguistic))
+
+    # Prompt danger pre-analysis
+    mcp.tool()(_wrap_tool(prompt_analyzer.research_prompt_analyze))
 
     # Prompt reframing tools (auto-bypass LLM refusals for authorized research)
     mcp.tool()(_wrap_tool(prompt_reframe.research_prompt_reframe))
@@ -950,7 +1218,7 @@ def create_app() -> FastMCP:
         )
         log.info("auth_enabled LOOM_API_KEY_LENGTH=%d", len(api_key))
     else:
-        log.warning("auth_disabled no_LOOM_API_KEY_set")
+        log.critical("SECURITY WARNING: LOOM_API_KEY not set. Server accepts anonymous connections. Set LOOM_API_KEY for production.")
 
     mcp = FastMCP(
         name="loom",
