@@ -89,3 +89,5 @@ graphify-out/
 dashboard.html
 *.bak
 *.bak2
+tmp/*.tar.gz
+tmp/uv*.log
