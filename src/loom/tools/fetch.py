@@ -423,15 +423,61 @@ def _fetch_http_httpx(params: FetchParams) -> FetchResult:
 
 
 def _fetch_stealthy(params: FetchParams) -> FetchResult:
-    """Fetch using stealth browser (Camoufox)."""
+    """Fetch using stealth browser (Camoufox async API)."""
+    try:
+        from camoufox.async_api import AsyncNewBrowser
+    except ImportError:
+        try:
+            from camoufox import Camoufox as _SyncCamoufox
+        except ImportError:
+            return FetchResult(
+                url=params.url,
+                error="Camoufox not installed: pip install camoufox",
+                tool="camoufox",
+            )
+        return _fetch_stealthy_sync(params)
+
+    import asyncio
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+
+    if loop and loop.is_running():
+        return asyncio.ensure_future(_fetch_stealthy_async(params))  # type: ignore[return-value]
+
+    return asyncio.run(_fetch_stealthy_async(params))
+
+
+async def _fetch_stealthy_async(params: FetchParams) -> FetchResult:
+    """Async stealth fetch using Camoufox async API."""
+    try:
+        from camoufox.async_api import AsyncNewBrowser
+    except ImportError:
+        return FetchResult(url=params.url, error="Camoufox async not available", tool="camoufox")
+
+    try:
+        async with AsyncNewBrowser() as browser:
+            page = await browser.new_page()
+            await page.goto(params.url, timeout=30000)
+            text = await page.inner_text("body")
+            html = await page.content()
+
+            if text and len(text) > params.max_chars:
+                text = text[: params.max_chars] + "…"
+
+            return FetchResult(url=params.url, text=text, html=html, tool="camoufox")
+    except Exception as e:
+        logger.warning("stealthy_async_fetch_failed url=%s error=%s", params.url, e)
+        return FetchResult(url=params.url, error=str(e), tool="camoufox")
+
+
+def _fetch_stealthy_sync(params: FetchParams) -> FetchResult:
+    """Sync fallback for stealthy fetch (only when no async loop running)."""
     try:
         from camoufox import Camoufox
     except ImportError:
-        return FetchResult(
-            url=params.url,
-            error="Camoufox not installed: pip install camoufox",
-            tool="camoufox",
-        )
+        return FetchResult(url=params.url, error="Camoufox not installed", tool="camoufox")
 
     try:
         with Camoufox() as _fox:
