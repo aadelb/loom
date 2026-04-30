@@ -3397,3 +3397,423 @@ class URLhausSearchParams(BaseModel):
             raise ValueError("query cannot be empty")
         return v.strip()
 
+
+class NodriverFetchParams(BaseModel):
+    """Parameters for research_nodriver_fetch tool."""
+
+    url: str
+    wait_for: str | None = None
+    timeout: int = 30
+    screenshot: bool = False
+    bypass_cache: bool = False
+    max_chars: int = 20000
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def validate_url_field(cls, v: str) -> str:
+        return validate_url(v)
+
+    @field_validator("timeout")
+    @classmethod
+    def validate_timeout(cls, v: int) -> int:
+        if v < 1 or v > 120:
+            raise ValueError("timeout must be 1-120 seconds")
+        return v
+
+    @field_validator("max_chars")
+    @classmethod
+    def validate_max_chars(cls, v: int) -> int:
+        if v < 1 or v > 50000:
+            raise ValueError("max_chars must be 1-50000")
+        return v
+
+    @field_validator("wait_for")
+    @classmethod
+    def validate_wait_for(cls, v: str | None) -> str | None:
+        if v is not None and len(v) > 256:
+            raise ValueError("wait_for selector max 256 chars")
+        return v
+
+
+class NodriverExtractParams(BaseModel):
+    """Parameters for research_nodriver_extract tool."""
+
+    url: str
+    css_selector: str | None = None
+    xpath: str | None = None
+    timeout: int = 30
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def validate_url_field(cls, v: str) -> str:
+        return validate_url(v)
+
+    @field_validator("timeout")
+    @classmethod
+    def validate_timeout(cls, v: int) -> int:
+        if v < 1 or v > 120:
+            raise ValueError("timeout must be 1-120 seconds")
+        return v
+
+    @field_validator("css_selector")
+    @classmethod
+    def validate_css_selector(cls, v: str | None) -> str | None:
+        if v is not None and len(v) > 512:
+            raise ValueError("css_selector max 512 chars")
+        return v
+
+    @field_validator("xpath")
+    @classmethod
+    def validate_xpath(cls, v: str | None) -> str | None:
+        if v is not None and len(v) > 512:
+            raise ValueError("xpath max 512 chars")
+        return v
+
+
+class NodriverSessionParams(BaseModel):
+    """Parameters for research_nodriver_session tool."""
+
+    action: Literal["open", "navigate", "extract", "close"]
+    session_name: str = "default"
+    url: str | None = None
+    css_selector: str | None = None
+    xpath: str | None = None
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def validate_url_field(cls, v: str | None) -> str | None:
+        if v is not None:
+            return validate_url(v)
+        return v
+
+    @field_validator("session_name")
+    @classmethod
+    def validate_session_name(cls, v: str) -> str:
+        if not (1 <= len(v) <= 32):
+            raise ValueError("session_name must be 1-32 characters")
+        if not re.match(r"^[a-zA-Z0-9_-]+$", v):
+            raise ValueError("session_name must be alphanumeric, underscore, or hyphen")
+        return v
+
+    @field_validator("css_selector")
+    @classmethod
+    def validate_css_selector(cls, v: str | None) -> str | None:
+        if v is not None and len(v) > 512:
+            raise ValueError("css_selector max 512 chars")
+        return v
+
+    @field_validator("xpath")
+    @classmethod
+    def validate_xpath(cls, v: str | None) -> str | None:
+        if v is not None and len(v) > 512:
+            raise ValueError("xpath max 512 chars")
+        return v
+
+
+class ScraperEngineFetchParams(BaseModel):
+    """Parameters for research_engine_fetch tool."""
+
+    url: str
+    mode: Literal["auto", "stealth", "max", "fast"] = "auto"
+    max_escalation: int | None = None
+    extract_title: bool = False
+    force_backend: str | None = None
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def validate_url_field(cls, v: str) -> str:
+        return validate_url(v)
+
+    @field_validator("max_escalation")
+    @classmethod
+    def validate_max_escalation(cls, v: int | None) -> int | None:
+        if v is not None and (v < 0 or v > 7):
+            raise ValueError("max_escalation must be 0-7")
+        return v
+
+    @field_validator("force_backend")
+    @classmethod
+    def validate_force_backend(cls, v: str | None) -> str | None:
+        if v is not None:
+            valid_backends = {
+                "httpx",
+                "scrapling",
+                "crawl4ai",
+                "patchright",
+                "nodriver",
+                "zendriver",
+                "camoufox",
+                "botasaurus",
+            }
+            if v not in valid_backends:
+                raise ValueError(f"force_backend must be one of {valid_backends}")
+        return v
+
+
+class ScraperEngineExtractParams(BaseModel):
+    """Parameters for research_engine_extract tool."""
+
+    url: str
+    query: str
+    model: Literal["auto", "groq", "openai", "gemini"] = "auto"
+    mode: Literal["auto", "stealth", "max", "fast"] = "auto"
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def validate_url_field(cls, v: str) -> str:
+        return validate_url(v)
+
+    @field_validator("query")
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("query cannot be empty")
+        if len(v) > 500:
+            raise ValueError("query max 500 chars")
+        return v.strip()
+
+
+class ScraperEngineBatchParams(BaseModel):
+    """Parameters for research_engine_batch tool."""
+
+    urls: list[str]
+    mode: Literal["auto", "stealth", "max", "fast"] = "auto"
+    max_concurrent: int = 10
+    fail_fast: bool = False
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("urls")
+    @classmethod
+    def validate_urls(cls, v: list[str]) -> list[str]:
+        if not v:
+            raise ValueError("urls cannot be empty")
+        if len(v) > 100:
+            raise ValueError("urls max 100 items")
+        return [validate_url(url) for url in v]
+
+    @field_validator("max_concurrent")
+    @classmethod
+    def validate_max_concurrent(cls, v: int) -> int:
+        if v < 1 or v > 50:
+            raise ValueError("max_concurrent must be 1-50")
+        return v
+
+
+class CrawlParams(BaseModel):
+    """Parameters for research_crawl tool."""
+
+    url: str
+    max_pages: int = Field(
+        default=10,
+        description="Maximum pages to crawl (1-100)",
+        ge=1,
+        le=100,
+    )
+    pattern: str | None = Field(
+        default=None,
+        description="Optional regex pattern to filter links",
+        max_length=256,
+    )
+    extract_links: bool = Field(
+        default=True,
+        description="Whether to extract and follow links",
+    )
+    use_js: bool = Field(
+        default=False,
+        description="Use Playwright (JS-enabled) instead of BeautifulSoup",
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def validate_url_field(cls, v: str) -> str:
+        return validate_url(v)
+
+    @field_validator("pattern")
+    @classmethod
+    def validate_pattern(cls, v: str | None) -> str | None:
+        if v is not None:
+            try:
+                import re
+
+                re.compile(v)  # Validate regex
+            except re.error as e:
+                raise ValueError(f"Invalid regex pattern: {e}")
+        return v
+
+
+class SitemapCrawlParams(BaseModel):
+    """Parameters for research_sitemap_crawl tool."""
+
+    url: str
+    max_pages: int = Field(
+        default=50,
+        description="Maximum pages to crawl from sitemap (1-500)",
+        ge=1,
+        le=500,
+    )
+    use_js: bool = Field(
+        default=False,
+        description="Use Playwright (JS-enabled) instead of BeautifulSoup",
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def validate_url_field(cls, v: str) -> str:
+        return validate_url(v)
+
+
+class StructuredCrawlParams(BaseModel):
+    """Parameters for research_structured_crawl tool."""
+
+    url: str
+    schema_map: dict[str, str] = Field(
+        description="Dict mapping field names to CSS selectors",
+        min_length=1,
+        alias="schema",
+    )
+    max_pages: int = Field(
+        default=5,
+        description="Maximum pages to crawl (1-50)",
+        ge=1,
+        le=50,
+    )
+    use_js: bool = Field(
+        default=False,
+        description="Use Playwright (JS-enabled) instead of BeautifulSoup",
+    )
+
+    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def validate_url_field(cls, v: str) -> str:
+        return validate_url(v)
+
+    @field_validator("schema_map")
+    @classmethod
+    def validate_schema_map(cls, v: dict[str, str]) -> dict[str, str]:
+        if not v:
+            raise ValueError("schema cannot be empty")
+        for field_name, selector in v.items():
+            if not isinstance(field_name, str) or not isinstance(selector, str):
+                raise ValueError("schema keys and values must be strings")
+            if len(selector) > 256:
+                raise ValueError(f"CSS selector for {field_name} exceeds 256 chars")
+        return v
+
+
+class ZenFetchParams(BaseModel):
+    """Parameters for research_zen_fetch tool."""
+
+    url: str
+    timeout: int = 30
+    headless: bool = True
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def validate_url_field(cls, v: str) -> str:
+        return validate_url(v)
+
+    @field_validator("timeout")
+    @classmethod
+    def validate_timeout(cls, v: int) -> int:
+        if v < 1 or v > 120:
+            raise ValueError("timeout must be 1-120 seconds")
+        return v
+
+
+class ZenBatchParams(BaseModel):
+    """Parameters for research_zen_batch tool."""
+
+    urls: list[str]
+    max_concurrent: int = 5
+    timeout: int = 30
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("urls")
+    @classmethod
+    def validate_urls(cls, v: list[str]) -> list[str]:
+        if not v:
+            raise ValueError("urls list cannot be empty")
+        if len(v) > 100:
+            raise ValueError("urls list max 100 items")
+        return [validate_url(url) for url in v]
+
+    @field_validator("max_concurrent")
+    @classmethod
+    def validate_max_concurrent(cls, v: int) -> int:
+        if v < 1 or v > 50:
+            raise ValueError("max_concurrent must be 1-50")
+        return v
+
+    @field_validator("timeout")
+    @classmethod
+    def validate_timeout(cls, v: int) -> int:
+        if v < 1 or v > 120:
+            raise ValueError("timeout must be 1-120 seconds")
+        return v
+
+
+class ZenInteractParams(BaseModel):
+    """Parameters for research_zen_interact tool."""
+
+    url: str
+    actions: list[dict[str, str]]
+    timeout: int = 30
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def validate_url_field(cls, v: str) -> str:
+        return validate_url(v)
+
+    @field_validator("actions")
+    @classmethod
+    def validate_actions(cls, v: list[dict[str, str]]) -> list[dict[str, str]]:
+        if not v:
+            raise ValueError("actions list cannot be empty")
+        if len(v) > 50:
+            raise ValueError("actions list max 50 items")
+
+        valid_types = {"click", "fill", "scroll", "wait"}
+        for i, action in enumerate(v):
+            if not isinstance(action, dict):
+                raise ValueError(f"action {i} must be a dict")
+            action_type = action.get("type", "").lower()
+            if action_type not in valid_types:
+                raise ValueError(
+                    f"action {i} type must be one of {valid_types}, got {action_type}",
+                )
+            if action_type in ("click", "fill", "wait"):
+                if "selector" not in action or not action["selector"]:
+                    raise ValueError(f"action {i} ({action_type}) requires selector")
+            if action_type == "fill":
+                if "value" not in action:
+                    raise ValueError(f"action {i} (fill) requires value")
+        return v
+
+    @field_validator("timeout")
+    @classmethod
+    def validate_timeout(cls, v: int) -> int:
+        if v < 1 or v > 120:
+            raise ValueError("timeout must be 1-120 seconds")
+        return v

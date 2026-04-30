@@ -43,10 +43,13 @@ from loom.crescendo_loop import research_crescendo_loop
 from loom.model_profiler import research_model_profile
 from loom.reid_pipeline import research_reid_pipeline
 from loom.full_spectrum import FullSpectrumPipeline
+from loom import crawlee_backend
+from loom import zendriver_backend
 
 
 # Import tool modules to register their functions
 from loom.tools import (
+    scraper_engine_tools,
     agent_benchmark,
     academic_integrity,
     access_tools,
@@ -55,6 +58,7 @@ from loom.tools import (
     bias_lens,
     breach_check,
     cache_mgmt,
+    cyberscraper,
     cert_analyzer,
     change_monitor,
     company_intel,
@@ -332,6 +336,11 @@ with suppress(ImportError):
     from loom.tools import param_sweep as param_sweep_tools
 
     _optional_tools["param_sweep"] = param_sweep_tools
+
+with suppress(ImportError):
+    from loom import nodriver_backend
+
+    _optional_tools["nodriver"] = nodriver_backend
 
 _start_time = time.time()
 
@@ -750,8 +759,27 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(github.research_github, "search"))
     mcp.tool()(_wrap_tool(stealth.research_camoufox, "fetch"))
     mcp.tool()(_wrap_tool(stealth.research_botasaurus, "fetch"))
+    mcp.tool()(_wrap_tool(cyberscraper.research_smart_extract, "fetch"))
+    mcp.tool()(_wrap_tool(cyberscraper.research_paginate_scrape, "fetch"))
+    mcp.tool()(_wrap_tool(cyberscraper.research_stealth_browser, "fetch"))
     mcp.tool()(_wrap_tool(cache_mgmt.research_cache_stats))
     mcp.tool()(_wrap_tool(cache_mgmt.research_cache_clear))
+
+    # Unified scraper escalation engine (3 tools)
+    mcp.tool()(_wrap_tool(scraper_engine_tools.research_engine_fetch, "fetch"))
+    mcp.tool()(_wrap_tool(scraper_engine_tools.research_engine_extract, "fetch"))
+    mcp.tool()(_wrap_tool(scraper_engine_tools.research_engine_batch, "fetch"))
+
+    # Zendriver async browser backend (Docker-friendly)
+    mcp.tool()(_wrap_tool(zendriver_backend.research_zen_fetch, "fetch"))
+    mcp.tool()(_wrap_tool(zendriver_backend.research_zen_batch, "fetch"))
+    mcp.tool()(_wrap_tool(zendriver_backend.research_zen_interact, "fetch"))
+
+    # Crawlee multi-backend scraping framework (3 tools)
+    with suppress(ImportError):
+        mcp.tool()(_wrap_tool(crawlee_backend.research_crawl, "fetch"))
+        mcp.tool()(_wrap_tool(crawlee_backend.research_sitemap_crawl, "fetch"))
+        mcp.tool()(_wrap_tool(crawlee_backend.research_structured_crawl, "fetch"))
 
     # Killer research tools (20 tools — Loom's unfair advantage)
     mcp.tool()(_wrap_tool(dead_content.research_dead_content, "fetch"))
@@ -1320,6 +1348,16 @@ def _register_tools(mcp: FastMCP) -> None:
             mcp.tool()(_wrap_tool(resume_intel_mod.research_optimize_resume, "llm"))
         if hasattr(resume_intel_mod, "research_interview_prep"):
             mcp.tool()(_wrap_tool(resume_intel_mod.research_interview_prep, "llm"))
+
+    # Nodriver undetected browser backend (3 tools)
+    if "nodriver" in _optional_tools:
+        nodriver_mod = _optional_tools["nodriver"]
+        if hasattr(nodriver_mod, "research_nodriver_fetch"):
+            mcp.tool()(_wrap_tool(nodriver_mod.research_nodriver_fetch, "fetch"))
+        if hasattr(nodriver_mod, "research_nodriver_extract"):
+            mcp.tool()(_wrap_tool(nodriver_mod.research_nodriver_extract, "fetch"))
+        if hasattr(nodriver_mod, "research_nodriver_session"):
+            mcp.tool()(_wrap_tool(nodriver_mod.research_nodriver_session, "fetch"))
 
     # P3 research tools (4 tools for model comparison, data poisoning detection, Wiki event correlation, and FOIA tracking)
     mcp.tool()(_wrap_tool(p3_tools.research_model_comparator, "fetch"))
