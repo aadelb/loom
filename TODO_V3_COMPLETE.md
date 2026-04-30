@@ -1,8 +1,48 @@
 # Loom v3 — Complete TODO (98 Requirements, 200+ Tasks)
 
-**Total Requirements:** 98 | **P0:** 52 | **P1:** 36 | **P2:** 10
+**Total Requirements:** 98+ | **P0:** 52 | **P1:** 36 | **P2:** 10
 **Timeline:** 8 weeks (2026-04-29 → 2026-06-24)
 **Status:** IN PROGRESS
+
+---
+
+## PRIORITY-0: SCRAPER BACKEND INTEGRATION (15 new tools)
+
+**Full plan:** SCRAPER_INTEGRATION_PLAN.md
+
+### Phase S1: CyberScraper-2077 (Patchright + LLM extraction) [BUILDING]
+- [ ] SCRAPER-001: Adapt CyberScraper PlaywrightScraper → src/loom/cyberscraper.py
+- [ ] SCRAPER-002: Build research_smart_extract (URL + NL query → structured JSON)
+- [ ] SCRAPER-003: Build research_paginate_scrape (multi-page with auto-pagination)
+- [ ] SCRAPER-004: Build research_stealth_browser (pure Patchright fetch, replace Camoufox)
+- [ ] SCRAPER-005: Install patchright + chromium on Hetzner
+
+### Phase S2: nodriver (async undetected Chrome) [BUILDING]
+- [ ] SCRAPER-006: Build research_nodriver_fetch (async stealth Chrome)
+- [ ] SCRAPER-007: Build research_nodriver_extract (CSS/XPath extraction)
+- [ ] SCRAPER-008: Build research_nodriver_session (persistent browser sessions)
+- [ ] SCRAPER-009: Install nodriver on Hetzner
+
+### Phase S3: Crawlee Python (multi-backend crawling) [BUILDING]
+- [ ] SCRAPER-010: Build research_crawl (website crawl with link following)
+- [ ] SCRAPER-011: Build research_sitemap_crawl (sitemap.xml comprehensive crawl)
+- [ ] SCRAPER-012: Build research_structured_crawl (crawl + CSS schema extraction)
+- [ ] SCRAPER-013: Install crawlee[playwright,beautifulsoup] on Hetzner
+
+### Phase S4: zendriver (Docker-optimized Chrome) [BUILDING]
+- [ ] SCRAPER-014: Build research_zen_fetch (Docker-friendly stealth)
+- [ ] SCRAPER-015: Build research_zen_batch (concurrent batch fetch)
+- [ ] SCRAPER-016: Build research_zen_interact (click, fill, scroll automation)
+- [ ] SCRAPER-017: Install zendriver on Hetzner
+
+### Phase S5: Unified Scraper Engine (8-level auto-escalation) [BUILDING]
+- [ ] SCRAPER-018: Build ScraperEngine with 8-level escalation chain
+- [ ] SCRAPER-019: Build research_engine_fetch (auto-escalation fetch)
+- [ ] SCRAPER-020: Build research_engine_extract (fetch + LLM extraction)
+- [ ] SCRAPER-021: Build research_engine_batch (batch with per-URL escalation)
+- [ ] SCRAPER-022: Smart domain learning (cache which level works per domain)
+- [ ] SCRAPER-023: Deploy all backends + engine to Hetzner
+- [ ] SCRAPER-024: Test against 10 known-difficult sites (Cloudflare, Akamai, etc.)
 
 ---
 
