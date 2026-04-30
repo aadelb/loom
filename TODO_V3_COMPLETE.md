@@ -44,7 +44,19 @@
 - [x] SCRAPER-023: Deploy all backends + engine to Hetzner
 - [ ] SCRAPER-024: Test against 10 known-difficult sites (Cloudflare, Akamai, etc.)
 
-### Phase S6: Additional Backend Integrations (from research)
+### Phase S6: Round 2 Integrations — Security, Social, Dark Web, DNS
+- [ ] INTEGRATE-016: Clone + adapt projectdiscovery/nuclei (28K★) → research_nuclei_scan (template vuln scanner)
+- [ ] INTEGRATE-017: Clone + adapt projectdiscovery/katana (16K★) → research_katana_crawl (next-gen spidering)
+- [ ] INTEGRATE-018: Clone + adapt twintproject/twint (16K★) → research_twint (Twitter no-API scraping)
+- [ ] INTEGRATE-019: Clone + adapt OWASP/Amass (14K★) → research_amass_enum (attack surface mapping)
+- [ ] INTEGRATE-020: Clone + adapt projectdiscovery/subfinder (13K★) → research_subfinder (subdomain enum)
+- [ ] INTEGRATE-021: Clone + adapt instaloader/instaloader (12K★) → research_instagram (IG media+metadata)
+- [ ] INTEGRATE-022: Clone + adapt projectdiscovery/httpx (9.8K★) → research_httpx_probe (HTTP toolkit)
+- [ ] INTEGRATE-023: Clone + adapt DedSecInside/TorBot (4K★) → research_torbot (dark web OSINT crawler)
+- [ ] INTEGRATE-024: Clone + adapt VirusTotal/yara (7.6K★) → research_yara_scan (malware signatures)
+- [ ] INTEGRATE-025: Clone + adapt MISP/MISP (4.2K★) → research_misp_lookup (threat intel sharing)
+
+### Phase S7: Additional Backend Integrations (from research round 1)
 - [ ] INTEGRATE-001: Clone + adapt yt-dlp (159K★) → research_video_download, research_audio_extract
 - [ ] INTEGRATE-002: Clone + adapt sherlock (82K★) → research_sherlock_lookup (400+ social networks)
 - [ ] INTEGRATE-003: Clone + adapt deer-flow (64K★) → research_deer_flow (multi-agent deep research)
