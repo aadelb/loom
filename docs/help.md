@@ -1,6 +1,6 @@
 # Loom MCP Research Server — Complete Help Guide
 
-Loom is a comprehensive research orchestration system with 167 tools, 21 search providers, intelligent provider cascading, and a 12-stage deep research pipeline.
+Loom is a comprehensive research orchestration system with 245+ tools, 21 search providers, intelligent provider cascading, and a 12-stage deep research pipeline.
 
 ## Quick Start
 
@@ -62,7 +62,7 @@ curl http://127.0.0.1:8787/mcp/status
 
 ---
 
-## Tool Catalog (167 Tools)
+## Tool Catalog (245+ Tools)
 
 ### Core Search & Fetch (8 tools)
 

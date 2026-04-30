@@ -1,6 +1,6 @@
 # Loom MCP Architecture
 
-Loom is a production-grade research orchestration server built on FastMCP. It combines 23+ research tools, a 12-stage deep research pipeline, intelligent provider cascading, and security-hardened fetch escalation.
+Loom is a production-grade research orchestration server built on FastMCP. It combines 245+ research tools, a 12-stage deep research pipeline, intelligent provider cascading, and security-hardened fetch escalation.
 
 ## System Overview
 

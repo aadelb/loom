@@ -1,6 +1,6 @@
 # Loom MCP Tools Reference
 
-Complete documentation of all 56 MCP tools exposed by the Loom research server. Tools are organized by category and include parameters, return types, and usage examples.
+Complete documentation of all 245+ MCP tools exposed by the Loom research server. Tools are organized by category and include parameters, return types, and usage examples.
 
 ## Overview
 
