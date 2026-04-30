@@ -3817,3 +3817,99 @@ class ZenInteractParams(BaseModel):
         if v < 1 or v > 120:
             raise ValueError("timeout must be 1-120 seconds")
         return v
+
+class GraphScraperParams(BaseModel):
+    """Parameters for research_graph_scrape tool."""
+
+    url: str
+    query: str
+    model: Literal["auto", "groq", "nvidia", "deepseek", "openai", "anthropic"] = "auto"
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def validate_url_field(cls, v: str) -> str:
+        return validate_url(v)
+
+    @field_validator("query")
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("query cannot be empty")
+        if len(v) > 5000:
+            raise ValueError("query max 5000 chars")
+        return v
+
+    @field_validator("model")
+    @classmethod
+    def validate_model(cls, v: str) -> str:
+        valid = ["auto", "groq", "nvidia", "deepseek", "openai", "anthropic"]
+        if v not in valid:
+            raise ValueError(f"model must be one of {valid}")
+        return v
+
+
+class KnowledgeExtractParams(BaseModel):
+    """Parameters for research_knowledge_extract tool."""
+
+    text: str
+    entity_types: list[str] | None = None
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("text")
+    @classmethod
+    def validate_text(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("text cannot be empty")
+        if len(v) > 100000:
+            raise ValueError("text max 100000 chars")
+        return v
+
+    @field_validator("entity_types")
+    @classmethod
+    def validate_entity_types(cls, v: list[str] | None) -> list[str] | None:
+        if v is None:
+            return v
+        if not isinstance(v, list):
+            raise ValueError("entity_types must be a list")
+        if len(v) > 20:
+            raise ValueError("entity_types max 20 items")
+        for et in v:
+            if not isinstance(et, str) or len(et) > 50:
+                raise ValueError("each entity_type must be a string <= 50 chars")
+        return v
+
+
+class MultiPageGraphParams(BaseModel):
+    """Parameters for research_multi_page_graph tool."""
+
+    urls: list[str]
+    query: str
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("urls")
+    @classmethod
+    def validate_urls(cls, v: list[str]) -> list[str]:
+        if not v:
+            raise ValueError("urls cannot be empty")
+        if len(v) > 100:
+            raise ValueError("urls max 100 items")
+        validated = []
+        for url in v:
+            validated.append(validate_url(url))
+        return validated
+
+    @field_validator("query")
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("query cannot be empty")
+        if len(v) > 5000:
+            raise ValueError("query max 5000 chars")
+        return v

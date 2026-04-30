@@ -66,6 +66,7 @@ from loom.tools import (
     crypto_trace,
     culture_dna,
     dark_forum,
+    dark_recon,
     darkweb_early_warning,
     dead_content,
     deception_detect,
@@ -79,6 +80,7 @@ from loom.tools import (
     gap_tools_ai,
     gap_tools_infra,
     github,
+    graph_scraper,
     hcs10_academic,
     hcs_scorer,
     hcs_report,
@@ -100,6 +102,7 @@ from loom.tools import (
     p3_tools,
     passive_recon,
     pdf_extract,
+    projectdiscovery,
     prompt_analyzer,
     prompt_reframe,
     psycholinguistic,
@@ -109,9 +112,11 @@ from loom.tools import (
     salary_synthesizer,
     search,
     security_headers,
+    sherlock_backend,
     signal_detection,
     social_graph,
     social_intel,
+    social_scraper,
     spider,
     stealth,
     stego_detect,
@@ -342,6 +347,16 @@ with suppress(ImportError):
 
     _optional_tools["nodriver"] = nodriver_backend
 
+with suppress(ImportError):
+    from loom.tools import ytdlp_backend as ytdlp_backend_tools
+
+    _optional_tools["ytdlp_backend"] = ytdlp_backend_tools
+
+
+with suppress(ImportError):
+    from loom import doc_parser as doc_parser_tools
+
+    _optional_tools["doc_parser"] = doc_parser_tools
 _start_time = time.time()
 
 
@@ -869,6 +884,10 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(cert_analyzer.research_cert_analyze, "fetch"))
     mcp.tool()(_wrap_tool(security_headers.research_security_headers, "fetch"))
 
+    # Sherlock username OSINT tools
+    mcp.tool()(_wrap_tool(sherlock_backend.research_sherlock_lookup, "search"))
+    mcp.tool()(_wrap_tool(sherlock_backend.research_sherlock_batch, "search"))
+
     # Signal detection tools
     mcp.tool()(_wrap_tool(signal_detection.research_ghost_protocol, "search"))
     mcp.tool()(_wrap_tool(signal_detection.research_temporal_anomaly, "fetch"))
@@ -897,6 +916,12 @@ def _register_tools(mcp: FastMCP) -> None:
     # PDF extraction tools
     mcp.tool()(_wrap_tool(pdf_extract.research_pdf_extract, "fetch"))
     mcp.tool()(_wrap_tool(pdf_extract.research_pdf_search, "fetch"))
+
+    # Advanced document parsing tools (OCR + PDF extraction with EasyOCR & PyMuPDF)
+    with suppress(ImportError):
+        mcp.tool()(_wrap_tool(doc_parser_tools.research_ocr_advanced, "fetch"))
+        mcp.tool()(_wrap_tool(doc_parser_tools.research_pdf_advanced, "fetch"))
+        mcp.tool()(_wrap_tool(doc_parser_tools.research_document_analyze, "fetch"))
 
     # Academic integrity tools
     mcp.tool()(_wrap_tool(academic_integrity.research_citation_analysis, "fetch"))
@@ -934,6 +959,11 @@ def _register_tools(mcp: FastMCP) -> None:
     # Social intelligence tools
     mcp.tool()(_wrap_tool(social_intel.research_social_search, "fetch"))
     mcp.tool()(_wrap_tool(social_intel.research_social_profile, "fetch"))
+
+    # Social media and article extraction tools
+    mcp.tool()(_wrap_tool(social_scraper.research_instagram, "fetch"))
+    mcp.tool()(_wrap_tool(social_scraper.research_article_extract, "fetch"))
+    mcp.tool()(_wrap_tool(social_scraper.research_article_batch, "fetch"))
 
     # Trend prediction and report generation tools
     mcp.tool()(_wrap_tool(trend_predictor.research_trend_predict, "search"))
@@ -1296,6 +1326,16 @@ def _register_tools(mcp: FastMCP) -> None:
         if hasattr(screenshot_mod, "research_screenshot"):
             mcp.tool()(_wrap_tool(screenshot_mod.research_screenshot, "fetch"))
 
+    # yt-dlp backend tools (if yt-dlp available)
+    if "ytdlp_backend" in _optional_tools:
+        ytdlp_mod = _optional_tools["ytdlp_backend"]
+        if hasattr(ytdlp_mod, "research_video_download"):
+            mcp.tool()(_wrap_tool(ytdlp_mod.research_video_download, "fetch"))
+        if hasattr(ytdlp_mod, "research_video_info"):
+            mcp.tool()(_wrap_tool(ytdlp_mod.research_video_info, "fetch"))
+        if hasattr(ytdlp_mod, "research_audio_extract"):
+            mcp.tool()(_wrap_tool(ytdlp_mod.research_audio_extract, "fetch"))
+
     # IP intelligence tools (if available)
 
     if "ip_intel" in _optional_tools:
@@ -1368,6 +1408,9 @@ def _register_tools(mcp: FastMCP) -> None:
     # Previously missing registrations (found by Gemini audit)
     mcp.tool()(_wrap_tool(change_monitor.research_change_monitor, "fetch"))
     mcp.tool()(_wrap_tool(knowledge_graph.research_knowledge_graph, "search"))
+    mcp.tool()(_wrap_tool(graph_scraper.research_graph_scrape, "fetch"))
+    mcp.tool()(_wrap_tool(graph_scraper.research_knowledge_extract, "search"))
+    mcp.tool()(_wrap_tool(graph_scraper.research_multi_page_graph, "fetch"))
     mcp.tool()(_wrap_tool(fact_checker.research_fact_check, "search"))
     mcp.tool()(_wrap_tool(culture_dna.research_culture_dna, "search"))
     mcp.tool()(_wrap_tool(synth_echo.research_synth_echo, "fetch"))
