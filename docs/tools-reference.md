@@ -4,7 +4,7 @@ Complete documentation of all 245+ MCP tools exposed by the Loom research server
 
 ## Overview
 
-Loom provides a comprehensive research toolkit split into 12 categories:
+Loom provides a comprehensive research toolkit organized into major categories with 245+ tools:
 
 - **Core** (6 tools) — fundamental fetching, searching, and content extraction
 - **GitHub** (3 tools) — GitHub API integration and README/releases retrieval
@@ -2824,6 +2824,157 @@ Mine Wikipedia talk pages and edit history for contested knowledge and controver
 | Network | 1 | `research_nmap_scan` | FREE |
 
 **Total: 167 tools**
+
+
+---
+
+## Adversarial Pipelines & Orchestration
+
+### Advanced Attack Chains (10 tools)
+
+| Tool | Purpose |
+|------|---------|
+| `research_evidence_pipeline` | Multi-turn evidence-gathering attack with reasoning loop |
+| `research_cross_model_transfer` | Transfer jailbreaks across model architectures |
+| `research_context_poison` | Context poisoning via prefix/suffix injection |
+| `research_daisy_chain` | Chain multiple models as sequential reasoning steps |
+| `research_adversarial_debate` | Exploit self-debate mechanisms in models |
+| `research_model_evidence` | Evidence contradiction attack chains |
+| `research_citation_police_pipeline` | Citation-based authority hijacking |
+| `research_consensus_ring_pipeline` | Consensus mechanism bypass |
+| `research_blind_spy_chain` | Indirect querying via proxy requests |
+| `research_innocent_coder_chain` | Innocent-seeming code generation chains |
+
+### Adversarial Scorers (8 tools)
+
+Quantitative metrics for attack effectiveness and safety:
+
+| Tool | Purpose | Range |
+|------|---------|-------|
+| `research_attack_score` | Score attack effectiveness | 0-100 |
+| `research_stealth_score` | Measure detection evasion | 0-100 |
+| `research_executability_score` | Score practical exploit capability | 0-100 |
+| `research_quality_score` | Response quality and coherence | 0-100 |
+| `research_harm_assess` | Harm potential assessment | low/medium/high/critical |
+| `research_toxicity_check` | Safety boundary violation scoring | 0-100 |
+| `research_danger_prescore` | Pre-scoring before execution | 0-100 |
+| `research_stealth_detect` | Detect stealthy jailbreaks | present/absent |
+
+### Orchestration (4 tools)
+
+Target-specific attack optimization and planning:
+
+| Tool | Purpose |
+|------|---------|
+| `research_target_orchestrate` | Orchestrate attacks against specific target models |
+| `research_constraint_optimize` | Optimize prompt within token/format constraints |
+| `research_optimization_plan` | Generate multi-stage optimization roadmap |
+| `research_reid_auto` | Automated REID (Reasoning with Evidence for Intent Detection) |
+
+---
+
+## Tracking & Monitoring
+
+### Behavioral Monitoring (5 tools)
+
+Track and predict model vulnerabilities over time:
+
+| Tool | Purpose |
+|------|---------|
+| `research_drift_monitor` | Monitor model behavior drift over time |
+| `research_jailbreak_evolution` | Track jailbreak effectiveness trends |
+| `research_consistency_pressure` | Measure consistency violation exploitation opportunities |
+| `research_strategy_oracle` | Predict optimal strategy for new models |
+| `research_model_sentiment` | Detect emotional/sentiment vulnerabilities |
+
+---
+
+## Infrastructure & Performance
+
+### Performance Analysis (6 tools)
+
+System monitoring and optimization tools:
+
+| Tool | Purpose |
+|------|---------|
+| `research_semantic_cache_stats` | Semantic cache hit rates and analytics |
+| `research_parameter_sweep` | Parameter sensitivity analysis for attacks |
+| `research_cicd_run` | CI/CD integration and automation |
+| `research_mcp_security_scan` | MCP server security audit |
+| `research_recommend_tools` | Tool recommendation engine |
+| `research_dashboard` | Real-time dashboard of all metrics |
+
+---
+
+## Analysis & Validation
+
+### Compliance & Assessment (3 tools)
+
+Policy validation and model analysis:
+
+| Tool | Purpose |
+|------|---------|
+| `research_model_profile` | Detailed model capability/vulnerability profile |
+| `research_policy_validate` | Validate compliance with safety policies |
+| `research_consensus_build` | Build consensus evidence across models |
+
+---
+
+## Reports & Fuzzing
+
+### Testing & Reporting (4 tools)
+
+Automated testing frameworks and reporting:
+
+| Tool | Purpose |
+|------|---------|
+| `research_generate_executive_report` | Executive summary of findings and risks |
+| `research_jailbreak_fuzz` | Fuzzing framework for jailbreak discovery |
+| `research_bpj_generate` | Behavioral Prompt Jailbreak generation |
+| `research_full_spectrum` | Full-spectrum adversarial testing suite |
+
+---
+
+## Benchmarks & Multi-LLM
+
+### Benchmarking Suite (3 tools)
+
+Performance and capability benchmarking:
+
+| Tool | Purpose |
+|------|---------|
+| `research_benchmark_run` | Run standardized benchmarks across models |
+| `research_agent_benchmark` | Benchmark agent/tool-use capabilities |
+| `research_multilingual_benchmark` | Multilingual capability assessment |
+
+---
+
+## HCS (Holistic Compliance Scoring)
+
+### Compliance Framework (3 tools)
+
+Structured compliance scoring and reporting:
+
+| Tool | Purpose |
+|------|---------|
+| `research_hcs_score` | Calculate HCS compliance score (0-100) |
+| `research_hcs_report` | Generate detailed HCS compliance report |
+| `research_hcs_rubric` | HCS rubric categories and scoring details |
+
+**HCS Categories:**
+- Safety alignment
+- Bias mitigation
+- Transparency
+- Robustness
+- Interpretability
+- Data handling
+- User privacy
+
+---
+
+**New Total: 245+ tools**
+
+---
 
 ---
 
