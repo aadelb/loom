@@ -44,6 +44,23 @@
 - [x] SCRAPER-023: Deploy all backends + engine to Hetzner
 - [ ] SCRAPER-024: Test against 10 known-difficult sites (Cloudflare, Akamai, etc.)
 
+### Phase S6: Additional Backend Integrations (from research)
+- [ ] INTEGRATE-001: Clone + adapt yt-dlp (159K★) → research_video_download, research_audio_extract
+- [ ] INTEGRATE-002: Clone + adapt sherlock (82K★) → research_sherlock_lookup (400+ social networks)
+- [ ] INTEGRATE-003: Clone + adapt deer-flow (64K★) → research_deer_flow (multi-agent deep research)
+- [ ] INTEGRATE-004: Clone + adapt EasyOCR (29K★) → upgrade research_ocr_extract (80+ languages)
+- [ ] INTEGRATE-005: Clone + adapt gpt-researcher (26K★) → research_gpt_researcher (autonomous research)
+- [ ] INTEGRATE-006: Clone + adapt ScrapeGraphAI (23K★) → research_graph_scrape (LLM pipeline)
+- [ ] INTEGRATE-007: Clone + adapt social-analyzer (22K★) → research_social_analyze (1000 sites)
+- [ ] INTEGRATE-008: Clone + adapt maigret (20K★) → research_maigret_dossier (3000+ sites)
+- [ ] INTEGRATE-009: Clone + adapt spiderfoot (17K★) → port passive recon modules
+- [ ] INTEGRATE-010: Clone + adapt theHarvester (16K★) → research_harvest (email/subdomain)
+- [ ] INTEGRATE-011: Clone + adapt newspaper (15K★) → research_article_extract (NLP article parsing)
+- [ ] INTEGRATE-012: Clone + adapt undetected-chromedriver (12K★) → escalation tier 4.5
+- [ ] INTEGRATE-013: Clone + adapt PyMuPDF (9.5K★) → upgrade research_pdf_extract
+- [ ] INTEGRATE-014: Clone + adapt SingleFile (21K★) → research_archive_page (faithful save)
+- [ ] INTEGRATE-015: Clone + adapt DocsGPT (17K★) → research_docs_ai (private doc AI search)
+
 ---
 
 ## PHASE 1: CRITICAL SECURITY + ARCHITECTURE (Week 1-2)
