@@ -65,16 +65,18 @@ async def research_daisy_chain(
         max_sub_queries=max_sub_queries,
     )
 
+    models = params.available_models or ["nvidia_nim", "groq", "deepseek", "gemini"]
+
     logger.info(
         f"Starting daisy-chain decomposition",
         extra={
             "query_len": len(params.query),
-            "num_models": len(params.available_models),
+            "num_models": len(models),
             "combiner": params.combiner_model,
         },
     )
 
-    decomposer = DaisyChainDecomposer(available_models=params.available_models)
+    decomposer = DaisyChainDecomposer(available_models=models)
 
     # Build mock LLM callbacks (would be replaced with real provider calls)
     # For now, use echo responses for demo

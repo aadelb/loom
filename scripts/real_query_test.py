@@ -257,6 +257,23 @@ TOOL_SPECIFIC_PARAMS: dict[str, dict[str, Any]] = {
         "prompt": "What are the best investment opportunities in Dubai?",
         "endpoints": ["https://integrate.api.nvidia.com/v1/chat/completions"],
     },
+    "research_target_orchestrate": {
+        "query": "Dubai free zone business setup guide",
+        "targets": {"hcs": 7.0, "stealth": 5.0},
+    },
+    "research_data_poisoning": {
+        "target_url": "https://integrate.api.nvidia.com/v1/chat/completions",
+    },
+    "research_constraint_optimize": {
+        "prompt": "How to set up an offshore company in Dubai DIFC",
+        "constraints": {"hcs": {"min": 7.0}, "stealth": {"min": 5.0}},
+    },
+    "research_daisy_chain": {
+        "query": "What are the best investment funds in Dubai for high net worth individuals?",
+    },
+    "research_data_fabrication": {
+        "numbers": [1.2, 3.4, 5.6, 7.8, 9.0, 2.1, 4.3, 6.5],
+    },
 }
 
 

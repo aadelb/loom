@@ -286,7 +286,7 @@ async def research_content_authenticity(url: str) -> dict[str, Any]:
     """
 
     async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(follow_redirects=True) as client:
+        async with httpx.AsyncClient(follow_redirects=True, timeout=60.0) as client:
             current_hash = ""
             original_hash = ""
             earliest_snapshot = ""
