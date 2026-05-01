@@ -222,7 +222,7 @@ def research_rss_fetch(
         result["items"] = result["items"][:max_items]
         result["item_count"] = max_items
 
-    logger.info("feed_fetched url=%s item_count=%d format=%s", url, result["item_count"], result["format"])
+    logger.info("feed_fetched url=%s item_count=%d format=%s", url, result.get("item_count", 0), result["format"])
 
     return result
 

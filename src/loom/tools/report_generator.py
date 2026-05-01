@@ -290,7 +290,7 @@ def _generate_markdown_report(
     return "\n".join(lines)
 
 
-def research_generate_report(
+async def research_generate_report(
     topic: str,
     depth: str = "standard",
     sections: list[str] | None = None,
@@ -418,14 +418,7 @@ def research_generate_report(
                 "generated_at": datetime.now(UTC).isoformat(),
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
 async def research_generate_executive_report(

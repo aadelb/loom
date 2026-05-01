@@ -306,7 +306,7 @@ def _predict_next_3_months(
     return {"predicted_papers": predicted, "growth_rate": round(growth_rate, 3)}
 
 
-def research_trend_predict(topic: str, time_range_days: int = 90) -> dict[str, Any]:
+async def research_trend_predict(topic: str, time_range_days: int = 90) -> dict[str, Any]:
     """Predict research trends by analyzing publication patterns.
 
     Analyzes arXiv publication rates, Semantic Scholar citation velocity,
@@ -388,11 +388,4 @@ def research_trend_predict(topic: str, time_range_days: int = 90) -> dict[str, A
                 },
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

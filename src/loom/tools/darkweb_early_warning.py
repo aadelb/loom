@@ -171,7 +171,7 @@ def _estimate_severity(keyword: str, mentions: int) -> str:
     return "low"
 
 
-def research_darkweb_early_warning(
+async def research_darkweb_early_warning(
     keywords: list[str], hours_back: int = 72
 ) -> dict[str, Any]:
     """Monitor dark web sources for early warning signals.
@@ -300,11 +300,4 @@ def research_darkweb_early_warning(
                 "timestamp": datetime.now(UTC).isoformat(),
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

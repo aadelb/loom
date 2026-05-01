@@ -300,7 +300,7 @@ def _determine_trajectory(
         return "stable"
 
 
-def research_career_trajectory(person_name: str, domain: str = "") -> dict[str, Any]:
+async def research_career_trajectory(person_name: str, domain: str = "") -> dict[str, Any]:
     """Build a career trajectory profile by combining multiple data sources.
 
     Analyzes academic publications (Semantic Scholar), open source work (GitHub),
@@ -405,14 +405,7 @@ def research_career_trajectory(person_name: str, domain: str = "") -> dict[str, 
                 "combined_impact_score": round(impact_score, 1),
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
 async def _search_github_trending(
@@ -506,7 +499,7 @@ async def _search_arxiv_papers(
     }
 
 
-def research_market_velocity(skill: str, location: str = "remote") -> dict[str, Any]:
+async def research_market_velocity(skill: str, location: str = "remote") -> dict[str, Any]:
     """Measure how fast a skill/technology is growing in the job market.
 
     Analyzes GitHub trending repositories, HackerNews discussion frequency,
@@ -661,11 +654,4 @@ def research_market_velocity(skill: str, location: str = "remote") -> dict[str, 
                 "confidence_score": round(confidence, 1),
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

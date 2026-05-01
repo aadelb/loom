@@ -321,7 +321,7 @@ def _is_valid_domain(domain: str) -> bool:
     return bool(re.match(pattern, domain))
 
 
-def research_leak_scan(
+async def research_leak_scan(
     target: str,
     target_type: str = "domain",
 ) -> dict[str, Any]:
@@ -448,12 +448,4 @@ def research_leak_scan(
 
             return result
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        # Handle case where event loop is already running
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

@@ -422,7 +422,7 @@ def _synthesize_signals(
     return signals, overall_assessment
 
 
-def research_competitive_intel(
+async def research_competitive_intel(
     company: str,
     domain: str | None = None,
     github_org: str | None = None,
@@ -531,12 +531,4 @@ def research_competitive_intel(
 
         return result
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        # Fallback if event loop already running
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

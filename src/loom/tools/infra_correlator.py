@@ -137,7 +137,7 @@ async def _get_http_fingerprint(client: httpx.AsyncClient, domain: str) -> dict[
     }
 
 
-def research_infra_correlator(
+async def research_infra_correlator(
     domain: str,
     check_favicon: bool = True,
     check_analytics: bool = True,
@@ -220,11 +220,4 @@ def research_infra_correlator(
                 "total_signals": len(correlation_signals),
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

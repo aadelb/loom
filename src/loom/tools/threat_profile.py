@@ -128,7 +128,7 @@ def _infer_timezone(created_timestamps: list[int]) -> str:
     return "likely_Asia_or_Europe"
 
 
-def research_threat_profile(
+async def research_threat_profile(
     username: str,
     email: str = "",
     check_platforms: bool = True,
@@ -202,11 +202,4 @@ def research_threat_profile(
                 "inferred_timezone": _infer_timezone(timestamps),
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

@@ -124,7 +124,7 @@ def _compute_ela(original_bytes: bytes, quality: int = 95) -> dict[str, Any]:
     return result
 
 
-def research_legal_takedown(domain: str) -> dict[str, Any]:
+async def research_legal_takedown(domain: str) -> dict[str, Any]:
     """Monitor legal takedowns against a domain.
 
     Queries Lumen Database (lumendatabase.org) for takedown notices and
@@ -178,17 +178,10 @@ def research_legal_takedown(domain: str) -> dict[str, Any]:
                 "sources": sources_checked,
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
-def research_open_access(doi: str = "", title: str = "") -> dict[str, Any]:
+async def research_open_access(doi: str = "", title: str = "") -> dict[str, Any]:
     """Find free/open-access versions of academic papers.
 
     Queries Unpaywall, CORE, and Semantic Scholar APIs to locate open-access
@@ -275,17 +268,10 @@ def research_open_access(doi: str = "", title: str = "") -> dict[str, Any]:
                 "alternatives": alternatives,
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
-def research_content_authenticity(url: str) -> dict[str, Any]:
+async def research_content_authenticity(url: str) -> dict[str, Any]:
     """Verify that content hasn't been modified using Wayback Machine.
 
     Compares current version of a URL against its earliest Wayback Machine
@@ -347,17 +333,10 @@ def research_content_authenticity(url: str) -> dict[str, Any]:
                 "diff_summary": diff_summary,
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
-def research_credential_monitor(target: str, target_type: str = "email") -> dict[str, Any]:
+async def research_credential_monitor(target: str, target_type: str = "email") -> dict[str, Any]:
     """Check if credentials have been exposed in known data breaches.
 
     Queries HIBP (HaveIBeenPwned) API to find breach records for an email
@@ -400,17 +379,10 @@ def research_credential_monitor(target: str, target_type: str = "email") -> dict
                 "total_exposed": len(breaches),
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
-def research_deepfake_checker(image_url: str) -> dict[str, Any]:
+async def research_deepfake_checker(image_url: str) -> dict[str, Any]:
     """Check image authenticity using EXIF analysis and Error Level Analysis.
 
     Downloads image, extracts EXIF metadata (detects editing software),
@@ -476,11 +448,4 @@ def research_deepfake_checker(image_url: str) -> dict[str, Any]:
                 "authenticity_score": authenticity_score,
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

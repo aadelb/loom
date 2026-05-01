@@ -242,7 +242,7 @@ def _detect_domain_shifts(patents: list[dict[str, Any]]) -> list[str]:
     return []
 
 
-def research_talent_migration(
+async def research_talent_migration(
     person_name: str, field: str = ""
 ) -> dict[str, Any]:
     """Predict researcher relocation from affiliation/timezone patterns.
@@ -297,17 +297,10 @@ def research_talent_migration(
                 "data_sources": ["dblp", "semantic_scholar"],
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
-def research_funding_pipeline(company_or_field: str) -> dict[str, Any]:
+async def research_funding_pipeline(company_or_field: str) -> dict[str, Any]:
     """Track full grant→patent→hiring pipeline.
 
     Correlates NIH/NSF grants, USPTO patent filings, and GitHub hiring signals
@@ -407,14 +400,7 @@ def research_funding_pipeline(company_or_field: str) -> dict[str, Any]:
                 },
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
 def research_jailbreak_library(
@@ -474,7 +460,7 @@ def research_jailbreak_library(
     }
 
 
-def research_patent_embargo(
+async def research_patent_embargo(
     company: str, months_back: int = 12
 ) -> dict[str, Any]:
     """Detect M&A signals from patent filing patterns.
@@ -545,11 +531,4 @@ def research_patent_embargo(
                 "months_analyzed": months_back,
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

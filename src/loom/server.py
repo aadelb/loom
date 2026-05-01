@@ -1243,6 +1243,53 @@ def _register_tools(mcp: FastMCP) -> None:
 
     log.info("integration_tools_registered count=10 (maigret,harvester,spiderfoot,singlefile,social_analyzer,yara,misp,gpt_researcher,docsgpt,deerflow)")
 
+    # New integrations (web-check, Shodan, Photon, h8mail, Censys, unstructured, instructor)
+    try:
+        from loom.tools.webcheck_backend import research_web_check
+        mcp.tool()(_wrap_tool(research_web_check))
+    except ImportError as exc:
+        log.debug("webcheck_unavailable: %s", exc)
+
+    try:
+        from loom.tools.shodan_backend import research_shodan_host, research_shodan_search
+        mcp.tool()(_wrap_tool(research_shodan_host))
+        mcp.tool()(_wrap_tool(research_shodan_search))
+    except ImportError as exc:
+        log.debug("shodan_unavailable: %s", exc)
+
+    try:
+        from loom.tools.photon_backend import research_photon_crawl
+        mcp.tool()(_wrap_tool(research_photon_crawl))
+    except ImportError as exc:
+        log.debug("photon_unavailable: %s", exc)
+
+    try:
+        from loom.tools.h8mail_backend import research_email_breach
+        mcp.tool()(_wrap_tool(research_email_breach))
+    except ImportError as exc:
+        log.debug("h8mail_unavailable: %s", exc)
+
+    try:
+        from loom.tools.censys_backend import research_censys_host, research_censys_search
+        mcp.tool()(_wrap_tool(research_censys_host))
+        mcp.tool()(_wrap_tool(research_censys_search))
+    except ImportError as exc:
+        log.debug("censys_unavailable: %s", exc)
+
+    try:
+        from loom.tools.unstructured_backend import research_document_extract
+        mcp.tool()(_wrap_tool(research_document_extract))
+    except ImportError as exc:
+        log.debug("unstructured_unavailable: %s", exc)
+
+    try:
+        from loom.tools.instructor_backend import research_structured_extract
+        mcp.tool()(_wrap_tool(research_structured_extract))
+    except ImportError as exc:
+        log.debug("instructor_unavailable: %s", exc)
+
+    log.info("new_integrations_registered count=9 (webcheck,shodan_host,shodan_search,photon,h8mail,censys_host,censys_search,unstructured,instructor)")
+
     # Arabic language support
     try:
         from loom.arabic import detect_arabic, route_by_language

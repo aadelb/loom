@@ -152,7 +152,7 @@ def _extract_exif(image_bytes: bytes) -> dict[str, Any]:
         return {"error": str(exc)}
 
 
-def research_metadata_forensics(
+async def research_metadata_forensics(
     url: str,
     extract_exif: bool = True,
     max_images: int = 3,
@@ -220,11 +220,4 @@ def research_metadata_forensics(
                 "structured_data_found": bool(json_ld or open_graph),
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

@@ -239,7 +239,7 @@ def _infer_location_adjustment(
     }
 
 
-def research_salary_synthesize(
+async def research_salary_synthesize(
     job_title: str, location: str = "remote", skills: list[str] | None = None
 ) -> dict[str, Any]:
     """Estimate salary using free public data sources.
@@ -357,11 +357,4 @@ def research_salary_synthesize(
                 "location_adjusted": location.lower() != "remote",
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

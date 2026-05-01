@@ -302,7 +302,7 @@ def _deduplicate_vulns(vulns: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return list(seen.values())
 
 
-def research_vuln_intel(query: str, max_results: int = 30) -> dict[str, Any]:
+async def research_vuln_intel(query: str, max_results: int = 30) -> dict[str, Any]:
     """Aggregate vulnerability intelligence from 6+ free sources.
 
     Combines NVD/CVE API, Exploit-DB, GitHub Security Advisories,
@@ -412,11 +412,4 @@ def research_vuln_intel(query: str, max_results: int = 30) -> dict[str, Any]:
             "vulns": unique_vulns,
         }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

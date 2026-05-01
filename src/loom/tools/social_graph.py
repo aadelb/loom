@@ -450,7 +450,7 @@ def _extract_hn_topics(title: str, url: str) -> list[str]:
     return list(topics) if topics else ["general"]
 
 
-def research_social_graph(
+async def research_social_graph(
     username: str, platforms: list[str] | None = None
 ) -> dict[str, Any]:
     """Build a social relationship graph from public data across platforms.
@@ -624,11 +624,4 @@ def research_social_graph(
             "total_connections": len(unique_edges),
         }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

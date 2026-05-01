@@ -216,7 +216,7 @@ def research_propaganda_detector(text: str) -> dict[str, Any]:
     }
 
 
-def research_source_credibility(url: str) -> dict[str, Any]:
+async def research_source_credibility(url: str) -> dict[str, Any]:
     """Rate source credibility using multiple factors.
 
     Assesses credibility by:
@@ -355,17 +355,10 @@ def research_source_credibility(url: str) -> dict[str, Any]:
                 "credibility_score": credibility_score,
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
-def research_information_cascade(
+async def research_information_cascade(
     topic: str, hours_back: int = 72
 ) -> dict[str, Any]:
     """Map information flow across platforms (HN, Reddit, arXiv, Wikipedia).
@@ -508,17 +501,10 @@ def research_information_cascade(
                 "platforms_reached": platforms_reached,
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
-def research_web_time_machine(url: str, snapshots: int = 10) -> dict[str, Any]:
+async def research_web_time_machine(url: str, snapshots: int = 10) -> dict[str, Any]:
     """Track website evolution via Wayback Machine CDX snapshots.
 
     Samples website snapshots over time and detects technology changes
@@ -603,14 +589,7 @@ def research_web_time_machine(url: str, snapshots: int = 10) -> dict[str, Any]:
                 "tech_changes": tech_changes,
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
 def _detect_tech_signatures(html: str) -> list[str]:
@@ -650,7 +629,7 @@ def _detect_tech_signatures(html: str) -> list[str]:
     return sorted(list(technologies))
 
 
-def research_influence_operation(topic: str) -> dict[str, Any]:
+async def research_influence_operation(topic: str) -> dict[str, Any]:
     """Detect potential influence operations via coordinated posting patterns.
 
     Analyzes HN and Reddit for suspicious clusters of posts:
@@ -787,17 +766,10 @@ def research_influence_operation(topic: str) -> dict[str, Any]:
                 "evidence": evidence,
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
-def research_dark_web_bridge(query: str) -> dict[str, Any]:
+async def research_dark_web_bridge(query: str) -> dict[str, Any]:
     """Find clearnet references to dark web content.
 
     Searches for .onion mentions in clearnet sources:
@@ -902,17 +874,10 @@ def research_dark_web_bridge(query: str) -> dict[str, Any]:
                 "total": len(clearnet_refs) + len(academic_refs),
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
-def research_info_half_life(urls: list[str]) -> dict[str, Any]:
+async def research_info_half_life(urls: list[str]) -> dict[str, Any]:
     """Estimate URL survival rate and information decay half-life.
 
     For each URL, checks:
@@ -1010,17 +975,10 @@ def research_info_half_life(urls: list[str]) -> dict[str, Any]:
             "days_since_last_snapshot": days_since_snapshot,
         }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
-def research_search_discrepancy(query: str) -> dict[str, Any]:
+async def research_search_discrepancy(query: str) -> dict[str, Any]:
     """Compare search results across multiple engines to find discrepancies.
 
     Queries:
@@ -1134,11 +1092,4 @@ def research_search_discrepancy(query: str) -> dict[str, Any]:
                 "deindexed_candidates": deindexed_candidates[:10],
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

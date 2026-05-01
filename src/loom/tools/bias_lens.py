@@ -185,7 +185,7 @@ def _analyze_citation_network(
     }
 
 
-def research_bias_lens(paper_id: str = "", text: str = "") -> dict[str, Any]:
+async def research_bias_lens(paper_id: str = "", text: str = "") -> dict[str, Any]:
     """Detect methodological bias in academic papers.
 
     Analyzes papers for hedging language, p-hacking indicators,
@@ -338,11 +338,4 @@ def research_bias_lens(paper_id: str = "", text: str = "") -> dict[str, Any]:
                 "analysis_timestamp": asyncio.get_event_loop().time(),
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

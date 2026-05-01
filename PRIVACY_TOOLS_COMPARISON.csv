@@ -1,0 +1,19 @@
+Stars,Tool,GitHub URL,Category,Loom Tool Name,Primary Use Case,Threat Model,Effort Days,Tier,Priority
+27020,FingerprintJS,https://github.com/fingerprintjs/fingerprintjs,Browser Fingerprinting,research_fingerprint_audit,Browser anonymity validation,Counter-intelligence against anonymity,4,1,IMMEDIATE
+7042,supercookie,https://github.com/jonasstrehle/supercookie,Advanced Tracking,research_supercookie_test,Favicon-based re-tracking detection,Discover covert tracking,3,2,HIGH
+4999,browser-fingerprinting,https://github.com/maciekopalinski/browser-fingerprinting,Bot Detection,research_bot_evasion_analysis,Analyze bot protection mechanisms,Evaluate bot detection resilience,3,3,FUTURE
+4583,usbkill,https://github.com/hephaest0s/usbkill,Physical Security,research_usb_kill_monitor,Device seizure protection,Device confiscation evasion,5,1,IMMEDIATE
+2360,creepjs,https://github.com/abrahamjuliot/creepjs,Privacy Audit,research_privacy_exposure,Quick privacy baseline assessment,Identify all fingerprinting vectors,3,1,IMMEDIATE
+2076,fingerprint-suite,https://github.com/amnemonic/fingerprint-suite,Anonymization,research_fingerprint_evasion_test,Test anonymization tool effectiveness,Validate spoofing mechanisms,4,2,HIGH
+783,Forensia,https://github.com/Forensia/Forensia,Anti-Forensics,research_artifact_cleanup,Post-exploit evidence destruction,Hide attack footprints,4,1,IMMEDIATE
+720,silk-guardian,https://github.com/NullArray/silk-guardian,Linux Anti-Forensics,research_linux_anti_forensics_monitor,Linux forensic prevention,Prevent LE forensic analysis,4,2,HIGH
+544,chameleon,https://github.com/lulzsec/chameleon,Fingerprint Protection,research_fingerprint_randomizer,Defensive fingerprint randomization,Anti-fingerprinting effectiveness,3,3,FUTURE
+456,swiftGuard,https://github.com/swiftGuard-security/swiftGuard,macOS Anti-Forensics,research_macos_anti_forensics_monitor,macOS offensive hardening,macOS-specific LE surveillance,4,3,FUTURE
+208,ulexecve,https://github.com/mempodipog/ulexecve,Fileless Execution,research_fileless_execution,Memory-only process injection,EDR/file detection evasion,5,3,FUTURE
+141,saruman,https://github.com/elfmaster/saruman,Binary Obfuscation,research_binary_obfuscation,Binary-level anti-analysis,Reverse engineering prevention,5,3,FUTURE
+13,LSB-Steganography-Python,https://github.com/amitvkulkarni/LSB-Steganography-Python,Steganography,research_stego_encode,Image-based data hiding,Bypass network DLP,3,2,HIGH
+13,steganography-python,https://github.com/tharukaromesh/steganography-python,Steganography,research_stego_hide,Secret message concealment,Undetectable data hiding,2,3,FUTURE
+6,flock-detection,https://github.com/BenDavidAaron/flock-detection,Wireless Counter-Surveillance,research_wireless_surveillance,Detect surveillance devices,Identify IoT/BLE beacons,4,3,FUTURE
+2,stegma,https://github.com/jmhmcc/stegma,Multi-Format Steganography,research_stego_multiformat,Multi-media covert channels,Format diversity evasion,3,3,FUTURE
+2,BrowserBlackBox,https://github.com/dessant/bbb,Interactive Audit,research_browser_privacy_audit,Interactive tracking assessment,Comprehensive privacy baseline,3,3,FUTURE
+1,PII-Recon,https://github.com/ru7-security/PII-Recon,Data Exposure,research_pii_exposure,Sensitive information discovery,PII leak detection,3,3,FUTURE

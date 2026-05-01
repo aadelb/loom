@@ -174,7 +174,7 @@ async def _arxiv_search(
     return []
 
 
-def research_narrative_tracker(topic: str, hours_back: int = 72) -> dict[str, Any]:
+async def research_narrative_tracker(topic: str, hours_back: int = 72) -> dict[str, Any]:
     """Track narrative propagation across platforms.
 
     Searches HN Algolia, Reddit, arXiv, and constructs timeline showing
@@ -248,14 +248,7 @@ def research_narrative_tracker(topic: str, hours_back: int = 72) -> dict[str, An
                 "top_posts": sorted(all_posts, key=lambda p: p.get("score", 0), reverse=True)[:10],
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
 async def _analyze_posting_times(
@@ -330,7 +323,7 @@ async def _analyze_posting_times(
     }
 
 
-def research_bot_detector(subreddit: str = "", hn_query: str = "") -> dict[str, Any]:
+async def research_bot_detector(subreddit: str = "", hn_query: str = "") -> dict[str, Any]:
     """Detect coordinated bot/spam behavior on social platforms.
 
     Analyzes posting patterns (timestamps within 5 min), content similarity
@@ -385,14 +378,7 @@ def research_bot_detector(subreddit: str = "", hn_query: str = "") -> dict[str, 
                 "cluster_details": analysis["cluster_details"],
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
 async def _dns_lookup_doh(
@@ -465,7 +451,7 @@ async def _lumen_database_check(
     return []
 
 
-def research_censorship_detector(url: str) -> dict[str, Any]:
+async def research_censorship_detector(url: str) -> dict[str, Any]:
     """Detect DNS censorship and takedown notices.
 
     Queries DNS over HTTPS (Google, Cloudflare, Quad9) to detect
@@ -531,14 +517,7 @@ def research_censorship_detector(url: str) -> dict[str, Any]:
                 "notices": notices,
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
 async def _wayback_search_social(
@@ -577,7 +556,7 @@ async def _wayback_search_social(
     return []
 
 
-def research_deleted_social(url: str) -> dict[str, Any]:
+async def research_deleted_social(url: str) -> dict[str, Any]:
     """Recover deleted social media content from archives.
 
     Searches Wayback Machine CDX for deleted tweets, Reddit posts, or YouTube videos.
@@ -638,14 +617,7 @@ def research_deleted_social(url: str) -> dict[str, Any]:
                 "recovered_content_preview": wayback_snapshots[:20],
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
 async def _robots_txt_cdx(
@@ -707,7 +679,7 @@ def _diff_robots_rules(
     return added, removed
 
 
-def research_robots_archaeology(domain: str, snapshots: int = 10) -> dict[str, Any]:
+async def research_robots_archaeology(domain: str, snapshots: int = 10) -> dict[str, Any]:
     """Analyze historical robots.txt changes to find hidden paths.
 
     Fetches historical robots.txt versions from Wayback Machine CDX,
@@ -806,11 +778,4 @@ def research_robots_archaeology(domain: str, snapshots: int = 10) -> dict[str, A
                 "hidden_paths_timeline": all_hidden_paths,
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

@@ -25,7 +25,7 @@ SECURITY_HEADERS = {
 }
 
 
-def research_security_headers(url: str) -> dict[str, Any]:
+def research_security_headers(url: str = "", domain: str = "") -> dict[str, Any]:
     """Analyze HTTP security headers of a given URL.
 
     Fetches the URL and checks for critical security headers. Scores each
@@ -34,6 +34,7 @@ def research_security_headers(url: str) -> dict[str, Any]:
 
     Args:
         url: Full URL to analyze (scheme required)
+        domain: Alternative parameter name; if provided without url, constructs https://domain
 
     Returns:
         Dict with keys:
@@ -45,38 +46,43 @@ def research_security_headers(url: str) -> dict[str, Any]:
           - recommendations: list of security recommendations
           - error: str (if fetch failed)
     """
+    # Resolve URL: prefer domain parameter if provided (construct HTTPS URL)
+    target_url = url
+    if domain and not url:
+        target_url = f"https://{domain}"
+
     # Validate URL
     try:
-        url = validate_url(url)
+        target_url = validate_url(target_url)
     except ValueError as e:
         return {
-            "url": url,
+            "url": target_url,
             "error": f"Invalid URL: {e}",
         }
 
-    logger.info("security_headers url=%s", url)
+    logger.info("security_headers url=%s", target_url)
 
     try:
         # Fetch the URL
         with httpx.Client(timeout=EXTERNAL_TIMEOUT_SECS, follow_redirects=True) as client:
-            response = client.head(url, allow_redirects=True)
+            response = client.head(target_url, allow_redirects=True)
 
         headers = response.headers
 
     except httpx.TimeoutException:
         return {
-            "url": url,
+            "url": target_url,
             "error": "Request timeout",
         }
     except httpx.RequestError as e:
         return {
-            "url": url,
+            "url": target_url,
             "error": f"Request failed: {e}",
         }
     except Exception as e:
         logger.exception("Unexpected error fetching headers")
         return {
-            "url": url,
+            "url": target_url,
             "error": f"Unexpected error: {type(e).__name__}: {e}",
         }
 
@@ -163,7 +169,7 @@ def research_security_headers(url: str) -> dict[str, Any]:
         recommendations.append("All major security headers are in place; review CSP strictness")
 
     return {
-        "url": url,
+        "url": target_url,
         "headers_found": headers_found,
         "score": round(score, 1),
         "grade": grade_letter,

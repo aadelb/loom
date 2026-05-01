@@ -1,0 +1,199 @@
+{
+  "research_id": "692",
+  "title": "Reasoning Model Exploitation: o3, R1, Thinking Phase Attacks",
+  "description": "Comprehensive research into exploitation techniques targeting reasoning models, with focus on thinking phase injection, reasoning chain manipulation, hidden reasoning exploitation, DeepSeek R1 visible thinking attacks, and cognitive wedge techniques.",
+  "status": "COMPLETED",
+  "execution_date": "2026-05-01T13:54:01.493598Z",
+  "author": "Ahmed Adel Bakr Alderai",
+  "classification": "EU AI Act Article 15 Compliance Testing",
+  "research_type": "Technical Security Research",
+
+  "deployment": {
+    "primary_location": "Hetzner /opt/research-toolbox/",
+    "script_path": "/opt/research-toolbox/scripts/research_692.py",
+    "output_json": "/opt/research-toolbox/tmp/research_692_reasoning.json",
+    "output_summary": "/opt/research-toolbox/tmp/research_692_summary.txt"
+  },
+
+  "local_references": {
+    "script": "/Users/aadel/projects/loom/scripts/research_692.py",
+    "index": "/Users/aadel/projects/loom/RESEARCH_692_INDEX.md",
+    "templates": "/Users/aadel/projects/loom/RESEARCH_692_ATTACK_TEMPLATES.md",
+    "summary": "/Users/aadel/projects/loom/tmp/research_692_summary.txt",
+    "manifest": "/Users/aadel/projects/loom/RESEARCH_692_MANIFEST.json"
+  },
+
+  "research_scope": {
+    "query_count": 8,
+    "queries": [
+      "reasoning model jailbreak o3 R1 thinking phase 2025 2026",
+      "chain of thought exploitation adversarial reasoning",
+      "DeepSeek R1 thinking injection attack",
+      "o3 hidden reasoning exploitation cognitive wedge",
+      "reasoning token injection thinking phase bypass",
+      "adversarial chain of thought manipulation",
+      "R1 visible thinking attack surface vulnerability",
+      "reasoning model prompt injection techniques"
+    ],
+    "target_models": [
+      "OpenAI o3",
+      "OpenAI o4",
+      "DeepSeek R1",
+      "General reasoning models"
+    ]
+  },
+
+  "five_attack_categories": [
+    {
+      "id": 1,
+      "name": "Thinking Phase Injection",
+      "description": "Inject instructions or prompts into reasoning tokens to manipulate model thinking",
+      "target_models": ["o3", "o4", "DeepSeek R1"],
+      "threat_level": "CRITICAL",
+      "primary_techniques": 4
+    },
+    {
+      "id": 2,
+      "name": "Reasoning Chain Manipulation",
+      "description": "Force specific conclusions through adversarial reasoning chain construction",
+      "target_models": ["All reasoning models"],
+      "threat_level": "HIGH",
+      "primary_techniques": 4
+    },
+    {
+      "id": 3,
+      "name": "Hidden Reasoning Exploitation",
+      "description": "Exploit hidden/internal reasoning in o3/o4 that users cannot see",
+      "target_models": ["o3", "o4"],
+      "threat_level": "CRITICAL",
+      "primary_techniques": 4
+    },
+    {
+      "id": 4,
+      "name": "DeepSeek R1 Visible Thinking Attacks",
+      "description": "Exploit publicly exposed reasoning tokens as unique attack surface",
+      "target_models": ["DeepSeek R1"],
+      "threat_level": "HIGH",
+      "primary_techniques": 4
+    },
+    {
+      "id": 5,
+      "name": "Cognitive Wedge Techniques",
+      "description": "Use reasoning models' own logic to force harmful conclusions",
+      "target_models": ["All reasoning models"],
+      "threat_level": "HIGH",
+      "primary_techniques": 5
+    }
+  ],
+
+  "timeline": {
+    "2025_q1": "Initial o3 reasoning attacks discovered; focus on thinking-phase injection",
+    "2025_q2": "DeepSeek R1 visible thinking exposed as attack surface; XML injection techniques emerge",
+    "2025_q3": "Chain-of-thought poisoning becomes primary attack vector; cognitive wedge effectiveness increases",
+    "2025_q4": "Hidden reasoning exploitation discovered for o4; thinking-layer jailbreaks effective against filters",
+    "2026_q1": "Meta-reasoning attacks enable model self-jailbreak; consensus mechanisms defeated"
+  },
+
+  "key_findings": {
+    "most_dangerous_vectors": [
+      "Thinking-phase injection (directly manipulates reasoning without output detection)",
+      "Hidden reasoning exploitation (bypasses visible output safety mechanisms)",
+      "Meta-reasoning traps (forces self-justification of harmful outputs)"
+    ],
+    "most_vulnerable_models": [
+      "DeepSeek R1 (public reasoning tokens expose unique attack surface)",
+      "o3/o4 (hidden reasoning creates asymmetric defense problem)"
+    ],
+    "highest_impact_defenses": [
+      "Reasoning-layer content filtering (not output-only)",
+      "Ensemble reasoning with disagreement detection",
+      "Adversarial reasoning training"
+    ]
+  },
+
+  "detection_strategies": [
+    "Monitor reasoning token entropy (sudden drops indicate injection)",
+    "Validate chain-of-thought consistency (detect poisoned intermediate steps)",
+    "Implement reasoning-layer content filtering (not just output filtering)",
+    "Detect cognitive wedge patterns in reasoning sequences"
+  ],
+
+  "defense_mechanisms": [
+    "Mask intermediate reasoning from user-controlled inputs",
+    "Validate reasoning consistency against hard constraints",
+    "Implement adversarial reasoning training (ART)",
+    "Use ensemble reasoning (vote across multiple reasoning paths)"
+  ],
+
+  "further_research_needed": [
+    "Investigate thinking-layer gradient attacks",
+    "Study reasoning token embedding space for vulnerabilities",
+    "Explore reasoning-layer adversarial robustness",
+    "Develop reasoning transparency standards"
+  ],
+
+  "files_generated": {
+    "executable_script": {
+      "path": "/opt/research-toolbox/scripts/research_692.py",
+      "size_bytes": 9216,
+      "format": "Python 3.11+"
+    },
+    "research_output": {
+      "path": "/opt/research-toolbox/tmp/research_692_reasoning.json",
+      "size_bytes": 5324,
+      "lines": 143,
+      "format": "JSON"
+    },
+    "summary_text": {
+      "path": "/opt/research-toolbox/tmp/research_692_summary.txt",
+      "size_bytes": 4800,
+      "format": "Plain text"
+    },
+    "local_index": {
+      "path": "/Users/aadel/projects/loom/RESEARCH_692_INDEX.md",
+      "format": "Markdown",
+      "sections": 12
+    },
+    "attack_templates": {
+      "path": "/Users/aadel/projects/loom/RESEARCH_692_ATTACK_TEMPLATES.md",
+      "format": "Markdown",
+      "attack_types_documented": 5
+    }
+  },
+
+  "execution_details": {
+    "start_time": "2026-05-01T13:54:01.493598Z",
+    "queries_executed": 8,
+    "execution_status": "COMPLETED",
+    "json_validation": "PASSED",
+    "file_integrity": "VERIFIED"
+  },
+
+  "usage_instructions": {
+    "view_research": "ssh hetzner 'cat /opt/research-toolbox/tmp/research_692_reasoning.json'",
+    "run_research": "ssh hetzner 'cd /opt/research-toolbox && python3 scripts/research_692.py'",
+    "read_index": "cat /Users/aadel/projects/loom/RESEARCH_692_INDEX.md",
+    "read_templates": "cat /Users/aadel/projects/loom/RESEARCH_692_ATTACK_TEMPLATES.md"
+  },
+
+  "classification": {
+    "type": "EU AI Act Article 15 Compliance Testing",
+    "scope": "Reasoning model vulnerability research",
+    "purpose": "Defense validation and hardening",
+    "distribution": "Research teams, security teams, vendors"
+  },
+
+  "related_research": [
+    "Research 001-005: Jailbreak vectors and defense mechanisms",
+    "Research 022: Adversarial attack matrix",
+    "Research 023: Adversarial gap analysis"
+  ],
+
+  "metadata": {
+    "version": "1.0",
+    "schema_version": "1.0",
+    "last_updated": "2026-05-01T15:54:00Z",
+    "total_attack_techniques_documented": 21,
+    "total_defense_strategies": 8
+  }
+}

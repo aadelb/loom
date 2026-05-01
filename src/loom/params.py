@@ -4401,3 +4401,238 @@ class DocumentAnalyzeParams(BaseModel):
         if len(v) > 500:
             raise ValueError("file_path_or_url too long")
         return v
+
+
+class ShodanHostParams(BaseModel):
+    """Parameters for research_shodan_host tool."""
+
+    ip: str
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("ip")
+    @classmethod
+    def validate_ip(cls, v: str) -> str:
+        v = v.strip()
+        # Basic IPv4 validation
+        if not re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", v):
+            raise ValueError("ip must be valid IPv4 address")
+        # Validate each octet is 0-255
+        octets = v.split(".")
+        for octet in octets:
+            num = int(octet)
+            if num < 0 or num > 255:
+                raise ValueError("ip octets must be 0-255")
+        return v
+
+
+class ShodanSearchParams(BaseModel):
+    """Parameters for research_shodan_search tool."""
+
+    query: str
+    max_results: int = 10
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("query")
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("query cannot be empty")
+        if len(v) > 500:
+            raise ValueError("query too long (max 500 chars)")
+        return v
+
+    @field_validator("max_results")
+    @classmethod
+    def validate_max_results(cls, v: int) -> int:
+        if v < 1 or v > 5000:
+            raise ValueError("max_results must be 1-5000")
+        return v
+
+class CensysHostParams(BaseModel):
+    """Parameters for research_censys_host tool."""
+
+    ip: str = Field(
+        ...,
+        description="IPv4 or IPv6 address to look up",
+        min_length=3,
+        max_length=45,
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("ip")
+    @classmethod
+    def validate_ip(cls, v: str) -> str:
+        """IP must be a valid IPv4 or IPv6 address."""
+        v = v.strip()
+        if not v:
+            raise ValueError("ip cannot be empty")
+        # Basic validation: IPv4 has dots, IPv6 has colons
+        if ":" not in v and "." not in v:
+            raise ValueError("ip must be IPv4 (with dots) or IPv6 (with colons)")
+        return v
+
+
+class CensysSearchParams(BaseModel):
+    """Parameters for research_censys_search tool."""
+
+    query: str = Field(
+        ...,
+        description="Censys query string (e.g., 'services.service_name: HTTP AND location.country: US')",
+        min_length=1,
+        max_length=1000,
+    )
+    max_results: int = Field(
+        10,
+        description="Maximum results to return (1-1000)",
+        ge=1,
+        le=1000,
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("query")
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        """Query must be non-empty and reasonably short."""
+        v = v.strip()
+        if not v:
+            raise ValueError("query cannot be empty")
+        return v
+
+    @field_validator("max_results")
+    @classmethod
+    def validate_max_results(cls, v: int) -> int:
+        """max_results must be between 1 and 1000."""
+        if v < 1 or v > 1000:
+            raise ValueError("max_results must be 1-1000")
+        return v
+
+
+class UnstructuredDocumentExtractParams(BaseModel):
+    """Parameters for research_document_extract tool."""
+
+    file_path: str = ""
+    url: str = ""
+    strategy: str = "auto"
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def validate_url_field(cls, v: str) -> str:
+        if v and v.strip():
+            return validate_url(v)
+        return v
+
+    @field_validator("strategy")
+    @classmethod
+    def validate_strategy(cls, v: str) -> str:
+        v = v.lower().strip()
+        valid_strategies = {"auto", "fast", "hi_res", "ocr_only"}
+        if v not in valid_strategies:
+            raise ValueError(f"strategy must be one of {valid_strategies}")
+        return v
+
+class InstructorStructuredExtractParams(BaseModel):
+    """Parameters for research_structured_extract tool."""
+
+    text: str = Field(
+        ...,
+        description="Input text to extract structured data from",
+        min_length=1,
+        max_length=100000,
+    )
+    output_schema: dict[str, str] = Field(
+        ...,
+        description="Field definitions (e.g., {'name': 'str', 'age': 'int', 'items': 'list'})",
+    )
+    model: str = Field(
+        "auto",
+        description="LLM model to use ('auto' for cascade)",
+        max_length=100,
+    )
+    max_retries: int = Field(
+        3,
+        description="Max validation retries (1-10)",
+        ge=1,
+        le=10,
+    )
+    provider_override: str | None = Field(
+        None,
+        description="Force a specific provider (nvidia, openai, anthropic, groq, deepseek, gemini, moonshot, vllm)",
+        max_length=50,
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("text")
+    @classmethod
+    def validate_text(cls, v: str) -> str:
+        """Text must be non-empty and within limits."""
+        if not v or not v.strip():
+            raise ValueError("text cannot be empty")
+        return v
+
+    @field_validator("output_schema")
+    @classmethod
+    def validate_schema(cls, v: dict[str, str]) -> dict[str, str]:
+        """Schema must be non-empty dict with valid type names."""
+        if not v:
+            raise ValueError("output_schema cannot be empty")
+        if len(v) > 100:
+            raise ValueError("output_schema max 100 fields")
+
+        valid_types = {
+            "str", "string",
+            "int", "integer",
+            "float",
+            "bool", "boolean",
+            "list",
+            "dict", "object",
+        }
+
+        for field_name, field_type in v.items():
+            if not isinstance(field_name, str) or not field_name:
+                raise ValueError("schema field names must be non-empty strings")
+            if len(field_name) > 50:
+                raise ValueError(f"field name '{field_name}' exceeds 50 chars")
+            if not isinstance(field_type, str) or field_type.lower() not in valid_types:
+                raise ValueError(
+                    f"invalid type '{field_type}' for field '{field_name}'. "
+                    f"Valid: str, int, float, bool, list, dict"
+                )
+
+        return v
+
+    @field_validator("model")
+    @classmethod
+    def validate_model(cls, v: str) -> str:
+        """Model must be non-empty or 'auto'."""
+        v = v.strip()
+        if not v:
+            raise ValueError("model cannot be empty")
+        return v
+
+    @field_validator("provider_override")
+    @classmethod
+    def validate_provider(cls, v: str | None) -> str | None:
+        """Provider, if provided, must be in allowed list."""
+        if v is None:
+            return v
+        v = v.strip()
+        if not v:
+            raise ValueError("provider_override cannot be empty string")
+
+        allowed = {
+            "nvidia", "openai", "anthropic", "groq",
+            "deepseek", "gemini", "moonshot", "vllm",
+        }
+        if v.lower() not in allowed:
+            raise ValueError(
+                f"invalid provider '{v}'. Allowed: {', '.join(sorted(allowed))}"
+            )
+        return v.lower()

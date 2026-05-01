@@ -11,7 +11,11 @@ from typing import Any
 logger = logging.getLogger("loom.tools.cert_analyzer")
 
 
-def research_cert_analyze(hostname: str, port: int = 443) -> dict[str, Any]:
+def research_cert_analyze(
+    hostname: str = "",
+    domain: str = "",
+    port: int = 443,
+) -> dict[str, Any]:
     """Extract SSL/TLS certificate information from a remote server.
 
     Uses Python's ssl stdlib to connect to the target and retrieve the peer
@@ -20,6 +24,7 @@ def research_cert_analyze(hostname: str, port: int = 443) -> dict[str, Any]:
 
     Args:
         hostname: Domain name or IP address (alphanumeric + dots + hyphens)
+        domain: Alternative parameter name for hostname (if provided, used as hostname)
         port: TCP port (default 443)
 
     Returns:
@@ -38,10 +43,13 @@ def research_cert_analyze(hostname: str, port: int = 443) -> dict[str, Any]:
           - version: X.509 version (1, 2, or 3)
           - error: str (if connection/parsing failed)
     """
+    # Resolve hostname: prefer domain parameter if provided
+    target_hostname = domain if domain else hostname
+
     # Validate hostname format
-    if not hostname or not _is_valid_hostname(hostname):
+    if not target_hostname or not _is_valid_hostname(target_hostname):
         return {
-            "hostname": hostname,
+            "hostname": target_hostname,
             "port": port,
             "error": "Invalid hostname format (alphanumeric + dots + hyphens only)",
         }
@@ -49,27 +57,27 @@ def research_cert_analyze(hostname: str, port: int = 443) -> dict[str, Any]:
     # Validate port
     if not isinstance(port, int) or port < 1 or port > 65535:
         return {
-            "hostname": hostname,
+            "hostname": target_hostname,
             "port": port,
             "error": "Port must be integer 1-65535",
         }
 
-    logger.info("cert_analyze hostname=%s port=%d", hostname, port)
+    logger.info("cert_analyze hostname=%s port=%d", target_hostname, port)
 
     try:
         # Create SSL context
         ctx = ssl.create_default_context()
 
         # Connect to the server
-        with ctx.wrap_socket(socket.socket(socket.AF_INET), server_hostname=hostname) as s:
+        with ctx.wrap_socket(socket.socket(socket.AF_INET), server_hostname=target_hostname) as s:
             s.settimeout(10)
-            s.connect((hostname, port))
+            s.connect((target_hostname, port))
 
             # Get peer certificate in DER format
             der_cert = s.getpeercert(binary_form=True)
             if not der_cert:
                 return {
-                    "hostname": hostname,
+                    "hostname": target_hostname,
                     "port": port,
                     "error": "No certificate returned",
                 }
@@ -79,7 +87,7 @@ def research_cert_analyze(hostname: str, port: int = 443) -> dict[str, Any]:
 
         if not cert_dict:
             return {
-                "hostname": hostname,
+                "hostname": target_hostname,
                 "port": port,
                 "error": "Failed to parse certificate",
             }
@@ -121,7 +129,7 @@ def research_cert_analyze(hostname: str, port: int = 443) -> dict[str, Any]:
                 logger.warning("Failed to extract serial: %s", e)
 
         return {
-            "hostname": hostname,
+            "hostname": target_hostname,
             "port": port,
             "subject": subject or {},
             "issuer": issuer or {},
@@ -137,26 +145,26 @@ def research_cert_analyze(hostname: str, port: int = 443) -> dict[str, Any]:
 
     except TimeoutError:
         return {
-            "hostname": hostname,
+            "hostname": target_hostname,
             "port": port,
             "error": "Connection timeout",
         }
     except socket.gaierror as e:
         return {
-            "hostname": hostname,
+            "hostname": target_hostname,
             "port": port,
             "error": f"DNS resolution failed: {e}",
         }
     except ssl.SSLError as e:
         return {
-            "hostname": hostname,
+            "hostname": target_hostname,
             "port": port,
             "error": f"SSL error: {e}",
         }
     except Exception as e:
         logger.exception("Unexpected error during cert analysis")
         return {
-            "hostname": hostname,
+            "hostname": target_hostname,
             "port": port,
             "error": f"Unexpected error: {type(e).__name__}: {e}",
         }

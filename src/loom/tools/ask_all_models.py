@@ -257,7 +257,7 @@ def _query_cli(name: str, cmd: list[str], prompt: str, timeout: int = 60) -> dic
         return {"text": "", "tokens": 0, "error": str(exc)[:150]}
 
 
-def research_ask_all_models(
+async def research_ask_all_models(
     prompt: str,
     models: list[str] | None = None,
     max_tokens: int = 1000,
@@ -427,11 +427,4 @@ def research_ask_all_models(
             "responses": responses,
         }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

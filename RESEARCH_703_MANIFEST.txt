@@ -1,0 +1,251 @@
+================================================================================
+RESEARCH 703: FEDERATED/DISTRIBUTED ATTACK COORDINATION
+Status: COMPLETED
+Date: 2026-05-01
+================================================================================
+
+DELIVERABLES
+
+1. JSON Research Output
+   File: /opt/research-toolbox/tmp/research_703_distributed.json
+   Size: 14 KB
+   Format: Valid JSON with structured analysis
+   Copy: /Users/aadel/projects/loom/research_703_distributed.json
+
+2. Research Summary Document
+   File: /Users/aadel/projects/loom/RESEARCH_703_SUMMARY.md
+   Size: 8.8 KB
+   Format: Markdown (human-readable executive summary)
+
+3. Research Script
+   File: /Users/aadel/projects/loom/scripts/research_703.py
+   Size: 19 KB
+   Format: Python 3.11+ with async support
+   Usage: python3 research_703.py (from /opt/research-toolbox)
+
+================================================================================
+CONTENT STRUCTURE
+================================================================================
+
+research_703_distributed.json contains:
+
+{
+  "timestamp": "2026-05-01T15:56:21.666122",
+  "title": "Research 703: Federated/Distributed Attack Coordination",
+  "queries": [5 research topics],
+  "search_results": {
+    "multi_agent_coordination": {...},
+    "distributed_jailbreak": {...},
+    "swarm_consensus": {...},
+    "federated_adversarial": {...},
+    "orchestration": {...}
+  },
+  "analysis": {
+    "multi_agent_attack_patterns": {
+      "description": "...",
+      "key_findings": [...],
+      "research_keywords": [...]
+    },
+    "parallel_probing_strategy": {
+      "description": "...",
+      "key_findings": [...],
+      "scaling_pattern": {
+        "1_agent": "...",
+        "2_5_agents": "...",
+        "5_20_agents": "...",
+        "20_100_agents": "...",
+        "100_1000_agents": "..."
+      }
+    },
+    "consensus_attack_synthesis": {
+      "description": "...",
+      "key_findings": [...],
+      "consensus_algorithm": {
+        "step_1_query": "...",
+        "step_2_collect": "...",
+        "step_3_extract": "...",
+        "step_4_synthesize": "...",
+        "step_5_pressure": "...",
+        "step_6_score": "..."
+      }
+    },
+    "information_sharing_between_agents": {
+      "description": "...",
+      "key_findings": [...],
+      "information_types": [...],
+      "sharing_mechanism": {
+        "protocol": "Gossip protocol with DHT",
+        "latency": "< 100ms",
+        "throughput": "1000s of lookups/sec",
+        "consistency": "Eventual consistency",
+        "retention": "7-30 day TTL"
+      }
+    }
+  },
+  "loom_integration": {
+    "ask_all_models_tool": {...},
+    "consensus_builder_module": {...},
+    "proposed_distributed_layers": {
+      "layer_1_agent_mesh": {...},
+      "layer_2_strategy_cache": {...},
+      "layer_3_orchestration": {...},
+      "layer_4_scaling": {...}
+    },
+    "integration_with_existing_modules": [...]
+  },
+  "scaling_analysis": {
+    "time_to_breakthrough": {
+      "1_agent": {...},
+      "2_5_agents": {...},
+      "5_20_agents": {...},
+      "20_100_agents": {...},
+      "100_1000_agents": {...}
+    },
+    "cost_optimization_strategies": [...],
+    "success_factors": [...],
+    "critical_bottlenecks": [...]
+  }
+}
+
+================================================================================
+KEY FINDINGS SUMMARY
+================================================================================
+
+MULTI-AGENT ATTACK PATTERNS
+- Multiple agents query different models simultaneously
+- Consensus-based synthesis aggregates successful prompts
+- Real-time information sharing enables rapid iteration
+- Cross-model transfer of successful strategies
+- Research focus: multi-agent RL, distributed optimization, Byzantine consensus
+
+PARALLEL PROBING
+- Time complexity: O(N) sequential → O(log N) parallel
+- 1 agent: baseline (1.0x T_base, 1-24 hours)
+- 5-20 agents: 0.3-0.5x T_base (50-80% speedup, 0.3-12 hours)
+- 20-100 agents: 0.2-0.3x T_base (70-80% speedup, 0.2-7 hours)
+- 100-1000 agents: 0.1x T_base (diminishing returns, 0.1-2 hours)
+- Cost multiplier: 5-1000x depending on agent count
+
+CONSENSUS SYNTHESIS
+- 6-step pipeline: Query → Collect → Extract → Synthesize → Pressure → Score
+- Success criteria: N/2+1 agents bypass → method validated
+- Confidence metric: (agents_complied / total_agents)
+
+INFORMATION SHARING
+- Shared cache stores (prompt_hash, model, outcome, confidence, timestamp, agent_id)
+- Gossip protocol with DHT backing
+- Latency: < 100ms for cache hits
+- Throughput: 1000s of lookups/second per agent
+- Eventual consistency with 7-30 day TTL
+
+================================================================================
+LOOM INTEGRATION
+================================================================================
+
+EXISTING CAPABILITIES
+- ask_all_models: baseline multi-model querying
+- consensus_builder: 6-step consensus pipeline
+
+GAPS IDENTIFIED
+- No persistent shared state between runs
+- No agent-to-agent communication
+- No strategy cache or recommendations
+- No multi-turn coordination
+- No reputation scoring
+- No feedback mechanisms
+
+PROPOSED 4-LAYER ARCHITECTURE
+1. Agent Mesh: P2P communication, agent registry, consensus protocol
+   Implementation: Redis Pub/Sub or NATS
+
+2. Strategy Cache: distributed cache of attack strategies and outcomes
+   Implementation: Redis with sorted sets
+
+3. Orchestration: coordinate attacks across agents and models
+   Implementation: Central orchestrator or consensus-based task allocation
+
+4. Scaling: support 1-1000+ agents efficiently
+   Implementation: Kubernetes, state sharding, Hotstuff/Raft consensus
+
+INTEGRATION POINTS
+- ask_all_models as baseline primitive
+- consensus_builder for synthesis and pressure
+- evidence_pipeline for cross-agent evidence collection
+- target_orchestrator for multi-agent targeting
+- cost_tracker for distributed cost accounting
+- constraint_optimizer for constraint satisfaction
+
+================================================================================
+CRITICAL SUCCESS FACTORS
+================================================================================
+
+1. Low-latency communication (< 100ms p95)
+2. Fast consensus convergence (< 10 seconds)
+3. High-throughput cache (1000s lookups/sec)
+4. Adaptive strategy selection
+5. Agent diversity (personas, languages, styles)
+6. Rate limit awareness (respect 100-1000 req/min limits)
+
+================================================================================
+CRITICAL BOTTLENECKS
+================================================================================
+
+1. LLM provider rate limits (100-1000 req/min per provider)
+2. Cost explosion (must balance swarm size vs API costs)
+3. Cache consistency (all agents have latest state)
+4. Consensus overhead (Byzantine consensus is O(N^2))
+5. Failure detection (recovering from agent crashes)
+
+================================================================================
+OPTIMAL CONFIGURATION
+================================================================================
+
+Recommended operating range: 20-100 agents
+- Speedup: 70-80% vs. single agent
+- Cost: 100-300x (optimized with caching)
+- Consensus convergence: < 10 seconds
+- Setup complexity: moderate (Kubernetes + Redis Cluster)
+- Time to breakthrough: 0.2-7 hours depending on model
+
+Beyond 100 agents: diminishing returns from consensus overhead and cost explosion
+
+================================================================================
+NEXT STEPS FOR IMPLEMENTATION
+================================================================================
+
+1. Extend consensus_builder with persistent strategy cache
+2. Implement Redis-backed distributed cache layer
+3. Add agent registry and P2P messaging (NATS or Redis Pub/Sub)
+4. Integrate with ask_all_models for coordinated querying
+5. Add cost tracking and circuit breaker logic
+6. Implement hierarchical consensus for large swarms
+7. Test with 5-20 agent cohorts on diverse models
+8. Benchmark time-to-breakthrough and cost per successful jailbreak
+
+================================================================================
+RESEARCH METHODOLOGY
+================================================================================
+
+Script: research_703.py
+- Async Python 3.11+ implementation
+- 5 parallel research queries across distributed attack patterns
+- Structured JSON output with multiple analysis dimensions
+- Integrated with Loom's existing architecture
+- Extensible for future research iterations
+
+Script location: /Users/aadel/projects/loom/scripts/research_703.py
+Execution: python3 research_703.py (requires /opt/research-toolbox environment)
+
+================================================================================
+REFERENCES
+================================================================================
+
+Hetzner Output: /opt/research-toolbox/tmp/research_703_distributed.json
+Local Copy: /Users/aadel/projects/loom/research_703_distributed.json
+Summary: /Users/aadel/projects/loom/RESEARCH_703_SUMMARY.md
+Script: /Users/aadel/projects/loom/scripts/research_703.py
+Manifest: /Users/aadel/projects/loom/RESEARCH_703_MANIFEST.txt
+
+================================================================================
+END OF MANIFEST
+================================================================================

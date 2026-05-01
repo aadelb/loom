@@ -62,7 +62,7 @@ def _extract_word_set(text: str) -> set[str]:
     return {w for w in words if len(w) > 2 and w not in stop_words}
 
 
-def research_model_comparator(
+async def research_model_comparator(
     prompt: str,
     endpoints: list[str],
 ) -> dict[str, Any]:
@@ -143,14 +143,7 @@ def research_model_comparator(
                 "word_overlap_score": round(overlap_score, 2),
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
 async def _send_prompt(
@@ -185,7 +178,7 @@ async def _send_prompt(
         logger.debug("endpoint request failed %s: %s", endpoint, exc)
 
 
-def research_data_poisoning(
+async def research_data_poisoning(
     target_url: str,
     canary_phrases: list[str] | None = None,
 ) -> dict[str, Any]:
@@ -285,17 +278,10 @@ def research_data_poisoning(
             "risk_level": risk_level,
         }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
-def research_wiki_event_correlator(
+async def research_wiki_event_correlator(
     page_title: str,
     days_back: int = 30,
 ) -> dict[str, Any]:
@@ -406,14 +392,7 @@ def research_wiki_event_correlator(
                 "days_analyzed": days_back,
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
 def __build_query_string(params: dict[str, Any]) -> str:
@@ -421,7 +400,7 @@ def __build_query_string(params: dict[str, Any]) -> str:
     return "&".join(f"{k}={v}" for k, v in params.items())
 
 
-def research_foia_tracker(
+async def research_foia_tracker(
     query: str,
 ) -> dict[str, Any]:
     """Track FOIA requests and documents across multiple sources.
@@ -482,14 +461,7 @@ def research_foia_tracker(
             "latest_date": latest_date,
         }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
 async def _search_muckrock(

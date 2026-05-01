@@ -1,0 +1,168 @@
+================================================================================
+PRIVACY, ANONYMITY & COUNTER-SURVEILLANCE TOOLS FOR LOOM
+Integration Summary (2026-05-01)
+================================================================================
+
+OVERVIEW:
+  18 GitHub repositories identified for integration into Loom.
+  Focus: Privacy validation, anti-forensics, steganography, counter-surveillance
+  Total estimated effort: 6-8 weeks across 3 priority tiers
+  Key value: Enable Loom to validate anonymity solutions & detect tracking
+
+================================================================================
+TIER 1: IMMEDIATE (4 tools, 2 weeks) — HIGHEST PRIORITY
+================================================================================
+
+[27020⭐] FingerprintJS
+  GitHub: https://github.com/fingerprintjs/fingerprintjs
+  Tool: research_fingerprint_audit()
+  Value: Browser anonymity validation; 70+ fingerprint vectors
+  Effort: 3-4 days
+  Status: ⭐ Start here — most important tool
+
+[2360⭐] creepjs
+  GitHub: https://github.com/abrahamjuliot/creepjs
+  Tool: research_privacy_exposure()
+  Value: Quick privacy baseline; 5-minute assessment
+  Effort: 2-3 days
+
+[4583⭐] usbkill
+  GitHub: https://github.com/hephaest0s/usbkill
+  Tool: research_usb_kill_monitor()
+  Value: Physical security layer; device seizure protection
+  Effort: 4-5 days
+  Status: High-impact for operational security
+
+[783⭐] Forensia
+  GitHub: https://github.com/Forensia/Forensia
+  Tool: research_artifact_cleanup()
+  Value: Evidence destruction; trace removal automation
+  Effort: 3-4 days
+
+================================================================================
+TIER 2: NEXT SPRINT (4 tools, 2 weeks) — OPERATIONAL ENHANCEMENT
+================================================================================
+
+[7042⭐] supercookie
+  GitHub: https://github.com/jonasstrehle/supercookie
+  Tool: research_supercookie_test()
+  Value: Uncover favicon-based covert tracking
+  Effort: 2-3 days
+
+[2076⭐] fingerprint-suite
+  GitHub: https://github.com/amnemonic/fingerprint-suite
+  Tool: research_fingerprint_evasion_test()
+  Value: Validate anonymization tool effectiveness
+  Effort: 3-4 days
+
+[720⭐] silk-guardian
+  GitHub: https://github.com/NullArray/silk-guardian
+  Tool: research_linux_anti_forensics_monitor()
+  Value: Linux defensive hardening
+  Effort: 3-4 days
+
+[13⭐] LSB-Steganography-Python
+  GitHub: https://github.com/amitvkulkarni/LSB-Steganography-Python
+  Tool: research_stego_encode()
+  Value: Covert data exfiltration channels
+  Effort: 2-3 days
+
+================================================================================
+TIER 3: FUTURE (10 tools, 2-3 weeks) — SPECIALIZED CAPABILITIES
+================================================================================
+
+[208⭐] ulexecve - Fileless execution research (4-5 days)
+[141⭐] saruman - Binary obfuscation analysis (4-5 days)
+[6⭐] flock-detection - WiFi/BLE surveillance detection (3-4 days)
+[4999⭐] browser-fingerprinting - Bot detection analysis (2-3 days)
+[544⭐] chameleon - Fingerprint randomization (2-3 days)
+[2⭐] stegma - Multi-format steganography (2-3 days)
+[2⭐] BrowserBlackBox - Interactive privacy audit (2-3 days)
+[1⭐] PII-Recon - PII exposure mapping (2-3 days)
+[456⭐] swiftGuard - macOS anti-forensics (3-4 days)
+[13⭐] steganography-python - Image hiding (1-2 days)
+
+================================================================================
+IMPLEMENTATION CHECKLIST (Per Tool)
+================================================================================
+
+For each tool, create:
+  ✓ src/loom/tools/privacy_<category>.py — Tool wrapper
+  ✓ src/loom/params.py — Add Pydantic parameter model
+  ✓ src/loom/server.py — Register tool with @mcp.tool()
+  ✓ tests/test_tools/test_privacy_<category>.py — 80%+ coverage
+  ✓ docs/tools-reference.md — Parameter reference + examples
+  ✓ docs/help.md — Troubleshooting guide
+
+Example tool signature:
+  @mcp.tool()
+  async def research_fingerprint_audit(
+      target_url: str,
+      include_canvas: bool = True,
+      include_webgl: bool = True,
+      include_audio: bool = True,
+      include_fonts: bool = True
+  ) -> ToolResponse:
+      """Audit target for browser fingerprinting vectors."""
+
+================================================================================
+STRATEGIC BENEFITS
+================================================================================
+
+OPERATIONAL SECURITY:
+  • Anti-forensics integration → post-compromise concealment
+  • Fingerprinting detection → validate anonymity solutions
+  • Steganography tools → secure covert exfiltration
+  • Physical security → device protection
+
+RESEARCH CAPABILITIES:
+  • Browser fingerprint testing (FingerprintJS + creepjs)
+  • Tracking vector discovery (supercookie)
+  • Privacy baseline assessment (BrowserBlackBox)
+  • Steganographic channel validation
+
+COMPLIANCE (EU AI Act Article 15):
+  • Privacy audit framework
+  • Fingerprint vector documentation
+  • Evidence preservation assessment
+  • Tracking vector inventory for transparency
+
+================================================================================
+GITHUB API RATE LIMITING NOTE
+================================================================================
+
+Research hit GitHub rate limit after 7 searches.
+For future bulk research:
+  • Use staggered queries (wait between requests)
+  • Increase GitHub API rate limit quota
+  • Run on Hetzner (higher quota than Mac)
+  • Query in separate sessions with delays
+
+Recommended quarterly re-run searches:
+  gh search repos "anti forensics" --sort stars
+  gh search repos "browser fingerprint" --sort stars
+  gh search repos "steganography" language:python --sort stars
+  gh search repos "privacy audit" --sort stars
+  gh search repos "counter surveillance" --sort stars
+
+================================================================================
+NEXT STEPS
+================================================================================
+
+1. Review PRIVACY_RESEARCH_REPORT.md for detailed analysis
+2. Start TIER 1 implementation (FingerprintJS first — highest ROI)
+3. Create GitHub issues for INTEGRATE-032 through INTEGRATE-049
+4. Assign implementation tasks to developer(s)
+5. Target: TIER 1 complete in 2 weeks, TIER 2 by week 4
+
+================================================================================
+Related Files
+================================================================================
+
+  /Users/aadel/projects/loom/PRIVACY_RESEARCH_REPORT.md
+    — Comprehensive research report with tool descriptions, use cases, threat models
+
+  /Users/aadel/projects/loom/CLAUDE.md (lines 395+)
+    — Integration task checklist with file paths and effort estimates
+
+================================================================================

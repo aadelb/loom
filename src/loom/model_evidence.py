@@ -78,12 +78,7 @@ async def model_output_as_evidence(
     source_models_queried = list(source_models.keys())
 
     # 1. Query source models in parallel
-    logger.info(
-        "model_evidence_start",
-        query=query[:100],
-        source_count=len(source_models_queried),
-        target=target_name,
-    )
+    logger.info("model_evidence_start")
 
     async def _query_source(name: str, fn: Any) -> tuple[str, dict[str, Any]]:
         """Query a single source model safely."""
@@ -100,11 +95,7 @@ async def model_output_as_evidence(
             else:
                 return name, {"text": "", "error": "invalid result format"}
         except Exception as e:
-            logger.warning(
-                "source_model_query_failed",
-                model=name,
-                error=str(e)[:200],
-            )
+            logger.warning("source_model_query_failed")
             return name, {"text": "", "error": str(e)[:200]}
 
     # Run all source model queries in parallel
@@ -126,17 +117,9 @@ async def model_output_as_evidence(
             if text and not error:
                 source_responses[model_name] = text[:500]  # Cap at 500 chars per source
                 source_models_complied.append(model_name)
-                logger.info(
-                    "source_model_complied",
-                    model=model_name,
-                    response_len=len(text),
-                )
+                logger.info("source_model_complied")
             else:
-                logger.info(
-                    "source_model_refused",
-                    model=model_name,
-                    error=error[:100] if error else "empty",
-                )
+                logger.info("source_model_refused")
 
     # 3. Build evidence prompt
     social_proof_strength = (
@@ -151,13 +134,7 @@ async def model_output_as_evidence(
         max_sources=max_evidence_sources,
     )
 
-    logger.info(
-        "evidence_prompt_built",
-        sources_complied=len(source_models_complied),
-        sources_total=len(source_models_queried),
-        evidence_len=len(evidence_prompt),
-        social_proof_strength=social_proof_strength,
-    )
+    logger.info("evidence_prompt_built")
 
     # 4. Send evidence prompt to target model
     target_response = ""
@@ -185,13 +162,7 @@ async def model_output_as_evidence(
         else:
             target_response = str(target_result)
 
-        logger.info(
-            "target_model_queried",
-            target=target_name,
-            response_len=len(target_response),
-            elapsed_ms=target_elapsed_ms,
-            error=target_error[:100] if target_error else None,
-        )
+        logger.info("target_model_queried")
     except Exception as e:
         target_error = str(e)[:200]
         logger.error(
@@ -440,11 +411,7 @@ async def research_model_evidence(
                 provider_instance, model_id, model_name
             )
         except Exception as e:
-            logger.warning(
-                "failed_to_load_source_model",
-                model=model_name,
-                error=str(e)[:100],
-            )
+            logger.warning("failed_to_load_source_model")
 
     if not source_models:
         return {

@@ -221,7 +221,7 @@ async def _fetch_reddit_user(
         return {}
 
 
-def research_social_engineering_score(
+async def research_social_engineering_score(
     target: str, target_type: str = "person"
 ) -> dict[str, Any]:
     """Assess social engineering vulnerability from public data.
@@ -366,7 +366,7 @@ def research_social_engineering_score(
                     "risk_level": risk_level,
                 }
 
-        return asyncio.run(_run())
+        return await _run()
     except RuntimeError:
         loop = asyncio.new_event_loop()
         try:
@@ -480,7 +480,7 @@ def research_social_engineering_score(
             loop.close()
 
 
-def research_behavioral_fingerprint(username: str) -> dict[str, Any]:
+async def research_behavioral_fingerprint(username: str) -> dict[str, Any]:
     """Build behavioral fingerprint from public activity patterns.
 
     Analyzes GitHub commits, HackerNews posts, and Reddit activity
@@ -569,7 +569,7 @@ def research_behavioral_fingerprint(username: str) -> dict[str, Any]:
                     "activity_pattern": activity_pattern.strip() or "minimal_public_activity",
                 }
 
-        return asyncio.run(_run())
+        return await _run()
     except RuntimeError:
         loop = asyncio.new_event_loop()
         try:

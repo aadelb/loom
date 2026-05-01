@@ -225,7 +225,7 @@ def _rank_results(results: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return sorted(results, key=lambda x: x.get("rank_score", 0), reverse=True)
 
 
-def research_multi_search(
+async def research_multi_search(
     query: str,
     engines: list[str] | None = None,
     max_results: int = 50,
@@ -300,11 +300,4 @@ def research_multi_search(
                 "sources_breakdown": source_breakdown,
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

@@ -444,7 +444,10 @@ def _fetch_stealthy(params: FetchParams) -> FetchResult:
         loop = None
 
     if loop and loop.is_running():
-        return asyncio.ensure_future(_fetch_stealthy_async(params))  # type: ignore[return-value]
+        # If already in an async context, we cannot use asyncio.run().
+        # Fall back to sync implementation to avoid Task return issues.
+        logger.debug("Already in async context, falling back to sync stealthy fetch")
+        return _fetch_stealthy_sync(params)
 
     return asyncio.run(_fetch_stealthy_async(params))
 

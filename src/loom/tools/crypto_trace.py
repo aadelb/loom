@@ -138,7 +138,7 @@ async def _blockchair_stats(
     }
 
 
-def research_crypto_trace(
+async def research_crypto_trace(
     address: str,
     chain: str = "auto",
     include_transactions: bool = True,
@@ -193,11 +193,4 @@ def research_crypto_trace(
                 "sources_checked": ["blockchain.info" if chain == "bitcoin" else "etherscan", "blockchair"],
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

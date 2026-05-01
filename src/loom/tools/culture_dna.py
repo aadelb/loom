@@ -163,7 +163,7 @@ def _classify_culture_type(signals: list[dict[str, Any]]) -> str:
         return "hybrid"
 
 
-def research_culture_dna(
+async def research_culture_dna(
     company: str,
     domain: str = "",
 ) -> dict[str, Any]:
@@ -237,11 +237,4 @@ def research_culture_dna(
                 "github_analysis": github_signals_data,
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

@@ -108,7 +108,7 @@ def _scan_for_env_vars(content: str) -> list[str]:
     return list(env_vars)
 
 
-def research_js_intel(
+async def research_js_intel(
     url: str,
     max_js_files: int = 20,
     check_source_maps: bool = True,
@@ -202,11 +202,4 @@ def research_js_intel(
                 "env_vars": list(set(all_env_vars)),
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

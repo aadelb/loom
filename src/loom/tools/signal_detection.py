@@ -161,7 +161,7 @@ async def _search_reddit(
     return events
 
 
-def research_ghost_protocol(
+async def research_ghost_protocol(
     keywords: list[str], time_window_minutes: int = 30
 ) -> dict[str, Any]:
     """Detect coordinated activity across platforms by checking temporal correlation.
@@ -321,14 +321,7 @@ def research_ghost_protocol(
                 "total_events": len(flat_events),
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
 async def _get_dns_changes(
@@ -415,7 +408,7 @@ async def _check_server_clock_skew(
     return 0
 
 
-def research_temporal_anomaly(
+async def research_temporal_anomaly(
     domain: str, check_type: str = "all"
 ) -> dict[str, Any]:
     """Detect temporal anomalies in a domain's infrastructure.
@@ -492,17 +485,10 @@ def research_temporal_anomaly(
                 "dns_records": results_map.get("dns", {}),
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
-def research_sec_tracker(
+async def research_sec_tracker(
     company: str, filing_types: list[str] | None = None
 ) -> dict[str, Any]:
     """Track SEC filings for a company over the past 90 days.
@@ -615,11 +601,4 @@ def research_sec_tracker(
                     "error": str(exc),
                 }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

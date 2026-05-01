@@ -100,7 +100,7 @@ def _detect_typosquatting_candidates(package_name: str, similar_names: list[str]
     return suspicious[:10]  # Cap results
 
 
-def research_registry_graveyard(package_name: str, ecosystem: str = "pypi") -> dict[str, Any]:
+async def research_registry_graveyard(package_name: str, ecosystem: str = "pypi") -> dict[str, Any]:
     """Scan package registries for deleted/yanked packages and typosquatting risks.
 
     Checks PyPI for yanked versions, NPM for unpublished versions, and
@@ -300,14 +300,7 @@ def research_registry_graveyard(package_name: str, ecosystem: str = "pypi") -> d
             "risk_level": risk_level,
         }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
 def _find_similar_packages(package_name: str, candidates: list[str]) -> list[str]:
@@ -365,7 +358,7 @@ def _levenshtein_distance(s1: str, s2: str) -> int:
     return previous_row[-1]
 
 
-def research_subdomain_temporal(domain: str, days_back: int = 90) -> dict[str, Any]:
+async def research_subdomain_temporal(domain: str, days_back: int = 90) -> dict[str, Any]:
     """Track subdomain births/deaths over time via Certificate Transparency logs.
 
     Uses crt.sh to retrieve all certificates, groups by date, and flags
@@ -519,17 +512,10 @@ def research_subdomain_temporal(domain: str, days_back: int = 90) -> dict[str, A
                 "risk_level": risk_level,
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
-def research_commit_analyzer(repo: str, days_back: int = 30) -> dict[str, Any]:
+async def research_commit_analyzer(repo: str, days_back: int = 30) -> dict[str, Any]:
     """Analyze GitHub commit patterns for intelligence signals.
 
     Analyzes commit metadata to detect: crunch (weekend/night work),
@@ -730,11 +716,4 @@ def research_commit_analyzer(repo: str, days_back: int = 30) -> dict[str, Any]:
                 "risk_level": risk_level,
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

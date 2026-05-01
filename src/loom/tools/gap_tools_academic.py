@@ -89,7 +89,7 @@ def _jaccard_distance(set_a: set[str], set_b: set[str]) -> float:
     return 1.0 - (intersection / union)
 
 
-def research_ideological_drift(field: str, years: int = 10) -> dict[str, Any]:
+async def research_ideological_drift(field: str, years: int = 10) -> dict[str, Any]:
     """Track how a research field's beliefs change over time using keyword evolution.
 
     Queries Semantic Scholar for papers by year, extracts keywords from abstracts,
@@ -162,17 +162,10 @@ def research_ideological_drift(field: str, years: int = 10) -> dict[str, Any]:
                 "average_drift_score": round(overall_drift, 3),
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
-def research_author_clustering(field: str, max_authors: int = 50) -> dict[str, Any]:
+async def research_author_clustering(field: str, max_authors: int = 50) -> dict[str, Any]:
     """Detect emerging research clusters by analyzing co-authorship patterns.
 
     Queries Semantic Scholar for recent papers, extracts author co-authorship
@@ -257,17 +250,10 @@ def research_author_clustering(field: str, max_authors: int = 50) -> dict[str, A
                 "emerging_clusters_count": len(emerging),
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
-def research_citation_cartography(paper_id: str, depth: int = 2) -> dict[str, Any]:
+async def research_citation_cartography(paper_id: str, depth: int = 2) -> dict[str, Any]:
     """Map citation flow with manipulation detection.
 
     Fetches a paper from Semantic Scholar, builds a citation graph up to
@@ -384,11 +370,4 @@ def research_citation_cartography(paper_id: str, depth: int = 2) -> dict[str, An
                 "risk_level": "high" if manipulation_score > 0.6 else ("medium" if manipulation_score > 0.3 else "low"),
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

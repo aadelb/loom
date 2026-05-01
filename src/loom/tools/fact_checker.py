@@ -227,7 +227,7 @@ def _aggregate_assessments(sources: list[dict[str, Any]]) -> tuple[str, float]:
         return "unverified", 0.5
 
 
-def research_fact_check(
+async def research_fact_check(
     claim: str,
     max_sources: int = 10,
 ) -> dict[str, Any]:
@@ -297,11 +297,4 @@ def research_fact_check(
                 "total_sources_checked": len(final_sources),
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

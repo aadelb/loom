@@ -99,7 +99,7 @@ async def _search_reddit_sub(
     ]
 
 
-def research_dark_forum(
+async def research_dark_forum(
     query: str,
     max_results: int = 50,
 ) -> dict[str, Any]:
@@ -166,11 +166,4 @@ def research_dark_forum(
                 "sources_breakdown": source_breakdown,
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

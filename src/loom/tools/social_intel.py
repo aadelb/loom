@@ -81,7 +81,7 @@ async def _check_profile_exists(username: str, platform: str, url: str) -> tuple
         return (platform, "unknown", url)
 
 
-def research_social_search(
+async def research_social_search(
     username: str,
     platforms: list[str] | None = None,
 ) -> dict[str, Any]:

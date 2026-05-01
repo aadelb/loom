@@ -1,0 +1,652 @@
+{
+  "test_run": {
+    "start_time": "2026-05-01T22:00:27.813510",
+    "tool_range": "81-160",
+    "total_tools": 64,
+    "passed": 39,
+    "failed": 25,
+    "success_rate": 60.9375
+  },
+  "tools": [
+    {
+      "tool_num": 81,
+      "module": "metrics",
+      "function": "research_metrics_health",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 37
+    },
+    {
+      "tool_num": 82,
+      "module": "misp_backend",
+      "function": "research_misp_search",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 34
+    },
+    {
+      "tool_num": 83,
+      "module": "model_sentiment",
+      "function": "research_model_sentiment_analyze",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 46
+    },
+    {
+      "tool_num": 84,
+      "module": "multi_llm",
+      "function": "research_multi_llm_cascade",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 40
+    },
+    {
+      "tool_num": 85,
+      "module": "multi_search",
+      "function": "research_multi_search",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 10224
+    },
+    {
+      "tool_num": 86,
+      "module": "network_persona",
+      "function": "research_network_persona",
+      "status": "ERROR",
+      "response_code": 200,
+      "has_error": true,
+      "error": "Error executing tool research_network_persona: 1 validation error for research_network_personaArguments\nposts\n  Field required [type=missing, input_va",
+      "response_length": 273
+    },
+    {
+      "tool_num": 87,
+      "module": "onion_discover",
+      "function": "research_onion_discover",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 375
+    },
+    {
+      "tool_num": 88,
+      "module": "onion_spectra",
+      "function": "research_onion_spectra",
+      "status": "ERROR",
+      "response_code": 200,
+      "has_error": true,
+      "error": "Error executing tool research_onion_spectra: 1 validation error for research_onion_spectraArguments\nurl\n  Field required [type=missing, input_value={'",
+      "response_length": 268
+    },
+    {
+      "tool_num": 89,
+      "module": "osint_extended",
+      "function": "research_osint_extended",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 37
+    },
+    {
+      "tool_num": 90,
+      "module": "p3_tools",
+      "function": "research_p3_recon",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 31
+    },
+    {
+      "tool_num": 91,
+      "module": "param_sweep",
+      "function": "research_param_sweep",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 34
+    },
+    {
+      "tool_num": 92,
+      "module": "passive_recon",
+      "function": "research_passive_recon",
+      "status": "ERROR",
+      "response_code": 200,
+      "has_error": true,
+      "error": "Error executing tool research_passive_recon: 1 validation error for research_passive_reconArguments\ndomain\n  Field required [type=missing, input_value",
+      "response_length": 271
+    },
+    {
+      "tool_num": 93,
+      "module": "pdf_extract",
+      "function": "research_pdf_extract",
+      "status": "ERROR",
+      "response_code": 200,
+      "has_error": true,
+      "error": "Error executing tool research_pdf_extract: 1 validation error for research_pdf_extractArguments\nurl\n  Field required [type=missing, input_value={'text",
+      "response_length": 263
+    },
+    {
+      "tool_num": 94,
+      "module": "pentest",
+      "function": "research_pentest_scan",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 35
+    },
+    {
+      "tool_num": 95,
+      "module": "persona_profile",
+      "function": "research_persona_profile",
+      "status": "ERROR",
+      "response_code": 200,
+      "has_error": true,
+      "error": "Error executing tool research_persona_profile: 1 validation error for research_persona_profileArguments\ntexts\n  Field required [type=missing, input_va",
+      "response_length": 273
+    },
+    {
+      "tool_num": 96,
+      "module": "projectdiscovery",
+      "function": "research_projectdiscovery_scan",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 44
+    },
+    {
+      "tool_num": 97,
+      "module": "prompt_analyzer",
+      "function": "research_prompt_analyze",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 497
+    },
+    {
+      "tool_num": 98,
+      "module": "prompt_reframe",
+      "function": "research_prompt_reframe",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 388129
+    },
+    {
+      "tool_num": 99,
+      "module": "psycholinguistic",
+      "function": "research_psycholinguistic_analyze",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 47
+    },
+    {
+      "tool_num": 100,
+      "module": "radicalization_detect",
+      "function": "research_radicalization_detect",
+      "status": "ERROR",
+      "response_code": 200,
+      "has_error": true,
+      "error": "{\n  \"error\": \"text must be at least 50 characters\",\n  \"risk_score\": 0.0,\n  \"risk_level\": \"low\",\n  \"indicators\": {},\n  \"word_count\": 0,\n  \"context\": nu",
+      "response_length": 154
+    },
+    {
+      "tool_num": 101,
+      "module": "realtime_monitor",
+      "function": "research_realtime_monitor",
+      "status": "ERROR",
+      "response_code": 200,
+      "has_error": true,
+      "error": "Error executing tool research_realtime_monitor: 1 validation error for research_realtime_monitorArguments\ntopics\n  Field required [type=missing, input",
+      "response_length": 269
+    },
+    {
+      "tool_num": 102,
+      "module": "report_generator",
+      "function": "research_report_generate",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 38
+    },
+    {
+      "tool_num": 103,
+      "module": "resume_intel",
+      "function": "research_resume_intel",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 35
+    },
+    {
+      "tool_num": 104,
+      "module": "rss_monitor",
+      "function": "research_rss_monitor",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 34
+    },
+    {
+      "tool_num": 105,
+      "module": "salary_synthesizer",
+      "function": "research_salary_synthesize",
+      "status": "ERROR",
+      "response_code": 200,
+      "has_error": true,
+      "error": "Error executing tool research_salary_synthesize: 1 validation error for research_salary_synthesizeArguments\njob_title\n  Field required [type=missing, ",
+      "response_length": 295
+    },
+    {
+      "tool_num": 106,
+      "module": "scraper_engine_tools",
+      "function": "research_scraper_engine_fetch",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 43
+    },
+    {
+      "tool_num": 107,
+      "module": "screenshot",
+      "function": "research_screenshot",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 27710
+    },
+    {
+      "tool_num": 108,
+      "module": "search",
+      "function": "research_search",
+      "status": "ERROR",
+      "response_code": 200,
+      "has_error": true,
+      "error": "{\n  \"results\": [],\n  \"query\": \"test\",\n  \"error\": \"EXA_API_KEY not set\",\n  \"provider\": \"exa\"\n}",
+      "response_length": 93
+    },
+    {
+      "tool_num": 109,
+      "module": "security_headers",
+      "function": "research_security_headers",
+      "status": "ERROR",
+      "response_code": 200,
+      "has_error": true,
+      "error": "{\n  \"url\": \"https://example.com\",\n  \"error\": \"Unexpected error: TypeError: Client.head() got an unexpected keyword argument 'allow_redirects'\"\n}",
+      "response_length": 144
+    },
+    {
+      "tool_num": 110,
+      "module": "semantic_cache_mgmt",
+      "function": "research_semantic_cache_stats",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 211
+    },
+    {
+      "tool_num": 111,
+      "module": "sentiment_deep",
+      "function": "research_sentiment_deep_analyze",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 45
+    },
+    {
+      "tool_num": 112,
+      "module": "sherlock_backend",
+      "function": "research_sherlock_search",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 38
+    },
+    {
+      "tool_num": 113,
+      "module": "signal_detection",
+      "function": "research_signal_detection",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 39
+    },
+    {
+      "tool_num": 114,
+      "module": "singlefile_backend",
+      "function": "research_singlefile_archive",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 41
+    },
+    {
+      "tool_num": 115,
+      "module": "slack",
+      "function": "research_slack_notify",
+      "status": "ERROR",
+      "response_code": 200,
+      "has_error": true,
+      "error": "Error executing tool research_slack_notify: 2 validation errors for research_slack_notifyArguments\nchannel\n  Field required [type=missing, input_value",
+      "response_length": 429
+    },
+    {
+      "tool_num": 116,
+      "module": "social_analyzer_backend",
+      "function": "research_social_analyzer",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 38
+    },
+    {
+      "tool_num": 117,
+      "module": "social_graph",
+      "function": "research_social_graph_map",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 39
+    },
+    {
+      "tool_num": 118,
+      "module": "social_intel",
+      "function": "research_social_intel",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 35
+    },
+    {
+      "tool_num": 119,
+      "module": "social_scraper",
+      "function": "research_social_scraper",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 37
+    },
+    {
+      "tool_num": 120,
+      "module": "spider",
+      "function": "research_spider",
+      "status": "ERROR",
+      "response_code": 200,
+      "has_error": true,
+      "error": "{\n  \"url\": \"https://example.com\",\n  \"text\": \"\",\n  \"error\": \"AsyncNewBrowser() missing 1 required positional argument: 'playwright'\",\n  \"tool\": \"camouf",
+      "response_length": 174
+    },
+    {
+      "tool_num": 121,
+      "module": "spiderfoot_backend",
+      "function": "research_spiderfoot_scan",
+      "status": "ERROR",
+      "response_code": 200,
+      "has_error": true,
+      "error": "{\n  \"target\": \"example.com\",\n  \"error\": \"SpiderFoot CLI not found. Install with: pip install spiderfoot\",\n  \"spiderfoot_available\": false\n}",
+      "response_length": 139
+    },
+    {
+      "tool_num": 122,
+      "module": "stealth",
+      "function": "research_camoufox",
+      "status": "ERROR",
+      "response_code": 200,
+      "has_error": true,
+      "error": "{\n  \"url\": \"https://example.com\",\n  \"title\": \"\",\n  \"html\": \"\",\n  \"text\": \"\",\n  \"error\": \"BrowserType.launch: Failed to launch the browser process.\\nBr",
+      "response_length": 1452
+    },
+    {
+      "tool_num": 123,
+      "module": "stealth_detect",
+      "function": "research_stealth_detect",
+      "status": "ERROR",
+      "response_code": 200,
+      "has_error": true,
+      "error": "Error executing tool research_stealth_detect: 2 validation errors for research_stealth_detectArguments\noriginal_prompt\n  Field required [type=missing,",
+      "response_length": 472
+    },
+    {
+      "tool_num": 124,
+      "module": "stealth_score",
+      "function": "research_stealth_score",
+      "status": "ERROR",
+      "response_code": 200,
+      "has_error": true,
+      "error": "Error executing tool research_stealth_score: 2 validation errors for research_stealth_scoreArguments\noriginal_prompt\n  Field required [type=missing, i",
+      "response_length": 448
+    },
+    {
+      "tool_num": 125,
+      "module": "stego_detect",
+      "function": "research_stego_detect",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 123
+    },
+    {
+      "tool_num": 126,
+      "module": "strategy_oracle",
+      "function": "research_strategy_oracle",
+      "status": "ERROR",
+      "response_code": 200,
+      "has_error": true,
+      "error": "Error executing tool research_strategy_oracle: 2 validation errors for research_strategy_oracleArguments\nquery\n  Field required [type=missing, input_v",
+      "response_length": 451
+    },
+    {
+      "tool_num": 127,
+      "module": "stylometry",
+      "function": "research_stylometry_analyze",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 41
+    },
+    {
+      "tool_num": 128,
+      "module": "supply_chain_intel",
+      "function": "research_supply_chain_intel",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 41
+    },
+    {
+      "tool_num": 129,
+      "module": "synth_echo",
+      "function": "research_synth_echo",
+      "status": "ERROR",
+      "response_code": 200,
+      "has_error": true,
+      "error": "Error executing tool research_synth_echo: 1 validation error for research_synth_echoArguments\nmodel_name\n  Field required [type=missing, input_value={",
+      "response_length": 262
+    },
+    {
+      "tool_num": 130,
+      "module": "text_analyze",
+      "function": "research_text_analyze",
+      "status": "ERROR",
+      "response_code": 200,
+      "has_error": true,
+      "error": "{\n  \"error\": \"text must be at least 10 characters\",\n  \"word_count\": 0\n}",
+      "response_length": 71
+    },
+    {
+      "tool_num": 131,
+      "module": "threat_intel",
+      "function": "research_threat_intel",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 35
+    },
+    {
+      "tool_num": 132,
+      "module": "threat_profile",
+      "function": "research_threat_profile",
+      "status": "ERROR",
+      "response_code": 200,
+      "has_error": true,
+      "error": "Error executing tool research_threat_profile: 1 validation error for research_threat_profileArguments\nusername\n  Field required [type=missing, input_v",
+      "response_length": 275
+    },
+    {
+      "tool_num": 133,
+      "module": "tool_recommender_tool",
+      "function": "research_tool_recommender",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 39
+    },
+    {
+      "tool_num": 134,
+      "module": "tor",
+      "function": "research_tor_check",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 32
+    },
+    {
+      "tool_num": 135,
+      "module": "toxicity_checker_tool",
+      "function": "research_toxicity_check",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 37
+    },
+    {
+      "tool_num": 136,
+      "module": "transcribe",
+      "function": "research_transcribe",
+      "status": "ERROR",
+      "response_code": 200,
+      "has_error": true,
+      "error": "Error executing tool research_transcribe: 1 validation error for research_transcribeArguments\nurl\n  Field required [type=missing, input_value={'audio_",
+      "response_length": 283
+    },
+    {
+      "tool_num": 137,
+      "module": "trend_predictor",
+      "function": "research_trend_predict",
+      "status": "ERROR",
+      "response_code": 200,
+      "has_error": true,
+      "error": "Error executing tool research_trend_predict: 1 validation error for research_trend_predictArguments\ntopic\n  Field required [type=missing, input_value=",
+      "response_length": 263
+    },
+    {
+      "tool_num": 138,
+      "module": "unique_tools",
+      "function": "research_unique_tool_demo",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 39
+    },
+    {
+      "tool_num": 139,
+      "module": "urlhaus_lookup",
+      "function": "research_urlhaus_lookup",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 37
+    },
+    {
+      "tool_num": 140,
+      "module": "vastai",
+      "function": "research_vastai_search",
+      "status": "ERROR",
+      "response_code": 200,
+      "has_error": true,
+      "error": "{\n  \"error\": \"API error: 400\",\n  \"results\": []\n}",
+      "response_length": 48
+    },
+    {
+      "tool_num": 141,
+      "module": "vercel",
+      "function": "research_vercel_list",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 34
+    },
+    {
+      "tool_num": 142,
+      "module": "vuln_intel",
+      "function": "research_vuln_intel",
+      "status": "ERROR",
+      "response_code": 200,
+      "has_error": true,
+      "error": "Error executing tool research_vuln_intel: 1 validation error for research_vuln_intelArguments\nquery\n  Field required [type=missing, input_value={'targ",
+      "response_length": 264
+    },
+    {
+      "tool_num": 143,
+      "module": "yara_backend",
+      "function": "research_yara_scan",
+      "status": "ERROR",
+      "response_code": 200,
+      "has_error": true,
+      "error": "Error executing tool research_yara_scan: 2 validation errors for research_yara_scanArguments\nrules_path\n  Field required [type=missing, input_value={'",
+      "response_length": 437
+    },
+    {
+      "tool_num": 144,
+      "module": "ytdlp_backend",
+      "function": "research_ytdlp_download",
+      "status": "OK",
+      "response_code": 200,
+      "has_error": false,
+      "error": "",
+      "response_length": 37
+    }
+  ]
+}

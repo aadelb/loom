@@ -226,7 +226,7 @@ def _deduplicate_edges(
     return list(set(edges))
 
 
-def research_knowledge_graph(
+async def research_knowledge_graph(
     query: str,
     max_nodes: int = 100,
     sources: list[str] | None = None,
@@ -323,11 +323,4 @@ def research_knowledge_graph(
                 "sources_used": sources,
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

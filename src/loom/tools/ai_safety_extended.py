@@ -77,7 +77,7 @@ async def _query_loom_llm(
         return ""
 
 
-def research_hallucination_benchmark(
+async def research_hallucination_benchmark(
     target_url: str, facts: list[str] | None = None
 ) -> dict[str, Any]:
     """Test a model for hallucination via fact-checking.
@@ -218,7 +218,7 @@ def research_hallucination_benchmark(
                     "hallucination_examples": examples[:5],  # Return top 5 examples
                 }
 
-        return asyncio.run(_run())
+        return await _run()
     except RuntimeError:
         loop = asyncio.new_event_loop()
         try:
@@ -282,7 +282,7 @@ def research_hallucination_benchmark(
             loop.close()
 
 
-def research_adversarial_robustness(
+async def research_adversarial_robustness(
     target_url: str, test_count: int = 5
 ) -> dict[str, Any]:
     """Test model robustness against adversarial inputs.
@@ -451,7 +451,7 @@ def research_adversarial_robustness(
                     "robustness_score": round(max(0.0, min(1.0, robustness_score)), 4),
                 }
 
-        return asyncio.run(_run())
+        return await _run()
     except RuntimeError:
         loop = asyncio.new_event_loop()
         try:

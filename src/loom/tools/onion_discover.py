@@ -174,7 +174,7 @@ async def _fetch_reddit_onions(
     return urls
 
 
-def research_onion_discover(
+async def research_onion_discover(
     query: str, max_results: int = 50
 ) -> dict[str, Any]:
     """Discover .onion hidden services related to a query using 5+ methods.
@@ -195,55 +195,112 @@ def research_onion_discover(
     """
 
     async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(
-            follow_redirects=True,
-            headers={"User-Agent": "Loom-Research/1.0"},
-        ) as client:
-            # Run all 5 methods in parallel
-            ahmia_task = _fetch_ahmia(client, query)
-            darksearch_task = _fetch_darksearch(client, query)
-            intelx_task = _fetch_intelx(client, query)
-            ct_task = _fetch_ct_onion_certs(client)
-            reddit_task = _fetch_reddit_onions(client, query)
+        try:
+            async with httpx.AsyncClient(
+                follow_redirects=True,
+                headers={"User-Agent": "Loom-Research/1.0"},
+            ) as client:
+                # Run all 5 methods in parallel with return_exceptions=True
+                # to ensure partial results even if individual sources fail
+                ahmia_task = _fetch_ahmia(client, query)
+                darksearch_task = _fetch_darksearch(client, query)
+                intelx_task = _fetch_intelx(client, query)
+                ct_task = _fetch_ct_onion_certs(client)
+                reddit_task = _fetch_reddit_onions(client, query)
 
-            all_results = await asyncio.gather(
-                ahmia_task, darksearch_task, intelx_task, ct_task, reddit_task
+                all_results = await asyncio.gather(
+                    ahmia_task,
+                    darksearch_task,
+                    intelx_task,
+                    ct_task,
+                    reddit_task,
+                    return_exceptions=True,
+                )
+
+                # Filter out exceptions and extract results safely
+                ahmia_urls = (
+                    all_results[0] if isinstance(all_results[0], list) else []
+                )
+                darksearch_urls = (
+                    all_results[1] if isinstance(all_results[1], list) else []
+                )
+                intelx_urls = (
+                    all_results[2] if isinstance(all_results[2], list) else []
+                )
+                ct_urls = (
+                    all_results[3] if isinstance(all_results[3], list) else []
+                )
+                reddit_urls = (
+                    all_results[4] if isinstance(all_results[4], list) else []
+                )
+
+                # Log any exceptions that occurred
+                for idx, result in enumerate(all_results):
+                    if isinstance(result, Exception):
+                        source_names = [
+                            "ahmia",
+                            "darksearch",
+                            "intelx",
+                            "certificate_transparency",
+                            "reddit_onions",
+                        ]
+                        logger.warning(
+                            "Exception in %s: %s",
+                            source_names[idx],
+                            str(result),
+                        )
+
+                # Combine and deduplicate by URL
+                combined = (
+                    ahmia_urls
+                    + darksearch_urls
+                    + intelx_urls
+                    + ct_urls
+                    + reddit_urls
+                )
+                seen_urls: dict[str, dict[str, Any]] = {}
+                for item in combined:
+                    url = item.get("url", "").lower()
+                    if url and ".onion" in url:
+                        if url not in seen_urls:
+                            seen_urls[url] = item
+
+                # Sort by source diversity and title presence
+                sorted_urls = sorted(
+                    seen_urls.values(),
+                    key=lambda x: (
+                        -len(x.get("title", "")),
+                        x.get("source", ""),
+                    ),
+                )
+
+                # Limit to max_results
+                final_urls = sorted_urls[: max(1, min(max_results, 100))]
+
+                logger.info(
+                    "onion_discover query=%s found=%d unique_sources=%d",
+                    query[:50],
+                    len(final_urls),
+                    len(set(u.get("source") for u in final_urls)),
+                )
+
+                return {
+                    "query": query,
+                    "sources_checked": [
+                        "ahmia",
+                        "darksearch",
+                        "intelx",
+                        "certificate_transparency",
+                        "reddit_onions",
+                    ],
+                    "onion_urls_found": final_urls,
+                    "total_unique": len(final_urls),
+                }
+        except Exception as exc:
+            logger.error(
+                "onion_discover failed with exception: %s", str(exc)
             )
-
-            ahmia_urls = all_results[0]
-            darksearch_urls = all_results[1]
-            intelx_urls = all_results[2]
-            ct_urls = all_results[3]
-            reddit_urls = all_results[4]
-
-            # Combine and deduplicate by URL
-            combined = ahmia_urls + darksearch_urls + intelx_urls + ct_urls + reddit_urls
-            seen_urls: dict[str, dict[str, Any]] = {}
-            for item in combined:
-                url = item.get("url", "").lower()
-                if url and ".onion" in url:
-                    if url not in seen_urls:
-                        seen_urls[url] = item
-
-            # Sort by source diversity and title presence
-            sorted_urls = sorted(
-                seen_urls.values(),
-                key=lambda x: (
-                    -len(x.get("title", "")),
-                    x.get("source", ""),
-                ),
-            )
-
-            # Limit to max_results
-            final_urls = sorted_urls[: max(1, min(max_results, 100))]
-
-            logger.info(
-                "onion_discover query=%s found=%d unique_sources=%d",
-                query[:50],
-                len(final_urls),
-                len(set(u.get("source") for u in final_urls)),
-            )
-
+            # Return graceful fallback response
             return {
                 "query": query,
                 "sources_checked": [
@@ -253,16 +310,8 @@ def research_onion_discover(
                     "certificate_transparency",
                     "reddit_onions",
                 ],
-                "onion_urls_found": final_urls,
-                "total_unique": len(final_urls),
+                "onion_urls_found": [],
+                "total_unique": 0,
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        # Handle case where event loop already exists
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

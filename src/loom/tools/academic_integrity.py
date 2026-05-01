@@ -292,7 +292,7 @@ async def _check_journal_predatory(
     }
 
 
-def research_citation_analysis(paper_id: str, depth: int = 2) -> dict[str, Any]:
+async def research_citation_analysis(paper_id: str, depth: int = 2) -> dict[str, Any]:
     """Analyze citation networks for anomalies using Semantic Scholar API.
 
     Detects suspicious citation patterns including mutual citations,
@@ -316,17 +316,10 @@ def research_citation_analysis(paper_id: str, depth: int = 2) -> dict[str, Any]:
         ) as client:
             return await _analyze_citation_network(client, paper_id, depth)
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
-def research_retraction_check(query: str, max_results: int = 20) -> dict[str, Any]:
+async def research_retraction_check(query: str, max_results: int = 20) -> dict[str, Any]:
     """Check if papers/authors have retractions using Crossref and PubPeer.
 
     Searches for retracted papers matching the query and identifies
@@ -350,17 +343,10 @@ def research_retraction_check(query: str, max_results: int = 20) -> dict[str, An
         ) as client:
             return await _check_for_retractions(client, query, max_results)
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
-def research_predatory_journal_check(journal_name: str) -> dict[str, Any]:
+async def research_predatory_journal_check(journal_name: str) -> dict[str, Any]:
     """Check if a journal shows signs of being predatory.
 
     Analyzes journal registration in DOAJ (Directory of Open Access
@@ -383,11 +369,4 @@ def research_predatory_journal_check(journal_name: str) -> dict[str, Any]:
         ) as client:
             return await _check_journal_predatory(client, journal_name)
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

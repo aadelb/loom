@@ -253,7 +253,7 @@ def research_grant_forensics(grant_id: str = "", text: str = "") -> dict[str, An
     }
 
 
-def research_monoculture_detect(field: str, max_papers: int = 50) -> dict[str, Any]:
+async def research_monoculture_detect(field: str, max_papers: int = 50) -> dict[str, Any]:
     """Detect research field monoculture via method diversity analysis.
 
     Searches Semantic Scholar for recent papers in a field, extracts method
@@ -350,17 +350,10 @@ def research_monoculture_detect(field: str, max_papers: int = 50) -> dict[str, A
                 "risk_level": "HIGH" if monoculture_risk > 0.7 else "MEDIUM" if monoculture_risk > 0.4 else "LOW",
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
-def research_review_cartel(author_id: str) -> dict[str, Any]:
+async def research_review_cartel(author_id: str) -> dict[str, Any]:
     """Detect peer review cartels via mutual citation patterns.
 
     Analyzes an author's papers to detect suspicious mutual citation
@@ -448,14 +441,7 @@ def research_review_cartel(author_id: str) -> dict[str, Any]:
                 "risk_level": "HIGH" if cartel_score > 0.3 else "MEDIUM" if cartel_score > 0.1 else "LOW",
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
 def research_data_fabrication(numbers: list[float]) -> dict[str, Any]:
@@ -516,7 +502,7 @@ def research_data_fabrication(numbers: list[float]) -> dict[str, Any]:
     }
 
 
-def research_institutional_decay(institution: str) -> dict[str, Any]:
+async def research_institutional_decay(institution: str) -> dict[str, Any]:
     """Assess institutional health from retraction rate, publication trend, and author turnover.
 
     Queries Crossref for retraction data, Semantic Scholar for publication trends,
@@ -627,17 +613,10 @@ def research_institutional_decay(institution: str) -> dict[str, Any]:
                 "risk_level": "HIGH" if decay_score > 0.6 else "MEDIUM" if decay_score > 0.3 else "LOW",
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
-def research_shell_funding(company: str) -> dict[str, Any]:
+async def research_shell_funding(company: str) -> dict[str, Any]:
     """Trace research funding through shell companies using OpenCorporates + SEC EDGAR.
 
     Queries OpenCorporates API for company details and searches for connected
@@ -729,17 +708,10 @@ def research_shell_funding(company: str) -> dict[str, Any]:
                 "risk_level": "HIGH" if opacity_score > 0.6 else "MEDIUM" if opacity_score > 0.3 else "LOW",
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
-def research_conference_arbitrage(conference: str) -> dict[str, Any]:
+async def research_conference_arbitrage(conference: str) -> dict[str, Any]:
     """Analyze conference acceptance patterns using DBLP and Semantic Scholar.
 
     Queries DBLP for conference submission/acceptance data to detect patterns
@@ -830,17 +802,10 @@ def research_conference_arbitrage(conference: str) -> dict[str, Any]:
                 "arbitrage_risk": "HIGH" if len(arbitrage_opportunities) > 2 else "MEDIUM" if len(arbitrage_opportunities) > 0 else "LOW",
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
-def research_preprint_manipulation(arxiv_id: str = "", topic: str = "") -> dict[str, Any]:
+async def research_preprint_manipulation(arxiv_id: str = "", topic: str = "") -> dict[str, Any]:
     """Detect preprint manipulation via timing analysis and social amplification.
 
     Analyzes arXiv submission timing relative to social media buzz (Hacker News, Reddit)
@@ -972,11 +937,4 @@ def research_preprint_manipulation(arxiv_id: str = "", topic: str = "") -> dict[
                 "risk_level": "HIGH" if manipulation_risk > 0.7 else "MEDIUM" if manipulation_risk > 0.4 else "LOW",
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

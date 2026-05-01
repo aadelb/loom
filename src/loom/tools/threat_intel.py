@@ -200,7 +200,7 @@ async def _extract_urls_from_text(text: str) -> list[str]:
     return re.findall(url_pattern, text)
 
 
-def research_dark_market_monitor(keywords: list[str]) -> dict[str, Any]:
+async def research_dark_market_monitor(keywords: list[str]) -> dict[str, Any]:
     """Monitor dark market activity from public sources.
 
     Searches multiple threat intelligence sources for dark market mentions:
@@ -277,17 +277,10 @@ def research_dark_market_monitor(keywords: list[str]) -> dict[str, Any]:
             "alerts": alerts[:20],
         }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
-def research_ransomware_tracker(
+async def research_ransomware_tracker(
     group_name: str = "", keyword: str = ""
 ) -> dict[str, Any]:
     """Track ransomware group activity via threat intelligence sources.
@@ -359,17 +352,10 @@ def research_ransomware_tracker(
             "activity_count": len(activity),
         }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
-def research_phishing_mapper(domain: str) -> dict[str, Any]:
+async def research_phishing_mapper(domain: str) -> dict[str, Any]:
     """Detect phishing campaigns targeting a domain.
 
     Checks for typosquatted domains via Certificate Transparency logs
@@ -435,17 +421,10 @@ def research_phishing_mapper(domain: str) -> dict[str, Any]:
             "risk_score": risk_score,
         }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
-def research_botnet_tracker(ioc: str, ioc_type: str = "ip") -> dict[str, Any]:
+async def research_botnet_tracker(ioc: str, ioc_type: str = "ip") -> dict[str, Any]:
     """Track botnet C2 infrastructure via threat feeds.
 
     Checks IOC against multiple botnet tracking services:
@@ -529,17 +508,10 @@ def research_botnet_tracker(ioc: str, ioc_type: str = "ip") -> dict[str, Any]:
             "sources_checked": [b["list"] for b in blocklist_status],
         }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
-def research_malware_intel(hash_value: str) -> dict[str, Any]:
+async def research_malware_intel(hash_value: str) -> dict[str, Any]:
     """Cross-reference malware hash across multiple threat intelligence sources.
 
     Queries MalwareBazaar, AlienVault OTX, and CIRCL hashlookup for
@@ -612,17 +584,10 @@ def research_malware_intel(hash_value: str) -> dict[str, Any]:
             "sources_checked": [d["source"] for d in detections],
         }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
-def research_domain_reputation(domain: str) -> dict[str, Any]:
+async def research_domain_reputation(domain: str) -> dict[str, Any]:
     """Aggregate domain reputation from multiple threat intelligence sources.
 
     Checks domain reputation across 5+ sources:
@@ -717,17 +682,10 @@ def research_domain_reputation(domain: str) -> dict[str, Any]:
             "total_sources_checked": total_sources,
         }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
-def research_ioc_enrich(ioc: str, ioc_type: str = "auto") -> dict[str, Any]:
+async def research_ioc_enrich(ioc: str, ioc_type: str = "auto") -> dict[str, Any]:
     """Enrich any IOC (IP, domain, hash, URL) from multiple free sources.
 
     Simultaneously queries all available free threat intelligence sources:
@@ -879,11 +837,4 @@ def research_ioc_enrich(ioc: str, ioc_type: str = "auto") -> dict[str, Any]:
             "verdict_summary": "malicious" if threat_score >= 60 else "suspicious" if threat_score >= 30 else "clean",
         }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

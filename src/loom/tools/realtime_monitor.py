@@ -221,7 +221,7 @@ async def _fetch_wikipedia_changes(client: httpx.AsyncClient, topic: str) -> lis
         return []
 
 
-def research_realtime_monitor(
+async def research_realtime_monitor(
     topics: list[str],
     sources: list[str] | None = None,
     hours_back: int = 24,
@@ -333,12 +333,4 @@ def research_realtime_monitor(
                 "recent_items": all_items,
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        # Handle case where event loop is already running
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

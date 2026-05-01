@@ -418,7 +418,7 @@ async def _fetch_hackernews_activity(
         return {"comments": [], "submissions": [], "tech_interests": []}
 
 
-def research_funding_signal(company: str, domain: str = "") -> dict[str, Any]:
+async def research_funding_signal(company: str, domain: str = "") -> dict[str, Any]:
     """Detect hiring signals from funding/growth indicators.
 
     Analyzes:
@@ -540,17 +540,10 @@ def research_funding_signal(company: str, domain: str = "") -> dict[str, Any]:
                 else "unknown",
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
-def research_stealth_hire_scanner(
+async def research_stealth_hire_scanner(
     keywords: str, location: str = ""
 ) -> dict[str, Any]:
     """Find hidden job opportunities not advertised on traditional job boards.
@@ -623,17 +616,10 @@ def research_stealth_hire_scanner(
                 "total_found": len(all_jobs),
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
-def research_interviewer_profiler(
+async def research_interviewer_profiler(
     person_name: str, company: str = ""
 ) -> dict[str, Any]:
     """Build a comprehensive profile of a potential interviewer from public data.
@@ -733,11 +719,4 @@ def research_interviewer_profiler(
                 "talking_points": talking_points[:5],
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

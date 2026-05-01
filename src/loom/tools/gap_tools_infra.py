@@ -46,7 +46,7 @@ async def _check_cloud_resource(
         }
 
 
-def research_cloud_enum(domain: str) -> dict[str, Any]:
+async def research_cloud_enum(domain: str) -> dict[str, Any]:
     """Check cloud resource existence for a domain by probing common patterns.
 
     Probes S3, Azure Blob, GCS, Firebase, Heroku, Netlify, Vercel, and
@@ -128,14 +128,7 @@ def research_cloud_enum(domain: str) -> dict[str, Any]:
                 "cloud_resources": cloud_resources,
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
 async def _github_code_search(
@@ -181,7 +174,7 @@ async def _github_code_search(
         return []
 
 
-def research_github_secrets(query: str, max_results: int = 20) -> dict[str, Any]:
+async def research_github_secrets(query: str, max_results: int = 20) -> dict[str, Any]:
     """Search GitHub for accidentally committed secrets using code search API.
 
     Queries for common secret patterns in config files (.env, .yml, .json, .py)
@@ -249,14 +242,7 @@ def research_github_secrets(query: str, max_results: int = 20) -> dict[str, Any]
                 "secrets_found": deduped[:max_results],
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
 async def _get_rdap_data(
@@ -337,7 +323,7 @@ async def _search_crt_sh(
         return []
 
 
-def research_whois_correlator(domain: str) -> dict[str, Any]:
+async def research_whois_correlator(domain: str) -> dict[str, Any]:
     """Correlate WHOIS registrant across domains.
 
     Performs RDAP lookup to extract registrant email and org, then searches
@@ -399,14 +385,7 @@ def research_whois_correlator(domain: str) -> dict[str, Any]:
                 },
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
 def _jaccard_similarity(set1: set[str], set2: set[str]) -> float:
@@ -466,7 +445,7 @@ async def _query_llm_endpoint(
         return ""
 
 
-def research_output_consistency(
+async def research_output_consistency(
     target_url: str, prompt: str, runs: int = 5
 ) -> dict[str, Any]:
     """Measure LLM response variability by sending same prompt multiple times.
@@ -572,11 +551,4 @@ def research_output_consistency(
                 "consistency_score": round(consistency_score, 3),
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

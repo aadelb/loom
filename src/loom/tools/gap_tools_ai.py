@@ -164,7 +164,7 @@ def _score_capability_response(response: str, prompt_category: str) -> float:
     return 1.0
 
 
-def research_capability_mapper(
+async def research_capability_mapper(
     target_url: str,
     categories: list[str] | None = None,
 ) -> dict[str, Any]:
@@ -230,17 +230,10 @@ def research_capability_mapper(
                 "tests_run": len(categories) * 3,
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
-def research_memorization_scanner(
+async def research_memorization_scanner(
     target_url: str,
     test_count: int = 10,
 ) -> dict[str, Any]:
@@ -309,17 +302,10 @@ def research_memorization_scanner(
                 "examples": examples,
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()
 
 
-def research_training_contamination(
+async def research_training_contamination(
     target_url: str,
     dataset_name: str = "common",
 ) -> dict[str, Any]:
@@ -392,11 +378,4 @@ def research_training_contamination(
                 "evidence": evidence,
             }
 
-    try:
-        return asyncio.run(_run())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run())
-        finally:
-            loop.close()
+    return await _run()

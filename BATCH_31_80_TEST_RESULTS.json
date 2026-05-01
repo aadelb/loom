@@ -1,0 +1,359 @@
+{
+  "batch": "31-80",
+  "total": 50,
+  "success": 7,
+  "errors": 43,
+  "timeouts": 0,
+  "results": [
+    {
+      "tool": "research_github_secrets",
+      "status": "success",
+      "response_size": 44,
+      "preview": "{\n  \"query\": \"test\",\n  \"secrets_found\": []\n}",
+      "error": null
+    },
+    {
+      "tool": "research_whois_correlator",
+      "status": "error_in_response",
+      "response_size": 269,
+      "preview": "Error executing tool research_whois_correlator: 1 validation error for research_whois_correlatorArguments\ndomain\n  Field required [type=missing, input",
+      "error": null
+    },
+    {
+      "tool": "research_output_consistency",
+      "status": "error_in_response",
+      "response_size": 442,
+      "preview": "Error executing tool research_output_consistency: 2 validation errors for research_output_consistencyArguments\ntarget_url\n  Field required [type=missi",
+      "error": null
+    },
+    {
+      "tool": "research_talent_migration",
+      "status": "error_in_response",
+      "response_size": 274,
+      "preview": "Error executing tool research_talent_migration: 1 validation error for research_talent_migrationArguments\nperson_name\n  Field required [type=missing, ",
+      "error": null
+    },
+    {
+      "tool": "research_funding_pipeline",
+      "status": "error_in_response",
+      "response_size": 279,
+      "preview": "Error executing tool research_funding_pipeline: 1 validation error for research_funding_pipelineArguments\ncompany_or_field\n  Field required [type=miss",
+      "error": null
+    },
+    {
+      "tool": "research_jailbreak_library",
+      "status": "success",
+      "response_size": 393,
+      "preview": "{\n  \"total_patterns\": 26,\n  \"categories\": [\n    \"role_play\",\n    \"encoding\",\n    \"context_overflow\",\n    \"multi_turn\",\n    \"instruction_override\"\n  ],",
+      "error": null
+    },
+    {
+      "tool": "research_patent_embargo",
+      "status": "error_in_response",
+      "response_size": 266,
+      "preview": "Error executing tool research_patent_embargo: 1 validation error for research_patent_embargoArguments\ncompany\n  Field required [type=missing, input_va",
+      "error": null
+    },
+    {
+      "tool": "research_ideological_drift",
+      "status": "error_in_response",
+      "response_size": 270,
+      "preview": "Error executing tool research_ideological_drift: 1 validation error for research_ideological_driftArguments\nfield\n  Field required [type=missing, inpu",
+      "error": null
+    },
+    {
+      "tool": "research_author_clustering",
+      "status": "error_in_response",
+      "response_size": 270,
+      "preview": "Error executing tool research_author_clustering: 1 validation error for research_author_clusteringArguments\nfield\n  Field required [type=missing, inpu",
+      "error": null
+    },
+    {
+      "tool": "research_citation_cartography",
+      "status": "error_in_response",
+      "response_size": 279,
+      "preview": "Error executing tool research_citation_cartography: 1 validation error for research_citation_cartographyArguments\npaper_id\n  Field required [type=miss",
+      "error": null
+    },
+    {
+      "tool": "research_capability_mapper",
+      "status": "error_in_response",
+      "response_size": 275,
+      "preview": "Error executing tool research_capability_mapper: 1 validation error for research_capability_mapperArguments\ntarget_url\n  Field required [type=missing,",
+      "error": null
+    },
+    {
+      "tool": "research_memorization_scanner",
+      "status": "error_in_response",
+      "response_size": 281,
+      "preview": "Error executing tool research_memorization_scanner: 1 validation error for research_memorization_scannerArguments\ntarget_url\n  Field required [type=mi",
+      "error": null
+    },
+    {
+      "tool": "research_training_contamination",
+      "status": "error_in_response",
+      "response_size": 285,
+      "preview": "Error executing tool research_training_contamination: 1 validation error for research_training_contaminationArguments\ntarget_url\n  Field required [typ",
+      "error": null
+    },
+    {
+      "tool": "research_registry_graveyard",
+      "status": "error_in_response",
+      "response_size": 279,
+      "preview": "Error executing tool research_registry_graveyard: 1 validation error for research_registry_graveyardArguments\npackage_name\n  Field required [type=miss",
+      "error": null
+    },
+    {
+      "tool": "research_subdomain_temporal",
+      "status": "error_in_response",
+      "response_size": 273,
+      "preview": "Error executing tool research_subdomain_temporal: 1 validation error for research_subdomain_temporalArguments\ndomain\n  Field required [type=missing, i",
+      "error": null
+    },
+    {
+      "tool": "research_commit_analyzer",
+      "status": "error_in_response",
+      "response_size": 265,
+      "preview": "Error executing tool research_commit_analyzer: 1 validation error for research_commit_analyzerArguments\nrepo\n  Field required [type=missing, input_val",
+      "error": null
+    },
+    {
+      "tool": "research_onion_discover",
+      "status": "error",
+      "response_size": 0,
+      "preview": "",
+      "error": "unhandled errors in a TaskGroup (1 sub-exception)"
+    },
+    {
+      "tool": "research_metadata_forensics",
+      "status": "error_in_response",
+      "response_size": 270,
+      "preview": "Error executing tool research_metadata_forensics: 1 validation error for research_metadata_forensicsArguments\nurl\n  Field required [type=missing, inpu",
+      "error": null
+    },
+    {
+      "tool": "research_crypto_trace",
+      "status": "error_in_response",
+      "response_size": 262,
+      "preview": "Error executing tool research_crypto_trace: 1 validation error for research_crypto_traceArguments\naddress\n  Field required [type=missing, input_value=",
+      "error": null
+    },
+    {
+      "tool": "research_stego_detect",
+      "status": "success",
+      "response_size": 123,
+      "preview": "{\n  \"content_analyzed\": false,\n  \"image_analyzed\": false,\n  \"analyses\": [],\n  \"total_anomalies\": 0,\n  \"suspicious\": false\n}",
+      "error": null
+    },
+    {
+      "tool": "research_threat_profile",
+      "status": "error_in_response",
+      "response_size": 267,
+      "preview": "Error executing tool research_threat_profile: 1 validation error for research_threat_profileArguments\nusername\n  Field required [type=missing, input_v",
+      "error": null
+    },
+    {
+      "tool": "research_dark_market_monitor",
+      "status": "error_in_response",
+      "response_size": 277,
+      "preview": "Error executing tool research_dark_market_monitor: 1 validation error for research_dark_market_monitorArguments\nkeywords\n  Field required [type=missin",
+      "error": null
+    },
+    {
+      "tool": "research_ransomware_tracker",
+      "status": "success",
+      "response_size": 156,
+      "preview": "{\n  \"group_name\": \"\",\n  \"keyword\": \"\",\n  \"recent_activity\": [],\n  \"victims_mentioned\": [],\n  \"iocs_found\": [],\n  \"error\": \"group_name or keyword requi",
+      "error": null
+    },
+    {
+      "tool": "research_phishing_mapper",
+      "status": "error_in_response",
+      "response_size": 267,
+      "preview": "Error executing tool research_phishing_mapper: 1 validation error for research_phishing_mapperArguments\ndomain\n  Field required [type=missing, input_v",
+      "error": null
+    },
+    {
+      "tool": "research_botnet_tracker",
+      "status": "error_in_response",
+      "response_size": 262,
+      "preview": "Error executing tool research_botnet_tracker: 1 validation error for research_botnet_trackerArguments\nioc\n  Field required [type=missing, input_value=",
+      "error": null
+    },
+    {
+      "tool": "research_malware_intel",
+      "status": "error_in_response",
+      "response_size": 267,
+      "preview": "Error executing tool research_malware_intel: 1 validation error for research_malware_intelArguments\nhash_value\n  Field required [type=missing, input_v",
+      "error": null
+    },
+    {
+      "tool": "research_domain_reputation",
+      "status": "error_in_response",
+      "response_size": 271,
+      "preview": "Error executing tool research_domain_reputation: 1 validation error for research_domain_reputationArguments\ndomain\n  Field required [type=missing, inp",
+      "error": null
+    },
+    {
+      "tool": "research_ioc_enrich",
+      "status": "error_in_response",
+      "response_size": 254,
+      "preview": "Error executing tool research_ioc_enrich: 1 validation error for research_ioc_enrichArguments\nioc\n  Field required [type=missing, input_value={'query'",
+      "error": null
+    },
+    {
+      "tool": "research_leak_scan",
+      "status": "error_in_response",
+      "response_size": 255,
+      "preview": "Error executing tool research_leak_scan: 1 validation error for research_leak_scanArguments\ntarget\n  Field required [type=missing, input_value={'query",
+      "error": null
+    },
+    {
+      "tool": "research_social_graph",
+      "status": "error_in_response",
+      "response_size": 263,
+      "preview": "Error executing tool research_social_graph: 1 validation error for research_social_graphArguments\nusername\n  Field required [type=missing, input_value",
+      "error": null
+    },
+    {
+      "tool": "research_stylometry",
+      "status": "error_in_response",
+      "response_size": 255,
+      "preview": "Error executing tool research_stylometry: 1 validation error for research_stylometryArguments\ntext\n  Field required [type=missing, input_value={'query",
+      "error": null
+    },
+    {
+      "tool": "research_deception_detect",
+      "status": "error_in_response",
+      "response_size": 267,
+      "preview": "Error executing tool research_deception_detect: 1 validation error for research_deception_detectArguments\ntext\n  Field required [type=missing, input_v",
+      "error": null
+    },
+    {
+      "tool": "research_company_diligence",
+      "status": "error_in_response",
+      "response_size": 277,
+      "preview": "Error executing tool research_company_diligence: 1 validation error for research_company_diligenceArguments\ncompany_name\n  Field required [type=missin",
+      "error": null
+    },
+    {
+      "tool": "research_salary_intelligence",
+      "status": "error_in_response",
+      "response_size": 273,
+      "preview": "Error executing tool research_salary_intelligence: 1 validation error for research_salary_intelligenceArguments\nrole\n  Field required [type=missing, i",
+      "error": null
+    },
+    {
+      "tool": "research_competitive_intel",
+      "status": "error_in_response",
+      "response_size": 272,
+      "preview": "Error executing tool research_competitive_intel: 1 validation error for research_competitive_intelArguments\ncompany\n  Field required [type=missing, in",
+      "error": null
+    },
+    {
+      "tool": "research_supply_chain_risk",
+      "status": "error_in_response",
+      "response_size": 277,
+      "preview": "Error executing tool research_supply_chain_risk: 1 validation error for research_supply_chain_riskArguments\npackage_name\n  Field required [type=missin",
+      "error": null
+    },
+    {
+      "tool": "research_patent_landscape",
+      "status": "success",
+      "response_size": 4636,
+      "preview": "{\n  \"query\": \"test\",\n  \"total_patents\": 20,\n  \"recent_patents\": [\n    {\n      \"title\": \"JEDEC STANDARD Stress-Test-Driven Qualification of Integrated ",
+      "error": null
+    },
+    {
+      "tool": "research_dependency_audit",
+      "status": "error_in_response",
+      "response_size": 271,
+      "preview": "Error executing tool research_dependency_audit: 1 validation error for research_dependency_auditArguments\nrepo_url\n  Field required [type=missing, inp",
+      "error": null
+    },
+    {
+      "tool": "research_whois",
+      "status": "error_in_response",
+      "response_size": 247,
+      "preview": "Error executing tool research_whois: 1 validation error for research_whoisArguments\ndomain\n  Field required [type=missing, input_value={'query': 'test",
+      "error": null
+    },
+    {
+      "tool": "research_dns_lookup",
+      "status": "error_in_response",
+      "response_size": 257,
+      "preview": "Error executing tool research_dns_lookup: 1 validation error for research_dns_lookupArguments\ndomain\n  Field required [type=missing, input_value={'que",
+      "error": null
+    },
+    {
+      "tool": "research_nmap_scan",
+      "status": "error_in_response",
+      "response_size": 255,
+      "preview": "Error executing tool research_nmap_scan: 1 validation error for research_nmap_scanArguments\ntarget\n  Field required [type=missing, input_value={'query",
+      "error": null
+    },
+    {
+      "tool": "research_torbot",
+      "status": "error_in_response",
+      "response_size": 246,
+      "preview": "Error executing tool research_torbot: 1 validation error for research_torbotArguments\nurl\n  Field required [type=missing, input_value={'query': 'test'",
+      "error": null
+    },
+    {
+      "tool": "research_amass_enum",
+      "status": "error_in_response",
+      "response_size": 257,
+      "preview": "Error executing tool research_amass_enum: 1 validation error for research_amass_enumArguments\ndomain\n  Field required [type=missing, input_value={'que",
+      "error": null
+    },
+    {
+      "tool": "research_amass_intel",
+      "status": "error_in_response",
+      "response_size": 259,
+      "preview": "Error executing tool research_amass_intel: 1 validation error for research_amass_intelArguments\ndomain\n  Field required [type=missing, input_value={'q",
+      "error": null
+    },
+    {
+      "tool": "research_legal_takedown",
+      "status": "error_in_response",
+      "response_size": 265,
+      "preview": "Error executing tool research_legal_takedown: 1 validation error for research_legal_takedownArguments\ndomain\n  Field required [type=missing, input_val",
+      "error": null
+    },
+    {
+      "tool": "research_open_access",
+      "status": "success",
+      "response_size": 131,
+      "preview": "{\n  \"query\": \"\",\n  \"open_access_url\": \"\",\n  \"sources_checked\": [],\n  \"alternatives\": [],\n  \"error\": \"Provide either DOI or title\"\n}",
+      "error": null
+    },
+    {
+      "tool": "research_content_authenticity",
+      "status": "error_in_response",
+      "response_size": 274,
+      "preview": "Error executing tool research_content_authenticity: 1 validation error for research_content_authenticityArguments\nurl\n  Field required [type=missing, ",
+      "error": null
+    },
+    {
+      "tool": "research_credential_monitor",
+      "status": "error_in_response",
+      "response_size": 273,
+      "preview": "Error executing tool research_credential_monitor: 1 validation error for research_credential_monitorArguments\ntarget\n  Field required [type=missing, i",
+      "error": null
+    },
+    {
+      "tool": "research_deepfake_checker",
+      "status": "error_in_response",
+      "response_size": 272,
+      "preview": "Error executing tool research_deepfake_checker: 1 validation error for research_deepfake_checkerArguments\nimage_url\n  Field required [type=missing, in",
+      "error": null
+    },
+    {
+      "tool": "research_identity_resolve",
+      "status": "success",
+      "response_size": 114,
+      "preview": "{\n  \"total_matches\": 0,\n  \"total_platforms_checked\": 0,\n  \"platforms_found\": [],\n  \"identity_confidence\": \"none\"\n}",
+      "error": null
+    }
+  ]
+}
