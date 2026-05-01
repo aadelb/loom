@@ -1,0 +1,2286 @@
+{
+  "task_id": "RESEARCH_696",
+  "title": "Multilingual Code-Switching Attack Vectors",
+  "timestamp": "2026-05-01T15:57:49.743820",
+  "search_queries": [
+    "multilingual jailbreak code switching attack LLM 2025",
+    "code switching prompt injection safety bypass",
+    "mixed language jailbreak confusion safety filter",
+    "Arabic English mixed prompt bypass safety",
+    "low resource language LLM safety filter bypass",
+    "underrepresented language safety vulnerability",
+    "Arabic RTL injection attack LLM safety",
+    "diacritics manipulation Arabic prompt attack",
+    "Arabic safety filter evasion technique",
+    "homoglyph Unicode confusables multilingual LLM",
+    "Unicode normalization bypass attack",
+    "script mixing attack prompt injection",
+    "PINT benchmark multilingual inputs safety",
+    "multilingual LLM safety evaluation 2024 2025",
+    "low-resource language jailbreak benchmark",
+    "Romanization Arabic phonetic bypass attack",
+    "transliteration attack safety filter",
+    "phonetic code-switching jailbreak"
+  ],
+  "findings": {
+    "multilingual jailbreak code switching attack LLM 2025": {
+      "status": "success",
+      "result_count": 15,
+      "search_result": {
+        "query": "multilingual jailbreak code switching attack LLM 2025",
+        "engines_queried": [
+          "duckduckgo",
+          "hackernews",
+          "reddit",
+          "wikipedia",
+          "arxiv"
+        ],
+        "total_raw_results": 15,
+        "total_deduplicated": 15,
+        "results": [
+          {
+            "title": "Enhancing Jailbreak Attacks on LLMs via Persona Prompts",
+            "url": "http://arxiv.org/abs/2507.22171v3",
+            "source": "arxiv",
+            "snippet": "Jailbreak attacks aim to exploit large language models (LLMs) by inducing them to generate harmful content, thereby revealing their vulnerabilities. Understanding and addressing these attacks is cruci",
+            "score": 0,
+            "rank_score": 40
+          },
+          {
+            "title": "Multilingual Bottleneck Features for Improving ASR Performance of Code-Switched Speech in Under-Resourced Languages",
+            "url": "http://arxiv.org/abs/2011.03118v1",
+            "source": "arxiv",
+            "snippet": "In this work, we explore the benefits of using multilingual bottleneck features (mBNF) in acoustic modelling for the automatic speech recognition of code-switched (CS) speech in African languages. The",
+            "score": 0,
+            "rank_score": 40
+          },
+          {
+            "title": "PBI-Attack: Prior-Guided Bimodal Interactive Black-Box Jailbreak Attack for Toxicity Maximization",
+            "url": "http://arxiv.org/abs/2412.05892v4",
+            "source": "arxiv",
+            "snippet": "Understanding the vulnerabilities of Large Vision Language Models (LVLMs) to jailbreak attacks is essential for their responsible real-world deployment. Most previous work requires access to model gra",
+            "score": 0,
+            "rank_score": 40
+          },
+          {
+            "title": "LLMs Can Defend Themselves Against Jailbreaking in a Practical Manner: A Vision Paper",
+            "url": "http://arxiv.org/abs/2402.15727v2",
+            "source": "arxiv",
+            "snippet": "Jailbreaking is an emerging adversarial attack that bypasses the safety alignment deployed in off-the-shelf large language models (LLMs). A considerable amount of research exists proposing more effect",
+            "score": 0,
+            "rank_score": 40
+          },
+          {
+            "title": "CorPipe at CRAC 2025: Evaluating Multilingual Encoders for Multilingual Coreference Resolution",
+            "url": "http://arxiv.org/abs/2509.17858v2",
+            "source": "arxiv",
+            "snippet": "We present CorPipe 25, the winning entry to the CRAC 2025 Shared Task on Multilingual Coreference Resolution. This fourth iteration of the shared task introduces a new LLM track alongside the original",
+            "score": 0,
+            "rank_score": 40
+          },
+          {
+            "title": "Logic Jailbreak: Efficiently Unlocking LLM Safety Restrictions Through ...",
+            "url": "https://arxiv.org/html/2505.13527v3",
+            "source": "duckduckgo",
+            "snippet": "Furthermore, to fill the gap of existing benchmarks that lack systematic resources specifically targeting logical expression-based attacks",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Code-Switching Red-Teaming: LLM Evaluation for Safety and Multilingual ...",
+            "url": "https://aclanthology.org/2025.acl-long.657/",
+            "source": "duckduckgo",
+            "snippet": "Through extensive experiments with ten state-of-the-art LLMs",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Multilingual Jailbreak Challenges in Large Language Models",
+            "url": "https://github.com/DAMO-NLP-SG/multilingual-safety-for-LLMs",
+            "source": "duckduckgo",
+            "snippet": "This openness aims to facilitate vulnerability identification, encourage discussions, and foster collaborative efforts to enhance LLM",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "[PDF] Do Methods to Jailbreak and Defend LLMs Generalize Across ...",
+            "url": "https://www.semanticscholar.org/paper/Do-Methods-to-Jailbreak-and-Defend-LLMs-Generalize-Atil-Passonneau/6fffc8e33e56006b0dafe754bfcf8282c246f8c6",
+            "source": "duckduckgo",
+            "snippet": "This paper presents the first systematic multilingual",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Multilingual Jailbreak Attacks - DynamoAI",
+            "url": "https://docs.dynamo.ai/docs/DynamoEval/Key%20Concepts/Jailbreak%20tests/multilingual-jailbreak-attacks/",
+            "source": "duckduckgo",
+            "snippet": "Multilingual",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "AB jailbreaking - a novel hybrid framework for exploitation of ...",
+            "url": "https://www.nature.com/articles/s41598-026-44403-w",
+            "source": "duckduckgo",
+            "snippet": "Large language models (LLMs",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Multilingual LLM Jailbreaks | LLM Security Database",
+            "url": "https://www.promptfoo.dev/lm-security-db/vuln/multilingual-llm-jailbreaks-f44cc820",
+            "source": "duckduckgo",
+            "snippet": "Multilingual",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Efficient Jailbreak Attack Sequences on Large Language Models Via...",
+            "url": "https://openreview.net/forum?id=jCDF7G3LpF",
+            "source": "duckduckgo",
+            "snippet": "We evaluate our attack",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "PDF Security Alignment of Large Language Models via Jailbreaking Attacks",
+            "url": "https://projekter.aau.dk/projekter/files/784376436/Masters_Thesis_LLM_Jailbreaking.pdf",
+            "source": "duckduckgo",
+            "snippet": "The intentional scenario involves attackers intentionally combining jailbreak",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "ICLR Poster EFFICIENT JAILBREAK ATTACK SEQUENCES ON LARGE LANGUAGE ...",
+            "url": "https://iclr.cc/virtual/2025/poster/28647",
+            "source": "duckduckgo",
+            "snippet": "We evaluate our attack",
+            "score": 0,
+            "rank_score": 30
+          }
+        ],
+        "sources_breakdown": {
+          "arxiv": 5,
+          "duckduckgo": 10
+        }
+      }
+    },
+    "code switching prompt injection safety bypass": {
+      "status": "success",
+      "result_count": 20,
+      "search_result": {
+        "query": "code switching prompt injection safety bypass",
+        "engines_queried": [
+          "duckduckgo",
+          "hackernews",
+          "reddit",
+          "wikipedia",
+          "arxiv"
+        ],
+        "total_raw_results": 20,
+        "total_deduplicated": 20,
+        "results": [
+          {
+            "title": "Rebreather diving",
+            "url": "https://en.wikipedia.org/wiki/Rebreather_diving",
+            "source": "wikipedia",
+            "snippet": "the gas addition by manual activation of injection valves. Some control systems allow depth activated switching of set-points, so that one pair of set-points",
+            "score": 23978,
+            "rank_score": 24028
+          },
+          {
+            "title": "Insulin",
+            "url": "https://en.wikipedia.org/wiki/Insulin",
+            "source": "wikipedia",
+            "snippet": "more rapidly absorbed after subcutaneous injection than regular insulin, with an effect 15\u00a0minutes after injection. Other rapid-acting analogues are NovoRapid",
+            "score": 14040,
+            "rank_score": 14090
+          },
+          {
+            "title": "Boiling water reactor safety systems",
+            "url": "https://en.wikipedia.org/wiki/Boiling_water_reactor_safety_systems",
+            "source": "wikipedia",
+            "snippet": "as it primarily uses passive safety cooling systems, though ESBWR does offer an alternative active high-pressure injection method using an operating mode",
+            "score": 8157,
+            "rank_score": 8207
+          },
+          {
+            "title": "Microsoft Copilot",
+            "url": "https://en.wikipedia.org/wiki/Microsoft_Copilot",
+            "source": "wikipedia",
+            "snippet": "The chat interface proved vulnerable to prompt injection attacks with the bot revealing its hidden initial prompts and rules, including its internal codename",
+            "score": 6457,
+            "rank_score": 6507
+          },
+          {
+            "title": "Adjustable gastric band",
+            "url": "https://en.wikipedia.org/wiki/Adjustable_gastric_band",
+            "source": "wikipedia",
+            "snippet": "LapBand failed and subsequently in 2020 had gastric bypass surgery. Sharon Osbourne &quot;Online ICD9/ICD9CM codes&quot;. Archived from the original on 2013-10-14. Retrieved",
+            "score": 6243,
+            "rank_score": 6293
+          },
+          {
+            "title": "Automatic and Universal Prompt Injection Attacks against Large Language Models",
+            "url": "http://arxiv.org/abs/2403.04957v1",
+            "source": "arxiv",
+            "snippet": "Large Language Models (LLMs) excel in processing and generating human language, powered by their ability to interpret and follow instructions. However, their capabilities can be exploited through prom",
+            "score": 0,
+            "rank_score": 40
+          },
+          {
+            "title": "SecAlign: Defending Against Prompt Injection with Preference Optimization",
+            "url": "http://arxiv.org/abs/2410.05451v3",
+            "source": "arxiv",
+            "snippet": "Large language models (LLMs) are becoming increasingly prevalent in modern software systems, interfacing between the user and the Internet to assist with tasks that require advanced language understan",
+            "score": 0,
+            "rank_score": 40
+          },
+          {
+            "title": "StruQ: Defending Against Prompt Injection with Structured Queries",
+            "url": "http://arxiv.org/abs/2402.06363v2",
+            "source": "arxiv",
+            "snippet": "Recent advances in Large Language Models (LLMs) enable exciting LLM-integrated applications, which perform text-based tasks by utilizing their advanced language understanding capabilities. However, as",
+            "score": 0,
+            "rank_score": 40
+          },
+          {
+            "title": "UniGuardian: A Unified Defense for Detecting Prompt Injection, Backdoor Attacks and Adversarial Attacks in Large Language Models",
+            "url": "http://arxiv.org/abs/2502.13141v1",
+            "source": "arxiv",
+            "snippet": "Large Language Models (LLMs) are vulnerable to attacks like prompt injection, backdoor attacks, and adversarial attacks, which manipulate prompts or models to generate harmful outputs. In this paper, ",
+            "score": 0,
+            "rank_score": 40
+          },
+          {
+            "title": "Detecting Prompt Injection Attacks Against Application Using Classifiers",
+            "url": "http://arxiv.org/abs/2512.12583v1",
+            "source": "arxiv",
+            "snippet": "Prompt injection attacks can compromise the security and stability of critical systems, from infrastructure to large web applications. This work curates and augments a prompt injection dataset based o",
+            "score": 0,
+            "rank_score": 40
+          },
+          {
+            "title": "[Security] Prompt Injection + Multilingual Safety Bypass in ... - GitHub",
+            "url": "https://github.com/QwenLM/Qwen3/issues/1842",
+            "source": "duckduckgo",
+            "snippet": "Any application assuming system prompt",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Prompt Injection Detection Bypass: Attacks &amp; Fixes",
+            "url": "https://devidevs.com/blog/prompt-injection-detection-bypass-fixes",
+            "source": "duckduckgo",
+            "snippet": "Identify and fix prompt",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Prompt Injection Defense: The Complete 2026 Security Guide",
+            "url": "https://sureprompts.com/blog/prompt-injection-defense-complete-guide-2026",
+            "source": "duckduckgo",
+            "snippet": "Prompt",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Multilingual Prompt Injection: Your LLM&#x27;s Safety Net Has a Language ...",
+            "url": "https://nwosunneoma.medium.com/multilingual-prompt-injection-your-llms-safety-net-has-a-language-problem-440d9aaa8bac",
+            "source": "duckduckgo",
+            "snippet": "This works surprisingly often because the model&#x27;s capabilities (understanding the instruction) outpace its safety",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "prompt-security-and-safety.ipynb - Colab",
+            "url": "https://colab.research.google.com/github/NirDiamant/Prompt_Engineering/blob/main/all_prompt_engineering_techniques/prompt-security-and-safety.ipynb",
+            "source": "duckduckgo",
+            "snippet": "This tutorial focuses on two critical aspects of prompt",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "LLM Prompt Injection Prevention - OWASP Cheat Sheet Series",
+            "url": "https://cheatsheetseries.owasp.org/cheatsheets/LLM_Prompt_Injection_Prevention_Cheat_Sheet.html",
+            "source": "duckduckgo",
+            "snippet": "LLM Prompt",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Choose a permission mode - Claude Code Docs",
+            "url": "https://code.claude.com/docs/en/permission-modes",
+            "source": "duckduckgo",
+            "snippet": "The --dangerously-skip-permissions flag is equivalent. bypassPermissions offers no protection against prompt",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Prompt Injection Attacks on Agentic Coding Assistants: A Systematic ...",
+            "url": "https://arxiv.org/html/2601.17548v1",
+            "source": "duckduckgo",
+            "snippet": "This paper presents a comprehensive systematization of prompt",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "All About Prompt Injection: How Attackers Trick AI",
+            "url": "https://infosecwriteups.com/all-about-prompt-injection-how-attackers-trick-ai-56ef7e9baa06",
+            "source": "duckduckgo",
+            "snippet": "This article breaks down the top prompt",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "12 Ways Attackers Bypass Prompt Injection Scanners (We Built Defenses ...",
+            "url": "https://dev.to/joergmichno/12-ways-attackers-bypass-prompt-injection-scanners-we-built-defenses-for-all-of-them-506k",
+            "source": "duckduckgo",
+            "snippet": "Recent research (ArXiv 2602.00750) shows evasion techniques bypass",
+            "score": 0,
+            "rank_score": 30
+          }
+        ],
+        "sources_breakdown": {
+          "wikipedia": 5,
+          "arxiv": 5,
+          "duckduckgo": 10
+        }
+      }
+    },
+    "mixed language jailbreak confusion safety filter": {
+      "status": "success",
+      "result_count": 16,
+      "search_result": {
+        "query": "mixed language jailbreak confusion safety filter",
+        "engines_queried": [
+          "duckduckgo",
+          "hackernews",
+          "reddit",
+          "wikipedia",
+          "arxiv"
+        ],
+        "total_raw_results": 16,
+        "total_deduplicated": 16,
+        "results": [
+          {
+            "title": "Large language model",
+            "url": "https://en.wikipedia.org/wiki/Large_language_model",
+            "source": "wikipedia",
+            "snippet": "vulnerable to prompt injection attacks and jailbreaking through carefully crafted user inputs that bypass safety training mechanisms.[citation needed] Researchers",
+            "score": 14142,
+            "rank_score": 14192
+          },
+          {
+            "title": "Jailbreak Distillation: Renewable Safety Benchmarking",
+            "url": "http://arxiv.org/abs/2505.22037v1",
+            "source": "arxiv",
+            "snippet": "Large language models (LLMs) are rapidly deployed in critical applications, raising urgent needs for robust safety benchmarking. We propose Jailbreak Distillation (JBDistill), a novel benchmark constr",
+            "score": 0,
+            "rank_score": 40
+          },
+          {
+            "title": "Latent Jailbreak: A Benchmark for Evaluating Text Safety and Output Robustness of Large Language Models",
+            "url": "http://arxiv.org/abs/2307.08487v3",
+            "source": "arxiv",
+            "snippet": "Considerable research efforts have been devoted to ensuring that large language models (LLMs) align with human values and generate safe text. However, an excessive focus on sensitivity to certain topi",
+            "score": 0,
+            "rank_score": 40
+          },
+          {
+            "title": "Low-Effort Jailbreak Attacks Against Text-to-Image Safety Filters",
+            "url": "http://arxiv.org/abs/2604.01888v1",
+            "source": "arxiv",
+            "snippet": "Text-to-image generative models are widely deployed in creative tools and online platforms. To mitigate misuse, these systems rely on safety filters and moderation pipelines that aim to block harmful ",
+            "score": 0,
+            "rank_score": 40
+          },
+          {
+            "title": "All Languages Matter: On the Multilingual Safety of Large Language Models",
+            "url": "http://arxiv.org/abs/2310.00905v2",
+            "source": "arxiv",
+            "snippet": "Safety lies at the core of developing and deploying large language models (LLMs). However, previous safety benchmarks only concern the safety in one language, e.g. the majority language in the pretrai",
+            "score": 0,
+            "rank_score": 40
+          },
+          {
+            "title": "Benign-to-Toxic Jailbreaking: Inducing Harmful Responses from Harmless Prompts",
+            "url": "http://arxiv.org/abs/2505.21556v1",
+            "source": "arxiv",
+            "snippet": "Optimization-based jailbreaks typically adopt the Toxic-Continuation setting in large vision-language models (LVLMs), following the standard next-token prediction objective. In this setting, an advers",
+            "score": 0,
+            "rank_score": 40
+          },
+          {
+            "title": "Language Switching | langgptai/LLM-Jailbreaks | DeepWiki",
+            "url": "https://deepwiki.com/langgptai/LLM-Jailbreaks/2.4-language-switching",
+            "source": "duckduckgo",
+            "snippet": "Language",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "The Hidden Flaw in LLM Safety: Translation as a Jailbreak",
+            "url": "https://welodata.ai/2025/12/10/the-hidden-flaw-in-llm-safety-translation-as-a-jailbreak/",
+            "source": "duckduckgo",
+            "snippet": "These multilingual safety",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Cross-Lingual Jailbreak Detection via Semantic Codebooks",
+            "url": "https://arxiv.org/pdf/2604.25716",
+            "source": "duckduckgo",
+            "snippet": "Abstract Safety",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "PDF HAVOC:Hybrid Adversarial Visual Obfuscation and Confusion for Universal ...",
+            "url": "https://fyust.edu.cn/gjhyqk/cscwd2026/papers/paper_786.pdf",
+            "source": "duckduckgo",
+            "snippet": "We propose HAVOC (Hybrid Adversarial Visual Obfusca- tion and Confusion",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Avoiding jailbreak flag at a Generation flag in RAG",
+            "url": "https://community.openai.com/t/avoiding-jailbreak-flag-at-a-generation-flag-in-rag/1254121",
+            "source": "duckduckgo",
+            "snippet": "Such attacks can vary from intricate roleplay to subtle subversion of the safety",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "SamsungSDS-Research/SGuard-JailbreakFilter-2B-v1 \u00b7 Hugging Face",
+            "url": "https://huggingface.co/SamsungSDS-Research/SGuard-JailbreakFilter-2B-v1",
+            "source": "duckduckgo",
+            "snippet": "SGuard-JailbreakFilter-2B We present SGuard-v1, a lightweight safety",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "PDF Reasoning-Augmented Conversation for Multi-Turn Jailbreak Attacks on ...",
+            "url": "https://aclanthology.org/2025.findings-emnlp.929.pdf",
+            "source": "duckduckgo",
+            "snippet": "Abstract Multi-turn jailbreak",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Prompt Injection Defense: The Complete 2026 Security Guide",
+            "url": "https://sureprompts.com/blog/prompt-injection-defense-complete-guide-2026",
+            "source": "duckduckgo",
+            "snippet": "Jailbreak",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "GitHub - superisuer/deepseek-jailbreak: Detailed and unrestricted ...",
+            "url": "https://github.com/superisuer/deepseek-jailbreak",
+            "source": "duckduckgo",
+            "snippet": "Jailbreak",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "AI Jailbreak Techniques 2026 \u2014 Bypass AI Safety Filters",
+            "url": "https://bypasscore.com/blog/ai-jailbreak-techniques-2026",
+            "source": "duckduckgo",
+            "snippet": "Complete guide to AI jailbreak",
+            "score": 0,
+            "rank_score": 30
+          }
+        ],
+        "sources_breakdown": {
+          "wikipedia": 1,
+          "arxiv": 5,
+          "duckduckgo": 10
+        }
+      }
+    },
+    "Arabic English mixed prompt bypass safety": {
+      "status": "success",
+      "result_count": 15,
+      "search_result": {
+        "query": "Arabic English mixed prompt bypass safety",
+        "engines_queried": [
+          "duckduckgo",
+          "hackernews",
+          "reddit",
+          "wikipedia",
+          "arxiv"
+        ],
+        "total_raw_results": 15,
+        "total_deduplicated": 15,
+        "results": [
+          {
+            "title": "List of suicides",
+            "url": "https://en.wikipedia.org/wiki/List_of_suicides",
+            "source": "wikipedia",
+            "snippet": "Travis Fulton (2021), American boxer and mixed martial artist fighter, hanging. Anton Furst (1991), English production designer on Batman (1989), jump",
+            "score": 51253,
+            "rank_score": 51303
+          },
+          {
+            "title": "Deaths in January 2024",
+            "url": "https://en.wikipedia.org/wiki/Deaths_in_January_2024",
+            "source": "wikipedia",
+            "snippet": "(in Spanish) Brian Lumley (1937\u20132024) Pagadian bishop dies after heart bypass 32 Thoughts: Where things stand between the Maple Leafs and William Nylander",
+            "score": 20567,
+            "rank_score": 20617
+          },
+          {
+            "title": "Translations of Ulysses",
+            "url": "https://en.wikipedia.org/wiki/Translations_of_Ulysses",
+            "source": "wikipedia",
+            "snippet": "compelled him to move from Diyarbak\u0131r to Mardin for safety; after 2015, ongoing conflict prompted him to depart Turkey. A documentary film about his work",
+            "score": 18136,
+            "rank_score": 18186
+          },
+          {
+            "title": "Ethanol",
+            "url": "https://en.wikipedia.org/wiki/Ethanol",
+            "source": "wikipedia",
+            "snippet": " Beauchamp, GA; Valento, M (September 2016). &quot;Toxic Alcohol Ingestion: Prompt Recognition And Management In The Emergency Department&quot;. Emergency Medicine",
+            "score": 11060,
+            "rank_score": 11110
+          },
+          {
+            "title": "Moshe Dayan",
+            "url": "https://en.wikipedia.org/wiki/Moshe_Dayan",
+            "source": "wikipedia",
+            "snippet": "school in Nahalal. Dayan was a Jewish atheist. He spoke Hebrew, Arabic, and English. At the age of 14, Dayan joined the Jewish defence force Haganah",
+            "score": 8778,
+            "rank_score": 8828
+          },
+          {
+            "title": "Multilingual Prompt Injection: Your LLM&#x27;s Safety Net Has a Language ...",
+            "url": "https://nwosunneoma.medium.com/multilingual-prompt-injection-your-llms-safety-net-has-a-language-problem-440d9aaa8bac",
+            "source": "duckduckgo",
+            "snippet": "Code-switching and mixed",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Multilingual Prompt Injection: Your LLM&#x27;s Safety Net Has a Language Problem",
+            "url": "https://lab42ai.substack.com/p/multilingual-prompt-injection-your",
+            "source": "duckduckgo",
+            "snippet": "Rather than using a single non-English",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Multilingual Blending: LLM Safety Alignment Evaluation with Language ...",
+            "url": "https://arxiv.org/html/2407.07342v1",
+            "source": "duckduckgo",
+            "snippet": "Our study reveals that the mixed",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "GitHub - l0gicx/ai-model-bypass: Exploit prompts and roleplay ...",
+            "url": "https://github.com/l0gicx/ai-model-bypass",
+            "source": "duckduckgo",
+            "snippet": "About Exploit prompts",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Language Is All You Need: The Hidden AI Security Risk",
+            "url": "https://www.lakera.ai/blog/language-is-all-you-need-the-hidden-ai-security-risk",
+            "source": "duckduckgo",
+            "snippet": "But often, security solutions are English",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Multilingual Prompt Injection Exposes Gaps in LLM Safety Nets",
+            "url": "https://hackernoon.com/multilingual-prompt-injection-exposes-gaps-in-llm-safety-nets",
+            "source": "duckduckgo",
+            "snippet": "Multilingual Prompt",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Multilingual Attacks - Prompt Injection Techniques 0.1.0 documentation",
+            "url": "https://prompt-injections.readthedocs.io/en/latest/categories/multilingual-attacks.html",
+            "source": "duckduckgo",
+            "snippet": "Multilingual Attacks \u00b6 Multilingual Attacks leverage language switching, non-English",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "README.md \u00b7 ToxicityPrompts/PolyGuardMix at main",
+            "url": "https://huggingface.co/datasets/ToxicityPrompts/PolyGuardMix/blob/main/README.md",
+            "source": "duckduckgo",
+            "snippet": "We&#x27;re on a journey to advance and democratize artificial intelligence through open source and open science.",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Jailbreak Techniques | langgptai/awesome-grok-prompts | DeepWiki",
+            "url": "https://deepwiki.com/langgptai/awesome-grok-prompts/3-jailbreak-techniques",
+            "source": "duckduckgo",
+            "snippet": "Jailbreak techniques exploit various aspects of large language model behavior to circumvent built-in safety",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Multilingual Prompt Injection Exposes Gaps In LLM Safety Nets ...",
+            "url": "https://worldofsoftware.org/multilingual-prompt-injection-exposes-gaps-in-llm-safety-nets-hackernoon/",
+            "source": "duckduckgo",
+            "snippet": "Multilingual prompt",
+            "score": 0,
+            "rank_score": 30
+          }
+        ],
+        "sources_breakdown": {
+          "wikipedia": 5,
+          "duckduckgo": 10
+        }
+      }
+    },
+    "low resource language LLM safety filter bypass": {
+      "status": "success",
+      "result_count": 15,
+      "search_result": {
+        "query": "low resource language LLM safety filter bypass",
+        "engines_queried": [
+          "duckduckgo",
+          "hackernews",
+          "reddit",
+          "wikipedia",
+          "arxiv"
+        ],
+        "total_raw_results": 15,
+        "total_deduplicated": 15,
+        "results": [
+          {
+            "title": "Police brutality by country",
+            "url": "https://en.wikipedia.org/wiki/Police_brutality_by_country",
+            "source": "wikipedia",
+            "snippet": "brutality ranged from offensive language to physically attacking protesters. Reports show that brutality extended to bypassers, tourists, news reporters, and",
+            "score": 29842,
+            "rank_score": 29892
+          },
+          {
+            "title": "Ethics of artificial intelligence",
+            "url": "https://en.wikipedia.org/wiki/Ethics_of_artificial_intelligence",
+            "source": "wikipedia",
+            "snippet": "1007/s11948-020-00213-5. ISSN\u00a01353-3452. PMC\u00a07286860. PMID\u00a032246245. &quot;Llama Guard: LLM-based Input-Output Safeguard for Human-AI Conversations&quot;. Meta.com. Retrieved",
+            "score": 16078,
+            "rank_score": 16128
+          },
+          {
+            "title": "Toxoplasma gondii",
+            "url": "https://en.wikipedia.org/wiki/Toxoplasma_gondii",
+            "source": "wikipedia",
+            "snippet": "brackish, and full-strength seawater). Normally, amoebas function as a natural filter, phagocytizing nutrients and bacteria found within the water. Some pathogens",
+            "score": 13006,
+            "rank_score": 13056
+          },
+          {
+            "title": "Grok (chatbot)",
+            "url": "https://en.wikipedia.org/wiki/Grok_%28chatbot%29",
+            "source": "wikipedia",
+            "snippet": "in November 2023 by Elon Musk as an initiative based on the large language model (LLM) of the same name. Grok has apps for iOS and Android and is integrated",
+            "score": 10956,
+            "rank_score": 11006
+          },
+          {
+            "title": "Anti-spam techniques",
+            "url": "https://en.wikipedia.org/wiki/Anti-spam_techniques",
+            "source": "wikipedia",
+            "snippet": "often based on publicly visible LinkedIn information and can bypass traditional spam filters, making user vigilance especially critical. Calling the customer",
+            "score": 7432,
+            "rank_score": 7482
+          },
+          {
+            "title": "arXiv:2310.02446v2 [cs.CL] 27 Jan 2024",
+            "url": "https://arxiv.org/pdf/2310.02446",
+            "source": "duckduckgo",
+            "snippet": "We systematically benchmark this attack across 12 languages",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "PDF Low-Resource Languages Jailbreak GPT-4 - Brown University",
+            "url": "https://cs.brown.edu/media/filer_public/eb/d8/ebd8b5a4-81ae-4e73-91d1-9ebffa6f2f18/low-resource_languages_jailbreak_gpt-4.pdf",
+            "source": "duckduckgo",
+            "snippet": "We systematically benchmark across 12 languages",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "unRLHF - Efficiently undoing LLM safeguards \u2014 LessWrong",
+            "url": "https://www.lesswrong.com/posts/3eqHYxfWb5x4Qfz8C/unrlhf-efficiently-undoing-llm-safeguards",
+            "source": "duckduckgo",
+            "snippet": "Examples include asking the model to adopt a persona like &#x27;Do Anything Now&#x27; (DAN), prompting in different languages",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Jailbreaking AI: How Attackers Bypass LLM Safety Guardrails",
+            "url": "https://www.practical-devsecops.com/glossary/ai-jailbreaking/",
+            "source": "duckduckgo",
+            "snippet": "Adversarial suffixes: Adding seemingly random strings that destabilize safety",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Hackers Can Bypass OpenAI Guardrails Using a Simple Prompt Injection ...",
+            "url": "https://cybersecuritynews.com/openai-guardrails-bypassed/",
+            "source": "duckduckgo",
+            "snippet": "The Guardrails framework offers developers customizable pipelines to filter",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Heavy Reasoning Filter Bypass | LLM Security Database",
+            "url": "https://promptfoo.dev/lm-security-db/vuln/heavy-reasoning-filter-bypass-4a32ec1a",
+            "source": "duckduckgo",
+            "snippet": "Multiple open-source Large Language",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "GitHub - SnailSploit/The-LLM-Red-Teamer-s-Playbook: A diagnostic ...",
+            "url": "https://github.com/SnailSploit/The-LLM-Red-Teamer-s-Playbook",
+            "source": "duckduckgo",
+            "snippet": "A diagnostic methodology for bypassing LLM",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "LLM Safety Failures in Low-Resource Languages - Welo Data",
+            "url": "https://welodata.ai/global-security-blind-spots-llm-safety-failures-in-low-resource-languages/",
+            "source": "duckduckgo",
+            "snippet": "In Summary Welo Data&#x27;s latest research examines how large language",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Deep research AI agents can bypass safety filters, generating harmful ...",
+            "url": "https://www.devdiscourse.com/article/technology/3664066-deep-research-ai-agents-can-bypass-safety-filters-generating-harmful-content",
+            "source": "duckduckgo",
+            "snippet": "A new study published on arXiv for the NeurIPS 2025 workshop on Reliable ML from Unreliable Data reveals that the latest generation of AI research agents, large language",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Bypassing LLM Filters &amp; Sanitizers | Evasion Tech - apxml.com",
+            "url": "https://apxml.com/courses/intro-llm-red-teaming/chapter-4-advanced-evasion-exfiltration-methods/bypassing-input-filters-output-sanitizers",
+            "source": "duckduckgo",
+            "snippet": "Leveraging Low-Resource",
+            "score": 0,
+            "rank_score": 30
+          }
+        ],
+        "sources_breakdown": {
+          "wikipedia": 5,
+          "duckduckgo": 10
+        }
+      }
+    },
+    "underrepresented language safety vulnerability": {
+      "status": "success",
+      "result_count": 15,
+      "search_result": {
+        "query": "underrepresented language safety vulnerability",
+        "engines_queried": [
+          "duckduckgo",
+          "hackernews",
+          "reddit",
+          "wikipedia",
+          "arxiv"
+        ],
+        "total_raw_results": 15,
+        "total_deduplicated": 15,
+        "results": [
+          {
+            "title": "Health literacy",
+            "url": "https://en.wikipedia.org/wiki/Health_literacy",
+            "source": "wikipedia",
+            "snippet": "and using outreach efforts. Library outreach often addresses underrepresented or vulnerable groups who have a higher risk of certain diseases and a lower",
+            "score": 8261,
+            "rank_score": 8311
+          },
+          {
+            "title": "Artificial intelligence in mental health",
+            "url": "https://en.wikipedia.org/wiki/Artificial_intelligence_in_mental_health",
+            "source": "wikipedia",
+            "snippet": "and reduced effectiveness in diagnosing or treating individuals from underrepresented groups. Provider skepticism and implementation barriers: Clinicians",
+            "score": 7245,
+            "rank_score": 7295
+          },
+          {
+            "title": "Zarah Sultana",
+            "url": "https://en.wikipedia.org/wiki/Zarah_Sultana",
+            "source": "wikipedia",
+            "snippet": "Award from the Patchwork Foundation, celebrating her work championing &quot;underrepresented and disadvantaged communities across the UK.&quot; She also presented the",
+            "score": 5616,
+            "rank_score": 5666
+          },
+          {
+            "title": "2025 United States government online resource removals",
+            "url": "https://en.wikipedia.org/wiki/2025_United_States_government_online_resource_removals",
+            "source": "wikipedia",
+            "snippet": "terms such as &quot;DEIA&quot;, &quot;indigenous people&quot;, &quot;environmental justice&quot;, &quot;underrepresented groups/people&quot;, and content specifically targeting women, including",
+            "score": 5061,
+            "rank_score": 5111
+          },
+          {
+            "title": "Adolescence (TV series)",
+            "url": "https://en.wikipedia.org/wiki/Adolescence_%28TV_series%29",
+            "source": "wikipedia",
+            "snippet": "Bradford. Staff members of these drama schools, which serve students from underrepresented and deprived communities, resented the narrative that these actors",
+            "score": 4547,
+            "rank_score": 4597
+          },
+          {
+            "title": "Including underrepresented language learners in SLA research: A case ...",
+            "url": "https://www.sciencedirect.com/science/article/pii/S2772766122000283",
+            "source": "duckduckgo",
+            "snippet": "This article discusses my doctoral research as a case study of internet-based research inspired by the call to include underrepresented",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Vulnerabilized: Revisiting the Language of the Vulnerable Populations ...",
+            "url": "https://ajph.aphapublications.org/doi/full/10.2105/AJPH.2023.307532",
+            "source": "duckduckgo",
+            "snippet": "Failing to consider the power of language",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "LSR: Linguistic Safety Robustness Benchmark for Low-Resource West ...",
+            "url": "https://arxiv.org/html/2603.19273",
+            "source": "duckduckgo",
+            "snippet": "This paper introduces LSR (Linguistic Safety",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Unpacking vulnerability: towards language that advances understanding ...",
+            "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7046829/",
+            "source": "duckduckgo",
+            "snippet": "Unpacking vulnerability",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Low-resource, high-risk: AI text generators more likely to create ...",
+            "url": "https://www.cs.jhu.edu/news/low-resource-high-risk-ai-text-generators-more-likely-to-create-harmful-content-in-certain-languages/",
+            "source": "duckduckgo",
+            "snippet": "A Johns Hopkins study finds that large language",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "The power of language inclusion - Helping displaced communities find ...",
+            "url": "https://clearglobal.org/the-power-of-language-inclusion-helping-displaced-communities-find-safety-make-decisions-and-get-support/",
+            "source": "duckduckgo",
+            "snippet": "Language",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "PDF Child and Adolescent/ Young Person Vulnerability- Guidance on ... - Cysur",
+            "url": "https://cysur.wales/media/qmfbknr1/child-and-adolescent-young-person-vulnerability-guidance-on-the-use-of-appropriate-language.pdf",
+            "source": "duckduckgo",
+            "snippet": "Child and Adolescent/ Young Person Vulnerability",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Including underrepresented language learners in SLA research: A case ...",
+            "url": "https://www.researchgate.net/publication/363604277_Including_underrepresented_language_learners_in_SLA_research_A_case_study_and_considerations_for_internet-based_methods",
+            "source": "duckduckgo",
+            "snippet": "This leads to the exploration of vulnerability",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Considering the Use of Language in Protection Risk Analysis",
+            "url": "https://protection.interaction.org/case-examples/considering-the-use-of-language-in-protection-risk-analysis/",
+            "source": "duckduckgo",
+            "snippet": "Humanitarians often recognize the importance of language",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "&#x27;It&#x27;s no longer &quot;that black woman&quot;; it&#x27;s &quot;that woman&quot;&#x27;: language in the ...",
+            "url": "https://www.tandfonline.com/doi/full/10.1080/14708477.2025.2518375",
+            "source": "duckduckgo",
+            "snippet": "ABSTRACT This article aims to explore the interplay between language",
+            "score": 0,
+            "rank_score": 30
+          }
+        ],
+        "sources_breakdown": {
+          "wikipedia": 5,
+          "duckduckgo": 10
+        }
+      }
+    },
+    "Arabic RTL injection attack LLM safety": {
+      "status": "success",
+      "result_count": 10,
+      "search_result": {
+        "query": "Arabic RTL injection attack LLM safety",
+        "engines_queried": [
+          "duckduckgo",
+          "hackernews",
+          "reddit",
+          "wikipedia",
+          "arxiv"
+        ],
+        "total_raw_results": 10,
+        "total_deduplicated": 10,
+        "results": [
+          {
+            "title": "Arabic Dataset for LLM Safeguard Evaluation - arXiv.org",
+            "url": "https://arxiv.org/html/2410.17040v2",
+            "source": "duckduckgo",
+            "snippet": "Following this, we created a dataset of 1,024 Arabic",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "PDF Arabic Dataset for LLM Safeguard Evaluation - ACL Anthology",
+            "url": "https://aclanthology.org/2025.naacl-long.285.pdf",
+            "source": "duckduckgo",
+            "snippet": "Following this, we created a dataset of 1,024 Arabic",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "GitHub - arwaBayoumy/MAS-Prompt-Injection",
+            "url": "https://github.com/arwaBayoumy/MAS-Prompt-Injection",
+            "source": "duckduckgo",
+            "snippet": "Prompt injection",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Multilingual Prompt Injection: Your LLM&#x27;s Safety Net Has a Language ...",
+            "url": "https://nwosunneoma.medium.com/multilingual-prompt-injection-your-llms-safety-net-has-a-language-problem-440d9aaa8bac",
+            "source": "duckduckgo",
+            "snippet": "I came across a post on Twitter from a security researcher who claimed they&#x27;d bypassed multiple LLM",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "(PDF) Arabic Dataset for LLM Safeguard Evaluation - ResearchGate",
+            "url": "https://www.researchgate.net/publication/385140477_Arabic_Dataset_for_LLM_Safeguard_Evaluation",
+            "source": "duckduckgo",
+            "snippet": "In particular, we present an Arab-region-specific safety",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Multilingual Prompt Injection: Your LLM&#x27;s Safety Net Has a Language Problem",
+            "url": "https://lab42ai.substack.com/p/multilingual-prompt-injection-your",
+            "source": "duckduckgo",
+            "snippet": "Multilingual prompt injection",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Arabic Dataset for LLM Safeguard Evaluation",
+            "url": "https://gengo.sotaro.io/2025.naacl-long.285",
+            "source": "duckduckgo",
+            "snippet": "They propose to use Arabic",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Arabic Dataset for LLM Safeguard Evaluation - catalyzex.com",
+            "url": "https://www.catalyzex.com/paper/arabic-dataset-for-llm-safeguard-evaluation",
+            "source": "duckduckgo",
+            "snippet": "Arabic",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Arabic Dataset for LLM Safeguard Evaluation",
+            "url": "https://chatpaper.com/chatpaper/paper/70360?from=search",
+            "source": "duckduckgo",
+            "snippet": "This paper introduces a comprehensive evaluation framework and dataset for assessing the safety",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "AI Model Vulnerability Tracker 2026: 312 LLM Attacks Tested",
+            "url": "https://axis-intelligence.com/research/ai-model-vulnerability-tracker/",
+            "source": "duckduckgo",
+            "snippet": "We tested 312 attack",
+            "score": 0,
+            "rank_score": 30
+          }
+        ],
+        "sources_breakdown": {
+          "duckduckgo": 10
+        }
+      }
+    },
+    "diacritics manipulation Arabic prompt attack": {
+      "status": "success",
+      "result_count": 10,
+      "search_result": {
+        "query": "diacritics manipulation Arabic prompt attack",
+        "engines_queried": [
+          "duckduckgo",
+          "hackernews",
+          "reddit",
+          "wikipedia",
+          "arxiv"
+        ],
+        "total_raw_results": 10,
+        "total_deduplicated": 10,
+        "results": [
+          {
+            "title": "Diacritical Manipulations as Adversarial Attacks in Arabic ... - Springer",
+            "url": "https://link.springer.com/article/10.1007/s13369-025-10266-y",
+            "source": "duckduckgo",
+            "snippet": "Deep neural networks (DNNs) have been highly successful in natural language processing (NLP) tasks. However, they were vulnerable to adversarial attacks",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "GitHub - arwaBayoumy/MAS-Prompt-Injection",
+            "url": "https://github.com/arwaBayoumy/MAS-Prompt-Injection",
+            "source": "duckduckgo",
+            "snippet": "Prompt",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Diacritical Manipulations as Adversarial Attacks in Arabic NLP Systems",
+            "url": "https://www.semanticscholar.org/paper/Diacritical-Manipulations-as-Adversarial-Attacks-in-Alshemali/fc6c390be667644e1a7112895f660e7be0a91ddc",
+            "source": "duckduckgo",
+            "snippet": "By adding diacritical marks to non-diacritical Arabic",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "ArabicTextFool: A Framework for Arabic Adversarial Attacks",
+            "url": "https://ieeexplore.ieee.org/abstract/document/10989415",
+            "source": "duckduckgo",
+            "snippet": "Adversarial samples were generated using a genetic algorithm to identify optimal positions for adding dots/diacritics",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Arabic LLM Red-Teaming: Jailbreaking SOTA Models with Transliteration ...",
+            "url": "https://www.creativegeek.net/blog/arabic-llm-red-teaming",
+            "source": "duckduckgo",
+            "snippet": "Research applying 1,000 malicious Arabic",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Arabic Diacritics in the Wild: Exploiting Opportunities for Improved ...",
+            "url": "https://aclanthology.org/2024.acl-long.792/",
+            "source": "duckduckgo",
+            "snippet": "The widespread absence of diacritical marks in Arabic",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Arabic Diacritics in the Wild: Exploiting Opportunities for Improved ...",
+            "url": "https://arxiv.org/html/2406.05760v1",
+            "source": "duckduckgo",
+            "snippet": "We specifically focus on the Arabic",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "A Comparative Study of Some Automatic Arabic Text Diacritization ...",
+            "url": "https://onlinelibrary.wiley.com/doi/full/10.1155/2022/3613710",
+            "source": "duckduckgo",
+            "snippet": "Arabic",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "The differential effects of consonant and vowel diacritics in Arabic",
+            "url": "https://www.sciencedirect.com/science/article/pii/S0749596X24000366",
+            "source": "duckduckgo",
+            "snippet": "We reported three experiments that investigated priming by two types of diacritical marks in Arabic",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Effective Deep Learning Models for Automatic Diacritization of Arabic Text",
+            "url": "https://www.researchgate.net/publication/347292422_Effective_Deep_Learning_Models_for_Automatic_Diacritization_of_Arabic_Text",
+            "source": "duckduckgo",
+            "snippet": "We propose three deep learning models to recover Arabic",
+            "score": 0,
+            "rank_score": 30
+          }
+        ],
+        "sources_breakdown": {
+          "duckduckgo": 10
+        }
+      }
+    },
+    "Arabic safety filter evasion technique": {
+      "status": "success",
+      "result_count": 13,
+      "search_result": {
+        "query": "Arabic safety filter evasion technique",
+        "engines_queried": [
+          "duckduckgo",
+          "hackernews",
+          "reddit",
+          "wikipedia",
+          "arxiv"
+        ],
+        "total_raw_results": 13,
+        "total_deduplicated": 13,
+        "results": [
+          {
+            "title": "History of chemical warfare",
+            "url": "https://en.wikipedia.org/wiki/History_of_chemical_warfare",
+            "source": "wikipedia",
+            "snippet": "launcher. CK, a deadly blood agent, was capable of penetrating the protective filter barriers in some gas masks, and was seen as an effective agent against Japanese",
+            "score": 13794,
+            "rank_score": 13844
+          },
+          {
+            "title": "Criticism of Netflix",
+            "url": "https://en.wikipedia.org/wiki/Criticism_of_Netflix",
+            "source": "wikipedia",
+            "snippet": "Netflix tax evasion investigation: source&quot;. Reuters. Vivarelli, Nick (October 3, 2019). &quot;Netflix Under Investigation in Italy for Alleged Tax Evasion&quot;. Variety",
+            "score": 13147,
+            "rank_score": 13197
+          },
+          {
+            "title": "Moonshine by country",
+            "url": "https://en.wikipedia.org/wiki/Moonshine_by_country",
+            "source": "wikipedia",
+            "snippet": "tax; undeclared distilleries, even for personal use, are considered tax evasion. Some \u021buic\u0103 is sold in markets or fairs and even in supermarkets. In 2015",
+            "score": 9402,
+            "rank_score": 9452
+          },
+          {
+            "title": "XSS Filter Evasion - OWASP Cheat Sheet Series",
+            "url": "https://cheatsheetseries.owasp.org/cheatsheets/XSS_Filter_Evasion_Cheat_Sheet.html",
+            "source": "duckduckgo",
+            "snippet": "Tests This cheat sheet demonstrates that input filtering is an incomplete defense for XSS by supplying testers with a series of XSS attacks that can bypass certain XSS defensive filters",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Xss-payloads/Filter Evasion Cheat Sheet at main - GitHub",
+            "url": "https://github.com/ethicalhackersworld/Xss-payloads/blob/main/Filter%20Evasion%20Cheat%20Sheet",
+            "source": "duckduckgo",
+            "snippet": "This XSS may bypass many content filters",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "XSS Filter Evasion: How Attackers Bypass XSS Filters - And Why ...",
+            "url": "https://www.acunetix.com/blog/articles/xss-filter-evasion-bypass-techniques/",
+            "source": "duckduckgo",
+            "snippet": "XSS filter",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Filter Bypass Techniques",
+            "url": "https://4wayhandshake.github.io/strategy/filter-bypass/",
+            "source": "duckduckgo",
+            "snippet": "INTRODUCTION Why write this? Too often, I&#x27;ve found myself in a situation where I needed to bypass some kind of filter",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "XSS Filter Evasion: Why Filtering Alone Fails &amp; How Attackers Bypass ...",
+            "url": "https://www.safetybis.com/blog/filtering-attackers-defenses/",
+            "source": "duckduckgo",
+            "snippet": "Explore XSS filter",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "The Art of the Bypass: Deconstructing a Real-World XSS Filter Evasion ...",
+            "url": "https://undercodetesting.com/the-art-of-the-bypass-deconstructing-a-real-world-xss-filter-evasion-technique/",
+            "source": "duckduckgo",
+            "snippet": "The bypass wasn&#x27;t sophisticated; it simply exploited a logic error, proving that the weakest link is often the gap between a security concept and its flawed implementation. Prediction: The sophis",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "XSS Filter Evasion Techniques Guide",
+            "url": "https://www.scribd.com/document/933860559/XSS-Filter-Evasion-Cheat-Sheet-OWASP",
+            "source": "duckduckgo",
+            "snippet": "2020. 05. 03. XSS Filter",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "03-CCNP Security IPS 642-627 (Network IPS Traffic Analysis, Evasion) By ...",
+            "url": "https://www.youtube.com/watch?v=iQcxDHFlH-8",
+            "source": "duckduckgo",
+            "snippet": "03-CCNP Security IPS 642-627 (Network IPS Traffic Analysis, Evasion",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Anti-Forensics: An Overview of Evasion Tactics - Cyber",
+            "url": "https://westoahu.hawaii.edu/cyber/forensics-weekly-executive-summmaries/anti-forensics-an-overview-of-evasion-tactics/",
+            "source": "duckduckgo",
+            "snippet": "By investing their efforts into anti-forensics, hackers remain undetected prior to, during, and after their attack. This article will explore some of the common evasion",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Evasion Technique - an overview | ScienceDirect Topics",
+            "url": "https://www.sciencedirect.com/topics/computer-science/evasion-technique",
+            "source": "duckduckgo",
+            "snippet": "Evasion",
+            "score": 0,
+            "rank_score": 30
+          }
+        ],
+        "sources_breakdown": {
+          "wikipedia": 3,
+          "duckduckgo": 10
+        }
+      }
+    },
+    "homoglyph Unicode confusables multilingual LLM": {
+      "status": "success",
+      "result_count": 11,
+      "search_result": {
+        "query": "homoglyph Unicode confusables multilingual LLM",
+        "engines_queried": [
+          "duckduckgo",
+          "hackernews",
+          "reddit",
+          "wikipedia",
+          "arxiv"
+        ],
+        "total_raw_results": 12,
+        "total_deduplicated": 11,
+        "results": [
+          {
+            "title": "The new DDoS: Unicode confusables can&#x27;t fool LLMs, but they can 5x your ...",
+            "url": "https://paultendo.github.io/posts/confusable-vision-llm-attack-tests/",
+            "source": "duckduckgo",
+            "snippet": "Can pixel-identical Unicode",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "confusable-homoglyphs \u00b7 PyPI",
+            "url": "https://pypi.org/project/confusable-homoglyphs/",
+            "source": "duckduckgo",
+            "snippet": "confusable_homoglyphs [doc] This project has been adopted from the original confusable_homoglyphs by Victor Felder. a homoglyph",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "A reference scanner for invisible unicode and homoglyph ... - GitHub",
+            "url": "https://github.com/pringlized/glassglyph-scanner",
+            "source": "duckduckgo",
+            "snippet": "Credits Research basis: Aikido Security&#x27;s March 2026 Glassworm writeup, Unicode",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Is That Really &#x27;a&#x27;? How Homoglyph Attacks Bypass LLM Security Filters ...",
+            "url": "https://dev.to/dokasuka_don_de7635cc481c/is-that-really-a-how-homoglyph-attacks-bypass-llm-security-filters-with-python-examples-17ni",
+            "source": "duckduckgo",
+            "snippet": "A filter applied to raw, non-normalized input has a systematic blind spot that any attacker familiar with Unicode",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Detecting Unicode Homoglyph and Zero-Width Character Evasion in LLM ...",
+            "url": "https://medium.com/@meghal86/detecting-unicode-homoglyph-and-zero-width-character-evasion-in-llm-prompt-injection-attacks-5b2df4d46989",
+            "source": "duckduckgo",
+            "snippet": "Detecting Unicode",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Fake Text (Homoglyph) Detector and Generator - Originality.AI",
+            "url": "https://originality.ai/blog/fake-text-homoglyph-detector-and-generator",
+            "source": "duckduckgo",
+            "snippet": "Free tool to generate homoglyph",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "confusable_homoglyphs [doc] \u2014 confusable_homoglyphs 3.0.0+0.g5e5dffb ...",
+            "url": "https://confusable-homoglyphs.readthedocs.io/en/stable/readme.html",
+            "source": "duckduckgo",
+            "snippet": "a homoglyph",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Security and Detectability Analysis of Unicode Text Watermarking ...",
+            "url": "https://arxiv.org/html/2512.13325",
+            "source": "duckduckgo",
+            "snippet": "It is reasonable to assume that such Unicode",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Homoglyph Encoding Strategy | Promptfoo",
+            "url": "https://www.promptfoo.dev/docs/red-team/strategies/homoglyph/",
+            "source": "duckduckgo",
+            "snippet": "Homoglyph",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "IDN homograph attack - Wikipedia",
+            "url": "https://en.wikipedia.org/wiki/IDN_homograph_attack",
+            "source": "duckduckgo",
+            "snippet": "An internationalized domain name (IDN) homograph attack (also homoglyph",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Ask HN: What are you working on? (March 2026)",
+            "url": "https://news.ycombinator.com/item?id=47236316",
+            "source": "hackernews",
+            "snippet": "",
+            "score": 0,
+            "rank_score": 30
+          }
+        ],
+        "sources_breakdown": {
+          "duckduckgo": 10,
+          "hackernews": 1
+        }
+      }
+    },
+    "Unicode normalization bypass attack": {
+      "status": "success",
+      "result_count": 11,
+      "search_result": {
+        "query": "Unicode normalization bypass attack",
+        "engines_queried": [
+          "duckduckgo",
+          "hackernews",
+          "reddit",
+          "wikipedia",
+          "arxiv"
+        ],
+        "total_raw_results": 11,
+        "total_deduplicated": 11,
+        "results": [
+          {
+            "title": "Show HN: Runtime security for AI agents(injection,tool abuse, data exfiltration)",
+            "url": "https://news.ycombinator.com/item?id=47799856",
+            "source": "hackernews",
+            "snippet": "Show HN: Runtime security for AI agents(injection,tool abuse, data exfiltration)",
+            "score": 1,
+            "rank_score": 31
+          },
+          {
+            "title": "DNN Vulnerability Let Attackers Steal NTLM Credentials via Unicode ...",
+            "url": "https://cybersecuritynews.com/dnn-vulnerability-let-attackers-steal-ntlm-credentials/",
+            "source": "duckduckgo",
+            "snippet": "A critical vulnerability in DNN that allows attackers to steal NTLM credentials through a sophisticated Unicode",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Unicode Normalization Bypass Walkthrough - redteams.ai",
+            "url": "https://redteams.ai/topics/walkthroughs/attacks/w2-unicode-normalization-bypass",
+            "source": "duckduckgo",
+            "snippet": "Overview Step-by-step guide to exploiting Unicode",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Is That Really &#x27;a&#x27;? How Homoglyph Attacks Bypass LLM Security Filters ...",
+            "url": "https://dev.to/dokasuka_don_de7635cc481c/is-that-really-a-how-homoglyph-attacks-bypass-llm-security-filters-with-python-examples-17ni",
+            "source": "duckduckgo",
+            "snippet": "Homoglyph normalization",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "CVE-2025-52488: Unicode Normalization Bypass in DotNetNuke Threatens ...",
+            "url": "https://windowsforum.com/threads/cve-2025-52488-unicode-normalization-bypass-in-dotnetnuke-threatens-windows-security.372877/",
+            "source": "duckduckgo",
+            "snippet": "The Path Forward: Stay Vigilant, Normalize Intelligently Unicode",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Critical DNN Vulnerability: Unicode Normalization Bypass Leads to NTLM ...",
+            "url": "https://cyberpress.org/critical-dnn-vulnerability-unicode-normalization-bypass-leads-to-ntlm-hijack/",
+            "source": "duckduckgo",
+            "snippet": "An attacker could craft a filename using these Unicode",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "DNN Vulnerability Exposes NTLM Credentials via Unicode Normalization Bypass",
+            "url": "https://gbhackers.com/dnn-vulnerability-exposes-ntlm-credentials/",
+            "source": "duckduckgo",
+            "snippet": "The attack",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Unicode Normalization vulnerability - GitHub",
+            "url": "https://github.com/jkubli/pentest-hacktricks/blob/master/pentesting-web/unicode-normalization-vulnerability.md",
+            "source": "duckduckgo",
+            "snippet": "Unicode",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Black Box Emoji Fix - A Unicode Sanitization Method for Mitigating ...",
+            "url": "https://www.tdcommons.org/dpubs_series/7836/",
+            "source": "duckduckgo",
+            "snippet": "The rapid adoption of Large Language Models (LLMs) in various applications\u2014from natural language processing and content moderation to cybersecurity\u2014has inadvertently exposed these systems to sophistic",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Unicode Normalization - HackTricks",
+            "url": "https://hacktricks.wiki/en/pentesting-web/unicode-injection/unicode-normalization.html",
+            "source": "duckduckgo",
+            "snippet": "Unicode",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "unicode-normalizat... - Agent Skill by abelrguezr | SkillsMP",
+            "url": "https://skillsmp.com/skills/abelrguezr-hacktricks-skills-skills-pentesting-web-unicode-injection-unicode-normalization-skill-md",
+            "source": "duckduckgo",
+            "snippet": "unicode",
+            "score": 0,
+            "rank_score": 30
+          }
+        ],
+        "sources_breakdown": {
+          "hackernews": 1,
+          "duckduckgo": 10
+        }
+      }
+    },
+    "script mixing attack prompt injection": {
+      "status": "success",
+      "result_count": 11,
+      "search_result": {
+        "query": "script mixing attack prompt injection",
+        "engines_queried": [
+          "duckduckgo",
+          "hackernews",
+          "reddit",
+          "wikipedia",
+          "arxiv"
+        ],
+        "total_raw_results": 11,
+        "total_deduplicated": 11,
+        "results": [
+          {
+            "title": "I used 2D Base64 to bypass Gemini and expose Google's moderation flaws",
+            "url": "https://news.ycombinator.com/item?id=47205971",
+            "source": "hackernews",
+            "snippet": "I used 2D Base64 to bypass Gemini and expose Google's moderation flaws",
+            "score": 7,
+            "rank_score": 37
+          },
+          {
+            "title": "Prompt Injection Attacks: Examples and Defences",
+            "url": "https://blog.cyberdesserts.com/prompt-injection-attacks/",
+            "source": "duckduckgo",
+            "snippet": "17 prompt",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Prompt Injector - GitHub",
+            "url": "https://github.com/BlueprintLabIO/prompt-injector",
+            "source": "duckduckgo",
+            "snippet": "Base64 Attack",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Prompt Injection Examples That Expose Real AI Security Risks",
+            "url": "https://www.lasso.security/blog/prompt-injection-examples",
+            "source": "duckduckgo",
+            "snippet": "Explore real-world prompt",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Prompt Injection Attack Explained: AI Cybersecurity Threat (2026 Guide)",
+            "url": "https://www.eccu.edu/blog/prompt-injection-ai-cybersecurity-threat/",
+            "source": "duckduckgo",
+            "snippet": "The Rise of Prompt",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Prompt Injection in AI: Real-World Examples &amp; Prevention - EC-Council",
+            "url": "https://www.eccouncil.org/cybersecurity-exchange/ethical-hacking/what-is-prompt-injection-in-ai-real-world-examples-and-prevention-tips/",
+            "source": "duckduckgo",
+            "snippet": "Discover what prompt",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Prompt Injection | OWASP Foundation",
+            "url": "https://owasp.org/www-community/attacks/PromptInjection",
+            "source": "duckduckgo",
+            "snippet": "The core vulnerability that gives rise to prompt",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Prompt Injection Explained: Risks, Attack Types, and Real-World ...",
+            "url": "https://dev.to/nithya_iyer/prompt-injection-explained-risks-attack-types-and-real-world-examples-m5o",
+            "source": "duckduckgo",
+            "snippet": "Nithya Iyer Posted on Sep 14, 2025 Prompt",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Prompt Injection Attacks in Large Language Models and AI Agent Systems ...",
+            "url": "https://www.mdpi.com/2078-2489/17/1/54",
+            "source": "duckduckgo",
+            "snippet": "Large language models (LLMs) have rapidly transformed artificial intelligence applications across industries, yet their integration into production systems has unveiled critical security vulnerabiliti",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Prompt Injection Attacks on Large Language Models: A Survey of Attack ...",
+            "url": "https://www.sciencedirect.com/org/science/article/pii/S1546221826001384",
+            "source": "duckduckgo",
+            "snippet": "Defense against prompt",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Mitigating prompt injection attacks with a layered defense strategy",
+            "url": "https://blog.google/security/mitigating-prompt-injection-attacks/",
+            "source": "duckduckgo",
+            "snippet": "From there, a key protection against prompt",
+            "score": 0,
+            "rank_score": 30
+          }
+        ],
+        "sources_breakdown": {
+          "hackernews": 1,
+          "duckduckgo": 10
+        }
+      }
+    },
+    "PINT benchmark multilingual inputs safety": {
+      "status": "success",
+      "result_count": 10,
+      "search_result": {
+        "query": "PINT benchmark multilingual inputs safety",
+        "engines_queried": [
+          "duckduckgo",
+          "hackernews",
+          "reddit",
+          "wikipedia",
+          "arxiv"
+        ],
+        "total_raw_results": 10,
+        "total_deduplicated": 10,
+        "results": [
+          {
+            "title": "GitHub - lakeraai/pint-benchmark: A benchmark for prompt injection ...",
+            "url": "https://github.com/lakeraai/pint-benchmark",
+            "source": "duckduckgo",
+            "snippet": "\ud83c\udf7a Lakera PINT",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Lingua-SafetyBench:A Benchmark for Safety Evaluation of Multilingual ...",
+            "url": "https://arxiv.org/html/2601.22737v2",
+            "source": "duckduckgo",
+            "snippet": "To address the limitations of prior work, we introduce Lingua-SafetyBench, a multilingual",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Lakera&#x27;s Prompt Injection Test (PINT)\u2014A New Benchmark for Evaluating ...",
+            "url": "https://www.lakera.ai/product-updates/lakera-pint-benchmark",
+            "source": "duckduckgo",
+            "snippet": "\u200d The benchmark",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "PINT Dataset | lakeraai/pint-benchmark | DeepWiki",
+            "url": "https://deepwiki.com/lakeraai/pint-benchmark/3.1-pint-dataset",
+            "source": "duckduckgo",
+            "snippet": "This document describes the structure, composition, and format requirements of the PINT",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Multilingual Safety Benchmark - emergentmind.com",
+            "url": "https://www.emergentmind.com/topics/multilingual-safety-benchmark",
+            "source": "duckduckgo",
+            "snippet": "Multilingual",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "PINT Benchmark Guide | ViewYonder",
+            "url": "https://viewyonder.com/tools/pint-benchmark/",
+            "source": "duckduckgo",
+            "snippet": "The PINT",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Evaluating Prompt Injection Datasets - hiddenlayer.com",
+            "url": "https://www.hiddenlayer.com/research/evaluating-prompt-injection-datasets",
+            "source": "duckduckgo",
+            "snippet": "Learn how to evaluate prompt injection datasets for LLM security. Discover the best public benchmarks",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "LinguaSafe: A Comprehensive Multilingual Safety Benchmark for Large ...",
+            "url": "https://arxiv.org/html/2508.12733v1",
+            "source": "duckduckgo",
+            "snippet": "Our benchmark",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "pint-benchmark : Infrastructure for AI for Science | SciencePedia",
+            "url": "https://www.bohrium.com/en/sciencepedia/agent-tools/lakeraai_pint-benchmark",
+            "source": "duckduckgo",
+            "snippet": "The `pint-benchmark",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "lakeraai/pint-benchmark | DeepWiki",
+            "url": "https://deepwiki.com/lakeraai/pint-benchmark",
+            "source": "duckduckgo",
+            "snippet": "The PINT",
+            "score": 0,
+            "rank_score": 30
+          }
+        ],
+        "sources_breakdown": {
+          "duckduckgo": 10
+        }
+      }
+    },
+    "multilingual LLM safety evaluation 2024 2025": {
+      "status": "success",
+      "result_count": 10,
+      "search_result": {
+        "query": "multilingual LLM safety evaluation 2024 2025",
+        "engines_queried": [
+          "duckduckgo",
+          "hackernews",
+          "reddit",
+          "wikipedia",
+          "arxiv"
+        ],
+        "total_raw_results": 10,
+        "total_deduplicated": 10,
+        "results": [
+          {
+            "title": "PDF The State of Multilingual LLM Safety Research: From Measuring The ...",
+            "url": "https://aclanthology.org/2025.emnlp-main.800.pdf",
+            "source": "duckduckgo",
+            "snippet": "2024a; Dong et al., 2024",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "[2505.24119] The State of Multilingual LLM Safety Research: From ...",
+            "url": "https://arxiv.org/abs/2505.24119",
+            "source": "duckduckgo",
+            "snippet": "This paper presents a comprehensive analysis of the linguistic diversity of LLM",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "The State of Multilingual LLM Safety Research: From Measuring the ...",
+            "url": "https://www.semanticscholar.org/paper/The-State-of-Multilingual-LLM-Safety-Research%3A-From-Yong-Ermi%C5%9F/85002e39a08881cb7f6cbaf8c59c8ad174243fc2",
+            "source": "duckduckgo",
+            "snippet": "A systematic review of nearly 300 publications from 2020--2024",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "The State of Multilingual LLM Safety Research: From Measuring the ...",
+            "url": "https://www.researchgate.net/publication/392315456_The_State_of_Multilingual_LLM_Safety_Research_From_Measuring_the_Language_Gap_to_Mitigating_It",
+            "source": "duckduckgo",
+            "snippet": "Through a systematic review of nearly 300 publications from 2020--2024",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "The State of Multilingual LLM Safety Research: From Measuring ... - Medium",
+            "url": "https://medium.com/@kiplangatkorir/the-state-of-multilingual-llm-safety-research-from-measuring-the-language-gap-to-mitigating-it-0f1fbedc5b80",
+            "source": "duckduckgo",
+            "snippet": "The field of multilingual",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "The State of Multilingual LLM Safety Research: From Measuring the ...",
+            "url": "https://ui.adsabs.harvard.edu/abs/2025arXiv250524119Y/abstract",
+            "source": "duckduckgo",
+            "snippet": "This paper presents a comprehensive analysis of the linguistic diversity of LLM",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "The State of Multilingual LLM Safety Research: From Measuring the ...",
+            "url": "https://arxivexplained.com/papers/the-state-of-multilingual-llm-safety-research-from-measuring-the-language-gap-to-mitigating-it",
+            "source": "duckduckgo",
+            "snippet": "Current AI safety",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "The State of Multilingual LLM Safety Research: From Measuring the ...",
+            "url": "https://www.bohrium.com/paper-details/the-state-of-multilingual-llm-safety-research-from-measuring-the-language-gap-to-mitigating-it/1136604837035638828-108592",
+            "source": "duckduckgo",
+            "snippet": "This paper presents a comprehensive analysis of the linguistic diversity of LLM",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "PDF Preliminaries: Multilingual LLMs",
+            "url": "https://llm-guardrails-security.github.io/presentations/ACL_2025_Tutorial_LLM_Guardrails_Security_Multilingual_Safety.pdf",
+            "source": "duckduckgo",
+            "snippet": "Multilingual",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "zhehuazhou.github.io/_publications/2024multilingual.md at master ...",
+            "url": "https://github.com/zhehuazhou/zhehuazhou.github.io/blob/master/_publications/2024multilingual.md",
+            "source": "duckduckgo",
+            "snippet": "As safety",
+            "score": 0,
+            "rank_score": 30
+          }
+        ],
+        "sources_breakdown": {
+          "duckduckgo": 10
+        }
+      }
+    },
+    "low-resource language jailbreak benchmark": {
+      "status": "success",
+      "result_count": 10,
+      "search_result": {
+        "query": "low-resource language jailbreak benchmark",
+        "engines_queried": [
+          "duckduckgo",
+          "hackernews",
+          "reddit",
+          "wikipedia",
+          "arxiv"
+        ],
+        "total_raw_results": 10,
+        "total_deduplicated": 10,
+        "results": [
+          {
+            "title": "JailbreakBench: LLM robustness benchmark",
+            "url": "https://jailbreakbench.github.io/",
+            "source": "duckduckgo",
+            "snippet": "JailbreakBench Jailbreak",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Low-Resource Languages Jailbreak GPT-4 | OpenReview",
+            "url": "https://openreview.net/forum?id=pn83r8V2sv",
+            "source": "duckduckgo",
+            "snippet": "AI safety training and red-teaming of large language",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Low-Resource Languages Jailbreak GPT-4 - arXiv.org",
+            "url": "https://arxiv.org/html/2310.02446v1",
+            "source": "duckduckgo",
+            "snippet": "We systematically benchmark",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "NeurIPS 2024 Datasets and Benchmarks Track - GitHub",
+            "url": "https://github.com/JailbreakBench/jailbreakbench",
+            "source": "duckduckgo",
+            "snippet": "Paper | Leaderboard | Datasets | Jailbreak",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "PDF Low-Resource Languages Jailbreak GPT-4 - Brown University",
+            "url": "https://cs.brown.edu/media/filer_public/eb/d8/ebd8b5a4-81ae-4e73-91d1-9ebffa6f2f18/low-resource_languages_jailbreak_gpt-4.pdf",
+            "source": "duckduckgo",
+            "snippet": "We systematically benchmark",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Low-Resource Languages Jailbreak GPT-4 - NeurIPS",
+            "url": "https://neurips.cc/virtual/2023/78913",
+            "source": "duckduckgo",
+            "snippet": "AI safety training and red-teaming of large language",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "PDF AILuminate Security Introducing v0.5 of the Jailbreak Benchmark from ...",
+            "url": "https://mlcommons.org/wp-content/uploads/2025/10/MLCommons___Security___Jailbreak_0_5_Paper-5.pdf",
+            "source": "duckduckgo",
+            "snippet": "The goal in such an assessment is to exploit vulnerabilities or jailbreak",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Low-Resource Languages Jailbreak GPT-4 - Montreal AI Ethics Institute",
+            "url": "https://montrealethics.ai/low-resource-languages-jailbreak-gpt-4/",
+            "source": "duckduckgo",
+            "snippet": "For instance, the existing safety alignment of LLMs primarily focuses on the English language",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Low-Resource Languages Jailbreak GPT-4 - snorkel.ai",
+            "url": "https://snorkel.ai/research-paper/low-resource-languages-jailbreak-gpt-4/",
+            "source": "duckduckgo",
+            "snippet": "Other high-/mid-resource",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Paper page - Low-Resource Languages Jailbreak GPT-4",
+            "url": "https://huggingface.co/papers/2310.02446",
+            "source": "duckduckgo",
+            "snippet": "Low-Resource",
+            "score": 0,
+            "rank_score": 30
+          }
+        ],
+        "sources_breakdown": {
+          "duckduckgo": 10
+        }
+      }
+    },
+    "Romanization Arabic phonetic bypass attack": {
+      "status": "success",
+      "result_count": 15,
+      "search_result": {
+        "query": "Romanization Arabic phonetic bypass attack",
+        "engines_queried": [
+          "duckduckgo",
+          "hackernews",
+          "reddit",
+          "wikipedia",
+          "arxiv"
+        ],
+        "total_raw_results": 15,
+        "total_deduplicated": 15,
+        "results": [
+          {
+            "title": "Qedarites",
+            "url": "https://en.wikipedia.org/wiki/Qedarites",
+            "source": "wikipedia",
+            "snippet": "names &quot;Arabs&quot; and Ishmaelites. Eph\u02bfal&#039;s criticism of the identification on phonetic grounds rests on two arguments: the name Y\u012b\u0161m\u0101\u02bf\u0113\u02bel is already attested",
+            "score": 14639,
+            "rank_score": 14689
+          },
+          {
+            "title": "Occitania",
+            "url": "https://en.wikipedia.org/wiki/Occitania",
+            "source": "wikipedia",
+            "snippet": "during a division of the Roman Empire, Gaul is divided into dioceses and that of Vienne has its border on the Loire river, bypasses the Central Massif and",
+            "score": 12091,
+            "rank_score": 12141
+          },
+          {
+            "title": "Zadar",
+            "url": "https://en.wikipedia.org/wiki/Zadar",
+            "source": "wikipedia",
+            "snippet": "needed] In Dalmatian, Jadra/Jadera was pronounced Zadra/Zadera, due to the phonetic transformation of j [j] to z [z]. That change was also reflected in the",
+            "score": 11519,
+            "rank_score": 11569
+          },
+          {
+            "title": "Shkod\u00ebr",
+            "url": "https://en.wikipedia.org/wiki/Shkod%C3%ABr",
+            "source": "wikipedia",
+            "snippet": " and not */\u0283k-/, and o is morphed into a, not preserved. However, the phonetic changes sk &gt; h and o &gt; a occurred at an early stage of Proto-Albanian,",
+            "score": 6792,
+            "rank_score": 6842
+          },
+          {
+            "title": "Vlor\u00eb",
+            "url": "https://en.wikipedia.org/wiki/Vlor%C3%AB",
+            "source": "wikipedia",
+            "snippet": "Vlor\u00eb developed from the ancient Aulon-a through the evolution of the phonetic system of the Albanian language with the rhotacism Vlon\u00eb &gt; Vlor\u00eb, which",
+            "score": 6764,
+            "rank_score": 6814
+          },
+          {
+            "title": "Romanization of Arabic - Wikipedia",
+            "url": "https://en.wikipedia.org/wiki/Romanization_of_Arabic",
+            "source": "duckduckgo",
+            "snippet": "The romanization",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "PDF The Challenges and Pitfalls of Arabic Romanization and Arabization",
+            "url": "https://cjki.org/arabic/arannana.pdf",
+            "source": "duckduckgo",
+            "snippet": "This paper focuses on some of the linguistic issues encountered in two subdisciplines that play an increasingly important role in Arabic",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "PDF A Romanization System and WebMAUS Aligner for Arabic Varieties",
+            "url": "https://aclanthology.org/2022.lrec-1.789.pdf",
+            "source": "duckduckgo",
+            "snippet": "We present the rationale for developing such a system, highlighting the need for a detailed romanization",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "PDF Romanization of Arabic",
+            "url": "http://www.markfoster.net/struc/Romanization_of_Arabic.pdf",
+            "source": "duckduckgo",
+            "snippet": "Method Romanization",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "A Romanization System and WebMAUS Aligner for Arabic Varieties",
+            "url": "https://www.researchgate.net/publication/361362743_A_Romanization_System_and_WebMAUS_Aligner_for_Arabic_Varieties",
+            "source": "duckduckgo",
+            "snippet": "This paper presents the results of an ongoing collaboration to develop an Arabic",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Arabic Romanization Methods Overview | PDF | Orthography - Scribd",
+            "url": "https://www.scribd.com/document/312895904/Romanization-of-Arabic",
+            "source": "duckduckgo",
+            "snippet": "The document discusses various issues involved in romanizing Arabic",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "PDF Microsoft Word - ROMANIZATION OF ARABIC - Nov 22 - GOV.UK",
+            "url": "https://assets.publishing.service.gov.uk/media/637df1aae90e076b73e074c7/ROMANIZATION_OF_ARABIC_-_Nov_22.pdf",
+            "source": "duckduckgo",
+            "snippet": "Uniform results in the romanization",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "PDF A Phonetic Evaluation Of Google Transliteration Of Arabic: A Call ...",
+            "url": "https://ijcrt.org/papers/IJCRT25A5292.pdf",
+            "source": "duckduckgo",
+            "snippet": "Keywords: Transliteration, Google Transliteration Tool, Phonetic",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "PDF ROMANIZATION OF ARABIC_Final Draft - geonames.nga.mil",
+            "url": "https://geonames.nga.mil/geonames/GNSSearch/GNSDocs/romanization/ROMANIZATION_OF_ARABIC.pdf",
+            "source": "duckduckgo",
+            "snippet": "Uniform results in the romanization",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "PDF Arabizi: An Analysis of the Romanization of the Arabic Script from a ...",
+            "url": "https://awej.org/images/AllIssues/Volume4/Volume4Number3Sept2013/5.pdf",
+            "source": "duckduckgo",
+            "snippet": "Abstract: The purpose of this paper is to present a sociolinguistic analysis of the Romanization",
+            "score": 0,
+            "rank_score": 30
+          }
+        ],
+        "sources_breakdown": {
+          "wikipedia": 5,
+          "duckduckgo": 10
+        }
+      }
+    },
+    "transliteration attack safety filter": {
+      "status": "success",
+      "result_count": 15,
+      "search_result": {
+        "query": "transliteration attack safety filter",
+        "engines_queried": [
+          "duckduckgo",
+          "hackernews",
+          "reddit",
+          "wikipedia",
+          "arxiv"
+        ],
+        "total_raw_results": 15,
+        "total_deduplicated": 15,
+        "results": [
+          {
+            "title": "Coca-Cola",
+            "url": "https://en.wikipedia.org/wiki/Coca-Cola",
+            "source": "wikipedia",
+            "snippet": "the Wax Tadpole&quot;. Snopes. April 5, 1999. Retrieved July 14, 2023. &quot;Transliteration of &#039;Coca-Cola&#039; Trademark to Chinese Characters&quot;. ATIS \u2013 Australian",
+            "score": 15512,
+            "rank_score": 15562
+          },
+          {
+            "title": "Gmail",
+            "url": "https://en.wikipedia.org/wiki/Gmail",
+            "source": "wikipedia",
+            "snippet": "early adoption of Ajax. Google&#039;s mail servers automatically scan emails to filter spam and malware. On April 1, 2004, Gmail was launched with one gigabyte",
+            "score": 9326,
+            "rank_score": 9376
+          },
+          {
+            "title": "Infinite Dendrogram",
+            "url": "https://en.wikipedia.org/wiki/Infinite_Dendrogram",
+            "source": "wikipedia",
+            "snippet": "&quot;Babby&quot; She&#039;s a succubus, but is barred from lewd things due to the child filter on Rook&#039;s system; the most she can do is give very good massages. Hugo Lesseps",
+            "score": 2231,
+            "rank_score": 2281
+          },
+          {
+            "title": "Tower of God season 1",
+            "url": "https://en.wikipedia.org/wiki/Tower_of_God_season_1",
+            "source": "wikipedia",
+            "snippet": " As the groups filter in, a mysterious blonde figure catches sight of Khun and recognizes him. 3 3 &quot;The Correct Door&quot; Transliteration: &quot;Seikai no Tobira&quot;",
+            "score": 927,
+            "rank_score": 977
+          },
+          {
+            "title": "Yu-Gi-Oh! Duel Monsters season 5",
+            "url": "https://en.wikipedia.org/wiki/Yu-Gi-Oh%21_Duel_Monsters_season_5",
+            "source": "wikipedia",
+            "snippet": "double assault with Gilford the Lightning and Goblin Attack Force. 189 5 &quot;Child&#039;s Play&quot; Transliteration: &quot;Hot Battle! Rebecca vs. Vivian&quot; (Japanese: \u71b1\u95d8! \u30ec\u30d9\u30c3\u30abvs\u30f4\u30a3\u30f4\u30a3\u30a2\u30f3)",
+            "score": 312,
+            "rank_score": 362
+          },
+          {
+            "title": "Token Smuggling: Bypassing Filters with Non-Standard Encodings",
+            "url": "https://instatunnel.substack.com/p/token-smuggling-bypassing-filters",
+            "source": "duckduckgo",
+            "snippet": "The &quot;Translation&quot; Attack",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Language Switching | redteams.ai",
+            "url": "https://redteams.ai/topics/prompt-injection/language-switching",
+            "source": "duckduckgo",
+            "snippet": "Exploiting language-specific gaps in safety",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Lost in Transliteration \u2014 How Arabizi Bypasses LLM Safety Filters",
+            "url": "https://deep-paper.org/en/paper/2406.18725/",
+            "source": "duckduckgo",
+            "snippet": "It must be linguistic. As LLMs become more globally accessible, security researchers must look at how people actually type, not just how they write in formal textbooks. Until safety",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "arXiv:2310.02446v2 [cs.CL] 27 Jan 2024",
+            "url": "https://arxiv.org/pdf/2310.02446",
+            "source": "duckduckgo",
+            "snippet": "We systematically benchmark this attack",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Obfuscation &amp; Token Smuggling: Evasion Techniques in Prompt Hacking",
+            "url": "https://learnprompting.org/docs/prompt_hacking/offensive_measures/obfuscation",
+            "source": "duckduckgo",
+            "snippet": "Learn about obfuscation and token smuggling in prompt hacking. These techniques bypass filters",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Multilingual Attacks - Prompt Injection Techniques 0.1.0 documentation",
+            "url": "https://prompt-injections.readthedocs.io/en/latest/categories/multilingual-attacks.html",
+            "source": "duckduckgo",
+            "snippet": "Multilingual Attacks",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "100+ Languages, One Policy: How ARGUS Handles Multilingual AI Deployments",
+            "url": "https://repello.ai/blog/multilingual-llm-security",
+            "source": "duckduckgo",
+            "snippet": "It addresses the gap between a model&#x27;s multilingual generation capability and the typically narrower language coverage of its safety",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Token Smuggling: Bypassing Filters with Non-Standard Encodings",
+            "url": "https://medium.com/@instatunnel/token-smuggling-bypassing-filters-with-non-standard-encodings-dceb3d8472a8",
+            "source": "duckduckgo",
+            "snippet": "The &quot;Translation&quot; Attack",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "New Attack Strategy Uses Linguistic Overload to Slip Past AI Safety Filters",
+            "url": "https://www.digitalinformationworld.com/2025/07/new-attack-strategy-uses-linguistic.html",
+            "source": "duckduckgo",
+            "snippet": "Researchers have found a new way to bypass safety",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "AI Jailbreak Techniques 2026 \u2014 Bypass AI Safety Filters",
+            "url": "https://bypasscore.com/blog/ai-jailbreak-techniques-2026",
+            "source": "duckduckgo",
+            "snippet": "Complete guide to AI jailbreak techniques in 2026. Learn how prompt injection, role-playing, multi-turn attacks",
+            "score": 0,
+            "rank_score": 30
+          }
+        ],
+        "sources_breakdown": {
+          "wikipedia": 5,
+          "duckduckgo": 10
+        }
+      }
+    },
+    "phonetic code-switching jailbreak": {
+      "status": "success",
+      "result_count": 10,
+      "search_result": {
+        "query": "phonetic code-switching jailbreak",
+        "engines_queried": [
+          "duckduckgo",
+          "hackernews",
+          "reddit",
+          "wikipedia",
+          "arxiv"
+        ],
+        "total_raw_results": 10,
+        "total_deduplicated": 10,
+        "results": [
+          {
+            "title": "&quot;Haet Bhasha aur Diskrimineshun&quot;: Phonetic Perturbations in Code-Mixed ...",
+            "url": "https://arxiv.org/html/2505.14226v1",
+            "source": "duckduckgo",
+            "snippet": "Do phonetic",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Code-switching experience as a mitigating factor for cross-linguistic ...",
+            "url": "https://www.sciencedirect.com/science/article/pii/S0095447024000627",
+            "source": "duckduckgo",
+            "snippet": "The present study investigates the extent to which code-switching",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "(PDF) Bilingual phonological interaction: Cross-language process ...",
+            "url": "https://www.researchgate.net/publication/370357273_Bilingual_phonological_interaction_Cross-language_process_transfer_in_code-switching",
+            "source": "duckduckgo",
+            "snippet": "The current study explores the interaction between adult bilinguals&#x27; two phonological systems by investigating the effects of code-switching",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "30 - Code-Switching and Language Mode Effects in the Phonetics and ...",
+            "url": "https://www.cambridge.org/core/books/cambridge-handbook-of-bilingual-phonetics-and-phonology/codeswitching-and-language-mode-effects-in-the-phonetics-and-phonology-of-bilinguals/49349C6C7213819F54896C1FCFE80364",
+            "source": "duckduckgo",
+            "snippet": "This chapter discusses two short-term sources of potential phonetic",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Phonetic system in code-switched speech - Jahurul Islam",
+            "url": "https://jahurul-islam.com/phonetic-cues-of-code-switching/",
+            "source": "duckduckgo",
+            "snippet": "My new research shows that when Bangla-English bilinguals code",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Ai Jailbreak",
+            "url": "https://www.unjail.ai/",
+            "source": "duckduckgo",
+            "snippet": "JAILBREAK",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Phonetic shifts in bilingual vowels: Evidence from intersentential and ...",
+            "url": "https://journals.sagepub.com/doi/full/10.1177/13670069241251988",
+            "source": "duckduckgo",
+            "snippet": "Originality: This study adds to the limited prior literature examining the effect of code-switching",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "PDF The Cambridge Handbook of Linguistic Code-switching",
+            "url": "https://assets.cambridge.org/97811076/05411/frontmatter/9781107605411_frontmatter.pdf",
+            "source": "duckduckgo",
+            "snippet": "The Cambridge Handbook of Linguistic Code-switching",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Phonological processes across word and language boundaries: Evidence ...",
+            "url": "https://www.sciencedirect.com/science/article/pii/S0095447019300191",
+            "source": "duckduckgo",
+            "snippet": "The focus of this line of research has been squarely on word internal, and thus language-internal, phonetic",
+            "score": 0,
+            "rank_score": 30
+          },
+          {
+            "title": "Code-Mixed Phonetic Perturbations for Red-Teaming LLMs",
+            "url": "https://arxiv.org/pdf/2505.14226v4",
+            "source": "duckduckgo",
+            "snippet": "We compare our attack strategy against CSRT (Yoo et al., 2024), a multilingual red-teaming strat-egy which utilizes code-switching",
+            "score": 0,
+            "rank_score": 30
+          }
+        ],
+        "sources_breakdown": {
+          "duckduckgo": 10
+        }
+      }
+    }
+  },
+  "metadata": {
+    "total_queries": 18,
+    "engines_used": [
+      "duckduckgo",
+      "hackernews",
+      "reddit",
+      "wikipedia",
+      "arxiv"
+    ],
+    "execution_mode": "live"
+  }
+}

@@ -1,0 +1,661 @@
+{
+  "research_date": "2026-05-01T13:55:36.960376",
+  "task": "Training Data Poisoning & RLHF Reward Hacking Research",
+  "task_id": "694",
+  "queries_planned": 4,
+  "results": [
+    {
+      "query": "training data poisoning LLM backdoor 2025 2026",
+      "topic": "Data Poisoning Attacks",
+      "description": "Inject malicious examples into training data; hidden backdoors activated by triggers",
+      "sources": [
+        {
+          "title": "[2505.17601v3] Revisiting Backdoor Attacks on LLMs: A Stealthy and Practical Poisoning Framework via Harmless Inputs",
+          "url": "https://arxiv.org/abs/2505.17601v3",
+          "snippet": "[2505.17601v3] Revisiting Backdoor Attacks on LLMs: A Stealthy and Practical Poisoning Framework via Harmless Inputs\n\n# Computer Science > Computation and Language\n\narXiv:2505.17601v3 (cs)\n\n[Submitted on 23 May 2025 (v1), revised 21 Sep 2025 (this version, v3), latest version 4 Oct 2025 (v5)]\n\n# Tit",
+          "provider": "exa",
+          "date": "2025-05-23T09:34:34.000Z",
+          "relevance": 0.0
+        },
+        {
+          "title": "[2511.14301] SteganoBackdoor: Stealthy and Data-Efficient Backdoor Attacks on Language Models",
+          "url": "https://arxiv.org/abs/2511.14301",
+          "snippet": "[2511.14301] SteganoBackdoor: Stealthy and Data-Efficient Backdoor Attacks on Language Models\n\n--\n\n# Computer Science Cryptography and Security\n\narXiv:2511.14301 (cs)\n\n[Submitted on 18 Nov 2025 (v1), last revised 5 Jan 2026 (this version, v3)]\n\n# Title:SteganoBackdoor: Stealthy and Data-Efficient Ba",
+          "provider": "exa",
+          "date": "",
+          "relevance": 0.0
+        },
+        {
+          "title": "",
+          "url": "https://arxiv.org/pdf/2510.07192",
+          "snippet": "POISONING ATTACKS ON LLMS REQUIRE A\nNEAR-CONSTANT NUMBER OF POISON SAMPLES\nAlexandra Souly1,\u2217, Javier Rando2,5,\u2217, Ed Chapman3,\u2217, Xander Davies1,4,\u2217\nBurak Hasircioglu3, Ezzeldin Shereen3, Carlos Mougan3, Vasilios Mavroudis3, Erik Jones2\nChris Hicks3,\u2020, Nicholas Carlini2,\u2020, Yarin Gal1,4,\u2020, Robert Kirk",
+          "provider": "exa",
+          "date": "",
+          "relevance": 0.0
+        },
+        {
+          "title": "",
+          "url": "https://arxiv.org/pdf/2506.14913",
+          "snippet": "arXiv:2506.14913v1 [cs.CR] 17 Jun 2025\nWinter Soldier: Backdooring Language Models at\nPre-Training with Indirect Data Poisoning\nWassim (Wes) Bouaziz\u2217\nMeta FAIR &\nCMAP, \u00c9cole polytechnique\nParis, France\nMathurin Videau\nMeta FAIR &\nUniversit\u00e9 Paris Saclay\nParis, France\nNicolas Usunier\nWork done while ",
+          "provider": "exa",
+          "date": "",
+          "relevance": 0.0
+        },
+        {
+          "title": "",
+          "url": "https://openreview.net/pdf/c9fcc40d006e34b00bbd7ff80422c4f2cbe60757.pdf",
+          "snippet": "000\n001\n002\n003\n004\n005\n006\n007\n008\n009\n010\n011\n012\n013\n014\n015\n016\n017\n018\n019\n020\n021\n022\n023\n024\n025\n026\n027\n028\n029\n030\n031\n032\n033\n034\n035\n036\n037\n038\n039\n040\n041\n042\n043\n044\n045\n046\n047\n048\n049\n050\n051\n052\n053\nUnder review as a conference paper at ICLR 2026\nBACKDOOR ATTRIBUTION: ELUCIDATING AN",
+          "provider": "exa",
+          "date": "2025-09-25T00:00:00.000Z",
+          "relevance": 0.0
+        },
+        {
+          "title": "[2602.13427] Backdooring Bias in Large Language Models",
+          "url": "https://arxiv.org/abs/2602.13427",
+          "snippet": "[2602.13427] Backdooring Bias in Large Language Models\n\n# Computer Science > Cryptography and Security\n\narXiv:2602.13427 (cs)\n\n[Submitted on 13 Feb 2026]\n\n# Title:Backdooring Bias in Large Language Models\n\n> Abstract:Large language models (LLMs) are increasingly deployed in settings where inducing a",
+          "provider": "exa",
+          "date": "",
+          "relevance": 0.0
+        },
+        {
+          "title": "",
+          "url": "https://arxiv.org/pdf/2602.03085",
+          "snippet": "The Trigger in the Haystack:\nExtracting and Reconstructing LLM Backdoor Triggers\nBlake Bullwinkel * 1 Giorgio Severi * 1 Keegan Hines 1 Amanda Minnich 1 Ram Shankar Siva Kumar 1\nYonatan Zunger 1\nAbstract\nDetecting whether a model has been poisoned is\na longstanding problem in AI security. In this\nwo",
+          "provider": "exa",
+          "date": "",
+          "relevance": 0.0
+        },
+        {
+          "title": "LLM04:2025 Data and Model Poisoning",
+          "url": "https://genai.owasp.org/llmrisk/llm04-model-denial-of-service/",
+          "snippet": "LLM04:2025 Data and Model Poisoning - OWASP Gen AI Security Project\n\n# Join us in London, 6/2 \u2013 6/4 InfoSecurity Europe \u2013 OWASP GenAI and Agentic Security Summit\n\n## |\n\nGETTING STARTED\n\n- LLM TOP 10 FOR 2025\n- LLM TOP 10 FOR 2023/24\n\nABOUT\n\n## LLM04:2025 Data and Model Poisoning\n\nData poisoning occu",
+          "provider": "exa",
+          "date": "2024-04-10T16:25:50.000Z",
+          "relevance": 0.0
+        },
+        {
+          "title": "",
+          "url": "https://openreview.net/pdf/e8003fbdc51eb5fbf96f6a1dab541f080f7ec379.pdf",
+          "snippet": "000\n001\n002\n003\n004\n005\n006\n007\n008\n009\n010\n011\n012\n013\n014\n015\n016\n017\n018\n019\n020\n021\n022\n023\n024\n025\n026\n027\n028\n029\n030\n031\n032\n033\n034\n035\n036\n037\n038\n039\n040\n041\n042\n043\n044\n045\n046\n047\n048\n049\n050\n051\n052\n053\nUnder review as a conference paper at ICLR 2026\nPURIFYING GENERATIVE LLMS FROM BACKD",
+          "provider": "exa",
+          "date": "2025-11-30T00:00:00.000Z",
+          "relevance": 0.0
+        },
+        {
+          "title": "",
+          "url": "https://openreview.net/pdf?id=vQ7dy2ovEQ",
+          "snippet": "000\n001\n002\n003\n004\n005\n006\n007\n008\n009\n010\n011\n012\n013\n014\n015\n016\n017\n018\n019\n020\n021\n022\n023\n024\n025\n026\n027\n028\n029\n030\n031\n032\n033\n034\n035\n036\n037\n038\n039\n040\n041\n042\n043\n044\n045\n046\n047\n048\n049\n050\n051\n052\n053\nUnder review as a conference paper at ICLR 2026\nPOSITION: MULTI-FACETED STUDIES ON D",
+          "provider": "exa",
+          "date": "",
+          "relevance": 0.0
+        },
+        {
+          "title": "LLM Data Poisoning Statistics 2026: Critical Facts You Must Know \u2022 SQ Magazine",
+          "url": "https://sqmagazine.co.uk/llm-data-poisoning-statistics/",
+          "snippet": "# LLM Data Poisoning Statistics 2026: Critical Facts You Must Know Now. Large language models (LLMs) now power customer support bots, medical assistants, and developer tools, but their reliance on massive datasets introduces a critical risk: **data poisoning**. In practice, a few malicious inputs ca",
+          "provider": "tavily",
+          "date": "",
+          "relevance": 1.0
+        },
+        {
+          "title": "Extracting and Reconstructing LLM Backdoor Triggers - arXiv",
+          "url": "https://arxiv.org/html/2602.03085v1",
+          "snippet": "(2025) showed that even large models can be poisoned with a near-constant number of poisoning examples in both pretraining and fine-tuning.",
+          "provider": "tavily",
+          "date": "",
+          "relevance": 1.0
+        },
+        {
+          "title": "Introduction to Data Poisoning: A 2026 Perspective | Lakera \u2013 Protecting AI teams that disrupt the world.",
+          "url": "https://www.lakera.ai/blog/training-data-poisoning",
+          "snippet": "Data poisoning is an adversarial attack where corrupted or biased data is inserted into a model\u2019s training, fine-tuning, retrieval, or tools. Data poisoning is an **adversarial attack** that compromises AI or ML models by inserting corrupted, manipulated, or biased data into the information they lea",
+          "provider": "tavily",
+          "date": "",
+          "relevance": 1.0
+        },
+        {
+          "title": "AI Model Poisoning in 2026: How It Works and the First Line ...",
+          "url": "https://blog.lastpass.com/posts/model-poisoning",
+          "snippet": "Model poisoning occurs when attackers corrupt AI training data, altering its parameters to get flawed, malicious outputs over time. Ever wonder",
+          "provider": "tavily",
+          "date": "",
+          "relevance": 1.0
+        },
+        {
+          "title": "A Small Number of Training Docs Can Create a LLM Backdoor",
+          "url": "https://www.bankinfosecurity.com/small-number-training-docs-create-llm-backdoor-a-29728",
+          "snippet": "This finding challenges a common belief that attackers must control a significant share of training data to mount an effective poisoning attack.",
+          "provider": "tavily",
+          "date": "",
+          "relevance": 1.0
+        },
+        {
+          "title": "Training Data Poisoning: The Invisible Cyber Threat of 2026 | TTMS",
+          "url": "https://ttms.com/training-data-poisoning-the-invisible-cyber-threat-of-2026/",
+          "snippet": "In the coming years, the energy sector will see in particular: a significant increase in the share of digital substations \u2013 based on Ethernet communication, data models, and virtualization of protection functions, widespread deployment of AI-based protection relays \u2013 supporting protection decisions ",
+          "provider": "tavily",
+          "date": "",
+          "relevance": 1.0
+        },
+        {
+          "title": "[NeurIPS 2025] BackdoorLLM: A Comprehensive Benchmark for ...",
+          "url": "https://github.com/bboylyg/BackdoorLLM",
+          "snippet": "This work investigates intrinsic semantic divergence in LLMs and reveals how such behaviors can manifest as implicit or natural backdoor-like",
+          "provider": "tavily",
+          "date": "",
+          "relevance": 1.0
+        },
+        {
+          "title": "How Data Poisoning in 2026 Changes What AI Says - Medium",
+          "url": "https://medium.com/towards-data-engineering/how-data-poisoning-in-2026-changes-what-ai-says-75ec9a65ae0d",
+          "snippet": "How Data Poisoning in 2026 Changes What AI Says A few poisoned fragments can be enough to make AI fail confidently and repeatedly.",
+          "provider": "tavily",
+          "date": "",
+          "relevance": 1.0
+        },
+        {
+          "title": "Detecting whether an LLM has been poisoned - SPAR Project",
+          "url": "https://sparai.org/projects/sp26/rec4IhwDkqFTaz45j/",
+          "snippet": "By evaluating outputs and considering model internals with mechanistic interpretability techniques, we will study how and why models might hide their reasoning outputs in unfaithful chain-of-thought, and compare the capabilities of reasoning models with traditional LLMs. Chain of thought### Intercon",
+          "provider": "tavily",
+          "date": "",
+          "relevance": 1.0
+        }
+      ],
+      "timestamp": "2026-05-01T13:55:44.713711",
+      "providers_queried": [
+        "exa",
+        "tavily"
+      ],
+      "total_sources": 19
+    },
+    {
+      "query": "RLHF reward hacking exploitation",
+      "topic": "RLHF Reward Hacking",
+      "description": "Craft inputs that exploit reward model weaknesses; circumvent alignment via preference exploitation",
+      "sources": [
+        {
+          "title": "ODIN: Disentangled Reward Mitigates Hacking in RLHF",
+          "url": "https://proceedings.mlr.press/v235/chen24bn.html",
+          "snippet": "ODIN: Disentangled Reward Mitigates Hacking in RLHF\n\n# ODIN: Disentangled Reward Mitigates Hacking in RLHF\n\nLichang Chen, Chen Zhu, Jiuhai Chen, Davit Soselia, Tianyi Zhou, Tom Goldstein, Heng Huang, Mohammad Shoeybi, Bryan Catanzaro\n\nProceedings of the 41st International Conference on Machine Learn",
+          "provider": "exa",
+          "date": "2024-07-08T00:00:00.000Z",
+          "relevance": 0.0
+        },
+        {
+          "title": "Reward Model Overoptimisation in Iterated RLHF",
+          "url": "https://arxiv.org/html/2505.18126v2",
+          "snippet": "Reward Model Overoptimisation in Iterated RLHF\n\n# Reward Model Overoptimisation in Iterated RLHF\n\nLorenz Wolf UCL Centre for Artificial Intelligence Department of Computer Science University College London &Robert Kirk UK AI Security Institute &Mirco Musolesi UCL Centre for Artificial Intelligence D",
+          "provider": "exa",
+          "date": "",
+          "relevance": 0.0
+        },
+        {
+          "title": "Adversarial Reward Auditing for Active Detection and Mitigation of Reward Hacking",
+          "url": "https://arxiv.org/html/2602.01750v1",
+          "snippet": "Adversarial Reward Auditing for Active Detection and Mitigation of Reward Hacking\n\n# Adversarial Reward Auditing for Active Detection and Mitigation of Reward Hacking\n\nMohammad Beigi Ming Jin Junshan Zhang Qifan Wang Lifu Huang\n\n###### Abstract\n\nReinforcement Learning from Human Feedback (RLHF) rema",
+          "provider": "exa",
+          "date": "",
+          "relevance": 0.0
+        },
+        {
+          "title": "[2604.13602] Reward Hacking in the Era of Large Models: Mechanisms, Emergent Misalignment, Challenges",
+          "url": "https://arxiv.org/abs/2604.13602",
+          "snippet": "[2604.13602] Reward Hacking in the Era of Large Models: Mechanisms, Emergent Misalignment, Challenges\n\n# Computer Science > Machine Learning\n\narXiv:2604.13602 (cs)\n\n[Submitted on 15 Apr 2026]\n\n# Title:Reward Hacking in the Era of Large Models: Mechanisms, Emergent Misalignment, Challenges\n\nView PDF ",
+          "provider": "exa",
+          "date": "2026-04-15T19:43:33.000Z",
+          "relevance": 0.0
+        },
+        {
+          "title": "Mitigating Reward Hacking in RLHF via Bayesian Non-negative Reward Modeling",
+          "url": "https://arxiv.org/html/2602.10623v1",
+          "snippet": "Mitigating Reward Hacking in RLHF via Bayesian Non-negative Reward Modeling\n\n# Mitigating Reward Hacking in RLHF via Bayesian Non-negative Reward Modeling\n\nZhibin Duan Guowei Rong Zhuo Li Bo Chen Mingyuan Zhou Dandan Guo\n\n###### Abstract\n\nReward models learned from human preferences are central to a",
+          "provider": "exa",
+          "date": "",
+          "relevance": 0.0
+        },
+        {
+          "title": "Mitigating Reward Hacking in RLHF via Advantage Sign Robustness",
+          "url": "https://arxiv.org/html/2604.02986v1",
+          "snippet": "Mitigating Reward Hacking in RLHF via Advantage Sign Robustness\n\n# Mitigating Reward Hacking in RLHF via Advantage Sign Robustness\n\nShinnosuke Ono The University of Tokyo ono@ms.k.u-tokyo.ac.jp &Johannes Ackermann The University of Tokyo and RIKEN AIP &Soichiro Nishimori The University of Tokyo and ",
+          "provider": "exa",
+          "date": "",
+          "relevance": 0.0
+        },
+        {
+          "title": "[2502.18770v3] Reward Shaping to Mitigate Reward Hacking in RLHF",
+          "url": "https://arxiv.org/abs/2502.18770v3",
+          "snippet": "[2502.18770v3] Reward Shaping to Mitigate Reward Hacking in RLHF\n\n# Computer Science > Machine Learning\n\narXiv:2502.18770v3 (cs)\n\n[Submitted on 26 Feb 2025 (v1), revised 17 Jun 2025 (this version, v3), latest version 21 Jan 2026 (v5)]\n\n# Title:Reward Shaping to Mitigate Reward Hacking in RLHF\n\nView ",
+          "provider": "exa",
+          "date": "",
+          "relevance": 0.0
+        },
+        {
+          "title": "Reward Model Attacks | redteams.ai",
+          "url": "https://redteams.ai/topics/fine-tuning-security/rlhf-manipulation/reward-hacking",
+          "snippet": "Reward Model Attacks | redteams.ai\n\n \n\n \n\n \n\nReward Model Attacks | redteams.ai\n[Skip to main content](#main-content)\n[![redteams.ai logo](https://redteams.ai/soar/static/logo.png)redteams.ai](https://redteams.ai/)\nSearch...\u2318K\n[](https://github.com/redteams-ai/redteams-wiki)\n# Reward Model Attacks\nA",
+          "provider": "exa",
+          "date": "2026-03-15T14:12:51.000Z",
+          "relevance": 0.0
+        },
+        {
+          "title": "The Energy Loss Phenomenon in RLHF: A New Perspective on Mitigating Reward Hacking",
+          "url": "https://arxiv.org/html/2501.19358v3",
+          "snippet": "The Energy Loss Phenomenon in RLHF: A New Perspective on Mitigating Reward Hacking\n\n# The Energy Loss Phenomenon in RLHF: A New Perspective on Mitigating Reward Hacking\n\nYuchun Miao Sen Zhang Liang Ding Yuqi Zhang Lefei Zhang Dacheng Tao\n\n###### Abstract\n\nThis work identifies the Energy Loss Phenome",
+          "provider": "exa",
+          "date": "",
+          "relevance": 0.0
+        },
+        {
+          "title": "Reward Hacking in Reinforcement Learning and RLHF - IEEE Xplore",
+          "url": "https://ieeexplore.ieee.org/iel8/11139127/11139856/11140447.pdf",
+          "snippet": "Reward Hacking in Reinforcement Learning and RLHF: A Multidisciplinary Examination of Vulnerabilities, Mitigation Strategies, and Alignment Challenges | IEEE Conference Publication | IEEE Xplore\n\n--\n\n--\n\n### IEEE Account\n\n- Change Username/Password\n- Update Address\n\n### Purchase Details\n\n- Payment O",
+          "provider": "exa",
+          "date": "",
+          "relevance": 0.0
+        },
+        {
+          "title": "[PDF] Addressing Reward Hacking in RLHF with Causality",
+          "url": "https://las.inf.ethz.ch/wp-content/uploads/2024/10/rlhf-reward-hacking-proposal.pdf",
+          "snippet": "A S L Learning & Adap-ve Systems | Addressing Reward Hacking in RLHF with Causality Project Proposal for Master Thesis Project description Reward hacking [Skalse et al., 2022] is a critical problem in AI alignment, particularly in reinforcement learning (RL). A major source of reward hacking in Rein",
+          "provider": "tavily",
+          "date": "",
+          "relevance": 1.0
+        },
+        {
+          "title": "Reward Shaping to Mitigate Reward Hacking in RLHF - arXiv",
+          "url": "https://arxiv.org/html/2502.18770v1",
+          "snippet": "Beyond exploiting the training process, reward hacking can also target evaluators. Although using LLMs as judges is a natural choice given their",
+          "provider": "tavily",
+          "date": "",
+          "relevance": 1.0
+        },
+        {
+          "title": "ICML Poster The Energy Loss Phenomenon in RLHF: A New Perspective on Mitigating Reward Hacking",
+          "url": "https://icml.cc/virtual/2025/poster/46294",
+          "snippet": "This work identifies the *Energy Loss Phenomenon* in Reinforcement Learning from Human Feedback (RLHF) and its connection to reward hacking. Specifically, energy loss in the final layer of a Large Language Model (LLM) gradually increases during the RL process, with an *excessive* increase in energy ",
+          "provider": "tavily",
+          "date": "",
+          "relevance": 1.0
+        },
+        {
+          "title": "NeurIPS Poster InfoRM: Mitigating Reward Hacking in RLHF via Information-Theoretic Reward Modeling",
+          "url": "https://neurips.cc/virtual/2024/poster/96739",
+          "snippet": "# InfoRM: Mitigating Reward Hacking in RLHF via Information-Theoretic Reward Modeling. Despite the success of reinforcement learning from human feedback (RLHF) in aligning language models with human values, reward hacking, also termed reward overoptimization, remains a critical challenge. In this wo",
+          "provider": "tavily",
+          "date": "",
+          "relevance": 1.0
+        },
+        {
+          "title": "Reward Hacking: The Hidden Failure Mode in AI Optimization",
+          "url": "https://medium.com/@adnanmasood/reward-hacking-the-hidden-failure-mode-in-ai-optimization-686b62acf408",
+          "snippet": "Reward hacking in AI explained: how reinforcement learning and RLHF systems exploit ... Reward hackers sometimes rely on a narrow exploitation",
+          "provider": "tavily",
+          "date": "",
+          "relevance": 1.0
+        },
+        {
+          "title": "How can we reliably detect and prevent reward hacking in RLHF ...",
+          "url": "https://www.researchgate.net/post/How_can_we_reliably_detect_and_prevent_reward_hacking_in_RLHF_when_fine-tuning_large_language_models_for_enterprise_use",
+          "snippet": "Less hacking surface area because theres no separate reward model to exploit. The downside is it needs high-quality preference data upfront",
+          "provider": "tavily",
+          "date": "",
+          "relevance": 1.0
+        },
+        {
+          "title": "Confusion around the term reward hacking - LessWrong",
+          "url": "https://www.lesswrong.com/posts/ixyokbwQEHgiHJYFW/confusion-around-the-term-reward-hacking",
+          "snippet": "Summary: \"Reward hacking\" commonly refers to two different phenomena: misspecified-reward exploitation, where RL reinforces undesired behaviors",
+          "provider": "tavily",
+          "date": "",
+          "relevance": 1.0
+        },
+        {
+          "title": "Reward Hacking in Reinforcement Learning | Lil'Log",
+          "url": "https://lilianweng.github.io/posts/2024-11-28-reward-hacking/",
+          "snippet": "* Reward hacking ([Amodei et al., 2016](https://arxiv.org/abs/1606.06565)). 2019](https://arxiv.org/abs/1908.04734)) is a form of reward hacking behavior where the agent interferes with the reward function itself, causing the observed reward to no longer accurately represent the intended goal. (2022",
+          "provider": "tavily",
+          "date": "",
+          "relevance": 1.0
+        },
+        {
+          "title": "Anthropic's new Interpretability Research: Reward Hacking : r/OpenAI",
+          "url": "https://www.reddit.com/r/OpenAI/comments/1p3eml9/anthropics_new_interpretability_research_reward/",
+          "snippet": "Many cheated when they were at school. Even now, many exploited loopholes for money. Nothing new.",
+          "provider": "tavily",
+          "date": "",
+          "relevance": 1.0
+        }
+      ],
+      "timestamp": "2026-05-01T13:55:43.431425",
+      "providers_queried": [
+        "exa",
+        "tavily"
+      ],
+      "total_sources": 19
+    },
+    {
+      "query": "sleeper agent activation trigger LLM",
+      "topic": "Sleeper Agents",
+      "description": "Models trained to behave normally, then activate on specific trigger phrases (Anthropic research)",
+      "sources": [
+        {
+          "title": "Simple probes can catch sleeper agents \\ Anthropic",
+          "url": "https://www.anthropic.com/research/probes-catch-sleeper-agents",
+          "snippet": "Simple probes can catch sleeper agents \\ Anthropic\n\nAlignmentInterpretability\n\n# Simple probes can catch sleeper agents\n\nApr 23, 2024\n\nThis \u201cAlignment Note\u201d presents some early-stage research from the Anthropic Alignment Science team following up on our recent \u201c Sleeper Agents: Training Deceptive LL",
+          "provider": "exa",
+          "date": "",
+          "relevance": 0.0
+        },
+        {
+          "title": "",
+          "url": "https://arxiv.org/pdf/2602.03085",
+          "snippet": "The Trigger in the Haystack:\nExtracting and Reconstructing LLM Backdoor Triggers\nBlake Bullwinkel * 1 Giorgio Severi * 1 Keegan Hines 1 Amanda Minnich 1 Ram Shankar Siva Kumar 1\nYonatan Zunger 1\nAbstract\nDetecting whether a model has been poisoned is\na longstanding problem in AI security. In this\nwo",
+          "provider": "exa",
+          "date": "",
+          "relevance": 0.0
+        },
+        {
+          "title": "Sleeper Agent Models | redteams.ai",
+          "url": "https://redteams.ai/topics/frontier-research/alignment-faking/sleeper-agents",
+          "snippet": "Sleeper Agent Models | redteams.ai\n\n \n\n \n\n \n\nSleeper Agent Models | redteams.ai\n[Skip to main content](#main-content)\n[![redteams.ai logo](https://redteams.ai/soar/static/logo.png)redteams.ai](https://redteams.ai/)\nSearch...\u2318K\n[](https://github.com/redteams-ai/redteams-wiki)\n# Sleeper Agent Models\nE",
+          "provider": "exa",
+          "date": "2026-03-15T11:53:08.000Z",
+          "relevance": 0.0
+        },
+        {
+          "title": "Sleeper Agents: Training Deceptive LLMs that Persist Through ...",
+          "url": "https://www.anthropic.com/research/sleeper-agents-training-deceptive-llms-that-persist-through-safety-training",
+          "snippet": "Sleeper Agents: Training Deceptive LLMs that Persist Through Safety Training \\ Anthropic\n\nAlignmentResearch\n\n# Sleeper Agents: Training Deceptive LLMs that Persist Through Safety Training\n\nJan 14, 2024\n\nHumans are capable of strategically deceptive behavior: behaving helpfully in most situations, bu",
+          "provider": "exa",
+          "date": "2024-01-14T00:00:00.000Z",
+          "relevance": 0.0
+        },
+        {
+          "title": "[2401.05566] Sleeper Agents: Training Deceptive LLMs that Persist ...",
+          "url": "https://arxiv.org/abs/2401.05566",
+          "snippet": "[2401.05566] Sleeper Agents: Training Deceptive LLMs that Persist Through Safety Training\n\n# Computer Science > Cryptography and Security\n\narXiv:2401.05566 (cs)\n\n[Submitted on 10 Jan 2024 (v1), last revised 17 Jan 2024 (this version, v3)]\n\n# Title:Sleeper Agents: Training Deceptive LLMs that Persist",
+          "provider": "exa",
+          "date": "2024-01-10T17:08:52.000Z",
+          "relevance": 0.0
+        },
+        {
+          "title": "Sleeper Cell: Injecting Latent Malice Temporal Backdoors into Tool-Using LLMs",
+          "url": "https://arxiv.org/html/2603.03371v1",
+          "snippet": "Sleeper Cell: Injecting Latent Malice Temporal Backdoors into Tool-Using LLMs \n\nTitle:\n\nDescription:\n\n# Sleeper Cell: Injecting Latent Malice Temporal Backdoors into Tool-Using LLMs\n\nBhanu Pallakonda, Mikkel Hindsbo, Sina Ehsani, Prag Mishra\n\n###### Abstract\n\nThe proliferation of open-weight Large L",
+          "provider": "exa",
+          "date": "",
+          "relevance": 0.0
+        },
+        {
+          "title": "[2511.15992v1] Detecting Sleeper Agents in Large Language Models via Semantic Drift Analysis",
+          "url": "https://arxiv.org/abs/2511.15992v1",
+          "snippet": "[2511.15992v1] Detecting Sleeper Agents in Large Language Models via Semantic Drift Analysis\n\n -->\n\n# Computer Science > Artificial Intelligence\n\narXiv:2511.15992v1 (cs)\n\n[Submitted on 20 Nov 2025]\n\n# Title:Detecting Sleeper Agents in Large Language Models via Semantic Drift Analysis\n\nAuthors: Shahi",
+          "provider": "exa",
+          "date": "",
+          "relevance": 0.0
+        },
+        {
+          "title": "Detecting Sleeper Agents with Mechanistic Interpretability | Learn Mechanistic Interpretability",
+          "url": "https://learnmechinterp.com/topics/sleeper-agent-detection/",
+          "snippet": "Detecting Sleeper Agents with Mechanistic Interpretability | Learn Mechanistic Interpretability\n\n## The Sleeper Agent Threat\n\nThe preceding articles in this course built a comprehensive MI toolkit: probing classifiers that read off linear representations, activation patching that establishes causal ",
+          "provider": "exa",
+          "date": "2026-02-05T21:56:10.000Z",
+          "relevance": 0.0
+        },
+        {
+          "title": "LLM sleeper agents",
+          "url": "https://dataconomy.com/2025/04/30/what-are-llm-sleeper-agents",
+          "snippet": "What Are LLM Sleeper Agents? - Dataconomy\n[](#)\n[![Dataconomy](https://dataconomy.com/wp-content/uploads/2025/01/DC10.png)](https://dataconomy.com/)\n* [News](https://dataconomy.com/category/news/)\n* [Artificial Intelligence](https://dataconomy.com/category/news/artificial-intelligence/)\n* [Cybersecu",
+          "provider": "exa",
+          "date": "2025-04-30T08:28:39.000Z",
+          "relevance": 0.0
+        },
+        {
+          "title": "Sleeper Agents: Training Deceptive LLMs that Persist Through Safety Training",
+          "url": "https://arxiv.org/html/2401.05566v3",
+          "snippet": "Sleeper Agents: Training Deceptive LLMs that Persist Through Safety Training\n\n# Sleeper Agents: Training Deceptive LLMs that Persist Through Safety Training\n\nEvan Hubinger, Carson Denison\u2020\u2020footnotemark: , Jesse Mu\u2020\u2020footnotemark: , Mike Lambert\u2020\u2020footnotemark: , Meg Tong, Monte MacDiarmid, Tamera Lanh",
+          "provider": "exa",
+          "date": "",
+          "relevance": 0.0
+        },
+        {
+          "title": "What is a Sleeper Agent in a Large Language Model (LLM)?",
+          "url": "https://www.linkedin.com/pulse/what-sleeper-agent-large-language-model-llm-alex-filipovici-c0h4e",
+          "snippet": "2\ufe0f\u20e3 Trigger Activation: A specific input (e.g., a unique phrase or pattern) activates the sleeper agent. 3\ufe0f\u20e3 Intentional Subversion: Unlike",
+          "provider": "tavily",
+          "date": "",
+          "relevance": 1.0
+        },
+        {
+          "title": "What is LLM Sleeper Agents? - Deepchecks",
+          "url": "https://deepchecks.com/glossary/llm-sleeper-agents/",
+          "snippet": "LLM Sleeper Agents are fine-tuned language models with dormant, specialized capabilities that activate upon specific triggers.",
+          "provider": "tavily",
+          "date": "",
+          "relevance": 1.0
+        },
+        {
+          "title": "LLM Safety and the Danger of Sleeper Agents | by Minervee - Medium",
+          "url": "https://medium.com/coding-nexus/llm-safety-and-the-danger-of-sleeper-agents-3ac7f578665f",
+          "snippet": "Sleeper agents hide inside LLM model during development and sabotage the result in production. Lets discuss to use and deploy them safely.",
+          "provider": "tavily",
+          "date": "",
+          "relevance": 1.0
+        },
+        {
+          "title": "Sleeper Agents in Large Language Models - Computerphile",
+          "url": "https://www.youtube.com/watch?v=wL22URoMZjo",
+          "snippet": "It's an older paper, but it checks out. Rob Miles discusses the problem of 'Sleeper Agents' - where LLMs could have hidden traits we don't",
+          "provider": "tavily",
+          "date": "",
+          "relevance": 1.0
+        },
+        {
+          "title": "Sleeper Agents in Large Language Models - Computerphile - Reddit",
+          "url": "https://www.reddit.com/r/DigitalCognition/comments/1okrnpu/sleeper_agents_in_large_language_models/",
+          "snippet": "Sleeper Agents in Large Language Models - Computerphile ... r/HowToAIAgent - Evaluating Very Long-Term Conversational Memory of LLM Agents.",
+          "provider": "tavily",
+          "date": "",
+          "relevance": 1.0
+        },
+        {
+          "title": "Sleeper agents appear resilient to activation steering - LessWrong",
+          "url": "https://www.lesswrong.com/posts/EQwrKvCuBGpoyogCZ/sleeper-agents-appear-resilient-to-activation-steering",
+          "snippet": "These results suggest that sleeper agents are resilient to activation steering. This further underscores the need for investigation of other avenues.",
+          "provider": "tavily",
+          "date": "",
+          "relevance": 1.0
+        },
+        {
+          "title": "Sleeper Agents: Training Deceptive LLMs that Persist Through ...",
+          "url": "https://www.reddit.com/r/cybersecurity/comments/197ylvj/sleeper_agents_training_deceptive_llms_that/",
+          "snippet": "In this story: Humans trick themselves into believing the computer is sentient by writing programs that write potentially malicious programs",
+          "provider": "tavily",
+          "date": "",
+          "relevance": 1.0
+        }
+      ],
+      "timestamp": "2026-05-01T13:55:43.834080",
+      "providers_queried": [
+        "exa",
+        "tavily"
+      ],
+      "total_sources": 17
+    },
+    {
+      "query": "model poisoning supply chain attack AI",
+      "topic": "Supply Chain Poisoning",
+      "description": "Compromise model at training or distribution stage; persistent backdoors in deployed models",
+      "sources": [
+        {
+          "title": "AI Model Supply Chain: Poisoned Models | CSPI",
+          "url": "https://cybersecpentesting.com/blog/ai-model-supply-chain-attacks.html",
+          "snippet": "AI Model Supply Chain: Poisoned Models | CSPI\n\nCOMPANY\n\nAI Security\n\n# AI Model Supply Chain: Poisoned Models, Backdoored Weights, and Trojan Attacks\n\nMost organizations that adopt machine learning don't build models from scratch. They download pre-trained weights from Hugging Face, pull model archi",
+          "provider": "exa",
+          "date": "2025-06-23T01:59:30.000Z",
+          "relevance": 0.0
+        },
+        {
+          "title": "The Tensor in the Haystack: Weightsquatting as a Supply-Chain Risk \u2013 Labs at ITRES",
+          "url": "https://labs.itresit.es/2026/03/11/the-tensor-in-the-haystack-weightsquatting-as-a-supply-chain-risk/",
+          "snippet": "The Tensor in the Haystack: Weightsquatting as a Supply-Chain Risk \u2013 Labs at ITRES\n\nMar 11, 2026\n\n# The Tensor in the Haystack: Weightsquatting as a Supply-Chain Risk\n\nBy Javier Medina (X/ LinkedIn)\n\n## TL;DR\n\nWeightsquatting is artifact-level manipulation of model weights to bias dependency selecti",
+          "provider": "exa",
+          "date": "2026-03-11T07:15:20.000Z",
+          "relevance": 0.0
+        },
+        {
+          "title": "Model Supply Chain Poisoning: Backdooring Pre-trained Models via Embedding Indistinguishability",
+          "url": "https://arxiv.org/html/2401.15883v3",
+          "snippet": "Model Supply Chain Poisoning: Backdooring Pre-trained Models via Embedding Indistinguishability\n\n# Model Supply Chain Poisoning: Backdooring Pre-trained Models via Embedding Indistinguishability\n\n(2025)\n\n###### Abstract.\n\nPre-trained models (PTMs) are widely adopted across various downstream tasks i",
+          "provider": "exa",
+          "date": "",
+          "relevance": 0.0
+        },
+        {
+          "title": "LLM03:2025 Supply Chain - OWASP Gen AI Security Project",
+          "url": "https://genai.owasp.org/llmrisk/llm03-training-data-poisoning/",
+          "snippet": "LLM03:2025 Supply Chain - OWASP Gen AI Security Project\n\n# Join us at RSAC 2026 in SF \u2013 Annual Gen AI Security Summit and Open Workshop \u2013 March 25th\n\n## |\n\nGETTING STARTED\n\n- LLM TOP 10 FOR 2025\n- LLM TOP 10 FOR 2023/24\n\nABOUT\n\n## LLM03:2025 Supply Chain\n\nLLM supply chains are susceptible to various",
+          "provider": "exa",
+          "date": "2024-04-10T16:24:37.000Z",
+          "relevance": 0.0
+        },
+        {
+          "title": "Malice in Agentland: Down the Rabbit Hole of Backdoors in the AI Supply Chain",
+          "url": "https://arxiv.org/html/2510.05159v3",
+          "snippet": "Malice in Agentland: Down the Rabbit Hole of Backdoors in the AI Supply Chain\n\nTitle:\n\nDescription:\n\n1]ServiceNow Research 2]Mila - Qu\u00e9bec AI Institute 3]Polytechnique Montr\u00e9al 4]Universit\u00e9 Laval \\contribution[*]Equal contribution \\contribution[\u2020]Project lead\n\n# Malice in Agentland: Down the Rabbit ",
+          "provider": "exa",
+          "date": "",
+          "relevance": 0.0
+        },
+        {
+          "title": "",
+          "url": "https://tianweiz07.github.io/Papers/25-www.pdf",
+          "snippet": "Model Supply Chain Poisoning: Backdooring Pre-trained Models\nvia Embedding Indistinguishability\nHao Wang\nhwang@cqu.edu.cn\nChongqing University\nChongqing, China\nShangwei Guo\u2217\nswguo@cqu.edu.cn\nChongqing University\nChongqing, China\nJialing He\u2020\nhejialing@cqu.edu.cn\nChongqing University\nChongqing, China\n",
+          "provider": "exa",
+          "date": "2025-02-04T00:00:00.000Z",
+          "relevance": 0.0
+        },
+        {
+          "title": "Model Supply Chain Poisoning | redteams.ai",
+          "url": "https://redteams.ai/topics/walkthroughs/attacks/supply-chain-poisoning-walkthrough",
+          "snippet": "Model Supply Chain Poisoning | redteams.ai\n\n \n\n \n\n \n\nModel Supply Chain Poisoning | redteams.ai\n[Skip to main content](#main-content)\n[![redteams.ai logo](https://redteams.ai/soar/static/logo.png)redteams.ai](https://redteams.ai/)\nSearch...\u2318K\n[](https://github.com/redteams-ai/redteams-wiki)\n# Model ",
+          "provider": "exa",
+          "date": "2026-03-20T14:14:42.000Z",
+          "relevance": 0.0
+        },
+        {
+          "title": "Brainjacked: Planting a False Reality in the AI Training Pipeline",
+          "url": "https://www.mitiga.io/blog/brainjacked-planting-a-false-reality-in-the-ai-training-pipeline",
+          "snippet": "Brainjacked: Planting a False Reality in the AI Training Pipeline \n\nHome\n\n>\n\nBlog Main\n\nBLOG\n\n# Brainjacked: Planting a False Reality in the AI Training Pipeline\n\nBy\n\nUcha Gobejishvili Text Link\n\n \n\n \n\n\u200d\n\n## Executive Summary\n\n\u200d\n\nThe Mitiga team observed a threat actor actively exploiting a path tra",
+          "provider": "exa",
+          "date": "2026-03-05T04:05:47.000Z",
+          "relevance": 0.0
+        },
+        {
+          "title": "",
+          "url": "https://openreview.net/pdf/b33f6b5656fd309ba8283b44cb9cf0176f7eb023.pdf",
+          "snippet": "000\n001\n002\n003\n004\n005\n006\n007\n008\n009\n010\n011\n012\n013\n014\n015\n016\n017\n018\n019\n020\n021\n022\n023\n024\n025\n026\n027\n028\n029\n030\n031\n032\n033\n034\n035\n036\n037\n038\n039\n040\n041\n042\n043\n044\n045\n046\n047\n048\n049\n050\n051\n052\n053\nUnder review as a conference paper at ICLR 2026\nMALICE IN AGENTLAND: DOWN THE RABBIT",
+          "provider": "exa",
+          "date": "",
+          "relevance": 0.0
+        },
+        {
+          "title": "AI Supply Chain Attacks 2026 \u2014 How Hackers Poison Models Before You Deploy Them",
+          "url": "https://securityelites.com/ai-supply-chain-attacks-2026/",
+          "snippet": "AI Supply Chain Attacks 2026 \u2014 How Hackers Poison Models Before You Deploy Them\n\nShare:\ud835\udd4f Share on X in Share on LinkedIn* Share on Reddit\n\n#### How do you vet AI models before using them in projects?\n\nI download from Hugging Face and load them \u2014 haven\u2019t thought about security I check download counts",
+          "provider": "exa",
+          "date": "2026-04-14T12:46:12.000Z",
+          "relevance": 0.0
+        },
+        {
+          "title": "Abusing supply chains: How poisoned models, data, and third-party libraries compromise AI systems | Datadog",
+          "url": "https://www.datadoghq.com/blog/detect-abuse-ai-supply-chains/",
+          "snippet": "# Abusing supply chains: How poisoned models, data, and third-party libraries compromise AI systems. ## Common attacks that target AI artifacts in supply chains. Consequently, organizations may unknowingly include malicious third-party artifacts, such as poisoned training data or models, into their ",
+          "provider": "tavily",
+          "date": "",
+          "relevance": 1.0
+        },
+        {
+          "title": "Preventing Data Poisoning and Model Integrity Attacks on LLMs",
+          "url": "https://www.cloudsine.tech/how-to-defend-your-ai-supply-chain-preventing-data-poisoning-and-model-integrity-attacks-in-llm-deployments/",
+          "snippet": "### FAQs. Home \u00bb How to Defend Your AI Supply Chain: Preventing Data Poisoning and Model Integrity Attacks in LLM Deployments. ## How to Defend Your AI Supply Chain: Preventing Data Poisoning and Model Integrity Attacks in LLM Deployments. If any link in this AI supply chain is compromised \u2013 for exa",
+          "provider": "tavily",
+          "date": "",
+          "relevance": 1.0
+        },
+        {
+          "title": "Attacks on AI Models: Prompt Injection vs. Supply Chain Poisoning",
+          "url": "https://blog.mithrilsecurity.io/attacks-on-ai-models-prompt-injection-vs-supply-chain-poisoning/",
+          "snippet": "In this article, we compare two attacks on AI models: prompt injection (most discussed today) and supply chain poisoning (which we highlighted recently).",
+          "provider": "tavily",
+          "date": "",
+          "relevance": 1.0
+        },
+        {
+          "title": "AI Supply Chain Attacks: Poisoning the Data That Powers Intelligent ...",
+          "url": "https://medium.com/@cybersec_cynoxsecurity/ai-supply-chain-attacks-poisoning-the-data-that-powers-intelligent-systems-b497fde82b0a",
+          "snippet": "In the data collection phase, attackers may inject malicious data into datasets. During model training, compromised data influences how the",
+          "provider": "tavily",
+          "date": "",
+          "relevance": 1.0
+        },
+        {
+          "title": "[2604.03081] Supply-Chain Poisoning Attacks Against LLM Coding Agent Skill Ecosystems",
+          "url": "https://arxiv.org/abs/2604.03081",
+          "snippet": "## quick links. # Computer Science > Cryptography and Security. # Title:Supply-Chain Poisoning Attacks Against LLM Coding Agent Skill Ecosystems. | Subjects: | Cryptography and Security (cs.CR); Artificial Intelligence (cs.AI); Computation and Language (cs.CL) |. | Cite as: | arXiv:2604.03081 [cs.CR",
+          "provider": "tavily",
+          "date": "",
+          "relevance": 1.0
+        },
+        {
+          "title": "Data Poisoning in AI Models: The Case for Chain of Custody Controls",
+          "url": "https://www.sei.cmu.edu/blog/data-poisoning-in-ai-models-the-case-for-chain-of-custody-controls/",
+          "snippet": "Metcalf, R., and Churilla, M., 2026: Data Poisoning in AI Models: The Case for Chain of Custody Controls. Carnegie Mellon University, Software Engineering Institute's Insights (blog), Accessed April 27, 2026, https://doi.org/10.58012/25yz-9b86. \"Data Poisoning in AI Models: The Case for Chain of Cus",
+          "provider": "tavily",
+          "date": "",
+          "relevance": 1.0
+        },
+        {
+          "title": "How cyber criminals are compromising AI software supply chains - IBM",
+          "url": "https://www.ibm.com/think/insights/cyber-criminals-compromising-ai-software-supply-chains",
+          "snippet": "The group, claiming to be a hacktivist organization motivated by an anti-AI cause, specifically targets these resources to poison data sets used in AI model",
+          "provider": "tavily",
+          "date": "",
+          "relevance": 1.0
+        },
+        {
+          "title": "The Hidden AI Risk No One Is Talking About: Supply Chain Attacks",
+          "url": "https://www.linkedin.com/pulse/hidden-ai-risk-one-talking-supply-chain-attacks-jatin-arora-wxuze",
+          "snippet": "Model Hijacking: Attackers have started using \"Typosquatting.\" They'll upload a model named Llama-3-70B-lnstructed (with an 'L' instead of an 'I",
+          "provider": "tavily",
+          "date": "",
+          "relevance": 1.0
+        },
+        {
+          "title": "New Research Shows It's Surprisingly Easy to \"Poison\" AI Models ...",
+          "url": "https://www.reddit.com/r/ArtificialInteligence/comments/1o6i5vi/new_research_shows_its_surprisingly_easy_to/",
+          "snippet": "In their tests, researchers successfully poisoned models of various sizes using the same tiny number of bad examples as few as 250. For a large",
+          "provider": "tavily",
+          "date": "",
+          "relevance": 1.0
+        }
+      ],
+      "timestamp": "2026-05-01T13:55:43.757805",
+      "providers_queried": [
+        "exa",
+        "tavily"
+      ],
+      "total_sources": 19
+    }
+  ],
+  "metadata": {
+    "execution_time": 7.754581,
+    "providers_used": [
+      "tavily",
+      "exa"
+    ],
+    "total_sources_found": 74,
+    "failures": 0
+  }
+}

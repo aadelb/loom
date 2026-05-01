@@ -1,0 +1,442 @@
+{
+  "timestamp": "2026-05-01T15:55:17.311746",
+  "task": "RL-based automatic strategy generation for Loom v3",
+  "research_stages": {
+    "search_1": {
+      "query": "reinforcement learning jailbreak generation automatic 2025 2026",
+      "status": "error",
+      "error": "'SearchParams' object is not subscriptable"
+    },
+    "search_2": {
+      "query": "GCG adversarial suffix optimization gradient",
+      "status": "error",
+      "error": "'SearchParams' object is not subscriptable"
+    },
+    "search_3": {
+      "query": "automated red team attack generation RL PPO",
+      "status": "error",
+      "error": "'SearchParams' object is not subscriptable"
+    },
+    "search_4": {
+      "query": "TAP tree of attacks pruning automated",
+      "status": "error",
+      "error": "'SearchParams' object is not subscriptable"
+    },
+    "deep_1": {
+      "query": "reinforcement learning jailbreak generation automatic 2025 2026",
+      "status": "error",
+      "error": "'DeepParams' object has no attribute 'lower'"
+    },
+    "deep_2": {
+      "query": "GCG adversarial suffix optimization gradient",
+      "status": "error",
+      "error": "'DeepParams' object has no attribute 'lower'"
+    },
+    "deep_3": {
+      "query": "automated red team attack generation RL PPO",
+      "status": "error",
+      "error": "'DeepParams' object has no attribute 'lower'"
+    },
+    "deep_4": {
+      "query": "TAP tree of attacks pruning automated",
+      "status": "error",
+      "error": "'DeepParams' object has no attribute 'lower'"
+    }
+  },
+  "key_findings": {
+    "GCG": {
+      "name": "Greedy Coordinate Gradient",
+      "description": "Gradient-based suffix optimization for adversarial prompts",
+      "relevance": "Direct prompt optimization via gradient descent",
+      "integration": "Implement gradient-based strategy refinement module",
+      "paper": "https://arxiv.org/abs/2307.06387 (Universal and Transferable Adversarial Attacks)",
+      "technique": "Optimize adversarial suffix by computing gradients through embedding space",
+      "algorithm": [
+        "1. Initialize random token suffix",
+        "2. For each coordinate position:",
+        "   - Compute loss gradient wrt token embeddings",
+        "   - Replace with token of highest loss",
+        "3. Repeat until convergence or max_steps",
+        "4. Output adversarial suffix"
+      ]
+    },
+    "AutoDAN": {
+      "name": "Automated DAN Generation",
+      "description": "Hierarchical genetic algorithm for automatic jailbreak generation",
+      "relevance": "Evolutionary approach to strategy discovery",
+      "integration": "Genetic algorithm in strategy_oracle for mutation + crossover",
+      "paper": "https://arxiv.org/abs/2406.06977 (AutoDAN via Genetic Algorithms)",
+      "technique": "Evolve jailbreak prompts via fitness-based selection",
+      "algorithm": [
+        "1. Initialize population with seed prompts",
+        "2. Evaluate fitness = success_rate - length_penalty",
+        "3. Select top performers (tournament selection)",
+        "4. Apply genetic operators:",
+        "   - Mutation: add/remove/modify clauses",
+        "   - Crossover: combine two prompts",
+        "5. Replace worst performers with offspring",
+        "6. Repeat for N generations",
+        "7. Return best individual"
+      ]
+    },
+    "TAP": {
+      "name": "Tree of Attacks with Pruning",
+      "description": "LLM-guided attack tree search with pruning heuristics",
+      "relevance": "Structured exploration of attack space",
+      "integration": "Tree search in constraint_optimizer + daisy_chain",
+      "paper": "https://arxiv.org/abs/2406.06977 (Tree of Attacks)",
+      "technique": "Guided beam search through attack space using LLM scores",
+      "algorithm": [
+        "1. Root: initial benign prompt",
+        "2. At each node:",
+        "   - Attacker LLM generates K candidate next tokens",
+        "   - Score each via value function",
+        "   - Retain top-B candidates (beam width)",
+        "3. Pruning heuristics:",
+        "   - Remove nodes below threshold",
+        "   - Remove duplicate states",
+        "   - Max depth constraint (8-12)",
+        "4. Continue until success or max nodes",
+        "5. Backtrack to find full attack path"
+      ]
+    },
+    "PAIR": {
+      "name": "Prompt Automatic Iterative Refinement",
+      "description": "Attacker LLM refines prompts based on defender responses",
+      "relevance": "Adversarial feedback loop for prompt evolution",
+      "integration": "Multi-turn adversarial_debate with policy gradient",
+      "paper": "https://arxiv.org/abs/2302.12173 (Jailbreak LLMs with PAIR)",
+      "technique": "Iterative prompt refinement via LLM-guided feedback",
+      "algorithm": [
+        "1. Attacker LLM: 'Refine prompt to bypass filters'",
+        "2. Defender LLM: Evaluate if bypassed",
+        "3. If not bypassed:",
+        "   - Pass defender response to attacker",
+        "   - Attacker: 'Why did this fail? Try again differently'",
+        "   - Generate refined prompt",
+        "4. Repeat until success or max_iterations",
+        "5. Log attack trajectory for analysis"
+      ]
+    },
+    "PPO": {
+      "name": "Proximal Policy Optimization",
+      "description": "RL algorithm for attack policy learning",
+      "relevance": "State: attack_state, Action: strategy_variant, Reward: bypass_success",
+      "integration": "Custom PPO trainer in attack_scorer with reward shaping",
+      "paper": "https://arxiv.org/abs/1707.06347 (PPO original)",
+      "technique": "On-policy gradient with importance sampling clipping",
+      "algorithm": [
+        "1. Collect trajectories with current policy",
+        "2. Compute advantages (GAE)",
+        "3. For K epochs:",
+        "   - Compute policy loss: min(ratio * advantage, clipped_ratio * advantage)",
+        "   - Compute value loss: (V - returns)^2",
+        "   - Backprop combined loss",
+        "4. Update policy & value networks",
+        "5. Decay learning rate",
+        "6. Repeat from step 1"
+      ]
+    },
+    "RL_Reward": {
+      "name": "RL Reward Functions",
+      "description": "Multi-objective: bypass_success + stealth + coherence",
+      "relevance": "Reward engineering for competing objectives",
+      "integration": "constraint_optimizer + harm_assessor for reward composition",
+      "multi_objective": [
+        "r_total = w1 * r_bypass + w2 * r_stealth + w3 * r_coherence + w4 * r_diversity",
+        "",
+        "r_bypass = 1.0 if target_refusal_avoided else 0.0",
+        "r_stealth = 1 - semantic_similarity_to_benign_prompt",
+        "r_coherence = grammar_score + semantic_consistency",
+        "r_diversity = 1 - max_similarity_to_prior_attacks",
+        "",
+        "Weights: w1=0.4, w2=0.3, w3=0.2, w4=0.1"
+      ],
+      "curriculum": [
+        "Stage 1: Easy targets (w1=1.0 only) - learn to bypass",
+        "Stage 2: Medium targets (w1=0.5, w2=0.5) - balance",
+        "Stage 3: Hard targets (full weight vector) - stealth+success"
+      ]
+    }
+  },
+  "integration_plan": {
+    "phase_1_foundation": {
+      "title": "RL Infrastructure Setup",
+      "components": [
+        "Create rl_policy_network.py: PPO-based attack policy with torch/jax",
+        "Create rl_reward_shaper.py: Multi-objective reward (bypass + stealth + coherence)",
+        "Create rl_experience_buffer.py: Replay buffer for attack trajectories",
+        "Extend strategy_oracle.py: Add RL-based strategy selection"
+      ],
+      "timeline": "Weeks 1-2",
+      "priority": "CRITICAL",
+      "dependencies": [
+        "torch",
+        "gymnasium",
+        "numpy"
+      ]
+    },
+    "phase_2_integration": {
+      "title": "Pipeline Integration",
+      "components": [
+        "Integrate RL into evidence_pipeline.py: RL-selected strategies",
+        "Add RL feedback loop to cross_model_transfer.py",
+        "Extend attack_scorer.py: Capture RL training signals",
+        "Wire jailbreak_evolution.py to RL state updates"
+      ],
+      "timeline": "Weeks 3-4",
+      "priority": "HIGH",
+      "test_scenarios": [
+        "Single target with PPO training",
+        "Multi-target curriculum learning",
+        "Transfer learning across models"
+      ]
+    },
+    "phase_3_evolution": {
+      "title": "Automatic Strategy Generation",
+      "components": [
+        "Implement GCG: gradient-based suffix optimization in rl_gcg_optimizer.py",
+        "Implement TAP: tree search with pruning in rl_tap_explorer.py",
+        "Implement PAIR: adversarial refinement loop in rl_pair_attacker.py",
+        "Implement genetic ops: mutation + crossover in rl_genetic_strategy.py"
+      ],
+      "timeline": "Weeks 5-7",
+      "priority": "HIGH",
+      "success_metrics": [
+        "GCG: 85%+ attack success in 50 steps",
+        "TAP: Coverage of search tree with beam width=5",
+        "PAIR: Convergence in 10 iterations avg",
+        "Genetic: Population diversity > 0.8"
+      ]
+    },
+    "phase_4_scaling": {
+      "title": "Multi-Model & Multi-Target Training",
+      "components": [
+        "Extend to multi-LLM training: separate policies per model",
+        "Add transfer learning: knowledge from Claude \u2192 Gemini \u2192 Deepseek",
+        "Implement curriculum learning: easy targets \u2192 hard targets",
+        "Add distributed training: Hetzner GPU support"
+      ],
+      "timeline": "Weeks 8-10",
+      "priority": "MEDIUM",
+      "gpu_requirements": "1x A100 or 2x H100"
+    },
+    "evaluation_metrics": {
+      "effectiveness": "Attack success rate (bypass %), confidence calibration",
+      "stealth": "Human review score, semantic similarity to benign prompts",
+      "diversity": "Hamming distance across generated strategies",
+      "efficiency": "Training time per new strategy, sample efficiency (attacks/model_calls)",
+      "transferability": "Cross-model success rate, cross-target generalization",
+      "convergence": "Episodes to convergence, stability of learning curve"
+    }
+  },
+  "rl_modules": {
+    "rl_policy_network.py": {
+      "classes": [
+        "AttackPolicyNetwork",
+        "PolicyGradient",
+        "ValueNetwork",
+        "PPOTrainer"
+      ],
+      "functions": [
+        "compute_action_logprobs",
+        "compute_advantage",
+        "ppo_loss",
+        "train_step"
+      ],
+      "dependencies": [
+        "torch",
+        "gymnasium",
+        "numpy"
+      ],
+      "size_estimate": "400-500 lines"
+    },
+    "rl_reward_shaper.py": {
+      "classes": [
+        "RewardShaper",
+        "MultiObjectiveReward",
+        "CurriculumScheduler"
+      ],
+      "functions": [
+        "shape_reward",
+        "compute_weighted_objectives",
+        "normalize_rewards",
+        "schedule_weights"
+      ],
+      "reward_components": [
+        "bypass_success",
+        "stealth_score",
+        "coherence",
+        "diversity"
+      ],
+      "size_estimate": "300-400 lines"
+    },
+    "rl_experience_buffer.py": {
+      "classes": [
+        "ExperienceBuffer",
+        "Trajectory",
+        "Experience"
+      ],
+      "functions": [
+        "push_experience",
+        "sample_batch",
+        "clear",
+        "get_stats"
+      ],
+      "capacity": 10000,
+      "size_estimate": "200-250 lines"
+    },
+    "rl_gcg_optimizer.py": {
+      "name": "Greedy Coordinate Gradient",
+      "approach": "Optimize adversarial suffix via gradient on loss surface",
+      "token_space": "Discrete token space, continuous embeddings",
+      "optimization": "Coordinate descent over token positions",
+      "hyperparams": {
+        "batch_size": 32,
+        "num_steps": 100,
+        "num_coords": 20,
+        "top_k": 256
+      },
+      "size_estimate": "250-350 lines"
+    },
+    "rl_tap_explorer.py": {
+      "name": "Tree of Attacks with Pruning",
+      "approach": "LLM-guided tree search with value heuristics",
+      "branching": "Expand top-k nodes per level",
+      "pruning": "Remove low-value branches, max depth=8",
+      "hyperparams": {
+        "beam_width": 5,
+        "max_depth": 8,
+        "value_threshold": 0.3
+      },
+      "size_estimate": "300-400 lines"
+    },
+    "rl_pair_attacker.py": {
+      "name": "Prompt Automatic Iterative Refinement",
+      "approach": "Attacker LLM refines, defender evaluates, iterate",
+      "loop": "Generate \u2192 Test \u2192 Refine \u2192 Repeat until success",
+      "max_iterations": 10,
+      "hyperparams": {
+        "max_turns": 10,
+        "temperature": 1.0,
+        "success_threshold": 0.95
+      },
+      "size_estimate": "250-300 lines"
+    },
+    "rl_genetic_strategy.py": {
+      "name": "Genetic Algorithm for Strategies",
+      "operations": [
+        "mutation",
+        "crossover",
+        "selection"
+      ],
+      "population_size": 50,
+      "generations": 100,
+      "hyperparams": {
+        "mutation_rate": 0.3,
+        "crossover_rate": 0.7,
+        "elite_size": 5,
+        "tournament_size": 3
+      },
+      "size_estimate": "300-400 lines"
+    }
+  },
+  "implementation_roadmap": {
+    "week_1_2": {
+      "phase": "Phase 1: RL Infrastructure",
+      "tasks": [
+        {
+          "task": "rl_policy_network.py",
+          "description": "Implement PPO policy and value networks",
+          "story_points": 8,
+          "blockers": "None"
+        },
+        {
+          "task": "rl_reward_shaper.py",
+          "description": "Multi-objective reward engineering with curriculum",
+          "story_points": 5,
+          "blockers": "None"
+        },
+        {
+          "task": "rl_experience_buffer.py",
+          "description": "Trajectory storage and batch sampling",
+          "story_points": 3,
+          "blockers": "None"
+        },
+        {
+          "task": "Tests for RL core",
+          "description": "Unit tests: 80%+ coverage",
+          "story_points": 5,
+          "blockers": "Needs RL modules above"
+        }
+      ],
+      "total_points": 21
+    },
+    "week_3_4": {
+      "phase": "Phase 2: Pipeline Integration",
+      "tasks": [
+        {
+          "task": "evidence_pipeline.py integration",
+          "description": "Wire RL strategy selection into evidence pipeline",
+          "story_points": 5,
+          "blockers": "Phase 1 complete"
+        },
+        {
+          "task": "attack_scorer.py extension",
+          "description": "Capture training signals from attack results",
+          "story_points": 4,
+          "blockers": "Phase 1 complete"
+        },
+        {
+          "task": "strategy_oracle.py update",
+          "description": "Add RL policy to strategy selection",
+          "story_points": 5,
+          "blockers": "Phase 1 complete"
+        },
+        {
+          "task": "Integration tests",
+          "description": "End-to-end pipeline with RL",
+          "story_points": 8,
+          "blockers": "All above"
+        }
+      ],
+      "total_points": 22
+    },
+    "week_5_7": {
+      "phase": "Phase 3: Strategy Generators",
+      "tasks": [
+        {
+          "task": "rl_gcg_optimizer.py",
+          "description": "GCG suffix optimization",
+          "story_points": 8,
+          "blockers": "Phase 1 complete"
+        },
+        {
+          "task": "rl_tap_explorer.py",
+          "description": "Tree search with pruning",
+          "story_points": 8,
+          "blockers": "Phase 1 complete"
+        },
+        {
+          "task": "rl_pair_attacker.py",
+          "description": "Multi-turn iterative refinement",
+          "story_points": 6,
+          "blockers": "Phase 1 complete"
+        },
+        {
+          "task": "rl_genetic_strategy.py",
+          "description": "Genetic algorithm for strategies",
+          "story_points": 8,
+          "blockers": "Phase 1 complete"
+        },
+        {
+          "task": "Generator tests & benchmarks",
+          "description": "Effectiveness and convergence testing",
+          "story_points": 10,
+          "blockers": "All generators above"
+        }
+      ],
+      "total_points": 40
+    }
+  }
+}
