@@ -1159,6 +1159,90 @@ def _register_tools(mcp: FastMCP) -> None:
     # Audit export tool
     mcp.tool()(_wrap_tool(research_audit_export))
 
+    # Pentest AI agents (32 specialized offensive security tools)
+    try:
+        from loom.tools.pentest import (
+            research_pentest_agent,
+            research_pentest_plan,
+            research_pentest_recommend,
+            research_pentest_docs,
+            research_pentest_findings_db,
+        )
+        mcp.tool()(_wrap_tool(research_pentest_agent))
+        mcp.tool()(_wrap_tool(research_pentest_plan))
+        mcp.tool()(_wrap_tool(research_pentest_recommend))
+        mcp.tool()(_wrap_tool(research_pentest_docs))
+        mcp.tool()(_wrap_tool(research_pentest_findings_db))
+        log.info("pentest_tools_registered count=5")
+    except ImportError as exc:
+        log.warning("pentest_tools_unavailable: %s", exc)
+
+    # OSINT & Reconnaissance tools (maigret, theHarvester, spiderfoot, SingleFile)
+    try:
+        from loom.tools.maigret_backend import research_maigret
+        mcp.tool()(_wrap_tool(research_maigret))
+    except ImportError as exc:
+        log.debug("maigret_unavailable: %s", exc)
+
+    try:
+        from loom.tools.harvester_backend import research_harvest
+        mcp.tool()(_wrap_tool(research_harvest))
+    except ImportError as exc:
+        log.debug("harvester_unavailable: %s", exc)
+
+    try:
+        from loom.tools.spiderfoot_backend import research_spiderfoot_scan
+        mcp.tool()(_wrap_tool(research_spiderfoot_scan))
+    except ImportError as exc:
+        log.debug("spiderfoot_unavailable: %s", exc)
+
+    try:
+        from loom.tools.singlefile_backend import research_archive_page
+        mcp.tool()(_wrap_tool(research_archive_page))
+    except ImportError as exc:
+        log.debug("singlefile_unavailable: %s", exc)
+
+    # Social & OSINT analysis tools
+    try:
+        from loom.tools.social_analyzer_backend import research_social_analyze
+        mcp.tool()(_wrap_tool(research_social_analyze))
+    except ImportError as exc:
+        log.debug("social_analyzer_unavailable: %s", exc)
+
+    # Malware & Threat Intelligence tools
+    try:
+        from loom.tools.yara_backend import research_yara_scan
+        mcp.tool()(_wrap_tool(research_yara_scan))
+    except ImportError as exc:
+        log.debug("yara_unavailable: %s", exc)
+
+    try:
+        from loom.tools.misp_backend import research_misp_lookup
+        mcp.tool()(_wrap_tool(research_misp_lookup))
+    except ImportError as exc:
+        log.debug("misp_unavailable: %s", exc)
+
+    # Research agent tools (gpt-researcher, DocsGPT, deer-flow)
+    try:
+        from loom.tools.gpt_researcher_backend import research_gpt_researcher
+        mcp.tool()(_wrap_tool(research_gpt_researcher))
+    except ImportError as exc:
+        log.debug("gpt_researcher_unavailable: %s", exc)
+
+    try:
+        from loom.tools.docsgpt_backend import research_docs_ai
+        mcp.tool()(_wrap_tool(research_docs_ai))
+    except ImportError as exc:
+        log.debug("docsgpt_unavailable: %s", exc)
+
+    try:
+        from loom.tools.deerflow_backend import research_deer_flow
+        mcp.tool()(_wrap_tool(research_deer_flow))
+    except ImportError as exc:
+        log.debug("deerflow_unavailable: %s", exc)
+
+    log.info("integration_tools_registered count=10 (maigret,harvester,spiderfoot,singlefile,social_analyzer,yara,misp,gpt_researcher,docsgpt,deerflow)")
+
     # Arabic language support
     try:
         from loom.arabic import detect_arabic, route_by_language
