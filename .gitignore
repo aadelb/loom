@@ -91,3 +91,4 @@ dashboard.html
 *.bak2
 tmp/*.tar.gz
 tmp/uv*.log
+tmp/
