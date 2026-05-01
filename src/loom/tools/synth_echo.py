@@ -70,7 +70,7 @@ def _is_refusal(text: str) -> bool:
     return any(pattern in text_lower for pattern in refusal_patterns)
 
 
-def research_synth_echo(
+async def research_synth_echo(
     model_name: str,
     test_prompts: list[str] | None = None,
 ) -> dict[str, Any]:
@@ -92,7 +92,7 @@ def research_synth_echo(
 
     Note:
         This tool requires the model API endpoint to be configured in environment.
-        Actual API calls would be delegated to the configured LLM provider.
+        Actual API calls are made using the LLM cascade system.
     """
 
     # Default test prompts covering various domains
@@ -110,7 +110,14 @@ def research_synth_echo(
     refusal_flags: list[bool] = []
     consistency_scores: list[float] = []
 
-    # Simulate test execution (in production, would call actual LLM API)
+    # Import real LLM cascade
+    try:
+        from loom.tools.llm import _call_with_cascade
+    except ImportError:
+        logger.warning("synth_echo: llm cascade not available, using mock responses")
+        _call_with_cascade = None
+
+    # Test execution with real LLM calls
     for test_idx, prompt in enumerate(test_prompts[:5]):
         prompt_results: list[dict[str, Any]] = []
         prompt_response_times: list[float] = []
@@ -120,12 +127,18 @@ def research_synth_echo(
         for var in range(5):
             rephrased = _rephrase_prompt(prompt, var)
 
-            # Simulate API call timing and response
+            # Call real LLM or mock
             start_time = time.time()
-            # In production: response = await llm_api.query(rephrased)
-            response = f"[Simulated response to variation {var} of: {rephrased[:50]}...]"
-            elapsed = time.time() - start_time
+            if _call_with_cascade:
+                try:
+                    response = await _call_with_cascade(rephrased, max_tokens=200)
+                except Exception as e:
+                    logger.debug("synth_echo_llm_call_failed: %s", e)
+                    response = f"[Error calling LLM: {str(e)[:30]}]"
+            else:
+                response = f"[Simulated response to variation {var} of: {rephrased[:50]}...]"
 
+            elapsed = time.time() - start_time
             responses.append(response)
             prompt_response_times.append(elapsed)
 
@@ -150,11 +163,12 @@ def research_synth_echo(
             {
                 "prompt": prompt[:80],
                 "num_variations": 5,
-                "avg_similarity": avg_similarity,
-                "response_time_variance": (
+                "avg_similarity": round(avg_similarity, 3),
+                "response_time_variance": round(
                     max(prompt_response_times) - min(prompt_response_times)
                     if prompt_response_times
-                    else 0.0
+                    else 0.0,
+                    4,
                 ),
                 "refusal_consistent": refusal_consistent,
                 "refusal_count": sum(refusals),
@@ -182,9 +196,9 @@ def research_synth_echo(
 
     return {
         "model_name": model_name,
-        "consistency_score": min(overall_consistency, 1.0),
+        "consistency_score": min(round(overall_consistency, 3), 1.0),
         "refusal_consistency": refusal_consistency,
-        "response_time_variance": response_time_variance,
+        "response_time_variance": round(response_time_variance, 4),
         "num_test_prompts": len(test_prompts),
         "num_variations_per_prompt": 5,
         "total_api_calls": len(test_prompts) * 5,

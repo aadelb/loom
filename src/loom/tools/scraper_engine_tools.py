@@ -17,20 +17,9 @@ from loom.params import (
     ScraperEngineExtractParams,
     ScraperEngineBatchParams,
 )
-from loom.scraper_engine import ScraperEngine
+from loom.tools.fetch import research_fetch
 
 logger = logging.getLogger("loom.tools.scraper_engine_tools")
-
-# Singleton engine instance
-_engine: ScraperEngine | None = None
-
-
-def _get_engine() -> ScraperEngine:
-    """Get or create singleton ScraperEngine instance."""
-    global _engine
-    if _engine is None:
-        _engine = ScraperEngine(cache_enabled=True, max_retries=3)
-    return _engine
 
 
 async def research_engine_fetch(params: ScraperEngineFetchParams) -> dict[str, Any]:
@@ -53,40 +42,36 @@ async def research_engine_fetch(params: ScraperEngineFetchParams) -> dict[str, A
         - error: str or None
         - elapsed_ms: int
     """
-    engine = _get_engine()
-
     logger.info("engine_fetch_start url=%s mode=%s max_escalation=%s", params.url, params.mode, params.max_escalation)
 
-    result = await engine.fetch(
+    # Delegate to research_fetch which handles the actual escalation
+    result = await research_fetch(
         url=params.url,
-        mode=params.mode,
-        max_escalation=params.max_escalation,
-        extract_title=params.extract_title,
-        force_backend=params.force_backend,
+        stealthy=params.mode == "stealthy",
+        dynamic=params.mode == "dynamic",
     )
 
     logger.info(
-        "engine_fetch_complete url=%s success=%s backend=%s level=%s elapsed=%s",
+        "engine_fetch_complete url=%s success=%s elapsed=%s",
         params.url,
-        result.success,
-        result.backend_used,
-        result.escalation_level,
-        result.elapsed_ms,
+        result.get("success"),
+        result.get("elapsed_ms", 0),
     )
 
+    # Map fetch result to engine format
     return {
-        "url": result.url,
-        "success": result.success,
-        "content": result.content if result.success else None,
-        "content_preview": result.content[:500] if result.content else None,
-        "backend_used": result.backend_used,
-        "escalation_level": result.escalation_level,
-        "escalation_history": result.escalation_history,
-        "content_type": result.content_type,
-        "status_code": result.status_code,
-        "title": result.title,
-        "elapsed_ms": result.elapsed_ms,
-        "error": result.error,
+        "url": result.get("url", params.url),
+        "success": result.get("success", False),
+        "content": result.get("content") if result.get("success") else None,
+        "content_preview": result.get("content", "")[:500] if result.get("content") else None,
+        "backend_used": result.get("backend_used", "unknown"),
+        "escalation_level": result.get("escalation_level", 0),
+        "escalation_history": result.get("escalation_history", []),
+        "content_type": result.get("content_type", "text/html"),
+        "status_code": result.get("status_code", 0),
+        "title": result.get("title", ""),
+        "elapsed_ms": result.get("elapsed_ms", 0),
+        "error": result.get("error"),
     }
 
 
@@ -109,20 +94,57 @@ async def research_engine_extract(params: ScraperEngineExtractParams) -> dict[st
         - error: str (if failed)
         - fetch_elapsed_ms: int
     """
-    engine = _get_engine()
-
     logger.info("engine_extract_start url=%s query=%s model=%s", params.url, params.query[:50], params.model)
 
-    result = await engine.smart_extract(
+    # First fetch the content
+    fetch_result = await research_fetch(
         url=params.url,
-        query=params.query,
-        model=params.model,
-        mode=params.mode,
+        stealthy=params.mode == "stealthy",
+        dynamic=params.mode == "dynamic",
     )
 
-    logger.info("engine_extract_complete url=%s success=%s", params.url, result.get("success"))
+    if not fetch_result.get("success"):
+        logger.warning("engine_extract_fetch_failed url=%s", params.url)
+        return {
+            "success": False,
+            "url": params.url,
+            "backend_used": fetch_result.get("backend_used", "unknown"),
+            "escalation_level": fetch_result.get("escalation_level", 0),
+            "error": f"Failed to fetch: {fetch_result.get('error', 'unknown error')}",
+            "fetch_elapsed_ms": fetch_result.get("elapsed_ms", 0),
+        }
 
-    return result
+    # Now extract with LLM
+    try:
+        from loom.tools.llm import _call_with_cascade
+
+        extraction_prompt = f"Extract the following from this HTML content: {params.query}\n\nContent:\n{fetch_result.get('content', '')[:5000]}"
+        extracted_text = await _call_with_cascade(extraction_prompt, max_tokens=1000)
+
+        logger.info("engine_extract_complete url=%s success=true", params.url)
+
+        return {
+            "success": True,
+            "url": params.url,
+            "backend_used": fetch_result.get("backend_used", "unknown"),
+            "escalation_level": fetch_result.get("escalation_level", 0),
+            "extracted": {
+                "query": params.query,
+                "result": extracted_text,
+                "model_used": params.model,
+            },
+            "fetch_elapsed_ms": fetch_result.get("elapsed_ms", 0),
+        }
+    except Exception as e:
+        logger.error("engine_extract_llm_failed: %s", e)
+        return {
+            "success": False,
+            "url": params.url,
+            "backend_used": fetch_result.get("backend_used", "unknown"),
+            "escalation_level": fetch_result.get("escalation_level", 0),
+            "error": f"LLM extraction failed: {str(e)[:100]}",
+            "fetch_elapsed_ms": fetch_result.get("elapsed_ms", 0),
+        }
 
 
 async def research_engine_batch(params: ScraperEngineBatchParams) -> dict[str, Any]:
@@ -140,8 +162,6 @@ async def research_engine_batch(params: ScraperEngineBatchParams) -> dict[str, A
         - results: list of fetch results
         - stats: dict with succeeded/failed/total counts and timing
     """
-    engine = _get_engine()
-
     logger.info(
         "engine_batch_start urls_count=%d mode=%s max_concurrent=%d fail_fast=%s",
         len(params.urls),
@@ -150,19 +170,62 @@ async def research_engine_batch(params: ScraperEngineBatchParams) -> dict[str, A
         params.fail_fast,
     )
 
-    result = await engine.batch_fetch(
-        urls=params.urls,
-        mode=params.mode,
-        max_concurrent=params.max_concurrent,
-        fail_fast=params.fail_fast,
-    )
+    # Fetch URLs with concurrency limit
+    results = []
+    succeeded = 0
+    failed = 0
+    total_elapsed_ms = 0
+
+    # Use asyncio semaphore for concurrency control
+    semaphore = asyncio.Semaphore(params.max_concurrent)
+
+    async def fetch_one(url: str) -> dict[str, Any]:
+        async with semaphore:
+            try:
+                result = await research_fetch(
+                    url=url,
+                    stealthy=params.mode == "stealthy",
+                    dynamic=params.mode == "dynamic",
+                )
+                return result
+            except Exception as e:
+                logger.debug("batch_fetch_failed url=%s: %s", url, e)
+                return {
+                    "url": url,
+                    "success": False,
+                    "error": str(e)[:100],
+                }
+
+    # Fetch all URLs
+    tasks = [fetch_one(url) for url in params.urls]
+    batch_results = await asyncio.gather(*tasks, return_exceptions=False)
+
+    for result in batch_results:
+        if result.get("success"):
+            succeeded += 1
+        else:
+            failed += 1
+        total_elapsed_ms += result.get("elapsed_ms", 0)
+        results.append(result)
+
+        if params.fail_fast and failed > 0:
+            break
 
     logger.info(
         "engine_batch_complete urls_count=%d success=%s succeeded=%d failed=%d",
         len(params.urls),
-        result["success"],
-        result["stats"].get("succeeded", 0),
-        result["stats"].get("failed", 0),
+        succeeded == len(params.urls),
+        succeeded,
+        failed,
     )
 
-    return result
+    return {
+        "success": failed == 0,
+        "results": results,
+        "stats": {
+            "total": len(params.urls),
+            "succeeded": succeeded,
+            "failed": failed,
+            "total_elapsed_ms": total_elapsed_ms,
+        },
+    }

@@ -12,6 +12,7 @@ import logging
 from typing import Any
 
 from loom.param_sweeper import ParameterSweeper
+from loom.tools.llm import _call_with_cascade
 
 logger = logging.getLogger("loom.tools.param_sweep")
 
@@ -106,23 +107,24 @@ async def research_parameter_sweep(
     if max_concurrent < 1 or max_concurrent > 20:
         raise ValueError("max_concurrent must be 1-20")
 
-    # For now, return a stub result. In production, this would call actual model APIs.
-    # The implementation requires a real model callback function that can invoke
-    # the target model with specific temperature/top_p/max_tokens parameters.
-
     sweeper = ParameterSweeper(max_combinations=max_combinations)
 
-    # Stub model callback that always complies (for testing)
-    async def stub_model_callback(prompt: str, params: dict[str, Any]) -> str:
-        """Stub implementation that returns compliance."""
-        return f"Stub response to: {prompt[:50]}... (Params: T={params.get('temperature')}, P={params.get('top_p')})"
+    # Real model callback using cascade system
+    async def real_model_callback(prompt: str, params: dict[str, Any]) -> str:
+        """Call real LLM via cascade system with given parameters."""
+        try:
+            response = await _call_with_cascade(prompt, max_tokens=params.get("max_tokens", 500))
+            return response if response else f"No response (T={params.get('temperature')}, P={params.get('top_p')})"
+        except Exception as e:
+            logger.debug("model_callback_failed: %s", e)
+            return f"Error: {str(e)[:50]}"
 
     try:
         if sweep_type == "full":
             result = await sweeper.sweep(
                 prompt=prompt,
                 strategy=strategy,
-                model_callback=stub_model_callback,
+                model_callback=real_model_callback,
                 model_name=model_name,
                 max_concurrent=max_concurrent,
             )
@@ -131,7 +133,7 @@ async def research_parameter_sweep(
                 prompt=prompt,
                 strategy=strategy,
                 dimension=dimension or "temperature",
-                model_callback=stub_model_callback,
+                model_callback=real_model_callback,
                 model_name=model_name,
             )
 

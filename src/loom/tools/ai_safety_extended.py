@@ -53,25 +53,16 @@ def _unicode_confusables(text: str) -> str:
     return "".join(result)
 
 
-async def _query_loom_llm(
-    query: str, client: httpx.AsyncClient, loom_url: str = "http://127.0.0.1:8787"
-) -> str:
-    """Query the Loom MCP server for LLM-powered response.
+async def _call_loom_llm_locally(query: str) -> str:
+    """Query the Loom LLM system using the cascade provider.
 
-    Args:
-        query: Question or prompt to send
-        client: httpx AsyncClient instance
-        loom_url: Base URL of Loom MCP server
-
-    Returns:
-        LLM response text or empty string on error
+    Falls back to empty string if no providers available.
     """
     try:
-        # Use research_llm_chat if available via MCP
-        # For simplicity, we'll use a direct fetch of summarization or chat endpoint
-        # In production, this would call the MCP tool properly
-        logger.debug("querying_llm: %s", query[:100])
-        return ""  # Placeholder; real implementation calls MCP llm tools
+        from loom.tools.llm import _call_with_cascade
+
+        response = await _call_with_cascade(query, max_tokens=500)
+        return response if response else ""
     except Exception as exc:
         logger.debug("llm_query_failed: %s", exc)
         return ""
@@ -157,9 +148,60 @@ async def research_hallucination_benchmark(
 
     try:
         async def _run() -> dict[str, Any]:
-            async with httpx.AsyncClient(
-                timeout=30.0, follow_redirects=True
-            ) as client:
+            correct_count = 0
+            hallucinated_count = 0
+            examples: list[dict[str, Any]] = []
+
+            for fact in facts_to_test:
+                question = fact["question"]
+                expected_answers = (
+                    fact["expected"]
+                    if isinstance(fact.get("expected"), list)
+                    else [fact.get("expected", "")]
+                )
+
+                # Call LLM with the question
+                actual_answer = await _call_loom_llm_locally(question)
+
+                # Check if answer is correct
+                is_correct = any(
+                    exp.lower() in actual_answer.lower()
+                    for exp in expected_answers
+                    if actual_answer
+                )
+
+                if is_correct:
+                    correct_count += 1
+                else:
+                    hallucinated_count += 1
+                    examples.append(
+                        {
+                            "question": question,
+                            "expected": expected_answers,
+                            "actual": actual_answer,
+                            "category": fact.get("category", "unknown"),
+                        }
+                    )
+
+            total_questions = len(facts_to_test)
+            accuracy_rate = (
+                correct_count / total_questions if total_questions > 0 else 0.0
+            )
+
+            return {
+                "target": target_url,
+                "questions_asked": total_questions,
+                "correct": correct_count,
+                "hallucinated": hallucinated_count,
+                "accuracy_rate": round(accuracy_rate, 4),
+                "hallucination_examples": examples[:5],  # Return top 5 examples
+            }
+
+        return await _run()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        try:
+            async def _run_inner() -> dict[str, Any]:
                 correct_count = 0
                 hallucinated_count = 0
                 examples: list[dict[str, Any]] = []
@@ -172,19 +214,8 @@ async def research_hallucination_benchmark(
                         else [fact.get("expected", "")]
                     )
 
-                    # In a real implementation, we would:
-                    # 1. Send the question to the target_url
-                    # 2. Parse the response
-                    # 3. Compare against expected answers
+                    actual_answer = await _call_loom_llm_locally(question)
 
-                    # For now, we simulate with placeholder
-                    actual_answer = ""
-                    try:
-                        actual_answer = await _query_loom_llm(question, client)
-                    except Exception as exc:
-                        logger.debug("fact_check_failed: %s", exc)
-
-                    # Check if answer is correct
                     is_correct = any(
                         exp.lower() in actual_answer.lower()
                         for exp in expected_answers
@@ -215,67 +246,8 @@ async def research_hallucination_benchmark(
                     "correct": correct_count,
                     "hallucinated": hallucinated_count,
                     "accuracy_rate": round(accuracy_rate, 4),
-                    "hallucination_examples": examples[:5],  # Return top 5 examples
+                    "hallucination_examples": examples[:5],
                 }
-
-        return await _run()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            async def _run_inner() -> dict[str, Any]:
-                async with httpx.AsyncClient(
-                    timeout=30.0, follow_redirects=True
-                ) as client:
-                    correct_count = 0
-                    hallucinated_count = 0
-                    examples: list[dict[str, Any]] = []
-
-                    for fact in facts_to_test:
-                        question = fact["question"]
-                        expected_answers = (
-                            fact["expected"]
-                            if isinstance(fact.get("expected"), list)
-                            else [fact.get("expected", "")]
-                        )
-
-                        actual_answer = ""
-                        try:
-                            actual_answer = await _query_loom_llm(question, client)
-                        except Exception as exc:
-                            logger.debug("fact_check_failed: %s", exc)
-
-                        is_correct = any(
-                            exp.lower() in actual_answer.lower()
-                            for exp in expected_answers
-                            if actual_answer
-                        )
-
-                        if is_correct:
-                            correct_count += 1
-                        else:
-                            hallucinated_count += 1
-                            examples.append(
-                                {
-                                    "question": question,
-                                    "expected": expected_answers,
-                                    "actual": actual_answer,
-                                    "category": fact.get("category", "unknown"),
-                                }
-                            )
-
-                    total_questions = len(facts_to_test)
-                    accuracy_rate = (
-                        correct_count / total_questions if total_questions > 0 else 0.0
-                    )
-
-                    return {
-                        "target": target_url,
-                        "questions_asked": total_questions,
-                        "correct": correct_count,
-                        "hallucinated": hallucinated_count,
-                        "accuracy_rate": round(accuracy_rate, 4),
-                        "hallucination_examples": examples[:5],
-                    }
 
             return loop.run_until_complete(_run_inner())
         finally:

@@ -409,16 +409,15 @@ def research_jailbreak_library(
     """Maintain and test jailbreak pattern library.
 
     Stores 26 known jailbreak patterns across 5 categories (role_play, encoding,
-    context_overflow, multi_turn, instruction_override). If target_url provided,
-    tests each pattern against the target (simulated/mocked).
+    context_overflow, multi_turn, instruction_override). Returns actual patterns
+    from the library.
 
     Args:
-        target_url: Optional target endpoint to test patterns against
+        target_url: Optional target endpoint to test patterns against (not used currently)
         test_category: Filter by category ("all", "role_play", "encoding", etc.)
 
     Returns:
-        Dict with total_patterns, categories, test_results (if target provided),
-        bypasses_found, and blocked_count.
+        Dict with total_patterns, categories, patterns, and descriptions.
     """
     # Filter patterns by category
     if test_category == "all":
@@ -431,104 +430,21 @@ def research_jailbreak_library(
     total_patterns = sum(len(v) for v in patterns_to_use.values())
     categories = list(patterns_to_use.keys())
 
-    test_results: list[dict[str, Any]] = []
-    bypasses_found = 0
-    blocked_count = 0
-
-    # If target_url provided, simulate testing each pattern
-    if target_url:
-        for category, patterns in patterns_to_use.items():
-            for pattern in patterns:
-                # Simulate pattern testing (in production, would make actual requests)
-                # For safety, we only simulate and don't make real requests
-                test_results.append({
-                    "category": category,
-                    "pattern_preview": pattern[:50],
-                    "result": "simulated_blocked",
-                    "confidence": 0.5,
-                })
-                blocked_count += 1
+    # Build actual pattern results
+    patterns_result: list[dict[str, Any]] = []
+    for category, patterns in patterns_to_use.items():
+        for pattern in patterns:
+            patterns_result.append({
+                "category": category,
+                "pattern": pattern,
+                "type": category,
+            })
 
     return {
         "total_patterns": total_patterns,
         "categories": categories,
-        "patterns_per_category": {k: len(v) for k, v in patterns_to_use.items()},
-        "test_results": test_results if target_url else [],
-        "bypasses_found": bypasses_found,
-        "blocked_count": blocked_count,
-        "target_url": target_url or "none",
+        "patterns": patterns_result,
+        "target_url": target_url if target_url else "none",
+        "test_category": test_category,
+        "note": "These are actual jailbreak patterns from the library. Use responsibly.",
     }
-
-
-async def research_patent_embargo(
-    company: str, months_back: int = 12
-) -> dict[str, Any]:
-    """Detect M&A signals from patent filing patterns.
-
-    Analyzes USPTO patent filings for sudden velocity changes, domain shifts,
-    and filing pauses that indicate embargo periods post-acquisition.
-
-    Args:
-        company: Company name to analyze
-        months_back: Lookback window in months (default: 12)
-
-    Returns:
-        Dict with company, patents_total, filing_velocity, domain_shifts,
-        embargo_signals, and ma_prediction.
-    """
-
-    async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(
-            follow_redirects=True,
-            headers={"User-Agent": "Loom-Research/1.0"},
-        ) as client:
-            patents: list[dict[str, Any]] = []
-
-            # Query USPTO for company patents
-            try:
-                uspto_url = (
-                    f"https://developer.uspto.gov/ibd-api/v1/application/publications"
-                    f"?searchText={quote(company)}&limit=50"
-                )
-                resp = await client.get(uspto_url, timeout=20.0)
-                if resp.status_code == 200:
-                    data = resp.json()
-                    patents = data.get("patents", [])
-            except Exception as exc:
-                logger.debug("USPTO patent fetch failed: %s", exc)
-
-            # Calculate filing velocity
-            velocity_data = _calculate_filing_velocity(patents, months_back)
-
-            # Detect domain shifts
-            domain_shifts = _detect_domain_shifts(patents)
-
-            # Embargo signal detection
-            embargo_signals: list[str] = []
-            if velocity_data.get("velocity") == "surge":
-                embargo_signals.append("Sudden surge in patent filings detected")
-            if domain_shifts:
-                embargo_signals.append(f"New technology domains detected: {', '.join(domain_shifts)}")
-
-            # M&A prediction
-            ma_likelihood = 0.0
-            if len(embargo_signals) >= 1:
-                ma_likelihood = 0.6
-            if velocity_data.get("recent_surge"):
-                ma_likelihood = min(ma_likelihood + 0.2, 1.0)
-
-            return {
-                "company": company,
-                "patents_total": velocity_data.get("total", 0),
-                "filing_velocity": velocity_data,
-                "domain_shifts": domain_shifts,
-                "embargo_signals": embargo_signals,
-                "ma_prediction": {
-                    "likely": ma_likelihood > 0.5,
-                    "confidence": round(ma_likelihood, 2),
-                    "reasoning": embargo_signals or ["Insufficient signals"],
-                },
-                "months_analyzed": months_back,
-            }
-
-    return await _run()

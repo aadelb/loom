@@ -19,12 +19,13 @@ logger = logging.getLogger("loom.tools.gcp")
 # Google Cloud API endpoints
 _GCP_VISION_API = "https://vision.googleapis.com/v1/images:annotate"
 _GCP_TTS_API = "https://texttospeech.googleapis.com/v1/text:synthesize"
+_GCP_VOICES_API = "https://texttospeech.googleapis.com/v1/voices"
 
 # Constraints
 MAX_IMAGE_SIZE_BYTES = 20 * 1024 * 1024  # 20 MB
 MAX_TEXT_CHARS = 5000
 
-# Supported TTS voices
+# Supported TTS voices (extended list for all language codes)
 _TTS_VOICE_SAMPLES = {
     "en-US-Neural2-A": "Female US English",
     "en-US-Neural2-C": "Male US English",
@@ -32,6 +33,10 @@ _TTS_VOICE_SAMPLES = {
     "en-GB-Neural2-B": "Male UK English",
     "es-ES-Neural2-A": "Female Spanish",
     "fr-FR-Neural2-A": "Female French",
+    "de-DE-Neural2-A": "Female German",
+    "it-IT-Neural2-A": "Female Italian",
+    "ja-JP-Neural2-A": "Female Japanese",
+    "zh-CN-Standard-A": "Female Mandarin Chinese",
 }
 
 
@@ -445,14 +450,47 @@ async def research_text_to_speech(
         }
 
 
-def research_tts_voices() -> dict[str, Any]:
+async def research_tts_voices() -> dict[str, Any]:
     """List supported Text-to-Speech voices.
+
+    Fetches from Google Cloud TTS API if API key available, otherwise
+    returns cached list of common voices.
 
     Returns:
         Dict with supported voices and descriptions
     """
+    api_key = _load_gcp_credentials()
+
+    # If API key available, try to fetch live list from Google Cloud
+    if api_key:
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(
+                    _GCP_VOICES_API,
+                    params={"key": api_key},
+                )
+                if response.status_code == 200:
+                    result = response.json()
+                    voices = {}
+                    for voice in result.get("voices", []):
+                        voice_name = voice.get("name", "")
+                        lang_code = voice.get("languageCodes", ["unknown"])[0]
+                        voices[voice_name] = f"{lang_code} - {voice.get('ssmlGender', 'unknown')}"
+                    if voices:
+                        logger.info("gcp_tts_voices_fetched count=%d", len(voices))
+                        return {
+                            "status": "success",
+                            "voices": voices,
+                            "source": "google_cloud_api",
+                            "note": "Use voice IDs in research_text_to_speech(voice=...) parameter",
+                        }
+        except Exception as e:
+            logger.debug("gcp_voices_fetch_failed: %s", e)
+
+    # Fall back to cached list
     return {
         "status": "success",
         "voices": _TTS_VOICE_SAMPLES,
-        "note": "Use voice IDs in research_text_to_speech(voice=...) parameter",
+        "source": "cached",
+        "note": "Use voice IDs in research_text_to_speech(voice=...) parameter. For full list, set GOOGLE_AI_KEY.",
     }
