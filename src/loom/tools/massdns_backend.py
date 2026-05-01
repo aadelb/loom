@@ -37,7 +37,6 @@ class MassDNSResolveParams(BaseModel):
     )
     output_format: str = Field(
         default="simple",
-        ge=0,
         description="Output format style (simple, full, json)",
     )
 

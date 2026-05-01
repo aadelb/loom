@@ -618,8 +618,8 @@ async def research_health_check() -> dict[str, Any]:
     return {
         "status": overall_status,
         "uptime_seconds": uptime_seconds,
-        "tool_count": 220,  # Hardcoded; matches current tool count
-        "strategy_count": 826,  # Hardcoded; matches current strategy count
+        "tool_count": 346,
+        "strategy_count": 957,
         "llm_providers": llm_providers,
         "search_providers": search_providers,
         "cache": cache_info,
@@ -2073,10 +2073,11 @@ def create_app() -> FastMCP:
     @mcp.custom_route("/health", methods=["GET"])
     async def health_endpoint(request: Request) -> JSONResponse:
         uptime = int(time.time() - _start_time)
+        tool_count = len(mcp._tool_manager._tools) if hasattr(mcp, "_tool_manager") else 346
         return JSONResponse({
             "status": "healthy",
             "uptime_seconds": uptime,
-            "tool_count": 303,
+            "tool_count": tool_count,
             "strategy_count": 957,
             "timestamp": datetime.now(UTC).isoformat(),
         })
