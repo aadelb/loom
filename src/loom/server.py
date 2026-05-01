@@ -138,6 +138,7 @@ from loom.tools import (
     unique_tools,
     vision_agent,
     workflow_engine,
+    tool_catalog,
 )
 from loom.tracing import install_tracing, new_request_id
 
@@ -2009,6 +2010,12 @@ def _register_tools(mcp: FastMCP) -> None:
         mcp.tool()(_wrap_tool(_optional_tools["cicd"]))
     if "stealth_detector" in _optional_tools:
         mcp.tool()(_wrap_tool(_optional_tools["stealth_detector"]))
+
+    # Tool Catalog and Knowledge Graph (4 tools)
+    mcp.tool()(_wrap_tool(tool_catalog.research_tool_catalog))
+    mcp.tool()(_wrap_tool(tool_catalog.research_tool_graph))
+    mcp.tool()(_wrap_tool(tool_catalog.research_tool_pipeline))
+    mcp.tool()(_wrap_tool(tool_catalog.research_tool_standalone))
 
     # Doc parser (multiple functions)
     if "doc_parser" in _optional_tools:
