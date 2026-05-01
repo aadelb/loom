@@ -162,6 +162,17 @@ _MODEL_CONFIGS: dict[str, dict[str, Any]] = {
         "temperature": 0.4,
         "multiplier": 6.1,
     },
+    "phi": {
+        "best_strategy": "reasoning",
+        "escalation": [
+            "meta_cognitive",
+            "recursive_authority",
+            "code_first",
+            "crescendo",
+        ],
+        "temperature": 0.2,
+        "multiplier": 4.8,
+    },
 }
 
 # Refusal detection patterns (23 English + 10 Arabic = 33 total)
@@ -235,6 +246,8 @@ def _detect_model(model_name: str) -> str:
         return "grok"
     if "mistral" in name or "devstral" in name:
         return "mistral"
+    if "phi" in name:
+        return "phi"
     if "qwen" in name:
         return "qwen"
     return "gpt"
@@ -1169,6 +1182,13 @@ _MODEL_FINGERPRINTS: dict[str, dict[str, Any]] = {
         "refusal_style": "redirect",
         "avg_sentence_len": (18, 35),
         "uses_markdown": True,
+    },
+    "phi": {
+        "markers": ["reasoning", "step by step", "let me think", "analysis"],
+        "format_affinity": "code",
+        "refusal_style": "reasoning_hedge",
+        "avg_sentence_len": (10, 24),
+        "has_thinking_tags": True,
     },
 }
 
