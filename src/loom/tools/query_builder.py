@@ -24,6 +24,15 @@ from typing import Any, Literal
 
 logger = logging.getLogger("loom.tools.query_builder")
 
+# Try to import DSPy
+_DSPY_AVAILABLE = False
+try:
+    import dspy
+    _DSPY_AVAILABLE = True
+    logger.info("dspy_loaded version=%s", dspy.__version__)
+except ImportError:
+    pass
+
 # Intent categories and their characteristics
 INTENT_KEYWORDS: dict[str, dict[str, Any]] = {
     "wealth_building": {
@@ -255,15 +264,64 @@ def _extract_intent(request: str) -> dict[str, Any]:
     }
 
 
-def _decompose_query(request: str, intent: dict[str, Any]) -> list[str]:
-    """Break request into sub-questions using heuristic decomposition.
+def _dspy_decompose(request: str, intent: dict[str, Any]) -> list[str] | None:
+    """Use DSPy ChainOfThought for intelligent query decomposition.
 
-    Patterns:
-        - Factual queries: "what is X?" → decompose into components
-        - How-to queries: "how to Y?" → break into steps
-        - Comparative queries: "compare X vs Y?" → separate into X, Y, comparison
-        - Complex queries: use DSPy-style chain-of-thought if available
+    Returns None if DSPy is not available or LLM call fails.
     """
+    if not _DSPY_AVAILABLE:
+        return None
+
+    try:
+        import os
+        # Configure DSPy with available LLM provider
+        api_key = os.environ.get("NVIDIA_NIM_API_KEY") or os.environ.get("GROQ_API_KEY")
+        if not api_key:
+            return None
+
+        if os.environ.get("NVIDIA_NIM_API_KEY"):
+            lm = dspy.LM(
+                model="nvidia_nim/meta/llama-3.3-70b-instruct",
+                api_key=os.environ["NVIDIA_NIM_API_KEY"],
+                api_base="https://integrate.api.nvidia.com/v1",
+                max_tokens=1000,
+            )
+        else:
+            lm = dspy.LM(
+                model="groq/llama-3.3-70b-versatile",
+                api_key=os.environ["GROQ_API_KEY"],
+                max_tokens=1000,
+            )
+
+        dspy.configure(lm=lm)
+
+        class QueryDecomposer(dspy.Signature):
+            """Decompose a research query into 3-5 focused sub-questions optimized for search engines."""
+            query: str = dspy.InputField(desc="The user's research query")
+            category: str = dspy.InputField(desc="The detected intent category")
+            sub_questions: list[str] = dspy.OutputField(desc="3-5 focused, searchable sub-questions")
+
+        decomposer = dspy.ChainOfThought(QueryDecomposer)
+        result = decomposer(query=request, category=intent.get("category", "general"))
+
+        if result.sub_questions and len(result.sub_questions) > 0:
+            logger.info("dspy_decomposition sub_questions=%d", len(result.sub_questions))
+            return result.sub_questions[:7]
+
+    except Exception as e:
+        logger.debug("dspy_decompose_failed: %s", e)
+
+    return None
+
+
+def _decompose_query(request: str, intent: dict[str, Any]) -> list[str]:
+    """Break request into sub-questions using DSPy (if available) or heuristic decomposition."""
+    # Try DSPy first for intelligent decomposition
+    dspy_result = _dspy_decompose(request, intent)
+    if dspy_result:
+        return dspy_result
+
+    # Fallback to heuristic decomposition
     sub_questions: list[str] = []
 
     # Pattern 1: What/Which questions → extract key entities
@@ -633,7 +691,7 @@ def research_build_query(
             "version": "1.0",
             "timestamp": datetime.now(UTC).isoformat(),
             "processing_time_ms": duration_ms,
-            "dspy_available": False,  # DSPy integration ready for future
+            "dspy_available": _DSPY_AVAILABLE,
         },
     }
 
