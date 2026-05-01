@@ -174,9 +174,44 @@ class MCPClient:
             "limit": 5,
         })
 
+    async def initialize_session(self) -> bool:
+        """Initialize MCP session (required before any tool calls)."""
+        try:
+            response = await self.client.post(
+                f"{self.base_url}/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "id": 0,
+                    "method": "initialize",
+                    "params": {
+                        "protocolVersion": "2025-03-26",
+                        "capabilities": {},
+                        "clientInfo": {"name": "load-test", "version": "1.0"},
+                    },
+                },
+                headers={
+                    "Accept": "application/json, text/event-stream",
+                    "Content-Type": "application/json",
+                },
+            )
+            if response.status_code == 200:
+                self.session_id = response.headers.get("mcp-session-id")
+                return True
+            return False
+        except Exception:
+            return False
+
     async def _call_tool(self, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
         """Call an MCP tool via streamable-http."""
+        if not self.session_id:
+            await self.initialize_session()
         try:
+            headers = {
+                "Accept": "application/json, text/event-stream",
+                "Content-Type": "application/json",
+            }
+            if self.session_id:
+                headers["Mcp-Session-Id"] = self.session_id
             response = await self.client.post(
                 f"{self.base_url}/mcp",
                 json={
@@ -188,12 +223,16 @@ class MCPClient:
                         "arguments": params,
                     },
                 },
-                headers={
-                    "Accept": "application/json, text/event-stream",
-                    "Content-Type": "application/json",
-                },
+                headers=headers,
             )
             if response.status_code == 200:
+                # Parse SSE response
+                for line in response.text.strip().split("\n"):
+                    if line.startswith("data: "):
+                        try:
+                            return json.loads(line[6:])
+                        except Exception:
+                            continue
                 return response.json()
             return {"error": f"HTTP {response.status_code}"}
         except Exception as e:
