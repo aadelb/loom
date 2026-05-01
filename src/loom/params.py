@@ -232,13 +232,13 @@ class SearchParams(BaseModel):
         "robin_osint",
         "investing",
     ] = "ddgs"
-    n: int = 10
+    max_results: int = Field(default=10, alias="n")
     sort_by: str | None = None
     region: str | None = None
     language: str | None = None
     freshness: str | None = None
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
 
     @field_validator("query")
     @classmethod
@@ -250,11 +250,11 @@ class SearchParams(BaseModel):
             raise ValueError("query max 2000 characters")
         return v
 
-    @field_validator("n")
+    @field_validator("max_results")
     @classmethod
     def validate_n(cls, v: int) -> int:
         if v < 1 or v > 100:
-            raise ValueError("n must be 1-100")
+            raise ValueError("max_results must be 1-100")
         return v
 
 
@@ -954,9 +954,9 @@ class ExaFindSimilarParams(BaseModel):
     """Parameters for find_similar_exa tool."""
 
     query: str
-    num_results: int = 10
+    max_results: int = Field(default=10, alias="num_results")
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
 
     @field_validator("query")
     @classmethod
@@ -4886,14 +4886,14 @@ class LightpandaBatchParams(BaseModel):
 class CreepjsParams(BaseModel):
     """Parameters for research_creepjs_audit tool."""
 
-    target_url: str = "https://creepjs.web.app"
+    url: str = Field(default="https://creepjs.web.app", alias="target_url")
     headless: bool = True
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
 
-    @field_validator("target_url", mode="before")
+    @field_validator("url", mode="before")
     @classmethod
-    def validate_target_url(cls, v: str) -> str:
+    def validate_url(cls, v: str) -> str:
         return validate_url(v)
 
 
@@ -5108,4 +5108,43 @@ class CryptoRiskParams(BaseModel):
         v = v.lower()
         if v not in ("bitcoin", "ethereum"):
             raise ValueError("chain must be 'bitcoin' or 'ethereum'")
+        return v
+
+class EthereumTxDecodeParams(BaseModel):
+    """Parameters for research_ethereum_tx_decode tool."""
+
+    tx_hash: str
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("tx_hash")
+    @classmethod
+    def validate_tx_hash(cls, v: str) -> str:
+        v = v.strip()
+        if not v.startswith("0x") or len(v) != 66:
+            raise ValueError("tx_hash must be 0x + 64 hex chars")
+        try:
+            int(v, 16)
+        except ValueError:
+            raise ValueError("tx_hash must be valid hex")
+        return v
+
+
+class DefiSecurityAuditParams(BaseModel):
+    """Parameters for research_defi_security_audit tool."""
+
+    contract_address: str
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("contract_address")
+    @classmethod
+    def validate_contract_address(cls, v: str) -> str:
+        v = v.strip()
+        if not v.startswith("0x") or len(v) != 42:
+            raise ValueError("contract_address must be 0x + 40 hex chars")
+        try:
+            int(v, 16)
+        except ValueError:
+            raise ValueError("contract_address must be valid hex")
         return v

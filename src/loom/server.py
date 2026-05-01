@@ -75,6 +75,7 @@ from loom.tools import (
     deep,
     deep_research_agent,
     domain_intel,
+    ethereum_tools,
     fact_checker,
     fetch,
     gap_tools_academic,
@@ -83,6 +84,7 @@ from loom.tools import (
     gap_tools_infra,
     github,
     graph_scraper,
+    graph_analysis,
     hcs10_academic,
     hcs_scorer,
     hcs_report,
@@ -99,8 +101,10 @@ from loom.tools import (
     lightpanda_backend,
     markdown,
     metadata_forensics,
+    neo4j_backend,
     multi_search,
     onion_discover,
+    observability,
     osint_extended,
     p3_tools,
     passive_recon,
@@ -108,6 +112,7 @@ from loom.tools import (
     projectdiscovery,
     prompt_analyzer,
     prompt_reframe,
+    rag_anything,
     psycholinguistic,
     realtime_monitor,
     report_generator,
@@ -121,6 +126,7 @@ from loom.tools import (
     social_intel,
     social_scraper,
     spider,
+    stagehand_backend,
     stealth,
     stego_detect,
     stylometry,
@@ -130,6 +136,8 @@ from loom.tools import (
     threat_profile,
     trend_predictor,
     unique_tools,
+    vision_agent,
+    workflow_engine,
 )
 from loom.tracing import install_tracing, new_request_id
 
@@ -897,6 +905,18 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(cyberscraper.research_stealth_browser, "fetch"))
     mcp.tool()(_wrap_tool(cache_mgmt.research_cache_stats))
     mcp.tool()(_wrap_tool(cache_mgmt.research_cache_clear))
+    mcp.tool()(_wrap_tool(workflow_engine.research_workflow_create))
+    mcp.tool()(_wrap_tool(workflow_engine.research_workflow_run))
+    mcp.tool()(_wrap_tool(workflow_engine.research_workflow_status))
+    
+    
+    # Observability tools (3 tools)
+    mcp.tool()(_wrap_tool(observability.research_trace_start))
+    mcp.tool()(_wrap_tool(observability.research_trace_end))
+    mcp.tool()(_wrap_tool(observability.research_traces_list))
+    mcp.tool()(_wrap_tool(rag_anything.research_rag_ingest))
+    mcp.tool()(_wrap_tool(rag_anything.research_rag_query))
+    mcp.tool()(_wrap_tool(rag_anything.research_rag_clear))
 
     # Unified scraper escalation engine (3 tools)
     mcp.tool()(_wrap_tool(scraper_engine_tools.research_engine_fetch, "fetch"))
@@ -907,6 +927,11 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(zendriver_backend.research_zen_fetch, "fetch"))
     mcp.tool()(_wrap_tool(zendriver_backend.research_zen_batch, "fetch"))
     mcp.tool()(_wrap_tool(zendriver_backend.research_zen_interact, "fetch"))
+
+    # Stagehand vision-first browser automation (2 tools)
+    with suppress(ImportError):
+        mcp.tool()(_wrap_tool(stagehand_backend.research_stagehand_act, "fetch"))
+        mcp.tool()(_wrap_tool(stagehand_backend.research_stagehand_extract, "fetch"))
 
     # Crawlee multi-backend scraping framework (3 tools)
     with suppress(ImportError):
@@ -946,6 +971,8 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(metadata_forensics.research_metadata_forensics, "fetch"))
     mcp.tool()(_wrap_tool(crypto_trace.research_crypto_trace, "fetch"))
     mcp.tool()(_wrap_tool(crypto_risk.research_crypto_risk_score))
+    mcp.tool()(_wrap_tool(ethereum_tools.research_ethereum_tx_decode))
+    mcp.tool()(_wrap_tool(ethereum_tools.research_defi_security_audit))
     mcp.tool()(_wrap_tool(stego_detect.research_stego_detect))
     mcp.tool()(_wrap_tool(threat_profile.research_threat_profile, "fetch"))
     # Threat intelligence tools (7 tools for dark market, ransomware, phishing, botnets, malware, domains, IOCs)
@@ -1102,6 +1129,10 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(unique_tools.research_dark_web_bridge, "search"))
     mcp.tool()(_wrap_tool(unique_tools.research_info_half_life, "fetch"))
     mcp.tool()(_wrap_tool(unique_tools.research_search_discrepancy, "search"))
+    # Vision agent for screenshot and visual analysis
+    mcp.tool()(_wrap_tool(vision_agent.research_vision_browse, "fetch"))
+    mcp.tool()(_wrap_tool(vision_agent.research_vision_compare, "fetch"))
+
 
     # Consensus and debate tools
     mcp.tool()(_wrap_tool(research_consensus_build))
@@ -1800,6 +1831,12 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(graph_scraper.research_graph_scrape, "fetch"))
     mcp.tool()(_wrap_tool(graph_scraper.research_knowledge_extract, "search"))
     mcp.tool()(_wrap_tool(graph_scraper.research_multi_page_graph, "fetch"))
+    mcp.tool()(_wrap_tool(graph_analysis.research_graph_analyze))
+    mcp.tool()(_wrap_tool(graph_analysis.research_transaction_graph))
+
+    mcp.tool()(_wrap_tool(neo4j_backend.research_graph_store))
+    mcp.tool()(_wrap_tool(neo4j_backend.research_graph_query))
+    mcp.tool()(_wrap_tool(neo4j_backend.research_graph_visualize))
     mcp.tool()(_wrap_tool(fact_checker.research_fact_check, "search"))
     mcp.tool()(_wrap_tool(culture_dna.research_culture_dna, "search"))
     mcp.tool()(_wrap_tool(synth_echo.research_synth_echo, "fetch"))

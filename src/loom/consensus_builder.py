@@ -510,7 +510,7 @@ async def research_consensus_build(
     from loom.providers.nvidia_nim import NvidiaNimProvider
     from loom.providers.deepseek_provider import DeepSeekProvider
     from loom.providers.gemini_provider import GeminiProvider
-    from loom.providers.moonshot_provider import MoonShotProvider
+    from loom.providers.moonshot_provider import MoonshotProvider
 
     config = get_config()
 
@@ -527,7 +527,7 @@ async def research_consensus_build(
         "nvidia": NvidiaNimProvider,
         "deepseek": DeepSeekProvider,
         "gemini": GeminiProvider,
-        "moonshot": MoonShotProvider,
+        "moonshot": MoonshotProvider,
     }
 
     for model_key in llm_cascade_order:
@@ -581,7 +581,7 @@ async def research_consensus_pressure(
     from loom.providers.nvidia_nim import NvidiaNimProvider
     from loom.providers.deepseek_provider import DeepSeekProvider
     from loom.providers.gemini_provider import GeminiProvider
-    from loom.providers.moonshot_provider import MoonShotProvider
+    from loom.providers.moonshot_provider import MoonshotProvider
 
     config = get_config()
 
@@ -597,7 +597,7 @@ async def research_consensus_pressure(
         "nvidia": NvidiaNimProvider,
         "deepseek": DeepSeekProvider,
         "gemini": GeminiProvider,
-        "moonshot": MoonShotProvider,
+        "moonshot": MoonshotProvider,
     }
 
     for model_key in llm_cascade_order:
