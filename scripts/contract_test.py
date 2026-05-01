@@ -19,7 +19,7 @@ import json
 import logging
 import sys
 from dataclasses import dataclass, asdict
-from datetime import datetime
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import Any
 
@@ -56,7 +56,7 @@ class TestResult:
 
     def __post_init__(self) -> None:
         if self.timestamp is None:
-            self.timestamp = datetime.utcnow().isoformat()
+            self.timestamp = datetime.now(UTC).isoformat()
 
 
 class MCPEventStreamParser:
@@ -972,7 +972,7 @@ class MCPProtocolTester:
             "failed": failed,
             "pass_rate": passed / len(self.results) if self.results else 0,
             "by_category": by_category,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
     def save_results(self, output_path: Path | None = None) -> Path:
@@ -980,7 +980,13 @@ class MCPProtocolTester:
         if output_path is None:
             output_path = RESULTS_FILE
 
-        output_path.parent.mkdir(parents=True, exist_ok=True)
+        # Try to create the directory, fallback to local if permission denied
+        try:
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+        except PermissionError:
+            log.warning(f"Cannot write to {output_path.parent}, using local file")
+            output_path = Path("contract_test_results.json")
+            output_path.parent.mkdir(parents=True, exist_ok=True)
 
         results_data = {
             "summary": self.get_summary(),
