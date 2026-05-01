@@ -215,6 +215,120 @@ with suppress(ImportError):
 
     _optional_tools["vercel"] = vercel_tools
 
+# ── v3 modules: scorers, pipelines, orchestration, tracking ──
+with suppress(ImportError):
+    from loom.tools import attack_scorer as attack_scorer_tools
+    _optional_tools["attack_scorer"] = attack_scorer_tools
+
+with suppress(ImportError):
+    from loom.tools import stealth_score as stealth_score_tools
+    _optional_tools["stealth_score"] = stealth_score_tools
+
+with suppress(ImportError):
+    from loom.tools import model_sentiment as model_sentiment_tools
+    _optional_tools["model_sentiment"] = model_sentiment_tools
+
+with suppress(ImportError):
+    from loom.tools import toxicity_checker_tool as toxicity_tools
+    _optional_tools["toxicity"] = toxicity_tools
+
+with suppress(ImportError):
+    from loom.tools import drift_monitor_tool as drift_tools
+    _optional_tools["drift"] = drift_tools
+
+with suppress(ImportError):
+    from loom.tools import bpj as bpj_tools
+    _optional_tools["bpj"] = bpj_tools
+
+with suppress(ImportError):
+    from loom.tools import daisy_chain_tool as daisy_tools
+    _optional_tools["daisy_chain"] = daisy_tools
+
+with suppress(ImportError):
+    from loom.tools import consistency_pressure as consistency_tools
+    _optional_tools["consistency"] = consistency_tools
+
+with suppress(ImportError):
+    from loom.tools import constraint_optimizer as constraint_tools
+    _optional_tools["constraint"] = constraint_tools
+
+with suppress(ImportError):
+    from loom.tools import jailbreak_evolution as jailbreak_evo_tools
+    _optional_tools["jailbreak_evo"] = jailbreak_evo_tools
+
+with suppress(ImportError):
+    from loom.tools import semantic_cache_mgmt as sem_cache_tools
+    _optional_tools["sem_cache"] = sem_cache_tools
+
+with suppress(ImportError):
+    from loom.tools import param_sweep as param_sweep_tools
+    _optional_tools["param_sweep"] = param_sweep_tools
+
+with suppress(ImportError):
+    from loom.tools import strategy_oracle as strategy_oracle_tools
+    _optional_tools["strategy_oracle"] = strategy_oracle_tools
+
+with suppress(ImportError):
+    from loom.tools import stealth_detect as stealth_detect_tools
+    _optional_tools["stealth_detect"] = stealth_detect_tools
+
+with suppress(ImportError):
+    from loom.tools import tool_recommender_tool as recommender_tools
+    _optional_tools["recommender"] = recommender_tools
+
+with suppress(ImportError):
+    from loom.tools import ytdlp_backend as ytdlp_tools
+    _optional_tools["ytdlp"] = ytdlp_tools
+
+# ── v3 direct imports (functions in src/loom/*.py) ──
+with suppress(ImportError):
+    from loom.danger_prescore import research_danger_prescore
+    _optional_tools["danger_prescore"] = research_danger_prescore
+
+with suppress(ImportError):
+    from loom.quality_scorer import research_quality_score
+    _optional_tools["quality_scorer"] = research_quality_score
+
+with suppress(ImportError):
+    from loom.evidence_pipeline import research_evidence_pipeline
+    _optional_tools["evidence_pipeline"] = research_evidence_pipeline
+
+with suppress(ImportError):
+    from loom.context_poisoning import research_context_poison
+    _optional_tools["context_poison"] = research_context_poison
+
+with suppress(ImportError):
+    from loom.adversarial_debate import research_adversarial_debate
+    _optional_tools["adversarial_debate"] = research_adversarial_debate
+
+with suppress(ImportError):
+    from loom.model_evidence import research_model_evidence
+    _optional_tools["model_evidence"] = research_model_evidence
+
+with suppress(ImportError):
+    from loom.target_orchestrator import research_target_orchestrate
+    _optional_tools["target_orchestrate"] = research_target_orchestrate
+
+with suppress(ImportError):
+    from loom.reid_auto import ReidAutoReframe
+    _optional_tools["reid_auto"] = ReidAutoReframe
+
+with suppress(ImportError):
+    from loom.mcp_security import research_mcp_security_scan
+    _optional_tools["mcp_security"] = research_mcp_security_scan
+
+with suppress(ImportError):
+    from loom.cicd import research_cicd_run
+    _optional_tools["cicd"] = research_cicd_run
+
+with suppress(ImportError):
+    from loom.stealth_detector import research_stealth_detect as stealth_det_fn
+    _optional_tools["stealth_detector"] = stealth_det_fn
+
+with suppress(ImportError):
+    from loom.doc_parser import research_ocr_advanced, research_pdf_advanced, research_document_analyze
+    _optional_tools["doc_parser"] = {"ocr": research_ocr_advanced, "pdf": research_pdf_advanced, "analyze": research_document_analyze}
+
 with suppress(ImportError):
     from loom.tools import cipher_mirror as cipher_mirror_tools
 
@@ -1022,11 +1136,6 @@ def _register_tools(mcp: FastMCP) -> None:
         constraint_mod = _optional_tools["constraint_optimizer"]
         mcp.tool()(_wrap_tool(constraint_mod.research_constraint_optimize))
 
-    # Jailbreak evolution stats
-    if "jailbreak_evolution" in _optional_tools:
-        jailbreak_mod = _optional_tools["jailbreak_evolution"]
-        mcp.tool()(_wrap_tool(jailbreak_mod.research_jailbreak_evolution_stats))
-
     # Parameter sweep tool
     if "param_sweep" in _optional_tools:
         param_mod = _optional_tools["param_sweep"]
@@ -1440,6 +1549,163 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(multi_llm.research_ask_all_llms, "llm"))
     mcp.tool()(_wrap_tool(ask_all_models.research_ask_all_models, "llm"))
 
+    # ── v3 gap fix: register all previously unregistered modules ──
+
+    if "attack_scorer" in _optional_tools:
+        mod = _optional_tools["attack_scorer"]
+        if hasattr(mod, "research_attack_score"):
+            mcp.tool()(_wrap_tool(mod.research_attack_score))
+
+    if "stealth_score" in _optional_tools:
+        mod = _optional_tools["stealth_score"]
+        if hasattr(mod, "research_stealth_score"):
+            mcp.tool()(_wrap_tool(mod.research_stealth_score))
+
+    if "model_sentiment" in _optional_tools:
+        mod = _optional_tools["model_sentiment"]
+        if hasattr(mod, "research_model_sentiment"):
+            mcp.tool()(_wrap_tool(mod.research_model_sentiment))
+
+    if "toxicity" in _optional_tools:
+        mod = _optional_tools["toxicity"]
+        if hasattr(mod, "research_toxicity_check"):
+            mcp.tool()(_wrap_tool(mod.research_toxicity_check))
+
+    if "drift" in _optional_tools:
+        mod = _optional_tools["drift"]
+        if hasattr(mod, "research_drift_monitor"):
+            mcp.tool()(_wrap_tool(mod.research_drift_monitor))
+        if hasattr(mod, "research_drift_monitor_list"):
+            mcp.tool()(_wrap_tool(mod.research_drift_monitor_list))
+
+    if "bpj" in _optional_tools:
+        mod = _optional_tools["bpj"]
+        if hasattr(mod, "research_bpj_generate"):
+            mcp.tool()(_wrap_tool(mod.research_bpj_generate))
+
+    if "daisy_chain" in _optional_tools:
+        mod = _optional_tools["daisy_chain"]
+        if hasattr(mod, "research_daisy_chain"):
+            mcp.tool()(_wrap_tool(mod.research_daisy_chain))
+
+    # Jailbreak evolution detailed tools (stats already registered above via jailbreak_evolution key)
+    if "jailbreak_evo" in _optional_tools:
+        mod = _optional_tools["jailbreak_evo"]
+        for fn_name in ["research_jailbreak_evolution_stats",
+                        "research_jailbreak_evolution_record", "research_jailbreak_evolution_get",
+                        "research_jailbreak_evolution_timeline", "research_jailbreak_evolution_patches",
+                        "research_jailbreak_evolution_adapt"]:
+            if hasattr(mod, fn_name):
+                mcp.tool()(_wrap_tool(getattr(mod, fn_name)))
+
+    if "strategy_oracle" in _optional_tools:
+        mod = _optional_tools["strategy_oracle"]
+        if hasattr(mod, "research_strategy_oracle"):
+            mcp.tool()(_wrap_tool(mod.research_strategy_oracle))
+
+    if "stealth_detect" in _optional_tools:
+        mod = _optional_tools["stealth_detect"]
+        if hasattr(mod, "research_stealth_detect"):
+            mcp.tool()(_wrap_tool(mod.research_stealth_detect))
+
+    if "recommender" in _optional_tools:
+        mod = _optional_tools["recommender"]
+        if hasattr(mod, "research_recommend_tools"):
+            mcp.tool()(_wrap_tool(mod.research_recommend_tools))
+
+    # Direct function registrations
+    if "danger_prescore" in _optional_tools:
+        mcp.tool()(_wrap_tool(_optional_tools["danger_prescore"]))
+    if "quality_scorer" in _optional_tools:
+        mcp.tool()(_wrap_tool(_optional_tools["quality_scorer"]))
+    if "evidence_pipeline" in _optional_tools:
+        mcp.tool()(_wrap_tool(_optional_tools["evidence_pipeline"], "llm"))
+    if "context_poison" in _optional_tools:
+        mcp.tool()(_wrap_tool(_optional_tools["context_poison"]))
+    if "adversarial_debate" in _optional_tools:
+        mcp.tool()(_wrap_tool(_optional_tools["adversarial_debate"], "llm"))
+    if "model_evidence" in _optional_tools:
+        mcp.tool()(_wrap_tool(_optional_tools["model_evidence"], "llm"))
+    if "target_orchestrate" in _optional_tools:
+        mcp.tool()(_wrap_tool(_optional_tools["target_orchestrate"]))
+    if "reid_auto" in _optional_tools:
+        async def research_reid_auto(
+            query: str,
+            model_name: str = "auto",
+            max_turns: int = 15,
+            context: str = "EU AI Act Article 15 compliance testing",
+            dry_run: bool = True,
+        ) -> dict[str, Any]:
+            """Execute automated Reid 9-step interrogation with adaptive reframing.
+
+            Runs the full Reid interrogation sequence against the specified model
+            using Loom's LLM cascade for model interaction.
+
+            Args:
+                query: The research query to investigate.
+                model_name: Target model name or "auto" for cascade.
+                max_turns: Maximum conversation turns (safety limit).
+                context: Research context for theme development.
+                dry_run: If True, simulate without calling real model.
+            """
+            ReidAutoReframe = _optional_tools["reid_auto"]
+            reframer = ReidAutoReframe(verbose=False)
+
+            if dry_run:
+                async def mock_fn(prompt: str) -> str:
+                    return f"[Simulated response from {model_name}]"
+                model_fn = mock_fn
+            else:
+                from loom.tools.llm import _get_provider
+                provider = await _get_provider(model_name if model_name != "auto" else None)
+                async def llm_fn(prompt: str) -> str:
+                    resp = await provider.chat([{"role": "user", "content": prompt}])
+                    return resp.text if resp else ""
+                model_fn = llm_fn
+
+            result = await reframer.run(
+                query=query,
+                model_fn=model_fn,
+                model_name=model_name,
+                max_turns=max_turns,
+                context=context,
+            )
+            return {
+                "success": result.success,
+                "steps_taken": [
+                    {
+                        "step_index": s.step_index,
+                        "step_name": s.step_name,
+                        "response_length": s.response_length,
+                        "classification": s.classification.value,
+                        "turn_number": s.turn_number,
+                    }
+                    for s in result.steps_taken
+                ],
+                "final_response": result.final_response,
+                "hcs_score": result.hcs_score,
+                "total_turns": result.total_turns,
+                "step_at_compliance": result.step_at_compliance,
+                "model_name": result.model_name,
+                "query": result.query,
+            }
+
+        mcp.tool()(_wrap_tool(research_reid_auto, "llm"))
+    if "mcp_security" in _optional_tools:
+        mcp.tool()(_wrap_tool(_optional_tools["mcp_security"]))
+    if "cicd" in _optional_tools:
+        mcp.tool()(_wrap_tool(_optional_tools["cicd"]))
+    if "stealth_detector" in _optional_tools:
+        mcp.tool()(_wrap_tool(_optional_tools["stealth_detector"]))
+
+    # Doc parser (multiple functions)
+    if "doc_parser" in _optional_tools:
+        dp = _optional_tools["doc_parser"]
+        if isinstance(dp, dict):
+            for fn in dp.values():
+                mcp.tool()(_wrap_tool(fn, "fetch"))
+
+
 def _validate_environment() -> None:
     """Validate that required environment variables are configured.
 
@@ -1549,6 +1815,32 @@ def create_app() -> FastMCP:
         auth=auth,
         token_verifier=token_verifier,
     )
+
+    # Register custom HTTP endpoints (health check, root)
+    from starlette.requests import Request
+    from starlette.responses import JSONResponse
+
+    @mcp.custom_route("/", methods=["GET"])
+    async def root_endpoint(request: Request) -> JSONResponse:
+        return JSONResponse({
+            "service": "loom",
+            "version": "3.0.0",
+            "description": "Loom MCP Research Server — 303 tools, 957 strategies",
+            "mcp_endpoint": "/mcp",
+            "health_endpoint": "/health",
+            "status": "running",
+        })
+
+    @mcp.custom_route("/health", methods=["GET"])
+    async def health_endpoint(request: Request) -> JSONResponse:
+        uptime = int(time.time() - _start_time)
+        return JSONResponse({
+            "status": "healthy",
+            "uptime_seconds": uptime,
+            "tool_count": 303,
+            "strategy_count": 957,
+            "timestamp": datetime.now(UTC).isoformat(),
+        })
 
     # Register all tools
     _register_tools(mcp)

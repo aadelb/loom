@@ -466,3 +466,73 @@ Loom FastMCP Server (127.0.0.1:8787)
 ```
 
 All external APIs are authenticated via environment variables (loaded at startup).
+
+## MCP Session Flow (Streamable-HTTP)
+
+Loom uses FastMCP's `streamable-http` transport. Clients connect via HTTP POST to `/mcp`.
+
+### Connection Sequence
+
+```
+Client                              Loom Server (port 8787)
+  │                                        │
+  │── POST /mcp ──────────────────────────→│  (initialize request)
+  │   Content-Type: application/json       │
+  │   Accept: text/event-stream            │
+  │   Body: {"jsonrpc":"2.0",              │
+  │          "method":"initialize",...}     │
+  │                                        │
+  │←── 200 OK ────────────────────────────│  (SSE stream)
+  │   Content-Type: text/event-stream      │
+  │   Mcp-Session-Id: <uuid>              │
+  │   data: {"result":{"capabilities":..}} │
+  │                                        │
+  │── POST /mcp ──────────────────────────→│  (tool call)
+  │   Mcp-Session-Id: <uuid>              │
+  │   Body: {"method":"tools/call",...}    │
+  │                                        │
+  │←── 200 OK (SSE stream) ──────────────│  (result)
+  │   data: {"result":{...tool output...}} │
+```
+
+### Key Points
+
+1. **Session ID**: Returned in `Mcp-Session-Id` header on first response. Must be sent back in all subsequent requests.
+2. **SSE Transport**: Responses use `text/event-stream` — each JSON-RPC result is a `data:` line.
+3. **No session persistence**: MCP sessions are in-memory only. Server restart clears all MCP sessions.
+4. **Auth**: If `LOOM_API_KEY` is set, all requests must include `Authorization: Bearer <key>`.
+
+### HTTP Endpoints
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/` | GET | Server info (service name, version, tool count) |
+| `/health` | GET | Health status (uptime, tool count, timestamp) |
+| `/mcp` | POST | MCP protocol (JSON-RPC over SSE) |
+
+### Python Client Example
+
+```python
+from mcp import ClientSession
+from mcp.client.streamable_http import streamablehttp_client
+
+async with streamablehttp_client("http://127.0.0.1:8787/mcp") as (r, w, _):
+    async with ClientSession(r, w) as session:
+        await session.initialize()
+        result = await session.call_tool("research_search", {"query": "test", "provider": "ddgs"})
+        print(result)
+```
+
+### Claude Code / CLI Configuration
+
+In `~/.claude/settings.json`:
+```json
+{
+  "mcpServers": {
+    "research-toolbox": {
+      "type": "streamable-http",
+      "url": "http://127.0.0.1:8787/mcp"
+    }
+  }
+}
+```
