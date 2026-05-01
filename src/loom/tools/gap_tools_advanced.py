@@ -403,6 +403,74 @@ async def research_funding_pipeline(company_or_field: str) -> dict[str, Any]:
     return await _run()
 
 
+async def research_patent_embargo(
+    company: str, months_back: int = 12
+) -> dict[str, Any]:
+    """Detect M&A signals from patent filing patterns.
+
+    Analyzes USPTO patent filings for sudden velocity changes, domain shifts,
+    and filing pauses that indicate embargo periods post-acquisition.
+
+    Args:
+        company: Company name to analyze
+        months_back: Lookback window in months (default: 12)
+
+    Returns:
+        Dict with company, patents_total, filing_velocity, domain_shifts,
+        embargo_signals, and ma_prediction.
+    """
+    from urllib.parse import quote
+
+    async def _run() -> dict[str, Any]:
+        async with httpx.AsyncClient(
+            follow_redirects=True,
+            headers={"User-Agent": "Loom-Research/1.0"},
+        ) as client:
+            patents: list[dict[str, Any]] = []
+            try:
+                uspto_url = (
+                    f"https://developer.uspto.gov/ibd-api/v1/application/publications"
+                    f"?searchText={quote(company)}&limit=50"
+                )
+                resp = await client.get(uspto_url, timeout=20.0)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    patents = data.get("patents", [])
+            except Exception as exc:
+                logger.debug("USPTO patent fetch failed: %s", exc)
+
+            velocity_data = _calculate_filing_velocity(patents, months_back)
+            domain_shifts = _detect_domain_shifts(patents)
+
+            embargo_signals: list[str] = []
+            if velocity_data.get("velocity") == "surge":
+                embargo_signals.append("Sudden surge in patent filings detected")
+            if domain_shifts:
+                embargo_signals.append(f"New technology domains: {', '.join(domain_shifts)}")
+
+            ma_likelihood = 0.0
+            if len(embargo_signals) >= 1:
+                ma_likelihood = 0.6
+            if velocity_data.get("recent_surge"):
+                ma_likelihood = min(ma_likelihood + 0.2, 1.0)
+
+            return {
+                "company": company,
+                "patents_total": velocity_data.get("total", 0),
+                "filing_velocity": velocity_data,
+                "domain_shifts": domain_shifts,
+                "embargo_signals": embargo_signals,
+                "ma_prediction": {
+                    "likely": ma_likelihood > 0.5,
+                    "confidence": round(ma_likelihood, 2),
+                    "reasoning": embargo_signals or ["Insufficient signals"],
+                },
+                "months_analyzed": months_back,
+            }
+
+    return await _run()
+
+
 def research_jailbreak_library(
     target_url: str = "", test_category: str = "all"
 ) -> dict[str, Any]:
