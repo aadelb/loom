@@ -289,10 +289,13 @@ class MCPProtocolTester:
                     "method": "tools/list",
                     "params": {},
                 }
+                headers = dict(MCP_HEADERS)
+                if self.session_id:
+                    headers["Mcp-Session-Id"] = self.session_id
                 response = await client.post(
                     self.server_url,
                     json=payload,
-                    headers=MCP_HEADERS,
+                    headers=headers,
                 )
 
                 if response.status_code != 200:
