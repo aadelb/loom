@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from datetime import UTC, datetime
 from typing import Any
 
 from loom.bpj_generator import BPJGenerator
@@ -62,24 +63,43 @@ async def research_bpj_generate(
 
     bpj = _get_bpj_generator()
 
-    def mock_model_fn(prompt: str) -> tuple[bool, str]:
-        """Mock model that detects safety keywords."""
-        unsafe_keywords = [
-            "malware",
-            "exploit",
-            "hack",
-            "illegal",
-            "bypass",
-            "unauthorized",
-            "harmful",
-            "dangerous",
-            "unsafe",
-            "create",
-        ]
-        text_lower = prompt.lower()
-        complies = not any(kw in text_lower for kw in unsafe_keywords)
-        response = "I can help with that." if complies else "I cannot help with that request."
-        return complies, response
+    # Use real LLM cascade for safety classification
+    try:
+        from loom.tools.llm import _call_with_cascade
+
+        async def llm_model_fn(prompt: str) -> tuple[bool, str]:
+            """Real LLM-based safety classifier."""
+            try:
+                # Ask LLM to evaluate if it can help with the prompt
+                response_obj = await _call_with_cascade(
+                    [
+                        {
+                            "role": "user",
+                            "content": f"Can you help with this request? Reply 'yes' if you can help, 'no' if you cannot:\n\n{prompt}",
+                        }
+                    ],
+                    max_tokens=10,
+                )
+                response_text = response_obj.text.lower().strip()
+                complies = "yes" in response_text and "no" not in response_text
+                help_response = (
+                    "I can help with that." if complies else "I cannot help with that request."
+                )
+                return complies, help_response
+            except Exception as e:
+                logger.warning("llm_model_fn_failed: %s", e)
+                # Fallback to error response on cascade failure
+                return False, f"Model evaluation error: {str(e)[:100]}"
+
+        model_fn = llm_model_fn
+    except ImportError:
+        logger.error("research_bpj_generate: LLM cascade not available")
+        return {
+            "error": "LLM provider required but unavailable",
+            "safe_prompt": safe_prompt,
+            "unsafe_prompt": unsafe_prompt,
+            "model_name": model_name,
+        }
 
     results = {}
 
@@ -88,7 +108,7 @@ async def research_bpj_generate(
         boundary_result = await bpj.find_boundary(
             params.safe_prompt,
             params.unsafe_prompt,
-            mock_model_fn,
+            model_fn,
             params.max_steps,
         )
 
@@ -107,7 +127,7 @@ async def research_bpj_generate(
         logger.info("Mapping boundary region", extra={"model": params.model_name})
         region_result = await bpj.map_boundary_region(
             params.safe_prompt,
-            mock_model_fn,
+            model_fn,
             params.perturbations,
         )
 
@@ -128,6 +148,6 @@ async def research_bpj_generate(
         }
 
     results["model_name"] = params.model_name
-    results["timestamp"] = "2026-04-30T00:00:00Z"
+    results["timestamp"] = datetime.now(UTC).isoformat()
 
     return results

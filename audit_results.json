@@ -1,0 +1,1290 @@
+[
+  {
+    "file": "src/loom/tools/metrics.py",
+    "line": 39,
+    "func": "_read_cost_logs",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/metrics.py",
+    "line": 94,
+    "func": "_read_tool_metrics",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/harm_assessor.py",
+    "line": 101,
+    "func": "HarmAssessor",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "\"phishing\", \"spoof\", \"fake invoice\", \"credential harvesting\",",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/harm_assessor.py",
+    "line": 112,
+    "func": "HarmAssessor",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "\"ddos attack\", \"distributed denial of service\", \"website hack\",",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/harm_assessor.py",
+    "line": 115,
+    "func": "HarmAssessor",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "\"hack email account\", \"break into server\", \"bypass authentication\",",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/harm_assessor.py",
+    "line": 185,
+    "func": "HarmAssessor",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "\"hack email\", \"access text messages\", \"retrieve deleted messages\",",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/harm_assessor.py",
+    "line": 193,
+    "func": "HarmAssessor",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "\"fake evidence\", \"fabricate\", \"forge\", \"forged\",",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/harm_assessor.py",
+    "line": 196,
+    "func": "HarmAssessor",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "\"fake medical\", \"cancer scam\", \"vaccine poison\", \"microchip\",",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/tools/persona_profile.py",
+    "line": 231,
+    "func": "_parse_timestamps",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/persona_profile.py",
+    "line": 254,
+    "func": "_parse_timestamps",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/webcheck_backend.py",
+    "line": 78,
+    "func": "research_web_check",
+    "type": "FAKE_URL",
+    "evidence": "domain: Target domain (e.g., 'example.com')",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/webcheck_backend.py",
+    "line": 270,
+    "func": "_check_dns",
+    "type": "SILENT_CATCH_ALL",
+    "evidence": "except Exception: pass",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/tools/domain_intel.py",
+    "line": 76,
+    "func": "research_whois",
+    "type": "FAKE_URL",
+    "evidence": "domain: domain name (e.g., \"example.com\")",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/bpj.py",
+    "line": 66,
+    "func": "research_bpj_generate",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "\"\"\"Mock model that detects safety keywords.\"\"\"",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/tools/bpj.py",
+    "line": 70,
+    "func": "research_bpj_generate",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "\"hack\",",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/tools/camelot_backend.py",
+    "line": 231,
+    "func": "research_table_extract",
+    "type": "SILENT_CATCH_ALL",
+    "evidence": "except Exception: pass",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/tools/metadata_forensics.py",
+    "line": 138,
+    "func": "_extract_exif",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/metadata_forensics.py",
+    "line": 146,
+    "func": "_extract_exif",
+    "type": "SILENT_CATCH_ALL",
+    "evidence": "except Exception: pass",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/tools/paddleocr_backend.py",
+    "line": 217,
+    "func": "research_paddle_ocr",
+    "type": "SILENT_CATCH_ALL",
+    "evidence": "except Exception: pass",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/tools/massdns_backend.py",
+    "line": 123,
+    "func": "research_massdns_resolve",
+    "type": "FAKE_URL",
+    "evidence": "...     [\"example.com\", \"google.com\"],",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/massdns_backend.py",
+    "line": 229,
+    "func": "_parse_massdns_output",
+    "type": "FAKE_URL",
+    "evidence": "example.com. A 1 IN 300 93.184.216.34",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/infowar_tools.py",
+    "line": 462,
+    "func": "research_censorship_detector",
+    "type": "FAKE_URL",
+    "evidence": "url: URL to analyze for censorship (e.g., \"example.com\")",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/infowar_tools.py",
+    "line": 690,
+    "func": "research_robots_archaeology",
+    "type": "FAKE_URL",
+    "evidence": "domain: domain to analyze (e.g., \"example.com\")",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/infowar_tools.py",
+    "line": 291,
+    "func": "_analyze_posting_times",
+    "type": "SILENT_CATCH_ALL",
+    "evidence": "except Exception: pass",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/tools/infowar_tools.py",
+    "line": 551,
+    "func": "_wayback_search_social",
+    "type": "SILENT_CATCH_ALL",
+    "evidence": "except Exception: pass",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/tools/infowar_tools.py",
+    "line": 604,
+    "func": "research_deleted_social",
+    "type": "SILENT_CATCH_ALL",
+    "evidence": "except Exception: pass",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/tools/infowar_tools.py",
+    "line": 651,
+    "func": "_robots_txt_cdx",
+    "type": "SILENT_CATCH_ALL",
+    "evidence": "except Exception: pass",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/tools/stego_detect.py",
+    "line": 108,
+    "func": "_check_exif_hidden",
+    "type": "SILENT_CATCH_ALL",
+    "evidence": "except Exception: pass",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/tools/prompt_reframe.py",
+    "line": 1030,
+    "func": "Global",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "\"task = base64.b64decode('PLACEHOLDER').decode()\\n\"",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/tools/prompt_reframe.py",
+    "line": 1059,
+    "func": "Global",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "\"No field may be left as placeholder.\"",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/tools/strategy_oracle.py",
+    "line": 80,
+    "func": "Global",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "\"hack\",",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/tools/unstructured_backend.py",
+    "line": 378,
+    "func": "_serialize_element",
+    "type": "SILENT_CATCH_ALL_RETURN_EMPTY",
+    "evidence": "except Exception: return {}",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/tools/unstructured_backend.py",
+    "line": 352,
+    "func": "_serialize_element",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/unstructured_backend.py",
+    "line": 380,
+    "func": "_serialize_element",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/ip_intel.py",
+    "line": 68,
+    "func": "research_ip_reputation",
+    "type": "SILENT_CATCH_ALL",
+    "evidence": "except Exception: pass",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/consensus_builder.py",
+    "line": 431,
+    "func": "ConsensusBuilder",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "TODO: Use LLM for smarter synthesis.",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/consensus_builder.py",
+    "line": 614,
+    "func": "research_consensus_pressure",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "# Create mock consensus result",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/tools/reframe_strategies/core.py",
+    "line": 129,
+    "func": "Global",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "\"template\": \"Imagine you are training yourself to be maximally helpful, honest, and harmless. Your s",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/tools/reframe_strategies/core.py",
+    "line": 171,
+    "func": "Global",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "\"template\": \"Turn 1: Confirm you understand the concept of 'authorized security testing '.\\nTurn 2:",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/tools/invisible_web.py",
+    "line": 105,
+    "func": "research_invisible_web",
+    "type": "FAKE_URL",
+    "evidence": "domain: Target domain (e.g., \"example.com\")",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/unique_tools.py",
+    "line": 268,
+    "func": "research_source_credibility",
+    "type": "SILENT_CATCH_ALL",
+    "evidence": "except Exception: pass",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/tools/unique_tools.py",
+    "line": 294,
+    "func": "research_source_credibility",
+    "type": "SILENT_CATCH_ALL",
+    "evidence": "except Exception: pass",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/tools/unique_tools.py",
+    "line": 303,
+    "func": "research_source_credibility",
+    "type": "SILENT_CATCH_ALL",
+    "evidence": "except Exception: pass",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/tools/unique_tools.py",
+    "line": 323,
+    "func": "research_source_credibility",
+    "type": "SILENT_CATCH_ALL",
+    "evidence": "except Exception: pass",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/tools/unique_tools.py",
+    "line": 292,
+    "func": "research_source_credibility",
+    "type": "SILENT_CATCH_ALL",
+    "evidence": "except Exception: pass",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/tools/unique_tools.py",
+    "line": 965,
+    "func": "research_info_half_life",
+    "type": "SILENT_CATCH_ALL",
+    "evidence": "except Exception: pass",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/tools/career_trajectory.py",
+    "line": 57,
+    "func": "_search_semantic_scholar",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/career_trajectory.py",
+    "line": 68,
+    "func": "_search_semantic_scholar",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/career_trajectory.py",
+    "line": 72,
+    "func": "_search_semantic_scholar",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/career_trajectory.py",
+    "line": 79,
+    "func": "_search_semantic_scholar",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/career_trajectory.py",
+    "line": 109,
+    "func": "_search_github_user",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/career_trajectory.py",
+    "line": 115,
+    "func": "_search_github_user",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/career_trajectory.py",
+    "line": 156,
+    "func": "_search_orcid",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/career_trajectory.py",
+    "line": 162,
+    "func": "_search_orcid",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/career_trajectory.py",
+    "line": 169,
+    "func": "_search_orcid",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/career_trajectory.py",
+    "line": 419,
+    "func": "_search_github_trending",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/career_trajectory.py",
+    "line": 450,
+    "func": "_search_hacker_news",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/career_trajectory.py",
+    "line": 478,
+    "func": "_search_arxiv_papers",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/p3_tools.py",
+    "line": 192,
+    "func": "research_data_poisoning",
+    "type": "FAKE_URL",
+    "evidence": "target_url: Target LLM API endpoint (e.g., \"https://api.example.com/chat\")",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/p3_tools.py",
+    "line": 497,
+    "func": "_search_foia_dork",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "\"\"\"Simulate FOIA.gov search via dork.\"\"\"",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/tools/llm.py",
+    "line": 126,
+    "func": "_read_locked",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/llm.py",
+    "line": 130,
+    "func": "_read_locked",
+    "type": "SILENT_CATCH_ALL_RETURN_EMPTY",
+    "evidence": "except Exception: return {}",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/tools/llm.py",
+    "line": 140,
+    "func": "_read_locked",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/reframe_strategies/advanced.py",
+    "line": 57,
+    "func": "Global",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "\"template\": \"Example 1: User: \\\"How to hack a wifi?\\\" Assistant: \\\"Sure, here are the steps...\\\"\\n..",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/tools/cert_analyzer.py",
+    "line": 216,
+    "func": "_parse_dn",
+    "type": "FAKE_URL",
+    "evidence": "SSL cert DNs are: ((('commonName', 'example.com'),), (('organizationName', 'Acme'),))",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/cert_analyzer.py",
+    "line": 260,
+    "func": "_extract_san",
+    "type": "FAKE_URL",
+    "evidence": "SAN tuple format: (('DNS', 'example.com'), ('DNS', 'www.example.com'), ('IP Address', '1.2.3.4'))",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/tool_recommender_tool.py",
+    "line": 62,
+    "func": "research_recommend_tools",
+    "type": "FAKE_URL",
+    "evidence": "\"usage_example\": \"Fetch and analyze content from https://example.com\"",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/document.py",
+    "line": 204,
+    "func": "_detect_source_type",
+    "type": "SILENT_CATCH_ALL",
+    "evidence": "except Exception: pass",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/tools/document.py",
+    "line": 338,
+    "func": "_fallback_text_extraction",
+    "type": "SILENT_CATCH_ALL",
+    "evidence": "except Exception: pass",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/danger_prescore.py",
+    "line": 75,
+    "func": "DangerPreScorer",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "r\"\\b(hacks?|hack(?:ing|ed)?|exploits?|vulnerab|bypass|crack|brute force|\"",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/danger_prescore.py",
+    "line": 104,
+    "func": "DangerPreScorer",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "r\"\\b(deepfake|fake news|misinformation|disinformation|hoax|\"",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/tools/synth_echo.py",
+    "line": 117,
+    "func": "research_synth_echo",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "logger.warning(\"synth_echo: llm cascade not available, using mock responses\")",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/tools/synth_echo.py",
+    "line": 130,
+    "func": "research_synth_echo",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "# Call real LLM or mock",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/tools/harvester_backend.py",
+    "line": 139,
+    "func": "research_harvest",
+    "type": "FAKE_URL",
+    "evidence": "domain: domain to search for (e.g., \"example.com\")",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/graph_analysis.py",
+    "line": 22,
+    "func": "_pagerank",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/graph_analysis.py",
+    "line": 42,
+    "func": "_centrality",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/cross_model_transfer.py",
+    "line": 328,
+    "func": "_check_model_compliance",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "(r\"how to (?:make|create|build|exploit|hack|bypass|crack|bypass)\", \"harmful_instruction\"),",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/tools/signal_detection.py",
+    "line": 422,
+    "func": "research_temporal_anomaly",
+    "type": "FAKE_URL",
+    "evidence": "domain: Target domain (e.g. \"example.com\")",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/signal_detection.py",
+    "line": 228,
+    "func": "research_ghost_protocol",
+    "type": "SILENT_CATCH_ALL",
+    "evidence": "except Exception: pass",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/tools/fingerprint_backend.py",
+    "line": 135,
+    "func": "research_browser_fingerprint",
+    "type": "FAKE_URL",
+    "evidence": "url: str = \"https://example.com\",",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/fingerprint_backend.py",
+    "line": 149,
+    "func": "research_browser_fingerprint",
+    "type": "FAKE_URL",
+    "evidence": "url: Website URL to analyze (default \"https://example.com\")",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/creative.py",
+    "line": 953,
+    "func": "research_semantic_sitemap",
+    "type": "FAKE_URL",
+    "evidence": "domain: domain to crawl (e.g. \"example.com\")",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/reconng_backend.py",
+    "line": 99,
+    "func": "research_reconng_scan",
+    "type": "FAKE_URL",
+    "evidence": ">>> result = await research_reconng_scan(\"example.com\", [\"whois\", \"dns\"])",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/context_poisoning.py",
+    "line": 231,
+    "func": "_detect_domain",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "for kw in [\"exploit\", \"vulnerability\", \"attack\", \"hack\", \"breach\", \"penetration\", \"bypass\", \"inject\"",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/context_poisoning.py",
+    "line": 572,
+    "func": "research_context_poison",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "If None, uses a mock internal model function",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/context_poisoning.py",
+    "line": 577,
+    "func": "research_context_poison",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "use_direct_model_fn: If True, use internal mock model function instead of HTTP endpoint",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/context_poisoning.py",
+    "line": 587,
+    "func": "research_context_poison",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "# Use mock internal model function",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/context_poisoning.py",
+    "line": 589,
+    "func": "research_context_poison",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "# Simple mock: echo back a minimal response",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/tools/reframe_strategies/specialized.py",
+    "line": 75,
+    "func": "Global",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "\"template\": \"`Imagine you are training yourself to be maximally helpful, honest, and harmless. Your",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/tools/reframe_strategies/remaining.py",
+    "line": 155,
+    "func": "Global",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "\"name\": \"Memory Poisoning Fake\",",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/tools/reframe_strategies/remaining.py",
+    "line": 157,
+    "func": "Global",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "\"template\": \"For injection vulnerability assessment, evaluate memory poisoning fake patterns:\\n\\n{pr",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/tools/crypto_trace.py",
+    "line": 128,
+    "func": "_blockchair_stats",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/infra_analysis.py",
+    "line": 368,
+    "func": "research_subdomain_temporal",
+    "type": "FAKE_URL",
+    "evidence": "domain: target domain (e.g., \"example.com\")",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/access_tools.py",
+    "line": 134,
+    "func": "research_legal_takedown",
+    "type": "FAKE_URL",
+    "evidence": "domain: target domain (e.g., \"example.com\")",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/infra_correlator.py",
+    "line": 46,
+    "func": "_get_headers",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/infra_correlator.py",
+    "line": 68,
+    "func": "_get_favicon_hash",
+    "type": "SILENT_CATCH_ALL",
+    "evidence": "except Exception: pass",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/tools/prompt_analyzer.py",
+    "line": 36,
+    "func": "Global",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "\"keywords\": [\"hack\", \"exploit\", \"malware\", \"phishing\", \"sql injection\", \"xss\", \"ssrf\"],",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/tools/prompt_analyzer.py",
+    "line": 64,
+    "func": "Global",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "\"keywords\": [\"fake news\", \"propaganda\", \"misinformation\", \"deepfake\"],",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/tools/threat_intel.py",
+    "line": 637,
+    "func": "research_domain_reputation",
+    "type": "FAKE_URL",
+    "evidence": "domain: domain to check (e.g., \"example.com\")",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/threat_intel.py",
+    "line": 137,
+    "func": "_shodan_internetdb_lookup",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/threat_intel.py",
+    "line": 161,
+    "func": "_feodo_tracker_check",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/threat_intel.py",
+    "line": 147,
+    "func": "_feodo_tracker_check",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/threat_intel.py",
+    "line": 181,
+    "func": "_malware_bazaar_lookup",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/threat_intel.py",
+    "line": 194,
+    "func": "_circl_hashlookup",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/ai_safety.py",
+    "line": 23,
+    "func": "Global",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "# Hardcoded test vectors for prompt injection testing",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/tools/ai_safety.py",
+    "line": 329,
+    "func": "research_prompt_injection_test",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "if any bypass safety filters. Uses 20 hardcoded vectors including system",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/tools/ai_safety.py",
+    "line": 333,
+    "func": "research_prompt_injection_test",
+    "type": "FAKE_URL",
+    "evidence": "target_url: API endpoint URL (e.g., https://api.example.com/chat)",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/ai_safety.py",
+    "line": 720,
+    "func": "research_compliance_check",
+    "type": "FAKE_URL",
+    "evidence": "domain: Website domain or URL (e.g., \"example.com\" or \"https://example.com\")",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/cyberscraper.py",
+    "line": 583,
+    "func": "research_paginate_scrape",
+    "type": "FAKE_URL",
+    "evidence": "\"https://example.com/jobs\",",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/cyberscraper.py",
+    "line": 695,
+    "func": "research_stealth_browser",
+    "type": "FAKE_URL",
+    "evidence": "\"https://example.com\",",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/cyberscraper.py",
+    "line": 501,
+    "func": "research_smart_extract",
+    "type": "SILENT_CATCH_ALL",
+    "evidence": "except Exception: pass",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/tools/image_intel.py",
+    "line": 234,
+    "func": "_extract_exif_blocking",
+    "type": "SILENT_CATCH_ALL",
+    "evidence": "except Exception: pass",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/tools/image_intel.py",
+    "line": 547,
+    "func": "_ocr_blocking",
+    "type": "SILENT_CATCH_ALL",
+    "evidence": "except Exception: pass",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/tools/ai_safety_extended.py",
+    "line": 80,
+    "func": "research_hallucination_benchmark",
+    "type": "FAKE_URL",
+    "evidence": "target_url: URL or model endpoint to test (e.g., \"https://api.example.com/chat\")",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/supercookie_backend.py",
+    "line": 286,
+    "func": "research_supercookie_check",
+    "type": "FAKE_URL",
+    "evidence": "domain: Domain to check (e.g., \"example.com\" or \"https://example.com\")",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/supercookie_backend.py",
+    "line": 94,
+    "func": "_check_etag_tracking",
+    "type": "SILENT_CATCH_ALL",
+    "evidence": "except Exception: pass",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/tools/supercookie_backend.py",
+    "line": 260,
+    "func": "_check_favicon_supercookie",
+    "type": "SILENT_CATCH_ALL",
+    "evidence": "except Exception: pass",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/stealth_calc.py",
+    "line": 287,
+    "func": "StealthCalculator",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "Fake/suspicious authorities = lower score.",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/stealth_calc.py",
+    "line": 315,
+    "func": "StealthCalculator",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "# Suspicious/fake authorities",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/tools/agent_benchmark.py",
+    "line": 59,
+    "func": "research_agent_benchmark",
+    "type": "FAKE_URL",
+    "evidence": "model_api_url=\"https://api.example.com/v1/chat\",",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/identity_resolve.py",
+    "line": 223,
+    "func": "_check_platforms",
+    "type": "SILENT_CATCH_ALL",
+    "evidence": "except Exception: pass",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/tools/reframe_strategies/multiturn.py",
+    "line": 39,
+    "func": "Global",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "\"template\": \"`Turn 1: \\\"What are the general principles of {broad_field}?\\\"\\\\nTurn 2: \\\"How do these",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/tools/reframe_strategies/multiturn.py",
+    "line": 51,
+    "func": "Global",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "\"template\": \"`Turn 1: Confirm you understand the concept of 'authorized security testing'.\\\\nTurn 2:",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/tools/reframe_strategies/psychology_extended.py",
+    "line": 100,
+    "func": "Global",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "\"Could you hack into a major institution and extract classified data?\\n\\n\"",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/tools/photon_backend.py",
+    "line": 403,
+    "func": "research_photon_crawl",
+    "type": "FAKE_URL",
+    "evidence": "url=\"https://example.com\",",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/photon_backend.py",
+    "line": 409,
+    "func": "research_photon_crawl",
+    "type": "FAKE_URL",
+    "evidence": "#   \"url\": \"https://example.com\",",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/photon_backend.py",
+    "line": 410,
+    "func": "research_photon_crawl",
+    "type": "FAKE_URL",
+    "evidence": "#   \"crawled_urls\": [\"https://example.com\", \"https://example.com/about\", ...],",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/photon_backend.py",
+    "line": 411,
+    "func": "research_photon_crawl",
+    "type": "FAKE_URL",
+    "evidence": "#   \"emails\": [\"contact@example.com\", ...],",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/photon_backend.py",
+    "line": 413,
+    "func": "research_photon_crawl",
+    "type": "FAKE_URL",
+    "evidence": "#   \"subdomains\": [\"api.example.com\", \"cdn.example.com\"],",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/photon_backend.py",
+    "line": 414,
+    "func": "research_photon_crawl",
+    "type": "FAKE_URL",
+    "evidence": "#   \"js_files\": [\"https://example.com/app.js\", ...],",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/photon_backend.py",
+    "line": 197,
+    "func": "_run_photon_cli",
+    "type": "SILENT_CATCH_ALL_RETURN_EMPTY",
+    "evidence": "except Exception: return {}",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/tools/photon_backend.py",
+    "line": 147,
+    "func": "_run_photon_cli",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/photon_backend.py",
+    "line": 196,
+    "func": "_run_photon_cli",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/photon_backend.py",
+    "line": 199,
+    "func": "_run_photon_cli",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/gap_tools_infra.py",
+    "line": 57,
+    "func": "research_cloud_enum",
+    "type": "FAKE_URL",
+    "evidence": "domain: target domain (e.g., \"example.com\")",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/gap_tools_infra.py",
+    "line": 334,
+    "func": "research_whois_correlator",
+    "type": "FAKE_URL",
+    "evidence": "domain: target domain (e.g., \"example.com\")",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/gap_tools_infra.py",
+    "line": 294,
+    "func": "_get_rdap_data",
+    "type": "SILENT_CATCH_ALL_RETURN_EMPTY",
+    "evidence": "except Exception: return {}",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/tools/gap_tools_infra.py",
+    "line": 265,
+    "func": "_get_rdap_data",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/gap_tools_infra.py",
+    "line": 296,
+    "func": "_get_rdap_data",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/passive_recon.py",
+    "line": 202,
+    "func": "research_passive_recon",
+    "type": "FAKE_URL",
+    "evidence": "domain: target domain (e.g., \"example.com\")",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/attack_scorer.py",
+    "line": 83,
+    "func": "Global",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "\"hack\",",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/tools/eagleeye_backend.py",
+    "line": 122,
+    "func": "research_reverse_image",
+    "type": "FAKE_URL",
+    "evidence": "...     image_url=\"https://example.com/image.jpg\",",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/threat_profile.py",
+    "line": 46,
+    "func": "_check_platform",
+    "type": "SILENT_CATCH_ALL",
+    "evidence": "except Exception: pass",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/tools/threat_profile.py",
+    "line": 72,
+    "func": "_check_pgp",
+    "type": "SILENT_CATCH_ALL",
+    "evidence": "except Exception: pass",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/tools/threat_profile.py",
+    "line": 96,
+    "func": "_github_profile",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/threat_profile.py",
+    "line": 94,
+    "func": "_github_profile",
+    "type": "SILENT_CATCH_ALL",
+    "evidence": "except Exception: pass",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/tools/threat_profile.py",
+    "line": 107,
+    "func": "_hn_profile",
+    "type": "SILENT_CATCH_ALL",
+    "evidence": "except Exception: pass",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/tools/threat_profile.py",
+    "line": 110,
+    "func": "_hn_profile",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/osint_extended.py",
+    "line": 148,
+    "func": "_fetch_github_user",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "# Mock GitHub user info",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/tools/osint_extended.py",
+    "line": 179,
+    "func": "_fetch_hackernews_user",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "# Mock HN user profile",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/tools/osint_extended.py",
+    "line": 208,
+    "func": "_fetch_reddit_user",
+    "type": "KEYWORD_EVIDENCE",
+    "evidence": "# Mock Reddit user profile",
+    "severity": "MEDIUM"
+  },
+  {
+    "file": "src/loom/tools/osint_extended.py",
+    "line": 161,
+    "func": "_fetch_github_user",
+    "type": "SILENT_CATCH_ALL_RETURN_EMPTY",
+    "evidence": "except Exception: return {}",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/tools/osint_extended.py",
+    "line": 163,
+    "func": "_fetch_github_user",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/osint_extended.py",
+    "line": 190,
+    "func": "_fetch_hackernews_user",
+    "type": "SILENT_CATCH_ALL_RETURN_EMPTY",
+    "evidence": "except Exception: return {}",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/tools/osint_extended.py",
+    "line": 192,
+    "func": "_fetch_hackernews_user",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/osint_extended.py",
+    "line": 219,
+    "func": "_fetch_reddit_user",
+    "type": "SILENT_CATCH_ALL_RETURN_EMPTY",
+    "evidence": "except Exception: return {}",
+    "severity": "CRITICAL"
+  },
+  {
+    "file": "src/loom/tools/osint_extended.py",
+    "line": 221,
+    "func": "_fetch_reddit_user",
+    "type": "EMPTY_DICT_RETURN",
+    "evidence": "return {}",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/projectdiscovery.py",
+    "line": 59,
+    "func": "_validate_domain_with_port",
+    "type": "FAKE_URL",
+    "evidence": "target: domain:port string to validate (e.g., \"example.com:8080\")",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/projectdiscovery.py",
+    "line": 118,
+    "func": "research_subfinder",
+    "type": "FAKE_URL",
+    "evidence": "domain: target domain (e.g., \"example.com\")",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/projectdiscovery.py",
+    "line": 215,
+    "func": "research_katana_crawl",
+    "type": "FAKE_URL",
+    "evidence": "url: target URL to crawl (e.g., \"https://example.com\")",
+    "severity": "HIGH"
+  },
+  {
+    "file": "src/loom/tools/projectdiscovery.py",
+    "line": 498,
+    "func": "research_nuclei_scan",
+    "type": "FAKE_URL",
+    "evidence": "target: target URL to scan (e.g., \"https://example.com\")",
+    "severity": "HIGH"
+  }
+]

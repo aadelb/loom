@@ -868,6 +868,134 @@ Raw multi-turn chat with an LLM.
 
 ---
 
+### research_pydantic_agent
+
+Create and run a type-safe AI agent with Pydantic validation. Returns raw agent responses with optional system prompt guidance and structured validation.
+
+**Parameters:**
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `prompt` | string | required | User prompt (will be wrapped for safety) |
+| `model` | string | `"nvidia_nim"` | LLM model to use (cascade default: `"auto"`) |
+| `system_prompt` | string | `""` | Optional system prompt to guide agent behavior |
+| `max_tokens` | integer | 1000 | Max tokens in response (10-8000) |
+
+**Returns:**
+
+```json
+{
+  "success": true,
+  "response": "Agent response text...",
+  "model_used": "meta/llama-4-maverick-17b-128e-instruct",
+  "tokens_used": 120,
+  "error": null
+}
+```
+
+Or on failure:
+
+```json
+{
+  "success": false,
+  "error": "error_message"
+}
+```
+
+**Fallback:** If pydantic-ai is unavailable, falls back to `research_llm_answer`
+
+**API Keys:** Depends on provider cascade order
+
+**Example Usage:**
+
+```python
+result = await research_pydantic_agent(
+    prompt="What are the 3 most important machine learning papers?",
+    system_prompt="You are an expert in machine learning research.",
+    model="gpt-4",
+    max_tokens=500
+)
+print(result["response"])
+```
+
+---
+
+### research_structured_llm
+
+Extract structured data from text with full Pydantic schema validation. Ensures response matches exact schema before returning.
+
+**Parameters:**
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `prompt` | string | required | Text/question to extract from |
+| `output_schema` | dict | required | Pydantic schema: `{"field_name": "type", ...}` |
+| `model` | string | `"nvidia_nim"` | LLM model to use |
+| `provider_override` | string | `null` | Force provider: `"nvidia"`, `"openai"`, `"anthropic"`, `"groq"`, etc. |
+
+**Supported Types in Schema:**
+- `"str"` or `"string"` — text
+- `"int"` or `"integer"` — integers
+- `"float"` — floating-point numbers
+- `"bool"` or `"boolean"` — true/false
+- `"list"` — arrays
+- `"dict"` or `"object"` — nested objects
+
+**Returns:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "author": "John Doe",
+    "papers": ["Paper A", "Paper B"],
+    "citation_count": 1250,
+    "verified": true
+  },
+  "model_used": "gpt-4",
+  "cost_usd": 0.0008,
+  "error": null
+}
+```
+
+Or on validation failure:
+
+```json
+{
+  "success": false,
+  "error": "Field 'citation_count' expected int, got str",
+  "model_used": "gpt-4",
+  "cost_usd": 0.0003
+}
+```
+
+**Fallback:** If pydantic-ai is unavailable, falls back to `research_llm_extract` with compatible schema
+
+**API Keys:** Depends on provider cascade order
+
+**Example Usage:**
+
+```python
+result = await research_structured_llm(
+    prompt="Extract researcher info from: Dr. Jane Smith published 42 papers with 5000 citations",
+    output_schema={
+        "name": "string",
+        "papers": "integer",
+        "citations": "integer"
+    },
+    model="gpt-4-mini"
+)
+print(result["data"]["citations"])  # 5000
+```
+
+**Differences from research_llm_extract:**
+- **Stricter validation** — Full Pydantic model validation before returning
+- **Error details** — Exact validation error messages
+- **JSON parsing** — Handles markdown JSON code blocks automatically
+- **Type safety** — Fails if response JSON doesn't match schema exactly
+
+---
+
 ## Enrichment Tools
 
 ### research_detect_language
