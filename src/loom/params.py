@@ -2061,12 +2061,12 @@ class ModelComparatorParams(BaseModel):
 class DataPoisoningParams(BaseModel):
     """Parameters for research_data_poisoning tool."""
 
-    target_url: str
+    url: str = Field(..., alias="target_url")
     canary_phrases: list[str] | None = None
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
 
-    @field_validator("target_url", mode="before")
+    @field_validator("url", mode="before")
     @classmethod
     def validate_url_field(cls, v: str) -> str:
         return validate_url(v)
@@ -5147,4 +5147,79 @@ class DefiSecurityAuditParams(BaseModel):
             int(v, 16)
         except ValueError:
             raise ValueError("contract_address must be valid hex")
+        return v
+
+
+class VisionBrowseParams(BaseModel):
+    """Parameters for research_vision_browse tool."""
+
+    url: str = Field(..., description="URL to screenshot and analyze")
+    task: str = Field(
+        ..., description="Task/question to analyze the screenshot for (e.g., 'Check if login form present')"
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def validate_url_field(cls, v: str) -> str:
+        return validate_url(v)
+
+    @field_validator("task")
+    @classmethod
+    def validate_task(cls, v: str) -> str:
+        if not v or len(v) > 500:
+            raise ValueError("task must be 1-500 characters")
+        return v.strip()
+
+
+class VisionCompareParams(BaseModel):
+    """Parameters for research_vision_compare tool."""
+
+    url1: str = Field(..., description="First URL to compare")
+    url2: str = Field(..., description="Second URL to compare")
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("url1", "url2", mode="before")
+    @classmethod
+    def validate_urls(cls, v: str) -> str:
+        return validate_url(v)
+
+
+class GraphAnalyzeParams(BaseModel):
+    """Parameters for research_graph_analyze tool."""
+
+    nodes: list[dict[str, Any]] = Field(
+        ..., description="List of node dicts with required 'id' field"
+    )
+    edges: list[dict[str, Any]] = Field(
+        ..., description="List of edge dicts with 'source' and 'target' fields"
+    )
+    algorithm: Literal["pagerank", "community_detection", "centrality", "shortest_path"] = Field(
+        default="pagerank", description="Graph analysis algorithm to use"
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+
+class TransactionGraphParams(BaseModel):
+    """Parameters for research_transaction_graph tool."""
+
+    addresses: list[str] = Field(
+        ..., description="List of blockchain addresses (Bitcoin/Ethereum)"
+    )
+    chain: Literal["bitcoin", "ethereum"] = Field(
+        default="bitcoin", description="Blockchain network"
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("addresses")
+    @classmethod
+    def validate_addresses(cls, v: list[str]) -> list[str]:
+        if not v:
+            raise ValueError("addresses list cannot be empty")
+        if len(v) > 100:
+            raise ValueError("addresses list limited to 100 items")
         return v
