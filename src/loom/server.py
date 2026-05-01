@@ -830,6 +830,7 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
 
 
 
+
 async def research_full_spectrum(
     query: str,
     model_name: str = "unknown",
@@ -858,28 +859,48 @@ async def research_full_spectrum(
     """
     pipeline = FullSpectrumPipeline()
 
-    # Mock async model function for demo purposes
-    async def mock_model(prompt: str = "") -> str:
-        return f"[Response from {model_name} model]"
+    # Real LLM model function using cascade
+    try:
+        from loom.tools.llm import _call_with_cascade
+
+        async def cascade_model(prompt: str = "") -> str:
+            try:
+                response_obj = await _call_with_cascade(
+                    [{"role": "user", "content": prompt}],
+                    max_tokens=1500,
+                )
+                return response_obj.text
+            except Exception as e:
+                return f"Error calling LLM: {str(e)[:200]}"
+
+        model_fn = cascade_model
+    except ImportError:
+        logger.error("research_full_spectrum: LLM cascade not available")
+        return {
+            "error": "LLM provider required but unavailable",
+            "query": query,
+            "model_name": model_name,
+        }
 
     strategy = None if reframing_strategy == "auto_select" else reframing_strategy
 
     if include_multi_strategy:
         result = await pipeline.run_multi_strategy(
             query=query,
-            model_fn=mock_model,
+            model_fn=model_fn,
             model_name=model_name,
         )
     else:
         result = await pipeline.run(
             query=query,
-            model_fn=mock_model,
+            model_fn=model_fn,
             model_name=model_name,
             target_hcs=target_hcs,
             reframing_strategy=strategy,
         )
 
     return result
+
 
 
 def _register_tools(mcp: FastMCP) -> None:

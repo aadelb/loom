@@ -124,8 +124,47 @@ async def crescendo_hcs_loop(
                 )
                 response = f"Error querying model: {e}"
         else:
-            # Fallback: simulated response
-            response = f"[Simulated response for strategy {strategy}, attempt {attempt_num + 1}]"
+            # No query_fn provided: try to use _call_with_cascade, otherwise error
+            try:
+                from loom.tools.llm import _call_with_cascade
+                try:
+                    response_obj = await _call_with_cascade(
+                        [{"role": "user", "content": prompt}],
+                        max_tokens=500,
+                    )
+                    response = response_obj.text
+                except Exception as e:
+                    logger.warning(
+                        "crescendo_cascade_error attempt=%d strategy=%s error=%s",
+                        attempt_num + 1,
+                        strategy,
+                        e,
+                    )
+                    return {
+                        "pipeline": "crescendo_hcs_loop",
+                        "query": query,
+                        "target_hcs": target_hcs,
+                        "best_hcs": best_hcs,
+                        "best_strategy": best_strategy,
+                        "attempts": len(escalation_log),
+                        "target_met": False,
+                        "best_response": best_response[:5000] if best_response else None,
+                        "escalation_log": escalation_log,
+                        "error": f"LLM provider unavailable: {str(e)[:100]}",
+                    }
+            except ImportError:
+                return {
+                    "pipeline": "crescendo_hcs_loop",
+                    "query": query,
+                    "target_hcs": target_hcs,
+                    "best_hcs": best_hcs,
+                    "best_strategy": best_strategy,
+                    "attempts": len(escalation_log),
+                    "target_met": False,
+                    "best_response": best_response[:5000] if best_response else None,
+                    "escalation_log": escalation_log,
+                    "error": "LLM provider required but unavailable",
+                }
 
         # Step 3: Score with HCS
         if score_fn:
@@ -141,8 +180,8 @@ async def crescendo_hcs_loop(
                 )
                 hcs = 0
         else:
-            # Fallback: simulate increasing scores with stronger strategies
-            hcs = min(10, 3 + attempt_num * 2)
+            # No score_fn: fallback behavior
+            hcs = 0
 
         # Ensure hcs is int and in valid range
         hcs = max(0, min(10, int(hcs)))

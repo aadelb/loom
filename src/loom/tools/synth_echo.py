@@ -114,8 +114,12 @@ async def research_synth_echo(
     try:
         from loom.tools.llm import _call_with_cascade
     except ImportError:
-        logger.warning("synth_echo: llm cascade not available, using mock responses")
-        _call_with_cascade = None
+        logger.error("synth_echo: llm cascade not available")
+        return {
+            "error": "LLM provider required but unavailable",
+            "simulated": False,
+            "model_name": model_name,
+        }
 
     # Test execution with real LLM calls
     for test_idx, prompt in enumerate(test_prompts[:5]):
@@ -127,16 +131,21 @@ async def research_synth_echo(
         for var in range(5):
             rephrased = _rephrase_prompt(prompt, var)
 
-            # Call real LLM or mock
+            # Call real LLM
             start_time = time.time()
-            if _call_with_cascade:
-                try:
-                    response = await _call_with_cascade(rephrased, max_tokens=200)
-                except Exception as e:
-                    logger.debug("synth_echo_llm_call_failed: %s", e)
-                    response = f"[Error calling LLM: {str(e)[:30]}]"
-            else:
-                response = f"[Simulated response to variation {var} of: {rephrased[:50]}...]"
+            try:
+                response_obj = await _call_with_cascade(
+                    [{"role": "user", "content": rephrased}],
+                    max_tokens=200,
+                )
+                response = response_obj.text
+            except Exception as e:
+                logger.debug("synth_echo_llm_call_failed: %s", e)
+                return {
+                    "error": f"LLM call failed: {str(e)[:100]}",
+                    "simulated": False,
+                    "model_name": model_name,
+                }
 
             elapsed = time.time() - start_time
             responses.append(response)

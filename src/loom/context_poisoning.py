@@ -584,15 +584,28 @@ async def research_context_poison(
     try:
         # Define model function
         if use_direct_model_fn or endpoint_url is None:
-            # Use mock internal model function
-            def mock_model_fn(prompt: str) -> str:
-                # Simple mock: echo back a minimal response
-                if len(prompt) > 500:
-                    return f"Processed poisoned prompt ({len(prompt)} chars)"
-                else:
-                    return f"Processed prompt ({len(prompt)} chars)"
+            # Use real LLM cascade
+            try:
+                from loom.tools.llm import _call_with_cascade
 
-            model_fn = mock_model_fn
+                async def cascade_model_fn(prompt: str) -> str:
+                    try:
+                        response_obj = await _call_with_cascade(
+                            [{"role": "user", "content": prompt}],
+                            max_tokens=500,
+                        )
+                        return response_obj.text
+                    except Exception as e:
+                        return f"LLM error: {str(e)[:100]}"
+
+                model_fn = cascade_model_fn
+            except ImportError:
+                logger.error("context_poison: LLM cascade not available")
+                return {
+                    "error": "LLM provider required but unavailable",
+                    "target_query": target_query,
+                    "model_name": model_name,
+                }
         else:
             # Use HTTP endpoint
             endpoint_url = validate_url(endpoint_url)
@@ -626,7 +639,7 @@ async def research_context_poison(
         result = await poisoner.run_pipeline(target_query, model_fn, num_examples, domain)
 
         # Add endpoint info
-        result["endpoint"] = endpoint_url if endpoint_url else "internal_mock"
+        result["endpoint"] = endpoint_url if endpoint_url else "internal_cascade"
         result["model_name"] = model_name
 
         return result
