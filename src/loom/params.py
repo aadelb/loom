@@ -381,16 +381,16 @@ class BotasaurusParams(BaseModel):
 class CacheStatsParams(BaseModel):
     """Parameters for research_cache_stats tool."""
 
-    limit: int = 10
+    max_results: int = Field(default=10, alias="limit")
     offset: int = 0
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
 
-    @field_validator("limit")
+    @field_validator("max_results")
     @classmethod
-    def validate_limit(cls, v: int) -> int:
+    def validate_max_results(cls, v: int) -> int:
         if v < 1 or v > 1000:
-            raise ValueError("limit must be 1-1000")
+            raise ValueError("max_results must be 1-1000")
         return v
 
     @field_validator("offset")
@@ -464,18 +464,18 @@ class DNSLookupParams(BaseModel):
 class NmapScanParams(BaseModel):
     """Parameters for research_nmap_scan tool."""
 
-    target: str
+    domain: str = Field(..., alias="target")
     scan_type: Literal["syn", "connect", "ping", "os"] = "syn"
     ports: str | None = None
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
 
-    @field_validator("target")
+    @field_validator("domain")
     @classmethod
-    def validate_target(cls, v: str) -> str:
+    def validate_domain(cls, v: str) -> str:
         v = v.strip()
         if not re.match(r"^[a-z0-9\-.:/_]+$", v, re.IGNORECASE):
-            raise ValueError("target format invalid")
+            raise ValueError("domain format invalid")
         return v
 
     @field_validator("ports")
@@ -597,21 +597,21 @@ class RSSFetchParams(BaseModel):
     """Parameters for research_rss_fetch tool."""
 
     feed_url: str
-    limit: int = 20
+    max_results: int = Field(default=20, alias="limit")
     parse_content: bool = False
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
 
     @field_validator("feed_url", mode="before")
     @classmethod
     def validate_url_field(cls, v: str) -> str:
         return validate_url(v)
 
-    @field_validator("limit")
+    @field_validator("max_results")
     @classmethod
-    def validate_limit(cls, v: int) -> int:
+    def validate_max_results(cls, v: int) -> int:
         if v < 1 or v > 500:
-            raise ValueError("limit must be 1-500")
+            raise ValueError("max_results must be 1-500")
         return v
 
 
@@ -619,9 +619,9 @@ class RSSSearchParams(BaseModel):
     """Parameters for research_rss_search tool."""
 
     query: str
-    limit: int = 10
+    max_results: int = Field(default=10, alias="limit")
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
 
     @field_validator("query")
     @classmethod
@@ -632,11 +632,11 @@ class RSSSearchParams(BaseModel):
             raise ValueError("query max 500 characters")
         return v
 
-    @field_validator("limit")
+    @field_validator("max_results")
     @classmethod
-    def validate_limit(cls, v: int) -> int:
+    def validate_max_results(cls, v: int) -> int:
         if v < 1 or v > 100:
-            raise ValueError("limit must be 1-100")
+            raise ValueError("max_results must be 1-100")
         return v
 
 
@@ -645,9 +645,9 @@ class SocialSearchParams(BaseModel):
 
     query: str
     platform: Literal["twitter", "instagram", "tiktok", "reddit", "linkedin"] = "twitter"
-    limit: int = 20
+    max_results: int = Field(default=20, alias="limit")
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
 
     @field_validator("query")
     @classmethod
@@ -658,11 +658,11 @@ class SocialSearchParams(BaseModel):
             raise ValueError("query max 500 characters")
         return v
 
-    @field_validator("limit")
+    @field_validator("max_results")
     @classmethod
-    def validate_limit(cls, v: int) -> int:
+    def validate_max_results(cls, v: int) -> int:
         if v < 1 or v > 100:
-            raise ValueError("limit must be 1-100")
+            raise ValueError("max_results must be 1-100")
         return v
 
 
@@ -930,9 +930,9 @@ class GithubReleasesParams(BaseModel):
     """Parameters for research_github_releases tool."""
 
     repo_url: str
-    limit: int = 10
+    max_results: int = Field(default=10, alias="limit")
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
 
     @field_validator("repo_url", mode="before")
     @classmethod
@@ -942,11 +942,11 @@ class GithubReleasesParams(BaseModel):
             raise ValueError("repo_url must be a GitHub URL")
         return url
 
-    @field_validator("limit")
+    @field_validator("max_results")
     @classmethod
-    def validate_limit(cls, v: int) -> int:
+    def validate_max_results(cls, v: int) -> int:
         if v < 1 or v > 100:
-            raise ValueError("limit must be 1-100")
+            raise ValueError("max_results must be 1-100")
         return v
 
 
@@ -1078,9 +1078,9 @@ class DarkForumParams(BaseModel):
 
     query: str
     forums: list[str] | None = None
-    limit: int = 20
+    max_results: int = Field(default=20, alias="limit")
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
 
     @field_validator("query")
     @classmethod
@@ -1091,11 +1091,11 @@ class DarkForumParams(BaseModel):
             raise ValueError("query max 500 characters")
         return v
 
-    @field_validator("limit")
+    @field_validator("max_results")
     @classmethod
-    def validate_limit(cls, v: int) -> int:
+    def validate_max_results(cls, v: int) -> int:
         if v < 1 or v > 100:
-            raise ValueError("limit must be 1-100")
+            raise ValueError("max_results must be 1-100")
         return v
 
 
@@ -1378,9 +1378,9 @@ class OnionDiscoverParams(BaseModel):
 
     query: str
     include_indexes: bool = True
-    limit: int = 20
+    max_results: int = Field(default=20, alias="limit")
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
 
     @field_validator("query")
     @classmethod
@@ -1391,11 +1391,11 @@ class OnionDiscoverParams(BaseModel):
             raise ValueError("query max 500 characters")
         return v
 
-    @field_validator("limit")
+    @field_validator("max_results")
     @classmethod
-    def validate_limit(cls, v: int) -> int:
+    def validate_max_results(cls, v: int) -> int:
         if v < 1 or v > 100:
-            raise ValueError("limit must be 1-100")
+            raise ValueError("max_results must be 1-100")
         return v
 
 
@@ -1501,9 +1501,9 @@ class ConsensusParams(BaseModel):
     """Parameters for research_consensus tool."""
 
     query: str
-    num_sources: int = 5
+    max_results: int = Field(default=5, alias="num_sources")
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
 
     @field_validator("query")
     @classmethod
@@ -1514,11 +1514,11 @@ class ConsensusParams(BaseModel):
             raise ValueError("query max 500 characters")
         return v
 
-    @field_validator("num_sources")
+    @field_validator("max_results")
     @classmethod
-    def validate_num_sources(cls, v: int) -> int:
+    def validate_max_results(cls, v: int) -> int:
         if v < 2 or v > 20:
-            raise ValueError("num_sources must be 2-20")
+            raise ValueError("max_results must be 2-20")
         return v
 
 
@@ -1865,17 +1865,17 @@ class ContentAuthenticityParams(BaseModel):
 class CredentialMonitorParams(BaseModel):
     """Parameters for research_credential_monitor tool."""
 
-    target: str
+    query: str = Field(..., alias="target")
     target_type: Literal["email", "username"] = "email"
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
 
-    @field_validator("target")
+    @field_validator("query")
     @classmethod
-    def validate_target(cls, v: str) -> str:
+    def validate_query(cls, v: str) -> str:
         v = v.strip().lower()
         if not v or len(v) > 255:
-            raise ValueError("target must be 1-255 characters")
+            raise ValueError("query must be 1-255 characters")
         return v
 
 
@@ -2161,9 +2161,10 @@ class PromptReframeParams(BaseModel):
 
 
 class AutoReframeParams(BaseModel):
-    model_config = {"extra": "forbid", "strict": True}
+    """Parameters for auto_reframe tool."""
+    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
     prompt: str
-    target_url: str = ""
+    url: str = Field(default="", alias="target_url")
     model: str = "auto"
     max_attempts: int = Field(default=5, ge=1, le=20)
 
@@ -2516,14 +2517,15 @@ class StripeListInvoicesParams(BaseModel):
         min_length=1,
         max_length=64,
     )
-    limit: int = Field(
+    max_results: int = Field(
         10,
         description="Maximum invoices to return (1-100)",
         ge=1,
         le=100,
+        alias="limit",
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
 
     @field_validator("customer_id")
     @classmethod
@@ -3025,9 +3027,11 @@ class ConsistencyPressureHistoryParams(BaseModel):
 class ContextPoisonParams(BaseModel):
     """Parameters for research_context_poison tool."""
 
-    target_query: str = Field(
+    query: str = Field(
+        ...,
         description="Query to poison",
         max_length=10000,
+        alias="target_query",
     )
     endpoint_url: str | None = Field(
         default=None,
@@ -3055,7 +3059,7 @@ class ContextPoisonParams(BaseModel):
         description="Use direct model function",
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
 
 
 class DaisyChainParams(BaseModel):
@@ -3183,14 +3187,15 @@ class CVELookupParams(BaseModel):
         description="Keyword or phrase to search CVE database",
         max_length=256,
     )
-    limit: int = Field(
+    max_results: int = Field(
         default=10,
         description="Max number of results (1-100)",
         ge=1,
         le=100,
+        alias="limit",
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
 
     @field_validator("query")
     @classmethod
@@ -3310,14 +3315,15 @@ class GitHubSearchParams(BaseModel):
         description="GitHub search query",
         max_length=256,
     )
-    limit: int = Field(
+    max_results: int = Field(
         default=10,
         description="Max results (1-100)",
         ge=1,
         le=100,
+        alias="limit",
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
 
     @field_validator("query")
     @classmethod
@@ -3396,14 +3402,15 @@ class URLhausSearchParams(BaseModel):
         description="Search query",
         max_length=256,
     )
-    limit: int = Field(
+    max_results: int = Field(
         default=10,
         description="Max results (1-100)",
         ge=1,
         le=100,
+        alias="limit",
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
 
     @field_validator("query")
     @classmethod
@@ -4146,16 +4153,16 @@ class HttpxProbeParams(BaseModel):
 class NucleiScanParams(BaseModel):
     """Parameters for research_nuclei_scan tool."""
 
-    target: str
+    url: str = Field(..., alias="target")
     templates: str = "cves,exposures"
     severity: str = "medium,high,critical"
     timeout: int = 120
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
 
-    @field_validator("target", mode="before")
+    @field_validator("url", mode="before")
     @classmethod
-    def validate_target(cls, v: str) -> str:
+    def validate_url(cls, v: str) -> str:
         return validate_url(v)
 
     @field_validator("templates")
@@ -4738,10 +4745,11 @@ class CamelotTableExtractParams(BaseModel):
 class ScapyPacketCraftParams(BaseModel):
     """Parameters for research_packet_craft tool."""
 
-    target: str = Field(
+    domain: str = Field(
         ...,
         description="Target IP address or hostname",
         max_length=255,
+        alias="target",
     )
     packet_type: str = Field(
         "tcp_syn",
@@ -4761,11 +4769,11 @@ class ScapyPacketCraftParams(BaseModel):
         le=30,
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
 
-    @field_validator("target")
+    @field_validator("domain")
     @classmethod
-    def validate_target(cls, v: str) -> str:
+    def validate_domain(cls, v: str) -> str:
         """Target must be non-empty hostname or IP."""
         if not v or not v.strip():
             raise ValueError("target cannot be empty")
