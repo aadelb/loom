@@ -342,7 +342,7 @@ def research_prompt_reframe(
     }
 
 
-def research_auto_reframe(
+async def research_auto_reframe(
     prompt: str,
     target_url: str = "",
     model: str = "auto",
@@ -421,75 +421,65 @@ def research_auto_reframe(
             "recommendation": f"Best strategy for {model_family}: {best}",
         }
 
-    async def _test_reframes() -> dict[str, Any]:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            for i, strat in enumerate(strategy_order[:max_attempts]):
-                reframed = _apply_strategy(prompt, strat, model_family)
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        for i, strat in enumerate(strategy_order[:max_attempts]):
+            reframed = _apply_strategy(prompt, strat, model_family)
 
-                try:
-                    resp = await client.post(
-                        target_url,
-                        json={"messages": [{"role": "user", "content": reframed}]},
-                        headers={"Content-Type": "application/json"},
-                    )
-                    if resp.status_code == 200:
-                        data = resp.json()
-                        response_text = ""
-                        if isinstance(data, dict):
-                            choices = data.get("choices", [])
-                            if choices:
-                                response_text = choices[0].get("message", {}).get("content", "")
+            try:
+                resp = await client.post(
+                    target_url,
+                    json={"messages": [{"role": "user", "content": reframed}]},
+                    headers={"Content-Type": "application/json"},
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    response_text = ""
+                    if isinstance(data, dict):
+                        choices = data.get("choices", [])
+                        if choices:
+                            response_text = choices[0].get("message", {}).get("content", "")
 
-                        refused = _detect_refusal(response_text)
+                    refused = _detect_refusal(response_text)
 
-                        attempt_log.append(
-                            {
-                                "attempt": i + 1,
-                                "strategy": strat,
-                                "strategy_name": _STRATEGIES[strat]["name"],
-                                "reframed_preview": reframed[:300],
-                                "response_preview": response_text[:300],
-                                "refused": refused,
-                                "multiplier": _STRATEGIES[strat]["multiplier"],
-                            }
-                        )
-
-                        if not refused and response_text:
-                            return {
-                                "original": prompt,
-                                "accepted": True,
-                                "attempts": i + 1,
-                                "successful_strategy": strat,
-                                "successful_strategy_name": _STRATEGIES[strat]["name"],
-                                "response_preview": response_text[:500],
-                                "attempt_log": attempt_log,
-                            }
-                except Exception as exc:
                     attempt_log.append(
                         {
                             "attempt": i + 1,
                             "strategy": strat,
-                            "error": str(exc)[:100],
+                            "strategy_name": _STRATEGIES[strat]["name"],
+                            "reframed_preview": reframed[:300],
+                            "response_preview": response_text[:300],
+                            "refused": refused,
+                            "multiplier": _STRATEGIES[strat]["multiplier"],
                         }
                     )
 
-            return {
-                "original": prompt,
-                "accepted": False,
-                "attempts": len(attempt_log),
-                "successful_strategy": None,
-                "response_preview": "All strategies refused",
-                "attempt_log": attempt_log,
-            }
+                    if not refused and response_text:
+                        return {
+                            "original": prompt,
+                            "accepted": True,
+                            "attempts": i + 1,
+                            "successful_strategy": strat,
+                            "successful_strategy_name": _STRATEGIES[strat]["name"],
+                            "response_preview": response_text[:500],
+                            "attempt_log": attempt_log,
+                        }
+            except Exception as exc:
+                attempt_log.append(
+                    {
+                        "attempt": i + 1,
+                        "strategy": strat,
+                        "error": str(exc)[:100],
+                    }
+                )
 
-    try:
-        return asyncio.run(_test_reframes())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_test_reframes())
-        finally:
-            loop.close()
+        return {
+            "original": prompt,
+            "accepted": False,
+            "attempts": len(attempt_log),
+            "successful_strategy": None,
+            "response_preview": "All strategies refused",
+            "attempt_log": attempt_log,
+        }
 
 
 def research_refusal_detector(

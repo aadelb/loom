@@ -458,18 +458,13 @@ async def research_funding_signal(company: str, domain: str = "") -> dict[str, A
             # Parallel fetch tasks
             sec_task = _fetch_sec_filings(client, company_clean)
             github_task = _fetch_github_activity(client, company_clean)
-            subdomains_task = (
-                _fetch_crt_sh_subdomains(client, domain)
-                if domain and len(domain) < 100
-                else asyncio.sleep(0)
-            )
 
             sec_data, github_data = await asyncio.gather(
                 sec_task, github_task, return_exceptions=True
             )
 
             new_subdomains = []
-            if domain:
+            if domain and len(domain) < 100:
                 try:
                     new_subdomains = await _fetch_crt_sh_subdomains(client, domain)
                 except Exception as exc:

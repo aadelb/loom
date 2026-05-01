@@ -237,36 +237,42 @@ async def research_dark_market_monitor(keywords: list[str]) -> dict[str, Any]:
                 if not keyword:
                     continue
 
-                # Search OTX
-                otx_results = await _search_otx(client, keyword)
-                if otx_results:
-                    sources_checked.append("OTX")
-                    for result in otx_results[:5]:
-                        mention = {
-                            "source": "OTX",
-                            "keyword": keyword,
-                            "type": result.get("type", ""),
-                            "title": result.get("title", ""),
-                            "created": result.get("created", ""),
-                        }
-                        mentions.append(mention)
-                        alerts.append({
-                            "level": "medium",
-                            "message": f"Dark market activity: {result.get('title', keyword)} on OTX",
-                        })
+                try:
+                    # Search OTX
+                    otx_results = await _search_otx(client, keyword)
+                    if otx_results:
+                        sources_checked.append("OTX")
+                        for result in otx_results[:5]:
+                            mention = {
+                                "source": "OTX",
+                                "keyword": keyword,
+                                "type": result.get("type", ""),
+                                "title": result.get("title", ""),
+                                "created": result.get("created", ""),
+                            }
+                            mentions.append(mention)
+                            alerts.append({
+                                "level": "medium",
+                                "message": f"Dark market activity: {result.get('title', keyword)} on OTX",
+                            })
+                except Exception as exc:
+                    logger.debug("OTX search error: %s", exc)
 
-                # Search Ahmia
-                ahmia_results = await _search_ahmia(client, keyword)
-                if ahmia_results:
-                    sources_checked.append("Ahmia")
-                    for result in ahmia_results[:3]:
-                        mention = {
-                            "source": "Ahmia",
-                            "keyword": keyword,
-                            "title": result.get("title", ""),
-                            "url": result.get("url", ""),
-                        }
-                        mentions.append(mention)
+                try:
+                    # Search Ahmia
+                    ahmia_results = await _search_ahmia(client, keyword)
+                    if ahmia_results:
+                        sources_checked.append("Ahmia")
+                        for result in ahmia_results[:3]:
+                            mention = {
+                                "source": "Ahmia",
+                                "keyword": keyword,
+                                "title": result.get("title", ""),
+                                "url": result.get("url", ""),
+                            }
+                            mentions.append(mention)
+                except Exception as exc:
+                    logger.debug("Ahmia search error: %s", exc)
 
         return {
             "keywords": keywords,
@@ -315,33 +321,39 @@ async def research_ransomware_tracker(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0"},
         ) as client:
-            # Search OTX for ransomware activity
-            otx_results = await _search_otx(client, search_term)
-            for result in otx_results[:10]:
-                activity.append({
-                    "source": "OTX",
-                    "type": result.get("type", ""),
-                    "title": result.get("title", ""),
-                    "created": result.get("created", ""),
-                })
+            try:
+                # Search OTX for ransomware activity
+                otx_results = await _search_otx(client, search_term)
+                for result in otx_results[:10]:
+                    activity.append({
+                        "source": "OTX",
+                        "type": result.get("type", ""),
+                        "title": result.get("title", ""),
+                        "created": result.get("created", ""),
+                    })
 
-                # Extract indicators from pulse data
-                pulse_detail = result.get("pulse_detail", {})
-                if isinstance(pulse_detail, dict):
-                    indicators = pulse_detail.get("indicators", [])
-                    for indicator in indicators[:5]:
-                        ind_type = indicator.get("type", "")
-                        if ind_type in ("IPv4", "domain", "URL", "file"):
-                            iocs.add(indicator.get("indicator", ""))
+                    # Extract indicators from pulse data
+                    pulse_detail = result.get("pulse_detail", {})
+                    if isinstance(pulse_detail, dict):
+                        indicators = pulse_detail.get("indicators", [])
+                        for indicator in indicators[:5]:
+                            ind_type = indicator.get("type", "")
+                            if ind_type in ("IPv4", "domain", "URL", "file"):
+                                iocs.add(indicator.get("indicator", ""))
+            except Exception as exc:
+                logger.debug("OTX ransomware search error: %s", exc)
 
-            # Search Ahmia
-            ahmia_results = await _search_ahmia(client, search_term)
-            for result in ahmia_results[:5]:
-                activity.append({
-                    "source": "Ahmia",
-                    "title": result.get("title", ""),
-                    "url": result.get("url", ""),
-                })
+            try:
+                # Search Ahmia
+                ahmia_results = await _search_ahmia(client, search_term)
+                for result in ahmia_results[:5]:
+                    activity.append({
+                        "source": "Ahmia",
+                        "title": result.get("title", ""),
+                        "url": result.get("url", ""),
+                    })
+            except Exception as exc:
+                logger.debug("Ahmia ransomware search error: %s", exc)
 
         return {
             "group_name": group_name,
@@ -386,20 +398,26 @@ async def research_phishing_mapper(domain: str) -> dict[str, Any]:
             headers={"User-Agent": "Loom-Research/1.0"},
         ) as client:
             # Find lookalike domains via Certificate Transparency
-            lookalikes = await _crt_sh_lookalikes(client, domain)
+            try:
+                lookalikes = await _crt_sh_lookalikes(client, domain)
+            except Exception as exc:
+                logger.debug("crt_sh lookalikes error: %s", exc)
 
             # Check URLhaus for phishing URLs on lookalike domains
             for lookalike in lookalikes[:20]:
-                results = await _urlhaus_host_check(client, lookalike)
-                for result in results[:5]:
-                    phishing_urls.append({
-                        "url": result.get("url", ""),
-                        "threat": result.get("threat", ""),
-                        "tags": result.get("tags", []),
-                        "date_added": result.get("date_added", ""),
-                        "source_domain": lookalike,
-                    })
-                    risk_score += 10
+                try:
+                    results = await _urlhaus_host_check(client, lookalike)
+                    for result in results[:5]:
+                        phishing_urls.append({
+                            "url": result.get("url", ""),
+                            "threat": result.get("threat", ""),
+                            "tags": result.get("tags", []),
+                            "date_added": result.get("date_added", ""),
+                            "source_domain": lookalike,
+                        })
+                        risk_score += 10
+                except Exception as exc:
+                    logger.debug("urlhaus check error for %s: %s", lookalike, exc)
 
         # Determine risk level
         if risk_score >= 50:
@@ -460,44 +478,53 @@ async def research_botnet_tracker(ioc: str, ioc_type: str = "ip") -> dict[str, A
         ) as client:
             # Check Feodo Tracker for C2 IPs
             if ioc_type == "ip":
-                feodo_result = await _feodo_tracker_check(client, ioc)
-                if feodo_result.get("listed"):
-                    known_c2 = True
-                    blocklist_status.append({
-                        "list": "Feodo Tracker",
-                        "listed": True,
-                    })
-                    threat_level = "critical"
-                else:
-                    blocklist_status.append({
-                        "list": "Feodo Tracker",
-                        "listed": False,
-                    })
+                try:
+                    feodo_result = await _feodo_tracker_check(client, ioc)
+                    if feodo_result.get("listed"):
+                        known_c2 = True
+                        blocklist_status.append({
+                            "list": "Feodo Tracker",
+                            "listed": True,
+                        })
+                        threat_level = "critical"
+                    else:
+                        blocklist_status.append({
+                            "list": "Feodo Tracker",
+                            "listed": False,
+                        })
+                except Exception as exc:
+                    logger.debug("Feodo tracker error: %s", exc)
 
-                # Check Shodan InternetDB
-                shodan_data = await _shodan_internetdb_lookup(client, ioc)
-                if shodan_data:
-                    blocklist_status.append({
-                        "list": "Shodan InternetDB",
-                        "listed": True,
-                        "ports": shodan_data.get("ports", []),
-                        "tags": shodan_data.get("tags", []),
-                    })
-                    if shodan_data.get("tags"):
-                        threat_level = "high"
+                try:
+                    # Check Shodan InternetDB
+                    shodan_data = await _shodan_internetdb_lookup(client, ioc)
+                    if shodan_data:
+                        blocklist_status.append({
+                            "list": "Shodan InternetDB",
+                            "listed": True,
+                            "ports": shodan_data.get("ports", []),
+                            "tags": shodan_data.get("tags", []),
+                        })
+                        if shodan_data.get("tags"):
+                            threat_level = "high"
+                except Exception as exc:
+                    logger.debug("Shodan error: %s", exc)
 
             # Check URLhaus for botnet URLs
             if ioc_type in ("domain", "ip"):
-                urlhaus_results = await _urlhaus_host_check(client, ioc)
-                if urlhaus_results:
-                    blocklist_status.append({
-                        "list": "URLhaus",
-                        "listed": True,
-                        "count": len(urlhaus_results),
-                    })
-                    if any(r.get("threat") == "botnet" for r in urlhaus_results):
-                        known_c2 = True
-                        threat_level = "critical"
+                try:
+                    urlhaus_results = await _urlhaus_host_check(client, ioc)
+                    if urlhaus_results:
+                        blocklist_status.append({
+                            "list": "URLhaus",
+                            "listed": True,
+                            "count": len(urlhaus_results),
+                        })
+                        if any(r.get("threat") == "botnet" for r in urlhaus_results):
+                            known_c2 = True
+                            threat_level = "critical"
+                except Exception as exc:
+                    logger.debug("URLhaus botnet error: %s", exc)
 
         return {
             "ioc": ioc,
@@ -543,36 +570,45 @@ async def research_malware_intel(hash_value: str) -> dict[str, Any]:
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0"},
         ) as client:
-            # Query MalwareBazaar
-            mb_result = await _malware_bazaar_lookup(client, hash_value)
-            if mb_result.get("query_status") == "ok":
-                data = mb_result.get("data", {})
-                if isinstance(data, dict):
-                    family = data.get("tags", [None])[0] if data.get("tags") else None
-                    first_seen = data.get("first_submission_date")
+            try:
+                # Query MalwareBazaar
+                mb_result = await _malware_bazaar_lookup(client, hash_value)
+                if mb_result.get("query_status") == "ok":
+                    data = mb_result.get("data", {})
+                    if isinstance(data, dict):
+                        family = data.get("tags", [None])[0] if data.get("tags") else None
+                        first_seen = data.get("first_submission_date")
+                        detections.append({
+                            "source": "MalwareBazaar",
+                            "av_detections": data.get("av_detections", 0),
+                            "signature": data.get("signature", ""),
+                        })
+                        tags.update(data.get("tags", []))
+            except Exception as exc:
+                logger.debug("MalwareBazaar error: %s", exc)
+
+            try:
+                # Query CIRCL hashlookup
+                circl_result = await _circl_hashlookup(client, hash_value)
+                if circl_result:
                     detections.append({
-                        "source": "MalwareBazaar",
-                        "av_detections": data.get("av_detections", 0),
-                        "signature": data.get("signature", ""),
+                        "source": "CIRCL hashlookup",
+                        "sources": circl_result.get("sources", []),
+                        "parents": circl_result.get("parents", []),
                     })
-                    tags.update(data.get("tags", []))
+            except Exception as exc:
+                logger.debug("CIRCL error: %s", exc)
 
-            # Query CIRCL hashlookup
-            circl_result = await _circl_hashlookup(client, hash_value)
-            if circl_result:
-                detections.append({
-                    "source": "CIRCL hashlookup",
-                    "sources": circl_result.get("sources", []),
-                    "parents": circl_result.get("parents", []),
-                })
-
-            # Search OTX
-            otx_results = await _search_otx(client, hash_value)
-            if otx_results:
-                detections.append({
-                    "source": "OTX",
-                    "pulse_count": len(otx_results),
-                })
+            try:
+                # Search OTX
+                otx_results = await _search_otx(client, hash_value)
+                if otx_results:
+                    detections.append({
+                        "source": "OTX",
+                        "pulse_count": len(otx_results),
+                    })
+            except Exception as exc:
+                logger.debug("OTX hash search error: %s", exc)
 
         return {
             "hash": hash_value,
@@ -622,56 +658,68 @@ async def research_domain_reputation(domain: str) -> dict[str, Any]:
             headers={"User-Agent": "Loom-Research/1.0"},
         ) as client:
             # Check URLhaus
-            urlhaus_results = await _urlhaus_host_check(client, domain)
-            total_sources += 1
-            if urlhaus_results:
-                verdicts["URLhaus"] = {
-                    "verdict": "malicious",
-                    "count": len(urlhaus_results),
-                }
-                malicious_votes += 1
-            else:
-                verdicts["URLhaus"] = {"verdict": "clean"}
+            try:
+                urlhaus_results = await _urlhaus_host_check(client, domain)
+                total_sources += 1
+                if urlhaus_results:
+                    verdicts["URLhaus"] = {
+                        "verdict": "malicious",
+                        "count": len(urlhaus_results),
+                    }
+                    malicious_votes += 1
+                else:
+                    verdicts["URLhaus"] = {"verdict": "clean"}
+            except Exception as exc:
+                logger.debug("URLhaus domain reputation error: %s", exc)
 
             # Check OTX
-            otx_results = await _search_otx(client, domain)
-            total_sources += 1
-            if otx_results:
-                verdicts["OTX"] = {
-                    "verdict": "suspicious",
-                    "pulse_count": len(otx_results),
-                }
-                malicious_votes += 1
-            else:
-                verdicts["OTX"] = {"verdict": "clean"}
+            try:
+                otx_results = await _search_otx(client, domain)
+                total_sources += 1
+                if otx_results:
+                    verdicts["OTX"] = {
+                        "verdict": "suspicious",
+                        "pulse_count": len(otx_results),
+                    }
+                    malicious_votes += 1
+                else:
+                    verdicts["OTX"] = {"verdict": "clean"}
+            except Exception as exc:
+                logger.debug("OTX domain reputation error: %s", exc)
 
             # Check Ahmia
-            ahmia_results = await _search_ahmia(client, domain)
-            total_sources += 1
-            if ahmia_results:
-                verdicts["Ahmia"] = {
-                    "verdict": "suspicious",
-                    "result_count": len(ahmia_results),
-                }
-                malicious_votes += 0.5
-            else:
-                verdicts["Ahmia"] = {"verdict": "clean"}
+            try:
+                ahmia_results = await _search_ahmia(client, domain)
+                total_sources += 1
+                if ahmia_results:
+                    verdicts["Ahmia"] = {
+                        "verdict": "suspicious",
+                        "result_count": len(ahmia_results),
+                    }
+                    malicious_votes += 0.5
+                else:
+                    verdicts["Ahmia"] = {"verdict": "clean"}
+            except Exception as exc:
+                logger.debug("Ahmia domain reputation error: %s", exc)
 
             # Check Certificate Transparency for lookalikes (phishing risk)
-            lookalikes = await _crt_sh_lookalikes(client, domain)
-            total_sources += 1
-            if lookalikes:
-                verdicts["CT Lookalikes"] = {
-                    "verdict": "phishing_risk",
-                    "count": len(lookalikes),
-                }
-                malicious_votes += 0.5
-            else:
-                verdicts["CT Lookalikes"] = {"verdict": "clean"}
+            try:
+                lookalikes = await _crt_sh_lookalikes(client, domain)
+                total_sources += 1
+                if lookalikes:
+                    verdicts["CT Lookalikes"] = {
+                        "verdict": "phishing_risk",
+                        "count": len(lookalikes),
+                    }
+                    malicious_votes += 0.5
+                else:
+                    verdicts["CT Lookalikes"] = {"verdict": "clean"}
+            except Exception as exc:
+                logger.debug("CT lookalikes error: %s", exc)
 
         # Calculate reputation score (0-100, lower is worse)
-        reputation_score = max(0, 100 - int((malicious_votes / total_sources) * 100))
-        is_malicious = malicious_votes >= (total_sources * 0.5)
+        reputation_score = max(0, 100 - int((malicious_votes / total_sources) * 100)) if total_sources > 0 else 0
+        is_malicious = malicious_votes >= (total_sources * 0.5) if total_sources > 0 else False
 
         return {
             "domain": domain,
@@ -737,91 +785,112 @@ async def research_ioc_enrich(ioc: str, ioc_type: str = "auto") -> dict[str, Any
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0"},
         ) as client:
-            # Search OTX
-            otx_results = await _search_otx(client, ioc)
-            sources_checked.add("OTX")
-            if otx_results:
-                enrichments.append({
-                    "source": "OTX",
-                    "type": "threat_pulses",
-                    "count": len(otx_results),
-                    "data": otx_results[:3],
-                })
-                verdicts["OTX"] = "malicious"
-                threat_score += 30
+            try:
+                # Search OTX
+                otx_results = await _search_otx(client, ioc)
+                sources_checked.add("OTX")
+                if otx_results:
+                    enrichments.append({
+                        "source": "OTX",
+                        "type": "threat_pulses",
+                        "count": len(otx_results),
+                        "data": otx_results[:3],
+                    })
+                    verdicts["OTX"] = "malicious"
+                    threat_score += 30
+            except Exception as exc:
+                logger.debug("OTX enrich error: %s", exc)
 
             # Query MalwareBazaar (for hashes)
             if detected_type == "hash":
-                mb_result = await _malware_bazaar_lookup(client, ioc)
-                sources_checked.add("MalwareBazaar")
-                if mb_result.get("query_status") == "ok":
-                    enrichments.append({
-                        "source": "MalwareBazaar",
-                        "type": "malware_info",
-                        "data": mb_result.get("data", {}),
-                    })
-                    verdicts["MalwareBazaar"] = "malicious"
-                    threat_score += 40
+                try:
+                    mb_result = await _malware_bazaar_lookup(client, ioc)
+                    sources_checked.add("MalwareBazaar")
+                    if mb_result.get("query_status") == "ok":
+                        enrichments.append({
+                            "source": "MalwareBazaar",
+                            "type": "malware_info",
+                            "data": mb_result.get("data", {}),
+                        })
+                        verdicts["MalwareBazaar"] = "malicious"
+                        threat_score += 40
+                except Exception as exc:
+                    logger.debug("MalwareBazaar enrich error: %s", exc)
 
-                # CIRCL hashlookup
-                circl_result = await _circl_hashlookup(client, ioc)
-                sources_checked.add("CIRCL")
-                if circl_result:
-                    enrichments.append({
-                        "source": "CIRCL",
-                        "type": "hash_relations",
-                        "data": circl_result,
-                    })
-                    verdicts["CIRCL"] = "suspicious"
-                    threat_score += 20
+                try:
+                    # CIRCL hashlookup
+                    circl_result = await _circl_hashlookup(client, ioc)
+                    sources_checked.add("CIRCL")
+                    if circl_result:
+                        enrichments.append({
+                            "source": "CIRCL",
+                            "type": "hash_relations",
+                            "data": circl_result,
+                        })
+                        verdicts["CIRCL"] = "suspicious"
+                        threat_score += 20
+                except Exception as exc:
+                    logger.debug("CIRCL enrich error: %s", exc)
 
             # Query Shodan InternetDB (for IPs)
             if detected_type == "ip":
-                shodan_result = await _shodan_internetdb_lookup(client, ioc)
-                sources_checked.add("Shodan")
-                if shodan_result:
-                    enrichments.append({
-                        "source": "Shodan",
-                        "type": "infrastructure",
-                        "ports": shodan_result.get("ports", []),
-                        "tags": shodan_result.get("tags", []),
-                    })
-                    if shodan_result.get("tags"):
-                        verdicts["Shodan"] = "suspicious"
-                        threat_score += 25
+                try:
+                    shodan_result = await _shodan_internetdb_lookup(client, ioc)
+                    sources_checked.add("Shodan")
+                    if shodan_result:
+                        enrichments.append({
+                            "source": "Shodan",
+                            "type": "infrastructure",
+                            "ports": shodan_result.get("ports", []),
+                            "tags": shodan_result.get("tags", []),
+                        })
+                        if shodan_result.get("tags"):
+                            verdicts["Shodan"] = "suspicious"
+                            threat_score += 25
+                except Exception as exc:
+                    logger.debug("Shodan enrich error: %s", exc)
 
-                # Feodo Tracker for C2
-                feodo_result = await _feodo_tracker_check(client, ioc)
-                sources_checked.add("Feodo")
-                if feodo_result.get("listed"):
-                    verdicts["Feodo"] = "malicious"
-                    threat_score += 50
+                try:
+                    # Feodo Tracker for C2
+                    feodo_result = await _feodo_tracker_check(client, ioc)
+                    sources_checked.add("Feodo")
+                    if feodo_result.get("listed"):
+                        verdicts["Feodo"] = "malicious"
+                        threat_score += 50
+                except Exception as exc:
+                    logger.debug("Feodo enrich error: %s", exc)
 
             # URLhaus check (for domains/URLs)
             if detected_type in ("domain", "url"):
-                urlhaus_results = await _urlhaus_host_check(client, ioc)
-                sources_checked.add("URLhaus")
-                if urlhaus_results:
-                    enrichments.append({
-                        "source": "URLhaus",
-                        "type": "malicious_urls",
-                        "count": len(urlhaus_results),
-                        "data": urlhaus_results[:3],
-                    })
-                    verdicts["URLhaus"] = "malicious"
-                    threat_score += 35
+                try:
+                    urlhaus_results = await _urlhaus_host_check(client, ioc)
+                    sources_checked.add("URLhaus")
+                    if urlhaus_results:
+                        enrichments.append({
+                            "source": "URLhaus",
+                            "type": "malicious_urls",
+                            "count": len(urlhaus_results),
+                            "data": urlhaus_results[:3],
+                        })
+                        verdicts["URLhaus"] = "malicious"
+                        threat_score += 35
+                except Exception as exc:
+                    logger.debug("URLhaus enrich error: %s", exc)
 
             # Ahmia darknet search
-            ahmia_results = await _search_ahmia(client, ioc)
-            sources_checked.add("Ahmia")
-            if ahmia_results:
-                enrichments.append({
-                    "source": "Ahmia",
-                    "type": "darknet_mentions",
-                    "count": len(ahmia_results),
-                })
-                verdicts["Ahmia"] = "suspicious"
-                threat_score += 15
+            try:
+                ahmia_results = await _search_ahmia(client, ioc)
+                sources_checked.add("Ahmia")
+                if ahmia_results:
+                    enrichments.append({
+                        "source": "Ahmia",
+                        "type": "darknet_mentions",
+                        "count": len(ahmia_results),
+                    })
+                    verdicts["Ahmia"] = "suspicious"
+                    threat_score += 15
+            except Exception as exc:
+                logger.debug("Ahmia enrich error: %s", exc)
 
         # Cap threat score at 100
         threat_score = min(100, threat_score)

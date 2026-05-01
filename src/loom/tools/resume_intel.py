@@ -267,7 +267,10 @@ async def research_interview_prep(
         job_description,
         re.IGNORECASE | re.MULTILINE,
     )
-    role_title = (role_match.group(1) or role_match.group(2) or "Candidate").strip()
+    if role_match:
+        role_title = (role_match.group(1) or role_match.group(2) or "Candidate").strip()
+    else:
+        role_title = "Candidate"
     role_summary = f"This interview will focus on {role_title} position. Key areas: {', '.join(sorted(list(jd_keywords)[:5]))}"
 
     questions: dict[str, list[dict[str, str]]] = {
