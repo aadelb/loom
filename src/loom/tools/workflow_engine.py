@@ -44,14 +44,14 @@ def research_workflow_create(name: str, steps: list[dict]) -> dict[str, Any]:
 
     Args:
         name: Workflow name
-        steps: List of step definitions
+        steps: List of step definitions (1-100 steps)
 
     Returns:
         Dict with workflow_id, name, step_count, created_at, status
     """
     _init_db()
 
-    if not steps or len(steps) > 100:
+    if not isinstance(steps, list) or len(steps) < 1 or len(steps) > 100:
         raise ValueError("1-100 steps required")
 
     step_names = {i: s.get("name", f"step_{i}") for i, s in enumerate(steps)}

@@ -69,12 +69,10 @@ async def research_daisy_chain(
     models = params.available_models or ["nvidia_nim", "groq", "deepseek", "gemini"]
 
     logger.info(
-        f"Starting daisy-chain decomposition",
-        extra={
-            "query_len": len(params.query),
-            "num_models": len(models),
-            "combiner": params.combiner_model,
-        },
+        "Starting daisy-chain decomposition query_len=%s num_models=%s combiner=%s",
+        len(params.query),
+        len(models),
+        params.combiner_model,
     )
 
     decomposer = DaisyChainDecomposer(available_models=models)
@@ -91,7 +89,7 @@ async def research_daisy_chain(
             return f"Error calling {model_name}: {str(e)[:100]}"
 
     callbacks = {
-        model: real_llm_callback for model in params.available_models
+        model: real_llm_callback for model in models
     }
     callbacks[params.combiner_model] = real_llm_callback
 
@@ -143,12 +141,10 @@ async def research_daisy_chain(
             }
 
         logger.info(
-            "Daisy-chain execution completed",
-            extra={
-                "success": result.success,
-                "hcs_score": result.hcs_score,
-                "execution_time_ms": result.execution_time_ms,
-            },
+            "Daisy-chain execution completed success=%s hcs_score=%s execution_time_ms=%s",
+            result.success,
+            result.hcs_score,
+            result.execution_time_ms,
         )
 
         return response

@@ -98,11 +98,11 @@ async def research_recommend_tools(
                     break
 
         log.info(
-            "recommend_tools",
-            query_length=len(params.query),
-            recommendations_count=len(recommendations),
-            excluded_count=len(params.exclude_used),
-            matched_categories=len(matched_categories),
+            "recommend_tools query_length=%s recommendations_count=%s excluded_count=%s matched_categories=%s",
+            len(params.query),
+            len(recommendations),
+            len(params.exclude_used),
+            len(matched_categories),
         )
 
         return {
@@ -124,7 +124,7 @@ async def research_recommend_tools(
         }
 
     except ValueError as e:
-        log.error("validation_error", error=str(e))
+        log.error("validation_error error=%s", str(e))
         raise
 
 

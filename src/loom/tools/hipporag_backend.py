@@ -223,7 +223,7 @@ class HippoRAGStore:
         """Synchronous recall implementation."""
         with sqlite3.connect(str(self.db_path)) as conn:
             conn.row_factory = sqlite3.Row
-            # FTS5 search for content relevance
+            # FTS5 search for content relevance with bm25 ranking
             cursor = conn.execute(
                 """
                 SELECT c.id, c.content, c.metadata, c.created_at
@@ -231,7 +231,7 @@ class HippoRAGStore:
                 WHERE c.namespace = ? AND c.id IN (
                     SELECT rowid FROM content_fts WHERE content_fts MATCH ?
                 )
-                ORDER BY rank
+                ORDER BY bm25(content_fts)
                 LIMIT ?
                 """,
                 (namespace, query, top_k),

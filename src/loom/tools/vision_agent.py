@@ -119,6 +119,11 @@ async def research_vision_compare(url1: str, url2: str) -> dict[str, Any]:
     from loom.tools.fetch import research_fetch
     from loom.tools.llm import _get_provider
 
+    if not url1 or not url1.strip():
+        raise ValueError("url1 is required and cannot be empty")
+    if not url2 or not url2.strip():
+        raise ValueError("url2 is required and cannot be empty")
+
     url1 = validate_url(url1)
     url2 = validate_url(url2)
 

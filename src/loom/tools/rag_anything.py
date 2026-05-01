@@ -75,10 +75,10 @@ def research_rag_ingest(
             chunk_ids.append(chunk_id)
 
         conn.commit()
-        logger.info("rag_ingest_success", chunks_stored=len(chunk_ids), content_type=content_type)
+        logger.info("rag_ingest_success chunks_stored=%s content_type=%s", len(chunk_ids), content_type)
         return {"chunks_stored": len(chunk_ids), "content_type": content_type, "chunk_ids": chunk_ids, "store_location": str(_DB_PATH)}
     except sqlite3.Error as e:
-        logger.error("rag_ingest_failed", error=str(e))
+        logger.error("rag_ingest_failed error=%s", str(e))
         return {"chunks_stored": 0, "error": str(e), "store_location": str(_DB_PATH)}
     finally:
         conn.close()
@@ -121,7 +121,7 @@ def research_rag_query(
         total = conn.execute("SELECT COUNT(*) FROM chunks").fetchone()
         total_chunks = total[0] if total else 0
 
-        logger.info("rag_query_success", query_len=len(query_text), results_found=len(results))
+        logger.info("rag_query_success query_len=%s results_found=%s", len(query_text), len(results))
         return {
             "query": query_text,
             "results": results,
@@ -130,7 +130,7 @@ def research_rag_query(
             "query_hash": _hash_embedding(query_text),
         }
     except sqlite3.Error as e:
-        logger.error("rag_query_failed", error=str(e), query=query_text)
+        logger.error("rag_query_failed error=%s query=%s", str(e), query_text)
         return {"query": query_text, "results": [], "error": str(e), "store_location": str(_DB_PATH)}
     finally:
         conn.close()
@@ -145,5 +145,5 @@ def research_rag_clear() -> dict[str, Any]:
             return {"cleared": True, "store_location": str(_DB_PATH)}
         return {"cleared": False, "message": "Store not found", "store_location": str(_DB_PATH)}
     except OSError as e:
-        logger.error("rag_clear_failed", error=str(e))
+        logger.error("rag_clear_failed error=%s", str(e))
         return {"cleared": False, "error": str(e), "store_location": str(_DB_PATH)}
