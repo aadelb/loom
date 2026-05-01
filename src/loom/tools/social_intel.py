@@ -143,25 +143,22 @@ async def research_social_search(
     not_found: list[str] = []
     unknown: list[str] = []
 
-    async def run_checks() -> None:
-        tasks = [_check_profile_exists(u, p, url) for u, p, url in check_tasks]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+    # Execute checks directly without asyncio.run (we're already in async context)
+    tasks = [_check_profile_exists(u, p, url) for u, p, url in check_tasks]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
 
-        for result in results:
-            if isinstance(result, Exception):
-                logger.error("social_search_exception: %s", result)
-                continue
+    for result in results:
+        if isinstance(result, Exception):
+            logger.error("social_search_exception: %s", result)
+            continue
 
-            platform, status, url = result
-            if status == "exists":
-                found.append({"platform": platform, "url": url, "status": "exists"})
-            elif status == "not_found":
-                not_found.append(platform)
-            else:
-                unknown.append(platform)
-
-    # Run async checks
-    asyncio.run(run_checks())
+        platform, status, url = result
+        if status == "exists":
+            found.append({"platform": platform, "url": url, "status": "exists"})
+        elif status == "not_found":
+            not_found.append(platform)
+        else:
+            unknown.append(platform)
 
     logger.info(
         "social_search completed username=%s platforms_checked=%d found=%d not_found=%d unknown=%d",
@@ -255,24 +252,21 @@ def research_social_profile(url: str) -> dict[str, Any]:
 
 
 def _detect_platform(url: str) -> str:
-    """Detect which platform a URL belongs to.
+    """Detect social platform from URL.
 
     Args:
-        url: URL to analyze
+        url: Profile URL
 
     Returns:
-        Platform name, or "unknown" if not recognized.
+        Platform name (e.g. "github", "twitter") or "unknown".
     """
     url_lower = url.lower()
-
     if "github.com" in url_lower:
         return "github"
-    elif "x.com" in url_lower or "twitter.com" in url_lower:
+    elif "twitter.com" in url_lower or "x.com" in url_lower:
         return "twitter"
     elif "reddit.com" in url_lower:
         return "reddit"
-    elif "news.ycombinator.com" in url_lower or "ycombinator.com" in url_lower:
-        return "hackernews"
     elif "linkedin.com" in url_lower:
         return "linkedin"
     elif "medium.com" in url_lower:
@@ -281,43 +275,27 @@ def _detect_platform(url: str) -> str:
         return "dev.to"
     elif "keybase.io" in url_lower:
         return "keybase"
-    else:
-        return "unknown"
+    elif "ycombinator.com" in url_lower:
+        return "hackernews"
+    return "unknown"
 
 
 def _extract_og_metadata(html: str) -> dict[str, str]:
     """Extract Open Graph metadata from HTML.
 
     Args:
-        html: HTML content
+        html: HTML page content
 
     Returns:
-        Dict mapping og: property names to values.
+        Dict of og:* metadata (og:title, og:description, og:image, etc.).
     """
-    metadata: dict[str, str] = {}
+    metadata = {}
+    # Simple regex-based extraction (more robust than regex would require a proper HTML parser)
+    import re
 
-    # Match <meta property="og:*" content="value">
-    og_pattern = re.compile(
-        r'<meta\s+property=["\']og:([a-z:]+)["\'](?:\s+[^>]*)content=["\']([^"\']*)["\']',
-        re.IGNORECASE,
-    )
-
-    for match in og_pattern.finditer(html):
-        prop = f"og:{match.group(1)}"
-        value = match.group(2)
-        if value:
-            metadata[prop] = value
-
-    # Fallback: try name attribute instead of property
-    if not metadata:
-        name_pattern = re.compile(
-            r'<meta\s+name=["\']og:([a-z:]+)["\'](?:\s+[^>]*)content=["\']([^"\']*)["\']',
-            re.IGNORECASE,
-        )
-        for match in name_pattern.finditer(html):
-            prop = f"og:{match.group(1)}"
-            value = match.group(2)
-            if value:
-                metadata[prop] = value
+    pattern = r'<meta\s+property="(og:[^"]+)"\s+content="([^"]+)"'
+    for match in re.finditer(pattern, html, re.IGNORECASE):
+        key, value = match.groups()
+        metadata[key] = value
 
     return metadata

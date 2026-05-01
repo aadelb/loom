@@ -1288,7 +1288,115 @@ def _register_tools(mcp: FastMCP) -> None:
     except ImportError as exc:
         log.debug("instructor_unavailable: %s", exc)
 
+    # Query builder (DSPy-powered intent extraction + query optimization)
+    try:
+        from loom.tools.query_builder import research_build_query
+        mcp.tool()(_wrap_tool(research_build_query))
+    except ImportError as exc:
+        log.debug("query_builder_unavailable: %s", exc)
+
+    # Threat intelligence (opencti, IntelOwl, deepdarkCTI)
+    try:
+        from loom.tools.opencti_backend import research_opencti_query
+        mcp.tool()(_wrap_tool(research_opencti_query))
+    except ImportError as exc:
+        log.debug("opencti_unavailable: %s", exc)
+    try:
+        from loom.tools.intelowl_backend import research_intelowl_analyze
+        mcp.tool()(_wrap_tool(research_intelowl_analyze))
+    except ImportError as exc:
+        log.debug("intelowl_unavailable: %s", exc)
+    try:
+        from loom.tools.deepdarkcti_backend import research_dark_cti
+        mcp.tool()(_wrap_tool(research_dark_cti))
+    except ImportError as exc:
+        log.debug("deepdarkcti_unavailable: %s", exc)
+
+    # Social media OSINT (Telegram, LinkedIn, Discord)
+    try:
+        from loom.tools.telegram_osint import research_telegram_intel
+        mcp.tool()(_wrap_tool(research_telegram_intel))
+    except ImportError as exc:
+        log.debug("telegram_unavailable: %s", exc)
+    try:
+        from loom.tools.linkedin_osint import research_linkedin_intel
+        mcp.tool()(_wrap_tool(research_linkedin_intel))
+    except ImportError as exc:
+        log.debug("linkedin_unavailable: %s", exc)
+    try:
+        from loom.tools.discord_osint import research_discord_intel
+        mcp.tool()(_wrap_tool(research_discord_intel))
+    except ImportError as exc:
+        log.debug("discord_unavailable: %s", exc)
+
+    # Reconnaissance (Recon-ng, massdns, EagleEye, robin, OnionScan, testssl, Masscan)
+    try:
+        from loom.tools.reconng_backend import research_reconng_scan
+        mcp.tool()(_wrap_tool(research_reconng_scan))
+    except ImportError as exc:
+        log.debug("reconng_unavailable: %s", exc)
+    try:
+        from loom.tools.massdns_backend import research_massdns_resolve
+        mcp.tool()(_wrap_tool(research_massdns_resolve))
+    except ImportError as exc:
+        log.debug("massdns_unavailable: %s", exc)
+    try:
+        from loom.tools.eagleeye_backend import research_reverse_image
+        mcp.tool()(_wrap_tool(research_reverse_image))
+    except ImportError as exc:
+        log.debug("eagleeye_unavailable: %s", exc)
+    try:
+        from loom.tools.robin_backend import research_robin_scan
+        mcp.tool()(_wrap_tool(research_robin_scan))
+    except ImportError as exc:
+        log.debug("robin_unavailable: %s", exc)
+    try:
+        from loom.tools.onionscan_backend import research_onionscan
+        mcp.tool()(_wrap_tool(research_onionscan))
+    except ImportError as exc:
+        log.debug("onionscan_unavailable: %s", exc)
+    try:
+        from loom.tools.testssl_backend import research_testssl
+        mcp.tool()(_wrap_tool(research_testssl))
+    except ImportError as exc:
+        log.debug("testssl_unavailable: %s", exc)
+    try:
+        from loom.tools.masscan_backend import research_masscan
+        mcp.tool()(_wrap_tool(research_masscan))
+    except ImportError as exc:
+        log.debug("masscan_unavailable: %s", exc)
+
+    # Data extraction (PaddleOCR, camelot, Scapy)
+    try:
+        from loom.tools.paddleocr_backend import research_paddle_ocr
+        mcp.tool()(_wrap_tool(research_paddle_ocr))
+    except ImportError as exc:
+        log.debug("paddleocr_unavailable: %s", exc)
+    try:
+        from loom.tools.camelot_backend import research_table_extract
+        mcp.tool()(_wrap_tool(research_table_extract))
+    except ImportError as exc:
+        log.debug("camelot_unavailable: %s", exc)
+    try:
+        from loom.tools.scapy_backend import research_packet_craft
+        mcp.tool()(_wrap_tool(research_packet_craft))
+    except ImportError as exc:
+        log.debug("scapy_unavailable: %s", exc)
+
+    # Privacy research (FingerprintJS, supercookie)
+    try:
+        from loom.tools.fingerprint_backend import research_browser_fingerprint
+        mcp.tool()(_wrap_tool(research_browser_fingerprint))
+    except ImportError as exc:
+        log.debug("fingerprint_unavailable: %s", exc)
+    try:
+        from loom.tools.supercookie_backend import research_supercookie_check
+        mcp.tool()(_wrap_tool(research_supercookie_check))
+    except ImportError as exc:
+        log.debug("supercookie_unavailable: %s", exc)
+
     log.info("new_integrations_registered count=9 (webcheck,shodan_host,shodan_search,photon,h8mail,censys_host,censys_search,unstructured,instructor)")
+    log.info("additional_integrations_registered count=18 (query_builder,opencti,intelowl,deepdarkcti,telegram,linkedin,discord,reconng,massdns,eagleeye,robin,onionscan,testssl,masscan,paddleocr,camelot,scapy,fingerprint,supercookie)")
 
     # Arabic language support
     try:

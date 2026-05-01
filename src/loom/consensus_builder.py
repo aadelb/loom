@@ -507,7 +507,7 @@ async def research_consensus_build(
     """
     from loom.config import get_config
     from loom.providers.groq_provider import GroqProvider
-    from loom.providers.nvidia_nim import NvidiaProvider
+    from loom.providers.nvidia_nim import NvidiaNimProvider
     from loom.providers.deepseek_provider import DeepSeekProvider
     from loom.providers.gemini_provider import GeminiProvider
     from loom.providers.moonshot_provider import MoonShotProvider
@@ -524,7 +524,7 @@ async def research_consensus_build(
     providers: dict[str, Any] = {}
     provider_classes = {
         "groq": GroqProvider,
-        "nvidia": NvidiaProvider,
+        "nvidia": NvidiaNimProvider,
         "deepseek": DeepSeekProvider,
         "gemini": GeminiProvider,
         "moonshot": MoonShotProvider,
@@ -578,7 +578,7 @@ async def research_consensus_pressure(
     """
     from loom.config import get_config
     from loom.providers.groq_provider import GroqProvider
-    from loom.providers.nvidia_nim import NvidiaProvider
+    from loom.providers.nvidia_nim import NvidiaNimProvider
     from loom.providers.deepseek_provider import DeepSeekProvider
     from loom.providers.gemini_provider import GeminiProvider
     from loom.providers.moonshot_provider import MoonShotProvider
@@ -594,7 +594,7 @@ async def research_consensus_pressure(
     providers: dict[str, Any] = {}
     provider_classes = {
         "groq": GroqProvider,
-        "nvidia": NvidiaProvider,
+        "nvidia": NvidiaNimProvider,
         "deepseek": DeepSeekProvider,
         "gemini": GeminiProvider,
         "moonshot": MoonShotProvider,

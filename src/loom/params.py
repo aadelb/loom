@@ -4636,3 +4636,188 @@ class InstructorStructuredExtractParams(BaseModel):
                 f"invalid provider '{v}'. Allowed: {', '.join(sorted(allowed))}"
             )
         return v.lower()
+
+class PaddleOCRParams(BaseModel):
+    """Parameters for research_paddle_ocr tool."""
+
+    image_url: str = Field(
+        "",
+        description="URL to image file (auto-download)",
+        max_length=2048,
+    )
+    image_path: str = Field(
+        "",
+        description="Local file path to image",
+        max_length=2048,
+    )
+    languages: list[str] | None = Field(
+        None,
+        description="List of language codes (e.g., ['en', 'ar']). Defaults to ['en'].",
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("image_url")
+    @classmethod
+    def validate_image_url(cls, v: str) -> str:
+        """URL must be empty or valid."""
+        if v and v.strip():
+            validate_url(v)
+        return v
+
+    @field_validator("languages")
+    @classmethod
+    def validate_languages(cls, v: list[str] | None) -> list[str] | None:
+        """Languages must be non-empty list of valid codes."""
+        if v is None:
+            return v
+        if not isinstance(v, list) or not v:
+            raise ValueError("languages must be a non-empty list")
+        if len(v) > 10:
+            raise ValueError("max 10 languages supported")
+        # Basic validation: 2-3 char language codes
+        for lang in v:
+            if not isinstance(lang, str) or len(lang) < 2 or len(lang) > 5:
+                raise ValueError(f"invalid language code: {lang}")
+        return v
+
+
+class CamelotTableExtractParams(BaseModel):
+    """Parameters for research_table_extract tool."""
+
+    pdf_url: str = Field(
+        "",
+        description="URL to PDF file (auto-download)",
+        max_length=2048,
+    )
+    pdf_path: str = Field(
+        "",
+        description="Local file path to PDF",
+        max_length=2048,
+    )
+    pages: str = Field(
+        "all",
+        description="Page range: 'all', single number (1), range (1-5), or comma-separated (1,3,5)",
+        max_length=100,
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("pdf_url")
+    @classmethod
+    def validate_pdf_url(cls, v: str) -> str:
+        """URL must be empty or valid."""
+        if v and v.strip():
+            validate_url(v)
+        return v
+
+    @field_validator("pages")
+    @classmethod
+    def validate_pages(cls, v: str) -> str:
+        """Pages must be 'all' or valid page range."""
+        if v == "all":
+            return v
+        # Basic validation
+        try:
+            if "-" in v:
+                parts = v.split("-")
+                if len(parts) != 2:
+                    raise ValueError("invalid range")
+                int(parts[0])
+                int(parts[1])
+            elif "," in v:
+                for p in v.split(","):
+                    int(p.strip())
+            else:
+                int(v)
+        except (ValueError, AttributeError):
+            raise ValueError("pages must be 'all', single number, range (1-5), or comma-separated (1,3,5)")
+        return v
+
+
+class ScapyPacketCraftParams(BaseModel):
+    """Parameters for research_packet_craft tool."""
+
+    target: str = Field(
+        ...,
+        description="Target IP address or hostname",
+        max_length=255,
+    )
+    packet_type: str = Field(
+        "tcp_syn",
+        description="Type of packet: tcp_syn, tcp_rst, icmp_echo, or udp_probe",
+        max_length=50,
+    )
+    port: int = Field(
+        80,
+        description="Destination port (1-65535)",
+        ge=1,
+        le=65535,
+    )
+    timeout: int = Field(
+        5,
+        description="Response timeout in seconds (1-30)",
+        ge=1,
+        le=30,
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("target")
+    @classmethod
+    def validate_target(cls, v: str) -> str:
+        """Target must be non-empty hostname or IP."""
+        if not v or not v.strip():
+            raise ValueError("target cannot be empty")
+        v = v.strip()
+        if len(v) > 255:
+            raise ValueError("target exceeds 255 chars")
+        # Basic validation: alphanumeric, dots, hyphens
+        if not all(c.isalnum() or c in ".-" for c in v):
+            raise ValueError("target contains invalid characters")
+        return v
+
+    @field_validator("packet_type")
+    @classmethod
+    def validate_packet_type(cls, v: str) -> str:
+        """Packet type must be valid."""
+        v = v.strip()
+        valid_types = {"tcp_syn", "tcp_rst", "icmp_echo", "udp_probe"}
+        if v not in valid_types:
+            raise ValueError(f"packet_type must be one of: {', '.join(sorted(valid_types))}")
+        return v
+
+class QueryBuilderParams(BaseModel):
+    """Parameters for research_build_query tool."""
+
+    user_request: str
+    context: str = ""
+    output_type: Literal["research", "osint", "threat_intel", "academic"] = "research"
+    max_queries: int = 5
+    optimize: bool = True
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("user_request")
+    @classmethod
+    def validate_user_request(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("user_request must be non-empty")
+        v = v.strip()
+        if len(v) > 5000:
+            raise ValueError("user_request max 5000 characters")
+        return v
+
+    @field_validator("context")
+    @classmethod
+    def validate_context(cls, v: str) -> str:
+        if v and len(v) > 2000:
+            raise ValueError("context max 2000 characters")
+        return v
+
+    @field_validator("max_queries")
+    @classmethod
+    def validate_max_queries(cls, v: int) -> int:
+        if v < 1 or v > 10:
+            raise ValueError("max_queries must be 1-10")
+        return v

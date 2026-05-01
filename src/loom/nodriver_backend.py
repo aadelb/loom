@@ -246,7 +246,7 @@ async def research_nodriver_fetch(
 
     # Cache result
     result_dict = result.model_dump()
-    get_cache().set(cache_key, result_dict)
+    get_cache().put(cache_key, result_dict)
 
     return result_dict
 
