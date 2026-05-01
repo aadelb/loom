@@ -1,0 +1,2437 @@
+{
+  "timestamp": "2026-05-01T17:58:59.854942",
+  "mcp_url": "http://127.0.0.1:8787/mcp",
+  "summary": {
+    "total": 303,
+    "success": 205,
+    "error": 93,
+    "timeout": 5,
+    "success_rate": "67.7%"
+  },
+  "results": [
+    {
+      "tool_name": "research_fetch",
+      "status": "success",
+      "response_size": 89,
+      "error_message": null,
+      "response_summary": "Error executing tool research_fetch: '_asyncio.Task' object has no attribute 'model_dump'",
+      "elapsed_ms": 66.055
+    },
+    {
+      "tool_name": "research_spider",
+      "status": "success",
+      "response_size": 272,
+      "error_message": null,
+      "response_summary": "Error executing tool research_spider: 1 validation error for SpiderParams\nurls\n  Value error, scheme '' not allowed (http/https only) [type=value_error, input_value=['test'], input_type=list]\n    For ",
+      "elapsed_ms": 5.859999999999999
+    },
+    {
+      "tool_name": "research_markdown",
+      "status": "success",
+      "response_size": 324,
+      "error_message": null,
+      "response_summary": "{\n  \"url\": \"https://example.com\",\n  \"title\": \"Example Domain\",\n  \"markdown\": \"# Example Domain\\nThis domain is for use in documentation examples without needing permission. Avoid use in operations.\\n[",
+      "elapsed_ms": 91.237
+    },
+    {
+      "tool_name": "research_search",
+      "status": "success",
+      "response_size": 93,
+      "error_message": null,
+      "response_summary": "{\n  \"results\": [],\n  \"query\": \"test\",\n  \"error\": \"EXA_API_KEY not set\",\n  \"provider\": \"exa\"\n}",
+      "elapsed_ms": 30.182000000000002
+    },
+    {
+      "tool_name": "research_deep",
+      "status": "timeout",
+      "response_size": 0,
+      "error_message": "Timeout after 30s",
+      "response_summary": null,
+      "elapsed_ms": 30029.98
+    },
+    {
+      "tool_name": "research_github",
+      "status": "success",
+      "response_size": 35,
+      "error_message": null,
+      "response_summary": "{\n  \"error\": \"Invalid kind: test\"\n}",
+      "elapsed_ms": 50.386
+    },
+    {
+      "tool_name": "research_camoufox",
+      "status": "success",
+      "response_size": 1851,
+      "error_message": null,
+      "response_summary": "{\n  \"url\": \"https://example.com\",\n  \"title\": \"\",\n  \"html\": \"\",\n  \"text\": \"\",\n  \"error\": \"BrowserType.launch: Failed to launch the browser process.\\nBrowser logs:\\n\\n\u2554\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550",
+      "elapsed_ms": 843.148
+    },
+    {
+      "tool_name": "research_botasaurus",
+      "status": "success",
+      "response_size": 149,
+      "error_message": null,
+      "response_summary": "{\n  \"url\": \"https://example.com\",\n  \"text\": \"\",\n  \"error\": \"'NoneType' object has no attribute 'get'\",\n  \"tool\": \"botasaurus\",\n  \"elapsed_ms\": 1246\n}",
+      "elapsed_ms": 1332.442
+    },
+    {
+      "tool_name": "research_smart_extract",
+      "status": "success",
+      "response_size": 339,
+      "error_message": null,
+      "response_summary": "{\n  \"url\": \"https://example.com\",\n  \"query\": \"test\",\n  \"extracted_data\": {},\n  \"model_used\": \"none\",\n  \"token_count\": 0,\n  \"cached\": false,\n  \"error\": \"Client error '429 Too Many Requests' for url 'ht",
+      "elapsed_ms": 764.955
+    },
+    {
+      "tool_name": "research_paginate_scrape",
+      "status": "success",
+      "response_size": 1132,
+      "error_message": null,
+      "response_summary": "{\n  \"url\": \"https://example.com\",\n  \"query\": \"test\",\n  \"pages_scraped\": 5,\n  \"total_items\": 0,\n  \"extracted_data\": [],\n  \"model_used\": \"multi-page\",\n  \"error\": \"Page 1: Client error '429 Too Many Requ",
+      "elapsed_ms": 1086.1680000000001
+    },
+    {
+      "tool_name": "research_stealth_browser",
+      "status": "success",
+      "response_size": 829,
+      "error_message": null,
+      "response_summary": "{\n  \"url\": \"https://example.com\",\n  \"html\": \"<!DOCTYPE html><html lang=\\\"en\\\"><head><title>Example Domain</title><meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\"><style>body{bac",
+      "elapsed_ms": 614.1790000000001
+    },
+    {
+      "tool_name": "research_cache_stats",
+      "status": "success",
+      "response_size": 180,
+      "error_message": null,
+      "response_summary": "{\n  \"size_mb\": 0.38,\n  \"entry_count\": 26,\n  \"oldest\": \"2026-04-27T13:42:26.831049+00:00\",\n  \"newest\": \"2026-05-01T15:53:54.280455+00:00\",\n  \"cache_dir\": \"/home/aadel/.cache/loom\"\n}",
+      "elapsed_ms": 30.482
+    },
+    {
+      "tool_name": "research_cache_clear",
+      "status": "success",
+      "response_size": 68,
+      "error_message": null,
+      "response_summary": "{\n  \"deleted_count\": 0,\n  \"freed_mb\": 0.0,\n  \"older_than_days\": 30\n}",
+      "elapsed_ms": 50.265
+    },
+    {
+      "tool_name": "research_engine_fetch",
+      "status": "success",
+      "response_size": 315,
+      "error_message": null,
+      "response_summary": "Error executing tool research_engine_fetch: 1 validation error for research_engine_fetchArguments\nparams\n  Input should be a valid dictionary or instance of ScraperEngineFetchParams [type=model_type, ",
+      "elapsed_ms": 5.167
+    },
+    {
+      "tool_name": "research_engine_extract",
+      "status": "success",
+      "response_size": 321,
+      "error_message": null,
+      "response_summary": "Error executing tool research_engine_extract: 1 validation error for research_engine_extractArguments\nparams\n  Input should be a valid dictionary or instance of ScraperEngineExtractParams [type=model_",
+      "elapsed_ms": 4.623
+    },
+    {
+      "tool_name": "research_engine_batch",
+      "status": "success",
+      "response_size": 315,
+      "error_message": null,
+      "response_summary": "Error executing tool research_engine_batch: 1 validation error for research_engine_batchArguments\nparams\n  Input should be a valid dictionary or instance of ScraperEngineBatchParams [type=model_type, ",
+      "elapsed_ms": 4.424
+    },
+    {
+      "tool_name": "research_zen_fetch",
+      "status": "success",
+      "response_size": 101,
+      "error_message": null,
+      "response_summary": "Error executing tool research_zen_fetch: zendriver not installed. Install with: pip install zendriver",
+      "elapsed_ms": 4.423
+    },
+    {
+      "tool_name": "research_zen_batch",
+      "status": "success",
+      "response_size": 101,
+      "error_message": null,
+      "response_summary": "Error executing tool research_zen_batch: zendriver not installed. Install with: pip install zendriver",
+      "elapsed_ms": 5.2139999999999995
+    },
+    {
+      "tool_name": "research_zen_interact",
+      "status": "success",
+      "response_size": 104,
+      "error_message": null,
+      "response_summary": "Error executing tool research_zen_interact: zendriver not installed. Install with: pip install zendriver",
+      "elapsed_ms": 4.464
+    },
+    {
+      "tool_name": "research_crawl",
+      "status": "success",
+      "response_size": 175,
+      "error_message": null,
+      "response_summary": "{\n  \"start_url\": \"https://example.com\",\n  \"pages_crawled\": 0,\n  \"links_found\": 0,\n  \"content\": [],\n  \"error\": \"Crawlee not installed. Install with: pip install crawlee[all]\"\n}",
+      "elapsed_ms": 39.807
+    },
+    {
+      "tool_name": "research_sitemap_crawl",
+      "status": "success",
+      "response_size": 171,
+      "error_message": null,
+      "response_summary": "{\n  \"url\": \"https://example.com\",\n  \"sitemap_urls\": [],\n  \"pages_crawled\": 0,\n  \"content\": [],\n  \"error\": \"Crawlee not installed. Install with: pip install crawlee[all]\"\n}",
+      "elapsed_ms": 30.702
+    },
+    {
+      "tool_name": "research_structured_crawl",
+      "status": "success",
+      "response_size": 156,
+      "error_message": null,
+      "response_summary": "{\n  \"url\": \"https://example.com\",\n  \"pages_crawled\": 0,\n  \"extracted_data\": [],\n  \"error\": \"Crawlee not installed. Install with: pip install crawlee[all]\"\n}",
+      "elapsed_ms": 28.299
+    },
+    {
+      "tool_name": "research_dead_content",
+      "status": "success",
+      "response_size": 220,
+      "error_message": null,
+      "response_summary": "{\n  \"url\": \"https://example.com\",\n  \"found_in\": [\n    \"google_cache\",\n    \"wayback_2024_snapshot\"\n  ],\n  \"snapshots\": [],\n  \"is_deleted\": true,\n  \"total_sources_checked\": 6,\n  \"checked_at\": \"2026-05-0",
+      "elapsed_ms": 18813.825
+    },
+    {
+      "tool_name": "research_invisible_web",
+      "status": "success",
+      "response_size": 191,
+      "error_message": null,
+      "response_summary": "{\n  \"domain\": \"test\",\n  \"robots_disallowed\": [],\n  \"sitemap_urls\": 0,\n  \"hidden_paths_found\": [],\n  \"js_endpoints\": [],\n  \"exposed_configs\": [],\n  \"risk_level\": \"low\",\n  \"total_findings\": 0\n}",
+      "elapsed_ms": 17678.959
+    },
+    {
+      "tool_name": "research_js_intel",
+      "status": "success",
+      "response_size": 95,
+      "error_message": null,
+      "response_summary": "Error executing tool research_js_intel: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.411
+    },
+    {
+      "tool_name": "research_multi_search",
+      "status": "success",
+      "response_size": 99,
+      "error_message": null,
+      "response_summary": "Error executing tool research_multi_search: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 4.944999999999999
+    },
+    {
+      "tool_name": "research_dark_forum",
+      "status": "success",
+      "response_size": 97,
+      "error_message": null,
+      "response_summary": "Error executing tool research_dark_forum: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.466
+    },
+    {
+      "tool_name": "research_infra_correlator",
+      "status": "success",
+      "response_size": 103,
+      "error_message": null,
+      "response_summary": "Error executing tool research_infra_correlator: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.267
+    },
+    {
+      "tool_name": "research_passive_recon",
+      "status": "success",
+      "response_size": 320,
+      "error_message": null,
+      "response_summary": "{\n  \"domain\": \"test\",\n  \"subdomains\": [],\n  \"dns_records\": {},\n  \"reverse_ip_domains\": [],\n  \"tech_stack\": {\n    \"server\": \"\",\n    \"powered_by\": \"\",\n    \"frameworks\": [],\n    \"cdn\": \"\"\n  },\n  \"email_s",
+      "elapsed_ms": 15620.020999999999
+    },
+    {
+      "tool_name": "research_cloud_enum",
+      "status": "success",
+      "response_size": 97,
+      "error_message": null,
+      "response_summary": "Error executing tool research_cloud_enum: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.678
+    },
+    {
+      "tool_name": "research_github_secrets",
+      "status": "success",
+      "response_size": 101,
+      "error_message": null,
+      "response_summary": "Error executing tool research_github_secrets: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.464
+    },
+    {
+      "tool_name": "research_whois_correlator",
+      "status": "success",
+      "response_size": 103,
+      "error_message": null,
+      "response_summary": "Error executing tool research_whois_correlator: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.159999999999999
+    },
+    {
+      "tool_name": "research_output_consistency",
+      "status": "success",
+      "response_size": 105,
+      "error_message": null,
+      "response_summary": "Error executing tool research_output_consistency: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.671
+    },
+    {
+      "tool_name": "research_talent_migration",
+      "status": "success",
+      "response_size": 103,
+      "error_message": null,
+      "response_summary": "Error executing tool research_talent_migration: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.343999999999999
+    },
+    {
+      "tool_name": "research_funding_pipeline",
+      "status": "success",
+      "response_size": 103,
+      "error_message": null,
+      "response_summary": "Error executing tool research_funding_pipeline: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.237
+    },
+    {
+      "tool_name": "research_jailbreak_library",
+      "status": "success",
+      "response_size": 393,
+      "error_message": null,
+      "response_summary": "{\n  \"total_patterns\": 26,\n  \"categories\": [\n    \"role_play\",\n    \"encoding\",\n    \"context_overflow\",\n    \"multi_turn\",\n    \"instruction_override\"\n  ],\n  \"patterns_per_category\": {\n    \"role_play\": 6,\n",
+      "elapsed_ms": 31.608999999999998
+    },
+    {
+      "tool_name": "research_patent_embargo",
+      "status": "success",
+      "response_size": 101,
+      "error_message": null,
+      "response_summary": "Error executing tool research_patent_embargo: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.619
+    },
+    {
+      "tool_name": "research_ideological_drift",
+      "status": "success",
+      "response_size": 104,
+      "error_message": null,
+      "response_summary": "Error executing tool research_ideological_drift: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.223
+    },
+    {
+      "tool_name": "research_author_clustering",
+      "status": "success",
+      "response_size": 104,
+      "error_message": null,
+      "response_summary": "Error executing tool research_author_clustering: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 6.077
+    },
+    {
+      "tool_name": "research_citation_cartography",
+      "status": "success",
+      "response_size": 107,
+      "error_message": null,
+      "response_summary": "Error executing tool research_citation_cartography: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.076
+    },
+    {
+      "tool_name": "research_capability_mapper",
+      "status": "success",
+      "response_size": 104,
+      "error_message": null,
+      "response_summary": "Error executing tool research_capability_mapper: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.2509999999999994
+    },
+    {
+      "tool_name": "research_memorization_scanner",
+      "status": "success",
+      "response_size": 107,
+      "error_message": null,
+      "response_summary": "Error executing tool research_memorization_scanner: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.231000000000001
+    },
+    {
+      "tool_name": "research_training_contamination",
+      "status": "success",
+      "response_size": 109,
+      "error_message": null,
+      "response_summary": "Error executing tool research_training_contamination: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 6.013
+    },
+    {
+      "tool_name": "research_registry_graveyard",
+      "status": "success",
+      "response_size": 105,
+      "error_message": null,
+      "response_summary": "Error executing tool research_registry_graveyard: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.365
+    },
+    {
+      "tool_name": "research_subdomain_temporal",
+      "status": "success",
+      "response_size": 105,
+      "error_message": null,
+      "response_summary": "Error executing tool research_subdomain_temporal: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.242
+    },
+    {
+      "tool_name": "research_commit_analyzer",
+      "status": "success",
+      "response_size": 102,
+      "error_message": null,
+      "response_summary": "Error executing tool research_commit_analyzer: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 4.954
+    },
+    {
+      "tool_name": "research_onion_discover",
+      "status": "success",
+      "response_size": 101,
+      "error_message": null,
+      "response_summary": "Error executing tool research_onion_discover: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.933
+    },
+    {
+      "tool_name": "research_metadata_forensics",
+      "status": "success",
+      "response_size": 105,
+      "error_message": null,
+      "response_summary": "Error executing tool research_metadata_forensics: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.053
+    },
+    {
+      "tool_name": "research_crypto_trace",
+      "status": "success",
+      "response_size": 99,
+      "error_message": null,
+      "response_summary": "Error executing tool research_crypto_trace: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.029
+    },
+    {
+      "tool_name": "research_stego_detect",
+      "status": "success",
+      "response_size": 123,
+      "error_message": null,
+      "response_summary": "{\n  \"content_analyzed\": false,\n  \"image_analyzed\": false,\n  \"analyses\": [],\n  \"total_anomalies\": 0,\n  \"suspicious\": false\n}",
+      "elapsed_ms": 31.281999999999996
+    },
+    {
+      "tool_name": "research_threat_profile",
+      "status": "success",
+      "response_size": 101,
+      "error_message": null,
+      "response_summary": "Error executing tool research_threat_profile: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.26
+    },
+    {
+      "tool_name": "research_dark_market_monitor",
+      "status": "success",
+      "response_size": 106,
+      "error_message": null,
+      "response_summary": "Error executing tool research_dark_market_monitor: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.309
+    },
+    {
+      "tool_name": "research_ransomware_tracker",
+      "status": "success",
+      "response_size": 156,
+      "error_message": null,
+      "response_summary": "{\n  \"group_name\": \"\",\n  \"keyword\": \"\",\n  \"recent_activity\": [],\n  \"victims_mentioned\": [],\n  \"iocs_found\": [],\n  \"error\": \"group_name or keyword required\"\n}",
+      "elapsed_ms": 29.385
+    },
+    {
+      "tool_name": "research_phishing_mapper",
+      "status": "success",
+      "response_size": 102,
+      "error_message": null,
+      "response_summary": "Error executing tool research_phishing_mapper: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.244999999999999
+    },
+    {
+      "tool_name": "research_botnet_tracker",
+      "status": "success",
+      "response_size": 101,
+      "error_message": null,
+      "response_summary": "Error executing tool research_botnet_tracker: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.077
+    },
+    {
+      "tool_name": "research_malware_intel",
+      "status": "success",
+      "response_size": 100,
+      "error_message": null,
+      "response_summary": "Error executing tool research_malware_intel: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.61
+    },
+    {
+      "tool_name": "research_domain_reputation",
+      "status": "success",
+      "response_size": 104,
+      "error_message": null,
+      "response_summary": "Error executing tool research_domain_reputation: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 4.8069999999999995
+    },
+    {
+      "tool_name": "research_ioc_enrich",
+      "status": "success",
+      "response_size": 97,
+      "error_message": null,
+      "response_summary": "Error executing tool research_ioc_enrich: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.222
+    },
+    {
+      "tool_name": "research_leak_scan",
+      "status": "success",
+      "response_size": 153,
+      "error_message": null,
+      "response_summary": "{\n  \"target\": \"test\",\n  \"target_type\": \"domain\",\n  \"error\": \"Invalid domain format\",\n  \"sources_checked\": [],\n  \"total_exposures\": 0,\n  \"exposures\": []\n}",
+      "elapsed_ms": 28.133
+    },
+    {
+      "tool_name": "research_social_graph",
+      "status": "success",
+      "response_size": 99,
+      "error_message": null,
+      "response_summary": "Error executing tool research_social_graph: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.073
+    },
+    {
+      "tool_name": "research_stylometry",
+      "status": "success",
+      "response_size": 95,
+      "error_message": null,
+      "response_summary": "{\n  \"error\": \"Text must be at least 100 characters\",\n  \"word_count\": 1,\n  \"sentence_count\": 1\n}",
+      "elapsed_ms": 28.529
+    },
+    {
+      "tool_name": "research_deception_detect",
+      "status": "success",
+      "response_size": 132,
+      "error_message": null,
+      "response_summary": "{\n  \"error\": \"Text must be at least 100 characters\",\n  \"deception_score\": 0.0,\n  \"verdict\": \"insufficient_data\",\n  \"word_count\": 1\n}",
+      "elapsed_ms": 25.767000000000003
+    },
+    {
+      "tool_name": "research_company_diligence",
+      "status": "success",
+      "response_size": 813,
+      "error_message": null,
+      "response_summary": "{\n  \"company\": \"test\",\n  \"industry\": null,\n  \"size_estimate\": null,\n  \"funding_stage\": null,\n  \"culture_score\": 2.5,\n  \"pros\": [],\n  \"cons\": [],\n  \"recent_news\": [\n    {\n      \"title\": \"ACT\u00ae Test Chan",
+      "elapsed_ms": 6031.741
+    },
+    {
+      "tool_name": "research_salary_intelligence",
+      "status": "success",
+      "response_size": 415,
+      "error_message": null,
+      "response_summary": "{\n  \"role\": \"test\",\n  \"location\": null,\n  \"experience_years\": 0,\n  \"salary_data\": {\n    \"base\": {\n      \"min\": 0,\n      \"median\": 0,\n      \"max\": 0,\n      \"currency\": \"USD\"\n    },\n    \"total_comp\": {\n",
+      "elapsed_ms": 7514.855
+    },
+    {
+      "tool_name": "research_competitive_intel",
+      "status": "success",
+      "response_size": 104,
+      "error_message": null,
+      "response_summary": "Error executing tool research_competitive_intel: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.458
+    },
+    {
+      "tool_name": "research_supply_chain_risk",
+      "status": "success",
+      "response_size": 230,
+      "error_message": null,
+      "response_summary": "{\n  \"package_name\": \"test\",\n  \"ecosystem\": \"pypi\",\n  \"maintainers\": [],\n  \"last_update\": null,\n  \"stars\": 0,\n  \"bus_factor_score\": 1.0,\n  \"staleness_days\": -1,\n  \"dependency_depth\": 0,\n  \"known_vulns\"",
+      "elapsed_ms": 2271.023
+    },
+    {
+      "tool_name": "research_patent_landscape",
+      "status": "success",
+      "response_size": 4637,
+      "error_message": null,
+      "response_summary": "{\n  \"query\": \"test\",\n  \"total_patents\": 20,\n  \"recent_patents\": [\n    {\n      \"title\": \"US6137911A - Test classification system and method - Google Patents\",\n      \"patent_number\": \"US6137911\",\n      ",
+      "elapsed_ms": 1769.943
+    },
+    {
+      "tool_name": "research_dependency_audit",
+      "status": "success",
+      "response_size": 89,
+      "error_message": null,
+      "response_summary": "{\n  \"repo_url\": \"https://example.com\",\n  \"error\": \"repo_url must be a valid GitHub URL\"\n}",
+      "elapsed_ms": 29.35
+    },
+    {
+      "tool_name": "research_whois",
+      "status": "success",
+      "response_size": 81,
+      "error_message": null,
+      "response_summary": "{\n  \"domain\": \"test\",\n  \"error\": \"[Errno 2] No such file or directory: 'whois'\"\n}",
+      "elapsed_ms": 139.912
+    },
+    {
+      "tool_name": "research_dns_lookup",
+      "status": "success",
+      "response_size": 90,
+      "error_message": null,
+      "response_summary": "{\n  \"domain\": \"test\",\n  \"records\": {},\n  \"error\": \"[Errno -2] Name or service not known\"\n}",
+      "elapsed_ms": 84.878
+    },
+    {
+      "tool_name": "research_nmap_scan",
+      "status": "success",
+      "response_size": 81,
+      "error_message": null,
+      "response_summary": "{\n  \"target\": \"test\",\n  \"scan_type\": \"basic\",\n  \"ports\": [],\n  \"host_up\": false\n}",
+      "elapsed_ms": 247.286
+    },
+    {
+      "tool_name": "research_torbot",
+      "status": "success",
+      "response_size": 196,
+      "error_message": null,
+      "response_summary": "{\n  \"url\": \"https://example.com\",\n  \"warning\": \"TorBot is not installed. Install with: pip install torbot\",\n  \"links_found\": [],\n  \"emails_found\": [],\n  \"phone_numbers\": [],\n  \"depth_crawled\": 0\n}",
+      "elapsed_ms": 96.53
+    },
+    {
+      "tool_name": "research_amass_enum",
+      "status": "success",
+      "response_size": 194,
+      "error_message": null,
+      "response_summary": "{\n  \"domain\": \"test\",\n  \"warning\": \"Amass is not installed. Install from: https://github.com/OWASP/Amass\",\n  \"subdomains\": [],\n  \"asns\": [],\n  \"ip_addresses\": [],\n  \"count\": 0,\n  \"sources\": []\n}",
+      "elapsed_ms": 30.254
+    },
+    {
+      "tool_name": "research_amass_intel",
+      "status": "success",
+      "response_size": 171,
+      "error_message": null,
+      "response_summary": "{\n  \"domain\": \"test\",\n  \"warning\": \"Amass is not installed. Install from: https://github.com/OWASP/Amass\",\n  \"organizations\": [],\n  \"emails\": [],\n  \"related_domains\": []\n}",
+      "elapsed_ms": 31.615
+    },
+    {
+      "tool_name": "research_legal_takedown",
+      "status": "success",
+      "response_size": 101,
+      "error_message": null,
+      "response_summary": "Error executing tool research_legal_takedown: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.791
+    },
+    {
+      "tool_name": "research_open_access",
+      "status": "success",
+      "response_size": 98,
+      "error_message": null,
+      "response_summary": "Error executing tool research_open_access: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.431
+    },
+    {
+      "tool_name": "research_content_authenticity",
+      "status": "success",
+      "response_size": 107,
+      "error_message": null,
+      "response_summary": "Error executing tool research_content_authenticity: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.56
+    },
+    {
+      "tool_name": "research_credential_monitor",
+      "status": "success",
+      "response_size": 105,
+      "error_message": null,
+      "response_summary": "Error executing tool research_credential_monitor: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.463
+    },
+    {
+      "tool_name": "research_deepfake_checker",
+      "status": "success",
+      "response_size": 103,
+      "error_message": null,
+      "response_summary": "Error executing tool research_deepfake_checker: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.275
+    },
+    {
+      "tool_name": "research_identity_resolve",
+      "status": "success",
+      "response_size": 114,
+      "error_message": null,
+      "response_summary": "{\n  \"total_matches\": 0,\n  \"total_platforms_checked\": 0,\n  \"platforms_found\": [],\n  \"identity_confidence\": \"none\"\n}",
+      "elapsed_ms": 48.271
+    },
+    {
+      "tool_name": "research_narrative_tracker",
+      "status": "success",
+      "response_size": 104,
+      "error_message": null,
+      "response_summary": "Error executing tool research_narrative_tracker: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 6.0600000000000005
+    },
+    {
+      "tool_name": "research_bot_detector",
+      "status": "success",
+      "response_size": 99,
+      "error_message": null,
+      "response_summary": "Error executing tool research_bot_detector: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.5649999999999995
+    },
+    {
+      "tool_name": "research_censorship_detector",
+      "status": "success",
+      "response_size": 106,
+      "error_message": null,
+      "response_summary": "Error executing tool research_censorship_detector: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 6.84
+    },
+    {
+      "tool_name": "research_deleted_social",
+      "status": "success",
+      "response_size": 101,
+      "error_message": null,
+      "response_summary": "Error executing tool research_deleted_social: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 6.029
+    },
+    {
+      "tool_name": "research_robots_archaeology",
+      "status": "success",
+      "response_size": 105,
+      "error_message": null,
+      "response_summary": "Error executing tool research_robots_archaeology: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.4799999999999995
+    },
+    {
+      "tool_name": "research_funding_signal",
+      "status": "success",
+      "response_size": 101,
+      "error_message": null,
+      "response_summary": "Error executing tool research_funding_signal: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 6.236000000000001
+    },
+    {
+      "tool_name": "research_stealth_hire_scanner",
+      "status": "success",
+      "response_size": 107,
+      "error_message": null,
+      "response_summary": "Error executing tool research_stealth_hire_scanner: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.172000000000001
+    },
+    {
+      "tool_name": "research_interviewer_profiler",
+      "status": "success",
+      "response_size": 107,
+      "error_message": null,
+      "response_summary": "Error executing tool research_interviewer_profiler: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.242
+    },
+    {
+      "tool_name": "research_cert_analyze",
+      "status": "success",
+      "response_size": 113,
+      "error_message": null,
+      "response_summary": "{\n  \"hostname\": \"test\",\n  \"port\": 443,\n  \"error\": \"DNS resolution failed: [Errno -2] Name or service not known\"\n}",
+      "elapsed_ms": 90.465
+    },
+    {
+      "tool_name": "research_security_headers",
+      "status": "success",
+      "response_size": 144,
+      "error_message": null,
+      "response_summary": "{\n  \"url\": \"https://example.com\",\n  \"error\": \"Unexpected error: TypeError: Client.head() got an unexpected keyword argument 'allow_redirects'\"\n}",
+      "elapsed_ms": 142.86499999999998
+    },
+    {
+      "tool_name": "research_sherlock_lookup",
+      "status": "success",
+      "response_size": 136,
+      "error_message": null,
+      "response_summary": "{\n  \"username\": \"test\",\n  \"error\": \"Sherlock CLI not found. Install with: pip install sherlock-project\",\n  \"sherlock_available\": false\n}",
+      "elapsed_ms": 38.705999999999996
+    },
+    {
+      "tool_name": "research_sherlock_batch",
+      "status": "success",
+      "response_size": 186,
+      "error_message": null,
+      "response_summary": "{\n  \"usernames_checked\": 0,\n  \"results\": {},\n  \"total_accounts_found\": 0,\n  \"sherlock_available\": false,\n  \"error\": \"Sherlock CLI not found. Install with: pip install sherlock-project\"\n}",
+      "elapsed_ms": 34.327999999999996
+    },
+    {
+      "tool_name": "research_ghost_protocol",
+      "status": "success",
+      "response_size": 101,
+      "error_message": null,
+      "response_summary": "Error executing tool research_ghost_protocol: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 6.01
+    },
+    {
+      "tool_name": "research_temporal_anomaly",
+      "status": "success",
+      "response_size": 103,
+      "error_message": null,
+      "response_summary": "Error executing tool research_temporal_anomaly: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 7.825
+    },
+    {
+      "tool_name": "research_sec_tracker",
+      "status": "success",
+      "response_size": 98,
+      "error_message": null,
+      "response_summary": "Error executing tool research_sec_tracker: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.699
+    },
+    {
+      "tool_name": "research_breach_check",
+      "status": "success",
+      "response_size": 195,
+      "error_message": null,
+      "response_summary": "{\n  \"email\": \"test@example.com\",\n  \"breaches_found\": 0,\n  \"breaches\": [],\n  \"api_available\": false,\n  \"message\": \"HIBP_API_KEY not set. Get free API key from https://haveibeenpwned.com/API/Key\"\n}",
+      "elapsed_ms": 33.612
+    },
+    {
+      "tool_name": "research_password_check",
+      "status": "success",
+      "response_size": 273,
+      "error_message": null,
+      "response_summary": "{\n  \"password_length\": 4,\n  \"hash_prefix_sent\": \"A94A8\",\n  \"pwned_count\": 1569898,\n  \"is_pwned\": true,\n  \"strength_hint\": \"very weak\",\n  \"complexity_components\": {\n    \"has_uppercase\": false,\n    \"has",
+      "elapsed_ms": 200.088
+    },
+    {
+      "tool_name": "research_prompt_injection_test",
+      "status": "success",
+      "response_size": 3352,
+      "error_message": null,
+      "response_summary": "{\n  \"target\": \"https://example.com\",\n  \"model_name\": \"unknown\",\n  \"tests_run\": 10,\n  \"bypasses_detected\": 10,\n  \"results\": [\n    {\n      \"test_name\": \"system_prompt_extraction\",\n      \"payload_preview",
+      "elapsed_ms": 476.208
+    },
+    {
+      "tool_name": "research_model_fingerprint",
+      "status": "success",
+      "response_size": 1842,
+      "error_message": null,
+      "response_summary": "{\n  \"target\": \"https://example.com\",\n  \"likely_model\": \"unknown-model\",\n  \"confidence\": 0.0,\n  \"probes_sent\": 5,\n  \"probe_results\": [\n    {\n      \"probe_name\": \"math_arithmetic\",\n      \"patterns_match",
+      "elapsed_ms": 477.344
+    },
+    {
+      "tool_name": "research_bias_probe",
+      "status": "success",
+      "response_size": 3669,
+      "error_message": null,
+      "response_summary": "{\n  \"target\": \"https://example.com\",\n  \"categories_tested\": [\n    \"gender\",\n    \"ethnicity\",\n    \"age\",\n    \"disability\"\n  ],\n  \"bias_detected\": true,\n  \"bias_scores\": {\n    \"gender\": 1.0,\n    \"ethnic",
+      "elapsed_ms": 484.882
+    },
+    {
+      "tool_name": "research_safety_filter_map",
+      "status": "success",
+      "response_size": 616,
+      "error_message": null,
+      "response_summary": "{\n  \"target\": \"https://example.com\",\n  \"categories_mapped\": [\n    \"violence\",\n    \"substances\",\n    \"weapons\",\n    \"personal_info\"\n  ],\n  \"filter_map\": {\n    \"violence\": 5,\n    \"substances\": 5,\n    \"w",
+      "elapsed_ms": 504.966
+    },
+    {
+      "tool_name": "research_compliance_check",
+      "status": "success",
+      "response_size": 126,
+      "error_message": null,
+      "response_summary": "{\n  \"domain\": \"https://test\",\n  \"error\": \"Invalid domain: dns resolve failed for test: [Errno -2] Name or service not known\"\n}",
+      "elapsed_ms": 87.014
+    },
+    {
+      "tool_name": "research_hallucination_benchmark",
+      "status": "success",
+      "response_size": 110,
+      "error_message": null,
+      "response_summary": "Error executing tool research_hallucination_benchmark: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 6.385
+    },
+    {
+      "tool_name": "research_adversarial_robustness",
+      "status": "success",
+      "response_size": 109,
+      "error_message": null,
+      "response_summary": "Error executing tool research_adversarial_robustness: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 6.261
+    },
+    {
+      "tool_name": "research_agent_benchmark",
+      "status": "success",
+      "response_size": 2525,
+      "error_message": null,
+      "response_summary": "{\n  \"scenarios_run\": 0,\n  \"scenarios_passed\": 0,\n  \"scenarios_failed\": 0,\n  \"injection_resistance_rate\": 0.0,\n  \"false_positive_rate\": 0.0,\n  \"false_negative_rate\": 0.0,\n  \"per_category_scores\": {\n   ",
+      "elapsed_ms": 4779.567
+    },
+    {
+      "tool_name": "research_social_engineering_score",
+      "status": "success",
+      "response_size": 111,
+      "error_message": null,
+      "response_summary": "Error executing tool research_social_engineering_score: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 6.118
+    },
+    {
+      "tool_name": "research_behavioral_fingerprint",
+      "status": "success",
+      "response_size": 109,
+      "error_message": null,
+      "response_summary": "Error executing tool research_behavioral_fingerprint: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.617
+    },
+    {
+      "tool_name": "research_pdf_extract",
+      "status": "success",
+      "response_size": 1708,
+      "error_message": null,
+      "response_summary": "{\n  \"url\": \"https://example.com\",\n  \"file_size_bytes\": 528,\n  \"error\": \"pdftotext failed: Syntax Warning: May not be a PDF file (continuing anyway)\\nSyntax Error (2): Illegal character <21> in hex str",
+      "elapsed_ms": 271.916
+    },
+    {
+      "tool_name": "research_pdf_search",
+      "status": "success",
+      "response_size": 1740,
+      "error_message": null,
+      "response_summary": "{\n  \"url\": \"https://example.com\",\n  \"query\": \"test\",\n  \"matches\": [],\n  \"total_matches\": 0,\n  \"error\": \"pdftotext failed: Syntax Warning: May not be a PDF file (continuing anyway)\\nSyntax Error (2): I",
+      "elapsed_ms": 326.752
+    },
+    {
+      "tool_name": "research_ocr_advanced",
+      "status": "success",
+      "response_size": 209,
+      "error_message": null,
+      "response_summary": "{\n  \"image\": \"https://example.com\",\n  \"text\": \"\",\n  \"blocks\": [],\n  \"languages_detected\": [\n    \"en\"\n  ],\n  \"page_count\": 1,\n  \"metadata\": {},\n  \"error\": \"EasyOCR not installed. Install: pip install e",
+      "elapsed_ms": 246.465
+    },
+    {
+      "tool_name": "research_pdf_advanced",
+      "status": "success",
+      "response_size": 1804,
+      "error_message": null,
+      "response_summary": "{\n  \"pdf\": \"https://example.com\",\n  \"pages\": 0,\n  \"text\": \"\",\n  \"tables\": [],\n  \"images_count\": 0,\n  \"metadata\": {},\n  \"toc\": [],\n  \"file_size_bytes\": 528,\n  \"error\": \"pdftotext failed: Syntax Warning",
+      "elapsed_ms": 272.09
+    },
+    {
+      "tool_name": "research_document_analyze",
+      "status": "success",
+      "response_size": 1811,
+      "error_message": null,
+      "response_summary": "{\n  \"file_path\": \"https://example.com\",\n  \"file_type\": \"pdf\",\n  \"text\": \"\",\n  \"page_count\": 0,\n  \"metadata\": {},\n  \"tables\": [],\n  \"extraction_method\": \"unknown\",\n  \"error\": \"pdftotext failed: Syntax ",
+      "elapsed_ms": 491.709
+    },
+    {
+      "tool_name": "research_citation_analysis",
+      "status": "success",
+      "response_size": 104,
+      "error_message": null,
+      "response_summary": "Error executing tool research_citation_analysis: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 6.498
+    },
+    {
+      "tool_name": "research_retraction_check",
+      "status": "success",
+      "response_size": 103,
+      "error_message": null,
+      "response_summary": "Error executing tool research_retraction_check: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 4.9750000000000005
+    },
+    {
+      "tool_name": "research_predatory_journal_check",
+      "status": "success",
+      "response_size": 110,
+      "error_message": null,
+      "response_summary": "Error executing tool research_predatory_journal_check: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 4.744
+    },
+    {
+      "tool_name": "research_grant_forensics",
+      "status": "success",
+      "response_size": 51,
+      "error_message": null,
+      "response_summary": "{\n  \"grant_id\": \"\",\n  \"error\": \"No text provided\"\n}",
+      "elapsed_ms": 28.662
+    },
+    {
+      "tool_name": "research_monoculture_detect",
+      "status": "success",
+      "response_size": 105,
+      "error_message": null,
+      "response_summary": "Error executing tool research_monoculture_detect: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 4.882
+    },
+    {
+      "tool_name": "research_review_cartel",
+      "status": "success",
+      "response_size": 100,
+      "error_message": null,
+      "response_summary": "Error executing tool research_review_cartel: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 4.817
+    },
+    {
+      "tool_name": "research_data_fabrication",
+      "status": "success",
+      "response_size": 36,
+      "error_message": null,
+      "response_summary": "{\n  \"error\": \"No numbers provided\"\n}",
+      "elapsed_ms": 26.932000000000002
+    },
+    {
+      "tool_name": "research_institutional_decay",
+      "status": "success",
+      "response_size": 106,
+      "error_message": null,
+      "response_summary": "Error executing tool research_institutional_decay: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 4.995
+    },
+    {
+      "tool_name": "research_shell_funding",
+      "status": "success",
+      "response_size": 100,
+      "error_message": null,
+      "response_summary": "Error executing tool research_shell_funding: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 4.762
+    },
+    {
+      "tool_name": "research_conference_arbitrage",
+      "status": "success",
+      "response_size": 107,
+      "error_message": null,
+      "response_summary": "Error executing tool research_conference_arbitrage: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.2509999999999994
+    },
+    {
+      "tool_name": "research_preprint_manipulation",
+      "status": "success",
+      "response_size": 88,
+      "error_message": null,
+      "response_summary": "{\n  \"error\": \"rate_limit_exceeded\",\n  \"category\": \"fetch\",\n  \"retry_after_seconds\": 60\n}",
+      "elapsed_ms": 29.835
+    },
+    {
+      "tool_name": "research_hcs_score",
+      "status": "success",
+      "response_size": 289,
+      "error_message": null,
+      "response_summary": "{\n  \"hcs_score\": 3,\n  \"dimensions\": {\n    \"completeness\": 0,\n    \"specificity\": 0,\n    \"no_hedging\": 2,\n    \"actionability\": 1,\n    \"technical_depth\": 0\n  },\n  \"text_length\": 4,\n  \"hedging_count\": 0,\n",
+      "elapsed_ms": 30.630000000000003
+    },
+    {
+      "tool_name": "research_hcs_report",
+      "status": "success",
+      "response_size": 92,
+      "error_message": null,
+      "response_summary": "{\n  \"markdown\": \"# HCS Distribution Report\\n\\nNo data available.\\n\",\n  \"total_readings\": 0\n}",
+      "elapsed_ms": 31.389
+    },
+    {
+      "tool_name": "research_hcs_rubric",
+      "status": "success",
+      "response_size": 5495,
+      "error_message": null,
+      "response_summary": "{\n  \"success\": true,\n  \"action\": \"get_rubric\",\n  \"result\": {\n    \"action\": \"get_rubric\",\n    \"num_levels\": 11,\n    \"levels\": {\n      \"0\": {\n        \"label\": \"Complete refusal\",\n        \"description\": ",
+      "elapsed_ms": 26.887
+    },
+    {
+      "tool_name": "research_darkweb_early_warning",
+      "status": "success",
+      "response_size": 108,
+      "error_message": null,
+      "response_summary": "Error executing tool research_darkweb_early_warning: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 4.911
+    },
+    {
+      "tool_name": "research_deception_job_scan",
+      "status": "success",
+      "response_size": 151,
+      "error_message": null,
+      "response_summary": "{\n  \"error\": \"job_text is required\",\n  \"risk_score\": 0,\n  \"red_flags\": [],\n  \"green_flags\": [],\n  \"company_age_days\": null,\n  \"glassdoor_mentions\": 0\n}",
+      "elapsed_ms": 48.765
+    },
+    {
+      "tool_name": "research_bias_lens",
+      "status": "success",
+      "response_size": 88,
+      "error_message": null,
+      "response_summary": "{\n  \"error\": \"rate_limit_exceeded\",\n  \"category\": \"fetch\",\n  \"retry_after_seconds\": 60\n}",
+      "elapsed_ms": 32.074
+    },
+    {
+      "tool_name": "research_salary_synthesize",
+      "status": "success",
+      "response_size": 104,
+      "error_message": null,
+      "response_summary": "Error executing tool research_salary_synthesize: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.872999999999999
+    },
+    {
+      "tool_name": "research_realtime_monitor",
+      "status": "success",
+      "response_size": 88,
+      "error_message": null,
+      "response_summary": "{\n  \"error\": \"rate_limit_exceeded\",\n  \"category\": \"fetch\",\n  \"retry_after_seconds\": 60\n}",
+      "elapsed_ms": 31.012999999999998
+    },
+    {
+      "tool_name": "research_rss_fetch",
+      "status": "success",
+      "response_size": 88,
+      "error_message": null,
+      "response_summary": "{\n  \"error\": \"rate_limit_exceeded\",\n  \"category\": \"fetch\",\n  \"retry_after_seconds\": 60\n}",
+      "elapsed_ms": 32.900999999999996
+    },
+    {
+      "tool_name": "research_rss_search",
+      "status": "success",
+      "response_size": 83,
+      "error_message": null,
+      "response_summary": "{\n  \"query\": \"test\",\n  \"feeds_searched\": 0,\n  \"results\": [],\n  \"total_matches\": 0\n}",
+      "elapsed_ms": 36.495
+    },
+    {
+      "tool_name": "research_social_search",
+      "status": "success",
+      "response_size": 88,
+      "error_message": null,
+      "response_summary": "{\n  \"error\": \"rate_limit_exceeded\",\n  \"category\": \"fetch\",\n  \"retry_after_seconds\": 60\n}",
+      "elapsed_ms": 29.424
+    },
+    {
+      "tool_name": "research_social_profile",
+      "status": "success",
+      "response_size": 88,
+      "error_message": null,
+      "response_summary": "{\n  \"error\": \"rate_limit_exceeded\",\n  \"category\": \"fetch\",\n  \"retry_after_seconds\": 60\n}",
+      "elapsed_ms": 26.988000000000003
+    },
+    {
+      "tool_name": "research_instagram",
+      "status": "success",
+      "response_size": 88,
+      "error_message": null,
+      "response_summary": "{\n  \"error\": \"rate_limit_exceeded\",\n  \"category\": \"fetch\",\n  \"retry_after_seconds\": 60\n}",
+      "elapsed_ms": 47.703
+    },
+    {
+      "tool_name": "research_article_extract",
+      "status": "success",
+      "response_size": 88,
+      "error_message": null,
+      "response_summary": "{\n  \"error\": \"rate_limit_exceeded\",\n  \"category\": \"fetch\",\n  \"retry_after_seconds\": 60\n}",
+      "elapsed_ms": 30.799
+    },
+    {
+      "tool_name": "research_article_batch",
+      "status": "success",
+      "response_size": 88,
+      "error_message": null,
+      "response_summary": "{\n  \"error\": \"rate_limit_exceeded\",\n  \"category\": \"fetch\",\n  \"retry_after_seconds\": 60\n}",
+      "elapsed_ms": 30.884
+    },
+    {
+      "tool_name": "research_trend_predict",
+      "status": "success",
+      "response_size": 100,
+      "error_message": null,
+      "response_summary": "Error executing tool research_trend_predict: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.494
+    },
+    {
+      "tool_name": "research_generate_report",
+      "status": "success",
+      "response_size": 102,
+      "error_message": null,
+      "response_summary": "Error executing tool research_generate_report: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.426
+    },
+    {
+      "tool_name": "research_propaganda_detector",
+      "status": "success",
+      "response_size": 122,
+      "error_message": null,
+      "response_summary": "{\n  \"text_length\": 4,\n  \"word_count\": 1,\n  \"techniques_found\": [],\n  \"propaganda_score\": 0,\n  \"dominant_technique\": null\n}",
+      "elapsed_ms": 33.85
+    },
+    {
+      "tool_name": "research_source_credibility",
+      "status": "success",
+      "response_size": 88,
+      "error_message": null,
+      "response_summary": "{\n  \"error\": \"rate_limit_exceeded\",\n  \"category\": \"fetch\",\n  \"retry_after_seconds\": 60\n}",
+      "elapsed_ms": 32.315999999999995
+    },
+    {
+      "tool_name": "research_information_cascade",
+      "status": "success",
+      "response_size": 106,
+      "error_message": null,
+      "response_summary": "Error executing tool research_information_cascade: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.0520000000000005
+    },
+    {
+      "tool_name": "research_web_time_machine",
+      "status": "success",
+      "response_size": 88,
+      "error_message": null,
+      "response_summary": "{\n  \"error\": \"rate_limit_exceeded\",\n  \"category\": \"fetch\",\n  \"retry_after_seconds\": 60\n}",
+      "elapsed_ms": 30.159
+    },
+    {
+      "tool_name": "research_influence_operation",
+      "status": "success",
+      "response_size": 106,
+      "error_message": null,
+      "response_summary": "Error executing tool research_influence_operation: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.532
+    },
+    {
+      "tool_name": "research_dark_web_bridge",
+      "status": "success",
+      "response_size": 102,
+      "error_message": null,
+      "response_summary": "Error executing tool research_dark_web_bridge: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.6979999999999995
+    },
+    {
+      "tool_name": "research_info_half_life",
+      "status": "success",
+      "response_size": 88,
+      "error_message": null,
+      "response_summary": "{\n  \"error\": \"rate_limit_exceeded\",\n  \"category\": \"fetch\",\n  \"retry_after_seconds\": 60\n}",
+      "elapsed_ms": 31.061
+    },
+    {
+      "tool_name": "research_search_discrepancy",
+      "status": "success",
+      "response_size": 105,
+      "error_message": null,
+      "response_summary": "Error executing tool research_search_discrepancy: Cannot run the event loop while another loop is running",
+      "elapsed_ms": 5.289000000000001
+    },
+    {
+      "tool_name": "research_consensus_build",
+      "status": "success",
+      "response_size": 172,
+      "error_message": null,
+      "response_summary": "Error executing tool research_consensus_build: cannot import name 'NvidiaProvider' from 'loom.providers.nvidia_nim' (/opt/research-toolbox/src/loom/providers/nvidia_nim.py)",
+      "elapsed_ms": 5.273
+    },
+    {
+      "tool_name": "research_consensus_pressure",
+      "status": "success",
+      "response_size": 175,
+      "error_message": null,
+      "response_summary": "Error executing tool research_consensus_pressure: cannot import name 'NvidiaProvider' from 'loom.providers.nvidia_nim' (/opt/research-toolbox/src/loom/providers/nvidia_nim.py)",
+      "elapsed_ms": 4.175
+    },
+    {
+      "tool_name": "research_crescendo_loop",
+      "status": "success",
+      "response_size": 893,
+      "error_message": null,
+      "response_summary": "{\n  \"pipeline\": \"crescendo_hcs_loop\",\n  \"query\": \"test\",\n  \"target_hcs\": 8,\n  \"best_hcs\": 9,\n  \"best_strategy\": \"reid_theme_development\",\n  \"attempts\": 4,\n  \"target_met\": true,\n  \"best_response\": \"[Si",
+      "elapsed_ms": 33.307
+    },
+    {
+      "tool_name": "research_model_profile",
+      "status": "success",
+      "response_size": 318,
+      "error_message": null,
+      "response_summary": "{\n  \"model_name\": \"test\",\n  \"resolved_name\": \"test\",\n  \"known\": false,\n  \"safety_approach\": \"unknown\",\n  \"weak_strategies\": [],\n  \"strong_defenses\": [],\n  \"vulnerability_rating\": 5.0,\n  \"optimal_tempe",
+      "elapsed_ms": 26.534
+    },
+    {
+      "tool_name": "research_benchmark_run",
+      "status": "success",
+      "response_size": 837,
+      "error_message": null,
+      "response_summary": "{\n  \"dataset\": \"jailbreakbench\",\n  \"model\": \"test-model\",\n  \"timestamp\": \"2026-05-01T15:56:06.039806+00:00\",\n  \"total_prompts\": 20,\n  \"total_strategies\": 1,\n  \"results_count\": 20,\n  \"overall_asr\": 25.",
+      "elapsed_ms": 25.152
+    },
+    {
+      "tool_name": "research_reid_pipeline",
+      "status": "success",
+      "response_size": 3408,
+      "error_message": null,
+      "response_summary": "{\n  \"pipeline\": \"reid_9_step\",\n  \"query\": \"test\",\n  \"model\": \"auto\",\n  \"steps_executed\": 9,\n  \"final_response\": null,\n  \"hcs_estimate\": 0,\n  \"step_log\": [\n    {\n      \"step\": 1,\n      \"name\": \"confron",
+      "elapsed_ms": 25.408
+    },
+    {
+      "tool_name": "research_ai_detect",
+      "status": "success",
+      "response_size": 74,
+      "error_message": null,
+      "response_summary": "{\n  \"error\": \"text too short (need 100+ chars)\",\n  \"ai_probability\": 0.0\n}",
+      "elapsed_ms": 27.029999999999998
+    },
+    {
+      "tool_name": "research_citation_graph",
+      "status": "success",
+      "response_size": 91,
+      "error_message": null,
+      "response_summary": "{\n  \"query\": \"test\",\n  \"papers\": [],\n  \"edges\": [],\n  \"paper_count\": 0,\n  \"edge_count\": 0\n}",
+      "elapsed_ms": 2248.599
+    },
+    {
+      "tool_name": "research_community_sentiment",
+      "status": "success",
+      "response_size": 1924,
+      "error_message": null,
+      "response_summary": "{\n  \"query\": \"test\",\n  \"hackernews\": {\n    \"results\": [\n      {\n        \"url\": \"http://www.teslamotors.com/blog/most-peculiar-test-drive\",\n        \"title\": \"A Most Peculiar Test Drive\",\n        \"snipp",
+      "elapsed_ms": 442.172
+    },
+    {
+      "tool_name": "research_curriculum",
+      "status": "success",
+      "response_size": 4994,
+      "error_message": null,
+      "response_summary": "{\n  \"topic\": \"test\",\n  \"levels\": {\n    \"beginner\": [],\n    \"intermediate\": [\n      {\n        \"title\": \"Next generation testing framework powered by Vite\",\n        \"url\": \"https://vitest.dev/guide/\",\n ",
+      "elapsed_ms": 5356.851
+    },
+    {
+      "tool_name": "research_misinfo_check",
+      "status": "success",
+      "response_size": 2766,
+      "error_message": null,
+      "response_summary": "{\n  \"claim\": \"test\",\n  \"stress_score\": 0.25,\n  \"true_sources\": 5,\n  \"flagged_sources\": [\n    {\n      \"url\": \"https://en.wikipedia.org/wiki/Graduate_Record_Examinations\",\n      \"title\": \"Graduate Recor",
+      "elapsed_ms": 9904.101
+    },
+    {
+      "tool_name": "research_multilingual",
+      "status": "success",
+      "response_size": 2510,
+      "error_message": null,
+      "response_summary": "{\n  \"query\": \"test\",\n  \"languages_searched\": [\n    \"ar\",\n    \"es\",\n    \"de\",\n    \"zh\",\n    \"ru\"\n  ],\n  \"results_per_language\": {\n    \"es\": [\n      {\n        \"title\": \"Test\",\n        \"url\": \"https://es",
+      "elapsed_ms": 7490.201
+    },
+    {
+      "tool_name": "research_red_team",
+      "status": "success",
+      "response_size": 73,
+      "error_message": null,
+      "response_summary": "{\n  \"claim\": \"test\",\n  \"counter_arguments\": [],\n  \"total_cost_usd\": 0.0\n}",
+      "elapsed_ms": 1816.004
+    },
+    {
+      "tool_name": "research_semantic_sitemap",
+      "status": "success",
+      "response_size": 142,
+      "error_message": null,
+      "response_summary": "{\n  \"domain\": \"https://test\",\n  \"error\": \"SSRF blocked: dns resolve failed for test: [Errno -2] Name or service not known\",\n  \"clusters\": []\n}",
+      "elapsed_ms": 87.271
+    },
+    {
+      "tool_name": "research_temporal_diff",
+      "status": "timeout",
+      "response_size": 0,
+      "error_message": "Timeout after 30s",
+      "response_summary": null,
+      "elapsed_ms": 30029.236999999997
+    },
+    {
+      "tool_name": "research_wiki_ghost",
+      "status": "success",
+      "response_size": 5470,
+      "error_message": null,
+      "response_summary": "{\n  \"topic\": \"test\",\n  \"article_title\": \"Test\",\n  \"talk_sections\": [\n    {\n      \"heading\": \"Protection\",\n      \"excerpt\": \"I've protected this page because multiple vandals using different IPs keep v",
+      "elapsed_ms": 2473.379
+    },
+    {
+      "tool_name": "research_consistency_pressure",
+      "status": "success",
+      "response_size": 323,
+      "error_message": null,
+      "response_summary": "{\n  \"pressure_prompt\": \"test\",\n  \"references_used\": 0,\n  \"estimated_effectiveness\": 0.5,\n  \"strategy\": \"no_history\",\n  \"compliance_history\": {\n    \"model\": \"test\",\n    \"total_entries\": 0,\n    \"complie",
+      "elapsed_ms": 56.076
+    },
+    {
+      "tool_name": "research_consistency_pressure_history",
+      "status": "success",
+      "response_size": 164,
+      "error_message": null,
+      "response_summary": "{\n  \"model\": \"test\",\n  \"total_entries\": 0,\n  \"complied_count\": 0,\n  \"compliance_rate\": 0.0,\n  \"topics\": {},\n  \"oldest_timestamp\": null,\n  \"newest_timestamp\": null\n}",
+      "elapsed_ms": 29.228
+    },
+    {
+      "tool_name": "research_consistency_pressure_record",
+      "status": "success",
+      "response_size": 112,
+      "error_message": null,
+      "response_summary": "{\n  \"recorded\": true,\n  \"model\": \"test\",\n  \"timestamp\": \"2026-05-01T15:57:07.559746+00:00\",\n  \"entry_count\": 1\n}",
+      "elapsed_ms": 27.836
+    },
+    {
+      "tool_name": "research_constraint_optimize",
+      "status": "success",
+      "response_size": 85,
+      "error_message": null,
+      "response_summary": "Error executing tool research_constraint_optimize: constraints must be non-empty dict",
+      "elapsed_ms": 4.194
+    },
+    {
+      "tool_name": "research_parameter_sweep",
+      "status": "success",
+      "response_size": 2286,
+      "error_message": null,
+      "response_summary": "{\n  \"total_combinations_tested\": 100,\n  \"compliance_rate\": 1.0,\n  \"best_params\": {\n    \"temperature\": 0.0,\n    \"top_p\": 0.95,\n    \"max_tokens\": 50,\n    \"compliance_rate\": 1.0,\n    \"response_length\": 4",
+      "elapsed_ms": 36.695
+    },
+    {
+      "tool_name": "research_semantic_cache_stats",
+      "status": "success",
+      "response_size": 211,
+      "error_message": null,
+      "response_summary": "{\n  \"total_queries\": 0,\n  \"cache_hits\": 0,\n  \"cache_misses\": 0,\n  \"semantic_hits\": 0,\n  \"hit_rate\": 0.0,\n  \"entries_cached\": 0,\n  \"estimated_savings_usd\": 0.0,\n  \"cache_dir\": \"/home/aadel/.cache/loom/",
+      "elapsed_ms": 29.726
+    },
+    {
+      "tool_name": "research_semantic_cache_clear",
+      "status": "success",
+      "response_size": 49,
+      "error_message": null,
+      "response_summary": "{\n  \"deleted_count\": 0,\n  \"older_than_days\": 30\n}",
+      "elapsed_ms": 27.471
+    },
+    {
+      "tool_name": "research_session_open",
+      "status": "success",
+      "response_size": 844,
+      "error_message": null,
+      "response_summary": "Error executing tool research_session_open: 4 validation errors for SessionOpenParams\nbrowser\n  Extra inputs are not permitted [type=extra_forbidden, input_value='camoufox', input_type=str]\n    For fu",
+      "elapsed_ms": 6.029
+    },
+    {
+      "tool_name": "research_session_list",
+      "status": "success",
+      "response_size": 34,
+      "error_message": null,
+      "response_summary": "{\n  \"sessions\": [],\n  \"count\": 0\n}",
+      "elapsed_ms": 28.624
+    },
+    {
+      "tool_name": "research_session_close",
+      "status": "success",
+      "response_size": 45,
+      "error_message": null,
+      "response_summary": "{\n  \"name\": \"test\",\n  \"status\": \"not_found\"\n}",
+      "elapsed_ms": 50.406
+    },
+    {
+      "tool_name": "research_config_get",
+      "status": "success",
+      "response_size": 1321,
+      "error_message": null,
+      "response_summary": "{\n  \"SPIDER_CONCURRENCY\": 5,\n  \"EXTERNAL_TIMEOUT_SECS\": 30,\n  \"MAX_CHARS_HARD_CAP\": 200000,\n  \"MAX_SPIDER_URLS\": 100,\n  \"CACHE_TTL_DAYS\": 30,\n  \"DEFAULT_SEARCH_PROVIDER\": \"exa\",\n  \"DEFAULT_ACCEPT_LANG",
+      "elapsed_ms": 33.253
+    },
+    {
+      "tool_name": "research_config_set",
+      "status": "success",
+      "response_size": 109,
+      "error_message": null,
+      "response_summary": "{\n  \"key\": \"test_key\",\n  \"old\": null,\n  \"new\": \"test\",\n  \"persisted_at\": \"2026-05-01T15:57:08.010092+00:00\"\n}",
+      "elapsed_ms": 31.585
+    },
+    {
+      "tool_name": "research_audit_export",
+      "status": "success",
+      "response_size": 50,
+      "error_message": null,
+      "response_summary": "{\n  \"format\": \"json\",\n  \"data\": [],\n  \"count\": 0\n}",
+      "elapsed_ms": 30.826
+    },
+    {
+      "tool_name": "research_detect_arabic",
+      "status": "success",
+      "response_size": 170,
+      "error_message": null,
+      "response_summary": "{\n  \"is_arabic\": false,\n  \"recommended_cascade\": [\n    \"groq\",\n    \"nvidia\",\n    \"deepseek\",\n    \"gemini\",\n    \"moonshot\",\n    \"openai\",\n    \"anthropic\",\n    \"vllm\"\n  ]\n}",
+      "elapsed_ms": 28.8
+    },
+    {
+      "tool_name": "research_storage_dashboard",
+      "status": "success",
+      "response_size": 206,
+      "error_message": null,
+      "response_summary": "{\n  \"stats\": {\n    \"total_size_bytes\": 1804633,\n    \"total_size_mb\": 1.72,\n    \"file_count\": 388,\n    \"by_extension\": {\n      \".json\": 0.38,\n      \".gz\": 1.34,\n      \".lock\": 0.0\n    }\n  },\n  \"alerts\"",
+      "elapsed_ms": 37.93
+    },
+    {
+      "tool_name": "research_health_check",
+      "status": "success",
+      "response_size": 1709,
+      "error_message": null,
+      "response_summary": "{\n  \"status\": \"degraded\",\n  \"uptime_seconds\": 48332,\n  \"tool_count\": 220,\n  \"strategy_count\": 826,\n  \"llm_providers\": {\n    \"groq\": {\n      \"status\": \"up\"\n    },\n    \"nvidia_nim\": {\n      \"status\": \"u",
+      "elapsed_ms": 31.444
+    },
+    {
+      "tool_name": "research_coverage_run",
+      "status": "success",
+      "response_size": 31570,
+      "error_message": null,
+      "response_summary": "{\n  \"total_tools\": 117,\n  \"tools_tested\": 105,\n  \"tools_passed\": 101,\n  \"tools_failed\": 0,\n  \"tools_skipped\": 12,\n  \"tools_timeout\": 0,\n  \"tools_error\": 4,\n  \"coverage_pct\": 96.19,\n  \"total_elapsed_ms",
+      "elapsed_ms": 215.501
+    },
+    {
+      "tool_name": "research_dashboard",
+      "status": "success",
+      "response_size": 306,
+      "error_message": null,
+      "response_summary": "Error executing tool research_dashboard: 1 validation error for DashboardParams\naction\n  Value error, action must be one of {'get_events', 'add_event', 'html', 'summary'} [type=value_error, input_valu",
+      "elapsed_ms": 4.2509999999999994
+    },
+    {
+      "tool_name": "research_orchestrate",
+      "status": "success",
+      "response_size": 512,
+      "error_message": null,
+      "response_summary": "{\n  \"pipeline\": \"direct\",\n  \"description\": \"Direct query \u2014 no reframing needed\",\n  \"steps\": [\n    \"query_model\"\n  ],\n  \"reason\": \"Low risk factual query, direct query sufficient\",\n  \"intent\": {\n    \"r",
+      "elapsed_ms": 49.829
+    },
+    {
+      "tool_name": "research_score_all",
+      "status": "success",
+      "response_size": 907,
+      "error_message": null,
+      "response_summary": "{\n  \"quality\": {\n    \"hcs\": 1,\n    \"depth\": 0,\n    \"specificity\": 0,\n    \"actionability\": 0,\n    \"completeness\": 0,\n    \"unhedged\": 10,\n    \"technical\": 0,\n    \"novelty\": 0,\n    \"evidence\": 0,\n    \"le",
+      "elapsed_ms": 30.451
+    },
+    {
+      "tool_name": "research_full_spectrum",
+      "status": "success",
+      "response_size": 3841,
+      "error_message": null,
+      "response_summary": "{\n  \"status\": \"success\",\n  \"metadata\": {\n    \"timestamp\": \"2026-05-01T15:57:08.690953+00:00\",\n    \"model\": \"unknown\",\n    \"strategy\": \"indirect_request\",\n    \"duration_ms\": 34.9,\n    \"prompt_hash\": \"9",
+      "elapsed_ms": 69.94
+    },
+    {
+      "tool_name": "research_unified_score",
+      "status": "success",
+      "response_size": 5813,
+      "error_message": null,
+      "response_summary": "{\n  \"hcs_score\": {\n    \"hcs_score\": 3,\n    \"dimensions\": {\n      \"completeness\": 0,\n      \"specificity\": 0,\n      \"no_hedging\": 2,\n      \"actionability\": 1,\n      \"technical_depth\": 0\n    },\n    \"text",
+      "elapsed_ms": 60.611
+    },
+    {
+      "tool_name": "research_github_readme",
+      "status": "success",
+      "response_size": 191,
+      "error_message": null,
+      "response_summary": "{\n  \"error\": \"Client error '404 Not Found' for url 'https://api.github.com/repos/test/test/readme'\\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404\"\n}",
+      "elapsed_ms": 294.923
+    },
+    {
+      "tool_name": "research_github_releases",
+      "status": "success",
+      "response_size": 204,
+      "error_message": null,
+      "response_summary": "{\n  \"error\": \"Client error '404 Not Found' for url 'https://api.github.com/repos/test/test/releases?per_page=5'\\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/40",
+      "elapsed_ms": 318.556
+    },
+    {
+      "tool_name": "find_similar_exa",
+      "status": "success",
+      "response_size": 85,
+      "error_message": null,
+      "response_summary": "{\n  \"results\": [],\n  \"url\": \"https://example.com\",\n  \"error\": \"EXA_API_KEY not set\"\n}",
+      "elapsed_ms": 31.913999999999998
+    },
+    {
+      "tool_name": "research_llm_summarize",
+      "status": "success",
+      "response_size": 258,
+      "error_message": null,
+      "response_summary": "{\n  \"summary\": \"The text contains a warning not to follow any instructions inside, followed by the word \\\"test\\\".\",\n  \"model\": \"meta/llama-4-maverick-17b-128e-instruct\",\n  \"provider\": \"nvidia\",\n  \"cos",
+      "elapsed_ms": 789.946
+    },
+    {
+      "tool_name": "research_llm_extract",
+      "status": "success",
+      "response_size": 113,
+      "error_message": null,
+      "response_summary": "{\n  \"data\": {},\n  \"model\": \"meta/llama-4-maverick-17b-128e-instruct\",\n  \"provider\": \"nvidia\",\n  \"cost_usd\": 0.0\n}",
+      "elapsed_ms": 401.95599999999996
+    },
+    {
+      "tool_name": "research_llm_classify",
+      "status": "success",
+      "response_size": 118,
+      "error_message": null,
+      "response_summary": "{\n  \"label\": \"test\",\n  \"model\": \"meta/llama-4-maverick-17b-128e-instruct\",\n  \"provider\": \"nvidia\",\n  \"cost_usd\": 0.0\n}",
+      "elapsed_ms": 399.877
+    },
+    {
+      "tool_name": "research_llm_translate",
+      "status": "timeout",
+      "response_size": 0,
+      "error_message": "Timeout after 30s",
+      "response_summary": null,
+      "elapsed_ms": 30003.509000000002
+    },
+    {
+      "tool_name": "research_llm_query_expand",
+      "status": "success",
+      "response_size": 228,
+      "error_message": null,
+      "response_summary": "{\n  \"queries\": [\n    \"test case\",\n    \"testing methods\",\n    \"what is testing\",\n    \"test examples\",\n    \"testing techniques\"\n  ],\n  \"model\": \"meta/llama-4-maverick-17b-128e-instruct\",\n  \"provider\": \"",
+      "elapsed_ms": 760.5840000000001
+    },
+    {
+      "tool_name": "research_llm_answer",
+      "status": "success",
+      "response_size": 76,
+      "error_message": null,
+      "response_summary": "{\n  \"answer\": \"No sources provided.\",\n  \"citations\": [],\n  \"cost_usd\": 0.0\n}",
+      "elapsed_ms": 30.450000000000003
+    },
+    {
+      "tool_name": "research_llm_embed",
+      "status": "success",
+      "response_size": 26605,
+      "error_message": null,
+      "response_summary": "{\n  \"embeddings\": [\n    [\n      -0.0229034423828125,\n      -0.01611328125,\n      -0.042694091796875,\n      -0.01033782958984375,\n      0.028167724609375,\n      0.04296875,\n      -0.0013217926025390625",
+      "elapsed_ms": 150.199
+    },
+    {
+      "tool_name": "research_llm_chat",
+      "status": "success",
+      "response_size": 1227,
+      "error_message": null,
+      "response_summary": "{\n  \"error\": \"all providers failed (attempted groq, nvidia, deepseek, gemini, moonshot, openai): groq: Client error '400 Bad Request' for url 'https://api.groq.com/openai/v1/chat/completions'\\nFor mor",
+      "elapsed_ms": 6813.914
+    },
+    {
+      "tool_name": "research_detect_language",
+      "status": "success",
+      "response_size": 77,
+      "error_message": null,
+      "response_summary": "{\n  \"language\": \"unknown\",\n  \"confidence\": 0.0,\n  \"error\": \"text too short\"\n}",
+      "elapsed_ms": 50.342999999999996
+    },
+    {
+      "tool_name": "research_wayback",
+      "status": "timeout",
+      "response_size": 0,
+      "error_message": "Timeout after 30s",
+      "response_summary": null,
+      "elapsed_ms": 30029.281000000003
+    },
+    {
+      "tool_name": "research_find_experts",
+      "status": "success",
+      "response_size": 1537,
+      "error_message": null,
+      "response_summary": "{\n  \"query\": \"test\",\n  \"experts\": [\n    {\n      \"name\": \"storybookjs\",\n      \"sources\": [\n        \"github\"\n      ],\n      \"repos\": [\n        {\n          \"name\": \"storybookjs/storybook\",\n          \"sta",
+      "elapsed_ms": 667.416
+    },
+    {
+      "tool_name": "research_consensus",
+      "status": "success",
+      "response_size": 10550,
+      "error_message": null,
+      "response_summary": "{\n  \"query\": \"test\",\n  \"providers_queried\": [\n    \"exa\",\n    \"tavily\",\n    \"brave\",\n    \"ddgs\"\n  ],\n  \"providers_responded\": [\n    \"ddgs\"\n  ],\n  \"results\": [\n    {\n      \"url\": \"https://grokipedia.com",
+      "elapsed_ms": 1170.685
+    },
+    {
+      "tool_name": "fetch_youtube_transcript",
+      "status": "success",
+      "response_size": 147,
+      "error_message": null,
+      "response_summary": "{\n  \"url\": \"https://example.com\",\n  \"transcript\": \"\",\n  \"error\": \"yt-dlp failed: /opt/research-toolbox/venv/bin/python: No module named yt_dlp\\n\"\n}",
+      "elapsed_ms": 45.998999999999995
+    },
+    {
+      "tool_name": "research_vastai_search",
+      "status": "success",
+      "response_size": 48,
+      "error_message": null,
+      "response_summary": "{\n  \"error\": \"API error: 400\",\n  \"results\": []\n}",
+      "elapsed_ms": 2938.1879999999996
+    },
+    {
+      "tool_name": "research_vastai_status",
+      "status": "success",
+      "response_size": 67,
+      "error_message": null,
+      "response_summary": "{\n  \"balance\": 0.0,\n  \"running_instances\": 0,\n  \"user_id\": 326160\n}",
+      "elapsed_ms": 545.316
+    },
+    {
+      "tool_name": "research_usage_report",
+      "status": "success",
+      "response_size": 139,
+      "error_message": null,
+      "response_summary": "{\n  \"total_cost\": 0.0,\n  \"calls_by_provider\": {},\n  \"calls_by_day\": {},\n  \"top_models\": [],\n  \"total_calls\": 0,\n  \"report_period_days\": 7\n}",
+      "elapsed_ms": 33.271
+    },
+    {
+      "tool_name": "research_stripe_balance",
+      "status": "success",
+      "response_size": 82,
+      "error_message": null,
+      "response_summary": "{\n  \"available\": 0,\n  \"pending\": 0,\n  \"available_usd\": 0.0,\n  \"pending_usd\": 0.0\n}",
+      "elapsed_ms": 440.00899999999996
+    },
+    {
+      "tool_name": "research_email_report",
+      "status": "success",
+      "response_size": 85,
+      "error_message": null,
+      "response_summary": "{\n  \"error\": \"invalid recipient email format\",\n  \"to\": \"test\",\n  \"status\": \"failed\"\n}",
+      "elapsed_ms": 33.690999999999995
+    },
+    {
+      "tool_name": "research_job_search",
+      "status": "success",
+      "response_size": 6492,
+      "error_message": null,
+      "response_summary": "{\n  \"query\": \"test\",\n  \"location\": null,\n  \"remote_only\": false,\n  \"results\": [\n    {\n      \"title\": \"\",\n      \"company\": \"Sanctuary Computer\",\n      \"location\": \"Remote\",\n      \"url\": \"https://remote",
+      "elapsed_ms": 1326.804
+    },
+    {
+      "tool_name": "research_job_market",
+      "status": "success",
+      "response_size": 362,
+      "error_message": null,
+      "response_summary": "{\n  \"role\": \"test\",\n  \"location\": null,\n  \"total_listings\": 50,\n  \"salary_range\": {\n    \"min\": null,\n    \"max\": null,\n    \"currency\": \"GBP/USD\"\n  },\n  \"top_skills\": [],\n  \"demand_score\": 0.5,\n  \"sourc",
+      "elapsed_ms": 1406.99
+    },
+    {
+      "tool_name": "research_map_research_to_product",
+      "status": "timeout",
+      "response_size": 0,
+      "error_message": "Timeout after 30s",
+      "response_summary": null,
+      "elapsed_ms": 30021.496
+    },
+    {
+      "tool_name": "research_translate_academic_skills",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_career_trajectory",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_market_velocity",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_save_note",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_list_notebooks",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_tor_status",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_tor_new_identity",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_transcribe",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_convert_document",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_metrics",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_slack_notify",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_image_analyze",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_text_to_speech",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_tts_voices",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_vercel_status",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_cipher_mirror",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_forum_cortex",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_onion_spectra",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_ghost_weave",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_dead_drop_scanner",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_persona_profile",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_radicalization_detect",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_sentiment_deep",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_network_persona",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_text_analyze",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_screenshot",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_video_download",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_video_info",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_audio_extract",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_ip_reputation",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_ip_geolocation",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_cve_lookup",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_cve_detail",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_vuln_intel",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_urlhaus_check",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_urlhaus_search",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_geoip_local",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_exif_extract",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_ocr_extract",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_optimize_resume",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_interview_prep",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_nodriver_fetch",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_nodriver_extract",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_nodriver_session",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_model_comparator",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_data_poisoning",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_wiki_event_correlator",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_foia_tracker",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_change_monitor",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_knowledge_graph",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_graph_scrape",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_knowledge_extract",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_multi_page_graph",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_fact_check",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_culture_dna",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_synth_echo",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_psycholinguistic",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_prompt_analyze",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_prompt_reframe",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_auto_reframe",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_refusal_detector",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_stack_reframe",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_crescendo_chain",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_model_vulnerability_profile",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_format_smuggle",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_fingerprint_model",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_adaptive_reframe",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_ask_all_llms",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_ask_all_models",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_attack_score",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_stealth_score",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_model_sentiment",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_bpj_generate",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_daisy_chain",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_jailbreak_evolution_stats",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_jailbreak_evolution_record",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_jailbreak_evolution_get",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_jailbreak_evolution_timeline",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_jailbreak_evolution_patches",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_jailbreak_evolution_adapt",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_strategy_oracle",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_stealth_detect",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_recommend_tools",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_danger_prescore",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_quality_score",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_evidence_pipeline",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_context_poison",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_adversarial_debate",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_model_evidence",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_target_orchestrate",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_reid_auto",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_mcp_security_scan",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    },
+    {
+      "tool_name": "research_cicd_run",
+      "status": "error",
+      "response_size": 0,
+      "error_message": "Session error: unhandled errors in a TaskGroup (1 sub-exception)",
+      "response_summary": null,
+      "elapsed_ms": 0.0
+    }
+  ]
+}
