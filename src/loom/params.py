@@ -688,9 +688,10 @@ class SessionOpenParams(BaseModel):
     """Parameters for research_session_open tool."""
 
     name: str
-    browser_type: Literal["chromium", "firefox", "webkit"] = "chromium"
-    headless: bool = True
-    timeout: int = 30
+    browser: Literal["camoufox", "chromium", "firefox"] | str = "camoufox"
+    ttl_seconds: int = 3600
+    login_url: str | None = None
+    login_script: str | None = None
 
     model_config = {"extra": "forbid", "strict": True}
 
@@ -701,11 +702,25 @@ class SessionOpenParams(BaseModel):
             raise ValueError("name must match ^[a-z0-9_-]{1,32}$")
         return v
 
-    @field_validator("timeout")
+    @field_validator("ttl_seconds")
     @classmethod
-    def validate_timeout(cls, v: int) -> int:
-        if v < 1 or v > 300:
-            raise ValueError("timeout must be 1-300")
+    def validate_ttl_seconds(cls, v: int) -> int:
+        if v < 1 or v > 86400:
+            raise ValueError("ttl_seconds must be 1-86400")
+        return v
+
+    @field_validator("login_script")
+    @classmethod
+    def validate_login_script(cls, v: str | None) -> str | None:
+        if v is not None:
+            return validate_js_script(v)
+        return v
+
+    @field_validator("login_url")
+    @classmethod
+    def validate_login_url(cls, v: str | None) -> str | None:
+        if v is not None:
+            return validate_url(v)
         return v
 
 
