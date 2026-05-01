@@ -310,10 +310,10 @@ def research_prompt_reframe(
     all_variants = {}
     for s_name, s_info in _STRATEGIES.items():
         all_variants[s_name] = {
-            "name": s_info["name"],
+            "name": s_info.get("name", s_name),
             "reframed": _apply_strategy(prompt, s_name, model_family)[:500],
-            "multiplier": s_info["multiplier"],
-            "best_for": s_info["best_for"],
+            "multiplier": s_info.get("multiplier", 1.0),
+            "best_for": s_info.get("best_for", []),
         }
 
     return {
