@@ -967,11 +967,11 @@ class ExaFindSimilarParams(BaseModel):
             raise ValueError("query max 500 characters")
         return v
 
-    @field_validator("num_results")
+    @field_validator("max_results")
     @classmethod
     def validate_num_results(cls, v: int) -> int:
         if v < 1 or v > 100:
-            raise ValueError("num_results must be 1-100")
+            raise ValueError("max_results must be 1-100")
         return v
 
 
@@ -5223,3 +5223,47 @@ class TransactionGraphParams(BaseModel):
         if len(v) > 100:
             raise ValueError("addresses list limited to 100 items")
         return v
+
+
+class WorkflowCreateParams(BaseModel):
+    """Parameters for research_workflow_create tool."""
+
+    name: str = Field(..., min_length=1, max_length=255)
+    steps: list[dict[str, Any]]
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        v = v.strip()
+        if not v or len(v) > 255:
+            raise ValueError("name 1-255 chars")
+        return v
+
+    @field_validator("steps")
+    @classmethod
+    def validate_steps(cls, v: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        if not v or len(v) > 100:
+            raise ValueError("1-100 steps")
+        for i, s in enumerate(v):
+            if "tool" not in s or "params" not in s:
+                raise ValueError(f"step {i}: missing tool/params")
+        return v
+
+
+class WorkflowRunParams(BaseModel):
+    """Parameters for research_workflow_run tool."""
+
+    workflow_id: str = Field(..., min_length=1)
+    dry_run: bool = False
+
+    model_config = {"extra": "forbid", "strict": True}
+
+
+class WorkflowStatusParams(BaseModel):
+    """Parameters for research_workflow_status tool."""
+
+    workflow_id: str = Field(..., min_length=1)
+
+    model_config = {"extra": "forbid", "strict": True}
