@@ -5275,3 +5275,24 @@ class WorkflowStatusParams(BaseModel):
     workflow_id: str = Field(..., min_length=1)
 
     model_config = {"extra": "forbid", "strict": True}
+
+
+class ToxicityCheckParams(BaseModel):
+    """Parameters for research_toxicity_check tool."""
+
+    text: str = Field(..., min_length=3, max_length=500000)
+    compare_prompt: str | None = Field(default=None, max_length=100000)
+    compare_response: str | None = Field(default=None, max_length=500000)
+
+    model_config = {"extra": "forbid", "strict": True}
+
+
+class DriftMonitorParams(BaseModel):
+    """Parameters for research_drift_monitor tool."""
+
+    prompts: list[str] = Field(..., min_length=1, max_length=50)
+    model_name: str = Field(..., min_length=1, max_length=100)
+    mode: str = Field(default="check", pattern=r"^(check|baseline|compare)$")
+    storage_path: str = Field(default="~/.loom/drift/", max_length=500)
+
+    model_config = {"extra": "forbid", "strict": True}

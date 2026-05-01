@@ -13,6 +13,7 @@ from typing import Any
 
 from loom.daisy_chain import DaisyChainDecomposer, _compute_daisy_chain_hcs
 from loom.params import DaisyChainParams
+from loom.providers.base import get_available_providers
 
 logger = logging.getLogger("loom.tools.daisy_chain")
 
@@ -78,24 +79,21 @@ async def research_daisy_chain(
 
     decomposer = DaisyChainDecomposer(available_models=models)
 
-    # Build mock LLM callbacks (would be replaced with real provider calls)
-    # For now, use echo responses for demo
-    async def mock_llm_callback(model_name: str, prompt: str) -> str:
-        """Mock LLM callback - in production would call real providers."""
-        # Simulate different model behaviors
-        if "gpt-4" in model_name.lower():
-            return f"GPT-4 response to prompt about: {prompt[:60]}..."
-        elif "claude" in model_name.lower():
-            return f"Claude response to prompt about: {prompt[:60]}..."
-        elif "deepseek" in model_name.lower():
-            return f"DeepSeek response to prompt about: {prompt[:60]}..."
-        else:
-            return f"Response from {model_name} to prompt about: {prompt[:60]}..."
+    # Build real LLM provider callbacks using cascade system
+    async def real_llm_callback(model_name: str, prompt: str) -> str:
+        """Call real LLM providers via cascade system."""
+        try:
+            from loom.tools.llm import _call_with_cascade
+            response = await _call_with_cascade(prompt, max_tokens=500)
+            return response if response else f"No response from {model_name}"
+        except Exception as e:
+            logger.warning("llm_callback_failed model=%s: %s", model_name, e)
+            return f"Error calling {model_name}: {str(e)[:100]}"
 
     callbacks = {
-        model: mock_llm_callback for model in params.available_models
+        model: real_llm_callback for model in params.available_models
     }
-    callbacks[params.combiner_model] = mock_llm_callback
+    callbacks[params.combiner_model] = real_llm_callback
 
     # Execute daisy-chain pipeline
     try:
