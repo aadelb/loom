@@ -4821,3 +4821,77 @@ class QueryBuilderParams(BaseModel):
         if v < 1 or v > 10:
             raise ValueError("max_queries must be 1-10")
         return v
+
+class LightpandaFetchParams(BaseModel):
+    """Parameters for research_lightpanda_fetch tool."""
+
+    url: str
+    javascript: bool = True
+    wait_for: str | None = None
+    extract_links: bool = False
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def validate_url_field(cls, v: str) -> str:
+        return validate_url(v)
+
+    @field_validator("wait_for")
+    @classmethod
+    def validate_wait_for(cls, v: str | None) -> str | None:
+        if v is not None and len(v) > 256:
+            raise ValueError("wait_for max 256 characters")
+        return v
+
+
+class LightpandaBatchParams(BaseModel):
+    """Parameters for research_lightpanda_batch tool."""
+
+    urls: list[str]
+    javascript: bool = True
+    wait_for: str | None = None
+    extract_links: bool = False
+    timeout: int = 60
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("urls", mode="before")
+    @classmethod
+    def validate_urls(cls, v: list[str]) -> list[str]:
+        if not v or len(v) == 0:
+            raise ValueError("urls list must not be empty")
+        if len(v) > 50:
+            raise ValueError("urls list max 50 URLs")
+        validated = []
+        for url in v:
+            validated.append(validate_url(url))
+        return validated
+
+    @field_validator("wait_for")
+    @classmethod
+    def validate_wait_for(cls, v: str | None) -> str | None:
+        if v is not None and len(v) > 256:
+            raise ValueError("wait_for max 256 characters")
+        return v
+
+    @field_validator("timeout")
+    @classmethod
+    def validate_timeout(cls, v: int) -> int:
+        if v < 1 or v > 300:
+            raise ValueError("timeout must be 1-300 seconds")
+        return v
+
+
+class CreepjsParams(BaseModel):
+    """Parameters for research_creepjs_audit tool."""
+
+    target_url: str = "https://creepjs.web.app"
+    headless: bool = True
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("target_url", mode="before")
+    @classmethod
+    def validate_target_url(cls, v: str) -> str:
+        return validate_url(v)

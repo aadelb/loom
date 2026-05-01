@@ -94,6 +94,7 @@ from loom.tools import (
     js_intel,
     knowledge_graph,
     leak_scan,
+    lightpanda_backend,
     markdown,
     metadata_forensics,
     multi_search,
@@ -1394,6 +1395,19 @@ def _register_tools(mcp: FastMCP) -> None:
         mcp.tool()(_wrap_tool(research_supercookie_check))
     except ImportError as exc:
         log.debug("supercookie_unavailable: %s", exc)
+    try:
+        from loom.tools.lightpanda_backend import research_lightpanda_fetch, research_lightpanda_batch
+        mcp.tool()(_wrap_tool(research_lightpanda_fetch, "fetch"))
+        mcp.tool()(_wrap_tool(research_lightpanda_batch, "fetch"))
+    except ImportError as exc:
+        log.debug("lightpanda_unavailable: %s", exc)
+
+    try:
+        from loom.tools.creepjs_backend import research_creepjs_audit
+        mcp.tool()(_wrap_tool(research_creepjs_audit))
+    except ImportError as exc:
+        log.debug("creepjs_unavailable: %s", exc)
+
 
     log.info("new_integrations_registered count=9 (webcheck,shodan_host,shodan_search,photon,h8mail,censys_host,censys_search,unstructured,instructor)")
     log.info("additional_integrations_registered count=18 (query_builder,opencti,intelowl,deepdarkcti,telegram,linkedin,discord,reconng,massdns,eagleeye,robin,onionscan,testssl,masscan,paddleocr,camelot,scapy,fingerprint,supercookie)")
