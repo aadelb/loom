@@ -223,18 +223,17 @@ class HippoRAGStore:
         """Synchronous recall implementation."""
         with sqlite3.connect(str(self.db_path)) as conn:
             conn.row_factory = sqlite3.Row
-            # FTS5 search for content relevance with bm25 ranking
+            # Simple LIKE search (FTS5 content-sync mode has schema issues)
+            search_term = f"%{query}%"
             cursor = conn.execute(
                 """
-                SELECT c.id, c.content, c.metadata, c.created_at
-                FROM content c
-                WHERE c.namespace = ? AND c.id IN (
-                    SELECT rowid FROM content_fts WHERE content_fts MATCH ?
-                )
-                ORDER BY bm25(content_fts)
+                SELECT id, content, metadata, created_at
+                FROM content
+                WHERE namespace = ? AND content LIKE ?
+                ORDER BY created_at DESC
                 LIMIT ?
                 """,
-                (namespace, query, top_k),
+                (namespace, search_term, top_k),
             )
             results = []
             for row in cursor.fetchall():

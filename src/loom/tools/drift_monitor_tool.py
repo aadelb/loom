@@ -60,7 +60,7 @@ async def research_drift_monitor(
             model_callback=dummy_callback,
             model_name=params.model_name,
         )
-        logger.info("baseline_created", model=params.model_name, prompts=len(params.prompts))
+        logger.info("baseline_created model=%s prompts=%d", params.model_name, len(params.prompts))
         return result
     else:
         # Check mode - requires existing baseline
@@ -73,10 +73,10 @@ async def research_drift_monitor(
                 model_callback=dummy_callback,
                 model_name=params.model_name,
             )
-            logger.info("check_completed", model=params.model_name, alert_level=result["alert_level"])
+            logger.info("check_completed model=%s alert_level=%s", params.model_name, result["alert_level"])
             return result
         except ValueError as e:
-            logger.error("check_failed", model=params.model_name, error=str(e))
+            logger.error("check_failed model=%s error=%s", params.model_name, str(e))
             return {
                 "error": str(e),
                 "model_name": params.model_name,
@@ -113,7 +113,7 @@ async def research_drift_monitor_list(
     """
     monitor = DriftMonitor(storage_path=storage_path)
     result = monitor.list_baselines()
-    logger.info("baselines_listed", count=len(result))
+    logger.info("baselines_listed count=%d", len(result))
     return result
 
 

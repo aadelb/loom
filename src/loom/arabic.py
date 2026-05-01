@@ -106,10 +106,10 @@ def route_by_language(
     other_providers = [p for p in default_cascade if p not in _ARABIC_PROVIDERS]
 
     logger.info(
-        "arabic_routing_applied",
-        text_sample=text[:50],
-        arabic_providers=arabic_capable,
-        other_providers=other_providers,
+        "arabic_routing_applied text_sample=%s arabic_providers=%s other_providers=%s",
+        text[:50],
+        arabic_capable,
+        other_providers,
     )
 
     return arabic_capable + other_providers
