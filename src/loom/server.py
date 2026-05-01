@@ -64,6 +64,7 @@ from loom.tools import (
     company_intel,
     competitive_intel,
     crypto_trace,
+    crypto_risk,
     culture_dna,
     dark_forum,
     dark_recon,
@@ -72,6 +73,7 @@ from loom.tools import (
     deception_detect,
     deception_job_scanner,
     deep,
+    deep_research_agent,
     domain_intel,
     fact_checker,
     fetch,
@@ -886,6 +888,7 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(markdown.research_markdown, "fetch"))
     mcp.tool()(_wrap_tool(search.research_search, "search"))
     mcp.tool()(_wrap_tool(deep.research_deep, "deep"))
+    mcp.tool()(_wrap_tool(deep_research_agent.research_hierarchical_research, "hierarchical_research"))
     mcp.tool()(_wrap_tool(github.research_github, "search"))
     mcp.tool()(_wrap_tool(stealth.research_camoufox, "fetch"))
     mcp.tool()(_wrap_tool(stealth.research_botasaurus, "fetch"))
@@ -942,6 +945,7 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(onion_discover.research_onion_discover, "fetch"))
     mcp.tool()(_wrap_tool(metadata_forensics.research_metadata_forensics, "fetch"))
     mcp.tool()(_wrap_tool(crypto_trace.research_crypto_trace, "fetch"))
+    mcp.tool()(_wrap_tool(crypto_risk.research_crypto_risk_score))
     mcp.tool()(_wrap_tool(stego_detect.research_stego_detect))
     mcp.tool()(_wrap_tool(threat_profile.research_threat_profile, "fetch"))
     # Threat intelligence tools (7 tools for dark market, ransomware, phishing, botnets, malware, domains, IOCs)
@@ -1289,6 +1293,17 @@ def _register_tools(mcp: FastMCP) -> None:
     except ImportError as exc:
         log.debug("instructor_unavailable: %s", exc)
 
+    # Pydantic AI agent framework (type-safe structured outputs)
+    try:
+        from loom.tools.pydantic_ai_backend import (
+            research_pydantic_agent,
+            research_structured_llm,
+        )
+        mcp.tool()(_wrap_tool(research_pydantic_agent, "llm"))
+        mcp.tool()(_wrap_tool(research_structured_llm, "llm"))
+    except ImportError as exc:
+        log.debug("pydantic_ai_unavailable: %s", exc)
+
     # Query builder (DSPy-powered intent extraction + query optimization)
     try:
         from loom.tools.query_builder import research_build_query
@@ -1407,6 +1422,13 @@ def _register_tools(mcp: FastMCP) -> None:
         mcp.tool()(_wrap_tool(research_creepjs_audit))
     except ImportError as exc:
         log.debug("creepjs_unavailable: %s", exc)
+
+    try:
+        from loom.tools.hipporag_backend import research_memory_store, research_memory_recall
+        mcp.tool()(_wrap_tool(research_memory_store))
+        mcp.tool()(_wrap_tool(research_memory_recall))
+    except ImportError as exc:
+        log.debug("hipporag_unavailable: %s", exc)
 
 
     log.info("new_integrations_registered count=9 (webcheck,shodan_host,shodan_search,photon,h8mail,censys_host,censys_search,unstructured,instructor)")

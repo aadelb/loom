@@ -4895,3 +4895,217 @@ class CreepjsParams(BaseModel):
     @classmethod
     def validate_target_url(cls, v: str) -> str:
         return validate_url(v)
+
+
+class PydanticAgentParams(BaseModel):
+    """Parameters for research_pydantic_agent tool."""
+
+    prompt: str
+    model: str = "nvidia_nim"
+    system_prompt: str = ""
+    max_tokens: int = 1000
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("prompt")
+    @classmethod
+    def validate_prompt(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("prompt must be non-empty")
+        v = v.strip()
+        if len(v) > 20000:
+            raise ValueError("prompt max 20000 characters")
+        return v
+
+    @field_validator("system_prompt")
+    @classmethod
+    def validate_system_prompt(cls, v: str) -> str:
+        if v and len(v) > 5000:
+            raise ValueError("system_prompt max 5000 characters")
+        return v
+
+    @field_validator("max_tokens")
+    @classmethod
+    def validate_max_tokens(cls, v: int) -> int:
+        if v < 10 or v > 8000:
+            raise ValueError("max_tokens must be 10-8000")
+        return v
+
+
+class StructuredLLMParams(BaseModel):
+    """Parameters for research_structured_llm tool."""
+
+    prompt: str
+    output_schema: dict[str, str]
+    model: str = "nvidia_nim"
+    provider_override: str | None = None
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("prompt")
+    @classmethod
+    def validate_prompt(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("prompt must be non-empty")
+        v = v.strip()
+        if len(v) > 20000:
+            raise ValueError("prompt max 20000 characters")
+        return v
+
+    @field_validator("output_schema")
+    @classmethod
+    def validate_output_schema(cls, v: dict[str, str]) -> dict[str, str]:
+        if not v:
+            raise ValueError("output_schema cannot be empty")
+        if len(v) > 50:
+            raise ValueError("output_schema max 50 fields")
+        valid_types = {"str", "string", "int", "integer", "float", "bool", "boolean", "list", "dict", "object"}
+        for field_name, field_type in v.items():
+            if field_type.lower() not in valid_types:
+                raise ValueError(
+                    f"invalid type '{field_type}' for field '{field_name}'. "
+                    f"Valid types: {', '.join(valid_types)}"
+                )
+        return v
+
+    @field_validator("provider_override")
+    @classmethod
+    def validate_provider_override(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        valid = {"nvidia", "openai", "anthropic", "groq", "deepseek", "gemini", "moonshot", "vllm"}
+        if v.lower() not in valid:
+            raise ValueError(f"invalid provider '{v}'. Valid: {', '.join(valid)}")
+        return v
+
+
+class MemoryStoreParams(BaseModel):
+    """Parameters for research_memory_store tool."""
+
+    content: str
+    metadata: dict[str, Any] | None = None
+    namespace: str = "default"
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("content")
+    @classmethod
+    def validate_content(cls, v: str) -> str:
+        if not v or len(v.strip()) < 10:
+            raise ValueError("content must be at least 10 characters")
+        if len(v) > 100000:
+            raise ValueError("content max 100000 characters")
+        return v
+
+    @field_validator("namespace")
+    @classmethod
+    def validate_namespace(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("namespace required")
+        if len(v) > 32:
+            raise ValueError("namespace max 32 characters")
+        if not re.match(r"^[a-z0-9_-]+$", v.lower()):
+            raise ValueError("namespace must contain only alphanumeric, underscore, hyphen")
+        return v.lower()
+
+
+class MemoryRecallParams(BaseModel):
+    """Parameters for research_memory_recall tool."""
+
+    query: str
+    namespace: str = "default"
+    top_k: int = 5
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("query")
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        if not v or len(v.strip()) < 3:
+            raise ValueError("query must be at least 3 characters")
+        if len(v) > 10000:
+            raise ValueError("query max 10000 characters")
+        return v
+
+    @field_validator("namespace")
+    @classmethod
+    def validate_namespace(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("namespace required")
+        if len(v) > 32:
+            raise ValueError("namespace max 32 characters")
+        if not re.match(r"^[a-z0-9_-]+$", v.lower()):
+            raise ValueError("namespace must contain only alphanumeric, underscore, hyphen")
+        return v.lower()
+
+    @field_validator("top_k")
+    @classmethod
+    def validate_top_k(cls, v: int) -> int:
+        if v < 1 or v > 20:
+            raise ValueError("top_k must be 1-20")
+        return v
+
+class HierarchicalResearchParams(BaseModel):
+    """Parameters for research_hierarchical_research tool."""
+
+    query: str
+    depth: int = 2
+    max_sources: int = 10
+    model: str = "nvidia"
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("query")
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        if not v or len(v.strip()) < 3:
+            raise ValueError("query must be at least 3 characters")
+        if len(v) > 500:
+            raise ValueError("query max 500 characters")
+        return v.strip()
+
+    @field_validator("depth")
+    @classmethod
+    def validate_depth(cls, v: int) -> int:
+        if v < 1 or v > 3:
+            raise ValueError("depth must be 1-3")
+        return v
+
+    @field_validator("max_sources")
+    @classmethod
+    def validate_max_sources(cls, v: int) -> int:
+        if v < 1 or v > 50:
+            raise ValueError("max_sources must be 1-50")
+        return v
+
+    @field_validator("model")
+    @classmethod
+    def validate_model(cls, v: str) -> str:
+        valid_models = {"nvidia", "groq", "deepseek", "gemini", "openai", "anthropic"}
+        if v.lower() not in valid_models:
+            raise ValueError(f"model must be one of {valid_models}")
+        return v.lower()
+
+class CryptoRiskParams(BaseModel):
+    """Parameters for research_crypto_risk_score tool."""
+
+    address: str
+    chain: Literal["bitcoin", "ethereum"] = "bitcoin"
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("address")
+    @classmethod
+    def validate_address(cls, v: str) -> str:
+        v = v.strip()
+        if not v or len(v) > 100:
+            raise ValueError("address must be 1-100 characters")
+        return v
+
+    @field_validator("chain")
+    @classmethod
+    def validate_chain(cls, v: str) -> str:
+        v = v.lower()
+        if v not in ("bitcoin", "ethereum"):
+            raise ValueError("chain must be 'bitcoin' or 'ethereum'")
+        return v
