@@ -180,9 +180,12 @@ async def research_crypto_trace(
                 tasks.append(_etherscan_address(client, address))
                 tasks.append(_blockchair_stats(client, address, "ethereum"))
 
+            if not tasks:
+                return {"address": address, "chain": chain, "error": "unsupported chain"}
+
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
-            primary = results[0] if isinstance(results[0], dict) else {}
+            primary = results[0] if results and isinstance(results[0], dict) else {}
             blockchair = results[1] if len(results) > 1 and isinstance(results[1], dict) else {}
 
             return {
