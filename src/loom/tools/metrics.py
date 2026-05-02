@@ -7,6 +7,7 @@ Tool:
 from __future__ import annotations
 
 import logging
+import sqlite3
 import time
 from datetime import UTC, datetime
 from pathlib import Path
@@ -29,53 +30,53 @@ _METRIC_HELP = {
 
 
 def _read_cost_logs() -> dict[str, dict[str, Any]]:
-    """Read cost tracker logs and aggregate by provider.
+    """Read cost logs from traces database and aggregate by provider.
+
+    Infers provider from operation name and estimates cost.
 
     Returns:
         Dict mapping provider -> {count, total_cost, models: {model: cost}}
     """
-    cache_dir = Path.home() / ".cache" / "loom" / "logs"
-    if not cache_dir.exists():
-        return {}
+    from loom.billing.cost_tracker import estimate_call_cost
 
-    import json
+    db_path = Path.home() / ".loom" / "traces" / "observability.db"
+    if not db_path.exists():
+        return {}
 
     provider_stats: dict[str, dict[str, Any]] = {}
 
     try:
-        for log_file in sorted(cache_dir.glob("llm_cost_*.json")):
-            try:
-                with open(log_file, encoding="utf-8") as f:
-                    for line in f:
-                        try:
-                            entry = json.loads(line.strip())
-                            if not entry:
-                                continue
+        with sqlite3.connect(db_path) as conn:
+            cursor = conn.execute("SELECT operation, status FROM traces")
+            for operation, status in cursor.fetchall():
+                if status != "success":
+                    continue
 
-                            provider = entry.get("provider", "unknown")
-                            model = entry.get("model", "unknown")
-                            cost = entry.get("cost_usd", 0.0)
+                # Infer provider from operation name
+                provider = "unknown"
+                op_lower = operation.lower()
+                if "search" in op_lower:
+                    provider = "exa"
+                elif "fetch" in op_lower or "spider" in op_lower:
+                    provider = "firecrawl"
+                elif "llm" in op_lower or "chat" in op_lower:
+                    provider = "groq"
 
-                            if provider not in provider_stats:
-                                provider_stats[provider] = {
-                                    "count": 0,
-                                    "total_cost": 0.0,
-                                    "models": {},
-                                }
+                if provider not in provider_stats:
+                    provider_stats[provider] = {
+                        "count": 0,
+                        "total_cost": 0.0,
+                        "models": {},
+                    }
 
-                            provider_stats[provider]["count"] += 1
-                            provider_stats[provider]["total_cost"] += cost
+                cost = estimate_call_cost(provider, "search" if "search" in op_lower else "llm")
+                provider_stats[provider]["count"] += 1
+                provider_stats[provider]["total_cost"] += cost
 
-                            if model not in provider_stats[provider]["models"]:
-                                provider_stats[provider]["models"][model] = 0.0
-                            provider_stats[provider]["models"][model] += cost
-
-                        except (json.JSONDecodeError, ValueError):
-                            continue
-
-            except Exception as e:
-                logger.warning("metrics_read_cost_error file=%s: %s", log_file.name, e)
-                continue
+                model = "default"
+                if model not in provider_stats[provider]["models"]:
+                    provider_stats[provider]["models"][model] = 0.0
+                provider_stats[provider]["models"][model] += cost
 
     except Exception as e:
         logger.error("metrics_read_cost_logs_error: %s", e)
@@ -84,55 +85,41 @@ def _read_cost_logs() -> dict[str, dict[str, Any]]:
 
 
 def _read_tool_metrics() -> dict[str, dict[str, Any]]:
-    """Read tool call metrics from logs.
+    """Read tool call metrics from observability database.
 
     Returns:
         Dict mapping tool_name -> {calls, latencies: [...], errors: {...}}
     """
-    cache_dir = Path.home() / ".cache" / "loom" / "logs"
-    if not cache_dir.exists():
+    db_path = Path.home() / ".loom" / "traces" / "observability.db"
+    if not db_path.exists():
         return {}
-
-    import json
 
     tool_metrics: dict[str, dict[str, Any]] = {}
 
     try:
-        for log_file in sorted(cache_dir.glob("tool_calls_*.json")):
-            try:
-                with open(log_file, encoding="utf-8") as f:
-                    for line in f:
-                        try:
-                            entry = json.loads(line.strip())
-                            if not entry:
-                                continue
+        with sqlite3.connect(db_path) as conn:
+            cursor = conn.execute(
+                "SELECT operation, duration_ms, status FROM traces"
+            )
+            for operation, duration_ms, status in cursor.fetchall():
+                tool_name = operation if operation else "unknown"
 
-                            tool_name = entry.get("tool", "unknown")
-                            latency_ms = entry.get("latency_ms", 0.0)
-                            error = entry.get("error")
+                if tool_name not in tool_metrics:
+                    tool_metrics[tool_name] = {
+                        "calls": 0,
+                        "latencies": [],
+                        "errors": {},
+                    }
 
-                            if tool_name not in tool_metrics:
-                                tool_metrics[tool_name] = {
-                                    "calls": 0,
-                                    "latencies": [],
-                                    "errors": {},
-                                }
+                tool_metrics[tool_name]["calls"] += 1
+                if duration_ms:
+                    tool_metrics[tool_name]["latencies"].append(float(duration_ms))
 
-                            tool_metrics[tool_name]["calls"] += 1
-                            tool_metrics[tool_name]["latencies"].append(latency_ms)
-
-                            if error:
-                                error_type = type(error).__name__ if isinstance(error, Exception) else str(error)
-                                tool_metrics[tool_name]["errors"][error_type] = (
-                                    tool_metrics[tool_name]["errors"].get(error_type, 0) + 1
-                                )
-
-                        except (json.JSONDecodeError, ValueError):
-                            continue
-
-            except Exception as e:
-                logger.warning("metrics_read_tool_error file=%s: %s", log_file.name, e)
-                continue
+                if status and status != "success":
+                    error_type = status
+                    tool_metrics[tool_name]["errors"][error_type] = (
+                        tool_metrics[tool_name]["errors"].get(error_type, 0) + 1
+                    )
 
     except Exception as e:
         logger.error("metrics_read_tool_logs_error: %s", e)
