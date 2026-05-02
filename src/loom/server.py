@@ -193,6 +193,7 @@ from loom.tools import (
     pdf_extract,
     projectdiscovery,
     provider_health,
+    privacy_advanced,
     proactive_defense,
     prompt_analyzer,
     prompt_reframe,
@@ -1392,6 +1393,14 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(antiforensics.research_usb_kill_monitor))
     mcp.tool()(_wrap_tool(antiforensics.research_artifact_cleanup))
     mcp.tool()(_wrap_tool(silk_guardian.research_silk_guardian_monitor))
+    # Privacy advanced tools (7 tools: fingerprint audit, metadata strip, secure delete, MAC randomize, DNS leak check, Tor circuit, privacy score)
+    mcp.tool()(_wrap_tool(privacy_advanced.research_browser_fingerprint_audit, "fetch"))
+    mcp.tool()(_wrap_tool(privacy_advanced.research_metadata_strip, "fetch"))
+    mcp.tool()(_wrap_tool(privacy_advanced.research_secure_delete))
+    mcp.tool()(_wrap_tool(privacy_advanced.research_mac_randomize))
+    mcp.tool()(_wrap_tool(privacy_advanced.research_dns_leak_check))
+    mcp.tool()(_wrap_tool(privacy_advanced.research_tor_circuit_info))
+    mcp.tool()(_wrap_tool(privacy_advanced.research_privacy_score, "fetch"))
     mcp.tool()(_wrap_tool(crypto_trace.research_crypto_trace, "fetch"))
     mcp.tool()(_wrap_tool(crypto_risk.research_crypto_risk_score))
     mcp.tool()(_wrap_tool(ethereum_tools.research_ethereum_tx_decode))
@@ -2758,6 +2767,7 @@ def create_app() -> FastMCP:
         port=port,
         auth=auth,
         token_verifier=token_verifier,
+        stateless_http=True,
     )
 
     # Register custom HTTP endpoints (health check, root)
