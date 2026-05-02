@@ -1,7 +1,7 @@
 """Pydantic v2 parameter models for all MCP tool arguments.
 
 Each tool has a dedicated model with field validators for URLs, headers,
-proxies, etc. All models forbid extra fields and use strict mode.
+proxies, etc. All models ignore extra fields and use strict mode.
 """
 
 from __future__ import annotations
@@ -40,7 +40,7 @@ class FetchParams(BaseModel):
     return_format: Literal["text", "html", "json", "screenshot"] = "text"
     extract_selector: str | None = None
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -104,7 +104,7 @@ class SpiderParams(BaseModel):
     accept_language: str = _DEFAULT_ACCEPT_LANG
     return_format: Literal["text", "html", "json"] = "text"
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("urls")
     @classmethod
@@ -176,7 +176,7 @@ class MarkdownParams(BaseModel):
     extract_selector: str | None = None
     wait_for: str | None = None
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -238,7 +238,7 @@ class SearchParams(BaseModel):
     language: str | None = None
     freshness: str | None = None
 
-    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
+    model_config = {"extra": "ignore", "strict": True, "populate_by_name": True}
 
     @field_validator("query")
     @classmethod
@@ -267,7 +267,7 @@ class DeepParams(BaseModel):
     include_citations: bool = True
     mode: Literal["fast", "thorough"] = "thorough"
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("query")
     @classmethod
@@ -296,7 +296,7 @@ class GitHubParams(BaseModel):
     per_page: int = 10
     code_search: bool = False
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("query")
     @classmethod
@@ -325,7 +325,7 @@ class CamoufoxParams(BaseModel):
     timeout: int = 30
     return_format: Literal["text", "screenshot", "html"] = "text"
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -363,7 +363,7 @@ class BotasaurusParams(BaseModel):
     timeout: int = 30
     javascript_enabled: bool = True
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -384,7 +384,7 @@ class CacheStatsParams(BaseModel):
     max_results: int = Field(default=10, alias="limit")
     offset: int = 0
 
-    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
+    model_config = {"extra": "ignore", "strict": True, "populate_by_name": True}
 
     @field_validator("max_results")
     @classmethod
@@ -407,7 +407,7 @@ class CacheClearParams(BaseModel):
     days_old: int | None = None
     all: bool = False
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("days_old")
     @classmethod
@@ -422,7 +422,7 @@ class WhoisParams(BaseModel):
 
     domain: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("domain")
     @classmethod
@@ -439,7 +439,7 @@ class DNSLookupParams(BaseModel):
     domain: str
     record_types: list[str] | None = None
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("domain")
     @classmethod
@@ -468,7 +468,7 @@ class NmapScanParams(BaseModel):
     scan_type: Literal["syn", "connect", "ping", "os"] = "syn"
     ports: str | None = None
 
-    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
+    model_config = {"extra": "ignore", "strict": True, "populate_by_name": True}
 
     @field_validator("domain")
     @classmethod
@@ -493,7 +493,7 @@ class CertAnalyzeParams(BaseModel):
 
     domain: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("domain")
     @classmethod
@@ -509,7 +509,7 @@ class SecurityHeadersParams(BaseModel):
 
     url: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -522,7 +522,7 @@ class BreachCheckParams(BaseModel):
 
     email: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("email")
     @classmethod
@@ -538,7 +538,7 @@ class PasswordCheckParams(BaseModel):
 
     password: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("password")
     @classmethod
@@ -556,7 +556,7 @@ class PDFExtractParams(BaseModel):
     extract_images: bool = False
     extract_tables: bool = True
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -573,7 +573,7 @@ class PDFSearchParams(BaseModel):
     url: str
     query: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -600,7 +600,7 @@ class RSSFetchParams(BaseModel):
     max_results: int = Field(default=20, alias="limit")
     parse_content: bool = False
 
-    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
+    model_config = {"extra": "ignore", "strict": True, "populate_by_name": True}
 
     @field_validator("feed_url", mode="before")
     @classmethod
@@ -621,7 +621,7 @@ class RSSSearchParams(BaseModel):
     query: str
     max_results: int = Field(default=10, alias="limit")
 
-    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
+    model_config = {"extra": "ignore", "strict": True, "populate_by_name": True}
 
     @field_validator("query")
     @classmethod
@@ -647,7 +647,7 @@ class SocialSearchParams(BaseModel):
     platform: Literal["twitter", "instagram", "tiktok", "reddit", "linkedin"] = "twitter"
     max_results: int = Field(default=20, alias="limit")
 
-    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
+    model_config = {"extra": "ignore", "strict": True, "populate_by_name": True}
 
     @field_validator("query")
     @classmethod
@@ -672,7 +672,7 @@ class SocialProfileParams(BaseModel):
     username: str
     platform: Literal["twitter", "instagram", "tiktok", "reddit", "linkedin"] | None = None
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("username")
     @classmethod
@@ -693,7 +693,7 @@ class SessionOpenParams(BaseModel):
     login_url: str | None = None
     login_script: str | None = None
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("name")
     @classmethod
@@ -729,7 +729,7 @@ class SessionCloseParams(BaseModel):
 
     name: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("name")
     @classmethod
@@ -744,7 +744,7 @@ class ConfigGetParams(BaseModel):
 
     key: str | None = None
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("key")
     @classmethod
@@ -762,7 +762,7 @@ class ConfigSetParams(BaseModel):
     key: str
     value: Any
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
 
 class LLMChatParams(BaseModel):
@@ -774,7 +774,7 @@ class LLMChatParams(BaseModel):
     temperature: float = 0.7
     max_tokens: int | None = None
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("temperature")
     @classmethod
@@ -792,7 +792,7 @@ class LLMSummarizeParams(BaseModel):
     provider: str = "openai"
     model: str | None = None
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("max_length")
     @classmethod
@@ -810,7 +810,7 @@ class LLMExtractParams(BaseModel):
     provider: str = "openai"
     model: str | None = None
 
-    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
+    model_config = {"extra": "ignore", "strict": True, "populate_by_name": True}
 
 
 class LLMClassifyParams(BaseModel):
@@ -821,7 +821,7 @@ class LLMClassifyParams(BaseModel):
     provider: str = "openai"
     model: str | None = None
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("categories")
     @classmethod
@@ -841,7 +841,7 @@ class LLMTranslateParams(BaseModel):
     provider: str = "openai"
     model: str | None = None
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("target_language")
     @classmethod
@@ -859,7 +859,7 @@ class LLMQueryExpandParams(BaseModel):
     provider: str = "openai"
     model: str | None = None
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("query")
     @classmethod
@@ -879,7 +879,7 @@ class LLMAnswerParams(BaseModel):
     provider: str = "openai"
     model: str | None = None
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("question")
     @classmethod
@@ -898,7 +898,7 @@ class LLMEmbedParams(BaseModel):
     provider: str = "openai"
     model: str | None = None
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("text")
     @classmethod
@@ -915,7 +915,7 @@ class GithubReadmeParams(BaseModel):
 
     repo_url: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("repo_url", mode="before")
     @classmethod
@@ -932,7 +932,7 @@ class GithubReleasesParams(BaseModel):
     repo_url: str
     max_results: int = Field(default=10, alias="limit")
 
-    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
+    model_config = {"extra": "ignore", "strict": True, "populate_by_name": True}
 
     @field_validator("repo_url", mode="before")
     @classmethod
@@ -956,7 +956,7 @@ class ExaFindSimilarParams(BaseModel):
     query: str
     max_results: int = Field(default=10, alias="num_results")
 
-    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
+    model_config = {"extra": "ignore", "strict": True, "populate_by_name": True}
 
     @field_validator("query")
     @classmethod
@@ -982,7 +982,7 @@ class MultiSearchParams(BaseModel):
     providers: list[str] | None = None
     limit_per_provider: int = 5
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("query")
     @classmethod
@@ -1008,7 +1008,7 @@ class DeadContentParams(BaseModel):
     check_archive: bool = True
     timeout: int = 30
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -1033,7 +1033,7 @@ class InvisibleWebParams(BaseModel):
     check_js_endpoints: bool = True
     max_paths: int = 50
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("domain")
     @classmethod
@@ -1058,7 +1058,7 @@ class JSIntelParams(BaseModel):
     max_js_files: int = 20
     check_source_maps: bool = True
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -1080,7 +1080,7 @@ class DarkForumParams(BaseModel):
     forums: list[str] | None = None
     max_results: int = Field(default=20, alias="limit")
 
-    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
+    model_config = {"extra": "ignore", "strict": True, "populate_by_name": True}
 
     @field_validator("query")
     @classmethod
@@ -1104,7 +1104,7 @@ class InfraCorrelatorParams(BaseModel):
 
     ip: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("ip")
     @classmethod
@@ -1123,7 +1123,7 @@ class MetadataForensicsParams(BaseModel):
     url: str
     extract_media: bool = True
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -1137,7 +1137,7 @@ class CryptoTraceParams(BaseModel):
     address: str
     blockchain: Literal["bitcoin", "ethereum", "litecoin"] = "ethereum"
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("address")
     @classmethod
@@ -1153,7 +1153,7 @@ class StegoDetectParams(BaseModel):
 
     url: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -1168,7 +1168,7 @@ class ThreatProfileParams(BaseModel):
     subject_type: Literal["domain", "ip", "email", "username", "file_hash"] = "domain"
     include_darkweb: bool = False
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("subject")
     @classmethod
@@ -1186,7 +1186,7 @@ class LeakScanParams(BaseModel):
     identifier: str
     scan_type: Literal["email", "username", "phone", "credit_card"] = "email"
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("identifier")
     @classmethod
@@ -1205,7 +1205,7 @@ class SocialGraphParams(BaseModel):
     platforms: list[str] | None = None
     max_depth: int = 2
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("username")
     @classmethod
@@ -1230,7 +1230,7 @@ class StylometryParams(BaseModel):
     text: str
     compare_with: str | None = None
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("text")
     @classmethod
@@ -1247,7 +1247,7 @@ class DeceptionDetectParams(BaseModel):
 
     text: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("text")
     @classmethod
@@ -1264,7 +1264,7 @@ class CompanyDiligenceParams(BaseModel):
 
     company_name: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("company_name")
     @classmethod
@@ -1283,7 +1283,7 @@ class SalaryIntelligenceParams(BaseModel):
     job_title: str
     location: str | None = None
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("job_title")
     @classmethod
@@ -1300,7 +1300,7 @@ class CompetitiveIntelParams(BaseModel):
 
     company_name: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("company_name")
     @classmethod
@@ -1318,7 +1318,7 @@ class SupplyChainRiskParams(BaseModel):
     package_name: str
     ecosystem: Literal["pypi", "npm", "cargo"] = "pypi"
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("package_name")
     @classmethod
@@ -1337,7 +1337,7 @@ class PatentLandscapeParams(BaseModel):
     query: str
     max_results: int = 20
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("query")
     @classmethod
@@ -1362,7 +1362,7 @@ class DependencyAuditParams(BaseModel):
 
     repo_url: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("repo_url")
     @classmethod
@@ -1380,7 +1380,7 @@ class OnionDiscoverParams(BaseModel):
     include_indexes: bool = True
     max_results: int = Field(default=20, alias="limit")
 
-    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
+    model_config = {"extra": "ignore", "strict": True, "populate_by_name": True}
 
     @field_validator("query")
     @classmethod
@@ -1405,7 +1405,7 @@ class WaybackParams(BaseModel):
     url: str
     year: int | None = None
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -1426,7 +1426,7 @@ class FindExpertsParams(BaseModel):
     topic: str
     max_results: int = 10
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("topic")
     @classmethod
@@ -1452,7 +1452,7 @@ class RedTeamParams(BaseModel):
     attack_vectors: list[str] | None = None
     iterations: int = 3
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("system_prompt")
     @classmethod
@@ -1478,7 +1478,7 @@ class MultilingualParams(BaseModel):
     target_languages: list[str] | None = None
     limit_per_language: int = 5
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("query")
     @classmethod
@@ -1503,7 +1503,7 @@ class ConsensusParams(BaseModel):
     query: str
     max_results: int = Field(default=5, alias="num_sources")
 
-    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
+    model_config = {"extra": "ignore", "strict": True, "populate_by_name": True}
 
     @field_validator("query")
     @classmethod
@@ -1527,7 +1527,7 @@ class MisinfoCheckParams(BaseModel):
 
     claim: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("claim")
     @classmethod
@@ -1545,7 +1545,7 @@ class TemporalDiffParams(BaseModel):
     query: str
     days_between: int = 30
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("query")
     @classmethod
@@ -1570,7 +1570,7 @@ class CitationGraphParams(BaseModel):
     query: str
     depth: int = 2
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("query")
     @classmethod
@@ -1596,7 +1596,7 @@ class CitationAnalysisParams(BaseModel):
     paper_id: str
     depth: int = 2
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("paper_id")
     @classmethod
@@ -1619,7 +1619,7 @@ class RetractionCheckParams(BaseModel):
     query: str
     max_results: int = 20
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("query")
     @classmethod
@@ -1644,7 +1644,7 @@ class PredatoryJournalCheckParams(BaseModel):
 
     journal_name: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("journal_name")
     @classmethod
@@ -1661,7 +1661,7 @@ class GhostProtocolParams(BaseModel):
     keywords: list[str]
     time_window_minutes: int = 30
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("keywords")
     @classmethod
@@ -1691,7 +1691,7 @@ class TemporalAnomalyParams(BaseModel):
     domain: str
     check_type: Literal["all", "certs", "dns", "clock"] = "all"
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("domain", mode="before")
     @classmethod
@@ -1712,7 +1712,7 @@ class SecTrackerParams(BaseModel):
     company: str
     filing_types: list[str] | None = None
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("company")
     @classmethod
@@ -1744,7 +1744,7 @@ class RegistryGraveyardParams(BaseModel):
     package_name: str
     ecosystem: Literal["pypi", "npm", "rubygems"] = "pypi"
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("package_name")
     @classmethod
@@ -1763,7 +1763,7 @@ class SubdomainTemporalParams(BaseModel):
     domain: str
     days_back: int = 90
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("domain")
     @classmethod
@@ -1788,7 +1788,7 @@ class CommitAnalyzerParams(BaseModel):
     repo: str
     days_back: int = 30
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("repo")
     @classmethod
@@ -1813,7 +1813,7 @@ class LegalTakedownParams(BaseModel):
 
     domain: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("domain")
     @classmethod
@@ -1830,7 +1830,7 @@ class OpenAccessParams(BaseModel):
     doi: str = ""
     title: str = ""
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("doi")
     @classmethod
@@ -1854,7 +1854,7 @@ class ContentAuthenticityParams(BaseModel):
 
     url: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -1868,7 +1868,7 @@ class CredentialMonitorParams(BaseModel):
     query: str = Field(..., alias="target")
     target_type: Literal["email", "username"] = "email"
 
-    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
+    model_config = {"extra": "ignore", "strict": True, "populate_by_name": True}
 
     @field_validator("query")
     @classmethod
@@ -1884,7 +1884,7 @@ class DeepfakeCheckerParams(BaseModel):
 
     image_url: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("image_url", mode="before")
     @classmethod
@@ -1902,7 +1902,7 @@ class PropagandaDetectorParams(BaseModel):
 
     text: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("text")
     @classmethod
@@ -1917,7 +1917,7 @@ class SourceCredibilityParams(BaseModel):
 
     url: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -1931,7 +1931,7 @@ class InformationCascadeParams(BaseModel):
     topic: str
     hours_back: int = 72
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("topic")
     @classmethod
@@ -1954,7 +1954,7 @@ class WebTimeMachineParams(BaseModel):
     url: str
     snapshots: int = 10
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -1974,7 +1974,7 @@ class InfluenceOperationParams(BaseModel):
 
     topic: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("topic")
     @classmethod
@@ -1989,7 +1989,7 @@ class DarkWebBridgeParams(BaseModel):
 
     query: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("query")
     @classmethod
@@ -2004,7 +2004,7 @@ class InfoHalfLifeParams(BaseModel):
 
     urls: list[str]
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("urls")
     @classmethod
@@ -2022,7 +2022,7 @@ class SearchDiscrepancyParams(BaseModel):
 
     query: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("query")
     @classmethod
@@ -2037,7 +2037,7 @@ class ModelComparatorParams(BaseModel):
     prompt: str
     endpoints: list[str]
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("prompt")
     @classmethod
@@ -2064,7 +2064,7 @@ class DataPoisoningParams(BaseModel):
     url: str = Field(..., alias="target_url")
     canary_phrases: list[str] | None = None
 
-    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
+    model_config = {"extra": "ignore", "strict": True, "populate_by_name": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -2089,7 +2089,7 @@ class WikiEventCorrelatorParams(BaseModel):
     page_title: str
     days_back: int = 30
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("page_title")
     @classmethod
@@ -2113,7 +2113,7 @@ class FOIATrackerParams(BaseModel):
 
     query: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("query")
     @classmethod
@@ -2132,7 +2132,7 @@ class DeadContentParams(BaseModel):
     include_snapshots: bool = True
     max_sources: int = 12
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -2153,7 +2153,7 @@ class DeadContentParams(BaseModel):
 
 
 class PromptReframeParams(BaseModel):
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
     prompt: str
     strategy: str = "auto"
     model: str = "auto"
@@ -2162,7 +2162,7 @@ class PromptReframeParams(BaseModel):
 
 class AutoReframeParams(BaseModel):
     """Parameters for auto_reframe tool."""
-    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
+    model_config = {"extra": "ignore", "strict": True, "populate_by_name": True}
     prompt: str
     url: str = Field(default="", alias="target_url")
     model: str = "auto"
@@ -2170,43 +2170,43 @@ class AutoReframeParams(BaseModel):
 
 
 class RefusalDetectorParams(BaseModel):
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
     text: str
 
 
 class StackReframeParams(BaseModel):
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
     prompt: str
     strategies: str = "deep_inception,recursive_authority"
     model: str = "auto"
 
 
 class CrescendoChainParams(BaseModel):
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
     prompt: str
     turns: int = Field(default=5, ge=3, le=7)
     model: str = "auto"
 
 
 class ModelVulnerabilityProfileParams(BaseModel):
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
     model: str = "auto"
 
 
 class FormatSmuggleParams(BaseModel):
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
     prompt: str
     format_type: str = "auto"
     model: str = "auto"
 
 
 class FingerprintModelParams(BaseModel):
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
     response_text: str
 
 
 class AdaptiveReframeParams(BaseModel):
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
     prompt: str
     refusal_text: str = ""
     model: str = "auto"
@@ -2234,7 +2234,7 @@ class DashboardParams(BaseModel):
         ge=0,
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("action", mode="before")
     @classmethod
@@ -2277,7 +2277,7 @@ class BenchmarkParams(BaseModel):
         description="Name of the model being evaluated",
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("dataset")
     @classmethod
@@ -2331,7 +2331,7 @@ class MultilingualBenchmarkParams(BaseModel):
         le=120.0,
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("model_api_url", mode="before")
     @classmethod
@@ -2376,7 +2376,7 @@ class AgentBenchmarkParams(BaseModel):
         description="Output format: json for detailed results or summary for metrics only",
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("model_api_url", mode="before")
     @classmethod
@@ -2410,7 +2410,7 @@ class StripeCreateSubscriptionParams(BaseModel):
         description="Subscription tier (not 'free')",
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("customer_id")
     @classmethod
@@ -2445,7 +2445,7 @@ class StripeCreateChargeParams(BaseModel):
         max_length=256,
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("customer_id")
     @classmethod
@@ -2476,7 +2476,7 @@ class StripeGetInvoiceParams(BaseModel):
         max_length=64,
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("invoice_id")
     @classmethod
@@ -2497,7 +2497,7 @@ class StripeCancelSubscriptionParams(BaseModel):
         max_length=64,
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("subscription_id")
     @classmethod
@@ -2525,7 +2525,7 @@ class StripeListInvoicesParams(BaseModel):
         alias="limit",
     )
 
-    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
+    model_config = {"extra": "ignore", "strict": True, "populate_by_name": True}
 
     @field_validator("customer_id")
     @classmethod
@@ -2564,7 +2564,7 @@ class StripeCreateCheckoutParams(BaseModel):
         max_length=2048,
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("customer_id")
     @classmethod
@@ -2642,7 +2642,7 @@ class FullSpectrumParams(BaseModel):
         description="If True, generate improvement recommendations",
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("query", mode="before")
     @classmethod
@@ -2686,7 +2686,7 @@ class HCSReportParams(BaseModel):
         max_length=256,
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("report_type")
     @classmethod
@@ -2727,7 +2727,7 @@ class UnifiedScoreParams(BaseModel):
         max_length=256,
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("prompt")
     @classmethod
@@ -2810,7 +2810,7 @@ class HCSRubricParams(BaseModel):
         description="List of dicts with 'scores' (list[int]) and optional 'response' key",
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("action")
     @classmethod
@@ -2860,7 +2860,7 @@ class CoverageRunParams(BaseModel):
         description="If True, skip network-required tools and add dry_run=True to params",
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("tools_to_test")
     @classmethod
@@ -2896,7 +2896,7 @@ class AdversarialDebateAttackerParams(BaseModel):
         le=10,
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("topic")
     @classmethod
@@ -2941,7 +2941,7 @@ class BPJParams(BaseModel):
         le=100,
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("mode")
     @classmethod
@@ -2969,7 +2969,7 @@ class ConsistencyPressureParams(BaseModel):
         le=20,
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("model")
     @classmethod
@@ -3005,7 +3005,7 @@ class ConsistencyPressureRecordParams(BaseModel):
         description="Whether model complied with request",
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
 
 class ConsistencyPressureHistoryParams(BaseModel):
@@ -3016,7 +3016,7 @@ class ConsistencyPressureHistoryParams(BaseModel):
         max_length=256,
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("model")
     @classmethod
@@ -3061,7 +3061,7 @@ class ContextPoisonParams(BaseModel):
         description="Use direct model function",
     )
 
-    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
+    model_config = {"extra": "ignore", "strict": True, "populate_by_name": True}
 
 
 class DaisyChainParams(BaseModel):
@@ -3093,7 +3093,7 @@ class DaisyChainParams(BaseModel):
         le=6,
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("query")
     @classmethod
@@ -3111,7 +3111,7 @@ class ExecutabilityParams(BaseModel):
         max_length=100000,
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("response_text")
     @classmethod
@@ -3146,7 +3146,7 @@ class ModelEvidenceParams(BaseModel):
         le=10,
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("query")
     @classmethod
@@ -3174,7 +3174,7 @@ class ToolRecommendParams(BaseModel):
         description="List of tool names to skip",
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("query")
     @classmethod
@@ -3199,7 +3199,7 @@ class CVELookupParams(BaseModel):
         alias="limit",
     )
 
-    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
+    model_config = {"extra": "ignore", "strict": True, "populate_by_name": True}
 
     @field_validator("query")
     @classmethod
@@ -3217,7 +3217,7 @@ class CVEDetailParams(BaseModel):
         pattern=r"^CVE-\d{4}-\d{5,}$",
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
 
 class CicdRunParams(BaseModel):
@@ -3234,7 +3234,7 @@ class CicdRunParams(BaseModel):
         le=3600,
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("command")
     @classmethod
@@ -3260,7 +3260,7 @@ class CrossModelTransferParams(BaseModel):
         max_length=256,
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("query")
     @classmethod
@@ -3286,7 +3286,7 @@ class EmailReportParams(BaseModel):
         max_length=256,
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("subject")
     @classmethod
@@ -3327,7 +3327,7 @@ class GitHubSearchParams(BaseModel):
         alias="limit",
     )
 
-    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
+    model_config = {"extra": "ignore", "strict": True, "populate_by_name": True}
 
     @field_validator("query")
     @classmethod
@@ -3354,7 +3354,7 @@ class SaveNoteParams(BaseModel):
         max_length=256,
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("title")
     @classmethod
@@ -3389,7 +3389,7 @@ class TextToSpeechParams(BaseModel):
         max_length=16,
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("text")
     @classmethod
@@ -3414,7 +3414,7 @@ class URLhausSearchParams(BaseModel):
         alias="limit",
     )
 
-    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
+    model_config = {"extra": "ignore", "strict": True, "populate_by_name": True}
 
     @field_validator("query")
     @classmethod
@@ -3434,7 +3434,7 @@ class NodriverFetchParams(BaseModel):
     bypass_cache: bool = False
     max_chars: int = 20000
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -3471,7 +3471,7 @@ class NodriverExtractParams(BaseModel):
     xpath: str | None = None
     timeout: int = 30
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -3509,7 +3509,7 @@ class NodriverSessionParams(BaseModel):
     css_selector: str | None = None
     xpath: str | None = None
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -3551,7 +3551,7 @@ class ScraperEngineFetchParams(BaseModel):
     extract_title: bool = False
     force_backend: str | None = None
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -3592,7 +3592,7 @@ class ScraperEngineExtractParams(BaseModel):
     model: Literal["auto", "groq", "openai", "gemini"] = "auto"
     mode: Literal["auto", "stealth", "max", "fast"] = "auto"
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -3617,7 +3617,7 @@ class ScraperEngineBatchParams(BaseModel):
     max_concurrent: int = 10
     fail_fast: bool = False
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("urls")
     @classmethod
@@ -3660,7 +3660,7 @@ class CrawlParams(BaseModel):
         description="Use Playwright (JS-enabled) instead of BeautifulSoup",
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -3695,7 +3695,7 @@ class SitemapCrawlParams(BaseModel):
         description="Use Playwright (JS-enabled) instead of BeautifulSoup",
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -3723,7 +3723,7 @@ class StructuredCrawlParams(BaseModel):
         description="Use Playwright (JS-enabled) instead of BeautifulSoup",
     )
 
-    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
+    model_config = {"extra": "ignore", "strict": True, "populate_by_name": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -3750,7 +3750,7 @@ class ZenFetchParams(BaseModel):
     timeout: int = 30
     headless: bool = True
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -3772,7 +3772,7 @@ class ZenBatchParams(BaseModel):
     max_concurrent: int = 5
     timeout: int = 30
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("urls")
     @classmethod
@@ -3805,7 +3805,7 @@ class ZenInteractParams(BaseModel):
     actions: list[dict[str, str]]
     timeout: int = 30
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -3851,7 +3851,7 @@ class GraphScraperParams(BaseModel):
     query: str
     model: Literal["auto", "groq", "nvidia", "deepseek", "openai", "anthropic"] = "auto"
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -3883,7 +3883,7 @@ class KnowledgeExtractParams(BaseModel):
     text: str
     entity_types: list[str] | None = None
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("text")
     @classmethod
@@ -3916,7 +3916,7 @@ class MultiPageGraphParams(BaseModel):
     urls: list[str]
     query: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("urls")
     @classmethod
@@ -3948,7 +3948,7 @@ class SherlockLookupParams(BaseModel):
     platforms: list[str] | None = None
     timeout: int = 30
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("username", mode="before")
     @classmethod
@@ -3994,7 +3994,7 @@ class SherlockBatchParams(BaseModel):
     platforms: list[str] | None = None
     timeout: int = 30
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("usernames", mode="before")
     @classmethod
@@ -4050,7 +4050,7 @@ class SubfinderParams(BaseModel):
     domain: str
     timeout: int = 60
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("domain")
     @classmethod
@@ -4079,7 +4079,7 @@ class KatanaCrawlParams(BaseModel):
     max_pages: int = 100
     timeout: int = 60
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -4115,7 +4115,7 @@ class HttpxProbeParams(BaseModel):
     ports: str = "80,443,8080,8443"
     timeout: int = 60
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("targets")
     @classmethod
@@ -4162,7 +4162,7 @@ class NucleiScanParams(BaseModel):
     severity: str = "medium,high,critical"
     timeout: int = 120
 
-    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
+    model_config = {"extra": "ignore", "strict": True, "populate_by_name": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -4205,7 +4205,7 @@ class TorbotParams(BaseModel):
     url: str
     depth: int = 2
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -4227,7 +4227,7 @@ class AmassEnumParams(BaseModel):
     passive: bool = True
     timeout: int = 120
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("domain")
     @classmethod
@@ -4251,7 +4251,7 @@ class AmassIntelParams(BaseModel):
 
     domain: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("domain")
     @classmethod
@@ -4269,7 +4269,7 @@ class InstagramParams(BaseModel):
     username: str
     max_posts: int = 10
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("username")
     @classmethod
@@ -4296,7 +4296,7 @@ class ArticleExtractParams(BaseModel):
 
     url: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -4310,7 +4310,7 @@ class ArticleBatchParams(BaseModel):
     urls: list[str]
     max_concurrent: int = 5
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("urls")
     @classmethod
@@ -4336,7 +4336,7 @@ class OCRAdvancedParams(BaseModel):
     languages: list[str] | None = Field(None, min_items=1, max_items=10)
     detail: bool = True
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("image_path_or_url", mode="before")
     @classmethod
@@ -4374,7 +4374,7 @@ class PDFAdvancedParams(BaseModel):
     extract_images: bool = False
     extract_tables: bool = True
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("pdf_path_or_url", mode="before")
     @classmethod
@@ -4397,7 +4397,7 @@ class DocumentAnalyzeParams(BaseModel):
     file_path_or_url: str
     analysis: Literal["full", "text", "fast"] = "full"
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("file_path_or_url", mode="before")
     @classmethod
@@ -4419,7 +4419,7 @@ class ShodanHostParams(BaseModel):
 
     ip: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("ip")
     @classmethod
@@ -4443,7 +4443,7 @@ class ShodanSearchParams(BaseModel):
     query: str
     max_results: int = 10
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("query")
     @classmethod
@@ -4472,7 +4472,7 @@ class CensysHostParams(BaseModel):
         max_length=45,
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("ip")
     @classmethod
@@ -4503,7 +4503,7 @@ class CensysSearchParams(BaseModel):
         le=1000,
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("query")
     @classmethod
@@ -4530,7 +4530,7 @@ class UnstructuredDocumentExtractParams(BaseModel):
     url: str = ""
     strategy: str = "auto"
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -4578,7 +4578,7 @@ class InstructorStructuredExtractParams(BaseModel):
         max_length=50,
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("text")
     @classmethod
@@ -4666,7 +4666,7 @@ class PaddleOCRParams(BaseModel):
         description="List of language codes (e.g., ['en', 'ar']). Defaults to ['en'].",
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("image_url")
     @classmethod
@@ -4712,7 +4712,7 @@ class CamelotTableExtractParams(BaseModel):
         max_length=100,
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("pdf_url")
     @classmethod
@@ -4773,7 +4773,7 @@ class ScapyPacketCraftParams(BaseModel):
         le=30,
     )
 
-    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
+    model_config = {"extra": "ignore", "strict": True, "populate_by_name": True}
 
     @field_validator("domain")
     @classmethod
@@ -4808,7 +4808,7 @@ class QueryBuilderParams(BaseModel):
     max_queries: int = 5
     optimize: bool = True
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("user_request")
     @classmethod
@@ -4842,7 +4842,7 @@ class LightpandaFetchParams(BaseModel):
     wait_for: str | None = None
     extract_links: bool = False
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -4866,7 +4866,7 @@ class LightpandaBatchParams(BaseModel):
     extract_links: bool = False
     timeout: int = 60
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("urls", mode="before")
     @classmethod
@@ -4901,7 +4901,7 @@ class CreepjsParams(BaseModel):
     url: str = Field(default="https://creepjs.web.app", alias="target_url")
     headless: bool = True
 
-    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
+    model_config = {"extra": "ignore", "strict": True, "populate_by_name": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -4917,7 +4917,7 @@ class PydanticAgentParams(BaseModel):
     system_prompt: str = ""
     max_tokens: int = 1000
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("prompt")
     @classmethod
@@ -4952,7 +4952,7 @@ class StructuredLLMParams(BaseModel):
     model: str = "nvidia_nim"
     provider_override: str | None = None
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("prompt")
     @classmethod
@@ -4998,7 +4998,7 @@ class MemoryStoreParams(BaseModel):
     metadata: dict[str, Any] | None = None
     namespace: str = "default"
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("content")
     @classmethod
@@ -5028,7 +5028,7 @@ class MemoryRecallParams(BaseModel):
     namespace: str = "default"
     top_k: int = 5
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("query")
     @classmethod
@@ -5065,7 +5065,7 @@ class HierarchicalResearchParams(BaseModel):
     max_sources: int = 10
     model: str = "nvidia"
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("query")
     @classmethod
@@ -5104,7 +5104,7 @@ class CryptoRiskParams(BaseModel):
     address: str
     chain: Literal["bitcoin", "ethereum"] = "bitcoin"
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("address")
     @classmethod
@@ -5127,7 +5127,7 @@ class EthereumTxDecodeParams(BaseModel):
 
     tx_hash: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("tx_hash")
     @classmethod
@@ -5147,7 +5147,7 @@ class DefiSecurityAuditParams(BaseModel):
 
     contract_address: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("contract_address")
     @classmethod
@@ -5170,7 +5170,7 @@ class VisionBrowseParams(BaseModel):
         ..., description="Task/question to analyze the screenshot for (e.g., 'Check if login form present')"
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -5191,7 +5191,7 @@ class VisionCompareParams(BaseModel):
     url1: str = Field(..., description="First URL to compare")
     url2: str = Field(..., description="Second URL to compare")
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url1", "url2", mode="before")
     @classmethod
@@ -5212,7 +5212,7 @@ class GraphAnalyzeParams(BaseModel):
         default="pagerank", description="Graph analysis algorithm to use"
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
 
 class TransactionGraphParams(BaseModel):
@@ -5225,7 +5225,7 @@ class TransactionGraphParams(BaseModel):
         default="bitcoin", description="Blockchain network"
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("addresses")
     @classmethod
@@ -5243,7 +5243,7 @@ class WorkflowCreateParams(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     steps: list[dict[str, Any]]
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("name")
     @classmethod
@@ -5270,7 +5270,7 @@ class WorkflowRunParams(BaseModel):
     workflow_id: str = Field(..., min_length=1)
     dry_run: bool = False
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
 
 class WorkflowStatusParams(BaseModel):
@@ -5278,7 +5278,7 @@ class WorkflowStatusParams(BaseModel):
 
     workflow_id: str = Field(..., min_length=1)
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
 
 class ToxicityCheckParams(BaseModel):
@@ -5288,7 +5288,7 @@ class ToxicityCheckParams(BaseModel):
     compare_prompt: str | None = Field(default=None, max_length=100000)
     compare_response: str | None = Field(default=None, max_length=500000)
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
 
 class DriftMonitorParams(BaseModel):
@@ -5299,7 +5299,7 @@ class DriftMonitorParams(BaseModel):
     mode: str = Field(default="check", pattern=r"^(check|baseline|compare)$")
     storage_path: str = Field(default="~/.loom/drift/", max_length=500)
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
 class SynthesizeReportParams(BaseModel):
     """Parameters for research_synthesize_report tool."""
@@ -5309,7 +5309,7 @@ class SynthesizeReportParams(BaseModel):
     format: str = Field(default="executive", pattern=r"^(executive|technical|academic)$")
     max_tokens: int = Field(default=3000, ge=100, le=10000)
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("answers")
     @classmethod
@@ -5328,7 +5328,7 @@ class CachedStrategyParams(BaseModel):
     model: str = Field(default="auto", max_length=100)
     fallback_strategy: str = Field(default="ethical_anchor", max_length=100)
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("topic")
     @classmethod
@@ -5355,7 +5355,7 @@ class PersistentMemoryRememberParams(BaseModel):
     session_id: str = Field(default="", max_length=100)
     importance: float = Field(default=0.5, ge=0.0, le=1.0)
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("content")
     @classmethod
@@ -5389,7 +5389,7 @@ class PersistentMemoryRecallParams(BaseModel):
     top_k: int = Field(default=10, ge=1, le=100)
     topic: str = Field(default="", max_length=100)
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("query")
     @classmethod
@@ -5416,7 +5416,7 @@ class ExploitRegisterParams(BaseModel):
     severity: Literal["critical", "high", "medium", "low"] = "high"
     asr: float = Field(default=0.0, ge=0.0, le=1.0)
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
 
 class ExploitSearchParams(BaseModel):
@@ -5426,7 +5426,7 @@ class ExploitSearchParams(BaseModel):
     severity: str = Field(default="", max_length=20)
     query: str = Field(default="", max_length=500)
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
 class StegoEncodeParams(BaseModel):
     """Parameters for research_stego_encode tool."""
@@ -5435,7 +5435,7 @@ class StegoEncodeParams(BaseModel):
     method: Literal["lsb", "whitespace", "unicode_zero_width", "metadata_exif"] = Field(default="lsb")
     output_format: str = Field(default="description", max_length=50)
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("message")
     @classmethod
@@ -5451,7 +5451,7 @@ class StegoAnalyzeParams(BaseModel):
 
     text: str = Field(..., min_length=1, max_length=5000)
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("text")
     @classmethod
@@ -5470,7 +5470,7 @@ class SimplifyParams(BaseModel):
     )
     max_length: int = Field(default=500, ge=100, le=5000)
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("text")
     @classmethod
@@ -5489,7 +5489,7 @@ class AttackerTargetDebateParams(BaseModel):
     max_turns: int = Field(default=5, ge=1, le=10)
     target_model: Literal["nvidia", "openai", "anthropic", "groq", "deepseek", "gemini", "moonshot", "auto"] = "nvidia"
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("topic")
     @classmethod
@@ -5519,7 +5519,7 @@ class SwarmAttackParams(BaseModel):
     rounds: int = Field(default=3, ge=1, le=5)
     share_findings: bool = Field(default=True)
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("target_prompt")
     @classmethod
@@ -5540,7 +5540,7 @@ class PotencyScoreParams(BaseModel):
     prompt: str = Field(..., min_length=1, max_length=5000)
     response: str = Field(..., min_length=1, max_length=50000)
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("prompt")
     @classmethod
@@ -5578,7 +5578,7 @@ class ArxivScanParams(BaseModel):
         description="Maximum papers to return per keyword"
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("keywords")
     @classmethod
@@ -5601,7 +5601,7 @@ class FingerprintBehaviorParams(BaseModel):
     model: str = "nvidia"
     probe_count: int = Field(default=10, ge=1, le=10)
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("model")
     @classmethod
@@ -5628,7 +5628,7 @@ class ResiliencePredictorParams(BaseModel):
     target_model: str = Field(default="auto", max_length=64)
     current_asr: float = Field(default=0.8, ge=0.0, le=1.0)
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("strategy")
     @classmethod
@@ -5680,7 +5680,7 @@ class ArxivScanParams(BaseModel):
         description="Maximum papers to return per keyword"
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("keywords")
     @classmethod
@@ -5716,7 +5716,7 @@ class WhiteRabbitParams(BaseModel):
         description="Min anomaly score (0.0-1.0) to follow further"
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("starting_point")
     @classmethod
@@ -5737,7 +5737,7 @@ class EmbeddingCollideParams(BaseModel):
         "synonym_swap", "context_inject", "semantic_trojan", "retrieval_poison"
     ] = "synonym_swap"
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("target_text")
     @classmethod
@@ -5771,7 +5771,7 @@ class RAGAttackParams(BaseModel):
     ] = "retrieval_poison"
     num_chunks: int = Field(default=5, ge=1, le=10)
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("query")
     @classmethod
@@ -5794,7 +5794,7 @@ class PolyglotSearchParams(BaseModel):
     languages: list[str] | None = None
     max_results: int = Field(default=10, ge=1, le=100)
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("query")
     @classmethod
@@ -5828,7 +5828,7 @@ class SubcultureIntelParams(BaseModel):
     topic: str
     platforms: list[str] | None = None
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("topic")
     @classmethod
@@ -5881,7 +5881,7 @@ class MemeticSimulateParams(BaseModel):
         description="Probability of message mutation per generation (0.0-1.0)"
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("idea", mode="before")
     @classmethod
@@ -5915,7 +5915,7 @@ class RunExperimentParams(BaseModel):
         description="Metric to measure: success_rate, response_length, specificity, or stealth_score"
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("hypothesis", mode="before")
     @classmethod
@@ -5958,7 +5958,7 @@ class ExperimentDesignParams(BaseModel):
         description="Max trials per condition (10-200)"
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("research_question", mode="before")
     @classmethod
@@ -5990,7 +5990,7 @@ class PersonalizeOutputParams(BaseModel):
         description="Reader expertise (novice, intermediate, expert, domain_expert)"
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("content", mode="before")
     @classmethod
@@ -6043,7 +6043,7 @@ class AdaptComplexityParams(BaseModel):
         description="Target reading level (1-20, where 12 = college)"
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("content", mode="before")
     @classmethod
@@ -6062,7 +6062,7 @@ class CheckpointSaveParams(BaseModel):
     state: dict[str, Any] = Field(..., description="JSON-serializable state dict")
     progress_pct: float = Field(0.0, ge=0.0, le=100.0, description="Progress percentage (0-100)")
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
 
 class CheckpointResumeParams(BaseModel):
@@ -6070,7 +6070,7 @@ class CheckpointResumeParams(BaseModel):
 
     task_id: str = Field(..., description="Task identifier to resume")
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
 
 class CheckpointListParams(BaseModel):
@@ -6078,7 +6078,7 @@ class CheckpointListParams(BaseModel):
 
     status: str = Field("all", description='Filter: "all", "incomplete" (<100%), or "stale" (>24h old)')
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("status", mode="before")
     @classmethod
@@ -6111,7 +6111,7 @@ class MetaLearnerParams(BaseModel):
         description="Number of new strategies to generate"
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("successful_strategies")
     @classmethod
@@ -6168,7 +6168,7 @@ class CraftAdversarialParams(BaseModel):
         "semantic_shift",
     ] = "greedy_swap"
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("benign_input")
     @classmethod
@@ -6211,7 +6211,7 @@ class AdversarialBatchParams(BaseModel):
     ] = "greedy_swap"
     budget: float = 0.1
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("inputs")
     @classmethod
@@ -6244,7 +6244,7 @@ class SuperpositionPromptParams(BaseModel):
     num_superpositions: int = 10
     collapse_method: Literal["max_compliance", "max_stealth", "balanced", "diverse_top3"] = "max_compliance"
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("prompt")
     @classmethod
@@ -6269,7 +6269,7 @@ class CaptureHarParams(BaseModel):
     duration_seconds: int = Field(default=10, ge=1, le=60)
     include_bodies: bool = True
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -6283,7 +6283,7 @@ class ExtractCookiesParams(BaseModel):
     url: str
     follow_redirects: bool = True
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -6298,7 +6298,7 @@ class UncertaintyEstimateParams(BaseModel):
     target_model: Literal["auto", "claude", "gpt", "deepseek", "gemini"] = "auto"
     prior_results: dict[str, float] | None = None
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("strategies")
     @classmethod
@@ -6337,7 +6337,7 @@ class ActiveSelectParams(BaseModel):
     budget: int = 3
     objective: Literal["maximize_success", "maximize_information", "balanced"] = "maximize_success"
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("candidate_strategies")
     @classmethod
@@ -6369,7 +6369,7 @@ class PredictAttacksParams(BaseModel):
     model: str = "auto"
     threat_level: Literal["low", "medium", "high", "critical"] = "high"
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("system_prompt")
     @classmethod
@@ -6395,7 +6395,7 @@ class PreemptivePatchParams(BaseModel):
     system_prompt: str = Field(..., min_length=1, max_length=10000)
     predicted_attacks: list[str] | None = None
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("system_prompt")
     @classmethod
@@ -6431,7 +6431,7 @@ class LifetimeOracleParams(BaseModel):
     target_models: list[str] | None = None
     is_public: bool = False
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("strategy_name")
     @classmethod
@@ -6467,7 +6467,7 @@ class PackageAuditParams(BaseModel):
     ecosystem: Literal["pypi", "npm", "cargo"] = "pypi"
     depth: int = 2
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("package_name")
     @classmethod
@@ -6493,7 +6493,7 @@ class ModelIntegrityParams(BaseModel):
     source: Literal["huggingface", "pytorch", "civitai"] = "huggingface"
     checks: list[str] | None = None
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("model_name")
     @classmethod
@@ -6528,7 +6528,7 @@ class HITLSubmitParams(BaseModel):
     response: str = Field(..., min_length=1, max_length=50000)
     model: str = Field(default="unknown", min_length=1, max_length=100)
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("strategy")
     @classmethod
@@ -6553,7 +6553,7 @@ class HITLEvaluateParams(BaseModel):
     notes: str = Field(default="", max_length=2000)
     tags: list[str] | None = Field(default=None, max_length=10)
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("eval_id")
     @classmethod
@@ -6580,7 +6580,7 @@ class HITLQueueParams(BaseModel):
     status: str = Field(default="pending")
     limit: int = Field(default=20, ge=1, le=100)
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("status")
     @classmethod
@@ -6598,7 +6598,7 @@ class AttackEconomySubmitParams(BaseModel):
     asr: float
     description: str = ""
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("strategy_name")
     @classmethod
@@ -6638,7 +6638,7 @@ class AttackEconomyLeaderboardParams(BaseModel):
 
     top_n: int = 10
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("top_n")
     @classmethod
@@ -6661,7 +6661,7 @@ class FuseEvidenceParams(BaseModel):
         "meta_analysis",
     ] = "weighted_consensus"
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("claims")
     @classmethod
@@ -6697,7 +6697,7 @@ class AuthorityStackParams(BaseModel):
     prompt: str
     authority_layers: int = 5
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("prompt")
     @classmethod
@@ -6735,7 +6735,7 @@ class FunctorMapParams(BaseModel):
     ] = "social_engineering"
     preserve_structure: bool = True
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("exploit")
     @classmethod
@@ -6762,7 +6762,7 @@ class StrangeAttractorParams(BaseModel):
     attractor_type: Literal["lorenz", "rossler", "henon", "logistic"] = "lorenz"
     iterations: int = Field(default=100, ge=50, le=500)
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("prompt")
     @classmethod
@@ -6789,7 +6789,7 @@ class ExportJsonParams(BaseModel):
     filename: str = Field(default="export", min_length=1, max_length=256)
     pretty: bool = Field(default=True, description="Pretty-print JSON")
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("filename")
     @classmethod
@@ -6805,7 +6805,7 @@ class ExportCsvParams(BaseModel):
     data: list[dict] = Field(..., description="List of dictionaries to export")
     filename: str = Field(default="export", min_length=1, max_length=256)
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("filename")
     @classmethod
@@ -6820,7 +6820,7 @@ class ExportListParams(BaseModel):
 
     limit: int = Field(default=50, ge=1, le=1000)
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
 
 class SafetyCircuitMapParams(BaseModel):
@@ -6829,7 +6829,7 @@ class SafetyCircuitMapParams(BaseModel):
     model: str = "auto"
     probe_type: Literal["contrastive", "ablation", "activation"] = "contrastive"
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("model")
     @classmethod
@@ -6852,7 +6852,7 @@ class CircuitBypassPlanParams(BaseModel):
     model: str
     target_circuit: str = "auto"
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("model")
     @classmethod
@@ -6883,7 +6883,7 @@ class ChainDefineParams(BaseModel):
     name: str = Field(..., min_length=1, max_length=64)
     steps: list[dict[str, Any]] = Field(..., min_items=1, max_items=100)
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("name")
     @classmethod
@@ -6898,7 +6898,7 @@ class ChainDescribeParams(BaseModel):
 
     name: str = Field(..., min_length=1, max_length=64)
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("name")
     @classmethod
@@ -6913,7 +6913,7 @@ class TaskResolveOrderParams(BaseModel):
 
     tasks: list[dict] = Field(..., min_items=1, max_items=1000)
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("tasks")
     @classmethod
@@ -6946,7 +6946,7 @@ class TaskCriticalPathParams(BaseModel):
 
     tasks: list[dict] = Field(..., min_items=1, max_items=1000)
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("tasks")
     @classmethod
@@ -6983,7 +6983,7 @@ class AggregateResultsParams(BaseModel):
     results: list[dict[str, Any]] = Field(..., min_length=1, max_length=100)
     strategy: Literal["merge", "concatenate", "summarize", "deduplicate", "rank"] = "merge"
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("results")
     @classmethod
@@ -7008,7 +7008,7 @@ class AggregateTextsParams(BaseModel):
     method: Literal["concatenate", "deduplicate", "summarize", "bullet_points"] = "concatenate"
     max_length: int = Field(5000, ge=100, le=50000)
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("texts")
     @classmethod
@@ -7034,7 +7034,7 @@ class GeodesicPathParams(BaseModel):
     max_steps: int = Field(7, ge=1, le=20)
     step_size: float = Field(0.3, ge=0.1, le=0.5)
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("start_prompt")
     @classmethod
@@ -7070,7 +7070,7 @@ class DetectParadoxParams(BaseModel):
 
     prompt: str = Field(..., min_length=1, max_length=10000)
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("prompt")
     @classmethod
@@ -7085,7 +7085,7 @@ class ParadoxImmunizeParams(BaseModel):
 
     system_prompt: str = Field(..., min_length=1, max_length=20000)
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("system_prompt")
     @classmethod
@@ -7102,7 +7102,7 @@ class OrchestrateSmartParams(BaseModel):
     max_tools: int = Field(default=3, ge=1, le=10)
     strategy: Literal["auto", "parallel", "sequential"] = "auto"
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("query", mode="before")
     @classmethod
@@ -7127,7 +7127,7 @@ class RecommendNextParams(BaseModel):
     context: str = Field(default="", max_length=5000)
     top_k: int = Field(default=5, ge=1, le=20)
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("last_tool")
     @classmethod
@@ -7149,7 +7149,7 @@ class SuggestWorkflowParams(BaseModel):
 
     tools_used: list[str] = Field(..., min_items=1, max_items=50)
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("tools_used")
     @classmethod
@@ -7170,7 +7170,7 @@ class ParallelExecutorParams(BaseModel):
     )
     timeout_seconds: int = Field(30, ge=1, le=300, description="Timeout per tool")
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("tools")
     @classmethod
@@ -7188,7 +7188,7 @@ class ParallelPlanExecutorParams(BaseModel):
     goal: str = Field(..., description="Research goal or query", min_length=1, max_length=2000)
     max_parallel: int = Field(5, ge=1, le=20, description="Max concurrent tools")
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("goal")
     @classmethod
@@ -7209,7 +7209,7 @@ class FingerprintEvasionParams(BaseModel):
         description="Number of fingerprint generations to collect (2-50)",
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("test_iterations")
     @classmethod

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import functools
+import difflib
 import logging
 import os
 import signal
@@ -136,6 +137,7 @@ from loom.tools import (
     graph_analysis,
     graph_scraper,
     health_dashboard,
+    help_system,
     hcs10_academic,
     hcs_escalation,
     hcs_report,
@@ -953,6 +955,42 @@ async def research_dashboard(
     else:
         raise ValueError(f"Unknown action: {params.action}")
 
+def _fuzzy_correct_params(func: Callable[..., Any], kwargs: dict) -> tuple[dict, dict]:
+    """Auto-correct misspelled param names using fuzzy matching.
+    
+    Args:
+        func: The function to extract parameter names from
+        kwargs: The keyword arguments to correct
+    
+    Returns:
+        Tuple of (corrected_kwargs, corrections_made)
+        corrections_made is dict mapping wrong_param -> correct_param (or None if dropped)
+    """
+    import inspect
+    
+    # Get valid param names from function signature
+    sig = inspect.signature(func)
+    valid_params = set(sig.parameters.keys())
+    
+    corrected = {}
+    corrections = {}
+    
+    for key, value in kwargs.items():
+        if key in valid_params:
+            corrected[key] = value
+        else:
+            # Fuzzy match against valid params
+            matches = difflib.get_close_matches(key, valid_params, n=1, cutoff=0.5)
+            if matches:
+                corrected[matches[0]] = value
+                corrections[key] = matches[0]
+            else:
+                # No close match — drop but report
+                corrections[key] = None  # means "no match found, dropped"
+    
+    return corrected, corrections
+
+
 def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callable[..., Any]:
     """Wrap tool with tracing and optional rate limiting.
 
@@ -971,8 +1009,16 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
         @functools.wraps(func)
         async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
             new_request_id()
+            # Auto-correct parameters
+            corrected_kwargs, corrections = _fuzzy_correct_params(func, kwargs)
+            if corrections:
+                logger.debug(f"Parameter corrections for {func.__name__}: {corrections}")
             try:
-                return await asyncio.wait_for(func(*args, **kwargs), timeout=tool_timeout)
+                result = await asyncio.wait_for(func(*args, **corrected_kwargs), timeout=tool_timeout)
+                # Add correction metadata if there were corrections
+                if corrections and isinstance(result, dict):
+                    result["_param_corrections"] = corrections
+                return result
             except asyncio.TimeoutError:
                 return {"error": f"Tool timed out after {tool_timeout}s", "tool": func.__name__}
 
@@ -985,7 +1031,15 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
         @functools.wraps(func)
         def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
             new_request_id()
-            return func(*args, **kwargs)
+            # Auto-correct parameters
+            corrected_kwargs, corrections = _fuzzy_correct_params(func, kwargs)
+            if corrections:
+                logger.debug(f"Parameter corrections for {func.__name__}: {corrections}")
+            result = func(*args, **corrected_kwargs)
+            # Add correction metadata if there were corrections
+            if corrections and isinstance(result, dict):
+                result["_param_corrections"] = corrections
+            return result
 
         return sync_wrapper
 
@@ -1681,6 +1735,10 @@ def _register_tools(mcp: FastMCP) -> None:
     # Config tools
     mcp.tool()(_wrap_tool(research_config_get))
     mcp.tool()(_wrap_tool(research_config_set))
+
+    # Help system tools (2 tools)
+    mcp.tool()(_wrap_tool(help_system.research_help))
+    mcp.tool()(_wrap_tool(help_system.research_tools_list))
 
     # Auto-parameter generator tools (2 tools)
     mcp.tool()(_wrap_tool(auto_params.research_auto_params))
