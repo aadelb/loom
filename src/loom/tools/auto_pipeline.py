@@ -1,21 +1,13 @@
 """Pipeline Auto-Composer: generates optimal multi-tool pipelines from natural language goals.
 
-Given a research goal (e.g., "scan for vulnerabilities in example.com"),
-auto-generates an ordered, parallelizable pipeline of tools with params,
-timing, and execution plan.
+Given a research goal (e.g., "scan for vulnerabilities"), auto-generates an ordered,
+parallelizable pipeline of tools with params, timing, and execution plan.
 
-Algorithm:
-1. DECOMPOSE goal into sub-tasks via keyword extraction
-2. SELECT best tools per sub-task by matching keywords against tool registry
-3. DETERMINE execution order (fetch → analysis → scoring → output)
-4. IDENTIFY parallelism (tools at same stage run concurrently)
-5. ESTIMATE time & cost per step
-6. RETURN structured pipeline with parallelization metadata
+Algorithm: Decompose → Select tools → Determine order → Identify parallelism → Estimate time.
 """
 
 from __future__ import annotations
 
-import asyncio
 import ast
 import logging
 import re
@@ -24,271 +16,183 @@ from typing import Any
 
 logger = logging.getLogger("loom.tools.auto_pipeline")
 
-# Keyword-to-tool-stage mapping
-_TASK_KEYWORDS = {
-    "scan": ("fetch", "security"),
-    "search": ("search", "discovery"),
-    "find": ("search", "discovery"),
-    "analyze": ("analysis", "processing"),
-    "extract": ("analysis", "processing"),
-    "summarize": ("analysis", "output"),
-    "report": ("output", "formatting"),
-    "rank": ("scoring", "evaluation"),
-    "score": ("scoring", "evaluation"),
-    "profile": ("analysis", "intelligence"),
-    "monitor": ("monitoring", "tracking"),
-    "compare": ("analysis", "evaluation"),
+# Keyword-to-stage mapping
+_STAGES = {
+    "scan": "fetch",
+    "search": "search",
+    "find": "search",
+    "analyze": "analysis",
+    "extract": "analysis",
+    "summarize": "output",
+    "report": "output",
+    "rank": "scoring",
+    "score": "scoring",
+    "profile": "analysis",
+    "monitor": "monitoring",
+    "compare": "analysis",
 }
 
-# Stage ordering: lower numbers = earlier execution
 _STAGE_ORDER = {
     "fetch": 1,
     "search": 1,
-    "discovery": 1,
     "security": 2,
     "processing": 2,
     "analysis": 2,
     "intelligence": 2,
     "evaluation": 3,
     "scoring": 3,
-    "ranking": 3,
     "monitoring": 3,
-    "tracking": 3,
-    "formatting": 4,
     "output": 4,
 }
 
-# Estimated execution time per stage (ms)
-_STAGE_TIMES = {
-    "fetch": 2000,
-    "search": 1500,
-    "discovery": 2000,
-    "security": 3000,
-    "processing": 1000,
-    "analysis": 2000,
-    "intelligence": 2500,
-    "evaluation": 1500,
-    "scoring": 1000,
-    "ranking": 800,
-    "monitoring": 4000,
-    "tracking": 2000,
-    "formatting": 500,
-    "output": 300,
-}
+_STAGE_TIMES = {s: {1: 2000, 2: 2000, 3: 1500, 4: 500}.get(_STAGE_ORDER.get(s, 99), 1000) for s in _STAGE_ORDER}
 
 
 def _get_tool_registry() -> dict[str, dict[str, Any]]:
-    """Scan tools/ directory for tool functions and their docstrings.
-
-    Returns:
-        Dict mapping tool_name → {docstring, module, category, keywords}
-    """
+    """Scan tools/ directory via AST for tool functions and docstrings."""
     registry = {}
     tools_dir = Path(__file__).parent
 
-    for py_file in tools_dir.glob("*.py"):
+    for py_file in sorted(tools_dir.glob("*.py")):
         if py_file.name.startswith("_") or py_file.name == "auto_pipeline.py":
             continue
 
         try:
-            source = py_file.read_text(encoding="utf-8")
-            tree = ast.parse(source)
-
+            tree = ast.parse(py_file.read_text(encoding="utf-8"))
             for node in ast.walk(tree):
                 if isinstance(node, ast.FunctionDef) and node.name.startswith("research_"):
                     doc = ast.get_docstring(node) or ""
-                    # Extract first line as summary
-                    summary = doc.split("\n")[0] if doc else ""
-                    # Extract keywords from docstring
-                    keywords = set(re.findall(r"\b[a-z_]+\b", summary.lower()))
-                    keywords.update(re.findall(r"\b[a-z_]+\b", node.name.lower()))
-
-                    registry[node.name] = {
-                        "module": py_file.name.replace(".py", ""),
-                        "summary": summary,
-                        "docstring": doc,
-                        "keywords": keywords,
-                    }
+                    summary = doc.split("\n")[0]
+                    keywords = set(re.findall(r"\b[a-z_]+\b", (summary + " " + node.name).lower()))
+                    registry[node.name] = {"module": py_file.stem, "keywords": keywords}
         except Exception as e:
-            logger.debug("tool_registry_scan_failed: %s: %s", py_file, e)
+            logger.debug("scan_failed: %s: %s", py_file.name, e)
 
     return registry
 
 
-def _decompose_goal(goal: str) -> list[dict[str, Any]]:
-    """Decompose goal into sub-tasks via keyword extraction.
-
-    Returns:
-        List of sub-tasks: [{task, keywords, stage}]
-    """
+def _decompose(goal: str) -> list[dict[str, Any]]:
+    """Decompose goal into sub-tasks via keyword extraction."""
     goal_lower = goal.lower()
     tasks = []
-    seen_stages = set()
 
-    for keyword, (stage, category) in _TASK_KEYWORDS.items():
+    for keyword, stage in _STAGES.items():
         if keyword in goal_lower:
-            tasks.append(
-                {
-                    "task": f"{keyword} operation",
-                    "keywords": [keyword],
-                    "stage": stage,
-                    "category": category,
-                    "stage_order": _STAGE_ORDER.get(stage, 99),
-                }
-            )
-            seen_stages.add(stage)
+            tasks.append({"keyword": keyword, "stage": stage, "order": _STAGE_ORDER.get(stage, 99)})
 
-    # If no tasks matched, infer from general goal keywords
     if not tasks:
-        if any(w in goal_lower for w in ["vulnerability", "security", "threat"]):
-            tasks.append({"task": "security scan", "keywords": ["scan"], "stage": "security", "category": "security", "stage_order": 2})
-        if any(w in goal_lower for w in ["research", "data", "collect"]):
-            tasks.append({"task": "data collection", "keywords": ["search"], "stage": "search", "category": "discovery", "stage_order": 1})
-        if not tasks:
-            tasks.append({"task": "general research", "keywords": ["search"], "stage": "search", "category": "discovery", "stage_order": 1})
+        # Default to search if no keywords matched
+        tasks.append({"keyword": "search", "stage": "search", "order": 1})
 
-    # Sort by stage order
-    tasks.sort(key=lambda x: x["stage_order"])
+    tasks.sort(key=lambda x: x["order"])
     return tasks
 
 
 def _select_tools(tasks: list[dict[str, Any]], registry: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
-    """Select best tools per task by matching keywords.
-
-    Returns:
-        List of selected tools: [{tool_name, module, task, stage, keywords_matched}]
-    """
+    """Select best tools per task by keyword overlap."""
     selected = []
 
     for task in tasks:
-        task_keywords = set(task["keywords"])
-        best_match = None
+        task_kw = {task["keyword"]}
+        best_tool = None
         best_score = 0
 
-        for tool_name, tool_info in registry.items():
-            tool_keywords = tool_info["keywords"]
-            # Score based on keyword overlap + task relevance
-            overlap = len(task_keywords & tool_keywords)
-            if overlap > best_score or (overlap == best_score and len(tool_name) < len(best_match or "")):
+        for tool_name, info in registry.items():
+            overlap = len(task_kw & info["keywords"])
+            if overlap > best_score:
                 best_score = overlap
-                best_match = (tool_name, tool_info)
+                best_tool = tool_name
 
-        if best_match:
-            tool_name, tool_info = best_match
-            selected.append(
-                {
-                    "tool": tool_name,
-                    "module": tool_info["module"],
-                    "task": task["task"],
-                    "stage": task["stage"],
-                    "keywords_matched": list(task_keywords & tool_info["keywords"]),
-                }
-            )
+        if not best_tool:
+            # Fallback: pick first tool from registry
+            best_tool = next(iter(registry.keys())) if registry else "research_search"
+
+        selected.append({
+            "tool": best_tool,
+            "module": registry[best_tool]["module"],
+            "stage": task["stage"],
+        })
 
     return selected
 
 
-def _determine_order(selected_tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Determine execution order and parallelism groups.
+def _order_and_parallelize(tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Assign execution order and parallel groups."""
+    tools.sort(key=lambda t: _STAGE_ORDER.get(t["stage"], 99))
 
-    Returns:
-        List of tools with: step, stage, parallel_group, stage_order
-    """
-    # Sort by stage order
-    selected_tools.sort(key=lambda t: _STAGE_ORDER.get(t["stage"], 99))
-
-    # Assign parallel groups (tools at same stage = same group)
-    parallel_groups = {}
-    group_counter = 0
+    group = 0
     current_stage = None
 
-    for i, tool in enumerate(selected_tools):
-        stage = tool["stage"]
-        if stage != current_stage:
-            current_stage = stage
-            group_counter += 1
+    for i, tool in enumerate(tools):
+        if tool["stage"] != current_stage:
+            current_stage = tool["stage"]
+            group += 1
 
         tool["step"] = i + 1
-        tool["parallel_group"] = group_counter
-        tool["stage_order"] = _STAGE_ORDER.get(stage, 99)
+        tool["parallel_group"] = group
+        tool["stage_order"] = _STAGE_ORDER.get(tool["stage"], 99)
 
-    return selected_tools
+    return tools
 
 
 def _extract_params(goal: str, tool: str) -> dict[str, str]:
-    """Extract relevant parameter values from goal.
-
-    Returns:
-        Dict of parameter candidates: {param_name: value}
-    """
+    """Extract relevant parameters from goal."""
     params = {}
 
-    # Extract URLs
     urls = re.findall(r"https?://[^\s]+", goal)
     if urls:
         params["url"] = urls[0]
         params["urls"] = urls
 
-    # Extract domain names
     domains = re.findall(r"(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}", goal)
     if domains:
         params["domain"] = domains[0]
         params["domains"] = domains
 
-    # Extract keywords/queries
     query_match = re.search(r"(?:for|about|on|analyze)\s+([^.!?]+)", goal)
     if query_match:
-        params["query"] = query_match.group(1).strip()[:100]
-        params["search_term"] = query_match.group(1).strip()[:100]
+        query = query_match.group(1).strip()[:100]
+        params["query"] = query
+        params["search_term"] = query
 
-    # Tool-specific params
     if "github" in tool.lower():
         params["max_results"] = "10"
     if "fetch" in tool.lower() or "spider" in tool.lower():
         params["mode"] = "stealthy"
-        params["max_chars"] = "10000"
     if "search" in tool.lower():
         params["max_results"] = "5"
 
     return params
 
 
-def _estimate_timing(tools: list[dict[str, Any]], optimize_for: str) -> dict[str, Any]:
-    """Estimate execution time and cost.
-
-    Returns:
-        Dict with: total_ms, per_tool_ms, sequential_ms, parallel_ms, speedup_factor
-    """
+def _estimate_time(tools: list[dict[str, Any]], optimize_for: str) -> dict[str, Any]:
+    """Estimate execution time and speedup."""
     stages = {}
     for tool in tools:
-        pg = tool["parallel_group"]
         stage = tool["stage"]
         time_ms = _STAGE_TIMES.get(stage, 1000)
+        pg = tool["parallel_group"]
 
         if pg not in stages:
             stages[pg] = time_ms
         else:
             stages[pg] = max(stages[pg], time_ms)
 
-    # Sequential: sum all times
     sequential_ms = sum(stages.values())
-    # Parallel: max time per group
     parallel_ms = max(stages.values()) if stages else 0
 
-    # Adjust for optimization
+    # Apply optimization
     if optimize_for == "speed":
-        parallel_ms = int(parallel_ms * 0.7)  # Assume 30% parallel overhead reduction
+        parallel_ms = int(parallel_ms * 0.7)
     elif optimize_for == "quality":
-        parallel_ms = int(parallel_ms * 1.3)  # Add time for better quality
+        parallel_ms = int(parallel_ms * 1.3)
 
     speedup = sequential_ms / parallel_ms if parallel_ms > 0 else 1.0
 
     return {
         "total_ms": parallel_ms,
         "sequential_ms": sequential_ms,
-        "parallel_ms": parallel_ms,
-        "speedup_factor": round(speedup, 2),
-        "per_tool_ms": {t["tool"]: _STAGE_TIMES.get(t["stage"], 1000) for t in tools},
+        "speedup": round(speedup, 2),
     }
 
 
@@ -300,20 +204,12 @@ async def research_auto_pipeline(
     """Auto-generate optimal multi-tool pipeline from a natural language goal.
 
     Args:
-        goal: Natural language research goal (e.g. "scan example.com for vulnerabilities")
+        goal: Natural language research goal (e.g., "scan example.com for vulnerabilities")
         max_steps: Maximum pipeline depth (default 7)
         optimize_for: One of "speed", "quality", "cost" (default "quality")
 
     Returns:
-        Dict with:
-        - goal: Original goal
-        - pipeline: List of steps with tool, params, stage, parallel_group
-        - total_steps: Number of steps
-        - parallel_groups: Number of concurrent execution stages
-        - estimated_total_ms: Total execution time
-        - estimated_speedup_vs_sequential: Parallelization benefit
-        - optimize_for: Optimization target
-        - registry_size: Number of tools scanned
+        Dict with goal, pipeline (list of steps), timing, parallelization info, metadata.
     """
     if not goal or len(goal) > 500:
         return {
@@ -324,46 +220,36 @@ async def research_auto_pipeline(
             "parallel_groups": 0,
         }
 
-    # Phase 1: Scan tool registry (cache-friendly)
     logger.info("auto_pipeline_start goal=%s optimize_for=%s", goal, optimize_for)
+
+    # Phase 1-3: Decompose, select, order
     registry = _get_tool_registry()
+    tasks = _decompose(goal)
+    tools = _select_tools(tasks, registry)
+    tools = _order_and_parallelize(tools)
 
-    # Phase 2: Decompose goal
-    tasks = _decompose_goal(goal)
+    if len(tools) > max_steps:
+        tools = tools[:max_steps]
 
-    # Phase 3: Select tools
-    selected_tools = _select_tools(tasks, registry)
-
-    # Phase 4: Determine order & parallelism
-    ordered_tools = _determine_order(selected_tools)
-
-    # Phase 5: Cap at max_steps
-    if len(ordered_tools) > max_steps:
-        ordered_tools = ordered_tools[:max_steps]
-
-    # Phase 6: Extract params & estimate timing
+    # Phase 4-5: Extract params and estimate
     pipeline = []
-    for tool in ordered_tools:
+    for tool in tools:
         params = _extract_params(goal, tool["tool"])
-        pipeline.append(
-            {
-                "step": tool["step"],
-                "tool": tool["tool"],
-                "module": tool["module"],
-                "task": tool["task"],
-                "params": params,
-                "stage": tool["stage"],
-                "parallel_group": tool["parallel_group"],
-                "keywords_matched": tool["keywords_matched"],
-                "estimated_ms": _STAGE_TIMES.get(tool["stage"], 1000),
-                "reason": f"Best match for {tool['task']}",
-            }
-        )
+        pipeline.append({
+            "step": tool["step"],
+            "tool": tool["tool"],
+            "module": tool["module"],
+            "task": f"{tool['stage']} operation",
+            "params": params,
+            "stage": tool["stage"],
+            "parallel_group": tool["parallel_group"],
+            "keywords_matched": list({tool["stage"]}),
+            "estimated_ms": _STAGE_TIMES.get(tool["stage"], 1000),
+            "reason": f"Best match for {tool['stage']} task",
+        })
 
-    # Phase 7: Timing & speedup
-    timing = _estimate_timing(ordered_tools, optimize_for)
-
-    parallel_groups = max([t["parallel_group"] for t in pipeline], default=0)
+    timing = _estimate_time(tools, optimize_for)
+    parallel_groups = max([t["parallel_group"] for t in tools], default=0) if tools else 0
 
     result = {
         "goal": goal,
@@ -372,7 +258,7 @@ async def research_auto_pipeline(
         "parallel_groups": parallel_groups,
         "estimated_total_ms": timing["total_ms"],
         "estimated_sequential_ms": timing["sequential_ms"],
-        "estimated_speedup_vs_sequential": timing["speedup_factor"],
+        "estimated_speedup_vs_sequential": timing["speedup"],
         "optimize_for": optimize_for,
         "registry_size": len(registry),
         "tasks_identified": len(tasks),
@@ -382,7 +268,7 @@ async def research_auto_pipeline(
         "auto_pipeline_generated steps=%d groups=%d speedup=%.2fx",
         result["total_steps"],
         parallel_groups,
-        timing["speedup_factor"],
+        timing["speedup"],
     )
 
     return result

@@ -63,28 +63,35 @@ def _infer_time_ms(imports: set[str]) -> int:
 
 def _infer_cost(imports: set[str]) -> str:
     """Infer cost category from imports."""
-    provider_count = sum(1 for imp in imports if "loom.providers" in imp)
-    if provider_count > 1:
-        return "medium"
-    if provider_count == 1:
-        return "low"
+    # Check if tool uses LLM providers (API calls = higher cost)
+    has_providers = any("providers" in imp for imp in imports)
+    if has_providers:
+        return "low"  # LLM API calls are "low" cost relative to network I/O
+    # Network I/O tools are "free" (we pay for bandwidth not API)
     return "free"
 
 
 def _infer_category(tool_name: str) -> str:
-    """Infer category from tool name patterns."""
-    if "search" in tool_name:
-        return "search"
+    """Infer category from tool name patterns (most specific first)."""
+    # LLM-related tools
+    if any(x in tool_name for x in ["llm_", "chat", "summarize", "extract", "classify", "translate", "embed"]):
+        return "llm"
+    # Fetch/scraping tools
     if any(x in tool_name for x in ["fetch", "spider", "markdown", "crawl"]):
         return "fetch"
-    if "llm" in tool_name or "chat" in tool_name or "summarize" in tool_name:
-        return "llm"
+    # Cache/storage
     if "cache" in tool_name:
         return "cache"
-    if "github" in tool_name:
-        return "search"
+    # Session management
     if "session" in tool_name:
         return "session"
+    # Version control
+    if "github" in tool_name:
+        return "vcs"
+    # Search tools (only exact "search" keyword patterns)
+    if any(x in tool_name for x in ["_search", "search_"]):
+        return "search"
+    # Default utility category
     return "utility"
 
 
@@ -101,9 +108,12 @@ def _extract_imports(module_path: Path) -> set[str]:
         if isinstance(node, ast.Import):
             for alias in node.names:
                 imports.add(alias.name.split(".")[0])
-        elif isinstance(node, ast.ImportFrom):
-            if node.module:
-                imports.add(node.module.split(".")[0])
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            parts = node.module.split(".")
+            imports.add(parts[0])
+            # Mark provider imports for cost inference
+            if "providers" in parts:
+                imports.add("loom.providers")
     return imports
 
 
@@ -117,9 +127,8 @@ def _extract_tool_functions(module_path: Path) -> list[str]:
 
     tools = []
     for node in ast.walk(tree):
-        if isinstance(node, (ast.AsyncFunctionDef, ast.FunctionDef)):
-            if node.name.startswith("research_"):
-                tools.append(node.name)
+        if isinstance(node, (ast.AsyncFunctionDef, ast.FunctionDef)) and node.name.startswith("research_"):
+            tools.append(node.name)
     return tools
 
 
@@ -170,7 +179,7 @@ def _match_goal_pattern(goal: str) -> list[str]:
     keywords = _extract_goal_keywords(goal)
     scores: dict[str, int] = {}
 
-    for pattern_name, tools in GOAL_PATTERNS.items():
+    for pattern_name, _tools in GOAL_PATTERNS.items():
         pattern_keywords = pattern_name.split("_")
         score = sum(1 for kw in keywords if kw in pattern_keywords)
         if score > 0:

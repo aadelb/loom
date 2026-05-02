@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import asyncio
 import importlib
+import inspect
 import re
 import time
 from typing import Any
@@ -49,20 +49,21 @@ TOOL_CATEGORIES = {
     ],
 }
 
-ACTION_TO_CATEGORY = {
-    r"\b(scan|audit|check|verify|analyze)\b": "security",
-    r"\b(search|find|discover|lookup|query)\b": "search",
-    r"\b(analyze|evaluate|score|assess|measure)\b": "analysis",
-    r"\b(monitor|track|watch|observe)\b": "monitoring",
-    r"\b(reframe|bypass|rephrase|transform)\b": "reframing",
-    r"\b(export|save|download|report)\b": "export",
-}
+ACTION_TO_CATEGORY = [
+    (r"\b(evaluate|score|assess|measure)\b", "analysis"),
+    (r"\b(scan|audit|check|verify)\b", "security"),
+    (r"\b(search|find|discover|lookup|query)\b", "search"),
+    (r"\b(analyze)\b", "analysis"),
+    (r"\b(monitor|track|watch|observe)\b", "monitoring"),
+    (r"\b(reframe|bypass|rephrase|transform)\b", "reframing"),
+    (r"\b(export|save|download|report)\b", "export"),
+]
 
 
 def _extract_action(instruction: str) -> str | None:
     """Extract action verb from instruction."""
     instruction_lower = instruction.lower()
-    for pattern, category in ACTION_TO_CATEGORY.items():
+    for pattern, category in ACTION_TO_CATEGORY:
         if re.search(pattern, instruction_lower):
             return category
     return None
@@ -84,7 +85,7 @@ def _extract_url(instruction: str) -> str | None:
 
 def _extract_query(instruction: str, action_category: str) -> str:
     """Extract query/target from instruction."""
-    action_pattern = r"\b(scan|audit|check|verify|analyze|search|find|discover|reframe|export|monitor)\b\s+"
+    action_pattern = r"\b(scan|audit|check|verify|analyze|search|find|discover|reframe|export|monitor|evaluate|score|assess|measure)\b\s+"
     query = re.sub(action_pattern, "", instruction, count=1, flags=re.IGNORECASE)
     return query.strip()
 
@@ -208,7 +209,7 @@ async def research_do(instruction: str) -> dict:
             params=params,
         )
 
-        if asyncio.iscoroutinefunction(tool_func):
+        if inspect.iscoroutinefunction(tool_func):
             result = await tool_func(**params)
         else:
             result = tool_func(**params)
