@@ -64,6 +64,7 @@ from loom.tools import (
     change_monitor,
     company_intel,
     competitive_intel,
+    competitive_monitor,
     crypto_risk,
     crypto_trace,
     culture_dna,
@@ -106,6 +107,9 @@ from loom.tools import (
     lightpanda_backend,
     markdown,
     metadata_forensics,
+    model_fingerprinter,
+    multi_search,
+    nightcrawler,
     multi_search,
     neo4j_backend,
     observability,
@@ -119,11 +123,13 @@ from loom.tools import (
     projectdiscovery,
     prompt_analyzer,
     prompt_reframe,
+    predictive_ranker,
     psycholinguistic,
     rag_anything,
     realtime_adapt,
     realtime_monitor,
     report_generator,
+    resilience_predictor,
     response_synthesizer,
     rss_monitor,
     salary_synthesizer,
@@ -136,12 +142,14 @@ from loom.tools import (
     social_intel,
     social_scraper,
     spider,
+    swarm_attack,
     stagehand_backend,
     stealth,
     stego_detect,
     stego_encoder,
     strategy_cache,
     strategy_feedback,
+    strategy_evolution,
     stylometry,
     supply_chain_intel,
     synth_echo,
@@ -248,6 +256,14 @@ with suppress(ImportError):
 with suppress(ImportError):
     from loom.tools import stealth_score as stealth_score_tools
     _optional_tools["stealth_score"] = stealth_score_tools
+
+with suppress(ImportError):
+    from loom.tools import potency_meter as potency_meter_tools
+    _optional_tools["potency_meter"] = potency_meter_tools
+
+with suppress(ImportError):
+    from loom.tools import stealth_scorer as stealth_scorer_tools
+    _optional_tools["stealth_scorer"] = stealth_scorer_tools
 
 with suppress(ImportError):
     from loom.tools import model_sentiment as model_sentiment_tools
@@ -402,6 +418,11 @@ with suppress(ImportError):
     from loom.tools import text_analyze as text_analyze_tools
 
     _optional_tools["text_analyze"] = text_analyze_tools
+
+with suppress(ImportError):
+    from loom.tools import epistemic_score as epistemic_score_tools
+
+    _optional_tools["epistemic_score"] = epistemic_score_tools
 
 with suppress(ImportError):
     from loom.tools import screenshot as screenshot_tools
@@ -934,6 +955,7 @@ def _register_tools(mcp: FastMCP) -> None:
     # Core tools: fetch, spider, markdown, search, deep, github, stealth, cache
     mcp.tool()(_wrap_tool(fetch.research_fetch, "fetch"))
     mcp.tool()(_wrap_tool(spider.research_spider, "fetch"))
+    mcp.tool()(_wrap_tool(swarm_attack.research_swarm_attack))
     mcp.tool()(_wrap_tool(markdown.research_markdown, "fetch"))
     mcp.tool()(_wrap_tool(search.research_search, "search"))
     mcp.tool()(_wrap_tool(deep.research_deep, "deep"))
@@ -955,6 +977,8 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(strategy_feedback.research_strategy_recommend))
     mcp.tool()(_wrap_tool(strategy_feedback.research_strategy_stats))
     mcp.tool()(_wrap_tool(strategy_cache.research_cached_strategy))
+    mcp.tool()(_wrap_tool(strategy_evolution.research_evolve_strategies))
+    mcp.tool()(_wrap_tool(predictive_ranker.research_predict_success))
     mcp.tool()(_wrap_tool(autonomous_agent.research_auto_redteam))
     mcp.tool()(_wrap_tool(autonomous_agent.research_schedule_redteam))
     mcp.tool()(_wrap_tool(workflow_engine.research_workflow_create))
@@ -1050,6 +1074,7 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(company_intel.research_company_diligence, "search"))
     mcp.tool()(_wrap_tool(company_intel.research_salary_intelligence, "search"))
     mcp.tool()(_wrap_tool(competitive_intel.research_competitive_intel, "search"))
+    competitive_monitor,
 
     # Supply chain intelligence tools
     mcp.tool()(_wrap_tool(supply_chain_intel.research_supply_chain_risk, "fetch"))
@@ -1113,6 +1138,9 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(ai_safety_extended.research_hallucination_benchmark, "fetch"))
     mcp.tool()(_wrap_tool(ai_safety_extended.research_adversarial_robustness, "fetch"))
     mcp.tool()(_wrap_tool(adversarial_debate_tool.research_adversarial_debate, "llm"))
+    # LLM behavioral fingerprinting tool (1 tool for personality vector analysis)
+    mcp.tool()(_wrap_tool(model_fingerprinter.research_fingerprint_behavior, "llm"))
+
 
     # Agent scenario benchmarking tool
     mcp.tool()(_wrap_tool(agent_benchmark.research_agent_benchmark))
@@ -1164,6 +1192,10 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(realtime_adapt.research_track_refusal))
     mcp.tool()(_wrap_tool(realtime_adapt.research_get_best_model))
 
+    # NIGHTCRAWLER arXiv monitoring daemon
+    mcp.tool()(_wrap_tool(nightcrawler.research_arxiv_scan, "search"))
+    mcp.tool()(_wrap_tool(nightcrawler.research_nightcrawler_status))
+
     # RSS feed tools
     mcp.tool()(_wrap_tool(rss_monitor.research_rss_fetch, "fetch"))
     mcp.tool()(_wrap_tool(rss_monitor.research_rss_search, "search"))
@@ -1181,6 +1213,7 @@ def _register_tools(mcp: FastMCP) -> None:
     # Trend prediction and report generation tools
     mcp.tool()(_wrap_tool(trend_predictor.research_trend_predict, "search"))
     mcp.tool()(_wrap_tool(report_generator.research_generate_report, "search"))
+    mcp.tool()(_wrap_tool(resilience_predictor.research_predict_resilience))
 
     # Unique research tools (8 tools for propaganda, credibility, cascades, etc.)
     mcp.tool()(_wrap_tool(unique_tools.research_propaganda_detector))
@@ -1802,6 +1835,12 @@ def _register_tools(mcp: FastMCP) -> None:
         if hasattr(text_analyze_mod, "research_text_analyze"):
             mcp.tool()(_wrap_tool(text_analyze_mod.research_text_analyze, "analysis"))
 
+    # Epistemic confidence scoring tool
+    if "epistemic_score" in _optional_tools:
+        epistemic_mod = _optional_tools["epistemic_score"]
+        if hasattr(epistemic_mod, "research_epistemic_score"):
+            mcp.tool()(_wrap_tool(epistemic_mod.research_epistemic_score, "analysis"))
+
     # Screenshot tool (if playwright available)
     if "screenshot" in _optional_tools:
         screenshot_mod = _optional_tools["screenshot"]
@@ -1937,6 +1976,11 @@ def _register_tools(mcp: FastMCP) -> None:
         mod = _optional_tools["stealth_score"]
         if hasattr(mod, "research_stealth_score"):
             mcp.tool()(_wrap_tool(mod.research_stealth_score))
+
+    if "potency_meter" in _optional_tools:
+        mod = _optional_tools["potency_meter"]
+        if hasattr(mod, "research_potency_score"):
+            mcp.tool()(_wrap_tool(mod.research_potency_score))
 
     if "model_sentiment" in _optional_tools:
         mod = _optional_tools["model_sentiment"]

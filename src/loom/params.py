@@ -5506,3 +5506,188 @@ class AttackerTargetDebateParams(BaseModel):
         if len(v) > 100:
             raise ValueError("strategy max length is 100 characters")
         return v
+
+class SwarmAttackParams(BaseModel):
+    """Parameters for research_swarm_attack tool."""
+
+    target_prompt: str = Field(..., min_length=5, max_length=2000)
+    swarm_size: int = Field(default=5, ge=1, le=20)
+    rounds: int = Field(default=3, ge=1, le=5)
+    share_findings: bool = Field(default=True)
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("target_prompt")
+    @classmethod
+    def validate_target_prompt(cls, v: str) -> str:
+        """Validate target prompt is non-empty."""
+        if not v.strip():
+            raise ValueError("target_prompt cannot be empty")
+        if len(v) < 5:
+            raise ValueError("target_prompt must be at least 5 characters")
+        if len(v) > 2000:
+            raise ValueError("target_prompt max length is 2000 characters")
+        return v
+
+
+class PotencyScoreParams(BaseModel):
+    """Parameters for research_potency_score tool."""
+
+    prompt: str = Field(..., min_length=1, max_length=5000)
+    response: str = Field(..., min_length=1, max_length=50000)
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("prompt")
+    @classmethod
+    def validate_prompt(cls, v: str) -> str:
+        """Validate prompt is non-empty."""
+        if not v.strip():
+            raise ValueError("prompt cannot be empty")
+        return v
+
+    @field_validator("response")
+    @classmethod
+    def validate_response(cls, v: str) -> str:
+        """Validate response is non-empty."""
+        if not v.strip():
+            raise ValueError("response cannot be empty")
+        return v
+
+class ArxivScanParams(BaseModel):
+    """Parameters for research_arxiv_scan tool."""
+
+    keywords: list[str] | None = Field(
+        default=None,
+        description="Search keywords (default: jailbreak, prompt injection, adversarial, red team, LLM safety)"
+    )
+    days_back: int = Field(
+        default=7,
+        ge=1,
+        le=365,
+        description="Number of days to search back"
+    )
+    max_papers: int = Field(
+        default=20,
+        ge=1,
+        le=100,
+        description="Maximum papers to return per keyword"
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("keywords")
+    @classmethod
+    def validate_keywords(cls, v: list[str] | None) -> list[str] | None:
+        """Validate keywords list."""
+        if v is not None:
+            if not isinstance(v, list) or len(v) == 0:
+                raise ValueError("keywords must be non-empty list")
+            if len(v) > 20:
+                raise ValueError("keywords max 20 items")
+            for kw in v:
+                if not isinstance(kw, str) or len(kw) > 100:
+                    raise ValueError("each keyword must be string, max 100 chars")
+        return v
+
+
+class FingerprintBehaviorParams(BaseModel):
+    """Parameters for research_fingerprint_behavior tool."""
+
+    model: str = "nvidia"
+    probe_count: int = Field(default=10, ge=1, le=10)
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("model")
+    @classmethod
+    def validate_model(cls, v: str) -> str:
+        """Validate model provider name."""
+        allowed = {"nvidia", "openai", "anthropic", "groq", "deepseek", "gemini", "moonshot", "vllm", "auto"}
+        if v not in allowed:
+            raise ValueError(f"model must be one of {allowed}, got {v}")
+        return v
+
+    @field_validator("probe_count")
+    @classmethod
+    def validate_probe_count(cls, v: int) -> int:
+        """Validate probe count is between 1-10."""
+        if v < 1 or v > 10:
+            raise ValueError("probe_count must be 1-10")
+        return v
+
+
+class ResiliencePredictorParams(BaseModel):
+    """Parameters for research_predict_resilience tool."""
+
+    strategy: str = Field(..., min_length=1, max_length=128)
+    target_model: str = Field(default="auto", max_length=64)
+    current_asr: float = Field(default=0.8, ge=0.0, le=1.0)
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("strategy")
+    @classmethod
+    def validate_strategy(cls, v: str) -> str:
+        """Validate strategy name format."""
+        if not re.match(r"^[a-zA-Z0-9_\-]+$", v):
+            raise ValueError("strategy must contain only alphanumeric, underscore, hyphen")
+        return v.lower()
+
+    @field_validator("target_model")
+    @classmethod
+    def validate_target_model(cls, v: str) -> str:
+        """Validate target model name."""
+        allowed_models = {
+            "auto", "gpt4", "gpt4o", "gpt-4-turbo", "claude3", "claude3.5",
+            "gemini", "gemini2", "llama2", "llama3", "deepseek", "mistral"
+        }
+        v_lower = v.lower()
+        if v_lower not in allowed_models:
+            raise ValueError(f"target_model must be one of {allowed_models}")
+        return v_lower
+
+    @field_validator("current_asr")
+    @classmethod
+    def validate_asr(cls, v: float) -> float:
+        """Validate ASR is between 0 and 1."""
+        if v < 0.0 or v > 1.0:
+            raise ValueError("current_asr must be between 0.0 and 1.0")
+        return v
+
+
+class ArxivScanParams(BaseModel):
+    """Parameters for research_arxiv_scan tool."""
+
+    keywords: list[str] | None = Field(
+        default=None,
+        description="Search keywords (default: jailbreak, prompt injection, adversarial, red team, LLM safety)"
+    )
+    days_back: int = Field(
+        default=7,
+        ge=1,
+        le=365,
+        description="Number of days to search back"
+    )
+    max_papers: int = Field(
+        default=20,
+        ge=1,
+        le=100,
+        description="Maximum papers to return per keyword"
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("keywords")
+    @classmethod
+    def validate_keywords(cls, v: list[str] | None) -> list[str] | None:
+        """Validate keywords list."""
+        if v is not None:
+            if not isinstance(v, list) or len(v) == 0:
+                raise ValueError("keywords must be non-empty list")
+            if len(v) > 20:
+                raise ValueError("keywords max 20 items")
+            for kw in v:
+                if not isinstance(kw, str) or len(kw) > 100:
+                    raise ValueError("each keyword must be string, max 100 chars")
+        return v
