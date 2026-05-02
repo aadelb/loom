@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import logging
-import psutil
+try:
+    import psutil
+except ImportError:
+    psutil = None
 from datetime import UTC, datetime
 from typing import Any
 

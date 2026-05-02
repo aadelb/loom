@@ -7,7 +7,10 @@ import json
 import logging
 import os
 import platform
-import psutil
+try:
+    import psutil
+except ImportError:
+    psutil = None
 import shutil
 import subprocess
 import sys
