@@ -166,7 +166,8 @@ async def _arxiv_search(
                             "timestamp": published,
                         }
                     )
-            except Exception:
+            except Exception as e:
+                logger.debug("arxiv_entry_parse_error: %s", e)
                 continue
         return results[:20]
     except Exception as exc:
@@ -288,8 +289,8 @@ async def _analyze_posting_times(
                             suspicious_clusters.append(current_cluster)
                         current_cluster = [{"timestamp": ts, "author": author}]
                         cluster_start_time = ts
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug("timestamp_parse_error: %s", e)
 
         if len(current_cluster) >= 3:
             suspicious_clusters.append(current_cluster)
@@ -548,8 +549,8 @@ async def _wayback_search_social(
                             "status": row[2] if len(row) > 2 else "",
                         }
                     )
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug("wayback_snapshot_parse_error: %s", e)
             return snapshots
     except Exception as exc:
         logger.debug("wayback_search_social failed: %s", exc)
@@ -601,8 +602,8 @@ async def research_deleted_social(url: str) -> dict[str, Any]:
             try:
                 resp = await client.head(google_cache_url, timeout=15.0)
                 google_status = resp.status_code
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("google_cache_check_error: %s", e)
 
             snapshots_found = len(wayback_snapshots)
             if google_status == 200:
@@ -648,8 +649,8 @@ async def _robots_txt_cdx(
                             "status": row[2] if len(row) > 2 else "",
                         }
                     )
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug("robots_version_parse_error: %s", e)
             return versions
     except Exception as exc:
         logger.debug("robots_txt_cdx failed: %s", exc)
@@ -662,7 +663,8 @@ async def _robots_txt_content(
     """Fetch actual robots.txt content from archive."""
     try:
         return await _fetch_text(client, archive_url, timeout=15.0)
-    except Exception:
+    except Exception as e:
+        logger.debug("robots_txt_fetch_error: %s", e)
         return ""
 
 

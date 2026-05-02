@@ -143,8 +143,8 @@ def _extract_exif(image_bytes: bytes) -> dict[str, Any]:
                 if isinstance(value, bytes):
                     value = value.decode("utf-8", errors="replace")[:100]
                 result[tag] = str(value)[:200]
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("exif_value_parse_error: %s", e)
         return result
     except ImportError:
         return {"error": "Pillow not installed"}

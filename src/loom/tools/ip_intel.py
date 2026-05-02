@@ -65,8 +65,8 @@ def research_ip_reputation(ip: str) -> dict[str, Any]:
 
         reverse_dns = socket.gethostbyaddr(ip)[0]
         result["reverse_dns"] = reverse_dns
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("reverse_dns_lookup_error: %s", e)
 
     # Check AbuseIPDB if API key is set
     abuseipdb_key = os.environ.get("ABUSEIPDB_API_KEY")

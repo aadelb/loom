@@ -186,7 +186,8 @@ async def research_table_extract(
 
                     reader = pypdf.PdfReader(io.BytesIO(pdf_bytes))
                     total_pages = len(reader.pages)
-                except Exception:
+                except Exception as e:
+                    logger.debug("pdf_page_count_error: %s", e)
                     total_pages = 0
 
                 # Convert to dict format
@@ -228,8 +229,8 @@ async def research_table_extract(
 
                 try:
                     os.unlink(tmp_path)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug("temp_file_cleanup_error: %s", e)
 
         tables, total_pages, pages_processed = await asyncio.to_thread(
             _extract_tables

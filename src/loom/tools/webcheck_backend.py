@@ -267,8 +267,8 @@ def _check_dns(domain: str) -> dict[str, Any]:
             try:
                 txt_records = dns.resolver.resolve(domain, "TXT")
                 result["txt_records"] = [str(txt) for txt in txt_records]
-            except Exception:
-                pass  # TXT records may not exist
+            except Exception as e:
+                logger.debug("txt_record_lookup_error: %s", e)
 
         except ImportError:
             result["errors"].append("dnspython not available for MX/TXT lookup")

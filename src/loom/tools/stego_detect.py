@@ -105,8 +105,8 @@ def _check_exif_hidden(image_bytes: bytes) -> dict[str, Any]:
                 val_str = str(value)
                 if len(val_str) > 100:
                     suspicious_fields.append({"tag_id": str(tag_id), "length": str(len(val_str)), "preview": val_str[:100]})
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("exif_field_parse_error: %s", e)
 
         comment = img.info.get("comment", b"")
         if isinstance(comment, bytes) and len(comment) > 10:

@@ -265,8 +265,8 @@ async def research_source_credibility(url: str) -> dict[str, Any]:
                                 break
                             except (ValueError, TypeError):
                                 pass
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("rdap_domain_age_error: %s", e)
 
             # Check Wikipedia references via Wikipedia API
             try:
@@ -289,10 +289,10 @@ async def research_source_credibility(url: str) -> dict[str, Any]:
                                 )
                                 if domain in extract.lower():
                                     wikipedia_referenced = True
-                        except Exception:
-                            pass
-            except Exception:
-                pass
+                        except Exception as e:
+                            logger.debug("wikipedia_page_extract_error: %s", e)
+            except Exception as e:
+                logger.debug("wikipedia_search_error: %s", e)
 
             # Check academic citations via Semantic Scholar
             try:
@@ -300,8 +300,8 @@ async def research_source_credibility(url: str) -> dict[str, Any]:
                 scholar_data = await _get_json(client, scholar_url, timeout=10.0)
                 if scholar_data and scholar_data.get("data"):
                     academic_citations = len(scholar_data.get("data", []))
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("semantic_scholar_error: %s", e)
 
             # Check security headers
             try:
@@ -320,8 +320,8 @@ async def research_source_credibility(url: str) -> dict[str, Any]:
                     if header.lower() in {k.lower() for k in headers.keys()}:
                         security_score += 20
                 security_score = min(100, security_score)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("security_headers_check_error: %s", e)
 
             # Calculate credibility score (0-100)
             credibility_score = 0
@@ -962,8 +962,8 @@ async def research_info_half_life(urls: list[str]) -> dict[str, Any]:
                         days_since_snapshot = (datetime.now() - snapshot_date).days
                     except (ValueError, TypeError):
                         pass
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("wayback_check_error: %s", e)
 
         status = "alive" if http_status and 200 <= http_status < 400 else "dead"
 
