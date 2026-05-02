@@ -430,7 +430,7 @@ class TestConsistencyPressureParams:
 
     def test_pressure_params_invalid_prompt(self) -> None:
         """Empty prompt raises validation error."""
-        with pytest.raises(ValueError, match="target_prompt must be non-empty"):
+        with pytest.raises(ValueError, match="target_prompt cannot be empty"):
             ConsistencyPressureParams(
                 model="gpt-4",
                 target_prompt="",

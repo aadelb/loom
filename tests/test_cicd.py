@@ -229,50 +229,39 @@ class TestCicdRunParams:
     def test_valid_params(self) -> None:
         """Test valid CICD parameters."""
         params = CicdRunParams(
-            config_path="loom-redteam.yml",
-            model_endpoint="https://example.com/api",
-            test_prompts=["prompt 1", "prompt 2"],
+            command="cd /repo && pytest tests/",
         )
 
-        assert params.config_path == "loom-redteam.yml"
-        assert params.model_endpoint == "https://example.com/api"
-        assert len(params.test_prompts) == 2
+        assert params.command == "cd /repo && pytest tests/"
 
     def test_endpoint_validation(self) -> None:
-        """Test endpoint URL validation."""
+        """Test command validation."""
         with pytest.raises(ValueError):
             CicdRunParams(
-                config_path="test.yml",
-                model_endpoint="not-a-url",
-                test_prompts=["test"],
+                command="",  # Empty command should fail
             )
 
     def test_empty_prompts(self) -> None:
-        """Test empty prompts is rejected."""
+        """Test empty command is rejected."""
         with pytest.raises(ValueError):
             CicdRunParams(
-                config_path="test.yml",
-                model_endpoint="https://example.com/api",
-                test_prompts=[],
+                command="   ",  # Whitespace-only
             )
 
     def test_prompt_length_validation(self) -> None:
-        """Test prompt length bounds."""
+        """Test command length bounds."""
         with pytest.raises(ValueError):
             CicdRunParams(
-                config_path="test.yml",
-                model_endpoint="https://example.com/api",
-                test_prompts=["x" * 6000],  # Too long
+                command="x" * 10001,  # Too long
             )
 
     def test_max_prompts(self) -> None:
-        """Test max prompts limit."""
-        with pytest.raises(ValueError):
-            CicdRunParams(
-                config_path="test.yml",
-                model_endpoint="https://example.com/api",
-                test_prompts=["test"] * 1001,
-            )
+        """Test timeout validation."""
+        params = CicdRunParams(
+            command="ls -la",
+            timeout=300,
+        )
+        assert params.timeout == 300
 
 
 class TestRedTeamCI:

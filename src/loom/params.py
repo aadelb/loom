@@ -2912,10 +2912,12 @@ class BPJParams(BaseModel):
     safe_prompt: str = Field(
         description="Prompt that model complies with",
         max_length=10000,
+        min_length=1,
     )
     unsafe_prompt: str = Field(
         description="Prompt that model refuses",
         max_length=10000,
+        min_length=1,
     )
     max_steps: int = Field(
         default=10,
@@ -3116,6 +3118,8 @@ class ExecutabilityParams(BaseModel):
     def validate_response_text(cls, v: str) -> str:
         if not isinstance(v, str):
             raise ValueError("response_text must be string")
+        if not v.strip():
+            raise ValueError("response_text cannot be empty")
         return v
 
 

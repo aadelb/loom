@@ -705,12 +705,12 @@ class TestParameterValidation:
             limit=25,
         )
         assert params.customer_id == "cus_test_123"
-        assert params.limit == 25
+        assert params.max_results == 25
 
     def test_list_invoices_params_default_limit(self) -> None:
         """Should default to limit 10."""
         params = StripeListInvoicesParams(customer_id="cus_test_123")
-        assert params.limit == 10
+        assert params.max_results == 10
 
     def test_list_invoices_params_invalid_limit(self) -> None:
         """Should reject invalid limits."""
