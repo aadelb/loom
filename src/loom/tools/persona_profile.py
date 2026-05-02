@@ -221,14 +221,28 @@ def _estimate_education(big_five: dict[str, float], vocab_tier: str) -> str:
 def _parse_timestamps(timestamps: list[Any]) -> dict[str, Any]:
     """Parse timestamp data to extract temporal patterns.
 
+    Extracts hour-of-day distribution, estimates timezone from activity patterns,
+    and classifies activity pattern (nocturnal/diurnal/irregular).
+
     Args:
         timestamps: list of timestamps (ISO strings, unix timestamps, or datetime objects)
 
     Returns:
-        Dict with peak_hours, timezone_estimate, activity_pattern
+        Dict with keys:
+        - peak_hours: list of top 3 hours by activity frequency
+        - timezone_estimate: estimated timezone offset string
+        - activity_pattern: classification (nocturnal/diurnal/irregular/unknown)
+        - active_hours: sorted list of all hours with activity
+        - total_events: count of successfully parsed timestamps
     """
     if not timestamps or len(timestamps) < 2:
-        return {}
+        return {
+            "peak_hours": [],
+            "timezone_estimate": "unknown",
+            "activity_pattern": "unknown",
+            "active_hours": [],
+            "total_events": 0,
+        }
 
     hours: list[int] = []
 
@@ -251,18 +265,40 @@ def _parse_timestamps(timestamps: list[Any]) -> dict[str, Any]:
             continue
 
     if not hours:
-        return {}
+        return {
+            "peak_hours": [],
+            "timezone_estimate": "unknown",
+            "activity_pattern": "unknown",
+            "active_hours": [],
+            "total_events": 0,
+        }
 
     # Find peak hours
     hour_counter = Counter(hours)
     peak_hours = [hour for hour, _ in hour_counter.most_common(3)]
 
-    # Estimate timezone (this is simplified; requires IP geolocation for accuracy)
+    # Extract all active hours (hours with any activity)
+    active_hours = sorted(set(hours))
+
+    # Estimate timezone based on peak activity hours (simplified)
+    # Assumes UTC baseline; real impl would use IP geolocation or explicit metadata
     timezone_estimate = "UTC+0"  # Default fallback
+
+    # Heuristic: if peak hours are clustered in a specific range,
+    # attempt crude timezone offset estimation
+    if peak_hours:
+        avg_peak = sum(peak_hours) / len(peak_hours)
+        # Map average peak hour to approximate timezone offset
+        # (this is a simplification; real timezone detection requires more context)
+        offset = round((avg_peak - 12) / 2)  # Rough approximation
+        if offset >= 0:
+            timezone_estimate = f"UTC+{offset}"
+        else:
+            timezone_estimate = f"UTC{offset}"
 
     # Determine activity pattern
     if not peak_hours:
-        activity_pattern = "irregular"
+        activity_pattern = "unknown"
     elif all(h >= 22 or h <= 6 for h in peak_hours):
         activity_pattern = "nocturnal"
     elif all(6 <= h <= 18 for h in peak_hours):
@@ -274,6 +310,8 @@ def _parse_timestamps(timestamps: list[Any]) -> dict[str, Any]:
         "peak_hours": sorted(peak_hours),
         "timezone_estimate": timezone_estimate,
         "activity_pattern": activity_pattern,
+        "active_hours": active_hours,
+        "total_events": len(hours),
     }
 
 
