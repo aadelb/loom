@@ -1,0 +1,10 @@
+#914: FAIL — Missing try/except error handling and has hardcoded ANOMALY_INDICATORS/DOMAIN_PAIRS.
+#915: FAIL — Has hardcoded DEFAULT_KEYWORDS and TECHNIQUE_PATTERNS values.
+#916: FAIL — Function is not `async def` and has hardcoded MODEL_UPDATE_HISTORY.
+#917: FAIL — Missing try/except error handling and has hardcoded MODEL_FAMILIES and TRANSFER_MATRIX.
+#918: FAIL — Missing try/except error handling and has hardcoded _MODEL_UPDATE_DAYS.
+#919: FAIL — Returns a Pydantic model (FuseEvidenceResult) instead of a dict, and is missing try/except error handling.
+#920: FAIL — Missing try/except error handling and has hardcoded DOMAIN_CATEGORIES and FUNCTORS.
+#921: FAIL — Returns a Pydantic model (AttractorResult) instead of a dict, and is missing try/except error handling.
+#922: FAIL — Function `NeuromorphicExecutor` does not exist (file contains `research_neuromorphic_schedule` instead) and it is not registered as a tool in server.py.
+#923: FAIL — Has hardcoded _MODEL_PATTERNS and _LANGUAGE_CODES values.

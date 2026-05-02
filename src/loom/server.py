@@ -222,6 +222,7 @@ from loom.tools import (
     safety_neurons,
     schema_migrate,
     sherlock_backend,
+    silk_guardian,
     signal_detection,
     social_graph,
     social_intel,
@@ -1336,6 +1337,7 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(metadata_forensics.research_metadata_forensics, "fetch"))
     mcp.tool()(_wrap_tool(antiforensics.research_usb_kill_monitor))
     mcp.tool()(_wrap_tool(antiforensics.research_artifact_cleanup))
+    mcp.tool()(_wrap_tool(silk_guardian.research_silk_guardian_monitor))
     mcp.tool()(_wrap_tool(crypto_trace.research_crypto_trace, "fetch"))
     mcp.tool()(_wrap_tool(crypto_risk.research_crypto_risk_score))
     mcp.tool()(_wrap_tool(ethereum_tools.research_ethereum_tx_decode))

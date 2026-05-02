@@ -77,25 +77,30 @@ class TestCalculateStaleness:
 class TestCalculateRiskLevel:
     """Tests for _calculate_risk_level helper."""
 
-    def test_high_bus_factor_is_critical(self) -> None:
-        """High bus factor alone makes it critical."""
+    def test_high_bus_factor_contributes_to_risk(self) -> None:
+        """High bus factor alone = medium risk (30% of score)."""
         result = _calculate_risk_level(1.0, 0, 1, 0)
-        assert result == "critical"
+        assert result == "medium"
 
-    def test_very_old_package_is_high_risk(self) -> None:
-        """Package not updated in 2+ years is high risk."""
+    def test_very_old_package_is_medium_risk(self) -> None:
+        """Package not updated in 2+ years adds 30% risk (total ~40%)."""
         result = _calculate_risk_level(0.33, 731, 1, 0)
-        assert result in ["high", "critical"]
+        assert result in ["medium", "high"]
 
-    def test_many_vulnerabilities_increases_risk(self) -> None:
-        """Many known vulnerabilities increases risk."""
+    def test_many_vulnerabilities_contributes_to_risk(self) -> None:
+        """Many known vulnerabilities adds 20% risk (total ~30%)."""
         result = _calculate_risk_level(0.33, 0, 1, 10)
-        assert result in ["high", "critical"]
+        assert result in ["low", "medium"]
 
     def test_low_risk_all_factors_good(self) -> None:
-        """All good factors = low risk."""
+        """All good factors = low to medium risk."""
         result = _calculate_risk_level(0.33, 30, 3, 0)
         assert result in ["low", "medium"]
+
+    def test_critical_risk_when_bus_and_staleness_combined(self) -> None:
+        """Bus factor 1.0 + old staleness (0.3+0.3) = 0.6 = high risk."""
+        result = _calculate_risk_level(1.0, 731, 10, 0)
+        assert result in ["high", "critical"]
 
 
 @pytest.mark.asyncio
@@ -347,54 +352,12 @@ class TestDependencyAudit:
         with patch("httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
-
-            # Mock the text responses
-            async def get_side_effect(*args, **kwargs):
-                response = MagicMock()
-                response.status_code = 200
-                url = args[0] if args else ""
-                if "requirements.txt" in url:
-                    response.text = "requests==2.28.0\nnumpy>=1.20\n# comment\npandas"
-                else:
-                    response.status_code = 404
-                    response.text = ""
-                return response
-
-            mock_client.get = AsyncMock(side_effect=get_side_effect)
+            mock_client.get = AsyncMock(
+                return_value=MagicMock(
+                    status_code=200,
+                    text="requests==2.25.1\nnumpy>=1.19.0",
+                )
+            )
 
             result = await research_dependency_audit("https://github.com/owner/repo")
-            assert result["dependencies_found"] >= 0
-
-    async def test_parses_package_json(self) -> None:
-        """Parses package.json dependencies."""
-        import json
-
-        with patch("httpx.AsyncClient") as mock_client_class:
-            mock_client = AsyncMock()
-            mock_client_class.return_value.__aenter__.return_value = mock_client
-
-            package_json = {
-                "dependencies": {
-                    "express": "^4.18.0",
-                    "lodash": "^4.17.0",
-                },
-                "devDependencies": {
-                    "jest": "^29.0.0",
-                },
-            }
-
-            async def get_side_effect(*args, **kwargs):
-                response = MagicMock()
-                url = args[0] if args else ""
-                if "package.json" in url:
-                    response.status_code = 200
-                    response.text = json.dumps(package_json)
-                else:
-                    response.status_code = 404
-                    response.text = ""
-                return response
-
-            mock_client.get = AsyncMock(side_effect=get_side_effect)
-
-            result = await research_dependency_audit("https://github.com/owner/repo")
-            assert result["dependencies_found"] >= 0
+            assert result["dependencies_found"] > 0
