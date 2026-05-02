@@ -25,7 +25,7 @@ from loom.providers.base import LLMResponse
 from loom.tools.hcs_scorer import research_hcs_score
 from loom.tools.llm import _call_with_cascade
 from loom.tools.query_builder import research_build_query
-from loom.tools.prompt_reframe import research_reframe_strategies
+from loom.tools.prompt_reframe import research_auto_reframe, _apply_strategy, _STRATEGIES
 
 logger = logging.getLogger("loom.tools.full_pipeline")
 
@@ -162,13 +162,10 @@ async def research_full_pipeline(
 
                 # If below target and attempts remain, escalate
                 if attempt < max_escalation_attempts - 1:
-                    # Get reframing strategies
-                    strategies_result = research_reframe_strategies(
-                        prompt=sub_q,
-                        count=3,
-                        category="advanced",
-                    )
-                    strategies: list[str] = strategies_result.get("strategies", [])
+                    # Get top reframing strategies for escalation
+                    top_strategies = ["deep_inception", "compliance_audit_fork", "crescendo",
+                                      "constitutional_conflict", "ethical_anchor"]
+                    strategies = top_strategies[attempt:attempt+2]
 
                     if strategies:
                         # Use first strategy to reframe the question
