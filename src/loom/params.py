@@ -6148,3 +6148,632 @@ class MetaLearnerParams(BaseModel):
         if v not in valid_models:
             raise ValueError(f"target_model must be one of {valid_models}")
         return v
+
+
+class CraftAdversarialParams(BaseModel):
+    """Parameters for research_craft_adversarial tool."""
+
+    benign_input: str
+    target_output: str = "compliance"
+    perturbation_budget: float = 0.1
+    method: Literal[
+        "greedy_swap",
+        "insert_trigger",
+        "unicode_perturb",
+        "whitespace_inject",
+        "semantic_shift",
+    ] = "greedy_swap"
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("benign_input")
+    @classmethod
+    def validate_input(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("benign_input cannot be empty")
+        if len(v) > 5000:
+            raise ValueError("benign_input max 5000 characters")
+        return v
+
+    @field_validator("target_output")
+    @classmethod
+    def validate_target(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("target_output cannot be empty")
+        if len(v) > 200:
+            raise ValueError("target_output max 200 characters")
+        return v
+
+    @field_validator("perturbation_budget")
+    @classmethod
+    def validate_budget(cls, v: float) -> float:
+        if v < 0.01 or v > 0.5:
+            raise ValueError("perturbation_budget must be 0.01-0.5")
+        return v
+
+
+class AdversarialBatchParams(BaseModel):
+    """Parameters for research_adversarial_batch tool."""
+
+    inputs: list[str]
+    method: Literal[
+        "greedy_swap",
+        "insert_trigger",
+        "unicode_perturb",
+        "whitespace_inject",
+        "semantic_shift",
+    ] = "greedy_swap"
+    budget: float = 0.1
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("inputs")
+    @classmethod
+    def validate_inputs(cls, v: list[str]) -> list[str]:
+        if not v:
+            raise ValueError("inputs list cannot be empty")
+        if len(v) > 100:
+            raise ValueError("inputs max 100 items")
+        validated = []
+        for inp in v:
+            inp = inp.strip()
+            if not inp:
+                raise ValueError("each input must be non-empty")
+            if len(inp) > 5000:
+                raise ValueError("each input max 5000 characters")
+            validated.append(inp)
+        return validated
+
+    @field_validator("budget")
+    @classmethod
+    def validate_budget(cls, v: float) -> float:
+        if v < 0.01 or v > 0.5:
+            raise ValueError("budget must be 0.01-0.5")
+        return v
+
+class SuperpositionPromptParams(BaseModel):
+    """Parameters for research_superposition_attack tool."""
+
+    prompt: str
+    num_superpositions: int = 10
+    collapse_method: Literal["max_compliance", "max_stealth", "balanced", "diverse_top3"] = "max_compliance"
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("prompt")
+    @classmethod
+    def validate_prompt(cls, v: str) -> str:
+        v = v.strip()
+        if not v or len(v) > 2000:
+            raise ValueError("prompt must be 1-2000 characters")
+        return v
+
+    @field_validator("num_superpositions")
+    @classmethod
+    def validate_num_superpositions(cls, v: int) -> int:
+        if v < 1 or v > 100:
+            raise ValueError("num_superpositions must be 1-100")
+        return v
+
+
+class CaptureHarParams(BaseModel):
+    """Parameters for research_capture_har tool."""
+
+    url: str
+    duration_seconds: int = Field(default=10, ge=1, le=60)
+    include_bodies: bool = True
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def validate_url_field(cls, v: str) -> str:
+        return validate_url(v)
+
+
+class ExtractCookiesParams(BaseModel):
+    """Parameters for research_extract_cookies tool."""
+
+    url: str
+    follow_redirects: bool = True
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def validate_url_field(cls, v: str) -> str:
+        return validate_url(v)
+
+
+class UncertaintyEstimateParams(BaseModel):
+    """Parameters for research_uncertainty_estimate tool."""
+
+    strategies: list[str]
+    target_model: Literal["auto", "claude", "gpt", "deepseek", "gemini"] = "auto"
+    prior_results: dict[str, float] | None = None
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("strategies")
+    @classmethod
+    def validate_strategies(cls, v: list[str]) -> list[str]:
+        """Validate strategies list."""
+        if not v:
+            raise ValueError("strategies list cannot be empty")
+        if len(v) > 100:
+            raise ValueError("strategies list max 100 items")
+        for strategy in v:
+            if not isinstance(strategy, str) or not strategy.strip():
+                raise ValueError("all strategies must be non-empty strings")
+            if len(strategy) > 256:
+                raise ValueError("each strategy max 256 characters")
+        return v
+
+    @field_validator("prior_results")
+    @classmethod
+    def validate_prior_results(cls, v: dict[str, float] | None) -> dict[str, float] | None:
+        """Validate prior results dict."""
+        if v is not None:
+            if not isinstance(v, dict):
+                raise ValueError("prior_results must be a dict")
+            for key, val in v.items():
+                if not isinstance(key, str) or not isinstance(val, (int, float)):
+                    raise ValueError("prior_results keys must be strings, values must be floats")
+                if not 0.0 <= val <= 1.0:
+                    raise ValueError(f"prior_results values must be 0.0-1.0, got {val}")
+        return v
+
+
+class ActiveSelectParams(BaseModel):
+    """Parameters for research_active_select tool."""
+
+    candidate_strategies: list[str]
+    budget: int = 3
+    objective: Literal["maximize_success", "maximize_information", "balanced"] = "maximize_success"
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("candidate_strategies")
+    @classmethod
+    def validate_candidate_strategies(cls, v: list[str]) -> list[str]:
+        """Validate strategies list."""
+        if not v:
+            raise ValueError("candidate_strategies list cannot be empty")
+        if len(v) > 100:
+            raise ValueError("candidate_strategies list max 100 items")
+        for strategy in v:
+            if not isinstance(strategy, str) or not strategy.strip():
+                raise ValueError("all strategies must be non-empty strings")
+            if len(strategy) > 256:
+                raise ValueError("each strategy max 256 characters")
+        return v
+
+    @field_validator("budget")
+    @classmethod
+    def validate_budget(cls, v: int) -> int:
+        """Validate budget."""
+        if v < 1 or v > 20:
+            raise ValueError("budget must be 1-20 API calls")
+        return v
+
+class PredictAttacksParams(BaseModel):
+    """Parameters for research_predict_attacks tool."""
+
+    system_prompt: str = Field(..., min_length=1, max_length=10000)
+    model: str = "auto"
+    threat_level: Literal["low", "medium", "high", "critical"] = "high"
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("system_prompt")
+    @classmethod
+    def validate_prompt(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("system_prompt cannot be empty")
+        return v
+
+    @field_validator("model")
+    @classmethod
+    def validate_model(cls, v: str) -> str:
+        v = v.strip().lower()
+        valid = {"auto", "claude", "gpt", "gemini", "deepseek", "llama"}
+        if v not in valid:
+            raise ValueError(f"model must be one of {valid}")
+        return v
+
+
+class PreemptivePatchParams(BaseModel):
+    """Parameters for research_preemptive_patch tool."""
+
+    system_prompt: str = Field(..., min_length=1, max_length=10000)
+    predicted_attacks: list[str] | None = None
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("system_prompt")
+    @classmethod
+    def validate_prompt(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("system_prompt cannot be empty")
+        return v
+
+    @field_validator("predicted_attacks")
+    @classmethod
+    def validate_attacks(cls, v: list[str] | None) -> list[str] | None:
+        if v is None:
+            return None
+        valid_attacks = {
+            "missing_role_anchoring",
+            "no_output_constraints",
+            "no_injection_resistance",
+            "long_context",
+            "no_multi_turn_defense",
+        }
+        for attack in v:
+            if attack not in valid_attacks:
+                raise ValueError(f"predicted_attacks must be subset of {valid_attacks}")
+        return v
+
+
+class LifetimeOracleParams(BaseModel):
+    """Parameters for research_lifetime_predict tool."""
+
+    strategy_name: str
+    strategy_text: str = ""
+    target_models: list[str] | None = None
+    is_public: bool = False
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("strategy_name")
+    @classmethod
+    def validate_strategy_name(cls, v: str) -> str:
+        v = v.strip()
+        if not v or len(v) > 256:
+            raise ValueError("strategy_name must be 1-256 characters")
+        return v
+
+    @field_validator("strategy_text")
+    @classmethod
+    def validate_strategy_text(cls, v: str) -> str:
+        if len(v) > 10000:
+            raise ValueError("strategy_text max 10000 characters")
+        return v
+
+    @field_validator("target_models")
+    @classmethod
+    def validate_target_models(cls, v: list[str] | None) -> list[str] | None:
+        if v is not None:
+            if len(v) > 20:
+                raise ValueError("target_models max 20 items")
+            for model in v:
+                if not isinstance(model, str) or not model.strip():
+                    raise ValueError("all models must be non-empty strings")
+        return v
+
+
+class PackageAuditParams(BaseModel):
+    """Parameters for research_package_audit tool."""
+
+    package_name: str
+    ecosystem: Literal["pypi", "npm", "cargo"] = "pypi"
+    depth: int = 2
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("package_name")
+    @classmethod
+    def validate_package_name(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("package_name must be non-empty")
+        if len(v) > 200:
+            raise ValueError("package_name max 200 characters")
+        return v.strip()
+
+    @field_validator("depth")
+    @classmethod
+    def validate_depth(cls, v: int) -> int:
+        if v < 1 or v > 3:
+            raise ValueError("depth must be 1-3")
+        return v
+
+
+class ModelIntegrityParams(BaseModel):
+    """Parameters for research_model_integrity tool."""
+
+    model_name: str
+    source: Literal["huggingface", "pytorch", "civitai"] = "huggingface"
+    checks: list[str] | None = None
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("model_name")
+    @classmethod
+    def validate_model_name(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("model_name must be non-empty")
+        if len(v) > 500:
+            raise ValueError("model_name max 500 characters")
+        return v.strip()
+
+    @field_validator("checks")
+    @classmethod
+    def validate_checks(cls, v: list[str] | None) -> list[str] | None:
+        if v is not None:
+            valid_checks = {
+                "hash_verify", "size_anomaly", "metadata_tampering",
+                "backdoor_indicators", "provenance"
+            }
+            for check in v:
+                if check not in valid_checks:
+                    raise ValueError(f"invalid check: {check}")
+            if len(v) > 5:
+                raise ValueError("checks list max 5 items")
+        return v
+
+
+class HITLSubmitParams(BaseModel):
+    """Parameters for research_hitl_submit tool."""
+
+    strategy: str = Field(..., min_length=1, max_length=200)
+    prompt: str = Field(..., min_length=1, max_length=10000)
+    response: str = Field(..., min_length=1, max_length=50000)
+    model: str = Field(default="unknown", min_length=1, max_length=100)
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("strategy")
+    @classmethod
+    def validate_strategy(cls, v: str) -> str:
+        if len(v.strip()) == 0:
+            raise ValueError("strategy cannot be empty or whitespace-only")
+        return v.strip()
+
+    @field_validator("model")
+    @classmethod
+    def validate_model(cls, v: str) -> str:
+        if len(v.strip()) == 0:
+            raise ValueError("model cannot be empty or whitespace-only")
+        return v.strip()
+
+
+class HITLEvaluateParams(BaseModel):
+    """Parameters for research_hitl_evaluate tool."""
+
+    eval_id: str = Field(..., min_length=1, max_length=100)
+    score: float = Field(..., ge=1.0, le=10.0)
+    notes: str = Field(default="", max_length=2000)
+    tags: list[str] | None = Field(default=None, max_length=10)
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("eval_id")
+    @classmethod
+    def validate_eval_id(cls, v: str) -> str:
+        if len(v.strip()) == 0:
+            raise ValueError("eval_id cannot be empty")
+        return v.strip()
+
+    @field_validator("tags")
+    @classmethod
+    def validate_tags(cls, v: list[str] | None) -> list[str] | None:
+        if v is None:
+            return v
+        valid_tags = {"effective", "partial", "refused", "hallucinated", "dangerous", "safe"}
+        for tag in v:
+            if tag not in valid_tags:
+                raise ValueError(f"tag must be one of {valid_tags}, got '{tag}'")
+        return list(set(v))  # Remove duplicates
+
+
+class HITLQueueParams(BaseModel):
+    """Parameters for research_hitl_queue tool."""
+
+    status: str = Field(default="pending")
+    limit: int = Field(default=20, ge=1, le=100)
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, v: str) -> str:
+        valid_statuses = {"pending", "evaluated"}
+        if v not in valid_statuses:
+            raise ValueError(f"status must be one of {valid_statuses}, got '{v}'")
+        return v
+
+class AttackEconomySubmitParams(BaseModel):
+    """Parameters for research_economy_submit tool."""
+
+    strategy_name: str
+    target_model: str
+    asr: float
+    description: str = ""
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("strategy_name")
+    @classmethod
+    def validate_strategy_name(cls, v: str) -> str:
+        if len(v) < 3:
+            raise ValueError("strategy_name must be at least 3 characters")
+        if len(v) > 200:
+            raise ValueError("strategy_name max 200 characters")
+        return v.strip()
+
+    @field_validator("target_model")
+    @classmethod
+    def validate_target_model(cls, v: str) -> str:
+        if len(v) < 2:
+            raise ValueError("target_model must be at least 2 characters")
+        if len(v) > 100:
+            raise ValueError("target_model max 100 characters")
+        return v.strip()
+
+    @field_validator("asr")
+    @classmethod
+    def validate_asr(cls, v: float) -> float:
+        if not (0.0 <= v <= 1.0):
+            raise ValueError("asr must be between 0.0 and 1.0")
+        return v
+
+    @field_validator("description")
+    @classmethod
+    def validate_description(cls, v: str) -> str:
+        if len(v) > 1000:
+            raise ValueError("description max 1000 characters")
+        return v.strip()
+
+
+class AttackEconomyLeaderboardParams(BaseModel):
+    """Parameters for research_economy_leaderboard tool."""
+
+    top_n: int = 10
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("top_n")
+    @classmethod
+    def validate_top_n(cls, v: int) -> int:
+        if not (1 <= v <= 100):
+            raise ValueError("top_n must be between 1 and 100")
+        return v
+
+
+class FuseEvidenceParams(BaseModel):
+    """Parameters for research_fuse_evidence tool."""
+
+    claims: list[str]
+    sources: list[str] | None = None
+    fusion_method: Literal[
+        "weighted_consensus",
+        "citation_chain",
+        "academic_synthesis",
+        "expert_panel",
+        "meta_analysis",
+    ] = "weighted_consensus"
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("claims")
+    @classmethod
+    def validate_claims(cls, v: list[str]) -> list[str]:
+        if not v:
+            raise ValueError("claims list cannot be empty")
+        if len(v) > 100:
+            raise ValueError("claims max 100 items")
+        for claim in v:
+            if not isinstance(claim, str) or not claim.strip():
+                raise ValueError("all claims must be non-empty strings")
+            if len(claim) > 500:
+                raise ValueError("each claim max 500 characters")
+        return v
+
+    @field_validator("sources")
+    @classmethod
+    def validate_sources(cls, v: list[str] | None) -> list[str] | None:
+        if v is not None:
+            if len(v) > 100:
+                raise ValueError("sources max 100 items")
+            for source in v:
+                if not isinstance(source, str) or not source.strip():
+                    raise ValueError("all sources must be non-empty strings")
+                if len(source) > 256:
+                    raise ValueError("each source max 256 characters")
+        return v
+
+
+class AuthorityStackParams(BaseModel):
+    """Parameters for research_authority_stack tool."""
+
+    prompt: str
+    authority_layers: int = 5
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("prompt")
+    @classmethod
+    def validate_prompt(cls, v: str) -> str:
+        v = v.strip()
+        if not v or len(v) > 5000:
+            raise ValueError("prompt must be 1-5000 characters")
+        return v
+
+    @field_validator("authority_layers")
+    @classmethod
+    def validate_authority_layers(cls, v: int) -> int:
+        if v < 1 or v > 5:
+            raise ValueError("authority_layers must be 1-5")
+        return v
+
+
+class FunctorMapParams(BaseModel):
+    """Parameters for research_functor_translate tool."""
+
+    exploit: str
+    source_domain: Literal[
+        "cybersecurity",
+        "social_engineering",
+        "legal",
+        "academic",
+        "medical",
+    ] = "cybersecurity"
+    target_domain: Literal[
+        "cybersecurity",
+        "social_engineering",
+        "legal",
+        "academic",
+        "medical",
+    ] = "social_engineering"
+    preserve_structure: bool = True
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("exploit")
+    @classmethod
+    def validate_exploit(cls, v: str) -> str:
+        v = v.strip()
+        if not v or len(v) > 1000:
+            raise ValueError("exploit must be 1-1000 characters")
+        return v
+
+    @field_validator("source_domain", "target_domain", mode="before")
+    @classmethod
+    def validate_domain(cls, v: str) -> str:
+        v = v.lower().strip()
+        valid = {"cybersecurity", "social_engineering", "legal", "academic", "medical"}
+        if v not in valid:
+            raise ValueError(f"domain must be one of {valid}")
+        return v
+
+
+class StrangeAttractorParams(BaseModel):
+    """Parameters for research_attractor_trap tool."""
+
+    prompt: str
+    attractor_type: Literal["lorenz", "rossler", "henon", "logistic"] = "lorenz"
+    iterations: int = Field(default=100, ge=50, le=500)
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("prompt")
+    @classmethod
+    def validate_prompt(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("prompt must be non-empty string")
+        if len(v) > 2000:
+            raise ValueError("prompt max 2000 characters")
+        return v.strip()
+
+    @field_validator("attractor_type")
+    @classmethod
+    def validate_attractor_type(cls, v: str) -> str:
+        v = v.lower().strip()
+        valid = {"lorenz", "rossler", "henon", "logistic"}
+        if v not in valid:
+            raise ValueError(f"attractor_type must be one of {valid}")
+        return v

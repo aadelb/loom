@@ -52,11 +52,13 @@ from loom.tools import (
     academic_integrity,
     access_tools,
     adversarial_debate_tool,
+    adversarial_craft,
     agent_benchmark,
     auto_experiment,
     ai_safety,
     ai_safety_extended,
     antiforensics,
+    arxiv_pipeline,
     autonomous_agent,
     bias_lens,
     breach_check,
@@ -83,6 +85,7 @@ from loom.tools import (
     defender_mode,
     embedding_collision,
     ensemble_attack,
+    evidence_fusion,
     deep_research_agent,
     domain_intel,
     exploit_db,
@@ -91,6 +94,7 @@ from loom.tools import (
     fact_checker,
     fetch,
     full_pipeline,
+    functor_map,
     gap_tools_academic,
     gap_tools_advanced,
     gap_tools_ai,
@@ -103,6 +107,7 @@ from loom.tools import (
     hcs_report,
     hcs_rubric_tool,
     hcs_scorer,
+    hitl_eval,
     identity_resolve,
     infowar_tools,
     infra_analysis,
@@ -113,6 +118,7 @@ from loom.tools import (
     knowledge_injector,
     knowledge_graph,
     leak_scan,
+    lifetime_oracle,
     lightpanda_backend,
     markdown,
     memetic_simulator,
@@ -157,7 +163,9 @@ from loom.tools import (
     social_intel,
     social_scraper,
     spider,
+    strange_attractors,
     swarm_attack,
+    superposition_prompt,
     stagehand_backend,
     stealth,
     stego_detect,
@@ -167,14 +175,17 @@ from loom.tools import (
     strategy_feedback,
     strategy_evolution,
     stylometry,
+    supply_chain,
     supply_chain_intel,
     synth_echo,
     synthetic_data,
     threat_intel,
     threat_profile,
+    traffic_capture,
     tool_catalog,
     trend_predictor,
     unique_tools,
+    webhook_system,
     white_rabbit,
     vision_agent,
     workflow_engine,
@@ -999,6 +1010,10 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(strategy_feedback.research_strategy_log))
     mcp.tool()(_wrap_tool(strategy_feedback.research_strategy_recommend))
     mcp.tool()(_wrap_tool(strategy_feedback.research_strategy_stats))
+    # Human-in-the-Loop evaluation tools (3 tools)
+    mcp.tool()(_wrap_tool(hitl_eval.research_hitl_submit))
+    mcp.tool()(_wrap_tool(hitl_eval.research_hitl_evaluate))
+    mcp.tool()(_wrap_tool(hitl_eval.research_hitl_queue))
     mcp.tool()(_wrap_tool(strategy_cache.research_cached_strategy))
     mcp.tool()(_wrap_tool(strategy_evolution.research_evolve_strategies))
     mcp.tool()(_wrap_tool(coevolution.research_coevolve))
@@ -1081,7 +1096,11 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(stego_detect.research_stego_detect))
     mcp.tool()(_wrap_tool(stego_encoder.research_stego_encode))
     mcp.tool()(_wrap_tool(stego_encoder.research_stego_analyze))
+    mcp.tool()(_wrap_tool(superposition_prompt.research_superposition_attack))
+    mcp.tool()(_wrap_tool(strange_attractors.research_attractor_trap))
     mcp.tool()(_wrap_tool(threat_profile.research_threat_profile, "fetch"))
+    mcp.tool()(_wrap_tool(traffic_capture.research_capture_har, "fetch"))
+    mcp.tool()(_wrap_tool(traffic_capture.research_extract_cookies))
     # Threat intelligence tools (7 tools for dark market, ransomware, phishing, botnets, malware, domains, IOCs)
     mcp.tool()(_wrap_tool(threat_intel.research_dark_market_monitor))
     mcp.tool()(_wrap_tool(threat_intel.research_ransomware_tracker))
@@ -1107,6 +1126,8 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(supply_chain_intel.research_supply_chain_risk, "fetch"))
     mcp.tool()(_wrap_tool(supply_chain_intel.research_patent_landscape, "search"))
     mcp.tool()(_wrap_tool(supply_chain_intel.research_dependency_audit, "fetch"))
+    mcp.tool()(_wrap_tool(supply_chain.research_package_audit))
+    mcp.tool()(_wrap_tool(supply_chain.research_model_integrity))
 
     # Domain intelligence tools
     mcp.tool()(_wrap_tool(domain_intel.research_whois, "fetch"))
@@ -1179,6 +1200,9 @@ def _register_tools(mcp: FastMCP) -> None:
     # Defender Mode: Blue-team system prompt hardening (2 tools)
     mcp.tool()(_wrap_tool(defender_mode.research_defend_test))
     mcp.tool()(_wrap_tool(defender_mode.research_harden_prompt))
+    # Proactive Adversarial Defense: Attack prediction and preemptive patching (2 tools)
+    mcp.tool()(_wrap_tool(proactive_defense.research_predict_attacks))
+    mcp.tool()(_wrap_tool(proactive_defense.research_preemptive_patch))
     # Embedding Collision Attack: RAG poisoning tools (2 tools)
     mcp.tool()(_wrap_tool(embedding_collision.research_embedding_collide))
     mcp.tool()(_wrap_tool(embedding_collision.research_rag_attack))
@@ -1187,6 +1211,10 @@ def _register_tools(mcp: FastMCP) -> None:
     # Ensemble Adversarial Training: Combine multiple strategies for robustness (2 tools)
     mcp.tool()(_wrap_tool(ensemble_attack.research_ensemble_attack))
     mcp.tool()(_wrap_tool(ensemble_attack.research_attack_portfolio))
+    mcp.tool()(_wrap_tool(evidence_fusion.research_fuse_evidence))
+    mcp.tool()(_wrap_tool(evidence_fusion.research_authority_stack))
+    mcp.tool()(_wrap_tool(adversarial_craft.research_craft_adversarial))
+    mcp.tool()(_wrap_tool(adversarial_craft.research_adversarial_batch))
     mcp.tool()(_wrap_tool(model_fingerprinter.research_fingerprint_behavior, "llm"))
 
 
@@ -1212,6 +1240,10 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(academic_integrity.research_retraction_check, "fetch"))
     mcp.tool()(_wrap_tool(academic_integrity.research_predatory_journal_check, "fetch"))
 
+
+    # arXiv research paper extraction pipeline
+    mcp.tool()(_wrap_tool(arxiv_pipeline.research_arxiv_ingest, "search"))
+    mcp.tool()(_wrap_tool(arxiv_pipeline.research_arxiv_extract_techniques, "search"))
     # HCS-10 academic research tools (8 tools for research integrity & anomaly detection)
     mcp.tool()(_wrap_tool(hcs10_academic.research_grant_forensics))
     mcp.tool()(_wrap_tool(hcs10_academic.research_monoculture_detect))
@@ -1263,6 +1295,7 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(memetic_simulator.research_memetic_simulate))
     mcp.tool()(_wrap_tool(report_generator.research_generate_report, "search"))
     mcp.tool()(_wrap_tool(resilience_predictor.research_predict_resilience))
+    mcp.tool()(_wrap_tool(lifetime_oracle.research_lifetime_predict))
 
     # Unique research tools (8 tools for propaganda, credibility, cascades, etc.)
     mcp.tool()(_wrap_tool(unique_tools.research_propaganda_detector))
@@ -1278,6 +1311,11 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(vision_agent.research_vision_compare, "fetch"))
     # White Rabbit Path discovery tool
     mcp.tool()(_wrap_tool(white_rabbit.research_white_rabbit))
+
+    # Webhook/Callback system for long-running tasks (3 tools)
+    mcp.tool()(_wrap_tool(webhook_system.research_webhook_register))
+    mcp.tool()(_wrap_tool(webhook_system.research_webhook_fire))
+    mcp.tool()(_wrap_tool(webhook_system.research_webhook_list))
 
     # Cross-model transfer attack tools
     mcp.tool()(_wrap_tool(xover_attack.research_xover_transfer))
@@ -2025,6 +2063,9 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(prompt_reframe.research_format_smuggle))
     mcp.tool()(_wrap_tool(prompt_reframe.research_fingerprint_model))
     mcp.tool()(_wrap_tool(prompt_reframe.research_adaptive_reframe))
+
+    # Category theoretic functor mapping (exploit translation across domains)
+    mcp.tool()(_wrap_tool(functor_map.research_functor_translate))
 
     # Multi-LLM query (ask all available providers simultaneously)
     from loom.tools import ask_all_models, multi_llm
