@@ -171,7 +171,6 @@ from loom.tools import (
     multi_search,
     nightcrawler,
     nl_executor,
-    multi_search,
     neo4j_backend,
     neuromorphic,
     network_map,
