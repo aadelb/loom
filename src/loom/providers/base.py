@@ -126,6 +126,17 @@ def _estimate_cost(provider: str, model: str, input_tokens: int, output_tokens: 
     return 0.0
 
 
+def get_available_providers() -> list[str]:
+    """Return list of configured LLM provider names."""
+    import os
+    providers = []
+    key_map = {"groq": "GROQ_API_KEY", "nvidia_nim": "NVIDIA_NIM_API_KEY", "deepseek": "DEEPSEEK_API_KEY", "gemini": "GOOGLE_AI_KEY", "moonshot": "MOONSHOT_API_KEY", "openai": "OPENAI_API_KEY", "anthropic": "ANTHROPIC_API_KEY"}
+    for name, env_var in key_map.items():
+        if os.environ.get(env_var):
+            providers.append(name)
+    return providers or ["groq", "nvidia_nim"]
+
+
 class LLMProvider(ABC):
     """Abstract base class for LLM providers.
 
