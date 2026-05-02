@@ -105,7 +105,7 @@ class DeepSeekProvider(LLMProvider):
         # Validate timeout to prevent abuse
         timeout = max(1, min(int(timeout), 600))
         # Use provider's own default if passed model isn't a DeepSeek-compatible model
-        DEEPSEEK_MODELS = {"deepseek-chat", "deepseek-reasoner"}
+        DEEPSEEK_MODELS = {"deepseek-chat", "deepseek-reasoning", "deepseek-reasoner"}
         if model and "/" in model:
             model = self.default_model
         elif model and model not in DEEPSEEK_MODELS:

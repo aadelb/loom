@@ -172,7 +172,7 @@ async def _check_for_retractions(
         }
 
     items = crossref_data.get("message", {}).get("items", [])
-    papers_checked = len(items)
+    papers_checked = min(len(items), max_results)
 
     for item in items[:max_results]:
         # Check for retraction status in Crossref metadata

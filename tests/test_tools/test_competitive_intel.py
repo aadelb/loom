@@ -448,7 +448,8 @@ class TestSynthesizeSignals:
 class TestResearchCompetitiveIntel:
     """Main competitive_intel tool integration."""
 
-    def test_competitive_intel_valid_company(self) -> None:
+    @pytest.mark.asyncio
+    async def test_competitive_intel_valid_company(self) -> None:
         """Competitive intel returns proper structure for valid company."""
         with patch("loom.tools.competitive_intel._fetch_sec_filings", new_callable=AsyncMock) as mock_sec, \
              patch("loom.tools.competitive_intel._fetch_patents", new_callable=AsyncMock) as mock_patent, \
@@ -467,7 +468,7 @@ class TestResearchCompetitiveIntel:
             mock_ct.return_value = {"total_found": 8, "recent_subdomains": []}
             mock_dns.return_value = {"records": {}, "detected_technologies": []}
 
-            result = research_competitive_intel("OpenAI")
+            result = await research_competitive_intel("OpenAI")
 
             assert result["company"] == "OpenAI"
             assert "domain" in result
@@ -480,7 +481,8 @@ class TestResearchCompetitiveIntel:
             assert "dns_records" in result
             assert "overall_assessment" in result
 
-    def test_competitive_intel_with_optional_params(self) -> None:
+    @pytest.mark.asyncio
+    async def test_competitive_intel_with_optional_params(self) -> None:
         """Competitive intel accepts optional domain and github_org."""
         with patch("loom.tools.competitive_intel._fetch_sec_filings", new_callable=AsyncMock) as mock_sec, \
              patch("loom.tools.competitive_intel._fetch_patents", new_callable=AsyncMock) as mock_patent, \
@@ -494,7 +496,7 @@ class TestResearchCompetitiveIntel:
             mock_ct.return_value = {"total_found": 0, "recent_subdomains": []}
             mock_dns.return_value = {"records": {}, "detected_technologies": []}
 
-            result = research_competitive_intel(
+            result = await research_competitive_intel(
                 "MyCompany",
                 domain="mycompany.io",
                 github_org="my-company-org",
@@ -503,22 +505,25 @@ class TestResearchCompetitiveIntel:
             assert result["domain"] == "mycompany.io"
             assert result["github_org"] == "my-company-org"
 
-    def test_competitive_intel_empty_company(self) -> None:
+    @pytest.mark.asyncio
+    async def test_competitive_intel_empty_company(self) -> None:
         """Competitive intel rejects empty company name."""
-        result = research_competitive_intel("")
+        result = await research_competitive_intel("")
 
         assert "error" in result
         assert "1-256" in result.get("error", "")
 
-    def test_competitive_intel_company_too_long(self) -> None:
+    @pytest.mark.asyncio
+    async def test_competitive_intel_company_too_long(self) -> None:
         """Competitive intel rejects overly long company name."""
         long_name = "A" * 300
-        result = research_competitive_intel(long_name)
+        result = await research_competitive_intel(long_name)
 
         assert "error" in result
         assert "1-256" in result.get("error", "")
 
-    def test_competitive_intel_domain_inference(self) -> None:
+    @pytest.mark.asyncio
+    async def test_competitive_intel_domain_inference(self) -> None:
         """Competitive intel infers domain from company name."""
         with patch("loom.tools.competitive_intel._fetch_sec_filings", new_callable=AsyncMock) as mock_sec, \
              patch("loom.tools.competitive_intel._fetch_patents", new_callable=AsyncMock) as mock_patent, \
@@ -532,13 +537,14 @@ class TestResearchCompetitiveIntel:
             mock_ct.return_value = {"total_found": 0, "recent_subdomains": []}
             mock_dns.return_value = {"records": {}, "detected_technologies": []}
 
-            result = research_competitive_intel("My New Company")
+            result = await research_competitive_intel("My New Company")
 
             # Domain should be inferred and lowercased
             assert "my-new-company" in result["domain"].lower()
             assert ".com" in result["domain"]
 
-    def test_competitive_intel_github_org_inference(self) -> None:
+    @pytest.mark.asyncio
+    async def test_competitive_intel_github_org_inference(self) -> None:
         """Competitive intel infers github_org from company name."""
         with patch("loom.tools.competitive_intel._fetch_sec_filings", new_callable=AsyncMock) as mock_sec, \
              patch("loom.tools.competitive_intel._fetch_patents", new_callable=AsyncMock) as mock_patent, \
@@ -552,13 +558,14 @@ class TestResearchCompetitiveIntel:
             mock_ct.return_value = {"total_found": 0, "recent_subdomains": []}
             mock_dns.return_value = {"records": {}, "detected_technologies": []}
 
-            result = research_competitive_intel("Test Company Inc")
+            result = await research_competitive_intel("Test Company Inc")
 
             # GitHub org should be inferred
             assert "test" in result["github_org"].lower()
             assert "company" in result["github_org"].lower()
 
-    def test_competitive_intel_whitespace_normalization(self) -> None:
+    @pytest.mark.asyncio
+    async def test_competitive_intel_whitespace_normalization(self) -> None:
         """Competitive intel normalizes whitespace in inputs."""
         with patch("loom.tools.competitive_intel._fetch_sec_filings", new_callable=AsyncMock) as mock_sec, \
              patch("loom.tools.competitive_intel._fetch_patents", new_callable=AsyncMock) as mock_patent, \
@@ -572,7 +579,7 @@ class TestResearchCompetitiveIntel:
             mock_ct.return_value = {"total_found": 0, "recent_subdomains": []}
             mock_dns.return_value = {"records": {}, "detected_technologies": []}
 
-            result = research_competitive_intel(
+            result = await research_competitive_intel(
                 "  OpenAI  ",
                 domain="  openai.com  ",
                 github_org="  openai  ",
