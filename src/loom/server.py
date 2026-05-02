@@ -1983,6 +1983,8 @@ def _register_tools(mcp: FastMCP) -> None:
 
     # Previously missing registrations (found by Gemini audit)
     mcp.tool()(_wrap_tool(change_monitor.research_change_monitor, "fetch"))
+    mcp.tool()(_wrap_tool(knowledge_injector.research_personalize_output))
+    mcp.tool()(_wrap_tool(knowledge_injector.research_adapt_complexity))
     mcp.tool()(_wrap_tool(knowledge_graph.research_knowledge_graph, "search"))
     mcp.tool()(_wrap_tool(graph_scraper.research_graph_scrape, "fetch"))
     mcp.tool()(_wrap_tool(graph_scraper.research_knowledge_extract, "search"))
