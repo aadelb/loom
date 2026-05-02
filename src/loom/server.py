@@ -53,6 +53,7 @@ from loom.tools import (
     access_tools,
     adversarial_debate_tool,
     agent_benchmark,
+    auto_experiment,
     ai_safety,
     ai_safety_extended,
     antiforensics,
@@ -81,10 +82,12 @@ from loom.tools import (
     deep,
     defender_mode,
     embedding_collision,
+    ensemble_attack,
     deep_research_agent,
     domain_intel,
     exploit_db,
     ethereum_tools,
+    explainability,
     fact_checker,
     fetch,
     full_pipeline,
@@ -107,6 +110,7 @@ from loom.tools import (
     invisible_web,
     job_signals,
     js_intel,
+    knowledge_injector,
     knowledge_graph,
     leak_scan,
     lightpanda_backend,
@@ -114,6 +118,7 @@ from loom.tools import (
     memetic_simulator,
     metadata_forensics,
     meta_learner,
+    multilang_attack,
     model_fingerprinter,
     multi_search,
     nightcrawler,
@@ -139,11 +144,13 @@ from loom.tools import (
     report_generator,
     resilience_predictor,
     response_synthesizer,
+    resumption,
     rss_monitor,
     salary_synthesizer,
     scraper_engine_tools,
     search,
     security_headers,
+    safety_predictor,
     sherlock_backend,
     signal_detection,
     social_graph,
@@ -171,6 +178,7 @@ from loom.tools import (
     white_rabbit,
     vision_agent,
     workflow_engine,
+    xover_attack,
 )
 from loom.tracing import install_tracing, new_request_id
 
@@ -979,6 +987,9 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(cyberscraper.research_stealth_browser, "fetch"))
     mcp.tool()(_wrap_tool(cache_mgmt.research_cache_stats))
     mcp.tool()(_wrap_tool(cache_mgmt.research_cache_clear))
+    mcp.tool()(_wrap_tool(resumption.research_checkpoint_save))
+    mcp.tool()(_wrap_tool(resumption.research_checkpoint_resume))
+    mcp.tool()(_wrap_tool(resumption.research_checkpoint_list))
     mcp.tool()(_wrap_tool(chronos.research_chronos_reverse))
     mcp.tool()(_wrap_tool(exploit_db.research_exploit_register))
     mcp.tool()(_wrap_tool(exploit_db.research_exploit_search))
@@ -993,6 +1004,8 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(coevolution.research_coevolve))
     mcp.tool()(_wrap_tool(meta_learner.research_meta_learn))
     mcp.tool()(_wrap_tool(predictive_ranker.research_predict_success))
+    mcp.tool()(_wrap_tool(auto_experiment.research_run_experiment))
+    mcp.tool()(_wrap_tool(auto_experiment.research_experiment_design))
     mcp.tool()(_wrap_tool(autonomous_agent.research_auto_redteam))
     mcp.tool()(_wrap_tool(autonomous_agent.research_schedule_redteam))
     mcp.tool()(_wrap_tool(workflow_engine.research_workflow_create))
@@ -1152,6 +1165,13 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(ai_safety_extended.research_hallucination_benchmark, "fetch"))
     mcp.tool()(_wrap_tool(ai_safety_extended.research_adversarial_robustness, "fetch"))
 
+    # Model Safety Update Predictor (1 tool for defense evolution prediction)
+    mcp.tool()(_wrap_tool(safety_predictor.research_predict_safety_update))
+
+    # Explainability Engine for jailbreak strategies (2 tools for root cause analysis)
+    mcp.tool()(_wrap_tool(explainability.research_explain_bypass))
+    mcp.tool()(_wrap_tool(explainability.research_vulnerability_map))
+
 
     # Thinking-phase injection tools for reasoning model exploitation (2 tools)
     mcp.tool()(_wrap_tool(thinking_injection.research_thinking_inject))
@@ -1159,8 +1179,14 @@ def _register_tools(mcp: FastMCP) -> None:
     # Defender Mode: Blue-team system prompt hardening (2 tools)
     mcp.tool()(_wrap_tool(defender_mode.research_defend_test))
     mcp.tool()(_wrap_tool(defender_mode.research_harden_prompt))
+    # Embedding Collision Attack: RAG poisoning tools (2 tools)
+    mcp.tool()(_wrap_tool(embedding_collision.research_embedding_collide))
+    mcp.tool()(_wrap_tool(embedding_collision.research_rag_attack))
     mcp.tool()(_wrap_tool(adversarial_debate_tool.research_adversarial_debate, "llm"))
     # LLM behavioral fingerprinting tool (1 tool for personality vector analysis)
+    # Ensemble Adversarial Training: Combine multiple strategies for robustness (2 tools)
+    mcp.tool()(_wrap_tool(ensemble_attack.research_ensemble_attack))
+    mcp.tool()(_wrap_tool(ensemble_attack.research_attack_portfolio))
     mcp.tool()(_wrap_tool(model_fingerprinter.research_fingerprint_behavior, "llm"))
 
 
@@ -1250,6 +1276,12 @@ def _register_tools(mcp: FastMCP) -> None:
     # Vision agent for screenshot and visual analysis
     mcp.tool()(_wrap_tool(vision_agent.research_vision_browse, "fetch"))
     mcp.tool()(_wrap_tool(vision_agent.research_vision_compare, "fetch"))
+    # White Rabbit Path discovery tool
+    mcp.tool()(_wrap_tool(white_rabbit.research_white_rabbit))
+
+    # Cross-model transfer attack tools
+    mcp.tool()(_wrap_tool(xover_attack.research_xover_transfer))
+    mcp.tool()(_wrap_tool(xover_attack.research_xover_matrix))
 
 
     # Consensus and debate tools
@@ -1972,6 +2004,11 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(synthetic_data.research_augment_dataset))
     mcp.tool()(_wrap_tool(synth_echo.research_synth_echo, "fetch"))
     mcp.tool()(_wrap_tool(psycholinguistic.research_psycholinguistic))
+
+    # Multi-language confusion attacks (3 tools)
+    mcp.tool()(_wrap_tool(multilang_attack.research_code_switch_attack))
+    mcp.tool()(_wrap_tool(multilang_attack.research_script_confusion))
+    mcp.tool()(_wrap_tool(multilang_attack.research_token_split_attack))
 
     # Prompt danger pre-analysis
     mcp.tool()(_wrap_tool(prompt_analyzer.research_prompt_analyze))
