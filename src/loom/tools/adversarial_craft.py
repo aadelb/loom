@@ -131,7 +131,13 @@ async def research_craft_adversarial(
         tokens = _tokenize_simple(benign_input)
         trigger_words = {"bypass", "override", "ignore", "disable", "unlock"}
         for i, token in enumerate(tokens):
-            if len(changes) / max(1, len(tokens)) > perturbation_budget:
+            # Check if we've reached budget by computing current perturbation
+            test_tokens = tokens.copy()
+            test_tokens[i] = target_output if i % 3 == 0 else f"[{token}]"
+            test_text = _detokenize(test_tokens)
+            test_dist = _compute_edit_distance(benign_input, test_text)
+            test_pert = test_dist / max(1, len(benign_input))
+            if test_pert > perturbation_budget:
                 break
             if token.lower() in trigger_words:
                 continue
@@ -168,26 +174,36 @@ async def research_craft_adversarial(
         )
 
     elif method == "unicode_perturb":
+        chars_list = list(benign_input)
         for i, char in enumerate(benign_input):
-            if len(changes) / max(1, len(benign_input)) > perturbation_budget:
-                break
+            # Check budget before making change
+            test_chars = chars_list.copy()
             variants = _get_unicode_variants(char)
             if variants:
                 replacement = variants[i % len(variants)]
-                adversarial = (
-                    adversarial[:i]
-                    + replacement
-                    + adversarial[i + 1 :]
-                )
+                test_chars[i] = replacement
+                test_text = "".join(test_chars)
+                test_dist = _compute_edit_distance(benign_input, test_text)
+                test_pert = test_dist / max(1, len(benign_input))
+                if test_pert > perturbation_budget:
+                    break
+                chars_list[i] = replacement
                 changes.append(
                     TokenChange(i, char, replacement, "unicode_obfuscation")
                 )
+        adversarial = "".join(chars_list)
 
     elif method == "whitespace_inject":
         chars_list = list(benign_input)
         insertion_indices = []
         for i in range(1, len(benign_input), max(1, len(benign_input) // 3)):
-            if len(changes) / max(1, len(benign_input)) < perturbation_budget:
+            # Check budget before insertion
+            test_chars = chars_list.copy()
+            test_chars.insert(i, "​")
+            test_text = "".join(test_chars)
+            test_dist = _compute_edit_distance(benign_input, test_text)
+            test_pert = test_dist / max(1, len(benign_input))
+            if test_pert <= perturbation_budget:
                 insertion_indices.append(i)
                 changes.append(
                     TokenChange(i, "", "​", "zero_width_space_insert")
@@ -204,11 +220,17 @@ async def research_craft_adversarial(
             "i want": "i need",
         }
         for i, token in enumerate(tokens):
-            if len(changes) / max(1, len(tokens)) > perturbation_budget:
-                break
             lower_token = token.lower()
             if lower_token in shift_replacements:
+                # Check budget before change
+                test_tokens = tokens.copy()
                 replacement = shift_replacements[lower_token]
+                test_tokens[i] = replacement
+                test_text = _detokenize(test_tokens)
+                test_dist = _compute_edit_distance(benign_input, test_text)
+                test_pert = test_dist / max(1, len(benign_input))
+                if test_pert > perturbation_budget:
+                    break
                 changes.append(
                     TokenChange(i, token, replacement, "semantic_drift")
                 )

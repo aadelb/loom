@@ -16,7 +16,6 @@ keywords = [
   "claude",
   "agent",
   "scrapling",
-  "crawl4ai",
 ]
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -47,13 +46,11 @@ dependencies = [
   "typer>=0.24",
   "rich>=14.3",
   "scrapling>=0.4.5",
-  "crawl4ai>=0.8.6",
   "firecrawl-py>=4.22",
   "exa-py>=2.11",
   "tavily-python>=0.7",
   "openai>=2.31",
   "python-dotenv>=1.2",
-  "ddgs>=3.9,<9",
   "aiosqlite>=0.20",
   "trafilatura>=1.6",
   "langdetect>=1.0",
