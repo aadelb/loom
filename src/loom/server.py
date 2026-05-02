@@ -78,6 +78,7 @@ from loom.tools import (
     ethereum_tools,
     fact_checker,
     fetch,
+    full_pipeline,
     gap_tools_academic,
     gap_tools_advanced,
     gap_tools_ai,
@@ -1115,6 +1116,7 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(hcs_scorer.research_hcs_score, "analysis"))
     mcp.tool()(_wrap_tool(hcs_report.research_hcs_report, "analysis"))
     mcp.tool()(_wrap_tool(hcs_rubric_tool.research_hcs_rubric, "analysis"))
+    mcp.tool()(_wrap_tool(full_pipeline.research_full_pipeline, "orchestration"))
 
     # Creative research tools (4 tools for advanced research scenarios)
     mcp.tool()(_wrap_tool(darkweb_early_warning.research_darkweb_early_warning, "search"))
