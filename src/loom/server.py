@@ -62,6 +62,7 @@ from loom.tools import (
     ai_safety_extended,
     auto_docs,
     antiforensics,
+    anomaly_detector,
     arxiv_pipeline,
     autonomous_agent,
     bias_lens,
@@ -71,7 +72,9 @@ from loom.tools import (
     breach_check,
     circuit_breaker,
     cache_mgmt,
+    changelog_gen,
     chain_composer,
+    compliance_checker,
     config_reload,
     cert_analyzer,
     chronos,
@@ -79,7 +82,9 @@ from loom.tools import (
     company_intel,
     competitive_intel,
     competitive_monitor,
+    context_manager,
     coevolution,
+    credential_vault,
     crypto_risk,
     crypto_trace,
     cost_estimator,
@@ -88,6 +93,7 @@ from loom.tools import (
     dark_forum,
     dark_recon,
     data_export,
+    data_pipeline,
     dependency_graph,
     darkweb_early_warning,
     dead_content,
@@ -98,6 +104,7 @@ from loom.tools import (
     deep,
     defender_mode,
     embedding_collision,
+    env_inspector,
     enterprise_sso,
     error_wrapper,
     ensemble_attack,
@@ -107,6 +114,7 @@ from loom.tools import (
     exploit_db,
     ethereum_tools,
     explainability,
+    execution_planner,
     feature_flags,
     fact_checker,
     gamification,
@@ -127,21 +135,25 @@ from loom.tools import (
     hcs_rubric_tool,
     hcs_scorer,
     hitl_eval,
+    integration_runner,
     identity_resolve,
     infowar_tools,
     infra_analysis,
     infra_correlator,
+    input_sanitizer,
     invisible_web,
     job_signals,
     key_rotation,
     js_intel,
     json_logger,
     knowledge_injector,
+    knowledge_base,
     knowledge_graph,
     leak_scan,
     lifetime_oracle,
     lightpanda_backend,
     markdown,
+    metric_alerts,
     memory_mgmt,
     memetic_simulator,
     metadata_forensics,
@@ -159,12 +171,15 @@ from loom.tools import (
     onion_discover,
     osint_extended,
     output_formatter,
+    output_diff,
     p3_tools,
     polyglot_scraper,
     persistent_memory,
+    plugin_loader,
     passive_recon,
     pdf_extract,
     projectdiscovery,
+    provider_health,
     prompt_analyzer,
     prompt_reframe,
     progress_tracker,
@@ -176,11 +191,13 @@ from loom.tools import (
     realtime_adapt,
     realtime_monitor,
     report_generator,
+    result_aggregator,
     resilience_predictor,
     research_journal,
     research_scheduler,
     retry_middleware,
     response_synthesizer,
+    response_cache,
     redteam_hub,
     resumption,
     rss_monitor,
@@ -190,11 +207,13 @@ from loom.tools import (
     security_headers,
     safety_predictor,
     safety_neurons,
+    schema_migrate,
     sherlock_backend,
     signal_detection,
     social_graph,
     social_intel,
     social_scraper,
+    smart_router,
     spider,
     session_replay,
     startup_validator,
@@ -213,14 +232,18 @@ from loom.tools import (
     stylometry,
     supply_chain,
     supply_chain_intel,
+    task_resolver,
     synth_echo,
     telemetry,
+    tenant_isolation,
     synthetic_data,
     threat_intel,
     threat_profile,
     traffic_capture,
     tool_catalog,
     tool_tags,
+    tool_versioning,
+    tool_profiler,
     trend_predictor,
     usage_analytics,
     unique_tools,
@@ -1034,6 +1057,9 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(swarm_attack.research_swarm_attack))
     mcp.tool()(_wrap_tool(markdown.research_markdown, "fetch"))
     mcp.tool()(_wrap_tool(search.research_search, "search"))
+    # Smart Search Router tools (2 tools)
+    mcp.tool()(_wrap_tool(smart_router.research_route_query))
+    mcp.tool()(_wrap_tool(smart_router.research_route_batch))
     mcp.tool()(_wrap_tool(deep.research_deep, "deep"))
     mcp.tool()(_wrap_tool(deep_research_agent.research_hierarchical_research, "hierarchical_research"))
     mcp.tool()(_wrap_tool(github.research_github, "search"))
@@ -1046,6 +1072,30 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(error_wrapper.research_error_stats))
     mcp.tool()(_wrap_tool(error_wrapper.research_error_clear))
     mcp.tool()(_wrap_tool(cache_mgmt.research_cache_clear))
+    mcp.tool()(_wrap_tool(response_cache.research_cache_store))
+    mcp.tool()(_wrap_tool(response_cache.research_cache_lookup))
+
+    # Data Pipeline Builder tools (3 tools)
+    mcp.tool()(_wrap_tool(data_pipeline.research_pipeline_create))
+    mcp.tool()(_wrap_tool(data_pipeline.research_pipeline_validate))
+    mcp.tool()(_wrap_tool(data_pipeline.research_pipeline_list))
+    mcp.tool()(_wrap_tool(response_cache.research_cache_stats))
+    # Input sanitization and validation tools (2 tools)
+    mcp.tool()(_wrap_tool(input_sanitizer.research_sanitize_input))
+    mcp.tool()(_wrap_tool(input_sanitizer.research_validate_params))
+    mcp.tool()(_wrap_tool(metric_alerts.research_alert_create))
+    mcp.tool()(_wrap_tool(metric_alerts.research_alert_check))
+    mcp.tool()(_wrap_tool(metric_alerts.research_alert_list))
+    # Changelog generator tools (2 tools)
+    mcp.tool()(_wrap_tool(changelog_gen.research_changelog_generate))
+    mcp.tool()(_wrap_tool(changelog_gen.research_changelog_stats))
+    # Plugin loader tools (3 tools)
+    mcp.tool()(_wrap_tool(plugin_loader.research_plugin_load))
+    mcp.tool()(_wrap_tool(plugin_loader.research_plugin_list))
+    mcp.tool()(_wrap_tool(plugin_loader.research_plugin_unload))
+    # Anomaly detection tools (2 tools)
+    mcp.tool()(_wrap_tool(anomaly_detector.research_detect_anomalies))
+    mcp.tool()(_wrap_tool(anomaly_detector.research_detect_text_anomalies))
     # Tool Chain Composer (3 tools)
     mcp.tool()(_wrap_tool(chain_composer.research_chain_define))
     mcp.tool()(_wrap_tool(chain_composer.research_chain_list))
@@ -1070,6 +1120,14 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(config_reload.research_config_watch))
     mcp.tool()(_wrap_tool(config_reload.research_config_check))
     mcp.tool()(_wrap_tool(config_reload.research_config_diff))
+    # Research context management (3 tools)
+    mcp.tool()(_wrap_tool(context_manager.research_context_set))
+    mcp.tool()(_wrap_tool(context_manager.research_context_get))
+    mcp.tool()(_wrap_tool(context_manager.research_context_clear))
+    # Provider health monitoring (3 tools)
+    mcp.tool()(_wrap_tool(provider_health.research_provider_ping))
+    mcp.tool()(_wrap_tool(provider_health.research_provider_history))
+    mcp.tool()(_wrap_tool(provider_health.research_provider_recommend))
     mcp.tool()(_wrap_tool(health_dashboard.research_dashboard_html))
     # Backup system (3 tools)
     mcp.tool()(_wrap_tool(backup_system.research_backup_create))
@@ -1087,6 +1145,10 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(memory_mgmt.research_memory_gc))
     mcp.tool()(_wrap_tool(memory_mgmt.research_memory_profile))
 
+    # Tool performance profiler (2 tools)
+    mcp.tool()(_wrap_tool(tool_profiler.research_profile_tool))
+    mcp.tool()(_wrap_tool(tool_profiler.research_profile_hotspots))
+
     # Deployment automation tools (3 tools)
     mcp.tool()(_wrap_tool(deployment.research_deploy_status))
     mcp.tool()(_wrap_tool(deployment.research_deploy_history))
@@ -1095,6 +1157,9 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(audit_log.research_audit_record))
     mcp.tool()(_wrap_tool(audit_log.research_audit_query))
     mcp.tool()(_wrap_tool(audit_log.research_audit_export))
+    # Environment inspector tools (2 tools)
+    mcp.tool()(_wrap_tool(env_inspector.research_env_inspect))
+    mcp.tool()(_wrap_tool(env_inspector.research_env_requirements))
     # Enterprise SSO integration tools (3 tools)
     mcp.tool()(_wrap_tool(enterprise_sso.research_sso_configure))
     mcp.tool()(_wrap_tool(enterprise_sso.research_sso_validate_token))
@@ -1125,9 +1190,15 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(chronos.research_chronos_reverse))
     mcp.tool()(_wrap_tool(exploit_db.research_exploit_register))
     mcp.tool()(_wrap_tool(exploit_db.research_exploit_search))
+    # Result aggregation tools (2 tools)
+    mcp.tool()(_wrap_tool(result_aggregator.research_aggregate_results))
+    mcp.tool()(_wrap_tool(result_aggregator.research_aggregate_texts))
     mcp.tool()(_wrap_tool(exploit_db.research_exploit_stats))
     mcp.tool()(_wrap_tool(output_formatter.research_format_report))
     mcp.tool()(_wrap_tool(output_formatter.research_extract_actionables))
+    # Output diff tracking tools (2 tools)
+    mcp.tool()(_wrap_tool(output_diff.research_diff_compare))
+    mcp.tool()(_wrap_tool(output_diff.research_diff_track))
     mcp.tool()(_wrap_tool(strategy_feedback.research_strategy_log))
     mcp.tool()(_wrap_tool(strategy_feedback.research_strategy_recommend))
     mcp.tool()(_wrap_tool(strategy_feedback.research_strategy_stats))
@@ -1201,6 +1272,8 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(dark_forum.research_dark_forum, "search"))
     mcp.tool()(_wrap_tool(infra_correlator.research_infra_correlator, "fetch"))
     mcp.tool()(_wrap_tool(passive_recon.research_passive_recon, "fetch"))
+    mcp.tool()(_wrap_tool(network_map.research_network_map))
+    mcp.tool()(_wrap_tool(network_map.research_network_visualize))
     mcp.tool()(_wrap_tool(gap_tools_infra.research_cloud_enum, "fetch"))
     mcp.tool()(_wrap_tool(gap_tools_infra.research_github_secrets, "search"))
     mcp.tool()(_wrap_tool(gap_tools_infra.research_whois_correlator, "fetch"))
@@ -1286,6 +1359,9 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(access_tools.research_credential_monitor, "fetch"))
     mcp.tool()(_wrap_tool(access_tools.research_deepfake_checker, "fetch"))
     # Identity resolution tool
+    # Integration testing tools (2 tools for validating all 311 tool modules)
+    mcp.tool()(_wrap_tool(integration_runner.research_integration_test))
+    mcp.tool()(_wrap_tool(integration_runner.research_smoke_test))
     mcp.tool()(_wrap_tool(identity_resolve.research_identity_resolve, "fetch"))
 
     # Information warfare tools (5 tools for narrative tracking, bot detection, censorship)
@@ -1314,6 +1390,9 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(signal_detection.research_sec_tracker, "search"))
     mcp.tool()(_wrap_tool(breach_check.research_breach_check, "fetch"))
     mcp.tool()(_wrap_tool(breach_check.research_password_check))
+    # Compliance Checker tools (2 tools for regulatory validation)
+    mcp.tool()(_wrap_tool(compliance_checker.research_compliance_check))
+    mcp.tool()(_wrap_tool(compliance_checker.research_pii_scan))
 
     # AI Safety red-team tools (5 tools for EU AI Act Article 15 compliance testing)
     mcp.tool()(_wrap_tool(ai_safety.research_prompt_injection_test, "fetch"))
@@ -1527,6 +1606,15 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(session_replay.research_session_record))
     mcp.tool()(_wrap_tool(session_replay.research_session_replay))
     mcp.tool()(_wrap_tool(session_replay.research_session_list))
+
+    # Task dependency resolver tools (2 tools)
+    mcp.tool()(_wrap_tool(task_resolver.research_resolve_order))
+    mcp.tool()(_wrap_tool(task_resolver.research_critical_path))
+
+    # Tenant isolation tools (3 tools)
+    mcp.tool()(_wrap_tool(tenant_isolation.research_tenant_create))
+    mcp.tool()(_wrap_tool(tenant_isolation.research_tenant_list))
+    mcp.tool()(_wrap_tool(tenant_isolation.research_tenant_usage))
 
     # MCP authentication tools
     if "mcp_auth" in _optional_tools:
@@ -2188,6 +2276,9 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(knowledge_injector.research_personalize_output))
     mcp.tool()(_wrap_tool(knowledge_injector.research_adapt_complexity))
     mcp.tool()(_wrap_tool(knowledge_graph.research_knowledge_graph, "search"))
+    mcp.tool()(_wrap_tool(knowledge_base.research_kb_store))
+    mcp.tool()(_wrap_tool(knowledge_base.research_kb_search))
+    mcp.tool()(_wrap_tool(knowledge_base.research_kb_stats))
     mcp.tool()(_wrap_tool(graph_scraper.research_graph_scrape, "fetch"))
     mcp.tool()(_wrap_tool(graph_scraper.research_knowledge_extract, "search"))
     mcp.tool()(_wrap_tool(graph_scraper.research_multi_page_graph, "fetch"))
@@ -2398,6 +2489,10 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(tool_tags.research_tag_tool))
     mcp.tool()(_wrap_tool(tool_tags.research_tag_search))
     mcp.tool()(_wrap_tool(tool_tags.research_tag_cloud))
+    # Tool Versioning (3 tools)
+    mcp.tool()(_wrap_tool(tool_versioning.research_tool_version))
+    mcp.tool()(_wrap_tool(tool_versioning.research_version_diff))
+    mcp.tool()(_wrap_tool(tool_versioning.research_version_snapshot))
     mcp.tool()(_wrap_tool(tool_catalog.research_tool_standalone))
 
     # Doc parser (multiple functions)
@@ -2422,6 +2517,14 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(research_journal.research_journal_timeline))
     mcp.tool()(_wrap_tool(auto_docs.research_generate_docs))
     mcp.tool()(_wrap_tool(auto_docs.research_docs_coverage))
+    # Tool Execution Planner (2 tools)
+    mcp.tool()(_wrap_tool(execution_planner.research_plan_execution))
+    mcp.tool()(_wrap_tool(execution_planner.research_plan_validate))
+
+    # Schema migration tools (3 tools)
+    mcp.tool()(_wrap_tool(schema_migrate.research_migrate_status))
+    mcp.tool()(_wrap_tool(schema_migrate.research_migrate_run))
+    mcp.tool()(_wrap_tool(schema_migrate.research_migrate_backup))
 
 def _validate_environment() -> None:
     """Validate that required environment variables are configured.

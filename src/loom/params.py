@@ -6902,3 +6902,121 @@ class ChainDescribeParams(BaseModel):
         if not all(c.isalnum() or c in "-_" for c in v):
             raise ValueError("name must be alphanumeric with dashes/underscores")
         return v
+
+
+class TaskResolveOrderParams(BaseModel):
+    """Parameters for research_resolve_order tool."""
+
+    tasks: list[dict] = Field(..., min_items=1, max_items=1000)
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("tasks")
+    @classmethod
+    def validate_tasks(cls, v: list[dict]) -> list[dict]:
+        if not v:
+            raise ValueError("tasks list cannot be empty")
+        if len(v) > 1000:
+            raise ValueError("tasks list max 1000 items")
+        for i, task in enumerate(v):
+            if not isinstance(task, dict):
+                raise ValueError(f"task {i} must be a dict")
+            if "name" not in task:
+                raise ValueError(f"task {i} missing required field: name")
+            name = task.get("name")
+            if not isinstance(name, str) or not name.strip():
+                raise ValueError(f"task {i}: name must be non-empty string")
+            if len(name) > 256:
+                raise ValueError(f"task {i}: name max 256 characters")
+            depends_on = task.get("depends_on", [])
+            if not isinstance(depends_on, list):
+                raise ValueError(f"task {i}: depends_on must be list")
+            for dep in depends_on:
+                if not isinstance(dep, str) or not dep.strip():
+                    raise ValueError(f"task {i}: depends_on items must be non-empty strings")
+        return v
+
+
+class TaskCriticalPathParams(BaseModel):
+    """Parameters for research_critical_path tool."""
+
+    tasks: list[dict] = Field(..., min_items=1, max_items=1000)
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("tasks")
+    @classmethod
+    def validate_tasks(cls, v: list[dict]) -> list[dict]:
+        if not v:
+            raise ValueError("tasks list cannot be empty")
+        if len(v) > 1000:
+            raise ValueError("tasks list max 1000 items")
+        for i, task in enumerate(v):
+            if not isinstance(task, dict):
+                raise ValueError(f"task {i} must be a dict")
+            if "name" not in task:
+                raise ValueError(f"task {i} missing required field: name")
+            name = task.get("name")
+            if not isinstance(name, str) or not name.strip():
+                raise ValueError(f"task {i}: name must be non-empty string")
+            if len(name) > 256:
+                raise ValueError(f"task {i}: name max 256 characters")
+            depends_on = task.get("depends_on", [])
+            if not isinstance(depends_on, list):
+                raise ValueError(f"task {i}: depends_on must be list")
+            for dep in depends_on:
+                if not isinstance(dep, str) or not dep.strip():
+                    raise ValueError(f"task {i}: depends_on items must be non-empty strings")
+            duration = task.get("duration_minutes", 1)
+            if not isinstance(duration, int) or duration < 1:
+                raise ValueError(f"task {i}: duration_minutes must be integer >= 1")
+        return v
+
+
+class AggregateResultsParams(BaseModel):
+    """Parameters for research_aggregate_results tool."""
+
+    results: list[dict[str, Any]] = Field(..., min_length=1, max_length=100)
+    strategy: Literal["merge", "concatenate", "summarize", "deduplicate", "rank"] = "merge"
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("results")
+    @classmethod
+    def validate_results(cls, v: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        if not v:
+            raise ValueError("results list cannot be empty")
+        return v
+
+    @field_validator("strategy")
+    @classmethod
+    def validate_strategy(cls, v: str) -> str:
+        valid = {"merge", "concatenate", "summarize", "deduplicate", "rank"}
+        if v not in valid:
+            raise ValueError(f"strategy must be one of {valid}")
+        return v
+
+
+class AggregateTextsParams(BaseModel):
+    """Parameters for research_aggregate_texts tool."""
+
+    texts: list[str] = Field(..., min_length=1, max_length=50)
+    method: Literal["concatenate", "deduplicate", "summarize", "bullet_points"] = "concatenate"
+    max_length: int = Field(5000, ge=100, le=50000)
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("texts")
+    @classmethod
+    def validate_texts(cls, v: list[str]) -> list[str]:
+        if not v:
+            raise ValueError("texts list cannot be empty")
+        return [str(t) for t in v]
+
+    @field_validator("method")
+    @classmethod
+    def validate_method(cls, v: str) -> str:
+        valid = {"concatenate", "deduplicate", "summarize", "bullet_points"}
+        if v not in valid:
+            raise ValueError(f"method must be one of {valid}")
+        return v
