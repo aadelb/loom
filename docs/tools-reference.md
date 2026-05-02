@@ -26,6 +26,128 @@ Loom provides a comprehensive research toolkit organized into major categories w
 
 ## Core Tools
 
+
+### research_orchestrate_smart
+
+**Meta-tool** — Universal Smart Orchestrator that auto-discovers, scores, and executes the optimal tool(s) for ANY natural language query. Takes ANY research request and automatically finds the 1-K best tools from all 334+ tool modules, generates parameters, and executes them in parallel or sequential mode.
+
+**Purpose:** Bridge the gap between users and the massive tool ecosystem. Instead of users needing to know which tool to call, they provide a natural language query and the orchestrator intelligently routes to the best tool(s).
+
+**Parameters:**
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `query` | string | required | Natural language research request (min 3 chars) |
+| `max_tools` | integer | 3 | Maximum tools to execute (1-10) |
+| `strategy` | string | `"auto"` | Execution strategy: `"auto"` (pick 1 best), `"parallel"` (top-K in parallel), `"sequential"` (top-K in order) |
+
+**Returns:**
+
+```json
+{
+  "query": "fetch website content about AI",
+  "tools_discovered": 334,
+  "tools_selected": [
+    {
+      "name": "research_fetch",
+      "relevance_score": 42,
+      "params_used": {"url": "https://...", "mode": "stealthy"}
+    },
+    {
+      "name": "research_markdown",
+      "relevance_score": 28,
+      "params_used": {"url": "https://...", "format": "markdown"}
+    }
+  ],
+  "results": [
+    {
+      "tool": "research_fetch",
+      "success": true,
+      "result": "Website content...",
+      "duration_ms": 1234
+    },
+    {
+      "tool": "research_markdown",
+      "success": true,
+      "result": "# Markdown content...",
+      "duration_ms": 890
+    }
+  ],
+  "aggregated_summary": {
+    "total_executed": 2,
+    "total_succeeded": 2,
+    "total_failed": 0,
+    "execution_strategy": "parallel"
+  },
+  "total_duration_ms": 2134
+}
+```
+
+**Implementation Details:**
+
+1. **Discovery**: Scans all 334+ tool modules via AST parsing and builds index of `research_*` functions
+2. **Scoring**: Matches query keywords against tool names (3x weight) and docstrings (1x weight)
+3. **Selection**: Picks top-K tools by relevance score, filtering out tools with score 0
+4. **Parameter Generation**: Auto-fills common parameters:
+   - `query`/`prompt`/`text` → uses the input query
+   - `url` → extracts first URL from query using regex
+   - `tool_name` → uses the selected tool name
+   - Other params → defaults or skipped
+5. **Execution**: Dynamically imports and calls each tool with generated params
+   - Async tools: wrapped with `asyncio.wait_for(timeout=10s)`
+   - Sync tools: wrapped with `asyncio.to_thread()`
+6. **Aggregation**: Merges results with execution metadata (success rate, timing)
+
+**API Key:** None — free
+
+**Example Usages:**
+
+Auto-mode (pick single best tool):
+```python
+result = await research_orchestrate_smart(
+    query="fetch latest news about AI safety",
+    max_tools=1,
+    strategy="auto"
+)
+# Returns single most relevant tool result
+```
+
+Parallel mode (top 3 tools in parallel):
+```python
+result = await research_orchestrate_smart(
+    query="analyze GitHub repository for security issues",
+    max_tools=3,
+    strategy="parallel"
+)
+# Executes top 3 tools simultaneously
+```
+
+Sequential mode (top 3 tools in order):
+```python
+result = await research_orchestrate_smart(
+    query="research deep learning architectures",
+    max_tools=5,
+    strategy="sequential"
+)
+# Executes tools one at a time, useful for cascading analysis
+```
+
+**Performance:**
+- Tool discovery: O(n) where n = number of tool modules (cached 1 hour)
+- Scoring: O(n * m) where m = query keywords (~20 msec for 334 tools)
+- Execution: 10-5000 msec depending on tool and strategy
+- Total latency: 100-6000 msec end-to-end
+
+**Error Handling:**
+- Query too short: Returns error dict
+- No relevant tools: Returns warning with empty results
+- Tool not found: Execution returns success=false with error message
+- Tool timeout: Execution returns success=false with timeout error (10s default)
+- Tool exception: Execution returns success=false with exception details
+
+---
+
+
 ### research_fetch
 
 Unified URL fetcher with three configurable modes: plain HTTP, stealth browser (Camoufox), or dynamic JavaScript-enabled (Botasaurus).
