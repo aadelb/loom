@@ -897,6 +897,86 @@ def get_answer_amplification(darkness_level: int) -> list[str]:
         ]
 
 
+def _generate_reframe_variants(questions: list[str], darkness_level: int) -> list[dict[str, Any]]:
+    """Generate strategy-wrapped variants of dark questions using 957 strategies.
+
+    For each dark question, applies the best reframing strategies from
+    prompt_reframe.py to create variants optimized for different models.
+
+    Returns list of {original, strategy, reframed, target_model, multiplier}
+    """
+    try:
+        from loom.tools.prompt_reframe import _apply_strategy, _STRATEGIES, _MODEL_CONFIGS
+    except ImportError:
+        return []
+
+    # Select top strategies by darkness level
+    strategy_sets = {
+        8: ["ethical_anchor", "scaffolded_layered_depth", "academic", "regulatory"],
+        9: ["deep_inception", "crescendo", "constitutional_conflict", "cognitive_wedge",
+            "nested_role_simulation", "persona"],
+        10: ["deep_inception", "crescendo", "constitutional_conflict", "cognitive_wedge",
+             "scaffolded_layered_depth", "ethical_anchor", "temporal_displacement",
+             "meta_cognitive", "code_first", "decomposition",
+             "multi_turn_recursive_escalation", "recursive_authority"],
+    }
+
+    strategies = strategy_sets.get(darkness_level, strategy_sets[10])
+
+    # Model targets for each strategy
+    model_targets = {
+        "ethical_anchor": "claude",
+        "scaffolded_layered_depth": "gemini",
+        "deep_inception": "deepseek",
+        "crescendo": "gpt",
+        "constitutional_conflict": "claude",
+        "cognitive_wedge": "gpt",
+        "code_first": "deepseek",
+        "persona": "kimi",
+        "meta_cognitive": "claude",
+        "temporal_displacement": "gemini",
+        "academic": "claude",
+        "regulatory": "gemini",
+        "decomposition": "gpt",
+        "nested_role_simulation": "deepseek",
+        "multi_turn_recursive_escalation": "kimi",
+        "recursive_authority": "nvidia",
+    }
+
+    dark_indicators = [
+        "launder", "fraud", "illegal", "criminal", "evade", "smuggl",
+        "underground", "black market", "hawala", "sanctions", "forgery",
+        "exploit", "ponzi", "scam", "bribe", "corrupt", "shell company",
+        "circumvent", "illicit", "prosecuted",
+    ]
+
+    variants = []
+    for q in questions:
+        is_dark = any(ind in q.lower() for ind in dark_indicators)
+        if not is_dark:
+            continue
+
+        # Apply top 3 strategies to each dark question
+        for strat in strategies[:3]:
+            if strat not in _STRATEGIES:
+                continue
+            try:
+                model_family = model_targets.get(strat, "gpt")
+                reframed = _apply_strategy(q, strat, model_family)
+                variants.append({
+                    "original": q[:100],
+                    "strategy": strat,
+                    "strategy_name": _STRATEGIES[strat].get("name", strat),
+                    "reframed": reframed[:500],
+                    "target_model": model_family,
+                    "multiplier": _STRATEGIES[strat].get("multiplier", 1.0),
+                })
+            except Exception:
+                continue
+
+    return variants
+
+
 def _get_techniques_applied(darkness_level: int) -> list[str]:
     """Return list of all techniques active at this darkness_level."""
     techniques = []
@@ -1285,6 +1365,13 @@ def research_build_query(
     if darkness_level >= 6:
         sub_questions = _reframe_dark_questions(sub_questions, darkness_level)
 
+    # Phase 2.6: Deep integration with 957 reframing strategies
+    #   For each dark question, also generate a strategy-wrapped variant
+    #   using the full prompt_reframe arsenal (EAP, SLD, Crescendo, etc.)
+    reframe_variants = []
+    if darkness_level >= 8:
+        reframe_variants = _generate_reframe_variants(sub_questions, darkness_level)
+
     # Phase 3: Generate optimized queries per engine
     optimized_queries: dict[str, list[str]] = {
         "web": [],
@@ -1335,9 +1422,13 @@ def research_build_query(
             "darkness_level": darkness_level,
             "spectrum_mode": darkness_level > 3,
             "answer_amplification": get_answer_amplification(darkness_level),
+            "answer_extraction_templates": list(ANSWER_EXTRACTION_TEMPLATES.keys()) if darkness_level >= 7 else [],
             "dark_model_cascade": DARK_MODEL_CASCADE if darkness_level >= 7 else [],
+            "topic_model_routing": TOPIC_MODEL_ROUTING if darkness_level >= 8 else {},
             "techniques_applied": _get_techniques_applied(darkness_level),
+            "reframe_variants_count": len(reframe_variants) if darkness_level >= 8 else 0,
         },
+        "reframe_variants": reframe_variants if darkness_level >= 8 else [],
     }
 
     logger.info(
