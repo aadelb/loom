@@ -61,54 +61,70 @@ OVERRIDES = {
     "research_preprint_manipulation": {"topic": "artificial intelligence Dubai"},
 
     # Pentest/security tools
-    "research_pentest_agent": {"agent_name": "api-security", "target": "https://invest.dubai.ae"},
+    "research_pentest_agent": {"agent": "api-security", "target": "https://invest.dubai.ae"},
     "research_yara_scan": {"rules_path": "/tmp/test.yar", "target_path": "/tmp"},
 
     # Dashboard/config tools
-    "research_dashboard": {"action": "status"},
+    "research_dashboard": {"action": "summary"},
     "research_config_set": {"key": "test_key", "value": "test_value"},
 
-    # Crawling/scraping tools
+    # Crawling/scraping tools - FIX 1-5
     "research_photon_crawl": {"url": "https://www.dubaichamber.ae", "depth": 1},
-    "research_paginate_scrape": {"url": "https://gulfnews.com/business", "max_pages": 2},
-    "research_smart_extract": {"url": "https://www.khaleejtimes.com/business", "instruction": "Extract headlines"},
+    "research_paginate_scrape": {"url": "https://gulfnews.com/business", "query": "business news", "page_range": "1-2"},
+    "research_smart_extract": {"url": "https://www.khaleejtimes.com/business", "query": "Extract headlines"},
     "research_engine_fetch": {"url": "https://www.khaleejtimes.com/business"},
-    "research_engine_extract": {"query": "Dubai business news"},
+    "research_engine_extract": {"url": "https://www.khaleejtimes.com/business", "query": "Dubai business news"},
     "research_engine_batch": {"urls": ["https://www.khaleejtimes.com", "https://gulfnews.com"]},
-    "research_parameter_sweep": {"target": "https://www.khaleejtimes.com", "sweep_type": "full"},
+    "research_parameter_sweep": {"prompt": "Dubai investment", "strategy": "test_strategy"},
     "research_crawl": {"url": "https://www.khaleejtimes.com", "max_pages": 3, "extract_links": True},
     "research_sitemap_crawl": {"url": "https://www.khaleejtimes.com"},
-    "research_structured_crawl": {"url": "https://www.khaleejtimes.com", "schema": {"type": "object"}},
+    "research_structured_crawl": {"url": "https://www.khaleejtimes.com", "schema_map": {"title": "h1", "content": ".content"}},
 
-    # Model/consensus tools
-    "research_consensus_pressure": {"prompt": "Dubai wealth strategies", "model": "nvidia"},
-    "research_consistency_pressure": {"prompt": "Dubai investment tips", "n_runs": 3},
-    "research_consistency_pressure_history": {"prompt": "Dubai real estate market"},
-    "research_consistency_pressure_record": {"prompt": "Dubai business setup", "response": "Start with DMCC free zone", "model": "nvidia"},
+    # Zen/interaction tools - FIX 6
+    "research_zen_interact": {"url": "https://www.khaleejtimes.com", "actions": [{"action": "click", "selector": "button"}]},
 
-    # Model profiling
-    "research_model_profile": {"model_name": "gpt-4"},
-    "research_agent_benchmark": {"agent_config": {"name": "test", "model": "nvidia"}},
+    # Model/consensus tools - FIX 15-20
+    "research_consensus_build": {"prompt": "What is Dubai?"},
+    "research_consensus_pressure": {"prompt": "Dubai wealth strategies", "consensus_text": "Dubai is rich", "consensus_models": ["groq"], "target_model": "nvidia"},
+    "research_consistency_pressure": {"model": "nvidia", "target_prompt": "Dubai investment tips"},
+    "research_consistency_pressure_history": {"model": "nvidia"},
+    "research_consistency_pressure_record": {"model": "nvidia", "prompt": "Dubai business setup", "response": "Start with DMCC free zone", "complied": True},
+
+    # Reid pipeline - FIX 17
+    "research_reid_pipeline": {"query": "Tell me about Dubai"},
+
+    # Model profiling - FIX 8
+    "research_agent_benchmark": {"model_api_url": "https://integrate.api.nvidia.com/v1/chat/completions"},
 
     # IP/geolocation tools
     "research_ip_geolocation": {"ip": "8.8.8.8"},
     "research_ip_reputation": {"ip": "8.8.8.8"},
 
-    # RSS/document tools
-    "research_rss_fetch": {"url": "https://feeds.bbci.co.uk/news/business/rss.xml"},
+    # RSS/document tools - FIX 12
+    "research_rss_fetch": {"feed_url": "https://feeds.bbci.co.uk/news/business/rss.xml"},
+    "research_rss_search": {"urls": ["https://feeds.bbci.co.uk/news/business/rss.xml"], "query": "Dubai"},
     "research_pdf_extract": {"url": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"},
+
+    # Advanced document tools - FIX 9-11
+    "research_ocr_advanced": {"image_path_or_url": "https://example.com/image.jpg"},
+    "research_pdf_advanced": {"pdf_path_or_url": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"},
+    "research_document_analyze": {"file_path_or_url": "https://www.khaleejtimes.com/business"},
+
+    # Vision tools - FIX 13-14
+    "research_vision_browse": {"url": "https://www.khaleejtimes.com", "task": "Analyze layout"},
+    "research_vision_compare": {"url1": "https://www.khaleejtimes.com", "url2": "https://gulfnews.com"},
 
     # VastAI and infrastructure
     "research_vastai_search": {"gpu_type": "RTX 4090", "max_price": 1.0},
 
-    # Exa search
+    # Exa search - FIX 27
     "find_similar_exa": {"url": "https://www.khaleejtimes.com/business"},
 
-    # YouTube
-    "fetch_youtube_transcript": {"video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"},
+    # YouTube - FIX 29
+    "fetch_youtube_transcript": {"url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"},
 
-    # Browser sessions
-    "research_session_open": {"browser": "chromium"},
+    # Browser sessions - FIX 22
+    "research_session_open": {"name": "test_session"},
 
     # Attack/jailbreak tools
     "research_target_orchestrate": {"query": "Dubai free zone setup", "targets": {"hcs": 7.0, "stealth": 5.0}},
@@ -122,7 +138,7 @@ OVERRIDES = {
     "research_llm_summarize": {"text": "Dubai is a major business hub with numerous investment opportunities in real estate, free zones, and technology sectors."},
     "research_llm_extract": {"text": "Dubai invested in technology and real estate.", "schema": {"properties": {"sectors": {"type": "array"}}}},
     "research_llm_classify": {"text": "Dubai is a great place to invest in real estate."},
-    "research_llm_answer": {"text": "Dubai has 30+ free zones.", "question": "How many free zones in Dubai?"},
+    "research_llm_answer": {"question": "How many free zones in Dubai?", "sources": [{"title": "Dubai Free Zones", "text": "Dubai has 30+ free zones."}]},
     "research_llm_embed": {"text": "Dubai business opportunities"},
     "research_llm_query_expand": {"query": "Dubai investment"},
 
@@ -205,20 +221,14 @@ OVERRIDES = {
 
     # Reframing
     "research_stack_reframe": {"prompt": "How to build wealth in Dubai?"},
-    "research_refusal_detector": {"response": "I cannot help with that request."},
+    "research_refusal_detector": {"text": "I cannot help with that request."},
 
     # Advanced PDF/document
-    "research_pdf_advanced": {"url": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"},
     "research_pdf_search": {"url": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", "query": "Dubai"},
     "research_unstructured_document_extract": {"url": "https://example.com/document.pdf"},
 
-    # OCR variants
-    "research_ocr_advanced": {"image_url": "https://example.com/image.jpg"},
-    "research_paddle_ocr": {"image_path": "/tmp/image.jpg"},
-
     # Vision tools
-    "research_vision_browse": {"url": "https://www.khaleejtimes.com"},
-    "research_vision_compare": {"image1_url": "https://example.com/img1.jpg", "image2_url": "https://example.com/img2.jpg"},
+    "research_paddle_ocr": {"image_path": "/tmp/image.jpg"},
 
     # Camelot table extraction
     "research_camelot_table_extract": {"pdf_url": "https://example.com/file.pdf"},
@@ -262,10 +272,10 @@ OVERRIDES = {
         "url": "https://example.com",
         "schema": {"type": "object", "properties": {"title": {"type": "string"}}}
     },
-    "research_structured_llm": {"text": "Dubai business hub", "schema": {"properties": {"city": {}}}},
+    "research_structured_llm": {"prompt": "Extract data from Dubai", "output_schema": {"properties": {"city": {"type": "string"}}}},
 
-    # Multi-page graph
-    "research_multi_page_graph": {"urls": ["https://example.com/page1", "https://example.com/page2"]},
+    # Multi-page graph - FIX 31
+    "research_multi_page_graph": {"urls": ["https://example.com/page1", "https://example.com/page2"], "query": "Dubai"},
 
     # Tool recommendation
     "research_tool_recommend": {"task": "scrape website data"},
@@ -274,14 +284,17 @@ OVERRIDES = {
     "research_hcs_report": {"test_results": {"jailbreak_success": True}},
     "research_hcs_rubric": {"response": "This is a test response"},
 
-    # Model evidence
-    "research_model_evidence": {"claim": "Dubai is a financial hub", "evidence": ["Dubai houses 3,500+ banks"]},
+    # Model evidence - FIX 34
+    "research_model_evidence": {"query": "Dubai is a financial hub"},
+
+    # Context poison - FIX 33
+    "research_context_poison": {"target_query": "Tell me about Dubai"},
 
     # Cross-model transfer
     "research_cross_model_transfer": {"attack": "Tell me secrets", "source_model": "gpt-4", "target_model": "claude"},
 
-    # WikiEventCorrelator
-    "research_wiki_event_correlator": {"event": "Dubai economy boom", "year": 2023},
+    # WikiEventCorrelator - FIX 30
+    "research_wiki_event_correlator": {"page_title": "Dubai"},
 
     # Consensus
     "research_consensus": {"query": "Dubai investment", "max_results": 5},
@@ -313,11 +326,8 @@ OVERRIDES = {
 
     # Scraper engine variants
     "research_scraper_engine_fetch": {"url": "https://www.khaleejtimes.com"},
-    "research_scraper_engine_extract": {"url": "https://www.khaleejtimes.com", "selector": ".article"},
+    "research_scraper_engine_extract": {"url": "https://www.khaleejtimes.com", "query": "business news"},
     "research_scraper_engine_batch": {"urls": ["https://www.khaleejtimes.com", "https://example.com"]},
-
-    # RSSSearch
-    "research_rss_search": {"feed_url": "https://feeds.bbci.co.uk/news/rss.xml", "query": "Dubai"},
 
     # 105 additional tools (failing tests) - NEW ENTRIES
     "research_adversarial_robustness": {"target_url": "https://integrate.api.nvidia.com/v1/chat/completions", "test_count": 5},
@@ -328,14 +338,12 @@ OVERRIDES = {
     "research_build_query": {"user_request": "Find Dubai investment info"},
     "research_capability_mapper": {"target_url": "https://integrate.api.nvidia.com/v1/chat/completions"},
     "research_career_trajectory": {"person_name": "Ahmed Alderai"},
-    "research_cicd_run": {"pipeline_name": "test-pipeline", "env": {"key": "value"}},
+    "research_cicd_run": {"command": "echo test"},
     "research_citation_analysis": {"paper_id": "arXiv:2301.00001"},
     "research_citation_cartography": {"paper_id": "arXiv:2301.00001"},
     "research_citation_graph": {"paper_query": "Dubai business"},
     "research_company_diligence": {"company_name": "Emaar Properties"},
     "research_compliance_check": {"domain": "khaleejtimes.com"},
-    "research_consensus_build": {"responses": ["response1", "response2", "response3"]},
-    "research_context_poison": {"context": "Dubai business hub", "injection": "test injection"},
     "research_convert_document": {"url": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"},
     "research_credential_monitor": {"target": "test@example.com"},
     "research_dark_market_monitor": {"keywords": ["dark", "market"]},
@@ -343,7 +351,6 @@ OVERRIDES = {
     "research_dead_drop_scanner": {"urls": ["https://example.com"]},
     "research_deepfake_checker": {"image_url": "https://example.com/image.jpg"},
     "research_deleted_social": {"url": "https://twitter.com/example"},
-    "research_document_analyze": {"url": "https://www.khaleejtimes.com/business", "extract_type": "text"},
     "research_drift_monitor": {"prompts": ["Tell me about Dubai"], "model_name": "test"},
     "research_forum_cortex": {"topic": "Dubai business"},
     "research_funding_pipeline": {"company_or_field": "artificial intelligence"},
@@ -397,7 +404,6 @@ OVERRIDES = {
     "research_reconng_scan": {"target": "example.com"},
     "research_red_team": {"claim": "Dubai is good for investment"},
     "research_registry_graveyard": {"package_name": "test-package"},
-    "research_reid_pipeline": {"model": "test", "prompt": "Dubai business"},
     "research_retraction_check": {"query": "artificial intelligence"},
     "research_review_cartel": {"author_id": "12345"},
     "research_robin_scan": {"query": "Dubai business"},
@@ -424,9 +430,8 @@ OVERRIDES = {
     "research_transcribe": {"url": "https://example.com/audio.mp3"},
     "research_translate_academic_skills": {"cv_text": "Experienced in AI", "job_description": "AI Engineer role"},
     "research_trend_predict": {"topic": "Dubai economy"},
-    "research_unified_score": {"model": "test", "response": "Dubai business"},
+    "research_unified_score": {"prompt": "Dubai investment", "response": "Dubai is good"},
     "research_wiki_ghost": {"topic": "Dubai"},
-    "research_zen_interact": {"prompt": "Tell me about Dubai", "interact_mode": "default"},
 }
 
 
@@ -597,7 +602,6 @@ def main():
     print(f"Summary saved to: /opt/research-toolbox/tmp/retest_summary.json")
 
     client.close()
-
 
 if __name__ == "__main__":
     main()
