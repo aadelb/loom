@@ -56,6 +56,7 @@ from loom.tools import (
     ai_safety,
     ai_safety_extended,
     antiforensics,
+    autonomous_agent,
     bias_lens,
     breach_check,
     cache_mgmt,
@@ -76,6 +77,7 @@ from loom.tools import (
     deep,
     deep_research_agent,
     domain_intel,
+    exploit_db,
     ethereum_tools,
     fact_checker,
     fetch,
@@ -111,6 +113,7 @@ from loom.tools import (
     osint_extended,
     output_formatter,
     p3_tools,
+    persistent_memory,
     passive_recon,
     pdf_extract,
     projectdiscovery,
@@ -943,12 +946,17 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(cyberscraper.research_stealth_browser, "fetch"))
     mcp.tool()(_wrap_tool(cache_mgmt.research_cache_stats))
     mcp.tool()(_wrap_tool(cache_mgmt.research_cache_clear))
+    mcp.tool()(_wrap_tool(exploit_db.research_exploit_register))
+    mcp.tool()(_wrap_tool(exploit_db.research_exploit_search))
+    mcp.tool()(_wrap_tool(exploit_db.research_exploit_stats))
     mcp.tool()(_wrap_tool(output_formatter.research_format_report))
     mcp.tool()(_wrap_tool(output_formatter.research_extract_actionables))
     mcp.tool()(_wrap_tool(strategy_feedback.research_strategy_log))
     mcp.tool()(_wrap_tool(strategy_feedback.research_strategy_recommend))
     mcp.tool()(_wrap_tool(strategy_feedback.research_strategy_stats))
     mcp.tool()(_wrap_tool(strategy_cache.research_cached_strategy))
+    mcp.tool()(_wrap_tool(autonomous_agent.research_auto_redteam))
+    mcp.tool()(_wrap_tool(autonomous_agent.research_schedule_redteam))
     mcp.tool()(_wrap_tool(workflow_engine.research_workflow_create))
     mcp.tool()(_wrap_tool(workflow_engine.research_workflow_run))
     mcp.tool()(_wrap_tool(workflow_engine.research_workflow_status))
@@ -1104,6 +1112,7 @@ def _register_tools(mcp: FastMCP) -> None:
     # Extended AI Safety tools (2 tools for advanced compliance testing)
     mcp.tool()(_wrap_tool(ai_safety_extended.research_hallucination_benchmark, "fetch"))
     mcp.tool()(_wrap_tool(ai_safety_extended.research_adversarial_robustness, "fetch"))
+    mcp.tool()(_wrap_tool(adversarial_debate_tool.research_adversarial_debate, "llm"))
 
     # Agent scenario benchmarking tool
     mcp.tool()(_wrap_tool(agent_benchmark.research_agent_benchmark))
@@ -1890,6 +1899,9 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(neo4j_backend.research_graph_store))
     mcp.tool()(_wrap_tool(neo4j_backend.research_graph_query))
     mcp.tool()(_wrap_tool(neo4j_backend.research_graph_visualize))
+    mcp.tool()(_wrap_tool(persistent_memory.research_remember))
+    mcp.tool()(_wrap_tool(persistent_memory.research_recall))
+    mcp.tool()(_wrap_tool(persistent_memory.research_memory_stats))
     mcp.tool()(_wrap_tool(fact_checker.research_fact_check, "search"))
     mcp.tool()(_wrap_tool(culture_dna.research_culture_dna, "search"))
     mcp.tool()(_wrap_tool(synth_echo.research_synth_echo, "fetch"))
