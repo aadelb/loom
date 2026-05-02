@@ -2871,7 +2871,7 @@ class CoverageRunParams(BaseModel):
 
 # Missing params for test files
 
-class AdversarialDebateParams(BaseModel):
+class AdversarialDebateAttackerParams(BaseModel):
     """Parameters for research_adversarial_debate tool."""
 
     topic: str = Field(
@@ -5371,3 +5371,118 @@ class CachedStrategyParams(BaseModel):
         if not v.strip():
             raise ValueError("fallback_strategy cannot be empty")
         return v.strip()
+
+
+class PersistentMemoryRememberParams(BaseModel):
+    """Parameters for research_remember tool."""
+
+    content: str = Field(..., min_length=10, max_length=100000)
+    topic: str = Field(default="", max_length=100)
+    session_id: str = Field(default="", max_length=100)
+    importance: float = Field(default=0.5, ge=0.0, le=1.0)
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("content")
+    @classmethod
+    def validate_content(cls, v: str) -> str:
+        """Validate content is not empty after strip."""
+        if not v.strip():
+            raise ValueError("content cannot be empty")
+        return v.strip()
+
+    @field_validator("topic")
+    @classmethod
+    def validate_topic(cls, v: str) -> str:
+        """Validate topic format."""
+        if v and not re.match(r"^[a-z0-9_-]+$", v.lower()):
+            raise ValueError("topic must contain only alphanumeric, underscore, hyphen")
+        return v.lower() if v else ""
+
+    @field_validator("session_id")
+    @classmethod
+    def validate_session_id(cls, v: str) -> str:
+        """Validate session_id format."""
+        if v and not re.match(r"^[a-z0-9_-]+$", v.lower()):
+            raise ValueError("session_id must contain only alphanumeric, underscore, hyphen")
+        return v.lower() if v else ""
+
+
+class PersistentMemoryRecallParams(BaseModel):
+    """Parameters for research_recall tool."""
+
+    query: str = Field(..., min_length=1, max_length=10000)
+    top_k: int = Field(default=10, ge=1, le=100)
+    topic: str = Field(default="", max_length=100)
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("query")
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        """Validate query is not empty after strip."""
+        if not v.strip():
+            raise ValueError("query cannot be empty")
+        return v.strip()
+
+    @field_validator("topic")
+    @classmethod
+    def validate_topic(cls, v: str) -> str:
+        """Validate topic format."""
+        if v and not re.match(r"^[a-z0-9_-]+$", v.lower()):
+            raise ValueError("topic must contain only alphanumeric, underscore, hyphen")
+        return v.lower() if v else ""
+
+class ExploitRegisterParams(BaseModel):
+    """Parameters for research_exploit_register tool."""
+
+    model: str = Field(..., min_length=1, max_length=100)
+    strategy: str = Field(..., min_length=1, max_length=200)
+    description: str = Field(..., min_length=1, max_length=5000)
+    severity: Literal["critical", "high", "medium", "low"] = "high"
+    asr: float = Field(default=0.0, ge=0.0, le=1.0)
+
+    model_config = {"extra": "forbid", "strict": True}
+
+
+class ExploitSearchParams(BaseModel):
+    """Parameters for research_exploit_search tool."""
+
+    model: str = Field(default="", max_length=100)
+    severity: str = Field(default="", max_length=20)
+    query: str = Field(default="", max_length=500)
+
+    model_config = {"extra": "forbid", "strict": True}
+
+class StegoEncodeParams(BaseModel):
+    """Parameters for research_stego_encode tool."""
+
+    message: str = Field(..., min_length=1, max_length=1000)
+    method: Literal["lsb", "whitespace", "unicode_zero_width", "metadata_exif"] = Field(default="lsb")
+    output_format: str = Field(default="description", max_length=50)
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("message")
+    @classmethod
+    def validate_message(cls, v: str) -> str:
+        """Validate message is non-empty."""
+        if not v.strip():
+            raise ValueError("message cannot be empty")
+        return v
+
+
+class StegoAnalyzeParams(BaseModel):
+    """Parameters for research_stego_analyze tool."""
+
+    text: str = Field(..., min_length=1, max_length=5000)
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("text")
+    @classmethod
+    def validate_text(cls, v: str) -> str:
+        """Validate text is non-empty."""
+        if not v.strip():
+            raise ValueError("text cannot be empty")
+        return v

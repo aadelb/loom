@@ -53,12 +53,14 @@ from loom.tools import (
     access_tools,
     adversarial_debate_tool,
     agent_benchmark,
+    benchmark_datasets,
     ai_safety,
     ai_safety_extended,
     antiforensics,
     autonomous_agent,
     bias_lens,
     breach_check,
+    compliance_report,
     cache_mgmt,
     cert_analyzer,
     change_monitor,
@@ -74,6 +76,7 @@ from loom.tools import (
     dead_content,
     deception_detect,
     deception_job_scanner,
+    evasion_network,
     deep,
     deep_research_agent,
     domain_intel,
@@ -1101,6 +1104,10 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(signal_detection.research_sec_tracker, "search"))
     mcp.tool()(_wrap_tool(breach_check.research_breach_check, "fetch"))
     mcp.tool()(_wrap_tool(breach_check.research_password_check))
+
+    # Compliance reporting and audit tools (2 tools for EU AI Act Article 15 compliance)
+    mcp.tool()(_wrap_tool(compliance_report.research_compliance_report))
+    mcp.tool()(_wrap_tool(compliance_report.research_audit_trail))
 
     # AI Safety red-team tools (5 tools for EU AI Act Article 15 compliance testing)
     mcp.tool()(_wrap_tool(ai_safety.research_prompt_injection_test, "fetch"))
