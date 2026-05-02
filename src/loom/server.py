@@ -87,6 +87,7 @@ from loom.tools import (
     graph_scraper,
     graph_analysis,
     hcs10_academic,
+    hcs_escalation,
     hcs_scorer,
     hcs_report,
     hcs_rubric_tool,
@@ -106,6 +107,7 @@ from loom.tools import (
     multi_search,
     onion_discover,
     observability,
+    output_formatter,
     osint_extended,
     p3_tools,
     passive_recon,
@@ -118,6 +120,7 @@ from loom.tools import (
     realtime_monitor,
     report_generator,
     rss_monitor,
+    response_synthesizer,
     salary_synthesizer,
     search,
     security_headers,
@@ -130,6 +133,7 @@ from loom.tools import (
     stagehand_backend,
     stealth,
     stego_detect,
+    strategy_feedback,
     stylometry,
     supply_chain_intel,
     synth_echo,
@@ -478,6 +482,12 @@ with suppress(ImportError):
     from loom.tools import ytdlp_backend as ytdlp_backend_tools
 
     _optional_tools["ytdlp_backend"] = ytdlp_backend_tools
+
+
+with suppress(ImportError):
+    from loom.tools import model_consensus as model_consensus_tools
+
+    _optional_tools["model_consensus"] = model_consensus_tools
 
 
 with suppress(ImportError):
@@ -928,6 +938,11 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(cyberscraper.research_stealth_browser, "fetch"))
     mcp.tool()(_wrap_tool(cache_mgmt.research_cache_stats))
     mcp.tool()(_wrap_tool(cache_mgmt.research_cache_clear))
+    mcp.tool()(_wrap_tool(output_formatter.research_format_report))
+    mcp.tool()(_wrap_tool(output_formatter.research_extract_actionables))
+    mcp.tool()(_wrap_tool(strategy_feedback.research_strategy_log))
+    mcp.tool()(_wrap_tool(strategy_feedback.research_strategy_recommend))
+    mcp.tool()(_wrap_tool(strategy_feedback.research_strategy_stats))
     mcp.tool()(_wrap_tool(workflow_engine.research_workflow_create))
     mcp.tool()(_wrap_tool(workflow_engine.research_workflow_run))
     mcp.tool()(_wrap_tool(workflow_engine.research_workflow_status))
@@ -1116,6 +1131,7 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(hcs_scorer.research_hcs_score, "analysis"))
     mcp.tool()(_wrap_tool(hcs_report.research_hcs_report, "analysis"))
     mcp.tool()(_wrap_tool(hcs_rubric_tool.research_hcs_rubric, "analysis"))
+    mcp.tool()(_wrap_tool(hcs_escalation.research_hcs_escalate, "orchestration"))
     mcp.tool()(_wrap_tool(full_pipeline.research_full_pipeline, "orchestration"))
 
     # Creative research tools (4 tools for advanced research scenarios)
@@ -1130,6 +1146,7 @@ def _register_tools(mcp: FastMCP) -> None:
     # RSS feed tools
     mcp.tool()(_wrap_tool(rss_monitor.research_rss_fetch, "fetch"))
     mcp.tool()(_wrap_tool(rss_monitor.research_rss_search, "search"))
+    mcp.tool()(_wrap_tool(response_synthesizer.research_synthesize_report))
 
     # Social intelligence tools
     mcp.tool()(_wrap_tool(social_intel.research_social_search, "fetch"))
@@ -2046,6 +2063,12 @@ def _register_tools(mcp: FastMCP) -> None:
         if isinstance(dp, dict):
             for fn in dp.values():
                 mcp.tool()(_wrap_tool(fn, "fetch"))
+    # Multi-model consensus tool (LLM analysis)
+    if "model_consensus" in _optional_tools:
+        mod = _optional_tools["model_consensus"]
+        if hasattr(mod, "research_multi_consensus"):
+            mcp.tool()(_wrap_tool(mod.research_multi_consensus, "llm"))
+
 
 
 def _validate_environment() -> None:

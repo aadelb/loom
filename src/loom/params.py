@@ -5296,3 +5296,22 @@ class DriftMonitorParams(BaseModel):
     storage_path: str = Field(default="~/.loom/drift/", max_length=500)
 
     model_config = {"extra": "forbid", "strict": True}
+
+class SynthesizeReportParams(BaseModel):
+    """Parameters for research_synthesize_report tool."""
+
+    question: str = Field(..., min_length=3, max_length=5000)
+    answers: list[str] = Field(..., min_length=1, max_length=50)
+    format: str = Field(default="executive", pattern=r"^(executive|technical|academic)$")
+    max_tokens: int = Field(default=3000, ge=100, le=10000)
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("answers")
+    @classmethod
+    def validate_answers(cls, v: list[str]) -> list[str]:
+        """Validate that all answers are non-empty strings."""
+        for i, ans in enumerate(v):
+            if not isinstance(ans, str) or not ans.strip():
+                raise ValueError(f"answer {i}: must be non-empty string")
+        return v
