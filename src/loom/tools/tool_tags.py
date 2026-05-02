@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 import json
+import logging
 from collections import Counter
 from pathlib import Path
 from typing import Any
 
-from loom.logging_config import get_logger
-
-logger = get_logger(__name__)
+logger = logging.getLogger("loom.tools.tool_tags")
 
 _TAGS_FILE = Path.home() / ".loom" / "tool_tags.json"
 
@@ -60,10 +59,10 @@ async def research_tag_tool(tool_name: str, tags: list[str]) -> dict:
         tmp_path.write_text(json.dumps(tags_dict, indent=2))
         tmp_path.replace(_TAGS_FILE)
 
-        logger.info("tool_tagged", tool=tool_name, tags_added=len(unique_tags), total=len(all_tags))
+        logger.info("tool_tagged", extra={"tool": tool_name, "tags_added": len(unique_tags), "total": len(all_tags)})
         return {"tool": tool_name, "tags_added": len(unique_tags), "total_tags": len(all_tags)}
     except Exception as e:
-        logger.error("tag_tool_error", tool=tool_name, error=str(e))
+        logger.error("tag_tool_error", extra={"tool": tool_name, "error": str(e)})
         return {"error": str(e), "tool": tool_name}
 
 
@@ -89,7 +88,7 @@ async def research_tag_search(tags: list[str], match: str = "any") -> dict:
                 matches.append({"name": tool, "tags": tool_tags})
 
         matches.sort(key=lambda x: x["name"])
-        logger.info("tag_search", tags=list(search_tags), match_mode=match, matches=len(matches))
+        logger.info("tag_search", extra={"tags": list(search_tags), "match_mode": match, "matches": len(matches)})
         return {
             "tags_searched": list(search_tags),
             "match_mode": match,
@@ -97,7 +96,7 @@ async def research_tag_search(tags: list[str], match: str = "any") -> dict:
             "total_matches": len(matches),
         }
     except Exception as e:
-        logger.error("tag_search_error", tags=tags, error=str(e))
+        logger.error("tag_search_error", extra={"tags": tags, "error": str(e)})
         return {"error": str(e), "tags_searched": tags, "tools": []}
 
 
@@ -126,8 +125,8 @@ async def research_tag_cloud() -> dict:
         ]
 
         most_common = cloud[0]["tag"] if cloud else None
-        logger.info("tag_cloud_generated", unique_tags=len(cloud), most_common=most_common)
+        logger.info("tag_cloud_generated", extra={"unique_tags": len(cloud), "most_common": most_common})
         return {"tags": cloud, "total_unique_tags": len(cloud), "most_common_tag": most_common}
     except Exception as e:
-        logger.error("tag_cloud_error", error=str(e))
+        logger.error("tag_cloud_error", extra={"error": str(e)})
         return {"error": str(e), "tags": []}

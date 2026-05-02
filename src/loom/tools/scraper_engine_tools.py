@@ -2,7 +2,7 @@
 
 Registers three tools:
 - research_engine_fetch: Single URL fetch with escalation
-- research_engine_extract: Fetch + LLM extraction
+- research_engine_extract: Fetch + selector/LLM extraction
 - research_engine_batch: Batch fetch multiple URLs
 """
 
@@ -76,13 +76,13 @@ async def research_engine_fetch(params: ScraperEngineFetchParams) -> dict[str, A
 
 
 async def research_engine_extract(params: ScraperEngineExtractParams) -> dict[str, Any]:
-    """Fetch + LLM-powered structured data extraction.
+    """Fetch + selector/LLM-powered structured data extraction.
 
-    First fetches the URL with automatic escalation, then uses LLM to extract
-    structured data based on the provided query.
+    First fetches the URL with automatic escalation, then extracts data using
+    either CSS selectors, XPath, or LLM-based extraction based on provided rules.
 
     Args:
-        params: ScraperEngineExtractParams with url, query, model, mode
+        params: ScraperEngineExtractParams with url, query, selectors, model, mode
 
     Returns:
         Dict with:
@@ -93,14 +93,22 @@ async def research_engine_extract(params: ScraperEngineExtractParams) -> dict[st
         - extracted: dict (if successful)
         - error: str (if failed)
         - fetch_elapsed_ms: int
+        - extraction_method: str ("css_selector" | "xpath" | "llm")
     """
-    logger.info("engine_extract_start url=%s query=%s model=%s", params.url, params.query[:50], params.model)
+    logger.info(
+        "engine_extract_start url=%s query=%s css=%s xpath=%s model=%s",
+        params.url,
+        params.query[:50] if params.query else None,
+        "yes" if params.css_selector else "no",
+        "yes" if params.xpath_selector else "no",
+        params.model,
+    )
 
     # First fetch the content
     fetch_result = await research_fetch(
         url=params.url,
-        stealthy=params.mode == "stealthy",
-        dynamic=params.mode == "dynamic",
+        stealthy=params.mode == "stealth",
+        dynamic=params.mode == "max",
     )
 
     if not fetch_result.get("success"):
@@ -114,14 +122,86 @@ async def research_engine_extract(params: ScraperEngineExtractParams) -> dict[st
             "fetch_elapsed_ms": fetch_result.get("elapsed_ms", 0),
         }
 
-    # Now extract with LLM
+    content = fetch_result.get("content", "")
+
+    # Try CSS selector extraction first if provided
+    if params.css_selector:
+        try:
+            from parsel import Selector
+
+            selector = Selector(text=content)
+            elements = selector.css(params.css_selector).getall()
+            if elements:
+                logger.info("engine_extract_css_success url=%s count=%d", params.url, len(elements))
+                return {
+                    "success": True,
+                    "url": params.url,
+                    "backend_used": fetch_result.get("backend_used", "unknown"),
+                    "escalation_level": fetch_result.get("escalation_level", 0),
+                    "extracted": {
+                        "query": params.query,
+                        "selector": params.css_selector,
+                        "raw_data": elements,
+                        "extracted_count": len(elements),
+                        "extraction_method": "css_selector",
+                    },
+                    "fetch_elapsed_ms": fetch_result.get("elapsed_ms", 0),
+                    "extraction_method": "css_selector",
+                }
+            else:
+                logger.warning("engine_extract_css_no_matches url=%s selector=%s", params.url, params.css_selector)
+        except Exception as e:
+            logger.warning("engine_extract_css_failed url=%s: %s", params.url, e)
+
+    # Try XPath extraction if provided
+    if params.xpath_selector:
+        try:
+            from lxml import etree
+
+            try:
+                parser = etree.HTMLParser()
+                tree = etree.fromstring(content.encode(), parser)
+            except Exception:
+                tree = etree.fromstring(content.encode())
+
+            elements = tree.xpath(params.xpath_selector)
+            if elements:
+                extracted_values = []
+                for elem in elements:
+                    if hasattr(elem, "text_content"):
+                        extracted_values.append(elem.text_content())
+                    else:
+                        extracted_values.append(str(elem))
+
+                logger.info("engine_extract_xpath_success url=%s count=%d", params.url, len(extracted_values))
+                return {
+                    "success": True,
+                    "url": params.url,
+                    "backend_used": fetch_result.get("backend_used", "unknown"),
+                    "escalation_level": fetch_result.get("escalation_level", 0),
+                    "extracted": {
+                        "query": params.query,
+                        "selector": params.xpath_selector,
+                        "raw_data": extracted_values,
+                        "extracted_count": len(extracted_values),
+                        "extraction_method": "xpath",
+                    },
+                    "fetch_elapsed_ms": fetch_result.get("elapsed_ms", 0),
+                    "extraction_method": "xpath",
+                }
+            else:
+                logger.warning("engine_extract_xpath_no_matches url=%s xpath=%s", params.url, params.xpath_selector)
+        except Exception as e:
+            logger.warning("engine_extract_xpath_failed url=%s: %s", params.url, e)
+
+    # Fallback to LLM extraction if selectors not provided or failed
     try:
         from loom.tools.llm import _call_with_cascade
 
-        extraction_prompt = f"Extract the following from this HTML content: {params.query}\n\nContent:\n{fetch_result.get('content', '')[:5000]}"
+        extraction_prompt = f"Extract the following from this HTML content: {params.query}\n\nContent:\n{content[:5000]}"
         extracted_text = await _call_with_cascade(extraction_prompt, max_tokens=1000)
 
-        logger.info("engine_extract_complete url=%s success=true", params.url)
+        logger.info("engine_extract_llm_complete url=%s success=true", params.url)
 
         return {
             "success": True,
@@ -132,8 +212,10 @@ async def research_engine_extract(params: ScraperEngineExtractParams) -> dict[st
                 "query": params.query,
                 "result": extracted_text,
                 "model_used": params.model,
+                "extraction_method": "llm",
             },
             "fetch_elapsed_ms": fetch_result.get("elapsed_ms", 0),
+            "extraction_method": "llm",
         }
     except Exception as e:
         logger.error("engine_extract_llm_failed: %s", e)
@@ -142,7 +224,7 @@ async def research_engine_extract(params: ScraperEngineExtractParams) -> dict[st
             "url": params.url,
             "backend_used": fetch_result.get("backend_used", "unknown"),
             "escalation_level": fetch_result.get("escalation_level", 0),
-            "error": f"LLM extraction failed: {str(e)[:100]}",
+            "error": f"All extraction methods failed: {str(e)[:100]}",
             "fetch_elapsed_ms": fetch_result.get("elapsed_ms", 0),
         }
 
