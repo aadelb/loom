@@ -104,6 +104,12 @@ class GroqProvider(LLMProvider):
         """
         # Validate timeout to prevent abuse
         timeout = max(1, min(int(timeout), 600))
+        # Use provider's own default if passed model isn't a Groq-compatible model
+        GROQ_MODELS = {"llama-3.3-70b-versatile", "llama-3.1-70b-versatile", "mixtral-8x7b-32768", "gemma2-9b-it", "llama-guard-3-8b"}
+        if model and "/" in model:
+            model = self.default_model
+        elif model and model not in GROQ_MODELS:
+            model = self.default_model
         model = model or self.default_model
         async with self.semaphore:
             return await self._chat_impl(
