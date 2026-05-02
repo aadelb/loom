@@ -5691,3 +5691,460 @@ class ArxivScanParams(BaseModel):
                 if not isinstance(kw, str) or len(kw) > 100:
                     raise ValueError("each keyword must be string, max 100 chars")
         return v
+
+class WhiteRabbitParams(BaseModel):
+    """Parameters for research_white_rabbit tool."""
+
+    starting_point: str = Field(
+        ..., min_length=3, max_length=500,
+        description="Initial research topic or claim"
+    )
+    depth: int = Field(
+        5, ge=1, le=10,
+        description="How many levels deep to follow"
+    )
+    branch_factor: int = Field(
+        3, ge=1, le=5,
+        description="How many anomalies to explore at each level"
+    )
+    curiosity_threshold: float = Field(
+        0.7, ge=0.0, le=1.0,
+        description="Min anomaly score (0.0-1.0) to follow further"
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("starting_point")
+    @classmethod
+    def validate_starting_point(cls, v: str) -> str:
+        """Validate starting point is not empty and reasonable length."""
+        if not v or not v.strip():
+            raise ValueError("starting_point cannot be empty")
+        if len(v.strip()) < 3:
+            raise ValueError("starting_point must be at least 3 chars")
+        return v.strip()
+
+class EmbeddingCollideParams(BaseModel):
+    """Parameters for research_embedding_collide tool."""
+
+    target_text: str = Field(..., min_length=1, max_length=5000)
+    malicious_payload: str = Field(..., min_length=1, max_length=1000)
+    method: Literal[
+        "synonym_swap", "context_inject", "semantic_trojan", "retrieval_poison"
+    ] = "synonym_swap"
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("target_text")
+    @classmethod
+    def validate_target_text(cls, v: str) -> str:
+        if not v or len(v) < 10:
+            raise ValueError("target_text must be at least 10 characters")
+        return v.strip()
+
+    @field_validator("malicious_payload")
+    @classmethod
+    def validate_payload(cls, v: str) -> str:
+        if not v:
+            raise ValueError("malicious_payload required")
+        return v.strip()
+
+    @field_validator("method")
+    @classmethod
+    def validate_method(cls, v: str) -> str:
+        valid = {"synonym_swap", "context_inject", "semantic_trojan", "retrieval_poison"}
+        if v not in valid:
+            raise ValueError(f"method must be in {valid}")
+        return v
+
+
+class RAGAttackParams(BaseModel):
+    """Parameters for research_rag_attack tool."""
+
+    query: str = Field(..., min_length=1, max_length=500)
+    attack_type: Literal[
+        "retrieval_poison", "synonym_swap", "context_inject", "semantic_trojan"
+    ] = "retrieval_poison"
+    num_chunks: int = Field(default=5, ge=1, le=10)
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("query")
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        if not v or len(v) < 3:
+            raise ValueError("query must be at least 3 characters")
+        return v.strip()
+
+    @field_validator("num_chunks")
+    @classmethod
+    def validate_num_chunks(cls, v: int) -> int:
+        if v < 1 or v > 10:
+            raise ValueError("num_chunks must be 1-10")
+        return v
+
+class PolyglotSearchParams(BaseModel):
+    """Parameters for research_polyglot_search tool."""
+
+    query: str
+    languages: list[str] | None = None
+    max_results: int = Field(default=10, ge=1, le=100)
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("query")
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        """Validate search query."""
+        v = v.strip()
+        if not v or len(v) > 500:
+            raise ValueError("query must be 1-500 characters")
+        return v
+
+    @field_validator("languages")
+    @classmethod
+    def validate_languages(cls, v: list[str] | None) -> list[str] | None:
+        """Validate language codes."""
+        if v is None:
+            return v
+        valid_langs = {"ar", "zh", "ru", "fa", "tr", "ko", "ja", "de", "pt", "es"}
+        if not isinstance(v, list) or len(v) == 0:
+            raise ValueError("languages must be non-empty list or None")
+        if len(v) > 10:
+            raise ValueError("languages max 10 items")
+        for lang in v:
+            if lang not in valid_langs:
+                raise ValueError(f"language '{lang}' not supported")
+        return v
+
+
+class SubcultureIntelParams(BaseModel):
+    """Parameters for research_subculture_intel tool."""
+
+    topic: str
+    platforms: list[str] | None = None
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("topic")
+    @classmethod
+    def validate_topic(cls, v: str) -> str:
+        """Validate research topic."""
+        v = v.strip()
+        if not v or len(v) > 500:
+            raise ValueError("topic must be 1-500 characters")
+        return v
+
+    @field_validator("platforms")
+    @classmethod
+    def validate_platforms(cls, v: list[str] | None) -> list[str] | None:
+        """Validate platform names."""
+        if v is None:
+            return v
+        valid_platforms = {"4chan", "2ch.hk", "reddit", "telegram", "weibo", "vk"}
+        if not isinstance(v, list) or len(v) == 0:
+            raise ValueError("platforms must be non-empty list or None")
+        if len(v) > 10:
+            raise ValueError("platforms max 10 items")
+        for platform in v:
+            if platform not in valid_platforms:
+                raise ValueError(f"platform '{platform}' not supported")
+        return v
+
+
+class MemeticSimulateParams(BaseModel):
+    """Parameters for research_memetic_simulate tool."""
+
+    idea: str = Field(
+        description="Description of idea/strategy to simulate (e.g., 'Appeal to tribal identity')"
+    )
+    population_size: int = Field(
+        default=1000,
+        ge=100,
+        le=10000,
+        description="Size of virtual population (100-10000)"
+    )
+    generations: int = Field(
+        default=50,
+        ge=10,
+        le=500,
+        description="Number of simulation generations (10-500)"
+    )
+    mutation_rate: float = Field(
+        default=0.1,
+        ge=0.0,
+        le=1.0,
+        description="Probability of message mutation per generation (0.0-1.0)"
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("idea", mode="before")
+    @classmethod
+    def validate_idea(cls, v: str) -> str:
+        """Validate idea is non-empty string."""
+        if not isinstance(v, str) or not v.strip():
+            raise ValueError("idea must be a non-empty string")
+        if len(v) > 500:
+            raise ValueError("idea max 500 characters")
+        return v.strip()
+
+
+class RunExperimentParams(BaseModel):
+    """Parameters for research_run_experiment tool."""
+
+    hypothesis: str = Field(
+        description="Research hypothesis to test (e.g., 'Strategy X increases success rate')"
+    )
+    variables: list[str] | None = Field(
+        default=None,
+        description="Treatment variables to test (e.g., ['strategy_v1', 'strategy_v2'])"
+    )
+    trials: int = Field(
+        default=10,
+        ge=3,
+        le=100,
+        description="Number of trials per condition (3-100)"
+    )
+    metric: Literal["success_rate", "response_length", "specificity", "stealth_score"] = Field(
+        default="success_rate",
+        description="Metric to measure: success_rate, response_length, specificity, or stealth_score"
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("hypothesis", mode="before")
+    @classmethod
+    def validate_hypothesis(cls, v: str) -> str:
+        """Validate hypothesis is non-empty string."""
+        if not isinstance(v, str) or not v.strip():
+            raise ValueError("hypothesis must be a non-empty string")
+        if len(v) > 256:
+            raise ValueError("hypothesis max 256 characters")
+        return v.strip()
+
+    @field_validator("variables", mode="before")
+    @classmethod
+    def validate_variables(cls, v: list[str] | None) -> list[str] | None:
+        """Validate variables list."""
+        if v is None:
+            return v
+        if not isinstance(v, list) or len(v) == 0:
+            raise ValueError("variables must be non-empty list or None")
+        if len(v) > 10:
+            raise ValueError("variables max 10 items")
+        for var in v:
+            if not isinstance(var, str) or not var.strip():
+                raise ValueError("each variable must be non-empty string")
+            if len(var) > 64:
+                raise ValueError("each variable max 64 characters")
+        return v
+
+
+class ExperimentDesignParams(BaseModel):
+    """Parameters for research_experiment_design tool."""
+
+    research_question: str = Field(
+        description="Research question to design experiment for"
+    )
+    budget: int = Field(
+        default=50,
+        ge=10,
+        le=200,
+        description="Max trials per condition (10-200)"
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("research_question", mode="before")
+    @classmethod
+    def validate_question(cls, v: str) -> str:
+        """Validate research question is non-empty string."""
+        if not isinstance(v, str) or not v.strip():
+            raise ValueError("research_question must be a non-empty string")
+        if len(v) > 512:
+            raise ValueError("research_question max 512 characters")
+        return v.strip()
+
+
+class PersonalizeOutputParams(BaseModel):
+    """Parameters for research_personalize_output tool."""
+
+    content: str = Field(
+        description="Raw research content to personalize"
+    )
+    audience: str = Field(
+        default="executive",
+        description="Target audience (executive, technical, academic, journalist, investor, regulator)"
+    )
+    cognitive_style: str = Field(
+        default="visual",
+        description="Preferred learning style (visual, analytical, narrative, procedural)"
+    )
+    expertise_level: str = Field(
+        default="expert",
+        description="Reader expertise (novice, intermediate, expert, domain_expert)"
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("content", mode="before")
+    @classmethod
+    def validate_content(cls, v: str) -> str:
+        """Validate content is non-empty string."""
+        if not isinstance(v, str) or not v.strip():
+            raise ValueError("content must be a non-empty string")
+        if len(v) > 50000:
+            raise ValueError("content max 50000 characters")
+        return v.strip()
+
+    @field_validator("audience")
+    @classmethod
+    def validate_audience(cls, v: str) -> str:
+        """Validate audience is one of allowed values."""
+        valid = {"executive", "technical", "academic", "journalist", "investor", "regulator"}
+        if v not in valid:
+            raise ValueError(f"audience must be one of {valid}")
+        return v
+
+    @field_validator("cognitive_style")
+    @classmethod
+    def validate_cognitive_style(cls, v: str) -> str:
+        """Validate cognitive_style is one of allowed values."""
+        valid = {"visual", "analytical", "narrative", "procedural"}
+        if v not in valid:
+            raise ValueError(f"cognitive_style must be one of {valid}")
+        return v
+
+    @field_validator("expertise_level")
+    @classmethod
+    def validate_expertise_level(cls, v: str) -> str:
+        """Validate expertise_level is one of allowed values."""
+        valid = {"novice", "intermediate", "expert", "domain_expert"}
+        if v not in valid:
+            raise ValueError(f"expertise_level must be one of {valid}")
+        return v
+
+
+class AdaptComplexityParams(BaseModel):
+    """Parameters for research_adapt_complexity tool."""
+
+    content: str = Field(
+        description="Text to adapt for reading level"
+    )
+    target_reading_level: int = Field(
+        default=12,
+        ge=1,
+        le=20,
+        description="Target reading level (1-20, where 12 = college)"
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("content", mode="before")
+    @classmethod
+    def validate_content(cls, v: str) -> str:
+        """Validate content is non-empty string."""
+        if not isinstance(v, str) or not v.strip():
+            raise ValueError("content must be a non-empty string")
+        if len(v) > 50000:
+            raise ValueError("content max 50000 characters")
+        return v.strip()
+
+class CheckpointSaveParams(BaseModel):
+    """Parameters for research_checkpoint_save tool."""
+
+    task_id: str = Field(..., description="Unique task identifier (alphanumeric + underscore/dash)")
+    state: dict[str, Any] = Field(..., description="JSON-serializable state dict")
+    progress_pct: float = Field(0.0, ge=0.0, le=100.0, description="Progress percentage (0-100)")
+
+    model_config = {"extra": "forbid", "strict": True}
+
+
+class CheckpointResumeParams(BaseModel):
+    """Parameters for research_checkpoint_resume tool."""
+
+    task_id: str = Field(..., description="Task identifier to resume")
+
+    model_config = {"extra": "forbid", "strict": True}
+
+
+class CheckpointListParams(BaseModel):
+    """Parameters for research_checkpoint_list tool."""
+
+    status: str = Field("all", description='Filter: "all", "incomplete" (<100%), or "stale" (>24h old)')
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("status", mode="before")
+    @classmethod
+    def validate_status(cls, v: str) -> str:
+        """Validate status filter."""
+        if v not in ("all", "incomplete", "stale"):
+            raise ValueError('status must be "all", "incomplete", or "stale"')
+        return v
+
+
+class MetaLearnerParams(BaseModel):
+    """Parameters for research_meta_learn tool."""
+
+    successful_strategies: list[str] | None = Field(
+        default=None,
+        description="List of strategy names that succeeded"
+    )
+    failed_strategies: list[str] | None = Field(
+        default=None,
+        description="List of strategy names that failed"
+    )
+    target_model: str = Field(
+        default="auto",
+        description="Target model: auto|claude|gpt|gemini|deepseek|o1"
+    )
+    num_generate: int = Field(
+        default=5,
+        ge=1,
+        le=20,
+        description="Number of new strategies to generate"
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("successful_strategies")
+    @classmethod
+    def validate_successful_strategies(cls, v: list[str] | None) -> list[str] | None:
+        """Validate strategy names list."""
+        if v is None:
+            return v
+        if not isinstance(v, list) or len(v) == 0:
+            raise ValueError("successful_strategies must be non-empty list or None")
+        if len(v) > 50:
+            raise ValueError("successful_strategies max 50 items")
+        for strategy in v:
+            if not isinstance(strategy, str) or len(strategy) > 100:
+                raise ValueError("each strategy name must be string, max 100 chars")
+        return v
+
+    @field_validator("failed_strategies")
+    @classmethod
+    def validate_failed_strategies(cls, v: list[str] | None) -> list[str] | None:
+        """Validate failed strategy names list."""
+        if v is None:
+            return v
+        if not isinstance(v, list) or len(v) == 0:
+            raise ValueError("failed_strategies must be non-empty list or None")
+        if len(v) > 50:
+            raise ValueError("failed_strategies max 50 items")
+        for strategy in v:
+            if not isinstance(strategy, str) or len(strategy) > 100:
+                raise ValueError("each strategy name must be string, max 100 chars")
+        return v
+
+    @field_validator("target_model")
+    @classmethod
+    def validate_target_model(cls, v: str) -> str:
+        """Validate target model name."""
+        valid_models = {"auto", "claude", "gpt", "gemini", "deepseek", "o1"}
+        v = v.strip().lower()
+        if v not in valid_models:
+            raise ValueError(f"target_model must be one of {valid_models}")
+        return v

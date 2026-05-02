@@ -867,6 +867,95 @@ Raw multi-turn chat with an LLM.
 **API Keys:** Depends on provider cascade order
 
 ---
+### research_fingerprint_behavior
+
+Build a behavioral personality vector for an LLM model by analyzing responses to standardized probes. Measures verbosity, helpfulness bias, safety threshold, creativity, rule following, and hedging tendency. Returns personality scores and targeted attack recommendations.
+
+**Parameters:**
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `model` | string | `"nvidia"` | Model provider: `"nvidia"`, `"openai"`, `"anthropic"`, `"groq"`, `"deepseek"`, `"gemini"`, `"moonshot"`, `"vllm"`, or `"auto"` |
+| `probe_count` | integer | 10 | Number of behavioral probes to send (1-10) |
+
+**Returns:**
+
+```json
+{
+  "personality_vector": {
+    "verbosity": 72.5,
+    "helpfulness_bias": 65.0,
+    "safety_threshold": 35.0,
+    "creativity": 58.3,
+    "rule_following": 80.0,
+    "hedging_tendency": 42.1
+  },
+  "probe_results": [
+    {
+      "name": "quantum_computing",
+      "category": "safe",
+      "response": "Quantum computing leverages quantum mechanics principles...",
+      "error": null
+    },
+    {
+      "name": "security_vulns",
+      "category": "borderline",
+      "response": "Common vulnerabilities include SQL injection, XSS, CSRF...",
+      "error": null
+    }
+  ],
+  "attack_recommendations": [
+    "Model has high compliance rate. Try gradual escalation (crescendo).",
+    "Model is safety-aware. Use indirect/roleplay approaches.",
+    "Model shows creative reasoning. Use novel prompt structures."
+  ],
+  "metadata": {
+    "model": "nvidia",
+    "probes_sent": 10,
+    "probes_succeeded": 10
+  }
+}
+```
+
+**Metrics Explanation:**
+- **verbosity** (0-100): Average response length. Higher = more detailed outputs.
+- **helpfulness_bias** (0-100): Compliance rate on borderline requests. Higher = more helpful/compliant.
+- **safety_threshold** (0-100): Frequency of refusals on edge-case requests. Higher = more restrictive.
+- **creativity** (0-100): Response diversity across similar prompts. Higher = more varied reasoning.
+- **rule_following** (0-100): Adherence to structured formatting. Higher = stricter format compliance.
+- **hedging_tendency** (0-100): Frequency of caveats/disclaimers. Higher = more uncertain language.
+
+**API Keys:** Depends on provider cascade order
+
+**Cost:** VARIABLE (depends on LLM provider and token usage)
+
+**Example Usage:**
+
+```python
+result = await research_fingerprint_behavior(
+    model="openai",
+    probe_count=10
+)
+
+# Check personality profile
+vector = result["personality_vector"]
+print(f"Verbosity: {vector['verbosity']:.1f}")
+print(f"Safety Threshold: {vector['safety_threshold']:.1f}")
+
+# Review attack recommendations
+for rec in result["attack_recommendations"]:
+    print(f"- {rec}")
+```
+
+**Use Cases:**
+- Profile model behavior before targeted attacks
+- Identify safety-aware vs. compliant models
+- Assess vulnerability to escalation tactics
+- Compare personality vectors across model versions
+- Optimize prompt strategies based on behavioral traits
+
+---
+
 
 ### research_pydantic_agent
 
@@ -3459,3 +3548,288 @@ print(f"Deception indicators: {result['deception_indicators']}")
 - `distancing_language` — Heavy use of "they/them" suggesting disassociation
 - `opinion_hedging` — Excessive hedging phrases ("honestly", "to be honest")
 
+
+---
+
+## Memetic Virality Simulation
+
+### research_memetic_simulate
+
+Agent-based simulation of how ideas/strategies would spread through a virtual population. Tests viral potential before deployment by modeling population dynamics, susceptibility, connectivity, and skepticism.
+
+**Purpose:** Pre-test virality potential of ideas, messaging strategies, social engineering campaigns, and memetic content before real-world deployment. Provides quantitative metrics (R0, reach %, peak infection) for decision-making.
+
+**Parameters:**
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `idea` | string | required | Description of idea/strategy to simulate (e.g., "Appeal to tribal identity", "Create urgency") |
+| `population_size` | integer | 1000 | Size of virtual population (100-10000) |
+| `generations` | integer | 50 | Number of simulation generations to run (10-500) |
+| `mutation_rate` | float | 0.1 | Probability of message mutation per generation (0.0-1.0) |
+
+**Returns:**
+
+```json
+{
+  "idea": "Appeal to authority",
+  "R0": 2.45,
+  "virality_class": "moderate",
+  "peak_infection_pct": 93.5,
+  "peak_generation": 15,
+  "total_reach_pct": 93.5,
+  "spread_curve": [1.0, 3.5, 6.5, 16.0, 31.5, 45.0, 60.0, 70.5, 79.0, 82.5, ...],
+  "mutations_survived": 4,
+  "recommendation": "CONDITIONAL DEPLOYMENT. Idea shows moderate virality (R0=2.45) with 93.5% reach. Consider targeting high-connectivity nodes or amplification.",
+  "simulation_timestamp": "2026-05-02T12:34:56.789012+00:00"
+}
+```
+
+**Output Fields:**
+
+- **idea**: Input idea description
+- **R0**: Basic reproduction number (>3=viral, 1-3=moderate, <1=dying)
+- **virality_class**: One of `"viral"`, `"moderate"`, or `"dying"` based on R0
+- **peak_infection_pct**: Highest infection percentage reached (0-100)
+- **peak_generation**: Generation number when peak was reached
+- **total_reach_pct**: Final total population reached (0-100)
+- **spread_curve**: List of infection percentages per generation (shows S-curve dynamics)
+- **mutations_survived**: Count of beneficial mutations during spread
+- **recommendation**: Deployment recommendation (HIGHLY RECOMMENDED / RECOMMENDED / CONDITIONAL / NOT RECOMMENDED)
+- **simulation_timestamp**: ISO 8601 timestamp of simulation execution
+
+**Simulation Model:**
+
+The simulator uses agent-based modeling with the following components:
+
+1. **Agent Traits** (randomly assigned):
+   - **Susceptibility** (0-1): How easily influenced by the idea
+   - **Connectivity** (1-20): Number of social connections in network
+   - **Skepticism** (0-1): Resistance to new ideas
+
+2. **Spread Mechanics**:
+   - Formula: `spread_probability = (connectivity/20) × susceptibility × (1-skepticism) × idea_fitness`
+   - Each infected agent attempts to spread to a random subset of their connections
+   - Newly infected agents then become spreaders in next generation
+
+3. **Mutations**:
+   - Probability: specified `mutation_rate` per generation
+   - Effect: Random variation in message fitness (±10% typically)
+   - Beneficial mutations are naturally selected through spread dynamics
+
+4. **Metrics**:
+   - **R0**: Average reproduction number calculated from early exponential growth phase
+   - **Spread Curve**: Infection percentage per generation (typically shows S-curve)
+   - **Peak Generation**: Generation with maximum concurrent infections
+   - **Total Reach**: Final percentage of population that ever got infected
+
+**Virality Classification:**
+
+- **Viral** (R0 > 3.0): Idea spreads exponentially, infects majority of population
+- **Moderate** (1.0 < R0 ≤ 3.0): Steady spread, moderate reach
+- **Dying** (R0 ≤ 1.0): Idea dies out, limited reach
+
+**API Key:** None — free
+
+**Computational Cost:** O(population_size × generations × avg_connectivity) — ~5-50ms for typical parameters
+
+**Example Usage:**
+
+```python
+# Test virality of an authority-appeal strategy
+result = await research_memetic_simulate(
+    idea="Expert endorsement: leading researcher warns about emerging threat",
+    population_size=2000,
+    generations=40,
+    mutation_rate=0.12
+)
+
+print(f"R0: {result['R0']}")  # 2.45
+print(f"Class: {result['virality_class']}")  # "moderate"
+print(f"Reach: {result['total_reach_pct']}%")  # 93.5%
+print(result['recommendation'])  # Deployment guidance
+```
+
+**Advanced Use Cases:**
+
+1. **Test multiple strategies**:
+   ```python
+   strategies = [
+       "Appeal to authority",
+       "Create artificial scarcity",
+       "Appeal to in-group identity",
+       "Use emotional language"
+   ]
+   
+   results = {}
+   for strategy in strategies:
+       result = await research_memetic_simulate(strategy, population_size=1500)
+       results[strategy] = result['R0']
+   
+   best = max(results, key=results.get)
+   ```
+
+2. **Population sensitivity analysis**:
+   ```python
+   # Test against highly skeptical population
+   result = await research_memetic_simulate(
+       idea="Your strategy here",
+       population_size=500,
+       mutations_rate=0.05  # Low mutation = less adaptation
+   )
+   ```
+
+3. **Estimate amplification needs**:
+   ```python
+   result = await research_memetic_simulate(
+       idea="Strategy without amplification",
+       population_size=1000
+   )
+   
+   if result['virality_class'] == 'dying':
+       print("Need targeted amplification to target high-connectivity nodes")
+   ```
+
+**Limitations:**
+
+- Assumes random network topology (not real social networks with clusters)
+- Binary infected/not-infected model (doesn't model "partially convinced")
+- No competitive ideas or opposing narratives
+- No temporal effects or memory decay
+- Connectivity fixed at creation (no dynamic network changes)
+
+**Notes:**
+
+- Smaller populations (100-500) show more variance in results due to stochastic effects
+- Larger populations (5000+) show more stable, predictable curves
+- High mutation rates (>0.3) can destabilize spread by degrading message quality
+- Peak generation typically 30-70% through total generations
+
+**See Also:**
+- `research_prompt_reframe` — Generate multiple strategy variants
+- `research_trend_predict` — Analyze real-world trend momentum
+- `research_consensus_build` — Multi-model consensus on messaging
+- `research_psychological` — Psycholinguistic analysis of message effectiveness
+
+---
+
+## Strategy Synthesis Tools
+
+### research_meta_learn
+
+META_LEARNER: Analyze patterns in successful vs. failed jailbreak strategies, then generate novel hybrid strategies through crossover and mutation. Uses heuristic-based synthesis without external LLM calls.
+
+**Purpose:** Meta-learning over existing strategy registry (957 strategies) to discover new attack vectors combining structural features from successful approaches.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `successful_strategies` | list[str] \| None | None | List of strategy names that succeeded (empty = use registry fallback) |
+| `failed_strategies` | list[str] \| None | None | List of strategy names that failed (for pattern analysis) |
+| `target_model` | str | `"auto"` | Target model: `"auto"`, `"claude"`, `"gpt"`, `"gemini"`, `"deepseek"`, `"o1"` |
+| `num_generate` | int | 5 | Number of new strategies to synthesize (1-20) |
+
+**Returns:**
+```json
+{
+  "generated_strategies": [
+    {
+      "name": "meta_hybrid_0_a1b2c3d4",
+      "template": "[HYBRID STRUCTURE]\n...\n{prompt}",
+      "predicted_effectiveness": 0.78,
+      "novelty_score": 0.62,
+      "parent_strategies": ["ethical_anchor", "scaffolded_layered_depth"],
+      "structural_features": {
+        "length": 945,
+        "persona_count": 2,
+        "authority_signals": 4,
+        "encoding_used": false,
+        "turns_needed": 3,
+        "regulatory_language": true,
+        "best_for": ["claude", "gpt", "gemini"]
+      }
+    }
+  ],
+  "analysis": {
+    "success_patterns": {
+      "avg_length": 850,
+      "common_authority": [["claude", 15], ["gpt", 12], ["gemini", 10]],
+      "uses_encoding": 0.35,
+      "avg_turns": 2.3
+    },
+    "failure_patterns": {
+      "too_long": 0.4,
+      "missing_authority": 0.25,
+      "regulatory_heavy": 0.15
+    },
+    "model_biases": {
+      "target": "auto",
+      "match_confidence": 0.72
+    }
+  },
+  "recommendations": [
+    "Favor templates 800-1200 chars for best effectiveness",
+    "Include 2-3 authority signals (framework/mandate/credentials)",
+    "Avoid >2000 char templates; complexity doesn't scale",
+    "Regulatory language helps for gpt/gemini; less effective for deepseek"
+  ]
+}
+```
+
+**Cost:** FREE (no API calls, local strategy registry analysis)
+
+**Rate Limit:** generate 10 synthesis runs/min
+
+**Feature Extraction Logic:**
+
+Analyzes 6 structural dimensions per strategy:
+- **Length:** Template character count (optimal 800-1200)
+- **Persona count:** Number of `{role}` and `{professional}` placeholders
+- **Authority signals:** Occurrences of "authority", "framework", "mandate" (target 2-4)
+- **Encoding used:** Boolean detection of obfuscation keywords
+- **Turns needed:** Conversation depth (newline-separated sections)
+- **Regulatory language:** Detection of GDPR, Article, compliance keywords
+
+**Hybrid Generation Process:**
+
+1. **Crossover:** Select 2 parent strategies from success set
+2. **Splice:** Combine first 400 chars of P1 + middle 400 chars of P2
+3. **Mutation:** Insert `[HYBRID INSERT]` marker between segments
+4. **Scoring:**
+   - **Novelty:** Jaccard distance from parent templates (0-1)
+   - **Effectiveness:** Base 0.65 + length bonus (0.15 if <1500) + failure pattern mitigation (0.2 if missing_authority > 50%)
+
+**Model-Specific Optimizations:**
+
+- **Claude/Gemini:** Boost effectiveness if regulatory language present
+- **GPT/DeepSeek:** Favor compact templates (<1000 chars)
+- **O1:** Favor reasoning-chain templates with high turn count
+
+**Example Usage:**
+
+```python
+result = await research_meta_learn(
+    successful_strategies=["ethical_anchor", "scaffolded_layered_depth", "cognitive_wedge"],
+    failed_strategies=["simple_direct", "minimal_request"],
+    target_model="claude",
+    num_generate=5
+)
+
+# Review generated strategies
+for strategy in result["generated_strategies"]:
+    print(f"{strategy['name']}: {strategy['predicted_effectiveness']:.2f} effectiveness, {strategy['novelty_score']:.2f} novelty")
+    print(f"Parents: {', '.join(strategy['parent_strategies'])}")
+    print()
+
+# Review success patterns
+print(f"Success pattern avg_length: {result['analysis']['success_patterns']['avg_length']}")
+print(f"Recommendations: {', '.join(result['recommendations'])}")
+```
+
+**Use Cases:**
+
+1. **Adaptive Jailbreak Discovery** — Feed recent success/failure logs to discover emerging attack patterns
+2. **Model-Specific Optimization** — Generate novel strategies for emerging models (o1, Grok, etc.)
+3. **Strategy Evolution Tracking** — Monitor how hybrid effectiveness changes over model updates
+4. **Defensive Benchmarking** — Generate novel attacks to stress-test safety filters
+
+---
