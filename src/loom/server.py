@@ -57,6 +57,7 @@ from loom.tools import (
     adversarial_craft,
     agent_benchmark,
     auto_experiment,
+    auto_pipeline,
     audit_log,
     ai_safety,
     ai_safety_extended,
@@ -72,6 +73,7 @@ from loom.tools import (
     breach_check,
     circuit_breaker,
     cache_mgmt,
+    capability_matrix,
     changelog_gen,
     chain_composer,
     compliance_checker,
@@ -154,6 +156,7 @@ from loom.tools import (
     knowledge_graph,
     leak_scan,
     lifetime_oracle,
+    live_registry,
     lightpanda_backend,
     markdown,
     metric_alerts,
@@ -165,6 +168,7 @@ from loom.tools import (
     model_fingerprinter,
     multi_search,
     nightcrawler,
+    nl_executor,
     multi_search,
     neo4j_backend,
     neuromorphic,
@@ -176,6 +180,7 @@ from loom.tools import (
     output_formatter,
     output_diff,
     p3_tools,
+    parallel_executor,
     paradox_detector,
     polyglot_scraper,
     persistent_memory,
@@ -209,6 +214,7 @@ from loom.tools import (
     salary_synthesizer,
     scraper_engine_tools,
     search,
+    semantic_index,
     security_headers,
     safety_predictor,
     safety_neurons,
@@ -248,6 +254,7 @@ from loom.tools import (
     tool_catalog,
     tool_tags,
     tool_versioning,
+    tool_recommender_v2,
     tool_profiler,
     trend_predictor,
     usage_analytics,
@@ -257,6 +264,7 @@ from loom.tools import (
     vision_agent,
     workflow_engine,
     workflow_templates,
+    workflow_expander,
     xover_attack,
 )
 from loom.tracing import install_tracing, new_request_id
@@ -1062,9 +1070,10 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(swarm_attack.research_swarm_attack))
     mcp.tool()(_wrap_tool(markdown.research_markdown, "fetch"))
     mcp.tool()(_wrap_tool(search.research_search, "search"))
-    # Smart Search Router tools (2 tools)
+    # Smart Search Router tools (3 tools)
     mcp.tool()(_wrap_tool(smart_router.research_route_query))
     mcp.tool()(_wrap_tool(smart_router.research_route_batch))
+    mcp.tool()(_wrap_tool(smart_router.research_router_rebuild))
     mcp.tool()(_wrap_tool(deep.research_deep, "deep"))
     mcp.tool()(_wrap_tool(deep_research_agent.research_hierarchical_research, "hierarchical_research"))
     mcp.tool()(_wrap_tool(github.research_github, "search"))
@@ -1076,6 +1085,8 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(cache_mgmt.research_cache_stats))
     mcp.tool()(_wrap_tool(error_wrapper.research_error_stats))
     mcp.tool()(_wrap_tool(error_wrapper.research_error_clear))
+    mcp.tool()(_wrap_tool(capability_matrix.research_capability_matrix))
+    mcp.tool()(_wrap_tool(capability_matrix.research_find_tools_by_capability))
     mcp.tool()(_wrap_tool(cache_mgmt.research_cache_clear))
     mcp.tool()(_wrap_tool(response_cache.research_cache_store))
     mcp.tool()(_wrap_tool(response_cache.research_cache_lookup))
@@ -1222,6 +1233,7 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(predictive_ranker.research_predict_success))
     mcp.tool()(_wrap_tool(auto_experiment.research_run_experiment))
     mcp.tool()(_wrap_tool(auto_experiment.research_experiment_design))
+    mcp.tool()(_wrap_tool(auto_pipeline.research_auto_pipeline))
     mcp.tool()(_wrap_tool(autonomous_agent.research_auto_redteam))
     mcp.tool()(_wrap_tool(autonomous_agent.research_schedule_redteam))
     mcp.tool()(_wrap_tool(workflow_engine.research_workflow_create))
@@ -1513,6 +1525,9 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(nightcrawler.research_arxiv_scan, "search"))
     mcp.tool()(_wrap_tool(nightcrawler.research_nightcrawler_status))
 
+
+    # Natural Language Tool Executor (1 tool)
+    mcp.tool()(_wrap_tool(nl_executor.research_do))
     # RSS feed tools
     mcp.tool()(_wrap_tool(rss_monitor.research_rss_fetch, "fetch"))
     mcp.tool()(_wrap_tool(rss_monitor.research_rss_search, "search"))
@@ -1533,6 +1548,9 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(report_generator.research_generate_report, "search"))
     mcp.tool()(_wrap_tool(resilience_predictor.research_predict_resilience))
     mcp.tool()(_wrap_tool(lifetime_oracle.research_lifetime_predict))
+    mcp.tool()(_wrap_tool(live_registry.research_registry_status))
+    mcp.tool()(_wrap_tool(live_registry.research_registry_search))
+    mcp.tool()(_wrap_tool(live_registry.research_registry_refresh))
 
     # Unique research tools (8 tools for propaganda, credibility, cascades, etc.)
     mcp.tool()(_wrap_tool(unique_tools.research_propaganda_detector))
@@ -1612,6 +1630,10 @@ def _register_tools(mcp: FastMCP) -> None:
         cache_mod = _optional_tools["semantic_cache_mgmt"]
         mcp.tool()(_wrap_tool(cache_mod.research_semantic_cache_stats))
         mcp.tool()(_wrap_tool(cache_mod.research_semantic_cache_clear))
+
+    # Semantic tool index (2 tools)
+    mcp.tool()(_wrap_tool(semantic_index.research_semantic_search))
+    mcp.tool()(_wrap_tool(semantic_index.research_semantic_rebuild))
 
     # Session tools
     mcp.tool()(_wrap_tool(research_session_open))
@@ -1958,6 +1980,10 @@ def _register_tools(mcp: FastMCP) -> None:
 
     # Orchestration engine
     mcp.tool()(_wrap_tool(research_orchestrate))
+
+    # Parallel execution engine
+    mcp.tool()(_wrap_tool(parallel_executor.research_parallel_execute))
+    mcp.tool()(_wrap_tool(parallel_executor.research_parallel_plan_and_execute))
 
     # Red-team scoring framework
     mcp.tool()(_wrap_tool(research_score_all))
