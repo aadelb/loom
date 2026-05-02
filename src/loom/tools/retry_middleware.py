@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 import importlib
 import logging
 import time
@@ -73,7 +74,7 @@ async def research_retry_execute(
             func = getattr(module, tool_name)
 
             # Call the tool with params
-            if asyncio.iscoroutinefunction(func):
+            if inspect.iscoroutinefunction(func):
                 result = await func(**params)
             else:
                 result = func(**params)

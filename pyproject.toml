@@ -54,6 +54,7 @@ dependencies = [
   "openai>=2.31",
   "python-dotenv>=1.2",
   "ddgs>=3.9",
+  "aiosqlite>=3.14",
   "trafilatura>=1.6",
   "langdetect>=1.0",
 ]

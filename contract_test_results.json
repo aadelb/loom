@@ -1,0 +1,209 @@
+{
+  "summary": {
+    "total": 16,
+    "passed": 9,
+    "failed": 7,
+    "pass_rate": 0.5625,
+    "by_category": {
+      "health": {
+        "passed": 1,
+        "failed": 0
+      },
+      "handshake": {
+        "passed": 2,
+        "failed": 0
+      },
+      "tools_list": {
+        "passed": 0,
+        "failed": 5
+      },
+      "tools_call": {
+        "passed": 3,
+        "failed": 1
+      },
+      "session": {
+        "passed": 2,
+        "failed": 0
+      },
+      "content_type": {
+        "passed": 1,
+        "failed": 1
+      }
+    },
+    "timestamp": "2026-05-01T23:06:15.942625+00:00"
+  },
+  "results": [
+    {
+      "test_name": "Server Health",
+      "category": "health",
+      "passed": true,
+      "message": "Server is responding",
+      "details": {},
+      "timestamp": "2026-05-01T23:06:11.879959+00:00"
+    },
+    {
+      "test_name": "Protocol Handshake (Valid)",
+      "category": "handshake",
+      "passed": true,
+      "message": "Initialize successful",
+      "details": {
+        "protocol_version": "2024-11-05",
+        "server_info": {
+          "name": "loom",
+          "version": "1.27.0"
+        },
+        "session_id": "f8b88e99f1794803975770d2823ba223"
+      },
+      "timestamp": "2026-05-01T23:06:12.186487+00:00"
+    },
+    {
+      "test_name": "Protocol Handshake (Invalid Version)",
+      "category": "handshake",
+      "passed": true,
+      "message": "Server handled invalid version gracefully",
+      "details": {
+        "response": {
+          "jsonrpc": "2.0",
+          "id": 2,
+          "result": {
+            "protocolVersion": "2025-11-25",
+            "capabilities": {
+              "experimental": {},
+              "prompts": {
+                "listChanged": false
+              },
+              "resources": {
+                "subscribe": false,
+                "listChanged": false
+              },
+              "tools": {
+                "listChanged": false
+              }
+            },
+            "serverInfo": {
+              "name": "loom",
+              "version": "1.27.0"
+            }
+          }
+        }
+      },
+      "timestamp": "2026-05-01T23:06:12.488984+00:00"
+    },
+    {
+      "test_name": "Tools/List Response Structure",
+      "category": "tools_list",
+      "passed": false,
+      "message": "HTTP 400",
+      "details": {},
+      "timestamp": "2026-05-01T23:06:12.791278+00:00"
+    },
+    {
+      "test_name": "Tools/List Response Structure",
+      "category": "tools_list",
+      "passed": false,
+      "message": "HTTP 400",
+      "details": {},
+      "timestamp": "2026-05-01T23:06:13.096604+00:00"
+    },
+    {
+      "test_name": "Tool Schema Validity",
+      "category": "tools_list",
+      "passed": false,
+      "message": "No tools available for validation",
+      "details": {},
+      "timestamp": "2026-05-01T23:06:13.096859+00:00"
+    },
+    {
+      "test_name": "Tools/List Response Structure",
+      "category": "tools_list",
+      "passed": false,
+      "message": "HTTP 400",
+      "details": {},
+      "timestamp": "2026-05-01T23:06:13.399100+00:00"
+    },
+    {
+      "test_name": "Tools/List Response Structure",
+      "category": "tools_list",
+      "passed": false,
+      "message": "HTTP 400",
+      "details": {},
+      "timestamp": "2026-05-01T23:06:13.773584+00:00"
+    },
+    {
+      "test_name": "Tool Call (Valid)",
+      "category": "tools_call",
+      "passed": false,
+      "message": "No tools available",
+      "details": {},
+      "timestamp": "2026-05-01T23:06:13.773987+00:00"
+    },
+    {
+      "test_name": "Tool Call (Non-existent)",
+      "category": "tools_call",
+      "passed": true,
+      "message": "Non-existent tool rejected with error -32600",
+      "details": {
+        "error_code": -32600
+      },
+      "timestamp": "2026-05-01T23:06:14.080688+00:00"
+    },
+    {
+      "test_name": "Tool Call (Malformed JSON)",
+      "category": "tools_call",
+      "passed": true,
+      "message": "Malformed JSON properly rejected with -32700",
+      "details": {
+        "error_code": -32700
+      },
+      "timestamp": "2026-05-01T23:06:14.386834+00:00"
+    },
+    {
+      "test_name": "Tool Call (Missing Params)",
+      "category": "tools_call",
+      "passed": true,
+      "message": "Missing params properly rejected (code: -32600)",
+      "details": {
+        "error_code": -32600
+      },
+      "timestamp": "2026-05-01T23:06:14.714941+00:00"
+    },
+    {
+      "test_name": "Session Header Presence",
+      "category": "session",
+      "passed": true,
+      "message": "Server returns Mcp-Session-Id header",
+      "details": {
+        "session_id": "90e0da65a8d944b1bf3039b7b8a32b06"
+      },
+      "timestamp": "2026-05-01T23:06:15.021472+00:00"
+    },
+    {
+      "test_name": "Session Reuse",
+      "category": "session",
+      "passed": true,
+      "message": "Session ID properly reused across calls",
+      "details": {
+        "session_id": "90e0da65a8d944b1bf3039b7b8a32b06"
+      },
+      "timestamp": "2026-05-01T23:06:15.326062+00:00"
+    },
+    {
+      "test_name": "Content-Type (Event-Stream)",
+      "category": "content_type",
+      "passed": false,
+      "message": "HTTP 400",
+      "details": {},
+      "timestamp": "2026-05-01T23:06:15.635458+00:00"
+    },
+    {
+      "test_name": "Content-Type (No Accept)",
+      "category": "content_type",
+      "passed": true,
+      "message": "Server properly requires Accept header (406)",
+      "details": {
+        "status": 406
+      },
+      "timestamp": "2026-05-01T23:06:15.941716+00:00"
+    }
+  ]
+}

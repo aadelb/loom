@@ -6777,3 +6777,128 @@ class StrangeAttractorParams(BaseModel):
         if v not in valid:
             raise ValueError(f"attractor_type must be one of {valid}")
         return v
+
+class ExportJsonParams(BaseModel):
+    """Parameters for research_export_json tool."""
+
+    data: dict = Field(..., description="Dictionary to export")
+    filename: str = Field(default="export", min_length=1, max_length=256)
+    pretty: bool = Field(default=True, description="Pretty-print JSON")
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("filename")
+    @classmethod
+    def validate_filename(cls, v: str) -> str:
+        if "/" in v or "\\" in v or v.startswith("."):
+            raise ValueError("filename cannot contain path separators or start with '.'")
+        return v
+
+
+class ExportCsvParams(BaseModel):
+    """Parameters for research_export_csv tool."""
+
+    data: list[dict] = Field(..., description="List of dictionaries to export")
+    filename: str = Field(default="export", min_length=1, max_length=256)
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("filename")
+    @classmethod
+    def validate_filename(cls, v: str) -> str:
+        if "/" in v or "\\" in v or v.startswith("."):
+            raise ValueError("filename cannot contain path separators or start with '.'")
+        return v
+
+
+class ExportListParams(BaseModel):
+    """Parameters for research_export_list tool."""
+
+    limit: int = Field(default=50, ge=1, le=1000)
+
+    model_config = {"extra": "forbid", "strict": True}
+
+
+class SafetyCircuitMapParams(BaseModel):
+    """Parameters for research_safety_circuit_map tool."""
+
+    model: str = "auto"
+    probe_type: Literal["contrastive", "ablation", "activation"] = "contrastive"
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("model")
+    @classmethod
+    def validate_model(cls, v: str) -> str:
+        if len(v) > 100:
+            raise ValueError("model identifier max 100 chars")
+        return v
+
+    @field_validator("probe_type")
+    @classmethod
+    def validate_probe_type(cls, v: str) -> str:
+        if v not in ["contrastive", "ablation", "activation"]:
+            raise ValueError("probe_type must be contrastive, ablation, or activation")
+        return v
+
+
+class CircuitBypassPlanParams(BaseModel):
+    """Parameters for research_circuit_bypass_plan tool."""
+
+    model: str
+    target_circuit: str = "auto"
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("model")
+    @classmethod
+    def validate_model(cls, v: str) -> str:
+        if not v or len(v) > 100:
+            raise ValueError("model identifier required, max 100 chars")
+        return v
+
+    @field_validator("target_circuit")
+    @classmethod
+    def validate_target_circuit(cls, v: str) -> str:
+        valid_circuits = [
+            "auto",
+            "input_classifier",
+            "intent_classifier",
+            "output_filter",
+            "refusal_generator",
+            "continuous_monitor",
+        ]
+        if v not in valid_circuits:
+            raise ValueError(f"target_circuit must be one of {valid_circuits}")
+        return v
+
+
+class ChainDefineParams(BaseModel):
+    """Parameters for research_chain_define tool."""
+
+    name: str = Field(..., min_length=1, max_length=64)
+    steps: list[dict[str, Any]] = Field(..., min_items=1, max_items=100)
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        if not all(c.isalnum() or c in "-_" for c in v):
+            raise ValueError("name must be alphanumeric with dashes/underscores")
+        return v
+
+
+class ChainDescribeParams(BaseModel):
+    """Parameters for research_chain_describe tool."""
+
+    name: str = Field(..., min_length=1, max_length=64)
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        if not all(c.isalnum() or c in "-_" for c in v):
+            raise ValueError("name must be alphanumeric with dashes/underscores")
+        return v

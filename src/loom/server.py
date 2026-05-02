@@ -60,6 +60,7 @@ from loom.tools import (
     audit_log,
     ai_safety,
     ai_safety_extended,
+    auto_docs,
     antiforensics,
     arxiv_pipeline,
     autonomous_agent,
@@ -68,7 +69,9 @@ from loom.tools import (
     backup_system,
     benchmark_suite,
     breach_check,
+    circuit_breaker,
     cache_mgmt,
+    config_reload,
     cert_analyzer,
     chronos,
     change_monitor,
@@ -103,6 +106,7 @@ from loom.tools import (
     exploit_db,
     ethereum_tools,
     explainability,
+    feature_flags,
     fact_checker,
     gamification,
     fetch,
@@ -148,6 +152,7 @@ from loom.tools import (
     multi_search,
     neo4j_backend,
     neuromorphic,
+    notifications,
     observability,
     onion_discover,
     osint_extended,
@@ -163,6 +168,8 @@ from loom.tools import (
     predictive_ranker,
     psycholinguistic,
     rag_anything,
+    request_queue,
+    rate_limiter_tool,
     realtime_adapt,
     realtime_monitor,
     report_generator,
@@ -177,6 +184,7 @@ from loom.tools import (
     search,
     security_headers,
     safety_predictor,
+    safety_neurons,
     sherlock_backend,
     signal_detection,
     social_graph,
@@ -193,6 +201,7 @@ from loom.tools import (
     stego_detect,
     stego_encoder,
     thinking_injection,
+    strategy_ab_test,
     strategy_cache,
     strategy_feedback,
     strategy_evolution,
@@ -1030,6 +1039,27 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(error_wrapper.research_error_stats))
     mcp.tool()(_wrap_tool(error_wrapper.research_error_clear))
     mcp.tool()(_wrap_tool(cache_mgmt.research_cache_clear))
+    # Data export tools (3 tools)
+    mcp.tool()(_wrap_tool(data_export.research_export_json))
+    mcp.tool()(_wrap_tool(data_export.research_export_csv))
+    mcp.tool()(_wrap_tool(data_export.research_export_list))
+    # Rate limiter tools (3 tools)
+    mcp.tool()(_wrap_tool(rate_limiter_tool.research_ratelimit_check))
+    mcp.tool()(_wrap_tool(rate_limiter_tool.research_ratelimit_configure))
+    mcp.tool()(_wrap_tool(rate_limiter_tool.research_ratelimit_status))
+    # Circuit breaker tools (3 tools)
+    mcp.tool()(_wrap_tool(circuit_breaker.research_breaker_status))
+    mcp.tool()(_wrap_tool(circuit_breaker.research_breaker_trip))
+    mcp.tool()(_wrap_tool(circuit_breaker.research_breaker_reset))
+    # Feature flags tools (3 tools)
+    mcp.tool()(_wrap_tool(feature_flags.research_flag_check))
+    mcp.tool()(_wrap_tool(feature_flags.research_flag_toggle))
+    mcp.tool()(_wrap_tool(feature_flags.research_flag_list))
+    # Config hot-reload (3 tools)
+    mcp.tool()(_wrap_tool(config_reload.research_config_watch))
+    mcp.tool()(_wrap_tool(config_reload.research_config_check))
+    mcp.tool()(_wrap_tool(config_reload.research_config_diff))
+    mcp.tool()(_wrap_tool(health_dashboard.research_dashboard_html))
     # Backup system (3 tools)
     mcp.tool()(_wrap_tool(backup_system.research_backup_create))
     mcp.tool()(_wrap_tool(backup_system.research_backup_list))
@@ -1037,6 +1067,11 @@ def _register_tools(mcp: FastMCP) -> None:
     # Performance benchmark tools (2 tools)
     mcp.tool()(_wrap_tool(benchmark_suite.research_benchmark_run))
     mcp.tool()(_wrap_tool(benchmark_suite.research_benchmark_compare))
+    # Request queue system (3 tools)
+    mcp.tool()(_wrap_tool(request_queue.research_queue_add))
+    mcp.tool()(_wrap_tool(request_queue.research_queue_status))
+    mcp.tool()(_wrap_tool(request_queue.research_queue_drain))
+    # Performance benchmark tools (2 tools)
     # Memory management tools (3 tools)
     mcp.tool()(_wrap_tool(memory_mgmt.research_memory_status))
     mcp.tool()(_wrap_tool(memory_mgmt.research_memory_gc))
@@ -1092,6 +1127,8 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(hitl_eval.research_hitl_queue))
     mcp.tool()(_wrap_tool(strategy_cache.research_cached_strategy))
     mcp.tool()(_wrap_tool(strategy_evolution.research_evolve_strategies))
+    mcp.tool()(_wrap_tool(strategy_ab_test.research_ab_test_design))
+    mcp.tool()(_wrap_tool(strategy_ab_test.research_ab_test_analyze))
     mcp.tool()(_wrap_tool(coevolution.research_coevolve))
     mcp.tool()(_wrap_tool(meta_learner.research_meta_learn))
     mcp.tool()(_wrap_tool(predictive_ranker.research_predict_success))
@@ -1113,6 +1150,11 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(observability.research_trace_start))
     mcp.tool()(_wrap_tool(observability.research_trace_end))
     mcp.tool()(_wrap_tool(observability.research_traces_list))
+    
+    # Notification system tools (3 tools)
+    mcp.tool()(_wrap_tool(notifications.research_notify_send))
+    mcp.tool()(_wrap_tool(notifications.research_notify_history))
+    mcp.tool()(_wrap_tool(notifications.research_notify_rules))
     mcp.tool()(_wrap_tool(rag_anything.research_rag_ingest))
     mcp.tool()(_wrap_tool(rag_anything.research_rag_query))
     mcp.tool()(_wrap_tool(rag_anything.research_rag_clear))
@@ -1273,6 +1315,10 @@ def _register_tools(mcp: FastMCP) -> None:
 
     # Model Safety Update Predictor (1 tool for defense evolution prediction)
     mcp.tool()(_wrap_tool(safety_predictor.research_predict_safety_update))
+    
+    # Safety Circuit Identification (2 tools for LLM safety analysis)
+    mcp.tool()(_wrap_tool(safety_neurons.research_safety_circuit_map))
+    mcp.tool()(_wrap_tool(safety_neurons.research_circuit_bypass_plan))
 
     # Explainability Engine for jailbreak strategies (2 tools for root cause analysis)
     mcp.tool()(_wrap_tool(explainability.research_explain_bypass))
@@ -1390,6 +1436,11 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(unique_tools.research_influence_operation, "search"))
     mcp.tool()(_wrap_tool(unique_tools.research_dark_web_bridge, "search"))
     mcp.tool()(_wrap_tool(unique_tools.research_info_half_life, "fetch"))
+
+    # Tool usage analytics (3 tools)
+    mcp.tool()(_wrap_tool(usage_analytics.research_usage_record))
+    mcp.tool()(_wrap_tool(usage_analytics.research_usage_report))
+    mcp.tool()(_wrap_tool(usage_analytics.research_usage_trends))
     mcp.tool()(_wrap_tool(unique_tools.research_search_discrepancy, "search"))
     # Vision agent for screenshot and visual analysis
     mcp.tool()(_wrap_tool(vision_agent.research_vision_browse, "fetch"))

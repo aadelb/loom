@@ -14,12 +14,25 @@ from typing import Any
 
 logger = logging.getLogger("loom.tools.session_replay")
 
+REPLAY_DIR = Path.home() / ".loom" / "sessions" / "replay"
+
 
 def _get_replay_dir() -> Path:
     """Get directory for session replay storage."""
-    base = Path.home() / ".loom" / "sessions" / "replay"
-    base.mkdir(parents=True, exist_ok=True)
-    return base
+    REPLAY_DIR.mkdir(parents=True, exist_ok=True)
+    return REPLAY_DIR
+
+
+def _load_jsonl_steps(session_file: Path) -> list[dict]:
+    """Load all steps from a JSONL file."""
+    steps = []
+    if session_file.exists():
+        try:
+            with session_file.open() as f:
+                steps = [json.loads(line) for line in f if line.strip()]
+        except (OSError, json.JSONDecodeError) as e:
+            logger.warning("load_jsonl_failed: %s", e)
+    return steps
 
 
 async def research_session_record(
@@ -31,56 +44,35 @@ async def research_session_record(
 ) -> dict[str, Any]:
     """Record a tool call as part of a named session.
 
-    Appends to ~/.loom/sessions/replay/{session_id}.jsonl for append-only
-    storage without locking overhead. Each line is a complete JSON step record.
-
-    Args:
-        session_id: Session identifier (alphanumeric, dash, underscore)
-        tool_name: Name of the tool called (e.g., "research_fetch")
-        params: Tool parameters as dictionary
-        result_summary: Brief summary of the result
-        duration_ms: Execution duration in milliseconds
+    Appends to ~/.loom/sessions/replay/{session_id}.jsonl in append-only mode.
 
     Returns:
-        Dict with: {recorded: True, session_id, step_number, timestamp}
+        {recorded: bool, session_id, step_number, timestamp}
     """
-    replay_dir = _get_replay_dir()
-    session_file = replay_dir / f"{session_id}.jsonl"
+    session_file = _get_replay_dir() / f"{session_id}.jsonl"
+    step_number = len(_load_jsonl_steps(session_file)) + 1
 
-    # Count existing steps to compute step number
-    step_number = 0
-    if session_file.exists():
-        try:
-            step_number = sum(1 for _ in session_file.open())
-        except OSError as e:
-            logger.warning("session_record_step_count_failed session=%s: %s", session_id, e)
-
-    step_number += 1
-
-    # Create step record
     step = {
         "step": step_number,
         "tool": tool_name,
-        "params_summary": str(params)[:200],  # Truncate to 200 chars
-        "result_summary": result_summary[:500],  # Truncate to 500 chars
+        "params_summary": str(params)[:200],
+        "result_summary": result_summary[:500],
         "duration_ms": duration_ms,
         "timestamp": datetime.now(UTC).isoformat(),
     }
 
-    # Append to JSONL (atomic per-line writes)
     try:
         with session_file.open("a") as f:
             f.write(json.dumps(step) + "\n")
+        return {
+            "recorded": True,
+            "session_id": session_id,
+            "step_number": step_number,
+            "timestamp": step["timestamp"],
+        }
     except OSError as e:
-        logger.error("session_record_write_failed session=%s: %s", session_id, e)
+        logger.error("session_record_failed: %s", e)
         return {"recorded": False, "session_id": session_id, "error": str(e)}
-
-    return {
-        "recorded": True,
-        "session_id": session_id,
-        "step_number": step_number,
-        "timestamp": step["timestamp"],
-    }
 
 
 async def research_session_replay(
@@ -88,18 +80,13 @@ async def research_session_replay(
 ) -> dict[str, Any]:
     """Load and return the full session timeline.
 
-    Reads all steps from JSONL file and reconstructs the workflow sequence.
-
-    Args:
-        session_id: Session identifier to replay
-
     Returns:
-        Dict with: {session_id, steps: list of step dicts, total_steps, total_duration_ms}
+        {session_id, steps: [step dicts], total_steps, total_duration_ms}
     """
-    replay_dir = _get_replay_dir()
-    session_file = replay_dir / f"{session_id}.jsonl"
+    session_file = _get_replay_dir() / f"{session_id}.jsonl"
+    steps = _load_jsonl_steps(session_file)
 
-    if not session_file.exists():
+    if not steps and not session_file.exists():
         return {
             "session_id": session_id,
             "steps": [],
@@ -108,75 +95,35 @@ async def research_session_replay(
             "error": f"Session not found: {session_id}",
         }
 
-    steps = []
-    total_duration_ms = 0.0
-
-    try:
-        with session_file.open() as f:
-            for line in f:
-                if line.strip():
-                    step = json.loads(line)
-                    steps.append(step)
-                    total_duration_ms += step.get("duration_ms", 0.0)
-    except (OSError, json.JSONDecodeError) as e:
-        logger.error("session_replay_read_failed session=%s: %s", session_id, e)
-        return {
-            "session_id": session_id,
-            "steps": steps,
-            "total_steps": len(steps),
-            "total_duration_ms": total_duration_ms,
-            "error": str(e),
-        }
-
+    total_duration = sum(s.get("duration_ms", 0) for s in steps)
     return {
         "session_id": session_id,
         "steps": steps,
         "total_steps": len(steps),
-        "total_duration_ms": round(total_duration_ms, 2),
+        "total_duration_ms": round(total_duration, 2),
     }
 
 
 async def research_session_list() -> dict[str, Any]:
     """List all recorded sessions with metadata.
 
-    Scans replay directory and returns summary for each session file found.
-
     Returns:
-        Dict with: {sessions: list[{id, steps_count, total_duration_ms, first_step_at, last_step_at}], total_sessions}
+        {sessions: [{id, steps_count, total_duration_ms, first_step_at, last_step_at}], total_sessions}
     """
     replay_dir = _get_replay_dir()
-
-    if not replay_dir.exists():
-        return {"sessions": [], "total_sessions": 0}
-
     sessions = []
 
     for session_file in sorted(replay_dir.glob("*.jsonl")):
-        session_id = session_file.stem
-        steps = []
-        total_duration_ms = 0.0
-
-        try:
-            with session_file.open() as f:
-                for line in f:
-                    if line.strip():
-                        step = json.loads(line)
-                        steps.append(step)
-                        total_duration_ms += step.get("duration_ms", 0.0)
-        except (OSError, json.JSONDecodeError) as e:
-            logger.warning("session_list_read_failed session=%s: %s", session_id, e)
-            continue
-
+        steps = _load_jsonl_steps(session_file)
         if steps:
-            sessions.append(
-                {
-                    "id": session_id,
-                    "steps_count": len(steps),
-                    "total_duration_ms": round(total_duration_ms, 2),
-                    "first_step_at": steps[0].get("timestamp", ""),
-                    "last_step_at": steps[-1].get("timestamp", ""),
-                }
-            )
+            total_duration = sum(s.get("duration_ms", 0) for s in steps)
+            sessions.append({
+                "id": session_file.stem,
+                "steps_count": len(steps),
+                "total_duration_ms": round(total_duration, 2),
+                "first_step_at": steps[0].get("timestamp", ""),
+                "last_step_at": steps[-1].get("timestamp", ""),
+            })
 
     return {
         "sessions": sessions,
