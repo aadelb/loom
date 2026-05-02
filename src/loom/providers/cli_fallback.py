@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import re
 import shutil
 from typing import Any
 
@@ -39,6 +40,57 @@ async def _run_cli(cmd: list[str], timeout: float = 120.0) -> str:
 def _cli_available(name: str) -> bool:
     """Check if a CLI tool is installed."""
     return shutil.which(name) is not None
+
+
+def _extract_json_from_cli(raw_text: str) -> dict[str, Any]:
+    """Extract JSON from raw CLI response.
+
+    Tries multiple strategies:
+    1. Direct JSON parsing
+    2. ```json ... ``` code block extraction
+    3. { ... } pattern extraction
+    4. Fallback to wrapped text
+
+    Args:
+        raw_text: Raw response from CLI tool
+
+    Returns:
+        Dict with either parsed JSON or {"text": raw_text, "source": "cli_fallback"}
+    """
+    if not raw_text:
+        return {"text": "", "source": "cli_fallback"}
+
+    # Strategy 1: Try direct JSON parse
+    try:
+        result = json.loads(raw_text)
+        if isinstance(result, dict):
+            return result
+    except (json.JSONDecodeError, ValueError):
+        pass
+
+    # Strategy 2: Extract from ```json ... ``` code block
+    json_block_match = re.search(r"```json\s*(.*?)\s*```", raw_text, re.DOTALL)
+    if json_block_match:
+        try:
+            result = json.loads(json_block_match.group(1))
+            if isinstance(result, dict):
+                return result
+        except (json.JSONDecodeError, ValueError):
+            pass
+
+    # Strategy 3: Extract first { ... } pattern
+    brace_match = re.search(r"\{.*\}", raw_text, re.DOTALL)
+    if brace_match:
+        try:
+            result = json.loads(brace_match.group(0))
+            if isinstance(result, dict):
+                return result
+        except (json.JSONDecodeError, ValueError):
+            pass
+
+    # Strategy 4: Fallback — wrap in dict
+    logger.debug("cli_json_extraction_failed, wrapping as text")
+    return {"text": raw_text, "source": "cli_fallback"}
 
 
 # === CLI Provider Registry ===
@@ -90,7 +142,7 @@ async def cli_llm_call(
         preferred_cli: Force a specific CLI ("gemini", "kimi", "codex")
 
     Returns:
-        Dict with: response (str), provider (str), via ("cli"), error (str|None)
+        Dict with: response (dict|str), provider (str), via ("cli"), error (str|None)
     """
     # If preferred CLI specified, try it first
     if preferred_cli:
@@ -111,8 +163,10 @@ async def cli_llm_call(
 
         if response and len(response) > 50:
             logger.info("cli_success provider=%s response_len=%d", provider["name"], len(response))
+            # Extract JSON if present, otherwise wrap raw text
+            parsed_response = _extract_json_from_cli(response)
             return {
-                "response": response,
+                "response": parsed_response,
                 "provider": provider["name"],
                 "via": "cli",
                 "error": None,
@@ -121,7 +175,7 @@ async def cli_llm_call(
             logger.debug("cli_empty_response provider=%s", provider["name"])
 
     return {
-        "response": "",
+        "response": {"text": "", "source": "cli_fallback"},
         "provider": "none",
         "via": "cli",
         "error": "All CLI providers failed or unavailable",
@@ -134,4 +188,10 @@ async def cli_cascade_call(
 ) -> str:
     """Simple interface: try all CLIs and return the response text or empty string."""
     result = await cli_llm_call(prompt, max_tokens)
-    return result.get("response", "")
+    response = result.get("response", "")
+
+    # Handle both dict (parsed JSON) and string (raw text)
+    if isinstance(response, dict):
+        # If parsed JSON, try to extract text field, otherwise serialize
+        return response.get("text", json.dumps(response))
+    return str(response)

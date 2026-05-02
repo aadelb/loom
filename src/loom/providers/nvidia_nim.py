@@ -104,6 +104,10 @@ class NvidiaNimProvider(LLMProvider):
         """
         # Validate timeout to prevent abuse (HIGH #8)
         timeout = max(1, min(int(timeout), 600))
+        # Use provider's own default if passed model isn't an NIM-compatible model
+        # NIM models are namespaced like "meta/llama-4-maverick-17b-128e-instruct"
+        if model and not model.startswith(("meta/", "nvidia/", "mistral/")):
+            model = self.default_model
         model = model or self.default_model
         async with self.semaphore:
             return await self._chat_impl(
