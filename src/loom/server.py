@@ -1100,12 +1100,12 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(cache_mgmt.research_cache_clear))
     mcp.tool()(_wrap_tool(response_cache.research_cache_store))
     mcp.tool()(_wrap_tool(response_cache.research_cache_lookup))
+    mcp.tool(name="research_response_cache_stats")(_wrap_tool(response_cache.research_cache_stats))
 
     # Data Pipeline Builder tools (3 tools)
     mcp.tool()(_wrap_tool(data_pipeline.research_pipeline_create))
     mcp.tool()(_wrap_tool(data_pipeline.research_pipeline_validate))
     mcp.tool()(_wrap_tool(data_pipeline.research_pipeline_list))
-    mcp.tool()(_wrap_tool(response_cache.research_cache_stats))
     # Input sanitization and validation tools (2 tools)
     mcp.tool()(_wrap_tool(input_sanitizer.research_sanitize_input))
     mcp.tool()(_wrap_tool(input_sanitizer.research_validate_params))
@@ -1437,7 +1437,7 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(ai_safety.research_model_fingerprint, "fetch"))
     mcp.tool()(_wrap_tool(ai_safety.research_bias_probe, "fetch"))
     mcp.tool()(_wrap_tool(ai_safety.research_safety_filter_map, "fetch"))
-    mcp.tool()(_wrap_tool(ai_safety.research_compliance_check, "fetch"))
+    mcp.tool(name="research_ai_compliance_check")(_wrap_tool(ai_safety.research_compliance_check, "fetch"))
 
     # Extended AI Safety tools (2 tools for advanced compliance testing)
     mcp.tool()(_wrap_tool(ai_safety_extended.research_hallucination_benchmark, "fetch"))
@@ -2094,7 +2094,7 @@ def _register_tools(mcp: FastMCP) -> None:
     if "billing" in _optional_tools:
         billing_mod = _optional_tools["billing"]
         if hasattr(billing_mod, "research_usage_report"):
-            mcp.tool()(_wrap_tool(billing_mod.research_usage_report))
+            mcp.tool(name="research_billing_report")(_wrap_tool(billing_mod.research_usage_report))
         if hasattr(billing_mod, "research_stripe_balance"):
             mcp.tool()(_wrap_tool(billing_mod.research_stripe_balance))
 
