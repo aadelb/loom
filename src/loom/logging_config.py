@@ -110,9 +110,9 @@ def setup_logging(
     if log_format.lower() == "json":
         formatter = JsonFormatter()
     else:
-        # Plain text format with support for request_id
+        # Plain text format
         formatter = logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s - [%(request_id)s] %(message)s"
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         )
 
     console_handler.setFormatter(formatter)
