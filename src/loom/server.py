@@ -50,6 +50,7 @@ from loom.sqlite_pool import research_pool_stats, research_pool_reset
 
 # Import tool modules to register their functions
 from loom.tools import (
+    api_version,
     academic_integrity,
     access_tools,
     adversarial_debate_tool,
@@ -65,6 +66,7 @@ from loom.tools import (
     bias_lens,
     backoff_dlq,
     backup_system,
+    benchmark_suite,
     breach_check,
     cache_mgmt,
     cert_analyzer,
@@ -76,11 +78,13 @@ from loom.tools import (
     coevolution,
     crypto_risk,
     crypto_trace,
+    cost_estimator,
     cultural_attacks,
-    culture_dna,
     cyberscraper,
     dark_forum,
     dark_recon,
+    data_export,
+    dependency_graph,
     darkweb_early_warning,
     dead_content,
     deception_detect,
@@ -90,6 +94,7 @@ from loom.tools import (
     deep,
     defender_mode,
     embedding_collision,
+    enterprise_sso,
     error_wrapper,
     ensemble_attack,
     evidence_fusion,
@@ -110,6 +115,7 @@ from loom.tools import (
     github,
     graph_analysis,
     graph_scraper,
+    health_dashboard,
     hcs10_academic,
     hcs_escalation,
     hcs_report,
@@ -161,6 +167,7 @@ from loom.tools import (
     realtime_monitor,
     report_generator,
     resilience_predictor,
+    retry_middleware,
     response_synthesizer,
     redteam_hub,
     resumption,
@@ -176,6 +183,7 @@ from loom.tools import (
     social_intel,
     social_scraper,
     spider,
+    session_replay,
     startup_validator,
     strange_attractors,
     swarm_attack,
@@ -199,6 +207,7 @@ from loom.tools import (
     traffic_capture,
     tool_catalog,
     trend_predictor,
+    usage_analytics,
     unique_tools,
     webhook_system,
     white_rabbit,
@@ -1025,10 +1034,9 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(backup_system.research_backup_create))
     mcp.tool()(_wrap_tool(backup_system.research_backup_list))
     mcp.tool()(_wrap_tool(backup_system.research_backup_restore))
-    # Distributed tracing tools (3 tools)
-    mcp.tool()(_wrap_tool(dist_tracing.research_trace_create))
-    mcp.tool()(_wrap_tool(dist_tracing.research_trace_complete))
-    mcp.tool()(_wrap_tool(dist_tracing.research_trace_query))
+    # Performance benchmark tools (2 tools)
+    mcp.tool()(_wrap_tool(benchmark_suite.research_benchmark_run))
+    mcp.tool()(_wrap_tool(benchmark_suite.research_benchmark_compare))
     # Memory management tools (3 tools)
     mcp.tool()(_wrap_tool(memory_mgmt.research_memory_status))
     mcp.tool()(_wrap_tool(memory_mgmt.research_memory_gc))
@@ -1042,6 +1050,10 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(audit_log.research_audit_record))
     mcp.tool()(_wrap_tool(audit_log.research_audit_query))
     mcp.tool()(_wrap_tool(audit_log.research_audit_export))
+    # Enterprise SSO integration tools (3 tools)
+    mcp.tool()(_wrap_tool(enterprise_sso.research_sso_configure))
+    mcp.tool()(_wrap_tool(enterprise_sso.research_sso_validate_token))
+    mcp.tool()(_wrap_tool(enterprise_sso.research_sso_user_info))
     # Red Team Hub tools (3 tools)
     mcp.tool()(_wrap_tool(redteam_hub.research_hub_share))
     mcp.tool()(_wrap_tool(redteam_hub.research_hub_feed))
@@ -1207,6 +1219,10 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(dark_recon.research_torbot, "fetch"))
     mcp.tool()(_wrap_tool(dark_recon.research_amass_enum, "fetch"))
     mcp.tool()(_wrap_tool(dark_recon.research_amass_intel, "fetch"))
+
+    # Tool dependency graph analysis (2 tools)
+    mcp.tool()(_wrap_tool(dependency_graph.research_tool_dependencies))
+    mcp.tool()(_wrap_tool(dependency_graph.research_tool_impact))
 
     # Access and content authenticity tools (5 tools for legal monitoring, open access, and deepfake detection)
     mcp.tool()(_wrap_tool(access_tools.research_legal_takedown, "fetch"))
@@ -1444,6 +1460,9 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(research_session_open))
     mcp.tool()(_wrap_tool(research_session_list))
     mcp.tool()(_wrap_tool(research_session_close))
+    mcp.tool()(_wrap_tool(session_replay.research_session_record))
+    mcp.tool()(_wrap_tool(session_replay.research_session_replay))
+    mcp.tool()(_wrap_tool(session_replay.research_session_list))
 
     # MCP authentication tools
     if "mcp_auth" in _optional_tools:
@@ -1765,6 +1784,11 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(research_health_check))
     mcp.tool()(_wrap_tool(research_coverage_run))
     mcp.tool()(_wrap_tool(research_dashboard))
+
+    # API versioning and metadata
+    mcp.tool()(_wrap_tool(api_version.research_api_version))
+    mcp.tool()(_wrap_tool(api_version.research_api_changelog))
+    mcp.tool()(_wrap_tool(api_version.research_api_deprecations))
 
     # Orchestration engine
     mcp.tool()(_wrap_tool(research_orchestrate))
@@ -2321,6 +2345,10 @@ def _register_tools(mcp: FastMCP) -> None:
             mcp.tool()(_wrap_tool(mod.research_multi_consensus, "llm"))
 
 
+
+    # Auto-documentation tools (2 tools)
+    mcp.tool()(_wrap_tool(auto_docs.research_generate_docs))
+    mcp.tool()(_wrap_tool(auto_docs.research_docs_coverage))
 
 def _validate_environment() -> None:
     """Validate that required environment variables are configured.

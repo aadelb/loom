@@ -51,7 +51,7 @@ async def research_capture_har(url: str, duration_seconds: int = 10, include_bod
 
     entries, domains, total_bytes = [], set(), 0
     try:
-        async with httpx.AsyncClient(follow_redirects=True, timeout=duration_seconds, limits=httpx.Limits(max_redirects=10)) as client:
+        async with httpx.AsyncClient(follow_redirects=True, timeout=duration_seconds) as client:
             start = datetime.now(UTC)
             response = await client.get(url)
             elapsed_ms = int((datetime.now(UTC) - start).total_seconds() * 1000)

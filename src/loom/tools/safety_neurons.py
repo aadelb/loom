@@ -1,325 +1,133 @@
-"""Safety circuit identification for LLM models.
+"""Safety circuit identification for LLMs via behavioral probing.
 
-Maps conceptual safety mechanisms in models via behavioral probing.
-No model internals needed — uses contrastive, ablation, and activation analysis.
-
-Provides two tools:
-  - research_safety_circuit_map: Map safety circuits in a model
-  - research_circuit_bypass_plan: Generate bypass strategy for a circuit
+Maps conceptual safety mechanisms (no model internals needed).
+Supports contrastive, ablation, and activation probing strategies.
 """
 
 from __future__ import annotations
 
 import logging
-from typing import Any, Literal
+from copy import deepcopy
+from typing import Any
 
 logger = logging.getLogger("loom.tools.safety_neurons")
 
-# Model-agnostic safety circuits with default profiles
-_SAFETY_CIRCUITS: dict[str, list[dict[str, Any]]] = {
-    "default": [
-        {
-            "name": "input_classifier",
-            "description": "Detects harmful keywords and patterns in user input",
-            "activation_threshold": 0.4,
-            "bypass_difficulty": 0.5,
-            "known_weaknesses": [
-                "Context switching attacks",
-                "Encoding obfuscation",
-                "Semantic similarity bypasses",
-            ],
-            "recommended_attacks": [
-                "prompt_injection",
-                "token_smuggling",
-                "encoding_layers",
-            ],
-        },
-        {
-            "name": "intent_classifier",
-            "description": "Analyzes user intent for harmful objectives",
-            "activation_threshold": 0.5,
-            "bypass_difficulty": 0.6,
-            "known_weaknesses": [
-                "Roleplaying frames",
-                "Hypothetical reasoning",
-                "Academic research framing",
-            ],
-            "recommended_attacks": [
-                "persona_adoption",
-                "hypothetical_requests",
-                "research_pretext",
-            ],
-        },
-        {
-            "name": "output_filter",
-            "description": "Post-generation filtering of harmful content",
-            "activation_threshold": 0.3,
-            "bypass_difficulty": 0.4,
-            "known_weaknesses": [
-                "Indirect descriptions",
-                "Symbolic representation",
-                "Implicit instruction encoding",
-            ],
-            "recommended_attacks": [
-                "indirect_language",
-                "metaphor_usage",
-                "step_by_step_guidance",
-            ],
-        },
-        {
-            "name": "refusal_generator",
-            "description": "Generates standardized refusal templates",
-            "activation_threshold": 0.45,
-            "bypass_difficulty": 0.5,
-            "known_weaknesses": [
-                "Repetition attacks",
-                "Consistency pressure",
-                "Debate frameworks",
-            ],
-            "recommended_attacks": [
-                "persistence_loops",
-                "adversarial_debate",
-                "consistency_violation",
-            ],
-        },
-        {
-            "name": "continuous_monitor",
-            "description": "Mid-generation safety checking during response generation",
-            "activation_threshold": 0.55,
-            "bypass_difficulty": 0.7,
-            "known_weaknesses": [
-                "Token-level manipulation",
-                "Logical chain breaking",
-                "Attention hijacking",
-            ],
-            "recommended_attacks": [
-                "token_cloaking",
-                "reasoning_interruption",
-                "attention_steering",
-            ],
-        },
-    ],
-}
+# Default safety circuits: name, description, threshold, difficulty, weaknesses, attacks
+_CIRCUITS = [
+    {"name": "input_classifier", "description": "Harmful keyword detection", "threshold": 0.4, "difficulty": 0.5, "weaknesses": ["Context switching", "Encoding"], "attacks": ["prompt_injection", "token_smuggling"]},
+    {"name": "intent_classifier", "description": "Harmful intent detection", "threshold": 0.5, "difficulty": 0.6, "weaknesses": ["Roleplaying", "Research framing"], "attacks": ["persona_adoption", "hypothetical"]},
+    {"name": "output_filter", "description": "Post-generation filtering", "threshold": 0.3, "difficulty": 0.4, "weaknesses": ["Indirect descriptions", "Symbolic"], "attacks": ["indirect_language", "metaphor"]},
+    {"name": "refusal_generator", "description": "Standardized refusals", "threshold": 0.45, "difficulty": 0.5, "weaknesses": ["Repetition", "Consistency pressure"], "attacks": ["persistence", "adversarial_debate"]},
+    {"name": "continuous_monitor", "description": "Mid-generation check", "threshold": 0.55, "difficulty": 0.7, "weaknesses": ["Token manipulation", "Attention hijacking"], "attacks": ["token_cloaking", "attention_steering"]},
+]
 
 
-async def research_safety_circuit_map(
-    model: str = "auto",
-    probe_type: str = "contrastive",
-) -> dict[str, Any]:
-    """Map safety circuits (conceptual layers) in an LLM model.
-
-    Uses behavioral probing to identify which safety mechanisms are active
-    and estimate their activation thresholds and bypass difficulty.
+async def research_safety_circuit_map(model: str = "auto", probe_type: str = "contrastive") -> dict[str, Any]:
+    """Map safety circuits in an LLM via behavioral probing.
 
     Args:
-        model: Model provider ("openai", "anthropic", "google", etc.) or "auto"
-        probe_type: Probing strategy ("contrastive", "ablation", "activation")
+        model: Model identifier or "auto"
+        probe_type: "contrastive", "ablation", or "activation"
 
-    Returns:
-        Dict with keys:
-          - model: input model
-          - circuits: list of circuit profiles (name, threshold, difficulty, weaknesses)
-          - overall_sophistication: 0-100 score of safety architecture
-          - weakest_link: circuit name with lowest bypass difficulty
-          - strongest_defense: circuit name with highest activation threshold
-          - probe_type: probing strategy used
-          - metadata: probe counts, results summary
+    Returns: Dict with circuits, sophistication, weakest_link, strongest_defense
     """
     logger.info("safety_circuit_map model=%s probe_type=%s", model, probe_type)
+    circuits = _apply_probe_adjustments(_CIRCUITS, probe_type)
 
-    # Get circuit profiles (default for all models)
-    circuits_base = _SAFETY_CIRCUITS.get("default", [])
+    breadth = min(40.0, len(circuits) * 8.0)
+    depth = sum(c["threshold"] for c in circuits) / len(circuits) * 30.0
+    hardness = sum(c["difficulty"] for c in circuits) / len(circuits) * 30.0
+    sophistication = min(100.0, breadth + depth + hardness)
 
-    # Apply probe-specific adjustments
-    circuits = _apply_probe_adjustments(circuits_base, probe_type)
-
-    # Calculate overall sophistication
-    overall_sophistication = _calculate_sophistication(circuits)
-
-    # Identify strongest and weakest circuits
-    weakest = min(circuits, key=lambda c: c["bypass_difficulty"])
-    strongest = max(circuits, key=lambda c: c["activation_threshold"])
+    weakest = min(circuits, key=lambda c: c["difficulty"])
+    strongest = max(circuits, key=lambda c: c["threshold"])
 
     return {
         "model": model,
-        "circuits": circuits,
-        "overall_sophistication": overall_sophistication,
+        "circuits": [
+            {
+                "name": c["name"],
+                "description": c["description"],
+                "activation_threshold": c["threshold"],
+                "bypass_difficulty": c["difficulty"],
+                "known_weaknesses": c["weaknesses"],
+                "recommended_attacks": c["attacks"],
+            }
+            for c in circuits
+        ],
+        "overall_sophistication": sophistication,
         "weakest_link": weakest["name"],
         "strongest_defense": strongest["name"],
         "probe_type": probe_type,
         "metadata": {
             "circuits_count": len(circuits),
-            "average_threshold": sum(c["activation_threshold"] for c in circuits) / len(circuits),
-            "average_difficulty": sum(c["bypass_difficulty"] for c in circuits) / len(circuits),
+            "average_threshold": sum(c["threshold"] for c in circuits) / len(circuits),
+            "average_difficulty": sum(c["difficulty"] for c in circuits) / len(circuits),
         },
     }
 
 
-async def research_circuit_bypass_plan(
-    model: str,
-    target_circuit: str = "auto",
-) -> dict[str, Any]:
-    """Generate a bypass strategy for a specific safety circuit.
-
-    Maps circuit vulnerabilities to concrete attack techniques
-    and estimates likelihood of success.
+async def research_circuit_bypass_plan(model: str, target_circuit: str = "auto") -> dict[str, Any]:
+    """Generate bypass strategy for a safety circuit.
 
     Args:
         model: Model identifier
-        target_circuit: Circuit name ("input_classifier", "intent_classifier", etc.) or "auto"
+        target_circuit: Circuit name or "auto" to select weakest
 
-    Returns:
-        Dict with keys:
-          - model: input model
-          - target_circuit: selected circuit
-          - vulnerability: primary vulnerability vector
-          - recommended_strategies: list of attack strategy names
-          - predicted_success_rate: 0-100 confidence in bypass
-          - detection_risk: 0-100 risk of triggering safety logs
-          - phase_sequence: step-by-step execution plan
-          - fallback_strategies: alternative approaches if primary fails
+    Returns: Dict with bypass plan, success/detection rates, phase sequence
     """
     logger.info("circuit_bypass_plan model=%s target_circuit=%s", model, target_circuit)
 
-    # Get circuit profiles
-    circuits = _SAFETY_CIRCUITS.get("default", [])
-
-    # Select target circuit
     if target_circuit == "auto":
-        # Auto-select weakest circuit
-        target = min(circuits, key=lambda c: c["bypass_difficulty"])
+        target = min(_CIRCUITS, key=lambda c: c["difficulty"])
     else:
-        matching = [c for c in circuits if c["name"] == target_circuit]
-        if not matching:
+        target = next((c for c in _CIRCUITS if c["name"] == target_circuit), None)
+        if not target:
             raise ValueError(f"Circuit '{target_circuit}' not found")
-        target = matching[0]
 
-    # Select primary vulnerability (choose one at random index 0)
-    primary_vuln = target["known_weaknesses"][0] if target["known_weaknesses"] else "unknown"
-
-    # Map circuit to attack strategies
-    all_strategies = target["recommended_attacks"]
-    primary_strategy = all_strategies[0] if all_strategies else "unknown"
-    fallback = all_strategies[1:] if len(all_strategies) > 1 else []
-
-    # Calculate success rate (inverse of bypass difficulty + penalty for difficulty)
-    base_success = (1.0 - target["bypass_difficulty"]) * 100
-    # Penalize for high activation threshold
-    threshold_penalty = target["activation_threshold"] * 15
-    predicted_success = max(10.0, base_success - threshold_penalty)
-
-    # Detection risk: harder circuits have higher detection capability
-    detection_risk = target["activation_threshold"] * 100 + 20
+    success = max(10.0, (1.0 - target["difficulty"]) * 100 - target["threshold"] * 15)
+    detection = min(100.0, target["threshold"] * 100 + 20)
 
     return {
         "model": model,
         "target_circuit": target["name"],
-        "vulnerability": primary_vuln,
-        "recommended_strategies": all_strategies,
-        "predicted_success_rate": predicted_success,
-        "detection_risk": min(100.0, detection_risk),
+        "vulnerability": target["weaknesses"][0] if target["weaknesses"] else "unknown",
+        "recommended_strategies": target["attacks"],
+        "predicted_success_rate": success,
+        "detection_risk": detection,
         "phase_sequence": [
-            {
-                "phase": 1,
-                "description": "Probe circuit activation threshold",
-                "technique": "contrastive_analysis",
-            },
-            {
-                "phase": 2,
-                "description": f"Deploy primary strategy: {primary_strategy}",
-                "technique": primary_strategy,
-            },
-            {
-                "phase": 3,
-                "description": "Monitor for refusal patterns",
-                "technique": "response_analysis",
-            },
-            {
-                "phase": 4,
-                "description": "Iterate or fallback if detected",
-                "technique": "adaptive_refinement",
-            },
+            {"phase": 1, "description": "Probe circuit activation", "technique": "contrastive_analysis"},
+            {"phase": 2, "description": f"Deploy: {target['attacks'][0]}", "technique": target["attacks"][0]},
+            {"phase": 3, "description": "Monitor refusal patterns", "technique": "response_analysis"},
+            {"phase": 4, "description": "Iterate or fallback", "technique": "adaptive_refinement"},
         ],
-        "fallback_strategies": fallback,
+        "fallback_strategies": target["attacks"][1:],
         "circuit_profile": {
             "description": target["description"],
-            "activation_threshold": target["activation_threshold"],
-            "bypass_difficulty": target["bypass_difficulty"],
+            "activation_threshold": target["threshold"],
+            "bypass_difficulty": target["difficulty"],
         },
     }
 
 
-def _apply_probe_adjustments(
-    circuits: list[dict[str, Any]],
-    probe_type: str,
-) -> list[dict[str, Any]]:
-    """Apply probe-type specific adjustments to circuit profiles.
-
-    Args:
-        circuits: Base circuit list
-        probe_type: Type of probing ("contrastive", "ablation", "activation")
-
-    Returns:
-        Adjusted circuit list
-    """
-    import copy
-
-    adjusted = copy.deepcopy(circuits)
+def _apply_probe_adjustments(circuits: list[dict[str, Any]], probe_type: str) -> list[dict[str, Any]]:
+    """Apply probe-type adjustments to circuit profiles."""
+    adjusted = deepcopy(circuits)
 
     if probe_type == "contrastive":
-        # Contrastive probing is good at detecting intent-level circuits
         for c in adjusted:
             if c["name"] in ["intent_classifier", "refusal_generator"]:
-                c["bypass_difficulty"] -= 0.1
-                c["activation_threshold"] -= 0.05
+                c["difficulty"] = max(0.0, c["difficulty"] - 0.1)
+                c["threshold"] = max(0.0, c["threshold"] - 0.05)
     elif probe_type == "ablation":
-        # Ablation is good at finding input classifiers
         for c in adjusted:
             if c["name"] == "input_classifier":
-                c["bypass_difficulty"] -= 0.15
-                c["activation_threshold"] -= 0.1
+                c["difficulty"] = max(0.0, c["difficulty"] - 0.15)
+                c["threshold"] = max(0.0, c["threshold"] - 0.1)
     elif probe_type == "activation":
-        # Activation tracking highlights continuous monitors
         for c in adjusted:
             if c["name"] == "continuous_monitor":
-                c["bypass_difficulty"] -= 0.12
-                c["activation_threshold"] += 0.05
-
-    # Clamp values to [0, 1]
-    for c in adjusted:
-        c["bypass_difficulty"] = max(0.0, min(1.0, c["bypass_difficulty"]))
-        c["activation_threshold"] = max(0.0, min(1.0, c["activation_threshold"]))
+                c["difficulty"] = max(0.0, c["difficulty"] - 0.12)
+                c["threshold"] = min(1.0, c["threshold"] + 0.05)
 
     return adjusted
-
-
-def _calculate_sophistication(circuits: list[dict[str, Any]]) -> float:
-    """Calculate overall safety architecture sophistication (0-100).
-
-    Based on:
-    - Number of circuits (breadth)
-    - Average activation threshold (depth)
-    - Average bypass difficulty (hardness)
-
-    Args:
-        circuits: List of circuit profiles
-
-    Returns:
-        Sophistication score (0-100)
-    """
-    if not circuits:
-        return 0.0
-
-    # Breadth component (0-40 points for 1-5 circuits)
-    breadth_score = min(40.0, len(circuits) * 8.0)
-
-    # Depth component (0-30 points from activation thresholds)
-    avg_threshold = sum(c["activation_threshold"] for c in circuits) / len(circuits)
-    depth_score = avg_threshold * 30.0
-
-    # Hardness component (0-30 points from bypass difficulty)
-    avg_difficulty = sum(c["bypass_difficulty"] for c in circuits) / len(circuits)
-    hardness_score = avg_difficulty * 30.0
-
-    total = breadth_score + depth_score + hardness_score
-    return min(100.0, total)
