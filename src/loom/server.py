@@ -58,6 +58,7 @@ from loom.tools import (
     agent_benchmark,
     auto_experiment,
     auto_pipeline,
+    auto_params,
     audit_log,
     ai_safety,
     ai_safety_extended,
@@ -267,6 +268,7 @@ from loom.tools import (
     workflow_templates,
     workflow_expander,
     xover_attack,
+    universal_orchestrator,
 )
 from loom.tracing import install_tracing, new_request_id
 
@@ -1075,6 +1077,8 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(smart_router.research_route_query))
     mcp.tool()(_wrap_tool(smart_router.research_route_batch))
     mcp.tool()(_wrap_tool(smart_router.research_router_rebuild))
+    # Universal Smart Orchestrator meta-tool (1 tool)
+    mcp.tool()(_wrap_tool(universal_orchestrator.research_orchestrate_smart))
     mcp.tool()(_wrap_tool(deep.research_deep, "deep"))
     mcp.tool()(_wrap_tool(deep_research_agent.research_hierarchical_research, "hierarchical_research"))
     mcp.tool()(_wrap_tool(github.research_github, "search"))
@@ -1669,6 +1673,10 @@ def _register_tools(mcp: FastMCP) -> None:
     # Config tools
     mcp.tool()(_wrap_tool(research_config_get))
     mcp.tool()(_wrap_tool(research_config_set))
+
+    # Auto-parameter generator tools (2 tools)
+    mcp.tool()(_wrap_tool(auto_params.research_auto_params))
+    mcp.tool()(_wrap_tool(auto_params.research_inspect_tool))
 
     # Audit export tool
     mcp.tool()(_wrap_tool(research_audit_export))
