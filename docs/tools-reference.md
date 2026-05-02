@@ -16,6 +16,7 @@ Loom provides a comprehensive research toolkit organized into major categories w
 - **Session Management** (3 tools) — persistent browser contexts
 - **Config** (2 tools) — runtime configuration management
 - **Cache** (2 tools) — cache statistics and cleanup
+- **Cost Estimation** (2 tools) — API cost prediction and budget tracking
 - **Infrastructure** (4 tools) — compute, billing, and payment services
 - **Communication** (2 tools) — email and note-taking
 - **Media** (2 tools) — audio transcription and document conversion
@@ -1767,6 +1768,150 @@ Remove cache entries older than N days.
 **API Key:** None — free
 
 ---
+
+## Cost Estimation Tools
+
+### research_estimate_cost
+
+Predict API costs BEFORE executing a tool call. Estimates token usage and pricing based on tool type, parameters, and LLM provider.
+
+**Parameters:**
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `tool_name` | string | required | Name of the tool to estimate (e.g., `"research_fetch"`, `"research_search"`) |
+| `params` | dict | `null` | Optional tool parameters for more accurate estimation |
+| `provider` | string | `"auto"` | LLM provider: `"auto"`, `"groq"`, `"nvidia_nim"`, `"deepseek"`, `"gemini"`, `"moonshot"`, `"openai"`, `"anthropic"` |
+
+**Returns:**
+
+```json
+{
+  "tool": "research_search",
+  "provider": "groq",
+  "estimated_tokens": {
+    "input": 350,
+    "output": 150,
+    "total": 500
+  },
+  "estimated_cost_usd": 0.0,
+  "free_alternatives": [
+    "groq (free)",
+    "nvidia_nim (free)"
+  ],
+  "cost_per_1m_tokens": {
+    "input": 0.0,
+    "output": 0.0
+  }
+}
+```
+
+**API Key:** None — free
+
+**Example Usage:**
+
+```python
+# Estimate cost before executing
+estimate = await research_estimate_cost(
+    tool_name="research_ask_all_llms",
+    params={"prompt": "Summarize this article", "max_tokens": 500},
+    provider="auto"  # Uses free provider (groq)
+)
+print(f"Estimated cost: ${estimate['estimated_cost_usd']}")
+
+# Or use paid provider
+estimate_paid = await research_estimate_cost(
+    tool_name="research_ask_all_llms",
+    provider="deepseek"
+)
+print(f"DeepSeek would cost: ${estimate_paid['estimated_cost_usd']}")
+```
+
+**Pricing Reference:**
+
+| Provider | Input Cost | Output Cost | Free? |
+|----------|-----------|------------|-------|
+| Groq | $0 | $0 | ✓ |
+| NVIDIA NIM | $0 | $0 | ✓ |
+| DeepSeek | $0.14/1M | $0.28/1M | |
+| Gemini | $1.25/1M | $5.00/1M | |
+| Moonshot | $0.50/1M | $0.50/1M | |
+| OpenAI | $2.50/1M | $10.00/1M | |
+| Anthropic | $3.00/1M | $15.00/1M | |
+
+**Token Estimation Strategy:**
+
+- **Fetch tools** (~100 tokens): Plain HTTP requests, minimal processing
+- **Search tools** (~500 tokens): Search queries with light ranking
+- **LLM tools** (~2000 tokens): Full language model inference
+- **Analysis tools** (~1000 tokens): Moderate LLM usage
+
+Actual token usage adjusted based on:
+- `max_tokens` parameter (if provided, overrides estimation)
+- Input size (URLs, queries, prompts)
+- Number of concurrent requests
+
+---
+
+### research_cost_summary
+
+Summarize estimated costs accumulated across multiple tool calls. Useful for budget tracking and cost optimization.
+
+**Parameters:**
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `period` | string | `"today"` | Time period: `"today"`, `"session"`, `"all"` |
+
+**Returns:**
+
+```json
+{
+  "period": "today",
+  "total_estimated_usd": 3.75,
+  "by_provider": {
+    "groq": 0.0,
+    "deepseek": 1.50,
+    "anthropic": 2.25
+  },
+  "total_calls": 24,
+  "avg_cost_per_call": 0.156,
+  "cheapest_provider": "groq",
+  "most_expensive_tool": "research_ask_all_llms",
+  "tool_breakdown": {
+    "research_search": 0.0,
+    "research_ask_all_llms": 2.50,
+    "research_fetch": 0.0,
+    "research_deep": 1.25
+  }
+}
+```
+
+**API Key:** None — free
+
+**Example Usage:**
+
+```python
+# Track costs for the session
+summary = await research_cost_summary(period="session")
+print(f"Total cost so far: ${summary['total_estimated_usd']}")
+print(f"Average per call: ${summary['avg_cost_per_call']}")
+print(f"Most expensive: {summary['most_expensive_tool']}")
+
+# Optimize by checking which providers are cheapest
+print(f"Cheapest provider: {summary['cheapest_provider']}")
+for provider, cost in summary['by_provider'].items():
+    print(f"  {provider}: ${cost:.2f}")
+```
+
+**Cost Optimization Tips:**
+
+1. Use `provider="auto"` in `research_estimate_cost` to get free providers
+2. Check `free_alternatives` in estimate results
+3. Use `research_cost_summary` regularly to track spending
+4. For LLM tools, prefer Groq or NVIDIA NIM (always free)
+5. For search/fetch tools, costs are typically zero
+
 
 ## Infrastructure Tools
 

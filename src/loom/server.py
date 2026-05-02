@@ -71,6 +71,7 @@ from loom.tools import (
     breach_check,
     circuit_breaker,
     cache_mgmt,
+    chain_composer,
     config_reload,
     cert_analyzer,
     chronos,
@@ -1039,6 +1040,10 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(error_wrapper.research_error_stats))
     mcp.tool()(_wrap_tool(error_wrapper.research_error_clear))
     mcp.tool()(_wrap_tool(cache_mgmt.research_cache_clear))
+    # Tool Chain Composer (3 tools)
+    mcp.tool()(_wrap_tool(chain_composer.research_chain_define))
+    mcp.tool()(_wrap_tool(chain_composer.research_chain_list))
+    mcp.tool()(_wrap_tool(chain_composer.research_chain_describe))
     # Data export tools (3 tools)
     mcp.tool()(_wrap_tool(data_export.research_export_json))
     mcp.tool()(_wrap_tool(data_export.research_export_csv))
@@ -1071,7 +1076,6 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(request_queue.research_queue_add))
     mcp.tool()(_wrap_tool(request_queue.research_queue_status))
     mcp.tool()(_wrap_tool(request_queue.research_queue_drain))
-    # Performance benchmark tools (2 tools)
     # Memory management tools (3 tools)
     mcp.tool()(_wrap_tool(memory_mgmt.research_memory_status))
     mcp.tool()(_wrap_tool(memory_mgmt.research_memory_gc))
