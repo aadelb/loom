@@ -961,6 +961,8 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
 
     is_async = inspect.iscoroutinefunction(func)
 
+    tool_timeout = 60  # seconds
+
     if is_async:
         if category:
             func = rate_limited(category)(func)
@@ -968,7 +970,10 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
         @functools.wraps(func)
         async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
             new_request_id()
-            return await func(*args, **kwargs)
+            try:
+                return await asyncio.wait_for(func(*args, **kwargs), timeout=tool_timeout)
+            except asyncio.TimeoutError:
+                return {"error": f"Tool timed out after {tool_timeout}s", "tool": func.__name__}
 
         return async_wrapper
     else:
