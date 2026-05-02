@@ -441,6 +441,29 @@ async def _call_with_cascade(
             )
             continue
 
+    # === CLI FALLBACK: Last resort when all API providers fail ===
+    try:
+        from loom.providers.cli_fallback import cli_cascade_call
+        user_prompt = ""
+        for msg in messages:
+            if msg.get("role") == "user":
+                user_prompt = msg["content"]
+        if user_prompt:
+            cli_response = await cli_cascade_call(user_prompt, max_tokens=max_tokens)
+            if cli_response:
+                logger.info("cli_fallback_success response_len=%d", len(cli_response))
+                return LLMResponse(
+                    text=cli_response,
+                    provider="cli_fallback",
+                    model="cli",
+                    input_tokens=len(user_prompt.split()),
+                    output_tokens=len(cli_response.split()),
+                    latency_ms=0,
+                    cost_usd=0.0,
+                )
+    except Exception as cli_err:
+        logger.debug("cli_fallback_failed: %s", cli_err)
+
     error_detail = "; ".join(f"{e['provider']}: {e['error']}" for e in all_errors)
     raise RuntimeError(
         f"all providers failed (attempted {', '.join(attempts)}): {error_detail}"
