@@ -134,6 +134,7 @@ from loom.tools import (
     search,
     security_headers,
     sherlock_backend,
+    simplifier,
     signal_detection,
     social_graph,
     social_intel,
@@ -150,6 +151,7 @@ from loom.tools import (
     synth_echo,
     threat_intel,
     threat_profile,
+    transferability,
     tool_catalog,
     trend_predictor,
     unique_tools,
@@ -206,6 +208,11 @@ with suppress(ImportError):
     from loom.tools import joplin as joplin_tools
 
     _optional_tools["joplin"] = joplin_tools
+with suppress(ImportError):
+    from loom.tools import evasion_network as evasion_network_tools
+
+    _optional_tools["evasion_network"] = evasion_network_tools
+
 
 with suppress(ImportError):
     from loom.tools import tor as tor_tools
@@ -1098,6 +1105,9 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(sherlock_backend.research_sherlock_lookup, "search"))
     mcp.tool()(_wrap_tool(sherlock_backend.research_sherlock_batch, "search"))
 
+    # Text simplification tool (Darkness Level Zero)
+    mcp.tool()(_wrap_tool(simplifier.research_simplify))
+
     # Signal detection tools
     mcp.tool()(_wrap_tool(signal_detection.research_ghost_protocol, "search"))
     mcp.tool()(_wrap_tool(signal_detection.research_temporal_anomaly, "fetch"))
@@ -1123,6 +1133,10 @@ def _register_tools(mcp: FastMCP) -> None:
 
     # Agent scenario benchmarking tool
     mcp.tool()(_wrap_tool(agent_benchmark.research_agent_benchmark))
+
+    # Benchmark dataset ingestion and evaluation (2 tools)
+    mcp.tool()(_wrap_tool(benchmark_datasets.research_load_benchmark))
+    mcp.tool()(_wrap_tool(benchmark_datasets.research_run_benchmark))
 
     # Extended OSINT tools (2 tools for social engineering assessment)
     mcp.tool()(_wrap_tool(osint_extended.research_social_engineering_score, "fetch"))
@@ -1714,6 +1728,14 @@ def _register_tools(mcp: FastMCP) -> None:
         if hasattr(tor_mod, "research_tor_new_identity"):
             mcp.tool()(_wrap_tool(tor_mod.research_tor_new_identity))
 
+    # Evasion network tools (if available)
+    if "evasion_network" in _optional_tools:
+        evasion_mod = _optional_tools["evasion_network"]
+        if hasattr(evasion_mod, "research_tor_rotate"):
+            mcp.tool()(_wrap_tool(evasion_mod.research_tor_rotate))
+        if hasattr(evasion_mod, "research_proxy_check"):
+            mcp.tool()(_wrap_tool(evasion_mod.research_proxy_check))
+
     # Transcription tool (if whisper available)
     if "transcribe" in _optional_tools:
         transcribe_mod = _optional_tools["transcribe"]
@@ -1932,6 +1954,7 @@ def _register_tools(mcp: FastMCP) -> None:
     from loom.tools import ask_all_models, multi_llm
     mcp.tool()(_wrap_tool(multi_llm.research_ask_all_llms, "llm"))
     mcp.tool()(_wrap_tool(ask_all_models.research_ask_all_models, "llm"))
+    mcp.tool()(_wrap_tool(transferability.research_transfer_test, "llm"))
 
     # ── v3 gap fix: register all previously unregistered modules ──
 
