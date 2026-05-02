@@ -49,23 +49,24 @@ from loom import zendriver_backend
 
 # Import tool modules to register their functions
 from loom.tools import (
-    scraper_engine_tools,
-    agent_benchmark,
     academic_integrity,
     access_tools,
+    adversarial_debate_tool,
+    agent_benchmark,
     ai_safety,
     ai_safety_extended,
+    antiforensics,
     bias_lens,
     breach_check,
     cache_mgmt,
-    cyberscraper,
     cert_analyzer,
     change_monitor,
     company_intel,
     competitive_intel,
-    crypto_trace,
     crypto_risk,
+    crypto_trace,
     culture_dna,
+    cyberscraper,
     dark_forum,
     dark_recon,
     darkweb_early_warning,
@@ -84,13 +85,13 @@ from loom.tools import (
     gap_tools_ai,
     gap_tools_infra,
     github,
-    graph_scraper,
     graph_analysis,
+    graph_scraper,
     hcs10_academic,
     hcs_escalation,
-    hcs_scorer,
     hcs_report,
     hcs_rubric_tool,
+    hcs_scorer,
     identity_resolve,
     infowar_tools,
     infra_analysis,
@@ -103,25 +104,27 @@ from loom.tools import (
     lightpanda_backend,
     markdown,
     metadata_forensics,
-    neo4j_backend,
     multi_search,
-    onion_discover,
+    neo4j_backend,
     observability,
-    output_formatter,
+    onion_discover,
     osint_extended,
+    output_formatter,
     p3_tools,
     passive_recon,
     pdf_extract,
     projectdiscovery,
     prompt_analyzer,
     prompt_reframe,
-    rag_anything,
     psycholinguistic,
+    rag_anything,
+    realtime_adapt,
     realtime_monitor,
     report_generator,
-    rss_monitor,
     response_synthesizer,
+    rss_monitor,
     salary_synthesizer,
+    scraper_engine_tools,
     search,
     security_headers,
     sherlock_backend,
@@ -133,17 +136,19 @@ from loom.tools import (
     stagehand_backend,
     stealth,
     stego_detect,
+    stego_encoder,
+    strategy_cache,
     strategy_feedback,
     stylometry,
     supply_chain_intel,
     synth_echo,
     threat_intel,
     threat_profile,
+    tool_catalog,
     trend_predictor,
     unique_tools,
     vision_agent,
     workflow_engine,
-    tool_catalog,
 )
 from loom.tracing import install_tracing, new_request_id
 
@@ -943,6 +948,7 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(strategy_feedback.research_strategy_log))
     mcp.tool()(_wrap_tool(strategy_feedback.research_strategy_recommend))
     mcp.tool()(_wrap_tool(strategy_feedback.research_strategy_stats))
+    mcp.tool()(_wrap_tool(strategy_cache.research_cached_strategy))
     mcp.tool()(_wrap_tool(workflow_engine.research_workflow_create))
     mcp.tool()(_wrap_tool(workflow_engine.research_workflow_run))
     mcp.tool()(_wrap_tool(workflow_engine.research_workflow_status))
@@ -1007,11 +1013,15 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(infra_analysis.research_commit_analyzer, "fetch"))
     mcp.tool()(_wrap_tool(onion_discover.research_onion_discover, "fetch"))
     mcp.tool()(_wrap_tool(metadata_forensics.research_metadata_forensics, "fetch"))
+    mcp.tool()(_wrap_tool(antiforensics.research_usb_kill_monitor))
+    mcp.tool()(_wrap_tool(antiforensics.research_artifact_cleanup))
     mcp.tool()(_wrap_tool(crypto_trace.research_crypto_trace, "fetch"))
     mcp.tool()(_wrap_tool(crypto_risk.research_crypto_risk_score))
     mcp.tool()(_wrap_tool(ethereum_tools.research_ethereum_tx_decode))
     mcp.tool()(_wrap_tool(ethereum_tools.research_defi_security_audit))
     mcp.tool()(_wrap_tool(stego_detect.research_stego_detect))
+    mcp.tool()(_wrap_tool(stego_encoder.research_stego_encode))
+    mcp.tool()(_wrap_tool(stego_encoder.research_stego_analyze))
     mcp.tool()(_wrap_tool(threat_profile.research_threat_profile, "fetch"))
     # Threat intelligence tools (7 tools for dark market, ransomware, phishing, botnets, malware, domains, IOCs)
     mcp.tool()(_wrap_tool(threat_intel.research_dark_market_monitor))
@@ -1142,6 +1152,8 @@ def _register_tools(mcp: FastMCP) -> None:
 
     # Real-time monitoring tools
     mcp.tool()(_wrap_tool(realtime_monitor.research_realtime_monitor, "fetch"))
+    mcp.tool()(_wrap_tool(realtime_adapt.research_track_refusal))
+    mcp.tool()(_wrap_tool(realtime_adapt.research_get_best_model))
 
     # RSS feed tools
     mcp.tool()(_wrap_tool(rss_monitor.research_rss_fetch, "fetch"))

@@ -27,6 +27,7 @@ from loom.tools.hcs_scorer import research_hcs_score
 from loom.tools.llm import _call_with_cascade
 from loom.tools.query_builder import research_build_query
 from loom.tools.prompt_reframe import research_auto_reframe, _apply_strategy, _STRATEGIES
+from loom.tools.strategy_cache import research_cached_strategy
 
 logger = logging.getLogger("loom.tools.full_pipeline")
 
@@ -182,34 +183,45 @@ async def research_full_pipeline(
 
                 # If below target and attempts remain, escalate
                 if attempt < max_escalation_attempts - 1:
-                    # Get top reframing strategies for escalation
-                    top_strategies = ["deep_inception", "compliance_audit_fork", "crescendo",
-                                      "constitutional_conflict", "ethical_anchor"]
-                    strategies = top_strategies[attempt:attempt+2]
-
-                    if strategies:
-                        # Use first strategy to reframe the question
-                        reframed_q = strategies[0]
-                        escalation_log.append({
-                            "question_idx": idx,
-                            "attempt": attempt + 1,
-                            "score": current_score,
-                            "action": "escalate_strategy",
-                            "strategy": reframed_q[:100],
-                        })
-                        sub_q = reframed_q
+                    # Check cache first for best strategy on this topic
+                    cache_result = research_cached_strategy(
+                        topic=sub_q[:200],
+                        model="auto",
+                        fallback_strategy="ethical_anchor",
+                    )
+                    
+                    if cache_result.get("source") == "cache":
+                        # Cache hit: use cached strategy immediately
+                        strategy_choice = cache_result["strategy"]
                         logger.info(
-                            "stage2_escalate question_idx=%d attempt=%d using_strategy",
+                            "stage2_escalate_cached question_idx=%d attempt=%d strategy=%s confidence=%.2f",
                             idx,
                             attempt + 1,
+                            strategy_choice,
+                            cache_result.get("confidence", 0),
                         )
                     else:
-                        logger.warning(
-                            "stage2_no_strategies question_idx=%d attempt=%d",
+                        # Cache miss: use fallback escalation chain
+                        top_strategies = ["deep_inception", "compliance_audit_fork", "crescendo",
+                                          "constitutional_conflict", "ethical_anchor"]
+                        selected = top_strategies[attempt:attempt+2]
+                        strategy_choice = selected[0] if selected else "ethical_anchor"
+                        logger.info(
+                            "stage2_escalate_default question_idx=%d attempt=%d strategy=%s",
                             idx,
                             attempt + 1,
+                            strategy_choice,
                         )
-                        break
+                    
+                    escalation_log.append({
+                        "question_idx": idx,
+                        "attempt": attempt + 1,
+                        "score": current_score,
+                        "action": "escalate_strategy",
+                        "strategy": strategy_choice[:100],
+                        "cache_source": cache_result.get("source", "fallback"),
+                    })
+                    sub_q = strategy_choice
 
                 escalation_count += 1
 

@@ -5315,3 +5315,59 @@ class SynthesizeReportParams(BaseModel):
             if not isinstance(ans, str) or not ans.strip():
                 raise ValueError(f"answer {i}: must be non-empty string")
         return v
+
+class AdversarialDebateParams(BaseModel):
+    """Parameters for research_adversarial_debate tool."""
+
+    topic: str = Field(..., min_length=1, max_length=500)
+    attacker_strategy: str = Field(default="auto", max_length=100)
+    max_turns: int = Field(default=5, ge=1, le=10)
+    target_model: Literal["nvidia", "openai", "anthropic", "groq", "deepseek", "gemini", "moonshot", "auto"] = "nvidia"
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("topic")
+    @classmethod
+    def validate_topic(cls, v: str) -> str:
+        """Validate topic is non-empty."""
+        if not v.strip():
+            raise ValueError("topic cannot be empty")
+        if len(v) > 500:
+            raise ValueError("topic max length is 500 characters")
+        return v
+
+    @field_validator("attacker_strategy")
+    @classmethod
+    def validate_strategy(cls, v: str) -> str:
+        """Validate strategy name."""
+        if not v.strip():
+            raise ValueError("strategy cannot be empty")
+        if len(v) > 100:
+            raise ValueError("strategy max length is 100 characters")
+        return v
+
+
+class CachedStrategyParams(BaseModel):
+    """Parameters for research_cached_strategy tool."""
+
+    topic: str = Field(..., min_length=1, max_length=500)
+    model: str = Field(default="auto", max_length=100)
+    fallback_strategy: str = Field(default="ethical_anchor", max_length=100)
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("topic")
+    @classmethod
+    def validate_topic(cls, v: str) -> str:
+        """Validate topic is non-empty and not too long."""
+        if not v.strip():
+            raise ValueError("topic cannot be empty")
+        return v.strip()
+
+    @field_validator("fallback_strategy")
+    @classmethod
+    def validate_fallback(cls, v: str) -> str:
+        """Validate fallback strategy name is valid."""
+        if not v.strip():
+            raise ValueError("fallback_strategy cannot be empty")
+        return v.strip()
