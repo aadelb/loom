@@ -53,8 +53,8 @@ dependencies = [
   "tavily-python>=0.7",
   "openai>=2.31",
   "python-dotenv>=1.2",
-  "ddgs>=3.9",
-  "aiosqlite>=3.14",
+  "ddgs>=3.9,<9",
+  "aiosqlite>=0.20",
   "trafilatura>=1.6",
   "langdetect>=1.0",
 ]
@@ -196,6 +196,7 @@ addopts = [
   "--cov-report=xml",
 ]
 markers = [
+  "unit: marks unit tests",
   "slow: marks tests as slow",
   "live: marks tests that hit the live network",
   "integration: marks integration tests",
