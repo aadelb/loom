@@ -86,6 +86,7 @@ from loom.tools import (
     competitive_monitor,
     context_manager,
     coevolution,
+    composition_optimizer,
     credential_vault,
     crypto_risk,
     crypto_trace,
@@ -1136,6 +1137,10 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(config_reload.research_config_watch))
     mcp.tool()(_wrap_tool(config_reload.research_config_check))
     mcp.tool()(_wrap_tool(config_reload.research_config_diff))
+    # Tool Composition Optimizer (3 tools)
+    mcp.tool()(_wrap_tool(composition_optimizer.research_optimize_workflow))
+    mcp.tool()(_wrap_tool(composition_optimizer.research_parallel_plan))
+    mcp.tool()(_wrap_tool(composition_optimizer.research_optimizer_rebuild))
     # Research context management (3 tools)
     mcp.tool()(_wrap_tool(context_manager.research_context_set))
     mcp.tool()(_wrap_tool(context_manager.research_context_get))
@@ -1242,7 +1247,9 @@ def _register_tools(mcp: FastMCP) -> None:
     # Workflow Templates (2 tools)
     mcp.tool()(_wrap_tool(workflow_templates.research_workflow_list))
     mcp.tool()(_wrap_tool(workflow_templates.research_workflow_get))
-    
+    # Workflow Coverage Expander (2 tools)
+    mcp.tool()(_wrap_tool(workflow_expander.research_workflow_generate))
+    mcp.tool()(_wrap_tool(workflow_expander.research_workflow_coverage))
     
     # Gamification system — leaderboards, challenges, competitions (3 tools)
     mcp.tool()(_wrap_tool(gamification.research_leaderboard))
@@ -2533,6 +2540,9 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(tool_versioning.research_tool_version))
     mcp.tool()(_wrap_tool(tool_versioning.research_version_diff))
     mcp.tool()(_wrap_tool(tool_versioning.research_version_snapshot))
+    # Tool Recommender v2 (2 tools)
+    mcp.tool()(_wrap_tool(tool_recommender_v2.research_recommend_next))
+    mcp.tool()(_wrap_tool(tool_recommender_v2.research_suggest_workflow))
     mcp.tool()(_wrap_tool(tool_catalog.research_tool_standalone))
 
     # Doc parser (multiple functions)

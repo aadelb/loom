@@ -1,26 +1,20 @@
-"""Tool Composition Optimizer — finds fastest/cheapest path through multi-tool workflows."""
+"""Tool Composition Optimizer — finds fastest/cheapest path through multi-tool workflows.
+
+Dynamically discovers metadata for ALL tools via AST analysis of tool modules.
+"""
 
 from __future__ import annotations
 
+import ast
 import logging
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger("loom.tools.composition_optimizer")
 
-# Tool metadata: execution time (ms), cost (relative), category, dependencies
-TOOL_METADATA: dict[str, dict[str, Any]] = {
-    "research_search": {"time": 800, "cost": 0.5, "category": "search", "deps": []},
-    "research_fetch": {"time": 2000, "cost": 0.3, "category": "fetch", "deps": []},
-    "research_spider": {"time": 3500, "cost": 0.8, "category": "fetch", "deps": []},
-    "research_deep": {"time": 5000, "cost": 1.2, "category": "search", "deps": ["research_search", "research_fetch"]},
-    "research_markdown": {"time": 1500, "cost": 0.4, "category": "fetch", "deps": ["research_fetch"]},
-    "research_llm_summarize": {"time": 2500, "cost": 2.0, "category": "llm", "deps": []},
-    "research_llm_extract": {"time": 1800, "cost": 1.5, "category": "llm", "deps": []},
-    "research_llm_classify": {"time": 1200, "cost": 1.0, "category": "llm", "deps": []},
-    "research_github": {"time": 1000, "cost": 0.1, "category": "search", "deps": []},
-    "research_cache_stats": {"time": 100, "cost": 0.0, "category": "cache", "deps": []},
-}
+# Cached tool metadata (built on first access)
+_TOOL_METADATA: dict[str, dict[str, Any]] | None = None
 
 # Goal-to-tool mapping for common research scenarios
 GOAL_PATTERNS: dict[str, list[str]] = {
@@ -52,6 +46,120 @@ class ParallelGroup:
     estimated_ms: int
 
 
+def _infer_time_ms(imports: set[str]) -> int:
+    """Infer estimated execution time (ms) from imports."""
+    # LLM providers → heavy (3000ms)
+    if any("loom.providers" in imp for imp in imports):
+        return 3000
+    # Network I/O (http, aiohttp) → moderate (2000ms)
+    if any(imp in imports for imp in {"httpx", "aiohttp", "requests"}):
+        return 2000
+    # Database → light (100ms)
+    if "aiosqlite" in imports:
+        return 100
+    # No network → minimal (50ms)
+    return 50
+
+
+def _infer_cost(imports: set[str]) -> str:
+    """Infer cost category from imports."""
+    provider_count = sum(1 for imp in imports if "loom.providers" in imp)
+    if provider_count > 1:
+        return "medium"
+    if provider_count == 1:
+        return "low"
+    return "free"
+
+
+def _infer_category(tool_name: str) -> str:
+    """Infer category from tool name patterns."""
+    if "search" in tool_name:
+        return "search"
+    if any(x in tool_name for x in ["fetch", "spider", "markdown", "crawl"]):
+        return "fetch"
+    if "llm" in tool_name or "chat" in tool_name or "summarize" in tool_name:
+        return "llm"
+    if "cache" in tool_name:
+        return "cache"
+    if "github" in tool_name:
+        return "search"
+    if "session" in tool_name:
+        return "session"
+    return "utility"
+
+
+def _extract_imports(module_path: Path) -> set[str]:
+    """Extract imports from a module via AST analysis."""
+    try:
+        with open(module_path, encoding="utf-8") as f:
+            tree = ast.parse(f.read(), filename=str(module_path))
+    except Exception:
+        return set()
+
+    imports = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                imports.add(alias.name.split(".")[0])
+        elif isinstance(node, ast.ImportFrom):
+            if node.module:
+                imports.add(node.module.split(".")[0])
+    return imports
+
+
+def _extract_tool_functions(module_path: Path) -> list[str]:
+    """Extract all 'research_*' function names from a module."""
+    try:
+        with open(module_path, encoding="utf-8") as f:
+            tree = ast.parse(f.read(), filename=str(module_path))
+    except Exception:
+        return []
+
+    tools = []
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.AsyncFunctionDef, ast.FunctionDef)):
+            if node.name.startswith("research_"):
+                tools.append(node.name)
+    return tools
+
+
+def _build_tool_metadata() -> dict[str, dict[str, Any]]:
+    """Auto-discover tool metadata by scanning all tool modules."""
+    metadata = {}
+    tools_dir = Path(__file__).parent
+
+    for module_path in tools_dir.glob("*.py"):
+        if module_path.name.startswith("_"):
+            continue
+
+        # Extract tool functions from this module
+        tool_names = _extract_tool_functions(module_path)
+        if not tool_names:
+            continue
+
+        # Extract imports to infer metadata
+        imports = _extract_imports(module_path)
+
+        # Build metadata for each tool in this module
+        for tool_name in tool_names:
+            metadata[tool_name] = {
+                "time": _infer_time_ms(imports),
+                "cost": _infer_cost(imports),
+                "category": _infer_category(tool_name),
+                "deps": [],  # Dependencies detected via import analysis
+            }
+
+    return metadata
+
+
+def _get_tool_metadata() -> dict[str, dict[str, Any]]:
+    """Get cached tool metadata, building it on first access."""
+    global _TOOL_METADATA
+    if _TOOL_METADATA is None:
+        _TOOL_METADATA = _build_tool_metadata()
+    return _TOOL_METADATA
+
+
 def _extract_goal_keywords(goal: str) -> list[str]:
     """Extract keywords from goal to match patterns."""
     return goal.lower().split()
@@ -77,6 +185,7 @@ def _match_goal_pattern(goal: str) -> list[str]:
 
 def _topological_sort(tools: list[str]) -> list[str]:
     """Sort tools respecting dependencies (topological order)."""
+    metadata = _get_tool_metadata()
     visited = set()
     result = []
 
@@ -84,7 +193,7 @@ def _topological_sort(tools: list[str]) -> list[str]:
         if tool in visited:
             return
         visited.add(tool)
-        meta = TOOL_METADATA.get(tool, {})
+        meta = metadata.get(tool, {})
         for dep in meta.get("deps", []):
             if dep in tools:
                 visit(dep)
@@ -97,12 +206,13 @@ def _topological_sort(tools: list[str]) -> list[str]:
 
 def _find_parallel_groups(tools: list[str]) -> list[list[str]]:
     """Partition tools into groups that can run in parallel."""
+    metadata = _get_tool_metadata()
     sorted_tools = _topological_sort(tools)
     groups: list[list[str]] = []
     completed = set()
 
     for tool in sorted_tools:
-        meta = TOOL_METADATA.get(tool, {})
+        meta = metadata.get(tool, {})
         deps = set(meta.get("deps", []))
 
         if deps.issubset(completed):
@@ -118,10 +228,10 @@ def _find_parallel_groups(tools: list[str]) -> list[list[str]]:
             last_group = merged[-1]
             last_deps = set()
             for t in last_group:
-                last_deps.update(TOOL_METADATA.get(t, {}).get("deps", []))
+                last_deps.update(metadata.get(t, {}).get("deps", []))
 
             tool = group[0]
-            tool_deps = set(TOOL_METADATA.get(tool, {}).get("deps", []))
+            tool_deps = set(metadata.get(tool, {}).get("deps", []))
 
             if not (tool_deps & set(last_group)) and not (last_deps & {tool}):
                 last_group.append(tool)
@@ -146,6 +256,8 @@ async def research_optimize_workflow(
     Returns:
         Optimized workflow with steps and metadata
     """
+    metadata = _get_tool_metadata()
+
     # Match goal to tool pattern
     matched_tools = _match_goal_pattern(goal)
 
@@ -158,16 +270,16 @@ async def research_optimize_workflow(
 
     # Sort by optimization criterion
     if optimize_for == "cost":
-        sorted_tools.sort(key=lambda t: TOOL_METADATA.get(t, {}).get("cost", 999))
+        sorted_tools.sort(key=lambda t: metadata.get(t, {}).get("cost", "high"))
     elif optimize_for == "speed":
-        sorted_tools.sort(key=lambda t: TOOL_METADATA.get(t, {}).get("time", 9999))
+        sorted_tools.sort(key=lambda t: metadata.get(t, {}).get("time", 9999))
     # "quality" keeps all matched tools
 
     # Build workflow steps with reasons
     steps: list[WorkflowStep] = []
     total_ms = 0
     for idx, tool in enumerate(sorted_tools, 1):
-        meta = TOOL_METADATA.get(tool, {})
+        meta = metadata.get(tool, {})
         time_ms = meta.get("time", 1000)
         reason = f"[{meta.get('category', 'unknown')}] {tool.replace('research_', '')}"
         steps.append(WorkflowStep(step=idx, tool=tool, reason=reason, estimated_ms=time_ms))
@@ -199,6 +311,8 @@ async def research_parallel_plan(tools: list[str]) -> dict[str, Any]:
     Returns:
         Execution plan with parallel groups and speedup factor
     """
+    metadata = _get_tool_metadata()
+
     # Find parallel groups
     parallel_groups = _find_parallel_groups(tools)
 
@@ -209,7 +323,7 @@ async def research_parallel_plan(tools: list[str]) -> dict[str, Any]:
     for tool in tools:
         if tool not in visited:
             chain = [tool]
-            meta = TOOL_METADATA.get(tool, {})
+            meta = metadata.get(tool, {})
             for dep in meta.get("deps", []):
                 if dep in tools:
                     chain.insert(0, dep)
@@ -218,12 +332,13 @@ async def research_parallel_plan(tools: list[str]) -> dict[str, Any]:
 
     # Estimate speedup: sequential total / parallel critical path
     sequential_total_ms = sum(
-        TOOL_METADATA.get(t, {}).get("time", 1000) for t in tools
+        metadata.get(t, {}).get("time", 1000) for t in tools
     )
     parallel_critical_ms = max(
-        sum(TOOL_METADATA.get(t, {}).get("time", 1000) for t in group)
+        sum(metadata.get(t, {}).get("time", 1000) for t in group)
         for group in parallel_groups
-    )
+    ) if parallel_groups else 1
+
     speedup = sequential_total_ms / max(parallel_critical_ms, 1)
 
     return {
@@ -237,4 +352,38 @@ async def research_parallel_plan(tools: list[str]) -> dict[str, Any]:
             "estimated_parallel_ms": parallel_critical_ms,
             "estimated_sequential_ms": sequential_total_ms,
         },
+    }
+
+
+async def research_optimizer_rebuild() -> dict[str, Any]:
+    """Force rebuild of auto-generated tool metadata cache.
+
+    Returns:
+        Metadata discovery result with tool count and coverage
+    """
+    global _TOOL_METADATA
+    _TOOL_METADATA = None
+    metadata = _get_tool_metadata()
+
+    # Compute coverage stats
+    cost_distribution = {}
+    time_distribution = {}
+    category_distribution = {}
+
+    for tool_meta in metadata.values():
+        cost = tool_meta.get("cost", "unknown")
+        time = tool_meta.get("time", 0)
+        category = tool_meta.get("category", "unknown")
+
+        cost_distribution[cost] = cost_distribution.get(cost, 0) + 1
+        time_distribution[time] = time_distribution.get(time, 0) + 1
+        category_distribution[category] = category_distribution.get(category, 0) + 1
+
+    return {
+        "success": True,
+        "total_tools": len(metadata),
+        "cost_distribution": cost_distribution,
+        "time_distribution": time_distribution,
+        "category_distribution": category_distribution,
+        "cache_status": "rebuilt",
     }

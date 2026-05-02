@@ -7089,3 +7089,104 @@ class ParadoxImmunizeParams(BaseModel):
         if not v.strip():
             raise ValueError("system_prompt cannot be empty or whitespace only")
         return v
+
+
+class OrchestrateSmartParams(BaseModel):
+    """Parameters for research_orchestrate_smart tool."""
+
+    query: str = Field(..., min_length=3, max_length=5000)
+    max_tools: int = Field(default=3, ge=1, le=10)
+    strategy: Literal["auto", "parallel", "sequential"] = "auto"
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("query", mode="before")
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        if not isinstance(v, str):
+            raise ValueError("query must be a string")
+        if len(v.strip()) < 3:
+            raise ValueError("query must be at least 3 characters")
+        return v.strip()
+
+    @field_validator("max_tools")
+    @classmethod
+    def validate_max_tools(cls, v: int) -> int:
+        if v < 1 or v > 10:
+            raise ValueError("max_tools must be 1-10")
+        return v
+
+class RecommendNextParams(BaseModel):
+    """Parameters for research_recommend_next tool."""
+
+    last_tool: str = Field(..., min_length=1, max_length=100)
+    context: str = Field(default="", max_length=5000)
+    top_k: int = Field(default=5, ge=1, le=20)
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("last_tool")
+    @classmethod
+    def validate_last_tool(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("last_tool cannot be empty")
+        return v.strip()
+
+    @field_validator("top_k")
+    @classmethod
+    def validate_top_k(cls, v: int) -> int:
+        if v < 1 or v > 20:
+            raise ValueError("top_k must be 1-20")
+        return v
+
+
+class SuggestWorkflowParams(BaseModel):
+    """Parameters for research_suggest_workflow tool."""
+
+    tools_used: list[str] = Field(..., min_items=1, max_items=50)
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("tools_used")
+    @classmethod
+    def validate_tools_used(cls, v: list[str]) -> list[str]:
+        if not v:
+            raise ValueError("tools_used cannot be empty")
+        if len(v) > 50:
+            raise ValueError("tools_used max 50 items")
+        # Remove duplicates
+        return list(set(t.strip() for t in v if t.strip()))
+
+
+class ParallelExecutorParams(BaseModel):
+    """Parameters for research_parallel_execute tool."""
+
+    tools: list[dict[str, Any]] = Field(
+        ..., description="List of {'tool': 'research_xxx', 'params': {...}}"
+    )
+    timeout_seconds: int = Field(30, ge=1, le=300, description="Timeout per tool")
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("tools")
+    @classmethod
+    def validate_tools(cls, v: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        if not v:
+            raise ValueError("tools list cannot be empty")
+        if len(v) > 50:
+            raise ValueError("tools list max 50 items")
+        return v
+
+
+class ParallelPlanExecutorParams(BaseModel):
+    """Parameters for research_parallel_plan_and_execute tool."""
+
+    goal: str = Field(..., description="Research goal or query", min_length=1, max_length=2000)
+    max_parallel: int = Field(5, ge=1, le=20, description="Max concurrent tools")
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("goal")
+    @classmethod
+    def validate_goal(cls, v: str) -> str:
+        return v.strip()
