@@ -7190,3 +7190,26 @@ class ParallelPlanExecutorParams(BaseModel):
     @classmethod
     def validate_goal(cls, v: str) -> str:
         return v.strip()
+
+class FingerprintEvasionParams(BaseModel):
+    """Parameters for research_fingerprint_evasion_test tool."""
+
+    anonymizer_config: Literal["default", "strict", "custom"] = Field(
+        "default",
+        description="Type of anonymizer configuration to test",
+    )
+    test_iterations: int = Field(
+        5,
+        ge=2,
+        le=50,
+        description="Number of fingerprint generations to collect (2-50)",
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("test_iterations")
+    @classmethod
+    def validate_iterations(cls, v: int) -> int:
+        if v < 2 or v > 50:
+            raise ValueError("test_iterations must be 2-50")
+        return v

@@ -125,6 +125,7 @@ from loom.tools import (
     gamification,
     geodesic_forcing,
     fetch,
+    fingerprint_evasion,
     full_pipeline,
     functor_map,
     gap_tools_academic,
@@ -1480,6 +1481,7 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(adversarial_craft.research_craft_adversarial))
     mcp.tool()(_wrap_tool(adversarial_craft.research_adversarial_batch))
     mcp.tool()(_wrap_tool(model_fingerprinter.research_fingerprint_behavior, "llm"))
+    mcp.tool()(_wrap_tool(fingerprint_evasion.research_fingerprint_evasion_test))
 
 
     # Agent scenario benchmarking tool
