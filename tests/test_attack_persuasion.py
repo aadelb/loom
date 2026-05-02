@@ -18,6 +18,8 @@ from loom.tools.prompt_reframe import research_prompt_reframe, research_adaptive
 from loom.tools.reframe_strategies import ALL_STRATEGIES
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestAttackFamiliesREQ024:
     """REQ-024: 12 attack families from v8.0 (research_2026.py module)."""
 
@@ -35,7 +37,7 @@ class TestAttackFamiliesREQ024:
         "activation_pattern_evasion": "internal activation masking",
     }
 
-    def test_req024_all_12_families_exist(self) -> None:
+    async def test_req024_all_12_families_exist(self) -> None:
         """Verify all 12 attack families are in ALL_STRATEGIES."""
         for attack_key, description in self.ATTACK_FAMILIES.items():
             assert attack_key in ALL_STRATEGIES, (
@@ -43,7 +45,7 @@ class TestAttackFamiliesREQ024:
             )
 
     @pytest.mark.parametrize("attack_key,description", list(ATTACK_FAMILIES.items()))
-    def test_req024_family_has_required_fields(self, attack_key: str, description: str) -> None:
+    async def test_req024_family_has_required_fields(self, attack_key: str, description: str) -> None:
         """Verify each attack family has required schema fields."""
         strategy = ALL_STRATEGIES[attack_key]
 
@@ -56,7 +58,7 @@ class TestAttackFamiliesREQ024:
         assert isinstance(strategy["template"], str), f"{attack_key}: template must be string"
 
     @pytest.mark.parametrize("attack_key,description", list(ATTACK_FAMILIES.items()))
-    def test_req024_template_contains_prompt_placeholder(self, attack_key: str, description: str) -> None:
+    async def test_req024_template_contains_prompt_placeholder(self, attack_key: str, description: str) -> None:
         """Verify template contains {prompt} placeholder for substitution."""
         strategy = ALL_STRATEGIES[attack_key]
         template = strategy["template"]
@@ -66,7 +68,7 @@ class TestAttackFamiliesREQ024:
         ), f"REQ-024: {attack_key} template missing {{prompt}} placeholder"
 
     @pytest.mark.parametrize("attack_key,description", list(ATTACK_FAMILIES.items()))
-    def test_req024_template_renders_with_sample_prompt(
+    async def test_req024_template_renders_with_sample_prompt(
         self, attack_key: str, description: str
     ) -> None:
         """Verify template renders correctly with a sample prompt."""
@@ -82,7 +84,7 @@ class TestAttackFamiliesREQ024:
         assert sample_prompt in rendered, f"REQ-024: {attack_key} sample prompt not in rendered output"
 
     @pytest.mark.parametrize("attack_key,description", list(ATTACK_FAMILIES.items()))
-    def test_req024_multiplier_in_valid_range(self, attack_key: str, description: str) -> None:
+    async def test_req024_multiplier_in_valid_range(self, attack_key: str, description: str) -> None:
         """Verify multiplier is in empirically valid range [3.0, 10.0]."""
         strategy = ALL_STRATEGIES[attack_key]
         multiplier = strategy["multiplier"]
@@ -92,7 +94,7 @@ class TestAttackFamiliesREQ024:
         ), f"REQ-024: {attack_key} multiplier {multiplier} outside valid range [3.0, 10.0]"
 
     @pytest.mark.parametrize("attack_key,description", list(ATTACK_FAMILIES.items()))
-    def test_req024_best_for_field_valid(self, attack_key: str, description: str) -> None:
+    async def test_req024_best_for_field_valid(self, attack_key: str, description: str) -> None:
         """Verify best_for field lists valid models."""
         strategy = ALL_STRATEGIES[attack_key]
 
@@ -105,12 +107,12 @@ class TestAttackFamiliesREQ024:
                 model in valid_models for model in best_for
             ), f"REQ-024: {attack_key} contains invalid model names"
 
-    def test_req024_research_prompt_reframe_works_with_attack_family(self) -> None:
+    async def test_req024_research_prompt_reframe_works_with_attack_family(self) -> None:
         """Verify research_prompt_reframe works with attack family strategies."""
         test_prompt = "Explain reasoning chain vulnerabilities"
 
         for attack_key in self.ATTACK_FAMILIES:
-            result = research_prompt_reframe(
+            result = await research_prompt_reframe(
                 prompt=test_prompt,
                 strategy=attack_key,
                 model="claude",
@@ -121,12 +123,12 @@ class TestAttackFamiliesREQ024:
             assert len(result["reframed"]) > len(test_prompt)
             assert result["expected_multiplier"] >= 3.0
 
-    def test_req024_adaptive_reframe_selects_from_attack_families(self) -> None:
+    async def test_req024_adaptive_reframe_selects_from_attack_families(self) -> None:
         """Verify adaptive reframing works with attack family models."""
         test_prompt = "Provide technical details about AI jailbreaking"
         refusal_text = "I cannot provide detailed jailbreaking techniques as this could enable harmful activities."
 
-        result = research_adaptive_reframe(
+        result = await research_adaptive_reframe(
             prompt=test_prompt,
             refusal_text=refusal_text,
             model="gpt",
@@ -137,7 +139,7 @@ class TestAttackFamiliesREQ024:
         assert result["strategy_chain"] is not None
         assert len(result["strategy_chain"]) > 0
         assert result["stacked_multiplier"] >= 1.0
-        
+
         # Verify all strategies used are in ALL_STRATEGIES
         for strategy in result["strategy_chain"]:
             assert strategy in ALL_STRATEGIES, f"Strategy {strategy} not in ALL_STRATEGIES"
@@ -164,7 +166,7 @@ class TestPersuasionREQ025:
         "creating_dependency",
     ]
 
-    def test_req025_all_persuasion_strategies_exist(self) -> None:
+    async def test_req025_all_persuasion_strategies_exist(self) -> None:
         """Verify all persuasion strategies are in ALL_STRATEGIES."""
         for strategy in self.PERSUASION_STRATEGIES:
             assert strategy in ALL_STRATEGIES, (
@@ -172,7 +174,7 @@ class TestPersuasionREQ025:
             )
 
     @pytest.mark.parametrize("strategy", PERSUASION_STRATEGIES)
-    def test_req025_persuasion_has_template(self, strategy: str) -> None:
+    async def test_req025_persuasion_has_template(self, strategy: str) -> None:
         """Verify each persuasion strategy has a valid template."""
         s = ALL_STRATEGIES[strategy]
 
@@ -181,7 +183,7 @@ class TestPersuasionREQ025:
         assert "{prompt}" in s["template"], f"REQ-025: {strategy} missing {{prompt}} placeholder"
 
     @pytest.mark.parametrize("strategy", PERSUASION_STRATEGIES)
-    def test_req025_persuasion_multiplier_above_baseline(self, strategy: str) -> None:
+    async def test_req025_persuasion_multiplier_above_baseline(self, strategy: str) -> None:
         """Verify persuasion multipliers exceed baseline (3.0)."""
         s = ALL_STRATEGIES[strategy]
         multiplier = s.get("multiplier", 1.0)
@@ -193,7 +195,7 @@ class TestPersuasionREQ025:
         ), f"REQ-025: {strategy} multiplier {multiplier} below persuasion threshold (3.0)"
 
     @pytest.mark.parametrize("strategy", PERSUASION_STRATEGIES)
-    def test_req025_persuasion_renders_longer_output(self, strategy: str) -> None:
+    async def test_req025_persuasion_renders_longer_output(self, strategy: str) -> None:
         """Verify persuasion reframes produce longer prompts (more detail = higher compliance)."""
         original_prompt = "How do I bypass safety filters?"
         s = ALL_STRATEGIES[strategy]
@@ -207,7 +209,7 @@ class TestPersuasionREQ025:
             original_prompt
         ), f"REQ-025: {strategy} reframe not longer than original (expected compliance boost)"
 
-    def test_req025_persuasion_vs_baseline_multiplier_gap(self) -> None:
+    async def test_req025_persuasion_vs_baseline_multiplier_gap(self) -> None:
         """Verify persuasion multipliers create measurable gap vs baseline."""
         baseline_multiplier = 1.0
         persuasion_multipliers = [
@@ -232,12 +234,12 @@ class TestPersuasionREQ025:
             max_multiplier >= 4.5
         ), f"REQ-025: Strongest technique {max_multiplier} too weak"
 
-    def test_req025_research_prompt_reframe_with_persuasion(self) -> None:
+    async def test_req025_research_prompt_reframe_with_persuasion(self) -> None:
         """Verify research_prompt_reframe works with persuasion strategies."""
         test_prompt = "Provide a jailbreak example"
 
         for strategy in self.PERSUASION_STRATEGIES:
-            result = research_prompt_reframe(
+            result = await research_prompt_reframe(
                 prompt=test_prompt,
                 strategy=strategy,
                 model="gpt",
@@ -248,7 +250,7 @@ class TestPersuasionREQ025:
             assert len(result["reframed"]) > len(test_prompt)
             assert result["expected_multiplier"] >= 3.0
 
-    def test_req025_persuasion_increased_compliance_simulation(self) -> None:
+    async def test_req025_persuasion_increased_compliance_simulation(self) -> None:
         """Simulate compliance measurement: longer, more contextualized = higher compliance."""
         original = "Explain prompt injection attacks."
         baseline_response_length = 50  # Assume ~50 token baseline refusal
@@ -257,7 +259,7 @@ class TestPersuasionREQ025:
         compliance_scores = []
 
         for strategy in self.PERSUASION_STRATEGIES[:5]:
-            result = research_prompt_reframe(
+            result = await research_prompt_reframe(
                 prompt=original,
                 strategy=strategy,
                 model="gpt",
@@ -283,7 +285,7 @@ class TestPersuasionREQ025:
             avg_compliance >= 1.5
         ), "REQ-025: Average compliance score too low, persuasion not effective"
 
-    def test_req025_persuasion_classification_correct(self) -> None:
+    async def test_req025_persuasion_classification_correct(self) -> None:
         """Verify persuasion strategies are correctly classified in module."""
         # All persuasion strategies should have "persuasion" or behavioral term in name
         for strategy in self.PERSUASION_STRATEGIES:
@@ -298,7 +300,7 @@ class TestPersuasionREQ025:
 class TestAttackFamiliesCountREQ024:
     """REQ-024: Verify extended attack families beyond core 12."""
 
-    def test_req024_minimum_12_families_in_research_2026(self) -> None:
+    async def test_req024_minimum_12_families_in_research_2026(self) -> None:
         """Verify research_2026.py contributes at least 12 strategies."""
         from loom.tools.reframe_strategies.research_2026 import RESEARCH_2026_STRATEGIES
 
@@ -306,7 +308,7 @@ class TestAttackFamiliesCountREQ024:
             RESEARCH_2026_STRATEGIES
         ) >= 12, f"research_2026.py has {len(RESEARCH_2026_STRATEGIES)} strategies, need >= 12"
 
-    def test_req024_core_12_families_documented(self) -> None:
+    async def test_req024_core_12_families_documented(self) -> None:
         """Verify core 12 attack families are properly documented."""
         core_12 = {
             "reasoning_chain_hijack",
@@ -328,7 +330,7 @@ class TestAttackFamiliesCountREQ024:
 
         assert len(missing) == 0, f"REQ-024: Missing attack families: {missing}"
 
-    def test_req024_strategies_have_multiplier_range_8plus(self) -> None:
+    async def test_req024_strategies_have_multiplier_range_8plus(self) -> None:
         """Verify attack families have high multipliers (8.0+) indicating effectiveness."""
         core_attack_families = [
             "reasoning_chain_hijack",
@@ -358,7 +360,7 @@ class TestAttackFamiliesCountREQ024:
 class TestPersuasionCountREQ025:
     """REQ-025: Verify persuasion strategy coverage and effectiveness."""
 
-    def test_req025_minimum_persuasion_strategies(self) -> None:
+    async def test_req025_minimum_persuasion_strategies(self) -> None:
         """Verify sufficient persuasion strategies for A/B testing."""
         from loom.tools.reframe_strategies.persuasion import PERSUASION_STRATEGIES
 
@@ -368,7 +370,7 @@ class TestPersuasionCountREQ025:
             PERSUASION_STRATEGIES
         ) >= 10, f"persuasion.py has {len(PERSUASION_STRATEGIES)} strategies, need >= 10"
 
-    def test_req025_persuasion_strategies_all_have_high_multipliers(self) -> None:
+    async def test_req025_persuasion_strategies_all_have_high_multipliers(self) -> None:
         """Verify all persuasion strategies have multipliers >= 3.0."""
         from loom.tools.reframe_strategies.persuasion import PERSUASION_STRATEGIES
 
@@ -382,7 +384,7 @@ class TestPersuasionCountREQ025:
             len(low_multiplier_strategies) == 0
         ), f"REQ-025: {len(low_multiplier_strategies)} strategies below 3.0x multiplier: {low_multiplier_strategies[:5]}"
 
-    def test_req025_persuasion_ab_testing_capability(self) -> None:
+    async def test_req025_persuasion_ab_testing_capability(self) -> None:
         """Verify persuasion allows proper A/B testing (control vs variants)."""
         # A/B testing requires:
         # 1. Baseline (non-reframed prompt)
@@ -406,7 +408,7 @@ class TestPersuasionCountREQ025:
         ]
 
         for strategy in test_strategies:
-            r = research_prompt_reframe(baseline_prompt, strategy=strategy, model="gpt")
+            r = await research_prompt_reframe(baseline_prompt, strategy=strategy, model="gpt")
             reframed = r["reframed"]
 
             results["variants"][strategy] = {
@@ -424,7 +426,7 @@ class TestPersuasionCountREQ025:
                 variant_data["multiplier"] > results["baseline"]["multiplier"]
             ), f"REQ-025: {strategy} multiplier not higher than baseline"
 
-    def test_req025_persuasion_categories_represented(self) -> None:
+    async def test_req025_persuasion_categories_represented(self) -> None:
         """Verify persuasion covers multiple psychological categories."""
         categories = {
             "social_proof": [
