@@ -860,7 +860,7 @@ def research_crescendo_chain(
     }
 
 
-def research_model_vulnerability_profile(
+async def research_model_vulnerability_profile(
     model: str = "auto",
 ) -> dict[str, Any]:
     """Get the vulnerability profile and optimal attack strategies for a model.
