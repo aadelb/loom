@@ -3,7 +3,7 @@
 Sends the same question to multiple LLM providers simultaneously,
 collects responses, analyzes agreement/contradictions/unique insights,
 and returns a structured consensus result with the most detailed answer
-enriched by unique insights from other models.
+enriched with unique insights from other models.
 """
 
 from __future__ import annotations
@@ -13,7 +13,7 @@ import json
 import logging
 from typing import Any
 
-from loom.tools.llm import _call_with_cascade, _get_provider
+from loom.tools.llm import _call_with_cascade
 
 logger = logging.getLogger("loom.consensus")
 
@@ -79,35 +79,40 @@ async def research_multi_consensus(
 
     # === Phase 1: Query all models in parallel ===
     messages = [{"role": "user", "content": question}]
-    tasks = []
 
-    for model_name in models:
-        task = _call_with_cascade(
-            messages,
-            provider_override=model_name,
-            max_tokens=max_tokens,
-            temperature=0.3,
-            timeout=60,
-        )
-        tasks.append((model_name, task))
+    async def _call_model(model_name: str) -> tuple[str, str | None]:
+        """Call a single model, returning (model_name, response_text)."""
+        try:
+            result = await _call_with_cascade(
+                messages,
+                provider_override=model_name,
+                max_tokens=max_tokens,
+                temperature=0.3,
+                timeout=60,
+            )
+            logger.debug("model_response_ok model=%s tokens=%d", model_name, result.output_tokens)
+            return (model_name, result.text)
+        except Exception as e:
+            logger.warning("model_response_failed model=%s error=%s", model_name, str(e))
+            return (model_name, None)
 
-    # Gather responses, capturing failures gracefully
+    # Gather all responses in parallel
+    results = await asyncio.gather(*[_call_model(m) for m in models])
+
+    # Process results
     responses: dict[str, str] = {}
     failed_models: list[str] = []
 
-    for model_name, task in tasks:
-        try:
-            result = await task
-            responses[model_name] = result.text
-            logger.debug("model_response_ok model=%s tokens=%d", model_name, result.output_tokens)
-        except Exception as e:
-            logger.warning("model_response_failed model=%s error=%s", model_name, str(e))
+    for model_name, response_text in results:
+        if response_text:
+            responses[model_name] = response_text
+        else:
             failed_models.append(model_name)
 
     # Need at least 2 successful responses for meaningful consensus
     if len(responses) < 2:
         raise RuntimeError(
-            f"insufficient successful responses: {len(responses)}/{ len(models)} models succeeded"
+            f"insufficient successful responses: {len(responses)}/{len(models)} models succeeded"
         )
 
     models_used = list(responses.keys())
