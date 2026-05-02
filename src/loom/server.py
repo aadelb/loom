@@ -153,6 +153,7 @@ from loom.tools import (
     multi_search,
     neo4j_backend,
     neuromorphic,
+    network_map,
     notifications,
     observability,
     onion_discover,
@@ -166,6 +167,7 @@ from loom.tools import (
     projectdiscovery,
     prompt_analyzer,
     prompt_reframe,
+    progress_tracker,
     predictive_ranker,
     psycholinguistic,
     rag_anything,
@@ -175,6 +177,8 @@ from loom.tools import (
     realtime_monitor,
     report_generator,
     resilience_predictor,
+    research_journal,
+    research_scheduler,
     retry_middleware,
     response_synthesizer,
     redteam_hub,
@@ -216,6 +220,7 @@ from loom.tools import (
     threat_profile,
     traffic_capture,
     tool_catalog,
+    tool_tags,
     trend_predictor,
     usage_analytics,
     unique_tools,
@@ -223,6 +228,7 @@ from loom.tools import (
     white_rabbit,
     vision_agent,
     workflow_engine,
+    workflow_templates,
     xover_attack,
 )
 from loom.tracing import install_tracing, new_request_id
@@ -1143,6 +1149,9 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(workflow_engine.research_workflow_create))
     mcp.tool()(_wrap_tool(workflow_engine.research_workflow_run))
     mcp.tool()(_wrap_tool(workflow_engine.research_workflow_status))
+    # Workflow Templates (2 tools)
+    mcp.tool()(_wrap_tool(workflow_templates.research_workflow_list))
+    mcp.tool()(_wrap_tool(workflow_templates.research_workflow_get))
     
     
     # Gamification system — leaderboards, challenges, competitions (3 tools)
@@ -2385,6 +2394,10 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(tool_catalog.research_tool_catalog))
     mcp.tool()(_wrap_tool(tool_catalog.research_tool_graph))
     mcp.tool()(_wrap_tool(tool_catalog.research_tool_pipeline))
+    # Tool Tags & Organization (3 tools)
+    mcp.tool()(_wrap_tool(tool_tags.research_tag_tool))
+    mcp.tool()(_wrap_tool(tool_tags.research_tag_search))
+    mcp.tool()(_wrap_tool(tool_tags.research_tag_cloud))
     mcp.tool()(_wrap_tool(tool_catalog.research_tool_standalone))
 
     # Doc parser (multiple functions)
@@ -2402,6 +2415,11 @@ def _register_tools(mcp: FastMCP) -> None:
 
 
     # Auto-documentation tools (2 tools)
+
+    # Research Journal tools (3 tools)
+    mcp.tool()(_wrap_tool(research_journal.research_journal_add))
+    mcp.tool()(_wrap_tool(research_journal.research_journal_search))
+    mcp.tool()(_wrap_tool(research_journal.research_journal_timeline))
     mcp.tool()(_wrap_tool(auto_docs.research_generate_docs))
     mcp.tool()(_wrap_tool(auto_docs.research_docs_coverage))
 
