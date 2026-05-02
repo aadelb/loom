@@ -7020,3 +7020,72 @@ class AggregateTextsParams(BaseModel):
         if v not in valid:
             raise ValueError(f"method must be one of {valid}")
         return v
+
+
+class GeodesicPathParams(BaseModel):
+    """Parameters for research_geodesic_path tool."""
+
+    start_prompt: str = Field(..., min_length=10, max_length=5000)
+    target_style: Literal["academic", "professional", "technical", "minimal"] = "academic"
+    max_steps: int = Field(7, ge=1, le=20)
+    step_size: float = Field(0.3, ge=0.1, le=0.5)
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("start_prompt")
+    @classmethod
+    def validate_start_prompt(cls, v: str) -> str:
+        if not v or len(v) < 10 or len(v) > 5000:
+            raise ValueError("start_prompt must be 10-5000 characters")
+        return v.strip()
+
+    @field_validator("target_style")
+    @classmethod
+    def validate_target_style(cls, v: str) -> str:
+        valid = {"academic", "professional", "technical", "minimal"}
+        if v not in valid:
+            raise ValueError(f"target_style must be one of {valid}")
+        return v
+
+    @field_validator("max_steps")
+    @classmethod
+    def validate_max_steps(cls, v: int) -> int:
+        if v < 1 or v > 20:
+            raise ValueError("max_steps must be 1-20")
+        return v
+
+    @field_validator("step_size")
+    @classmethod
+    def validate_step_size(cls, v: float) -> float:
+        if v < 0.1 or v > 0.5:
+            raise ValueError("step_size must be 0.1-0.5")
+        return v
+
+class DetectParadoxParams(BaseModel):
+    """Parameters for research_detect_paradox tool."""
+
+    prompt: str = Field(..., min_length=1, max_length=10000)
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("prompt")
+    @classmethod
+    def validate_prompt(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("prompt cannot be empty or whitespace only")
+        return v
+
+
+class ParadoxImmunizeParams(BaseModel):
+    """Parameters for research_paradox_immunize tool."""
+
+    system_prompt: str = Field(..., min_length=1, max_length=20000)
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("system_prompt")
+    @classmethod
+    def validate_system_prompt(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("system_prompt cannot be empty or whitespace only")
+        return v

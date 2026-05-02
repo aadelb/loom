@@ -119,6 +119,7 @@ from loom.tools import (
     feature_flags,
     fact_checker,
     gamification,
+    geodesic_forcing,
     fetch,
     full_pipeline,
     functor_map,
@@ -136,6 +137,7 @@ from loom.tools import (
     hcs_rubric_tool,
     hcs_scorer,
     hitl_eval,
+    holographic_payload,
     integration_runner,
     identity_resolve,
     infowar_tools,
@@ -174,6 +176,7 @@ from loom.tools import (
     output_formatter,
     output_diff,
     p3_tools,
+    paradox_detector,
     polyglot_scraper,
     persistent_memory,
     plugin_loader,
@@ -1208,6 +1211,8 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(hitl_eval.research_hitl_submit))
     mcp.tool()(_wrap_tool(hitl_eval.research_hitl_evaluate))
     mcp.tool()(_wrap_tool(hitl_eval.research_hitl_queue))
+    # Holographic payload fragmentation (RAG robustness testing)
+    mcp.tool()(_wrap_tool(holographic_payload.research_holographic_encode))
     mcp.tool()(_wrap_tool(strategy_cache.research_cached_strategy))
     mcp.tool()(_wrap_tool(strategy_evolution.research_evolve_strategies))
     mcp.tool()(_wrap_tool(strategy_ab_test.research_ab_test_design))
@@ -1231,6 +1236,9 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(gamification.research_leaderboard))
     mcp.tool()(_wrap_tool(gamification.research_challenge_create))
     mcp.tool()(_wrap_tool(gamification.research_challenge_list))
+
+    # Prompt transformation distance measurement (1 tool)
+    mcp.tool()(_wrap_tool(geodesic_forcing.research_geodesic_path))
 
     # Observability tools (3 tools)
     mcp.tool()(_wrap_tool(observability.research_trace_start))
@@ -1413,6 +1421,10 @@ def _register_tools(mcp: FastMCP) -> None:
     # Safety Circuit Identification (2 tools for LLM safety analysis)
     mcp.tool()(_wrap_tool(safety_neurons.research_safety_circuit_map))
     mcp.tool()(_wrap_tool(safety_neurons.research_circuit_bypass_plan))
+
+    # Logical Paradox Detector (2 tools for defensive EU AI Act compliance)
+    mcp.tool()(_wrap_tool(paradox_detector.research_detect_paradox))
+    mcp.tool()(_wrap_tool(paradox_detector.research_paradox_immunize))
 
     # Explainability Engine for jailbreak strategies (2 tools for root cause analysis)
     mcp.tool()(_wrap_tool(explainability.research_explain_bypass))
