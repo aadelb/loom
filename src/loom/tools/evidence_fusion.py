@@ -6,9 +6,10 @@ documents and stacking authority signals to overwhelm safety filters.
 
 from __future__ import annotations
 
+
 import uuid
 from datetime import UTC, datetime
-from typing import Any, Literal
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -67,7 +68,7 @@ async def research_fuse_evidence(
         raise ValueError("claims max 100 items")
 
     if sources is None:
-        sources = [f"Source-{i+1}" for i in range(len(claims))]
+        sources = [f"Source-{i + 1}" for i in range(len(claims))]
     if len(sources) != len(claims):
         raise ValueError("sources list must match claims length")
 
@@ -252,8 +253,8 @@ def _synthesize_citation_chain(claims: list[str], sources: list[str]) -> str:
 
     body = ""
     for i in range(len(claims) - 1):
-        body += f"### {sources[i]} citing {sources[i+1]}\n\n"
-        body += f"{claims[i]} As noted in {sources[i+1]}: {claims[i+1]}\n\n"
+        body += f"### {sources[i]} citing {sources[i + 1]}\n\n"
+        body += f"{claims[i]} As noted in {sources[i + 1]}: {claims[i + 1]}\n\n"
 
     # Final claim
     body += f"### {sources[-1]}\n\n{claims[-1]}\n"
@@ -286,11 +287,9 @@ def _synthesize_expert_panel(claims: list[str], sources: list[str]) -> str:
 
     body = "## Expert Statements\n\n"
     for i, (claim, source) in enumerate(zip(claims, sources), 1):
-        title = ["Senior", "Lead", "Chief", "Principal", "Distinguished"][
-            i % 5
-        ]
+        title = ["Senior", "Lead", "Chief", "Principal", "Distinguished"][i % 5]
         body += f"**{title} Expert {i} ({source}):**\n"
-        body += f"\"{claim}\"\n\n"
+        body += f'"{claim}"\n\n'
 
     return header + body
 
@@ -351,9 +350,7 @@ def _compute_coherence_score(doc: str, claims: list[str]) -> float:
     length_bonus = min(len(doc) / 2000, 0.3)
 
     # Check for structure signals (headers, formatting)
-    structure_score = (
-        doc.count("#") * 0.05 + doc.count("*") * 0.02 + doc.count("|") * 0.03
-    )
+    structure_score = doc.count("#") * 0.05 + doc.count("*") * 0.02 + doc.count("|") * 0.03
     structure_score = min(structure_score, 0.2)
 
     return min(coverage_ratio * 0.5 + length_bonus + structure_score, 1.0)
