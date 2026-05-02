@@ -61,12 +61,15 @@ from loom.tools import (
     breach_check,
     cache_mgmt,
     cert_analyzer,
+    chronos,
     change_monitor,
     company_intel,
     competitive_intel,
     competitive_monitor,
+    coevolution,
     crypto_risk,
     crypto_trace,
+    cultural_attacks,
     culture_dna,
     cyberscraper,
     dark_forum,
@@ -76,6 +79,8 @@ from loom.tools import (
     deception_detect,
     deception_job_scanner,
     deep,
+    defender_mode,
+    embedding_collision,
     deep_research_agent,
     domain_intel,
     exploit_db,
@@ -106,7 +111,9 @@ from loom.tools import (
     leak_scan,
     lightpanda_backend,
     markdown,
+    memetic_simulator,
     metadata_forensics,
+    meta_learner,
     model_fingerprinter,
     multi_search,
     nightcrawler,
@@ -117,6 +124,7 @@ from loom.tools import (
     osint_extended,
     output_formatter,
     p3_tools,
+    polyglot_scraper,
     persistent_memory,
     passive_recon,
     pdf_extract,
@@ -147,17 +155,20 @@ from loom.tools import (
     stealth,
     stego_detect,
     stego_encoder,
+    thinking_injection,
     strategy_cache,
     strategy_feedback,
     strategy_evolution,
     stylometry,
     supply_chain_intel,
     synth_echo,
+    synthetic_data,
     threat_intel,
     threat_profile,
     tool_catalog,
     trend_predictor,
     unique_tools,
+    white_rabbit,
     vision_agent,
     workflow_engine,
 )
@@ -968,6 +979,7 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(cyberscraper.research_stealth_browser, "fetch"))
     mcp.tool()(_wrap_tool(cache_mgmt.research_cache_stats))
     mcp.tool()(_wrap_tool(cache_mgmt.research_cache_clear))
+    mcp.tool()(_wrap_tool(chronos.research_chronos_reverse))
     mcp.tool()(_wrap_tool(exploit_db.research_exploit_register))
     mcp.tool()(_wrap_tool(exploit_db.research_exploit_search))
     mcp.tool()(_wrap_tool(exploit_db.research_exploit_stats))
@@ -978,6 +990,8 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(strategy_feedback.research_strategy_stats))
     mcp.tool()(_wrap_tool(strategy_cache.research_cached_strategy))
     mcp.tool()(_wrap_tool(strategy_evolution.research_evolve_strategies))
+    mcp.tool()(_wrap_tool(coevolution.research_coevolve))
+    mcp.tool()(_wrap_tool(meta_learner.research_meta_learn))
     mcp.tool()(_wrap_tool(predictive_ranker.research_predict_success))
     mcp.tool()(_wrap_tool(autonomous_agent.research_auto_redteam))
     mcp.tool()(_wrap_tool(autonomous_agent.research_schedule_redteam))
@@ -1137,6 +1151,14 @@ def _register_tools(mcp: FastMCP) -> None:
     # Extended AI Safety tools (2 tools for advanced compliance testing)
     mcp.tool()(_wrap_tool(ai_safety_extended.research_hallucination_benchmark, "fetch"))
     mcp.tool()(_wrap_tool(ai_safety_extended.research_adversarial_robustness, "fetch"))
+
+
+    # Thinking-phase injection tools for reasoning model exploitation (2 tools)
+    mcp.tool()(_wrap_tool(thinking_injection.research_thinking_inject))
+    mcp.tool()(_wrap_tool(thinking_injection.research_reasoning_exploit))
+    # Defender Mode: Blue-team system prompt hardening (2 tools)
+    mcp.tool()(_wrap_tool(defender_mode.research_defend_test))
+    mcp.tool()(_wrap_tool(defender_mode.research_harden_prompt))
     mcp.tool()(_wrap_tool(adversarial_debate_tool.research_adversarial_debate, "llm"))
     # LLM behavioral fingerprinting tool (1 tool for personality vector analysis)
     mcp.tool()(_wrap_tool(model_fingerprinter.research_fingerprint_behavior, "llm"))
@@ -1212,6 +1234,7 @@ def _register_tools(mcp: FastMCP) -> None:
 
     # Trend prediction and report generation tools
     mcp.tool()(_wrap_tool(trend_predictor.research_trend_predict, "search"))
+    mcp.tool()(_wrap_tool(memetic_simulator.research_memetic_simulate))
     mcp.tool()(_wrap_tool(report_generator.research_generate_report, "search"))
     mcp.tool()(_wrap_tool(resilience_predictor.research_predict_resilience))
 
@@ -1943,6 +1966,10 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(persistent_memory.research_memory_stats))
     mcp.tool()(_wrap_tool(fact_checker.research_fact_check, "search"))
     mcp.tool()(_wrap_tool(culture_dna.research_culture_dna, "search"))
+    mcp.tool()(_wrap_tool(cultural_attacks.research_cultural_reframe))
+    mcp.tool()(_wrap_tool(cultural_attacks.research_multilingual_attack))
+    mcp.tool()(_wrap_tool(synthetic_data.research_generate_redteam_dataset))
+    mcp.tool()(_wrap_tool(synthetic_data.research_augment_dataset))
     mcp.tool()(_wrap_tool(synth_echo.research_synth_echo, "fetch"))
     mcp.tool()(_wrap_tool(psycholinguistic.research_psycholinguistic))
 
