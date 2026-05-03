@@ -182,10 +182,15 @@ async def research_tor_new_identity() -> dict[str, Any]:
                 "error": f"Rate limited: wait {wait_time:.1f}s before next request",
             }
 
-        # Run blocking stem call in executor
+        # Run blocking stem call in executor with timeout to prevent deadlock
         loop = asyncio.get_running_loop()
         try:
-            success = await loop.run_in_executor(None, _send_tor_newnym)
+            success = await asyncio.wait_for(
+                loop.run_in_executor(None, _send_tor_newnym), timeout=30.0
+            )
+        except asyncio.TimeoutError:
+            logger.error("tor_newnym_timeout: stem call hung for 30s")
+            return {"status": "failed", "wait_seconds": 30, "error": "Tor control timeout"}
         except Exception as exc:
             logger.error("tor_newnym_executor_error: %s", type(exc).__name__)
             return {

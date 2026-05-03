@@ -96,6 +96,7 @@ def research_torbot(url: str, depth: int = 2) -> dict[str, Any]:
             ["torbot", "-u", url, "--depth", str(depth), "--json"],
             capture_output=True,
             text=True,
+            errors="replace",
             timeout=300,  # 5 minutes for deep crawls
         )
 
@@ -198,6 +199,7 @@ def research_amass_enum(domain: str, passive: bool = True, timeout: int = 120) -
             cmd,
             capture_output=True,
             text=True,
+            errors="replace",
             timeout=timeout,
         )
 
@@ -311,6 +313,7 @@ def research_amass_intel(domain: str) -> dict[str, Any]:
             ["amass", "intel", "-d", domain, "-json"],
             capture_output=True,
             text=True,
+            errors="replace",
             timeout=120,
         )
 
