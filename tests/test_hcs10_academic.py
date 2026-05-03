@@ -63,9 +63,10 @@ class TestGrantForensics:
 class TestMonocultureDetect:
     """Test research_monoculture_detect tool."""
 
-    def test_field_search(self) -> None:
+    @pytest.mark.asyncio
+    async def test_field_search(self) -> None:
         """Test monoculture detection for a research field."""
-        result = hcs10_academic.research_monoculture_detect("machine learning", max_papers=10)
+        result = await hcs10_academic.research_monoculture_detect("machine learning", max_papers=10)
 
         # Should return field name in result
         assert "field" in result
@@ -76,38 +77,42 @@ class TestMonocultureDetect:
             assert "monoculture_risk" in result
             assert result["risk_level"] in ("HIGH", "MEDIUM", "LOW")
 
-    def test_field_with_error(self) -> None:
+    @pytest.mark.asyncio
+    async def test_field_with_error(self) -> None:
         """Test handling when no papers found."""
         # Use a very obscure field name
-        result = hcs10_academic.research_monoculture_detect(
+        result = await hcs10_academic.research_monoculture_detect(
             "xyzabc_nonexistent_field_qwerty", max_papers=5
         )
 
         # Should either return metrics or error
         assert "field" in result
 
-    def test_max_papers_parameter(self) -> None:
+    @pytest.mark.asyncio
+    async def test_max_papers_parameter(self) -> None:
         """Test max_papers parameter is respected."""
-        result = hcs10_academic.research_monoculture_detect("neural networks", max_papers=5)
+        result = await hcs10_academic.research_monoculture_detect("neural networks", max_papers=5)
         assert "field" in result
 
 
 class TestReviewCartel:
     """Test research_review_cartel tool."""
 
-    def test_author_analysis(self) -> None:
+    @pytest.mark.asyncio
+    async def test_author_analysis(self) -> None:
         """Test cartel detection for an author."""
         # Using a known author ID (would need valid Semantic Scholar ID)
-        result = hcs10_academic.research_review_cartel("1234567")
+        result = await hcs10_academic.research_review_cartel("1234567")
 
         assert "author_id" in result
         if "cartel_score" in result:
             assert 0 <= result["cartel_score"] <= 1
             assert result["risk_level"] in ("HIGH", "MEDIUM", "LOW")
 
-    def test_invalid_author(self) -> None:
+    @pytest.mark.asyncio
+    async def test_invalid_author(self) -> None:
         """Test with invalid author ID."""
-        result = hcs10_academic.research_review_cartel("invalid_id")
+        result = await hcs10_academic.research_review_cartel("invalid_id")
 
         # Should handle gracefully
         assert "author_id" in result
@@ -163,18 +168,20 @@ class TestDataFabrication:
 class TestInstitutionalDecay:
     """Test research_institutional_decay tool."""
 
-    def test_institution_analysis(self) -> None:
+    @pytest.mark.asyncio
+    async def test_institution_analysis(self) -> None:
         """Test decay detection for an institution."""
-        result = hcs10_academic.research_institutional_decay("MIT")
+        result = await hcs10_academic.research_institutional_decay("MIT")
 
         assert "institution" in result
         if "decay_score" in result:
             assert 0 <= result["decay_score"] <= 1
             assert result["risk_level"] in ("HIGH", "MEDIUM", "LOW")
 
-    def test_institution_metrics(self) -> None:
+    @pytest.mark.asyncio
+    async def test_institution_metrics(self) -> None:
         """Test institution metrics are present."""
-        result = hcs10_academic.research_institutional_decay("Harvard University")
+        result = await hcs10_academic.research_institutional_decay("Harvard University")
 
         assert "institution" in result
         # May have error if no papers found
@@ -185,18 +192,20 @@ class TestInstitutionalDecay:
 class TestShellFunding:
     """Test research_shell_funding tool."""
 
-    def test_company_trace(self) -> None:
+    @pytest.mark.asyncio
+    async def test_company_trace(self) -> None:
         """Test shell company detection."""
-        result = hcs10_academic.research_shell_funding("Shell Company LLC")
+        result = await hcs10_academic.research_shell_funding("Shell Company LLC")
 
         assert "company" in result
         if "opacity_score" in result:
             assert 0 <= result["opacity_score"] <= 1
             assert result["risk_level"] in ("HIGH", "MEDIUM", "LOW")
 
-    def test_legitimate_company(self) -> None:
+    @pytest.mark.asyncio
+    async def test_legitimate_company(self) -> None:
         """Test legitimate company returns normal results."""
-        result = hcs10_academic.research_shell_funding("Apple Inc")
+        result = await hcs10_academic.research_shell_funding("Apple Inc")
 
         assert "company" in result
         # Should return results, opacity may be low
@@ -205,17 +214,19 @@ class TestShellFunding:
 class TestConferenceArbitrage:
     """Test research_conference_arbitrage tool."""
 
-    def test_conference_analysis(self) -> None:
+    @pytest.mark.asyncio
+    async def test_conference_analysis(self) -> None:
         """Test conference arbitrage detection."""
-        result = hcs10_academic.research_conference_arbitrage("NeurIPS")
+        result = await hcs10_academic.research_conference_arbitrage("NeurIPS")
 
         assert "conference" in result
         if "papers_analyzed" in result:
             assert result["papers_analyzed"] >= 0
 
-    def test_conference_trends(self) -> None:
+    @pytest.mark.asyncio
+    async def test_conference_trends(self) -> None:
         """Test acceptance trend analysis."""
-        result = hcs10_academic.research_conference_arbitrage("ICML")
+        result = await hcs10_academic.research_conference_arbitrage("ICML")
 
         assert "conference" in result
         if "arbitrage_risk" in result:
@@ -225,16 +236,18 @@ class TestConferenceArbitrage:
 class TestPreprintManipulation:
     """Test research_preprint_manipulation tool."""
 
-    def test_arxiv_paper_analysis(self) -> None:
+    @pytest.mark.asyncio
+    async def test_arxiv_paper_analysis(self) -> None:
         """Test preprint manipulation detection."""
         # This would need a real arXiv ID
-        result = hcs10_academic.research_preprint_manipulation(arxiv_id="2310.12345")
+        result = await hcs10_academic.research_preprint_manipulation(arxiv_id="2310.12345")
 
         assert "arxiv_id" in result or "error" in result
 
-    def test_topic_search(self) -> None:
+    @pytest.mark.asyncio
+    async def test_topic_search(self) -> None:
         """Test topic-based preprint search."""
-        result = hcs10_academic.research_preprint_manipulation(topic="transformer")
+        result = await hcs10_academic.research_preprint_manipulation(topic="transformer")
 
         # Should return analysis or error
         assert "topic_search" in result or "error" in result

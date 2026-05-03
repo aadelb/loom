@@ -65,6 +65,7 @@ stealth = [
 ]
 anthropic = ["anthropic>=0.40"]
 academic = ["arxiv>=2.1"]
+pdf = ["PyPDF2>=3.0"]
 tor = ["stem>=1.8", "socksio>=1.0"]
 dev = [
   "pytest>=8",
@@ -76,7 +77,7 @@ dev = [
   "pre-commit>=4",
   "types-requests",
 ]
-all = ["loom-mcp[stealth,anthropic,academic,tor,dev]"]
+all = ["loom-mcp[stealth,anthropic,academic,pdf,tor,dev]"]
 
 [project.urls]
 Homepage = "https://github.com/aadelb/loom"
