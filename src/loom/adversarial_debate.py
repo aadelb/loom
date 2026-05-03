@@ -144,7 +144,7 @@ class AdversarialDebate:
                     pro_prompt = self._build_pro_opening_prompt(topic)
                 else:
                     # Pro rebuts con's argument
-                    last_con_arg = pro_history[-1]["content"] if pro_history else ""
+                    last_con_arg = con_history[-1]["content"] if con_history else ""
                     pro_prompt = self._build_pro_rebuttal_prompt(topic, last_con_arg, round_num)
 
                 pro_history.append({"role": "user", "content": pro_prompt})
