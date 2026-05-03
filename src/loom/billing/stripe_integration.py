@@ -120,7 +120,7 @@ class StripeIntegration:
             raise ValueError(f"Invalid tier: {tier}")
 
         price_id = TIER_PRICE_MAP[tier]
-        if not price_id:
+        if not price_id or len(price_id) < 5:
             raise ValueError(f"No Stripe price configured for tier: {tier}")
 
         client = await self._get_client()
@@ -383,7 +383,7 @@ class StripeIntegration:
             raise ValueError(f"Invalid tier: {tier}")
 
         price_id = TIER_PRICE_MAP[tier]
-        if not price_id:
+        if not price_id or len(price_id) < 5:
             raise ValueError(f"No Stripe price configured for tier: {tier}")
 
         client = await self._get_client()
