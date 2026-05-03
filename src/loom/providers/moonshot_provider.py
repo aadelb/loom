@@ -7,6 +7,7 @@ Kimi K2 models are also available via NVIDIA NIM.
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import os
 import time
@@ -99,7 +100,11 @@ class MoonshotProvider(LLMProvider):
                 logger.error("Moonshot error: %d %s", e.response.status_code, e.response.text[:200])
                 raise
 
-            data = response.json()
+            try:
+                data = response.json()
+            except (json.JSONDecodeError, ValueError):
+                raise RuntimeError(f"Invalid JSON from moonshot: {response.text[:200]}")
+
             latency_ms = int((time.time() - start) * 1000)
 
             choice = data.get("choices", [{}])[0]

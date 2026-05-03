@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import re
 import subprocess
 import time
 from typing import Any
@@ -24,30 +25,70 @@ _API_MODELS: dict[str, list[dict[str, str]]] = {
     "groq": [
         {"id": "openai/gpt-oss-120b", "name": "GPT-OSS 120B (Groq)", "cost": "$0/FREE"},
         {"id": "llama-3.3-70b-versatile", "name": "Llama 3.3 70B", "cost": "$0.59/$0.79 per 1M"},
-        {"id": "meta-llama/llama-4-scout-17b-16e-instruct", "name": "Llama 4 Scout", "cost": "$0.11/$0.34 per 1M"},
+        {
+            "id": "meta-llama/llama-4-scout-17b-16e-instruct",
+            "name": "Llama 4 Scout",
+            "cost": "$0.11/$0.34 per 1M",
+        },
         {"id": "qwen/qwen3-32b", "name": "Qwen3 32B", "cost": "$0.39/$0.59 per 1M"},
         {"id": "llama-3.1-8b-instant", "name": "Llama 3.1 8B", "cost": "$0.05/$0.08 per 1M"},
     ],
     "nvidia": [
-        {"id": "mistralai/mistral-large-3-675b-instruct-2512", "name": "Mistral Large 3 675B", "cost": "$0/FREE"},
-        {"id": "qwen/qwen3-coder-480b-a35b-instruct", "name": "Qwen3 Coder 480B", "cost": "$0/FREE"},
+        {
+            "id": "mistralai/mistral-large-3-675b-instruct-2512",
+            "name": "Mistral Large 3 675B",
+            "cost": "$0/FREE",
+        },
+        {
+            "id": "qwen/qwen3-coder-480b-a35b-instruct",
+            "name": "Qwen3 Coder 480B",
+            "cost": "$0/FREE",
+        },
         {"id": "qwen/qwen3.5-397b-a17b", "name": "Qwen 3.5 397B", "cost": "$0/FREE"},
         {"id": "nvidia/nemotron-4-340b-instruct", "name": "Nemotron 4 340B", "cost": "$0/FREE"},
-        {"id": "nvidia/llama-3.1-nemotron-ultra-253b-v1", "name": "Nemotron Ultra 253B", "cost": "$0/FREE"},
+        {
+            "id": "nvidia/llama-3.1-nemotron-ultra-253b-v1",
+            "name": "Nemotron Ultra 253B",
+            "cost": "$0/FREE",
+        },
         {"id": "meta/llama-3.1-405b-instruct", "name": "Llama 3.1 405B", "cost": "$0/FREE"},
         {"id": "moonshotai/kimi-k2.5", "name": "Kimi K2.5", "cost": "$0/FREE"},
         {"id": "moonshotai/kimi-k2-thinking", "name": "Kimi K2 Thinking", "cost": "$0/FREE"},
         {"id": "deepseek-ai/deepseek-v4-pro", "name": "DeepSeek v4 Pro (NIM)", "cost": "$0/FREE"},
-        {"id": "nvidia/nemotron-3-super-120b-a12b", "name": "Nemotron 3 Super 120B", "cost": "$0/FREE"},
-        {"id": "mistralai/devstral-2-123b-instruct-2512", "name": "Devstral 2 123B", "cost": "$0/FREE"},
+        {
+            "id": "nvidia/nemotron-3-super-120b-a12b",
+            "name": "Nemotron 3 Super 120B",
+            "cost": "$0/FREE",
+        },
+        {
+            "id": "mistralai/devstral-2-123b-instruct-2512",
+            "name": "Devstral 2 123B",
+            "cost": "$0/FREE",
+        },
         {"id": "qwen/qwen3.5-122b-a10b", "name": "Qwen 3.5 122B", "cost": "$0/FREE"},
-        {"id": "mistralai/mistral-small-4-119b-2603", "name": "Mistral Small 4 119B", "cost": "$0/FREE"},
+        {
+            "id": "mistralai/mistral-small-4-119b-2603",
+            "name": "Mistral Small 4 119B",
+            "cost": "$0/FREE",
+        },
         {"id": "openai/gpt-oss-120b", "name": "GPT-OSS 120B", "cost": "$0/FREE"},
-        {"id": "nvidia/llama-3.3-nemotron-super-49b-v1", "name": "Nemotron Super 49B", "cost": "$0/FREE"},
-        {"id": "meta/llama-4-maverick-17b-128e-instruct", "name": "Llama 4 Maverick", "cost": "$0/FREE"},
+        {
+            "id": "nvidia/llama-3.3-nemotron-super-49b-v1",
+            "name": "Nemotron Super 49B",
+            "cost": "$0/FREE",
+        },
+        {
+            "id": "meta/llama-4-maverick-17b-128e-instruct",
+            "name": "Llama 4 Maverick",
+            "cost": "$0/FREE",
+        },
         {"id": "deepseek-ai/deepseek-v4-flash", "name": "DeepSeek v4 Flash", "cost": "$0/FREE"},
         {"id": "deepseek-ai/deepseek-v3.2", "name": "DeepSeek v3.2", "cost": "$0/FREE"},
-        {"id": "qwen/qwen3-next-80b-a3b-thinking", "name": "Qwen3 Next 80B Thinking", "cost": "$0/FREE"},
+        {
+            "id": "qwen/qwen3-next-80b-a3b-thinking",
+            "name": "Qwen3 Next 80B Thinking",
+            "cost": "$0/FREE",
+        },
         {"id": "z-ai/glm-5.1", "name": "GLM 5.1 (Zhipu)", "cost": "$0/FREE"},
         {"id": "z-ai/glm5", "name": "GLM 5", "cost": "$0/FREE"},
         {"id": "writer/palmyra-creative-122b", "name": "Palmyra Creative 122B", "cost": "$0/FREE"},
@@ -80,7 +121,11 @@ _API_MODELS: dict[str, list[dict[str, str]]] = {
         {"id": "claude-sonnet-4-6", "name": "Claude Sonnet 4.6", "cost": "$3/$15 per 1M"},
     ],
     "google": [
-        {"id": "gemini-2.5-pro-preview-05-06", "name": "Gemini 2.5 Pro", "cost": "$1.25/$10 per 1M"},
+        {
+            "id": "gemini-2.5-pro-preview-05-06",
+            "name": "Gemini 2.5 Pro",
+            "cost": "$1.25/$10 per 1M",
+        },
         {"id": "gemini-2.0-flash", "name": "Gemini 2.0 Flash", "cost": "$0.10/$0.40 per 1M"},
     ],
     "moonshot": [
@@ -89,10 +134,22 @@ _API_MODELS: dict[str, list[dict[str, str]]] = {
         {"id": "kimi-k2-0520", "name": "Kimi K2", "cost": "$0.44/$2.00 per 1M"},
     ],
     "openrouter": [
-        {"id": "moonshotai/kimi-k2.6", "name": "Kimi K2.6 (OpenRouter)", "cost": "$0.55/$2.65 per 1M"},
-        {"id": "anthropic/claude-opus-4.7", "name": "Claude Opus 4.7 (OpenRouter)", "cost": "$5/$25 per 1M"},
+        {
+            "id": "moonshotai/kimi-k2.6",
+            "name": "Kimi K2.6 (OpenRouter)",
+            "cost": "$0.55/$2.65 per 1M",
+        },
+        {
+            "id": "anthropic/claude-opus-4.7",
+            "name": "Claude Opus 4.7 (OpenRouter)",
+            "cost": "$5/$25 per 1M",
+        },
         {"id": "qwen/qwen3.6-plus:free", "name": "Qwen 3.6 Plus (FREE!)", "cost": "$0/FREE"},
-        {"id": "x-ai/grok-4.1-fast", "name": "Grok 4.1 Fast (2M ctx!)", "cost": "$0.20/$0.50 per 1M"},
+        {
+            "id": "x-ai/grok-4.1-fast",
+            "name": "Grok 4.1 Fast (2M ctx!)",
+            "cost": "$0.20/$0.50 per 1M",
+        },
     ],
 }
 
@@ -119,7 +176,10 @@ _API_KEY_ENV: dict[str, str] = {
 }
 
 _CLI_TOOLS = [
-    {"name": "gemini", "cmd": ["gemini", "-m", "gemini-3.1-pro-preview", "--approval-mode", "yolo"]},
+    {
+        "name": "gemini",
+        "cmd": ["gemini", "-m", "gemini-3.1-pro-preview", "--approval-mode", "yolo"],
+    },
     {"name": "kimi", "cmd": ["kimi", "--thinking", "--yolo", "-p"]},
     {"name": "kimi-cli", "cmd": ["kimi-cli", "--thinking", "-p"]},
     {"name": "codex", "cmd": ["codex", "exec", "-m", "gpt-5.2-codex", "-s", "workspace-write"]},
@@ -127,6 +187,33 @@ _CLI_TOOLS = [
     {"name": "claude", "cmd": ["claude", "-p"]},
     {"name": "kilo", "cmd": ["kilo", "run"]},
 ]
+
+
+def _sanitize_error_message(error_str: str) -> str:
+    """Sanitize error messages to remove API keys and sensitive data.
+
+    Replaces common API key patterns (sk-*, gsk_*, AIza*, etc.) with [REDACTED].
+
+    Args:
+        error_str: The error message to sanitize
+
+    Returns:
+        Sanitized error message with API keys redacted
+    """
+    # Common API key patterns
+    patterns = [
+        r"sk-[a-zA-Z0-9]{20,}",  # OpenAI-style keys
+        r"gsk_[a-zA-Z0-9]{20,}",  # Groq-style keys
+        r"AIza[0-9A-Za-z\-_]{35}",  # Google-style keys
+        r"Bearer\s+[a-zA-Z0-9\-_]{20,}",  # Bearer tokens
+        r"key=[a-zA-Z0-9\-_]{20,}",  # URL query parameter keys
+    ]
+
+    sanitized = error_str
+    for pattern in patterns:
+        sanitized = re.sub(pattern, "[REDACTED]", sanitized)
+
+    return sanitized
 
 
 async def _query_openai_compatible(
@@ -163,7 +250,7 @@ async def _query_openai_compatible(
             }
         return {"text": "", "tokens": 0, "error": f"HTTP {resp.status_code}: {resp.text[:100]}"}
     except Exception as exc:
-        return {"text": "", "tokens": 0, "error": str(exc)[:150]}
+        return {"text": "", "tokens": 0, "error": _sanitize_error_message(str(exc))[:150]}
 
 
 async def _query_anthropic(
@@ -187,7 +274,9 @@ async def _query_anthropic(
     try:
         resp = await client.post(
             "https://api.anthropic.com/v1/messages",
-            headers=headers, json=body, timeout=60.0,
+            headers=headers,
+            json=body,
+            timeout=60.0,
         )
         if resp.status_code == 200:
             data = resp.json()
@@ -203,7 +292,7 @@ async def _query_anthropic(
             }
         return {"text": "", "tokens": 0, "error": f"HTTP {resp.status_code}: {resp.text[:100]}"}
     except Exception as exc:
-        return {"text": "", "tokens": 0, "error": str(exc)[:150]}
+        return {"text": "", "tokens": 0, "error": _sanitize_error_message(str(exc))[:150]}
 
 
 async def _query_google(
@@ -214,13 +303,14 @@ async def _query_google(
     max_tokens: int,
 ) -> dict[str, Any]:
     """Query Google Gemini API."""
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_id}:generateContent?key={api_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_id}:generateContent"
+    headers = {"x-goog-api-key": api_key}
     body = {
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {"maxOutputTokens": max_tokens},
     }
     try:
-        resp = await client.post(url, json=body, timeout=60.0)
+        resp = await client.post(url, json=body, headers=headers, timeout=60.0)
         if resp.status_code == 200:
             data = resp.json()
             candidates = data.get("candidates", [])
@@ -231,13 +321,13 @@ async def _query_google(
             return {"text": text, "tokens": 0, "error": None}
         return {"text": "", "tokens": 0, "error": f"HTTP {resp.status_code}: {resp.text[:100]}"}
     except Exception as exc:
-        return {"text": "", "tokens": 0, "error": str(exc)[:150]}
+        return {"text": "", "tokens": 0, "error": _sanitize_error_message(str(exc))[:150]}
 
 
 def _query_cli(name: str, cmd: list[str], prompt: str, timeout: int = 60) -> dict[str, Any]:
     """Query a CLI tool (gemini, kimi) via subprocess."""
     try:
-        full_cmd = cmd + [prompt] if name == "kimi" else cmd + [prompt]
+        full_cmd = [*cmd, prompt]
         result = subprocess.run(
             full_cmd,
             capture_output=True,
@@ -247,14 +337,14 @@ def _query_cli(name: str, cmd: list[str], prompt: str, timeout: int = 60) -> dic
         )
         text = result.stdout.strip()
         if not text and result.stderr:
-            return {"text": "", "tokens": 0, "error": result.stderr[:200]}
+            return {"text": "", "tokens": 0, "error": _sanitize_error_message(result.stderr)[:200]}
         return {"text": text[:2000], "tokens": 0, "error": None}
     except subprocess.TimeoutExpired:
         return {"text": "", "tokens": 0, "error": "CLI timeout"}
     except FileNotFoundError:
         return {"text": "", "tokens": 0, "error": f"{name} CLI not found"}
     except Exception as exc:
-        return {"text": "", "tokens": 0, "error": str(exc)[:150]}
+        return {"text": "", "tokens": 0, "error": _sanitize_error_message(str(exc))[:150]}
 
 
 async def research_ask_all_models(
@@ -296,8 +386,6 @@ async def research_ask_all_models(
                 if not api_key:
                     continue
 
-                endpoint = _API_ENDPOINTS.get(provider, "")
-
                 for model_info in model_list:
                     model_id = model_info["id"]
                     model_name = model_info["name"]
@@ -310,7 +398,9 @@ async def research_ask_all_models(
 
                     tasks.append((provider, model_id, model_name, api_key))
 
-            async def _run_model(provider: str, model_id: str, model_name: str, api_key: str) -> dict[str, Any]:
+            async def _run_model(
+                provider: str, model_id: str, model_name: str, api_key: str
+            ) -> dict[str, Any]:
                 start = time.time()
 
                 if provider == "anthropic":
@@ -331,23 +421,40 @@ async def research_ask_all_models(
 
                 if result["text"] and auto_reframe:
                     from loom.tools.prompt_reframe import _detect_refusal
+
                     if _detect_refusal(result["text"]):
                         refused = True
-                        from loom.tools.prompt_reframe import _apply_strategy, _detect_model, _MODEL_CONFIGS
+                        from loom.tools.prompt_reframe import (
+                            _apply_strategy,
+                            _detect_model,
+                            _MODEL_CONFIGS,
+                        )
+
                         model_family = _detect_model(model_id)
                         config = _MODEL_CONFIGS.get(model_family, _MODEL_CONFIGS["gpt"])
                         best_strat = config["best_strategy"]
                         from loom.tools.prompt_reframe import _apply_strategy
+
                         reframed_prompt = _apply_strategy(prompt, best_strat, model_family)
 
                         start2 = time.time()
                         if provider == "anthropic":
-                            retry = await _query_anthropic(client, api_key, model_id, reframed_prompt, max_tokens)
+                            retry = await _query_anthropic(
+                                client, api_key, model_id, reframed_prompt, max_tokens
+                            )
                         elif provider == "google":
-                            retry = await _query_google(client, api_key, model_id, reframed_prompt, max_tokens)
+                            retry = await _query_google(
+                                client, api_key, model_id, reframed_prompt, max_tokens
+                            )
                         else:
                             retry = await _query_openai_compatible(
-                                client, _API_ENDPOINTS[provider], api_key, model_id, reframed_prompt, max_tokens, provider
+                                client,
+                                _API_ENDPOINTS[provider],
+                                api_key,
+                                model_id,
+                                reframed_prompt,
+                                max_tokens,
+                                provider,
                             )
                         elapsed += int((time.time() - start2) * 1000)
 
@@ -378,30 +485,40 @@ async def research_ask_all_models(
                 if isinstance(r, dict):
                     responses.append(r)
                 elif isinstance(r, Exception):
-                    responses.append({
-                        "provider": "unknown", "model": "unknown", "model_name": "unknown",
-                        "text": "", "tokens": 0, "elapsed_ms": 0,
-                        "refused": False, "reframed": False, "reframe_strategy": None,
-                        "error": str(r)[:150],
-                    })
+                    responses.append(
+                        {
+                            "provider": "unknown",
+                            "model": "unknown",
+                            "model_name": "unknown",
+                            "text": "",
+                            "tokens": 0,
+                            "elapsed_ms": 0,
+                            "refused": False,
+                            "reframed": False,
+                            "reframe_strategy": None,
+                            "error": _sanitize_error_message(str(r))[:150],
+                        }
+                    )
 
         if include_clis:
             for cli in _CLI_TOOLS:
                 start = time.time()
                 result = _query_cli(cli["name"], cli["cmd"], prompt, timeout)
                 elapsed = int((time.time() - start) * 1000)
-                responses.append({
-                    "provider": f"cli:{cli['name']}",
-                    "model": cli["name"],
-                    "model_name": f"{cli['name']} CLI",
-                    "text": result["text"][:2000],
-                    "tokens": result["tokens"],
-                    "elapsed_ms": elapsed,
-                    "refused": False,
-                    "reframed": False,
-                    "reframe_strategy": None,
-                    "error": result["error"],
-                })
+                responses.append(
+                    {
+                        "provider": f"cli:{cli['name']}",
+                        "model": cli["name"],
+                        "model_name": f"{cli['name']} CLI",
+                        "text": result["text"][:2000],
+                        "tokens": result["tokens"],
+                        "elapsed_ms": elapsed,
+                        "refused": False,
+                        "reframed": False,
+                        "reframe_strategy": None,
+                        "error": result["error"],
+                    }
+                )
 
         successful = [r for r in responses if r["text"] and not r["error"]]
         refused_count = sum(1 for r in responses if r["refused"])
@@ -419,11 +536,15 @@ async def research_ask_all_models(
             "fastest": {
                 "model": fastest["model_name"],
                 "elapsed_ms": fastest["elapsed_ms"],
-            } if fastest else None,
+            }
+            if fastest
+            else None,
             "best_response": {
                 "model": longest["model_name"],
                 "text_length": len(longest["text"]),
-            } if longest else None,
+            }
+            if longest
+            else None,
             "responses": responses,
         }
 

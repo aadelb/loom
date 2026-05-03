@@ -9,9 +9,11 @@ Provides:
 
 from __future__ import annotations
 
+import fcntl
 import hashlib
 import json
 import logging
+import os
 import secrets
 from datetime import UTC, datetime
 from pathlib import Path
@@ -39,6 +41,8 @@ def _save_customers(data: dict[str, Any]) -> None:
     # Use tmp + replace pattern for atomicity
     tmp_file = _CUSTOMERS_FILE.parent / f".customers-{secrets.token_hex(4)}.tmp"
     tmp_file.write_text(json.dumps(data, indent=2))
+    # Restrict file permissions to owner only before atomically replacing
+    os.chmod(tmp_file, 0o600)
     tmp_file.replace(_CUSTOMERS_FILE)
 
 
@@ -193,22 +197,28 @@ def update_credits(customer_id: str, amount: int) -> bool:
     Returns:
         True if updated, False if customer not found
     """
-    customers = _load_customers()
+    lock_path = _CUSTOMERS_FILE.with_suffix(".lock")
+    with open(lock_path, "w") as lock_file:
+        fcntl.flock(lock_file, fcntl.LOCK_EX)
+        try:
+            customers = _load_customers()
 
-    if customer_id not in customers:
-        return False
+            if customer_id not in customers:
+                return False
 
-    current = customers[customer_id].get("credits", 0)
-    new_balance = max(0, current + amount)
-    customers[customer_id]["credits"] = new_balance
+            current = customers[customer_id].get("credits", 0)
+            new_balance = max(0, current + amount)
+            customers[customer_id]["credits"] = new_balance
 
-    _save_customers(customers)
-    log.info(
-        f"Updated credits for {customer_id}: {current} -> {new_balance} "
-        f"(delta={amount})"
-    )
+            _save_customers(customers)
+            log.info(
+                f"Updated credits for {customer_id}: {current} -> {new_balance} "
+                f"(delta={amount})"
+            )
 
-    return True
+            return True
+        finally:
+            fcntl.flock(lock_file, fcntl.LOCK_UN)
 
 
 def list_customers() -> list[dict[str, Any]]:

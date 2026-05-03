@@ -7,6 +7,7 @@ with global rate limiting (10 parallel requests by default).
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import os
 import time
@@ -157,7 +158,11 @@ class DeepSeekProvider(LLMProvider):
             )
             raise
 
-        data = response.json()
+        try:
+            data = response.json()
+        except (json.JSONDecodeError, ValueError):
+            raise RuntimeError(f"Invalid JSON from deepseek: {response.text[:200]}")
+
         latency_ms = int((time.time() - start) * 1000)
 
         # Extract response data

@@ -7,6 +7,7 @@ with global rate limiting (12 parallel requests by default).
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import os
 import time
@@ -155,7 +156,11 @@ class NvidiaNimProvider(LLMProvider):
             )
             raise
 
-        data = response.json()
+        try:
+            data = response.json()
+        except (json.JSONDecodeError, ValueError):
+            raise RuntimeError(f"Invalid JSON from nvidia: {response.text[:200]}")
+
         latency_ms = int((time.time() - start) * 1000)
 
         # Extract response data
@@ -229,7 +234,10 @@ class NvidiaNimProvider(LLMProvider):
                 timeout=float(timeout),
             )
             response.raise_for_status()
-            data = response.json()
+            try:
+                data = response.json()
+            except (json.JSONDecodeError, ValueError):
+                raise RuntimeError(f"Invalid JSON from nvidia: {response.text[:200]}")
             return [item["embedding"] for item in data.get("data", [])]
         except Exception as exc:
             logger.error("NVIDIA NIM embeddings error: %s", exc)

@@ -6,6 +6,7 @@ Defaults to http://localhost:9001/v1 but can be overridden with VLLM_LOCAL_URL.
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import time
@@ -118,7 +119,11 @@ class VllmLocalProvider(LLMProvider):
             )
             raise
 
-        data = response.json()
+        try:
+            data = response.json()
+        except (json.JSONDecodeError, ValueError):
+            raise RuntimeError(f"Invalid JSON from vllm: {response.text[:200]}")
+
         latency_ms = int((time.time() - start) * 1000)
 
         # Extract response data
@@ -197,7 +202,11 @@ class VllmLocalProvider(LLMProvider):
             logger.error("vLLM embeddings error: %d", e.response.status_code)
             raise
 
-        data = response.json()
+        try:
+            data = response.json()
+        except (json.JSONDecodeError, ValueError):
+            raise RuntimeError(f"Invalid JSON from vllm: {response.text[:200]}")
+
         latency_ms = int((time.time() - start) * 1000)
 
         # Extract embeddings

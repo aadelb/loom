@@ -7,6 +7,7 @@ with global rate limiting (15 parallel requests by default).
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import os
 import time
@@ -128,10 +129,12 @@ class GeminiProvider(LLMProvider):
             content = msg.get("content", "")
             # Map user role from OpenAI format; system messages are typically ignored by Gemini
             gemini_role = "user" if role in ("user", "system") else "model"
-            contents.append({
-                "role": gemini_role,
-                "parts": [{"text": content}],
-            })
+            contents.append(
+                {
+                    "role": gemini_role,
+                    "parts": [{"text": content}],
+                }
+            )
 
         # Build request body
         payload = {
@@ -142,13 +145,17 @@ class GeminiProvider(LLMProvider):
             },
         }
 
-        # Construct URL with API key as query parameter
-        url = f"{self.endpoint}/models/{model}:generateContent?key={self.api_key}"
+        # Construct URL without API key (moved to header)
+        url = f"{self.endpoint}/models/{model}:generateContent"
+
+        # Set API key via x-goog-api-key header (Google's recommended approach)
+        headers = {"x-goog-api-key": self.api_key}
 
         try:
             response = await client.post(
                 url,
                 json=payload,
+                headers=headers,
                 timeout=float(timeout),
             )
             response.raise_for_status()
@@ -163,7 +170,11 @@ class GeminiProvider(LLMProvider):
             )
             raise
 
-        data = await response.json()
+        try:
+            data = await response.json()
+        except (json.JSONDecodeError, ValueError):
+            raise RuntimeError(f"Invalid JSON from gemini: {response.text[:200]}")
+
         latency_ms = int((time.time() - start) * 1000)
 
         # Extract response data
