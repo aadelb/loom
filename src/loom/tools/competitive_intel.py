@@ -251,9 +251,24 @@ async def _fetch_certificate_transparency(
             name_value = entry.get("name_value", "")
             for line in name_value.split("\n"):
                 line = line.strip().lstrip("*.")
-                if line and (line.endswith(f".{domain}") or line == domain):
-                    if line not in recent_subs:
-                        recent_subs.append(line)
+                if (
+                    line
+                    and (line.endswith(f".{domain}") or line == domain)
+                    and line not in recent_subs
+                ):
+                    recent_subs.append(line)
+                if (
+                    line
+                    and (line.endswith(f".{domain}") or line == domain)
+                    and line not in recent_subs
+                ):
+                    recent_subs.append(line)
+                if (
+                    line
+                    and (line.endswith(f".{domain}") or line == domain)
+                    and line not in recent_subs
+                ):
+                    recent_subs.append(line)
 
         return {
             "total_found": len(subdomains),

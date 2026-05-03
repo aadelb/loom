@@ -10,9 +10,12 @@ from __future__ import annotations
 import base64
 import logging
 import os
+from pathlib import Path
 from typing import Any
 
 import httpx
+
+from loom.validators import PathSafetyError, validate_local_file_path
 
 logger = logging.getLogger("loom.tools.gcp")
 
@@ -85,8 +88,8 @@ async def research_image_analyze(
     with Vision API enabled.
 
     Args:
-        image_url: public image URL (https://) or local file path. Local files are
-            base64 encoded before sending.
+        image_url: public image URL (https://) or local file path under ~/.loom/.
+            Local files are base64 encoded before sending.
         features: list of detection features. Defaults to ["LABEL_DETECTION",
             "TEXT_DETECTION"]. Options: LABEL_DETECTION, TEXT_DETECTION,
             FACE_DETECTION, LANDMARK_DETECTION, LOGO_DETECTION, SAFE_SEARCH_DETECTION,
@@ -135,17 +138,34 @@ async def research_image_analyze(
     if image_url.startswith("http://") or image_url.startswith("https://"):
         # URL reference
         image_source["imageUrl"] = {"url": image_url}
-    elif os.path.isfile(image_url):
+    else:
+        # Validate local file path before attempting to read
+        try:
+            validated_path = validate_local_file_path(image_url)
+        except PathSafetyError as e:
+            logger.warning("gcp_vision_path_validation_failed: %s", e)
+            return {
+                "status": "failed",
+                "error": str(e),
+            }
+
+        # Check if file exists
+        if not os.path.isfile(validated_path):
+            return {
+                "status": "failed",
+                "error": "image file not found",
+            }
+
         # Local file — read and encode as base64
         try:
-            file_size = os.path.getsize(image_url)
+            file_size = os.path.getsize(validated_path)
             if file_size > MAX_IMAGE_SIZE_BYTES:
                 return {
                     "status": "failed",
                     "error": f"image exceeds {MAX_IMAGE_SIZE_BYTES / 1024 / 1024:.0f} MB",
                 }
 
-            with open(image_url, "rb") as f:
+            with open(validated_path, "rb") as f:
                 image_bytes = f.read()
                 image_base64 = base64.b64encode(image_bytes).decode("utf-8")
                 image_source["content"] = image_base64
@@ -161,11 +181,6 @@ async def research_image_analyze(
                 "error": "failed to read image file",
                 "details": str(e)[:200],
             }
-    else:
-        return {
-            "status": "failed",
-            "error": "image_url must be http(s) URL or local file path",
-        }
 
     # Build Vision API request
     request_body = {
