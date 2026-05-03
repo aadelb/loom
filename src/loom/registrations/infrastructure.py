@@ -47,7 +47,7 @@ def register_infrastructure_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip deployment: %s", e)
     try:
-        from loom.tools.email import research_email_report
+        from loom.tools.email_report import research_email_report
         mcp.tool()(wrap_tool(research_email_report))
     except (ImportError, AttributeError) as e:
         log.debug("skip email_mod: %s", e)

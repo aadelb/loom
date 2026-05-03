@@ -44,7 +44,7 @@ def register_adversarial_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip coevolution: %s", e)
     try:
-        from loom.tools.defendere import research_defend_test, research_harden_prompt
+        from loom.tools.defender_mode import research_defend_test, research_harden_prompt
         mcp.tool()(wrap_tool(research_defend_test))
         mcp.tool()(wrap_tool(research_harden_prompt))
     except (ImportError, AttributeError) as e:

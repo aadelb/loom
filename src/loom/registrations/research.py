@@ -114,7 +114,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip career_intel_mod: %s", e)
     try:
-        from loom.tools.career_traj import research_career_trajectory, research_market_velocity
+        from loom.tools.career_trajectory import research_career_trajectory, research_market_velocity
         mcp.tool()(wrap_tool(research_career_trajectory))
         mcp.tool()(wrap_tool(research_market_velocity))
     except (ImportError, AttributeError) as e:
@@ -445,7 +445,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip image_mod: %s", e)
     try:
-        from loom.tools.infowar import research_narrative_tracker, research_bot_detector, research_censorship_detector, research_deleted_social, research_robots_archaeology
+        from loom.tools.infowar_tools import research_narrative_tracker, research_bot_detector, research_censorship_detector, research_deleted_social, research_robots_archaeology
         mcp.tool()(wrap_tool(research_narrative_tracker))
         mcp.tool()(wrap_tool(research_bot_detector))
         mcp.tool()(wrap_tool(research_censorship_detector))
@@ -603,7 +603,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip nightcrawler: %s", e)
     try:
-        from loom.tools.nodriver import research_nodriver_fetch, research_nodriver_extract, research_nodriver_session
+        from loom.tools.nodriver_backend import research_nodriver_fetch, research_nodriver_extract, research_nodriver_session
         mcp.tool()(wrap_tool(research_nodriver_fetch))
         mcp.tool()(wrap_tool(research_nodriver_extract))
         mcp.tool()(wrap_tool(research_nodriver_session))
@@ -635,7 +635,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip output_formatter: %s", e)
     try:
-        from loom.tools.p3 import research_model_comparator, research_data_poisoning, research_wiki_event_correlator, research_foia_tracker
+        from loom.tools.p3_tools import research_model_comparator, research_data_poisoning, research_wiki_event_correlator, research_foia_tracker
         mcp.tool()(wrap_tool(research_model_comparator))
         mcp.tool()(wrap_tool(research_data_poisoning))
         mcp.tool()(wrap_tool(research_wiki_event_correlator))
@@ -949,7 +949,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip transcribe_mod: %s", e)
     try:
-        from loom.tools.unique import research_propaganda_detector, research_source_credibility, research_information_cascade, research_web_time_machine, research_influence_operation, research_dark_web_bridge, research_info_half_life, research_search_discrepancy
+        from loom.tools.unique_tools import research_propaganda_detector, research_source_credibility, research_information_cascade, research_web_time_machine, research_influence_operation, research_dark_web_bridge, research_info_half_life, research_search_discrepancy
         mcp.tool()(wrap_tool(research_propaganda_detector))
         mcp.tool()(wrap_tool(research_source_credibility))
         mcp.tool()(wrap_tool(research_information_cascade))
@@ -997,7 +997,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip yt_mod: %s", e)
     try:
-        from loom.tools.ytdlp import research_video_download, research_video_info, research_audio_extract
+        from loom.tools.ytdlp_backend import research_video_download, research_video_info, research_audio_extract
         mcp.tool()(wrap_tool(research_video_download))
         mcp.tool()(wrap_tool(research_video_info))
         mcp.tool()(wrap_tool(research_audio_extract))
