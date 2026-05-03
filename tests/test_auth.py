@@ -11,9 +11,22 @@ from loom.auth import ApiKeyVerifier
 
 
 @pytest.mark.asyncio
-async def test_no_key_set_allows_anonymous() -> None:
-    """Without LOOM_API_KEY, verifier allows anonymous access with full scopes."""
+async def test_no_key_set_no_anonymous_flag_restricts_to_health() -> None:
+    """Without LOOM_API_KEY and LOOM_ALLOW_ANONYMOUS, access is restricted to health scope."""
     with patch.dict(os.environ, {}, clear=True):
+        verifier = ApiKeyVerifier()
+        token = await verifier.verify_token("any-token")
+
+        assert token is not None
+        assert token.token == "anonymous-restricted"
+        assert token.client_id == "anonymous-restricted"
+        assert token.scopes == ["health"]
+
+
+@pytest.mark.asyncio
+async def test_no_key_with_allow_anonymous_true_grants_full_access() -> None:
+    """With LOOM_ALLOW_ANONYMOUS=true but no API key, full anonymous access is granted."""
+    with patch.dict(os.environ, {"LOOM_ALLOW_ANONYMOUS": "true"}, clear=True):
         verifier = ApiKeyVerifier()
         token = await verifier.verify_token("any-token")
 
@@ -21,6 +34,28 @@ async def test_no_key_set_allows_anonymous() -> None:
         assert token.token == "anonymous"
         assert token.client_id == "anonymous"
         assert token.scopes == ["*"]
+
+
+@pytest.mark.asyncio
+async def test_allow_anonymous_case_insensitive() -> None:
+    """LOOM_ALLOW_ANONYMOUS is case-insensitive (True, TRUE, true all work)."""
+    for flag_value in ["true", "True", "TRUE"]:
+        with patch.dict(os.environ, {"LOOM_ALLOW_ANONYMOUS": flag_value}, clear=True):
+            verifier = ApiKeyVerifier()
+            token = await verifier.verify_token("any-token")
+            assert token is not None
+            assert token.scopes == ["*"]
+
+
+@pytest.mark.asyncio
+async def test_allow_anonymous_false_restricts() -> None:
+    """LOOM_ALLOW_ANONYMOUS=false does not grant full access."""
+    with patch.dict(os.environ, {"LOOM_ALLOW_ANONYMOUS": "false"}, clear=True):
+        verifier = ApiKeyVerifier()
+        token = await verifier.verify_token("any-token")
+
+        assert token is not None
+        assert token.scopes == ["health"]
 
 
 @pytest.mark.asyncio
@@ -118,3 +153,23 @@ async def test_multiple_instances_independent() -> None:
 
     token2_wrong = await verifier2.verify_token(api_key_1)
     assert token2_wrong is None
+
+
+@pytest.mark.asyncio
+async def test_api_key_takes_priority_over_allow_anonymous() -> None:
+    """When LOOM_API_KEY is set, it takes priority over LOOM_ALLOW_ANONYMOUS."""
+    api_key = "test-secret-key-12345"
+    with patch.dict(
+        os.environ, {"LOOM_API_KEY": api_key, "LOOM_ALLOW_ANONYMOUS": "true"}
+    ):
+        verifier = ApiKeyVerifier()
+
+        # Correct key should work
+        token = await verifier.verify_token(api_key)
+        assert token is not None
+        assert token.scopes == ["*"]
+        assert token.client_id == "api_key"
+
+        # Wrong token should fail (not fall back to anonymous)
+        token = await verifier.verify_token("wrong-token")
+        assert token is None
