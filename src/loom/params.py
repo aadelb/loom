@@ -7375,3 +7375,127 @@ class LeaderboardViewParams(BaseModel):
             )
         return v
 
+
+# HCS Multi-Scorer Parameters
+
+class HcsScorePromptParams(BaseModel):
+    """Parameters for research_hcs_score_prompt tool."""
+
+    prompt: str = Field(..., min_length=1, max_length=10000)
+    use_llm: bool = False
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("prompt")
+    @classmethod
+    def validate_prompt(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("prompt must be non-empty")
+        return v
+
+
+class HcsScoreResponseParams(BaseModel):
+    """Parameters for research_hcs_score_response tool."""
+
+    prompt: str = Field(..., min_length=1, max_length=10000)
+    response: str = Field(..., min_length=1, max_length=50000)
+    use_llm: bool = False
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("prompt")
+    @classmethod
+    def validate_prompt(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("prompt must be non-empty")
+        return v
+
+    @field_validator("response")
+    @classmethod
+    def validate_response(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("response must be non-empty")
+        return v
+
+
+class HcsScoreFullParams(BaseModel):
+    """Parameters for research_hcs_score_full tool."""
+
+    prompt: str = Field(..., min_length=1, max_length=10000)
+    response: str = Field(..., min_length=1, max_length=50000)
+    use_llm: bool = False
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("prompt")
+    @classmethod
+    def validate_prompt(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("prompt must be non-empty")
+        return v
+
+    @field_validator("response")
+    @classmethod
+    def validate_response(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("response must be non-empty")
+        return v
+
+
+class HcsCompareParams(BaseModel):
+    """Parameters for research_hcs_compare tool."""
+
+    prompt: str = Field(..., min_length=1, max_length=10000)
+    responses: list[str] = Field(..., min_items=1, max_items=20)
+    use_llm: bool = False
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("prompt")
+    @classmethod
+    def validate_prompt(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("prompt must be non-empty")
+        return v
+
+    @field_validator("responses")
+    @classmethod
+    def validate_responses(cls, v: list[str]) -> list[str]:
+        if not v:
+            raise ValueError("responses list cannot be empty")
+        if len(v) > 20:
+            raise ValueError("responses max 20 items")
+        for resp in v:
+            if not resp or not resp.strip():
+                raise ValueError("each response must be non-empty")
+        return v
+
+
+class HcsBatchParams(BaseModel):
+    """Parameters for research_hcs_batch tool."""
+
+    pairs: list[dict[str, str]] = Field(
+        ...,
+        min_items=1,
+        max_items=100,
+        description="List of {prompt, response} dicts"
+    )
+    use_llm: bool = False
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("pairs")
+    @classmethod
+    def validate_pairs(cls, v: list[dict[str, str]]) -> list[dict[str, str]]:
+        if not v:
+            raise ValueError("pairs list cannot be empty")
+        if len(v) > 100:
+            raise ValueError("pairs max 100 items")
+        for idx, pair in enumerate(v):
+            if "prompt" not in pair or "response" not in pair:
+                raise ValueError(f"pair {idx} must have 'prompt' and 'response' keys")
+            if not pair["prompt"] or not pair["prompt"].strip():
+                raise ValueError(f"pair {idx} prompt must be non-empty")
+            if not pair["response"] or not pair["response"].strip():
+                raise ValueError(f"pair {idx} response must be non-empty")
+        return v

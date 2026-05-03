@@ -635,6 +635,21 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip hcs_scorer: %s", e)
         record_failure("research", "hcs_scorer", str(e))
     try:
+        from loom.tools.hcs_multi_scorer import research_hcs_score_prompt, research_hcs_score_response, research_hcs_score_full, research_hcs_compare, research_hcs_batch
+        mcp.tool()(wrap_tool(research_hcs_score_prompt))
+        record_success("research", "research_hcs_score_prompt")
+        mcp.tool()(wrap_tool(research_hcs_score_response))
+        record_success("research", "research_hcs_score_response")
+        mcp.tool()(wrap_tool(research_hcs_score_full))
+        record_success("research", "research_hcs_score_full")
+        mcp.tool()(wrap_tool(research_hcs_compare))
+        record_success("research", "research_hcs_compare")
+        mcp.tool()(wrap_tool(research_hcs_batch))
+        record_success("research", "research_hcs_batch")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip hcs_multi_scorer: %s", e)
+        record_failure("research", "hcs_multi_scorer", str(e))
+    try:
         from loom.tools.health_dashboard import research_dashboard_html
         mcp.tool()(wrap_tool(research_dashboard_html))
         record_success("research", "research_dashboard_html")
