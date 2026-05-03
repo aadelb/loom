@@ -301,12 +301,13 @@ async def research_knowledge_graph(
             # Truncate to max_nodes
             if len(dedup_nodes) > max_nodes:
                 dedup_nodes = dedup_nodes[:max_nodes]
-                # Also filter edges to only include nodes in the result
-                node_ids = {n["id"] for n in dedup_nodes}
-                dedup_edges = [
-                    e for e in dedup_edges
-                    if e[0] in node_ids and e[1] in node_ids
-                ]
+
+            # Always filter edges to only include valid nodes (prevents dangling refs)
+            node_ids = {n["id"] for n in dedup_nodes}
+            dedup_edges = [
+                e for e in dedup_edges
+                if e[0] in node_ids and e[1] in node_ids
+            ]
 
             # Convert edges to dict format
             edge_dicts = [
