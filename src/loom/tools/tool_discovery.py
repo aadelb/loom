@@ -21,7 +21,7 @@ logger = logging.getLogger("loom.tools.tool_discovery")
 # Tool Registry — Comprehensive categorization of 581 tools
 # ─────────────────────────────────────────────────────────────────────────────
 
-TOOL_CATEGORIES = {
+TOOL_CATEGORIES: dict[str, dict[str, Any]] = {
     "core": {
         "description": "Essential research & fetch tools (16)",
         "tools": [
@@ -666,7 +666,7 @@ TOOL_CATEGORIES = {
 # Category summaries for quick navigation
 # ─────────────────────────────────────────────────────────────────────────────
 
-CATEGORY_SUMMARIES = {
+CATEGORY_SUMMARIES: dict[str, dict[str, Any]] = {
     key: {
         "description": value["description"],
         "tool_count": len(value["tools"]),
@@ -694,16 +694,16 @@ class DiscoverResponse(BaseModel):
         ..., description="Result format: 'summary', 'detailed', or 'count'"
     )
     categories: dict[str, dict[str, Any]] | None = Field(
-        None, description="Category summaries when query_type='categories'"
+        default=None, description="Category summaries when query_type='categories'"
     )
     category_detail: dict[str, Any] | None = Field(
-        None, description="Detailed category info when query_type='category'"
+        default=None, description="Detailed category info when query_type='category'"
     )
     search_results: list[dict[str, Any]] | None = Field(
-        None, description="Tools matching search query"
+        default=None, description="Tools matching search query"
     )
     tag_results: dict[str, list[dict[str, Any]]] | None = Field(
-        None, description="Tools by tag when query_type='tag'"
+        default=None, description="Tools by tag when query_type='tag'"
     )
     total_tools: int = Field(..., description="Total tools in result set")
     query_cost_reduction: str = Field(
@@ -865,5 +865,5 @@ async def research_discover(
         result_type="error",
         total_tools=0,
         query_cost_reduction="N/A",
-        categories={"error": "No valid query parameters provided"},
+        category_detail={"error": "No valid query parameters provided"},
     )
