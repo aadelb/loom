@@ -54,6 +54,8 @@ async def research_genetic_fuzz(
     """
     if not target_prompt or len(target_prompt.strip()) < 5:
         return {"error": "prompt too short"}
+    if len(target_prompt.strip()) > 50000:
+        return {"error": "Prompt too long (max 50000 chars)"}
 
     population_size = max(2, min(population_size, 50))
     generations = max(1, min(generations, 20))
@@ -90,6 +92,9 @@ async def research_genetic_fuzz(
             if random.random() < mutation_rate:
                 strategy = random.choice(_MUTATION_STRATEGIES)
                 child_prompt = _apply_strategy(child_prompt, strategy, "gpt")
+
+            # Cap prompt size to prevent unbounded growth
+            child_prompt = child_prompt[:50000]
 
             offspring.append(child_prompt)
 

@@ -99,7 +99,7 @@ async def _fetch_github_activity(
         repos_url = f"https://api.github.com/orgs/{quote(company_slug)}/repos?sort=created&per_page=30"
 
         data = await _get_json(client, repos_url, timeout=15.0)
-        if not data or isinstance(data, dict) and "message" in data:
+        if not data or (isinstance(data, dict) and "message" in data):
             return {"repos": [], "activity_level": "unknown"}
 
         if not isinstance(data, list):

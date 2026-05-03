@@ -99,7 +99,11 @@ async def research_arxiv_scan(
                     "sortOrder": "descending"
                 })
                 resp.raise_for_status()
-                root = ET.fromstring(resp.content)
+                try:
+                    root = ET.fromstring(resp.content)
+                except ET.ParseError as e:
+                    logger.warning("arxiv_xml_parse_error kw=%s error=%s", kw, str(e))
+                    continue
                 for entry in root.findall("{http://www.w3.org/2005/Atom}entry"):
                     paper = _parse_arxiv_entry(entry)
                     if paper and paper.arxiv_id not in all_papers:

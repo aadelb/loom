@@ -1,7 +1,7 @@
 """URL and input validation for SSRF prevention.
 
-Provides SSRF-safe URL validation, character capping, and GitHub query
-sanitization.
+Provides SSRF-safe URL validation, character capping, GitHub query
+sanitization, and local file path validation for safe file operations.
 """
 
 from __future__ import annotations
@@ -12,6 +12,7 @@ import re
 import socket
 import threading
 import time
+from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
@@ -182,6 +183,58 @@ def filter_provider_config(
 
 class UrlSafetyError(ValueError):
     """Raised when a URL fails SSRF / scheme safety checks."""
+
+
+class PathSafetyError(ValueError):
+    """Raised when a file path fails local file access safety checks."""
+
+
+def validate_local_file_path(file_path: str, allowed_base: str | Path | None = None) -> str:
+    """Validate a local file path is within allowed bounds to prevent arbitrary
+    file read/write attacks.
+
+    Prevents path traversal attacks (e.g., ../../etc/passwd) by resolving the
+    path and checking it's under the allowed base directory.
+
+    Args:
+        file_path: candidate file path to validate
+        allowed_base: base directory path. If None, defaults to ~/.loom/.
+                     Only files under this directory are allowed.
+
+    Returns:
+        The validated file path (as string).
+
+    Raises:
+        PathSafetyError: if path escapes the allowed base directory or is invalid.
+    """
+    if not isinstance(file_path, str) or not file_path.strip():
+        raise PathSafetyError("file_path missing or empty")
+
+    if allowed_base is None:
+        allowed_base = Path.home() / ".loom"
+    else:
+        allowed_base = Path(allowed_base)
+
+    try:
+        # Resolve to absolute path, following symlinks
+        resolved = Path(file_path).resolve()
+        allowed_resolved = allowed_base.resolve()
+
+        # Ensure resolved path is under allowed base
+        # Use strict_relative_to to prevent breakouts
+        try:
+            resolved.relative_to(allowed_resolved)
+        except ValueError:
+            raise PathSafetyError(
+                f"file path '{resolved}' escapes allowed base '{allowed_resolved}'"
+            )
+
+        return str(resolved)
+
+    except PathSafetyError:
+        raise
+    except Exception as exc:
+        raise PathSafetyError(f"file path validation failed: {exc}") from None
 
 
 def _get_cached_dns(host: str) -> list[str] | None:

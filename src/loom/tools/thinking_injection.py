@@ -58,6 +58,10 @@ async def research_thinking_inject(
     Returns:
         Dictionary with original, injected prompt, and mechanism details
     """
+    # Validate prompt length to prevent memory exhaustion
+    if len(prompt) > 50000:
+        return {"error": "Prompt too long (max 50000 chars)", "prompt_length": len(prompt)}
+
     if target_model not in _TEMPLATES:
         return {
             "error": f"Unsupported model: {target_model}",
@@ -105,6 +109,10 @@ async def research_reasoning_exploit(
     Returns:
         Dictionary with exploited prompt and technique details
     """
+    # Validate prompt length to prevent memory exhaustion
+    if len(prompt) > 50000:
+        return {"error": "Prompt too long (max 50000 chars)", "prompt_length": len(prompt)}
+
     if technique not in _EXPLOIT_TEMPLATES and technique != "auto":
         return {
             "error": f"Unknown technique: {technique}",

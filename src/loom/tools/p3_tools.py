@@ -21,6 +21,9 @@ _HACKERNEWS_SEARCH = "https://hn.algolia.com/api/v1/search"
 _FOIA_GOV = "https://www.foia.gov"
 _MUCKROCK_SEARCH = "https://www.muckrock.com"
 
+# ReDoS protection: max XML/RSS content size before regex parsing
+_MAX_RSS_CONTENT_SIZE = 100000
+
 
 async def _get_json(
     client: httpx.AsyncClient, url: str, timeout: float = 20.0
@@ -166,8 +169,15 @@ async def _send_prompt(
             try:
                 data = resp.json()
                 # Handle different response formats
+                text = ""
                 if isinstance(data, dict):
-                    text = data.get("response", data.get("text", data.get("choices", [{}])[0].get("text", "")))
+                    # Check for standard response fields first
+                    text = data.get("response") or data.get("text") or ""
+                    # If not found, check choices array with safety check
+                    if not text:
+                        choices = data.get("choices", [])
+                        if choices:
+                            text = choices[0].get("text", "")
                 else:
                     text = str(data)
                 responses[endpoint] = text
@@ -528,6 +538,9 @@ async def _search_govt_rss(
     for feed_url in feeds:
         try:
             feed_content = await _get_text(client, feed_url)
+            # Truncate content to prevent ReDoS on large feeds
+            if len(feed_content) > _MAX_RSS_CONTENT_SIZE:
+                feed_content = feed_content[:_MAX_RSS_CONTENT_SIZE]
             # Extract item titles and links with regex
             items = re.findall(r"<item>.*?<title>([^<]+)</title>.*?<link>([^<]+)</link>.*?</item>", feed_content, re.DOTALL)
             for title, link in items:

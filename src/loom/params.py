@@ -12,7 +12,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field, field_validator
 
 from loom.config import CONFIG
-from loom.validators import filter_headers, validate_js_script, validate_url
+from loom.validators import filter_headers, validate_js_script, validate_local_file_path, validate_url
 
 # Default Accept-Language header sourced from config
 _DEFAULT_ACCEPT_LANG = CONFIG.get("DEFAULT_ACCEPT_LANGUAGE", "en-US,en;q=0.9,ar;q=0.8")
@@ -3369,6 +3369,52 @@ class SaveNoteParams(BaseModel):
         if not v.strip():
             raise ValueError("content cannot be empty")
         return v.strip()
+
+
+
+class ImageAnalyzeParams(BaseModel):
+    """Parameters for research_image_analyze tool."""
+
+    image_url: str = Field(
+        description="Public image URL (https://) or local file path within ~/.loom/",
+        min_length=1,
+        max_length=4096,
+    )
+    features: list[str] | None = Field(
+        default=None,
+        description="Detection features (LABEL_DETECTION, TEXT_DETECTION, FACE_DETECTION, etc.)",
+    )
+    max_results: int = Field(
+        default=10,
+        description="Max results per feature (1-100)",
+        ge=1,
+        le=100,
+    )
+
+    model_config = {"extra": "ignore", "strict": True}
+
+    @field_validator("image_url", mode="before")
+    @classmethod
+    def validate_image_url(cls, v: str) -> str:
+        if v.startswith("http://") or v.startswith("https://"):
+            return validate_url(v)
+        # For local file paths, validate they are within ~/.loom/
+        return validate_local_file_path(v)
+
+    @field_validator("features")
+    @classmethod
+    def validate_features(cls, v: list[str] | None) -> list[str] | None:
+        if v is None:
+            return v
+        valid_features = {
+            "LABEL_DETECTION", "TEXT_DETECTION", "FACE_DETECTION",
+            "LANDMARK_DETECTION", "LOGO_DETECTION", "SAFE_SEARCH_DETECTION",
+            "IMAGE_PROPERTIES", "OBJECT_LOCALIZATION", "WEB_DETECTION"
+        }
+        invalid = set(v) - valid_features
+        if invalid:
+            raise ValueError(f"invalid features: {invalid}")
+        return v
 
 
 class TextToSpeechParams(BaseModel):

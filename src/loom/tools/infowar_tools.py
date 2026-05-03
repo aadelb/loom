@@ -5,6 +5,8 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import time
+from datetime import datetime, timezone
 from typing import Any
 from urllib.parse import quote, urlparse
 
@@ -61,7 +63,7 @@ async def _hn_search(
         params = {
             "query": search_query,
             "tags": "story",
-            "numericFilters": f"created_at>{int((asyncio.get_event_loop().time() - hours_back * 3600))}",
+            "numericFilters": f"created_at>{int(time.time() - hours_back * 3600)}",
         }
         data = await _fetch_json(client, _HN_ALGOLIA_SEARCH, timeout=15.0, params=params)
         if data and "hits" in data:
@@ -91,7 +93,7 @@ async def _reddit_search(
         url = f"https://api.pushshift.io/reddit/search/submission"
         params = {
             "q": query,
-            "after": f"{int((asyncio.get_event_loop().time() - hours_back * 3600))}",
+            "after": f"{int(time.time() - hours_back * 3600)}",
             "sort": "desc",
             "size": 20,
         }
@@ -209,12 +211,15 @@ async def research_narrative_tracker(topic: str, hours_back: int = 72) -> dict[s
 
             all_posts = hn_posts + reddit_posts + arxiv_posts
 
-            # Build timeline
+            # Build timeline - normalize all timestamps to ISO strings
             timeline_map: dict[str, dict[str, int]] = {}
             for post in all_posts:
                 ts = post.get("timestamp", "")
                 if ts:
-                    # Round to hour
+                    # Normalize Unix epoch timestamps (integers/floats) to ISO strings
+                    if isinstance(ts, (int, float)):
+                        ts = datetime.fromtimestamp(ts, tz=timezone.utc).isoformat()
+                    # Round to hour (extract first 13 characters of ISO string)
                     hour = ts[:13] if len(ts) >= 13 else ts[:10]
                     platform = post.get("platform", "unknown")
                     if hour not in timeline_map:
@@ -261,6 +266,9 @@ async def _analyze_posting_times(
     for post in posts:
         ts = post.get("timestamp", "")
         author = post.get("author", "")
+        # Normalize timestamps to ISO strings before processing
+        if isinstance(ts, (int, float)):
+            ts = datetime.fromtimestamp(ts, tz=timezone.utc).isoformat()
         if ts and author:
             timestamps.append((ts, author))
             authors.add(author)
@@ -277,10 +285,10 @@ async def _analyze_posting_times(
             if cluster_start_time and ts:
                 try:
                     # Parse ISO format times
-                    import datetime
+                    import datetime as dt
 
-                    t1 = datetime.datetime.fromisoformat(cluster_start_time.replace("Z", "+00:00"))
-                    t2 = datetime.datetime.fromisoformat(ts.replace("Z", "+00:00"))
+                    t1 = dt.datetime.fromisoformat(cluster_start_time.replace("Z", "+00:00"))
+                    t2 = dt.datetime.fromisoformat(ts.replace("Z", "+00:00"))
                     diff = (t2 - t1).total_seconds()
                     if diff <= 300:  # 5 minutes
                         current_cluster.append({"timestamp": ts, "author": author})

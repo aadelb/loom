@@ -325,15 +325,25 @@ async def _query_google(
 
 
 def _query_cli(name: str, cmd: list[str], prompt: str, timeout: int = 60) -> dict[str, Any]:
-    """Query a CLI tool (gemini, kimi) via subprocess."""
+    """Query a CLI tool (gemini, kimi) via subprocess.
+
+    SECURITY: Uses a minimal safe environment with only essential variables
+    to prevent exposure of API keys and sensitive data to untrusted CLI binaries.
+    """
     try:
         full_cmd = [*cmd, prompt]
+        # Create minimal safe environment with only necessary variables
+        safe_env = {
+            "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
+            "HOME": os.environ.get("HOME", "/tmp"),
+            "LANG": os.environ.get("LANG", "en_US.UTF-8"),
+        }
         result = subprocess.run(
             full_cmd,
             capture_output=True,
             text=True,
             timeout=timeout,
-            env={**os.environ},
+            env=safe_env,
         )
         text = result.stdout.strip()
         if not text and result.stderr:

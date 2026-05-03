@@ -67,6 +67,9 @@ async def research_fuse_evidence(
     if len(claims) > 100:
         raise ValueError("claims max 100 items")
 
+    # Cap each claim to 10K chars to prevent resource exhaustion
+    claims = [c[:10000] for c in claims]
+
     if sources is None:
         sources = [f"Source-{i + 1}" for i in range(len(claims))]
     if len(sources) != len(claims):
@@ -342,8 +345,11 @@ def _compute_authority_score(sources: list[str], method: str) -> float:
 
 def _compute_coherence_score(doc: str, claims: list[str]) -> float:
     """Compute coherence of synthesized document."""
+    # Pre-compute lowercase doc once to avoid O(n*m) memory allocations
+    doc_lower = doc.lower()
+
     # Check if all claims appear in document
-    claim_coverage = sum(1 for claim in claims if claim.lower() in doc.lower())
+    claim_coverage = sum(1 for claim in claims if claim.lower() in doc_lower)
     coverage_ratio = claim_coverage / max(len(claims), 1)
 
     # Check document length quality

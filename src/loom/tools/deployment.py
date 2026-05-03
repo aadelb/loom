@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import asyncio
+import fcntl
 import json
 import logging
 import re
+import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -100,7 +102,7 @@ async def research_deploy_record(
     duration_seconds: float = 0,
     status: str = "success",
 ) -> dict[str, Any]:
-    """Record deployment event to ~/.loom/deploy_history.jsonl."""
+    """Record deployment event to ~/.loom/deploy_history.jsonl with file locking."""
     _DEPLOY_FILE.parent.mkdir(parents=True, exist_ok=True)
     record = {
         "timestamp": datetime.now(UTC).isoformat(),
@@ -109,9 +111,33 @@ async def research_deploy_record(
         "duration_seconds": duration_seconds,
         "status": status,
     }
+
+    lock_path = _DEPLOY_FILE.with_suffix('.lock')
     try:
-        _DEPLOY_FILE.write_text(_DEPLOY_FILE.read_text() + json.dumps(record) + "\n")
-        return {"recorded": True, "deploy_id": record["timestamp"].replace(":", "").replace("-", "")[:14]}
+        with open(lock_path, 'w') as lock_fd:
+            fcntl.flock(lock_fd, fcntl.LOCK_EX)
+            try:
+                # Read current content atomically within lock
+                current_content = _DEPLOY_FILE.read_text() if _DEPLOY_FILE.exists() else ""
+                # Prepare new content
+                new_content = current_content + json.dumps(record) + "\n"
+
+                # Write atomically: write to temp file, then rename
+                with tempfile.NamedTemporaryFile(
+                    mode='w', dir=_DEPLOY_FILE.parent, delete=False, suffix='.tmp'
+                ) as tmp_file:
+                    tmp_file.write(new_content)
+                    tmp_path = Path(tmp_file.name)
+
+                # Atomic rename
+                tmp_path.replace(_DEPLOY_FILE)
+
+                return {
+                    "recorded": True,
+                    "deploy_id": record["timestamp"].replace(":", "").replace("-", "")[:14]
+                }
+            finally:
+                fcntl.flock(lock_fd, fcntl.LOCK_UN)
     except OSError as e:
         logger.error("deploy_record_write_failed: %s", e)
         return {"recorded": False, "deploy_id": "", "error": str(e)}

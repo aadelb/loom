@@ -262,6 +262,7 @@ async def research_consensus(
                 partial(research_search, query, provider=provider, n=n),
             )
             if "error" not in result:
+                # Safe in asyncio: single event loop + GIL prevents races on list.append
                 providers_used.append(provider)
                 for r in result.get("results", []):
                     url = r.get("url", "")
@@ -300,7 +301,7 @@ async def research_consensus(
         "query": query,
         "providers_queried": providers,
         "providers_responded": providers_used,
-        "results": scored[: n * 2],
+        "results": scored[: min(n * 2, 100)],
         "high_consensus": [r for r in scored if r["consensus_score"] >= 0.5][:10],
         "singular_results": [r for r in scored if r["is_singular"]][:5],
     }

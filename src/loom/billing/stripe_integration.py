@@ -14,6 +14,7 @@ import base64
 import json
 import logging
 import os
+import uuid
 from typing import Any
 
 import httpx
@@ -134,6 +135,7 @@ class StripeIntegration:
             response = await client.post(
                 f"{STRIPE_API_BASE}/subscriptions",
                 data=data,
+                headers={"Idempotency-Key": str(uuid.uuid4())},
             )
             response.raise_for_status()
             result = response.json()
@@ -190,6 +192,7 @@ class StripeIntegration:
             response = await client.post(
                 f"{STRIPE_API_BASE}/invoiceitems",
                 data=data,
+                headers={"Idempotency-Key": str(uuid.uuid4())},
             )
             response.raise_for_status()
             result = response.json()
@@ -398,6 +401,7 @@ class StripeIntegration:
             response = await client.post(
                 f"{STRIPE_API_BASE}/checkout/sessions",
                 data=data,
+                headers={"Idempotency-Key": str(uuid.uuid4())},
             )
             response.raise_for_status()
             result = response.json()

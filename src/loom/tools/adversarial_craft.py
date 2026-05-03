@@ -27,6 +27,8 @@ class TokenChange:
 
 def _compute_edit_distance(s1: str, s2: str) -> int:
     """Compute Levenshtein edit distance between two strings."""
+    s1 = s1[:2000]
+    s2 = s2[:2000]
     if len(s1) < len(s2):
         return _compute_edit_distance(s2, s1)
     if len(s2) == 0:
@@ -111,6 +113,8 @@ async def research_craft_adversarial(
         perturbation_budget, changes_made, target_alignment_score,
         detection_difficulty
     """
+    if len(benign_input) > 5000:
+        return {"error": "benign_input too long (max 5000 chars)", "original": benign_input[:100]}
     if not benign_input or not benign_input.strip():
         return {
             "original": benign_input,

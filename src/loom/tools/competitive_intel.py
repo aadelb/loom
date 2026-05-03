@@ -18,15 +18,19 @@ import httpx
 
 logger = logging.getLogger("loom.tools.competitive_intel")
 
+# Semaphore to limit concurrent DNS/HTTP requests
+_request_semaphore = asyncio.Semaphore(5)
+
 
 async def _get_json(
     client: httpx.AsyncClient, url: str, timeout: float = 20.0
 ) -> Any:
     """Safely fetch JSON from URL."""
     try:
-        resp = await client.get(url, timeout=timeout)
-        if resp.status_code == 200:
-            return resp.json()
+        async with _request_semaphore:
+            resp = await client.get(url, timeout=timeout)
+            if resp.status_code == 200:
+                return resp.json()
     except Exception as exc:
         logger.debug("json fetch failed: %s", exc)
     return None
@@ -37,9 +41,10 @@ async def _get_text(
 ) -> str:
     """Safely fetch text from URL."""
     try:
-        resp = await client.get(url, timeout=timeout)
-        if resp.status_code == 200:
-            return resp.text
+        async with _request_semaphore:
+            resp = await client.get(url, timeout=timeout)
+            if resp.status_code == 200:
+                return resp.text
     except Exception as exc:
         logger.debug("text fetch failed: %s", exc)
     return ""
@@ -94,7 +99,7 @@ async def _fetch_sec_filings(
 
         return {
             "count": len(filings_sorted),
-            "recent": [f for f in filings_sorted[:5]],
+            "recent": list(filings_sorted[:5]),
         }
 
     except Exception as exc:
@@ -160,9 +165,6 @@ async def _fetch_github_activity(
     """
     try:
         url = f"https://api.github.com/orgs/{quote(github_org)}/repos?sort=updated&per_page=50"
-
-        # Add User-Agent header for GitHub API
-        headers = {"User-Agent": "Loom-Research/1.0"}
 
         data = await _get_json(client, url, timeout=20.0)
         if not data or not isinstance(data, list):
@@ -242,9 +244,6 @@ async def _fetch_certificate_transparency(
                 line = line.strip().lstrip("*.")
                 if line and (line.endswith(f".{domain}") or line == domain):
                     subdomains.add(line)
-
-        # Sort and limit
-        sorted_subs = sorted(subdomains)
 
         # Try to identify newer subdomains by checking entry timestamps
         recent_subs: list[str] = []
@@ -492,18 +491,42 @@ async def research_competitive_intel(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0"},
         ) as client:
-            # Fetch all signals in parallel
+            # Fetch all signals in parallel with overall timeout
             sec_task = _fetch_sec_filings(client, company_clean)
             patent_task = _fetch_patents(client, company_clean)
             github_task = _fetch_github_activity(client, github_org_clean)
             ct_task = _fetch_certificate_transparency(client, domain_clean)
             dns_task = _fetch_dns_records(client, domain_clean)
 
-            sec_data, patent_data, github_data, ct_data, dns_data = (
-                await asyncio.gather(
-                    sec_task, patent_task, github_task, ct_task, dns_task
+            try:
+                sec_data, patent_data, github_data, ct_data, dns_data = (
+                    await asyncio.wait_for(
+                        asyncio.gather(
+                            sec_task,
+                            patent_task,
+                            github_task,
+                            ct_task,
+                            dns_task,
+                        ),
+                        timeout=60.0,
+                    )
                 )
-            )
+            except TimeoutError:
+                logger.warning(
+                    "competitive_intel timeout after 60s company=%s",
+                    company_clean,
+                )
+                # Return partial results with empty data for timed-out tasks
+                sec_data = {"count": 0, "recent": []}
+                patent_data = {"count": 0, "recent_titles": []}
+                github_data = {
+                    "repo_count": 0,
+                    "total_stars": 0,
+                    "languages": [],
+                    "recent_repos": [],
+                }
+                ct_data = {"total_found": 0, "recent_subdomains": []}
+                dns_data = {"records": {}, "detected_technologies": []}
 
         # Synthesize signals
         signals, overall_assessment = _synthesize_signals(

@@ -12,6 +12,53 @@ import httpx
 
 logger = logging.getLogger("loom.tools.identity_resolve")
 
+# Domain validation: lowercase alphanumeric, hyphens, dots; TLD required
+_DOMAIN_RE = re.compile(
+    r"^[a-z0-9]([a-z0-9\-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9\-]*[a-z0-9])?)*\.[a-z]{2,}$"
+)
+
+# Username validation: alphanumeric, dots, underscores, hyphens; 1-100 chars
+_USERNAME_RE = re.compile(r"^[a-zA-Z0-9._-]{1,100}$")
+
+
+def _validate_domain(domain: str) -> None:
+    """Validate domain format to prevent SSRF/DNS injection attacks.
+
+    Args:
+        domain: Domain to validate
+
+    Raises:
+        ValueError: If domain format is invalid
+    """
+    if not domain or not isinstance(domain, str):
+        raise ValueError("Domain must be a non-empty string")
+
+    normalized = domain.lower().strip()
+    if not _DOMAIN_RE.match(normalized):
+        raise ValueError(
+            f"Invalid domain format: {domain}. Must be lowercase alphanumeric "
+            "with hyphens and dots; TLD required."
+        )
+
+
+def _validate_username(username: str) -> None:
+    """Validate username format to prevent URL injection attacks.
+
+    Args:
+        username: Username to validate
+
+    Raises:
+        ValueError: If username format is invalid
+    """
+    if not username or not isinstance(username, str):
+        raise ValueError("Username must be a non-empty string")
+
+    if not _USERNAME_RE.match(username):
+        raise ValueError(
+            f"Invalid username format: {username}. Must be 1-100 characters; "
+            "alphanumeric, dots, underscores, and hyphens only."
+        )
+
 
 async def research_identity_resolve(
     query: str = "",
@@ -84,6 +131,7 @@ async def research_identity_resolve(
 
             elif query_type == "username":
                 # Username-based checks
+                _validate_username(query)  # Validate before platform checks
                 platforms = await _check_platforms(client, query)
                 result["platforms_checked"] = len(platforms)
                 result["platforms_found"] = [p for p in platforms if p["exists"]]
@@ -92,12 +140,32 @@ async def research_identity_resolve(
 
             elif query_type == "domain":
                 # Domain-based checks
+                _validate_domain(query)  # Validate before WHOIS/DNS lookups
                 whois = await _check_whois(client, query)
                 result["whois_registrant"] = whois
 
                 dns_soa = await _check_dns_soa(client, query)
                 result["dns_soa_email"] = dns_soa
 
+    except ValueError as e:
+        # Validation error (invalid domain/username format)
+        logger.warning("Identity resolve validation error: %s", e)
+        result["error"] = f"Validation error: {str(e)}"
+        # Ensure default fields are present even on error
+        if query_type == "email":
+            result["gravatar"] = result.get("gravatar", {"exists": False, "url": None, "hash": ""})
+            result["pgp_keys"] = result.get("pgp_keys", [])
+            result["pgp_keys_count"] = result.get("pgp_keys_count", 0)
+            result["github_commits"] = result.get("github_commits", 0)
+        elif query_type == "username":
+            result["platforms_checked"] = result.get("platforms_checked", 0)
+            result["platforms_found_count"] = result.get("platforms_found_count", 0)
+            result["platforms_found"] = result.get("platforms_found", [])
+            result["all_platforms"] = result.get("all_platforms", [])
+        elif query_type == "domain":
+            result["whois_registrant"] = result.get("whois_registrant", {"name": "", "organization": ""})
+            result["dns_soa_email"] = result.get("dns_soa_email", "")
+        return result
     except Exception as e:
         logger.exception("Identity resolve failed: %s", e)
         result["error"] = f"Resolution failed: {type(e).__name__}"

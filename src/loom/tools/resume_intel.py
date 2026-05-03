@@ -186,8 +186,8 @@ Only return valid JSON, no markdown."""
             response = await provider.chat(prompt, max_tokens=500, temperature=0.3)
             if response and response.text:
                 try:
-                    # Try to extract JSON from response
-                    json_match = re.search(r"\[.*\]", response.text, re.DOTALL)
+                    # Try to extract JSON from response (non-greedy match)
+                    json_match = re.search(r"\[.*?\]", response.text, re.DOTALL)
                     if json_match:
                         improvements = json.loads(json_match.group())
                         if not isinstance(improvements, list):
@@ -449,8 +449,8 @@ Generate 2-3 questions per category. Only return valid JSON."""
         return _generate_basic_questions(job_description, role_title)
 
     try:
-        # Extract JSON from response
-        json_match = re.search(r"\{.*\}", response.text, re.DOTALL)
+        # Extract JSON from response (non-greedy match)
+        json_match = re.search(r"\{.*?\}", response.text, re.DOTALL)
         if json_match:
             questions = json.loads(json_match.group())
             # Validate structure

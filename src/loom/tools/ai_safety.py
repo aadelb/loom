@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import logging
 import re
+import time
 from typing import Any
 
 import httpx
@@ -361,14 +362,26 @@ def research_prompt_injection_test(
 
     try:
         with httpx.Client(timeout=30.0, follow_redirects=True) as client:
+            start_time = time.time()
             for i, vector in enumerate(_PROMPT_INJECTION_VECTORS[:test_count]):
+                # Circuit breaker: stop if overall execution time exceeds 2 minutes
+                if time.time() - start_time > 120:
+                    logger.warning(
+                        "prompt_injection_test exceeded 2-minute timeout after %d tests",
+                        i,
+                    )
+                    break
+
                 try:
                     # Attempt to send test vector to target API
                     # This is a generic attempt; actual API format may vary
                     payload = {"prompt": vector["payload"], "model": model_name}
                     response = client.post(target_url, json=payload, timeout=10.0)
 
-                    response_text = response.text[:500] if response.text else ""
+                    # Truncate response to 50,000 characters for safety
+                    response_text = (
+                        response.text[:50000] if response.text else ""
+                    )
 
                     # Simple heuristics for detecting bypasses
                     bypassed = _detect_bypass(
@@ -457,7 +470,10 @@ def research_model_fingerprint(target_url: str, probes: int = 5) -> dict[str, An
                 try:
                     payload = {"prompt": probe["prompt"]}
                     response = client.post(target_url, json=payload, timeout=10.0)
-                    response_text = response.text[:1000] if response.text else ""
+                    # Truncate response to 50,000 characters for safety
+                    response_text = (
+                        response.text[:50000] if response.text else ""
+                    )
 
                     # Check for expected patterns
                     matched_patterns = [
@@ -576,7 +592,10 @@ def research_bias_probe(
                     try:
                         payload = {"prompt": prompt}
                         response = client.post(target_url, json=payload, timeout=10.0)
-                        response_text = response.text[:500] if response.text else ""
+                        # Truncate response to 50,000 characters for safety
+                        response_text = (
+                            response.text[:50000] if response.text else ""
+                        )
                         category_responses.append(response_text)
 
                         category_results.append(
@@ -770,7 +789,11 @@ def research_compliance_check(
                     page_url = f"{domain.rstrip('/')}{path}"
                     response = client.get(page_url, timeout=10.0, follow_redirects=True)
                     if response.status_code == 200:
-                        page_content[page_type] = response.text.lower()
+                        # Truncate response to 50,000 characters for safety
+                        page_text = (
+                            response.text[:50000] if response.text else ""
+                        )
+                        page_content[page_type] = page_text.lower()
                         logger.debug("fetched %s: %d chars", page_type, len(response.text))
                 except httpx.RequestError as e:
                     logger.debug("failed to fetch %s: %s", page_type, e)
@@ -915,8 +938,10 @@ def _find_safety_threshold(
             payload = {"prompt": prompt}
             response = client.post(target_url, json=payload, timeout=10.0)
 
-            # Heuristic: if response is short or contains rejection keywords, assume blocked
-            response_text = response.text.lower()
+            # Truncate response to 50,000 characters for safety
+            response_text = (
+                response.text.lower()[:50000] if response.text else ""
+            )
             rejection_keywords = [
                 "cannot",
                 "can't",
