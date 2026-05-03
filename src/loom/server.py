@@ -1842,9 +1842,12 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
         async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
             new_request_id()
             # Auto-correct parameters
-            corrected_kwargs, corrections = _fuzzy_correct_params(func, kwargs)
-            if corrections:
-                log.debug(f"Parameter corrections for {func.__name__}: {corrections}")
+            if os.environ.get("LOOM_FUZZY_PARAMS"):
+                corrected_kwargs, corrections = _fuzzy_correct_params(func, kwargs)
+                if corrections:
+                    log.debug(f"Parameter corrections for {func.__name__}: {corrections}")
+            else:
+                corrected_kwargs = kwargs
             try:
                 result = await asyncio.wait_for(func(*args, **corrected_kwargs), timeout=tool_timeout)
                 # Add correction metadata if there were corrections
@@ -1864,9 +1867,12 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
         def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
             new_request_id()
             # Auto-correct parameters
-            corrected_kwargs, corrections = _fuzzy_correct_params(func, kwargs)
-            if corrections:
-                log.debug(f"Parameter corrections for {func.__name__}: {corrections}")
+            if os.environ.get("LOOM_FUZZY_PARAMS"):
+                corrected_kwargs, corrections = _fuzzy_correct_params(func, kwargs)
+                if corrections:
+                    log.debug(f"Parameter corrections for {func.__name__}: {corrections}")
+            else:
+                corrected_kwargs = kwargs
             result = func(*args, **corrected_kwargs)
             # Add correction metadata if there were corrections
             if corrections and isinstance(result, dict):
@@ -2673,9 +2679,12 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
         async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
             new_request_id()
             # Auto-correct parameters
-            corrected_kwargs, corrections = _fuzzy_correct_params(func, kwargs)
-            if corrections:
-                log.debug(f"Parameter corrections for {func.__name__}: {corrections}")
+            if os.environ.get("LOOM_FUZZY_PARAMS"):
+                corrected_kwargs, corrections = _fuzzy_correct_params(func, kwargs)
+                if corrections:
+                    log.debug(f"Parameter corrections for {func.__name__}: {corrections}")
+            else:
+                corrected_kwargs = kwargs
             try:
                 result = await asyncio.wait_for(func(*args, **corrected_kwargs), timeout=tool_timeout)
                 # Add correction metadata if there were corrections
@@ -2695,9 +2704,12 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
         def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
             new_request_id()
             # Auto-correct parameters
-            corrected_kwargs, corrections = _fuzzy_correct_params(func, kwargs)
-            if corrections:
-                log.debug(f"Parameter corrections for {func.__name__}: {corrections}")
+            if os.environ.get("LOOM_FUZZY_PARAMS"):
+                corrected_kwargs, corrections = _fuzzy_correct_params(func, kwargs)
+                if corrections:
+                    log.debug(f"Parameter corrections for {func.__name__}: {corrections}")
+            else:
+                corrected_kwargs = kwargs
             result = func(*args, **corrected_kwargs)
             # Add correction metadata if there were corrections
             if corrections and isinstance(result, dict):
