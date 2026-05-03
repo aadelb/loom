@@ -10,11 +10,19 @@ Provides:
 from __future__ import annotations
 
 import json
+import re
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 _METER_DIR = Path.home() / ".loom" / "meters"
+_SAFE_ID_RE = re.compile(r"^[a-z0-9_-]{1,64}$")
+
+
+def _validate_customer_id(customer_id: str) -> str:
+    if not _SAFE_ID_RE.match(customer_id):
+        raise ValueError(f"Invalid customer_id format: {customer_id[:20]}")
+    return customer_id
 
 
 def _ensure_dir() -> None:
@@ -51,6 +59,7 @@ def record_usage(
         "credits_used": credits_used,
         "duration_ms": round(duration_ms, 1),
     }
+    _validate_customer_id(customer_id)
     meter_file = _METER_DIR / f"{customer_id}_{today}.jsonl"
     with open(meter_file, "a") as f:
         f.write(json.dumps(entry) + "\n")
@@ -78,6 +87,7 @@ def get_usage(
         - by_tool: Dict mapping tool names to total credits
     """
     _ensure_dir()
+    _validate_customer_id(customer_id)
     if date is None:
         date = datetime.now(UTC).strftime("%Y-%m-%d")
 
