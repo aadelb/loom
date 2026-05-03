@@ -21,7 +21,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip academic_integrity: %s", e)
     try:
-        from loom.tools.access import research_legal_takedown, research_open_access, research_content_authenticity, research_credential_monitor, research_deepfake_checker
+        from loom.tools.access_tools import research_legal_takedown, research_open_access, research_content_authenticity, research_credential_monitor, research_deepfake_checker
         mcp.tool()(wrap_tool(research_legal_takedown))
         mcp.tool()(wrap_tool(research_open_access))
         mcp.tool()(wrap_tool(research_content_authenticity))
@@ -54,7 +54,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip arxiv_pipeline: %s", e)
     try:
-        from loom.tools.auth_mod import research_auth_create_token, research_auth_validate, research_auth_revoke
+        from loom.auth import research_auth_create_token, research_auth_validate, research_auth_revoke
         mcp.tool()(wrap_tool(research_auth_create_token))
         mcp.tool()(wrap_tool(research_auth_validate))
         mcp.tool()(wrap_tool(research_auth_revoke))
@@ -102,19 +102,19 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip bias_lens: %s", e)
     try:
-        from loom.tools.cache_mod import research_semantic_cache_stats, research_semantic_cache_clear
+        from loom.tools.cache_mgmt import research_semantic_cache_stats, research_semantic_cache_clear
         mcp.tool()(wrap_tool(research_semantic_cache_stats))
         mcp.tool()(wrap_tool(research_semantic_cache_clear))
     except (ImportError, AttributeError) as e:
         log.debug("skip cache_mod: %s", e)
     try:
-        from loom.tools.career_intel_mod import research_map_research_to_product, research_translate_academic_skills
+        from loom.tools.career_intel import research_map_research_to_product, research_translate_academic_skills
         mcp.tool()(wrap_tool(research_map_research_to_product))
         mcp.tool()(wrap_tool(research_translate_academic_skills))
     except (ImportError, AttributeError) as e:
         log.debug("skip career_intel_mod: %s", e)
     try:
-        from loom.tools.career_traj_mod import research_career_trajectory, research_market_velocity
+        from loom.tools.career_traj import research_career_trajectory, research_market_velocity
         mcp.tool()(wrap_tool(research_career_trajectory))
         mcp.tool()(wrap_tool(research_market_velocity))
     except (ImportError, AttributeError) as e:
@@ -151,14 +151,14 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip compliance_checker: %s", e)
     try:
-        from loom.tools.consistency_mod import research_consistency_pressure, research_consistency_pressure_history, research_consistency_pressure_record
+        from loom.tools.consistency import research_consistency_pressure, research_consistency_pressure_history, research_consistency_pressure_record
         mcp.tool()(wrap_tool(research_consistency_pressure))
         mcp.tool()(wrap_tool(research_consistency_pressure_history))
         mcp.tool()(wrap_tool(research_consistency_pressure_record))
     except (ImportError, AttributeError) as e:
         log.debug("skip consistency_mod: %s", e)
     try:
-        from loom.tools.constraint_mod import research_constraint_optimize
+        from loom.tools.constraint import research_constraint_optimize
         mcp.tool()(wrap_tool(research_constraint_optimize))
     except (ImportError, AttributeError) as e:
         log.debug("skip constraint_mod: %s", e)
@@ -177,7 +177,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip crawlee_backend: %s", e)
     try:
-        from loom.tools.creative_mod import research_ai_detect, research_citation_graph, research_community_sentiment, research_curriculum, research_misinfo_check, research_multilingual, research_red_team, research_semantic_sitemap, research_temporal_diff, research_wiki_ghost
+        from loom.tools.creative import research_ai_detect, research_citation_graph, research_community_sentiment, research_curriculum, research_misinfo_check, research_multilingual, research_red_team, research_semantic_sitemap, research_temporal_diff, research_wiki_ghost
         mcp.tool()(wrap_tool(research_ai_detect))
         mcp.tool()(wrap_tool(research_citation_graph))
         mcp.tool()(wrap_tool(research_community_sentiment))
@@ -228,7 +228,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip data_pipeline: %s", e)
     try:
-        from loom.tools.dead_drop_scanner_mod import research_dead_drop_scanner
+        from loom.tools.dead_drop_scanner import research_dead_drop_scanner
         mcp.tool()(wrap_tool(research_dead_drop_scanner))
     except (ImportError, AttributeError) as e:
         log.debug("skip dead_drop_scanner_mod: %s", e)
@@ -261,7 +261,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip doc_parser_tools: %s", e)
     try:
-        from loom.tools.document_mod import research_convert_document
+        from loom.tools.document import research_convert_document
         mcp.tool()(wrap_tool(research_convert_document))
     except (ImportError, AttributeError) as e:
         log.debug("skip document_mod: %s", e)
@@ -272,7 +272,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip embedding_collision: %s", e)
     try:
-        from loom.tools.enrich_mod import research_detect_language, research_wayback
+        from loom.tools.enrich import research_detect_language, research_wayback
         mcp.tool()(wrap_tool(research_detect_language))
         mcp.tool()(wrap_tool(research_wayback))
     except (ImportError, AttributeError) as e:
@@ -291,7 +291,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip enterprise_sso: %s", e)
     try:
-        from loom.tools.epistemic_mod import research_epistemic_score
+        from loom.tools.epistemic import research_epistemic_score
         mcp.tool()(wrap_tool(research_epistemic_score))
     except (ImportError, AttributeError) as e:
         log.debug("skip epistemic_mod: %s", e)
@@ -302,7 +302,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip ethereum_tools: %s", e)
     try:
-        from loom.tools.experts_mod import research_find_experts
+        from loom.tools.experts import research_find_experts
         mcp.tool()(wrap_tool(research_find_experts))
     except (ImportError, AttributeError) as e:
         log.debug("skip experts_mod: %s", e)
@@ -372,7 +372,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip geodesic_forcing: %s", e)
     try:
-        from loom.tools.geoip_mod import research_geoip_local
+        from loom.tools.geoip import research_geoip_local
         mcp.tool()(wrap_tool(research_geoip_local))
     except (ImportError, AttributeError) as e:
         log.debug("skip geoip_mod: %s", e)
@@ -439,7 +439,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip holographic_payload: %s", e)
     try:
-        from loom.tools.image_mod import research_exif_extract, research_ocr_extract
+        from loom.tools.image import research_exif_extract, research_ocr_extract
         mcp.tool()(wrap_tool(research_exif_extract))
         mcp.tool()(wrap_tool(research_ocr_extract))
     except (ImportError, AttributeError) as e:
@@ -473,7 +473,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip integration_runner: %s", e)
     try:
-        from loom.tools.job_research_mod import research_job_search, research_job_market
+        from loom.tools.job_research import research_job_search, research_job_market
         mcp.tool()(wrap_tool(research_job_search))
         mcp.tool()(wrap_tool(research_job_market))
     except (ImportError, AttributeError) as e:
@@ -521,7 +521,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip live_registry: %s", e)
     try:
-        from loom.tools.llm_mod import research_llm_summarize, research_llm_extract, research_llm_classify, research_llm_translate, research_llm_query_expand, research_llm_answer, research_llm_embed, research_llm_chat
+        from loom.tools.llm import research_llm_summarize, research_llm_extract, research_llm_classify, research_llm_translate, research_llm_query_expand, research_llm_answer, research_llm_embed, research_llm_chat
         mcp.tool()(wrap_tool(research_llm_summarize))
         mcp.tool()(wrap_tool(research_llm_extract))
         mcp.tool()(wrap_tool(research_llm_classify))
@@ -592,7 +592,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip network_map: %s", e)
     try:
-        from loom.tools.network_persona_mod import research_network_persona
+        from loom.tools.network_persona import research_network_persona
         mcp.tool()(wrap_tool(research_network_persona))
     except (ImportError, AttributeError) as e:
         log.debug("skip network_persona_mod: %s", e)
@@ -603,7 +603,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip nightcrawler: %s", e)
     try:
-        from loom.tools.nodriver_mod import research_nodriver_fetch, research_nodriver_extract, research_nodriver_session
+        from loom.tools.nodriver import research_nodriver_fetch, research_nodriver_extract, research_nodriver_session
         mcp.tool()(wrap_tool(research_nodriver_fetch))
         mcp.tool()(wrap_tool(research_nodriver_extract))
         mcp.tool()(wrap_tool(research_nodriver_session))
@@ -643,7 +643,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip p3_tools: %s", e)
     try:
-        from loom.tools.param_mod import research_parameter_sweep
+        from loom.tools.param import research_parameter_sweep
         mcp.tool()(wrap_tool(research_parameter_sweep))
     except (ImportError, AttributeError) as e:
         log.debug("skip param_mod: %s", e)
@@ -661,7 +661,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip persistent_memory: %s", e)
     try:
-        from loom.tools.persona_profile_mod import research_persona_profile
+        from loom.tools.persona_profile import research_persona_profile
         mcp.tool()(wrap_tool(research_persona_profile))
     except (ImportError, AttributeError) as e:
         log.debug("skip persona_profile_mod: %s", e)
@@ -702,7 +702,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip provider_health: %s", e)
     try:
-        from loom.tools.radicalization_detect_mod import research_radicalization_detect
+        from loom.tools.radicalization_detect import research_radicalization_detect
         mcp.tool()(wrap_tool(research_radicalization_detect))
     except (ImportError, AttributeError) as e:
         log.debug("skip radicalization_detect_mod: %s", e)
@@ -759,7 +759,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip response_synthesizer: %s", e)
     try:
-        from loom.tools.resume_intel_mod import research_optimize_resume, research_interview_prep
+        from loom.tools.resume_intel import research_optimize_resume, research_interview_prep
         mcp.tool()(wrap_tool(research_optimize_resume))
         mcp.tool()(wrap_tool(research_interview_prep))
     except (ImportError, AttributeError) as e:
@@ -797,12 +797,12 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip scraper_engine_tools: %s", e)
     try:
-        from loom.tools.screenshot_mod import research_screenshot
+        from loom.tools.screenshot import research_screenshot
         mcp.tool()(wrap_tool(research_screenshot))
     except (ImportError, AttributeError) as e:
         log.debug("skip screenshot_mod: %s", e)
     try:
-        from loom.tools.sentiment_deep_mod import research_sentiment_deep
+        from loom.tools.sentiment_deep import research_sentiment_deep
         mcp.tool()(wrap_tool(research_sentiment_deep))
     except (ImportError, AttributeError) as e:
         log.debug("skip sentiment_deep_mod: %s", e)
@@ -905,7 +905,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip tenant_isolation: %s", e)
     try:
-        from loom.tools.text_analyze_mod import research_text_analyze
+        from loom.tools.text_analyze import research_text_analyze
         mcp.tool()(wrap_tool(research_text_analyze))
     except (ImportError, AttributeError) as e:
         log.debug("skip text_analyze_mod: %s", e)
@@ -944,7 +944,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip traffic_capture: %s", e)
     try:
-        from loom.tools.transcribe_mod import research_transcribe
+        from loom.tools.transcribe import research_transcribe
         mcp.tool()(wrap_tool(research_transcribe))
     except (ImportError, AttributeError) as e:
         log.debug("skip transcribe_mod: %s", e)
@@ -992,12 +992,12 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip xover_attack: %s", e)
     try:
-        from loom.tools.yt_mod import fetch_youtube_transcript
+        from loom.tools.yt import fetch_youtube_transcript
         mcp.tool()(wrap_tool(fetch_youtube_transcript))
     except (ImportError, AttributeError) as e:
         log.debug("skip yt_mod: %s", e)
     try:
-        from loom.tools.ytdlp_mod import research_video_download, research_video_info, research_audio_extract
+        from loom.tools.ytdlp import research_video_download, research_video_info, research_audio_extract
         mcp.tool()(wrap_tool(research_video_download))
         mcp.tool()(wrap_tool(research_video_info))
         mcp.tool()(wrap_tool(research_audio_extract))

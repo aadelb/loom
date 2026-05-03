@@ -14,7 +14,7 @@ log = logging.getLogger("loom.registrations.llm")
 def register_llm_tools(mcp: "FastMCP", wrap_tool) -> None:
     """Register 2 llm tools."""
     try:
-        from loom.tools.ask_all_models import research_ask_all_models
+        from loom.tools.ask_allels import research_ask_all_models
         mcp.tool()(wrap_tool(research_ask_all_models))
     except (ImportError, AttributeError) as e:
         log.debug("skip ask_all_models: %s", e)

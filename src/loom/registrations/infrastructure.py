@@ -28,7 +28,7 @@ def register_infrastructure_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip backup_system: %s", e)
     try:
-        from loom.tools.billing_mod import research_stripe_balance
+        from loom.tools.billing import research_stripe_balance
         mcp.tool()(wrap_tool(research_stripe_balance))
     except (ImportError, AttributeError) as e:
         log.debug("skip billing_mod: %s", e)
@@ -47,7 +47,7 @@ def register_infrastructure_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip deployment: %s", e)
     try:
-        from loom.tools.email_mod import research_email_report
+        from loom.tools.email import research_email_report
         mcp.tool()(wrap_tool(research_email_report))
     except (ImportError, AttributeError) as e:
         log.debug("skip email_mod: %s", e)
@@ -58,14 +58,14 @@ def register_infrastructure_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip error_wrapper: %s", e)
     try:
-        from loom.tools.gcp_mod import research_image_analyze, research_text_to_speech, research_tts_voices
+        from loom.tools.gcp import research_image_analyze, research_text_to_speech, research_tts_voices
         mcp.tool()(wrap_tool(research_image_analyze))
         mcp.tool()(wrap_tool(research_text_to_speech))
         mcp.tool()(wrap_tool(research_tts_voices))
     except (ImportError, AttributeError) as e:
         log.debug("skip gcp_mod: %s", e)
     try:
-        from loom.tools.joplin_mod import research_save_note, research_list_notebooks
+        from loom.tools.joplin import research_save_note, research_list_notebooks
         mcp.tool()(wrap_tool(research_save_note))
         mcp.tool()(wrap_tool(research_list_notebooks))
     except (ImportError, AttributeError) as e:
@@ -85,7 +85,7 @@ def register_infrastructure_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip memory_mgmt: %s", e)
     try:
-        from loom.tools.metrics_mod import research_metrics
+        from loom.tools.metrics import research_metrics
         mcp.tool()(wrap_tool(research_metrics))
     except (ImportError, AttributeError) as e:
         log.debug("skip metrics_mod: %s", e)
@@ -104,7 +104,7 @@ def register_infrastructure_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip session_replay: %s", e)
     try:
-        from loom.tools.slack_mod import research_slack_notify
+        from loom.tools.slack import research_slack_notify
         mcp.tool()(wrap_tool(research_slack_notify))
     except (ImportError, AttributeError) as e:
         log.debug("skip slack_mod: %s", e)
@@ -116,13 +116,13 @@ def register_infrastructure_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip telemetry: %s", e)
     try:
-        from loom.tools.vastai_mod import research_vastai_search, research_vastai_status
+        from loom.tools.vastai import research_vastai_search, research_vastai_status
         mcp.tool()(wrap_tool(research_vastai_search))
         mcp.tool()(wrap_tool(research_vastai_status))
     except (ImportError, AttributeError) as e:
         log.debug("skip vastai_mod: %s", e)
     try:
-        from loom.tools.vercel_mod import research_vercel_status
+        from loom.tools.vercel import research_vercel_status
         mcp.tool()(wrap_tool(research_vercel_status))
     except (ImportError, AttributeError) as e:
         log.debug("skip vercel_mod: %s", e)

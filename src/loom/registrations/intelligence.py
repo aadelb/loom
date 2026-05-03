@@ -36,7 +36,7 @@ def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip change_monitor: %s", e)
     try:
-        from loom.tools.cipher_mirror_mod import research_cipher_mirror
+        from loom.tools.cipher_mirror import research_cipher_mirror
         mcp.tool()(wrap_tool(research_cipher_mirror))
     except (ImportError, AttributeError) as e:
         log.debug("skip cipher_mirror_mod: %s", e)
@@ -57,7 +57,7 @@ def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip crypto_trace: %s", e)
     try:
-        from loom.tools.cve_lookup_mod import research_cve_lookup, research_cve_detail
+        from loom.tools.cve_lookup import research_cve_lookup, research_cve_detail
         mcp.tool()(wrap_tool(research_cve_lookup))
         mcp.tool()(wrap_tool(research_cve_detail))
     except (ImportError, AttributeError) as e:
@@ -98,7 +98,7 @@ def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip env_inspector: %s", e)
     try:
-        from loom.tools.forum_cortex_mod import research_forum_cortex
+        from loom.tools.forum_cortex import research_forum_cortex
         mcp.tool()(wrap_tool(research_forum_cortex))
     except (ImportError, AttributeError) as e:
         log.debug("skip forum_cortex_mod: %s", e)
@@ -108,7 +108,7 @@ def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip functor_map: %s", e)
     try:
-        from loom.tools.ghost_weave_mod import research_ghost_weave
+        from loom.tools.ghost_weave import research_ghost_weave
         mcp.tool()(wrap_tool(research_ghost_weave))
     except (ImportError, AttributeError) as e:
         log.debug("skip ghost_weave_mod: %s", e)
@@ -128,7 +128,7 @@ def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip invisible_web: %s", e)
     try:
-        from loom.tools.ip_intel_mod import research_ip_reputation, research_ip_geolocation
+        from loom.tools.ip_intel import research_ip_reputation, research_ip_geolocation
         mcp.tool()(wrap_tool(research_ip_reputation))
         mcp.tool()(wrap_tool(research_ip_geolocation))
     except (ImportError, AttributeError) as e:
@@ -160,7 +160,7 @@ def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip onion_discover: %s", e)
     try:
-        from loom.tools.onion_spectra_mod import research_onion_spectra
+        from loom.tools.onion_spectra import research_onion_spectra
         mcp.tool()(wrap_tool(research_onion_spectra))
     except (ImportError, AttributeError) as e:
         log.debug("skip onion_spectra_mod: %s", e)
@@ -271,7 +271,7 @@ def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip threat_profile: %s", e)
     try:
-        from loom.tools.tor_mod import research_tor_status, research_tor_new_identity
+        from loom.tools.tor import research_tor_status, research_tor_new_identity
         mcp.tool()(wrap_tool(research_tor_status))
         mcp.tool()(wrap_tool(research_tor_new_identity))
     except (ImportError, AttributeError) as e:
@@ -287,13 +287,13 @@ def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip universal_orchestrator: %s", e)
     try:
-        from loom.tools.urlhaus_lookup_mod import research_urlhaus_check, research_urlhaus_search
+        from loom.tools.urlhaus_lookup import research_urlhaus_check, research_urlhaus_search
         mcp.tool()(wrap_tool(research_urlhaus_check))
         mcp.tool()(wrap_tool(research_urlhaus_search))
     except (ImportError, AttributeError) as e:
         log.debug("skip urlhaus_lookup_mod: %s", e)
     try:
-        from loom.tools.vuln_intel_mod import research_vuln_intel
+        from loom.tools.vuln_intel import research_vuln_intel
         mcp.tool()(wrap_tool(research_vuln_intel))
     except (ImportError, AttributeError) as e:
         log.debug("skip vuln_intel_mod: %s", e)
