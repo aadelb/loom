@@ -105,6 +105,7 @@ from loom.tools import (
     dead_content,
     deception_detect,
     deception_job_scanner,
+    deep_url_analysis,
     deployment,
     do_expert,
     dist_tracing,
@@ -1145,6 +1146,8 @@ def _register_tools(mcp: FastMCP) -> None:
     # Expert Engine — 7-stage publication-quality research synthesis
     mcp.tool()(_wrap_tool(expert_engine.research_expert))
     mcp.tool()(_wrap_tool(do_expert.research_do_expert, "orchestration"))
+    # Deep URL Analysis — fetch N URLs + Gemini 1M context synthesis
+    mcp.tool()(_wrap_tool(deep_url_analysis.research_deep_url_analysis))
     mcp.tool()(_wrap_tool(deep.research_deep, "deep"))
     mcp.tool()(_wrap_tool(deep_research_agent.research_hierarchical_research, "hierarchical_research"))
     mcp.tool()(_wrap_tool(github.research_github, "search"))
