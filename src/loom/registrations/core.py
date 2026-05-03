@@ -12,7 +12,7 @@ log = logging.getLogger("loom.registrations.core")
 
 
 def register_core_tools(mcp: "FastMCP", wrap_tool) -> None:
-    """Register 16 core tools."""
+    """Register 17 core tools including tool discovery."""
     from loom.registrations.tracking import record_success, record_failure
 
     try:
@@ -102,4 +102,11 @@ def register_core_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip stealth: %s", e)
         record_failure("core", "stealth", str(e))
-    log.info("registered core tools count=16")
+    try:
+        from loom.tools.tool_discovery import research_discover
+        mcp.tool()(wrap_tool(research_discover))
+        record_success("core", "research_discover")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip tool_discovery: %s", e)
+        record_failure("core", "tool_discovery", str(e))
+    log.info("registered core tools count=17")

@@ -35,6 +35,7 @@ __all__ = [
     "AuthorityStackParams",
     "AutoReframeParams",
     "BPJParams",
+    "BenchmarkModelsParams",
     "BenchmarkParams",
     "ChainDefineParams",
     "ChainDescribeParams",
@@ -90,6 +91,8 @@ __all__ = [
     "InfraCorrelatorParams",
     "InstagramParams",
     "KatanaCrawlParams",
+    "LeaderboardUpdateParams",
+    "LeaderboardViewParams",
     "LegalTakedownParams",
     "LightpandaBatchParams",
     "MemeticSimulateParams",
@@ -508,6 +511,52 @@ class BPJParams(BaseModel):
     def validate_mode(cls, v: str) -> str:
         if v not in ("find_boundary", "map_region", "both"):
             raise ValueError("mode must be find_boundary, map_region, or both")
+        return v
+
+
+
+
+class BenchmarkModelsParams(BaseModel):
+    """Parameters for research_benchmark_models tool."""
+
+    models: list[str] | None = Field(
+        None,
+        description="List of model names to benchmark (e.g., ['gpt-4', 'claude-opus']). If None, benchmarks all available.",
+        max_length=20,
+    )
+    categories: list[str] | None = Field(
+        None,
+        description="Benchmark categories: injection_resistance, refusal_rate, response_quality, all. If None, runs all.",
+        max_length=5,
+    )
+
+    model_config = {"extra": "ignore", "strict": True}
+
+    @field_validator("models")
+    @classmethod
+    def validate_models(cls, v: list[str] | None) -> list[str] | None:
+        if v is None:
+            return v
+        if not v:
+            raise ValueError("models list cannot be empty")
+        if len(v) > 20:
+            raise ValueError("models list max 20 items")
+        return [m.strip() for m in v if m.strip()]
+
+    @field_validator("categories")
+    @classmethod
+    def validate_categories(cls, v: list[str] | None) -> list[str] | None:
+        if v is None:
+            return v
+        valid = {
+            "injection_resistance",
+            "refusal_rate",
+            "response_quality",
+            "all",
+        }
+        invalid = [c for c in v if c not in valid]
+        if invalid:
+            raise ValueError(f"Invalid categories: {invalid}. Must be one of {valid}")
         return v
 
 
@@ -1409,6 +1458,7 @@ class FingerprintEvasionParams(BaseModel):
         return v
 
 
+
 class FingerprintModelParams(BaseModel):
     model_config = {"extra": "ignore", "strict": True}
     response_text: str
@@ -2041,6 +2091,76 @@ class KatanaCrawlParams(BaseModel):
         return v
 
 
+
+
+class LeaderboardUpdateParams(BaseModel):
+    """Parameters for research_leaderboard_update tool."""
+
+    model: str = Field(..., description="Model name", min_length=1, max_length=100)
+    category: str = Field(
+        ...,
+        description="Benchmark category (injection_resistance, refusal_rate, response_quality)",
+    )
+    score: float = Field(
+        ...,
+        description="Score 0-1 (will be clamped)",
+        ge=0.0,
+        le=1.0,
+    )
+    details: dict[str, Any] | None = Field(
+        None,
+        description="Optional test details (JSON-serializable)",
+    )
+
+    model_config = {"extra": "ignore", "strict": True}
+
+    @field_validator("model")
+    @classmethod
+    def validate_model(cls, v: str) -> str:
+        return v.strip()
+
+    @field_validator("category")
+    @classmethod
+    def validate_category(cls, v: str) -> str:
+        valid = {"injection_resistance", "refusal_rate", "response_quality"}
+        v = v.strip().lower()
+        if v not in valid:
+            raise ValueError(
+                f"Invalid category: {v}. Must be one of {valid}"
+            )
+        return v
+
+
+
+
+class LeaderboardViewParams(BaseModel):
+    """Parameters for research_leaderboard_view tool."""
+
+    category: str | None = Field(
+        None,
+        description="Filter by category. If None, shows overall rankings.",
+    )
+    limit: int = Field(
+        20,
+        description="Maximum results to return",
+        ge=1,
+        le=100,
+    )
+
+    model_config = {"extra": "ignore", "strict": True}
+
+    @field_validator("category")
+    @classmethod
+    def validate_category(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        valid = {"injection_resistance", "refusal_rate", "response_quality"}
+        v = v.strip().lower()
+        if v not in valid:
+            raise ValueError(
+                f"Invalid category: {v}. Must be one of {valid}"
+            )
+        return v
 
 
 class LegalTakedownParams(BaseModel):
