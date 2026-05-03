@@ -75,12 +75,19 @@ async def _execute_tool(tool_name: str, tool_info: dict[str, Any], params: dict[
         return {"tool": tool_name, "success": False, "error": f"{type(e).__name__}: {str(e)[:100]}", "duration_ms": (time.time() - start_time) * 1000}
 
 
+_ORCHESTRATOR_BLACKLIST = frozenset({
+    "research_orchestrate_smart",
+    "research_do_expert",
+    "research_full_pipeline",
+})
+
+
 async def research_orchestrate_smart(query: str, max_tools: int = 3, strategy: str = "auto") -> dict[str, Any]:
     """Auto-discover, score, and execute optimal tools for ANY query.
 
     Args:
         query: Natural language query (min 3 chars)
-        max_tools: Maximum number of tools to select (1-10)
+        max_tools: Maximum number of tools to select (1-25)
         strategy: "auto" (pick 1), "parallel" (top-K), or "sequential"
 
     Returns:
@@ -95,7 +102,7 @@ async def research_orchestrate_smart(query: str, max_tools: int = 3, strategy: s
     if not tool_index:
         return {"error": "no_tools_discovered", "query": query, "total_duration_ms": (time.time() - total_start) * 1000}
 
-    scored = [(n, _score_tool_relevance(query, n, i), i) for n, i in tool_index.items()]
+    scored = [(n, _score_tool_relevance(query, n, i), i) for n, i in tool_index.items() if n not in _ORCHESTRATOR_BLACKLIST]
     scored = sorted([(n, s, i) for n, s, i in scored if s > 0], key=lambda x: x[1], reverse=True)
 
     selected_count = 1 if strategy == "auto" else min(max_tools, len(scored))
@@ -107,7 +114,8 @@ async def research_orchestrate_smart(query: str, max_tools: int = 3, strategy: s
     selections = [{"name": n, "relevance_score": s, "params_used": await _auto_generate_params(n, i, query)} for n, s, i in selected]
 
     tasks = [_execute_tool(s["name"], tool_index[s["name"]], s["params_used"]) for s in selections]
-    results = await asyncio.gather(*tasks, return_exceptions=False) if strategy == "parallel" else [await t for t in tasks]
+    results = await asyncio.gather(*tasks, return_exceptions=True) if strategy == "parallel" else [await t for t in tasks]
+    results = [r if isinstance(r, dict) else {"tool": "unknown", "success": False, "error": str(r)} for r in results]
 
     successful = [r for r in results if r.get("success")]
     return {

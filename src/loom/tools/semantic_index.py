@@ -8,6 +8,7 @@ logger = logging.getLogger("loom.tools.semantic_index")
 _INDEX: dict[str, list[float]] = {}
 _IDF: dict[str, float] = {}
 _VOCAB: list[str] = []
+_VOCAB_IDX: dict[str, int] = {}
 _INDEX_LOCK = asyncio.Lock()
 _STOPWORDS = {"the", "a", "is", "to", "for", "and", "of", "in", "with", "on", "by", "from", "or", "an", "as", "be", "at", "this", "that", "it", "which", "was", "are", "been", "have", "has", "do", "does", "did"}
 
@@ -70,18 +71,19 @@ async def research_semantic_search(query: str, top_k: int = 10) -> dict[str, Any
     Returns:
         Dict with query, results list, total_indexed count.
     """
-    global _INDEX, _IDF, _VOCAB
+    global _INDEX, _IDF, _VOCAB, _VOCAB_IDX
     if not _INDEX:
         async with _INDEX_LOCK:
             if not _INDEX:
                 _INDEX, _IDF, _VOCAB = _build_index()
+                _VOCAB_IDX = {w: i for i, w in enumerate(_VOCAB)}
     top_k = max(1, min(top_k, 50))
     tools = _extract_tools()
     q_tokens = _tokenize(query)
     q_tf = [0.0] * len(_VOCAB)
     for token in q_tokens:
-        if token in _IDF:
-            q_tf[_VOCAB.index(token)] += 1
+        if token in _VOCAB_IDX:
+            q_tf[_VOCAB_IDX[token]] += 1
     norm = math.sqrt(sum(x**2 for x in q_tf)) or 1.0
     q_tf = [x / norm for x in q_tf]
     q_tfidf = [q_tf[i] * _IDF.get(_VOCAB[i], 0) for i in range(len(_VOCAB))]
@@ -103,11 +105,12 @@ async def research_semantic_rebuild() -> dict[str, Any]:
     Returns:
         Dict with rebuild status, tools_indexed, vocabulary_size.
     """
-    global _INDEX, _IDF, _VOCAB
+    global _INDEX, _IDF, _VOCAB, _VOCAB_IDX
     async with _INDEX_LOCK:
         _INDEX.clear()
         _IDF.clear()
         _VOCAB.clear()
         _INDEX, _IDF, _VOCAB = _build_index()
+        _VOCAB_IDX = {w: i for i, w in enumerate(_VOCAB)}
     idx_kb = round(sum(len(v) * 8 for v in _INDEX.values()) / 1024, 2)
     return {"rebuilt": True, "tools_indexed": len(_INDEX), "vocabulary_size": len(_VOCAB), "index_size_kb": idx_kb}

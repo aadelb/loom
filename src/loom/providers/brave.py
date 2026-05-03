@@ -6,25 +6,40 @@ import logging
 import os
 from typing import Any
 
+import atexit
+import threading
+
 import httpx
 
 logger = logging.getLogger("loom.providers.brave")
 
 _BRAVE_SEARCH_URL = "https://api.search.brave.com/res/v1/web/search"
 
-# Module-level client for connection pooling
 _brave_client: httpx.Client | None = None
+_brave_lock = threading.Lock()
 
 
 def _get_brave_client() -> httpx.Client:
     """Get or create Brave Search client with connection pooling."""
     global _brave_client
     if _brave_client is None:
-        _brave_client = httpx.Client(
-            timeout=30.0,
-            limits=httpx.Limits(max_keepalive_connections=10, max_connections=50),
-        )
+        with _brave_lock:
+            if _brave_client is None:
+                _brave_client = httpx.Client(
+                    timeout=30.0,
+                    limits=httpx.Limits(max_keepalive_connections=10, max_connections=50),
+                )
     return _brave_client
+
+
+def _close_brave_client() -> None:
+    global _brave_client
+    if _brave_client is not None:
+        _brave_client.close()
+        _brave_client = None
+
+
+atexit.register(_close_brave_client)
 
 
 def search_brave(
