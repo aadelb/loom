@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import threading
 import time
 from datetime import UTC, datetime
 from typing import Any, Literal, cast
@@ -29,17 +30,27 @@ logger = logging.getLogger("loom.tools.fetch")
 
 # Module-level connection pool for httpx (reused across calls).
 _http_client: httpx.Client | None = None
+_client_lock = threading.Lock()
 
 
 def _get_http_client() -> httpx.Client:
-    """Return a shared httpx client with connection pooling."""
+    """Return a shared httpx client with connection pooling.
+
+    Uses double-checked locking pattern for thread-safe lazy initialization.
+    """
     global _http_client
-    if _http_client is None:
-        _http_client = httpx.Client(
-            timeout=EXTERNAL_TIMEOUT_SECS,
-            follow_redirects=True,
-            limits=httpx.Limits(max_keepalive_connections=20, max_connections=100),
-        )
+    # First check without lock (performance optimization)
+    if _http_client is not None:
+        return _http_client
+
+    # Acquire lock and check again (standard double-checked locking)
+    with _client_lock:
+        if _http_client is None:
+            _http_client = httpx.Client(
+                timeout=EXTERNAL_TIMEOUT_SECS,
+                follow_redirects=True,
+                limits=httpx.Limits(max_keepalive_connections=20, max_connections=100),
+            )
     return _http_client
 
 

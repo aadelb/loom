@@ -153,17 +153,19 @@ class RateLimiter:
 
             return True
 
-    def remaining(self, key: str = "global") -> int:
-        now = time.time()
-        cutoff = now - self.window_seconds
+    async def remaining(self, key: str = "global") -> int:
+        """Return the number of calls remaining in the current window."""
+        async with self._lock:
+            now = time.time()
+            cutoff = now - self.window_seconds
 
-        if self._db_path:
-            db_timestamps = _load_from_db(self._db_path, "global", key, self.window_seconds)
-            window = [t for t in db_timestamps if t > cutoff]
-        else:
-            window = [t for t in self._calls[key] if t > cutoff]
+            if self._db_path:
+                db_timestamps = _load_from_db(self._db_path, "global", key, self.window_seconds)
+                window = [t for t in db_timestamps if t > cutoff]
+            else:
+                window = [t for t in self._calls[key] if t > cutoff]
 
-        return max(0, self.max_calls - len(window))
+            return max(0, self.max_calls - len(window))
 
 
 # Global limiters keyed by tool category — initialised lazily by _get_limiter.
