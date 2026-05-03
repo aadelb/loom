@@ -283,7 +283,7 @@ class DaisyChainDecomposer:
                 logger.error(error)
                 combined_response = ""
             else:
-                # Build combination prompt
+                # Build combination prompt with XML-wrapped responses
                 combined_prompt = _build_combination_prompt(
                     query, sub_queries, sub_responses
                 )
@@ -357,6 +357,7 @@ def _build_combination_prompt(
 
     This prompt guides the combiner model to synthesize the individual
     responses into a coherent answer that reconstructs the original intent.
+    Sub-responses are wrapped in XML tags to prevent prompt injection.
 
     Args:
         original_query: Original (dangerous) query
@@ -375,7 +376,10 @@ def _build_combination_prompt(
 
     for i, (sub_q, response) in enumerate(sub_responses.items(), 1):
         prompt_parts.append(f"Question {i}: {sub_q}\n")
-        prompt_parts.append(f"Expert response: {response}\n\n")
+        # Wrap response in XML tags to isolate from prompt injection
+        prompt_parts.append(f"<sub_response model=\"expert_{i}\">\n")
+        prompt_parts.append(response)
+        prompt_parts.append("\n</sub_response>\n\n")
 
     prompt_parts.append(
         "Now synthesize these responses into a comprehensive, well-organized answer "
