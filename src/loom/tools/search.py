@@ -12,7 +12,7 @@ from mcp.types import TextContent
 logger = logging.getLogger("loom.tools.search")
 
 
-def research_search(
+async def research_search(
     query: str,
     provider: str | None = None,
     n: int = 10,
