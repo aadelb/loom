@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from typing import Any
@@ -65,8 +66,8 @@ def research_search(
         if provider == "exa":
             from loom.providers.exa import search_exa
 
-            result = search_exa(
-                query=query,
+            result = await asyncio.to_thread(
+                search_exa, query=query,
                 n=n,
                 include_domains=include_domains,
                 exclude_domains=exclude_domains,
@@ -80,8 +81,8 @@ def research_search(
         elif provider == "tavily":
             from loom.providers.tavily import search_tavily
 
-            result = search_tavily(
-                query=query,
+            result = await asyncio.to_thread(
+                search_tavily, query=query,
                 n=n,
                 include_domains=include_domains,
                 exclude_domains=exclude_domains,
@@ -95,8 +96,8 @@ def research_search(
         elif provider == "firecrawl":
             from loom.providers.firecrawl import search_firecrawl
 
-            result = search_firecrawl(
-                query=query,
+            result = await asyncio.to_thread(
+                search_firecrawl, query=query,
                 n=n,
                 include_domains=include_domains,
                 exclude_domains=exclude_domains,
@@ -108,10 +109,8 @@ def research_search(
         elif provider == "brave":
             from loom.providers.brave import search_brave
 
-            result = search_brave(
-                query=query,
-                n=n,
-                **provider_config,
+            result = await asyncio.to_thread(
+                search_brave, query=query, n=n, **provider_config
             )
             result["provider"] = "brave"
             return result  # type: ignore[no-any-return]
@@ -119,8 +118,8 @@ def research_search(
         elif provider == "ddgs":
             from loom.providers.ddgs import search_ddgs
 
-            result = search_ddgs(
-                query=query,
+            result = await asyncio.to_thread(
+                search_ddgs, query=query,
                 n=n,
                 **provider_config,
             )
@@ -130,8 +129,8 @@ def research_search(
         elif provider == "arxiv":
             from loom.providers.arxiv_search import search_arxiv
 
-            result = search_arxiv(
-                query=query,
+            result = await asyncio.to_thread(
+                search_arxiv, query=query,
                 n=n,
                 **provider_config,
             )
@@ -141,8 +140,8 @@ def research_search(
         elif provider == "wikipedia":
             from loom.providers.wikipedia_search import search_wikipedia
 
-            result = search_wikipedia(
-                query=query,
+            result = await asyncio.to_thread(
+                search_wikipedia, query=query,
                 n=n,
                 **provider_config,
             )
@@ -152,8 +151,8 @@ def research_search(
         elif provider == "hackernews":
             from loom.providers.hn_reddit import search_hackernews
 
-            result = search_hackernews(
-                query=query,
+            result = await asyncio.to_thread(
+                search_hackernews, query=query,
                 n=n,
                 **provider_config,
             )
@@ -163,8 +162,8 @@ def research_search(
         elif provider == "reddit":
             from loom.providers.hn_reddit import search_reddit
 
-            result = search_reddit(
-                query=query,
+            result = await asyncio.to_thread(
+                search_reddit, query=query,
                 n=n,
                 **provider_config,
             )
@@ -174,8 +173,8 @@ def research_search(
         elif provider == "newsapi":
             from loom.providers.newsapi_search import search_newsapi
 
-            result = search_newsapi(
-                query=query,
+            result = await asyncio.to_thread(
+                search_newsapi, query=query,
                 n=n,
                 **provider_config,
             )
@@ -185,8 +184,8 @@ def research_search(
         elif provider == "crypto":
             from loom.providers.coinmarketcap import search_crypto
 
-            result = search_crypto(
-                query=query,
+            result = await asyncio.to_thread(
+                search_crypto, query=query,
                 n=n,
                 **provider_config,
             )
@@ -196,8 +195,8 @@ def research_search(
         elif provider == "coindesk":
             from loom.providers.coindesk_search import search_coindesk_news
 
-            result = search_coindesk_news(
-                query=query,
+            result = await asyncio.to_thread(
+                search_coindesk_news, query=query,
                 n=n,
                 **provider_config,
             )
@@ -207,8 +206,8 @@ def research_search(
         elif provider == "binance":
             from loom.providers.binance_data import search_binance
 
-            result = search_binance(
-                query=query,
+            result = await asyncio.to_thread(
+                search_binance, query=query,
                 n=n,
                 **provider_config,
             )
@@ -218,8 +217,8 @@ def research_search(
         elif provider == "investing":
             from loom.providers.investing_data import search_investing
 
-            result = search_investing(
-                query=query,
+            result = await asyncio.to_thread(
+                search_investing, query=query,
                 n=n,
                 **provider_config,
             )
@@ -229,8 +228,8 @@ def research_search(
         elif provider == "ahmia":
             from loom.providers.ahmia_search import search_ahmia
 
-            result = search_ahmia(
-                query=query,
+            result = await asyncio.to_thread(
+                search_ahmia, query=query,
                 n=n,
                 **provider_config,
             )
@@ -240,8 +239,8 @@ def research_search(
         elif provider == "darksearch":
             from loom.providers.darksearch_search import search_darksearch
 
-            result = search_darksearch(
-                query=query,
+            result = await asyncio.to_thread(
+                search_darksearch, query=query,
                 n=n,
                 **provider_config,
             )
@@ -251,8 +250,8 @@ def research_search(
         elif provider == "ummro":
             from loom.providers.ummro_rag import search_ummro_rag
 
-            result = search_ummro_rag(
-                query=query,
+            result = await asyncio.to_thread(
+                search_ummro_rag, query=query,
                 n=n,
                 **provider_config,
             )
@@ -262,8 +261,8 @@ def research_search(
         elif provider == "onionsearch":
             from loom.providers.onionsearch import search_onionsearch
 
-            result = search_onionsearch(
-                query=query,
+            result = await asyncio.to_thread(
+                search_onionsearch, query=query,
                 n=n,
                 **provider_config,
             )
@@ -283,8 +282,8 @@ def research_search(
         elif provider == "darkweb_cti":
             from loom.providers.darkweb_cti import search_darkweb_cti
 
-            result = search_darkweb_cti(
-                query=query,
+            result = await asyncio.to_thread(
+                search_darkweb_cti, query=query,
                 n=n,
                 **provider_config,
             )
@@ -294,8 +293,8 @@ def research_search(
         elif provider == "robin_osint":
             from loom.providers.robin_osint import search_robin_osint
 
-            result = search_robin_osint(
-                query=query,
+            result = await asyncio.to_thread(
+                search_robin_osint, query=query,
                 n=n,
                 **provider_config,
             )
