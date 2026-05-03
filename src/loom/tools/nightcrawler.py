@@ -85,6 +85,7 @@ async def research_arxiv_scan(
     """Search arXiv for recent papers on jailbreak/adversarial/safety topics."""
     if keywords is None:
         keywords = _DEFAULT_KEYWORDS
+    keywords = keywords[:10]
     _ensure_state_db()
     all_papers: dict[str, ArxivPaper] = {}
 
