@@ -79,8 +79,7 @@ async def research_marketplace_list(
     if not (1 <= page <= 1000) or not (1 <= limit <= 100):
         return {"error": "Invalid page or limit"}
 
-    conn = await _get_db()
-    try:
+    async with await _get_db() as conn:
         # Build query
         where_clause = "" if category == "all" else f"WHERE category = ?"
         order_map = {
@@ -127,8 +126,6 @@ async def research_marketplace_list(
             "limit": limit,
             "pages": (total + limit - 1) // limit,
         }
-    finally:
-        await conn.close()
 
 
 async def research_marketplace_publish(
@@ -166,8 +163,7 @@ async def research_marketplace_publish(
     listing_id = str(uuid4())
     now = datetime.now(UTC).isoformat()
 
-    conn = await _get_db()
-    try:
+    async with await _get_db() as conn:
         await conn.execute(
             "INSERT INTO listings "
             "(id, name, category, description, price_credits, author, downloads, rating, created, content) "
@@ -185,8 +181,6 @@ async def research_marketplace_publish(
             "status": "published",
             "created": now,
         }
-    finally:
-        await conn.close()
 
 
 async def research_marketplace_download(
@@ -203,8 +197,7 @@ async def research_marketplace_download(
     if not listing_id or len(listing_id) > 100:
         return {"error": "Invalid listing_id"}
 
-    conn = await _get_db()
-    try:
+    async with await _get_db() as conn:
         cursor = await conn.execute(
             "SELECT id, name, category, content, downloads FROM listings WHERE id = ?",
             (listing_id,),
@@ -231,5 +224,3 @@ async def research_marketplace_download(
             "downloaded_at": datetime.now(UTC).isoformat(),
             "download_count": downloads + 1,
         }
-    finally:
-        await conn.close()

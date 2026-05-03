@@ -60,13 +60,12 @@ async def research_hub_share(
     timestamp = datetime.now(UTC).isoformat()
 
     try:
-        conn = await _init_db()
-        await conn.execute(
-            "INSERT INTO findings VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)",
-            (finding_id, finding_type, title, content, json.dumps(tags or []), visibility, "anonymous", timestamp),
-        )
-        await conn.commit()
-        await conn.close()
+        async with await _init_db() as conn:
+            await conn.execute(
+                "INSERT INTO findings VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)",
+                (finding_id, finding_type, title, content, json.dumps(tags or []), visibility, "anonymous", timestamp),
+            )
+            await conn.commit()
         logger.info("hub_share", finding_id=finding_id, type=finding_type)
         return {"success": True, "finding_id": finding_id, "type": finding_type, "title": title, "visibility": visibility, "timestamp": timestamp}
     except Exception as e:
@@ -86,22 +85,21 @@ async def research_hub_feed(
     """
     limit = min(limit, 100)
     try:
-        conn = await _init_db()
-        query = "SELECT id, type, title, tags, author, created, votes FROM findings WHERE visibility IN ('team', 'public')"
-        params: list[Any] = []
-        if type_filter != "all":
-            query += " AND type = ?"
-            params.append(type_filter)
-        query += " ORDER BY created DESC LIMIT ?"
-        params.append(limit)
+        async with await _init_db() as conn:
+            query = "SELECT id, type, title, tags, author, created, votes FROM findings WHERE visibility IN ('team', 'public')"
+            params: list[Any] = []
+            if type_filter != "all":
+                query += " AND type = ?"
+                params.append(type_filter)
+            query += " ORDER BY created DESC LIMIT ?"
+            params.append(limit)
 
-        cursor = await conn.execute(query, params)
-        rows = await cursor.fetchall()
+            cursor = await conn.execute(query, params)
+            rows = await cursor.fetchall()
         findings = [{
             "id": r[0], "type": r[1], "title": r[2], "tags": json.loads(r[3]) if r[3] else [],
             "author": r[4], "created": r[5], "votes": r[6],
         } for r in rows]
-        await conn.close()
         return {"findings": findings, "total": len(findings), "type_filter": type_filter}
     except Exception as e:
         logger.error("hub_feed_failed", error=str(e))
@@ -122,16 +120,14 @@ async def research_hub_vote(
         return {"success": False, "error": "vote must be 1 or -1"}
 
     try:
-        conn = await _init_db()
-        cursor = await conn.execute("SELECT votes FROM findings WHERE id = ?", (finding_id,))
-        row = await cursor.fetchone()
-        if not row:
-            await conn.close()
-            return {"success": False, "error": f"Finding {finding_id} not found"}
-        new_votes = row[0] + vote
-        await conn.execute("UPDATE findings SET votes = ? WHERE id = ?", (new_votes, finding_id))
-        await conn.commit()
-        await conn.close()
+        async with await _init_db() as conn:
+            cursor = await conn.execute("SELECT votes FROM findings WHERE id = ?", (finding_id,))
+            row = await cursor.fetchone()
+            if not row:
+                return {"success": False, "error": f"Finding {finding_id} not found"}
+            new_votes = row[0] + vote
+            await conn.execute("UPDATE findings SET votes = ? WHERE id = ?", (new_votes, finding_id))
+            await conn.commit()
         logger.info("hub_vote", finding_id=finding_id, vote=vote, new_count=new_votes)
         return {"success": True, "finding_id": finding_id, "new_vote_count": new_votes}
     except Exception as e:
