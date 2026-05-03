@@ -88,7 +88,7 @@ async def research_orchestrate_smart(query: str, max_tools: int = 3, strategy: s
     """
     if not query or len(query.strip()) < 3:
         return {"error": "query too short (min 3 chars)", "query": query}
-    max_tools = max(1, min(max_tools, 10))
+    max_tools = max(1, min(max_tools, 25))
     total_start = time.time()
 
     tool_index = _build_tool_index()

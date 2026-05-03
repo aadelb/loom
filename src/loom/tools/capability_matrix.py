@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import asyncio
 import logging
 import pathlib
 from typing import Any
@@ -11,6 +12,8 @@ logger = logging.getLogger("loom.tools.capability_matrix")
 
 # Module-level cache: populated on first query
 _MATRIX_CACHE: dict[str, Any] | None = None
+_MATRIX_LOCK = asyncio.Lock()
+
 _CATEGORIES_MAP = {
     "fetch": ["fetch", "spider", "scrape", "stealth", "camoufox", "botasaurus"],
     "search": ["search", "deep", "query", "semantic"],
@@ -182,7 +185,9 @@ async def research_capability_matrix(category: str = "all") -> dict[str, Any]:
     global _MATRIX_CACHE
 
     if _MATRIX_CACHE is None:
-        _MATRIX_CACHE = _build_matrix()
+        async with _MATRIX_LOCK:
+            if _MATRIX_CACHE is None:
+                _MATRIX_CACHE = _build_matrix()
 
     result = {
         "total_tools": _MATRIX_CACHE["total_tools"],
@@ -221,7 +226,9 @@ async def research_find_tools_by_capability(
     global _MATRIX_CACHE
 
     if _MATRIX_CACHE is None:
-        _MATRIX_CACHE = _build_matrix()
+        async with _MATRIX_LOCK:
+            if _MATRIX_CACHE is None:
+                _MATRIX_CACHE = _build_matrix()
 
     matching = _MATRIX_CACHE["matrix"]
     filters = {}

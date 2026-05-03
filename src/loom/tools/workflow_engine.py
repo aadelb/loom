@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import sqlite3
 import uuid
 from datetime import UTC, datetime
@@ -11,6 +12,37 @@ from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger("loom.tools.workflow_engine")
+
+# Regex pattern for valid Loom tool names: must start with "research_" and contain only lowercase letters, digits, underscores
+VALID_TOOL_NAME_PATTERN = re.compile(r"^research_[a-z0-9_]+$")
+
+
+def _validate_tool_name(tool_name: str) -> None:
+    """Validate that tool name matches Loom naming convention and contains no injection payloads.
+
+    All Loom tools follow the pattern: research_[a-z0-9_]+
+    This prevents tool injection attacks via workflow definitions.
+
+    Args:
+        tool_name: The tool name to validate
+
+    Raises:
+        ValueError: If tool name is invalid or contains suspicious patterns
+    """
+    if not isinstance(tool_name, str):
+        raise ValueError(f"Tool name must be string, got {type(tool_name).__name__}")
+
+    if not tool_name:
+        raise ValueError("Tool name cannot be empty")
+
+    if "/" in tool_name or "\\" in tool_name or ".." in tool_name:
+        raise ValueError(f"Tool name contains path separators or traversal: {tool_name}")
+
+    if not VALID_TOOL_NAME_PATTERN.match(tool_name):
+        raise ValueError(
+            f"Tool name '{tool_name}' does not match pattern 'research_[a-z0-9_]+'. "
+            "All Loom tools must start with 'research_' and contain only lowercase letters, digits, and underscores."
+        )
 
 
 def _get_db_path() -> Path:
@@ -60,6 +92,13 @@ def research_workflow_create(name: str, steps: list[dict]) -> dict[str, Any]:
             raise ValueError(f"Step {i}: missing 'tool' or 'params'")
         if not isinstance(s["params"], dict):
             raise ValueError(f"Step {i}: params must be dict")
+
+        # SECURITY FIX: Validate tool name to prevent tool injection attacks
+        try:
+            _validate_tool_name(s["tool"])
+        except ValueError as e:
+            raise ValueError(f"Step {i}: invalid tool name - {e}")
+
         for dep in s.get("depends_on", []):
             if dep not in step_names.values():
                 raise ValueError(f"Step {step_names[i]}: unknown dependency '{dep}'")
@@ -102,6 +141,13 @@ def research_workflow_run(workflow_id: str, dry_run: bool = False) -> dict[str, 
 
         name, steps_json = row
         steps = json.loads(steps_json)
+
+        # SECURITY FIX: Re-validate tool names on execution (defense-in-depth)
+        for i, step in enumerate(steps):
+            try:
+                _validate_tool_name(step["tool"])
+            except ValueError as e:
+                raise ValueError(f"Step {i}: invalid tool name - {e}")
 
         if dry_run:
             return {"workflow_id": workflow_id, "name": name, "status": "dry_run_ok",

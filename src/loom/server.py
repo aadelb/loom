@@ -106,6 +106,7 @@ from loom.tools import (
     deception_detect,
     deception_job_scanner,
     deployment,
+    do_expert,
     dist_tracing,
     deep,
     defender_mode,
@@ -119,6 +120,7 @@ from loom.tools import (
     domain_intel,
     exploit_db,
     ethereum_tools,
+    expert_engine,
     explainability,
     execution_planner,
     feature_flags,
@@ -1140,6 +1142,9 @@ def _register_tools(mcp: FastMCP) -> None:
     mcp.tool()(_wrap_tool(smart_router.research_router_rebuild))
     # Universal Smart Orchestrator meta-tool (1 tool)
     mcp.tool()(_wrap_tool(universal_orchestrator.research_orchestrate_smart))
+    # Expert Engine — 7-stage publication-quality research synthesis
+    mcp.tool()(_wrap_tool(expert_engine.research_expert))
+    mcp.tool()(_wrap_tool(do_expert.research_do_expert, "orchestration"))
     mcp.tool()(_wrap_tool(deep.research_deep, "deep"))
     mcp.tool()(_wrap_tool(deep_research_agent.research_hierarchical_research, "hierarchical_research"))
     mcp.tool()(_wrap_tool(github.research_github, "search"))

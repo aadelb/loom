@@ -6,6 +6,7 @@ Dynamically discovers metadata for ALL tools via AST analysis of tool modules.
 from __future__ import annotations
 
 import ast
+import asyncio
 import logging
 from dataclasses import dataclass
 from pathlib import Path
@@ -15,6 +16,7 @@ logger = logging.getLogger("loom.tools.composition_optimizer")
 
 # Cached tool metadata (built on first access)
 _TOOL_METADATA: dict[str, dict[str, Any]] | None = None
+_METADATA_LOCK = asyncio.Lock()
 
 # Goal-to-tool mapping for common research scenarios
 GOAL_PATTERNS: dict[str, list[str]] = {
@@ -371,7 +373,8 @@ async def research_optimizer_rebuild() -> dict[str, Any]:
         Metadata discovery result with tool count and coverage
     """
     global _TOOL_METADATA
-    _TOOL_METADATA = None
+    async with _METADATA_LOCK:
+        _TOOL_METADATA = None
     metadata = _get_tool_metadata()
 
     # Compute coverage stats

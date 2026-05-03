@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import asyncio
 import logging
 from collections import defaultdict
 from pathlib import Path
@@ -10,6 +11,7 @@ from typing import Any
 
 logger = logging.getLogger("loom.tools.smart_router")
 _TOOL_INDEX: dict[str, set[str]] = {}
+_INDEX_LOCK = asyncio.Lock()
 
 
 def _build_tool_index() -> dict[str, set[str]]:
@@ -127,7 +129,8 @@ async def research_route_batch(queries: list[str]) -> dict[str, Any]:
 async def research_router_rebuild() -> dict[str, Any]:
     """Force rebuild tool index (call when new tools added)."""
     global _TOOL_INDEX
-    _TOOL_INDEX = {}
+    async with _INDEX_LOCK:
+        _TOOL_INDEX = {}
     idx = _get_tool_index()
     return {
         "status": "rebuilt",

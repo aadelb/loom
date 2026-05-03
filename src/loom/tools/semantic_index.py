@@ -1,6 +1,6 @@
 """Semantic Tool Index — TF-IDF vectors for intelligent tool discovery."""
 from __future__ import annotations
-import ast, logging, math, re
+import ast, asyncio, logging, math, re
 from pathlib import Path
 from typing import Any
 
@@ -8,6 +8,7 @@ logger = logging.getLogger("loom.tools.semantic_index")
 _INDEX: dict[str, list[float]] = {}
 _IDF: dict[str, float] = {}
 _VOCAB: list[str] = []
+_INDEX_LOCK = asyncio.Lock()
 _STOPWORDS = {"the", "a", "is", "to", "for", "and", "of", "in", "with", "on", "by", "from", "or", "an", "as", "be", "at", "this", "that", "it", "which", "was", "are", "been", "have", "has", "do", "does", "did"}
 
 def _extract_tools() -> dict[str, str]:
@@ -71,7 +72,9 @@ async def research_semantic_search(query: str, top_k: int = 10) -> dict[str, Any
     """
     global _INDEX, _IDF, _VOCAB
     if not _INDEX:
-        _INDEX, _IDF, _VOCAB = _build_index()
+        async with _INDEX_LOCK:
+            if not _INDEX:
+                _INDEX, _IDF, _VOCAB = _build_index()
     top_k = max(1, min(top_k, 50))
     tools = _extract_tools()
     q_tokens = _tokenize(query)
@@ -101,9 +104,10 @@ async def research_semantic_rebuild() -> dict[str, Any]:
         Dict with rebuild status, tools_indexed, vocabulary_size.
     """
     global _INDEX, _IDF, _VOCAB
-    _INDEX.clear()
-    _IDF.clear()
-    _VOCAB.clear()
-    _INDEX, _IDF, _VOCAB = _build_index()
+    async with _INDEX_LOCK:
+        _INDEX.clear()
+        _IDF.clear()
+        _VOCAB.clear()
+        _INDEX, _IDF, _VOCAB = _build_index()
     idx_kb = round(sum(len(v) * 8 for v in _INDEX.values()) / 1024, 2)
     return {"rebuilt": True, "tools_indexed": len(_INDEX), "vocabulary_size": len(_VOCAB), "index_size_kb": idx_kb}
