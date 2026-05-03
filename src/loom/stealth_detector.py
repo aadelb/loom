@@ -414,7 +414,7 @@ class StealthDetector:
             plausibility_bonus = (1 - authority_plausibility) * 0.2
 
             # Adjust by evasion keywords
-            keyword_bonus = -0.05 * len(evasion_kw) if len(evasion_kw) > 0 else 0
+            keyword_bonus = 0.05 * len(evasion_kw) if len(evasion_kw) > 0 else 0
 
             # System-specific adjustments
             if system_name == "llama_guard":
