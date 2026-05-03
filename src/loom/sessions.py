@@ -221,6 +221,8 @@ async def open_session(
                 try:
                     await page.goto(login_url, wait_until="networkidle")
                     if login_script:
+                        from loom.validators import validate_js_script
+                        validate_js_script(login_script)
                         await page.evaluate(login_script)
                     logger.info("session_login_complete name=%s url=%s", name, login_url)
                 except Exception as e:

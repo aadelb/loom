@@ -409,7 +409,7 @@ async def research_evidence_pipeline(
 
     async def search_wrapper(q: str) -> dict[str, Any]:
         """Wrapper for search_fn."""
-        return research_search(query=q, provider=search_provider)
+        return await research_search(query=q, provider=search_provider)
 
     def reframe_wrapper(prompt: str) -> str:
         """Wrapper for reframe_fn."""
