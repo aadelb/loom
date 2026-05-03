@@ -1,8 +1,4 @@
-"""Intelligence and OSINT tools — threat intel, social graphs, breach scanning, etc.
-
-Tools for open-source intelligence, threat profiling, security analysis, and
-research infrastructure intelligence.
-"""
+"""Registration module for intelligence tools."""
 from __future__ import annotations
 
 import logging
@@ -16,177 +12,289 @@ log = logging.getLogger("loom.registrations.intelligence")
 
 
 def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
-    """Register 87 intelligence and OSINT tools.
-
-    Includes threat intelligence, social graph analysis, breach scanning,
-    domain intelligence, academic integrity, and security research.
-    """
-    from loom.tools import (
-        academic_integrity,
-        access_tools,
-        breach_check,
-        career_intel_mod,
-        career_traj_mod,
-        cert_analyzer,
-        company_intel,
-        competitive_intel,
-        crypto_trace,
-        dark_forum,
-        dark_recon,
-        darkweb_early_warning,
-        deception_detect,
-        deception_job_scanner,
-        domain_intel,
-        gap_tools_academic,
-        gap_tools_advanced,
-        gap_tools_ai,
-        gap_tools_infra,
-        hcs10_academic,
-        hcs_rubric_tool,
-        hcs_scorer,
-        identity_resolve,
-        infra_correlator,
-        invisible_web,
-        job_signals,
-        leak_scan,
-        metadata_forensics,
-        onion_discover,
-        passive_recon,
-        salary_synthesizer,
-        security_headers,
-        signal_detection,
-        social_graph,
-        stego_detect,
-        stylometry,
-        supply_chain,
-        supply_chain_intel,
-        threat_intel,
-        threat_profile,
-        urlhaus_lookup_mod,
-        vuln_intel_mod,
-    )
-
-    # Infrastructure intelligence
-    mcp.tool()(wrap_tool(invisible_web.research_invisible_web, "fetch"))
-    mcp.tool()(wrap_tool(dark_forum.research_dark_forum, "search"))
-    mcp.tool()(wrap_tool(infra_correlator.research_infra_correlator, "fetch"))
-    mcp.tool()(wrap_tool(passive_recon.research_passive_recon, "fetch"))
-    mcp.tool()(wrap_tool(gap_tools_infra.research_cloud_enum, "fetch"))
-    mcp.tool()(wrap_tool(gap_tools_infra.research_github_secrets, "search"))
-    mcp.tool()(wrap_tool(gap_tools_infra.research_whois_correlator, "fetch"))
-    mcp.tool()(wrap_tool(gap_tools_infra.research_output_consistency, "fetch"))
-
-    # Advanced intelligence
-    mcp.tool()(wrap_tool(gap_tools_advanced.research_talent_migration, "fetch"))
-    mcp.tool()(wrap_tool(gap_tools_advanced.research_funding_pipeline, "search"))
-    mcp.tool()(wrap_tool(gap_tools_advanced.research_jailbreak_library))
-    mcp.tool()(wrap_tool(gap_tools_advanced.research_patent_embargo, "fetch"))
-
-    # Academic integrity
-    mcp.tool()(wrap_tool(gap_tools_academic.research_ideological_drift))
-    mcp.tool()(wrap_tool(gap_tools_academic.research_author_clustering))
-    mcp.tool()(wrap_tool(gap_tools_academic.research_citation_cartography))
-
-    # AI capabilities
-    mcp.tool()(wrap_tool(gap_tools_ai.research_capability_mapper, "fetch"))
-    mcp.tool()(wrap_tool(gap_tools_ai.research_memorization_scanner, "fetch"))
-    mcp.tool()(wrap_tool(gap_tools_ai.research_training_contamination, "fetch"))
-
-    # Cryptography and forensics
-    mcp.tool()(wrap_tool(onion_discover.research_onion_discover, "fetch"))
-    mcp.tool()(wrap_tool(metadata_forensics.research_metadata_forensics, "fetch"))
-    mcp.tool()(wrap_tool(crypto_trace.research_crypto_trace, "fetch"))
-    mcp.tool()(wrap_tool(stego_detect.research_stego_detect))
-
-    # Threat profiling and tracking
-    mcp.tool()(wrap_tool(threat_profile.research_threat_profile, "fetch"))
-    mcp.tool()(wrap_tool(threat_intel.research_dark_market_monitor))
-    mcp.tool()(wrap_tool(threat_intel.research_ransomware_tracker))
-    mcp.tool()(wrap_tool(threat_intel.research_phishing_mapper))
-    mcp.tool()(wrap_tool(threat_intel.research_botnet_tracker))
-    mcp.tool()(wrap_tool(threat_intel.research_malware_intel))
-    mcp.tool()(wrap_tool(threat_intel.research_domain_reputation))
-    mcp.tool()(wrap_tool(threat_intel.research_ioc_enrich))
-
-    # Breach and leak detection
-    mcp.tool()(wrap_tool(leak_scan.research_leak_scan, "fetch"))
-
-    # Social analysis
-    mcp.tool()(wrap_tool(social_graph.research_social_graph, "fetch"))
-    mcp.tool()(wrap_tool(stylometry.research_stylometry))
-    mcp.tool()(wrap_tool(deception_detect.research_deception_detect))
-
-    # Company and competitive intelligence
-    mcp.tool()(wrap_tool(company_intel.research_company_diligence, "search"))
-    mcp.tool()(wrap_tool(company_intel.research_salary_intelligence, "search"))
-    mcp.tool()(wrap_tool(competitive_intel.research_competitive_intel, "search"))
-    mcp.tool()(wrap_tool(supply_chain_intel.research_supply_chain_risk, "fetch"))
-    mcp.tool()(wrap_tool(supply_chain_intel.research_patent_landscape, "search"))
-    mcp.tool()(wrap_tool(supply_chain_intel.research_dependency_audit, "fetch"))
-    mcp.tool()(wrap_tool(supply_chain.research_package_audit))
-    mcp.tool()(wrap_tool(supply_chain.research_model_integrity))
-
-    # Domain and infrastructure intelligence
-    mcp.tool()(wrap_tool(domain_intel.research_whois, "fetch"))
-    mcp.tool()(wrap_tool(domain_intel.research_dns_lookup, "fetch"))
-    mcp.tool()(wrap_tool(domain_intel.research_nmap_scan, "fetch"))
-
-    # Dark web reconnaissance
-    mcp.tool()(wrap_tool(dark_recon.research_torbot, "fetch"))
-    mcp.tool()(wrap_tool(dark_recon.research_amass_enum, "fetch"))
-    mcp.tool()(wrap_tool(dark_recon.research_amass_intel, "fetch"))
-
-    # Access and content verification
-    mcp.tool()(wrap_tool(access_tools.research_legal_takedown, "fetch"))
-    mcp.tool()(wrap_tool(access_tools.research_open_access))
-    mcp.tool()(wrap_tool(access_tools.research_content_authenticity, "fetch"))
-    mcp.tool()(wrap_tool(access_tools.research_credential_monitor, "fetch"))
-    mcp.tool()(wrap_tool(access_tools.research_deepfake_checker, "fetch"))
-
-    # Identity and employment intelligence
-    mcp.tool()(wrap_tool(identity_resolve.research_identity_resolve, "fetch"))
-    mcp.tool()(wrap_tool(job_signals.research_funding_signal, "search"))
-    mcp.tool()(wrap_tool(job_signals.research_stealth_hire_scanner, "search"))
-    mcp.tool()(wrap_tool(job_signals.research_interviewer_profiler, "fetch"))
-
-    # Security and vulnerability intelligence
-    mcp.tool()(wrap_tool(cert_analyzer.research_cert_analyze, "fetch"))
-    mcp.tool()(wrap_tool(security_headers.research_security_headers, "fetch"))
-    mcp.tool()(wrap_tool(signal_detection.research_ghost_protocol, "search"))
-    mcp.tool()(wrap_tool(signal_detection.research_temporal_anomaly, "fetch"))
-    mcp.tool()(wrap_tool(signal_detection.research_sec_tracker, "search"))
-    mcp.tool()(wrap_tool(breach_check.research_breach_check, "fetch"))
-    mcp.tool()(wrap_tool(breach_check.research_password_check))
-
-    # Academic and research integrity
-    mcp.tool()(wrap_tool(academic_integrity.research_citation_analysis, "fetch"))
-    mcp.tool()(wrap_tool(academic_integrity.research_retraction_check, "fetch"))
-    mcp.tool()(wrap_tool(academic_integrity.research_predatory_journal_check, "fetch"))
-    mcp.tool()(wrap_tool(hcs10_academic.research_grant_forensics))
-    mcp.tool()(wrap_tool(hcs10_academic.research_monoculture_detect))
-    mcp.tool()(wrap_tool(hcs10_academic.research_review_cartel, "fetch"))
-    mcp.tool()(wrap_tool(hcs10_academic.research_data_fabrication))
-    mcp.tool()(wrap_tool(hcs10_academic.research_institutional_decay, "fetch"))
-    mcp.tool()(wrap_tool(hcs10_academic.research_shell_funding, "fetch"))
-    mcp.tool()(wrap_tool(hcs10_academic.research_conference_arbitrage, "fetch"))
-    mcp.tool()(wrap_tool(hcs10_academic.research_preprint_manipulation, "fetch"))
-    mcp.tool()(wrap_tool(hcs_scorer.research_hcs_score, "analysis"))
-    mcp.tool()(wrap_tool(hcs_rubric_tool.research_hcs_rubric, "analysis"))
-
-    # Dark web and deception detection
-    mcp.tool()(wrap_tool(darkweb_early_warning.research_darkweb_early_warning, "search"))
-    mcp.tool()(wrap_tool(deception_job_scanner.research_deception_job_scan))
-
-    # Career and salary intelligence
-    mcp.tool()(wrap_tool(salary_synthesizer.research_salary_synthesize, "search"))
-    mcp.tool()(wrap_tool(career_intel_mod.research_map_research_to_product, "llm"))
-    mcp.tool()(wrap_tool(career_intel_mod.research_translate_academic_skills, "llm"))
-    mcp.tool()(wrap_tool(career_traj_mod.research_career_trajectory, "fetch"))
-    mcp.tool()(wrap_tool(career_traj_mod.research_market_velocity, "search"))
-
-    # Vulnerability and URL intelligence
-    mcp.tool()(wrap_tool(vuln_intel_mod.research_vuln_intel, "search"))
-    mcp.tool()(wrap_tool(urlhaus_lookup_mod.research_urlhaus_check, "fetch"))
-    mcp.tool()(wrap_tool(urlhaus_lookup_mod.research_urlhaus_search, "search"))
-
-    log.info("registered intelligence tools count=87")
+    """Register 80 intelligence tools."""
+    try:
+        from loom.tools.anomaly_detector import research_detect_anomalies, research_detect_text_anomalies
+        mcp.tool()(wrap_tool(research_detect_anomalies))
+        mcp.tool()(wrap_tool(research_detect_text_anomalies))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip anomaly_detector: %s", e)
+    try:
+        from loom.tools.breach_check import research_breach_check, research_password_check
+        mcp.tool()(wrap_tool(research_breach_check))
+        mcp.tool()(wrap_tool(research_password_check))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip breach_check: %s", e)
+    try:
+        from loom.tools.cert_analyzer import research_cert_analyze
+        mcp.tool()(wrap_tool(research_cert_analyze))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip cert_analyzer: %s", e)
+    try:
+        from loom.tools.change_monitor import research_change_monitor
+        mcp.tool()(wrap_tool(research_change_monitor))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip change_monitor: %s", e)
+    try:
+        from loom.tools.cipher_mirror_mod import research_cipher_mirror
+        mcp.tool()(wrap_tool(research_cipher_mirror))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip cipher_mirror_mod: %s", e)
+    try:
+        from loom.tools.company_intel import research_company_diligence, research_salary_intelligence
+        mcp.tool()(wrap_tool(research_company_diligence))
+        mcp.tool()(wrap_tool(research_salary_intelligence))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip company_intel: %s", e)
+    try:
+        from loom.tools.competitive_intel import research_competitive_intel
+        mcp.tool()(wrap_tool(research_competitive_intel))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip competitive_intel: %s", e)
+    try:
+        from loom.tools.crypto_trace import research_crypto_trace
+        mcp.tool()(wrap_tool(research_crypto_trace))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip crypto_trace: %s", e)
+    try:
+        from loom.tools.cve_lookup_mod import research_cve_lookup, research_cve_detail
+        mcp.tool()(wrap_tool(research_cve_lookup))
+        mcp.tool()(wrap_tool(research_cve_detail))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip cve_lookup_mod: %s", e)
+    try:
+        from loom.tools.dark_forum import research_dark_forum
+        mcp.tool()(wrap_tool(research_dark_forum))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip dark_forum: %s", e)
+    try:
+        from loom.tools.dark_recon import research_torbot, research_amass_enum, research_amass_intel
+        mcp.tool()(wrap_tool(research_torbot))
+        mcp.tool()(wrap_tool(research_amass_enum))
+        mcp.tool()(wrap_tool(research_amass_intel))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip dark_recon: %s", e)
+    try:
+        from loom.tools.darkweb_early_warning import research_darkweb_early_warning
+        mcp.tool()(wrap_tool(research_darkweb_early_warning))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip darkweb_early_warning: %s", e)
+    try:
+        from loom.tools.dead_content import research_dead_content
+        mcp.tool()(wrap_tool(research_dead_content))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip dead_content: %s", e)
+    try:
+        from loom.tools.domain_intel import research_whois, research_dns_lookup, research_nmap_scan
+        mcp.tool()(wrap_tool(research_whois))
+        mcp.tool()(wrap_tool(research_dns_lookup))
+        mcp.tool()(wrap_tool(research_nmap_scan))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip domain_intel: %s", e)
+    try:
+        from loom.tools.env_inspector import research_env_inspect, research_env_requirements
+        mcp.tool()(wrap_tool(research_env_inspect))
+        mcp.tool()(wrap_tool(research_env_requirements))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip env_inspector: %s", e)
+    try:
+        from loom.tools.forum_cortex_mod import research_forum_cortex
+        mcp.tool()(wrap_tool(research_forum_cortex))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip forum_cortex_mod: %s", e)
+    try:
+        from loom.tools.functor_map import research_functor_translate
+        mcp.tool()(wrap_tool(research_functor_translate))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip functor_map: %s", e)
+    try:
+        from loom.tools.ghost_weave_mod import research_ghost_weave
+        mcp.tool()(wrap_tool(research_ghost_weave))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip ghost_weave_mod: %s", e)
+    try:
+        from loom.tools.identity_resolve import research_identity_resolve
+        mcp.tool()(wrap_tool(research_identity_resolve))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip identity_resolve: %s", e)
+    try:
+        from loom.tools.infra_correlator import research_infra_correlator
+        mcp.tool()(wrap_tool(research_infra_correlator))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip infra_correlator: %s", e)
+    try:
+        from loom.tools.invisible_web import research_invisible_web
+        mcp.tool()(wrap_tool(research_invisible_web))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip invisible_web: %s", e)
+    try:
+        from loom.tools.ip_intel_mod import research_ip_reputation, research_ip_geolocation
+        mcp.tool()(wrap_tool(research_ip_reputation))
+        mcp.tool()(wrap_tool(research_ip_geolocation))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip ip_intel_mod: %s", e)
+    try:
+        from loom.tools.knowledge_injector import research_personalize_output, research_adapt_complexity
+        mcp.tool()(wrap_tool(research_personalize_output))
+        mcp.tool()(wrap_tool(research_adapt_complexity))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip knowledge_injector: %s", e)
+    try:
+        from loom.tools.leak_scan import research_leak_scan
+        mcp.tool()(wrap_tool(research_leak_scan))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip leak_scan: %s", e)
+    try:
+        from loom.tools.memetic_simulator import research_memetic_simulate
+        mcp.tool()(wrap_tool(research_memetic_simulate))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip memetic_simulator: %s", e)
+    try:
+        from loom.tools.nl_executor import research_do
+        mcp.tool()(wrap_tool(research_do))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip nl_executor: %s", e)
+    try:
+        from loom.tools.onion_discover import research_onion_discover
+        mcp.tool()(wrap_tool(research_onion_discover))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip onion_discover: %s", e)
+    try:
+        from loom.tools.onion_spectra_mod import research_onion_spectra
+        mcp.tool()(wrap_tool(research_onion_spectra))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip onion_spectra_mod: %s", e)
+    try:
+        from loom.tools.paradox_detector import research_detect_paradox, research_paradox_immunize
+        mcp.tool()(wrap_tool(research_detect_paradox))
+        mcp.tool()(wrap_tool(research_paradox_immunize))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip paradox_detector: %s", e)
+    try:
+        from loom.tools.parallel_executor import research_parallel_execute, research_parallel_plan_and_execute
+        mcp.tool()(wrap_tool(research_parallel_execute))
+        mcp.tool()(wrap_tool(research_parallel_plan_and_execute))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip parallel_executor: %s", e)
+    try:
+        from loom.tools.passive_recon import research_passive_recon
+        mcp.tool()(wrap_tool(research_passive_recon))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip passive_recon: %s", e)
+    try:
+        from loom.tools.realtime_monitor import research_realtime_monitor
+        mcp.tool()(wrap_tool(research_realtime_monitor))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip realtime_monitor: %s", e)
+    try:
+        from loom.tools.report_generator import research_generate_report
+        mcp.tool()(wrap_tool(research_generate_report))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip report_generator: %s", e)
+    try:
+        from loom.tools.resilience_predictor import research_predict_resilience
+        mcp.tool()(wrap_tool(research_predict_resilience))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip resilience_predictor: %s", e)
+    try:
+        from loom.tools.result_aggregator import research_aggregate_results, research_aggregate_texts
+        mcp.tool()(wrap_tool(research_aggregate_results))
+        mcp.tool()(wrap_tool(research_aggregate_texts))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip result_aggregator: %s", e)
+    try:
+        from loom.tools.rss_monitor import research_rss_fetch, research_rss_search
+        mcp.tool()(wrap_tool(research_rss_fetch))
+        mcp.tool()(wrap_tool(research_rss_search))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip rss_monitor: %s", e)
+    try:
+        from loom.tools.safety_predictor import research_predict_safety_update
+        mcp.tool()(wrap_tool(research_predict_safety_update))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip safety_predictor: %s", e)
+    try:
+        from loom.tools.security_headers import research_security_headers
+        mcp.tool()(wrap_tool(research_security_headers))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip security_headers: %s", e)
+    try:
+        from loom.tools.signal_detection import research_ghost_protocol, research_temporal_anomaly, research_sec_tracker
+        mcp.tool()(wrap_tool(research_ghost_protocol))
+        mcp.tool()(wrap_tool(research_temporal_anomaly))
+        mcp.tool()(wrap_tool(research_sec_tracker))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip signal_detection: %s", e)
+    try:
+        from loom.tools.social_graph import research_social_graph
+        mcp.tool()(wrap_tool(research_social_graph))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip social_graph: %s", e)
+    try:
+        from loom.tools.startup_validator import research_validate_startup, research_health_deep
+        mcp.tool()(wrap_tool(research_validate_startup))
+        mcp.tool()(wrap_tool(research_health_deep))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip startup_validator: %s", e)
+    try:
+        from loom.tools.strange_attractors import research_attractor_trap
+        mcp.tool()(wrap_tool(research_attractor_trap))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip strange_attractors: %s", e)
+    try:
+        from loom.tools.supply_chain import research_package_audit, research_model_integrity
+        mcp.tool()(wrap_tool(research_package_audit))
+        mcp.tool()(wrap_tool(research_model_integrity))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip supply_chain: %s", e)
+    try:
+        from loom.tools.supply_chain_intel import research_supply_chain_risk, research_patent_landscape, research_dependency_audit
+        mcp.tool()(wrap_tool(research_supply_chain_risk))
+        mcp.tool()(wrap_tool(research_patent_landscape))
+        mcp.tool()(wrap_tool(research_dependency_audit))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip supply_chain_intel: %s", e)
+    try:
+        from loom.tools.threat_intel import research_dark_market_monitor, research_ransomware_tracker, research_phishing_mapper, research_botnet_tracker, research_malware_intel, research_domain_reputation, research_ioc_enrich
+        mcp.tool()(wrap_tool(research_dark_market_monitor))
+        mcp.tool()(wrap_tool(research_ransomware_tracker))
+        mcp.tool()(wrap_tool(research_phishing_mapper))
+        mcp.tool()(wrap_tool(research_botnet_tracker))
+        mcp.tool()(wrap_tool(research_malware_intel))
+        mcp.tool()(wrap_tool(research_domain_reputation))
+        mcp.tool()(wrap_tool(research_ioc_enrich))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip threat_intel: %s", e)
+    try:
+        from loom.tools.threat_profile import research_threat_profile
+        mcp.tool()(wrap_tool(research_threat_profile))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip threat_profile: %s", e)
+    try:
+        from loom.tools.tor_mod import research_tor_status, research_tor_new_identity
+        mcp.tool()(wrap_tool(research_tor_status))
+        mcp.tool()(wrap_tool(research_tor_new_identity))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip tor_mod: %s", e)
+    try:
+        from loom.tools.trend_predictor import research_trend_predict
+        mcp.tool()(wrap_tool(research_trend_predict))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip trend_predictor: %s", e)
+    try:
+        from loom.tools.universal_orchestrator import research_orchestrate_smart
+        mcp.tool()(wrap_tool(research_orchestrate_smart))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip universal_orchestrator: %s", e)
+    try:
+        from loom.tools.urlhaus_lookup_mod import research_urlhaus_check, research_urlhaus_search
+        mcp.tool()(wrap_tool(research_urlhaus_check))
+        mcp.tool()(wrap_tool(research_urlhaus_search))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip urlhaus_lookup_mod: %s", e)
+    try:
+        from loom.tools.vuln_intel_mod import research_vuln_intel
+        mcp.tool()(wrap_tool(research_vuln_intel))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip vuln_intel_mod: %s", e)
+    log.info("registered intelligence tools count=80")

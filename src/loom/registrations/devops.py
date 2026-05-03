@@ -1,8 +1,4 @@
-"""DevOps, workflow, and orchestration tools — composition, execution planning, automation.
-
-Tools for workflow management, tool recommendation, experiment execution, and
-intelligent orchestration.
-"""
+"""Registration module for devops tools."""
 from __future__ import annotations
 
 import logging
@@ -16,152 +12,83 @@ log = logging.getLogger("loom.registrations.devops")
 
 
 def register_devops_tools(mcp: "FastMCP", wrap_tool) -> None:
-    """Register 70 DevOps and orchestration tools.
-
-    Includes workflow engines, composition optimizers, tool recommenders,
-    execution planning, and intelligent routing.
-    """
-    from loom.tools import (
-        workflow_engine,
-        workflow_templates,
-        workflow_expander,
-        execution_planner,
-        smart_router,
-        composition_optimizer,
-        capability_matrix,
-        semantic_index,
-        universal_orchestrator,
-        auto_params,
-        tool_recommender_v2,
-        param_sweep,
-        realtime_monitor,
-        research_scheduler,
-        auto_pipeline,
-        auto_experiment,
-        progress_tracker,
-        strategy_evolution,
-        strategy_cache,
-        strategy_ab_test,
-        strategy_feedback,
-        lifetime_oracle,
-        model_profiler,
-        auto_docs,
-        tool_catalog,
-        tool_tags,
-        tool_versioning,
-        tool_profiler,
-        change_monitor,
-        resilience_predictor,
-        predictive_ranker,
-        response_synthesizer,
-        result_aggregator,
-        resumption,
-        nl_executor,
-        parallel_executor,
-        chain_composer,
-        do_expert,
-        expert_engine,
-    )
-
-    # Workflow management
-    mcp.tool()(wrap_tool(workflow_engine.research_workflow_create))
-    mcp.tool()(wrap_tool(workflow_engine.research_workflow_run))
-    mcp.tool()(wrap_tool(workflow_engine.research_workflow_status))
-
-    # Workflow templates and generation
-    mcp.tool()(wrap_tool(workflow_templates.research_workflow_list))
-    mcp.tool()(wrap_tool(workflow_templates.research_workflow_get))
-    mcp.tool()(wrap_tool(workflow_expander.research_workflow_generate))
-    mcp.tool()(wrap_tool(workflow_expander.research_workflow_coverage))
-
-    # Execution planning
-    mcp.tool()(wrap_tool(execution_planner.research_plan_execution))
-    mcp.tool()(wrap_tool(execution_planner.research_executable_check))
-    mcp.tool()(wrap_tool(execution_planner.research_plan_refine))
-
-    # Smart routing and composition
-    mcp.tool()(wrap_tool(smart_router.research_route_query))
-    mcp.tool()(wrap_tool(smart_router.research_route_batch))
-    mcp.tool()(wrap_tool(smart_router.research_router_rebuild))
-    mcp.tool()(wrap_tool(composition_optimizer.research_optimize_workflow))
-    mcp.tool()(wrap_tool(composition_optimizer.research_parallel_plan))
-    mcp.tool()(wrap_tool(composition_optimizer.research_optimizer_rebuild))
-    mcp.tool()(wrap_tool(universal_orchestrator.research_orchestrate_smart))
-
-    # Capability and tool analysis
-    mcp.tool()(wrap_tool(capability_matrix.research_capability_matrix))
-    mcp.tool()(wrap_tool(capability_matrix.research_find_tools_by_capability))
-    mcp.tool()(wrap_tool(semantic_index.research_semantic_index))
-    mcp.tool()(wrap_tool(semantic_index.research_similarity_search))
-
-    # Parameter and tool management
-    mcp.tool()(wrap_tool(auto_params.research_auto_params))
-    mcp.tool()(wrap_tool(auto_params.research_inspect_tool))
-    mcp.tool()(wrap_tool(tool_recommender_v2.research_tool_recommend))
-    mcp.tool()(wrap_tool(tool_recommender_v2.research_tool_rank))
-    mcp.tool()(wrap_tool(param_sweep.research_param_sweep))
-
-    # Monitoring and tracking
-    mcp.tool()(wrap_tool(realtime_monitor.research_monitor_status))
-    mcp.tool()(wrap_tool(realtime_monitor.research_monitor_alerts))
-    mcp.tool()(wrap_tool(research_scheduler.research_schedule_task))
-    mcp.tool()(wrap_tool(research_scheduler.research_scheduled_list))
-
-    # Automation and pipelines
-    mcp.tool()(wrap_tool(auto_pipeline.research_auto_pipeline))
-    mcp.tool()(wrap_tool(auto_experiment.research_experiment_design))
-    mcp.tool()(wrap_tool(auto_experiment.research_run_experiment))
-    mcp.tool()(wrap_tool(progress_tracker.research_track_progress))
-
-    # Strategy management
-    mcp.tool()(wrap_tool(strategy_evolution.research_evolve_strategy))
-    mcp.tool()(wrap_tool(strategy_evolution.research_strategy_compare))
-    mcp.tool()(wrap_tool(strategy_cache.research_cache_strategy))
-    mcp.tool()(wrap_tool(strategy_ab_test.research_ab_test_design))
-    mcp.tool()(wrap_tool(strategy_ab_test.research_ab_test_analyze))
-    mcp.tool()(wrap_tool(strategy_feedback.research_collect_feedback))
-    mcp.tool()(wrap_tool(strategy_feedback.research_apply_feedback))
-
-    # Performance and prediction
-    mcp.tool()(wrap_tool(lifetime_oracle.research_predict_lifetime))
-    mcp.tool()(wrap_tool(lifetime_oracle.research_estimate_value))
-    mcp.tool()(wrap_tool(model_profiler.research_model_profile))
-    mcp.tool()(wrap_tool(model_profiler.research_profile_benchmark))
-    mcp.tool()(wrap_tool(resilience_predictor.research_predict_resilience))
-    mcp.tool()(wrap_tool(predictive_ranker.research_rank_items))
-
-    # Tool and documentation management
-    mcp.tool()(wrap_tool(auto_docs.research_generate_docs))
-    mcp.tool()(wrap_tool(auto_docs.research_docs_coverage))
-    mcp.tool()(wrap_tool(tool_catalog.research_tool_catalog))
-    mcp.tool()(wrap_tool(tool_tags.research_tag_tool))
-    mcp.tool()(wrap_tool(tool_versioning.research_version_check))
-    mcp.tool()(wrap_tool(tool_profiler.research_profile_tool))
-    mcp.tool()(wrap_tool(tool_profiler.research_profile_hotspots))
-
-    # Change and trend tracking
-    mcp.tool()(wrap_tool(change_monitor.research_change_monitor, "fetch"))
-
-    # Response synthesis and aggregation
-    mcp.tool()(wrap_tool(response_synthesizer.research_synthesize_responses))
-    mcp.tool()(wrap_tool(result_aggregator.research_aggregate_results))
-    mcp.tool()(wrap_tool(resumption.research_resume_session))
-    mcp.tool()(wrap_tool(resumption.research_checkpoint_save))
-
-    # Execution tools
-    mcp.tool()(wrap_tool(nl_executor.research_execute_nl))
-    mcp.tool()(wrap_tool(parallel_executor.research_execute_parallel))
-    mcp.tool()(wrap_tool(chain_composer.research_chain_define))
-    mcp.tool()(wrap_tool(chain_composer.research_chain_list))
-    mcp.tool()(wrap_tool(chain_composer.research_chain_describe))
-
-    # Expert and smart routing
-    mcp.tool()(wrap_tool(do_expert.research_do_expert, "orchestration"))
-    mcp.tool()(wrap_tool(expert_engine.research_expert))
-
-    # Optional DevOps tools
-    with suppress(ImportError):
-        mcp.tool()(_optional_tools["cicd"])
-        mcp.tool()(_optional_tools["mcp_security"])
-
-    log.info("registered devops tools count=70")
+    """Register 26 devops tools."""
+    try:
+        from loom.tools.auto_params import research_auto_params, research_inspect_tool
+        mcp.tool()(wrap_tool(research_auto_params))
+        mcp.tool()(wrap_tool(research_inspect_tool))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip auto_params: %s", e)
+    try:
+        from loom.tools.capability_matrix import research_capability_matrix, research_find_tools_by_capability
+        mcp.tool()(wrap_tool(research_capability_matrix))
+        mcp.tool()(wrap_tool(research_find_tools_by_capability))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip capability_matrix: %s", e)
+    try:
+        from loom.tools.composition_optimizer import research_optimize_workflow, research_parallel_plan, research_optimizer_rebuild
+        mcp.tool()(wrap_tool(research_optimize_workflow))
+        mcp.tool()(wrap_tool(research_parallel_plan))
+        mcp.tool()(wrap_tool(research_optimizer_rebuild))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip composition_optimizer: %s", e)
+    try:
+        from loom.tools.do_expert import research_do_expert
+        mcp.tool()(wrap_tool(research_do_expert))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip do_expert: %s", e)
+    try:
+        from loom.tools.execution_planner import research_plan_execution, research_plan_validate
+        mcp.tool()(wrap_tool(research_plan_execution))
+        mcp.tool()(wrap_tool(research_plan_validate))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip execution_planner: %s", e)
+    try:
+        from loom.tools.expert_engine import research_expert
+        mcp.tool()(wrap_tool(research_expert))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip expert_engine: %s", e)
+    try:
+        from loom.tools.full_pipeline import research_full_pipeline
+        mcp.tool()(wrap_tool(research_full_pipeline))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip full_pipeline: %s", e)
+    try:
+        from loom.tools.semantic_index import research_semantic_search, research_semantic_rebuild
+        mcp.tool()(wrap_tool(research_semantic_search))
+        mcp.tool()(wrap_tool(research_semantic_rebuild))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip semantic_index: %s", e)
+    try:
+        from loom.tools.smart_router import research_route_query, research_route_batch, research_router_rebuild
+        mcp.tool()(wrap_tool(research_route_query))
+        mcp.tool()(wrap_tool(research_route_batch))
+        mcp.tool()(wrap_tool(research_router_rebuild))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip smart_router: %s", e)
+    try:
+        from loom.tools.tool_recommender_v2 import research_recommend_next, research_suggest_workflow
+        mcp.tool()(wrap_tool(research_recommend_next))
+        mcp.tool()(wrap_tool(research_suggest_workflow))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip tool_recommender_v2: %s", e)
+    try:
+        from loom.tools.workflow_engine import research_workflow_create, research_workflow_run, research_workflow_status
+        mcp.tool()(wrap_tool(research_workflow_create))
+        mcp.tool()(wrap_tool(research_workflow_run))
+        mcp.tool()(wrap_tool(research_workflow_status))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip workflow_engine: %s", e)
+    try:
+        from loom.tools.workflow_expander import research_workflow_generate, research_workflow_coverage
+        mcp.tool()(wrap_tool(research_workflow_generate))
+        mcp.tool()(wrap_tool(research_workflow_coverage))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip workflow_expander: %s", e)
+    try:
+        from loom.tools.workflow_templates import research_workflow_list, research_workflow_get
+        mcp.tool()(wrap_tool(research_workflow_list))
+        mcp.tool()(wrap_tool(research_workflow_get))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip workflow_templates: %s", e)
+    log.info("registered devops tools count=26")
