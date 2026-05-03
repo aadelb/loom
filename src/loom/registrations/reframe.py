@@ -38,7 +38,7 @@ def register_reframe_tools(mcp: "FastMCP", wrap_tool) -> None:
     )
 
     # Core reframing strategies
-    mcp.tool()(wrap_tool(prompt_reframe.research_reframe_prompt))
+    mcp.tool()(wrap_tool(prompt_reframe.research_prompt_reframe))
     mcp.tool()(wrap_tool(prompt_analyzer.research_analyze_prompt))
     mcp.tool()(wrap_tool(prompt_analyzer.research_prompt_suggest_variations))
 

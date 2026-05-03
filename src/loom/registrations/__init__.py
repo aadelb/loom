@@ -26,11 +26,20 @@ def register_all_tools(mcp: "FastMCP", wrap_tool) -> None:
     from loom.registrations.research import register_research_tools
     from loom.registrations.devops import register_devops_tools
 
-    register_core_tools(mcp, wrap_tool)
-    register_llm_tools(mcp, wrap_tool)
-    register_reframe_tools(mcp, wrap_tool)
-    register_adversarial_tools(mcp, wrap_tool)
-    register_infrastructure_tools(mcp, wrap_tool)
-    register_intelligence_tools(mcp, wrap_tool)
-    register_research_tools(mcp, wrap_tool)
-    register_devops_tools(mcp, wrap_tool)
+    import logging
+    _log = logging.getLogger("loom.registrations")
+    _categories = [
+        ("core", register_core_tools),
+        ("llm", register_llm_tools),
+        ("reframe", register_reframe_tools),
+        ("adversarial", register_adversarial_tools),
+        ("infrastructure", register_infrastructure_tools),
+        ("intelligence", register_intelligence_tools),
+        ("research", register_research_tools),
+        ("devops", register_devops_tools),
+    ]
+    for name, register_fn in _categories:
+        try:
+            register_fn(mcp, wrap_tool)
+        except Exception as e:
+            _log.error("registration_failed category=%s error=%s", name, str(e)[:200])
