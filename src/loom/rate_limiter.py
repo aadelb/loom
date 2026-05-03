@@ -121,7 +121,7 @@ class RateLimiter:
         if self._db_path:
             _init_persistence_db(self._db_path)
 
-    async def check(self, key: str = "global") -> bool:
+    async def check(self, category: str = "global", key: str = "global") -> bool:
         """Return True if the call is within limits, False otherwise."""
         async with self._lock:
             now = time.time()
@@ -129,7 +129,9 @@ class RateLimiter:
 
             # Load from DB if persistence is enabled
             if self._db_path:
-                db_timestamps = _load_from_db(self._db_path, "global", key, self.window_seconds)
+                db_timestamps = await asyncio.to_thread(
+                    _load_from_db, self._db_path, category, key, self.window_seconds
+                )
                 window = [t for t in db_timestamps if t > cutoff]
             else:
                 window = [t for t in self._calls[key] if t > cutoff]
@@ -143,8 +145,12 @@ class RateLimiter:
 
             # Save to DB if persistence is enabled
             if self._db_path:
-                _save_to_db(self._db_path, "global", key, now)
-                _cleanup_old_entries(self._db_path, self.window_seconds)
+                await asyncio.to_thread(
+                    _save_to_db, self._db_path, category, key, now
+                )
+                await asyncio.to_thread(
+                    _cleanup_old_entries, self._db_path, self.window_seconds
+                )
 
             # Prune empty keys to prevent unbounded memory growth
             empty_keys = [k for k, v in self._calls.items() if not v]
@@ -153,14 +159,16 @@ class RateLimiter:
 
             return True
 
-    async def remaining(self, key: str = "global") -> int:
+    async def remaining(self, category: str = "global", key: str = "global") -> int:
         """Return the number of calls remaining in the current window."""
         async with self._lock:
             now = time.time()
             cutoff = now - self.window_seconds
 
             if self._db_path:
-                db_timestamps = _load_from_db(self._db_path, "global", key, self.window_seconds)
+                db_timestamps = await asyncio.to_thread(
+                    _load_from_db, self._db_path, category, key, self.window_seconds
+                )
                 window = [t for t in db_timestamps if t > cutoff]
             else:
                 window = [t for t in self._calls[key] if t > cutoff]
@@ -199,7 +207,7 @@ def rate_limited(category: str) -> Callable[..., Any]:
         @functools.wraps(fn)
         async def wrapper(*args: Any, **kwargs: Any) -> Any:
             limiter = _get_limiter(category)
-            if not await limiter.check():
+            if not await limiter.check(category=category):
                 logger.warning(
                     "rate_limit_exceeded category=%s function=%s",
                     category,
@@ -220,7 +228,7 @@ def rate_limited(category: str) -> Callable[..., Any]:
 async def check_rate_limit(category: str) -> dict[str, Any] | None:
     """Check rate limit for a category. Returns error dict if exceeded, None if OK."""
     limiter = _get_limiter(category)
-    if not await limiter.check():
+    if not await limiter.check(category=category):
         logger.warning("rate_limit_exceeded category=%s", category)
         return {
             "error": "rate_limit_exceeded",
@@ -242,14 +250,14 @@ class SyncRateLimiter:
         if self._db_path:
             _init_persistence_db(self._db_path)
 
-    def check(self, key: str = "global") -> bool:
+    def check(self, category: str = "global", key: str = "global") -> bool:
         with self._lock:
             now = time.time()
             cutoff = now - self.window_seconds
 
             # Load from DB if persistence is enabled
             if self._db_path:
-                db_timestamps = _load_from_db(self._db_path, "sync", key, self.window_seconds)
+                db_timestamps = _load_from_db(self._db_path, category, key, self.window_seconds)
                 window = [t for t in db_timestamps if t > cutoff]
             else:
                 window = [t for t in self._calls[key] if t > cutoff]
@@ -263,7 +271,7 @@ class SyncRateLimiter:
 
             # Save to DB if persistence is enabled
             if self._db_path:
-                _save_to_db(self._db_path, "sync", key, now)
+                _save_to_db(self._db_path, category, key, now)
                 _cleanup_old_entries(self._db_path, self.window_seconds)
 
             empty_keys = [k for k, v in self._calls.items() if not v]
@@ -298,7 +306,7 @@ def sync_rate_limited(category: str) -> Callable[..., Any]:
         @functools.wraps(fn)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             limiter = _get_sync_limiter(category)
-            if not limiter.check():
+            if not limiter.check(category=category):
                 logger.warning(
                     "rate_limit_exceeded category=%s function=%s",
                     category,
