@@ -202,6 +202,7 @@ class DaisyChainDecomposer:
         import time
 
         start_time = time.time()
+        sub_queries: list[str] = []
         sub_responses: dict[str, str] = {}
         model_assignments: dict[str, str] = {}
         error: str | None = None
