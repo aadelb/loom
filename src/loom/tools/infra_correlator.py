@@ -137,6 +137,9 @@ async def _get_http_fingerprint(client: httpx.AsyncClient, domain: str) -> dict[
     }
 
 
+_DOMAIN_RE = re.compile(r"^[a-z0-9]([a-z0-9\-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9\-]*[a-z0-9])?)*\.[a-z]{2,}$")
+
+
 async def research_infra_correlator(
     domain: str,
     check_favicon: bool = True,
@@ -161,6 +164,9 @@ async def research_infra_correlator(
         Dict with ``domain``, ``favicon_hash``, ``analytics_ids``,
         ``cert_sans``, ``http_fingerprint``, and ``correlation_signals``.
     """
+    domain = domain.strip().lower()
+    if not domain or not _DOMAIN_RE.match(domain) or len(domain) > 253:
+        return {"error": "Invalid domain format", "domain": domain}
 
     async def _run() -> dict[str, Any]:
         async with httpx.AsyncClient(

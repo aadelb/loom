@@ -15,6 +15,12 @@ from typing import Any
 logger = logging.getLogger("loom.tools.company_intel")
 
 
+def _sanitize_company_name(name: str) -> str:
+    """Strip prompt injection characters from company name input."""
+    sanitized = re.sub(r'["\'\{\}\[\]\\<>]', '', name)
+    return sanitized[:200].strip()
+
+
 async def research_company_diligence(company_name: str) -> dict[str, Any]:
     """Deep company analysis for job seekers.
 
@@ -49,7 +55,7 @@ async def research_company_diligence(company_name: str) -> dict[str, Any]:
             "error": "company_name must be 1-200 characters",
         }
 
-    company_name = company_name.strip()
+    company_name = _sanitize_company_name(company_name)
     logger.info("company_diligence query=%s", company_name)
 
     result: dict[str, Any] = {
