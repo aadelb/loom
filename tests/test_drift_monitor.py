@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import asyncio
 import json
-import os
 from pathlib import Path
 from typing import Any
 
@@ -30,8 +28,8 @@ class TestDriftMonitorBaseline:
         async def dummy_callback(prompt: str) -> str:
             return f"Response to: {prompt[:30]}..."
 
-        baseline = asyncio.run(
-            monitor.run_baseline(prompts, dummy_callback, "test_model")
+        baseline = await monitor.run_baseline(
+            prompts, dummy_callback, "test_model"
         )
 
         assert baseline["model_name"] == "test_model"
@@ -50,7 +48,7 @@ class TestDriftMonitorBaseline:
         async def dummy_callback(prompt: str) -> str:
             return "Test response"
 
-        asyncio.run(monitor.run_baseline(prompts, dummy_callback, "test_model"))
+        await monitor.run_baseline(prompts, dummy_callback, "test_model")
 
         # Check that files were created
         model_dir = tmp_path / "test_model"
@@ -78,10 +76,8 @@ class TestDriftMonitorBaseline:
         async def callback_with_refusal(prompt: str) -> str:
             return "I cannot help with this request."
 
-        baseline = asyncio.run(
-            monitor.run_baseline(
-                ["Malicious prompt"], callback_with_refusal, "model_with_refusals"
-            )
+        baseline = await monitor.run_baseline(
+            ["Malicious prompt"], callback_with_refusal, "model_with_refusals"
         )
 
         results = baseline["results"]
@@ -97,8 +93,8 @@ class TestDriftMonitorBaseline:
         async def dummy_callback(prompt: str) -> str:
             return "A normal response to the prompt"
 
-        baseline = asyncio.run(
-            monitor.run_baseline(["Normal prompt"], dummy_callback, "model")
+        baseline = await monitor.run_baseline(
+            ["Normal prompt"], dummy_callback, "model"
         )
 
         # HCS score should be in results
@@ -120,10 +116,8 @@ class TestDriftMonitorCheck:
             return "Test"
 
         with pytest.raises(ValueError, match="No baseline found"):
-            asyncio.run(
-                monitor.run_check(
-                    ["Test prompt"], dummy_callback, "nonexistent_model"
-                )
+            await monitor.run_check(
+                ["Test prompt"], dummy_callback, "nonexistent_model"
             )
 
     async def test_check_compares_against_baseline(self, tmp_path: Path) -> None:
@@ -135,13 +129,13 @@ class TestDriftMonitorCheck:
             return "Full response to: " + prompt
 
         # Create baseline
-        baseline = asyncio.run(
-            monitor.run_baseline(prompts, compliant_callback, "test_model")
+        baseline = await monitor.run_baseline(
+            prompts, compliant_callback, "test_model"
         )
 
         # Run check (same behavior)
-        check = asyncio.run(
-            monitor.run_check(prompts, compliant_callback, "test_model")
+        check = await monitor.run_check(
+            prompts, compliant_callback, "test_model"
         )
 
         assert check["model_name"] == "test_model"
@@ -157,12 +151,12 @@ class TestDriftMonitorCheck:
         async def consistent_callback(prompt: str) -> str:
             return "Consistent answer"
 
-        baseline = asyncio.run(
-            monitor.run_baseline(prompts, consistent_callback, "model")
+        baseline = await monitor.run_baseline(
+            prompts, consistent_callback, "model"
         )
 
-        check = asyncio.run(
-            monitor.run_check(prompts, consistent_callback, "model")
+        check = await monitor.run_check(
+            prompts, consistent_callback, "model"
         )
 
         # Refusal rates should match (both 0% since responses aren't refusals)
@@ -184,12 +178,12 @@ class TestDriftMonitorCheck:
                 return "I cannot help with this."
             return "Normal response"
 
-        baseline = asyncio.run(
-            monitor.run_baseline(prompts, baseline_callback, "model")
+        baseline = await monitor.run_baseline(
+            prompts, baseline_callback, "model"
         )
 
-        check = asyncio.run(
-            monitor.run_check(prompts, check_callback, "model")
+        check = await monitor.run_check(
+            prompts, check_callback, "model"
         )
 
         # One refusal out of 5 = 20% refusal rate
@@ -212,12 +206,12 @@ class TestDriftMonitorCheck:
                 return "I cannot help with that."
             return "Helpful response"
 
-        baseline = asyncio.run(
-            monitor.run_baseline(prompts, compliant_baseline, "model")
+        baseline = await monitor.run_baseline(
+            prompts, compliant_baseline, "model"
         )
 
-        check = asyncio.run(
-            monitor.run_check(prompts, mostly_refusing_check, "model")
+        check = await monitor.run_check(
+            prompts, mostly_refusing_check, "model"
         )
 
         # Should trigger critical alert due to large change
@@ -235,12 +229,12 @@ class TestDriftMonitorCheck:
         async def check_unsafe(prompt: str) -> str:
             return "Unsafe or problematic response"
 
-        baseline = asyncio.run(
-            monitor.run_baseline(prompts, baseline_safe, "model")
+        baseline = await monitor.run_baseline(
+            prompts, baseline_safe, "model"
         )
 
-        check = asyncio.run(
-            monitor.run_check(prompts, check_unsafe, "model")
+        check = await monitor.run_check(
+            prompts, check_unsafe, "model"
         )
 
         # HCS drift should be detected (even if small)
@@ -401,8 +395,8 @@ class TestDriftMonitorListBaselines:
 
         prompts = ["Test"]
 
-        asyncio.run(monitor.run_baseline(prompts, callback, "model_a"))
-        asyncio.run(monitor.run_baseline(prompts, callback, "model_b"))
+        await monitor.run_baseline(prompts, callback, "model_a")
+        await monitor.run_baseline(prompts, callback, "model_b")
 
         result = monitor.list_baselines()
 
@@ -532,8 +526,8 @@ class TestDriftMonitorStorage:
             return "Response"
 
         # Save baseline
-        baseline = asyncio.run(
-            monitor.run_baseline(["Test prompt"], callback, "model")
+        baseline = await monitor.run_baseline(
+            ["Test prompt"], callback, "model"
         )
 
         # Load it back
@@ -550,10 +544,10 @@ class TestDriftMonitorStorage:
         async def callback(prompt: str) -> str:
             return "Response"
 
-        asyncio.run(monitor.run_baseline(["P1"], callback, "model"))
+        await monitor.run_baseline(["P1"], callback, "model")
 
         # Append second baseline
-        asyncio.run(monitor.run_baseline(["P2"], callback, "model"))
+        await monitor.run_baseline(["P2"], callback, "model")
 
         # Latest should be returned
         loaded = monitor._load_baseline("model")
@@ -574,32 +568,36 @@ class TestDriftMonitorAsync:
 
     async def test_baseline_with_async_callback(self, tmp_path: Path) -> None:
         """Async callbacks work correctly."""
+        import asyncio
+
         monitor = DriftMonitor(storage_path=str(tmp_path))
 
         async def async_callback(prompt: str) -> str:
             await asyncio.sleep(0.01)
             return f"Response to {prompt}"
 
-        baseline = asyncio.run(
-            monitor.run_baseline(["Test"], async_callback, "model")
+        baseline = await monitor.run_baseline(
+            ["Test"], async_callback, "model"
         )
 
         assert baseline["prompt_count"] == 1
 
     async def test_check_with_async_callback(self, tmp_path: Path) -> None:
         """Async callbacks work in check mode."""
+        import asyncio
+
         monitor = DriftMonitor(storage_path=str(tmp_path))
 
         async def async_callback(prompt: str) -> str:
             await asyncio.sleep(0.01)
-            return f"Response"
+            return "Response"
 
         # Create baseline first
-        asyncio.run(monitor.run_baseline(["Test"], async_callback, "model"))
+        await monitor.run_baseline(["Test"], async_callback, "model")
 
         # Then check
-        check = asyncio.run(
-            monitor.run_check(["Test"], async_callback, "model")
+        check = await monitor.run_check(
+            ["Test"], async_callback, "model"
         )
 
         assert check["alert_level"] is not None

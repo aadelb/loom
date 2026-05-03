@@ -32,7 +32,7 @@ class TestCamoufox:
                 assert result["error"] == "Camoufox not installed: pip install camoufox"
                 assert result["url"] == "https://example.com"
 
-            asyncio.run(run_test())
+            await run_test()
 
     async def test_camoufox_returns_expected_fields(self) -> None:
         """Camoufox result includes url, title, text, tool keys."""
@@ -53,7 +53,7 @@ class TestCamoufox:
                 assert result["text"] == "Example content"
                 assert result["tool"] == "camoufox"
 
-            asyncio.run(run_test())
+            await run_test()
 
 
 class TestBotasaurus:
@@ -74,7 +74,7 @@ class TestBotasaurus:
                 call_kwargs = mock_fetch.call_args.kwargs
                 assert call_kwargs["mode"] == "dynamic"
 
-            asyncio.run(run_test())
+            await run_test()
 
     async def test_botasaurus_returns_tool_field(self) -> None:
         """botasaurus result has tool='botasaurus'."""
@@ -88,4 +88,4 @@ class TestBotasaurus:
                 result = await research_botasaurus("https://example.com")
                 assert result["tool"] == "botasaurus"
 
-            asyncio.run(run_test())
+            await run_test()

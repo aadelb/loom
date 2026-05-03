@@ -161,24 +161,24 @@ class TestRateLimiter:
     async def test_allows_within_limit(self) -> None:
         limiter = RateLimiter(max_calls=3, window_seconds=60)
         for _ in range(3):
-            assert asyncio.run(limiter.check("test"))
+            assert await limiter.check("test")
 
     async def test_blocks_over_limit(self) -> None:
         limiter = RateLimiter(max_calls=2, window_seconds=60)
-        assert asyncio.run(limiter.check("test"))
-        assert asyncio.run(limiter.check("test"))
-        assert not asyncio.run(limiter.check("test"))
+        assert await limiter.check("test")
+        assert await limiter.check("test")
+        assert not await limiter.check("test")
 
     async def test_separate_keys(self) -> None:
         limiter = RateLimiter(max_calls=1, window_seconds=60)
-        assert asyncio.run(limiter.check("a"))
-        assert asyncio.run(limiter.check("b"))
-        assert not asyncio.run(limiter.check("a"))
+        assert await limiter.check("a")
+        assert await limiter.check("b")
+        assert not await limiter.check("a")
 
     async def test_remaining(self) -> None:
         limiter = RateLimiter(max_calls=5, window_seconds=60)
         assert limiter.remaining("x") == 5
-        asyncio.run(limiter.check("x"))
+        await limiter.check("x")
         assert limiter.remaining("x") == 4
 
     async def test_reset_all(self) -> None:
@@ -282,7 +282,7 @@ class TestHealthCheck:
     async def test_health_check_returns_status(self) -> None:
         from loom.server import research_health_check
 
-        result = asyncio.run(await research_health_check())
+        result = await research_health_check()
         assert result["status"] == "healthy"
         assert "timestamp" in result
         assert "uptime_seconds" in result
@@ -305,6 +305,6 @@ class TestDeepWarnings:
                 from loom.tools.deep import research_deep
                 return await research_deep("test query", depth=1, expand_queries=False)
 
-        result = asyncio.run(run())
+        result = await run()
         assert "warnings" in result
         assert isinstance(result["warnings"], list)

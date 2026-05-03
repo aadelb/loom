@@ -63,7 +63,7 @@ class TestGracefulShutdown:
 
             from loom.server import _shutdown
 
-            asyncio.run(_shutdown())
+            await _shutdown()
 
             mock_cleanup.assert_called_once()
 
@@ -75,7 +75,7 @@ class TestGracefulShutdown:
 
             from loom.server import _shutdown
 
-            asyncio.run(_shutdown())
+            await _shutdown()
 
             # Verify close was attempted on the mock client
             mock_client.close.assert_called()
@@ -94,7 +94,7 @@ class TestGracefulShutdown:
 
             # Should not raise even if close_all_providers is not found
             try:
-                asyncio.run(_shutdown())
+                await _shutdown()
             except Exception:
                 pass  # Expected in mock scenario
 

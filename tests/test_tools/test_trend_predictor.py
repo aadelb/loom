@@ -58,7 +58,7 @@ class TestArxivPublicationRate:
             assert result["papers_per_month"]["2026-04"] == 2
             assert result["papers_per_month"]["2026-03"] == 1
 
-        asyncio.run(test())
+        await test()
 
     async def test_empty_arxiv_response(self) -> None:
         """Handle empty arXiv response gracefully."""
@@ -78,7 +78,7 @@ class TestArxivPublicationRate:
             assert result["total_papers"] == 0
             assert result["papers_per_month"] == {}
 
-        asyncio.run(test())
+        await test()
 
 
 class TestSemanticScholarCitations:
@@ -122,7 +122,7 @@ class TestSemanticScholarCitations:
             assert 2024 in result["citations_per_year"]
             assert 2025 in result["citations_per_year"]
 
-        asyncio.run(test())
+        await test()
 
     async def test_empty_scholar_response(self) -> None:
         """Handle empty Semantic Scholar response."""
@@ -142,7 +142,7 @@ class TestSemanticScholarCitations:
             assert result["max_citations"] == 0
             assert result["citations_per_year"] == {}
 
-        asyncio.run(test())
+        await test()
 
 
 class TestGithubRepoMomentum:
@@ -182,7 +182,7 @@ class TestGithubRepoMomentum:
             assert result["avg_stars"] == 4000.0
             assert result["avg_forks"] == 400.0
 
-        asyncio.run(test())
+        await test()
 
     async def test_empty_github_response(self) -> None:
         """Handle empty GitHub response."""
@@ -202,7 +202,7 @@ class TestGithubRepoMomentum:
             assert result["repos"] == 0
             assert result["total_stars"] == 0
 
-        asyncio.run(test())
+        await test()
 
 
 class TestHackernewsDiscussion:
@@ -241,7 +241,7 @@ class TestHackernewsDiscussion:
             assert result["avg_points"] == 175.0
             assert result["avg_comments"] == 40.0
 
-        asyncio.run(test())
+        await test()
 
 
 class TestComputeTrendDirection:
