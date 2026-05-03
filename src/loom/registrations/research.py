@@ -143,6 +143,18 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip benchmark_suite: %s", e)
         record_failure("research", "benchmark_suite", str(e))
     try:
+        from loom.tools.benchmark_leaderboard import research_benchmark_models, research_leaderboard_update, research_leaderboard_view
+        mcp.tool()(wrap_tool(research_benchmark_models))
+        record_success("research", "research_benchmark_models")
+        mcp.tool()(wrap_tool(research_leaderboard_update))
+        record_success("research", "research_leaderboard_update")
+        mcp.tool()(wrap_tool(research_leaderboard_view))
+        record_success("research", "research_leaderboard_view")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip benchmark_leaderboard: %s", e)
+        record_failure("research", "benchmark_leaderboard", str(e))
+
+    try:
         from loom.tools.bias_lens import research_bias_lens
         mcp.tool()(wrap_tool(research_bias_lens))
         record_success("research", "research_bias_lens")
@@ -1537,4 +1549,74 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip zendriver_backend: %s", e)
         record_failure("research", "zendriver_backend", str(e))
-    log.info("registered research tools count=369")
+        # ── CRITICAL MISSING TOOLS (ProjectDiscovery suite) ──
+    try:
+        from loom.tools.projectdiscovery import research_nuclei_scan, research_katana_crawl, research_subfinder, research_httpx_probe
+        mcp.tool()(wrap_tool(research_nuclei_scan))
+        record_success("research", "research_nuclei_scan")
+        mcp.tool()(wrap_tool(research_katana_crawl))
+        record_success("research", "research_katana_crawl")
+        mcp.tool()(wrap_tool(research_subfinder))
+        record_success("research", "research_subfinder")
+        mcp.tool()(wrap_tool(research_httpx_probe))
+        record_success("research", "research_httpx_probe")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip projectdiscovery: %s", e)
+        record_failure("research", "projectdiscovery", str(e))
+    try:
+        from loom.tools.marketplace import research_marketplace_list, research_marketplace_publish, research_marketplace_download
+        mcp.tool()(wrap_tool(research_marketplace_list))
+        record_success("research", "research_marketplace_list")
+        mcp.tool()(wrap_tool(research_marketplace_publish))
+        record_success("research", "research_marketplace_publish")
+        mcp.tool()(wrap_tool(research_marketplace_download))
+        record_success("research", "research_marketplace_download")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip marketplace: %s", e)
+        record_failure("research", "marketplace", str(e))
+    try:
+        from loom.tools.credential_vault import research_vault_store, research_vault_retrieve, research_vault_list
+        mcp.tool()(wrap_tool(research_vault_store))
+        record_success("research", "research_vault_store")
+        mcp.tool()(wrap_tool(research_vault_retrieve))
+        record_success("research", "research_vault_retrieve")
+        mcp.tool()(wrap_tool(research_vault_list))
+        record_success("research", "research_vault_list")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip credential_vault: %s", e)
+        record_failure("research", "credential_vault", str(e))
+    try:
+        from loom.tools.research_scheduler import research_schedule_create, research_schedule_list, research_schedule_check
+        mcp.tool()(wrap_tool(research_schedule_create))
+        record_success("research", "research_schedule_create")
+        mcp.tool()(wrap_tool(research_schedule_list))
+        record_success("research", "research_schedule_list")
+        mcp.tool()(wrap_tool(research_schedule_check))
+        record_success("research", "research_schedule_check")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip research_scheduler: %s", e)
+        record_failure("research", "research_scheduler", str(e))
+    try:
+        from loom.tools.job_research import research_job_search, research_job_market
+        mcp.tool()(wrap_tool(research_job_search))
+        record_success("research", "research_job_search")
+        mcp.tool()(wrap_tool(research_job_market))
+        record_success("research", "research_job_market")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip job_research: %s", e)
+        record_failure("research", "job_research", str(e))
+    try:
+        from loom.tools.multi_llm import research_ask_all_llms
+        mcp.tool()(wrap_tool(research_ask_all_llms))
+        record_success("research", "research_ask_all_llms")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip multi_llm: %s", e)
+        record_failure("research", "multi_llm", str(e))
+    try:
+        from loom.tools.ask_all_models import research_ask_all_models
+        mcp.tool()(wrap_tool(research_ask_all_models))
+        record_success("research", "research_ask_all_models")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip ask_all_models: %s", e)
+        record_failure("research", "ask_all_models", str(e))
+    log.info("registered research tools count=383")

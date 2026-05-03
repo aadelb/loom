@@ -24,6 +24,7 @@ def register_all_tools(mcp: "FastMCP", wrap_tool) -> None:
     from loom.registrations.infrastructure import register_infrastructure_tools
     from loom.registrations.intelligence import register_intelligence_tools
     from loom.registrations.research import register_research_tools
+    from loom.registrations.remaining import register_remaining_tools
     from loom.registrations.devops import register_devops_tools
 
     import logging
@@ -36,6 +37,7 @@ def register_all_tools(mcp: "FastMCP", wrap_tool) -> None:
         ("infrastructure", register_infrastructure_tools),
         ("intelligence", register_intelligence_tools),
         ("research", register_research_tools),
+        ("remaining", register_remaining_tools),
         ("devops", register_devops_tools),
     ]
     for name, register_fn in _categories:
