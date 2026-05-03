@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
+import secrets
 
 from mcp.server.auth.provider import AccessToken
 
@@ -32,7 +33,7 @@ class ApiKeyVerifier:
         """
         # If API key is configured, verify token against it
         if self.api_key:
-            if token == self.api_key:
+            if secrets.compare_digest(token, self.api_key):
                 logger.info("auth_success client_id=api_key")
                 return AccessToken(
                     token=token,
