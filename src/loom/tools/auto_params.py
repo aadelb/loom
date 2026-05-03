@@ -8,6 +8,8 @@ import logging
 import re
 from typing import Any
 
+from loom.validators import validate_url, UrlSafetyError
+
 logger = logging.getLogger("loom.tools.auto_params")
 
 # Model name patterns for detection
@@ -24,10 +26,21 @@ _LANGUAGE_CODES = {
 
 
 def _extract_urls(text: str) -> list[str]:
-    """Extract HTTP(S) URLs from text."""
+    """Extract HTTP(S) URLs from text, filtered through SSRF validation."""
     pattern = r"https?://[^\s\)]+"
     matches = re.findall(pattern, text)
-    return [url.rstrip(".,;") for url in matches]
+    urls = [url.rstrip(".,;") for url in matches]
+
+    # Validate each URL against SSRF checks
+    validated_urls = []
+    for url in urls:
+        try:
+            validated_url = validate_url(url)
+            validated_urls.append(validated_url)
+        except UrlSafetyError as e:
+            logger.warning("url_rejected_ssrf url=%s error=%s", url, e)
+
+    return validated_urls
 
 
 def _extract_numbers(text: str) -> list[int]:
@@ -155,18 +168,10 @@ async def research_auto_params(
         else:
             module = importlib.import_module(f"loom.tools.{tool_name}")
 
-        # Find the function
-        func = None
-        for attr_name in dir(module):
-            if tool_name.replace("research_", "") in attr_name.lower():
-                func = getattr(module, attr_name, None)
-                if callable(func):
-                    break
+        # Find the function — exact lookup only
+        func = getattr(module, tool_name, None)
 
-        if not func:
-            func = getattr(module, f"research_{tool_name.split('_')[1]}", None)
-
-        if not func:
+        if not func or not callable(func):
             return {
                 "tool_name": tool_name,
                 "generated_params": {},
