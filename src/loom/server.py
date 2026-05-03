@@ -1133,6 +1133,17 @@ def _register_tools(mcp: FastMCP) -> None:
     # Register all tools from 8 category modules
     register_all_tools(mcp, _wrap_tool)
 
+    # Register optional tools (loaded with suppress(ImportError) at module level)
+    for _mod_name, _mod in _optional_tools.items():
+        for _attr in dir(_mod):
+            if _attr.startswith("research_"):
+                _func = getattr(_mod, _attr)
+                if callable(_func):
+                    try:
+                        mcp.tool()(_wrap_tool(_func))
+                    except Exception:
+                        pass
+
     log.info("tool_registration_complete")
 
 def _validate_environment() -> None:
