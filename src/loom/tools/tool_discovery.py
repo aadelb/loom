@@ -711,6 +711,10 @@ class DiscoverResponse(BaseModel):
     )
 
 
+# Rebuild pydantic model after defining Any
+DiscoverResponse.model_rebuild()
+
+
 async def research_discover(
     category: str = "",
     query: str = "",
