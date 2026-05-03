@@ -21,56 +21,57 @@ Margin calculation: (revenue - cost) / max(revenue, 0.001) ≥ 20% healthy
 
 from __future__ import annotations
 
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
 
 # Estimated cost per tool call by LLM provider (USD)
-LLM_PROVIDER_COSTS: dict[str, float] = {
-    "groq": 0.0,  # Free tier
-    "nvidia_nim": 0.0,  # Free tier (integrate.api.nvidia.com)
-    "deepseek": 0.0005,  # ~$0.55/1M tokens → $0.0005/call estimate
-    "gemini": 0.002,  # ~$2/1M tokens → $0.002/call estimate
-    "moonshot": 0.001,  # ~$1/1M tokens → $0.001/call estimate
-    "openai": 0.01,  # ~$10/1M tokens (gpt-5-mini) → $0.01/call estimate
-    "anthropic": 0.015,  # ~$15/1M tokens (claude-opus) → $0.015/call estimate
-    "vllm": 0.0,  # Self-hosted, no cost
+LLM_PROVIDER_COSTS: dict[str, Decimal] = {
+    "groq": Decimal("0"),  # Free tier
+    "nvidia_nim": Decimal("0"),  # Free tier (integrate.api.nvidia.com)
+    "deepseek": Decimal("0.0005"),  # ~$0.55/1M tokens → $0.0005/call estimate
+    "gemini": Decimal("0.002"),  # ~$2/1M tokens → $0.002/call estimate
+    "moonshot": Decimal("0.001"),  # ~$1/1M tokens → $0.001/call estimate
+    "openai": Decimal("0.01"),  # ~$10/1M tokens (gpt-5-mini) → $0.01/call estimate
+    "anthropic": Decimal("0.015"),  # ~$15/1M tokens (claude-opus) → $0.015/call estimate
+    "vllm": Decimal("0"),  # Self-hosted, no cost
 }
 
 # Estimated cost per search call by provider (USD)
-SEARCH_PROVIDER_COSTS: dict[str, float] = {
-    "exa": 0.001,  # ~$1/1K queries
-    "tavily": 0.001,  # ~$1/1K queries
-    "firecrawl": 0.0005,  # ~$0.50/1K pages
-    "brave": 0.001,  # ~$1/1K queries
-    "ddgs": 0.0,  # Free (DuckDuckGo)
-    "arxiv": 0.0,  # Free (arXiv API)
-    "wikipedia": 0.0,  # Free
-    "hn_reddit": 0.0,  # Free
-    "newsapi": 0.0001,  # Negligible
-    "coindesk": 0.0,  # Free
-    "coinmarketcap": 0.0,  # Free (free tier)
-    "binance": 0.0,  # Free
-    "ahmia": 0.0,  # Free (Tor search)
-    "darksearch": 0.0,  # Free
-    "ummro": 0.0,  # Internal RAG
-    "onionsearch": 0.0,  # Free
-    "torcrawl": 0.0,  # Free
-    "darkweb_cti": 0.0,  # Free
-    "robin_osint": 0.0,  # Free
-    "investing": 0.0,  # Free tier
-    "youtube": 0.0,  # Free (YouTube API)
+SEARCH_PROVIDER_COSTS: dict[str, Decimal] = {
+    "exa": Decimal("0.001"),  # ~$1/1K queries
+    "tavily": Decimal("0.001"),  # ~$1/1K queries
+    "firecrawl": Decimal("0.0005"),  # ~$0.50/1K pages
+    "brave": Decimal("0.001"),  # ~$1/1K queries
+    "ddgs": Decimal("0"),  # Free (DuckDuckGo)
+    "arxiv": Decimal("0"),  # Free (arXiv API)
+    "wikipedia": Decimal("0"),  # Free
+    "hn_reddit": Decimal("0"),  # Free
+    "newsapi": Decimal("0.0001"),  # Negligible
+    "coindesk": Decimal("0"),  # Free
+    "coinmarketcap": Decimal("0"),  # Free (free tier)
+    "binance": Decimal("0"),  # Free
+    "ahmia": Decimal("0"),  # Free (Tor search)
+    "darksearch": Decimal("0"),  # Free
+    "ummro": Decimal("0"),  # Internal RAG
+    "onionsearch": Decimal("0"),  # Free
+    "torcrawl": Decimal("0"),  # Free
+    "darkweb_cti": Decimal("0"),  # Free
+    "robin_osint": Decimal("0"),  # Free
+    "investing": Decimal("0"),  # Free tier
+    "youtube": Decimal("0"),  # Free (YouTube API)
 }
 
 # Revenue per credit by customer tier (USD/credit)
-REVENUE_PER_CREDIT: dict[str, float] = {
-    "free": 0.0,  # Free tier pays $0
-    "pro": 0.0099,  # $99/month ÷ 10,000 credits
-    "team": 0.00598,  # $299/month ÷ 50,000 credits
-    "enterprise": 0.004995,  # $999/month ÷ 200,000 credits
+REVENUE_PER_CREDIT: dict[str, Decimal] = {
+    "free": Decimal("0"),  # Free tier pays $0
+    "pro": Decimal("0.0099"),  # $99/month ÷ 10,000 credits
+    "team": Decimal("0.00598"),  # $299/month ÷ 50,000 credits
+    "enterprise": Decimal("0.004995"),  # $999/month ÷ 200,000 credits
 }
 
 
-def estimate_call_cost(provider: str, provider_type: str = "llm") -> float:
+def estimate_call_cost(provider: str, provider_type: str = "llm") -> Decimal:
     """Estimate USD cost of a single call to a provider.
 
     Args:
@@ -81,11 +82,11 @@ def estimate_call_cost(provider: str, provider_type: str = "llm") -> float:
         Estimated USD cost of one call
     """
     if provider_type == "llm":
-        return LLM_PROVIDER_COSTS.get(provider, 0.005)
+        return LLM_PROVIDER_COSTS.get(provider, Decimal("0.005"))
     elif provider_type == "search":
-        return SEARCH_PROVIDER_COSTS.get(provider, 0.001)
+        return SEARCH_PROVIDER_COSTS.get(provider, Decimal("0.001"))
     else:
-        return 0.005  # Default fallback
+        return Decimal("0.005")  # Default fallback
 
 
 def estimate_revenue(tier: str, credits_used: int) -> float:
@@ -98,8 +99,9 @@ def estimate_revenue(tier: str, credits_used: int) -> float:
     Returns:
         Estimated USD revenue (rounded to 4 decimal places)
     """
-    rate = REVENUE_PER_CREDIT.get(tier, 0.0)
-    return round(credits_used * rate, 4)
+    rate = REVENUE_PER_CREDIT.get(tier, Decimal("0"))
+    revenue = (Decimal(credits_used) * rate).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
+    return float(revenue)
 
 
 def compute_margin(
@@ -126,16 +128,19 @@ def compute_margin(
         - healthy: True if margin ≥ 20%
         - alert: None if healthy, or "low_margin" (0-20%) or "negative" (<0)
     """
-    revenue = estimate_revenue(tier, credits_used)
-    profit = revenue - provider_costs
+    revenue_d = Decimal(str(estimate_revenue(tier, credits_used)))
+    provider_costs_d = Decimal(str(provider_costs))
+    profit_d = (revenue_d - provider_costs_d).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
 
     # Calculate margin percentage
     # If revenue > 0, calculate actual margin
     # If revenue == 0 and profit < 0, treat as negative
     # If revenue == 0 and profit == 0, margin is 0%
-    if revenue > 0:
-        margin_pct = round((profit / revenue) * 100, 1)
-    elif profit < 0:
+    if revenue_d > 0:
+        margin_pct = float(
+            ((profit_d / revenue_d) * Decimal("100")).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)
+        )
+    elif profit_d < 0:
         # When revenue is 0 but there's a cost, treat as deeply negative
         margin_pct = -100.0
     else:
@@ -144,15 +149,15 @@ def compute_margin(
 
     # Determine health status
     alert = None
-    if profit < 0:
+    if profit_d < 0:
         alert = "negative"
     elif 0 <= margin_pct < 20:
         alert = "low_margin"
 
     return {
-        "revenue": round(revenue, 4),
-        "cost": round(provider_costs, 4),
-        "profit": round(profit, 4),
+        "revenue": float(revenue_d),
+        "cost": float(provider_costs_d),
+        "profit": float(profit_d),
         "margin_percent": margin_pct,
         "healthy": margin_pct >= 20,
         "alert": alert,
@@ -172,11 +177,12 @@ def aggregate_provider_costs(calls: list[dict[str, Any]]) -> float:
     Returns:
         Total USD cost (rounded to 4 decimal places)
     """
-    total = sum(
-        estimate_call_cost(call.get("provider", ""), call.get("provider_type", "llm"))
-        for call in calls
+    total_d = sum(
+        (estimate_call_cost(call.get("provider", ""), call.get("provider_type", "llm")) for call in calls),
+        Decimal("0"),
     )
-    return round(total, 4)
+    total_d = total_d.quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
+    return float(total_d)
 
 
 def check_margin_health(

@@ -43,3 +43,13 @@ def register_all_tools(mcp: "FastMCP", wrap_tool) -> None:
             register_fn(mcp, wrap_tool)
         except Exception as e:
             _log.error("registration_failed category=%s error=%s", name, str(e)[:200])
+
+
+def get_registration_stats() -> dict:
+    """Get tool registration statistics for health endpoint.
+
+    Returns statistics on which tools loaded successfully vs failed
+    during server startup, organized by category.
+    """
+    from loom.registrations.tracking import get_registration_stats as _get_stats
+    return _get_stats()

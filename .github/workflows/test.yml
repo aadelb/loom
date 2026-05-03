@@ -1,0 +1,152 @@
+name: Test
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  syntax-check:
+    runs-on: ubuntu-latest
+    name: Python Syntax Validation
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate Python syntax on all files
+        run: |
+          python << 'EOF'
+          import ast
+          import pathlib
+          import sys
+
+          src_dir = pathlib.Path("src")
+          errors = 0
+
+          for py_file in sorted(src_dir.rglob("*.py")):
+              if "__pycache__" in str(py_file):
+                  continue
+              try:
+                  ast.parse(py_file.read_text())
+              except SyntaxError as e:
+                  print(f"SYNTAX ERROR: {py_file}:{e.lineno} — {e.msg}", file=sys.stderr)
+                  errors += 1
+
+          if errors > 0:
+              print(f"\nFailed syntax check: {errors} file(s)", file=sys.stderr)
+              sys.exit(1)
+          else:
+              print(f"✓ Syntax validation passed for {len(list(src_dir.rglob('*.py')))} files")
+          EOF
+
+  lint:
+    runs-on: ubuntu-latest
+    name: Lint & Format
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-lint-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-lint-
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Run Ruff lint
+        run: ruff check src tests
+
+      - name: Run Ruff format check
+        run: ruff format --check src tests
+
+      - name: MyPy type check
+        run: mypy src
+
+  test:
+    runs-on: ubuntu-latest
+    name: "Test (Python ${{ matrix.python-version }})"
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-test-py${{ matrix.python-version }}-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-test-py${{ matrix.python-version }}-
+            ${{ runner.os }}-pip-test-
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: pip install -e ".[dev,stealth]"
+
+      - name: Install Playwright browsers (for stealth tests)
+        run: playwright install chromium
+
+      - name: Run tests with coverage
+        run: |
+          pytest tests/ \
+            --timeout=300 \
+            --maxfail=10 \
+            -q \
+            --cov=src/loom \
+            --cov-report=term-missing \
+            --cov-report=xml \
+            --cov-report=html
+
+      - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.11' && always()
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.xml
+          flags: unittests
+          name: py${{ matrix.python-version }}-coverage
+          fail_ci_if_error: false
+
+      - name: Archive coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-py${{ matrix.python-version }}
+          path: |
+            coverage.xml
+            htmlcov/
+          retention-days: 7
+
+  summary:
+    runs-on: ubuntu-latest
+    name: Test Summary
+    needs: [syntax-check, lint, test]
+    if: always()
+    steps:
+      - name: Check test status
+        run: |
+          if [ "${{ needs.syntax-check.result }}" = "failure" ] || \
+             [ "${{ needs.lint.result }}" = "failure" ] || \
+             [ "${{ needs.test.result }}" = "failure" ]; then
+            echo "❌ One or more test jobs failed"
+            exit 1
+          fi
+          echo "✓ All test jobs passed"

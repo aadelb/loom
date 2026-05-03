@@ -1,0 +1,248 @@
+name: Security
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  bandit:
+    runs-on: ubuntu-latest
+    name: Bandit (Security Scanner)
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-security-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-security-
+            ${{ runner.os }}-pip-
+
+      - name: Install Bandit
+        run: pip install bandit[toml]
+
+      - name: Run Bandit security scan
+        run: bandit -r src/ -f json -o bandit-report.json || true
+
+      - name: Display Bandit results
+        run: |
+          python << 'EOF'
+          import json
+          import sys
+
+          with open("bandit-report.json") as f:
+              report = json.load(f)
+
+          if report["metrics"]["_totals"]["HIGH"] > 0 or report["metrics"]["_totals"]["MEDIUM"] > 0:
+              print("\n⚠ Bandit findings:\n")
+              for result in report["results"]:
+                  severity = result["severity"]
+                  if severity in ["HIGH", "MEDIUM"]:
+                      print(f"  [{severity}] {result['test_id']} - {result['issue_text']}")
+                      print(f"       at {result['filename']}:{result['line_number']}\n")
+
+          high_count = report["metrics"]["_totals"]["HIGH"]
+          medium_count = report["metrics"]["_totals"]["MEDIUM"]
+
+          if high_count > 0:
+              print(f"❌ HIGH severity issues: {high_count}")
+              sys.exit(1)
+          elif medium_count > 0:
+              print(f"⚠ MEDIUM severity issues: {medium_count}")
+              print("   (not blocking, but should be reviewed)")
+              sys.exit(0)
+          else:
+              print("✓ No HIGH or MEDIUM security issues found")
+          EOF
+
+  secrets:
+    runs-on: ubuntu-latest
+    name: Secret Detection
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Scan for hardcoded secrets
+        run: |
+          python << 'EOF'
+          import re
+          import pathlib
+          import sys
+
+          # Patterns that likely indicate real secrets (not test code)
+          secret_patterns = {
+              "AWS_KEY": re.compile(r"AKIA[0-9A-Z]{16}"),
+              "GitHub_PAT": re.compile(r"ghp_[A-Za-z0-9_]{36,}"),
+              "GitHub_OAuth": re.compile(r"ghu_[A-Za-z0-9_]{36,}"),
+              "GitHub_App": re.compile(r"ghs_[A-Za-z0-9_]{36,}"),
+              "GitLab_PAT": re.compile(r"glpat-[A-Za-z0-9_-]{20,}"),
+              "OpenAI_Key": re.compile(r"sk-[A-Za-z0-9_-]{20,}"),
+              "Slack_Token": re.compile(r"xoxb-[A-Za-z0-9_-]{10,}"),
+              "Slack_Webhook": re.compile(r"hooks\.slack\.com/services/[A-Za-z0-9/_-]+"),
+              "Private_Key": re.compile(r"-----BEGIN (RSA|OPENSSH|EC|DSA) PRIVATE KEY-----"),
+          }
+
+          # Patterns that indicate regex/redaction code (not real secrets)
+          safe_indicators = [
+              "re.sub", "re.match", "re.search", "re.compile",
+              "regex", "pattern", "redact", "REDACT", "mask", "MASK",
+              r"r\"", r"r'", "test", "mock", "fixture"
+          ]
+
+          src_dir = pathlib.Path("src")
+          config_files = [
+              ".env", ".env.example", "config.json", "config.example.json",
+              "secrets.json", "credentials.json"
+          ]
+
+          errors = []
+
+          # Check source files
+          for py_file in sorted(src_dir.rglob("*.py")):
+              if "__pycache__" in str(py_file):
+                  continue
+
+              content = py_file.read_text()
+              for pattern_name, pattern_re in secret_patterns.items():
+                  for match in pattern_re.finditer(content):
+                      line_num = content[:match.start()].count("\n") + 1
+                      line = content.splitlines()[line_num - 1]
+
+                      # Skip comments
+                      if line.strip().startswith("#"):
+                          continue
+
+                      # Skip safe patterns
+                      if any(safe in line for safe in safe_indicators):
+                          continue
+
+                      errors.append((py_file, line_num, pattern_name, match.group()))
+
+          # Check for config files in repo
+          for config in config_files:
+              config_path = pathlib.Path(config)
+              if config_path.exists() and not "example" in config:
+                  errors.append((config_path, 0, "Config file", "Found uncommitted config"))
+
+          if errors:
+              print("⚠ Potential secrets detected:\n")
+              for file, line_num, pattern, secret in errors[:20]:
+                  if line_num > 0:
+                      print(f"  {file}:{line_num} [{pattern}]")
+                  else:
+                      print(f"  {file} [{pattern}]")
+
+              if len(errors) > 20:
+                  print(f"  ... and {len(errors) - 20} more")
+
+              print(f"\n❌ Found {len(errors)} potential secrets")
+              sys.exit(1)
+          else:
+              print("✓ No obvious secrets detected")
+          EOF
+
+  dependencies:
+    runs-on: ubuntu-latest
+    name: Dependency Vulnerability Check
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-security-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-security-
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: pip install -e ".[all]"
+
+      - name: Check for vulnerable dependencies
+        run: |
+          pip install safety
+          safety check --json > safety-report.json || true
+          python << 'EOF'
+          import json
+          import sys
+
+          try:
+              with open("safety-report.json") as f:
+                  report = json.load(f)
+
+              if isinstance(report, list) and len(report) > 0:
+                  print("⚠ Vulnerable dependencies found:\n")
+                  for vuln in report[:10]:
+                      print(f"  {vuln.get('package', 'unknown')}: {vuln.get('vulnerability', 'unknown')}")
+                  if len(report) > 10:
+                      print(f"  ... and {len(report) - 10} more")
+                  print(f"\nTotal: {len(report)} vulnerabilities")
+                  sys.exit(0)  # Warning only, don't block
+              else:
+                  print("✓ No known vulnerable dependencies")
+          except Exception as e:
+              print(f"⚠ Could not check dependencies: {e}")
+          EOF
+
+  pre-deploy:
+    runs-on: ubuntu-latest
+    name: Pre-Deploy Verification
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-predeploy-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-predeploy-
+            ${{ runner.os }}-pip-
+
+      - name: Install minimal dependencies
+        run: pip install pydantic httpx aiosqlite
+
+      - name: Run pre-deploy verification script
+        run: python scripts/pre_deploy.py
+
+  summary:
+    runs-on: ubuntu-latest
+    name: Security Summary
+    needs: [bandit, secrets, dependencies, pre-deploy]
+    if: always()
+    steps:
+      - name: Check security status
+        run: |
+          if [ "${{ needs.bandit.result }}" = "failure" ] || \
+             [ "${{ needs.secrets.result }}" = "failure" ] || \
+             [ "${{ needs.pre-deploy.result }}" = "failure" ]; then
+            echo "❌ One or more security checks failed"
+            exit 1
+          fi
+          echo "✓ All security checks passed"

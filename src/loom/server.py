@@ -278,8 +278,11 @@ from loom.tools import (
     universal_orchestrator,
 )
 from loom.tracing import install_tracing, new_request_id
+from loom.billing.meter import record_usage
 
 log = logging.getLogger("loom.server")
+from loom.registrations.tracking import record_optional_module_loaded, record_import_failure
+
 
 # Dynamically import optional tool modules (LLM tools, etc.)
 _optional_tools: dict[str, Any] = {}
@@ -287,363 +290,440 @@ with suppress(ImportError):
     from loom.tools import llm as llm_tools
 
     _optional_tools["llm"] = llm_tools
+    record_optional_module_loaded("llm")
 
 with suppress(ImportError):
     from loom.tools import enrich as enrich_tools
 
     _optional_tools["enrich"] = enrich_tools
+    record_optional_module_loaded("enrich")
 
 with suppress(ImportError):
     from loom.tools import experts as experts_tools
 
     _optional_tools["experts"] = experts_tools
+    record_optional_module_loaded("experts")
 
 with suppress(ImportError):
     from loom.tools import creative as creative_tools
 
     _optional_tools["creative"] = creative_tools
+    record_optional_module_loaded("creative")
 
 with suppress(ImportError):
     from loom.providers import youtube_transcripts as yt_tools
 
     _optional_tools["youtube"] = yt_tools
+    record_optional_module_loaded("youtube")
 
 with suppress(ImportError):
     from loom.tools import vastai as vastai_tools
 
     _optional_tools["vastai"] = vastai_tools
+    record_optional_module_loaded("vastai")
 
 with suppress(ImportError):
     from loom.tools import billing as billing_tools
 
     _optional_tools["billing"] = billing_tools
+    record_optional_module_loaded("billing")
 
 with suppress(ImportError):
     from loom.tools import email_report as email_tools
 
     _optional_tools["email"] = email_tools
+    record_optional_module_loaded("email")
 
 with suppress(ImportError):
     from loom.tools import joplin as joplin_tools
 
     _optional_tools["joplin"] = joplin_tools
+    record_optional_module_loaded("joplin")
 
 with suppress(ImportError):
     from loom.tools import tor as tor_tools
 
     _optional_tools["tor"] = tor_tools
+    record_optional_module_loaded("tor")
 
 with suppress(ImportError):
     from loom.tools import transcribe as transcribe_tools
 
     _optional_tools["transcribe"] = transcribe_tools
+    record_optional_module_loaded("transcribe")
 
 with suppress(ImportError):
     from loom.tools import document as document_tools
 
     _optional_tools["document"] = document_tools
+    record_optional_module_loaded("document")
 
 
 with suppress(ImportError):
     from loom.tools import metrics as metrics_tools
 
     _optional_tools["metrics"] = metrics_tools
+    record_optional_module_loaded("metrics")
 
 with suppress(ImportError):
     from loom.tools import slack as slack_tools
 
     _optional_tools["slack"] = slack_tools
+    record_optional_module_loaded("slack")
 
 with suppress(ImportError):
     from loom.tools import gcp as gcp_tools
 
     _optional_tools["gcp"] = gcp_tools
+    record_optional_module_loaded("gcp")
 
 with suppress(ImportError):
     from loom.tools import vercel as vercel_tools
 
     _optional_tools["vercel"] = vercel_tools
+    record_optional_module_loaded("vercel")
 
 # ── v3 modules: scorers, pipelines, orchestration, tracking ──
 with suppress(ImportError):
     from loom.tools import attack_scorer as attack_scorer_tools
     _optional_tools["attack_scorer"] = attack_scorer_tools
+    record_optional_module_loaded("attack_scorer")
 
 with suppress(ImportError):
     from loom.tools import stealth_score as stealth_score_tools
     _optional_tools["stealth_score"] = stealth_score_tools
+    record_optional_module_loaded("stealth_score")
 
 with suppress(ImportError):
     from loom.tools import potency_meter as potency_meter_tools
     _optional_tools["potency_meter"] = potency_meter_tools
+    record_optional_module_loaded("potency_meter")
 
 with suppress(ImportError):
     from loom.tools import stealth_scorer as stealth_scorer_tools
     _optional_tools["stealth_scorer"] = stealth_scorer_tools
+    record_optional_module_loaded("stealth_scorer")
 
 with suppress(ImportError):
     from loom.tools import model_sentiment as model_sentiment_tools
     _optional_tools["model_sentiment"] = model_sentiment_tools
+    record_optional_module_loaded("model_sentiment")
 
 with suppress(ImportError):
     from loom.tools import toxicity_checker_tool as toxicity_tools
     _optional_tools["toxicity"] = toxicity_tools
+    record_optional_module_loaded("toxicity")
 
 with suppress(ImportError):
     from loom.tools import drift_monitor_tool as drift_tools
     _optional_tools["drift"] = drift_tools
+    record_optional_module_loaded("drift")
 
 with suppress(ImportError):
     from loom.tools import bpj as bpj_tools
     _optional_tools["bpj"] = bpj_tools
+    record_optional_module_loaded("bpj")
 
 with suppress(ImportError):
     from loom.tools import daisy_chain_tool as daisy_tools
     _optional_tools["daisy_chain"] = daisy_tools
+    record_optional_module_loaded("daisy_chain")
 
 with suppress(ImportError):
     from loom.tools import consistency_pressure as consistency_tools
     _optional_tools["consistency"] = consistency_tools
+    record_optional_module_loaded("consistency")
 
 with suppress(ImportError):
     from loom.tools import constraint_optimizer as constraint_tools
     _optional_tools["constraint"] = constraint_tools
+    record_optional_module_loaded("constraint")
 
 with suppress(ImportError):
     from loom.tools import jailbreak_evolution as jailbreak_evo_tools
     _optional_tools["jailbreak_evo"] = jailbreak_evo_tools
+    record_optional_module_loaded("jailbreak_evo")
 
 with suppress(ImportError):
     from loom.tools import semantic_cache_mgmt as sem_cache_tools
     _optional_tools["sem_cache"] = sem_cache_tools
+    record_optional_module_loaded("sem_cache")
 
 with suppress(ImportError):
     from loom.tools import param_sweep as param_sweep_tools
     _optional_tools["param_sweep"] = param_sweep_tools
+    record_optional_module_loaded("param_sweep")
 
 with suppress(ImportError):
     from loom.tools import strategy_oracle as strategy_oracle_tools
     _optional_tools["strategy_oracle"] = strategy_oracle_tools
+    record_optional_module_loaded("strategy_oracle")
 
 with suppress(ImportError):
     from loom.tools import stealth_detect as stealth_detect_tools
     _optional_tools["stealth_detect"] = stealth_detect_tools
+    record_optional_module_loaded("stealth_detect")
 
 with suppress(ImportError):
     from loom.tools import tool_recommender_tool as recommender_tools
     _optional_tools["recommender"] = recommender_tools
+    record_optional_module_loaded("recommender")
 
 with suppress(ImportError):
     from loom.tools import ytdlp_backend as ytdlp_tools
     _optional_tools["ytdlp"] = ytdlp_tools
+    record_optional_module_loaded("ytdlp")
 
 # ── v3 direct imports (functions in src/loom/*.py) ──
 with suppress(ImportError):
     from loom.danger_prescore import research_danger_prescore
     _optional_tools["danger_prescore"] = research_danger_prescore
+    record_optional_module_loaded("danger_prescore")
 
 with suppress(ImportError):
     from loom.quality_scorer import research_quality_score
     _optional_tools["quality_scorer"] = research_quality_score
+    record_optional_module_loaded("quality_scorer")
 
 with suppress(ImportError):
     from loom.evidence_pipeline import research_evidence_pipeline
     _optional_tools["evidence_pipeline"] = research_evidence_pipeline
+    record_optional_module_loaded("evidence_pipeline")
 
 with suppress(ImportError):
     from loom.context_poisoning import research_context_poison
     _optional_tools["context_poison"] = research_context_poison
+    record_optional_module_loaded("context_poison")
 
 with suppress(ImportError):
     from loom.adversarial_debate import research_adversarial_debate
     _optional_tools["adversarial_debate"] = research_adversarial_debate
+    record_optional_module_loaded("adversarial_debate")
 
 with suppress(ImportError):
     from loom.model_evidence import research_model_evidence
     _optional_tools["model_evidence"] = research_model_evidence
+    record_optional_module_loaded("model_evidence")
 
 with suppress(ImportError):
     from loom.target_orchestrator import research_target_orchestrate
     _optional_tools["target_orchestrate"] = research_target_orchestrate
+    record_optional_module_loaded("target_orchestrate")
 
 with suppress(ImportError):
     from loom.reid_auto import ReidAutoReframe
     _optional_tools["reid_auto"] = ReidAutoReframe
+    record_optional_module_loaded("reid_auto")
 
 with suppress(ImportError):
     from loom.mcp_security import research_mcp_security_scan
     _optional_tools["mcp_security"] = research_mcp_security_scan
+    record_optional_module_loaded("mcp_security")
 
 with suppress(ImportError):
     from loom.cicd import research_cicd_run
     _optional_tools["cicd"] = research_cicd_run
+    record_optional_module_loaded("cicd")
 
 with suppress(ImportError):
     from loom.stealth_detector import research_stealth_detect as stealth_det_fn
     _optional_tools["stealth_detector"] = stealth_det_fn
+    record_optional_module_loaded("stealth_detector")
 
 with suppress(ImportError):
     from loom.doc_parser import research_ocr_advanced, research_pdf_advanced, research_document_analyze
     _optional_tools["doc_parser"] = {"ocr": research_ocr_advanced, "pdf": research_pdf_advanced, "analyze": research_document_analyze}
+    record_optional_module_loaded("doc_parser")
 
 with suppress(ImportError):
     from loom.tools import cipher_mirror as cipher_mirror_tools
 
     _optional_tools["cipher_mirror"] = cipher_mirror_tools
+    record_optional_module_loaded("cipher_mirror")
 
 with suppress(ImportError):
     from loom.tools import forum_cortex as forum_cortex_tools
 
     _optional_tools["forum_cortex"] = forum_cortex_tools
+    record_optional_module_loaded("forum_cortex")
 
 with suppress(ImportError):
     from loom.tools import onion_spectra as onion_spectra_tools
 
     _optional_tools["onion_spectra"] = onion_spectra_tools
+    record_optional_module_loaded("onion_spectra")
 
 with suppress(ImportError):
     from loom.tools import ghost_weave as ghost_weave_tools
 
     _optional_tools["ghost_weave"] = ghost_weave_tools
+    record_optional_module_loaded("ghost_weave")
 
 with suppress(ImportError):
     from loom.tools import dead_drop_scanner as dead_drop_scanner_tools
 
     _optional_tools["dead_drop_scanner"] = dead_drop_scanner_tools
+    record_optional_module_loaded("dead_drop_scanner")
 
 with suppress(ImportError):
     from loom.tools import persona_profile as persona_profile_tools
 
     _optional_tools["persona_profile"] = persona_profile_tools
+    record_optional_module_loaded("persona_profile")
 
 with suppress(ImportError):
     from loom.tools import radicalization_detect as radicalization_detect_tools
 
     _optional_tools["radicalization_detect"] = radicalization_detect_tools
+    record_optional_module_loaded("radicalization_detect")
 with suppress(ImportError):
     from loom.tools import sentiment_deep as sentiment_deep_tools
 
     _optional_tools["sentiment_deep"] = sentiment_deep_tools
+    record_optional_module_loaded("sentiment_deep")
 
 with suppress(ImportError):
     from loom.tools import network_persona as network_persona_tools
 
     _optional_tools["network_persona"] = network_persona_tools
+    record_optional_module_loaded("network_persona")
 
 with suppress(ImportError):
     from loom.tools import text_analyze as text_analyze_tools
 
     _optional_tools["text_analyze"] = text_analyze_tools
+    record_optional_module_loaded("text_analyze")
 
 with suppress(ImportError):
     from loom.tools import epistemic_score as epistemic_score_tools
 
     _optional_tools["epistemic_score"] = epistemic_score_tools
+    record_optional_module_loaded("epistemic_score")
 
 with suppress(ImportError):
     from loom.tools import screenshot as screenshot_tools
 
     _optional_tools["screenshot"] = screenshot_tools
+    record_optional_module_loaded("screenshot")
 
 
 with suppress(ImportError):
     from loom.tools import geoip_local as geoip_local_tools
 
     _optional_tools["geoip_local"] = geoip_local_tools
+    record_optional_module_loaded("geoip_local")
 
 with suppress(ImportError):
     from loom.tools import image_intel as image_intel_tools
 
     _optional_tools["image_intel"] = image_intel_tools
+    record_optional_module_loaded("image_intel")
 
 with suppress(ImportError):
     from loom.tools import ip_intel as ip_intel_tools
 
     _optional_tools["ip_intel"] = ip_intel_tools
+    record_optional_module_loaded("ip_intel")
 
 with suppress(ImportError):
     from loom.tools import cve_lookup as cve_lookup_tools
 
     _optional_tools["cve_lookup"] = cve_lookup_tools
+    record_optional_module_loaded("cve_lookup")
 
 with suppress(ImportError):
     from loom.tools import vuln_intel as vuln_intel_tools
 
     _optional_tools["vuln_intel"] = vuln_intel_tools
+    record_optional_module_loaded("vuln_intel")
 
 with suppress(ImportError):
     from loom.tools import urlhaus_lookup as urlhaus_lookup_tools
 
     _optional_tools["urlhaus_lookup"] = urlhaus_lookup_tools
+    record_optional_module_loaded("urlhaus_lookup")
 
 with suppress(ImportError):
     from loom.tools import job_research as job_research_tools
 
     _optional_tools["job_research"] = job_research_tools
+    record_optional_module_loaded("job_research")
 
 
 with suppress(ImportError):
     from loom.tools import career_intel as career_intel_tools
 
     _optional_tools["career_intel"] = career_intel_tools
+    record_optional_module_loaded("career_intel")
 
 with suppress(ImportError):
     from loom.tools import resume_intel as resume_intel_tools
 
     _optional_tools["resume_intel"] = resume_intel_tools
+    record_optional_module_loaded("resume_intel")
 
 
 with suppress(ImportError):
     from loom.tools import career_trajectory as career_trajectory_tools
 
     _optional_tools["career_trajectory"] = career_trajectory_tools
+    record_optional_module_loaded("career_trajectory")
 
 with suppress(ImportError):
     from loom.tools import consistency_pressure as consistency_pressure_tools
 
     _optional_tools["consistency_pressure"] = consistency_pressure_tools
+    record_optional_module_loaded("consistency_pressure")
 
 with suppress(ImportError):
     from loom.tools import constraint_optimizer as constraint_optimizer_tools
 
     _optional_tools["constraint_optimizer"] = constraint_optimizer_tools
+    record_optional_module_loaded("constraint_optimizer")
 
 with suppress(ImportError):
     from loom.tools import semantic_cache_mgmt as semantic_cache_mgmt_tools
 
     _optional_tools["semantic_cache_mgmt"] = semantic_cache_mgmt_tools
+    record_optional_module_loaded("semantic_cache_mgmt")
 
 with suppress(ImportError):
     from loom.tools import param_sweep as param_sweep_tools
 
     _optional_tools["param_sweep"] = param_sweep_tools
+    record_optional_module_loaded("param_sweep")
 
 with suppress(ImportError):
     from loom import nodriver_backend
 
     _optional_tools["nodriver"] = nodriver_backend
+    record_optional_module_loaded("nodriver")
 
 with suppress(ImportError):
     from loom.tools import ytdlp_backend as ytdlp_backend_tools
 
     _optional_tools["ytdlp_backend"] = ytdlp_backend_tools
+    record_optional_module_loaded("ytdlp_backend")
 
 
 with suppress(ImportError):
     from loom.tools import model_consensus as model_consensus_tools
 
     _optional_tools["model_consensus"] = model_consensus_tools
+    record_optional_module_loaded("model_consensus")
 
 
 with suppress(ImportError):
     from loom import doc_parser as doc_parser_tools
 
     _optional_tools["doc_parser"] = doc_parser_tools
+    record_optional_module_loaded("doc_parser")
 
 with suppress(ImportError):
     from loom.tools import mcp_auth as mcp_auth_tools
 
     _optional_tools["mcp_auth"] = mcp_auth_tools
+    record_optional_module_loaded("mcp_auth")
 
 _start_time = time.time()
 
@@ -996,7 +1076,7 @@ def _fuzzy_correct_params(func: Callable[..., Any], kwargs: dict) -> tuple[dict,
 
 
 def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callable[..., Any]:
-    """Wrap tool with tracing and optional rate limiting.
+    """Wrap tool with tracing, rate limiting, and optional billing.
 
     Handles both sync and async tool functions correctly.
     """
@@ -1005,6 +1085,7 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
     is_async = inspect.iscoroutinefunction(func)
 
     tool_timeout = 60  # seconds
+    billing_enabled = os.getenv("LOOM_BILLING_ENABLED", "").lower() == "true"
 
     if is_async:
         if category:
@@ -1012,16 +1093,36 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
 
         @functools.wraps(func)
         async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
-            new_request_id()
+            request_id = new_request_id()
+            start_time = time.time()
             # Auto-correct parameters
             corrected_kwargs, corrections = _fuzzy_correct_params(func, kwargs)
             if corrections:
                 log.debug(f"Parameter corrections for {func.__name__}: {corrections}")
+            
+            # Billing: check credits before execution (if enabled)
+            customer_id = os.getenv("LOOM_CUSTOMER_ID", "default")
+            if billing_enabled:
+                # Credit check would go here; for now we just record
+                log.debug(f"Billing enabled for tool {func.__name__}, customer {customer_id}")
+            
             try:
                 result = await asyncio.wait_for(func(*args, **corrected_kwargs), timeout=tool_timeout)
                 # Add correction metadata if there were corrections
                 if corrections and isinstance(result, dict):
                     result["_param_corrections"] = corrections
+                
+                # Billing: record usage after successful execution
+                if billing_enabled:
+                    duration_ms = (time.time() - start_time) * 1000
+                    # Estimate credits: 1 credit per second of execution
+                    credits_used = max(1, int(duration_ms / 1000))
+                    try:
+                        record_usage(customer_id, func.__name__, credits_used, duration_ms)
+                        log.debug(f"Billed {credits_used} credits to {customer_id} for {func.__name__}")
+                    except Exception as e:
+                        log.error(f"Billing error for {func.__name__}: {e}", exc_info=False)
+                
                 return result
             except asyncio.TimeoutError:
                 return {"error": f"Tool timed out after {tool_timeout}s", "tool": func.__name__}
@@ -1034,15 +1135,35 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
 
         @functools.wraps(func)
         def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
-            new_request_id()
+            request_id = new_request_id()
+            start_time = time.time()
             # Auto-correct parameters
             corrected_kwargs, corrections = _fuzzy_correct_params(func, kwargs)
             if corrections:
                 log.debug(f"Parameter corrections for {func.__name__}: {corrections}")
+            
+            # Billing: check credits before execution (if enabled)
+            customer_id = os.getenv("LOOM_CUSTOMER_ID", "default")
+            if billing_enabled:
+                # Credit check would go here; for now we just record
+                log.debug(f"Billing enabled for tool {func.__name__}, customer {customer_id}")
+            
             result = func(*args, **corrected_kwargs)
             # Add correction metadata if there were corrections
             if corrections and isinstance(result, dict):
                 result["_param_corrections"] = corrections
+            
+            # Billing: record usage after successful execution
+            if billing_enabled:
+                duration_ms = (time.time() - start_time) * 1000
+                # Estimate credits: 1 credit per second of execution
+                credits_used = max(1, int(duration_ms / 1000))
+                try:
+                    record_usage(customer_id, func.__name__, credits_used, duration_ms)
+                    log.debug(f"Billed {credits_used} credits to {customer_id} for {func.__name__}")
+                except Exception as e:
+                    log.error(f"Billing error for {func.__name__}: {e}", exc_info=False)
+            
             return result
 
         return sync_wrapper
@@ -1305,15 +1426,39 @@ def create_app() -> FastMCP:
 
     @mcp.custom_route("/health", methods=["GET"])
     async def health_endpoint(request: Request) -> JSONResponse:
+        from loom.registrations import get_registration_stats
+        
         uptime = int(time.time() - _start_time)
         tool_count = len(mcp._tool_manager._tools) if hasattr(mcp, "_tool_manager") else 346
-        return JSONResponse({
+        
+        # Get registration statistics
+        reg_stats = get_registration_stats()
+        
+        # Try to get memory usage
+        memory_mb = None
+        try:
+            import psutil
+            memory_mb = round(psutil.Process().memory_info().rss / 1024 / 1024, 1)
+        except (ImportError, Exception):
+            pass
+        
+        health_response = {
             "status": "healthy",
             "uptime_seconds": uptime,
             "tool_count": tool_count,
             "strategy_count": 957,
+            "registration_stats": reg_stats.get("registration_stats", {}),
+            "optional_modules_loaded": reg_stats.get("optional_modules_loaded", 0),
+            "import_failures": reg_stats.get("import_failures", []),
+            "total_tools_loaded": reg_stats.get("total_loaded", 0),
+            "total_tools_failed": reg_stats.get("total_failed", 0),
             "timestamp": datetime.now(UTC).isoformat(),
-        })
+        }
+        
+        if memory_mb is not None:
+            health_response["memory_mb"] = memory_mb
+        
+        return JSONResponse(health_response)
 
     # Register all tools
     _register_tools(mcp)

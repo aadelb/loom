@@ -1,0 +1,375 @@
+name: Deploy to Hetzner
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Deployment target"
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+      skip_tests:
+        description: "Skip test suite (not recommended)"
+        required: false
+        type: boolean
+        default: false
+
+env:
+  HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+  HETZNER_USER: ${{ secrets.HETZNER_USER }}
+  HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+  LOOM_APP_PATH: /opt/loom
+
+permissions:
+  contents: read
+
+jobs:
+  pre-flight:
+    runs-on: ubuntu-latest
+    name: Pre-Flight Checks
+    outputs:
+      deploy_id: ${{ steps.gen_deploy_id.outputs.deploy_id }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Generate deployment ID
+        id: gen_deploy_id
+        run: |
+          DEPLOY_ID=$(date +%s)-$(git rev-parse --short HEAD)
+          echo "deploy_id=${DEPLOY_ID}" >> $GITHUB_OUTPUT
+          echo "Deployment ID: ${DEPLOY_ID}"
+
+      - name: Validate SSH credentials
+        run: |
+          if [ -z "${{ env.HETZNER_HOST }}" ] || [ -z "${{ env.HETZNER_USER }}" ]; then
+            echo "❌ Missing Hetzner credentials in GitHub Secrets"
+            echo "   Required: HETZNER_HOST, HETZNER_USER, HETZNER_SSH_KEY"
+            exit 1
+          fi
+          echo "✓ Hetzner credentials configured"
+
+      - name: Validate deployment target
+        run: |
+          TARGET="${{ github.event.inputs.target }}"
+          if [ "$TARGET" != "staging" ] && [ "$TARGET" != "production" ]; then
+            echo "❌ Invalid target: $TARGET"
+            exit 1
+          fi
+          echo "✓ Deploying to: $TARGET"
+
+  test:
+    runs-on: ubuntu-latest
+    name: Test Before Deploy
+    if: github.event.inputs.skip_tests != 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-deploy-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-deploy-
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: pip install -e ".[dev,stealth]"
+
+      - name: Install Playwright browsers
+        run: playwright install chromium
+
+      - name: Run full test suite
+        run: |
+          pytest tests/ \
+            --timeout=300 \
+            --maxfail=5 \
+            -q \
+            --cov=src/loom \
+            --cov-report=term
+
+      - name: Run linter
+        run: ruff check src tests
+
+  security-check:
+    runs-on: ubuntu-latest
+    name: Security Verification
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-security-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-security-
+            ${{ runner.os }}-pip-
+
+      - name: Install Bandit
+        run: pip install bandit[toml]
+
+      - name: Security scan
+        run: bandit -r src/ -f csv -o /tmp/bandit.csv || true
+
+      - name: Check for HIGH severity issues
+        run: |
+          python << 'EOF'
+          import csv
+
+          high_count = 0
+          try:
+              with open("/tmp/bandit.csv") as f:
+                  reader = csv.DictReader(f)
+                  for row in reader:
+                      if row.get("severity") == "HIGH":
+                          high_count += 1
+                          print(f"  HIGH: {row.get('issue_cwe')} - {row.get('issue_text')}")
+          except:
+              pass
+
+          if high_count > 0:
+              print(f"\n❌ Found {high_count} HIGH severity issues")
+              exit(1)
+          else:
+              print("✓ No HIGH severity security issues")
+          EOF
+
+      - name: Install minimal deps for pre-deploy
+        run: pip install pydantic httpx aiosqlite
+
+      - name: Run pre-deploy verification
+        run: python scripts/pre_deploy.py
+
+  build:
+    runs-on: ubuntu-latest
+    name: Build Package
+    needs: [test, security-check]
+    if: success()
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-build-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-build-
+            ${{ runner.os }}-pip-
+
+      - name: Install build tools
+        run: pip install build
+
+      - name: Build package
+        run: python -m build
+
+      - name: List artifacts
+        run: ls -lh dist/
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 7
+
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy to ${{ github.event.inputs.target }}
+    needs: [pre-flight, build]
+    if: success()
+    environment:
+      name: ${{ github.event.inputs.target }}
+      url: https://${{ github.event.inputs.target }}.loom.internal
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ env.HETZNER_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ env.HETZNER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - name: Create deployment directory structure
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ env.HETZNER_USER }}@${{ env.HETZNER_HOST }} << 'EOSSH'
+          set -e
+          mkdir -p ${{ env.LOOM_APP_PATH }}/releases/${{ needs.pre-flight.outputs.deploy_id }}
+          mkdir -p ${{ env.LOOM_APP_PATH }}/backups
+          mkdir -p ${{ env.LOOM_APP_PATH }}/logs
+          echo "✓ Deployment directories created"
+          EOSSH
+
+      - name: Backup current installation
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ env.HETZNER_USER }}@${{ env.HETZNER_HOST }} << 'EOSSH'
+          set -e
+          if [ -d "${{ env.LOOM_APP_PATH }}/current" ]; then
+            BACKUP_TIME=$(date +%Y%m%d_%H%M%S)
+            cp -r ${{ env.LOOM_APP_PATH }}/current ${{ env.LOOM_APP_PATH }}/backups/backup_${BACKUP_TIME}
+            echo "✓ Backup created: backup_${BACKUP_TIME}"
+          else
+            echo "⚠ No current installation to backup"
+          fi
+          EOSSH
+
+      - name: Upload and extract package
+        run: |
+          rsync -avz \
+            -e "ssh -i ~/.ssh/deploy_key" \
+            --delete \
+            dist/ \
+            ${{ env.HETZNER_USER }}@${{ env.HETZNER_HOST }}:${{ env.LOOM_APP_PATH }}/releases/${{ needs.pre-flight.outputs.deploy_id }}/
+          echo "✓ Package uploaded"
+
+      - name: Install dependencies on remote
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ env.HETZNER_USER }}@${{ env.HETZNER_HOST }} << 'EOSSH'
+          set -e
+          cd ${{ env.LOOM_APP_PATH }}/releases/${{ needs.pre-flight.outputs.deploy_id }}
+          python3 -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip
+          pip install -e ".[all]"
+          echo "✓ Dependencies installed"
+          EOSSH
+
+      - name: Run pre-deploy checks on remote
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ env.HETZNER_USER }}@${{ env.HETZNER_HOST }} << 'EOSSH'
+          set -e
+          cd ${{ env.LOOM_APP_PATH }}/releases/${{ needs.pre-flight.outputs.deploy_id }}
+          source venv/bin/activate
+          python scripts/pre_deploy.py
+          echo "✓ Pre-deploy checks passed"
+          EOSSH
+
+      - name: Update symlink to new release
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ env.HETZNER_USER }}@${{ env.HETZNER_HOST }} << 'EOSSH'
+          set -e
+          cd ${{ env.LOOM_APP_PATH }}
+          OLD_RELEASE=$(readlink -f current 2>/dev/null || echo "none")
+          ln -sfn releases/${{ needs.pre-flight.outputs.deploy_id }} current
+          echo "✓ Symlink updated: ${{ needs.pre-flight.outputs.deploy_id }}"
+          EOSSH
+
+      - name: Restart Loom service
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ env.HETZNER_USER }}@${{ env.HETZNER_HOST }} << 'EOSSH'
+          set -e
+          systemctl --user restart loom || systemctl restart loom || true
+          sleep 3
+          echo "✓ Service restart initiated"
+          EOSSH
+
+  health-check:
+    runs-on: ubuntu-latest
+    name: Health Check
+    needs: [pre-flight, deploy]
+    if: success()
+    steps:
+      - name: Health check endpoint
+        run: |
+          TARGET="${{ github.event.inputs.target }}"
+          HEALTH_URL="https://${TARGET}.loom.internal/health"
+
+          for i in {1..30}; do
+            echo "Attempt $i/30: Checking $HEALTH_URL"
+            if curl -sf "$HEALTH_URL" > /dev/null; then
+              echo "✓ Health check passed"
+              exit 0
+            fi
+            sleep 2
+          done
+
+          echo "❌ Health check failed after 30 attempts"
+          exit 1
+
+  rollback:
+    runs-on: ubuntu-latest
+    name: Rollback (if needed)
+    needs: [pre-flight, deploy, health-check]
+    if: failure() && needs.deploy.result == 'success'
+    steps:
+      - name: Rollback to previous release
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ env.HETZNER_USER }}@${{ env.HETZNER_HOST }} << 'EOSSH'
+          set -e
+
+          cd ${{ env.LOOM_APP_PATH }}
+
+          # Find previous working release
+          BACKUPS=$(ls -t backups/ | head -1)
+          if [ -z "$BACKUPS" ]; then
+            echo "❌ No backup available for rollback"
+            exit 1
+          fi
+
+          # Restore from backup
+          rm -rf current
+          cp -r backups/$BACKUPS current
+          systemctl --user restart loom || systemctl restart loom || true
+
+          echo "✓ Rolled back to: $BACKUPS"
+          EOSSH
+
+  notify:
+    runs-on: ubuntu-latest
+    name: Deployment Notification
+    needs: [pre-flight, deploy, health-check]
+    if: always()
+    steps:
+      - name: Determine status
+        id: status
+        run: |
+          if [ "${{ needs.deploy.result }}" = "success" ] && [ "${{ needs.health-check.result }}" = "success" ]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "emoji=✓" >> $GITHUB_OUTPUT
+          else
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "emoji=❌" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create deployment summary
+        run: |
+          cat > /tmp/deploy-summary.txt << 'EOF'
+          Deployment: ${{ needs.pre-flight.outputs.deploy_id }}
+          Target: ${{ github.event.inputs.target }}
+          Status: ${{ steps.status.outputs.status }}
+          Commit: ${{ github.sha }}
+          Branch: ${{ github.ref_name }}
+          Triggered by: ${{ github.actor }}
+          EOF
+          cat /tmp/deploy-summary.txt
+
+      - name: Output summary
+        run: |
+          echo "${{ steps.status.outputs.emoji }} Deployment ${{ steps.status.outputs.status }}"
+          cat /tmp/deploy-summary.txt
