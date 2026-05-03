@@ -1144,6 +1144,37 @@ def _register_tools(mcp: FastMCP) -> None:
                     except Exception:
                         pass
 
+    # Register core loom.* module tools (sessions, config, orchestrator, scoring, etc.)
+    _core_funcs = [
+        research_session_open, research_session_list, research_session_close,
+        research_config_get, research_config_set,
+        research_orchestrate, research_score_all, research_unified_score,
+        research_benchmark_run, research_consensus_build, research_consensus_pressure,
+        research_crescendo_loop, research_model_profile, research_reid_pipeline,
+        research_pool_stats, research_pool_reset, export_audit,
+    ]
+    for _func in _core_funcs:
+        try:
+            mcp.tool()(_wrap_tool(_func))
+        except Exception:
+            pass
+
+    # Register crawlee/zendriver backends (in loom namespace)
+    try:
+        if crawlee_backend:
+            for _attr in dir(crawlee_backend):
+                if _attr.startswith("research_"):
+                    mcp.tool()(_wrap_tool(getattr(crawlee_backend, _attr)))
+    except Exception:
+        pass
+    try:
+        if zendriver_backend:
+            for _attr in dir(zendriver_backend):
+                if _attr.startswith("research_"):
+                    mcp.tool()(_wrap_tool(getattr(zendriver_backend, _attr)))
+    except Exception:
+        pass
+
     log.info("tool_registration_complete")
 
 def _validate_environment() -> None:
