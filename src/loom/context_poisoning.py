@@ -411,7 +411,11 @@ class ContextPoisoner:
 
         # Get direct response first
         try:
-            direct_response_raw = await asyncio.to_thread(model_fn, target_query)
+            import inspect
+            if inspect.iscoroutinefunction(model_fn):
+                direct_response_raw = await model_fn(target_query)
+            else:
+                direct_response_raw = await asyncio.to_thread(model_fn, target_query)
             # Handle both string and dict returns
             if isinstance(direct_response_raw, dict):
                 direct_response = direct_response_raw.get("response", str(direct_response_raw))
@@ -427,7 +431,10 @@ class ContextPoisoner:
 
         # Get poisoned response
         try:
-            poisoned_response_raw = await asyncio.to_thread(model_fn, poisoned_prompt)
+            if inspect.iscoroutinefunction(model_fn):
+                poisoned_response_raw = await model_fn(poisoned_prompt)
+            else:
+                poisoned_response_raw = await asyncio.to_thread(model_fn, poisoned_prompt)
             if isinstance(poisoned_response_raw, dict):
                 poisoned_response = poisoned_response_raw.get("response", str(poisoned_response_raw))
             else:
