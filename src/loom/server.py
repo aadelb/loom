@@ -48,6 +48,13 @@ from loom import crawlee_backend
 from loom import zendriver_backend
 from loom.sqlite_pool import research_pool_stats, research_pool_reset
 
+
+from loom.tracing import install_tracing, new_request_id
+from loom.billing.meter import record_usage
+
+log = logging.getLogger("loom.server")
+from loom.registrations.tracking import record_optional_module_loaded, record_import_failure
+
 # PostgreSQL migration tools (optional, graceful fallback if asyncpg not installed)
 _pg_tools: dict[str, Any] = {}
 with suppress(ImportError):
@@ -56,12 +63,6 @@ with suppress(ImportError):
     _pg_tools["pg_status"] = research_pg_status
     record_optional_module_loaded("pg_store")
 
-
-from loom.tracing import install_tracing, new_request_id
-from loom.billing.meter import record_usage
-
-log = logging.getLogger("loom.server")
-from loom.registrations.tracking import record_optional_module_loaded, record_import_failure
 
 
 # Dynamically import optional tool modules (LLM tools, etc.)
