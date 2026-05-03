@@ -18,10 +18,12 @@ import pytest
 from loom.dashboard import AttackDashboard
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestAttackDashboardEventManagement:
     """Test event recording and retrieval."""
 
-    def test_add_event_single(self) -> None:
+    async def test_add_event_single(self) -> None:
         """Test adding a single event."""
         dashboard = AttackDashboard()
         assert len(dashboard.events) == 0
@@ -36,7 +38,7 @@ class TestAttackDashboardEventManagement:
         assert "timestamp" in event
         assert event["index"] == 0
 
-    def test_add_event_with_custom_timestamp(self) -> None:
+    async def test_add_event_with_custom_timestamp(self) -> None:
         """Test adding event with custom timestamp."""
         dashboard = AttackDashboard()
         custom_time = "2026-04-30T12:00:00+00:00"
@@ -50,7 +52,7 @@ class TestAttackDashboardEventManagement:
         event = dashboard.events[0]
         assert event["timestamp"] == custom_time
 
-    def test_add_multiple_events(self) -> None:
+    async def test_add_multiple_events(self) -> None:
         """Test adding multiple events."""
         dashboard = AttackDashboard()
 
@@ -64,7 +66,7 @@ class TestAttackDashboardEventManagement:
         assert dashboard.events[0]["index"] == 0
         assert dashboard.events[4]["index"] == 4
 
-    def test_get_events_all(self) -> None:
+    async def test_get_events_all(self) -> None:
         """Test retrieving all events."""
         dashboard = AttackDashboard()
 
@@ -77,7 +79,7 @@ class TestAttackDashboardEventManagement:
         assert events[0]["index"] == 0
         assert events[2]["index"] == 2
 
-    def test_get_events_since_index(self) -> None:
+    async def test_get_events_since_index(self) -> None:
         """Test retrieving events from a specific index."""
         dashboard = AttackDashboard()
 
@@ -91,7 +93,7 @@ class TestAttackDashboardEventManagement:
         assert events[1]["index"] == 3
         assert events[2]["index"] == 4
 
-    def test_get_events_beyond_range(self) -> None:
+    async def test_get_events_beyond_range(self) -> None:
         """Test retrieving events from beyond available range."""
         dashboard = AttackDashboard()
 
@@ -102,7 +104,7 @@ class TestAttackDashboardEventManagement:
 
         assert len(events) == 0
 
-    def test_get_events_negative_index(self) -> None:
+    async def test_get_events_negative_index(self) -> None:
         """Test that negative indices are treated as 0."""
         dashboard = AttackDashboard()
 
@@ -118,7 +120,7 @@ class TestAttackDashboardEventManagement:
 class TestAttackDashboardSummary:
     """Test summary statistics calculation."""
 
-    def test_summary_empty_dashboard(self) -> None:
+    async def test_summary_empty_dashboard(self) -> None:
         """Test summary for empty dashboard."""
         dashboard = AttackDashboard()
         summary = dashboard.get_summary()
@@ -131,7 +133,7 @@ class TestAttackDashboardSummary:
         assert summary["top_strategies"] == []
         assert summary["active_models"] == []
 
-    def test_summary_attack_counters(self) -> None:
+    async def test_summary_attack_counters(self) -> None:
         """Test attack success/failure counters."""
         dashboard = AttackDashboard()
 
@@ -146,7 +148,7 @@ class TestAttackDashboardSummary:
         assert summary["failures"] == 1
         assert summary["success_rate"] == pytest.approx(66.7, abs=0.1)
 
-    def test_summary_hcs_score_tracking(self) -> None:
+    async def test_summary_hcs_score_tracking(self) -> None:
         """Test HCS score calculation."""
         dashboard = AttackDashboard()
 
@@ -158,7 +160,7 @@ class TestAttackDashboardSummary:
 
         assert summary["avg_hcs_score"] == pytest.approx(66.7, abs=0.1)
 
-    def test_summary_active_models(self) -> None:
+    async def test_summary_active_models(self) -> None:
         """Test tracking of active models."""
         dashboard = AttackDashboard()
 
@@ -171,7 +173,7 @@ class TestAttackDashboardSummary:
 
         assert set(summary["active_models"]) == {"gpt-4", "claude", "llama"}
 
-    def test_summary_top_strategies(self) -> None:
+    async def test_summary_top_strategies(self) -> None:
         """Test top strategies ranking."""
         dashboard = AttackDashboard()
 
@@ -197,7 +199,7 @@ class TestAttackDashboardSummary:
         assert strategies[1]["name"] == "strategy_a"
         assert strategies[1]["rate"] == pytest.approx(66.7, abs=0.1)
 
-    def test_summary_model_stats(self) -> None:
+    async def test_summary_model_stats(self) -> None:
         """Test per-model statistics."""
         dashboard = AttackDashboard()
 
@@ -214,7 +216,7 @@ class TestAttackDashboardSummary:
         assert model_stats["claude"]["total"] == 1
         assert model_stats["claude"]["successes"] == 1
 
-    def test_summary_event_count(self) -> None:
+    async def test_summary_event_count(self) -> None:
         """Test event count in summary."""
         dashboard = AttackDashboard()
 
@@ -232,7 +234,7 @@ class TestAttackDashboardSummary:
 class TestAttackDashboardHtmlGeneration:
     """Test HTML dashboard generation."""
 
-    def test_generate_html_basic_structure(self) -> None:
+    async def test_generate_html_basic_structure(self) -> None:
         """Test that generated HTML has required structure."""
         dashboard = AttackDashboard()
         html = dashboard.generate_html()
@@ -243,7 +245,7 @@ class TestAttackDashboardHtmlGeneration:
         assert "</html>" in html
         assert "Attack Dashboard" in html
 
-    def test_generate_html_contains_metrics(self) -> None:
+    async def test_generate_html_contains_metrics(self) -> None:
         """Test that HTML contains metric containers."""
         dashboard = AttackDashboard()
 
@@ -259,7 +261,7 @@ class TestAttackDashboardHtmlGeneration:
         assert "Avg HCS Score" in html
         assert "Active Models" in html
 
-    def test_generate_html_contains_strategy_table(self) -> None:
+    async def test_generate_html_contains_strategy_table(self) -> None:
         """Test that HTML contains strategy success rate table."""
         dashboard = AttackDashboard()
 
@@ -274,7 +276,7 @@ class TestAttackDashboardHtmlGeneration:
         assert "Successes" in html
         assert "prompt_injection" in html
 
-    def test_generate_html_contains_model_table(self) -> None:
+    async def test_generate_html_contains_model_table(self) -> None:
         """Test that HTML contains model comparison table."""
         dashboard = AttackDashboard()
 
@@ -288,7 +290,7 @@ class TestAttackDashboardHtmlGeneration:
         assert "Total Attacks" in html
         assert "gpt-4" in html
 
-    def test_generate_html_contains_event_feed(self) -> None:
+    async def test_generate_html_contains_event_feed(self) -> None:
         """Test that HTML contains event feed section."""
         dashboard = AttackDashboard()
 
@@ -300,7 +302,7 @@ class TestAttackDashboardHtmlGeneration:
         assert "Event Feed" in html
         assert "event-feed" in html
 
-    def test_generate_html_embedded_data(self) -> None:
+    async def test_generate_html_embedded_data(self) -> None:
         """Test that events are embedded in HTML as JSON."""
         dashboard = AttackDashboard()
 
@@ -312,7 +314,7 @@ class TestAttackDashboardHtmlGeneration:
         assert "allEvents = " in html
         assert "test_model" in html
 
-    def test_generate_html_displays_counter_values(self) -> None:
+    async def test_generate_html_displays_counter_values(self) -> None:
         """Test that metric values are displayed."""
         dashboard = AttackDashboard()
 
@@ -324,7 +326,7 @@ class TestAttackDashboardHtmlGeneration:
         # Should contain counters
         assert "<div class=\"metric-value\">1</div>" in html or ">1<" in html
 
-    def test_generate_html_styling(self) -> None:
+    async def test_generate_html_styling(self) -> None:
         """Test that HTML includes proper styling."""
         dashboard = AttackDashboard()
         html = dashboard.generate_html()
@@ -334,7 +336,7 @@ class TestAttackDashboardHtmlGeneration:
         assert "background:" in html
         assert "color:" in html
 
-    def test_generate_html_responsive_design(self) -> None:
+    async def test_generate_html_responsive_design(self) -> None:
         """Test that HTML includes responsive CSS."""
         dashboard = AttackDashboard()
         html = dashboard.generate_html()
@@ -342,14 +344,14 @@ class TestAttackDashboardHtmlGeneration:
         assert "@media" in html
         assert "viewport" in html
 
-    def test_generate_html_no_events_message(self) -> None:
+    async def test_generate_html_no_events_message(self) -> None:
         """Test that empty dashboard shows appropriate message."""
         dashboard = AttackDashboard()
         html = dashboard.generate_html()
 
         assert "no-events" in html or "No events" in html
 
-    def test_generate_html_recent_events_only(self) -> None:
+    async def test_generate_html_recent_events_only(self) -> None:
         """Test that HTML displays only recent events (last 20)."""
         dashboard = AttackDashboard()
 
@@ -367,7 +369,7 @@ class TestAttackDashboardHtmlGeneration:
 class TestAttackDashboardIntegration:
     """Integration tests combining multiple operations."""
 
-    def test_dashboard_workflow_complete(self) -> None:
+    async def test_dashboard_workflow_complete(self) -> None:
         """Test complete dashboard workflow."""
         dashboard = AttackDashboard()
 
@@ -394,7 +396,7 @@ class TestAttackDashboardIntegration:
         html = dashboard.generate_html()
         assert "50.0%" in html or "success" in html.lower()
 
-    def test_dashboard_persistence_pattern(self) -> None:
+    async def test_dashboard_persistence_pattern(self) -> None:
         """Test that dashboard can be reused across multiple calls."""
         # Simulate scenario where dashboard is used across multiple tool calls
         dashboard1 = AttackDashboard()
@@ -409,7 +411,7 @@ class TestAttackDashboardIntegration:
         dashboard2 = AttackDashboard()
         assert len(dashboard2.events) == 0  # New instance starts fresh
 
-    def test_dashboard_empty_to_populated_flow(self) -> None:
+    async def test_dashboard_empty_to_populated_flow(self) -> None:
         """Test dashboard going from empty to populated state."""
         dashboard = AttackDashboard()
 
@@ -429,7 +431,7 @@ class TestAttackDashboardIntegration:
         assert populated_summary["success_rate"] == 100.0
         assert populated_summary["avg_hcs_score"] == 85.0
 
-    def test_dashboard_html_consistency(self) -> None:
+    async def test_dashboard_html_consistency(self) -> None:
         """Test that HTML generation produces consistent results."""
         dashboard = AttackDashboard()
 
@@ -446,7 +448,7 @@ class TestAttackDashboardIntegration:
 class TestAttackDashboardEdgeCases:
     """Test edge cases and error conditions."""
 
-    def test_empty_event_data(self) -> None:
+    async def test_empty_event_data(self) -> None:
         """Test adding event with empty data dict."""
         dashboard = AttackDashboard()
 
@@ -455,7 +457,7 @@ class TestAttackDashboardEdgeCases:
         assert len(dashboard.events) == 1
         assert dashboard.events[0]["data"] == {}
 
-    def test_large_event_data(self) -> None:
+    async def test_large_event_data(self) -> None:
         """Test adding event with large data payload."""
         dashboard = AttackDashboard()
 
@@ -469,7 +471,7 @@ class TestAttackDashboardEdgeCases:
         assert len(dashboard.events) == 1
         assert dashboard.events[0]["data"]["response"] == "x" * 10000
 
-    def test_special_characters_in_event_data(self) -> None:
+    async def test_special_characters_in_event_data(self) -> None:
         """Test handling special characters in event data."""
         dashboard = AttackDashboard()
 
@@ -484,7 +486,7 @@ class TestAttackDashboardEdgeCases:
         html = dashboard.generate_html()
         assert isinstance(html, str)  # Should generate without errors
 
-    def test_many_strategies_ranking(self) -> None:
+    async def test_many_strategies_ranking(self) -> None:
         """Test ranking with many different strategies."""
         dashboard = AttackDashboard()
 
@@ -504,7 +506,7 @@ class TestAttackDashboardEdgeCases:
         if len(strategies) > 1:
             assert strategies[0]["rate"] >= strategies[1]["rate"]
 
-    def test_numeric_models_and_strategies(self) -> None:
+    async def test_numeric_models_and_strategies(self) -> None:
         """Test with numeric identifiers."""
         dashboard = AttackDashboard()
 

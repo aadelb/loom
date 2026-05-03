@@ -16,8 +16,10 @@ def _clear_module_cache():
     sys.modules.pop("loom.providers.hn_reddit", None)
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestSearchHackerNews:
-    def test_basic_search(self):
+    async def test_basic_search(self):
         mock_resp = MagicMock()
         mock_resp.json.return_value = {
             "hits": [
@@ -54,7 +56,7 @@ class TestSearchHackerNews:
         assert result["results"][0]["points"] == 100
         assert "error" not in result
 
-    def test_empty_results(self):
+    async def test_empty_results(self):
         mock_resp = MagicMock()
         mock_resp.json.return_value = {"hits": []}
         mock_resp.raise_for_status = MagicMock()
@@ -72,7 +74,7 @@ class TestSearchHackerNews:
         assert result["results"] == []
         assert result["query"] == "empty test"
 
-    def test_error_handling(self):
+    async def test_error_handling(self):
         mock_client = MagicMock()
         mock_client.__enter__ = MagicMock(return_value=mock_client)
         mock_client.__exit__ = MagicMock(return_value=False)
@@ -89,7 +91,7 @@ class TestSearchHackerNews:
 
 
 class TestSearchReddit:
-    def test_basic_search(self):
+    async def test_basic_search(self):
         mock_resp = MagicMock()
         mock_resp.json.return_value = {
             "data": {
@@ -132,7 +134,7 @@ class TestSearchReddit:
         assert result["results"][0]["url"] == "https://www.reddit.com/r/test/comments/123/example/"
         assert "error" not in result
 
-    def test_subreddit_filter(self):
+    async def test_subreddit_filter(self):
         mock_resp = MagicMock()
         mock_resp.json.return_value = {"data": {"children": []}}
         mock_resp.raise_for_status = MagicMock()
@@ -152,7 +154,7 @@ class TestSearchReddit:
         assert "r/python/search.json" in args[0]
         assert kwargs["params"]["restrict_sr"] == "on"
 
-    def test_error_handling(self):
+    async def test_error_handling(self):
         mock_client = MagicMock()
         mock_client.__enter__ = MagicMock(return_value=mock_client)
         mock_client.__exit__ = MagicMock(return_value=False)

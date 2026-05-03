@@ -15,8 +15,10 @@ def _clear_firecrawl_module():
     sys.modules.pop("loom.providers.firecrawl", None)
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestSearchFirecrawl:
-    def test_missing_api_key(self):
+    async def test_missing_api_key(self):
         with patch.dict("os.environ", {}, clear=True):
             from loom.providers.firecrawl import search_firecrawl
 
@@ -24,7 +26,7 @@ class TestSearchFirecrawl:
             assert result["error"] == "FIRECRAWL_API_KEY not set"
             assert result["results"] == []
 
-    def test_sdk_not_installed(self):
+    async def test_sdk_not_installed(self):
         with (
             patch.dict("os.environ", {"FIRECRAWL_API_KEY": "test-key"}),
             patch.dict("sys.modules", {"firecrawl": None}),
@@ -34,7 +36,7 @@ class TestSearchFirecrawl:
             result = search_firecrawl("test query")
             assert "not installed" in result["error"]
 
-    def test_basic_search_list_response(self):
+    async def test_basic_search_list_response(self):
         mock_app_cls = MagicMock()
         mock_app_cls.return_value.search.return_value = [
             {"url": "https://example.com", "title": "Example", "description": "Desc", "score": 0.9}
@@ -55,7 +57,7 @@ class TestSearchFirecrawl:
         assert result["results"][0]["url"] == "https://example.com"
         assert result["results"][0]["snippet"] == "Desc"
 
-    def test_basic_search_dict_response(self):
+    async def test_basic_search_dict_response(self):
         mock_app_cls = MagicMock()
         mock_app_cls.return_value.search.return_value = {
             "data": [{"url": "https://example.com", "title": "T", "description": "D"}]
@@ -73,7 +75,7 @@ class TestSearchFirecrawl:
 
         assert len(result["results"]) == 1
 
-    def test_client_side_domain_include(self):
+    async def test_client_side_domain_include(self):
         mock_app_cls = MagicMock()
         mock_app_cls.return_value.search.return_value = [
             {"url": "https://example.com/page", "title": "Good", "description": ""},
@@ -93,7 +95,7 @@ class TestSearchFirecrawl:
         assert len(result["results"]) == 1
         assert result["results"][0]["url"] == "https://example.com/page"
 
-    def test_client_side_domain_exclude(self):
+    async def test_client_side_domain_exclude(self):
         mock_app_cls = MagicMock()
         mock_app_cls.return_value.search.return_value = [
             {"url": "https://example.com/page", "title": "Good", "description": ""},
@@ -113,7 +115,7 @@ class TestSearchFirecrawl:
         assert len(result["results"]) == 1
         assert result["results"][0]["title"] == "Good"
 
-    def test_api_error(self):
+    async def test_api_error(self):
         mock_app_cls = MagicMock()
         mock_app_cls.return_value.search.side_effect = RuntimeError("API down")
         mock_fc_mod = MagicMock()
@@ -129,7 +131,7 @@ class TestSearchFirecrawl:
 
         assert "search failed" in result["error"]
 
-    def test_snippet_truncation(self):
+    async def test_snippet_truncation(self):
         mock_app_cls = MagicMock()
         mock_app_cls.return_value.search.return_value = [
             {"url": "https://x.com", "title": "T", "description": "d" * 1000}

@@ -358,10 +358,11 @@ class TestGenerateMarkdownReport:
         assert "# Research Report: Test" in markdown  # Main header always exists
 
 
+@pytest.mark.asyncio
 class TestResearchGenerateReport:
     """research_generate_report main function."""
 
-    def test_full_report_generation(self) -> None:
+    async def test_full_report_generation(self) -> None:
         """Generate complete research report with all sources."""
         with patch("loom.tools.report_generator._wikipedia_overview") as mock_wiki:
             with patch(
@@ -414,7 +415,7 @@ class TestResearchGenerateReport:
                             "source": "hackernews",
                         }
 
-                        result = research_generate_report("transformers")
+                        result = await research_generate_report("transformers")
 
                         assert result["topic"] == "transformers"
                         assert "sections" in result
@@ -426,7 +427,7 @@ class TestResearchGenerateReport:
                         assert "word_count" in result
                         assert result["word_count"] > 0
 
-    def test_report_with_deep_depth(self) -> None:
+    async def test_report_with_deep_depth(self) -> None:
         """Generate report with deep depth level."""
         with patch("loom.tools.report_generator._wikipedia_overview") as mock_wiki:
             with patch(
@@ -456,12 +457,12 @@ class TestResearchGenerateReport:
                             "source": "hackernews",
                         }
 
-                        result = research_generate_report("ai", depth="deep")
+                        result = await research_generate_report("ai", depth="deep")
 
                         assert result["depth"] == "deep"
                         assert "Open Questions" in result["markdown_report"]
 
-    def test_report_with_brief_depth(self) -> None:
+    async def test_report_with_brief_depth(self) -> None:
         """Generate brief report with minimal content."""
         with patch("loom.tools.report_generator._wikipedia_overview") as mock_wiki:
             with patch(
@@ -491,12 +492,12 @@ class TestResearchGenerateReport:
                             "source": "hackernews",
                         }
 
-                        result = research_generate_report("topic", depth="brief")
+                        result = await research_generate_report("topic", depth="brief")
 
                         assert result["depth"] == "brief"
                         assert "# Research Report: topic" in result["markdown_report"]
 
-    def test_report_sources_used_tracked(self) -> None:
+    async def test_report_sources_used_tracked(self) -> None:
         """Track which sources were used in report."""
         with patch("loom.tools.report_generator._wikipedia_overview") as mock_wiki:
             with patch(
@@ -526,7 +527,7 @@ class TestResearchGenerateReport:
                             "source": "hackernews",
                         }
 
-                        result = research_generate_report("test")
+                        result = await research_generate_report("test")
 
                         assert "sources_used" in result
                         assert "wikipedia" in result["sources_used"]

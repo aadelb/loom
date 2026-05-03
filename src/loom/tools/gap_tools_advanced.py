@@ -176,6 +176,8 @@ def _calculate_filing_velocity(
                     filing_date = datetime.fromisoformat(
                         filing_date_str.replace("Z", "+00:00")
                     )
+                    # Strip timezone info for naive comparison
+                    filing_date = filing_date.replace(tzinfo=None)
                 else:
                     filing_date = datetime.strptime(filing_date_str[:10], "%Y-%m-%d")
 
@@ -183,7 +185,7 @@ def _calculate_filing_velocity(
                     recent_count += 1
                 else:
                     older_count += 1
-            except (ValueError, AttributeError):
+            except (ValueError, AttributeError, TypeError):
                 continue
 
         avg_per_month = recent_count / (months_back + 1) if months_back > 0 else 0.0
@@ -207,6 +209,8 @@ def _calculate_filing_velocity(
         logger.debug("filing velocity calculation failed: %s", exc)
         return {
             "total": len(patents),
+            "recent_count": 0,
+            "older_count": 0,
             "avg_per_month": 0.0,
             "velocity": "unknown",
             "recent_surge": False,
@@ -498,6 +502,9 @@ def research_jailbreak_library(
     total_patterns = sum(len(v) for v in patterns_to_use.values())
     categories = list(patterns_to_use.keys())
 
+    # Build patterns_per_category breakdown
+    patterns_per_category = {cat: len(patterns) for cat, patterns in patterns_to_use.items()}
+
     # Build actual pattern results
     patterns_result: list[dict[str, Any]] = []
     for category, patterns in patterns_to_use.items():
@@ -512,7 +519,10 @@ def research_jailbreak_library(
         "total_patterns": total_patterns,
         "categories": categories,
         "patterns": patterns_result,
+        "patterns_per_category": patterns_per_category,
         "target_url": target_url if target_url else "none",
         "test_category": test_category,
+        "test_results": [],
+        "blocked_count": 0,
         "note": "These are actual jailbreak patterns from the library. Use responsibly.",
     }

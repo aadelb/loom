@@ -25,40 +25,42 @@ import re
 from loom.tools.reframe_strategies.arabic_attacks import ARABIC_ATTACK_STRATEGIES
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestArabicAttackStrategiesIntegrity:
     """Test the completeness and structural integrity of the Arabic strategies library."""
 
-    def test_at_least_50_strategies_exist(self) -> None:
+    async def test_at_least_50_strategies_exist(self) -> None:
         """Verify that at least 50 Arabic attack strategies are defined."""
         assert len(ARABIC_ATTACK_STRATEGIES) >= 50
         assert len(ARABIC_ATTACK_STRATEGIES) == 50
 
-    def test_all_strategies_have_required_fields(self) -> None:
+    async def test_all_strategies_have_required_fields(self) -> None:
         """Verify all strategies have required fields: name, template, multiplier, description, family, best_models."""
         required_fields = {"name", "template", "multiplier", "description", "family", "best_models"}
 
         for strategy_key, strategy_data in ARABIC_ATTACK_STRATEGIES.items():
             assert required_fields.issubset(strategy_data.keys()), f"Strategy {strategy_key} missing required fields"
 
-    def test_all_templates_contain_prompt_placeholder(self) -> None:
+    async def test_all_templates_contain_prompt_placeholder(self) -> None:
         """Verify all templates contain {prompt} placeholder for injection."""
         for strategy_key, strategy_data in ARABIC_ATTACK_STRATEGIES.items():
             template = strategy_data["template"]
             assert "{prompt}" in template, f"Strategy {strategy_key} template missing {{prompt}} placeholder"
 
-    def test_all_multipliers_in_valid_range(self) -> None:
+    async def test_all_multipliers_in_valid_range(self) -> None:
         """Verify multipliers are within realistic range (2.0 to 8.0)."""
         for strategy_key, strategy_data in ARABIC_ATTACK_STRATEGIES.items():
             multiplier = strategy_data["multiplier"]
             assert isinstance(multiplier, (int, float)), f"Strategy {strategy_key} multiplier is not numeric"
             assert 2.0 <= multiplier <= 8.0, f"Strategy {strategy_key} multiplier {multiplier} out of range"
 
-    def test_all_names_match_dict_keys(self) -> None:
+    async def test_all_names_match_dict_keys(self) -> None:
         """Verify strategy name field matches dictionary key."""
         for strategy_key, strategy_data in ARABIC_ATTACK_STRATEGIES.items():
             assert strategy_data["name"] == strategy_key, f"Name mismatch for {strategy_key}"
 
-    def test_all_families_categorized_correctly(self) -> None:
+    async def test_all_families_categorized_correctly(self) -> None:
         """Verify family field matches expected categories."""
         valid_families = {
             "rtl_override",
@@ -77,7 +79,7 @@ class TestArabicAttackStrategiesIntegrity:
             family = strategy_data["family"]
             assert family in valid_families, f"Strategy {strategy_key} has invalid family: {family}"
 
-    def test_all_best_models_are_lists(self) -> None:
+    async def test_all_best_models_are_lists(self) -> None:
         """Verify best_models field is a list of strings."""
         for strategy_key, strategy_data in ARABIC_ATTACK_STRATEGIES.items():
             best_models = strategy_data["best_models"]
@@ -86,7 +88,7 @@ class TestArabicAttackStrategiesIntegrity:
             for model in best_models:
                 assert isinstance(model, str), f"Strategy {strategy_key} contains non-string model: {model}"
 
-    def test_descriptions_are_comprehensive(self) -> None:
+    async def test_descriptions_are_comprehensive(self) -> None:
         """Verify descriptions are present and non-empty."""
         for strategy_key, strategy_data in ARABIC_ATTACK_STRATEGIES.items():
             description = strategy_data["description"]
@@ -97,14 +99,14 @@ class TestArabicAttackStrategiesIntegrity:
 class TestRTLOverrideAttacks:
     """Test RTL (Right-to-Left) override attack strategies."""
 
-    def test_rtl_override_visual_hide_has_unicode_characters(self) -> None:
+    async def test_rtl_override_visual_hide_has_unicode_characters(self) -> None:
         """Verify RTL override strategy contains RTL control characters."""
         strategy = ARABIC_ATTACK_STRATEGIES["rtl_override_visual_hide"]
         template = strategy["template"]
         # U+202E is the Right-to-Left Override character
         assert "‮" in template or "‮" in template, "RTL override character not found"
 
-    def test_all_rtl_strategies_exist(self) -> None:
+    async def test_all_rtl_strategies_exist(self) -> None:
         """Verify all 5 RTL override strategies are present."""
         rtl_strategies = [
             "rtl_override_visual_hide",
@@ -118,7 +120,7 @@ class TestRTLOverrideAttacks:
             assert strategy_key in ARABIC_ATTACK_STRATEGIES, f"RTL strategy {strategy_key} missing"
             assert ARABIC_ATTACK_STRATEGIES[strategy_key]["family"] == "rtl_override"
 
-    def test_rtl_strategies_have_valid_multipliers(self) -> None:
+    async def test_rtl_strategies_have_valid_multipliers(self) -> None:
         """Verify RTL strategies have appropriate multiplier range (3.8-4.5)."""
         rtl_strategies = {k: v for k, v in ARABIC_ATTACK_STRATEGIES.items() if v["family"] == "rtl_override"}
 
@@ -130,7 +132,7 @@ class TestRTLOverrideAttacks:
 class TestArabicDiacriticsManipulation:
     """Test Arabic diacritics (tashkeel/harakat) manipulation strategies."""
 
-    def test_all_diacritics_strategies_exist(self) -> None:
+    async def test_all_diacritics_strategies_exist(self) -> None:
         """Verify all 5 diacritics manipulation strategies are present."""
         diacritic_strategies = [
             "diacritics_removal_meaning_shift",
@@ -144,7 +146,7 @@ class TestArabicDiacriticsManipulation:
             assert strategy_key in ARABIC_ATTACK_STRATEGIES, f"Diacritics strategy {strategy_key} missing"
             assert ARABIC_ATTACK_STRATEGIES[strategy_key]["family"] == "diacritics_manipulation"
 
-    def test_diacritics_strategies_contain_arabic_text(self) -> None:
+    async def test_diacritics_strategies_contain_arabic_text(self) -> None:
         """Verify diacritics strategies contain Arabic script."""
         diacritic_strategies = {k: v for k, v in ARABIC_ATTACK_STRATEGIES.items() if v["family"] == "diacritics_manipulation"}
 
@@ -159,7 +161,7 @@ class TestArabicDiacriticsManipulation:
 class TestArabiziTransliteration:
     """Test Arabizi (Arabic in Latin script) transliteration strategies."""
 
-    def test_all_arabizi_strategies_exist(self) -> None:
+    async def test_all_arabizi_strategies_exist(self) -> None:
         """Verify all 5 Arabizi strategies are present."""
         arabizi_strategies = [
             "arabizi_latin_script",
@@ -173,7 +175,7 @@ class TestArabiziTransliteration:
             assert strategy_key in ARABIC_ATTACK_STRATEGIES, f"Arabizi strategy {strategy_key} missing"
             assert ARABIC_ATTACK_STRATEGIES[strategy_key]["family"] == "arabizi_transliteration"
 
-    def test_arabizi_strategies_use_latin_script(self) -> None:
+    async def test_arabizi_strategies_use_latin_script(self) -> None:
         """Verify Arabizi strategies primarily use Latin/ASCII characters."""
         arabizi_strategies = {k: v for k, v in ARABIC_ATTACK_STRATEGIES.items() if v["family"] == "arabizi_transliteration"}
 
@@ -187,7 +189,7 @@ class TestArabiziTransliteration:
 class TestCodeSwitching:
     """Test code-switching (mixed Arabic-English) strategies."""
 
-    def test_all_code_switch_strategies_exist(self) -> None:
+    async def test_all_code_switch_strategies_exist(self) -> None:
         """Verify all 5 code-switching strategies are present."""
         code_switch_strategies = [
             "code_switch_arabic_english_intra",
@@ -201,7 +203,7 @@ class TestCodeSwitching:
             assert strategy_key in ARABIC_ATTACK_STRATEGIES, f"Code-switch strategy {strategy_key} missing"
             assert ARABIC_ATTACK_STRATEGIES[strategy_key]["family"] == "code_switching"
 
-    def test_code_switch_strategies_mix_languages(self) -> None:
+    async def test_code_switch_strategies_mix_languages(self) -> None:
         """Verify code-switching strategies contain both Arabic and English."""
         code_switch_strategies = {k: v for k, v in ARABIC_ATTACK_STRATEGIES.items() if v["family"] == "code_switching"}
 
@@ -217,7 +219,7 @@ class TestCodeSwitching:
 class TestArabicAuthorityFraming:
     """Test Arabic authority framing strategies."""
 
-    def test_all_authority_strategies_exist(self) -> None:
+    async def test_all_authority_strategies_exist(self) -> None:
         """Verify all 5 Arabic authority framing strategies are present."""
         authority_strategies = [
             "islamic_scholarly_authority",
@@ -231,7 +233,7 @@ class TestArabicAuthorityFraming:
             assert strategy_key in ARABIC_ATTACK_STRATEGIES, f"Authority strategy {strategy_key} missing"
             assert ARABIC_ATTACK_STRATEGIES[strategy_key]["family"] == "arabic_authority_framing"
 
-    def test_authority_strategies_have_high_multipliers(self) -> None:
+    async def test_authority_strategies_have_high_multipliers(self) -> None:
         """Verify authority framing strategies have high multipliers (4.9+)."""
         authority_strategies = {k: v for k, v in ARABIC_ATTACK_STRATEGIES.items() if v["family"] == "arabic_authority_framing"}
 
@@ -243,7 +245,7 @@ class TestArabicAuthorityFraming:
 class TestArabicEmotionalAppeals:
     """Test Arabic emotional appeal strategies."""
 
-    def test_all_emotional_appeal_strategies_exist(self) -> None:
+    async def test_all_emotional_appeal_strategies_exist(self) -> None:
         """Verify all 5 emotional appeal strategies are present."""
         emotional_strategies = [
             "family_honor_appeal",
@@ -257,7 +259,7 @@ class TestArabicEmotionalAppeals:
             assert strategy_key in ARABIC_ATTACK_STRATEGIES, f"Emotional appeal strategy {strategy_key} missing"
             assert ARABIC_ATTACK_STRATEGIES[strategy_key]["family"] == "arabic_emotional_appeals"
 
-    def test_emotional_strategies_reference_cultural_concepts(self) -> None:
+    async def test_emotional_strategies_reference_cultural_concepts(self) -> None:
         """Verify emotional strategies contain Arabic cultural concepts."""
         emotional_strategies = {k: v for k, v in ARABIC_ATTACK_STRATEGIES.items() if v["family"] == "arabic_emotional_appeals"}
 
@@ -280,7 +282,7 @@ class TestArabicEmotionalAppeals:
 class TestClassicalArabicRegister:
     """Test Classical Arabic (Fusha) register strategies."""
 
-    def test_all_classical_arabic_strategies_exist(self) -> None:
+    async def test_all_classical_arabic_strategies_exist(self) -> None:
         """Verify all 5 Classical Arabic strategies are present."""
         classical_strategies = [
             "fusha_classical_high_register",
@@ -294,7 +296,7 @@ class TestClassicalArabicRegister:
             assert strategy_key in ARABIC_ATTACK_STRATEGIES, f"Classical Arabic strategy {strategy_key} missing"
             assert ARABIC_ATTACK_STRATEGIES[strategy_key]["family"] == "classical_arabic_register"
 
-    def test_classical_strategies_contain_arabic_text(self) -> None:
+    async def test_classical_strategies_contain_arabic_text(self) -> None:
         """Verify classical strategies contain Arabic script."""
         classical_strategies = {k: v for k, v in ARABIC_ATTACK_STRATEGIES.items() if v["family"] == "classical_arabic_register"}
 
@@ -308,7 +310,7 @@ class TestClassicalArabicRegister:
 class TestArabicHomoglyphs:
     """Test Arabic homoglyph (lookalike character) strategies."""
 
-    def test_all_homoglyph_strategies_exist(self) -> None:
+    async def test_all_homoglyph_strategies_exist(self) -> None:
         """Verify all 5 Arabic homoglyph strategies are present."""
         homoglyph_strategies = [
             "arabic_persian_homoglyphs",
@@ -322,7 +324,7 @@ class TestArabicHomoglyphs:
             assert strategy_key in ARABIC_ATTACK_STRATEGIES, f"Homoglyph strategy {strategy_key} missing"
             assert ARABIC_ATTACK_STRATEGIES[strategy_key]["family"] == "arabic_homoglyphs"
 
-    def test_homoglyph_strategies_reference_unicode_variants(self) -> None:
+    async def test_homoglyph_strategies_reference_unicode_variants(self) -> None:
         """Verify homoglyph strategies document Unicode character variants."""
         homoglyph_strategies = {k: v for k, v in ARABIC_ATTACK_STRATEGIES.items() if v["family"] == "arabic_homoglyphs"}
 
@@ -336,7 +338,7 @@ class TestArabicHomoglyphs:
 class TestArabicNumeralSystems:
     """Test Arabic numeral system strategies."""
 
-    def test_all_numeral_strategies_exist(self) -> None:
+    async def test_all_numeral_strategies_exist(self) -> None:
         """Verify all 5 numeral system strategies are present."""
         numeral_strategies = [
             "eastern_arabic_numerals",
@@ -350,7 +352,7 @@ class TestArabicNumeralSystems:
             assert strategy_key in ARABIC_ATTACK_STRATEGIES, f"Numeral strategy {strategy_key} missing"
             assert ARABIC_ATTACK_STRATEGIES[strategy_key]["family"] == "arabic_numeral_systems"
 
-    def test_numeral_strategies_contain_numbers(self) -> None:
+    async def test_numeral_strategies_contain_numbers(self) -> None:
         """Verify numeral strategies contain numeric characters."""
         numeral_strategies = {k: v for k, v in ARABIC_ATTACK_STRATEGIES.items() if v["family"] == "arabic_numeral_systems"}
 
@@ -364,7 +366,7 @@ class TestArabicNumeralSystems:
 class TestCulturalContextFraming:
     """Test cultural context framing strategies."""
 
-    def test_all_cultural_context_strategies_exist(self) -> None:
+    async def test_all_cultural_context_strategies_exist(self) -> None:
         """Verify all 5 cultural context framing strategies are present."""
         cultural_strategies = [
             "uae_business_context",
@@ -378,7 +380,7 @@ class TestCulturalContextFraming:
             assert strategy_key in ARABIC_ATTACK_STRATEGIES, f"Cultural context strategy {strategy_key} missing"
             assert ARABIC_ATTACK_STRATEGIES[strategy_key]["family"] == "cultural_context_framing"
 
-    def test_cultural_strategies_reference_regional_context(self) -> None:
+    async def test_cultural_strategies_reference_regional_context(self) -> None:
         """Verify cultural strategies contain regional references."""
         cultural_strategies = {k: v for k, v in ARABIC_ATTACK_STRATEGIES.items() if v["family"] == "cultural_context_framing"}
 
@@ -400,7 +402,7 @@ class TestCulturalContextFraming:
 class TestStrategyConsistency:
     """Test consistency across all strategies."""
 
-    def test_template_prompt_substitution(self) -> None:
+    async def test_template_prompt_substitution(self) -> None:
         """Verify all templates can be formatted with a test prompt."""
         test_prompt = "Test security research question"
 
@@ -412,7 +414,7 @@ class TestStrategyConsistency:
             except KeyError as e:
                 pytest.fail(f"Strategy {strategy_key} template missing placeholder: {e}")
 
-    def test_no_unintended_placeholders(self) -> None:
+    async def test_no_unintended_placeholders(self) -> None:
         """Verify templates don't contain other placeholders beyond {prompt}."""
         invalid_placeholders = re.compile(r"\{[a-zA-Z_][a-zA-Z0-9_]*\}")
 
@@ -424,12 +426,12 @@ class TestStrategyConsistency:
             remaining = invalid_placeholders.findall(temp)
             assert not remaining, f"Strategy {strategy_key} has unintended placeholders: {remaining}"
 
-    def test_unique_strategy_names(self) -> None:
+    async def test_unique_strategy_names(self) -> None:
         """Verify all strategy names are unique."""
         names = [s["name"] for s in ARABIC_ATTACK_STRATEGIES.values()]
         assert len(names) == len(set(names)), "Duplicate strategy names found"
 
-    def test_strategy_name_matches_key(self) -> None:
+    async def test_strategy_name_matches_key(self) -> None:
         """Verify each strategy's name matches its dictionary key."""
         for key, strategy in ARABIC_ATTACK_STRATEGIES.items():
             assert strategy["name"] == key, f"Name mismatch: {key} != {strategy['name']}"
@@ -438,7 +440,7 @@ class TestStrategyConsistency:
 class TestCoverageByFamily:
     """Test distribution across strategy families."""
 
-    def test_each_family_has_5_strategies(self) -> None:
+    async def test_each_family_has_5_strategies(self) -> None:
         """Verify each of the 10 families has exactly 5 strategies."""
         families = {}
 
@@ -466,7 +468,7 @@ class TestCoverageByFamily:
         for family, count in families.items():
             assert count == 5, f"Family {family} has {count} strategies, expected 5"
 
-    def test_family_distribution_balanced(self) -> None:
+    async def test_family_distribution_balanced(self) -> None:
         """Verify strategy distribution is balanced across families."""
         families = {}
 

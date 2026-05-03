@@ -14,30 +14,32 @@ from loom.params import (
 )
 
 
+pytestmark = pytest.mark.asyncio
+
 class TestLegalTakedownParams:
     """Tests for LegalTakedownParams validation."""
 
-    def test_valid_domain(self):
+    async def test_valid_domain(self):
         """Test valid domain."""
         params = LegalTakedownParams(domain="example.com")
         assert params.domain == "example.com"
 
-    def test_domain_case_normalization(self):
+    async def test_domain_case_normalization(self):
         """Test that domains are lowercased."""
         params = LegalTakedownParams(domain="EXAMPLE.COM")
         assert params.domain == "example.com"
 
-    def test_domain_whitespace_trimmed(self):
+    async def test_domain_whitespace_trimmed(self):
         """Test that domain whitespace is trimmed."""
         params = LegalTakedownParams(domain="  example.com  ")
         assert params.domain == "example.com"
 
-    def test_invalid_domain_format(self):
+    async def test_invalid_domain_format(self):
         """Test that invalid domain format raises error."""
         with pytest.raises(ValidationError):
             LegalTakedownParams(domain="invalid..domain")
 
-    def test_invalid_domain_no_tld(self):
+    async def test_invalid_domain_no_tld(self):
         """Test that domain without TLD raises error."""
         with pytest.raises(ValidationError):
             LegalTakedownParams(domain="localhost")
@@ -46,38 +48,38 @@ class TestLegalTakedownParams:
 class TestOpenAccessParams:
     """Tests for OpenAccessParams validation."""
 
-    def test_valid_doi(self):
+    async def test_valid_doi(self):
         """Test valid DOI."""
         params = OpenAccessParams(doi="10.1000/xyz123")
         assert params.doi == "10.1000/xyz123"
 
-    def test_doi_whitespace_trimmed(self):
+    async def test_doi_whitespace_trimmed(self):
         """Test that DOI whitespace is trimmed."""
         params = OpenAccessParams(doi="  10.1000/xyz123  ")
         assert params.doi == "10.1000/xyz123"
 
-    def test_invalid_doi_format(self):
+    async def test_invalid_doi_format(self):
         """Test that invalid DOI format raises error."""
         with pytest.raises(ValidationError):
             OpenAccessParams(doi="not_a_doi")
 
-    def test_valid_title(self):
+    async def test_valid_title(self):
         """Test valid title."""
         params = OpenAccessParams(title="Machine Learning in Practice")
         assert params.title == "Machine Learning in Practice"
 
-    def test_title_whitespace_trimmed(self):
+    async def test_title_whitespace_trimmed(self):
         """Test that title whitespace is trimmed."""
         params = OpenAccessParams(title="  Machine Learning  ")
         assert params.title == "Machine Learning"
 
-    def test_title_max_length(self):
+    async def test_title_max_length(self):
         """Test that title exceeding max length raises error."""
         long_title = "x" * 501
         with pytest.raises(ValidationError):
             OpenAccessParams(title=long_title)
 
-    def test_doi_and_title_optional(self):
+    async def test_doi_and_title_optional(self):
         """Test that both DOI and title are optional."""
         params = OpenAccessParams()
         assert params.doi == ""
@@ -87,17 +89,17 @@ class TestOpenAccessParams:
 class TestContentAuthenticityParams:
     """Tests for ContentAuthenticityParams validation."""
 
-    def test_valid_url(self):
+    async def test_valid_url(self):
         """Test valid URL."""
         params = ContentAuthenticityParams(url="https://example.com/page")
         assert "example.com" in params.url
 
-    def test_url_validation(self):
+    async def test_url_validation(self):
         """Test that invalid URL raises error."""
         with pytest.raises(ValidationError):
             ContentAuthenticityParams(url="not a url")
 
-    def test_http_url(self):
+    async def test_http_url(self):
         """Test HTTP URL is accepted."""
         params = ContentAuthenticityParams(url="http://example.com")
         assert "example.com" in params.url
@@ -106,35 +108,35 @@ class TestContentAuthenticityParams:
 class TestCredentialMonitorParams:
     """Tests for CredentialMonitorParams validation."""
 
-    def test_valid_email_target(self):
+    async def test_valid_email_target(self):
         """Test valid email target."""
         params = CredentialMonitorParams(target="user@example.com", target_type="email")
         assert params.target == "user@example.com"
         assert params.target_type == "email"
 
-    def test_valid_username_target(self):
+    async def test_valid_username_target(self):
         """Test valid username target."""
         params = CredentialMonitorParams(target="john_doe", target_type="username")
         assert params.target == "john_doe"
         assert params.target_type == "username"
 
-    def test_target_case_normalization(self):
+    async def test_target_case_normalization(self):
         """Test that target is lowercased."""
         params = CredentialMonitorParams(target="USER@EXAMPLE.COM")
         assert params.target == "user@example.com"
 
-    def test_target_whitespace_trimmed(self):
+    async def test_target_whitespace_trimmed(self):
         """Test that target whitespace is trimmed."""
         params = CredentialMonitorParams(target="  user@example.com  ")
         assert params.target == "user@example.com"
 
-    def test_target_max_length(self):
+    async def test_target_max_length(self):
         """Test that target exceeding max length raises error."""
         long_target = "x" * 256
         with pytest.raises(ValidationError):
             CredentialMonitorParams(target=long_target)
 
-    def test_default_target_type(self):
+    async def test_default_target_type(self):
         """Test that target_type defaults to email."""
         params = CredentialMonitorParams(target="user@example.com")
         assert params.target_type == "email"
@@ -143,32 +145,32 @@ class TestCredentialMonitorParams:
 class TestDeepfakeCheckerParams:
     """Tests for DeepfakeCheckerParams validation."""
 
-    def test_valid_jpg_url(self):
+    async def test_valid_jpg_url(self):
         """Test valid JPG image URL."""
         params = DeepfakeCheckerParams(image_url="https://example.com/image.jpg")
         assert "example.com" in params.image_url
 
-    def test_valid_png_url(self):
+    async def test_valid_png_url(self):
         """Test valid PNG image URL."""
         params = DeepfakeCheckerParams(image_url="https://example.com/image.png")
         assert "example.com" in params.image_url
 
-    def test_valid_webp_url(self):
+    async def test_valid_webp_url(self):
         """Test valid WebP image URL."""
         params = DeepfakeCheckerParams(image_url="https://example.com/image.webp")
         assert "example.com" in params.image_url
 
-    def test_invalid_file_type(self):
+    async def test_invalid_file_type(self):
         """Test that non-image file types raise error."""
         with pytest.raises(ValidationError):
             DeepfakeCheckerParams(image_url="https://example.com/document.pdf")
 
-    def test_invalid_url(self):
+    async def test_invalid_url(self):
         """Test that invalid URL raises error."""
         with pytest.raises(ValidationError):
             DeepfakeCheckerParams(image_url="not a url")
 
-    def test_jpeg_extension(self):
+    async def test_jpeg_extension(self):
         """Test JPEG extension is accepted."""
         params = DeepfakeCheckerParams(image_url="https://example.com/photo.jpeg")
         assert "example.com" in params.image_url
@@ -177,22 +179,22 @@ class TestDeepfakeCheckerParams:
 class TestParamsExtraSecurity:
     """Tests for extra fields rejection and strict mode."""
 
-    def test_legal_takedown_no_extra_fields(self):
+    async def test_legal_takedown_no_extra_fields(self):
         """Test that extra fields are rejected."""
         with pytest.raises(ValidationError):
             LegalTakedownParams(domain="example.com", extra_field="value")
 
-    def test_open_access_no_extra_fields(self):
+    async def test_open_access_no_extra_fields(self):
         """Test that extra fields are rejected."""
         with pytest.raises(ValidationError):
             OpenAccessParams(doi="10.1000/xyz", extra_field="value")
 
-    def test_credential_monitor_no_extra_fields(self):
+    async def test_credential_monitor_no_extra_fields(self):
         """Test that extra fields are rejected."""
         with pytest.raises(ValidationError):
             CredentialMonitorParams(target="user@example.com", extra_field="value")
 
-    def test_deepfake_checker_no_extra_fields(self):
+    async def test_deepfake_checker_no_extra_fields(self):
         """Test that extra fields are rejected."""
         with pytest.raises(ValidationError):
             DeepfakeCheckerParams(image_url="https://example.com/image.jpg", extra_field="value")

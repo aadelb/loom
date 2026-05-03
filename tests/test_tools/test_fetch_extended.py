@@ -13,6 +13,7 @@ Tests cover:
 """
 
 from __future__ import annotations
+import pytest
 
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -30,28 +31,30 @@ from loom.tools.fetch import (
 )
 
 
+pytestmark = pytest.mark.asyncio
+
 class TestMakeCacheKey:
     """Tests for _make_cache_key — consistent hash generation."""
 
-    def test_make_cache_key_deterministic(self) -> None:
+    async def test_make_cache_key_deterministic(self) -> None:
         """Cache key is deterministic for same input."""
         key1 = _make_cache_key("https://example.com", "http")
         key2 = _make_cache_key("https://example.com", "http")
         assert key1 == key2
 
-    def test_make_cache_key_differs_by_url(self) -> None:
+    async def test_make_cache_key_differs_by_url(self) -> None:
         """Different URLs produce different keys."""
         key1 = _make_cache_key("https://example.com", "http")
         key2 = _make_cache_key("https://other.com", "http")
         assert key1 != key2
 
-    def test_make_cache_key_differs_by_mode(self) -> None:
+    async def test_make_cache_key_differs_by_mode(self) -> None:
         """Different modes produce different keys."""
         key1 = _make_cache_key("https://example.com", "http")
         key2 = _make_cache_key("https://example.com", "stealthy")
         assert key1 != key2
 
-    def test_make_cache_key_length(self) -> None:
+    async def test_make_cache_key_length(self) -> None:
         """Cache key is 32 characters."""
         key = _make_cache_key("https://example.com", "http")
         assert len(key) == 32
@@ -60,51 +63,51 @@ class TestMakeCacheKey:
 class TestExtractText:
     """Tests for _extract_text — HTML to text conversion."""
 
-    def test_extract_text_simple_html(self) -> None:
+    async def test_extract_text_simple_html(self) -> None:
         """Extract plain text from simple HTML."""
         html = "<html><body><p>Hello world</p></body></html>"
         text = _extract_text(html, max_chars=1000)
         assert "Hello" in text
         assert "world" in text
 
-    def test_extract_text_removes_script_tags(self) -> None:
+    async def test_extract_text_removes_script_tags(self) -> None:
         """Extract text removes <script> content."""
         html = "<html><body><p>Visible</p><script>alert('hidden')</script></body></html>"
         text = _extract_text(html, max_chars=1000)
         assert "Visible" in text
         assert "alert" not in text
 
-    def test_extract_text_removes_style_tags(self) -> None:
+    async def test_extract_text_removes_style_tags(self) -> None:
         """Extract text removes <style> content."""
         html = "<html><body><p>Visible</p><style>.x { color: red; }</style></body></html>"
         text = _extract_text(html, max_chars=1000)
         assert "Visible" in text
         assert "color" not in text
 
-    def test_extract_text_normalizes_whitespace(self) -> None:
+    async def test_extract_text_normalizes_whitespace(self) -> None:
         """Extract text normalizes multiple spaces."""
         html = "<html><body><p>Hello    world</p></body></html>"
         text = _extract_text(html, max_chars=1000)
         assert "Hello" in text and "world" in text
 
-    def test_extract_text_respects_max_chars(self) -> None:
+    async def test_extract_text_respects_max_chars(self) -> None:
         """Extract text is capped at max_chars."""
         html = "<html><body><p>" + "x" * 5000 + "</p></body></html>"
         text = _extract_text(html, max_chars=1000)
         assert len(text) <= 1001
 
-    def test_extract_text_adds_ellipsis_when_truncated(self) -> None:
+    async def test_extract_text_adds_ellipsis_when_truncated(self) -> None:
         """Extract text adds ellipsis when truncated."""
         html = "<html><body>" + "x" * 2000 + "</body></html>"
         text = _extract_text(html, max_chars=100)
         assert text.endswith("…")
 
-    def test_extract_text_empty_html(self) -> None:
+    async def test_extract_text_empty_html(self) -> None:
         """Extract text handles empty HTML."""
         text = _extract_text("", max_chars=1000)
         assert text == ""
 
-    def test_extract_text_malformed_html(self) -> None:
+    async def test_extract_text_malformed_html(self) -> None:
         """Extract text handles malformed HTML gracefully."""
         html = "<p>Unclosed paragraph"
         text = _extract_text(html, max_chars=1000)
@@ -114,7 +117,7 @@ class TestExtractText:
 class TestToScraplingSchema:
     """Tests for _to_scrapling_schema — transform to Scrapling-compatible format."""
 
-    def test_to_scrapling_schema_basic_fields(self) -> None:
+    async def test_to_scrapling_schema_basic_fields(self) -> None:
         """Transform includes url, title, text, html_len, fetched_at."""
         result = {
             "url": "https://example.com",
@@ -132,7 +135,7 @@ class TestToScraplingSchema:
         assert "fetched_at" in output
         assert output["tool"] == "httpx"
 
-    def test_to_scrapling_schema_caps_text(self) -> None:
+    async def test_to_scrapling_schema_caps_text(self) -> None:
         """Transform caps text at max_chars."""
         result = {
             "url": "https://example.com",
@@ -142,7 +145,7 @@ class TestToScraplingSchema:
         output = _to_scrapling_schema(result, max_chars=1000)
         assert len(output["text"]) == 1000
 
-    def test_to_scrapling_schema_missing_optional_fields(self) -> None:
+    async def test_to_scrapling_schema_missing_optional_fields(self) -> None:
         """Transform handles missing optional fields."""
         result = {
             "url": "https://example.com",
@@ -155,7 +158,7 @@ class TestToScraplingSchema:
         assert output["text"] == ""
         assert output["html_len"] == 0
 
-    def test_to_scrapling_schema_includes_status_code(self) -> None:
+    async def test_to_scrapling_schema_includes_status_code(self) -> None:
         """Transform includes status_code if present."""
         result = {
             "url": "https://example.com",
@@ -165,7 +168,7 @@ class TestToScraplingSchema:
         output = _to_scrapling_schema(result, max_chars=5000)
         assert output["status_code"] == 200
 
-    def test_to_scrapling_schema_includes_error(self) -> None:
+    async def test_to_scrapling_schema_includes_error(self) -> None:
         """Transform includes error if present."""
         result = {
             "url": "https://example.com",
@@ -179,7 +182,7 @@ class TestToScraplingSchema:
 class TestFetchHttpMode:
     """Tests for HTTP mode fetching."""
 
-    def test_fetch_http_httpx_basic(self) -> None:
+    async def test_fetch_http_httpx_basic(self) -> None:
         """_fetch_http_httpx makes HTTP request."""
         params = FetchParams(
             url="https://example.com",
@@ -203,7 +206,7 @@ class TestFetchHttpMode:
             assert result.url == "https://example.com"
             assert result.tool == "httpx"
 
-    def test_fetch_http_httpx_handles_timeout(self) -> None:
+    async def test_fetch_http_httpx_handles_timeout(self) -> None:
         """_fetch_http_httpx handles request timeout."""
         params = FetchParams(
             url="https://example.com",
@@ -224,7 +227,7 @@ class TestFetchHttpMode:
 class TestFetchStealthyMode:
     """Tests for stealthy mode fetching."""
 
-    def test_fetch_stealthy_basic(self) -> None:
+    async def test_fetch_stealthy_basic(self) -> None:
         """_fetch_stealthy returns FetchResult."""
         params = FetchParams(
             url="https://example.com",
@@ -247,7 +250,7 @@ class TestFetchStealthyMode:
 class TestCacheHitMiss:
     """Tests for cache behavior in research_fetch."""
 
-    def test_fetch_cache_hit(self, tmp_cache_dir: Path) -> None:
+    async def test_fetch_cache_hit(self, tmp_cache_dir: Path) -> None:
         """Fetch returns cached result on second call."""
         import os
 
@@ -277,7 +280,7 @@ class TestCacheHitMiss:
             assert result1["text"] == result2["text"]
             assert mock_fetch.call_count == 1
 
-    def test_fetch_cache_miss(self, tmp_cache_dir: Path) -> None:
+    async def test_fetch_cache_miss(self, tmp_cache_dir: Path) -> None:
         """Fetch bypasses cache when bypass_cache=True."""
         import os
 
@@ -312,7 +315,7 @@ class TestCacheHitMiss:
 
             assert mock_fetch.call_count == 2
 
-    def test_fetch_cache_separate_modes(self, tmp_cache_dir: Path) -> None:
+    async def test_fetch_cache_separate_modes(self, tmp_cache_dir: Path) -> None:
         """Fetch caches separately by mode."""
         import os
 
@@ -351,7 +354,7 @@ class TestCacheHitMiss:
 class TestAutoEscalation:
     """Tests for auto_escalate feature."""
 
-    def test_auto_escalate_http_to_stealthy_on_cloudflare(self, tmp_cache_dir: Path) -> None:
+    async def test_auto_escalate_http_to_stealthy_on_cloudflare(self, tmp_cache_dir: Path) -> None:
         """Auto-escalate escalates HTTP to stealthy on Cloudflare block."""
         import os
 
@@ -386,7 +389,7 @@ class TestAutoEscalation:
 class TestFetchResult:
     """Tests for FetchResult model."""
 
-    def test_fetch_result_basic(self) -> None:
+    async def test_fetch_result_basic(self) -> None:
         """FetchResult can be instantiated."""
         result = FetchResult(
             url="https://example.com",
@@ -398,7 +401,7 @@ class TestFetchResult:
         assert result.status_code == 200
         assert result.text == "Content"
 
-    def test_fetch_result_json_alias(self) -> None:
+    async def test_fetch_result_json_alias(self) -> None:
         """FetchResult.json_data serializes as 'json'."""
         result = FetchResult(
             url="https://example.com",
@@ -409,7 +412,7 @@ class TestFetchResult:
         assert "json" in output
         assert output["json"] == {"key": "value"}
 
-    def test_fetch_result_with_error(self) -> None:
+    async def test_fetch_result_with_error(self) -> None:
         """FetchResult can include error message."""
         result = FetchResult(
             url="https://example.com",
@@ -423,7 +426,7 @@ class TestFetchResult:
 class TestFetchEdgeCases:
     """Tests for edge cases and error conditions."""
 
-    def test_fetch_respects_max_chars(self, tmp_cache_dir: Path) -> None:
+    async def test_fetch_respects_max_chars(self, tmp_cache_dir: Path) -> None:
         """Fetch respects max_chars parameter."""
         import os
 
@@ -448,7 +451,7 @@ class TestFetchEdgeCases:
 
             assert len(result["text"]) <= 1000
 
-    def test_fetch_with_custom_headers(self, tmp_cache_dir: Path) -> None:
+    async def test_fetch_with_custom_headers(self, tmp_cache_dir: Path) -> None:
         """Fetch passes custom headers to fetcher."""
         import os
 
@@ -473,7 +476,7 @@ class TestFetchEdgeCases:
 
             assert mock_fetch.called
 
-    def test_fetch_elapsed_ms_is_numeric(self, tmp_cache_dir: Path) -> None:
+    async def test_fetch_elapsed_ms_is_numeric(self, tmp_cache_dir: Path) -> None:
         """Fetch result includes elapsed_ms as integer."""
         import os
 
@@ -497,7 +500,7 @@ class TestFetchEdgeCases:
             assert isinstance(result["elapsed_ms"], int)
             assert result["elapsed_ms"] >= 0
 
-    def test_fetch_return_html_mode(self, tmp_cache_dir: Path) -> None:
+    async def test_fetch_return_html_mode(self, tmp_cache_dir: Path) -> None:
         """Fetch can return HTML in return_format='html'."""
         import os
 
@@ -525,31 +528,31 @@ class TestFetchEdgeCases:
 class TestCloudflareDetection:
     """Tests for _is_cloudflare_block helper."""
 
-    def test_detects_403_with_ray_id(self) -> None:
+    async def test_detects_403_with_ray_id(self) -> None:
         """Detects Cloudflare 403 with Ray ID."""
         result = FetchResult(
             url="https://x.com", status_code=403, text="Attention Required Ray ID: abc123"
         )
         assert _is_cloudflare_block(result) is True
 
-    def test_detects_403_with_cf_ray(self) -> None:
+    async def test_detects_403_with_cf_ray(self) -> None:
         """Detects Cloudflare 403 with CF-Ray header."""
         result = FetchResult(
             url="https://x.com", status_code=403, html="<html>cf-ray header</html>"
         )
         assert _is_cloudflare_block(result) is True
 
-    def test_detects_503_cloudflare(self) -> None:
+    async def test_detects_503_cloudflare(self) -> None:
         """Detects Cloudflare 503."""
         result = FetchResult(url="https://x.com", status_code=503, text="Cloudflare challenge page")
         assert _is_cloudflare_block(result) is True
 
-    def test_ignores_normal_403(self) -> None:
+    async def test_ignores_normal_403(self) -> None:
         """Ignores normal 403 without Cloudflare markers."""
         result = FetchResult(url="https://x.com", status_code=403, text="Forbidden")
         assert _is_cloudflare_block(result) is False
 
-    def test_ignores_200(self) -> None:
+    async def test_ignores_200(self) -> None:
         """Ignores 200 responses."""
         result = FetchResult(url="https://x.com", status_code=200, text="OK")
         assert _is_cloudflare_block(result) is False

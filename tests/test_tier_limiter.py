@@ -40,10 +40,12 @@ def limiter() -> TierRateLimiter:
     return TierRateLimiter()
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestFreeTier:
     """Tests for free tier (10 requests/min)."""
 
-    def test_free_tier_allows_10_requests(self, limiter: TierRateLimiter) -> None:
+    async def test_free_tier_allows_10_requests(self, limiter: TierRateLimiter) -> None:
         """Free tier allows up to 10 requests in a 60-second window."""
         customer_id = "cust_free_001"
         for i in range(10):
@@ -54,7 +56,7 @@ class TestFreeTier:
             assert result["retry_after"] == 0
             assert result["tier"] == "free"
 
-    def test_free_tier_blocks_11th_request(self, limiter: TierRateLimiter) -> None:
+    async def test_free_tier_blocks_11th_request(self, limiter: TierRateLimiter) -> None:
         """Free tier blocks the 11th request within the same window."""
         customer_id = "cust_free_002"
         # Fill up the window with 10 requests
@@ -70,7 +72,7 @@ class TestFreeTier:
         assert result["retry_after"] > 0
         assert result["tier"] == "free"
 
-    def test_free_tier_remaining_decrements(self, limiter: TierRateLimiter) -> None:
+    async def test_free_tier_remaining_decrements(self, limiter: TierRateLimiter) -> None:
         """Free tier remaining count decrements correctly."""
         customer_id = "cust_free_003"
         for i in range(5):
@@ -81,7 +83,7 @@ class TestFreeTier:
 class TestProTier:
     """Tests for pro tier (60 requests/min)."""
 
-    def test_pro_tier_allows_60_requests(self, limiter: TierRateLimiter) -> None:
+    async def test_pro_tier_allows_60_requests(self, limiter: TierRateLimiter) -> None:
         """Pro tier allows up to 60 requests in a 60-second window."""
         customer_id = "cust_pro_001"
         for i in range(60):
@@ -90,7 +92,7 @@ class TestProTier:
             assert result["remaining"] == 60 - i - 1
             assert result["limit"] == 60
 
-    def test_pro_tier_blocks_61st_request(self, limiter: TierRateLimiter) -> None:
+    async def test_pro_tier_blocks_61st_request(self, limiter: TierRateLimiter) -> None:
         """Pro tier blocks the 61st request."""
         customer_id = "cust_pro_002"
         for _ in range(60):
@@ -106,7 +108,7 @@ class TestProTier:
 class TestTeamTier:
     """Tests for team tier (300 requests/min)."""
 
-    def test_team_tier_allows_300_requests(self, limiter: TierRateLimiter) -> None:
+    async def test_team_tier_allows_300_requests(self, limiter: TierRateLimiter) -> None:
         """Team tier allows up to 300 requests."""
         customer_id = "cust_team_001"
         # Test sampling to avoid slow test
@@ -115,7 +117,7 @@ class TestTeamTier:
             assert result["allowed"] is True
             assert result["limit"] == 300
 
-    def test_team_tier_blocks_301st_request(self, limiter: TierRateLimiter) -> None:
+    async def test_team_tier_blocks_301st_request(self, limiter: TierRateLimiter) -> None:
         """Team tier blocks the 301st request."""
         customer_id = "cust_team_002"
         for _ in range(300):
@@ -156,7 +158,7 @@ class TestEnterpriseTier:
 class TestResponseStructure:
     """Tests for response dictionary structure and fields."""
 
-    def test_response_has_required_fields(self, limiter: TierRateLimiter) -> None:
+    async def test_response_has_required_fields(self, limiter: TierRateLimiter) -> None:
         """Response includes all required fields."""
         result = limiter.check("cust_001", "pro")
         assert "allowed" in result
@@ -165,7 +167,7 @@ class TestResponseStructure:
         assert "retry_after" in result
         assert "tier" in result
 
-    def test_response_types_are_correct(self, limiter: TierRateLimiter) -> None:
+    async def test_response_types_are_correct(self, limiter: TierRateLimiter) -> None:
         """Response fields have correct types."""
         result = limiter.check("cust_002", "pro")
         assert isinstance(result["allowed"], bool)
@@ -214,7 +216,7 @@ class TestIndependentCustomers:
         result_b = limiter.check("cust_b", "free")
         assert result_b["allowed"] is True
 
-    def test_three_customers_simultaneous(self, limiter: TierRateLimiter) -> None:
+    async def test_three_customers_simultaneous(self, limiter: TierRateLimiter) -> None:
         """Multiple customers can make requests simultaneously."""
         customers = ["cust_x", "cust_y", "cust_z"]
         for customer in customers:
@@ -232,7 +234,7 @@ class TestIndependentCustomers:
 class TestReset:
     """Tests for reset functionality."""
 
-    def test_reset_clears_customer_window(self, limiter: TierRateLimiter) -> None:
+    async def test_reset_clears_customer_window(self, limiter: TierRateLimiter) -> None:
         """Reset clears the customer's rate limit window."""
         customer_id = "cust_reset_001"
         # Fill up the limit
@@ -277,7 +279,7 @@ class TestReset:
 class TestUnknownTier:
     """Tests for handling unknown subscription tiers."""
 
-    def test_unknown_tier_defaults_to_free(self, limiter: TierRateLimiter) -> None:
+    async def test_unknown_tier_defaults_to_free(self, limiter: TierRateLimiter) -> None:
         """Unknown tier defaults to free tier limits (10 requests)."""
         customer_id = "cust_unknown_001"
         # Fill up with 10 requests
@@ -290,7 +292,7 @@ class TestUnknownTier:
         result = limiter.check(customer_id, "unknown_tier")
         assert result["allowed"] is False
 
-    def test_nonexistent_tier_uses_free_limits(self, limiter: TierRateLimiter) -> None:
+    async def test_nonexistent_tier_uses_free_limits(self, limiter: TierRateLimiter) -> None:
         """Nonexistent tier name defaults to free tier."""
         result = limiter.check("cust_unknown_002", "nonexistent")
         assert result["limit"] == 10
@@ -300,7 +302,7 @@ class TestUnknownTier:
 class TestWindowSliding:
     """Tests for sliding window behavior over time."""
 
-    def test_window_slides_after_60_seconds(self, limiter: TierRateLimiter) -> None:
+    async def test_window_slides_after_60_seconds(self, limiter: TierRateLimiter) -> None:
         """Old timestamps slide out of the window after 60 seconds."""
         customer_id = "cust_window_001"
 
@@ -361,7 +363,7 @@ class TestGetRemaining:
 class TestConcurrency:
     """Tests for thread safety."""
 
-    def test_multiple_rapid_requests(self, limiter: TierRateLimiter) -> None:
+    async def test_multiple_rapid_requests(self, limiter: TierRateLimiter) -> None:
         """Multiple rapid requests are counted correctly."""
         customer_id = "cust_concurrent_001"
         results = []
@@ -379,7 +381,7 @@ class TestConcurrency:
 class TestEdgeCases:
     """Tests for edge cases and boundary conditions."""
 
-    def test_exact_limit_boundary(self, limiter: TierRateLimiter) -> None:
+    async def test_exact_limit_boundary(self, limiter: TierRateLimiter) -> None:
         """Requesting exactly at the limit is allowed, next is blocked."""
         customer_id = "cust_edge_001"
         for i in range(10):
@@ -397,13 +399,13 @@ class TestEdgeCases:
         result = limiter.check("", "free")
         assert result["allowed"] is True
 
-    def test_very_long_customer_id(self, limiter: TierRateLimiter) -> None:
+    async def test_very_long_customer_id(self, limiter: TierRateLimiter) -> None:
         """Very long customer IDs are handled correctly."""
         long_id = "cust_" + "x" * 1000
         result = limiter.check(long_id, "free")
         assert result["allowed"] is True
 
-    def test_special_characters_in_customer_id(self, limiter: TierRateLimiter) -> None:
+    async def test_special_characters_in_customer_id(self, limiter: TierRateLimiter) -> None:
         """Special characters in customer IDs are handled."""
         special_id = "cust_@#$%&*()_+-=[]{}|;:',.<>?/~`"
         result = limiter.check(special_id, "free")
@@ -424,14 +426,14 @@ class TestEdgeCases:
 class TestGlobalInstance:
     """Tests for global limiter instance."""
 
-    def test_get_tier_limiter_returns_singleton(self) -> None:
+    async def test_get_tier_limiter_returns_singleton(self) -> None:
         """get_tier_limiter returns the same instance."""
         reset_all()
         limiter1 = get_tier_limiter()
         limiter2 = get_tier_limiter()
         assert limiter1 is limiter2
 
-    def test_global_limiter_is_persistent_across_calls(self) -> None:
+    async def test_global_limiter_is_persistent_across_calls(self) -> None:
         """Global limiter persists state across calls."""
         reset_all()
         limiter = get_tier_limiter()
@@ -451,27 +453,27 @@ class TestGlobalInstance:
 class TestTierLimitsConstant:
     """Tests for TIER_LIMITS constant."""
 
-    def test_tier_limits_has_expected_tiers(self) -> None:
+    async def test_tier_limits_has_expected_tiers(self) -> None:
         """TIER_LIMITS contains expected tier names."""
         assert "free" in TIER_LIMITS
         assert "pro" in TIER_LIMITS
         assert "team" in TIER_LIMITS
         assert "enterprise" in TIER_LIMITS
 
-    def test_tier_limits_have_correct_values(self) -> None:
+    async def test_tier_limits_have_correct_values(self) -> None:
         """TIER_LIMITS have correct request counts."""
         assert TIER_LIMITS["free"] == 10
         assert TIER_LIMITS["pro"] == 60
         assert TIER_LIMITS["team"] == 300
         assert TIER_LIMITS["enterprise"] == 1000
 
-    def test_tier_limits_values_are_positive(self) -> None:
+    async def test_tier_limits_values_are_positive(self) -> None:
         """All tier limits are positive integers."""
         for tier, limit in TIER_LIMITS.items():
             assert isinstance(limit, int)
             assert limit > 0
 
-    def test_tier_limits_are_ordered(self) -> None:
+    async def test_tier_limits_are_ordered(self) -> None:
         """Tier limits increase from free to enterprise."""
         free = TIER_LIMITS["free"]
         pro = TIER_LIMITS["pro"]

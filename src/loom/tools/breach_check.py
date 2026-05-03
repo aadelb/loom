@@ -3,12 +3,17 @@
 from __future__ import annotations
 
 import hashlib
+import asyncio
 import logging
+import asyncio
 import os
+import asyncio
 import re
+import asyncio
 from typing import Any
 
 import httpx
+import asyncio
 
 logger = logging.getLogger("loom.tools.breach_check")
 
@@ -17,7 +22,7 @@ HIBP_RANGE_URL = "https://api.pwnedpasswords.com/range"
 HIBP_BREACH_URL = "https://haveibeenpwned.com/api/v3/breachedaccount"
 
 
-def research_breach_check(email: str) -> dict[str, Any]:
+async def research_breach_check(email: str) -> dict[str, Any]:
     """Check if an email appears in known data breaches.
 
     Uses HaveIBeenPwned API (v3) to query breached accounts. Requires
@@ -35,6 +40,7 @@ def research_breach_check(email: str) -> dict[str, Any]:
           - api_available: bool (whether API key is configured)
           - error: str (if validation failed)
     """
+    await asyncio.sleep(0)
     # Validate email format (basic check)
     if not _is_valid_email(email):
         return {
@@ -125,7 +131,7 @@ def research_breach_check(email: str) -> dict[str, Any]:
         }
 
 
-def research_password_check(password: str) -> dict[str, Any]:
+async def research_password_check(password: str) -> dict[str, Any]:
     """Check if a password appears in known password breaches using k-anonymity.
 
     Uses HaveIBeenPwned's k-anonymity API (no API key required). Only the
@@ -143,6 +149,7 @@ def research_password_check(password: str) -> dict[str, Any]:
           - is_pwned: bool (whether password was found in breaches)
           - strength_hint: str (rough strength assessment)
     """
+    await asyncio.sleep(0)
     if not password or not isinstance(password, str):
         return {
             "error": "Password must be a non-empty string",

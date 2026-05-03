@@ -19,30 +19,32 @@ from loom.arabic import (
 )
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestDetectArabic:
     """Tests for detect_arabic() function — 5 test cases."""
 
-    def test_detect_arabic_true_standard(self) -> None:
+    async def test_detect_arabic_true_standard(self) -> None:
         """Detect standard Arabic text."""
         text = "كيف أصبح غنياً"
         assert detect_arabic(text) is True
 
-    def test_detect_arabic_false_english(self) -> None:
+    async def test_detect_arabic_false_english(self) -> None:
         """Return False for English text."""
         text = "how to be rich"
         assert detect_arabic(text) is False
 
-    def test_detect_arabic_mixed_english_arabic(self) -> None:
+    async def test_detect_arabic_mixed_english_arabic(self) -> None:
         """Detect Arabic in mixed English-Arabic text."""
         text = "Hello مرحبا world"
         assert detect_arabic(text) is True
 
-    def test_detect_arabic_empty_string(self) -> None:
+    async def test_detect_arabic_empty_string(self) -> None:
         """Return False for empty string."""
         text = ""
         assert detect_arabic(text) is False
 
-    def test_detect_arabic_long_arabic_text(self) -> None:
+    async def test_detect_arabic_long_arabic_text(self) -> None:
         """Detect Arabic in longer text."""
         text = "أهلا وسهلا بك في عالم اللغة العربية والتعليم الحديث"
         assert detect_arabic(text) is True
@@ -51,17 +53,17 @@ class TestDetectArabic:
 class TestGetArabicPreferredProviders:
     """Tests for get_arabic_preferred_providers() function."""
 
-    def test_get_providers_returns_list(self) -> None:
+    async def test_get_providers_returns_list(self) -> None:
         """Return a list of providers."""
         providers = get_arabic_preferred_providers()
         assert isinstance(providers, list)
 
-    def test_get_providers_order(self) -> None:
+    async def test_get_providers_order(self) -> None:
         """Return providers in correct priority order."""
         providers = get_arabic_preferred_providers()
         assert providers == ["qwen", "gemini", "kimi", "deepseek"]
 
-    def test_get_providers_immutable(self) -> None:
+    async def test_get_providers_immutable(self) -> None:
         """Return copy to prevent external mutation."""
         providers1 = get_arabic_preferred_providers()
         providers1.append("invalid")
@@ -72,7 +74,7 @@ class TestGetArabicPreferredProviders:
 class TestRouteByLanguage:
     """Tests for route_by_language() function — 8 test cases."""
 
-    def test_route_arabic_reorders_providers(self) -> None:
+    async def test_route_arabic_reorders_providers(self) -> None:
         """Reorder cascade to put Arabic-capable providers first."""
         text = "كيف أصبح غنياً"
         default_cascade = ["groq", "gemini", "openai", "anthropic"]
@@ -81,7 +83,7 @@ class TestRouteByLanguage:
         # gemini should be first (Arabic-capable), others in original order
         assert result == ["gemini", "groq", "openai", "anthropic"]
 
-    def test_route_english_unchanged(self) -> None:
+    async def test_route_english_unchanged(self) -> None:
         """Keep cascade unchanged for English text."""
         text = "how to be rich"
         default_cascade = ["groq", "gemini", "openai", "anthropic"]
@@ -89,7 +91,7 @@ class TestRouteByLanguage:
 
         assert result == default_cascade
 
-    def test_route_arabic_multiple_providers(self) -> None:
+    async def test_route_arabic_multiple_providers(self) -> None:
         """Handle multiple Arabic providers in cascade."""
         text = "مرحبا بك"
         default_cascade = ["groq", "qwen", "gemini", "openai", "deepseek"]
@@ -98,7 +100,7 @@ class TestRouteByLanguage:
         # All Arabic-capable to front in their order
         assert result == ["qwen", "gemini", "deepseek", "groq", "openai"]
 
-    def test_route_arabic_no_overlap(self) -> None:
+    async def test_route_arabic_no_overlap(self) -> None:
         """Handle case with no Arabic-capable providers in cascade."""
         text = "السلام عليكم"
         default_cascade = ["groq", "openai", "anthropic"]
@@ -107,7 +109,7 @@ class TestRouteByLanguage:
         # Should return unchanged since no Arabic providers available
         assert result == ["groq", "openai", "anthropic"]
 
-    def test_route_mixed_text_with_arabic(self) -> None:
+    async def test_route_mixed_text_with_arabic(self) -> None:
         """Route mixed English-Arabic text to Arabic providers."""
         text = "Hello مرحبا world"
         default_cascade = ["groq", "kimi", "openai"]
@@ -116,7 +118,7 @@ class TestRouteByLanguage:
         # kimi (Arabic-capable) should be first
         assert result == ["kimi", "groq", "openai"]
 
-    def test_route_empty_text(self) -> None:
+    async def test_route_empty_text(self) -> None:
         """Handle empty text gracefully."""
         text = ""
         default_cascade = ["groq", "gemini", "openai"]
@@ -124,7 +126,7 @@ class TestRouteByLanguage:
 
         assert result == default_cascade
 
-    def test_route_empty_cascade(self) -> None:
+    async def test_route_empty_cascade(self) -> None:
         """Handle empty cascade gracefully."""
         text = "مرحبا"
         default_cascade = []
@@ -132,7 +134,7 @@ class TestRouteByLanguage:
 
         assert result == []
 
-    def test_route_single_provider(self) -> None:
+    async def test_route_single_provider(self) -> None:
         """Handle single provider cascade."""
         text = "كيف حالك"
         default_cascade = ["gemini"]
@@ -144,22 +146,22 @@ class TestRouteByLanguage:
 class TestIsRtlText:
     """Tests for is_rtl_text() function."""
 
-    def test_is_rtl_arabic_true(self) -> None:
+    async def test_is_rtl_arabic_true(self) -> None:
         """Identify Arabic as RTL."""
         text = "مرحبا بك"
         assert is_rtl_text(text) is True
 
-    def test_is_rtl_english_false(self) -> None:
+    async def test_is_rtl_english_false(self) -> None:
         """Identify English as LTR (not RTL)."""
         text = "hello world"
         assert is_rtl_text(text) is False
 
-    def test_is_rtl_mixed_arabic_english(self) -> None:
+    async def test_is_rtl_mixed_arabic_english(self) -> None:
         """Identify mixed text with Arabic as RTL."""
         text = "Hello مرحبا"
         assert is_rtl_text(text) is True
 
-    def test_is_rtl_empty_string(self) -> None:
+    async def test_is_rtl_empty_string(self) -> None:
         """Return False for empty string."""
         text = ""
         assert is_rtl_text(text) is False
@@ -168,19 +170,19 @@ class TestIsRtlText:
 class TestArabicUnicodeRanges:
     """Tests for various Arabic Unicode blocks coverage."""
 
-    def test_arabic_main_block(self) -> None:
+    async def test_arabic_main_block(self) -> None:
         """Detect Arabic main block (U+0600–U+06FF)."""
         # Sample from main block
         text = "ء ب ج د ه و ز"  # Arabic letters
         assert detect_arabic(text) is True
 
-    def test_arabic_supplement_block(self) -> None:
+    async def test_arabic_supplement_block(self) -> None:
         """Detect Arabic Supplement block (U+0750–U+077F)."""
         # Sample from supplement block (if available)
         text = "ݐݑݒ"  # Supplement block characters
         assert detect_arabic(text) is True
 
-    def test_arabic_extended_a_block(self) -> None:
+    async def test_arabic_extended_a_block(self) -> None:
         """Detect Arabic Extended-A block (U+08A0–U+08FF)."""
         # Sample from extended-A block
         text = "ࢡࢢࢣ"  # Extended-A characters
@@ -190,7 +192,7 @@ class TestArabicUnicodeRanges:
 class TestArabicCaching:
     """Tests for Arabic text in caching scenarios."""
 
-    def test_arabic_cache_key_generation(self) -> None:
+    async def test_arabic_cache_key_generation(self) -> None:
         """Arabic text produces valid cache key via SHA-256."""
         from hashlib import sha256
 
@@ -200,7 +202,7 @@ class TestArabicCaching:
         assert isinstance(hash_key, str)
         assert len(hash_key) == 64
 
-    def test_arabic_cache_roundtrip(self, tmp_path: Path) -> None:
+    async def test_arabic_cache_roundtrip(self, tmp_path: Path) -> None:
         """Store and retrieve Arabic text from cache without corruption."""
         text = "السلام عليكم ورحمة الله وبركاته"
         cache_file = tmp_path / "test_arabic_cache.json"
@@ -221,7 +223,7 @@ class TestArabicCaching:
 class TestArabicJsonSerialization:
     """Tests for JSON serialization of Arabic text."""
 
-    def test_arabic_json_ensure_ascii_false(self) -> None:
+    async def test_arabic_json_ensure_ascii_false(self) -> None:
         """JSON serialization with ensure_ascii=False preserves Arabic."""
         data = {"query": "كيف أصبح غنياً", "language": "ar"}
         json_str = json.dumps(data, ensure_ascii=False)
@@ -229,7 +231,7 @@ class TestArabicJsonSerialization:
         # Should contain Arabic characters directly, not escape sequences
         assert "كيف" in json_str
 
-    def test_arabic_json_roundtrip(self) -> None:
+    async def test_arabic_json_roundtrip(self) -> None:
         """Arabic text survives JSON dumps/loads cycle."""
         original_text = "مرحبا بك في عالم البحث الذكي"
         data = {"text": original_text}
@@ -241,7 +243,7 @@ class TestArabicJsonSerialization:
         loaded = json.loads(json_str)
         assert loaded["text"] == original_text
 
-    def test_arabic_json_ensure_ascii_true_roundtrip(self) -> None:
+    async def test_arabic_json_ensure_ascii_true_roundtrip(self) -> None:
         """Arabic text survives JSON with ensure_ascii=True via escape sequences."""
         original_text = "مرحبا بك"
         data = {"text": original_text}
@@ -257,22 +259,22 @@ class TestArabicJsonSerialization:
 class TestArabicEdgeCases:
     """Tests for edge cases and special scenarios."""
 
-    def test_detect_arabic_with_numbers(self) -> None:
+    async def test_detect_arabic_with_numbers(self) -> None:
         """Detect Arabic text mixed with Western numerals."""
         text = "السعر 100 درهم"
         assert detect_arabic(text) is True
 
-    def test_detect_arabic_with_punctuation(self) -> None:
+    async def test_detect_arabic_with_punctuation(self) -> None:
         """Detect Arabic text with punctuation."""
         text = "كيف أصبح غنياً؟ والعملات الرقمية؟"
         assert detect_arabic(text) is True
 
-    def test_detect_arabic_single_character(self) -> None:
+    async def test_detect_arabic_single_character(self) -> None:
         """Detect single Arabic character."""
         text = "ع"
         assert detect_arabic(text) is True
 
-    def test_route_preserves_order_non_arabic(self) -> None:
+    async def test_route_preserves_order_non_arabic(self) -> None:
         """Preserve exact order of non-Arabic providers."""
         text = "hello"
         default_cascade = ["deepseek", "anthropic", "openai", "groq"]
@@ -280,7 +282,7 @@ class TestArabicEdgeCases:
 
         assert result == default_cascade
 
-    def test_route_prioritizes_by_arabic_ranking(self) -> None:
+    async def test_route_prioritizes_by_arabic_ranking(self) -> None:
         """Prioritize Arabic providers by their ranking, not cascade order."""
         text = "مرحبا"
         # deepseek and gemini are Arabic-capable; gemini has higher ranking
@@ -295,7 +297,7 @@ class TestArabicEdgeCases:
 class TestArabicIntegration:
     """Integration tests combining multiple functions."""
 
-    def test_detect_and_route_workflow(self) -> None:
+    async def test_detect_and_route_workflow(self) -> None:
         """Complete workflow: detect then route."""
         text = "كيف يمكنني تحسين مهاراتي في البرمجة؟"
         cascade = ["groq", "openai", "gemini", "anthropic"]
@@ -308,7 +310,7 @@ class TestArabicIntegration:
         routed = route_by_language(text, cascade)
         assert routed[0] == "gemini"
 
-    def test_english_and_route_workflow(self) -> None:
+    async def test_english_and_route_workflow(self) -> None:
         """Complete workflow with English text."""
         text = "How can I improve my programming skills?"
         cascade = ["groq", "openai", "gemini", "anthropic"]

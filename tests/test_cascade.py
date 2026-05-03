@@ -152,7 +152,7 @@ class TestLLMCascadeFailover:
                     p2.available = MagicMock(return_value=True)
                     p2.chat = AsyncMock(return_value=success_response)
 
-                    def get_provider_side_effect(name):
+                    async def get_provider_side_effect(name):
                         if name == "provider1":
                             return p1
                         return p2

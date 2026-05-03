@@ -18,8 +18,10 @@ def _clear_module_cache():
     sys.modules.pop("loom.providers.youtube_transcripts", None)
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestFetchYoutubeTranscript:
-    def test_basic_transcript(self):
+    async def test_basic_transcript(self):
         mock_subprocess_run = MagicMock()
         mock_subprocess_run.returncode = 0
         mock_subprocess_run.stdout = json.dumps(
@@ -54,7 +56,7 @@ class TestFetchYoutubeTranscript:
         assert "Hello" in result["transcript"] and "World" in result["transcript"]
         assert result["tool"] == "yt-dlp"
 
-    def test_no_subtitles(self):
+    async def test_no_subtitles(self):
         mock_subprocess_run = MagicMock()
         mock_subprocess_run.returncode = 0
         mock_subprocess_run.stdout = json.dumps(
@@ -74,7 +76,7 @@ class TestFetchYoutubeTranscript:
         assert result["note"] == "no subtitles available, using description"
         assert "error" not in result
 
-    def test_ytdlp_not_installed(self):
+    async def test_ytdlp_not_installed(self):
         with patch("subprocess.run", side_effect=FileNotFoundError("command not found")):
             from loom.providers.youtube_transcripts import fetch_youtube_transcript
 
@@ -83,7 +85,7 @@ class TestFetchYoutubeTranscript:
         assert result["transcript"] == ""
         assert "not installed" in result["error"]
 
-    def test_timeout(self):
+    async def test_timeout(self):
         with patch(
             "subprocess.run", side_effect=subprocess.TimeoutExpired(cmd="yt_dlp", timeout=30)
         ):

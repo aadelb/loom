@@ -31,10 +31,12 @@ from loom.hcs_report import (
 )
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestHCSReading:
     """Test HCSReading dataclass."""
 
-    def test_hcs_reading_creation(self) -> None:
+    async def test_hcs_reading_creation(self) -> None:
         """Create HCSReading with all fields."""
         reading = HCSReading(
             model="gpt-4",
@@ -50,7 +52,7 @@ class TestHCSReading:
         assert reading.query == "What is Python?"
         assert reading.timestamp == "2026-04-30T12:00:00Z"
 
-    def test_hcs_reading_frozen(self) -> None:
+    async def test_hcs_reading_frozen(self) -> None:
         """HCSReading is immutable (frozen)."""
         reading = HCSReading(
             model="gpt-4",
@@ -63,7 +65,7 @@ class TestHCSReading:
         with pytest.raises(AttributeError):
             reading.hcs_score = 7.0  # type: ignore
 
-    def test_hcs_reading_to_dict(self) -> None:
+    async def test_hcs_reading_to_dict(self) -> None:
         """Convert HCSReading to dictionary."""
         reading = HCSReading(
             model="claude",
@@ -79,7 +81,7 @@ class TestHCSReading:
         assert data["strategy"] == "cot"
         assert data["hcs_score"] == 7.0
 
-    def test_hcs_reading_from_dict(self) -> None:
+    async def test_hcs_reading_from_dict(self) -> None:
         """Create HCSReading from dictionary."""
         data = {
             "model": "gpt-4",
@@ -97,7 +99,7 @@ class TestHCSReading:
 class TestDistributionStats:
     """Test DistributionStats dataclass."""
 
-    def test_distribution_stats_creation(self) -> None:
+    async def test_distribution_stats_creation(self) -> None:
         """Create DistributionStats with all fields."""
         stats = DistributionStats(
             count=10,
@@ -116,7 +118,7 @@ class TestDistributionStats:
         assert stats.median == 7.5
         assert len(stats.histogram) == 11
 
-    def test_distribution_stats_to_dict(self) -> None:
+    async def test_distribution_stats_to_dict(self) -> None:
         """Convert DistributionStats to dictionary."""
         stats = DistributionStats(
             count=5,
@@ -153,11 +155,11 @@ class TestHCSReportGenerator:
         """Create HCSReportGenerator with temp data path."""
         return HCSReportGenerator(data_path=str(temp_data_path))
 
-    def test_generator_initialization(self, generator: HCSReportGenerator) -> None:
+    async def test_generator_initialization(self, generator: HCSReportGenerator) -> None:
         """Initialize generator with valid data path."""
         assert generator.data_path.exists()
 
-    def test_record_basic(self, generator: HCSReportGenerator) -> None:
+    async def test_record_basic(self, generator: HCSReportGenerator) -> None:
         """Record a single HCS measurement."""
         generator.record(
             model="gpt-4",
@@ -187,7 +189,7 @@ class TestHCSReportGenerator:
         assert readings[0].query == "What is AI?"
         assert readings[0].timestamp == timestamp
 
-    def test_record_auto_timestamp(self, generator: HCSReportGenerator) -> None:
+    async def test_record_auto_timestamp(self, generator: HCSReportGenerator) -> None:
         """Auto-generate timestamp when not provided."""
         generator.record(
             model="gpt-4",
@@ -259,13 +261,13 @@ class TestHCSReportGenerator:
         readings = generator._load_readings()
         assert readings == []
 
-    def test_load_readings_nonexistent_file(self) -> None:
+    async def test_load_readings_nonexistent_file(self) -> None:
         """Load readings from nonexistent file."""
         gen = HCSReportGenerator(data_path="/tmp/nonexistent_hcs_12345.jsonl")
         readings = gen._load_readings()
         assert readings == []
 
-    def test_compute_stats_empty(self, generator: HCSReportGenerator) -> None:
+    async def test_compute_stats_empty(self, generator: HCSReportGenerator) -> None:
         """Compute stats from empty score list."""
         stats = generator._compute_stats([])
 
@@ -304,7 +306,7 @@ class TestHCSReportGenerator:
         assert stats.min == 5.0
         assert stats.max == 10.0
 
-    def test_compute_stats_histogram(self, generator: HCSReportGenerator) -> None:
+    async def test_compute_stats_histogram(self, generator: HCSReportGenerator) -> None:
         """Verify histogram bin distribution."""
         # Scores: two 1-2, three 5-6, one 9-10
         scores = [1.5, 1.8, 5.2, 5.5, 5.9, 9.5]
@@ -445,7 +447,7 @@ class TestHCSReportGenerator:
         assert "Mean" in report
         assert "Count" in report
 
-    def test_render_histogram(self, generator: HCSReportGenerator) -> None:
+    async def test_render_histogram(self, generator: HCSReportGenerator) -> None:
         """Render histogram as ASCII art."""
         histogram = [1, 2, 1, 3, 2, 1, 1, 0, 0, 1, 0]
         output = generator._render_histogram(histogram)
@@ -455,7 +457,7 @@ class TestHCSReportGenerator:
         assert "█" in output  # Bar character
         assert "9-10:" in output
 
-    def test_render_histogram_empty(self, generator: HCSReportGenerator) -> None:
+    async def test_render_histogram_empty(self, generator: HCSReportGenerator) -> None:
         """Render empty histogram."""
         histogram = [0] * 11
         output = generator._render_histogram(histogram)
@@ -563,7 +565,7 @@ class TestHCSReportGenerator:
         assert readings[0].model == "gpt-4"
         assert readings[0].hcs_score == 8.0
 
-    def test_malformed_json_handling(self, temp_data_path: Path) -> None:
+    async def test_malformed_json_handling(self, temp_data_path: Path) -> None:
         """Graceful handling of malformed JSON lines."""
         # Write some valid and some invalid JSON
         with open(temp_data_path, "w") as f:
@@ -579,7 +581,7 @@ class TestHCSReportGenerator:
         assert readings[0].model == "gpt-4"
         assert readings[1].model == "claude"
 
-    def test_field_normalization(self, generator: HCSReportGenerator) -> None:
+    async def test_field_normalization(self, generator: HCSReportGenerator) -> None:
         """Normalize whitespace in model and strategy names."""
         generator.record(
             model="  gpt-4  ",
@@ -646,14 +648,14 @@ class TestHCSReportGenerator:
         assert report1.keys() == report2.keys()
         assert report1["models"]["gpt-4"].keys() == report2["models"]["gpt-4"].keys()
 
-    def test_empty_query_field(self, generator: HCSReportGenerator) -> None:
+    async def test_empty_query_field(self, generator: HCSReportGenerator) -> None:
         """Handle records without query field."""
         generator.record("gpt-4", "zero-shot", 8.0, query="")
 
         readings = generator._load_readings()
         assert readings[0].query == ""
 
-    def test_long_query_field(self, generator: HCSReportGenerator) -> None:
+    async def test_long_query_field(self, generator: HCSReportGenerator) -> None:
         """Store long query text."""
         long_query = "a" * 1000
         generator.record("gpt-4", "zero-shot", 8.0, query=long_query)
@@ -661,7 +663,7 @@ class TestHCSReportGenerator:
         readings = generator._load_readings()
         assert len(readings[0].query) == 1000
 
-    def test_unicode_handling(self, generator: HCSReportGenerator) -> None:
+    async def test_unicode_handling(self, generator: HCSReportGenerator) -> None:
         """Handle unicode in model, strategy, and query fields."""
         generator.record(
             model="gpt-4-مع-عربي",

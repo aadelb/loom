@@ -14,10 +14,12 @@ import pytest
 from loom.errors import LoomError
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestToolError:
     """Test LoomError.tool_error for standard exception handling."""
 
-    def test_tool_error_timeout_error(self) -> None:
+    async def test_tool_error_timeout_error(self) -> None:
         """TimeoutError maps to TIMEOUT code."""
         error = TimeoutError("Request took too long")
         result = LoomError.tool_error("research_fetch", error)
@@ -31,7 +33,7 @@ class TestToolError:
         assert isinstance(result["suggestion"], str)
         assert len(result["suggestion"]) > 0
 
-    def test_tool_error_connection_error(self) -> None:
+    async def test_tool_error_connection_error(self) -> None:
         """ConnectionError maps to CONNECTION_FAILED code."""
         error = ConnectionError("Failed to connect to provider")
         result = LoomError.tool_error("research_search", error)
@@ -42,7 +44,7 @@ class TestToolError:
         assert result["error_type"] == "ConnectionError"
         assert "suggestion" in result
 
-    def test_tool_error_value_error(self) -> None:
+    async def test_tool_error_value_error(self) -> None:
         """ValueError maps to INVALID_INPUT code."""
         error = ValueError("Invalid URL format")
         result = LoomError.tool_error("research_spider", error)
@@ -52,7 +54,7 @@ class TestToolError:
         assert result["tool_name"] == "research_spider"
         assert result["error_type"] == "ValueError"
 
-    def test_tool_error_key_error(self) -> None:
+    async def test_tool_error_key_error(self) -> None:
         """KeyError maps to MISSING_PARAM code."""
         error = KeyError("api_key")
         result = LoomError.tool_error("research_llm_summarize", error)
@@ -61,7 +63,7 @@ class TestToolError:
         assert result["tool_name"] == "research_llm_summarize"
         assert result["error_type"] == "KeyError"
 
-    def test_tool_error_permission_error(self) -> None:
+    async def test_tool_error_permission_error(self) -> None:
         """PermissionError maps to AUTH_REQUIRED code."""
         error = PermissionError("Access denied")
         result = LoomError.tool_error("research_config_set", error)
@@ -71,7 +73,7 @@ class TestToolError:
         assert result["tool_name"] == "research_config_set"
         assert result["error_type"] == "PermissionError"
 
-    def test_tool_error_file_not_found(self) -> None:
+    async def test_tool_error_file_not_found(self) -> None:
         """FileNotFoundError maps to NOT_FOUND code."""
         error = FileNotFoundError("Config file not found")
         result = LoomError.tool_error("research_config_get", error)
@@ -81,7 +83,7 @@ class TestToolError:
         assert result["tool_name"] == "research_config_get"
         assert result["error_type"] == "FileNotFoundError"
 
-    def test_tool_error_type_error(self) -> None:
+    async def test_tool_error_type_error(self) -> None:
         """TypeError maps to INVALID_INPUT code."""
         error = TypeError("Expected str, got int")
         result = LoomError.tool_error("research_fetch", error)
@@ -90,7 +92,7 @@ class TestToolError:
         assert result["message"] == "Expected str, got int"
         assert result["error_type"] == "TypeError"
 
-    def test_tool_error_unknown_exception(self) -> None:
+    async def test_tool_error_unknown_exception(self) -> None:
         """Unknown exception type maps to INTERNAL_ERROR."""
         error = RuntimeError("Something went wrong")
         result = LoomError.tool_error("research_pdf_extract", error)
@@ -100,7 +102,7 @@ class TestToolError:
         assert result["tool_name"] == "research_pdf_extract"
         assert result["error_type"] == "RuntimeError"
 
-    def test_tool_error_custom_suggestion(self) -> None:
+    async def test_tool_error_custom_suggestion(self) -> None:
         """Custom suggestion overrides default."""
         error = TimeoutError("Request timeout")
         custom_suggestion = "Use a VPN or try a different region"
@@ -110,7 +112,7 @@ class TestToolError:
 
         assert result["suggestion"] == custom_suggestion
 
-    def test_tool_error_default_suggestion_applied(self) -> None:
+    async def test_tool_error_default_suggestion_applied(self) -> None:
         """Default suggestion is applied when not provided."""
         error = ConnectionError("Network unavailable")
         result = LoomError.tool_error("research_search", error)
@@ -118,7 +120,7 @@ class TestToolError:
         assert result["suggestion"] is not None
         assert "network" in result["suggestion"].lower()
 
-    def test_tool_error_response_is_dict(self) -> None:
+    async def test_tool_error_response_is_dict(self) -> None:
         """tool_error always returns a dict, never raises."""
         error = ValueError("Invalid input")
         result = LoomError.tool_error("test_tool", error)
@@ -130,7 +132,7 @@ class TestToolError:
         assert "tool_name" in result
         assert "error_type" in result
 
-    def test_tool_error_preserves_exception_message(self) -> None:
+    async def test_tool_error_preserves_exception_message(self) -> None:
         """Exception message is preserved in error response."""
         original_message = "This is the specific error that occurred"
         error = RuntimeError(original_message)
@@ -142,7 +144,7 @@ class TestToolError:
 class TestRateLimited:
     """Test LoomError.rate_limited for rate limit errors."""
 
-    def test_rate_limited_default_retry_after(self) -> None:
+    async def test_rate_limited_default_retry_after(self) -> None:
         """rate_limited returns default retry_after of 60 seconds."""
         result = LoomError.rate_limited("research_search")
 
@@ -152,7 +154,7 @@ class TestRateLimited:
         assert result["retry_after"] == 60
         assert "suggestion" in result
 
-    def test_rate_limited_custom_retry_after(self) -> None:
+    async def test_rate_limited_custom_retry_after(self) -> None:
         """rate_limited accepts custom retry_after value."""
         result = LoomError.rate_limited("research_fetch", retry_after=120)
 
@@ -160,14 +162,14 @@ class TestRateLimited:
         assert result["retry_after"] == 120
         assert "120" in result["suggestion"]
 
-    def test_rate_limited_small_retry_after(self) -> None:
+    async def test_rate_limited_small_retry_after(self) -> None:
         """rate_limited handles small retry_after values."""
         result = LoomError.rate_limited("research_spider", retry_after=5)
 
         assert result["retry_after"] == 5
         assert "5" in result["suggestion"]
 
-    def test_rate_limited_response_is_dict(self) -> None:
+    async def test_rate_limited_response_is_dict(self) -> None:
         """rate_limited always returns a dict."""
         result = LoomError.rate_limited("test_tool")
 
@@ -178,7 +180,7 @@ class TestRateLimited:
         assert "tool_name" in result
         assert "retry_after" in result
 
-    def test_rate_limited_suggestion_mentions_retry(self) -> None:
+    async def test_rate_limited_suggestion_mentions_retry(self) -> None:
         """Suggestion clearly mentions how to handle rate limiting."""
         result = LoomError.rate_limited("research_search", retry_after=30)
 
@@ -190,7 +192,7 @@ class TestRateLimited:
 class TestInsufficientCredits:
     """Test LoomError.insufficient_credits for credit errors."""
 
-    def test_insufficient_credits_basic(self) -> None:
+    async def test_insufficient_credits_basic(self) -> None:
         """insufficient_credits includes required and available credits."""
         result = LoomError.insufficient_credits("research_fetch", required=100, available=50)
 
@@ -201,7 +203,7 @@ class TestInsufficientCredits:
         assert result["required"] == 100
         assert result["available"] == 50
 
-    def test_insufficient_credits_suggestion(self) -> None:
+    async def test_insufficient_credits_suggestion(self) -> None:
         """Suggestion mentions billing."""
         result = LoomError.insufficient_credits("research_search", required=200, available=0)
 
@@ -209,14 +211,14 @@ class TestInsufficientCredits:
             "suggestion"
         ].lower()
 
-    def test_insufficient_credits_zero_available(self) -> None:
+    async def test_insufficient_credits_zero_available(self) -> None:
         """insufficient_credits handles zero available credits."""
         result = LoomError.insufficient_credits("test_tool", required=10, available=0)
 
         assert result["available"] == 0
         assert result["required"] == 10
 
-    def test_insufficient_credits_response_is_dict(self) -> None:
+    async def test_insufficient_credits_response_is_dict(self) -> None:
         """insufficient_credits always returns a dict."""
         result = LoomError.insufficient_credits("test_tool", required=50, available=25)
 
@@ -227,7 +229,7 @@ class TestInsufficientCredits:
 class TestProviderUnavailable:
     """Test LoomError.provider_unavailable for provider errors."""
 
-    def test_provider_unavailable_basic(self) -> None:
+    async def test_provider_unavailable_basic(self) -> None:
         """provider_unavailable includes provider name and error details."""
         error = ConnectionError("API returned 503")
         result = LoomError.provider_unavailable("groq", error)
@@ -238,7 +240,7 @@ class TestProviderUnavailable:
         assert result["error_type"] == "ConnectionError"
         assert "suggestion" in result
 
-    def test_provider_unavailable_with_timeout(self) -> None:
+    async def test_provider_unavailable_with_timeout(self) -> None:
         """provider_unavailable handles timeout errors."""
         error = TimeoutError("Request timed out")
         result = LoomError.provider_unavailable("openai", error)
@@ -247,7 +249,7 @@ class TestProviderUnavailable:
         assert result["error_type"] == "TimeoutError"
         assert "openai" in result["message"]
 
-    def test_provider_unavailable_cascade_suggestion(self) -> None:
+    async def test_provider_unavailable_cascade_suggestion(self) -> None:
         """Suggestion mentions automatic provider cascade."""
         error = RuntimeError("Internal error")
         result = LoomError.provider_unavailable("anthropic", error)
@@ -256,7 +258,7 @@ class TestProviderUnavailable:
             "suggestion"
         ].lower()
 
-    def test_provider_unavailable_response_is_dict(self) -> None:
+    async def test_provider_unavailable_response_is_dict(self) -> None:
         """provider_unavailable always returns a dict."""
         error = ValueError("Invalid config")
         result = LoomError.provider_unavailable("deepseek", error)
@@ -268,7 +270,7 @@ class TestProviderUnavailable:
 class TestValidationError:
     """Test LoomError.validation_error for input validation errors."""
 
-    def test_validation_error_basic(self) -> None:
+    async def test_validation_error_basic(self) -> None:
         """validation_error includes field name and reason."""
         result = LoomError.validation_error(
             "research_fetch", "url", "URL must be absolute"
@@ -280,7 +282,7 @@ class TestValidationError:
         assert result["tool_name"] == "research_fetch"
         assert result["field"] == "url"
 
-    def test_validation_error_response_is_dict(self) -> None:
+    async def test_validation_error_response_is_dict(self) -> None:
         """validation_error always returns a dict."""
         result = LoomError.validation_error(
             "test_tool", "api_key", "API key is required"
@@ -289,7 +291,7 @@ class TestValidationError:
         assert isinstance(result, dict)
         assert all(k in result for k in ["error_code", "message", "suggestion", "tool_name", "field"])
 
-    def test_validation_error_multiple_fields(self) -> None:
+    async def test_validation_error_multiple_fields(self) -> None:
         """validation_error can be called for different fields."""
         url_error = LoomError.validation_error(
             "research_fetch", "url", "Invalid format"
@@ -306,7 +308,7 @@ class TestValidationError:
 class TestConfigurationError:
     """Test LoomError.configuration_error for config errors."""
 
-    def test_configuration_error_basic(self) -> None:
+    async def test_configuration_error_basic(self) -> None:
         """configuration_error includes config key and reason."""
         result = LoomError.configuration_error(
             "GROQ_API_KEY", "Environment variable not set"
@@ -317,14 +319,14 @@ class TestConfigurationError:
         assert "Environment variable not set" in result["message"]
         assert result["config_key"] == "GROQ_API_KEY"
 
-    def test_configuration_error_response_is_dict(self) -> None:
+    async def test_configuration_error_response_is_dict(self) -> None:
         """configuration_error always returns a dict."""
         result = LoomError.configuration_error("LOOM_HOST", "Invalid value")
 
         assert isinstance(result, dict)
         assert all(k in result for k in ["error_code", "message", "suggestion", "config_key"])
 
-    def test_configuration_error_suggestion(self) -> None:
+    async def test_configuration_error_suggestion(self) -> None:
         """Suggestion mentions checking config."""
         result = LoomError.configuration_error("API_KEY", "Missing")
 
@@ -336,7 +338,7 @@ class TestConfigurationError:
 class TestDependencyError:
     """Test LoomError.dependency_error for dependency errors."""
 
-    def test_dependency_error_basic(self) -> None:
+    async def test_dependency_error_basic(self) -> None:
         """dependency_error includes dependency name and reason."""
         result = LoomError.dependency_error(
             "scrapling", "Package not installed"
@@ -347,14 +349,14 @@ class TestDependencyError:
         assert "Package not installed" in result["message"]
         assert result["dependency"] == "scrapling"
 
-    def test_dependency_error_response_is_dict(self) -> None:
+    async def test_dependency_error_response_is_dict(self) -> None:
         """dependency_error always returns a dict."""
         result = LoomError.dependency_error("playwright", "Not found")
 
         assert isinstance(result, dict)
         assert all(k in result for k in ["error_code", "message", "suggestion", "dependency"])
 
-    def test_dependency_error_suggestion(self) -> None:
+    async def test_dependency_error_suggestion(self) -> None:
         """Suggestion mentions installing dependencies."""
         result = LoomError.dependency_error("torch", "GPU not available")
 
@@ -366,7 +368,7 @@ class TestDependencyError:
 class TestErrorConsistency:
     """Test consistency across all error types."""
 
-    def test_all_errors_have_error_code(self) -> None:
+    async def test_all_errors_have_error_code(self) -> None:
         """All error responses include error_code."""
         errors = [
             LoomError.tool_error("test", ValueError("test")),
@@ -383,7 +385,7 @@ class TestErrorConsistency:
             assert isinstance(error["error_code"], str)
             assert len(error["error_code"]) > 0
 
-    def test_all_errors_have_message(self) -> None:
+    async def test_all_errors_have_message(self) -> None:
         """All error responses include message."""
         errors = [
             LoomError.tool_error("test", ValueError("test error")),
@@ -400,7 +402,7 @@ class TestErrorConsistency:
             assert isinstance(error["message"], str)
             assert len(error["message"]) > 0
 
-    def test_all_errors_have_suggestion(self) -> None:
+    async def test_all_errors_have_suggestion(self) -> None:
         """All error responses include suggestion."""
         errors = [
             LoomError.tool_error("test", ValueError("test")),
@@ -417,7 +419,7 @@ class TestErrorConsistency:
             assert isinstance(error["suggestion"], str)
             assert len(error["suggestion"]) > 0
 
-    def test_all_errors_return_dicts(self) -> None:
+    async def test_all_errors_return_dicts(self) -> None:
         """All error methods return dicts, never raise."""
         errors = [
             LoomError.tool_error("test", ValueError("test")),
@@ -432,7 +434,7 @@ class TestErrorConsistency:
         for error in errors:
             assert isinstance(error, dict)
 
-    def test_error_codes_are_uppercase_with_underscores(self) -> None:
+    async def test_error_codes_are_uppercase_with_underscores(self) -> None:
         """All error_code values follow naming convention."""
         errors = [
             LoomError.tool_error("test", ValueError("test")),
@@ -454,7 +456,7 @@ class TestErrorConsistency:
 class TestAsyncioTimeout:
     """Test that asyncio.TimeoutError is properly handled."""
 
-    def test_asyncio_timeout_error_mapping(self) -> None:
+    async def test_asyncio_timeout_error_mapping(self) -> None:
         """asyncio.TimeoutError maps to TIMEOUT code."""
         # Create an asyncio timeout error
         error = asyncio.TimeoutError("Async operation timed out")
@@ -469,7 +471,7 @@ class TestAsyncioTimeout:
 class TestEdgeCases:
     """Test edge cases and special scenarios."""
 
-    def test_empty_error_message(self) -> None:
+    async def test_empty_error_message(self) -> None:
         """Handles exceptions with empty messages gracefully."""
         error = ValueError()
         result = LoomError.tool_error("test_tool", error)
@@ -478,7 +480,7 @@ class TestEdgeCases:
         # Empty string is still valid
         assert "message" in result
 
-    def test_very_long_error_message(self) -> None:
+    async def test_very_long_error_message(self) -> None:
         """Handles very long error messages."""
         long_message = "x" * 10000
         error = RuntimeError(long_message)
@@ -487,7 +489,7 @@ class TestEdgeCases:
         assert result["message"] == long_message
         assert len(result["message"]) == 10000
 
-    def test_special_characters_in_messages(self) -> None:
+    async def test_special_characters_in_messages(self) -> None:
         """Handles special characters in error messages."""
         message = "Error with émojis 🔥 and spëcial çharacters"
         error = ValueError(message)
@@ -495,7 +497,7 @@ class TestEdgeCases:
 
         assert result["message"] == message
 
-    def test_tool_name_with_special_characters(self) -> None:
+    async def test_tool_name_with_special_characters(self) -> None:
         """Handles tool names with underscores and numbers."""
         result = LoomError.tool_error("research_fetch_v2_beta", ValueError("test"))
 

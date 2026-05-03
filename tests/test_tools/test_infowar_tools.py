@@ -125,7 +125,8 @@ class TestNarrativeTrackerHelper:
 class TestNarrativeTracker:
     """research_narrative_tracker function."""
 
-    def test_narrative_tracker_returns_expected_shape(self) -> None:
+    @pytest.mark.asyncio
+    async def test_narrative_tracker_returns_expected_shape(self) -> None:
         """Narrative tracker returns expected result shape."""
         with patch("loom.tools.infowar_tools.httpx.AsyncClient") as mock_client_class:
             mock_client = MagicMock()
@@ -147,7 +148,7 @@ class TestNarrativeTracker:
                         mock_reddit.return_value = []
                         mock_arxiv.return_value = []
 
-                        result = research_narrative_tracker("AI safety", hours_back=72)
+                        result = await research_narrative_tracker("AI safety", hours_back=72)
 
                         assert "topic" in result
                         assert result["topic"] == "AI safety"
@@ -162,7 +163,8 @@ class TestNarrativeTracker:
                         assert isinstance(result["platforms"], dict)
                         assert "top_posts" in result
 
-    def test_narrative_tracker_no_results(self) -> None:
+    @pytest.mark.asyncio
+    async def test_narrative_tracker_no_results(self) -> None:
         """Narrative tracker handles no results gracefully."""
         with patch("loom.tools.infowar_tools.httpx.AsyncClient") as mock_client_class:
             mock_client = MagicMock()
@@ -177,7 +179,7 @@ class TestNarrativeTracker:
                         mock_reddit.return_value = []
                         mock_arxiv.return_value = []
 
-                        result = research_narrative_tracker("nonexistent", hours_back=72)
+                        result = await research_narrative_tracker("nonexistent", hours_back=72)
 
                         assert result["total_posts"] == 0
                         assert result["velocity_posts_per_hour"] == 0.0
@@ -216,7 +218,8 @@ class TestBotDetectorHelper:
 class TestBotDetector:
     """research_bot_detector function."""
 
-    def test_bot_detector_subreddit(self) -> None:
+    @pytest.mark.asyncio
+    async def test_bot_detector_subreddit(self) -> None:
         """Bot detector analyzes subreddit."""
         with patch("loom.tools.infowar_tools.httpx.AsyncClient") as mock_client_class:
             mock_client = MagicMock()
@@ -236,7 +239,7 @@ class TestBotDetector:
                     ]
                     mock_hn.return_value = []
 
-                    result = research_bot_detector(subreddit="programming")
+                    result = await research_bot_detector(subreddit="programming")
 
                     assert "accounts_analyzed" in result
                     assert "posts_analyzed" in result
@@ -244,7 +247,8 @@ class TestBotDetector:
                     assert "coordination_score" in result
                     assert result["subreddit"] == "programming"
 
-    def test_bot_detector_empty_results(self) -> None:
+    @pytest.mark.asyncio
+    async def test_bot_detector_empty_results(self) -> None:
         """Bot detector handles no results."""
         with patch("loom.tools.infowar_tools.httpx.AsyncClient") as mock_client_class:
             mock_client = MagicMock()
@@ -257,7 +261,7 @@ class TestBotDetector:
                     mock_reddit.return_value = []
                     mock_hn.return_value = []
 
-                    result = research_bot_detector(subreddit="")
+                    result = await research_bot_detector(subreddit="")
 
                     assert result["accounts_analyzed"] == 0
                     assert result["posts_analyzed"] == 0
@@ -318,7 +322,8 @@ class TestCensorshipDetectorHelper:
 class TestCensorshipDetector:
     """research_censorship_detector function."""
 
-    def test_censorship_detector_returns_shape(self) -> None:
+    @pytest.mark.asyncio
+    async def test_censorship_detector_returns_shape(self) -> None:
         """Censorship detector returns expected shape."""
         with patch("loom.tools.infowar_tools.httpx.AsyncClient") as mock_client_class:
             mock_client = MagicMock()
@@ -337,7 +342,7 @@ class TestCensorshipDetector:
                     }
                     mock_lumen.return_value = []
 
-                    result = research_censorship_detector("example.com")
+                    result = await research_censorship_detector("example.com")
 
                     assert "url" in result
                     assert "domain" in result
@@ -382,7 +387,8 @@ class TestDeletedSocialHelper:
 class TestDeletedSocial:
     """research_deleted_social function."""
 
-    def test_deleted_social_twitter_detection(self) -> None:
+    @pytest.mark.asyncio
+    async def test_deleted_social_twitter_detection(self) -> None:
         """Deleted social detects Twitter platform."""
         with patch("loom.tools.infowar_tools.httpx.AsyncClient") as mock_client_class:
             mock_client = MagicMock()
@@ -393,7 +399,7 @@ class TestDeletedSocial:
             with patch("loom.tools.infowar_tools._wayback_search_social") as mock_wayback:
                 mock_wayback.return_value = []
 
-                result = research_deleted_social(
+                result = await research_deleted_social(
                     "https://twitter.com/user/status/123456"
                 )
 
@@ -401,7 +407,8 @@ class TestDeletedSocial:
                 assert "url" in result
                 assert "snapshots_found" in result
 
-    def test_deleted_social_reddit_detection(self) -> None:
+    @pytest.mark.asyncio
+    async def test_deleted_social_reddit_detection(self) -> None:
         """Deleted social detects Reddit platform."""
         with patch("loom.tools.infowar_tools.httpx.AsyncClient") as mock_client_class:
             mock_client = MagicMock()
@@ -412,11 +419,12 @@ class TestDeletedSocial:
             with patch("loom.tools.infowar_tools._wayback_search_social") as mock_wayback:
                 mock_wayback.return_value = []
 
-                result = research_deleted_social("https://reddit.com/r/test/comments/123")
+                result = await research_deleted_social("https://reddit.com/r/test/comments/123")
 
                 assert result["platform"] == "reddit"
 
-    def test_deleted_social_unknown_platform(self) -> None:
+    @pytest.mark.asyncio
+    async def test_deleted_social_unknown_platform(self) -> None:
         """Deleted social handles unknown platform."""
         with patch("loom.tools.infowar_tools.httpx.AsyncClient") as mock_client_class:
             mock_client = MagicMock()
@@ -427,7 +435,7 @@ class TestDeletedSocial:
             with patch("loom.tools.infowar_tools._wayback_search_social") as mock_wayback:
                 mock_wayback.return_value = []
 
-                result = research_deleted_social("https://example.com/page")
+                result = await research_deleted_social("https://example.com/page")
 
                 assert result["platform"] == "unknown"
 
@@ -435,7 +443,8 @@ class TestDeletedSocial:
 class TestRobotsArchaeology:
     """research_robots_archaeology function."""
 
-    def test_robots_archaeology_returns_shape(self) -> None:
+    @pytest.mark.asyncio
+    async def test_robots_archaeology_returns_shape(self) -> None:
         """Robots archaeology returns expected shape."""
         with patch("loom.tools.infowar_tools.httpx.AsyncClient") as mock_client_class:
             mock_client = MagicMock()
@@ -453,7 +462,7 @@ class TestRobotsArchaeology:
                     ]
                     mock_content.return_value = "User-agent: *\nDisallow: /admin"
 
-                    result = research_robots_archaeology("example.com", snapshots=10)
+                    result = await research_robots_archaeology("example.com", snapshots=10)
 
                     assert "domain" in result
                     assert "versions_found" in result
@@ -461,7 +470,8 @@ class TestRobotsArchaeology:
                     assert isinstance(result["changes"], list)
                     assert "hidden_paths_timeline" in result
 
-    def test_robots_archaeology_no_versions(self) -> None:
+    @pytest.mark.asyncio
+    async def test_robots_archaeology_no_versions(self) -> None:
         """Robots archaeology handles no versions found."""
         with patch("loom.tools.infowar_tools.httpx.AsyncClient") as mock_client_class:
             mock_client = MagicMock()
@@ -472,7 +482,7 @@ class TestRobotsArchaeology:
             with patch("loom.tools.infowar_tools._robots_txt_cdx") as mock_cdx:
                 mock_cdx.return_value = []
 
-                result = research_robots_archaeology("example.com", snapshots=10)
+                result = await research_robots_archaeology("example.com", snapshots=10)
 
                 assert result["versions_found"] == 0
                 assert result["changes"] == []

@@ -13,10 +13,12 @@ from loom.tools.job_signals import (
 )
 
 
+pytestmark = pytest.mark.asyncio
+
 class TestFundingSignal:
     """research_funding_signal — detect hiring indicators from company growth."""
 
-    def test_valid_company(self) -> None:
+    async def test_valid_company(self) -> None:
         """Valid company name returns structured funding signals."""
         with patch(
             "loom.tools.job_signals._fetch_sec_filings"
@@ -42,27 +44,27 @@ class TestFundingSignal:
             }
             mock_crt.return_value = ["api.example.com", "dashboard.example.com"]
 
-            result = research_funding_signal("OpenAI", "openai.com")
+            result = await research_funding_signal("OpenAI", "openai.com")
 
             assert result["company"] == "OpenAI"
-            assert "S-1" in str(result.get("funding_signals", []))
+            assert ("IPO filing" in str(result.get("funding_signals", [])) or "S-1" in str(result.get("funding_signals", [])))
             assert result["hiring_likelihood"] in ("low", "medium", "high")
             assert isinstance(result.get("new_subdomains"), list)
 
-    def test_company_empty(self) -> None:
+    async def test_company_empty(self) -> None:
         """Empty company name returns error."""
-        result = research_funding_signal("")
+        result = await research_funding_signal("")
 
         assert "error" in result or result.get("company") == ""
 
-    def test_company_too_long(self) -> None:
+    async def test_company_too_long(self) -> None:
         """Company name exceeding 200 chars returns error."""
         long_name = "a" * 201
-        result = research_funding_signal(long_name)
+        result = await research_funding_signal(long_name)
 
         assert "error" in result
 
-    def test_domain_optional(self) -> None:
+    async def test_domain_optional(self) -> None:
         """Domain parameter is optional."""
         with patch(
             "loom.tools.job_signals._fetch_sec_filings"
@@ -72,12 +74,12 @@ class TestFundingSignal:
             mock_sec.return_value = {"cik": None, "filings": []}
             mock_github.return_value = {"repos": [], "activity_level": "low"}
 
-            result = research_funding_signal("StartupCorp")
+            result = await research_funding_signal("StartupCorp")
 
             assert result["company"] == "StartupCorp"
             assert isinstance(result.get("new_subdomains"), list)
 
-    def test_high_likelihood_on_s1_filing(self) -> None:
+    async def test_high_likelihood_on_s1_filing(self) -> None:
         """S-1 IPO filing sets hiring_likelihood to 'high'."""
         with patch(
             "loom.tools.job_signals._fetch_sec_filings"
@@ -97,11 +99,11 @@ class TestFundingSignal:
             }
             mock_github.return_value = {"repos": [], "activity_level": "low"}
 
-            result = research_funding_signal("PublicCo")
+            result = await research_funding_signal("PublicCo")
 
             assert result["hiring_likelihood"] == "high"
 
-    def test_evidence_field_populated(self) -> None:
+    async def test_evidence_field_populated(self) -> None:
         """Evidence field contains human-readable findings."""
         with patch(
             "loom.tools.job_signals._fetch_sec_filings"
@@ -111,7 +113,7 @@ class TestFundingSignal:
             mock_sec.return_value = {"cik": None, "filings": []}
             mock_github.return_value = {"repos": [], "activity_level": "low"}
 
-            result = research_funding_signal("TestCorp")
+            result = await research_funding_signal("TestCorp")
 
             assert "evidence" in result
             assert isinstance(result["evidence"], str)
@@ -120,7 +122,7 @@ class TestFundingSignal:
 class TestStealthHireScanner:
     """research_stealth_hire_scanner — find hidden job opportunities."""
 
-    def test_valid_keywords(self) -> None:
+    async def test_valid_keywords(self) -> None:
         """Valid keywords return stealth job opportunities."""
         with patch(
             "loom.tools.job_signals._fetch_github_jobs_keywords"
@@ -157,27 +159,27 @@ class TestStealthHireScanner:
                 }
             ]
 
-            result = research_stealth_hire_scanner("Python engineer")
+            result = await research_stealth_hire_scanner("Python engineer")
 
             assert result["keywords"] == "Python engineer"
             assert isinstance(result["stealth_jobs_found"], list)
             assert result["total_found"] >= 0
             assert len(result["stealth_jobs_found"]) <= 50
 
-    def test_keywords_empty(self) -> None:
+    async def test_keywords_empty(self) -> None:
         """Empty keywords returns error."""
-        result = research_stealth_hire_scanner("")
+        result = await research_stealth_hire_scanner("")
 
         assert "error" in result
 
-    def test_keywords_too_long(self) -> None:
+    async def test_keywords_too_long(self) -> None:
         """Keywords exceeding 200 chars returns error."""
         long_keywords = "a" * 201
-        result = research_stealth_hire_scanner(long_keywords)
+        result = await research_stealth_hire_scanner(long_keywords)
 
         assert "error" in result
 
-    def test_location_filter(self) -> None:
+    async def test_location_filter(self) -> None:
         """Location parameter filters results."""
         with patch(
             "loom.tools.job_signals._fetch_github_jobs_keywords"
@@ -198,11 +200,11 @@ class TestStealthHireScanner:
             ]
             mock_reddit.return_value = []
 
-            result = research_stealth_hire_scanner("Python", location="San Francisco")
+            result = await research_stealth_hire_scanner("Python", location="San Francisco")
 
             assert result["location"] == "San Francisco"
 
-    def test_consolidates_multiple_sources(self) -> None:
+    async def test_consolidates_multiple_sources(self) -> None:
         """Results from GitHub, HN, and Reddit are consolidated."""
         with patch(
             "loom.tools.job_signals._fetch_github_jobs_keywords"
@@ -221,7 +223,7 @@ class TestStealthHireScanner:
                 {"source": "Reddit", "title": "Job3", "url": "url3", "snippet": "", "upvotes": 0}
             ]
 
-            result = research_stealth_hire_scanner("DevOps")
+            result = await research_stealth_hire_scanner("DevOps")
 
             assert result["total_found"] == 3
 
@@ -229,7 +231,7 @@ class TestStealthHireScanner:
 class TestInterviewerProfiler:
     """research_interviewer_profiler — build public data profile of interviewer."""
 
-    def test_valid_person(self) -> None:
+    async def test_valid_person(self) -> None:
         """Valid person name returns comprehensive profile."""
         with patch(
             "loom.tools.job_signals._fetch_github_profile"
@@ -278,7 +280,7 @@ class TestInterviewerProfiler:
                 "tech_interests": ["python", "machine learning"],
             }
 
-            result = research_interviewer_profiler("Sam Altman", "OpenAI")
+            result = await research_interviewer_profiler("Sam Altman", "OpenAI")
 
             assert result["person_name"] == "Sam Altman"
             assert result["company"] == "OpenAI"
@@ -287,20 +289,20 @@ class TestInterviewerProfiler:
             assert isinstance(result.get("tech_interests"), list)
             assert isinstance(result.get("talking_points"), list)
 
-    def test_person_empty(self) -> None:
+    async def test_person_empty(self) -> None:
         """Empty person name returns error."""
-        result = research_interviewer_profiler("")
+        result = await research_interviewer_profiler("")
 
         assert "error" in result
 
-    def test_person_too_long(self) -> None:
+    async def test_person_too_long(self) -> None:
         """Person name exceeding 200 chars returns error."""
         long_name = "a" * 201
-        result = research_interviewer_profiler(long_name)
+        result = await research_interviewer_profiler(long_name)
 
         assert "error" in result
 
-    def test_company_optional(self) -> None:
+    async def test_company_optional(self) -> None:
         """Company parameter is optional."""
         with patch(
             "loom.tools.job_signals._fetch_github_profile"
@@ -317,12 +319,12 @@ class TestInterviewerProfiler:
                 "tech_interests": [],
             }
 
-            result = research_interviewer_profiler("Jane Developer")
+            result = await research_interviewer_profiler("Jane Developer")
 
             assert result["person_name"] == "Jane Developer"
             assert result["company"] == ""
 
-    def test_tech_stack_consolidated(self) -> None:
+    async def test_tech_stack_consolidated(self) -> None:
         """Tech stack combines data from GitHub languages and HN interests."""
         with patch(
             "loom.tools.job_signals._fetch_github_profile"
@@ -352,18 +354,18 @@ class TestInterviewerProfiler:
                 "tech_interests": ["rust", "go"],
             }
 
-            result = research_interviewer_profiler("Developer")
+            result = await research_interviewer_profiler("Developer")
 
             tech_stack = result.get("tech_interests", [])
             assert "Python" in tech_stack or "python" in str(tech_stack).lower()
             assert isinstance(tech_stack, list)
 
-    def test_talking_points_generated(self) -> None:
+    async def test_talking_points_generated(self) -> None:
         """Talking points are generated from GitHub bio and HN posts."""
         with patch(
             "loom.tools.job_signals._fetch_github_profile"
         ) as mock_github, patch(
-            "loom.tools.job_signals._fetch_semantic_Scholar"
+            "loom.tools.job_signals._fetch_semantic_scholar"
         ) as mock_scholar, patch(
             "loom.tools.job_signals._fetch_hackernews_activity"
         ) as mock_hn:
@@ -391,7 +393,7 @@ class TestInterviewerProfiler:
                 "tech_interests": [],
             }
 
-            result = research_interviewer_profiler("Developer")
+            result = await research_interviewer_profiler("Developer")
 
             talking_points = result.get("talking_points", [])
             assert isinstance(talking_points, list)

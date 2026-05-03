@@ -3,16 +3,18 @@
 from __future__ import annotations
 
 import logging
+import asyncio
 from typing import Any, Literal
 
 import httpx
+import asyncio
 
 logger = logging.getLogger("loom.tools.urlhaus_lookup")
 
 _URLHAUS_BASE = "https://urlhaus-api.abuse.ch/v1"
 
 
-def research_urlhaus_check(url: str) -> dict[str, Any]:
+async def research_urlhaus_check(url: str) -> dict[str, Any]:
     """Check if URL is listed in URLhaus malware database (free).
 
     Queries URLhaus to check if a URL is known to host malware,
@@ -24,6 +26,7 @@ def research_urlhaus_check(url: str) -> dict[str, Any]:
     Returns:
         Dict with keys: url, threat, status, tags, date_added, threat_type
     """
+    await asyncio.sleep(0)
     if not url or not (url.startswith("http://") or url.startswith("https://")):
         return {
             "url": url,
@@ -93,7 +96,7 @@ def research_urlhaus_check(url: str) -> dict[str, Any]:
         }
 
 
-def research_urlhaus_search(
+async def research_urlhaus_search(
     query: str,
     search_type: Literal["tag", "signature", "hash"] = "tag",
 ) -> dict[str, Any]:
@@ -108,6 +111,7 @@ def research_urlhaus_search(
     Returns:
         Dict with keys: query, type, results (list), total
     """
+    await asyncio.sleep(0)
     if not query or len(query.strip()) == 0:
         return {
             "query": query,

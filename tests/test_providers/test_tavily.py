@@ -15,8 +15,10 @@ def _clear_tavily_module():
     sys.modules.pop("loom.providers.tavily", None)
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestSearchTavily:
-    def test_missing_api_key(self):
+    async def test_missing_api_key(self):
         with patch.dict("os.environ", {}, clear=True):
             from loom.providers.tavily import search_tavily
 
@@ -24,7 +26,7 @@ class TestSearchTavily:
             assert result["error"] == "TAVILY_API_KEY not set"
             assert result["results"] == []
 
-    def test_sdk_not_installed(self):
+    async def test_sdk_not_installed(self):
         with (
             patch.dict("os.environ", {"TAVILY_API_KEY": "test-key"}),
             patch.dict("sys.modules", {"tavily": None}),
@@ -34,7 +36,7 @@ class TestSearchTavily:
             result = search_tavily("test query")
             assert "not installed" in result["error"]
 
-    def test_basic_search(self):
+    async def test_basic_search(self):
         mock_client_cls = MagicMock()
         mock_client_cls.return_value.search.return_value = {
             "results": [
@@ -63,7 +65,7 @@ class TestSearchTavily:
         assert result["results"][0]["snippet"] == "Example content"
         assert result["results"][0]["score"] == 0.87
 
-    def test_content_mapped_to_snippet(self):
+    async def test_content_mapped_to_snippet(self):
         mock_client_cls = MagicMock()
         mock_client_cls.return_value.search.return_value = {
             "results": [{"url": "https://x.com", "title": "X", "content": "Long content here"}]
@@ -81,7 +83,7 @@ class TestSearchTavily:
 
         assert result["results"][0]["snippet"] == "Long content here"
 
-    def test_domain_filtering(self):
+    async def test_domain_filtering(self):
         mock_client_cls = MagicMock()
         mock_client_cls.return_value.search.return_value = {"results": []}
         mock_tavily_mod = MagicMock()
@@ -98,7 +100,7 @@ class TestSearchTavily:
         call_kwargs = mock_client_cls.return_value.search.call_args
         assert call_kwargs.kwargs.get("include_domains") == ["example.com"]
 
-    def test_api_error(self):
+    async def test_api_error(self):
         mock_client_cls = MagicMock()
         mock_client_cls.return_value.search.side_effect = RuntimeError("rate limited")
         mock_tavily_mod = MagicMock()
@@ -114,7 +116,7 @@ class TestSearchTavily:
 
         assert "search failed" in result["error"]
 
-    def test_snippet_truncation(self):
+    async def test_snippet_truncation(self):
         mock_client_cls = MagicMock()
         mock_client_cls.return_value.search.return_value = {
             "results": [{"url": "https://x.com", "title": "X", "content": "y" * 1000}]

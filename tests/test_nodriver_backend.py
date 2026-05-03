@@ -348,7 +348,7 @@ async def test_nodriver_session_result_structure():
 # ============================================================================
 
 
-def test_extract_text_from_html(sample_html):
+async def test_extract_text_from_html(sample_html):
     """Test HTML text extraction."""
     text = _extract_text_from_html(sample_html)
 
@@ -358,14 +358,14 @@ def test_extract_text_from_html(sample_html):
     assert "script" not in text.lower()
 
 
-def test_extract_text_from_html_empty():
+async def test_extract_text_from_html_empty():
     """Test text extraction from empty HTML."""
     text = _extract_text_from_html("")
 
     assert text == ""
 
 
-def test_extract_text_from_html_with_scripts():
+async def test_extract_text_from_html_with_scripts():
     """Test that scripts are removed."""
     html = "<p>Before</p><script>alert('test')</script><p>After</p>"
     text = _extract_text_from_html(html)
@@ -399,7 +399,7 @@ async def test_extract_element_data():
     assert elements[1]["text"] == "Div content"
 
 
-def test_make_cache_key():
+async def test_make_cache_key():
     """Test cache key generation."""
     url = "https://example.com"
     mode = "nodriver"

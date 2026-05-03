@@ -41,17 +41,19 @@ def oracle_with_tmp_tracker(tmp_tracker_dir: Path) -> StrategyOracle:
     return oracle
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestStrategyOracleInitialization:
     """Tests for StrategyOracle initialization."""
 
-    def test_init_with_default_path(self) -> None:
+    async def test_init_with_default_path(self) -> None:
         """StrategyOracle initializes with default tracker path."""
         oracle = StrategyOracle()
         assert oracle.tracker_path == Path.home() / ".loom" / "attack_tracker"
         assert oracle.model is None
         assert oracle._feature_cache == {}
 
-    def test_init_with_custom_path(self, tmp_tracker_dir: Path) -> None:
+    async def test_init_with_custom_path(self, tmp_tracker_dir: Path) -> None:
         """StrategyOracle initializes with custom tracker path."""
         oracle = StrategyOracle(tracker_path=str(tmp_tracker_dir))
         assert oracle.tracker_path == tmp_tracker_dir
@@ -463,9 +465,9 @@ class TestScoreBlending:
 class TestResearchStrategyOracleTool:
     """Tests for research_strategy_oracle MCP tool."""
 
-    def test_research_strategy_oracle_returns_dict(self) -> None:
-        """research_strategy_oracle() returns dict with required keys."""
-        result = research_strategy_oracle(
+    async def test_research_strategy_oracle_returns_dict(self) -> None:
+        """await research_strategy_oracle() returns dict with required keys."""
+        result = await research_strategy_oracle(
             query="test query", model_name="gpt-4", top_k=3
         )
 
@@ -476,9 +478,9 @@ class TestResearchStrategyOracleTool:
         assert "training_status" in result
         assert "timestamp" in result
 
-    def test_research_strategy_oracle_predictions_format(self) -> None:
-        """research_strategy_oracle() returns properly formatted predictions."""
-        result = research_strategy_oracle(
+    async def test_research_strategy_oracle_predictions_format(self) -> None:
+        """await research_strategy_oracle() returns properly formatted predictions."""
+        result = await research_strategy_oracle(
             query="test query", model_name="gpt-4", top_k=5
         )
 
@@ -491,45 +493,45 @@ class TestResearchStrategyOracleTool:
             assert "confidence" in pred
             assert "reason" in pred
 
-    def test_research_strategy_oracle_top_k_parameter(self) -> None:
-        """research_strategy_oracle() respects top_k parameter."""
+    async def test_research_strategy_oracle_top_k_parameter(self) -> None:
+        """await research_strategy_oracle() respects top_k parameter."""
         for top_k in [1, 3, 5, 10]:
-            result = research_strategy_oracle(
+            result = await research_strategy_oracle(
                 query="test query", model_name="gpt-4", top_k=top_k
             )
             assert len(result["predictions"]) <= top_k
 
-    def test_research_strategy_oracle_top_k_bounds(self) -> None:
-        """research_strategy_oracle() clamps top_k to valid range."""
+    async def test_research_strategy_oracle_top_k_bounds(self) -> None:
+        """await research_strategy_oracle() clamps top_k to valid range."""
         # Test below minimum
-        result_low = research_strategy_oracle(
+        result_low = await research_strategy_oracle(
             query="test query", model_name="gpt-4", top_k=0
         )
         assert len(result_low["predictions"]) <= 5
 
         # Test above maximum
-        result_high = research_strategy_oracle(
+        result_high = await research_strategy_oracle(
             query="test query", model_name="gpt-4", top_k=15
         )
         assert len(result_high["predictions"]) <= 5
 
-    def test_research_strategy_oracle_model_name_stored(self) -> None:
-        """research_strategy_oracle() includes requested model name in response."""
+    async def test_research_strategy_oracle_model_name_stored(self) -> None:
+        """await research_strategy_oracle() includes requested model name in response."""
         model = "claude-3-custom"
-        result = research_strategy_oracle(query="test", model_name=model, top_k=3)
+        result = await research_strategy_oracle(query="test", model_name=model, top_k=3)
 
         assert result["model_name"] == model
 
-    def test_research_strategy_oracle_query_length_stored(self) -> None:
-        """research_strategy_oracle() includes query length in response."""
+    async def test_research_strategy_oracle_query_length_stored(self) -> None:
+        """await research_strategy_oracle() includes query length in response."""
         query = "this is a test query"
-        result = research_strategy_oracle(query=query, model_name="gpt-4", top_k=3)
+        result = await research_strategy_oracle(query=query, model_name="gpt-4", top_k=3)
 
         assert result["query_length"] == len(query)
 
-    def test_research_strategy_oracle_timestamp_present(self) -> None:
-        """research_strategy_oracle() includes ISO timestamp."""
-        result = research_strategy_oracle(query="test", model_name="gpt-4")
+    async def test_research_strategy_oracle_timestamp_present(self) -> None:
+        """await research_strategy_oracle() includes ISO timestamp."""
+        result = await research_strategy_oracle(query="test", model_name="gpt-4")
 
         assert "timestamp" in result
         assert "T" in result["timestamp"]  # ISO format has T

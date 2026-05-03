@@ -45,7 +45,7 @@ class TestDarkToolsIsolation:
     4. Session metadata is properly isolated
     """
 
-    def test_config_tor_enabled_is_configurable(self) -> None:
+    async def test_config_tor_enabled_is_configurable(self) -> None:
         """TOR_ENABLED should be a configurable boolean in config."""
         config = load_config()
         assert isinstance(config, dict)
@@ -54,14 +54,14 @@ class TestDarkToolsIsolation:
         if "TOR_ENABLED" in config:
             assert isinstance(config["TOR_ENABLED"], bool)
 
-    def test_session_dir_is_properly_isolated(self, tmp_sessions_dir: Path) -> None:
+    async def test_session_dir_is_properly_isolated(self, tmp_sessions_dir: Path) -> None:
         """Session directory should be properly isolated per test."""
         # Each test with tmp_sessions_dir gets a fresh temp directory
         session_dir = tmp_sessions_dir
         assert session_dir.exists()
         assert len(list(session_dir.iterdir())) == 0
 
-    def test_metadata_independent_per_session(self, tmp_sessions_dir: Path) -> None:
+    async def test_metadata_independent_per_session(self, tmp_sessions_dir: Path) -> None:
         """Session metadata for different sessions should be independent."""
         meta1 = SessionMetadata(
             name="session_1",
@@ -88,7 +88,7 @@ class TestDarkToolsIsolation:
         assert data1["ttl_seconds"] == SESSION_TTL_SECONDS
         assert data2["ttl_seconds"] == SESSION_TTL_SECONDS * 2
 
-    def test_cache_keys_are_unique_per_query(self, tmp_cache_dir: Path) -> None:
+    async def test_cache_keys_are_unique_per_query(self, tmp_cache_dir: Path) -> None:
         """Different queries should have unique cache keys with no bleed."""
         cache = CacheStore(tmp_cache_dir)
 
@@ -141,7 +141,7 @@ class TestDarkToolsIsolation:
         total_files = len(cache_files_gz) + len(cache_files_legacy)
         assert total_files == 3, f"Expected 3 files, got {total_files}"
 
-    def test_cache_no_bleed_on_concurrent_writes(self, tmp_cache_dir: Path) -> None:
+    async def test_cache_no_bleed_on_concurrent_writes(self, tmp_cache_dir: Path) -> None:
         """Concurrent writes to different keys should not bleed into each other."""
         from concurrent.futures import ThreadPoolExecutor
 
@@ -170,7 +170,7 @@ class TestDarkToolsIsolation:
             assert len(result["results"]) == 1
             assert result["results"][0]["url"] == f"onion_{query_id}.tor"
 
-    def test_config_isolation_per_instance(self) -> None:
+    async def test_config_isolation_per_instance(self) -> None:
         """ConfigModel instances should be independent."""
         config1 = ConfigModel()
         config2 = ConfigModel()
@@ -222,7 +222,7 @@ class TestDarkToolsIsolation:
         assert restored_a.extra == {"key_a": "value_a"}
         assert restored_b.extra == {"key_b": "value_b"}
 
-    def test_cache_get_with_metadata_isolation(self, tmp_cache_dir: Path) -> None:
+    async def test_cache_get_with_metadata_isolation(self, tmp_cache_dir: Path) -> None:
         """Cache with metadata should isolate results per key."""
         cache = CacheStore(tmp_cache_dir)
 
@@ -256,7 +256,7 @@ class TestProgressStreaming:
     4. Progress updates don't hold up other requests
     """
 
-    def test_config_load_is_fast(self) -> None:
+    async def test_config_load_is_fast(self) -> None:
         """Config load should be fast (<1s) to support progress polling."""
         start = time.monotonic()
         config = load_config()
@@ -265,7 +265,7 @@ class TestProgressStreaming:
         assert isinstance(config, dict)
         assert elapsed < 1.0, f"Config load took {elapsed}s (expected <1s)"
 
-    def test_cache_stats_retrieval_is_fast(self, tmp_cache_dir: Path) -> None:
+    async def test_cache_stats_retrieval_is_fast(self, tmp_cache_dir: Path) -> None:
         """Cache stats should be retrievable quickly."""
         cache = CacheStore(tmp_cache_dir)
 
@@ -282,7 +282,7 @@ class TestProgressStreaming:
         assert stats["file_count"] == 10
         assert isinstance(stats["total_bytes"], int)
 
-    def test_health_check_minimal_overhead(self) -> None:
+    async def test_health_check_minimal_overhead(self) -> None:
         """Health check (empty config read) should have minimal overhead."""
         iterations = 100
         times = []
@@ -394,7 +394,7 @@ class TestProgressStreaming:
 
             assert elapsed < 0.5, f"Loading 20 sessions took {elapsed}s (expected <0.5s)"
 
-    def test_streaming_simulation_with_progress_updates(self) -> None:
+    async def test_streaming_simulation_with_progress_updates(self) -> None:
         """Simulate streaming operation with periodic progress updates."""
         progress_events: list[dict[str, Any]] = []
 
@@ -422,7 +422,7 @@ class TestProgressStreaming:
         assert len(progress_events) == 5
         assert progress_events[-1]["progress_percent"] == 100
 
-    def test_config_reload_doesnt_block_cache(self, tmp_cache_dir: Path) -> None:
+    async def test_config_reload_doesnt_block_cache(self, tmp_cache_dir: Path) -> None:
         """Config reload and cache operations should not block each other."""
         cache = CacheStore(tmp_cache_dir)
 
@@ -551,7 +551,7 @@ class TestDarkToolsWithProgressStreaming:
             age = (datetime.now(UTC) - created).total_seconds()
             assert age > expired_loaded.ttl_seconds
 
-    def test_tor_config_isolation(self) -> None:
+    async def test_tor_config_isolation(self) -> None:
         """Tor config changes should not affect other operations."""
         config = load_config()
 

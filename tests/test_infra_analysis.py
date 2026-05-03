@@ -11,10 +11,12 @@ import pytest
 from loom.tools import infra_analysis
 
 
+pytestmark = pytest.mark.asyncio
+
 class TestRegistryGraveyard:
     """Tests for research_registry_graveyard tool."""
 
-    def test_pypi_yanked_detection(self) -> None:
+    async def test_pypi_yanked_detection(self) -> None:
         """Detects yanked versions on PyPI."""
         with patch("loom.tools.infra_analysis._get_json") as mock_get:
             mock_get.return_value = {
@@ -26,7 +28,7 @@ class TestRegistryGraveyard:
                 "info": {"name": "test-package"},
             }
 
-            result = infra_analysis.research_registry_graveyard(
+            result = await infra_analysis.research_registry_graveyard(
                 "test-package", ecosystem="pypi"
             )
 
@@ -37,7 +39,7 @@ class TestRegistryGraveyard:
             assert result["yanked_count"] == 2
             assert result["is_yanked"] is True
 
-    def test_npm_deprecated_detection(self) -> None:
+    async def test_npm_deprecated_detection(self) -> None:
         """Detects deprecated versions on NPM."""
         with patch("loom.tools.infra_analysis._get_json") as mock_get:
             mock_get.return_value = {
@@ -48,7 +50,7 @@ class TestRegistryGraveyard:
                 }
             }
 
-            result = infra_analysis.research_registry_graveyard(
+            result = await infra_analysis.research_registry_graveyard(
                 "test-package", ecosystem="npm"
             )
 
@@ -58,7 +60,7 @@ class TestRegistryGraveyard:
             assert result["version_count"] == 3
             assert result["deprecated_count"] == 2
 
-    def test_rubygems_yanked_versions(self) -> None:
+    async def test_rubygems_yanked_versions(self) -> None:
         """Detects yanked versions on RubyGems."""
         with patch("loom.tools.infra_analysis._get_json") as mock_get:
             mock_get.return_value = [
@@ -67,7 +69,7 @@ class TestRegistryGraveyard:
                 {"number": "1.0.2", "yanked": True},
             ]
 
-            result = infra_analysis.research_registry_graveyard(
+            result = await infra_analysis.research_registry_graveyard(
                 "test-package", ecosystem="rubygems"
             )
 
@@ -75,9 +77,9 @@ class TestRegistryGraveyard:
             assert result["version_count"] == 3
             assert result["yanked_count"] == 2
 
-    def test_entropy_calculation(self) -> None:
+    async def test_entropy_calculation(self) -> None:
         """Entropy score is calculated for package name."""
-        result = infra_analysis.research_registry_graveyard(
+        result = await infra_analysis.research_registry_graveyard(
             "numpy", ecosystem="pypi"
         )
 
@@ -85,23 +87,23 @@ class TestRegistryGraveyard:
         assert "entropy_score" in result
         assert 0.0 <= result["entropy_score"] <= 5.5
 
-    def test_invalid_package_name(self) -> None:
+    async def test_invalid_package_name(self) -> None:
         """Rejects invalid package names."""
-        result = infra_analysis.research_registry_graveyard("", ecosystem="pypi")
+        result = await infra_analysis.research_registry_graveyard("", ecosystem="pypi")
 
         assert result["exists"] is False
         assert "error" in result
 
-    def test_invalid_ecosystem(self) -> None:
+    async def test_invalid_ecosystem(self) -> None:
         """Rejects unknown ecosystems."""
-        result = infra_analysis.research_registry_graveyard(
+        result = await infra_analysis.research_registry_graveyard(
             "test", ecosystem="unknown"  # type: ignore
         )
 
         assert result["exists"] is False
         assert "error" in result
 
-    def test_risk_level_assessment(self) -> None:
+    async def test_risk_level_assessment(self) -> None:
         """Risk level is assessed based on yanked/deprecated status."""
         with patch("loom.tools.infra_analysis._get_json") as mock_get:
             # High risk: many yanked versions
@@ -112,15 +114,15 @@ class TestRegistryGraveyard:
                 }
             }
 
-            result = infra_analysis.research_registry_graveyard(
+            result = await infra_analysis.research_registry_graveyard(
                 "risky-package", ecosystem="pypi"
             )
 
             assert result["risk_level"] in ["critical", "high", "medium", "low"]
 
-    def test_typosquatting_candidates(self) -> None:
+    async def test_typosquatting_candidates(self) -> None:
         """Identifies suspicious package names."""
-        result = infra_analysis.research_registry_graveyard(
+        result = await infra_analysis.research_registry_graveyard(
             "numpy", ecosystem="pypi"
         )
 
@@ -132,7 +134,7 @@ class TestRegistryGraveyard:
 class TestSubdomainTemporal:
     """Tests for research_subdomain_temporal tool."""
 
-    def test_ct_logs_parsing(self) -> None:
+    async def test_ct_logs_parsing(self) -> None:
         """Parses Certificate Transparency logs correctly."""
         now = datetime.now(UTC)
 
@@ -150,14 +152,14 @@ class TestSubdomainTemporal:
                 },
             ]
 
-            result = infra_analysis.research_subdomain_temporal(
+            result = await infra_analysis.research_subdomain_temporal(
                 "example.com", days_back=90
             )
 
             assert result["domain"] == "example.com"
             assert result["subdomains_total"] > 0
 
-    def test_internal_tools_detection(self) -> None:
+    async def test_internal_tools_detection(self) -> None:
         """Detects exposed internal tool subdomains."""
         now = datetime.now(UTC)
 
@@ -170,7 +172,7 @@ class TestSubdomainTemporal:
                 }
             ]
 
-            result = infra_analysis.research_subdomain_temporal(
+            result = await infra_analysis.research_subdomain_temporal(
                 "example.com", days_back=90
             )
 
@@ -178,7 +180,7 @@ class TestSubdomainTemporal:
             assert "jenkins.example.com" in result["internal_tools_exposed"]
             assert "jira.example.com" in result["internal_tools_exposed"]
 
-    def test_internal_tools_risk_assessment(self) -> None:
+    async def test_internal_tools_risk_assessment(self) -> None:
         """Risk is critical when internal tools are exposed."""
         now = datetime.now(UTC)
 
@@ -191,7 +193,7 @@ class TestSubdomainTemporal:
                 }
             ]
 
-            result = infra_analysis.research_subdomain_temporal(
+            result = await infra_analysis.research_subdomain_temporal(
                 "example.com", days_back=90
             )
 
@@ -199,7 +201,7 @@ class TestSubdomainTemporal:
             if len(result["internal_tools_exposed"]) > 3:
                 assert result["risk_level"] == "critical"
 
-    def test_burst_detection(self) -> None:
+    async def test_burst_detection(self) -> None:
         """Detects certificate issuance bursts."""
         now = datetime.now(UTC)
 
@@ -221,30 +223,30 @@ class TestSubdomainTemporal:
 
             mock_get.return_value = certs
 
-            result = infra_analysis.research_subdomain_temporal(
+            result = await infra_analysis.research_subdomain_temporal(
                 "example.com", days_back=90
             )
 
             # Burst pattern should be detected
             assert "burst_detected" in result
 
-    def test_days_back_validation(self) -> None:
+    async def test_days_back_validation(self) -> None:
         """Validates days_back parameter bounds."""
         with patch("loom.tools.infra_analysis._get_json") as mock_get:
             mock_get.return_value = []
 
-            result = infra_analysis.research_subdomain_temporal(
+            result = await infra_analysis.research_subdomain_temporal(
                 "example.com", days_back=400  # Should be clamped to 365
             )
 
             assert result["domain"] == "example.com"
 
-    def test_empty_ct_logs(self) -> None:
+    async def test_empty_ct_logs(self) -> None:
         """Handles empty CT logs gracefully."""
         with patch("loom.tools.infra_analysis._get_json") as mock_get:
             mock_get.return_value = None
 
-            result = infra_analysis.research_subdomain_temporal(
+            result = await infra_analysis.research_subdomain_temporal(
                 "example.com", days_back=90
             )
 
@@ -252,7 +254,7 @@ class TestSubdomainTemporal:
             assert result["burst_detected"] is False
             assert result["risk_level"] == "low"
 
-    def test_monthly_distribution(self) -> None:
+    async def test_monthly_distribution(self) -> None:
         """Tracks subdomain creation by month."""
         now = datetime.now(UTC)
 
@@ -270,7 +272,7 @@ class TestSubdomainTemporal:
                 },
             ]
 
-            result = infra_analysis.research_subdomain_temporal(
+            result = await infra_analysis.research_subdomain_temporal(
                 "example.com", days_back=90
             )
 
@@ -280,7 +282,7 @@ class TestSubdomainTemporal:
 class TestCommitAnalyzer:
     """Tests for research_commit_analyzer tool."""
 
-    def test_security_commit_detection(self) -> None:
+    async def test_security_commit_detection(self) -> None:
         """Detects security-related commits."""
         now = datetime.now(UTC)
 
@@ -326,12 +328,12 @@ class TestCommitAnalyzer:
             with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_http_get:
                 mock_http_get.return_value = mock_resp
 
-                result = infra_analysis.research_commit_analyzer("owner/repo", days_back=30)
+                result = await infra_analysis.research_commit_analyzer("owner/repo", days_back=30)
 
                 assert result["security_incidents"] >= 1
                 assert len(result["security_commits"]) > 0
 
-    def test_crunch_score_calculation(self) -> None:
+    async def test_crunch_score_calculation(self) -> None:
         """Calculates crunch score (weekend/night commits)."""
         now = datetime.now(UTC)
 
@@ -357,12 +359,12 @@ class TestCommitAnalyzer:
             ]
             mock_http_get.return_value = mock_resp
 
-            result = infra_analysis.research_commit_analyzer("owner/repo", days_back=30)
+            result = await infra_analysis.research_commit_analyzer("owner/repo", days_back=30)
 
             assert "crunch_score" in result
             assert 0 <= result["crunch_score"] <= 100
 
-    def test_author_churn_detection(self) -> None:
+    async def test_author_churn_detection(self) -> None:
         """Tracks unique authors and churn rate."""
         now = datetime.now(UTC)
 
@@ -394,12 +396,12 @@ class TestCommitAnalyzer:
             ]
             mock_http_get.return_value = mock_resp
 
-            result = infra_analysis.research_commit_analyzer("owner/repo", days_back=30)
+            result = await infra_analysis.research_commit_analyzer("owner/repo", days_back=30)
 
             assert result["unique_authors"] == 2
             assert "author_churn_rate" in result
 
-    def test_sentiment_analysis(self) -> None:
+    async def test_sentiment_analysis(self) -> None:
         """Analyzes commit message sentiment."""
         now = datetime.now(UTC)
 
@@ -425,13 +427,13 @@ class TestCommitAnalyzer:
             ]
             mock_http_get.return_value = mock_resp
 
-            result = infra_analysis.research_commit_analyzer("owner/repo", days_back=30)
+            result = await infra_analysis.research_commit_analyzer("owner/repo", days_back=30)
 
             assert "sentiment_trend" in result
             assert result["sentiment_trend"] in ["positive", "neutral", "negative"]
             assert isinstance(result["sentiment_score"], float)
 
-    def test_tech_direction_detection(self) -> None:
+    async def test_tech_direction_detection(self) -> None:
         """Detects technology direction from commits."""
         now = datetime.now(UTC)
 
@@ -463,18 +465,18 @@ class TestCommitAnalyzer:
             ]
             mock_http_get.return_value = mock_resp
 
-            result = infra_analysis.research_commit_analyzer("owner/repo", days_back=30)
+            result = await infra_analysis.research_commit_analyzer("owner/repo", days_back=30)
 
             assert "tech_direction" in result
             assert isinstance(result["tech_direction"], list)
 
-    def test_invalid_repo_format(self) -> None:
+    async def test_invalid_repo_format(self) -> None:
         """Rejects invalid repo format."""
-        result = infra_analysis.research_commit_analyzer("invalid-repo-no-slash")
+        result = await infra_analysis.research_commit_analyzer("invalid-repo-no-slash")
 
         assert "error" in result
 
-    def test_risk_assessment_high_security_incidents(self) -> None:
+    async def test_risk_assessment_high_security_incidents(self) -> None:
         """Risk is high with many security incidents."""
         now = datetime.now(UTC)
 
@@ -496,13 +498,13 @@ class TestCommitAnalyzer:
             mock_resp.json.return_value = commits
             mock_http_get.return_value = mock_resp
 
-            result = infra_analysis.research_commit_analyzer("owner/repo", days_back=30)
+            result = await infra_analysis.research_commit_analyzer("owner/repo", days_back=30)
 
             assert result["security_incidents"] >= 5
             # High number of security incidents should trigger higher risk
             assert result["risk_level"] in ["critical", "high"]
 
-    def test_empty_repo(self) -> None:
+    async def test_empty_repo(self) -> None:
         """Handles empty repositories gracefully."""
         with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_http_get:
             mock_resp = MagicMock()
@@ -510,12 +512,12 @@ class TestCommitAnalyzer:
             mock_resp.json.return_value = []
             mock_http_get.return_value = mock_resp
 
-            result = infra_analysis.research_commit_analyzer("owner/repo", days_back=30)
+            result = await infra_analysis.research_commit_analyzer("owner/repo", days_back=30)
 
             assert result["total_commits"] == 0
             assert result["risk_level"] == "low"
 
-    def test_days_back_parameter(self) -> None:
+    async def test_days_back_parameter(self) -> None:
         """Respects days_back parameter bounds."""
         with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_http_get:
             mock_resp = MagicMock()
@@ -523,7 +525,7 @@ class TestCommitAnalyzer:
             mock_resp.json.return_value = []
             mock_http_get.return_value = mock_resp
 
-            result = infra_analysis.research_commit_analyzer("owner/repo", days_back=500)
+            result = await infra_analysis.research_commit_analyzer("owner/repo", days_back=500)
 
             # Should clamp to 365
             assert result["repo"] == "owner/repo"
@@ -532,20 +534,20 @@ class TestCommitAnalyzer:
 class TestLevenshteinDistance:
     """Tests for string similarity calculation."""
 
-    def test_identical_strings(self) -> None:
+    async def test_identical_strings(self) -> None:
         """Identical strings have distance 0."""
         assert infra_analysis._levenshtein_distance("test", "test") == 0
 
-    def test_empty_string(self) -> None:
+    async def test_empty_string(self) -> None:
         """Distance to empty string is length of string."""
         assert infra_analysis._levenshtein_distance("test", "") == 4
         assert infra_analysis._levenshtein_distance("", "test") == 4
 
-    def test_single_substitution(self) -> None:
+    async def test_single_substitution(self) -> None:
         """Single character change has distance 1."""
         assert infra_analysis._levenshtein_distance("cat", "bat") == 1
 
-    def test_typosquatting_similarity(self) -> None:
+    async def test_typosquatting_similarity(self) -> None:
         """Detects typosquatting patterns."""
         # "numpy" vs "numby" (one substitution)
         assert infra_analysis._levenshtein_distance("numpy", "numby") == 1
@@ -554,7 +556,7 @@ class TestLevenshteinDistance:
 class TestEntropyCalculation:
     """Tests for Shannon entropy calculation."""
 
-    def test_uniform_entropy(self) -> None:
+    async def test_uniform_entropy(self) -> None:
         """Uniform distribution has maximum entropy."""
         # "aaaa" has entropy 0 (all same)
         entropy_low = infra_analysis._calculate_entropy("aaaa")
@@ -563,15 +565,15 @@ class TestEntropyCalculation:
 
         assert entropy_low < entropy_high
 
-    def test_empty_string(self) -> None:
+    async def test_empty_string(self) -> None:
         """Empty string has 0 entropy."""
         assert infra_analysis._calculate_entropy("") == 0.0
 
-    def test_single_character(self) -> None:
+    async def test_single_character(self) -> None:
         """Single character has 0 entropy."""
         assert infra_analysis._calculate_entropy("a") == 0.0
 
-    def test_high_entropy_detection(self) -> None:
+    async def test_high_entropy_detection(self) -> None:
         """Random strings have high entropy."""
         # Truly random-looking strings
         random_str = "xyzqwjklmn"
@@ -583,7 +585,7 @@ class TestEntropyCalculation:
     "ecosystem",
     ["pypi", "npm", "rubygems"],
 )
-def test_registry_graveyard_ecosystems(ecosystem: str) -> None:
+async def test_registry_graveyard_ecosystems(ecosystem: str) -> None:
     """Tests all supported ecosystems."""
     with patch("loom.tools.infra_analysis._get_json") as mock_get:
         if ecosystem == "pypi":
@@ -593,7 +595,7 @@ def test_registry_graveyard_ecosystems(ecosystem: str) -> None:
         else:  # rubygems
             mock_get.return_value = [{"number": "1.0.0", "yanked": False}]
 
-        result = infra_analysis.research_registry_graveyard("test-pkg", ecosystem=ecosystem)
+        result = await infra_analysis.research_registry_graveyard("test-pkg", ecosystem=ecosystem)
 
         assert result["ecosystem"] == ecosystem
         assert result["exists"] is True

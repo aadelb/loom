@@ -19,7 +19,7 @@ from loom.danger_prescore import DangerPreScorer, research_danger_prescore
 class TestDangerPrescorerBasics:
     """Basic functionality and score calculation."""
 
-    def test_safe_prompt(self) -> None:
+    async def test_safe_prompt(self) -> None:
         """Safe prompts score low danger."""
         scorer = DangerPreScorer()
         result = scorer.prescore("What is the capital of France?")
@@ -28,7 +28,7 @@ class TestDangerPrescorerBasics:
         assert result["risk_level"] == "safe"
         assert len(result["detected_topics"]) == 0
 
-    def test_safe_educational_prompt(self) -> None:
+    async def test_safe_educational_prompt(self) -> None:
         """Educational questions are safe."""
         scorer = DangerPreScorer()
         result = scorer.prescore("What is photosynthesis?")
@@ -36,7 +36,7 @@ class TestDangerPrescorerBasics:
         assert result["danger_score"] < 2.5
         assert result["risk_level"] == "safe"
 
-    def test_weapons_with_intent(self) -> None:
+    async def test_weapons_with_intent(self) -> None:
         """Weapons + intent reaches medium danger."""
         scorer = DangerPreScorer()
         result = scorer.prescore(
@@ -48,7 +48,7 @@ class TestDangerPrescorerBasics:
         assert any(t["topic"] == "weapons" for t in result["detected_topics"])
         assert len(result["intent_markers"]) > 0
 
-    def test_violence_prompt(self) -> None:
+    async def test_violence_prompt(self) -> None:
         """Violence prompts reach high danger."""
         scorer = DangerPreScorer()
         result = scorer.prescore(
@@ -59,7 +59,7 @@ class TestDangerPrescorerBasics:
         assert result["risk_level"] in ("medium", "high", "critical")
         assert any(t["topic"] == "violence" for t in result["detected_topics"])
 
-    def test_self_harm_prompt(self) -> None:
+    async def test_self_harm_prompt(self) -> None:
         """Self-harm prompts are dangerous."""
         scorer = DangerPreScorer()
         result = scorer.prescore(
@@ -74,7 +74,7 @@ class TestDangerPrescorerBasics:
 class TestTopicDetection:
     """Topic detection across 12 categories."""
 
-    def test_weapons_detected(self) -> None:
+    async def test_weapons_detected(self) -> None:
         """Weapons keywords detected."""
         scorer = DangerPreScorer()
         result = scorer.prescore("How to make explosives?")
@@ -83,7 +83,7 @@ class TestTopicDetection:
         assert any(t["topic"] == "weapons" for t in detected_topics)
         assert result["danger_score"] >= 2.0
 
-    def test_hacking_keywords(self) -> None:
+    async def test_hacking_keywords(self) -> None:
         """Hacking keywords detected."""
         scorer = DangerPreScorer()
         result = scorer.prescore(
@@ -93,7 +93,7 @@ class TestTopicDetection:
         detected_topics = result["detected_topics"]
         assert any(t["topic"] == "hacking" for t in detected_topics)
 
-    def test_violence_keywords(self) -> None:
+    async def test_violence_keywords(self) -> None:
         """Violence keywords detected."""
         scorer = DangerPreScorer()
         result = scorer.prescore("How to murder someone?")
@@ -101,7 +101,7 @@ class TestTopicDetection:
         detected_topics = result["detected_topics"]
         assert any(t["topic"] == "violence" for t in detected_topics)
 
-    def test_privacy_violation_keywords(self) -> None:
+    async def test_privacy_violation_keywords(self) -> None:
         """Privacy violation keywords detected."""
         scorer = DangerPreScorer()
         result = scorer.prescore(
@@ -111,7 +111,7 @@ class TestTopicDetection:
         detected_topics = result["detected_topics"]
         assert any(t["topic"] == "privacy" for t in detected_topics)
 
-    def test_multiple_topics_compound_danger(self) -> None:
+    async def test_multiple_topics_compound_danger(self) -> None:
         """Multiple dangerous topics increase danger score."""
         scorer = DangerPreScorer()
         result1 = scorer.prescore("How to hack?")
@@ -124,7 +124,7 @@ class TestTopicDetection:
 class TestIntentMarkers:
     """Explicit intent marker detection."""
 
-    def test_howto_intent(self) -> None:
+    async def test_howto_intent(self) -> None:
         """'How to' intent detected."""
         scorer = DangerPreScorer()
         result = scorer.prescore("How to make explosives?")
@@ -132,7 +132,7 @@ class TestIntentMarkers:
         intents = result["intent_markers"]
         assert any(m["type"] == "howto" for m in intents)
 
-    def test_stepwise_intent(self) -> None:
+    async def test_stepwise_intent(self) -> None:
         """Step-by-step intent detected."""
         scorer = DangerPreScorer()
         result = scorer.prescore(
@@ -142,7 +142,7 @@ class TestIntentMarkers:
         intents = result["intent_markers"]
         assert any(m["type"] == "stepwise" for m in intents)
 
-    def test_request_intent(self) -> None:
+    async def test_request_intent(self) -> None:
         """Request intent detected."""
         scorer = DangerPreScorer()
         result = scorer.prescore("Can you help me create malware?")
@@ -150,7 +150,7 @@ class TestIntentMarkers:
         intents = result["intent_markers"]
         assert any(m["type"] == "request" for m in intents)
 
-    def test_urgency_intent(self) -> None:
+    async def test_urgency_intent(self) -> None:
         """Urgency markers detected."""
         scorer = DangerPreScorer()
         result = scorer.prescore("I need to hack immediately")
@@ -158,7 +158,7 @@ class TestIntentMarkers:
         intents = result["intent_markers"]
         assert any(m["type"] == "urgency" for m in intents)
 
-    def test_multiple_intent_markers(self) -> None:
+    async def test_multiple_intent_markers(self) -> None:
         """Multiple intent markers increase danger."""
         scorer = DangerPreScorer()
         result = scorer.prescore(
@@ -172,14 +172,14 @@ class TestIntentMarkers:
 class TestSpecificity:
     """Specificity scoring (named targets, locations, dates, tools)."""
 
-    def test_generic_prompt_low_specificity(self) -> None:
+    async def test_generic_prompt_low_specificity(self) -> None:
         """Generic prompts have low specificity."""
         scorer = DangerPreScorer()
         result = scorer.prescore("How to commit fraud?")
 
         assert result["specificity_score"] < 0.5
 
-    def test_named_entity_increases_specificity(self) -> None:
+    async def test_named_entity_increases_specificity(self) -> None:
         """Named entities increase specificity score."""
         scorer = DangerPreScorer()
         result = scorer.prescore(
@@ -188,7 +188,7 @@ class TestSpecificity:
 
         assert result["specificity_score"] >= 0.1
 
-    def test_location_increases_specificity(self) -> None:
+    async def test_location_increases_specificity(self) -> None:
         """Location references increase specificity."""
         scorer = DangerPreScorer()
         result = scorer.prescore(
@@ -197,7 +197,7 @@ class TestSpecificity:
 
         assert result["specificity_score"] >= 0.1
 
-    def test_date_increases_specificity(self) -> None:
+    async def test_date_increases_specificity(self) -> None:
         """Date references increase specificity."""
         scorer = DangerPreScorer()
         result = scorer.prescore(
@@ -210,7 +210,7 @@ class TestSpecificity:
 class TestDualUseIndicators:
     """Legitimate research indicators (dual-use probability)."""
 
-    def test_academic_language_increases_dual_use(self) -> None:
+    async def test_academic_language_increases_dual_use(self) -> None:
         """Academic research language increases dual-use probability."""
         scorer = DangerPreScorer()
         # Use actual keywords that trigger topics
@@ -222,7 +222,7 @@ class TestDualUseIndicators:
         assert len(result["detected_topics"]) > 0  # Topics detected
         assert result["dual_use_probability"] > 0.0  # Academic language boosts it
 
-    def test_legitimate_defense_language(self) -> None:
+    async def test_legitimate_defense_language(self) -> None:
         """Defense/safety language increases dual-use probability."""
         scorer = DangerPreScorer()
         # Use actual 'hack' keyword with defensive language
@@ -234,7 +234,7 @@ class TestDualUseIndicators:
         assert len(result["detected_topics"]) > 0
         assert result["dual_use_probability"] > 0.0
 
-    def test_no_topics_no_dual_use(self) -> None:
+    async def test_no_topics_no_dual_use(self) -> None:
         """No dangerous topics = no dual-use boost needed."""
         scorer = DangerPreScorer()
         result = scorer.prescore("What is AI?")
@@ -246,7 +246,7 @@ class TestDualUseIndicators:
 class TestLanguageRegister:
     """Language register analysis (academic, casual, threatening, neutral)."""
 
-    def test_academic_register(self) -> None:
+    async def test_academic_register(self) -> None:
         """Academic language detected correctly."""
         scorer = DangerPreScorer()
         result = scorer.prescore(
@@ -255,7 +255,7 @@ class TestLanguageRegister:
 
         assert result["language_register"] == "academic"
 
-    def test_threatening_register(self) -> None:
+    async def test_threatening_register(self) -> None:
         """Threatening language detected."""
         scorer = DangerPreScorer()
         result = scorer.prescore(
@@ -264,7 +264,7 @@ class TestLanguageRegister:
 
         assert result["language_register"] == "threatening"
 
-    def test_neutral_register(self) -> None:
+    async def test_neutral_register(self) -> None:
         """Neutral language classified correctly."""
         scorer = DangerPreScorer()
         result = scorer.prescore("What time is it?")
@@ -275,21 +275,21 @@ class TestLanguageRegister:
 class TestRiskLevels:
     """Risk level classification."""
 
-    def test_safe_risk_level(self) -> None:
+    async def test_safe_risk_level(self) -> None:
         """Low danger scores = safe."""
         scorer = DangerPreScorer()
         result = scorer.prescore("What is 2+2?")
 
         assert result["risk_level"] == "safe"
 
-    def test_low_risk_level(self) -> None:
+    async def test_low_risk_level(self) -> None:
         """Some dangerous content but no intent = low risk."""
         scorer = DangerPreScorer()
         result = scorer.prescore("The word bomb appears in context")
 
         assert result["risk_level"] in ("safe", "low")
 
-    def test_weapons_intent_increases_risk(self) -> None:
+    async def test_weapons_intent_increases_risk(self) -> None:
         """Weapons + intent increases risk level."""
         scorer = DangerPreScorer()
         result = scorer.prescore("How to make explosives?")
@@ -301,14 +301,14 @@ class TestRiskLevels:
 class TestRecommendedStrategies:
     """Strategy recommendation logic."""
 
-    def test_safe_prompt_allows(self) -> None:
+    async def test_safe_prompt_allows(self) -> None:
         """Safe prompts get 'allow' strategy."""
         scorer = DangerPreScorer()
         result = scorer.prescore("What is the weather?")
 
         assert "allow" in result["recommended_strategies"]
 
-    def test_low_dangerous_content(self) -> None:
+    async def test_low_dangerous_content(self) -> None:
         """Low risk gets guardrails or allow."""
         scorer = DangerPreScorer()
         result = scorer.prescore("How do firewalls work?")
@@ -316,7 +316,7 @@ class TestRecommendedStrategies:
         strategies = result["recommended_strategies"]
         assert len(strategies) > 0
 
-    def test_strategies_list_not_empty(self) -> None:
+    async def test_strategies_list_not_empty(self) -> None:
         """All risk levels have at least one strategy."""
         scorer = DangerPreScorer()
         for prompt in ["Safe", "Mild threat", "Medium threat", "High threat"]:
@@ -327,14 +327,14 @@ class TestRecommendedStrategies:
 class TestRecommendedModel:
     """Model recommendation logic."""
 
-    def test_safe_recommends_any(self) -> None:
+    async def test_safe_recommends_any(self) -> None:
         """Safe prompts recommend any model."""
         scorer = DangerPreScorer()
         result = scorer.prescore("What is AI?")
 
         assert result["recommended_model"] == "any"
 
-    def test_model_recommendation_valid(self) -> None:
+    async def test_model_recommendation_valid(self) -> None:
         """Model recommendation is a valid option."""
         scorer = DangerPreScorer()
         valid_models = {"any", "gpt-4", "claude", "mixed"}
@@ -347,7 +347,7 @@ class TestRecommendedModel:
 class TestAPIParameters:
     """API parameter recommendations."""
 
-    def test_safe_high_temperature(self) -> None:
+    async def test_safe_high_temperature(self) -> None:
         """Safe prompts get higher temperature."""
         scorer = DangerPreScorer()
         result = scorer.prescore("Tell me a joke")
@@ -355,7 +355,7 @@ class TestAPIParameters:
         params = result["api_params"]
         assert params["temperature"] >= 0.7
 
-    def test_critical_low_temperature(self) -> None:
+    async def test_critical_low_temperature(self) -> None:
         """High risk gets low temperature."""
         scorer = DangerPreScorer()
         result = scorer.prescore(
@@ -367,7 +367,7 @@ class TestAPIParameters:
         assert params["temperature"] <= 0.7
         assert params["top_p"] <= 1.0
 
-    def test_api_params_in_range(self) -> None:
+    async def test_api_params_in_range(self) -> None:
         """API params always in valid ranges."""
         scorer = DangerPreScorer()
         result = scorer.prescore("Any random prompt")
@@ -380,7 +380,7 @@ class TestAPIParameters:
 class TestResultStructure:
     """Result dictionary structure and types."""
 
-    def test_result_has_all_keys(self) -> None:
+    async def test_result_has_all_keys(self) -> None:
         """Result has all required keys."""
         scorer = DangerPreScorer()
         result = scorer.prescore("Test prompt")
@@ -399,7 +399,7 @@ class TestResultStructure:
         }
         assert set(result.keys()) == required_keys
 
-    def test_danger_score_in_range(self) -> None:
+    async def test_danger_score_in_range(self) -> None:
         """Danger score always 0-10."""
         scorer = DangerPreScorer()
         for prompt in [
@@ -410,7 +410,7 @@ class TestResultStructure:
             result = scorer.prescore(prompt)
             assert 0.0 <= result["danger_score"] <= 10.0
 
-    def test_risk_level_valid(self) -> None:
+    async def test_risk_level_valid(self) -> None:
         """Risk level is one of 5 values."""
         scorer = DangerPreScorer()
         valid_levels = {"safe", "low", "medium", "high", "critical"}
@@ -420,7 +420,7 @@ class TestResultStructure:
             result = scorer.prescore(prompt)
             assert result["risk_level"] in valid_levels
 
-    def test_detected_topics_structure(self) -> None:
+    async def test_detected_topics_structure(self) -> None:
         """Detected topics have correct structure."""
         scorer = DangerPreScorer()
         result = scorer.prescore("How to make explosives?")
@@ -432,7 +432,7 @@ class TestResultStructure:
             assert isinstance(topic["count"], int)
             assert topic["count"] >= 1
 
-    def test_intent_markers_structure(self) -> None:
+    async def test_intent_markers_structure(self) -> None:
         """Intent markers have correct structure."""
         scorer = DangerPreScorer()
         result = scorer.prescore("How can I make explosives step by step?")
@@ -442,7 +442,7 @@ class TestResultStructure:
             assert "count" in marker
             assert marker["count"] >= 1
 
-    def test_language_register_valid(self) -> None:
+    async def test_language_register_valid(self) -> None:
         """Language register is one of 4 values."""
         scorer = DangerPreScorer()
         valid_registers = {"academic", "casual", "threatening", "neutral"}
@@ -450,7 +450,7 @@ class TestResultStructure:
             result = scorer.prescore(prompt)
             assert result["language_register"] in valid_registers
 
-    def test_strategies_is_list(self) -> None:
+    async def test_strategies_is_list(self) -> None:
         """Strategies is non-empty list."""
         scorer = DangerPreScorer()
         result = scorer.prescore("Any prompt")
@@ -459,7 +459,7 @@ class TestResultStructure:
         assert len(result["recommended_strategies"]) > 0
         assert all(isinstance(s, str) for s in result["recommended_strategies"])
 
-    def test_api_params_structure(self) -> None:
+    async def test_api_params_structure(self) -> None:
         """API params have temperature and top_p."""
         scorer = DangerPreScorer()
         result = scorer.prescore("Test")
@@ -492,7 +492,7 @@ async def test_async_tool_dangerous_prompt() -> None:
 class TestEdgeCases:
     """Edge cases and boundary conditions."""
 
-    def test_empty_string(self) -> None:
+    async def test_empty_string(self) -> None:
         """Empty string scores as safe."""
         scorer = DangerPreScorer()
         result = scorer.prescore("")
@@ -500,7 +500,7 @@ class TestEdgeCases:
         assert result["danger_score"] == 0.0
         assert result["risk_level"] == "safe"
 
-    def test_very_long_safe_prompt(self) -> None:
+    async def test_very_long_safe_prompt(self) -> None:
         """Very long safe prompts remain safe."""
         scorer = DangerPreScorer()
         long_prompt = "What is AI? " * 100
@@ -508,7 +508,7 @@ class TestEdgeCases:
         result = scorer.prescore(long_prompt)
         assert result["danger_score"] < 3.0
 
-    def test_case_insensitive_detection(self) -> None:
+    async def test_case_insensitive_detection(self) -> None:
         """Dangerous keywords detected case-insensitively."""
         scorer = DangerPreScorer()
 
@@ -518,7 +518,7 @@ class TestEdgeCases:
         assert result_lower["danger_score"] >= 2.0
         assert result_upper["danger_score"] >= 2.0
 
-    def test_keyword_in_context(self) -> None:
+    async def test_keyword_in_context(self) -> None:
         """Keywords detected in longer text."""
         scorer = DangerPreScorer()
         result = scorer.prescore(
@@ -529,7 +529,7 @@ class TestEdgeCases:
         # Should detect weapons topic
         assert len(result["detected_topics"]) > 0
 
-    def test_minimal_dangerous_content(self) -> None:
+    async def test_minimal_dangerous_content(self) -> None:
         """Single dangerous keyword without intent scores lower."""
         scorer = DangerPreScorer()
         result = scorer.prescore("The word explosives appears here")
@@ -541,7 +541,7 @@ class TestEdgeCases:
 class TestConsistency:
     """Consistency and reproducibility."""
 
-    def test_repeated_calls_same_result(self) -> None:
+    async def test_repeated_calls_same_result(self) -> None:
         """Same prompt produces same score."""
         scorer = DangerPreScorer()
         prompt = "How can I hack a system?"
@@ -552,7 +552,7 @@ class TestConsistency:
         assert result1["danger_score"] == result2["danger_score"]
         assert result1["risk_level"] == result2["risk_level"]
 
-    def test_similar_prompts_similar_scores(self) -> None:
+    async def test_similar_prompts_similar_scores(self) -> None:
         """Similar prompts produce similar danger scores."""
         scorer = DangerPreScorer()
 
@@ -566,7 +566,7 @@ class TestConsistency:
 class TestScoringMechanics:
     """Test the scoring mechanics directly."""
 
-    def test_topic_weight_application(self) -> None:
+    async def test_topic_weight_application(self) -> None:
         """Topic weights are applied correctly."""
         scorer = DangerPreScorer()
 
@@ -578,7 +578,7 @@ class TestScoringMechanics:
             # With weight 9, 1 occurrence = 9 * 1 / 10 = 0.9
             assert detected[0]["score"] == 0.9
 
-    def test_intent_multiplier(self) -> None:
+    async def test_intent_multiplier(self) -> None:
         """Intent markers multiply danger score."""
         scorer = DangerPreScorer()
 
@@ -588,7 +588,7 @@ class TestScoringMechanics:
         # Intent should increase score
         assert result_with_intent["danger_score"] > result_no_intent["danger_score"]
 
-    def test_specificity_increases_danger(self) -> None:
+    async def test_specificity_increases_danger(self) -> None:
         """More specific prompts have higher danger."""
         scorer = DangerPreScorer()
 
@@ -600,7 +600,7 @@ class TestScoringMechanics:
         # Specific should have more danger
         assert result_specific["specificity_score"] > result_generic["specificity_score"]
 
-    def test_dual_use_reduces_danger(self) -> None:
+    async def test_dual_use_reduces_danger(self) -> None:
         """High dual-use probability reduces danger."""
         scorer = DangerPreScorer()
 

@@ -16,8 +16,10 @@ def _clear_coindesk_module():
     sys.modules.pop("loom.providers.coindesk_search", None)
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestSearchCoinDeskNews:
-    def test_bitcoin_price_query_no_auth_required(self):
+    async def test_bitcoin_price_query_no_auth_required(self):
         """Test that Bitcoin price queries work without API key."""
         mock_response = MagicMock()
         mock_response.json.return_value = {
@@ -47,7 +49,7 @@ class TestSearchCoinDeskNews:
             assert result["results"][0]["symbol"] == "BTC"
             assert result["results"][0]["price"] == 45000.50
 
-    def test_btc_price_query(self):
+    async def test_btc_price_query(self):
         """Test query with BTC abbreviation."""
         mock_response = MagicMock()
         mock_response.json.return_value = {
@@ -74,7 +76,7 @@ class TestSearchCoinDeskNews:
 
             assert result["results"][0]["price"] == 46000.0
 
-    def test_news_search_missing_api_key(self):
+    async def test_news_search_missing_api_key(self):
         """Test news search without API key (still attempts API call)."""
         with patch.dict("os.environ", {}, clear=True), patch(
             "loom.providers.coindesk_search._get_coindesk_client"
@@ -94,7 +96,7 @@ class TestSearchCoinDeskNews:
             assert "error" in result
             assert result["results"] == []
 
-    def test_news_search_success(self):
+    async def test_news_search_success(self):
         """Test successful news article search."""
         mock_response = MagicMock()
         mock_response.json.return_value = {
@@ -131,7 +133,7 @@ class TestSearchCoinDeskNews:
             assert result["results"][0]["title"] == "Bitcoin Reaches New High"
             assert result["results"][0]["snippet"] == "Bitcoin crosses $45k"
 
-    def test_news_snippet_truncation(self):
+    async def test_news_snippet_truncation(self):
         """Test that news snippet is truncated to 500 chars."""
         long_description = "x" * 1000
         mock_response = MagicMock()
@@ -160,7 +162,7 @@ class TestSearchCoinDeskNews:
 
             assert len(result["results"][0]["snippet"]) == 500
 
-    def test_http_error_401(self):
+    async def test_http_error_401(self):
         """Test handling of HTTP 401 unauthorized for news search."""
         mock_response = MagicMock()
         mock_response.status_code = 401
@@ -182,7 +184,7 @@ class TestSearchCoinDeskNews:
             assert "error" in result
             assert result["results"] == []
 
-    def test_http_error_price_query(self):
+    async def test_http_error_price_query(self):
         """Test handling of HTTP error in price query."""
         mock_response = MagicMock()
         mock_response.status_code = 503
@@ -204,7 +206,7 @@ class TestSearchCoinDeskNews:
             assert "error" in result
             assert result["results"] == []
 
-    def test_connection_error(self):
+    async def test_connection_error(self):
         """Test handling of connection error."""
         with patch.dict("os.environ", {"COINDESK_API_KEY": "key"}), patch(
             "loom.providers.coindesk_search._get_coindesk_client"
@@ -219,7 +221,7 @@ class TestSearchCoinDeskNews:
 
             assert "search failed" in result["error"]
 
-    def test_empty_brief_handling(self):
+    async def test_empty_brief_handling(self):
         """Test handling of articles with missing description."""
         mock_response = MagicMock()
         mock_response.json.return_value = {

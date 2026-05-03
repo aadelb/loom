@@ -8,17 +8,19 @@ from pydantic import ValidationError
 from loom.params import SherlockBatchParams, SherlockLookupParams
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestSherlockLookupParams:
     """Test SherlockLookupParams validation."""
 
-    def test_valid_minimal(self) -> None:
+    async def test_valid_minimal(self) -> None:
         """Minimal valid params."""
         params = SherlockLookupParams(username="john_doe")
         assert params.username == "john_doe"
         assert params.platforms is None
         assert params.timeout == 30
 
-    def test_valid_full(self) -> None:
+    async def test_valid_full(self) -> None:
         """Full valid params."""
         params = SherlockLookupParams(
             username="test_user",
@@ -29,23 +31,23 @@ class TestSherlockLookupParams:
         assert params.platforms == ["twitter", "github"]
         assert params.timeout == 60
 
-    def test_username_stripped(self) -> None:
+    async def test_username_stripped(self) -> None:
         """Username whitespace is stripped."""
         params = SherlockLookupParams(username="  john_doe  ")
         assert params.username == "john_doe"
 
-    def test_invalid_username_empty(self) -> None:
+    async def test_invalid_username_empty(self) -> None:
         """Empty username fails."""
         with pytest.raises(ValidationError) as exc_info:
             SherlockLookupParams(username="")
         assert "username must be" in str(exc_info.value)
 
-    def test_invalid_username_too_long(self) -> None:
+    async def test_invalid_username_too_long(self) -> None:
         """Username exceeding 255 chars fails."""
         with pytest.raises(ValidationError):
             SherlockLookupParams(username="a" * 256)
 
-    def test_invalid_username_disallowed_chars(self) -> None:
+    async def test_invalid_username_disallowed_chars(self) -> None:
         """Username with disallowed chars fails."""
         with pytest.raises(ValidationError):
             SherlockLookupParams(username="user@invalid")
@@ -53,12 +55,12 @@ class TestSherlockLookupParams:
         with pytest.raises(ValidationError):
             SherlockLookupParams(username="user name")
 
-    def test_invalid_platforms_not_list(self) -> None:
+    async def test_invalid_platforms_not_list(self) -> None:
         """Platforms must be a list."""
         with pytest.raises(ValidationError):
             SherlockLookupParams(username="user", platforms="twitter")  # type: ignore
 
-    def test_invalid_platforms_too_many(self) -> None:
+    async def test_invalid_platforms_too_many(self) -> None:
         """Platforms list cannot exceed 50 items."""
         with pytest.raises(ValidationError):
             SherlockLookupParams(
@@ -66,7 +68,7 @@ class TestSherlockLookupParams:
                 platforms=[f"platform{i}" for i in range(51)],
             )
 
-    def test_invalid_platform_too_long(self) -> None:
+    async def test_invalid_platform_too_long(self) -> None:
         """Platform name cannot exceed 100 chars."""
         with pytest.raises(ValidationError):
             SherlockLookupParams(
@@ -74,7 +76,7 @@ class TestSherlockLookupParams:
                 platforms=["a" * 101],
             )
 
-    def test_invalid_platform_disallowed_chars(self) -> None:
+    async def test_invalid_platform_disallowed_chars(self) -> None:
         """Platform with disallowed chars fails."""
         with pytest.raises(ValidationError):
             SherlockLookupParams(
@@ -82,17 +84,17 @@ class TestSherlockLookupParams:
                 platforms=["twitter.com"],
             )
 
-    def test_invalid_timeout_too_low(self) -> None:
+    async def test_invalid_timeout_too_low(self) -> None:
         """Timeout must be at least 1."""
         with pytest.raises(ValidationError):
             SherlockLookupParams(username="user", timeout=0)
 
-    def test_invalid_timeout_too_high(self) -> None:
+    async def test_invalid_timeout_too_high(self) -> None:
         """Timeout cannot exceed 300."""
         with pytest.raises(ValidationError):
             SherlockLookupParams(username="user", timeout=301)
 
-    def test_extra_fields_forbidden(self) -> None:
+    async def test_extra_fields_forbidden(self) -> None:
         """Extra fields are forbidden."""
         with pytest.raises(ValidationError):
             SherlockLookupParams(  # type: ignore
@@ -100,7 +102,7 @@ class TestSherlockLookupParams:
                 extra_field="value",
             )
 
-    def test_valid_special_chars(self) -> None:
+    async def test_valid_special_chars(self) -> None:
         """Username with allowed special chars."""
         params = SherlockLookupParams(username="john_doe-123.test+tag")
         assert params.username == "john_doe-123.test+tag"
@@ -109,14 +111,14 @@ class TestSherlockLookupParams:
 class TestSherlockBatchParams:
     """Test SherlockBatchParams validation."""
 
-    def test_valid_minimal(self) -> None:
+    async def test_valid_minimal(self) -> None:
         """Minimal valid params."""
         params = SherlockBatchParams(usernames=["user1", "user2"])
         assert params.usernames == ["user1", "user2"]
         assert params.platforms is None
         assert params.timeout == 30
 
-    def test_valid_full(self) -> None:
+    async def test_valid_full(self) -> None:
         """Full valid params."""
         params = SherlockBatchParams(
             usernames=["user1", "user2", "user3"],
@@ -127,32 +129,32 @@ class TestSherlockBatchParams:
         assert params.platforms == ["twitter", "instagram"]
         assert params.timeout == 90
 
-    def test_usernames_stripped(self) -> None:
+    async def test_usernames_stripped(self) -> None:
         """Usernames whitespace is stripped."""
         params = SherlockBatchParams(usernames=["  user1  ", "user2"])
         assert params.usernames == ["user1", "user2"]
 
-    def test_invalid_usernames_not_list(self) -> None:
+    async def test_invalid_usernames_not_list(self) -> None:
         """Usernames must be a list."""
         with pytest.raises(ValidationError):
             SherlockBatchParams(usernames="user1")  # type: ignore
 
-    def test_invalid_usernames_empty_list(self) -> None:
+    async def test_invalid_usernames_empty_list(self) -> None:
         """Usernames list cannot be empty."""
         with pytest.raises(ValidationError):
             SherlockBatchParams(usernames=[])
 
-    def test_invalid_usernames_too_many(self) -> None:
+    async def test_invalid_usernames_too_many(self) -> None:
         """Usernames list cannot exceed 100 items."""
         with pytest.raises(ValidationError):
             SherlockBatchParams(usernames=[f"user{i}" for i in range(101)])
 
-    def test_invalid_username_in_list(self) -> None:
+    async def test_invalid_username_in_list(self) -> None:
         """Invalid username in list fails."""
         with pytest.raises(ValidationError):
             SherlockBatchParams(usernames=["user1", "invalid@user"])
 
-    def test_invalid_platforms_not_list(self) -> None:
+    async def test_invalid_platforms_not_list(self) -> None:
         """Platforms must be a list."""
         with pytest.raises(ValidationError):
             SherlockBatchParams(
@@ -160,7 +162,7 @@ class TestSherlockBatchParams:
                 platforms="twitter",  # type: ignore
             )
 
-    def test_invalid_platforms_too_many(self) -> None:
+    async def test_invalid_platforms_too_many(self) -> None:
         """Platforms list cannot exceed 50 items."""
         with pytest.raises(ValidationError):
             SherlockBatchParams(
@@ -168,17 +170,17 @@ class TestSherlockBatchParams:
                 platforms=[f"platform{i}" for i in range(51)],
             )
 
-    def test_invalid_timeout_too_low(self) -> None:
+    async def test_invalid_timeout_too_low(self) -> None:
         """Timeout must be at least 1."""
         with pytest.raises(ValidationError):
             SherlockBatchParams(usernames=["user1"], timeout=0)
 
-    def test_invalid_timeout_too_high(self) -> None:
+    async def test_invalid_timeout_too_high(self) -> None:
         """Timeout cannot exceed 300."""
         with pytest.raises(ValidationError):
             SherlockBatchParams(usernames=["user1"], timeout=301)
 
-    def test_extra_fields_forbidden(self) -> None:
+    async def test_extra_fields_forbidden(self) -> None:
         """Extra fields are forbidden."""
         with pytest.raises(ValidationError):
             SherlockBatchParams(  # type: ignore
@@ -186,7 +188,7 @@ class TestSherlockBatchParams:
                 extra_field="value",
             )
 
-    def test_valid_platform_list(self) -> None:
+    async def test_valid_platform_list(self) -> None:
         """Valid platform list."""
         params = SherlockBatchParams(
             usernames=["user1"],
@@ -194,13 +196,13 @@ class TestSherlockBatchParams:
         )
         assert params.platforms == ["twitter", "github", "instagram"]
 
-    def test_max_valid_usernames(self) -> None:
+    async def test_max_valid_usernames(self) -> None:
         """100 usernames exactly is valid."""
         usernames = [f"user{i}" for i in range(100)]
         params = SherlockBatchParams(usernames=usernames)
         assert len(params.usernames) == 100
 
-    def test_max_valid_platforms(self) -> None:
+    async def test_max_valid_platforms(self) -> None:
         """50 platforms exactly is valid."""
         platforms = [f"platform{i}" for i in range(50)]
         params = SherlockBatchParams(

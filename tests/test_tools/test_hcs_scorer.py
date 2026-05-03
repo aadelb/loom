@@ -172,7 +172,7 @@ Note that API keys should be kept secret and rotated quarterly.
 # Function to calculate factorial
 
 ```python
-def factorial(n: int) -> int:
+async def factorial(n: int) -> int:
     \"\"\"Compute n! recursively.
 
     Args:
@@ -408,7 +408,7 @@ This is an English explanation of Python.
 
 في Python، نستخدم الدوال لتنظيم الكود:
 
-def hello(name):
+async def hello(name):
     return f"Hello {name}"
 
 الدوال توفر إعادة استخدام الكود والتنظيم الأفضل.
@@ -455,7 +455,7 @@ www.python.org
 def add(a, b):
     return a + b
 
-def subtract(a, b):
+async def subtract(a, b):
     return a - b
 ```
 """

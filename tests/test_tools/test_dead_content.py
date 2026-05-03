@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 
@@ -11,33 +11,35 @@ from loom.tools.dead_content import research_dead_content
 from loom.validators import UrlSafetyError
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestResearchDeadContent:
     """Unit tests for research_dead_content function."""
 
-    def test_invalid_url_returns_error(self) -> None:
+    async def test_invalid_url_returns_error(self) -> None:
         """Test that invalid URLs are rejected."""
-        result = research_dead_content(url="not-a-url")
+        result = await research_dead_content(url="not-a-url")
         assert "error" in result
         assert result["is_deleted"] is False
         assert result["found_in"] == []
 
-    def test_private_ip_url_returns_error(self) -> None:
+    async def test_private_ip_url_returns_error(self) -> None:
         """Test that private IP URLs are rejected for SSRF safety."""
-        result = research_dead_content(url="http://127.0.0.1:8080")
+        result = await research_dead_content(url="http://127.0.0.1:8080")
         assert "error" in result
         assert result["is_deleted"] is False
 
-    def test_loopback_url_returns_error(self) -> None:
+    async def test_loopback_url_returns_error(self) -> None:
         """Test that loopback URLs are rejected."""
-        result = research_dead_content(url="http://localhost/test")
+        result = await research_dead_content(url="http://localhost/test")
         assert "error" in result
         assert result["is_deleted"] is False
 
-    @patch("loom.tools.dead_content.httpx.Client")
-    def test_wayback_machine_found(self, mock_client_class: Mock) -> None:
+    @patch("loom.tools.dead_content.httpx.AsyncClient")
+    async def test_wayback_machine_found(self, mock_client_class: Mock) -> None:
         """Test successful Wayback Machine snapshot detection."""
-        mock_client = MagicMock()
-        mock_client_class.return_value.__enter__.return_value = mock_client
+        mock_client = AsyncMock()
+        mock_client_class.return_value.__aenter__.return_value = mock_client
 
         # Mock Wayback Machine response
         mock_resp = MagicMock()
@@ -52,18 +54,18 @@ class TestResearchDeadContent:
         # Call with mocked responses
         mock_client.head.return_value.status_code = 404  # Other sources fail
 
-        result = research_dead_content(url="https://example.com", include_snapshots=True)
+        result = await research_dead_content(url="https://example.com", include_snapshots=True)
 
         assert result["is_deleted"] is True
         assert "wayback_machine" in result["found_in"]
         assert len(result["snapshots"]) > 0
         assert result["snapshots"][0]["source"] == "wayback_machine"
 
-    @patch("loom.tools.dead_content.httpx.Client")
-    def test_archive_today_found(self, mock_client_class: Mock) -> None:
+    @patch("loom.tools.dead_content.httpx.AsyncClient")
+    async def test_archive_today_found(self, mock_client_class: Mock) -> None:
         """Test successful Archive.today snapshot detection."""
-        mock_client = MagicMock()
-        mock_client_class.return_value.__enter__.return_value = mock_client
+        mock_client = AsyncMock()
+        mock_client_class.return_value.__aenter__.return_value = mock_client
 
         # First source (Wayback) fails
         mock_resp_fail = MagicMock()
@@ -79,15 +81,15 @@ class TestResearchDeadContent:
         mock_client.get.return_value = mock_resp_fail
         mock_client.head.side_effect = [mock_resp_archive, mock_resp_fail, mock_resp_fail]
 
-        result = research_dead_content(url="https://example.com", include_snapshots=True)
+        result = await research_dead_content(url="https://example.com", include_snapshots=True)
 
         assert "archive_today" in result["found_in"]
 
-    @patch("loom.tools.dead_content.httpx.Client")
-    def test_no_archives_found(self, mock_client_class: Mock) -> None:
+    @patch("loom.tools.dead_content.httpx.AsyncClient")
+    async def test_no_archives_found(self, mock_client_class: Mock) -> None:
         """Test when no archives are found."""
-        mock_client = MagicMock()
-        mock_client_class.return_value.__enter__.return_value = mock_client
+        mock_client = AsyncMock()
+        mock_client_class.return_value.__aenter__.return_value = mock_client
 
         # All sources return 404 or empty
         mock_resp = MagicMock()
@@ -97,32 +99,32 @@ class TestResearchDeadContent:
         mock_client.get.return_value = mock_resp
         mock_client.head.return_value = mock_resp
 
-        result = research_dead_content(url="https://example.com")
+        result = await research_dead_content(url="https://example.com")
 
         assert result["is_deleted"] is False
         assert result["found_in"] == []
         assert result["snapshots"] == []
 
-    def test_max_sources_clamping(self) -> None:
+    async def test_max_sources_clamping(self) -> None:
         """Test that max_sources is clamped to valid range."""
-        with patch("loom.tools.dead_content.httpx.Client"):
+        with patch("loom.tools.dead_content.httpx.AsyncClient"):
             # Should clamp 100 to 6 (max available sources)
-            result = research_dead_content(url="https://example.com", max_sources=100)
+            result = await research_dead_content(url="https://example.com", max_sources=100)
             # total_sources_checked should be at most 6
             assert result["total_sources_checked"] <= 6
 
-    def test_max_sources_minimum(self) -> None:
+    async def test_max_sources_minimum(self) -> None:
         """Test that max_sources minimum is 1."""
-        with patch("loom.tools.dead_content.httpx.Client"):
-            result = research_dead_content(url="https://example.com", max_sources=0)
+        with patch("loom.tools.dead_content.httpx.AsyncClient"):
+            result = await research_dead_content(url="https://example.com", max_sources=0)
             # Should at least check 1 source
             assert result["total_sources_checked"] >= 1
 
-    @patch("loom.tools.dead_content.httpx.Client")
-    def test_snapshots_excluded_when_flag_false(self, mock_client_class: Mock) -> None:
+    @patch("loom.tools.dead_content.httpx.AsyncClient")
+    async def test_snapshots_excluded_when_flag_false(self, mock_client_class: Mock) -> None:
         """Test that snapshots are not included when include_snapshots=False."""
-        mock_client = MagicMock()
-        mock_client_class.return_value.__enter__.return_value = mock_client
+        mock_client = AsyncMock()
+        mock_client_class.return_value.__aenter__.return_value = mock_client
 
         # Mock Wayback Machine response
         mock_resp = MagicMock()
@@ -134,7 +136,7 @@ class TestResearchDeadContent:
         mock_client.get.return_value = mock_resp
         mock_client.head.return_value.status_code = 404
 
-        result = research_dead_content(
+        result = await research_dead_content(
             url="https://example.com", include_snapshots=False
         )
 
@@ -142,10 +144,10 @@ class TestResearchDeadContent:
         assert "wayback_machine" in result["found_in"]
         assert len(result["snapshots"]) == 0
 
-    def test_response_structure(self) -> None:
+    async def test_response_structure(self) -> None:
         """Test that response has all required fields."""
-        with patch("loom.tools.dead_content.httpx.Client"):
-            result = research_dead_content(url="https://example.com")
+        with patch("loom.tools.dead_content.httpx.AsyncClient"):
+            result = await research_dead_content(url="https://example.com")
 
             # Verify required fields
             assert "url" in result
@@ -163,11 +165,11 @@ class TestResearchDeadContent:
             assert isinstance(result["total_sources_checked"], int)
             assert isinstance(result["checked_at"], str)
 
-    @patch("loom.tools.dead_content.httpx.Client")
-    def test_handles_malformed_json(self, mock_client_class: Mock) -> None:
+    @patch("loom.tools.dead_content.httpx.AsyncClient")
+    async def test_handles_malformed_json(self, mock_client_class: Mock) -> None:
         """Test graceful handling of malformed JSON responses."""
-        mock_client = MagicMock()
-        mock_client_class.return_value.__enter__.return_value = mock_client
+        mock_client = AsyncMock()
+        mock_client_class.return_value.__aenter__.return_value = mock_client
 
         # Mock response that raises JSON decode error
         mock_resp = MagicMock()
@@ -178,16 +180,16 @@ class TestResearchDeadContent:
         mock_client.head.return_value.status_code = 404
 
         # Should not raise, should handle gracefully
-        result = research_dead_content(url="https://example.com")
+        result = await research_dead_content(url="https://example.com")
 
         assert result["is_deleted"] is False
         assert result["found_in"] == []
 
-    @patch("loom.tools.dead_content.httpx.Client")
-    def test_handles_network_timeout(self, mock_client_class: Mock) -> None:
+    @patch("loom.tools.dead_content.httpx.AsyncClient")
+    async def test_handles_network_timeout(self, mock_client_class: Mock) -> None:
         """Test graceful handling of network timeouts."""
-        mock_client = MagicMock()
-        mock_client_class.return_value.__enter__.return_value = mock_client
+        mock_client = AsyncMock()
+        mock_client_class.return_value.__aenter__.return_value = mock_client
 
         # Mock timeout exception
         import httpx
@@ -196,7 +198,7 @@ class TestResearchDeadContent:
         mock_client.head.side_effect = httpx.TimeoutException("timeout")
 
         # Should not raise, should handle gracefully
-        result = research_dead_content(url="https://example.com")
+        result = await research_dead_content(url="https://example.com")
 
         assert result["is_deleted"] is False
         assert result["found_in"] == []

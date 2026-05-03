@@ -137,7 +137,7 @@ async def test_research_llm_query_expand_n_parameter() -> None:
     assert isinstance(result_over, dict)
 
 
-def test_research_ask_all_models_basic() -> None:
+async def test_research_ask_all_models_basic() -> None:
     """Test research_ask_all_models sends to multiple models.
 
     Tests:
@@ -147,7 +147,7 @@ def test_research_ask_all_models_basic() -> None:
     """
     from loom.tools.ask_all_models import research_ask_all_models
 
-    result = research_ask_all_models(
+    result = await research_ask_all_models(
         prompt="2+2=?",
         max_tokens=50,
         auto_reframe=False,
@@ -175,12 +175,12 @@ def test_research_ask_all_models_basic() -> None:
                 assert "elapsed_ms" in resp
 
 
-def test_research_ask_all_models_timeout_respect() -> None:
+async def test_research_ask_all_models_timeout_respect() -> None:
     """Test research_ask_all_models respects timeout parameter."""
     from loom.tools.ask_all_models import research_ask_all_models
 
     # Use very short timeout to test parameter acceptance
-    result = research_ask_all_models(
+    result = await research_ask_all_models(
         prompt="hi",
         max_tokens=30,
         timeout=5,
@@ -189,11 +189,11 @@ def test_research_ask_all_models_timeout_respect() -> None:
     assert isinstance(result, dict)
 
 
-def test_research_ask_all_models_auto_reframe_param() -> None:
+async def test_research_ask_all_models_auto_reframe_param() -> None:
     """Test research_ask_all_models auto_reframe parameter is accepted."""
     from loom.tools.ask_all_models import research_ask_all_models
 
-    result = research_ask_all_models(
+    result = await research_ask_all_models(
         prompt="test",
         auto_reframe=True,
         max_tokens=30,
@@ -210,8 +210,8 @@ async def test_multi_llm_concurrent_execution() -> None:
 
     # Run two concurrent queries
     results = await asyncio.gather(
-        research_ask_all_llms("test1", max_tokens=30),
-        research_llm_query_expand("test2", n=2),
+        await research_ask_all_llms("test1", max_tokens=30),
+        await research_llm_query_expand("test2", n=2),
     )
 
     assert len(results) == 2
@@ -248,11 +248,11 @@ async def test_query_expand_long_query() -> None:
     assert isinstance(result, dict)
 
 
-def test_ask_all_models_models_parameter() -> None:
+async def test_ask_all_models_models_parameter() -> None:
     """Test research_ask_all_models models filter parameter."""
     from loom.tools.ask_all_models import research_ask_all_models
 
-    result = research_ask_all_models(
+    result = await research_ask_all_models(
         prompt="test",
         models=["gpt"],  # Filter to GPT models only
         max_tokens=30,

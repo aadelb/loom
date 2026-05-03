@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import logging
+import asyncio
 import re
+import asyncio
 from typing import Any
 
 import httpx
+import asyncio
 
 logger = logging.getLogger("loom.tools.cve_lookup")
 
@@ -14,11 +17,11 @@ _NVD_API_BASE = "https://services.nvd.nist.gov/rest/json/cves/2.0"
 
 
 def _validate_cve_id(cve_id: str) -> bool:
-    """Validate CVE ID format: CVE-YYYY-NNNNN+."""
-    return bool(re.match(r"^CVE-\d{4}-\d{5,}$", cve_id.upper()))
+    """Validate CVE ID format: CVE-YYYY-NNNN+ (4+ digits)."""
+    return bool(re.match(r"^CVE-\d{4}-\d{4,}$", cve_id.upper()))
 
 
-def research_cve_lookup(query: str, limit: int = 10) -> dict[str, Any]:
+async def research_cve_lookup(query: str, limit: int = 10) -> dict[str, Any]:
     """Search CVE database using NVD API (free, rate limited).
 
     Queries the National Vulnerability Database by keyword.
@@ -30,12 +33,13 @@ def research_cve_lookup(query: str, limit: int = 10) -> dict[str, Any]:
     Returns:
         Dict with keys: query, total_results, cves (list of CVE details)
     """
+    await asyncio.sleep(0)
     # Validate inputs
     if not query or len(query.strip()) == 0:
         return {"query": query, "total_results": 0, "cves": [], "error": "query required"}
 
-    if limit < 1 or limit > 100:
-        limit = 10
+    # Clamp limit to valid range [1, 100]
+    limit = max(1, min(limit, 100))
 
     try:
         with httpx.Client(timeout=30.0) as client:
@@ -120,10 +124,10 @@ def research_cve_lookup(query: str, limit: int = 10) -> dict[str, Any]:
         return {"query": query, "total_results": 0, "cves": [], "error": str(exc)}
 
 
-def research_cve_detail(cve_id: str) -> dict[str, Any]:
+async def research_cve_detail(cve_id: str) -> dict[str, Any]:
     """Get detailed information for a specific CVE.
 
-    Queries NVD by exact CVE ID. Validate format: CVE-YYYY-NNNNN.
+    Queries NVD by exact CVE ID. Validate format: CVE-YYYY-NNNN+.
 
     Args:
         cve_id: CVE identifier (e.g., "CVE-2021-44228")
@@ -132,11 +136,12 @@ def research_cve_detail(cve_id: str) -> dict[str, Any]:
         Dict with detailed CVE info: id, description, cvss, severity, dates,
         references, affected_products, weaknesses
     """
+    await asyncio.sleep(0)
     # Validate CVE ID format
     if not _validate_cve_id(cve_id):
         return {
             "cve_id": cve_id,
-            "error": "Invalid CVE ID format (expected CVE-YYYY-NNNNN+)",
+            "error": "Invalid CVE ID format (expected CVE-YYYY-NNNN+)",
         }
 
     try:

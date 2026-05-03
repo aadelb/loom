@@ -391,29 +391,30 @@ class TestFetchSemanticScholarData:
             assert len(edges) == 0
 
 
+@pytest.mark.asyncio
 class TestResearchSocialGraph:
     """Tests for main research_social_graph function."""
 
-    def test_invalid_username(self) -> None:
+    async def test_invalid_username(self) -> None:
         """Reject empty or invalid username."""
-        result = research_social_graph("")
+        result = await research_social_graph("")
         assert "error" in result
         assert result["nodes"] == []
         assert result["edges"] == []
 
-    def test_username_too_long(self) -> None:
+    async def test_username_too_long(self) -> None:
         """Reject username exceeding length limit."""
         long_username = "a" * 300
-        result = research_social_graph(long_username)
+        result = await research_social_graph(long_username)
         assert "error" in result
         assert "exceeds 255" in result["error"]
 
-    def test_none_username(self) -> None:
+    async def test_none_username(self) -> None:
         """Reject None username."""
-        result = research_social_graph(None)
+        result = await research_social_graph(None)
         assert "error" in result
 
-    def test_valid_username_github_only(self) -> None:
+    async def test_valid_username_github_only(self) -> None:
         """Analyze GitHub platform only."""
         with patch("loom.tools.social_graph._fetch_github_data") as mock_github:
             mock_github.return_value = (
@@ -421,19 +422,19 @@ class TestResearchSocialGraph:
                 [],
             )
 
-            result = research_social_graph("testuser", platforms=["github"])
+            result = await research_social_graph("testuser", platforms=["github"])
 
             assert result["username"] == "testuser"
             assert "github" in result["platforms_analyzed"]
             assert len(result["nodes"]) > 0
 
-    def test_no_valid_platforms(self) -> None:
+    async def test_no_valid_platforms(self) -> None:
         """Reject when no valid platforms specified."""
-        result = research_social_graph("testuser", platforms=["invalid_platform"])
+        result = await research_social_graph("testuser", platforms=["invalid_platform"])
         assert "error" in result
         assert "no valid platforms" in result["error"]
 
-    def test_default_platforms(self) -> None:
+    async def test_default_platforms(self) -> None:
         """Use default platforms when none specified."""
         with patch("loom.tools.social_graph._fetch_github_data") as mock_github, \
              patch("loom.tools.social_graph._fetch_reddit_data") as mock_reddit, \
@@ -446,7 +447,7 @@ class TestResearchSocialGraph:
             mock_reddit.return_value = ([], [])
             mock_hn.return_value = ([], [])
 
-            result = research_social_graph("testuser")
+            result = await research_social_graph("testuser")
 
             # Should attempt to analyze default platforms
             assert isinstance(result, dict)
@@ -454,7 +455,7 @@ class TestResearchSocialGraph:
             assert "nodes" in result
             assert "edges" in result
 
-    def test_deduplication(self) -> None:
+    async def test_deduplication(self) -> None:
         """Deduplicate nodes and edges."""
         with patch("loom.tools.social_graph._fetch_github_data") as mock_github, \
              patch("loom.tools.social_graph._fetch_reddit_data") as mock_reddit:
@@ -472,13 +473,13 @@ class TestResearchSocialGraph:
                 [shared_edge],
             )
 
-            result = research_social_graph("testuser", platforms=["github", "reddit"])
+            result = await research_social_graph("testuser", platforms=["github", "reddit"])
 
             # Count occurrences of the shared node
             shared_count = sum(1 for n in result["nodes"] if n["id"] == "user:john")
             assert shared_count == 1, "Nodes should be deduplicated"
 
-    def test_response_structure(self) -> None:
+    async def test_response_structure(self) -> None:
         """Response has required fields."""
         with patch("loom.tools.social_graph._fetch_github_data") as mock_github:
             mock_github.return_value = (
@@ -486,7 +487,7 @@ class TestResearchSocialGraph:
                 [],
             )
 
-            result = research_social_graph("testuser", platforms=["github"])
+            result = await research_social_graph("testuser", platforms=["github"])
 
             assert "username" in result
             assert "nodes" in result
@@ -498,7 +499,7 @@ class TestResearchSocialGraph:
             assert isinstance(result["platforms_analyzed"], list)
             assert isinstance(result["total_connections"], int)
 
-    def test_connection_count(self) -> None:
+    async def test_connection_count(self) -> None:
         """total_connections matches edges count."""
         with patch("loom.tools.social_graph._fetch_github_data") as mock_github:
             edge1 = ("github:user1", "github:user2", "collaborated", 1)
@@ -514,6 +515,6 @@ class TestResearchSocialGraph:
                 [edge1, edge2],
             )
 
-            result = research_social_graph("testuser", platforms=["github"])
+            result = await research_social_graph("testuser", platforms=["github"])
 
             assert result["total_connections"] == len(result["edges"])

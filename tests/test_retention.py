@@ -59,6 +59,8 @@ def sample_logs(audit_dir: Path) -> dict:
     }
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestArchiveOldLogs:
     """Test suite for archive_old_logs function."""
 
@@ -180,7 +182,7 @@ class TestVerifyArchivedReadable:
         assert result["corrupt"] == 0
         assert result["total"] == 1
 
-    def test_verify_reports_corrupt_archives(self, archive_dir: Path) -> None:
+    async def test_verify_reports_corrupt_archives(self, archive_dir: Path) -> None:
         """Test that corrupt gzip files are detected."""
         archive_dir.mkdir(parents=True, exist_ok=True)
 
@@ -194,7 +196,7 @@ class TestVerifyArchivedReadable:
         assert result["readable"] == 0
         assert result["total"] == 1
 
-    def test_verify_empty_archive_dir(self, archive_dir: Path) -> None:
+    async def test_verify_empty_archive_dir(self, archive_dir: Path) -> None:
         """Test verification on empty archive directory."""
         archive_dir.mkdir(parents=True, exist_ok=True)
 
@@ -244,7 +246,7 @@ class TestVerifyArchivedReadable:
 class TestRetentionConstants:
     """Test suite for retention policy constants."""
 
-    def test_retention_years_constant(self) -> None:
+    async def test_retention_years_constant(self) -> None:
         """Test that retention years constant is set correctly."""
         assert RETENTION_YEARS == 5
         assert isinstance(RETENTION_YEARS, int)

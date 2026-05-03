@@ -12,6 +12,7 @@ import re
 from functools import partial
 from typing import Any
 
+import math
 logger = logging.getLogger("loom.tools.cipher_mirror")
 
 # Common API key patterns (prefix-based detection)
@@ -65,15 +66,15 @@ def _entropy_score(text: str, window_size: int = 32) -> float:
     for byte in sample.encode():
         freq[byte] = freq.get(byte, 0) + 1
 
-    # Shannon entropy
+    # Shannon entropy: H = -sum(p * log2(p))
     entropy = 0.0
     for count in freq.values():
         p = count / len(sample)
-        entropy -= p * (p ** 0.5) if p > 0 else 0
+        if p > 0:
+            entropy -= p * math.log2(p)
 
-    # Normalize to 0-1 (max entropy is ~5.0 for 256 possible values)
-    return min(entropy / 5.0, 1.0)
-
+    # Normalize to 0-1 (max entropy for 256 possible bytes is 8.0)
+    return min(entropy / 8.0, 1.0)
 
 def _detect_credentials(text: str) -> list[dict[str, Any]]:
     """Scan text for high-entropy credentials matching known patterns.

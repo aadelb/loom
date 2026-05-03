@@ -386,7 +386,7 @@ class TestHealthCheckOverallStatus:
             # Only first 4 LLM providers available
             call_count = [0]
 
-            def side_effect(provider_name: str) -> bool:
+            async def side_effect(provider_name: str) -> bool:
                 call_count[0] += 1
                 return call_count[0] <= 4
 

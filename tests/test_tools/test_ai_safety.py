@@ -29,6 +29,7 @@ from loom.tools.ai_safety import (
 )
 
 
+
 class TestPromptInjectionTest:
     """Tests for research_prompt_injection_test."""
 
@@ -148,7 +149,7 @@ class TestModelFingerprint:
             mock_response = Mock()
             mock_response.text = "Sample response"
             mock_client.post.return_value = mock_response
-
+            
             result = research_model_fingerprint("https://example.com/api", probes=100)
             assert result["probes_sent"] <= 5
 
@@ -546,3 +547,5 @@ class TestIntegration:
 
             result5 = research_compliance_check("https://example.com")
             assert "domain" in result5
+
+

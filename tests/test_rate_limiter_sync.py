@@ -9,6 +9,7 @@ Tests cover:
 """
 
 from __future__ import annotations
+import pytest
 
 import threading
 import time
@@ -17,10 +18,12 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from loom.rate_limiter import SyncRateLimiter, reset_all, sync_rate_limited
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestSyncRateLimiter:
     """Tests for SyncRateLimiter class."""
 
-    def test_sync_rate_limiter_allows_calls_within_limit(self) -> None:
+    async def test_sync_rate_limiter_allows_calls_within_limit(self) -> None:
         """Test that rate limiter allows calls within limit."""
         limiter = SyncRateLimiter(max_calls=3, window_seconds=60)
 
@@ -28,7 +31,7 @@ class TestSyncRateLimiter:
         assert limiter.check("test_key") is True
         assert limiter.check("test_key") is True
 
-    def test_sync_rate_limiter_blocks_calls_above_limit(self) -> None:
+    async def test_sync_rate_limiter_blocks_calls_above_limit(self) -> None:
         """Test that rate limiter blocks calls above limit."""
         limiter = SyncRateLimiter(max_calls=2, window_seconds=60)
 
@@ -36,7 +39,7 @@ class TestSyncRateLimiter:
         assert limiter.check("test_key") is True
         assert limiter.check("test_key") is False
 
-    def test_sync_rate_limiter_different_keys_independent(self) -> None:
+    async def test_sync_rate_limiter_different_keys_independent(self) -> None:
         """Test that different keys have independent limits."""
         limiter = SyncRateLimiter(max_calls=2, window_seconds=60)
 
@@ -49,7 +52,7 @@ class TestSyncRateLimiter:
         assert limiter.check("key2") is True
         assert limiter.check("key2") is False
 
-    def test_sync_rate_limiter_window_reset(self) -> None:
+    async def test_sync_rate_limiter_window_reset(self) -> None:
         """Test that rate limiter resets after window expires."""
         limiter = SyncRateLimiter(max_calls=2, window_seconds=1)
 
@@ -63,7 +66,7 @@ class TestSyncRateLimiter:
         # Should allow new calls after window reset
         assert limiter.check("test_key") is True
 
-    def test_sync_rate_limiter_thread_safe_concurrent(self) -> None:
+    async def test_sync_rate_limiter_thread_safe_concurrent(self) -> None:
         """Test that rate limiter is thread-safe under concurrent load."""
         limiter = SyncRateLimiter(max_calls=5, window_seconds=2)
         results = []
@@ -86,7 +89,7 @@ class TestSyncRateLimiter:
         assert allowed == 5
         assert blocked == 5
 
-    def test_sync_rate_limiter_default_key(self) -> None:
+    async def test_sync_rate_limiter_default_key(self) -> None:
         """Test that rate limiter uses 'global' as default key."""
         limiter = SyncRateLimiter(max_calls=2, window_seconds=60)
 
@@ -98,7 +101,7 @@ class TestSyncRateLimiter:
 class TestSyncRateLimitedDecorator:
     """Tests for sync_rate_limited decorator."""
 
-    def test_sync_rate_limited_decorator_allows_calls(self) -> None:
+    async def test_sync_rate_limited_decorator_allows_calls(self) -> None:
         """Test that decorated function allows calls within limit."""
         call_count = 0
 
@@ -112,7 +115,7 @@ class TestSyncRateLimitedDecorator:
         assert isinstance(result1, dict)
         assert call_count == 1
 
-    def test_sync_rate_limited_decorator_blocks_calls(self) -> None:
+    async def test_sync_rate_limited_decorator_blocks_calls(self) -> None:
         """Test that decorated function returns error dict when rate limited."""
         # Reset to ensure clean state
         reset_all()
@@ -141,7 +144,7 @@ class TestSyncRateLimitedDecorator:
         # Function should not have been called
         assert call_count == 1
 
-    def test_sync_rate_limited_decorator_error_format(self) -> None:
+    async def test_sync_rate_limited_decorator_error_format(self) -> None:
         """Test that rate limit error has expected format."""
         reset_all()
 
@@ -163,7 +166,7 @@ class TestSyncRateLimitedDecorator:
         assert result["category"] == "test_format"
         assert "retry_after_seconds" in result
 
-    def test_sync_rate_limited_decorator_preserves_function_name(self) -> None:
+    async def test_sync_rate_limited_decorator_preserves_function_name(self) -> None:
         """Test that decorator preserves function metadata."""
 
         @sync_rate_limited("test")
@@ -174,7 +177,7 @@ class TestSyncRateLimitedDecorator:
         assert my_function.__name__ == "my_function"
         assert "My docstring" in my_function.__doc__
 
-    def test_sync_rate_limited_decorator_returns_data_on_success(self) -> None:
+    async def test_sync_rate_limited_decorator_returns_data_on_success(self) -> None:
         """Test that decorator returns function result on success."""
 
         @sync_rate_limited("test_return")
@@ -186,7 +189,7 @@ class TestSyncRateLimitedDecorator:
         assert result["status"] == "ok"
         assert result["value"] == "test"
 
-    def test_sync_rate_limited_decorator_with_arguments(self) -> None:
+    async def test_sync_rate_limited_decorator_with_arguments(self) -> None:
         """Test that decorator works with function arguments."""
 
         @sync_rate_limited("test_args")
@@ -197,7 +200,7 @@ class TestSyncRateLimitedDecorator:
 
         assert result["result"] == 8
 
-    def test_sync_rate_limited_decorator_with_kwargs(self) -> None:
+    async def test_sync_rate_limited_decorator_with_kwargs(self) -> None:
         """Test that decorator works with function kwargs."""
 
         @sync_rate_limited("test_kwargs")
@@ -212,7 +215,7 @@ class TestSyncRateLimitedDecorator:
 class TestSyncRateLimiterIntegration:
     """Integration tests for sync rate limiter."""
 
-    def test_sync_rate_limiter_multiple_windows(self) -> None:
+    async def test_sync_rate_limiter_multiple_windows(self) -> None:
         """Test rate limiter across multiple windows."""
         limiter = SyncRateLimiter(max_calls=2, window_seconds=1)
 
@@ -229,7 +232,7 @@ class TestSyncRateLimiterIntegration:
         assert limiter.check("test") is True
         assert limiter.check("test") is False
 
-    def test_sync_rate_limiter_no_memory_leak(self) -> None:
+    async def test_sync_rate_limiter_no_memory_leak(self) -> None:
         """Test that rate limiter doesn't leak memory with many keys."""
         limiter = SyncRateLimiter(max_calls=1, window_seconds=1)
 
@@ -249,7 +252,7 @@ class TestSyncRateLimiterIntegration:
         initial_count = len(limiter._calls)
         assert initial_count <= 100
 
-    def test_sync_rate_limiter_boundary_condition(self) -> None:
+    async def test_sync_rate_limiter_boundary_condition(self) -> None:
         """Test boundary condition where call arrives exactly at window edge."""
         limiter = SyncRateLimiter(max_calls=1, window_seconds=1)
 

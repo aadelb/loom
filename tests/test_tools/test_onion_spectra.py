@@ -22,7 +22,7 @@ class TestOnionSpectra:
         result = await research_onion_spectra(url="https://example.com")
 
         assert result["error"] is not None
-        assert "not a .onion address" in result["error"].lower()
+        assert "onion address" in result["error"].lower()
         assert result["category"] == "suspicious"
 
     @pytest.mark.asyncio
@@ -48,7 +48,8 @@ class TestOnionSpectra:
             }
 
             with patch(
-                "loom.tools.onion_spectra.research_llm_classify"
+                "loom.tools.onion_spectra.research_llm_classify",
+                new_callable=AsyncMock,
             ) as mock_classify:
                 # Mock language detection
                 mock_classify.side_effect = [
@@ -126,18 +127,21 @@ class TestOnionSpectra:
     @pytest.mark.asyncio
     async def test_detect_language_llm_fallback(self) -> None:
         """Language detection falls back to English on LLM unavailable."""
-        with patch("loom.tools.onion_spectra.research_llm_classify") as mock_classify:
-            mock_classify.side_effect = ImportError("No LLM provider")
-
+        with patch(
+            "loom.tools.onion_spectra.research_llm_classify", None
+        ) as mock_classify:
             result = await _detect_language("Some random text")
 
-            # Should fall back to heuristic
-            assert result["language_code"] in ["en", "ar", "ru", "zh"]
+            # Should fall back to English (no heuristic match)
+            assert result["language_code"] == "en"
 
     @pytest.mark.asyncio
     async def test_classify_safety_benign(self) -> None:
         """Safety classification identifies benign content."""
-        with patch("loom.tools.onion_spectra.research_llm_classify") as mock_classify:
+        with patch(
+            "loom.tools.onion_spectra.research_llm_classify",
+            new_callable=AsyncMock,
+        ) as mock_classify:
             mock_classify.return_value = {
                 "classification": {
                     "label": "benign",
@@ -156,7 +160,10 @@ class TestOnionSpectra:
     @pytest.mark.asyncio
     async def test_classify_safety_illegal(self) -> None:
         """Safety classification flags illegal content."""
-        with patch("loom.tools.onion_spectra.research_llm_classify") as mock_classify:
+        with patch(
+            "loom.tools.onion_spectra.research_llm_classify",
+            new_callable=AsyncMock,
+        ) as mock_classify:
             mock_classify.return_value = {
                 "classification": {
                     "label": "illegal",
@@ -175,9 +182,7 @@ class TestOnionSpectra:
     @pytest.mark.asyncio
     async def test_classify_safety_llm_unavailable(self) -> None:
         """Safety classification falls back on LLM unavailable."""
-        with patch("loom.tools.onion_spectra.research_llm_classify") as mock_classify:
-            mock_classify.side_effect = ImportError("No LLM")
-
+        with patch("loom.tools.onion_spectra.research_llm_classify", None):
             result = await _classify_safety(
                 title="Test Site", content="Some content here"
             )
@@ -199,7 +204,8 @@ class TestOnionSpectra:
             }
 
             with patch(
-                "loom.tools.onion_spectra.research_llm_classify"
+                "loom.tools.onion_spectra.research_llm_classify",
+                new_callable=AsyncMock,
             ) as mock_classify:
                 mock_classify.side_effect = [
                     {"classification": {"label": "en", "confidence": 0.5}},
@@ -224,7 +230,8 @@ class TestOnionSpectra:
             }
 
             with patch(
-                "loom.tools.onion_spectra.research_llm_classify"
+                "loom.tools.onion_spectra.research_llm_classify",
+                new_callable=AsyncMock,
             ) as mock_classify:
                 mock_classify.side_effect = [
                     {"classification": {"label": "en", "confidence": 0.8}},

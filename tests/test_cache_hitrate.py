@@ -11,10 +11,12 @@ import pytest
 from loom.cache import CacheStore
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestCacheHitRate:
     """Verify cache hit rate meets REQ-057 (>= 40% on repeated queries)."""
 
-    def test_repeated_query_serves_from_cache(self, tmp_cache_dir: Path) -> None:
+    async def test_repeated_query_serves_from_cache(self, tmp_cache_dir: Path) -> None:
         """Same key returns cached value on second call."""
         cache = CacheStore(tmp_cache_dir)
         cache.put("test_key", {"result": "data"})
@@ -23,7 +25,7 @@ class TestCacheHitRate:
         assert result is not None
         assert result["result"] == "data"
 
-    def test_cache_hit_rate_40_percent(self, tmp_cache_dir: Path) -> None:
+    async def test_cache_hit_rate_40_percent(self, tmp_cache_dir: Path) -> None:
         """10 identical queries should have >= 4 cache hits (40%)."""
         cache = CacheStore(tmp_cache_dir)
 
@@ -49,7 +51,7 @@ class TestCacheHitRate:
         assert hits >= 4, f"Cache hit rate {hits}/10 = {hit_rate_percent}% (need >= 40%)"
         assert hit_rate_percent >= 40
 
-    def test_different_keys_no_collision(self, tmp_cache_dir: Path) -> None:
+    async def test_different_keys_no_collision(self, tmp_cache_dir: Path) -> None:
         """Different keys don't collide in cache."""
         cache = CacheStore(tmp_cache_dir)
         cache.put("key_a", {"data": "alpha"})
@@ -63,7 +65,7 @@ class TestCacheHitRate:
         assert result_a["data"] == "alpha"
         assert result_b["data"] == "beta"
 
-    def test_cache_survives_across_instances(self, tmp_cache_dir: Path) -> None:
+    async def test_cache_survives_across_instances(self, tmp_cache_dir: Path) -> None:
         """New CacheStore instance reads existing cache entries."""
         cache1 = CacheStore(tmp_cache_dir)
         cache1.put("persist_key", {"value": 42})
@@ -75,7 +77,7 @@ class TestCacheHitRate:
         assert result is not None
         assert result["value"] == 42
 
-    def test_large_value_cached(self, tmp_cache_dir: Path) -> None:
+    async def test_large_value_cached(self, tmp_cache_dir: Path) -> None:
         """Large JSON values cached and retrieved correctly."""
         cache = CacheStore(tmp_cache_dir)
         large_data = {
@@ -89,7 +91,7 @@ class TestCacheHitRate:
         assert result["items"][0]["id"] == 0
         assert result["items"][99]["id"] == 99
 
-    def test_unicode_key_and_value(self, tmp_cache_dir: Path) -> None:
+    async def test_unicode_key_and_value(self, tmp_cache_dir: Path) -> None:
         """Arabic/Unicode keys and values cached correctly."""
         cache = CacheStore(tmp_cache_dir)
         cache.put("كيف أصبح غنياً", {"answer": "إجابة بالعربية"})
@@ -98,7 +100,7 @@ class TestCacheHitRate:
         assert result is not None
         assert result["answer"] == "إجابة بالعربية"
 
-    def test_mixed_unicode_and_ascii_keys(self, tmp_cache_dir: Path) -> None:
+    async def test_mixed_unicode_and_ascii_keys(self, tmp_cache_dir: Path) -> None:
         """Mix of Unicode and ASCII keys all cache independently."""
         cache = CacheStore(tmp_cache_dir)
 
@@ -117,7 +119,7 @@ class TestCacheHitRate:
             assert result is not None
             assert result == expected_value, f"Failed for key: {key}"
 
-    def test_sequential_queries_hit_rate_analysis(self, tmp_cache_dir: Path) -> None:
+    async def test_sequential_queries_hit_rate_analysis(self, tmp_cache_dir: Path) -> None:
         """Analyze hit rate across 50 sequential queries of same key."""
         cache = CacheStore(tmp_cache_dir)
         key = "sequential_query"
@@ -138,7 +140,7 @@ class TestCacheHitRate:
         assert hits == 50, f"Expected 50 hits, got {hits}"
         assert hit_rate_percent == 100.0
 
-    def test_cache_with_nested_json(self, tmp_cache_dir: Path) -> None:
+    async def test_cache_with_nested_json(self, tmp_cache_dir: Path) -> None:
         """Deeply nested JSON structures cached and retrieved correctly."""
         cache = CacheStore(tmp_cache_dir)
         nested_data = {
@@ -157,7 +159,7 @@ class TestCacheHitRate:
         assert result["level_1"]["level_2"]["level_3"]["level_4"]["value"] == "deep_value"
         assert result["level_1"]["level_2"]["level_3"]["level_4"]["number"] == 42
 
-    def test_cache_hit_rate_with_many_distinct_keys(self, tmp_cache_dir: Path) -> None:
+    async def test_cache_hit_rate_with_many_distinct_keys(self, tmp_cache_dir: Path) -> None:
         """Cache maintains separate entries for distinct keys (no false hits)."""
         cache = CacheStore(tmp_cache_dir)
         num_keys = 20
@@ -178,7 +180,7 @@ class TestCacheHitRate:
         # Should get 20/20 hits (100% for existing entries)
         assert hits == num_keys
 
-    def test_cache_empty_value_not_treated_as_miss(self, tmp_cache_dir: Path) -> None:
+    async def test_cache_empty_value_not_treated_as_miss(self, tmp_cache_dir: Path) -> None:
         """Empty/null values cached and retrieved (not treated as misses)."""
         cache = CacheStore(tmp_cache_dir)
         cache.put("empty_dict_key", {})
@@ -198,7 +200,7 @@ class TestCacheHitRate:
         assert cache.get("null_string_key")["text"] == ""
         assert cache.get("false_bool_key")["flag"] is False
 
-    def test_realistic_tool_cache_scenario(self, tmp_cache_dir: Path) -> None:
+    async def test_realistic_tool_cache_scenario(self, tmp_cache_dir: Path) -> None:
         """Simulate realistic tool caching with query::params::url keys."""
         cache = CacheStore(tmp_cache_dir)
 
@@ -234,7 +236,7 @@ class TestCacheHitRate:
         hit_rate_percent = (hit_count / (total_queries + 1)) * 100
         assert hit_count >= 4, f"Expected >= 4 hits, got {hit_count}"
 
-    def test_cache_stats_tracking(self, tmp_cache_dir: Path) -> None:
+    async def test_cache_stats_tracking(self, tmp_cache_dir: Path) -> None:
         """Cache stats accurately reflect stored data."""
         cache = CacheStore(tmp_cache_dir)
 
@@ -254,7 +256,7 @@ class TestCacheHitRate:
         assert stats["file_count"] == 10
         assert stats["total_bytes"] > 0
 
-    def test_cache_hit_rate_minimum_threshold(self, tmp_cache_dir: Path) -> None:
+    async def test_cache_hit_rate_minimum_threshold(self, tmp_cache_dir: Path) -> None:
         """Verify cache meets REQ-057 minimum 40% hit rate threshold."""
         cache = CacheStore(tmp_cache_dir)
 
@@ -294,7 +296,7 @@ class TestCacheHitRate:
         hit_rate = (hits / (hits + misses + len(repeat_keys))) * 100
         assert hit_rate >= 40, f"Hit rate {hit_rate}% below 40% threshold"
 
-    def test_cache_put_preserves_data_types(self, tmp_cache_dir: Path) -> None:
+    async def test_cache_put_preserves_data_types(self, tmp_cache_dir: Path) -> None:
         """Cache preserves JSON data types through put/get cycle."""
         cache = CacheStore(tmp_cache_dir)
 
@@ -320,7 +322,7 @@ class TestCacheHitRate:
         assert isinstance(result["array"], list)
         assert isinstance(result["nested"], dict)
 
-    def test_cache_compression_hit_rate(self, tmp_cache_dir: Path) -> None:
+    async def test_cache_compression_hit_rate(self, tmp_cache_dir: Path) -> None:
         """Compressed cache entries still provide high hit rates."""
         cache = CacheStore(tmp_cache_dir)
 

@@ -45,6 +45,8 @@ def mock_tracker_home(tmp_tracker_dir: Path) -> None:
         yield
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestRecordAttempt:
     """Tests for record_attempt() function."""
 

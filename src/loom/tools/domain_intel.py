@@ -1,6 +1,7 @@
 """Domain intelligence tools — WHOIS, DNS lookup, and port scanning."""
 
 from __future__ import annotations
+import asyncio
 
 import ipaddress
 import logging
@@ -66,7 +67,7 @@ def _validate_ip_or_domain(target: str) -> str:
     return _validate_domain(target)
 
 
-def research_whois(domain: str) -> dict[str, Any]:
+async def research_whois(domain: str) -> dict[str, Any]:
     """Run whois lookup on a domain.
 
     Uses the system `whois` command to retrieve registration information.
@@ -90,6 +91,7 @@ def research_whois(domain: str) -> dict[str, Any]:
         - raw_text: truncated raw whois output (2000 chars max)
         - error: error message if lookup failed
     """
+    await asyncio.sleep(0)
     try:
         domain = _validate_domain(domain)
     except ValueError as exc:
@@ -204,7 +206,7 @@ def research_whois(domain: str) -> dict[str, Any]:
         return {"domain": domain, "error": str(exc)}
 
 
-def research_dns_lookup(
+async def research_dns_lookup(
     domain: str, record_types: list[str] | None = None
 ) -> dict[str, Any]:
     """DNS lookup for domain records.
@@ -223,6 +225,7 @@ def research_dns_lookup(
         - ip_addresses: flattened list of all A/AAAA records
         - error: error message if lookup failed
     """
+    await asyncio.sleep(0)
     try:
         domain = _validate_domain(domain)
     except ValueError as exc:
@@ -312,7 +315,7 @@ def research_dns_lookup(
     return output
 
 
-def research_nmap_scan(
+async def research_nmap_scan(
     target: str, ports: str = "80,443,8080,8443", scan_type: str = "basic"
 ) -> dict[str, Any]:
     """Port scan using nmap.
@@ -333,6 +336,7 @@ def research_nmap_scan(
         - host_up: whether the host responded
         - error: error message if scan failed
     """
+    await asyncio.sleep(0)
     try:
         target = _validate_ip_or_domain(target)
     except ValueError as exc:

@@ -15,15 +15,17 @@ def _clear_ddgs_module():
     sys.modules.pop("loom.providers.ddgs", None)
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestSearchDdgs:
-    def test_sdk_not_installed(self):
+    async def test_sdk_not_installed(self):
         with patch.dict("sys.modules", {"ddgs": None}):
             from loom.providers.ddgs import search_ddgs
 
             result = search_ddgs("test query")
             assert "not installed" in result["error"]
 
-    def test_basic_search(self):
+    async def test_basic_search(self):
         mock_ddgs_cls = MagicMock()
         mock_ddgs_cls.return_value.text.return_value = [
             {"title": "Example", "href": "https://example.com", "body": "Example text"},
@@ -41,7 +43,7 @@ class TestSearchDdgs:
         assert result["results"][0]["url"] == "https://example.com"
         assert result["results"][0]["title"] == "Example"
 
-    def test_empty_results(self):
+    async def test_empty_results(self):
         mock_ddgs_cls = MagicMock()
         mock_ddgs_cls.return_value.text.return_value = []
         mock_ddgs_mod = MagicMock()
@@ -55,7 +57,7 @@ class TestSearchDdgs:
         assert result["results"] == []
         assert "error" not in result
 
-    def test_error_handling(self):
+    async def test_error_handling(self):
         mock_ddgs_cls = MagicMock()
         mock_ddgs_cls.return_value.text.side_effect = RuntimeError("rate limited")
         mock_ddgs_mod = MagicMock()
@@ -68,7 +70,7 @@ class TestSearchDdgs:
 
         assert "search failed" in result["error"]
 
-    def test_snippet_truncation(self):
+    async def test_snippet_truncation(self):
         mock_ddgs_cls = MagicMock()
         mock_ddgs_cls.return_value.text.return_value = [
             {"title": "T", "href": "https://x.com", "body": "b" * 1000},

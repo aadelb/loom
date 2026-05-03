@@ -179,7 +179,7 @@ async def research_social_search(
     }
 
 
-def research_social_profile(url: str) -> dict[str, Any]:
+async def research_social_profile(url: str) -> dict[str, Any]:
     """Extract public profile metadata from a social media URL.
 
     Fetches the page and extracts Open Graph metadata (og:title, og:description, og:image).
@@ -211,8 +211,8 @@ def research_social_profile(url: str) -> dict[str, Any]:
 
     # Fetch page
     try:
-        with httpx.Client(timeout=_HTTP_TIMEOUT) as client:
-            resp = client.get(url, headers={"User-Agent": "Mozilla/5.0"})
+        async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT) as client:
+            resp = await client.get(url, headers={"User-Agent": "Mozilla/5.0"})
             resp.raise_for_status()
             html = resp.text
     except Exception as e:
@@ -290,10 +290,11 @@ def _extract_og_metadata(html: str) -> dict[str, str]:
         Dict of og:* metadata (og:title, og:description, og:image, etc.).
     """
     metadata = {}
-    # Simple regex-based extraction (more robust than regex would require a proper HTML parser)
     import re
 
-    pattern = r'<meta\s+property="(og:[^"]+)"\s+content="([^"]+)"'
+    # Match both property and name attributes
+    # <meta property="og:title" content="..."> or <meta name="og:title" content="...">
+    pattern = r'<meta\s+(?:property|name)="(og:[^"]+)"\s+content="([^"]+)"'
     for match in re.finditer(pattern, html, re.IGNORECASE):
         key, value = match.groups()
         metadata[key] = value

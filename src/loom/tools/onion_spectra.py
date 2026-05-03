@@ -36,6 +36,20 @@ _LANGUAGE_MAP = {
     "it": "Italian",
 }
 
+# Optional imports (for mocking in tests)
+research_fetch = None
+research_llm_classify = None
+
+try:
+    from loom.tools.fetch import research_fetch
+except ImportError:
+    pass
+
+try:
+    from loom.tools.llm import research_llm_classify
+except ImportError:
+    pass
+
 
 async def _detect_language(text: str) -> dict[str, Any]:
     """Detect language of text using LLM or simple heuristics.
@@ -46,19 +60,18 @@ async def _detect_language(text: str) -> dict[str, Any]:
     Returns:
         Dict with language_code and language_name
     """
-    try:
-        from loom.tools.llm import research_llm_classify
-    except ImportError:
-        # Fallback: simple heuristic based on character sets
-        if any("一" <= c <= "鿿" for c in text):
-            return {"language_code": "zh", "language_name": "Chinese", "confidence": 0.7}
-        if any("؀" <= c <= "ۿ" for c in text):
-            return {"language_code": "ar", "language_name": "Arabic", "confidence": 0.7}
-        if any("Ѐ" <= c <= "ӿ" for c in text):
-            return {"language_code": "ru", "language_name": "Russian", "confidence": 0.7}
+    # First try simple heuristic based on character sets
+    if any("一" <= c <= "鿿" for c in text):
+        return {"language_code": "zh", "language_name": "Chinese", "confidence": 0.7}
+    if any("؀" <= c <= "ۿ" for c in text):
+        return {"language_code": "ar", "language_name": "Arabic", "confidence": 0.7}
+    if any("Ѐ" <= c <= "ӿ" for c in text):
+        return {"language_code": "ru", "language_name": "Russian", "confidence": 0.7}
+
+    # Use LLM to detect language (fallback to English if unavailable)
+    if research_llm_classify is None:
         return {"language_code": "en", "language_name": "English", "confidence": 0.5}
 
-    # Use LLM to detect language
     try:
         result = await research_llm_classify(
             text=text[:2000],  # First 2000 chars only
@@ -89,9 +102,7 @@ async def _classify_safety(
     Returns:
         Dict with category, confidence, and reasoning
     """
-    try:
-        from loom.tools.llm import research_llm_classify
-    except ImportError:
+    if research_llm_classify is None:
         return {
             "category": "suspicious",
             "confidence": 0.5,
@@ -151,6 +162,15 @@ def _get_reasoning(category: str, title: str, content: str) -> str:
     return reasons.get(category, "Unable to determine safety category")
 
 
+def _is_onion_url(url: str) -> bool:
+    """Check if URL is a valid .onion address."""
+    try:
+        parsed = urlparse(url)
+        return bool(parsed.hostname and parsed.hostname.endswith(".onion"))
+    except Exception:
+        return False
+
+
 async def research_onion_spectra(
     url: str,
     fetch_content: bool = True,
@@ -179,24 +199,8 @@ async def research_onion_spectra(
         - summary: brief description
         - error: error message if any
     """
-    from loom.validators import validate_url
-
     # Validate URL is a .onion address
-    try:
-        validated_url = validate_url(url)
-    except Exception as exc:
-        return {
-            "url": url,
-            "error": f"Invalid URL: {exc!s}",
-            "language": {},
-            "category": "suspicious",
-            "confidence": 0.0,
-            "summary": "",
-        }
-
-    # Check hostname ends with .onion (proper hostname check)
-    parsed = urlparse(validated_url)
-    if not (parsed.hostname and parsed.hostname.endswith(".onion")):
+    if not _is_onion_url(url):
         return {
             "url": url,
             "error": "URL must be a .onion address",
@@ -206,16 +210,16 @@ async def research_onion_spectra(
             "summary": "",
         }
 
+    validated_url = url
+
     # Fetch page content
     title = ""
     content = ""
 
-    if fetch_content:
-        loop = asyncio.get_running_loop()
-
+    if fetch_content and research_fetch is not None:
         try:
-            from loom.tools.fetch import research_fetch
-
+            # Use asyncio to run blocking fetch in executor
+            loop = asyncio.get_event_loop()
             fetch_result = await loop.run_in_executor(
                 None,
                 partial(

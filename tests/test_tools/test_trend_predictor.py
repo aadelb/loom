@@ -17,10 +17,12 @@ from loom.tools.trend_predictor import (
 )
 
 
+pytestmark = pytest.mark.asyncio
+
 class TestArxivPublicationRate:
     """_arxiv_publication_rate extracts publication trends."""
 
-    def test_valid_arxiv_response(self) -> None:
+    async def test_valid_arxiv_response(self) -> None:
         """Parse arXiv XML and extract monthly publication counts."""
         import asyncio
         from unittest.mock import AsyncMock
@@ -58,7 +60,7 @@ class TestArxivPublicationRate:
 
         asyncio.run(test())
 
-    def test_empty_arxiv_response(self) -> None:
+    async def test_empty_arxiv_response(self) -> None:
         """Handle empty arXiv response gracefully."""
         import asyncio
         from unittest.mock import AsyncMock
@@ -82,7 +84,7 @@ class TestArxivPublicationRate:
 class TestSemanticScholarCitations:
     """_semantic_scholar_citations analyzes citation velocity."""
 
-    def test_valid_scholar_response(self) -> None:
+    async def test_valid_scholar_response(self) -> None:
         """Parse Semantic Scholar response and compute citation stats."""
         import asyncio
         from unittest.mock import AsyncMock
@@ -122,7 +124,7 @@ class TestSemanticScholarCitations:
 
         asyncio.run(test())
 
-    def test_empty_scholar_response(self) -> None:
+    async def test_empty_scholar_response(self) -> None:
         """Handle empty Semantic Scholar response."""
         import asyncio
         from unittest.mock import AsyncMock
@@ -146,7 +148,7 @@ class TestSemanticScholarCitations:
 class TestGithubRepoMomentum:
     """_github_repo_momentum analyzes repository growth."""
 
-    def test_valid_github_response(self) -> None:
+    async def test_valid_github_response(self) -> None:
         """Parse GitHub search response and compute momentum."""
         import asyncio
         from unittest.mock import AsyncMock
@@ -182,7 +184,7 @@ class TestGithubRepoMomentum:
 
         asyncio.run(test())
 
-    def test_empty_github_response(self) -> None:
+    async def test_empty_github_response(self) -> None:
         """Handle empty GitHub response."""
         import asyncio
         from unittest.mock import AsyncMock
@@ -206,7 +208,7 @@ class TestGithubRepoMomentum:
 class TestHackernewsDiscussion:
     """_hackernews_discussion analyzes community engagement."""
 
-    def test_valid_hn_response(self) -> None:
+    async def test_valid_hn_response(self) -> None:
         """Parse HackerNews response and compute engagement metrics."""
         import asyncio
         from unittest.mock import AsyncMock
@@ -245,7 +247,7 @@ class TestHackernewsDiscussion:
 class TestComputeTrendDirection:
     """_compute_trend_direction determines trend based on signals."""
 
-    def test_rising_trend(self) -> None:
+    async def test_rising_trend(self) -> None:
         """Detect rising trend from strong signals."""
         arxiv_data = {
             "papers_per_month": {
@@ -281,7 +283,7 @@ class TestComputeTrendDirection:
         assert trend == "rising"
         assert confidence > 0.5
 
-    def test_declining_trend(self) -> None:
+    async def test_declining_trend(self) -> None:
         """Detect declining trend from weak signals."""
         arxiv_data = {
             "papers_per_month": {
@@ -320,7 +322,7 @@ class TestComputeTrendDirection:
 class TestPredictNext3Months:
     """_predict_next_3_months forecasts future activity."""
 
-    def test_predict_rising_trend(self) -> None:
+    async def test_predict_rising_trend(self) -> None:
         """Predict increased activity for rising trend."""
         arxiv_data = {
             "papers_per_month": {
@@ -338,7 +340,7 @@ class TestPredictNext3Months:
         assert prediction["predicted_papers"] > 0
         assert prediction["growth_rate"] != 0
 
-    def test_predict_stable_trend(self) -> None:
+    async def test_predict_stable_trend(self) -> None:
         """Predict stable activity for stable trend."""
         arxiv_data = {
             "papers_per_month": {
@@ -359,7 +361,7 @@ class TestPredictNext3Months:
 class TestResearchTrendPredict:
     """research_trend_predict main function."""
 
-    def test_basic_trend_prediction(self) -> None:
+    async def test_basic_trend_prediction(self) -> None:
         """Basic trend prediction returns expected structure."""
         with patch("loom.tools.trend_predictor._arxiv_publication_rate") as mock_arxiv:
             with patch(
@@ -392,7 +394,7 @@ class TestResearchTrendPredict:
                             "avg_comments": 20.0,
                         }
 
-                        result = research_trend_predict("transformers")
+                        result = await research_trend_predict("transformers")
 
                         assert result["topic"] == "transformers"
                         assert "trend_direction" in result
@@ -404,7 +406,7 @@ class TestResearchTrendPredict:
                         assert "prediction_next_3_months" in result
                         assert "analysis_timestamp" in result
 
-    def test_invalid_topic_handles_gracefully(self) -> None:
+    async def test_invalid_topic_handles_gracefully(self) -> None:
         """Invalid topic still returns valid structure."""
         with patch("loom.tools.trend_predictor._arxiv_publication_rate") as mock_arxiv:
             with patch(
@@ -437,7 +439,7 @@ class TestResearchTrendPredict:
                             "avg_comments": 0.0,
                         }
 
-                        result = research_trend_predict("nonexistent_topic_xyz")
+                        result = await research_trend_predict("nonexistent_topic_xyz")
 
                         assert result["topic"] == "nonexistent_topic_xyz"
                         assert "trend_direction" in result

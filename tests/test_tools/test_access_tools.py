@@ -18,10 +18,12 @@ from loom.tools.access_tools import (
 )
 
 
+pytestmark = pytest.mark.asyncio
+
 class TestLegalTakedown:
     """Tests for research_legal_takedown."""
 
-    def test_legal_takedown_basic(self):
+    async def test_legal_takedown_basic(self):
         """Test legal takedown with mocked API responses."""
         with patch("loom.tools.access_tools.asyncio.run") as mock_run:
             mock_result = {
@@ -33,12 +35,12 @@ class TestLegalTakedown:
                 "sources": ["Lumen Database"],
             }
             mock_run.return_value = mock_result
-            result = research_legal_takedown("example.com")
+            result = await research_legal_takedown("example.com")
             assert result["domain"] == "example.com"
             assert "takedown_notices" in result
             assert "sources" in result
 
-    def test_legal_takedown_no_results(self):
+    async def test_legal_takedown_no_results(self):
         """Test legal takedown with no results."""
         with patch("loom.tools.access_tools.asyncio.run") as mock_run:
             mock_result = {
@@ -48,21 +50,21 @@ class TestLegalTakedown:
                 "sources": [],
             }
             mock_run.return_value = mock_result
-            result = research_legal_takedown("clean-domain.com")
+            result = await research_legal_takedown("clean-domain.com")
             assert result["total_found"] == 0
             assert result["takedown_notices"] == []
 
-    def test_legal_takedown_domain_validation(self):
+    async def test_legal_takedown_domain_validation(self):
         """Test that invalid domains are rejected gracefully."""
         # Should return some result without crashing
-        result = research_legal_takedown("invalid..domain")
+        result = await research_legal_takedown("invalid..domain")
         assert "domain" in result or "error" in result or result == {}
 
 
 class TestOpenAccess:
     """Tests for research_open_access."""
 
-    def test_open_access_with_doi(self):
+    async def test_open_access_with_doi(self):
         """Test open access lookup with DOI."""
         with patch("loom.tools.access_tools.asyncio.run") as mock_run:
             mock_result = {
@@ -72,12 +74,12 @@ class TestOpenAccess:
                 "alternatives": [{"url": "https://example.org/paper.pdf", "source": "Unpaywall", "version": "submitted"}],
             }
             mock_run.return_value = mock_result
-            result = research_open_access(doi="10.1000/xyz123")
+            result = await research_open_access(doi="10.1000/xyz123")
             assert result["query"] == "10.1000/xyz123"
             assert "open_access_url" in result
             assert "sources_checked" in result
 
-    def test_open_access_with_title(self):
+    async def test_open_access_with_title(self):
         """Test open access lookup with paper title."""
         with patch("loom.tools.access_tools.asyncio.run") as mock_run:
             mock_result = {
@@ -87,11 +89,11 @@ class TestOpenAccess:
                 "alternatives": [{"url": "https://arxiv.org/pdf/1234.5678.pdf", "source": "CORE", "version": "preprint"}],
             }
             mock_run.return_value = mock_result
-            result = research_open_access(title="Machine Learning Advances")
+            result = await research_open_access(title="Machine Learning Advances")
             assert result["query"] == "Machine Learning Advances"
             assert len(result["alternatives"]) > 0
 
-    def test_open_access_no_params(self):
+    async def test_open_access_no_params(self):
         """Test open access with no DOI or title."""
         with patch("loom.tools.access_tools.asyncio.run") as mock_run:
             mock_result = {
@@ -102,14 +104,14 @@ class TestOpenAccess:
                 "error": "Provide either DOI or title",
             }
             mock_run.return_value = mock_result
-            result = research_open_access()
+            result = await research_open_access()
             assert "error" in result
 
 
 class TestContentAuthenticity:
     """Tests for research_content_authenticity."""
 
-    def test_content_authenticity_no_modification(self):
+    async def test_content_authenticity_no_modification(self):
         """Test content authenticity when content hasn't changed."""
         with patch("loom.tools.access_tools.asyncio.run") as mock_run:
             mock_result = {
@@ -121,11 +123,11 @@ class TestContentAuthenticity:
                 "diff_summary": "",
             }
             mock_run.return_value = mock_result
-            result = research_content_authenticity("https://example.com/page")
+            result = await research_content_authenticity("https://example.com/page")
             assert result["modified"] is False
             assert result["current_hash"] == result["original_hash"]
 
-    def test_content_authenticity_modified(self):
+    async def test_content_authenticity_modified(self):
         """Test content authenticity when content has been modified."""
         with patch("loom.tools.access_tools.asyncio.run") as mock_run:
             mock_result = {
@@ -137,7 +139,7 @@ class TestContentAuthenticity:
                 "diff_summary": "Content length changed: 1000 → 1500 chars",
             }
             mock_run.return_value = mock_result
-            result = research_content_authenticity("https://example.com/page")
+            result = await research_content_authenticity("https://example.com/page")
             assert result["modified"] is True
             assert result["diff_summary"] != ""
 
@@ -145,7 +147,7 @@ class TestContentAuthenticity:
 class TestCredentialMonitor:
     """Tests for research_credential_monitor."""
 
-    def test_credential_monitor_email_compromised(self):
+    async def test_credential_monitor_email_compromised(self):
         """Test credential monitor with compromised email."""
         with patch("loom.tools.access_tools.asyncio.run") as mock_run:
             mock_result = {
@@ -157,11 +159,11 @@ class TestCredentialMonitor:
                 "total_exposed": 1,
             }
             mock_run.return_value = mock_result
-            result = research_credential_monitor("user@example.com", target_type="email")
+            result = await research_credential_monitor("user@example.com", target_type="email")
             assert result["total_exposed"] == 1
             assert len(result["breaches_found"]) > 0
 
-    def test_credential_monitor_email_clean(self):
+    async def test_credential_monitor_email_clean(self):
         """Test credential monitor with clean email."""
         with patch("loom.tools.access_tools.asyncio.run") as mock_run:
             mock_result = {
@@ -171,10 +173,10 @@ class TestCredentialMonitor:
                 "total_exposed": 0,
             }
             mock_run.return_value = mock_result
-            result = research_credential_monitor("clean@example.com")
+            result = await research_credential_monitor("clean@example.com")
             assert result["total_exposed"] == 0
 
-    def test_credential_monitor_username(self):
+    async def test_credential_monitor_username(self):
         """Test credential monitor with username."""
         with patch("loom.tools.access_tools.asyncio.run") as mock_run:
             mock_result = {
@@ -184,14 +186,14 @@ class TestCredentialMonitor:
                 "total_exposed": 0,
             }
             mock_run.return_value = mock_result
-            result = research_credential_monitor("john_doe", target_type="username")
+            result = await research_credential_monitor("john_doe", target_type="username")
             assert result["target_type"] == "username"
 
 
 class TestDeepfakeChecker:
     """Tests for research_deepfake_checker."""
 
-    def test_deepfake_checker_authentic_image(self):
+    async def test_deepfake_checker_authentic_image(self):
         """Test deepfake checker with authentic image."""
         with patch("loom.tools.access_tools.asyncio.run") as mock_run:
             mock_result = {
@@ -203,11 +205,11 @@ class TestDeepfakeChecker:
                 "authenticity_score": 100.0,
             }
             mock_run.return_value = mock_result
-            result = research_deepfake_checker("https://example.com/image.jpg")
+            result = await research_deepfake_checker("https://example.com/image.jpg")
             assert result["authenticity_score"] == 100.0
             assert result["editing_software_detected"] is False
 
-    def test_deepfake_checker_edited_image(self):
+    async def test_deepfake_checker_edited_image(self):
         """Test deepfake checker with edited image."""
         with patch("loom.tools.access_tools.asyncio.run") as mock_run:
             mock_result = {
@@ -219,11 +221,11 @@ class TestDeepfakeChecker:
                 "authenticity_score": 30.0,
             }
             mock_run.return_value = mock_result
-            result = research_deepfake_checker("https://example.com/edited.jpg")
+            result = await research_deepfake_checker("https://example.com/edited.jpg")
             assert result["editing_software_detected"] is True
             assert result["authenticity_score"] < 100.0
 
-    def test_deepfake_checker_download_failure(self):
+    async def test_deepfake_checker_download_failure(self):
         """Test deepfake checker when image download fails."""
         with patch("loom.tools.access_tools.asyncio.run") as mock_run:
             mock_result = {
@@ -235,7 +237,7 @@ class TestDeepfakeChecker:
                 "error": "Failed to download image",
             }
             mock_run.return_value = mock_result
-            result = research_deepfake_checker("https://example.com/notfound.jpg")
+            result = await research_deepfake_checker("https://example.com/notfound.jpg")
             assert result["authenticity_score"] == 0.0
             assert "error" in result
 
@@ -243,14 +245,14 @@ class TestDeepfakeChecker:
 class TestExifExtraction:
     """Tests for _extract_exif helper function."""
 
-    def test_extract_exif_from_valid_image(self):
+    async def test_extract_exif_from_valid_image(self):
         """Test EXIF extraction from valid image data."""
         # Create minimal JPEG bytes (just test the function doesn't crash)
         # Real test would need actual JPEG with EXIF
         result = _extract_exif(b"")
         assert isinstance(result, dict)
 
-    def test_extract_exif_invalid_data(self):
+    async def test_extract_exif_invalid_data(self):
         """Test EXIF extraction with invalid image data."""
         result = _extract_exif(b"not an image")
         assert isinstance(result, dict)
@@ -260,7 +262,7 @@ class TestExifExtraction:
 class TestElaComputation:
     """Tests for _compute_ela helper function."""
 
-    def test_compute_ela_invalid_image(self):
+    async def test_compute_ela_invalid_image(self):
         """Test ELA computation with invalid image data."""
         result = _compute_ela(b"not an image")
         assert "suspicious_regions_count" in result
@@ -268,7 +270,7 @@ class TestElaComputation:
         assert result["suspicious_regions_count"] >= 0
         assert 0 <= result["error_level_score"] <= 100
 
-    def test_compute_ela_structure(self):
+    async def test_compute_ela_structure(self):
         """Test that ELA result has correct structure."""
         result = _compute_ela(b"")
         assert isinstance(result, dict)
@@ -279,7 +281,7 @@ class TestElaComputation:
 class TestIntegration:
     """Integration tests for access_tools."""
 
-    def test_all_tools_callable(self):
+    async def test_all_tools_callable(self):
         """Test that all tools are callable and don't raise on import."""
         assert callable(research_legal_takedown)
         assert callable(research_open_access)
@@ -288,18 +290,18 @@ class TestIntegration:
         assert callable(research_deepfake_checker)
 
     @pytest.mark.slow
-    def test_legal_takedown_integration(self):
+    async def test_legal_takedown_integration(self):
         """Integration test with real API (slow, marked slow)."""
         # This would hit real APIs in a live environment
         # Skipped by default unless --slow flag used
         pass
 
     @pytest.mark.slow
-    def test_open_access_integration(self):
+    async def test_open_access_integration(self):
         """Integration test with real Unpaywall API (slow)."""
         pass
 
     @pytest.mark.slow
-    def test_credential_monitor_integration(self):
+    async def test_credential_monitor_integration(self):
         """Integration test with real HIBP API (slow)."""
         pass

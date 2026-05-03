@@ -16,8 +16,10 @@ def _clear_binance_module():
     sys.modules.pop("loom.providers.binance_data", None)
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestSearchBinance:
-    def test_single_crypto_success(self):
+    async def test_single_crypto_success(self):
         """Test successful search for single cryptocurrency."""
         mock_response = MagicMock()
         mock_response.json.return_value = {
@@ -49,7 +51,7 @@ class TestSearchBinance:
             assert result["results"][0]["price"] == 45000.50
             assert result["results"][0]["price_change_pct"] == 2.27
 
-    def test_ethereum_search(self):
+    async def test_ethereum_search(self):
         """Test search for Ethereum by name."""
         mock_response = MagicMock()
         mock_response.json.return_value = {
@@ -78,7 +80,7 @@ class TestSearchBinance:
             assert result["results"][0]["symbol"] == "ETHUSDT"
             assert result["results"][0]["price"] == 2500.0
 
-    def test_unknown_cryptocurrency(self):
+    async def test_unknown_cryptocurrency(self):
         """Test query with unknown cryptocurrency (formats to pair and attempts API)."""
         with patch("loom.providers.binance_data.httpx.Client") as mock_client_cls:
             mock_instance = MagicMock()
@@ -98,7 +100,7 @@ class TestSearchBinance:
             assert "error" in result
             assert result["results"] == []
 
-    def test_top_crypto_query(self):
+    async def test_top_crypto_query(self):
         """Test search for top cryptocurrencies by volume."""
         mock_response = MagicMock()
         mock_response.json.return_value = [
@@ -140,7 +142,7 @@ class TestSearchBinance:
             assert len(result["results"]) == 2
             assert result["results"][0]["symbol"] == "BTCUSDT"
 
-    def test_http_error_400_invalid_symbol(self):
+    async def test_http_error_400_invalid_symbol(self):
         """Test handling of HTTP 400 for invalid symbol."""
         mock_response = MagicMock()
         mock_response.status_code = 400
@@ -161,7 +163,7 @@ class TestSearchBinance:
 
             assert "error" in result
 
-    def test_http_error_500(self):
+    async def test_http_error_500(self):
         """Test handling of HTTP 500 server error."""
         mock_response = MagicMock()
         mock_response.status_code = 500
@@ -182,7 +184,7 @@ class TestSearchBinance:
 
             assert "error" in result
 
-    def test_connection_error(self):
+    async def test_connection_error(self):
         """Test handling of connection error."""
         with patch("loom.providers.binance_data.httpx.Client") as mock_client_cls:
             mock_instance = MagicMock()
@@ -197,7 +199,7 @@ class TestSearchBinance:
 
             assert "error" in result
 
-    def test_price_change_rounding(self):
+    async def test_price_change_rounding(self):
         """Test that price change percentage is rounded to 2 decimals."""
         mock_response = MagicMock()
         mock_response.json.return_value = {

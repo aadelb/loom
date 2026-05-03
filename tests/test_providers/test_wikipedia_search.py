@@ -15,8 +15,10 @@ def _clear_wiki_module():
     sys.modules.pop("loom.providers.wikipedia_search", None)
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestSearchWikipedia:
-    def test_basic_search(self):
+    async def test_basic_search(self):
         mock_resp = MagicMock()
         mock_resp.status_code = 200
         mock_resp.json.return_value = {
@@ -44,7 +46,7 @@ class TestSearchWikipedia:
         assert result["results"][0]["title"] == "Test Article"
         assert "test article" in result["results"][0]["snippet"].lower()
 
-    def test_no_results(self):
+    async def test_no_results(self):
         mock_resp = MagicMock()
         mock_resp.status_code = 200
         mock_resp.json.return_value = {"query": {"search": []}}
@@ -60,7 +62,7 @@ class TestSearchWikipedia:
 
         assert result["results"] == []
 
-    def test_connection_error(self):
+    async def test_connection_error(self):
         import httpx
 
         mock_client = MagicMock()

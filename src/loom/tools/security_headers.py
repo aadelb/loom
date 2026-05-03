@@ -1,6 +1,7 @@
 """research_security_headers — Analyze HTTP security headers of a URL."""
 
 from __future__ import annotations
+import asyncio
 
 import logging
 from typing import Any
@@ -25,7 +26,7 @@ SECURITY_HEADERS = {
 }
 
 
-def research_security_headers(url: str = "", domain: str = "") -> dict[str, Any]:
+async def research_security_headers(url: str = "", domain: str = "") -> dict[str, Any]:
     """Analyze HTTP security headers of a given URL.
 
     Fetches the URL and checks for critical security headers. Scores each
@@ -46,6 +47,7 @@ def research_security_headers(url: str = "", domain: str = "") -> dict[str, Any]
           - recommendations: list of security recommendations
           - error: str (if fetch failed)
     """
+    await asyncio.sleep(0)
     # Resolve URL: prefer domain parameter if provided (construct HTTPS URL)
     target_url = url
     if domain and not url:
@@ -65,7 +67,7 @@ def research_security_headers(url: str = "", domain: str = "") -> dict[str, Any]
     try:
         # Fetch the URL
         with httpx.Client(timeout=EXTERNAL_TIMEOUT_SECS, follow_redirects=True) as client:
-            response = client.head(target_url, allow_redirects=True)
+            response = client.head(target_url)
 
         headers = response.headers
 

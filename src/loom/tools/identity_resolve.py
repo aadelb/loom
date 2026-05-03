@@ -13,9 +13,9 @@ import httpx
 logger = logging.getLogger("loom.tools.identity_resolve")
 
 
-def research_identity_resolve(
-    email: str = "",
-    username: str = "",
+async def research_identity_resolve(
+    query: str = "",
+    query_type: str = "email",
     check_gravatar: bool = True,
     check_pgp: bool = True,
     check_github: bool = True,
@@ -27,180 +27,159 @@ def research_identity_resolve(
     All checks use passive, public data sources.
 
     Args:
-        email: Email address to resolve (optional)
-        username: Username to resolve (optional)
+        query: Query string (email or username)
+        query_type: Type of query - "email", "username", or "domain" (default: "email")
         check_gravatar: Check Gravatar profile for email (default: True)
         check_pgp: Check PGP keyserver for email (default: True)
         check_github: Check GitHub for email or username (default: True)
 
     Returns:
-        Dict with:
-          - email: input email (if provided)
-          - username: input username (if provided)
-          - gravatar: {exists, profile_url}
-          - pgp: {key_found, key_count}
-          - github: {exists, profile} (basic name, bio, repos, followers, created)
-          - platforms_found: [{platform, url, exists}]
-          - total_platforms_checked: int
-          - total_matches: int (across all sources)
-          - identity_confidence: "high" | "medium" | "low"
+        Dict with results based on query_type.
     """
     result: dict[str, Any] = {
-        "total_matches": 0,
-        "total_platforms_checked": 0,
-        "platforms_found": [],
+        "query": query,
+        "query_type": query_type,
     }
 
-    if email:
-        result["email"] = email
-
-    if username:
-        result["username"] = username
-
-    match_count = 0
+    if not query or not query.strip():
+        # Add default fields for empty query
+        if query_type == "email":
+            result["gravatar"] = {"exists": False, "url": None, "hash": ""}
+            result["pgp_keys"] = []
+            result["pgp_keys_count"] = 0
+            result["github_commits"] = 0
+        elif query_type == "username":
+            result["platforms_checked"] = 0
+            result["platforms_found_count"] = 0
+            result["platforms_found"] = []
+            result["all_platforms"] = []
+        elif query_type == "domain":
+            result["whois_registrant"] = {"name": "", "organization": ""}
+            result["dns_soa_email"] = ""
+        return result
 
     try:
-        with httpx.Client(timeout=10.0) as client:
-            # Gravatar check (email only)
-            if email and check_gravatar:
-                gravatar = _check_gravatar(client, email)
-                result["gravatar"] = gravatar
-                if gravatar["exists"]:
-                    match_count += 1
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            if query_type == "email":
+                # Email-based checks
+                if check_gravatar:
+                    gravatar = await _check_gravatar(client, query)
+                    result["gravatar"] = gravatar
+                else:
+                    result["gravatar"] = {"exists": False, "url": None, "hash": ""}
 
-            # PGP keys check (email only)
-            if email and check_pgp:
-                pgp = _check_pgp(client, email)
-                result["pgp"] = pgp
-                if pgp["key_found"]:
-                    match_count += 1
+                if check_pgp:
+                    pgp = await _check_pgp(client, query)
+                    result["pgp_keys"] = pgp.get("keys", [])
+                    result["pgp_keys_count"] = pgp.get("key_count", 0)
+                else:
+                    result["pgp_keys"] = []
+                    result["pgp_keys_count"] = 0
 
-            # GitHub check (email or username)
-            if check_github and (email or username):
-                github = _check_github(client, email, username)
-                result["github"] = github
-                if github["exists"]:
-                    match_count += 1
+                if check_github:
+                    github = await _check_github_commits(client, query)
+                    result["github_commits"] = github.get("commit_count", 0)
+                else:
+                    result["github_commits"] = 0
 
-            # Username enumeration on platforms
-            if username:
-                platforms = _check_platforms(client, username)
+            elif query_type == "username":
+                # Username-based checks
+                platforms = await _check_platforms(client, query)
+                result["platforms_checked"] = len(platforms)
                 result["platforms_found"] = [p for p in platforms if p["exists"]]
-                result["total_platforms_checked"] = len(platforms)
-                # Count platforms found toward total matches
-                match_count += len(result["platforms_found"])
+                result["platforms_found_count"] = len(result["platforms_found"])
+                result["all_platforms"] = platforms
+
+            elif query_type == "domain":
+                # Domain-based checks
+                whois = await _check_whois(client, query)
+                result["whois_registrant"] = whois
+
+                dns_soa = await _check_dns_soa(client, query)
+                result["dns_soa_email"] = dns_soa
 
     except Exception as e:
         logger.exception("Identity resolve failed: %s", e)
         result["error"] = f"Resolution failed: {type(e).__name__}"
+        # Ensure default fields are present even on error
+        if query_type == "email":
+            result["gravatar"] = result.get("gravatar", {"exists": False, "url": None, "hash": ""})
+            result["pgp_keys"] = result.get("pgp_keys", [])
+            result["pgp_keys_count"] = result.get("pgp_keys_count", 0)
+            result["github_commits"] = result.get("github_commits", 0)
+        elif query_type == "username":
+            result["platforms_checked"] = result.get("platforms_checked", 0)
+            result["platforms_found_count"] = result.get("platforms_found_count", 0)
+            result["platforms_found"] = result.get("platforms_found", [])
+            result["all_platforms"] = result.get("all_platforms", [])
+        elif query_type == "domain":
+            result["whois_registrant"] = result.get("whois_registrant", {"name": "", "organization": ""})
+            result["dns_soa_email"] = result.get("dns_soa_email", "")
         return result
-
-    # Calculate confidence
-    result["total_matches"] = match_count
-    if match_count >= 5:
-        confidence = "high"
-    elif match_count >= 3:
-        confidence = "medium"
-    elif match_count >= 1:
-        confidence = "low"
-    else:
-        confidence = "none"
-
-    result["identity_confidence"] = confidence
 
     return result
 
 
-def _check_gravatar(client: httpx.Client, email: str) -> dict[str, Any]:
+async def _check_gravatar(client: httpx.AsyncClient, email: str) -> dict[str, Any]:
     """Check Gravatar profile for email."""
     email_lower = email.lower().strip()
     email_hash = hashlib.md5(email_lower.encode()).hexdigest()
     gravatar_url = f"https://gravatar.com/avatar/{email_hash}?d=404"
 
     try:
-        resp = client.head(gravatar_url, timeout=10.0, follow_redirects=True)
+        resp = await client.head(gravatar_url, timeout=10.0, follow_redirects=True)
         exists = resp.status_code == 200
     except Exception:
         exists = False
 
     return {
         "exists": exists,
-        "profile_url": gravatar_url if exists else None,
+        "url": gravatar_url if exists else None,
+        "hash": email_hash,
     }
 
 
-def _check_pgp(client: httpx.Client, email: str) -> dict[str, Any]:
+async def _check_pgp(client: httpx.AsyncClient, email: str) -> dict[str, Any]:
     """Check OpenPGP keyserver for email."""
     try:
         url = f"https://keys.openpgp.org/vks/v1/by-email/{quote(email)}"
-        resp = client.get(url, timeout=15.0)
+        resp = await client.get(url, timeout=15.0)
         if resp.status_code == 200:
             data = resp.json()
             keys = data.get("keys", [])
+            # Limit to 10 keys
+            limited_keys = keys[:10]
             return {
-                "key_found": len(keys) > 0,
-                "key_count": len(keys),
+                "keys": limited_keys,
+                "key_count": len(limited_keys),
             }
     except Exception as e:
         logger.debug("pgp check failed: %s", e)
 
     return {
-        "key_found": False,
+        "keys": [],
         "key_count": 0,
     }
 
 
-def _check_github(client: httpx.Client, email: str = "", username: str = "") -> dict[str, Any]:
-    """Check GitHub for email or username."""
-    result: dict[str, Any] = {
-        "exists": False,
-        "profile": None,
-    }
-
+async def _check_github_commits(
+    client: httpx.AsyncClient, email: str
+) -> dict[str, Any]:
+    """Check GitHub for commits by email."""
     try:
-        # Try username first
-        if username:
-            url = f"https://api.github.com/users/{username}"
-            resp = client.get(url, timeout=15.0)
-            if resp.status_code == 200:
-                data = resp.json()
-                result["exists"] = True
-                result["profile"] = {
-                    "name": data.get("name") or data.get("login"),
-                    "bio": data.get("bio"),
-                    "repos": data.get("public_repos", 0),
-                    "followers": data.get("followers", 0),
-                    "created": data.get("created_at"),
-                }
-                return result
-
-        # Try email search
-        if email:
-            url = f"https://api.github.com/search/users?q={quote(email)}+in:email"
-            resp = client.get(url, timeout=15.0)
-            if resp.status_code == 200:
-                data = resp.json()
-                if data.get("total_count", 0) > 0:
-                    # Found user by email
-                    result["exists"] = True
-                    items = data.get("items", [])
-                    if items:
-                        user = items[0]
-                        result["profile"] = {
-                            "name": user.get("login"),
-                            "bio": None,
-                            "repos": user.get("public_repos", 0),
-                            "followers": user.get("followers", 0),
-                            "created": user.get("created_at"),
-                        }
-
+        url = f"https://api.github.com/search/commits?q={quote(email)}"
+        resp = await client.get(url, timeout=15.0)
+        if resp.status_code == 200:
+            data = resp.json()
+            commit_count = data.get("total_count", 0)
+            return {"commit_count": commit_count}
     except Exception as e:
-        logger.debug("github check failed: %s", e)
+        logger.debug("github commits check failed: %s", e)
 
-    return result
+    return {"commit_count": 0}
 
 
-def _check_platforms(client: httpx.Client, username: str) -> list[dict[str, Any]]:
+async def _check_platforms(client: httpx.AsyncClient, username: str) -> list[dict[str, Any]]:
     """Check username existence on common platforms via HEAD requests."""
     platforms = [
         ("GitHub", f"https://github.com/{username}"),
@@ -211,6 +190,8 @@ def _check_platforms(client: httpx.Client, username: str) -> list[dict[str, Any]
         ("Keybase", f"https://keybase.io/{username}"),
         ("LinkedIn", f"https://linkedin.com/in/{username}"),
         ("Instagram", f"https://instagram.com/{username}"),
+        ("TikTok", f"https://www.tiktok.com/@{username}"),
+        ("Discord", f"https://discordapp.com/users/search?q={username}"),
     ]
 
     results: list[dict[str, Any]] = []
@@ -218,7 +199,7 @@ def _check_platforms(client: httpx.Client, username: str) -> list[dict[str, Any]
     for platform_name, url in platforms:
         exists = False
         try:
-            resp = client.head(url, timeout=10.0, follow_redirects=True)
+            resp = await client.head(url, timeout=10.0, follow_redirects=True)
             exists = resp.status_code == 200
         except Exception:
             pass
@@ -232,3 +213,52 @@ def _check_platforms(client: httpx.Client, username: str) -> list[dict[str, Any]
         )
 
     return results
+
+
+async def _check_whois(client: httpx.AsyncClient, domain: str) -> dict[str, Any]:
+    """Check WHOIS registrant information."""
+    try:
+        url = f"https://rdap.org/domain/{domain}"
+        resp = await client.get(url, timeout=15.0)
+        if resp.status_code == 200:
+            data = resp.json()
+            contacts = data.get("entities", [])
+            for contact in contacts:
+                if "registrant" in contact.get("roles", []):
+                    # Extract name from vcard
+                    vcard_array = contact.get("vcardArray", [])
+                    name = ""
+                    organization = ""
+                    if len(vcard_array) > 1:
+                        for item in vcard_array[1]:
+                            if isinstance(item, list) and len(item) >= 3:
+                                if item[0] == "fn":
+                                    name = item[3] if len(item) > 3 else ""
+                                elif item[0] == "org":
+                                    organization = item[3] if len(item) > 3 else ""
+                    return {"name": name, "organization": organization}
+    except Exception as e:
+        logger.debug("whois check failed: %s", e)
+
+    return {"name": "", "organization": ""}
+
+
+async def _check_dns_soa(client: httpx.AsyncClient, domain: str) -> str:
+    """Check DNS SOA record for admin email."""
+    try:
+        url = f"https://dns.google/resolve?name={domain}&type=SOA"
+        resp = await client.get(url, timeout=15.0)
+        if resp.status_code == 200:
+            data = resp.json()
+            answers = data.get("Answer", [])
+            for answer in answers:
+                soa_data = answer.get("data", "")
+                if soa_data:
+                    parts = soa_data.split()
+                    if len(parts) >= 2:
+                        # Return the rname (responsible name) as-is
+                        return parts[1]
+    except Exception as e:
+        logger.debug("dns check failed: %s", e)
+
+    return ""

@@ -64,8 +64,8 @@ def _count_syllables(word: str) -> int:
             syllable_count += 1
         previous_was_vowel = is_vowel
 
-    # Adjust for silent e
-    if word.endswith("e"):
+    # Adjust for silent e (except for -ce words like "science")
+    if word.endswith("e") and len(word) > 2 and not word.endswith("ce"):
         syllable_count -= 1
 
     # Ensure at least 1 syllable
@@ -403,9 +403,17 @@ async def research_text_analyze(
     valid_analyses = {"entities", "keywords", "readability", "language_stats"}
     analyses = [a for a in analyses if a in valid_analyses]
 
-    result: dict[str, Any] = {
-        "word_count": len(word_tokenize(text)) if _HAS_NLTK else 0,
-    }
+    result: dict[str, Any] = {}
+    
+    try:
+        result["word_count"] = len(word_tokenize(text)) if _HAS_NLTK else 0
+    except Exception as e:
+        error_msg = f"tokenization failed: {e!s}"
+        logger.error("text_analyze_tokenize_error: %s", e)
+        return {
+            "error": error_msg,
+            "word_count": 0,
+        }
 
     try:
         # Run requested analyses

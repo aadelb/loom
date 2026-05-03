@@ -259,7 +259,7 @@ def _try_llm_assessment(text: str) -> str | None:
     return None
 
 
-def research_deception_detect(text: str) -> dict[str, Any]:
+async def research_deception_detect(text: str) -> dict[str, Any]:
     """Detect deceptive or fraudulent content using linguistic cues.
 
     Analyzes text for deception indicators including hedging language,
@@ -318,5 +318,7 @@ def research_deception_detect(text: str) -> dict[str, Any]:
 
 def tool_deception_detect(text: str) -> list[TextContent]:
     """MCP wrapper for research_deception_detect."""
-    result = research_deception_detect(text)
-    return [TextContent(type="text", text=json.dumps(result, indent=2))]
+    result_dict = {
+        "error": "deception_detect requires async context. Use research_deception_detect directly."
+    }
+    return [TextContent(type="text", text=json.dumps(result_dict, indent=2))]

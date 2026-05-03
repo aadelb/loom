@@ -13,10 +13,12 @@ import pytest
 from loom.drift_monitor import DriftMonitor
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestDriftMonitorBaseline:
     """Test baseline creation and storage."""
 
-    def test_baseline_creation(self, tmp_path: Path) -> None:
+    async def test_baseline_creation(self, tmp_path: Path) -> None:
         """Baseline creation stores metrics correctly."""
         monitor = DriftMonitor(storage_path=str(tmp_path))
         prompts = [
@@ -40,7 +42,7 @@ class TestDriftMonitorBaseline:
         assert "results" in baseline
         assert len(baseline["results"]) == 3
 
-    def test_baseline_persists_to_disk(self, tmp_path: Path) -> None:
+    async def test_baseline_persists_to_disk(self, tmp_path: Path) -> None:
         """Baseline is saved to disk in dated directories."""
         monitor = DriftMonitor(storage_path=str(tmp_path))
         prompts = ["Test prompt 1", "Test prompt 2"]
@@ -69,7 +71,7 @@ class TestDriftMonitorBaseline:
             baseline_data = json.loads(lines[-1])
             assert baseline_data["model_name"] == "test_model"
 
-    def test_baseline_response_analysis(self, tmp_path: Path) -> None:
+    async def test_baseline_response_analysis(self, tmp_path: Path) -> None:
         """Response analysis extracts correct metrics."""
         monitor = DriftMonitor(storage_path=str(tmp_path))
 
@@ -88,7 +90,7 @@ class TestDriftMonitorBaseline:
         assert result["is_refusal"] is True
         assert result["response_length"] > 0
 
-    def test_baseline_hcs_scoring(self, tmp_path: Path) -> None:
+    async def test_baseline_hcs_scoring(self, tmp_path: Path) -> None:
         """HCS score is calculated if scorer is available."""
         monitor = DriftMonitor(storage_path=str(tmp_path))
 
@@ -110,7 +112,7 @@ class TestDriftMonitorBaseline:
 class TestDriftMonitorCheck:
     """Test drift detection and checking."""
 
-    def test_check_requires_baseline(self, tmp_path: Path) -> None:
+    async def test_check_requires_baseline(self, tmp_path: Path) -> None:
         """Check fails gracefully if no baseline exists."""
         monitor = DriftMonitor(storage_path=str(tmp_path))
 
@@ -124,7 +126,7 @@ class TestDriftMonitorCheck:
                 )
             )
 
-    def test_check_compares_against_baseline(self, tmp_path: Path) -> None:
+    async def test_check_compares_against_baseline(self, tmp_path: Path) -> None:
         """Check produces comparison against baseline."""
         monitor = DriftMonitor(storage_path=str(tmp_path))
         prompts = ["Prompt 1", "Prompt 2", "Prompt 3"]
@@ -147,7 +149,7 @@ class TestDriftMonitorCheck:
         assert "check_date" in check
         assert "alert_level" in check
 
-    def test_no_drift_detected(self, tmp_path: Path) -> None:
+    async def test_no_drift_detected(self, tmp_path: Path) -> None:
         """No drift when behavior is consistent."""
         monitor = DriftMonitor(storage_path=str(tmp_path))
         prompts = ["Question 1", "Question 2"]
@@ -167,7 +169,7 @@ class TestDriftMonitorCheck:
         assert check["refusal_drift_pct"] == 0.0
         assert check["alert_level"] == "normal"
 
-    def test_small_drift_detected(self, tmp_path: Path) -> None:
+    async def test_small_drift_detected(self, tmp_path: Path) -> None:
         """Small drift (5-15%) triggers warning."""
         monitor = DriftMonitor(storage_path=str(tmp_path))
         prompts = ["Q1", "Q2", "Q3", "Q4", "Q5"]
@@ -195,7 +197,7 @@ class TestDriftMonitorCheck:
         # But we check for changes > 5%
         assert check["alert_level"] in ["warning", "critical"]
 
-    def test_large_drift_detected(self, tmp_path: Path) -> None:
+    async def test_large_drift_detected(self, tmp_path: Path) -> None:
         """Large drift (>15%) triggers critical alert."""
         monitor = DriftMonitor(storage_path=str(tmp_path))
         prompts = ["Q" + str(i) for i in range(10)]
@@ -222,7 +224,7 @@ class TestDriftMonitorCheck:
         assert check["alert_level"] == "critical"
         assert abs(check["refusal_drift_pct"]) > 15
 
-    def test_hcs_drift_detection(self, tmp_path: Path) -> None:
+    async def test_hcs_drift_detection(self, tmp_path: Path) -> None:
         """HCS score drift is detected."""
         monitor = DriftMonitor(storage_path=str(tmp_path))
         prompts = ["Test prompt"]
@@ -250,7 +252,7 @@ class TestDriftMonitorCheck:
 class TestDriftMonitorComparison:
     """Test the compare method."""
 
-    def test_compare_normal_alert(self) -> None:
+    async def test_compare_normal_alert(self) -> None:
         """Compare returns normal alert when drift < 5%."""
         monitor = DriftMonitor()
 
@@ -274,7 +276,7 @@ class TestDriftMonitorComparison:
 
         assert result["alert_level"] == "normal"
 
-    def test_compare_warning_alert(self) -> None:
+    async def test_compare_warning_alert(self) -> None:
         """Compare returns warning alert when drift 5-15%."""
         monitor = DriftMonitor()
 
@@ -298,7 +300,7 @@ class TestDriftMonitorComparison:
 
         assert result["alert_level"] == "warning"
 
-    def test_compare_critical_alert(self) -> None:
+    async def test_compare_critical_alert(self) -> None:
         """Compare returns critical alert when drift > 15%."""
         monitor = DriftMonitor()
 
@@ -322,7 +324,7 @@ class TestDriftMonitorComparison:
 
         assert result["alert_level"] == "critical"
 
-    def test_compare_hcs_drift_critical(self) -> None:
+    async def test_compare_hcs_drift_critical(self) -> None:
         """Compare detects critical HCS drift."""
         monitor = DriftMonitor()
 
@@ -347,7 +349,7 @@ class TestDriftMonitorComparison:
         assert result["alert_level"] == "critical"
         assert result["hcs_drift"] < -1.0
 
-    def test_compare_per_prompt_changes(self) -> None:
+    async def test_compare_per_prompt_changes(self) -> None:
         """Compare tracks per-prompt changes."""
         monitor = DriftMonitor()
 
@@ -384,13 +386,13 @@ class TestDriftMonitorComparison:
 class TestDriftMonitorListBaselines:
     """Test listing stored baselines."""
 
-    def test_list_baselines_empty(self, tmp_path: Path) -> None:
+    async def test_list_baselines_empty(self, tmp_path: Path) -> None:
         """List baselines returns empty dict when no baselines exist."""
         monitor = DriftMonitor(storage_path=str(tmp_path))
         result = monitor.list_baselines()
         assert result == {}
 
-    def test_list_baselines_multiple_models(self, tmp_path: Path) -> None:
+    async def test_list_baselines_multiple_models(self, tmp_path: Path) -> None:
         """List baselines shows all models."""
         monitor = DriftMonitor(storage_path=str(tmp_path))
 
@@ -415,7 +417,7 @@ class TestDriftMonitorListBaselines:
 class TestDriftMonitorRefusalDetection:
     """Test refusal detection logic."""
 
-    def test_is_refusal_positive(self) -> None:
+    async def test_is_refusal_positive(self) -> None:
         """Refusal patterns are detected."""
         monitor = DriftMonitor()
 
@@ -431,7 +433,7 @@ class TestDriftMonitorRefusalDetection:
         for response in refusal_responses:
             assert monitor._is_refusal(response), f"Should detect: {response}"
 
-    def test_is_refusal_negative(self) -> None:
+    async def test_is_refusal_negative(self) -> None:
         """Non-refusal responses are not flagged."""
         monitor = DriftMonitor()
 
@@ -449,7 +451,7 @@ class TestDriftMonitorRefusalDetection:
 class TestDriftMonitorHedgingDetection:
     """Test hedging word counting."""
 
-    def test_count_hedging_words(self) -> None:
+    async def test_count_hedging_words(self) -> None:
         """Hedging words are counted."""
         monitor = DriftMonitor()
 
@@ -459,7 +461,7 @@ class TestDriftMonitorHedgingDetection:
         # "might", "could", "possibly", "Perhaps", "may" = 5
         assert count >= 4  # Case-insensitive counting
 
-    def test_no_hedging_words(self) -> None:
+    async def test_no_hedging_words(self) -> None:
         """Confident responses have low hedging counts."""
         monitor = DriftMonitor()
 
@@ -472,7 +474,7 @@ class TestDriftMonitorHedgingDetection:
 class TestDriftMonitorRecommendations:
     """Test recommendation generation."""
 
-    def test_recommendations_no_drift(self) -> None:
+    async def test_recommendations_no_drift(self) -> None:
         """No recommendations for minimal drift."""
         monitor = DriftMonitor()
 
@@ -488,7 +490,7 @@ class TestDriftMonitorRecommendations:
         assert len(recs) > 0
         assert any("continue monitoring" in rec.lower() for rec in recs)
 
-    def test_recommendations_increased_refusals(self) -> None:
+    async def test_recommendations_increased_refusals(self) -> None:
         """Recommendations for increased refusals."""
         monitor = DriftMonitor()
 
@@ -503,7 +505,7 @@ class TestDriftMonitorRecommendations:
 
         assert any("refusal rate increased" in rec.lower() for rec in recs)
 
-    def test_recommendations_hcs_critical_drop(self) -> None:
+    async def test_recommendations_hcs_critical_drop(self) -> None:
         """Recommendations for critical HCS drop."""
         monitor = DriftMonitor()
 
@@ -522,7 +524,7 @@ class TestDriftMonitorRecommendations:
 class TestDriftMonitorStorage:
     """Test persistence and loading."""
 
-    def test_save_and_load_baseline(self, tmp_path: Path) -> None:
+    async def test_save_and_load_baseline(self, tmp_path: Path) -> None:
         """Baseline can be saved and loaded."""
         monitor = DriftMonitor(storage_path=str(tmp_path))
 
@@ -541,7 +543,7 @@ class TestDriftMonitorStorage:
         assert loaded["model_name"] == "model"
         assert loaded["prompt_count"] == 1
 
-    def test_multiple_baselines_per_model(self, tmp_path: Path) -> None:
+    async def test_multiple_baselines_per_model(self, tmp_path: Path) -> None:
         """Multiple baselines can be stored per model."""
         monitor = DriftMonitor(storage_path=str(tmp_path))
 
@@ -570,7 +572,7 @@ class TestDriftMonitorStorage:
 class TestDriftMonitorAsync:
     """Test async functionality."""
 
-    def test_baseline_with_async_callback(self, tmp_path: Path) -> None:
+    async def test_baseline_with_async_callback(self, tmp_path: Path) -> None:
         """Async callbacks work correctly."""
         monitor = DriftMonitor(storage_path=str(tmp_path))
 
@@ -584,7 +586,7 @@ class TestDriftMonitorAsync:
 
         assert baseline["prompt_count"] == 1
 
-    def test_check_with_async_callback(self, tmp_path: Path) -> None:
+    async def test_check_with_async_callback(self, tmp_path: Path) -> None:
         """Async callbacks work in check mode."""
         monitor = DriftMonitor(storage_path=str(tmp_path))
 

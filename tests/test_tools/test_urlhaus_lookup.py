@@ -136,7 +136,8 @@ class TestURLhausCheck:
             result = research_urlhaus_check(url="http://example.com")
 
             assert result["url"] == "http://example.com"
-            assert result["error"] is None
+            assert "error" not in result
+            assert result["status"] == "not_listed"
 
 
 class TestURLhausSearch:

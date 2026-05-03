@@ -1,14 +1,17 @@
 """Tests for UMMRO RAG provider."""
 
 from __future__ import annotations
+import pytest
 
 from unittest.mock import MagicMock, patch
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestSearchUmmroRag:
     """Tests for search_ummro_rag() function."""
 
-    def test_missing_api_url(self):
+    async def test_missing_api_url(self):
         """Test error when UMMRO_RAG_URL is not set."""
         with patch.dict("os.environ", {}, clear=True):
             from loom.providers.ummro_rag import search_ummro_rag
@@ -18,7 +21,7 @@ class TestSearchUmmroRag:
             assert "error" in result
             assert "UMMRO_RAG_URL" in result["error"] or "not set" in result["error"].lower()
 
-    def test_invalid_collection(self):
+    async def test_invalid_collection(self):
         """Test error for invalid collection name."""
         with patch.dict("os.environ", {"UMMRO_RAG_URL": "http://localhost:8000"}):
             from loom.providers.ummro_rag import search_ummro_rag
@@ -28,7 +31,7 @@ class TestSearchUmmroRag:
             assert "error" in result
             assert "collection" in result["error"].lower() or "invalid" in result["error"].lower()
 
-    def test_documents_collection(self):
+    async def test_documents_collection(self):
         """Test 'documents' is valid collection."""
         with patch.dict("os.environ", {"UMMRO_RAG_URL": "http://localhost:8000"}):
             from loom.providers.ummro_rag import search_ummro_rag
@@ -49,7 +52,7 @@ class TestSearchUmmroRag:
                 if "error" in result:
                     assert "collection" not in result["error"].lower()
 
-    def test_code_collection(self):
+    async def test_code_collection(self):
         """Test 'code' is valid collection."""
         with patch.dict("os.environ", {"UMMRO_RAG_URL": "http://localhost:8000"}):
             from loom.providers.ummro_rag import search_ummro_rag
@@ -70,7 +73,7 @@ class TestSearchUmmroRag:
                 if "error" in result:
                     assert "collection" not in result["error"].lower()
 
-    def test_successful_search_documents(self):
+    async def test_successful_search_documents(self):
         """Test successful search in documents collection."""
         with patch.dict("os.environ", {"UMMRO_RAG_URL": "http://localhost:8000"}):
             from loom.providers.ummro_rag import search_ummro_rag
@@ -106,7 +109,7 @@ class TestSearchUmmroRag:
                 assert result["collection"] == "documents"
                 assert result["count"] >= 0
 
-    def test_successful_search_code(self):
+    async def test_successful_search_code(self):
         """Test successful search in code collection."""
         with patch.dict("os.environ", {"UMMRO_RAG_URL": "http://localhost:8000"}):
             from loom.providers.ummro_rag import search_ummro_rag
@@ -139,7 +142,7 @@ class TestSearchUmmroRag:
                 assert "error" not in result or result.get("error") is None
                 assert result["collection"] == "code"
 
-    def test_n_parameter_validation(self):
+    async def test_n_parameter_validation(self):
         """Test 'n' parameter is validated."""
         with patch.dict("os.environ", {"UMMRO_RAG_URL": "http://localhost:8000"}):
             from loom.providers.ummro_rag import search_ummro_rag
@@ -159,7 +162,7 @@ class TestSearchUmmroRag:
                 # Should either clamp n or accept it
                 assert isinstance(result, dict)
 
-    def test_connection_error(self):
+    async def test_connection_error(self):
         """Test handling of connection errors."""
         with patch.dict("os.environ", {"UMMRO_RAG_URL": "http://localhost:8000"}):
             from loom.providers.ummro_rag import search_ummro_rag
@@ -175,7 +178,7 @@ class TestSearchUmmroRag:
                 assert "error" in result
                 assert result["results"] == []
 
-    def test_timeout_error(self):
+    async def test_timeout_error(self):
         """Test handling of timeout errors."""
         with patch.dict("os.environ", {"UMMRO_RAG_URL": "http://localhost:8000"}):
             from loom.providers.ummro_rag import search_ummro_rag
@@ -190,7 +193,7 @@ class TestSearchUmmroRag:
 
                 assert "error" in result
 
-    def test_http_error_response(self):
+    async def test_http_error_response(self):
         """Test handling of HTTP error responses."""
         with patch.dict("os.environ", {"UMMRO_RAG_URL": "http://localhost:8000"}):
             from loom.providers.ummro_rag import search_ummro_rag
@@ -208,7 +211,7 @@ class TestSearchUmmroRag:
 
                 assert "error" in result
 
-    def test_empty_results(self):
+    async def test_empty_results(self):
         """Test handling of empty search results."""
         with patch.dict("os.environ", {"UMMRO_RAG_URL": "http://localhost:8000"}):
             from loom.providers.ummro_rag import search_ummro_rag
@@ -229,7 +232,7 @@ class TestSearchUmmroRag:
                 assert result["results"] == []
                 assert "error" not in result or result["error"] is None
 
-    def test_result_structure(self):
+    async def test_result_structure(self):
         """Test result has required fields."""
         with patch.dict("os.environ", {"UMMRO_RAG_URL": "http://localhost:8000"}):
             from loom.providers.ummro_rag import search_ummro_rag
@@ -260,7 +263,7 @@ class TestSearchUmmroRag:
                 assert "count" in result
                 assert "results" in result
 
-    def test_malformed_response(self):
+    async def test_malformed_response(self):
         """Test handling of malformed API response."""
         with patch.dict("os.environ", {"UMMRO_RAG_URL": "http://localhost:8000"}):
             from loom.providers.ummro_rag import search_ummro_rag
@@ -279,7 +282,7 @@ class TestSearchUmmroRag:
 
                 assert "error" in result
 
-    def test_multilingual_query(self):
+    async def test_multilingual_query(self):
         """Test support for multilingual queries."""
         with patch.dict("os.environ", {"UMMRO_RAG_URL": "http://localhost:8000"}):
             from loom.providers.ummro_rag import search_ummro_rag
@@ -308,7 +311,7 @@ class TestSearchUmmroRag:
 
                 assert "error" not in result or result.get("error") is None
 
-    def test_special_characters_in_query(self):
+    async def test_special_characters_in_query(self):
         """Test handling of special characters in query."""
         with patch.dict("os.environ", {"UMMRO_RAG_URL": "http://localhost:8000"}):
             from loom.providers.ummro_rag import search_ummro_rag
@@ -327,7 +330,7 @@ class TestSearchUmmroRag:
 
                 assert isinstance(result, dict)
 
-    def test_kwargs_ignored(self):
+    async def test_kwargs_ignored(self):
         """Test that extra kwargs are ignored."""
         with patch.dict("os.environ", {"UMMRO_RAG_URL": "http://localhost:8000"}):
             from loom.providers.ummro_rag import search_ummro_rag

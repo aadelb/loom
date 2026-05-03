@@ -181,12 +181,12 @@ class TestCallWithCascade:
 class TestNvidiaNimAvailable:
     """Tests for NvidiaNimProvider.available()."""
 
-    def test_nvidia_available_with_key(self, clear_env_keys: None) -> None:
+    async def test_nvidia_available_with_key(self, clear_env_keys: None) -> None:
         """available() True with API key set."""
         os.environ["NVIDIA_NIM_API_KEY"] = "nvapi-test-key-123"
         assert NvidiaNimProvider().available() is True
 
-    def test_nvidia_unavailable_without_key(self, clear_env_keys: None) -> None:
+    async def test_nvidia_unavailable_without_key(self, clear_env_keys: None) -> None:
         """available() False without API key."""
         os.environ.pop("NVIDIA_NIM_API_KEY", None)
         assert NvidiaNimProvider().available() is False
@@ -209,12 +209,12 @@ class TestNvidiaNimAvailable:
 class TestOpenAIAvailable:
     """Tests for OpenAIProvider.available()."""
 
-    def test_openai_available_with_key(self, clear_env_keys: None) -> None:
+    async def test_openai_available_with_key(self, clear_env_keys: None) -> None:
         """available() True with API key set."""
         os.environ["OPENAI_API_KEY"] = "sk-test-key-123"
         assert OpenAIProvider().available() is True
 
-    def test_openai_unavailable_without_key(self, clear_env_keys: None) -> None:
+    async def test_openai_unavailable_without_key(self, clear_env_keys: None) -> None:
         """available() False without API key."""
         os.environ.pop("OPENAI_API_KEY", None)
         assert OpenAIProvider().available() is False

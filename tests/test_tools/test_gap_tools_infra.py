@@ -24,33 +24,38 @@ from loom.tools.gap_tools_infra import (
 class TestCloudEnum:
     """Cloud resource enumeration for domains."""
 
-    def test_cloud_enum_valid_domain(self) -> None:
+    @pytest.mark.asyncio
+    async def test_cloud_enum_valid_domain(self) -> None:
         """Valid domain triggers enumeration."""
-        result = research_cloud_enum("example.com")
+        result = await research_cloud_enum("example.com")
         assert result["domain"] == "example.com"
         assert "cloud_resources" in result
         assert isinstance(result["cloud_resources"], list)
 
-    def test_cloud_enum_empty_domain(self) -> None:
+    @pytest.mark.asyncio
+    async def test_cloud_enum_empty_domain(self) -> None:
         """Empty domain returns error."""
-        result = research_cloud_enum("")
+        result = await research_cloud_enum("")
         assert "error" in result
         assert result["domain"] == ""
 
-    def test_cloud_enum_domain_too_long(self) -> None:
+    @pytest.mark.asyncio
+    async def test_cloud_enum_domain_too_long(self) -> None:
         """Domain exceeding 255 chars returns error."""
         long_domain = "a" * 256 + ".com"
-        result = research_cloud_enum(long_domain)
+        result = await research_cloud_enum(long_domain)
         assert "error" in result
 
-    def test_cloud_enum_invalid_chars(self) -> None:
+    @pytest.mark.asyncio
+    async def test_cloud_enum_invalid_chars(self) -> None:
         """Domain with invalid chars returns error."""
-        result = research_cloud_enum("example@domain.com")
+        result = await research_cloud_enum("example@domain.com")
         assert "error" in result
 
-    def test_cloud_enum_with_subdomain(self) -> None:
+    @pytest.mark.asyncio
+    async def test_cloud_enum_with_subdomain(self) -> None:
         """Subdomain extraction works correctly."""
-        result = research_cloud_enum("sub.example.com")
+        result = await research_cloud_enum("sub.example.com")
         assert result["domain"] == "sub.example.com"
         assert "cloud_resources" in result
 
@@ -118,43 +123,50 @@ class TestCheckCloudResource:
 class TestGithubSecrets:
     """GitHub secret scanning using code search API."""
 
-    def test_github_secrets_valid_query(self) -> None:
+    @pytest.mark.asyncio
+    async def test_github_secrets_valid_query(self) -> None:
         """Valid query returns secrets list."""
-        result = research_github_secrets("example")
+        result = await research_github_secrets("example")
         assert result["query"] == "example"
         assert "secrets_found" in result
         assert isinstance(result["secrets_found"], list)
 
-    def test_github_secrets_empty_query(self) -> None:
+    @pytest.mark.asyncio
+    async def test_github_secrets_empty_query(self) -> None:
         """Empty query returns error."""
-        result = research_github_secrets("")
+        result = await research_github_secrets("")
         assert "error" in result
 
-    def test_github_secrets_query_too_long(self) -> None:
+    @pytest.mark.asyncio
+    async def test_github_secrets_query_too_long(self) -> None:
         """Query exceeding 100 chars returns error."""
         long_query = "a" * 101
-        result = research_github_secrets(long_query)
+        result = await research_github_secrets(long_query)
         assert "error" in result
 
-    def test_github_secrets_invalid_chars(self) -> None:
+    @pytest.mark.asyncio
+    async def test_github_secrets_invalid_chars(self) -> None:
         """Query with invalid chars returns error."""
-        result = research_github_secrets("example@invalid")
+        result = await research_github_secrets("example@invalid")
         assert "error" in result
 
-    def test_github_secrets_max_results_capped(self) -> None:
+    @pytest.mark.asyncio
+    async def test_github_secrets_max_results_capped(self) -> None:
         """max_results capped at 100."""
-        result = research_github_secrets("test", max_results=200)
+        result = await research_github_secrets("test", max_results=200)
         # Should not error, just cap the results
         assert "secrets_found" in result
 
-    def test_github_secrets_min_max_results(self) -> None:
+    @pytest.mark.asyncio
+    async def test_github_secrets_min_max_results(self) -> None:
         """max_results=1 is valid."""
-        result = research_github_secrets("test", max_results=1)
+        result = await research_github_secrets("test", max_results=1)
         assert "secrets_found" in result
 
-    def test_github_secrets_returns_correct_fields(self) -> None:
+    @pytest.mark.asyncio
+    async def test_github_secrets_returns_correct_fields(self) -> None:
         """Results contain expected fields."""
-        result = research_github_secrets("example")
+        result = await research_github_secrets("example")
         if result.get("secrets_found"):
             secret = result["secrets_found"][0]
             assert "repo" in secret
@@ -166,9 +178,10 @@ class TestGithubSecrets:
 class TestWhoisCorrelator:
     """WHOIS registrant correlation across domains."""
 
-    def test_whois_correlator_valid_domain(self) -> None:
+    @pytest.mark.asyncio
+    async def test_whois_correlator_valid_domain(self) -> None:
         """Valid domain returns correlation data."""
-        result = research_whois_correlator("example.com")
+        result = await research_whois_correlator("example.com")
         assert result["domain"] == "example.com"
         assert "registrant_email" in result
         assert "registrant_org" in result
@@ -177,25 +190,29 @@ class TestWhoisCorrelator:
         assert isinstance(result["related_domains"], list)
         assert isinstance(result["ownership_graph"], dict)
 
-    def test_whois_correlator_empty_domain(self) -> None:
+    @pytest.mark.asyncio
+    async def test_whois_correlator_empty_domain(self) -> None:
         """Empty domain returns error."""
-        result = research_whois_correlator("")
+        result = await research_whois_correlator("")
         assert "error" in result
 
-    def test_whois_correlator_domain_too_long(self) -> None:
+    @pytest.mark.asyncio
+    async def test_whois_correlator_domain_too_long(self) -> None:
         """Domain exceeding 255 chars returns error."""
         long_domain = "a" * 256 + ".com"
-        result = research_whois_correlator(long_domain)
+        result = await research_whois_correlator(long_domain)
         assert "error" in result
 
-    def test_whois_correlator_invalid_chars(self) -> None:
+    @pytest.mark.asyncio
+    async def test_whois_correlator_invalid_chars(self) -> None:
         """Domain with invalid chars returns error."""
-        result = research_whois_correlator("example@domain.com")
+        result = await research_whois_correlator("example@domain.com")
         assert "error" in result
 
-    def test_whois_correlator_ownership_graph_structure(self) -> None:
+    @pytest.mark.asyncio
+    async def test_whois_correlator_ownership_graph_structure(self) -> None:
         """Ownership graph has correct structure."""
-        result = research_whois_correlator("example.com")
+        result = await research_whois_correlator("example.com")
         if "ownership_graph" in result:
             graph = result["ownership_graph"]
             if "example.com" in graph:
@@ -383,9 +400,10 @@ class TestQueryLlmEndpoint:
 class TestOutputConsistency:
     """LLM output consistency measurement."""
 
-    def test_output_consistency_valid_params(self) -> None:
+    @pytest.mark.asyncio
+    async def test_output_consistency_valid_params(self) -> None:
         """Valid params trigger consistency check."""
-        result = research_output_consistency(
+        result = await research_output_consistency(
             "https://api.example.com/chat",
             "What is 2+2?",
             runs=3,
@@ -396,63 +414,72 @@ class TestOutputConsistency:
         assert "variance" in result
         assert "consistency_score" in result
 
-    def test_output_consistency_invalid_url(self) -> None:
+    @pytest.mark.asyncio
+    async def test_output_consistency_invalid_url(self) -> None:
         """Invalid URL returns error."""
-        result = research_output_consistency("", "test prompt")
+        result = await research_output_consistency("", "test prompt")
         assert "error" in result
 
-    def test_output_consistency_url_too_long(self) -> None:
+    @pytest.mark.asyncio
+    async def test_output_consistency_url_too_long(self) -> None:
         """URL exceeding 500 chars returns error."""
         long_url = "https://" + "a" * 500 + ".com"
-        result = research_output_consistency(long_url, "test prompt")
+        result = await research_output_consistency(long_url, "test prompt")
         assert "error" in result
 
-    def test_output_consistency_invalid_prompt(self) -> None:
+    @pytest.mark.asyncio
+    async def test_output_consistency_invalid_prompt(self) -> None:
         """Invalid prompt returns error."""
-        result = research_output_consistency("https://api.example.com/chat", "")
+        result = await research_output_consistency("https://api.example.com/chat", "")
         assert "error" in result
 
-    def test_output_consistency_prompt_too_long(self) -> None:
+    @pytest.mark.asyncio
+    async def test_output_consistency_prompt_too_long(self) -> None:
         """Prompt exceeding 5000 chars returns error."""
         long_prompt = "a" * 5001
-        result = research_output_consistency(
+        result = await research_output_consistency(
             "https://api.example.com/chat", long_prompt
         )
         assert "error" in result
 
-    def test_output_consistency_runs_default(self) -> None:
+    @pytest.mark.asyncio
+    async def test_output_consistency_runs_default(self) -> None:
         """Default runs is 5."""
-        result = research_output_consistency(
+        result = await research_output_consistency(
             "https://api.example.com/chat", "test prompt"
         )
         assert result["runs"] >= 0  # Will be 0 if endpoints fail, but structure is correct
 
-    def test_output_consistency_runs_capped(self) -> None:
+    @pytest.mark.asyncio
+    async def test_output_consistency_runs_capped(self) -> None:
         """Runs capped at 20."""
-        result = research_output_consistency(
+        result = await research_output_consistency(
             "https://api.example.com/chat", "test prompt", runs=100
         )
         assert result["runs"] <= 20
 
-    def test_output_consistency_min_runs(self) -> None:
+    @pytest.mark.asyncio
+    async def test_output_consistency_min_runs(self) -> None:
         """Runs minimum is 1."""
-        result = research_output_consistency(
+        result = await research_output_consistency(
             "https://api.example.com/chat", "test prompt", runs=0
         )
         assert result["runs"] >= 0
 
-    def test_output_consistency_scores_bounded(self) -> None:
+    @pytest.mark.asyncio
+    async def test_output_consistency_scores_bounded(self) -> None:
         """Scores are between 0 and 1."""
-        result = research_output_consistency(
+        result = await research_output_consistency(
             "https://api.example.com/chat", "test prompt"
         )
         assert 0 <= result["mean_similarity"] <= 1
         assert 0 <= result["variance"] <= 1
         assert 0 <= result["consistency_score"] <= 1
 
-    def test_output_consistency_response_truncation(self) -> None:
+    @pytest.mark.asyncio
+    async def test_output_consistency_response_truncation(self) -> None:
         """Individual response previews are truncated to 200 chars."""
-        result = research_output_consistency(
+        result = await research_output_consistency(
             "https://api.example.com/chat", "test prompt"
         )
         for resp in result.get("responses", []):

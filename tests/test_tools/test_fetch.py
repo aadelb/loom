@@ -25,24 +25,26 @@ _SCRAPLING_API_TODO = (
 )
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestFetch:
     """research_fetch tool tests."""
 
-    def test_fetch_rejects_ssrf_url(self) -> None:
+    async def test_fetch_rejects_ssrf_url(self) -> None:
         """Fetch rejects URLs that fail SSRF validation."""
         from pydantic import ValidationError
 
         with pytest.raises(ValidationError):
-            research_fetch(url="http://localhost:8080")
+            await research_fetch(url="http://localhost:8080")
 
-    def test_fetch_rejects_private_ip(self) -> None:
+    async def test_fetch_rejects_private_ip(self) -> None:
         """Fetch rejects private IPs."""
         from pydantic import ValidationError
 
         with pytest.raises(ValidationError):
-            research_fetch(url="http://192.168.1.1")
+            await research_fetch(url="http://192.168.1.1")
 
-    def test_fetch_returns_expected_fields(self, tmp_cache_dir: Path) -> None:
+    async def test_fetch_returns_expected_fields(self, tmp_cache_dir: Path) -> None:
         """Fetch result has expected fields (url, title, text, html_len, fetched_at)."""
         import os
 
@@ -59,7 +61,7 @@ class TestFetch:
 
                 mock_fetcher.get.return_value = mock_page
 
-                result = research_fetch(
+                result = await research_fetch(
                     url="https://example.com",
                     mode="http",
                     bypass_cache=True,
@@ -74,7 +76,7 @@ class TestFetch:
         except ModuleNotFoundError as e:
             pytest.skip(f"scrapling dependency missing: {e}")
 
-    def test_fetch_cache_hit(self, tmp_cache_dir: Path) -> None:
+    async def test_fetch_cache_hit(self, tmp_cache_dir: Path) -> None:
         """Fetch returns cached result on second call (same params)."""
         import os
 
@@ -90,14 +92,14 @@ class TestFetch:
                 mock_fetcher.get.return_value = mock_page
 
                 # First call
-                result1 = research_fetch(
+                result1 = await research_fetch(
                     url="https://example.com",
                     mode="http",
                     bypass_cache=False,
                 )
 
                 # Second call — should be cached
-                result2 = research_fetch(
+                result2 = await research_fetch(
                     url="https://example.com",
                     mode="http",
                     bypass_cache=False,
@@ -108,7 +110,7 @@ class TestFetch:
         except ModuleNotFoundError as e:
             pytest.skip(f"scrapling dependency missing: {e}")
 
-    def test_fetch_max_chars_applied(self, tmp_cache_dir: Path) -> None:
+    async def test_fetch_max_chars_applied(self, tmp_cache_dir: Path) -> None:
         """Fetch respects max_chars parameter."""
         import os
 
@@ -125,7 +127,7 @@ class TestFetch:
 
                 mock_fetcher.get.return_value = mock_page
 
-                result = research_fetch(
+                result = await research_fetch(
                     url="https://example.com",
                     mode="http",
                     max_chars=1000,
@@ -137,7 +139,7 @@ class TestFetch:
         except ModuleNotFoundError as e:
             pytest.skip(f"scrapling dependency missing: {e}")
 
-    def test_fetch_bypass_cache(self, tmp_cache_dir: Path) -> None:
+    async def test_fetch_bypass_cache(self, tmp_cache_dir: Path) -> None:
         """Fetch with bypass_cache=True ignores cache."""
         import os
 
@@ -153,7 +155,7 @@ class TestFetch:
                 mock_fetcher.get.return_value = mock_page
 
                 # First call
-                result1 = research_fetch(
+                result1 = await research_fetch(
                     url="https://example.com",
                     mode="http",
                     bypass_cache=True,
@@ -163,7 +165,7 @@ class TestFetch:
                 mock_page.get_all_text.return_value = "Content v2"
 
                 # Second call with bypass_cache=True should get new content
-                result2 = research_fetch(
+                result2 = await research_fetch(
                     url="https://example.com",
                     mode="http",
                     bypass_cache=True,
@@ -177,31 +179,31 @@ class TestFetch:
 class TestCloudflareDetection:
     """Tests for _is_cloudflare_block helper."""
 
-    def test_detects_403_with_ray_id(self):
+    async def test_detects_403_with_ray_id(self):
         result = FetchResult(
             url="https://x.com", status_code=403, text="Attention Required Ray ID: abc123"
         )
         assert _is_cloudflare_block(result) is True
 
-    def test_detects_403_with_cf_ray(self):
+    async def test_detects_403_with_cf_ray(self):
         result = FetchResult(
             url="https://x.com", status_code=403, html="<html>cf-ray header</html>"
         )
         assert _is_cloudflare_block(result) is True
 
-    def test_detects_503_cloudflare(self):
+    async def test_detects_503_cloudflare(self):
         result = FetchResult(url="https://x.com", status_code=503, text="Cloudflare challenge page")
         assert _is_cloudflare_block(result) is True
 
-    def test_ignores_normal_403(self):
+    async def test_ignores_normal_403(self):
         result = FetchResult(url="https://x.com", status_code=403, text="Forbidden")
         assert _is_cloudflare_block(result) is False
 
-    def test_ignores_200(self):
+    async def test_ignores_200(self):
         result = FetchResult(url="https://x.com", status_code=200, text="OK")
         assert _is_cloudflare_block(result) is False
 
-    def test_ignores_404(self):
+    async def test_ignores_404(self):
         result = FetchResult(url="https://x.com", status_code=404, text="Not found cloudflare")
         assert _is_cloudflare_block(result) is False
 
@@ -209,7 +211,7 @@ class TestCloudflareDetection:
 class TestFetchAutoEscalation:
     """Tests for auto_escalate parameter."""
 
-    def test_auto_escalate_off_returns_as_is(self, tmp_cache_dir):
+    async def test_auto_escalate_off_returns_as_is(self, tmp_cache_dir):
         import os
 
         os.environ["LOOM_CACHE_DIR"] = str(tmp_cache_dir)
@@ -218,12 +220,12 @@ class TestFetchAutoEscalation:
             url="https://example.com", status_code=403, text="Cloudflare Ray ID: x", tool="httpx"
         )
         with patch("loom.tools.fetch._fetch_http", return_value=cf_result):
-            result = research_fetch(
+            result = await research_fetch(
                 url="https://example.com", mode="http", auto_escalate=False, bypass_cache=True
             )
         assert result.get("status_code") == 403
 
-    def test_auto_escalate_on_tries_stealthy(self, tmp_cache_dir):
+    async def test_auto_escalate_on_tries_stealthy(self, tmp_cache_dir):
         import os
 
         os.environ["LOOM_CACHE_DIR"] = str(tmp_cache_dir)
@@ -239,7 +241,7 @@ class TestFetchAutoEscalation:
             patch("loom.tools.fetch._fetch_http", return_value=cf_result),
             patch("loom.tools.fetch._fetch_stealthy", return_value=ok_result),
         ):
-            result = research_fetch(
+            result = await research_fetch(
                 url="https://example.com", mode="http", auto_escalate=True, bypass_cache=True
             )
 

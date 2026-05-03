@@ -1,6 +1,7 @@
 """Unit tests for stealth tools — camoufox and botasaurus."""
 
 from __future__ import annotations
+import pytest
 
 import asyncio
 from unittest.mock import MagicMock, patch
@@ -8,10 +9,12 @@ from unittest.mock import MagicMock, patch
 from loom.tools.stealth import research_botasaurus, research_camoufox
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestCamoufox:
     """research_camoufox tool tests."""
 
-    def test_camoufox_import_error_graceful(self) -> None:
+    async def test_camoufox_import_error_graceful(self) -> None:
         """ImportError on camoufox import returns error dict."""
         with patch("loom.tools.stealth._fetch_camoufox") as mock_fetch:
             # Simulate ImportError
@@ -31,7 +34,7 @@ class TestCamoufox:
 
             asyncio.run(run_test())
 
-    def test_camoufox_returns_expected_fields(self) -> None:
+    async def test_camoufox_returns_expected_fields(self) -> None:
         """Camoufox result includes url, title, text, tool keys."""
         mock_result = MagicMock()
         mock_result.model_dump.return_value = {
@@ -56,7 +59,7 @@ class TestCamoufox:
 class TestBotasaurus:
     """research_botasaurus tool tests."""
 
-    def test_botasaurus_delegates_to_fetch(self) -> None:
+    async def test_botasaurus_delegates_to_fetch(self) -> None:
         """botasaurus delegates to research_fetch with mode='dynamic'."""
         with patch("loom.tools.fetch.research_fetch") as mock_fetch:
             mock_fetch.return_value = {
@@ -73,7 +76,7 @@ class TestBotasaurus:
 
             asyncio.run(run_test())
 
-    def test_botasaurus_returns_tool_field(self) -> None:
+    async def test_botasaurus_returns_tool_field(self) -> None:
         """botasaurus result has tool='botasaurus'."""
         with patch("loom.tools.fetch.research_fetch") as mock_fetch:
             mock_fetch.return_value = {

@@ -1013,7 +1013,7 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
             # Auto-correct parameters
             corrected_kwargs, corrections = _fuzzy_correct_params(func, kwargs)
             if corrections:
-                logger.debug(f"Parameter corrections for {func.__name__}: {corrections}")
+                log.debug(f"Parameter corrections for {func.__name__}: {corrections}")
             try:
                 result = await asyncio.wait_for(func(*args, **corrected_kwargs), timeout=tool_timeout)
                 # Add correction metadata if there were corrections
@@ -1035,7 +1035,7 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
             # Auto-correct parameters
             corrected_kwargs, corrections = _fuzzy_correct_params(func, kwargs)
             if corrections:
-                logger.debug(f"Parameter corrections for {func.__name__}: {corrections}")
+                log.debug(f"Parameter corrections for {func.__name__}: {corrections}")
             result = func(*args, **corrected_kwargs)
             # Add correction metadata if there were corrections
             if corrections and isinstance(result, dict):
@@ -2762,12 +2762,12 @@ def create_app() -> FastMCP:
         log.critical("SECURITY WARNING: LOOM_API_KEY not set. Server accepts anonymous connections. Set LOOM_API_KEY for production.")
 
     mcp = FastMCP(
+        stateless_http=True,
         name="loom",
         host=host,
         port=port,
         auth=auth,
         token_verifier=token_verifier,
-        stateless_http=True,
     )
 
     # Register custom HTTP endpoints (health check, root)

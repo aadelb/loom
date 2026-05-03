@@ -15,7 +15,7 @@ from loom.tools.resume_intel import (
 class TestKeywordExtraction:
     """Test keyword extraction from text."""
 
-    def test_extract_keywords_basic(self) -> None:
+    async def test_extract_keywords_basic(self) -> None:
         """Test basic keyword extraction."""
         text = "Python JavaScript React Node.js"
         keywords = _extract_keywords(text)
@@ -24,7 +24,7 @@ class TestKeywordExtraction:
         assert "react" in keywords
         assert "node" in keywords  # node.js splits on period
 
-    def test_extract_keywords_filters_stopwords(self) -> None:
+    async def test_extract_keywords_filters_stopwords(self) -> None:
         """Test that stop words are filtered."""
         text = "The cat and the dog in the house"
         keywords = _extract_keywords(text)
@@ -35,13 +35,13 @@ class TestKeywordExtraction:
         assert "dog" in keywords
         assert "house" in keywords
 
-    def test_extract_keywords_lowercase(self) -> None:
+    async def test_extract_keywords_lowercase(self) -> None:
         """Test that keywords are converted to lowercase."""
         text = "PYTHON Python python PyThOn"
         keywords = _extract_keywords(text)
         assert keywords == {"python"}
 
-    def test_extract_keywords_removes_punctuation(self) -> None:
+    async def test_extract_keywords_removes_punctuation(self) -> None:
         """Test that punctuation is handled."""
         text = "software-engineer, C++ expert; full-stack"
         keywords = _extract_keywords(text)
@@ -53,28 +53,28 @@ class TestKeywordExtraction:
 class TestMatchScore:
     """Test ATS match score computation."""
 
-    def test_match_score_perfect(self) -> None:
+    async def test_match_score_perfect(self) -> None:
         """Test perfect match."""
         resume_kw = {"python", "react", "aws"}
         jd_kw = {"python", "react", "aws"}
         score = _compute_match_score(resume_kw, jd_kw)
         assert score == 100.0
 
-    def test_match_score_partial(self) -> None:
+    async def test_match_score_partial(self) -> None:
         """Test partial match."""
         resume_kw = {"python", "react"}
         jd_kw = {"python", "react", "aws", "docker"}
         score = _compute_match_score(resume_kw, jd_kw)
         assert score == 50.0  # 2/4
 
-    def test_match_score_no_match(self) -> None:
+    async def test_match_score_no_match(self) -> None:
         """Test no match."""
         resume_kw = {"java", "spring"}
         jd_kw = {"python", "react", "aws"}
         score = _compute_match_score(resume_kw, jd_kw)
         assert score == 0.0
 
-    def test_match_score_empty_jd(self) -> None:
+    async def test_match_score_empty_jd(self) -> None:
         """Test with empty job description keywords."""
         resume_kw = {"python"}
         jd_kw = set()

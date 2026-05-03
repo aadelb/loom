@@ -20,8 +20,12 @@ from typing import Any
 import pytest
 from httpx import MockTransport, Response
 
+# Add src directory to path for proper imports
+_src_path = str(Path(__file__).parent.parent / 'src')
+if _src_path not in sys.path:
+    sys.path.insert(0, _src_path)
 
-@pytest.fixture(autouse=True)
+
 def _reset_rate_limiters() -> None:
     """Reset rate limiter state between tests to prevent cross-test contamination."""
     try:

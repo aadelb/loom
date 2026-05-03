@@ -1,6 +1,7 @@
 """Unit tests for CacheStore — gzip compression, atomic writes, UUID tmp, SHA-256, concurrent access."""
 
 from __future__ import annotations
+import pytest
 
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -8,16 +9,18 @@ from pathlib import Path
 from loom.cache import CacheStore
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestCacheStore:
     """CacheStore atomic write and concurrent safety tests."""
 
-    def test_cache_get_missing_returns_none(self, tmp_cache_dir: Path) -> None:
+    async def test_cache_get_missing_returns_none(self, tmp_cache_dir: Path) -> None:
         """get() returns None for missing keys."""
         cache = CacheStore(tmp_cache_dir)
         result = cache.get("nonexistent_key")
         assert result is None
 
-    def test_cache_put_get_roundtrip(self, tmp_cache_dir: Path) -> None:
+    async def test_cache_put_get_roundtrip(self, tmp_cache_dir: Path) -> None:
         """put() and get() store and retrieve data correctly."""
         cache = CacheStore(tmp_cache_dir)
         key = "test_key_1"
@@ -30,7 +33,7 @@ class TestCacheStore:
         assert result["text"] == "example content"
         assert result["status"] == "ok"
 
-    def test_cache_path_uses_sha256_prefix(self, tmp_cache_dir: Path) -> None:
+    async def test_cache_path_uses_sha256_prefix(self, tmp_cache_dir: Path) -> None:
         """_cache_path() uses SHA-256 first 32 hex chars."""
         cache = CacheStore(tmp_cache_dir)
         key = "test_sha256_key"
@@ -41,7 +44,7 @@ class TestCacheStore:
         assert len(path.stem) == 32
         assert path.parent.name.count("-") == 2  # YYYY-MM-DD format
 
-    def test_cache_atomic_write_uses_uuid_tmp(self, tmp_cache_dir: Path) -> None:
+    async def test_cache_atomic_write_uses_uuid_tmp(self, tmp_cache_dir: Path) -> None:
         """put() uses uuid-suffixed tmp file for atomicity."""
         cache = CacheStore(tmp_cache_dir)
         key = "atomic_test"
@@ -57,7 +60,7 @@ class TestCacheStore:
         cache_files = list(tmp_cache_dir.rglob("*.json.gz"))
         assert len(cache_files) == 1
 
-    def test_cache_clear_older_than(self, tmp_cache_dir: Path) -> None:
+    async def test_cache_clear_older_than(self, tmp_cache_dir: Path) -> None:
         """clear_older_than() removes entries by age."""
         import datetime as dt
 
@@ -80,7 +83,7 @@ class TestCacheStore:
         assert not old_file.exists()  # Old file should be gone
         assert cache.get("recent") is not None  # Recent should remain
 
-    def test_cache_concurrent_writes_no_corruption(self, tmp_cache_dir: Path) -> None:
+    async def test_cache_concurrent_writes_no_corruption(self, tmp_cache_dir: Path) -> None:
         """Concurrent writes to same key do not corrupt data."""
         cache = CacheStore(tmp_cache_dir)
         key = "concurrent_key"
@@ -100,7 +103,7 @@ class TestCacheStore:
         assert "status" in result
         assert result["status"] == "complete"
 
-    def test_cache_stats(self, tmp_cache_dir: Path) -> None:
+    async def test_cache_stats(self, tmp_cache_dir: Path) -> None:
         """stats() returns file_count and total_bytes."""
         cache = CacheStore(tmp_cache_dir)
 
@@ -113,7 +116,7 @@ class TestCacheStore:
         assert stats["total_bytes"] > 0
         assert isinstance(stats["days_present"], list)
 
-    def test_cache_separate_keys_separate_files(self, tmp_cache_dir: Path) -> None:
+    async def test_cache_separate_keys_separate_files(self, tmp_cache_dir: Path) -> None:
         """Different keys create separate cache files."""
         cache = CacheStore(tmp_cache_dir)
 
@@ -128,7 +131,7 @@ class TestCacheStore:
         cache_files = list(tmp_cache_dir.rglob("*.json.gz"))
         assert len(cache_files) == 2
 
-    def test_cache_get_handles_invalid_json(self, tmp_cache_dir: Path) -> None:
+    async def test_cache_get_handles_invalid_json(self, tmp_cache_dir: Path) -> None:
         """get() returns None if cached file has invalid JSON."""
         cache = CacheStore(tmp_cache_dir)
         key = "bad_json"

@@ -728,7 +728,7 @@ class Request(BaseModel):
     email: str
 
     @validator('email')
-    def validate_email(cls, v):
+    async def validate_email(cls, v):
         if '@' not in v:
             raise ValueError('Invalid email')
         return v

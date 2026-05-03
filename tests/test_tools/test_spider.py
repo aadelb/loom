@@ -9,16 +9,18 @@ import pytest
 
 
 @pytest.mark.asyncio
-async def test_spider_empty_urls_returns_empty() -> None:
-    """Spider with empty URL list returns empty result."""
+@pytest.mark.asyncio
+async def test_spider_empty_urls_raises_validation_error() -> None:
+    """Spider with empty URL list raises validation error."""
     pytest.importorskip("loom.tools.spider")
 
     from loom.tools.spider import research_spider
+    from pydantic_core import ValidationError
 
-    result = await research_spider(urls=[])
+    with pytest.raises(ValidationError):
+        await research_spider(urls=[])
 
-    # Spider returns a list, not a dict
-    assert isinstance(result, list)
+
 
 
 @pytest.mark.asyncio
@@ -61,7 +63,7 @@ async def test_spider_respects_concurrency_limit() -> None:
     max_concurrent = 0
     lock = asyncio.Lock()
 
-    def slow_fetch(*args, **kwargs):  # type: ignore
+    async def slow_fetch(*args, **kwargs):  # type: ignore
         nonlocal concurrent_count, max_concurrent
         concurrent_count += 1
         max_concurrent = max(max_concurrent, concurrent_count)
@@ -97,7 +99,7 @@ async def test_spider_mixed_ok_fail() -> None:
         "https://another-good.com",
     ]
 
-    def mock_fetch(url: str, **kwargs):  # type: ignore
+    async def mock_fetch(url: str, **kwargs):  # type: ignore
         if "bad" in url:
             return {"url": url, "error": "timeout"}
         return {"url": url, "text": "content", "title": "ok"}

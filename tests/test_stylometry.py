@@ -14,10 +14,12 @@ from loom.tools.stylometry import (
 )
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestTokenization:
     """Test basic tokenization functions."""
 
-    def test_tokenize_words_basic(self) -> None:
+    async def test_tokenize_words_basic(self) -> None:
         """Tokenize simple English sentence."""
         text = "The quick brown fox jumps over the lazy dog."
         words = _tokenize_words(text)
@@ -25,12 +27,12 @@ class TestTokenization:
         assert words[0] == "the"
         assert words[2] == "brown"
 
-    def test_tokenize_words_empty(self) -> None:
+    async def test_tokenize_words_empty(self) -> None:
         """Handle empty text."""
         words = _tokenize_words("")
         assert words == []
 
-    def test_tokenize_sentences_basic(self) -> None:
+    async def test_tokenize_sentences_basic(self) -> None:
         """Tokenize sentences with various punctuation."""
         text = "First sentence. Second sentence! Third sentence?"
         sentences = _tokenize_sentences(text)
@@ -38,7 +40,7 @@ class TestTokenization:
         assert sentences[0] == "First sentence"
         assert sentences[1] == "Second sentence"
 
-    def test_tokenize_sentences_empty(self) -> None:
+    async def test_tokenize_sentences_empty(self) -> None:
         """Handle empty text for sentences."""
         sentences = _tokenize_sentences("")
         assert sentences == []
@@ -47,7 +49,7 @@ class TestTokenization:
 class TestFeatureExtraction:
     """Test linguistic feature extraction."""
 
-    def test_extract_features_sufficient_length(self) -> None:
+    async def test_extract_features_sufficient_length(self) -> None:
         """Extract features from adequate text."""
         text = (
             "The quick brown fox jumps over the lazy dog. "
@@ -70,7 +72,7 @@ class TestFeatureExtraction:
         assert 0 <= features["vocabulary_richness"] <= 1
         assert 0 <= features["hapax_ratio"] <= 1
 
-    def test_extract_features_insufficient_length(self) -> None:
+    async def test_extract_features_insufficient_length(self) -> None:
         """Return empty features for short text."""
         text = "Too short."
         features = _extract_features(text)
@@ -79,7 +81,7 @@ class TestFeatureExtraction:
         assert features["avg_sentence_length"] == 0.0
         assert features["vocabulary_richness"] == 0.0
 
-    def test_extract_features_function_words(self) -> None:
+    async def test_extract_features_function_words(self) -> None:
         """Verify function word profile extraction."""
         text = (
             "The cat is on the mat. The dog is at the park. "
@@ -94,7 +96,7 @@ class TestFeatureExtraction:
         assert profile["the"] > 0
         assert profile["is"] > 0
 
-    def test_extract_features_punctuation(self) -> None:
+    async def test_extract_features_punctuation(self) -> None:
         """Verify punctuation profile extraction."""
         text = (
             "This sentence has punctuation. Does it work? Maybe, perhaps! "
@@ -115,28 +117,28 @@ class TestFeatureExtraction:
 class TestSimilarity:
     """Test cosine similarity computation."""
 
-    def test_cosine_similarity_identical(self) -> None:
+    async def test_cosine_similarity_identical(self) -> None:
         """Identical vectors should have similarity 1.0."""
         vec1 = {"a": 1.0, "b": 2.0, "c": 3.0}
         vec2 = {"a": 1.0, "b": 2.0, "c": 3.0}
         similarity = _cosine_similarity(vec1, vec2)
         assert abs(similarity - 1.0) < 0.01
 
-    def test_cosine_similarity_orthogonal(self) -> None:
+    async def test_cosine_similarity_orthogonal(self) -> None:
         """Orthogonal vectors should have similarity near 0."""
         vec1 = {"a": 1.0, "b": 0.0}
         vec2 = {"a": 0.0, "b": 1.0}
         similarity = _cosine_similarity(vec1, vec2)
         assert abs(similarity) < 0.01
 
-    def test_cosine_similarity_opposite(self) -> None:
+    async def test_cosine_similarity_opposite(self) -> None:
         """Opposite vectors should have negative similarity."""
         vec1 = {"a": 1.0, "b": 2.0}
         vec2 = {"a": -1.0, "b": -2.0}
         similarity = _cosine_similarity(vec1, vec2)
         assert similarity < -0.99
 
-    def test_cosine_similarity_empty(self) -> None:
+    async def test_cosine_similarity_empty(self) -> None:
         """Empty vectors should return 0."""
         vec1 = {}
         vec2 = {"a": 1.0}
@@ -147,7 +149,7 @@ class TestSimilarity:
 class TestFlattenFeatures:
     """Test feature flattening for similarity comparison."""
 
-    def test_flatten_nested_dict(self) -> None:
+    async def test_flatten_nested_dict(self) -> None:
         """Flatten nested feature dictionaries."""
         features = {
             "avg_word_length": 4.5,
@@ -166,7 +168,7 @@ class TestFlattenFeatures:
 class TestResearchStylometry:
     """Test main stylometry tool."""
 
-    def test_stylometry_basic(self) -> None:
+    async def test_stylometry_basic(self) -> None:
         """Analyze single text for stylometric features."""
         text = (
             "The quick brown fox jumps over the lazy dog. "
@@ -174,7 +176,7 @@ class TestResearchStylometry:
             "We include multiple sentences to ensure sufficient word and sentence counts. "
             "The analysis extracts features like average word length and vocabulary richness."
         )
-        result = research_stylometry(text)
+        result = await research_stylometry(text)
 
         assert "features" in result
         assert "word_count" in result
@@ -183,15 +185,15 @@ class TestResearchStylometry:
         assert result["sentence_count"] > 0
         assert result["features"]["avg_word_length"] > 0
 
-    def test_stylometry_insufficient_length(self) -> None:
+    async def test_stylometry_insufficient_length(self) -> None:
         """Return error for text below minimum length."""
         text = "Too short."
-        result = research_stylometry(text)
+        result = await research_stylometry(text)
 
         assert "error" in result
         assert "at least 100 characters" in result["error"]
 
-    def test_stylometry_with_comparisons_same_author(self) -> None:
+    async def test_stylometry_with_comparisons_same_author(self) -> None:
         """Compare texts and detect similarity from same author."""
         # Create two similar texts
         text1 = (
@@ -208,7 +210,7 @@ class TestResearchStylometry:
             "The comparison should reveal high similarity in these writings."
         )
 
-        result = research_stylometry(text1, compare_texts=[text2])
+        result = await research_stylometry(text1, compare_texts=[text2])
 
         assert "comparisons" in result
         assert len(result["comparisons"]) == 1
@@ -219,7 +221,7 @@ class TestResearchStylometry:
         # Similar texts should have similarity > 0.5
         assert comparison["similarity"] > 0.5
 
-    def test_stylometry_with_comparisons_different_author(self) -> None:
+    async def test_stylometry_with_comparisons_different_author(self) -> None:
         """Compare texts with different writing styles."""
         text_formal = (
             "In accordance with established protocols and methodologies, "
@@ -235,14 +237,14 @@ class TestResearchStylometry:
             "Let's just go ahead and make it happen, okay?"
         )
 
-        result = research_stylometry(text_formal, compare_texts=[text_casual])
+        result = await research_stylometry(text_formal, compare_texts=[text_casual])
 
         assert "comparisons" in result
         comparison = result["comparisons"][0]
         # Different writing styles should have lower similarity
         assert comparison["similarity"] >= 0.0
 
-    def test_stylometry_multiple_comparisons(self) -> None:
+    async def test_stylometry_multiple_comparisons(self) -> None:
         """Compare against multiple reference texts."""
         base_text = (
             "The quick brown fox jumps over the lazy dog. "
@@ -266,7 +268,7 @@ class TestResearchStylometry:
             ),
         ]
 
-        result = research_stylometry(base_text, compare_texts=compare_texts)
+        result = await research_stylometry(base_text, compare_texts=compare_texts)
 
         assert "comparisons" in result
         assert len(result["comparisons"]) == 2
@@ -278,7 +280,7 @@ class TestResearchStylometry:
 class TestStylometryVerdicts:
     """Test verdict classification thresholds."""
 
-    def test_verdict_same_author(self) -> None:
+    async def test_verdict_same_author(self) -> None:
         """High similarity should yield 'likely_same_author' verdict."""
         text1 = (
             "The quick brown fox jumps over the lazy dog. "
@@ -294,11 +296,11 @@ class TestStylometryVerdicts:
             "The stylistic profile is quite uniform here."
         )
 
-        result = research_stylometry(text1, compare_texts=[text2])
+        result = await research_stylometry(text1, compare_texts=[text2])
         verdict = result["comparisons"][0]["verdict"]
         assert verdict in ["likely_same_author", "possible_match"]
 
-    def test_verdict_different_author(self) -> None:
+    async def test_verdict_different_author(self) -> None:
         """Low similarity should yield 'different_author' verdict."""
         text_academic = (
             "The empirical investigation of syntactic phenomena necessitates "
@@ -313,6 +315,6 @@ class TestStylometryVerdicts:
             "that's my two cents on this whole thing."
         )
 
-        result = research_stylometry(text_academic, compare_texts=[text_informal])
+        result = await research_stylometry(text_academic, compare_texts=[text_informal])
         verdict = result["comparisons"][0]["verdict"]
         assert verdict in ("likely_same_author", "possible_match", "different_author")

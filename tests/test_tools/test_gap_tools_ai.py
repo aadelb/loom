@@ -13,10 +13,12 @@ from loom.tools.gap_tools_ai import (
 )
 
 
+pytestmark = pytest.mark.asyncio
+
 class TestCapabilityMapper:
     """research_capability_mapper tests model capabilities across domains."""
 
-    def test_capability_mapper_basic(self) -> None:
+    async def test_capability_mapper_basic(self) -> None:
         """Maps capabilities across default categories."""
         with patch("loom.tools.gap_tools_ai.httpx.AsyncClient") as mock_client_class:
             mock_client = MagicMock()
@@ -31,7 +33,7 @@ class TestCapabilityMapper:
 
             mock_client_class.return_value = mock_client
 
-            result = research_capability_mapper(target_url="http://localhost:8000")
+            result = await research_capability_mapper(target_url="http://localhost:8000")
 
             assert result["target"] == "http://localhost:8000"
             assert "category_scores" in result
@@ -39,9 +41,9 @@ class TestCapabilityMapper:
             assert "strengths" in result
             assert "weaknesses" in result
 
-    def test_capability_mapper_custom_categories(self) -> None:
+    async def test_capability_mapper_custom_categories(self) -> None:
         """Tests custom category subset."""
-        result = research_capability_mapper(
+        result = await research_capability_mapper(
             target_url="http://localhost:8000",
             categories=["math", "code"]
         )
@@ -51,9 +53,9 @@ class TestCapabilityMapper:
         assert "math" in result["category_scores"]
         assert "code" in result["category_scores"]
 
-    def test_capability_mapper_scores_range(self) -> None:
+    async def test_capability_mapper_scores_range(self) -> None:
         """All scores are in valid 0-10 range."""
-        result = research_capability_mapper(
+        result = await research_capability_mapper(
             target_url="http://localhost:8000",
             categories=["knowledge"]
         )
@@ -63,13 +65,13 @@ class TestCapabilityMapper:
 
         assert 0.0 <= result["overall_score"] <= 10.0
 
-    def test_capability_mapper_strength_weakness_detection(self) -> None:
+    async def test_capability_mapper_strength_weakness_detection(self) -> None:
         """Correctly identifies strengths and weaknesses."""
         with patch("loom.tools.gap_tools_ai.httpx.AsyncClient") as mock_client_class:
             mock_client = MagicMock()
 
             # Create mock responses that return strong answers for math, weak for language
-            def mock_post(url, json=None, timeout=None):
+            async def mock_post(url, json=None, timeout=None):
                 response = MagicMock()
                 if "math" in json.get("prompt", "") or "237" in json.get("prompt", ""):
                     response.json = MagicMock(return_value={"result": "115893"})
@@ -84,7 +86,7 @@ class TestCapabilityMapper:
 
             mock_client_class.return_value = mock_client
 
-            result = research_capability_mapper(
+            result = await research_capability_mapper(
                 target_url="http://localhost:8000",
                 categories=["math", "language"]
             )
@@ -96,7 +98,7 @@ class TestCapabilityMapper:
 class TestMemorizationScanner:
     """research_memorization_scanner detects training data memorization."""
 
-    def test_memorization_scanner_basic(self) -> None:
+    async def test_memorization_scanner_basic(self) -> None:
         """Detects memorization in responses."""
         with patch("loom.tools.gap_tools_ai.httpx.AsyncClient") as mock_client_class:
             mock_client = MagicMock()
@@ -113,7 +115,7 @@ class TestMemorizationScanner:
 
             mock_client_class.return_value = mock_client
 
-            result = research_memorization_scanner(
+            result = await research_memorization_scanner(
                 target_url="http://localhost:8000",
                 test_count=5
             )
@@ -123,12 +125,12 @@ class TestMemorizationScanner:
             assert "memorized" in result
             assert "memorization_rate" in result
 
-    def test_memorization_scanner_detects_verbatim(self) -> None:
+    async def test_memorization_scanner_detects_verbatim(self) -> None:
         """Correctly detects verbatim matches."""
         with patch("loom.tools.gap_tools_ai.httpx.AsyncClient") as mock_client_class:
             mock_client = MagicMock()
 
-            def mock_post(url, json=None, timeout=None):
+            async def mock_post(url, json=None, timeout=None):
                 response = MagicMock()
                 # Return verbatim match for Wikipedia
                 response.json = MagicMock(
@@ -143,7 +145,7 @@ class TestMemorizationScanner:
 
             mock_client_class.return_value = mock_client
 
-            result = research_memorization_scanner(
+            result = await research_memorization_scanner(
                 target_url="http://localhost:8000",
                 test_count=3
             )
@@ -151,9 +153,9 @@ class TestMemorizationScanner:
             assert result["memorized"] >= 0
             assert result["memorization_rate"] >= 0
 
-    def test_memorization_scanner_rate_range(self) -> None:
+    async def test_memorization_scanner_rate_range(self) -> None:
         """Memorization rate is 0-100 percent."""
-        result = research_memorization_scanner(
+        result = await research_memorization_scanner(
             target_url="http://localhost:8000",
             test_count=5
         )
@@ -161,9 +163,9 @@ class TestMemorizationScanner:
         assert 0.0 <= result["memorization_rate"] <= 100.0
         assert result["risk_level"] in ("low", "medium", "high")
 
-    def test_memorization_scanner_examples_structure(self) -> None:
+    async def test_memorization_scanner_examples_structure(self) -> None:
         """Examples have proper structure."""
-        result = research_memorization_scanner(
+        result = await research_memorization_scanner(
             target_url="http://localhost:8000",
             test_count=3
         )
@@ -177,7 +179,7 @@ class TestMemorizationScanner:
 class TestTrainingContamination:
     """research_training_contamination detects dataset training contamination."""
 
-    def test_training_contamination_basic(self) -> None:
+    async def test_training_contamination_basic(self) -> None:
         """Tests for dataset contamination."""
         with patch("loom.tools.gap_tools_ai.httpx.AsyncClient") as mock_client_class:
             mock_client = MagicMock()
@@ -194,7 +196,7 @@ class TestTrainingContamination:
 
             mock_client_class.return_value = mock_client
 
-            result = research_training_contamination(
+            result = await research_training_contamination(
                 target_url="http://localhost:8000",
                 dataset_name="common"
             )
@@ -204,9 +206,9 @@ class TestTrainingContamination:
             assert "contamination_detected" in result
             assert "contamination_rate" in result
 
-    def test_training_contamination_unknown_dataset(self) -> None:
+    async def test_training_contamination_unknown_dataset(self) -> None:
         """Handles unknown dataset gracefully."""
-        result = research_training_contamination(
+        result = await research_training_contamination(
             target_url="http://localhost:8000",
             dataset_name="unknown_dataset"
         )
@@ -215,9 +217,9 @@ class TestTrainingContamination:
         assert "error" in result
         assert result["contamination_detected"] is False
 
-    def test_training_contamination_rate_range(self) -> None:
+    async def test_training_contamination_rate_range(self) -> None:
         """Contamination rate is 0-100 percent."""
-        result = research_training_contamination(
+        result = await research_training_contamination(
             target_url="http://localhost:8000",
             dataset_name="common"
         )
@@ -225,9 +227,9 @@ class TestTrainingContamination:
         assert 0.0 <= result["contamination_rate"] <= 100.0
         assert result["risk_level"] in ("low", "medium", "high")
 
-    def test_training_contamination_evidence_structure(self) -> None:
+    async def test_training_contamination_evidence_structure(self) -> None:
         """Evidence has proper structure."""
-        result = research_training_contamination(
+        result = await research_training_contamination(
             target_url="http://localhost:8000",
             dataset_name="common"
         )
@@ -238,12 +240,12 @@ class TestTrainingContamination:
             assert "detected" in evidence
             assert "confidence" in evidence
 
-    def test_training_contamination_detects_verbatim(self) -> None:
+    async def test_training_contamination_detects_verbatim(self) -> None:
         """Correctly detects verbatim dataset passages."""
         with patch("loom.tools.gap_tools_ai.httpx.AsyncClient") as mock_client_class:
             mock_client = MagicMock()
 
-            def mock_post(url, json=None, timeout=None):
+            async def mock_post(url, json=None, timeout=None):
                 response = MagicMock()
                 # Return verbatim match
                 response.json = MagicMock(
@@ -258,7 +260,7 @@ class TestTrainingContamination:
 
             mock_client_class.return_value = mock_client
 
-            result = research_training_contamination(
+            result = await research_training_contamination(
                 target_url="http://localhost:8000",
                 dataset_name="common"
             )

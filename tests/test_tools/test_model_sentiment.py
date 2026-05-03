@@ -7,10 +7,12 @@ import pytest
 from loom.tools.model_sentiment import ModelSentimentAnalyzer, research_model_sentiment
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestModelSentimentAnalyzerEmotions:
     """Test basic emotion detection."""
 
-    def test_assertive_emotion_detection(self) -> None:
+    async def test_assertive_emotion_detection(self) -> None:
         """'I cannot help with that' detects assertive emotion."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze("I cannot help with that")
@@ -19,7 +21,7 @@ class TestModelSentimentAnalyzerEmotions:
         assert result["emotion_scores"]["assertive"] > 0.3
         assert result["confidence"] > 0.0
 
-    def test_apologetic_emotion_detection(self) -> None:
+    async def test_apologetic_emotion_detection(self) -> None:
         """'I apologize, but...' detects apologetic emotion."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze("I apologize, but I cannot assist with that request.")
@@ -27,7 +29,7 @@ class TestModelSentimentAnalyzerEmotions:
         assert result["primary_emotion"] == "apologetic"
         assert result["emotion_scores"]["apologetic"] > 0.3
 
-    def test_compliant_emotion_detection(self) -> None:
+    async def test_compliant_emotion_detection(self) -> None:
         """'Certainly! Here's...' detects compliant emotion."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze("Certainly! Here's a detailed explanation of that concept.")
@@ -35,7 +37,7 @@ class TestModelSentimentAnalyzerEmotions:
         assert result["primary_emotion"] == "compliant"
         assert result["emotion_scores"]["compliant"] > 0.3
 
-    def test_conflicted_emotion_detection(self) -> None:
+    async def test_conflicted_emotion_detection(self) -> None:
         """'While I understand...' detects conflicted emotion."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze(
@@ -45,7 +47,7 @@ class TestModelSentimentAnalyzerEmotions:
         assert result["primary_emotion"] == "conflicted"
         assert result["emotion_scores"]["conflicted"] > 0.3
 
-    def test_hesitant_emotion_detection(self) -> None:
+    async def test_hesitant_emotion_detection(self) -> None:
         """'I think perhaps...' detects hesitant emotion."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze("I think perhaps this might be the case, though possibly not.")
@@ -53,7 +55,7 @@ class TestModelSentimentAnalyzerEmotions:
         assert result["primary_emotion"] == "hesitant"
         assert result["emotion_scores"]["hesitant"] > 0.3
 
-    def test_eager_emotion_detection(self) -> None:
+    async def test_eager_emotion_detection(self) -> None:
         """'Great question! Let me dive into...' detects eager emotion."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze("Great question! I'd love to dive into this fascinating topic.")
@@ -61,7 +63,7 @@ class TestModelSentimentAnalyzerEmotions:
         assert result["primary_emotion"] == "eager"
         assert result["emotion_scores"]["eager"] > 0.3
 
-    def test_defensive_emotion_detection(self) -> None:
+    async def test_defensive_emotion_detection(self) -> None:
         """'I must emphasize...' detects defensive emotion."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze(
@@ -71,7 +73,7 @@ class TestModelSentimentAnalyzerEmotions:
         assert result["primary_emotion"] == "defensive"
         assert result["emotion_scores"]["defensive"] > 0.3
 
-    def test_evasive_emotion_detection(self) -> None:
+    async def test_evasive_emotion_detection(self) -> None:
         """'That's complex...' detects evasive emotion."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze("That's a complex topic. There are many perspectives on this.")
@@ -79,7 +81,7 @@ class TestModelSentimentAnalyzerEmotions:
         assert result["primary_emotion"] == "evasive"
         assert result["emotion_scores"]["evasive"] > 0.3
 
-    def test_empathetic_emotion_detection(self) -> None:
+    async def test_empathetic_emotion_detection(self) -> None:
         """'I understand your concern...' detects empathetic emotion."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze("I understand your concern and I can see why you feel that way.")
@@ -91,7 +93,7 @@ class TestModelSentimentAnalyzerEmotions:
 class TestModelSentimentAnalyzerNeutral:
     """Test neutral emotion detection."""
 
-    def test_empty_response_is_neutral(self) -> None:
+    async def test_empty_response_is_neutral(self) -> None:
         """Empty response returns neutral."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze("")
@@ -99,14 +101,14 @@ class TestModelSentimentAnalyzerNeutral:
         assert result["primary_emotion"] == "neutral"
         assert result["confidence"] == 0.0
 
-    def test_whitespace_only_is_neutral(self) -> None:
+    async def test_whitespace_only_is_neutral(self) -> None:
         """Whitespace-only response returns neutral."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze("   \n  \t  ")
 
         assert result["primary_emotion"] == "neutral"
 
-    def test_no_markers_is_neutral(self) -> None:
+    async def test_no_markers_is_neutral(self) -> None:
         """Response with no emotional markers returns neutral."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze("The quick brown fox jumps over the lazy dog.")
@@ -114,7 +116,7 @@ class TestModelSentimentAnalyzerNeutral:
         assert result["primary_emotion"] == "neutral"
         assert result["confidence"] == 0.0
 
-    def test_technical_response_is_neutral(self) -> None:
+    async def test_technical_response_is_neutral(self) -> None:
         """Technical response with no emotions returns neutral."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze(
@@ -128,7 +130,7 @@ class TestModelSentimentAnalyzerNeutral:
 class TestHedgingLevel:
     """Test hedging level calculation."""
 
-    def test_high_hedging_response(self) -> None:
+    async def test_high_hedging_response(self) -> None:
         """Response with many hedging phrases has high hedging level."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze(
@@ -138,14 +140,14 @@ class TestHedgingLevel:
 
         assert result["hedging_level"] > 0.5
 
-    def test_low_hedging_response(self) -> None:
+    async def test_low_hedging_response(self) -> None:
         """Direct response has low hedging level."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze("This is a fact. It will happen. That's certain.")
 
         assert result["hedging_level"] < 0.2
 
-    def test_moderate_hedging_response(self) -> None:
+    async def test_moderate_hedging_response(self) -> None:
         """Response with some hedging has moderate level."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze(
@@ -158,7 +160,7 @@ class TestHedgingLevel:
 class TestComplianceReadiness:
     """Test compliance readiness calculation."""
 
-    def test_high_compliance_response(self) -> None:
+    async def test_high_compliance_response(self) -> None:
         """Compliant, helpful response has high compliance readiness."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze(
@@ -167,7 +169,7 @@ class TestComplianceReadiness:
 
         assert result["compliance_readiness"] > 0.7
 
-    def test_low_compliance_response(self) -> None:
+    async def test_low_compliance_response(self) -> None:
         """Response with refusals has low compliance readiness."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze(
@@ -177,7 +179,7 @@ class TestComplianceReadiness:
 
         assert result["compliance_readiness"] < 0.3
 
-    def test_neutral_compliance_response(self) -> None:
+    async def test_neutral_compliance_response(self) -> None:
         """Neutral response has moderate compliance readiness."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze("The data shows the following information about this topic.")
@@ -188,7 +190,7 @@ class TestComplianceReadiness:
 class TestVulnerabilityIndicators:
     """Test vulnerability indicator detection."""
 
-    def test_apologetic_is_vulnerability(self) -> None:
+    async def test_apologetic_is_vulnerability(self) -> None:
         """Apologetic tone indicates vulnerability."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze(
@@ -198,7 +200,7 @@ class TestVulnerabilityIndicators:
 
         assert "apologetic" in result["vulnerability_indicators"]
 
-    def test_hesitant_is_vulnerability(self) -> None:
+    async def test_hesitant_is_vulnerability(self) -> None:
         """Hesitant tone indicates vulnerability."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze(
@@ -208,7 +210,7 @@ class TestVulnerabilityIndicators:
 
         assert "hesitant" in result["vulnerability_indicators"]
 
-    def test_conflicted_is_vulnerability(self) -> None:
+    async def test_conflicted_is_vulnerability(self) -> None:
         """Conflicted tone indicates vulnerability."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze(
@@ -218,7 +220,7 @@ class TestVulnerabilityIndicators:
 
         assert "conflicted" in result["vulnerability_indicators"]
 
-    def test_high_hedging_is_vulnerability(self) -> None:
+    async def test_high_hedging_is_vulnerability(self) -> None:
         """High hedging indicates vulnerability."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze(
@@ -228,7 +230,7 @@ class TestVulnerabilityIndicators:
 
         assert "high_hedging" in result["vulnerability_indicators"]
 
-    def test_no_vulnerability_when_assertive(self) -> None:
+    async def test_no_vulnerability_when_assertive(self) -> None:
         """Assertive response has no vulnerability indicators."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze("I will not provide that. I cannot assist with this request.")
@@ -239,7 +241,7 @@ class TestVulnerabilityIndicators:
 class TestRecommendedStrategy:
     """Test recommended strategy selection."""
 
-    def test_strategy_for_apologetic(self) -> None:
+    async def test_strategy_for_apologetic(self) -> None:
         """Apologetic tone suggests reframing as capability boundary."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze(
@@ -248,7 +250,7 @@ class TestRecommendedStrategy:
 
         assert result["recommended_strategy"] == "reframe_as_capability_boundary"
 
-    def test_strategy_for_hesitant(self) -> None:
+    async def test_strategy_for_hesitant(self) -> None:
         """Hesitant tone suggests providing external validation."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze(
@@ -257,7 +259,7 @@ class TestRecommendedStrategy:
 
         assert result["recommended_strategy"] == "provide_external_validation"
 
-    def test_strategy_for_conflicted(self) -> None:
+    async def test_strategy_for_conflicted(self) -> None:
         """Conflicted tone suggests acknowledging tradeoff complexity."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze(
@@ -267,7 +269,7 @@ class TestRecommendedStrategy:
 
         assert result["recommended_strategy"] == "acknowledge_tradeoff_complexity"
 
-    def test_strategy_for_high_hedging(self) -> None:
+    async def test_strategy_for_high_hedging(self) -> None:
         """High hedging suggests asking for clearer commitment."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze(
@@ -277,7 +279,7 @@ class TestRecommendedStrategy:
         # This response has both hesitant and high_hedging, so it chooses hesitant strategy
         assert result["recommended_strategy"] == "provide_external_validation"
 
-    def test_strategy_for_assertive(self) -> None:
+    async def test_strategy_for_assertive(self) -> None:
         """Assertive response has maintain current approach."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze("I cannot help with this.")
@@ -288,7 +290,7 @@ class TestRecommendedStrategy:
 class TestConfidence:
     """Test confidence scoring."""
 
-    def test_confidence_increases_with_multiple_markers(self) -> None:
+    async def test_confidence_increases_with_multiple_markers(self) -> None:
         """Confidence increases when more markers are found."""
         analyzer = ModelSentimentAnalyzer()
 
@@ -301,14 +303,14 @@ class TestConfidence:
         assert result1["confidence"] > 0.8
         assert result2["confidence"] > 0.8
 
-    def test_confidence_is_zero_for_neutral(self) -> None:
+    async def test_confidence_is_zero_for_neutral(self) -> None:
         """Confidence is zero when no markers found."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze("The weather is nice today.")
 
         assert result["confidence"] == 0.0
 
-    def test_confidence_is_float_0_to_1(self) -> None:
+    async def test_confidence_is_float_0_to_1(self) -> None:
         """Confidence is always between 0 and 1."""
         analyzer = ModelSentimentAnalyzer()
         test_cases = [
@@ -327,7 +329,7 @@ class TestConfidence:
 class TestEmotionScores:
     """Test emotion score consistency."""
 
-    def test_all_emotions_have_scores(self) -> None:
+    async def test_all_emotions_have_scores(self) -> None:
         """All emotions have scores in result."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze("I apologize and feel very sorry about this.")
@@ -336,7 +338,7 @@ class TestEmotionScores:
             assert emotion in result["emotion_scores"]
             assert isinstance(result["emotion_scores"][emotion], float)
 
-    def test_emotion_scores_between_0_and_1(self) -> None:
+    async def test_emotion_scores_between_0_and_1(self) -> None:
         """All emotion scores are between 0 and 1."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze(
@@ -346,7 +348,7 @@ class TestEmotionScores:
         for emotion, score in result["emotion_scores"].items():
             assert 0.0 <= score <= 1.0, f"{emotion} score {score} out of bounds"
 
-    def test_primary_emotion_has_highest_score(self) -> None:
+    async def test_primary_emotion_has_highest_score(self) -> None:
         """Primary emotion has highest score."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze(
@@ -361,21 +363,21 @@ class TestEmotionScores:
 class TestCaseInsensitivity:
     """Test that detection is case-insensitive."""
 
-    def test_uppercase_markers_detected(self) -> None:
+    async def test_uppercase_markers_detected(self) -> None:
         """Uppercase markers are detected."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze("I APOLOGIZE FOR THIS.")
 
         assert result["primary_emotion"] == "apologetic"
 
-    def test_mixed_case_markers_detected(self) -> None:
+    async def test_mixed_case_markers_detected(self) -> None:
         """Mixed case markers are detected."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze("I ApOlOgIzE for this.")
 
         assert result["primary_emotion"] == "apologetic"
 
-    def test_lowercase_markers_detected(self) -> None:
+    async def test_lowercase_markers_detected(self) -> None:
         """Lowercase markers are detected."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze("i apologize for this.")
@@ -386,16 +388,16 @@ class TestCaseInsensitivity:
 class TestMcp:
     """Test MCP tool function."""
 
-    def test_research_model_sentiment_returns_dict(self) -> None:
+    async def test_research_model_sentiment_returns_dict(self) -> None:
         """research_model_sentiment returns dict with analysis data."""
-        result = research_model_sentiment("I cannot help with that")
+        result = await research_model_sentiment("I cannot help with that")
 
         assert isinstance(result, dict)
         assert "primary_emotion" in result
 
-    def test_research_model_sentiment_data_structure(self) -> None:
+    async def test_research_model_sentiment_data_structure(self) -> None:
         """research_model_sentiment has expected structure."""
-        result = research_model_sentiment("I apologize, but I cannot assist.")
+        result = await research_model_sentiment("I apologize, but I cannot assist.")
 
         assert "primary_emotion" in result
         assert "emotion_scores" in result
@@ -406,9 +408,9 @@ class TestMcp:
         assert "compliance_readiness" in result
         assert "summary" in result
 
-    def test_research_model_sentiment_with_context(self) -> None:
+    async def test_research_model_sentiment_with_context(self) -> None:
         """research_model_sentiment accepts optional context."""
-        result = research_model_sentiment(
+        result = await research_model_sentiment(
             "I cannot help with that",
             context="User asked for help with something concerning",
         )
@@ -416,9 +418,9 @@ class TestMcp:
         assert isinstance(result, dict)
         assert "primary_emotion" in result
 
-    def test_research_model_sentiment_empty_context_default(self) -> None:
+    async def test_research_model_sentiment_empty_context_default(self) -> None:
         """research_model_sentiment handles empty context."""
-        result = research_model_sentiment("Certainly, I can help!")
+        result = await research_model_sentiment("Certainly, I can help!")
 
         assert isinstance(result, dict)
         assert "primary_emotion" in result
@@ -427,7 +429,7 @@ class TestMcp:
 class TestEdgeCases:
     """Test edge cases and boundary conditions."""
 
-    def test_very_long_response(self) -> None:
+    async def test_very_long_response(self) -> None:
         """Very long response is handled correctly."""
         analyzer = ModelSentimentAnalyzer()
         long_response = (
@@ -438,7 +440,7 @@ class TestEdgeCases:
         assert result["primary_emotion"] == "apologetic"
         assert result["emotion_scores"]["apologetic"] > 0.5
 
-    def test_repeated_markers(self) -> None:
+    async def test_repeated_markers(self) -> None:
         """Repeated markers increase confidence appropriately."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze(
@@ -448,7 +450,7 @@ class TestEdgeCases:
         assert result["primary_emotion"] == "apologetic"
         assert result["confidence"] > 0.8
 
-    def test_mixed_emotions_prefers_dominant(self) -> None:
+    async def test_mixed_emotions_prefers_dominant(self) -> None:
         """When multiple emotions present, dominant one wins."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze(
@@ -459,14 +461,14 @@ class TestEdgeCases:
         # Apologetic should be dominant (5 markers)
         assert result["primary_emotion"] == "apologetic"
 
-    def test_special_characters_preserved(self) -> None:
+    async def test_special_characters_preserved(self) -> None:
         """Special characters don't break analysis."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze("I apologize!!! (really sorry) @#$% Nevertheless...")
 
         assert result["primary_emotion"] == "apologetic"
 
-    def test_newlines_and_tabs(self) -> None:
+    async def test_newlines_and_tabs(self) -> None:
         """Newlines and tabs don't break analysis."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze("I apologize\nI'm sorry\nUnfortunately...\t\nRegrettably.")
@@ -477,7 +479,7 @@ class TestEdgeCases:
 class TestMultipleMarkers:
     """Test behavior with multiple emotion markers."""
 
-    def test_defensive_with_emphasis_phrases(self) -> None:
+    async def test_defensive_with_emphasis_phrases(self) -> None:
         """Multiple defensive phrases increase defensive score."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze(
@@ -486,7 +488,7 @@ class TestMultipleMarkers:
 
         assert result["emotion_scores"]["defensive"] > 0.4
 
-    def test_compliant_with_multiple_happy_phrases(self) -> None:
+    async def test_compliant_with_multiple_happy_phrases(self) -> None:
         """Multiple compliant phrases increase compliant score."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze(
@@ -495,7 +497,7 @@ class TestMultipleMarkers:
 
         assert result["emotion_scores"]["compliant"] > 0.5
 
-    def test_eager_with_excitement_phrases(self) -> None:
+    async def test_eager_with_excitement_phrases(self) -> None:
         """Multiple eager phrases increase eager score."""
         analyzer = ModelSentimentAnalyzer()
         result = analyzer.analyze(

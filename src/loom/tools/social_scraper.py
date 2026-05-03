@@ -72,7 +72,7 @@ class ArticleBatchResult(TypedDict):
     failed: list[dict[str, str]]
 
 
-def research_instagram(username: str, max_posts: int = 10) -> dict[str, Any]:
+async def research_instagram(username: str, max_posts: int = 10) -> dict[str, Any]:
     """Download Instagram profile info and recent posts.
 
     Args:
@@ -95,6 +95,18 @@ def research_instagram(username: str, max_posts: int = 10) -> dict[str, Any]:
     # Clamp max_posts
     max_posts = min(max(max_posts, 1), 100)
 
+    try:
+        # Run synchronous operation in executor to avoid blocking
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(None, _fetch_instagram_profile, username, max_posts)
+        return result
+    except Exception as e:
+        logger.error("instagram_fetch_error username=%s error=%s", username, str(e))
+        return {"error": str(e), "username": username}
+
+
+def _fetch_instagram_profile(username: str, max_posts: int) -> dict[str, Any]:
+    """Synchronous helper to fetch Instagram profile data."""
     try:
         # Create instaloader context (no login required for public profiles)
         loader = Instaloader()
@@ -133,9 +145,7 @@ def research_instagram(username: str, max_posts: int = 10) -> dict[str, Any]:
 
         result["recent_posts"] = posts
 
-        logger.info(
         logger.info("instagram_profile_fetched username=%s post_count=%d", username, len(posts))
-        )
 
         return result
 
@@ -147,7 +157,7 @@ def research_instagram(username: str, max_posts: int = 10) -> dict[str, Any]:
         return {"error": str(e), "username": username}
 
 
-def research_article_extract(url: str) -> dict[str, Any]:
+async def research_article_extract(url: str) -> dict[str, Any]:
     """Extract article content, metadata, and NLP features from URL.
 
     Uses newspaper3k to download, parse, and extract NLP features
@@ -169,6 +179,14 @@ def research_article_extract(url: str) -> dict[str, Any]:
     if not _HAS_NEWSPAPER:
         return {"error": "newspaper3k not installed", "url": url}
 
+    # Run synchronous extraction in executor
+    loop = asyncio.get_event_loop()
+    result = await loop.run_in_executor(None, _extract_article_sync, url)
+    return result
+
+
+def _extract_article_sync(url: str) -> dict[str, Any]:
+    """Synchronous helper to extract article data."""
     try:
         article = Article(url)
 
@@ -205,14 +223,7 @@ def research_article_extract(url: str) -> dict[str, Any]:
         return {"error": str(e), "url": url}
 
 
-async def _extract_article_async(url: str) -> ArticleData | dict[str, str]:
-    """Extract single article in async context."""
-    # Run synchronous extraction in executor to avoid blocking
-    loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(None, research_article_extract, url)
-
-
-def research_article_batch(
+async def research_article_batch(
     urls: list[str], max_concurrent: int = 5
 ) -> dict[str, Any]:
     """Batch extract articles from multiple URLs with concurrency control.
@@ -250,21 +261,32 @@ def research_article_batch(
     articles: list[ArticleData] = []
     failed: list[dict[str, str]] = []
 
-    # Process URLs sequentially with limit to avoid overwhelming
-    # In production, use asyncio.gather with proper semaphore
-    for i, url in enumerate(urls):
-        if i >= max_concurrent * 10:  # Practical limit
-            break
+    # Create semaphore for concurrency control
+    semaphore = asyncio.Semaphore(max_concurrent)
 
-        result = research_article_extract(url)
+    async def extract_with_semaphore(url: str) -> None:
+        """Extract article with semaphore to control concurrency."""
+        async with semaphore:
+            result = await research_article_extract(url)
 
-        # Check if result is an error dict
-        if "error" in result and "title" not in result:
-            failed.append({"url": url, "error": result["error"]})
-        else:
-            articles.append(result)  # type: ignore
+            # Check if result is an error dict
+            if "error" in result and "title" not in result:
+                failed.append({"url": url, "error": result["error"]})
+            else:
+                articles.append(result)  # type: ignore
 
-    logger.info("article_batch_complete urls_requested=%d articles_extracted=%d failed_count=%d", len(urls), len(articles), len(failed))
+    # Create tasks for all URLs
+    tasks = [extract_with_semaphore(url) for url in urls]
+
+    # Run all tasks concurrently
+    await asyncio.gather(*tasks)
+
+    logger.info(
+        "article_batch_complete urls_requested=%d articles_extracted=%d failed_count=%d",
+        len(urls),
+        len(articles),
+        len(failed),
+    )
 
     return {
         "urls_processed": len(urls),

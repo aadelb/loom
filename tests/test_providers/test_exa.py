@@ -17,8 +17,10 @@ def _clear_exa_module():
     sys.modules.pop("loom.providers.exa", None)
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestSearchExa:
-    def test_missing_api_key(self):
+    async def test_missing_api_key(self):
         with patch.dict("os.environ", {}, clear=True):
             from loom.providers.exa import search_exa
 
@@ -27,7 +29,7 @@ class TestSearchExa:
             assert result["results"] == []
             assert result["query"] == "test query"
 
-    def test_sdk_not_installed(self):
+    async def test_sdk_not_installed(self):
         with (
             patch.dict("os.environ", {"EXA_API_KEY": "test-key"}),
             patch.dict("sys.modules", {"exa_py": None}),
@@ -37,7 +39,7 @@ class TestSearchExa:
             result = search_exa("test query")
             assert "not installed" in result["error"]
 
-    def test_basic_search(self):
+    async def test_basic_search(self):
         mock_result = SimpleNamespace(
             url="https://example.com",
             title="Example",
@@ -65,7 +67,7 @@ class TestSearchExa:
         assert result["results"][0]["title"] == "Example"
         assert result["results"][0]["score"] == 0.95
 
-    def test_domain_filtering(self):
+    async def test_domain_filtering(self):
         mock_exa_cls = MagicMock()
         mock_exa_cls.return_value.search_and_contents.return_value = SimpleNamespace(results=[])
         mock_exa_mod = MagicMock()
@@ -83,7 +85,7 @@ class TestSearchExa:
         assert call_kwargs.kwargs.get("include_domains") == ["example.com"]
         assert call_kwargs.kwargs.get("exclude_domains") == ["bad.com"]
 
-    def test_date_range(self):
+    async def test_date_range(self):
         mock_exa_cls = MagicMock()
         mock_exa_cls.return_value.search_and_contents.return_value = SimpleNamespace(results=[])
         mock_exa_mod = MagicMock()
@@ -101,7 +103,7 @@ class TestSearchExa:
         assert call_kwargs.kwargs.get("start_published_date") == "2024-01-01"
         assert call_kwargs.kwargs.get("end_published_date") == "2024-12-31"
 
-    def test_snippet_truncation(self):
+    async def test_snippet_truncation(self):
         long_text = "x" * 1000
         mock_result = SimpleNamespace(
             url="https://example.com", title="T", text=long_text, score=0.5, published_date=None
@@ -123,7 +125,7 @@ class TestSearchExa:
 
         assert len(result["results"][0]["snippet"]) == 500
 
-    def test_api_error(self):
+    async def test_api_error(self):
         mock_exa_cls = MagicMock()
         mock_exa_cls.return_value.search_and_contents.side_effect = RuntimeError("API down")
         mock_exa_mod = MagicMock()
@@ -142,14 +144,14 @@ class TestSearchExa:
 
 
 class TestFindSimilarExa:
-    def test_find_similar_missing_key(self):
+    async def test_find_similar_missing_key(self):
         with patch.dict("os.environ", {}, clear=True):
             from loom.providers.exa import find_similar_exa
 
             result = find_similar_exa("https://example.com")
             assert result["error"] == "EXA_API_KEY not set"
 
-    def test_find_similar_success(self):
+    async def test_find_similar_success(self):
         mock_result = SimpleNamespace(
             url="https://similar.com", title="Similar Page", text="Similar content", score=0.88
         )

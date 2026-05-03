@@ -3,15 +3,18 @@
 from __future__ import annotations
 
 import logging
+import asyncio
 import socket
+import asyncio
 import ssl
+import asyncio
 from datetime import UTC, datetime
 from typing import Any
 
 logger = logging.getLogger("loom.tools.cert_analyzer")
 
 
-def research_cert_analyze(
+async def research_cert_analyze(
     hostname: str = "",
     domain: str = "",
     port: int = 443,

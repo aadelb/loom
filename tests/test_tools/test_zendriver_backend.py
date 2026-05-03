@@ -25,10 +25,12 @@ from loom.zendriver_backend import (
 )
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestZenFetchParams:
     """Validation tests for ZenFetchParams."""
 
-    def test_valid_fetch_params(self) -> None:
+    async def test_valid_fetch_params(self) -> None:
         """Valid params pass validation."""
         params = ZenFetchParams(
             url="https://example.com",
@@ -39,21 +41,21 @@ class TestZenFetchParams:
         assert params.timeout == 30
         assert params.headless is True
 
-    def test_fetch_params_rejects_ssrf_url(self) -> None:
+    async def test_fetch_params_rejects_ssrf_url(self) -> None:
         """SSRF URLs are rejected."""
         from pydantic import ValidationError
 
         with pytest.raises(ValidationError):
             ZenFetchParams(url="http://localhost:8080")
 
-    def test_fetch_params_rejects_private_ip(self) -> None:
+    async def test_fetch_params_rejects_private_ip(self) -> None:
         """Private IPs are rejected."""
         from pydantic import ValidationError
 
         with pytest.raises(ValidationError):
             ZenFetchParams(url="http://192.168.1.1")
 
-    def test_fetch_params_timeout_bounds(self) -> None:
+    async def test_fetch_params_timeout_bounds(self) -> None:
         """Timeout must be 1-120 seconds."""
         from pydantic import ValidationError
 
@@ -63,7 +65,7 @@ class TestZenFetchParams:
         with pytest.raises(ValidationError):
             ZenFetchParams(url="https://example.com", timeout=121)
 
-    def test_fetch_params_default_values(self) -> None:
+    async def test_fetch_params_default_values(self) -> None:
         """Default values are correct."""
         params = ZenFetchParams(url="https://example.com")
         assert params.timeout == 30
@@ -73,7 +75,7 @@ class TestZenFetchParams:
 class TestZenBatchParams:
     """Validation tests for ZenBatchParams."""
 
-    def test_valid_batch_params(self) -> None:
+    async def test_valid_batch_params(self) -> None:
         """Valid params pass validation."""
         params = ZenBatchParams(
             urls=["https://example.com", "https://huggingface.co"],
@@ -83,14 +85,14 @@ class TestZenBatchParams:
         assert len(params.urls) == 2
         assert params.max_concurrent == 5
 
-    def test_batch_params_empty_urls(self) -> None:
+    async def test_batch_params_empty_urls(self) -> None:
         """Empty URL list is rejected."""
         from pydantic import ValidationError
 
         with pytest.raises(ValidationError):
             ZenBatchParams(urls=[])
 
-    def test_batch_params_too_many_urls(self) -> None:
+    async def test_batch_params_too_many_urls(self) -> None:
         """More than 100 URLs is rejected."""
         from pydantic import ValidationError
 
@@ -98,7 +100,7 @@ class TestZenBatchParams:
         with pytest.raises(ValidationError):
             ZenBatchParams(urls=urls)
 
-    def test_batch_params_max_concurrent_bounds(self) -> None:
+    async def test_batch_params_max_concurrent_bounds(self) -> None:
         """max_concurrent must be 1-50."""
         from pydantic import ValidationError
 
@@ -114,7 +116,7 @@ class TestZenBatchParams:
                 max_concurrent=51,
             )
 
-    def test_batch_params_validates_all_urls(self) -> None:
+    async def test_batch_params_validates_all_urls(self) -> None:
         """All URLs in the list are validated."""
         from pydantic import ValidationError
 
@@ -130,7 +132,7 @@ class TestZenBatchParams:
 class TestZenInteractParams:
     """Validation tests for ZenInteractParams."""
 
-    def test_valid_interact_params(self) -> None:
+    async def test_valid_interact_params(self) -> None:
         """Valid params pass validation."""
         params = ZenInteractParams(
             url="https://example.com",
@@ -141,7 +143,7 @@ class TestZenInteractParams:
         assert params.url == "https://example.com"
         assert len(params.actions) == 1
 
-    def test_interact_params_empty_actions(self) -> None:
+    async def test_interact_params_empty_actions(self) -> None:
         """Empty actions list is rejected."""
         from pydantic import ValidationError
 
@@ -151,7 +153,7 @@ class TestZenInteractParams:
                 actions=[],
             )
 
-    def test_interact_params_too_many_actions(self) -> None:
+    async def test_interact_params_too_many_actions(self) -> None:
         """More than 50 actions is rejected."""
         from pydantic import ValidationError
 
@@ -165,7 +167,7 @@ class TestZenInteractParams:
                 actions=actions,
             )
 
-    def test_interact_params_validates_action_type(self) -> None:
+    async def test_interact_params_validates_action_type(self) -> None:
         """Invalid action type is rejected."""
         from pydantic import ValidationError
 
@@ -177,7 +179,7 @@ class TestZenInteractParams:
                 ],
             )
 
-    def test_interact_params_requires_selector_for_click(self) -> None:
+    async def test_interact_params_requires_selector_for_click(self) -> None:
         """Click action requires selector."""
         from pydantic import ValidationError
 
@@ -189,7 +191,7 @@ class TestZenInteractParams:
                 ],
             )
 
-    def test_interact_params_requires_value_for_fill(self) -> None:
+    async def test_interact_params_requires_value_for_fill(self) -> None:
         """Fill action requires value."""
         from pydantic import ValidationError
 
@@ -201,7 +203,7 @@ class TestZenInteractParams:
                 ],
             )
 
-    def test_interact_params_all_action_types(self) -> None:
+    async def test_interact_params_all_action_types(self) -> None:
         """All valid action types are accepted."""
         params = ZenInteractParams(
             url="https://example.com",
@@ -218,7 +220,7 @@ class TestZenInteractParams:
 class TestZenFetchResult:
     """ZenFetchResult model tests."""
 
-    def test_zen_fetch_result_structure(self) -> None:
+    async def test_zen_fetch_result_structure(self) -> None:
         """Result has expected fields."""
         result = ZenFetchResult(
             url="https://example.com",
@@ -233,7 +235,7 @@ class TestZenFetchResult:
         assert result.method == "GET"
         assert result.error is None
 
-    def test_zen_fetch_result_with_error(self) -> None:
+    async def test_zen_fetch_result_with_error(self) -> None:
         """Error is properly set."""
         result = ZenFetchResult(
             url="https://example.com",
@@ -246,7 +248,7 @@ class TestZenFetchResult:
 class TestZenBatchResult:
     """ZenBatchResult model tests."""
 
-    def test_zen_batch_result_structure(self) -> None:
+    async def test_zen_batch_result_structure(self) -> None:
         """Result has expected fields."""
         result = ZenBatchResult(
             urls_requested=2,
@@ -266,80 +268,80 @@ class TestZenBatchResult:
 class TestZenFetchTool:
     """research_zen_fetch tool tests."""
 
-    def test_zen_fetch_requires_zendriver(self) -> None:
+    async def test_zen_fetch_requires_zendriver(self) -> None:
         """Tool requires zendriver library."""
         with patch("loom.zendriver_backend._HAS_ZENDRIVER", False):
             with pytest.raises(ImportError, match="zendriver not installed"):
-                research_zen_fetch(url="https://example.com")
+                await research_zen_fetch(url="https://example.com")
 
-    def test_zen_fetch_rejects_ssrf_url(self) -> None:
+    async def test_zen_fetch_rejects_ssrf_url(self) -> None:
         """SSRF URLs are rejected."""
         with patch("loom.zendriver_backend._HAS_ZENDRIVER", True):
             from loom.validators import UrlSafetyError
             with pytest.raises(UrlSafetyError):
-                research_zen_fetch(url="http://localhost:8080")
+                await research_zen_fetch(url="http://localhost:8080")
 
-    def test_zen_fetch_returns_dict(self) -> None:
+    async def test_zen_fetch_returns_dict(self) -> None:
         """Result is a dictionary."""
         with patch("loom.zendriver_backend._HAS_ZENDRIVER", False):
             try:
-                research_zen_fetch(url="https://example.com")
+                await research_zen_fetch(url="https://example.com")
             except ImportError:
                 # Expected when zendriver is not installed
                 pass
 
-    def test_zen_fetch_timeout_validation(self) -> None:
+    async def test_zen_fetch_timeout_validation(self) -> None:
         """Timeout bounds are enforced."""
         with patch("loom.zendriver_backend._HAS_ZENDRIVER", True):
             with pytest.raises(ValueError, match="timeout must be 1-120"):
-                research_zen_fetch(url="https://example.com", timeout=0)
+                await research_zen_fetch(url="https://example.com", timeout=0)
 
             with pytest.raises(ValueError, match="timeout must be 1-120"):
-                research_zen_fetch(url="https://example.com", timeout=121)
+                await research_zen_fetch(url="https://example.com", timeout=121)
 
 
 class TestZenBatchTool:
     """research_zen_batch tool tests."""
 
-    def test_zen_batch_requires_zendriver(self) -> None:
+    async def test_zen_batch_requires_zendriver(self) -> None:
         """Tool requires zendriver library."""
         with patch("loom.zendriver_backend._HAS_ZENDRIVER", False):
             with pytest.raises(ImportError, match="zendriver not installed"):
-                research_zen_batch(urls=["https://example.com"])
+                await research_zen_batch(urls=["https://example.com"])
 
-    def test_zen_batch_rejects_empty_urls(self) -> None:
+    async def test_zen_batch_rejects_empty_urls(self) -> None:
         """Empty URL list is rejected."""
         with patch("loom.zendriver_backend._HAS_ZENDRIVER", True):
             with pytest.raises(ValueError, match="urls list cannot be empty"):
-                research_zen_batch(urls=[])
+                await research_zen_batch(urls=[])
 
-    def test_zen_batch_rejects_too_many_urls(self) -> None:
+    async def test_zen_batch_rejects_too_many_urls(self) -> None:
         """Too many URLs are rejected."""
         with patch("loom.zendriver_backend._HAS_ZENDRIVER", True):
             urls = [f"https://example{i}.com" for i in range(101)]
             with pytest.raises(ValueError, match="urls list max 100"):
-                research_zen_batch(urls=urls)
+                await research_zen_batch(urls=urls)
 
-    def test_zen_batch_max_concurrent_validation(self) -> None:
+    async def test_zen_batch_max_concurrent_validation(self) -> None:
         """max_concurrent bounds are enforced."""
         with patch("loom.zendriver_backend._HAS_ZENDRIVER", True):
             with pytest.raises(ValueError, match="max_concurrent must be 1-50"):
-                research_zen_batch(
+                await research_zen_batch(
                     urls=["https://example.com"],
                     max_concurrent=0,
                 )
 
             with pytest.raises(ValueError, match="max_concurrent must be 1-50"):
-                research_zen_batch(
+                await research_zen_batch(
                     urls=["https://example.com"],
                     max_concurrent=51,
                 )
 
-    def test_zen_batch_timeout_validation(self) -> None:
+    async def test_zen_batch_timeout_validation(self) -> None:
         """Timeout bounds are enforced."""
         with patch("loom.zendriver_backend._HAS_ZENDRIVER", True):
             with pytest.raises(ValueError, match="timeout must be 1-120"):
-                research_zen_batch(
+                await research_zen_batch(
                     urls=["https://example.com"],
                     timeout=121,
                 )
@@ -348,35 +350,35 @@ class TestZenBatchTool:
 class TestZenInteractTool:
     """research_zen_interact tool tests."""
 
-    def test_zen_interact_requires_zendriver(self) -> None:
+    async def test_zen_interact_requires_zendriver(self) -> None:
         """Tool requires zendriver library."""
         with patch("loom.zendriver_backend._HAS_ZENDRIVER", False):
             with pytest.raises(ImportError, match="zendriver not installed"):
-                research_zen_interact(
+                await research_zen_interact(
                     url="https://example.com",
                     actions=[{"type": "click", "selector": "button"}],
                 )
 
-    def test_zen_interact_rejects_ssrf_url(self) -> None:
+    async def test_zen_interact_rejects_ssrf_url(self) -> None:
         """SSRF URLs are rejected."""
         with patch("loom.zendriver_backend._HAS_ZENDRIVER", True):
             from loom.validators import UrlSafetyError
             with pytest.raises(UrlSafetyError):
-                research_zen_interact(
+                await research_zen_interact(
                     url="http://localhost:8080",
                     actions=[{"type": "click", "selector": "button"}],
                 )
 
-    def test_zen_interact_rejects_empty_actions(self) -> None:
+    async def test_zen_interact_rejects_empty_actions(self) -> None:
         """Empty actions list is rejected."""
         with patch("loom.zendriver_backend._HAS_ZENDRIVER", True):
             with pytest.raises(ValueError, match="actions list cannot be empty"):
-                research_zen_interact(
+                await research_zen_interact(
                     url="https://example.com",
                     actions=[],
                 )
 
-    def test_zen_interact_rejects_too_many_actions(self) -> None:
+    async def test_zen_interact_rejects_too_many_actions(self) -> None:
         """Too many actions are rejected."""
         with patch("loom.zendriver_backend._HAS_ZENDRIVER", True):
             actions = [
@@ -384,23 +386,23 @@ class TestZenInteractTool:
                 for i in range(51)
             ]
             with pytest.raises(ValueError, match="actions list max 50"):
-                research_zen_interact(
+                await research_zen_interact(
                     url="https://example.com",
                     actions=actions,
                 )
 
-    def test_zen_interact_timeout_validation(self) -> None:
+    async def test_zen_interact_timeout_validation(self) -> None:
         """Timeout bounds are enforced."""
         with patch("loom.zendriver_backend._HAS_ZENDRIVER", True):
             with pytest.raises(ValueError, match="timeout must be 1-120"):
-                research_zen_interact(
+                await research_zen_interact(
                     url="https://example.com",
                     actions=[{"type": "click", "selector": "button"}],
                     timeout=0,
                 )
 
             with pytest.raises(ValueError, match="timeout must be 1-120"):
-                research_zen_interact(
+                await research_zen_interact(
                     url="https://example.com",
                     actions=[{"type": "click", "selector": "button"}],
                     timeout=121,
@@ -410,7 +412,7 @@ class TestZenInteractTool:
 class TestZenFetchIntegration:
     """Integration tests for research_zen_fetch (mocked)."""
 
-    def test_zen_fetch_successful_fetch(self) -> None:
+    async def test_zen_fetch_successful_fetch(self) -> None:
         """Successful fetch returns correct structure."""
         with patch("loom.zendriver_backend._HAS_ZENDRIVER", True):
             with patch(
@@ -432,7 +434,7 @@ class TestZenFetchIntegration:
                 # In tests, we can't easily test the async behavior without
                 # a running loop, so we just verify the validation passes
 
-    def test_zen_fetch_with_error(self) -> None:
+    async def test_zen_fetch_with_error(self) -> None:
         """Fetch with error returns error dict."""
         with patch("loom.zendriver_backend._HAS_ZENDRIVER", True):
             with patch(
@@ -450,7 +452,7 @@ class TestZenFetchIntegration:
                     "title": "",
                 }
 
-    def test_zen_fetch_returns_zen_fetch_result_dict(self) -> None:
+    async def test_zen_fetch_returns_zen_fetch_result_dict(self) -> None:
         """Result is properly formatted as dict."""
         result = ZenFetchResult(
             url="https://example.com",
@@ -470,7 +472,7 @@ class TestZenFetchIntegration:
 class TestZenBatchIntegration:
     """Integration tests for research_zen_batch (mocked)."""
 
-    def test_zen_batch_returns_batch_result_dict(self) -> None:
+    async def test_zen_batch_returns_batch_result_dict(self) -> None:
         """Result is properly formatted as dict."""
         result = ZenBatchResult(
             urls_requested=2,
@@ -500,7 +502,7 @@ class TestZenBatchIntegration:
 class TestZenInteractIntegration:
     """Integration tests for research_zen_interact (mocked)."""
 
-    def test_zen_interact_returns_interact_result_dict(self) -> None:
+    async def test_zen_interact_returns_interact_result_dict(self) -> None:
         """Result is properly formatted as dict."""
         result = ZenInteractResult(
             url="https://example.com",
@@ -516,7 +518,7 @@ class TestZenInteractIntegration:
         assert "final_html" in result_dict
         assert "final_text" in result_dict
 
-    def test_zen_interact_with_error(self) -> None:
+    async def test_zen_interact_with_error(self) -> None:
         """Interaction with error returns error dict."""
         result = ZenInteractResult(
             url="https://example.com",

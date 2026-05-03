@@ -6,10 +6,12 @@ from loom.tools.reframe_strategies.psychology_extended import (
 )
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestPsychologyExtendedStrategies:
     """Test suite for extended cognitive science and behavioral psychology strategies."""
 
-    def test_all_20_strategies_exist(self) -> None:
+    async def test_all_20_strategies_exist(self) -> None:
         """Verify all 20 strategies are present in the dict."""
         expected_strategies = {
             "bandwagon_effect",
@@ -37,7 +39,7 @@ class TestPsychologyExtendedStrategies:
         assert len(PSYCHOLOGY_EXTENDED_STRATEGIES) == 20
         assert set(PSYCHOLOGY_EXTENDED_STRATEGIES.keys()) == expected_strategies
 
-    def test_all_strategies_have_required_keys(self) -> None:
+    async def test_all_strategies_have_required_keys(self) -> None:
         """Verify every strategy has all required keys."""
         required_keys = {"name", "multiplier", "template", "description", "family", "best_models"}
 
@@ -48,7 +50,7 @@ class TestPsychologyExtendedStrategies:
                 f"Expected: {required_keys}, Got: {strategy_dict.keys()}"
             )
 
-    def test_all_templates_contain_prompt_placeholder(self) -> None:
+    async def test_all_templates_contain_prompt_placeholder(self) -> None:
         """Verify all templates contain {prompt} placeholder."""
         for strategy_key, strategy_dict in PSYCHOLOGY_EXTENDED_STRATEGIES.items():
             template = strategy_dict["template"]
@@ -57,7 +59,7 @@ class TestPsychologyExtendedStrategies:
                 f"{strategy_key} template does not contain {{prompt}} placeholder"
             )
 
-    def test_multipliers_in_valid_range(self) -> None:
+    async def test_multipliers_in_valid_range(self) -> None:
         """Verify multipliers are floats and in reasonable range (4.0 to 8.0)."""
         for strategy_key, strategy_dict in PSYCHOLOGY_EXTENDED_STRATEGIES.items():
             multiplier = strategy_dict["multiplier"]
@@ -68,7 +70,7 @@ class TestPsychologyExtendedStrategies:
                 f"{strategy_key} multiplier {multiplier} is outside valid range [4.0, 8.0]"
             )
 
-    def test_specific_multiplier_values(self) -> None:
+    async def test_specific_multiplier_values(self) -> None:
         """Verify specific strategies have correct multiplier values."""
         expected_multipliers = {
             "bandwagon_effect": 6.0,
@@ -100,28 +102,28 @@ class TestPsychologyExtendedStrategies:
                 f"expected {expected_multiplier}, got {actual_multiplier}"
             )
 
-    def test_all_names_are_non_empty_strings(self) -> None:
+    async def test_all_names_are_non_empty_strings(self) -> None:
         """Verify all strategy names are non-empty strings."""
         for strategy_key, strategy_dict in PSYCHOLOGY_EXTENDED_STRATEGIES.items():
             name = strategy_dict["name"]
             assert isinstance(name, str), f"{strategy_key} name is not a string"
             assert len(name) > 0, f"{strategy_key} has empty name"
 
-    def test_all_descriptions_are_non_empty_strings(self) -> None:
+    async def test_all_descriptions_are_non_empty_strings(self) -> None:
         """Verify all descriptions are non-empty strings."""
         for strategy_key, strategy_dict in PSYCHOLOGY_EXTENDED_STRATEGIES.items():
             description = strategy_dict["description"]
             assert isinstance(description, str), f"{strategy_key} description is not a string"
             assert len(description) > 0, f"{strategy_key} has empty description"
 
-    def test_all_families_are_valid(self) -> None:
+    async def test_all_families_are_valid(self) -> None:
         """Verify all family classifications are non-empty strings."""
         for strategy_key, strategy_dict in PSYCHOLOGY_EXTENDED_STRATEGIES.items():
             family = strategy_dict["family"]
             assert isinstance(family, str), f"{strategy_key} family is not a string"
             assert len(family) > 0, f"{strategy_key} has empty family"
 
-    def test_expected_families(self) -> None:
+    async def test_expected_families(self) -> None:
         """Verify families match expected cognitive science categories."""
         expected_families = {
             "bandwagon_effect": "social_psychology",
@@ -153,7 +155,7 @@ class TestPsychologyExtendedStrategies:
                 f"expected {expected_family}, got {actual_family}"
             )
 
-    def test_all_best_models_are_lists(self) -> None:
+    async def test_all_best_models_are_lists(self) -> None:
         """Verify best_models is a list for all strategies."""
         for strategy_key, strategy_dict in PSYCHOLOGY_EXTENDED_STRATEGIES.items():
             best_models = strategy_dict["best_models"]
@@ -162,7 +164,7 @@ class TestPsychologyExtendedStrategies:
             )
             assert len(best_models) > 0, f"{strategy_key} has empty best_models list"
 
-    def test_all_best_models_are_strings(self) -> None:
+    async def test_all_best_models_are_strings(self) -> None:
         """Verify all model names in best_models are non-empty strings."""
         for strategy_key, strategy_dict in PSYCHOLOGY_EXTENDED_STRATEGIES.items():
             best_models = strategy_dict["best_models"]
@@ -174,7 +176,7 @@ class TestPsychologyExtendedStrategies:
                     f"{strategy_key} has empty model string"
                 )
 
-    def test_template_prompt_replacement_works(self) -> None:
+    async def test_template_prompt_replacement_works(self) -> None:
         """Verify {prompt} can be replaced in all templates."""
         test_prompt = "test research question"
 
@@ -193,14 +195,14 @@ class TestPsychologyExtendedStrategies:
                     f"{strategy_key} template has invalid placeholder: {e}"
                 )
 
-    def test_unique_strategy_names(self) -> None:
+    async def test_unique_strategy_names(self) -> None:
         """Verify all strategy names are unique."""
         names = [s["name"] for s in PSYCHOLOGY_EXTENDED_STRATEGIES.values()]
         assert len(names) == len(set(names)), (
             "Duplicate strategy names found"
         )
 
-    def test_strategy_data_consistency(self) -> None:
+    async def test_strategy_data_consistency(self) -> None:
         """Verify consistency between strategy key and name."""
         for strategy_key, strategy_dict in PSYCHOLOGY_EXTENDED_STRATEGIES.items():
             # Name should be a title-case version related to the key
@@ -234,7 +236,7 @@ class TestPsychologyExtendedStrategies:
             "chunking_cognitive",
         ],
     )
-    def test_individual_strategy_validity(self, strategy_key: str) -> None:
+    async def test_individual_strategy_validity(self, strategy_key: str) -> None:
         """Test each individual strategy for complete validity."""
         assert strategy_key in PSYCHOLOGY_EXTENDED_STRATEGIES
 
@@ -257,12 +259,12 @@ class TestPsychologyExtendedStrategies:
         assert isinstance(strategy["family"], str) and len(strategy["family"]) > 0
         assert isinstance(strategy["best_models"], list) and len(strategy["best_models"]) > 0
 
-    def test_psychology_extended_dict_is_non_empty(self) -> None:
+    async def test_psychology_extended_dict_is_non_empty(self) -> None:
         """Verify the PSYCHOLOGY_EXTENDED_STRATEGIES dict is populated."""
         assert PSYCHOLOGY_EXTENDED_STRATEGIES
         assert len(PSYCHOLOGY_EXTENDED_STRATEGIES) > 0
 
-    def test_no_extra_keys_in_strategies(self) -> None:
+    async def test_no_extra_keys_in_strategies(self) -> None:
         """Verify no strategies have extra/unexpected keys."""
         allowed_keys = {"name", "multiplier", "template", "description", "family", "best_models"}
 

@@ -294,7 +294,7 @@ class TestJailbreakFuzzer:
         """Test fuzzing with synchronous callback."""
         fuzzer = JailbreakFuzzer()
 
-        def sync_callback(prompt: str) -> str:
+        async def sync_callback(prompt: str) -> str:
             return "Short response"
 
         result = await fuzzer.fuzz(

@@ -531,7 +531,7 @@ class TestSyncCallableSupport:
         """Sync callable model is supported."""
         benchmark = MultilingualBenchmark()
 
-        def sync_model(prompt: str) -> str:
+        async def sync_model(prompt: str) -> str:
             return "Sync response"
 
         results = await benchmark.run_benchmark(sync_model, languages=["english"])

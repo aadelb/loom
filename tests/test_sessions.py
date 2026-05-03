@@ -15,38 +15,38 @@ from loom.sessions import SessionManager, _validate_session_name
 class TestSessionNameValidation:
     """Session name allow-list validation tests."""
 
-    def test_validate_session_name_valid(self) -> None:
+    async def test_validate_session_name_valid(self) -> None:
         """Valid names pass validation."""
         _validate_session_name("my_session_1")
         _validate_session_name("session-prod")
         _validate_session_name("s1")
 
-    def test_validate_session_name_rejects_uppercase(self) -> None:
+    async def test_validate_session_name_rejects_uppercase(self) -> None:
         """Uppercase letters raise ValueError."""
         with pytest.raises(ValueError):
             _validate_session_name("MySession")
 
-    def test_validate_session_name_rejects_spaces(self) -> None:
+    async def test_validate_session_name_rejects_spaces(self) -> None:
         """Spaces raise ValueError."""
         with pytest.raises(ValueError):
             _validate_session_name("my session")
 
-    def test_validate_session_name_rejects_dots(self) -> None:
+    async def test_validate_session_name_rejects_dots(self) -> None:
         """Dots (path traversal) raise ValueError."""
         with pytest.raises(ValueError):
             _validate_session_name("..")
 
-    def test_validate_session_name_rejects_special_chars(self) -> None:
+    async def test_validate_session_name_rejects_special_chars(self) -> None:
         """Special chars raise ValueError."""
         with pytest.raises(ValueError):
             _validate_session_name("session#1")
 
-    def test_validate_session_name_rejects_too_long(self) -> None:
+    async def test_validate_session_name_rejects_too_long(self) -> None:
         """Names > 32 chars raise ValueError."""
         with pytest.raises(ValueError):
             _validate_session_name("a" * 33)
 
-    def test_validate_session_name_rejects_non_string(self) -> None:
+    async def test_validate_session_name_rejects_non_string(self) -> None:
         """Non-string input raises ValueError."""
         with pytest.raises(ValueError):
             _validate_session_name(123)  # type: ignore

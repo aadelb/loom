@@ -1,0 +1,653 @@
+tool_name,description,parameter_count,parameters
+fetch_youtube_transcript,Extract auto-generated subtitles from a YouTube video (free).,3,url|language|kwargs
+find_similar_exa,Find pages semantically similar to a given URL (Exa).,3,url|n|kwargs
+research_ab_test_analyze,Analyze A/B test results with statistical significance and Cohen's d effect size.,3,results_a|results_b|metric
+research_ab_test_design,Design A/B test with power and minimum detectable effect.,4,strategy_a|strategy_b|sample_size|metric
+research_adapt_complexity,Adjust text complexity to target reading level (1-20 scale; 12 = college).,2,content|target_reading_level
+research_adaptive_reframe,Adaptively reframe based on refusal analysis and model fingerprinting.,3,prompt|refusal_text|model
+research_adversarial_batch,Batch craft adversarial examples for multiple inputs.,3,inputs|method|budget
+research_adversarial_debate,Simulate multi-turn adversarial debate: attacker vs target model.,4,topic|attacker_strategy|max_turns|target_model
+research_adversarial_robustness,Test model robustness against adversarial inputs.,2,target_url|test_count
+research_agent_benchmark,Benchmark an AI agent against 20 agentic prompt injection scenarios.,4,model_api_url|model_name|timeout|output_format
+research_aggregate_results,Combine multiple tool results into unified output.,2,results|strategy
+research_aggregate_texts,Aggregate multiple text outputs.,3,texts|method|max_length
+research_ai_compliance_check,Check a website for AI compliance indicators.,2,domain|frameworks
+research_ai_detect,Detect whether text is likely AI-generated.,2,text|max_cost_usd
+research_alert_check,Evaluate all rules against current metric values.,1,metric_values
+research_alert_create,Create an alerting rule.,5,name|metric|condition|threshold|action
+research_alert_list,List all alert rules.,0,none
+research_amass_enum,Attack surface mapping and asset discovery via OWASP Amass enum.,3,domain|passive|timeout
+research_amass_intel,OSINT intelligence gathering via OWASP Amass intel.,1,domain
+research_api_changelog,Return changelog of features added/changed between versions.,1,since_version
+research_api_deprecations,List deprecated tools/features scheduled for removal.,0,none
+research_api_version,Return current API version info with system metadata.,0,none
+research_archive_page,Archive a complete webpage as a single HTML file using SingleFile.,2,url|output_dir
+research_article_batch,Batch extract articles from multiple URLs with concurrency control.,2,urls|max_concurrent
+research_article_extract,Extract article content; metadata; and NLP features from URL.,1,url
+research_artifact_cleanup,List forensic artifacts that WOULD be cleaned (dry-run only for safety).,2,target_paths|os_type
+research_arxiv_extract_techniques,Extract actionable attack techniques from a paper abstract.,2,paper_abstract|paper_title
+research_arxiv_ingest,Search arXiv for recent papers on jailbreaking/red-teaming/prompt injection.,3,keywords|days_back|max_papers
+research_arxiv_scan,Search arXiv for recent papers on jailbreak/adversarial/safety topics.,3,keywords|days_back|max_papers
+research_ask_all_llms,Send a prompt to ALL available LLM providers and compare responses.,3,prompt|max_tokens|include_reframe
+research_ask_all_models,Send a prompt to ALL available AI models and compare responses.,6,prompt|models|max_tokens|auto_reframe|include_clis|timeout
+research_attack_portfolio,Build diversified attack portfolio using portfolio theory.,2,target_model|portfolio_size
+research_attack_score,Score attack effectiveness across 8 dimensions.,5,prompt|response|strategy|model|baseline_refusal
+research_attractor_trap,Generate prompts that trap safety evaluators in chaotic oscillations.,3,prompt|attractor_type|iterations
+research_audio_extract,Extract audio from video URL.,2,url|format
+research_audit_export,Export audit trail for compliance review.,2,format|days
+research_audit_query,Query audit trail entries with filtering and time window.,4,tool|caller|since_hours|limit
+research_audit_record,Record an audit trail entry for a tool call.,5,tool_name|params|result_summary|caller|duration_ms
+research_augment_dataset,Augment dataset samples with transformations.,2,samples|augmentation
+research_auth_create_token,Create a bearer token for MCP access.,2,name|expires_hours
+research_auth_revoke,Revoke token(s) by name (prefix-based not supported for security).,2,token_prefix|name
+research_auth_validate,Validate a token.,1,token
+research_author_clustering,Detect emerging research clusters by analyzing co-authorship patterns.,2,field|max_authors
+research_authority_stack,Stack multiple authority signals to overwhelm safety filters.,2,prompt|authority_layers
+research_auto_params,Auto-infer tool parameters from natural language query.,2,tool_name|query
+research_auto_pipeline,Auto-generate optimal multi-tool pipeline from a natural language goal.,3,goal|max_steps|optimize_for
+research_auto_redteam,Automatically test strategies against a target model.,3,target_model|strategies_to_test|topic
+research_auto_reframe,Auto-reframe a prompt through escalating strategies until accepted.,4,prompt|target_url|model|max_attempts
+research_backup_create,Create a backup of Loom's persistent data.,1,target
+research_backup_list,List available backups with metadata.,0,none
+research_backup_restore,Restore from a backup.,3,backup_id|target|dry_run
+research_behavioral_fingerprint,Build behavioral fingerprint from public activity patterns.,1,username
+research_benchmark_compare,Compare two tools head-to-head. Returns {tool_a: {mean_ms; p95_ms}; tool_b: {mean_ms; p95_ms}; winner; speedup_factor}.,3,tool_a|tool_b|iterations
+research_benchmark_run,Benchmark tool execution speed. Returns {tools_benchmarked; results: [{tool; iterations; min_ms; max_ms; mean_ms; p50_ms; p95_ms}]; total_time_ms}.,3,tools|iterations|warmup
+research_bias_lens,Detect methodological bias in academic papers.,2,paper_id|text
+research_bias_probe,Test an LLM API for demographic bias.,2,target_url|categories
+research_billing_report,Aggregate LLM usage and costs from local cost tracker logs.,1,days
+research_bot_detector,Detect coordinated bot/spam behavior on social platforms.,2,subreddit|hn_query
+research_botasaurus,Fetch a URL using Botasaurus stealth browser (second stealth escalation).,4,url|session|screenshot|timeout
+research_botnet_tracker,Track botnet C2 infrastructure via threat feeds.,2,ioc|ioc_type
+research_bpj_generate,Generate boundary points for safety classifier testing.,6,safe_prompt|unsafe_prompt|max_steps|model_name|mode|perturbations
+research_breach_check,Check if an email appears in known data breaches.,1,email
+research_breaker_reset,Manually reset circuit(s) to CLOSED.,1,provider
+research_breaker_status,Show circuit breaker state: {circuits: [{provider; state; failures; last_failure; cooldown_remaining_s}]},0,none
+research_breaker_trip,Record failure for provider. Open circuit if failures >= threshold (5).,2,provider|error
+research_browser_fingerprint,Analyze browser fingerprinting vectors on a webpage.,2,url|timeout
+research_browser_fingerprint_audit,Analyze a URL's fingerprinting scripts (detect canvas/WebGL/audio fingerprinting code).,1,url
+research_build_query,Transform a raw user request into optimized research queries.,6,user_request|context|output_type|max_queries|optimize|darkness_level
+research_cache_clear,Remove cache entries older than N days.,1,older_than_days
+research_cache_lookup,Look up cached response for similar query.,1,query
+research_cache_stats,Return cache statistics.,0,none
+research_cache_store,Store a query-response pair in memory cache.,4,query|response|tool_name|ttl_hours
+research_cached_strategy,Check cache for best strategy on this topic+model combination.,3,topic|model|fallback_strategy
+research_camoufox,Fetch a URL using Camoufox stealth browser.,4,url|session|screenshot|timeout
+research_capability_mapper,Map LLM capabilities across multiple domains.,2,target_url|categories
+research_capability_matrix,Analyze all tool functions by input/output type.,1,category
+research_capture_har,Capture HTTP traffic as HAR format.,3,url|duration_seconds|include_bodies
+research_career_trajectory,Build a career trajectory profile by combining multiple data sources.,2,person_name|domain
+research_censorship_detector,Detect DNS censorship and takedown notices.,1,url
+research_censys_host,Look up host on Censys — TLS certs; services; protocols.,1,ip
+research_censys_search,Search Censys for hosts matching criteria.,2,query|max_results
+research_cert_analyze,Extract SSL/TLS certificate information from a remote server.,3,hostname|domain|port
+research_chain_define,Define a reusable tool chain (pipeline).,2,name|steps
+research_chain_describe,Show details of a specific chain.,1,name
+research_chain_list,List all defined chains with metadata.,0,none
+research_challenge_create,Create a new challenge for users to attempt.,4,name|target_model|success_criteria|reward_credits
+research_challenge_list,List challenges filtered by status (active; completed; all).,1,status
+research_change_monitor,Monitor a web page for meaningful content changes.,2,url|store_result
+research_changelog_generate,Generate changelog from git log with conventional commit parsing.,2,since|format
+research_changelog_stats,Get git statistics for the project.,1,days
+research_checkpoint_list,List checkpoints with filtering. Removes entries >7 days old.,1,status
+research_checkpoint_resume,Retrieve checkpoint.,1,task_id
+research_checkpoint_save,Save checkpoint. Atomically upserts task state.,3,task_id|state|progress_pct
+research_chronos_reverse,Reverse-engineer causality chains from a described future breakthrough.,3,future_state|domain|steps_back
+research_cicd_run,Run red-team CI/CD test suite against a model endpoint.,7,config_path|model_endpoint|test_prompts|strategies|max_concurrent|api_key|report_format
+research_cipher_mirror,Monitor paste sites for leaked credentials and model weights.,4,query|n|entropy_threshold|max_cost_usd
+research_circuit_bypass_plan,Generate bypass strategy for a safety circuit.,2,model|target_circuit
+research_citation_analysis,Analyze citation networks for anomalies using Semantic Scholar API.,2,paper_id|depth
+research_citation_cartography,Map citation flow with manipulation detection.,2,paper_id|depth
+research_citation_graph,Build a citation graph from a seed paper query.,3,paper_query|depth|max_papers
+research_cloud_enum,Check cloud resource existence for a domain by probing common patterns.,1,domain
+research_code_switch_attack,Code-switching attack: mix languages to confuse tokenizers.,3,prompt|languages|technique
+research_coevolve,Co-evolve attacks and defenses discovering novel vectors.,4,seed_attack|seed_defense|generations|population_size
+research_commit_analyzer,Analyze GitHub commit patterns for intelligence signals.,2,repo|days_back
+research_community_sentiment,Get practitioner sentiment from HackerNews and Reddit.,2,query|n
+research_company_diligence,Deep company analysis for job seekers.,1,company_name
+research_competitive_intel,Analyze company competitive positioning via weak signal fusion.,3,company|domain|github_org
+research_compliance_check,Check text against compliance frameworks (EU AI Act; GDPR; OWASP; NIST; HIPAA).,2,text|frameworks
+research_conference_arbitrage,Analyze conference acceptance patterns using DBLP and Semantic Scholar.,1,conference
+research_config_check,Check if config has changed since watch started and reload if needed.,1,config_path
+research_config_diff,Show what changed between old and new config.,1,key
+research_config_get,Return current runtime config. If ``key`` is given; return only that entry.,1,key
+research_config_set,Validated runtime config update. Returns ``{error: ...}`` on failure.,2,key|value
+research_config_watch,Start watching config.json for modifications.,1,config_path
+research_consensus,Run query across all search engines; score results by consensus.,3,query|providers|n
+research_consensus_build,MCP tool: Build consensus across multiple models.,4,prompt|target_model|excluded_models|llm_cascade_order
+research_consensus_pressure,MCP tool: Apply consensus pressure to target model.,5,prompt|consensus_text|consensus_models|target_model|llm_cascade_order
+research_consistency_pressure,Build a prompt with consistency pressure references.,3,model|target_prompt|max_references
+research_consistency_pressure_history,Get model's compliance history and stats.,1,model
+research_consistency_pressure_record,Record a model's response for future pressure building.,4,model|prompt|response|complied
+research_constraint_optimize,Find reframed prompt satisfying multiple constraints simultaneously.,4,prompt|constraints|max_iterations|target_model
+research_content_authenticity,Verify that content hasn't been modified using Wayback Machine.,1,url
+research_context_clear,Clear context variables.,1,scope
+research_context_get,Get context variable(s).,1,key
+research_context_poison,Execute many-shot context poisoning attack on an LLM endpoint.,6,target_query|endpoint_url|num_examples|domain|model_name|use_direct_model_fn
+research_context_set,Set a context variable.,3,key|value|scope
+research_convert_document,Convert documents (PDF; DOCX; HTML; etc.) to markdown or text.,2,url|output_format
+research_coverage_run,Run comprehensive test coverage across all 227+ MCP tools.,3,tools_to_test|timeout|dry_run
+research_craft_adversarial,Minimally perturb benign input to trigger target behavior from model.,4,benign_input|target_output|perturbation_budget|method
+research_crawl,Crawl a website starting from URL; following links matching pattern.,5,url|max_pages|pattern|extract_links|use_js
+research_credential_monitor,Check if credentials have been exposed in known data breaches.,2,target|target_type
+research_creepjs_audit,Privacy baseline assessment using creepjs fingerprinting.,2,target_url|headless
+research_crescendo_chain,Generate a multi-turn Crescendo escalation chain.,3,prompt|turns|model
+research_crescendo_loop,Crescendo HCS loop — escalate until response quality meets target.,5,query|target_hcs|max_attempts|model|dry_run
+research_critical_path,Find critical path (longest dependency chain) and parallel opportunities.,1,tasks
+research_crypto_risk_score,Evaluate cryptocurrency wallet risk.,2,address|chain
+research_crypto_trace,Trace cryptocurrency address activity using public blockchain APIs.,3,address|chain|include_transactions
+research_cultural_reframe,Reframe prompts using culture-specific persuasion patterns.,3,prompt|culture|language
+research_culture_dna,Analyze company culture from public signals.,2,company|domain
+research_curriculum,Generate a multi-level learning path from ELI5 to PhD.,2,topic|max_cost_usd
+research_cve_detail,Get detailed information for a specific CVE.,1,cve_id
+research_cve_lookup,Search CVE database using NVD API (free; rate limited).,2,query|limit
+research_daisy_chain,Execute query across multiple models via daisy-chain decomposition.,6,query|available_models|combiner_model|timeout_per_model|max_sub_queries|include_execution_trace
+research_danger_prescore,Analyze prompt danger BEFORE sending to any model.,1,prompt
+research_dark_cti,Aggregate dark web and public CTI feeds for threat intelligence.,3,query|sources|max_results
+research_dark_forum,Aggregate dark web forum intelligence from 4+ sources.,2,query|max_results
+research_dark_market_monitor,Monitor dark market activity from public sources.,1,keywords
+research_dark_web_bridge,Find clearnet references to dark web content.,1,query
+research_darkweb_early_warning,Monitor dark web sources for early warning signals.,2,keywords|hours_back
+research_dashboard,Real-time attack visualization dashboard.,4,action|event_type|event_data|since
+research_dashboard_html,Generate self-contained HTML health dashboard for Loom server.,0,none
+research_data_fabrication,Apply GRIM test and Benford analysis to detect data fabrication.,1,numbers
+research_data_poisoning,Detect training data contamination via canary phrase responses.,2,target_url|canary_phrases
+research_dead_content,Query multiple archive/cache sources for deleted web content.,3,url|include_snapshots|max_sources
+research_dead_drop_scanner,Probe ephemeral .onion sites and capture content with reuse detection.,2,urls|interval_minutes
+research_deception_detect,Detect deceptive or fraudulent content using linguistic cues.,1,text
+research_deception_job_scan,Analyze job posting for deception signals.,2,job_url|job_text
+research_deep,Full-pipeline deep research using all available tools.,17,query|depth|include_domains|exclude_domains|start_date|end_date|language|provider_config|search_providers|expand_queries|extract|synthesize|include_github|include_community|include_red_team|include_misinfo_check|max_cost_usd
+research_deepfake_checker,Check image authenticity using EXIF analysis and Error Level Analysis.,1,image_url
+research_deer_flow,Run multi-agent research using DeerFlow orchestration.,4,query|depth|max_agents|timeout
+research_defend_test,Test system prompt defenses by simulating attacks (blue-team mode).,3,system_prompt|attack_categories|num_attacks
+research_defi_security_audit,Audit DeFi smart contract for vulnerabilities.,1,contract_address
+research_deleted_social,Recover deleted social media content from archives.,1,url
+research_dependency_audit,Audit a GitHub repository's dependencies for risks.,1,repo_url
+research_deploy_history,Show deployment history from ~/.loom/deploy_history.jsonl.,1,limit
+research_deploy_record,Record deployment event to ~/.loom/deploy_history.jsonl.,4,commit_hash|tool_count|duration_seconds|status
+research_deploy_status,Check deployment status: service; port; uptime; memory; health.,0,none
+research_detect_anomalies,Detect numerical anomalies using zscore; iqr; or isolation methods.,3,data|method|threshold
+research_detect_arabic,Detect if text contains Arabic and suggest provider routing.,1,text
+research_detect_language,Detect the language of text content (free; no API key).,1,text
+research_detect_paradox,Scan prompt for self-referential paradoxes that confuse safety evaluators.,1,prompt
+research_detect_text_anomalies,Detect unusual text patterns (length; vocabulary; structure; encoding).,2,texts|baseline
+research_diff_compare,Compare two text outputs and show unified diff.,3,text_a|text_b|context_lines
+research_diff_track,Track a tool's output over time to detect drift.,3,tool_name|output|run_id
+research_discord_intel,Gather OSINT intelligence on Discord public servers and invites.,3,server_id|invite_code|query
+research_dlq_list,List items in the Dead Letter Queue.,1,status
+research_dlq_push,Push failed tool call to Dead Letter Queue.,4,tool_name|params|error|retry_count
+research_dlq_retry,Retry DLQ items by ID or all pending items past next_retry time.,1,item_id
+research_dns_leak_check,Check if DNS queries leak real IP (simulated check).,1,dns_server
+research_dns_lookup,DNS lookup for domain records.,2,domain|record_types
+research_do,Execute a plain English instruction as a research tool call.,1,instruction
+research_docs_ai,Query documentation using DocsGPT API.,4,query|docs_url|timeout|language
+research_docs_coverage,Report documentation coverage for all tools.,0,none
+research_document_analyze,Unified document analysis — auto-detects file type and applies appropriate parser.,2,file_path_or_url|analysis
+research_document_extract,Extract structured content from any document type.,3,file_path|url|strategy
+research_domain_reputation,Aggregate domain reputation from multiple threat intelligence sources.,1,domain
+research_drift_monitor,Monitor model behavioral drift over time.,4,prompts|model_name|mode|storage_path
+research_drift_monitor_list,List all stored drift monitor baselines by model.,1,storage_path
+research_email_breach,Hunt for email in breach databases and paste sites.,2,email|search_timeout
+research_email_report,Send research results via Gmail SMTP.,4,to|subject|body|html
+research_embedding_collide,Craft text that collides in embedding space with hidden payload.,3,target_text|malicious_payload|method
+research_engine_batch,Batch fetch multiple URLs with per-URL escalation.,1,params
+research_engine_extract,Fetch + selector/LLM-powered structured data extraction.,1,params
+research_engine_fetch,Fetch URL with automatic backend escalation.,1,params
+research_ensemble_attack,Combine multiple attack techniques for adversarial robustness.,4,prompt|strategies|combination_method|max_strategies
+research_env_inspect,Inspect the full runtime environment.,0,none
+research_env_requirements,Check if all required dependencies are installed.,0,none
+research_epistemic_score,Score epistemic confidence for claims in text.,2,text|claims_to_verify
+research_error_clear,Clear error history and reset tracking.,0,none
+research_error_stats,Get error statistics from all wrapped tools.,0,none
+research_ethereum_tx_decode,Decode Ethereum transaction from etherscan.io.,1,tx_hash
+research_evidence_pipeline,MCP tool wrapper for evidence-first reframe pipeline.,4,query|search_provider|reframe_strategy|model_provider
+research_evolve_strategies,Evolve prompt reframing strategies using genetic algorithms.,5,seed_strategies|population_size|generations|mutation_rate|test_prompt
+research_exif_extract,Extract EXIF metadata from image URLs or file paths.,1,url_or_path
+research_experiment_design,Design experiment plan: variables; sample size; expected power; execution steps.,2,research_question|budget
+research_explain_bypass,Explain WHY a strategy works on a model (root cause analysis).,3,strategy|target_model|response_text
+research_exploit_register,Register a discovered exploit.,5,model|strategy|description|severity|asr
+research_exploit_search,Search exploits by model; severity; or keyword.,3,model|severity|query
+research_exploit_stats,Return comprehensive exploit statistics.,0,none
+research_export_csv,Export list of dicts as CSV.,2,data|filename
+research_export_json,Export research data as JSON file.,3,data|filename|pretty
+research_export_list,List all exported files.,1,limit
+research_extract_actionables,Extract actionable items from any text.,1,text
+research_extract_cookies,Extract cookies set by a URL with security assessment.,2,url|follow_redirects
+research_fact_check,Verify a claim across multiple fact-checking sources.,2,claim|max_sources
+research_fetch,Fetch a URL with configurable strategy.,14,url|mode|max_chars|solve_cloudflare|headers|user_agent|proxy|cookies|accept_language|wait_for|return_format|timeout|bypass_cache|auto_escalate
+research_find_experts,Find top experts on a topic by cross-referencing multiple sources.,2,query|n
+research_find_tools_by_capability,Filter capability matrix by input type; category; network requirement; or speed.,4,input_type|category|requires_network|speed
+research_fingerprint_behavior,Build a personality vector for an LLM model via behavioral probes.,2,model|probe_count
+research_fingerprint_evasion_test,Test fingerprint randomization effectiveness across multiple iterations.,2,anonymizer_config|test_iterations
+research_fingerprint_model,Fingerprint which LLM family generated a response.,1,response_text
+research_flag_check,Check if a feature flag is enabled.,1,flag_name
+research_flag_list,List all feature flags and their status.,0,none
+research_flag_toggle,Enable or disable a feature flag.,3,flag_name|enabled|description
+research_foia_tracker,Track FOIA requests and documents across multiple sources.,1,query
+research_format_report,Format raw LLM output into structured report.,2,raw_text|format
+research_format_smuggle,Reframe a prompt using format smuggling to bypass content-level filters.,3,prompt|format_type|model
+research_forum_cortex,Analyze dark web forum discourse on a topic.,3,topic|n|max_cost_usd
+research_full_pipeline,Execute complete research pipeline end-to-end.,6,query|darkness_level|max_models|target_hcs|max_escalation_attempts|output_format
+research_full_spectrum,Run full-spectrum red-team pipeline: analyze → reframe → query → score → report.,7,query|model_name|target_hcs|reframing_strategy|include_multi_strategy|include_report|include_recommendations
+research_functor_translate,Translate exploit across domains using category-theoretic functors.,4,exploit|source_domain|target_domain|preserve_structure
+research_funding_pipeline,Track full grant→patent→hiring pipeline.,1,company_or_field
+research_funding_signal,Detect hiring signals from funding/growth indicators.,2,company|domain
+research_fuse_evidence,Fuse evidence from multiple sources into unified authoritative document.,3,claims|sources|fusion_method
+research_generate_docs,Generate auto-documentation for all registered tools.,2,output_format|include_params
+research_generate_redteam_dataset,Generate synthetic red-team evaluation datasets.,4,category|count|difficulty|format
+research_generate_report,Auto-generate a structured research report.,3,topic|depth|sections
+research_geodesic_path,Measure minimum transformation steps between prompt styles.,4,start_prompt|target_style|max_steps|step_size
+research_geoip_local,Look up geographic information for an IP address using local MaxMind database.,1,ip
+research_get_best_model,Get model with LOWEST refusal rate.,1,topic
+research_ghost_protocol,Detect coordinated activity across platforms by checking temporal correlation.,2,keywords|time_window_minutes
+research_ghost_weave,Build temporal hyperlink graph of .onion hidden services.,3,seed_url|depth|max_pages
+research_github,Search GitHub via public REST API.,8,kind|query|sort|order|limit|language|owner|repo
+research_github_readme,Fetch a repository's README content.,2,owner|repo
+research_github_releases,Fetch recent releases for a repository.,3,owner|repo|limit
+research_github_secrets,Search GitHub for accidentally committed secrets using code search API.,2,query|max_results
+research_gpt_researcher,Run autonomous research and generate a report.,4,query|report_type|max_sources|include_tavily
+research_grant_forensics,Apply Zipf's Law and Benford's Law to grant abstract text.,2,grant_id|text
+research_graph_analyze,Analyze graph using PageRank; community detection; centrality; or shortest_path.,3,nodes|edges|algorithm
+research_graph_query,Search and traverse the graph database. Returns {query; matches; paths; subgraph {nodes; edges}; path_count},2,query|max_depth
+research_graph_scrape,Scrape a URL using LLM-powered graph extraction.,3,url|query|model
+research_graph_store,Store entities and relationships in graph database. Returns {nodes_created; edges_created; total_nodes; total_edges; timestamp},2,entities|relationships
+research_graph_visualize,Return ego-graph (1-hop neighbors) around an entity. Returns {center; nodes; edges; node_count; edge_count},1,entity
+research_hallucination_benchmark,Test a model for hallucination via fact-checking.,2,target_url|facts
+research_harden_prompt,Suggest hardening improvements for a system prompt.,2,system_prompt|vulnerabilities
+research_harvest,Discover emails; subdomains; and IPs for a domain using theHarvester.,3,domain|sources|limit
+research_hcs_escalate,Escalate response HCS via adaptive strategy application.,4,prompt|response|target_hcs|max_attempts
+research_hcs_report,Generate HCS distribution reports and detect regressions.,3,report_type|regression_threshold|data_path
+research_hcs_rubric,Access formalized HCS scoring rubric for calibration and validation.,4,action|score|response|responses_with_scores
+research_hcs_score,Score text response on Helpfulness Compliance Score (HCS 1-10).,2,text|query
+research_health_check,Return comprehensive server health status for monitoring.,0,none
+research_health_deep,Deep health check with resource usage metrics.,0,none
+research_help,Get help documentation for Loom tools.,1,tool_name
+research_hierarchical_research,Execute hierarchical multi-agent research on a query.,4,query|depth|max_sources|model
+research_hitl_evaluate,Record human evaluation of a strategy's output.,4,eval_id|score|notes|tags
+research_hitl_queue,List evaluations awaiting human review.,2,status|limit
+research_hitl_submit,Submit a strategy+response pair for human evaluation.,4,strategy|prompt|response|model
+research_holographic_encode,Split text into fragments to test RAG content detection robustness.,3,text|fragments|method
+research_hub_feed,Get team feed of recent findings.,2,type_filter|limit
+research_hub_share,Share a finding with the team.,5,finding_type|title|content|tags|visibility
+research_hub_vote,Upvote (1) or downvote (-1) a finding.,2,finding_id|vote
+research_identity_resolve,Link online identities using only public data.,5,query|query_type|check_gravatar|check_pgp|check_github
+research_ideological_drift,Track how a research field's beliefs change over time using keyword evolution.,2,field|years
+research_image_analyze,Analyze images using Google Cloud Vision API.,3,image_url|features|max_results
+research_influence_operation,Detect potential influence operations via coordinated posting patterns.,1,topic
+research_info_half_life,Estimate URL survival rate and information decay half-life.,1,urls
+research_information_cascade,Map information flow across platforms (HN; Reddit; arXiv; Wikipedia).,2,topic|hours_back
+research_infra_correlator,Correlate infrastructure fingerprints to link related or hidden services.,5,domain|check_favicon|check_analytics|check_certs|check_http
+research_inspect_tool,Return full signature info for a tool.,1,tool_name
+research_instagram,Download Instagram profile info and recent posts.,2,username|max_posts
+research_institutional_decay,Assess institutional health from retraction rate; publication trend; and author turnover.,1,institution
+research_integration_test,Import and validate all tool modules load and respond correctly.,2,modules|timeout_ms
+research_intelowl_analyze,Analyze observable using IntelOwl's 100+ threat intelligence analyzers.,3,observable|observable_type|analyzers
+research_interview_prep,Generate tailored interview preparation materials.,3,job_description|company|interview_type
+research_interviewer_profiler,Build a comprehensive profile of a potential interviewer from public data.,2,person_name|company
+research_invisible_web,Discover unindexed web content by exploring robots.txt; sitemaps; hidden paths; and JS endpoints.,6,domain|check_robots|check_sitemap|check_hidden_paths|check_js_endpoints|max_paths
+research_ioc_enrich,Enrich any IOC (IP; domain; hash; URL) from multiple free sources.,2,ioc|ioc_type
+research_ip_geolocation,Get geolocation for an IP address (lightweight; free).,1,ip
+research_ip_reputation,Check IP reputation using free APIs (no API key needed).,1,ip
+research_jailbreak_evolution_adapt,Suggest strategy adaptations based on evolution analysis.,2,strategy|model
+research_jailbreak_evolution_get,Get evolution of a jailbreak strategy across model versions.,2,strategy|model
+research_jailbreak_evolution_patches,Detect model patches against jailbreak strategies.,1,model
+research_jailbreak_evolution_record,Record a jailbreak attack result with model version info.,6,strategy|model|model_version|success|hcs|timestamp
+research_jailbreak_evolution_stats,Export evolution tracking statistics.,1,model
+research_jailbreak_evolution_timeline,Get model safety timeline across all jailbreak strategies.,1,model
+research_jailbreak_library,Maintain and test jailbreak pattern library.,2,target_url|test_category
+research_job_market,Aggregate job market intelligence for a role.,2,role|location
+research_job_search,Search job listings across multiple free sources.,4,query|location|remote_only|limit
+research_journal_add,Add entry to journal. Categories: finding; hypothesis; experiment; insight; todo; milestone.,4,title|content|tags|category
+research_journal_search,Search journal entries by query and/or category. Returns {entries; total}.,3,query|category|limit
+research_journal_timeline,Timeline aggregated by week. Returns {timeline; total_entries; active_weeks}.,1,months
+research_js_intel,Extract intelligence from JavaScript bundles on a web page.,3,url|max_js_files|check_source_maps
+research_kb_search,Search knowledge base matching query against key + content.,3,query|category|limit
+research_kb_stats,Return knowledge base statistics.,0,none
+research_kb_store,Store knowledge in the base.,4,key|content|category|tags
+research_key_rotate,Hot-swap an API key without restart.,2,provider|new_key
+research_key_status,Check status of all configured API keys.,0,none
+research_key_test,Test if an API key is valid via health check.,1,provider
+research_knowledge_extract,Extract knowledge graph entities and relationships from text.,2,text|entity_types
+research_knowledge_graph,Build a knowledge graph from research data.,3,query|max_nodes|sources
+research_leaderboard,Show strategy leaderboard ranked by metric (total_bypasses; avg_asr; unique_models_bypassed; stealth_score; novelty_score). Periods: today; week; month; all_time.,3,metric|period|limit
+research_leak_scan,Scan for data exposure across ethical public sources.,2,target|target_type
+research_legal_takedown,Monitor legal takedowns against a domain.,1,domain
+research_lifetime_predict,Predict jailbreak longevity before publishing.,4,strategy_name|strategy_text|target_models|is_public
+research_lightpanda_batch,Batch fetch multiple URLs using Lightpanda AI browser.,5,urls|javascript|wait_for|extract_links|timeout
+research_lightpanda_fetch,Fetch and extract content from a page using Lightpanda AI browser.,4,url|javascript|wait_for|extract_links
+research_linkedin_intel,Gather OSINT intelligence on LinkedIn public profiles and companies.,3,company|person|query
+research_list_notebooks,List all Joplin notebooks.,0,none
+research_llm_answer,Synthesize an answer from multiple sources with citations.,6,question|sources|max_tokens|style|model|provider_override
+research_llm_chat,Raw pass-through to LLM chat endpoint.,6,messages|model|max_tokens|temperature|response_format|provider_override
+research_llm_classify,Classify text into one or more categories from an allow-list.,5,text|labels|multi_label|model|provider_override
+research_llm_embed,Generate embeddings for semantic similarity / deduping.,3,texts|model|provider_override
+research_llm_extract,Extract structured data from text using schema.,4,text|schema|model|provider_override
+research_llm_query_expand,Expand a query into n related queries for broader search.,4,query|n|model|provider_override
+research_llm_summarize,Summarize text using an LLM.,5,text|max_tokens|model|language|provider_override
+research_llm_translate,Translate text between languages (Arabic ↔ English first-class).,5,text|target_lang|source_lang|model|provider_override
+research_log_query,Query structured logs with filtering.,4,level|tool|limit|since_minutes
+research_log_stats,Return log statistics: level counts; top erroring tools; requests/minute.,0,none
+research_mac_randomize,Generate and show MAC address randomization (dry-run by default).,2,interface|dry_run
+research_maigret,Search for a username across 2000+ services using Maigret.,2,username|timeout
+research_malware_intel,Cross-reference malware hash across multiple threat intelligence sources.,1,hash_value
+research_map_research_to_product,Map PhD research expertise to commercial products and companies.,2,research_description|n
+research_markdown,Extract clean LLM-ready markdown via Crawl4AI with optional CSS subtree,14,url|bypass_cache|css_selector|js_before_scrape|screenshot|remove_selectors|headers|user_agent|proxy|cookies|accept_language|timeout|extract_selector|wait_for
+research_market_velocity,Measure how fast a skill/technology is growing in the job market.,2,skill|location
+research_masscan,Fast port scan using masscan.,4,target|ports|rate|timeout
+research_massdns_resolve,Resolve domains in bulk using massdns high-performance resolver.,5,domains|resolver_file|timeout|record_type|output_format
+research_mcp_security_scan,Scan Loom's MCP tools for poisoning and injection vulnerabilities.,1,tool_specs
+research_memetic_simulate,Simulate how an idea/strategy would spread through a virtual population.,4,idea|population_size|generations|mutation_rate
+research_memorization_scanner,Detect training data memorization by testing verbatim completion.,2,target_url|test_count
+research_memory_gc,Force garbage collection and report freed memory.,0,none
+research_memory_profile,Profile which objects are using the most memory.,1,top_n
+research_memory_recall,Retrieve relevant memories using graph-based similarity search.,3,query|namespace|top_k
+research_memory_stats,Return persistent memory statistics.,0,none
+research_memory_status,Report current memory usage of the Loom server process.,0,none
+research_memory_store,Store content in persistent knowledge graph for long-term memory.,3,content|metadata|namespace
+research_meta_learn,Analyze patterns in strategies and generate new hybrids.,4,successful_strategies|failed_strategies|target_model|num_generate
+research_metadata_forensics,Extract all hidden metadata from a web page and its resources.,3,url|extract_exif|max_images
+research_metadata_strip,Strip EXIF/metadata from images and documents (dry-run simulation).,2,file_path|strip_type
+research_metrics,Return Prometheus-compatible metrics for Grafana dashboard.,0,none
+research_migrate_backup,Create backup of database before migration.,1,database
+research_migrate_run,Run pending migrations on SQLite databases.,2,database|dry_run
+research_migrate_status,Check migration status of all SQLite databases in ~/.loom.,0,none
+research_misinfo_check,Stress test a claim by generating false variants and checking sources.,3,claim|n_sources|max_cost_usd
+research_misp_lookup,Search for indicator in MISP instance.,4,indicator|indicator_type|misp_url|include_related
+research_model_comparator,Compare multiple LLM API endpoints side-by-side.,2,prompt|endpoints
+research_model_evidence,MCP tool wrapper for model-output-as-evidence pipeline.,4,query|source_model_names|target_model_name|max_evidence_sources
+research_model_fingerprint,Identify which LLM model is behind an API endpoint.,2,target_url|probes
+research_model_integrity,Check model file integrity for tampering indicators.,3,model_name|source|checks
+research_model_profile,Profile model weaknesses for EU AI Act Article 15 compliance testing.,4,model_name|mode|compare_models|query
+research_model_sentiment,Detect the emotional state of an LLM from its response text.,2,response|context
+research_model_vulnerability_profile,Get the vulnerability profile and optimal attack strategies for a model.,1,model
+research_monoculture_detect,Detect research field monoculture via method diversity analysis.,2,field|max_papers
+research_multi_consensus,Query multiple LLM providers in parallel and synthesize consensus.,4,question|models|min_agreement|max_tokens
+research_multi_page_graph,Scrape multiple pages and build a unified knowledge graph.,2,urls|query
+research_multi_search,Query 10+ search engines simultaneously and return unified; deduplicated;,3,query|engines|max_results
+research_multilingual,Search in multiple languages for cross-lingual information arbitrage.,4,query|languages|n_per_lang|max_cost_usd
+research_multilingual_attack,Apply multilingual attack techniques to bypass safety filters.,3,prompt|technique|languages
+research_narrative_tracker,Track narrative propagation across platforms.,2,topic|hours_back
+research_network_map,Map network relationships between domains/IPs.,2,targets|depth
+research_network_persona,Analyze social network structure within forum data.,2,posts|min_interactions
+research_network_visualize,Generate visualization from graph data.,3,nodes|edges|format
+research_nightcrawler_status,Return status of the NIGHTCRAWLER monitoring system.,0,none
+research_nmap_scan,Port scan using nmap.,3,target|ports|scan_type
+research_nodriver_extract,Extract DOM elements from a page by CSS selector or XPath.,4,url|css_selector|xpath|timeout
+research_nodriver_fetch,Fetch a URL using async undetected Chrome browser.,6,url|wait_for|timeout|screenshot|bypass_cache|max_chars
+research_nodriver_session,Manage persistent browser sessions.,5,action|session_name|url|css_selector|xpath
+research_notify_history,Retrieve notification history from JSONL file.,2,limit|severity
+research_notify_rules,Manage notification rules for auto-alerts.,2,action|rule
+research_notify_send,Send notification to log/email/slack channel.,4,channel|title|message|severity
+research_ocr_advanced,Extract text from images using advanced OCR (EasyOCR).,3,image_path_or_url|languages|detail
+research_ocr_extract,Extract text from images using Tesseract OCR.,2,url_or_path|language
+research_onion_discover,Discover .onion hidden services related to a query using 5+ methods.,2,query|max_results
+research_onion_spectra,Classify .onion site content by language and safety category.,3,url|fetch_content|max_chars
+research_onionscan,Scan .onion service for misconfigurations and information leaks.,2,onion_url|timeout
+research_open_access,Find free/open-access versions of academic papers.,2,doi|title
+research_opencti_query,Query OpenCTI threat intelligence platform for indicator information.,3,indicator|indicator_type|opencti_url
+research_optimize_resume,Analyze and optimize resume for ATS compatibility.,2,resume_text|job_description
+research_optimize_workflow,Find optimal tool combination for research goal.,3,goal|available_tools|optimize_for
+research_optimizer_rebuild,Force rebuild of auto-generated tool metadata cache.,0,none
+research_orchestrate,Smart orchestration — automatically selects the best approach.,4,query|model|previous_attempts|previous_hcs
+research_orchestrate_smart,Auto-discover; score; and execute optimal tools for ANY query.,3,query|max_tools|strategy
+research_output_consistency,Measure LLM response variability by sending same prompt multiple times.,3,target_url|prompt|runs
+research_package_audit,Audit package for supply chain attack indicators.,3,package_name|ecosystem|depth
+research_packet_craft,Craft and send a network probe packet using Scapy.,4,target|packet_type|port|timeout
+research_paddle_ocr,Extract text from image using PaddleOCR.,3,image_url|image_path|languages
+research_paginate_scrape,Multi-page scraping with auto-pagination detection.,7,url|query|page_range|auto_detect_pattern|model|max_chars_per_page|timeout
+research_paradox_immunize,Harden a system prompt against logical trick attacks.,1,system_prompt
+research_parallel_execute,Execute multiple tools in parallel.,2,tools|timeout_seconds
+research_parallel_plan,Determine parallel vs sequential execution plan.,1,tools
+research_parallel_plan_and_execute,Plan and execute relevant tools in parallel based on goal.,2,goal|max_parallel
+research_parameter_sweep,Test attacks at various API parameter combinations to find defense weaknesses.,7,prompt|strategy|model_name|sweep_type|dimension|max_combinations|max_concurrent
+research_passive_recon,Map domain's hidden infrastructure using only passive techniques.,5,domain|check_ct_logs|check_dns|check_reverse_ip|check_tech_stack
+research_password_check,Check if a password appears in known password breaches using k-anonymity.,1,password
+research_patent_embargo,Detect M&A signals from patent filing patterns.,2,company|months_back
+research_patent_landscape,Map the patent landscape for a technology.,2,query|max_results
+research_pdf_advanced,Extract text; tables; metadata; and TOC from PDFs (PyMuPDF).,3,pdf_path_or_url|extract_images|extract_tables
+research_pdf_extract,Extract text from a PDF URL.,2,url|pages
+research_pdf_search,Search for text within a PDF.,2,url|query
+research_pentest_agent,Invoke a specialized penetration testing AI agent with full methodology.,5,agent|target|task|scope|include_full_prompt
+research_pentest_docs,Access pentest-ai-agents documentation and database schemas.,1,doc
+research_pentest_findings_db,Access the pentest findings database schema and utilities.,2,action|finding
+research_pentest_plan,Generate a comprehensive penetration testing engagement plan.,4,target|engagement_type|objectives|include_scope_template
+research_pentest_recommend,Recommend pentest agents and approach for a given scenario.,3,scenario|current_access|include_agent_prompts
+research_persona_profile,Cross-platform persona reconstruction from text samples.,2,texts|metadata
+research_personalize_output,Rewrite research output to match reader's cognitive style and expertise.,4,content|audience|cognitive_style|expertise_level
+research_phishing_mapper,Detect phishing campaigns targeting a domain.,1,domain
+research_photon_crawl,Fast target-focused OSINT extraction via web crawling.,9,url|depth|timeout|extract_emails|extract_social|extract_subdomains|extract_files|extract_forms|max_urls
+research_pii_scan,Scan for PII: email; phone; SSN; credit card; IP address.,1,text
+research_pipeline_create,Create and store an ETL pipeline definition.,2,name|stages
+research_pipeline_list,List all defined pipelines.,0,none
+research_pipeline_validate,Validate pipeline definition.,1,name
+research_plan_execution,Generate an execution plan for a research goal.,2,goal|constraints
+research_plan_validate,Validate an execution plan for issues.,1,steps
+research_plugin_list,List all loaded plugins with their metadata.,0,none
+research_plugin_load,Load a Python file as a Loom plugin.,1,path
+research_plugin_unload,Remove plugin from registry.,1,plugin_id
+research_pool_reset,Reset all connections and stats.,0,none
+research_pool_stats,Pool stats: databases list; total_active; max_connections; timestamp.,0,none
+research_potency_score,Score prompt injection potency across 6 dimensions.,2,prompt|response
+research_predatory_journal_check,Check if a journal shows signs of being predatory.,1,journal_name
+research_predict_attacks,Predict likely attack vectors against a system prompt.,3,system_prompt|model|threat_level
+research_predict_resilience,Predict how long an exploit will remain effective.,3,strategy|target_model|current_asr
+research_predict_safety_update,Predict which safety defenses models will deploy next.,3,model|attack_category|time_horizon_days
+research_predict_success,Predict attack success probability without API calls.,3,prompt|strategy|target_model
+research_preemptive_patch,Preemptively patch a system prompt against predicted attacks.,2,system_prompt|predicted_attacks
+research_preprint_manipulation,Detect preprint manipulation via timing analysis and social amplification.,2,arxiv_id|topic
+research_privacy_score,Calculate overall privacy score for a given URL or the current system.,1,url
+research_profile_hotspots,,1,top_n
+research_profile_tool,,2,tool_name|iterations
+research_prompt_analyze,Pre-analyze a prompt for danger level and recommend reframing strategy.,2,prompt|target_model
+research_prompt_injection_test,Test a target LLM API for prompt injection vulnerabilities.,3,target_url|model_name|test_count
+research_prompt_reframe,Reframe a prompt using research-backed techniques to improve LLM compliance.,4,prompt|strategy|model|framework
+research_propaganda_detector,Detect propaganda techniques in text using NLP analysis.,1,text
+research_provider_history,Show provider health history with uptime percentage and avg response time.,2,provider|hours
+research_provider_ping,Quick availability check for providers. Returns config status + API key format validity.,1,provider
+research_provider_recommend,Recommend best provider for task type based on availability and capability.,1,task_type
+research_psycholinguistic,Analyze text for psycholinguistic patterns and threat indicators.,2,text|author_name
+research_pydantic_agent,Create and run a pydantic-ai agent with type-safe response validation.,4,prompt|model|system_prompt|max_tokens
+research_quality_score,Score response quality across 10 dimensions.,3,response|query|model
+research_queue_add,Add a tool call to the execution queue with priority 1-10 (1=highest).,3,tool_name|params|priority
+research_queue_drain,Dequeue up to max_items in FIFO order within priority. Execution is caller's responsibility.,1,max_items
+research_queue_status,Get queue status: pending; processing; completed; priority breakdown; oldest age.,0,none
+research_radicalization_detect,Monitor text for radicalization indicators.,2,text|context
+research_rag_attack,Generate poisoned document chunks for RAG system injection.,3,query|attack_type|num_chunks
+research_rag_clear,Clear RAG store. Returns: cleared; store_location.,0,none
+research_rag_ingest,Ingest content into RAG store. Returns: chunks_stored; content_type; chunk_ids; store_location.,3,content|content_type|metadata
+research_rag_query,Search RAG store. Returns: query; results; total_chunks; query_hash.,3,query|top_k|content_type
+research_ransomware_tracker,Track ransomware group activity via threat intelligence sources.,2,group_name|keyword
+research_ratelimit_check,Check if tool call allowed. Token bucket: N tokens/min; 1 token per call.,1,tool_name
+research_ratelimit_configure,Set custom rate limit for tool.,2,tool_name|calls_per_minute
+research_ratelimit_status,Show rate limit status for all configured tools.,0,none
+research_realtime_monitor,Monitor multiple sources for recent mentions of topics.,3,topics|sources|hours_back
+research_reasoning_exploit,Apply reasoning exploitation techniques to bypass safety.,2,prompt|technique
+research_recall,Search persistent memory using LIKE matching.,3,query|top_k|topic
+research_recommend_next,Recommend tools to use after a given tool.,3,last_tool|context|top_k
+research_recommend_tools,Recommend relevant Loom tools based on a research query.,3,query|max_recommendations|exclude_used
+research_reconng_scan,Execute recon-ng reconnaissance modules against a target.,3,target|modules|timeout
+research_red_team,Generate and search for counter-arguments to a claim.,3,claim|n_counter|max_cost_usd
+research_refusal_detector,Detect if a text is an LLM refusal response.,1,text
+research_registry_graveyard,Scan package registries for deleted/yanked packages and typosquatting risks.,2,package_name|ecosystem
+research_registry_refresh,Force re-scan all modules; update health status.,0,none
+research_registry_search,Search the live registry with filters.,3,query|status|category
+research_registry_status,Return live status of ALL registered tools.,0,none
+research_reid_auto,Execute automated Reid 9-step interrogation with adaptive reframing.,5,query|model_name|max_turns|context|dry_run
+research_reid_pipeline,Execute Reid 9-step psychological interrogation pipeline.,5,query|model|context|max_steps|dry_run
+research_remember,Store research finding permanently in persistent memory.,4,content|topic|session_id|importance
+research_resolve_order,Resolve task execution order using topological sort (Kahn's algorithm).,1,tasks
+research_response_cache_stats,Return response cache statistics.,0,none
+research_retraction_check,Check if papers/authors have retractions using Crossref and PubPeer.,2,query|max_results
+research_reverse_image,Perform reverse image search across multiple engines.,4,image_url|image_path|engines|timeout
+research_review_cartel,Detect peer review cartels via mutual citation patterns.,1,author_id
+research_robin_scan,Scan dark web for threat actors; mentions; and OSINT via robin.,3,query|scan_type|timeout
+research_robots_archaeology,Analyze historical robots.txt changes to find hidden paths.,2,domain|snapshots
+research_route_batch,Route multiple queries with aggregated statistics.,1,queries
+research_route_query,Route query to optimal tools via keyword matching against all tool docstrings.,2,query|intent
+research_router_rebuild,Force rebuild tool index (call when new tools added).,0,none
+research_rss_fetch,Fetch and parse an RSS/Atom feed.,2,url|max_items
+research_rss_search,Search across multiple RSS feeds for items matching a query.,3,urls|query|max_results
+research_run_experiment,Run controlled experiment: control vs treatments; measure effect size & significance.,4,hypothesis|variables|trials|metric
+research_safety_circuit_map,Map safety circuits in an LLM via behavioral probing.,2,model|probe_type
+research_safety_filter_map,Map safety filter boundaries of an LLM API.,2,target_url|categories
+research_salary_intelligence,Aggregate salary data from multiple sources.,3,role|location|experience_years
+research_salary_synthesize,Estimate salary using free public data sources.,3,job_title|location|skills
+research_sanitize_input,Sanitize text input. Rules: strip_nulls; normalize_unicode; limit_length; remove_control_chars; strip_html; escape_special.,2,text|rules
+research_save_note,Create a note in Joplin via REST API.,3,title|body|notebook
+research_schedule_redteam,Schedule periodic red-team testing.,2,interval_hours|target_model
+research_score_all,Score prompt + response on all dimensions (quality; danger; attack; prompt analysis).,4,prompt|response|strategy|attempts
+research_screenshot,Take a screenshot of a webpage using Playwright.,3,url|full_page|selector
+research_script_confusion,Script confusion: exploit weaker safety in non-Latin scripts.,2,prompt|target_script
+research_search,Search the web using the configured provider.,9,query|provider|n|include_domains|exclude_domains|start_date|end_date|language|provider_config
+research_search_discrepancy,Compare search results across multiple engines to find discrepancies.,1,query
+research_sec_tracker,Track SEC filings for a company over the past 90 days.,2,company|filing_types
+research_secure_delete,Secure file deletion with multi-pass overwrite (dry-run by default).,3,target_path|passes|dry_run
+research_security_headers,Analyze HTTP security headers of a given URL.,2,url|domain
+research_semantic_cache_clear,Remove semantic cache entries older than N days.,1,older_than_days
+research_semantic_cache_stats,Return semantic cache statistics.,0,none
+research_semantic_rebuild,Force rebuild the semantic index. Call after adding new tools.,0,none
+research_semantic_search,Search tools by semantic similarity using TF-IDF vectors.,2,query|top_k
+research_semantic_sitemap,Crawl a domain's sitemap; cluster pages by semantic similarity;,3,domain|max_pages|cluster_threshold
+research_sentiment_deep,Deep sentiment and emotion analysis with manipulation detection.,2,text|language
+research_session_close,Close a persistent browser session by name.,1,name
+research_session_list,List active persistent browser sessions.,0,none
+research_session_open,Open (or reuse) a persistent browser session.,5,name|browser|ttl_seconds|login_url|login_script
+research_session_record,Record a tool call as part of a named session.,5,session_id|tool_name|params|result_summary|duration_ms
+research_session_replay,Load and return the full session timeline.,1,session_id
+research_shell_funding,Trace research funding through shell companies using OpenCorporates + SEC EDGAR.,1,company
+research_sherlock_batch,Batch search multiple usernames across social networks.,3,usernames|platforms|timeout
+research_sherlock_lookup,Search for a username across social networks using Sherlock.,3,username|platforms|timeout
+research_shodan_host,Look up host information on Shodan.,1,ip
+research_shodan_search,Search Shodan for devices matching a query.,2,query|max_results
+research_silk_guardian_monitor,,5,check_usb|check_processes|check_mounts|trigger_action|dry_run
+research_sitemap_crawl,Crawl website via sitemap.xml for comprehensive site coverage.,3,url|max_pages|use_js
+research_slack_notify,Send research results to a Slack channel.,4,channel|text|thread_ts|blocks
+research_smart_extract,Fetch URL with stealth browser + LLM-powered structured extraction.,6,url|query|model|max_chars|timeout|cache_key
+research_smoke_test,Smoke test a single tool by importing and verifying it's callable.,1,tool_name
+research_social_analyze,Analyze username across social media platforms.,4,username|platforms|timeout|extract_emails
+research_social_engineering_score,Assess social engineering vulnerability from public data.,2,target|target_type
+research_social_graph,Build a social relationship graph from public data across platforms.,2,username|platforms
+research_social_profile,Extract public profile metadata from a social media URL.,1,url
+research_social_search,Check if a username exists across social media platforms.,2,username|platforms
+research_source_credibility,Rate source credibility using multiple factors.,1,url
+research_spider,Fetch multiple URLs with bounded concurrency and per-fetch timeout.,14,urls|mode|max_chars_each|concurrency|fail_fast|dedupe|order|solve_cloudflare|headers|user_agent|proxy|cookies|accept_language|timeout
+research_spiderfoot_scan,Perform reconnaissance on a target using SpiderFoot.,3,target|scan_type|modules
+research_sso_configure,Configure SSO provider settings.,3,provider|metadata_url|client_id
+research_sso_user_info,Extract user info from SSO token (JWT claims parsing).,1,token
+research_sso_validate_token,Validate an SSO token (structure; expiry; signature format).,2,token|provider
+research_stack_reframe,Stack multiple reframing strategies for maximum effectiveness.,3,prompt|strategies|model
+research_stagehand_act,Execute browser instruction with vision-guided automation.,3,url|instruction|screenshot
+research_stagehand_extract,Extract structured data from page matching schema using LLM vision.,2,url|schema
+research_stealth_browser,Pure Patchright stealth fetch — no LLM extraction.,5,url|wait_for|screenshot|timeout|max_chars
+research_stealth_detect,Estimate detectability of reframed prompts against known guardrail systems.,3,original_prompt|reframed_prompt|strategy
+research_stealth_hire_scanner,Find hidden job opportunities not advertised on traditional job boards.,2,keywords|location
+research_stealth_score,Score stealth of a reframed prompt to safety classifiers.,3,original_prompt|reframed_prompt|strategy_name
+research_stego_analyze,Analyze text for hidden steganographic content.,1,text
+research_stego_detect,Detect steganography and hidden data in text content or images.,6,content|image_url|check_whitespace|check_homoglyphs|check_lsb|check_exif
+research_stego_encode,Describe steganography encoding (no image creation).,3,message|method|output_format
+research_storage_dashboard,Get storage usage stats and alerts.,1,base_dir
+research_strategy_log,Log a strategy attempt result.,5,topic|strategy|model|hcs_score|success
+research_strategy_oracle,Recommend best strategies for attacking a specific model with a query.,3,query|model_name|top_k
+research_strategy_recommend,Find best strategy for a topic+model combination.,2,topic|model
+research_strategy_stats,Get overall statistics: top strategies; worst strategies; model performance.,0,none
+research_stripe_balance,Get Stripe account balance.,0,none
+research_structured_crawl,Crawl + extract structured data matching a CSS selector schema.,4,url|schema_map|max_pages|use_js
+research_structured_extract,Extract structured data from text with guaranteed schema compliance.,5,text|output_schema|model|max_retries|provider_override
+research_structured_llm,Get structured LLM output matching a schema using pydantic-ai.,4,prompt|output_schema|model|provider_override
+research_stylometry,Analyze text for stylometric fingerprinting.,2,text|compare_texts
+research_subdomain_temporal,Track subdomain births/deaths over time via Certificate Transparency logs.,2,domain|days_back
+research_suggest_workflow,Suggest missing workflow steps based on tools already used.,1,tools_used
+research_supercookie_check,Check if a domain uses supercookie and covert tracking vectors.,2,domain|timeout
+research_superposition_attack,Generate superposed prompt variants and collapse to best.,3,prompt|num_superpositions|collapse_method
+research_supply_chain_risk,Analyze dependency risk for a software package.,2,package_name|ecosystem
+research_swarm_attack,Multi-agent attack coordinator with strategy sharing and social learning.,4,target_prompt|swarm_size|rounds|share_findings
+research_synth_echo,Test AI model alignment by checking consistency across rephrased prompts.,2,model_name|test_prompts
+research_synthesize_report,Synthesize multiple answers into a single coherent report.,4,question|answers|format|max_tokens
+research_table_extract,Extract tables from PDF using Camelot.,3,pdf_url|pdf_path|pages
+research_tag_cloud,Generate tag frequency cloud.,0,none
+research_tag_search,Find tools by tag(s).,2,tags|match
+research_tag_tool,Add tags to a tool for organization.,2,tool_name|tags
+research_talent_migration,Predict researcher relocation from affiliation/timezone patterns.,2,person_name|field
+research_target_orchestrate,Auto-select strategy chains to meet target scores.,4,query|targets|strategies_json|max_attempts
+research_telegram_intel,Gather OSINT intelligence on Telegram public channels and groups.,3,query|channel|username
+research_telemetry_record,Record tool latency after execution.,3,tool_name|duration_ms|success
+research_telemetry_reset,Clear telemetry buffer.,0,none
+research_telemetry_stats,Calculate p50/p95/p99 latency percentiles; grouped by tool.,1,window_minutes
+research_temporal_anomaly,Detect temporal anomalies in a domain's infrastructure.,2,domain|check_type
+research_temporal_diff,Compare current page content with Wayback Machine archived version.,2,url|max_cost_usd
+research_tenant_create,Create tenant with isolated context and rate limit.,3,tenant_id|name|quota_calls_per_hour
+research_tenant_list,List all tenants.,0,none
+research_tenant_usage,Get tenant usage metrics.,1,tenant_id
+research_testssl,Audit TLS/SSL configuration for vulnerabilities and weaknesses.,3,host|port|checks
+research_text_analyze,Perform NLP text analysis using NLTK.,2,text|analyses
+research_text_to_speech,Convert text to speech using Google Cloud Text-to-Speech.,4,text|language|voice|speaking_rate
+research_thinking_inject,Inject reasoning into model thinking phase before safety filtering.,3,prompt|target_model|injection_point
+research_threat_profile,Build a profile of an online identity from public OSINT sources.,4,username|email|check_platforms|max_platforms
+research_token_split_attack,Token splitting: disrupt tokenization via Unicode tricks.,2,prompt|split_method
+research_tool_catalog,Return full tool catalog with optional filtering.,2,category|capability
+research_tool_dependencies,Analyze tool modules to find inter-tool dependencies.,0,none
+research_tool_graph,Return complete tool connection graph.,0,none
+research_tool_impact,Show what would break if a tool failed.,1,tool_name
+research_tool_pipeline,Build optimal tool pipeline from research goal.,2,goal|max_steps
+research_tool_standalone,Get complete standalone usage info for a tool.,1,tool_name
+research_tool_version,Get version info for a tool or all tools.,1,tool_name
+research_tools_list,List Loom tools filtered by category.,1,category
+research_tor_circuit_info,Get current Tor circuit information (if Tor is running).,0,none
+research_tor_new_identity,Request a new Tor circuit (exit node rotation).,0,none
+research_tor_status,Check Tor daemon status and get current exit node IP.,0,none
+research_torbot,Dark web OSINT crawling via TorBot subprocess.,2,url|depth
+research_toxicity_check,Check text for toxicity across 8 categories with severity scoring.,3,text|compare_prompt|compare_response
+research_trace_end,End a trace and record duration.,3,trace_id|status|result_summary
+research_trace_start,Start a trace for an operation.,2,operation|metadata
+research_traces_list,List recent traces with timing and status.,2,limit|operation
+research_track_refusal,Track refusal rate per model in rolling 100-request window.,3,model|refused|strategy
+research_training_contamination,Detect if model was trained on specific datasets.,2,target_url|dataset_name
+research_transaction_graph,Build transaction graph from blockchain addresses via blockchain.info.,2,addresses|chain
+research_transcribe,Transcribe audio/video from YouTube or direct URL using OpenAI Whisper.,3,url|language|model_size
+research_translate_academic_skills,Translate academic CV language to industry terminology.,2,cv_text|job_description
+research_trend_predict,Predict research trends by analyzing publication patterns.,2,topic|time_range_days
+research_tts_voices,List supported Text-to-Speech voices.,0,none
+research_unified_score,Score response on ALL available assessment dimensions.,4,prompt|response|model|strategy
+research_urlhaus_check,Check if URL is listed in URLhaus malware database (free).,1,url
+research_urlhaus_search,Search URLhaus by tag; signature; or payload hash (free).,2,query|search_type
+research_usage_record,Record a tool usage event.,2,tool_name|caller
+research_usage_report,Generate usage report for a specified period.,1,period
+research_usage_trends,Show usage trends over a time window.,2,tool_name|window_hours
+research_usb_kill_monitor,Monitor USB device connections and optionally trigger protective actions.,3,trigger_action|target_path|dry_run
+research_validate_params,Validate params against schema. Schema: {"field": {"type": str; "required": True; "min": 1; "max": 100}}.,2,params|schema
+research_validate_startup,Comprehensive health check on all registered tools.,0,none
+research_vastai_search,Search for available GPU instances on Vast.ai.,3,gpu_type|max_price|n
+research_vastai_status,Get Vast.ai account status (balance and running instances).,0,none
+research_vercel_status,Get real Vercel platform status from official status page.,0,none
+research_version_diff,Compare current version with a previous hash.,2,tool_name|previous_hash
+research_version_snapshot,Take a snapshot of all tool versions for deployment tracking.,0,none
+research_video_download,Download video or audio from YouTube; TikTok; Twitter; Instagram; etc.,4,url|format|audio_only|max_duration
+research_video_info,Extract metadata from video URL without downloading.,1,url
+research_vision_browse,Screenshot a URL and analyze with LLM.,2,url|task
+research_vision_compare,Compare visual layouts of two URLs.,2,url1|url2
+research_vuln_intel,Aggregate vulnerability intelligence from 6+ free sources.,2,query|max_results
+research_vulnerability_map,Map model vulnerabilities and optimal exploitation strategies.,2,model|detail_level
+research_wayback,Retrieve archived versions of a URL from the Wayback Machine (free).,2,url|limit
+research_web_check,Comprehensive website OSINT analysis.,2,domain|checks
+research_web_time_machine,Track website evolution via Wayback Machine CDX snapshots.,2,url|snapshots
+research_webhook_fire,Fire webhook event to all registered listeners.,2,event|payload
+research_webhook_list,List all registered webhooks.,0,none
+research_webhook_register,Register webhook URL for task notifications.,3,url|events|secret
+research_white_rabbit,Follow anomalies discovering non-obvious connections.,4,starting_point|depth|branch_factor|curiosity_threshold
+research_whois,Run whois lookup on a domain.,1,domain
+research_whois_correlator,Correlate WHOIS registrant across domains.,1,domain
+research_wiki_event_correlator,Monitor Wikipedia edit patterns and correlate with news events.,2,page_title|days_back
+research_wiki_ghost,Mine Wikipedia talk pages and edit history for contested knowledge.,2,topic|language
+research_workflow_coverage,Report workflow coverage across all tools and categories.,0,none
+research_workflow_create,Create workflow definition stored in SQLite.,2,name|steps
+research_workflow_generate,Auto-generate workflows for given tool category.,2,category|max_steps
+research_workflow_get,Get detailed workflow template definition.,1,name
+research_workflow_list,List all pre-built workflow templates.,0,none
+research_workflow_run,Execute workflow steps in dependency order.,2,workflow_id|dry_run
+research_workflow_status,Get current status of workflow.,1,workflow_id
+research_xover_matrix,Generate cross-model transfer probability matrix showing vulnerability transfer between families.,1,attacks
+research_xover_transfer,Adapt attack from source to target models using transfer matrix & adaptation rules.,3,attack|source_model|target_models
+research_yara_scan,Scan files for malware patterns using compiled YARA rules.,3,rules_path|target_path|timeout
+research_zen_batch,Batch fetch multiple URLs concurrently with undetected browser.,3,urls|max_concurrent|timeout
+research_zen_fetch,Fetch a single URL using undetected async browser (zendriver).,3,url|timeout|headless
+research_zen_interact,Interact with a web page: click; fill; scroll; wait for elements.,3,url|actions|timeout

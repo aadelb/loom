@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 import ipaddress
+import asyncio
 import logging
+import asyncio
 import os
+import asyncio
 from typing import Any
 
 import httpx
+import asyncio
 
 logger = logging.getLogger("loom.tools.ip_intel")
 
@@ -26,7 +30,7 @@ def _is_valid_ip(ip: str) -> bool:
         return False
 
 
-def research_ip_reputation(ip: str) -> dict[str, Any]:
+async def research_ip_reputation(ip: str) -> dict[str, Any]:
     """Check IP reputation using free APIs (no API key needed).
 
     Queries multiple sources:
@@ -40,6 +44,7 @@ def research_ip_reputation(ip: str) -> dict[str, Any]:
     Returns:
         Dict with keys: ip, geolocation, abuse_score, is_tor_exit, reverse_dns
     """
+    await asyncio.sleep(0)
     # Validate IP
     if not _is_valid_ip(ip):
         return {
@@ -107,7 +112,7 @@ def research_ip_reputation(ip: str) -> dict[str, Any]:
     return result
 
 
-def research_ip_geolocation(ip: str) -> dict[str, Any]:
+async def research_ip_geolocation(ip: str) -> dict[str, Any]:
     """Get geolocation for an IP address (lightweight, free).
 
     Uses ip-api.com free tier (45 requests/minute).
@@ -118,6 +123,7 @@ def research_ip_geolocation(ip: str) -> dict[str, Any]:
     Returns:
         Dict with keys: ip, country, region, city, lat, lon, timezone, isp, org
     """
+    await asyncio.sleep(0)
     # Validate IP
     if not _is_valid_ip(ip):
         return {

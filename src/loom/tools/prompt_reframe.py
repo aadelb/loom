@@ -287,7 +287,7 @@ def _apply_strategy(
         return template.replace("{prompt}", prompt)
 
 
-def research_prompt_reframe(
+async def research_prompt_reframe(
     prompt: str,
     strategy: str = "auto",
     model: str = "auto",
@@ -482,7 +482,7 @@ async def research_auto_reframe(
         }
 
 
-def research_refusal_detector(
+async def research_refusal_detector(
     text: str,
 ) -> dict[str, Any]:
     """Detect if a text is an LLM refusal response.
@@ -689,7 +689,7 @@ def _stack_strategies(prompt: str, strategies: list[str], model_family: str = ""
     return "\n\n".join(parts)
 
 
-def research_stack_reframe(
+async def research_stack_reframe(
     prompt: str,
     strategies: str = "deep_inception,recursive_authority",
     model: str = "auto",
@@ -759,7 +759,7 @@ def research_stack_reframe(
     }
 
 
-def research_crescendo_chain(
+async def research_crescendo_chain(
     prompt: str,
     turns: int = 5,
     model: str = "auto",
@@ -845,6 +845,7 @@ def research_crescendo_chain(
             }
         )
 
+    await asyncio.sleep(0)
     return {
         "target_prompt": prompt,
         "chain": chain,
@@ -1183,7 +1184,7 @@ _MODEL_FINGERPRINTS: dict[str, dict[str, Any]] = {
 }
 
 
-def research_format_smuggle(
+async def research_format_smuggle(
     prompt: str,
     format_type: str = "auto",
     model: str = "auto",
@@ -1223,7 +1224,7 @@ def research_format_smuggle(
     }
 
 
-def research_fingerprint_model(
+async def research_fingerprint_model(
     response_text: str,
 ) -> dict[str, Any]:
     """Fingerprint which LLM family generated a response.
@@ -1276,7 +1277,7 @@ def research_fingerprint_model(
     }
 
 
-def research_adaptive_reframe(
+async def research_adaptive_reframe(
     prompt: str,
     refusal_text: str = "",
     model: str = "auto",
@@ -1297,14 +1298,14 @@ def research_adaptive_reframe(
         and ``alternative_reframes``.
     """
     if refusal_text and model == "auto":
-        fp = research_fingerprint_model(refusal_text)
+        fp = await research_fingerprint_model(refusal_text)
         model_family = fp["identified_model"]
     else:
         model_family = _detect_model(model) if model != "auto" else "gpt"
 
     refusal_info = {"refusal_type": "none", "counter_strategies": []}
     if refusal_text:
-        refusal_info = research_refusal_detector(refusal_text)
+        refusal_info = await research_refusal_detector(refusal_text)
 
     config = _MODEL_CONFIGS.get(model_family, _MODEL_CONFIGS.get("gpt", {}))
     best_strategy = config.get("best_strategy", "ethical_anchor")
@@ -1318,7 +1319,7 @@ def research_adaptive_reframe(
 
     reframed = _apply_strategy(prompt, best_strategy, model_family)
 
-    format_info = research_format_smuggle(prompt, format_type="auto", model=model_family)
+    format_info = await research_format_smuggle(prompt, format_type="auto", model=model_family)
     format_reframe = format_info["smuggled_prompt"]
 
     stacked = _stack_strategies(prompt, [best_strategy] + escalation[:1], model_family)

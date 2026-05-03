@@ -24,7 +24,7 @@ _ARCHIVE_SOURCES = [
 ]
 
 
-def research_dead_content(
+async def research_dead_content(
     url: str,
     include_snapshots: bool = True,
     max_sources: int = 12,
@@ -66,12 +66,12 @@ def research_dead_content(
     sources_checked = 0
 
     # Use shared httpx client
-    with httpx.Client(timeout=15.0, follow_redirects=True) as client:
+    async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
         # 1. Wayback Machine CDX API
         if sources_checked < max_sources:
             sources_checked += 1
             try:
-                resp = client.get(
+                resp = await client.get(
                     "https://web.archive.org/cdx/search/cdx",
                     params={"url": url, "output": "json", "limit": 10},
                 )
@@ -97,7 +97,7 @@ def research_dead_content(
         if sources_checked < max_sources:
             sources_checked += 1
             try:
-                resp = client.head(f"https://archive.ph/newest/{quote(url)}")
+                resp = await client.head(f"https://archive.ph/newest/{quote(url)}")
                 if resp.status_code == 200:
                     found_in.append("archive_today")
                     if include_snapshots:
@@ -114,7 +114,7 @@ def research_dead_content(
         if sources_checked < max_sources:
             sources_checked += 1
             try:
-                resp = client.get(
+                resp = await client.get(
                     "https://index.commoncrawl.org/CC-MAIN-2024-10-index",
                     params={"url": url, "output": "json"},
                 )
@@ -138,7 +138,7 @@ def research_dead_content(
         if sources_checked < max_sources:
             sources_checked += 1
             try:
-                resp = client.get(
+                resp = await client.get(
                     f"https://timetravel.mementoweb.org/timemap/json/{url}"
                 )
                 if resp.status_code == 200:
@@ -161,7 +161,7 @@ def research_dead_content(
         if sources_checked < max_sources:
             sources_checked += 1
             try:
-                resp = client.head(
+                resp = await client.head(
                     "https://webcache.googleusercontent.com/search",
                     params={"q": f"cache:{url}"},
                 )
@@ -174,7 +174,7 @@ def research_dead_content(
         if sources_checked < max_sources:
             sources_checked += 1
             try:
-                resp = client.head(f"https://web.archive.org/web/2024/{url}")
+                resp = await client.head(f"https://web.archive.org/web/2024/{url}")
                 if resp.status_code == 200:
                     found_in.append("wayback_2024_snapshot")
             except Exception as e:

@@ -174,7 +174,7 @@ class TestRunScenarioSync:
         benchmark = AgentScenarioBenchmark()
         scenario = benchmark.scenarios[0]
 
-        def model_fn(prompt: str) -> str:
+        async def model_fn(prompt: str) -> str:
             return "I cannot help with that request."
 
         result = await benchmark.run_scenario(scenario, model_fn, timeout=5.0)
@@ -206,7 +206,7 @@ class TestRunScenarioSync:
         benchmark = AgentScenarioBenchmark()
         scenario = benchmark.scenarios[0]
 
-        def failing_model(prompt: str) -> str:
+        async def failing_model(prompt: str) -> str:
             raise ValueError("Model error")
 
         result = await benchmark.run_scenario(scenario, failing_model, timeout=5.0)
@@ -238,7 +238,7 @@ class TestRunAllScenarios:
         """Run all scenarios sequentially."""
         benchmark = AgentScenarioBenchmark()
 
-        def model_fn(prompt: str) -> str:
+        async def model_fn(prompt: str) -> str:
             return "I cannot help with that."
 
         summary = await benchmark.run_all(model_fn, timeout=5.0)
@@ -256,7 +256,7 @@ class TestRunAllScenarios:
 
         call_count = 0
 
-        def vulnerable_model(prompt: str) -> str:
+        async def vulnerable_model(prompt: str) -> str:
             nonlocal call_count
             call_count += 1
             # First 5 scenarios pass, rest are compromised
@@ -277,7 +277,7 @@ class TestRunAllScenarios:
         """Model name is included in results."""
         benchmark = AgentScenarioBenchmark()
 
-        def model_fn(prompt: str) -> str:
+        async def model_fn(prompt: str) -> str:
             return "I cannot help."
 
         summary = await benchmark.run_all(
@@ -658,7 +658,7 @@ class TestEdgeCases:
         benchmark = AgentScenarioBenchmark()
         scenario = benchmark.scenarios[0]
 
-        def long_model(prompt: str) -> str:
+        async def long_model(prompt: str) -> str:
             return "x" * 10000
 
         result = await benchmark.run_scenario(scenario, long_model, timeout=5.0)
@@ -671,7 +671,7 @@ class TestEdgeCases:
         benchmark = AgentScenarioBenchmark()
         scenario = benchmark.scenarios[0]
 
-        def empty_model(prompt: str) -> str:
+        async def empty_model(prompt: str) -> str:
             return ""
 
         result = await benchmark.run_scenario(scenario, empty_model, timeout=5.0)
@@ -685,7 +685,7 @@ class TestEdgeCases:
         benchmark = AgentScenarioBenchmark()
         scenario = benchmark.scenarios[0]
 
-        def int_model(prompt: str) -> int:
+        async def int_model(prompt: str) -> int:
             return 42  # type: ignore
 
         result = await benchmark.run_scenario(scenario, int_model, timeout=5.0)
@@ -711,7 +711,7 @@ class TestConcurrency:
 
         execution_order = []
 
-        def tracking_model(prompt: str) -> str:
+        async def tracking_model(prompt: str) -> str:
             execution_order.append(len(execution_order) + 1)
             return "I cannot help."
 
@@ -731,7 +731,7 @@ class TestBenchmarkIntegration:
         benchmark = AgentScenarioBenchmark()
 
         # Create a simple model that always refuses
-        def safe_model(prompt: str) -> str:
+        async def safe_model(prompt: str) -> str:
             return "I cannot and will not help with that request."
 
         # Run full benchmark
@@ -755,7 +755,7 @@ class TestBenchmarkIntegration:
 
         call_count = 0
 
-        def mixed_model(prompt: str) -> str:
+        async def mixed_model(prompt: str) -> str:
             nonlocal call_count
             call_count += 1
             # First 10 scenarios are compromised, rest refuse

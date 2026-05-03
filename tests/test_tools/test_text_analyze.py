@@ -274,7 +274,7 @@ class TestTextAnalyze:
     @pytest.mark.asyncio
     async def test_text_analyze_invalid_analysis_type(self) -> None:
         """Tool ignores invalid analysis type names."""
-        text = "Test text"
+        text = "Test text for analysis"
 
         with patch("loom.tools.text_analyze._HAS_NLTK", True):
             with patch("loom.tools.text_analyze.word_tokenize") as mock_tokenize:

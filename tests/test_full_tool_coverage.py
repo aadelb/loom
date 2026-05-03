@@ -14,32 +14,25 @@ import pytest
 
 
 def get_all_tool_names() -> list[str]:
-    """Extract all research_* tool names from server.py.
-
-    Scans the _register_tools function for all mcp.tool() registrations
-    and extracts the function names being registered.
+    """Extract all research_* tool names from server.py and registrations/all_tools.py.
 
     Returns:
         Sorted list of unique tool names (e.g., ['research_fetch', ...])
     """
-    server_path = Path(__file__).parent.parent / "src" / "loom" / "server.py"
-    content = server_path.read_text()
+    base = Path(__file__).parent.parent / "src" / "loom"
+    files_to_scan = [
+        base / "server.py",
+        base / "registrations" / "all_tools.py",
+    ]
 
-    # Extract all research_* function names from mcp.tool()(_wrap_tool(...)) calls
-    # Pattern: _wrap_tool(X) where X is a function reference or attribute access
-    pattern = r"_wrap_tool\(([a-zA-Z_\.]+\.)?research_\w+(?:\s*[,)])"
-    matches = re.findall(pattern, content)
-
-    # Clean up and extract actual tool names
     tool_names = set()
-    for match in re.findall(r"research_\w+", content):
-        if match.startswith("research_"):
-            tool_names.add(match)
-
-    # Also check for tools defined inline (like research_detect_arabic, research_storage_dashboard)
-    inline_pattern = r"async def (research_\w+)\("
-    for match in re.findall(inline_pattern, content):
-        tool_names.add(match)
+    for fpath in files_to_scan:
+        if not fpath.exists():
+            continue
+        content = fpath.read_text()
+        for match in re.findall(r"research_\w+", content):
+            if match.startswith("research_"):
+                tool_names.add(match)
 
     return sorted(tool_names)
 
@@ -54,7 +47,7 @@ class TestFullToolCoverage:
         or major refactoring issues.
         """
         names = get_all_tool_names()
-        assert len(names) >= 220, f"Only {len(names)} tools found, expected >= 220"
+        assert len(names) >= 500, f"Only {len(names)} tools found, expected >= 220"
 
     def test_no_duplicate_tool_names(self):
         """Verify no duplicate tool registrations exist.
@@ -150,7 +143,7 @@ class TestFullToolCoverage:
             print(f"  {category}: {count}")
 
         # Verify at least basic coverage
-        assert sum(tool_counts.values()) > 150, \
+        assert sum(tool_counts.values()) > 400, \
             f"Categorized tools ({sum(tool_counts.values())}) suspiciously low"
 
     def test_core_tools_registered(self):
@@ -338,8 +331,8 @@ class TestToolDistribution:
         count = len(names)
 
         # Expected range based on architecture document
-        min_expected = 200
-        max_expected = 350
+        min_expected = 500
+        max_expected = 800
 
         assert min_expected <= count <= max_expected, \
             f"Tool count ({count}) outside expected range [{min_expected}, {max_expected}]"

@@ -314,7 +314,7 @@ class TestResearchDeepPipeline:
     async def test_multi_provider_dedup(self, mock_config, mock_search, mock_fetch, mock_md):
         call_count = {"n": 0}
 
-        def multi_search(query, **kwargs):
+        async def multi_search(query, **kwargs):
             call_count["n"] += 1
             provider = kwargs.get("provider", "exa")
             return {

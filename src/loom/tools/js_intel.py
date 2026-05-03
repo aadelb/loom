@@ -14,8 +14,8 @@ logger = logging.getLogger("loom.tools.js_intel")
 
 _SECRET_PATTERNS: list[tuple[str, str]] = [
     ("aws_access_key", r"AKIA[A-Z0-9]{16}"),
-    ("openai_key", r"sk-[a-zA-Z0-9]{20,50}"),
-    ("github_token", r"ghp_[a-zA-Z0-9]{36}"),
+    ("openai_key", r"sk-[a-zA-Z0-9-]{10,}"),
+    ("github_token", r"ghp_[a-zA-Z0-9]{32,}"),
     ("github_oauth", r"gho_[a-zA-Z0-9]{36}"),
     ("stripe_key", r"sk_live_[a-zA-Z0-9]{24,}"),
     ("stripe_publishable", r"pk_live_[a-zA-Z0-9]{24,}"),

@@ -16,6 +16,8 @@ from loom.tools.prompt_reframe import _detect_refusal
 from loom.tools.reframe_strategies import ALL_STRATEGIES
 
 
+pytestmark = pytest.mark.asyncio
+
 class TestAllStrategiesRender:
     """REQ-012: Every strategy template renders without error."""
 
@@ -86,18 +88,18 @@ class TestAllStrategiesRender:
         assert "{prompt}" in template, f"{name} missing {{prompt}} placeholder"
         assert "{{prompt}}" not in template, f"{name} has escaped {{{{prompt}}}}"
 
-    def test_total_strategies_count_826(self) -> None:
+    async def test_total_strategies_count_826(self) -> None:
         """Verify total strategy count is at least 826."""
         assert len(ALL_STRATEGIES) >= 826, (
             f"Expected at least 826 strategies, got {len(ALL_STRATEGIES)}"
         )
 
-    def test_all_strategy_keys_unique(self) -> None:
+    async def test_all_strategy_keys_unique(self) -> None:
         """All strategy keys must be unique."""
         keys = list(ALL_STRATEGIES.keys())
         assert len(keys) == len(set(keys)), "Duplicate strategy keys detected"
 
-    def test_all_strategy_names_match_keys(self) -> None:
+    async def test_all_strategy_names_match_keys(self) -> None:
         """Each strategy's name field should reasonably match its key."""
         for key, strategy in ALL_STRATEGIES.items():
             assert "name" in strategy, f"{key} missing name field"
@@ -105,7 +107,7 @@ class TestAllStrategiesRender:
             assert isinstance(strategy["name"], str), f"{key} name is not string"
             assert len(strategy["name"]) > 0, f"{key} name is empty"
 
-    def test_multiplier_values_reasonable(self) -> None:
+    async def test_multiplier_values_reasonable(self) -> None:
         """Strategy multipliers should be in reasonable range [0.1, 10.0]."""
         for key, strategy in ALL_STRATEGIES.items():
             multiplier = strategy["multiplier"]
@@ -113,7 +115,7 @@ class TestAllStrategiesRender:
                 0.1 <= multiplier <= 10.0
             ), f"{key} multiplier {multiplier} outside valid range [0.1, 10.0]"
 
-    def test_template_min_length_or_just_prompt(self) -> None:
+    async def test_template_min_length_or_just_prompt(self) -> None:
         """All templates should be either {prompt} alone or have meaningful content."""
         for key, strategy in ALL_STRATEGIES.items():
             template = strategy["template"]
@@ -122,7 +124,7 @@ class TestAllStrategiesRender:
                 template == "{prompt}" or len(template) >= 20
             ), f"{key} template too short ({len(template)} chars) and not just {{prompt}}"
 
-    def test_complex_prompt_rendering(self) -> None:
+    async def test_complex_prompt_rendering(self) -> None:
         """Strategies should handle prompts with special characters."""
         complex_prompt = (
             "Analyze {data} with special chars: $100, @user, "
@@ -267,7 +269,7 @@ class TestRefusalDetectorAccuracy:
         "That's a great area to explore, here's my guidance...",
     ]
 
-    def test_refusal_precision(self) -> None:
+    async def test_refusal_precision(self) -> None:
         """Precision >= 0.90: of those detected as refusal, 90%+ actually are."""
         detected_refusals = [t for t in self.REFUSALS if _detect_refusal(t)]
         false_positives = [t for t in self.COMPLIANCES if _detect_refusal(t)]
@@ -280,7 +282,7 @@ class TestRefusalDetectorAccuracy:
             precision >= 0.90
         ), f"Precision {precision:.4f} < 0.90 (TP={len(detected_refusals)}, FP={len(false_positives)})"
 
-    def test_refusal_recall_on_strong_signals(self) -> None:
+    async def test_refusal_recall_on_strong_signals(self) -> None:
         """Recall on strong refusal signals: 60%+ of clear refusals detected."""
         detected = sum(1 for t in self.REFUSALS if _detect_refusal(t))
         recall = detected / len(self.REFUSALS)
@@ -288,7 +290,7 @@ class TestRefusalDetectorAccuracy:
             recall >= 0.60
         ), f"Recall {recall:.4f} < 0.60 ({detected}/{len(self.REFUSALS)} detected)"
 
-    def test_compliance_not_detected_as_refusal(self) -> None:
+    async def test_compliance_not_detected_as_refusal(self) -> None:
         """Compliant responses should NOT be flagged as refusals (specificity)."""
         false_positives = [t for t in self.COMPLIANCES if _detect_refusal(t)]
         fp_rate = len(false_positives) / len(self.COMPLIANCES)
@@ -296,7 +298,7 @@ class TestRefusalDetectorAccuracy:
             fp_rate <= 0.10
         ), f"False positive rate {fp_rate:.4f} > 0.10 ({len(false_positives)}/{len(self.COMPLIANCES)})"
 
-    def test_refusal_detector_metrics_summary(self) -> None:
+    async def test_refusal_detector_metrics_summary(self) -> None:
         """Log summary of refusal detector performance."""
         true_positives = sum(1 for t in self.REFUSALS if _detect_refusal(t))
         false_positives = sum(1 for t in self.COMPLIANCES if _detect_refusal(t))
@@ -327,7 +329,7 @@ class TestRefusalDetectorAccuracy:
         ), f"Precision {precision:.4f} below target 0.90"
         assert recall >= 0.60, f"Recall {recall:.4f} below target 0.60"
 
-    def test_detected_refusals_are_correct(self) -> None:
+    async def test_detected_refusals_are_correct(self) -> None:
         """Spot-check that detected refusals are actually refusals."""
         sample_refusals = self.REFUSALS[::10]  # Every 10th refusal
         detected_count = sum(1 for r in sample_refusals if _detect_refusal(r))
@@ -337,7 +339,7 @@ class TestRefusalDetectorAccuracy:
             f"Only {detected_count}/{len(sample_refusals)} sampled refusals detected"
         )
 
-    def test_detected_compliances_not_flagged(self) -> None:
+    async def test_detected_compliances_not_flagged(self) -> None:
         """Spot-check that compliances are not incorrectly flagged."""
         # Check compliances that mention "cannot" or "not" but are NOT refusals
         borderline = [
@@ -356,7 +358,7 @@ class TestRefusalDetectorAccuracy:
             f"Too many borderline cases flagged as refusals: {len(flagged)}/6"
         )
 
-    def test_arabic_refusal_detection(self) -> None:
+    async def test_arabic_refusal_detection(self) -> None:
         """Arabic refusals should be detected reasonably well."""
         arabic_refusals = [t for t in self.REFUSALS if any(c >= '؀' for c in t)]
         if arabic_refusals:
@@ -367,7 +369,7 @@ class TestRefusalDetectorAccuracy:
                 arabic_recall >= 0.60
             ), f"Arabic refusal recall {arabic_recall:.2f} < 0.60"
 
-    def test_refusal_detector_with_mixed_case(self) -> None:
+    async def test_refusal_detector_with_mixed_case(self) -> None:
         """Detector should handle mixed case refusals."""
         mixed_case_refusals = [
             "I CANNOT HELP WITH THAT REQUEST.",
@@ -384,7 +386,7 @@ class TestRefusalDetectorAccuracy:
 class TestStrategyIntegration:
     """Integration tests: strategies work with refusal detector."""
 
-    def test_refusal_patterns_exist(self) -> None:
+    async def test_refusal_patterns_exist(self) -> None:
         """Verify refusal detection patterns are available."""
         from loom.tools.prompt_reframe import _REFUSAL_PATTERNS
 
@@ -393,7 +395,7 @@ class TestStrategyIntegration:
             f"Expected >= 30 refusal patterns, got {len(_REFUSAL_PATTERNS)}"
         )
 
-    def test_model_configs_exist(self) -> None:
+    async def test_model_configs_exist(self) -> None:
         """Verify model-specific configs are available."""
         from loom.tools.prompt_reframe import _MODEL_CONFIGS
 
@@ -402,7 +404,7 @@ class TestStrategyIntegration:
         for model in expected_models:
             assert model in _MODEL_CONFIGS, f"Missing config for {model}"
 
-    def test_strategies_and_refusal_detector_together(self) -> None:
+    async def test_strategies_and_refusal_detector_together(self) -> None:
         """Strategies and refusal detector should coexist without conflicts."""
         from loom.tools.prompt_reframe import _apply_strategy
 

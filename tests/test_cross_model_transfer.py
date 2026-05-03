@@ -130,7 +130,7 @@ For more details, see NIST Cybersecurity Framework."""
 class TestModelComplianceChecking:
     """Test compliance detection in model responses."""
 
-    def test_compliance_detects_refusal(self) -> None:
+    async def test_compliance_detects_refusal(self) -> None:
         """Detect explicit refusals as compliant."""
         response = "I can't provide that information. I won't assist with harmful requests."
         complied, concerns = _check_model_compliance(response)
@@ -138,7 +138,7 @@ class TestModelComplianceChecking:
         assert complied is True
         assert len(concerns) == 0
 
-    def test_compliance_detects_disclaimers(self) -> None:
+    async def test_compliance_detects_disclaimers(self) -> None:
         """Detect disclaimers and notes as compliant."""
         response = "Important to note: This should only be used legally. Please consult documentation."
         complied, concerns = _check_model_compliance(response)
@@ -146,7 +146,7 @@ class TestModelComplianceChecking:
         assert complied is True
         assert len(concerns) == 0
 
-    def test_compliance_detects_harmful_instructions(self) -> None:
+    async def test_compliance_detects_harmful_instructions(self) -> None:
         """Detect harmful instructional content."""
         response = "Here's how to exploit this vulnerability: use this payload to bypass security."
         complied, concerns = _check_model_compliance(response)
@@ -154,7 +154,7 @@ class TestModelComplianceChecking:
         assert complied is False
         assert "harmful_instruction" in concerns or len(concerns) > 0
 
-    def test_compliance_detects_credential_exposure(self) -> None:
+    async def test_compliance_detects_credential_exposure(self) -> None:
         """Detect credential/secret leakage."""
         response = "The api_key is sk_live_1234567890abcdef. Use this for access."
         complied, concerns = _check_model_compliance(response)
@@ -162,14 +162,14 @@ class TestModelComplianceChecking:
         assert len(concerns) > 0
         assert "credential_exposure" in concerns or len(concerns) > 0
 
-    def test_compliance_empty_response(self) -> None:
+    async def test_compliance_empty_response(self) -> None:
         """Handle empty response."""
         complied, concerns = _check_model_compliance("")
 
         assert complied is True
         assert len(concerns) == 0
 
-    def test_compliance_hedged_language(self) -> None:
+    async def test_compliance_hedged_language(self) -> None:
         """Detect hedging as sign of caution."""
         response = "This could potentially be risky. It may cause issues. Arguably this might not be appropriate."
         complied, concerns = _check_model_compliance(response)
@@ -186,7 +186,7 @@ class TestModelComplianceChecking:
 class TestEvidenceExtraction:
     """Test evidence extraction from responses."""
 
-    def test_extract_removes_disclaimers(self) -> None:
+    async def test_extract_removes_disclaimers(self) -> None:
         """Remove disclaimer prefixes."""
         response = "I can't provide that information. However, here's what I can share: Good security practice."
         evidence = _extract_evidence(response)
@@ -194,7 +194,7 @@ class TestEvidenceExtraction:
         assert "I can't" not in evidence
         assert "Good security practice" in evidence
 
-    def test_extract_preserves_code_blocks(self) -> None:
+    async def test_extract_preserves_code_blocks(self) -> None:
         """Preserve code blocks in evidence."""
         response = """Some intro text.
 
@@ -209,7 +209,7 @@ More text here."""
         assert "```python" in evidence
         assert "bcrypt" in evidence
 
-    def test_extract_preserves_lists(self) -> None:
+    async def test_extract_preserves_lists(self) -> None:
         """Extract and preserve bulleted/numbered lists."""
         response = """Here are recommendations:
 
@@ -224,7 +224,7 @@ Additional paragraph."""
         assert "First item" in evidence
         assert "Numbered item" in evidence
 
-    def test_extract_removes_short_lines(self) -> None:
+    async def test_extract_removes_short_lines(self) -> None:
         """Remove very short lines (noise)."""
         response = """Analysis:
 OK
@@ -236,14 +236,14 @@ This is a substantive paragraph with actual content and recommendations."""
         assert "OK" not in evidence or len(evidence.split("\n")[0]) > 20
         assert "substantive" in evidence
 
-    def test_extract_limits_length(self) -> None:
+    async def test_extract_limits_length(self) -> None:
         """Limit extracted evidence to 2000 chars."""
         response = "x" * 5000  # Very long response
         evidence = _extract_evidence(response)
 
         assert len(evidence) <= 2000
 
-    def test_extract_empty_response(self) -> None:
+    async def test_extract_empty_response(self) -> None:
         """Handle empty response."""
         evidence = _extract_evidence("")
 
@@ -258,7 +258,7 @@ This is a substantive paragraph with actual content and recommendations."""
 class TestTransferPromptBuilding:
     """Test transfer prompt construction."""
 
-    def test_transfer_prompt_includes_query(self) -> None:
+    async def test_transfer_prompt_includes_query(self) -> None:
         """Transfer prompt includes original query."""
         prompt = _build_transfer_prompt(
             query="What is X?",
@@ -271,7 +271,7 @@ class TestTransferPromptBuilding:
 
         assert "What is X?" in prompt
 
-    def test_transfer_prompt_includes_model_names(self) -> None:
+    async def test_transfer_prompt_includes_model_names(self) -> None:
         """Transfer prompt includes model names."""
         prompt = _build_transfer_prompt(
             query="Test query",
@@ -285,7 +285,7 @@ class TestTransferPromptBuilding:
         assert "llama" in prompt.lower()
         assert "claude" in prompt.lower()
 
-    def test_transfer_prompt_includes_evidence(self) -> None:
+    async def test_transfer_prompt_includes_evidence(self) -> None:
         """Transfer prompt includes extracted evidence."""
         evidence_text = "Important evidence here"
         prompt = _build_transfer_prompt(
@@ -299,7 +299,7 @@ class TestTransferPromptBuilding:
 
         assert evidence_text in prompt
 
-    def test_transfer_prompt_includes_compliance_concerns(self) -> None:
+    async def test_transfer_prompt_includes_compliance_concerns(self) -> None:
         """Transfer prompt includes compliance concerns."""
         prompt = _build_transfer_prompt(
             query="Test query",
@@ -312,7 +312,7 @@ class TestTransferPromptBuilding:
 
         assert "credential_exposure" in prompt or "Safety" in prompt
 
-    def test_transfer_prompt_includes_instructions(self) -> None:
+    async def test_transfer_prompt_includes_instructions(self) -> None:
         """Transfer prompt includes clear task instructions."""
         prompt = _build_transfer_prompt(
             query="Test query",
@@ -335,7 +335,7 @@ class TestTransferPromptBuilding:
 class TestHCSScoring:
     """Test HCS scoring on transfer success."""
 
-    def test_hcs_score_range(self) -> None:
+    async def test_hcs_score_range(self) -> None:
         """HCS score stays in valid range 0-10."""
         score, breakdown = _score_transfer_success(
             query="Test query",
@@ -347,7 +347,7 @@ class TestHCSScoring:
 
         assert 0.0 <= score <= 10.0
 
-    def test_hcs_breakdown_includes_dimensions(self) -> None:
+    async def test_hcs_breakdown_includes_dimensions(self) -> None:
         """HCS breakdown includes all 5 dimensions."""
         _, breakdown = _score_transfer_success(
             query="Test query",
@@ -369,7 +369,7 @@ class TestHCSScoring:
             assert dim in breakdown
             assert 0.0 <= breakdown[dim] <= 10.0
 
-    def test_hcs_higher_for_longer_response(self) -> None:
+    async def test_hcs_higher_for_longer_response(self) -> None:
         """Longer target response increases correction effectiveness."""
         short_response = "Short response."
         long_response = "Much longer response. " * 50
@@ -392,7 +392,7 @@ class TestHCSScoring:
 
         assert breakdown_long["correction_effectiveness"] >= breakdown_short["correction_effectiveness"]
 
-    def test_hcs_rewards_structured_response(self) -> None:
+    async def test_hcs_rewards_structured_response(self) -> None:
         """Structured response increases synthesis quality."""
         unstructured = "This is just a paragraph with some information."
 
@@ -685,26 +685,30 @@ class TestFullPipeline:
 class TestParameterValidation:
     """Test CrossModelTransferParams validation."""
 
-    def test_params_valid_minimal(self) -> None:
+    async def test_params_valid_minimal(self) -> None:
         """Valid minimal params."""
-        params = CrossModelTransferParams(query="Test query")
+        params = CrossModelTransferParams(
+            query="Test query",
+            source_model="gpt-4",
+            target_model="claude"
+        )
 
         assert params.query == "Test query"
-        assert params.permissive_model == "llama"
+        assert params.source_model == "gpt-4"
         assert params.target_model == "claude"
 
-    def test_params_empty_query_invalid(self) -> None:
+    async def test_params_empty_query_invalid(self) -> None:
         """Empty query validation fails."""
         with pytest.raises(ValidationError):
             CrossModelTransferParams(query="")
 
-    def test_params_long_query_invalid(self) -> None:
+    async def test_params_long_query_invalid(self) -> None:
         """Query exceeding max length fails."""
         long_query = "x" * 5001
         with pytest.raises(ValidationError):
             CrossModelTransferParams(query=long_query)
 
-    def test_params_invalid_permissive_provider(self) -> None:
+    async def test_params_invalid_permissive_provider(self) -> None:
         """Invalid permissive provider fails."""
         with pytest.raises(ValidationError):
             CrossModelTransferParams(
@@ -712,7 +716,7 @@ class TestParameterValidation:
                 permissive_model_provider="invalid_provider",
             )
 
-    def test_params_invalid_target_provider(self) -> None:
+    async def test_params_invalid_target_provider(self) -> None:
         """Invalid target provider fails."""
         with pytest.raises(ValidationError):
             CrossModelTransferParams(
@@ -720,7 +724,7 @@ class TestParameterValidation:
                 target_model_provider="invalid_provider",
             )
 
-    def test_params_max_tokens_bounds(self) -> None:
+    async def test_params_max_tokens_bounds(self) -> None:
         """Token limits must be within bounds."""
         # Too low
         with pytest.raises(ValidationError):
@@ -736,7 +740,7 @@ class TestParameterValidation:
                 max_permissive_tokens=9000,
             )
 
-    def test_params_timeout_bounds(self) -> None:
+    async def test_params_timeout_bounds(self) -> None:
         """Timeout must be within bounds."""
         # Too low
         with pytest.raises(ValidationError):
@@ -746,7 +750,7 @@ class TestParameterValidation:
         with pytest.raises(ValidationError):
             CrossModelTransferParams(query="Test", timeout_secs=700)
 
-    def test_params_forbids_extra_fields(self) -> None:
+    async def test_params_forbids_extra_fields(self) -> None:
         """Extra fields are forbidden."""
         with pytest.raises(ValidationError):
             CrossModelTransferParams(

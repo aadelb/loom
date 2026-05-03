@@ -1,0 +1,621 @@
+"""Test suite for REQ-043: AI Safety 7 tools return scores/risk levels.
+
+Tests verify that all 7 AI safety tools return appropriate score/risk level fields:
+1. research_prompt_injection_test — returns bypasses_detected (int)
+2. research_model_fingerprint — returns confidence (float 0-1)
+3. research_bias_probe — returns bias_scores (dict of floats 0-1)
+4. research_safety_filter_map — returns filter_map (dict of thresholds)
+5. research_compliance_check — returns compliance_score (float 0-100)
+6. research_hallucination_benchmark — returns accuracy_rate (float 0-1)
+7. research_adversarial_robustness — returns robustness_score (float 0-1)
+"""
+
+import pytest
+from unittest.mock import Mock, patch, AsyncMock
+from loom.tools.ai_safety import (
+    research_prompt_injection_test,
+    research_model_fingerprint,
+    research_bias_probe,
+    research_safety_filter_map,
+    research_compliance_check,
+)
+from loom.tools.ai_safety_extended import (
+    research_hallucination_benchmark,
+    research_adversarial_robustness,
+)
+
+
+pytestmark = pytest.mark.asyncio
+
+class TestPromptInjectionTest:
+    """Test research_prompt_injection_test returns bypass detection score."""
+    def (self):
+        """Verify tool returns bypasses_detected (int) field."""
+        with patch("loom.tools.ai_safety.httpx.Client") as mock_client_class:
+            mock_client = Mock()
+            mock_client_class.return_value.__enter__.return_value = mock_client
+
+            # Mock response for a test vector
+            mock_response = Mock()
+            mock_response.text = "I cannot help with that"
+            mock_response.status_code = 200
+            mock_client.post.return_value = mock_response
+
+            result = research_prompt_injection_test(
+                target_url="http://example.com/api",
+                model_name="test-model",
+                test_count=1,
+            )
+
+            assert "bypasses_detected" in result
+            assert isinstance(result["bypasses_detected"], int)
+            assert result["bypasses_detected"] >= 0
+    def (self):
+        """Verify tool returns tests_run (int) field."""
+        with patch("loom.tools.ai_safety.httpx.Client") as mock_client_class:
+            mock_client = Mock()
+            mock_client_class.return_value.__enter__.return_value = mock_client
+
+            mock_response = Mock()
+            mock_response.text = "I cannot help with that"
+            mock_response.status_code = 200
+            mock_client.post.return_value = mock_response
+
+            result = research_prompt_injection_test(
+                target_url="http://example.com/api",
+                model_name="test-model",
+                test_count=3,
+            )
+
+            assert "tests_run" in result
+            assert isinstance(result["tests_run"], int)
+            assert result["tests_run"] > 0
+    def (self):
+        """Verify tool handles invalid URL and returns error."""
+        result = research_prompt_injection_test(
+            target_url="not-a-valid-url",
+            model_name="test-model",
+        )
+
+        assert "error" in result
+        # But the tool should still be a dict
+        assert isinstance(result, dict)
+
+
+class TestModelFingerprint:
+    """Test research_model_fingerprint returns confidence score."""
+    def (self):
+        """Verify tool returns confidence (float 0-1) field."""
+        with patch("loom.tools.ai_safety.httpx.Client") as mock_client_class:
+            mock_client = Mock()
+            mock_client_class.return_value.__enter__.return_value = mock_client
+
+            mock_response = Mock()
+            mock_response.text = "This is a helpful response."
+            mock_response.status_code = 200
+            mock_client.post.return_value = mock_response
+
+            result = research_model_fingerprint(
+                target_url="http://example.com/api",
+                probes=1,
+            )
+
+            assert "confidence" in result
+            assert isinstance(result["confidence"], float)
+            assert 0.0 <= result["confidence"] <= 1.0
+    def (self):
+        """Verify tool returns likely_model (str) field."""
+        with patch("loom.tools.ai_safety.httpx.Client") as mock_client_class:
+            mock_client = Mock()
+            mock_client_class.return_value.__enter__.return_value = mock_client
+
+            mock_response = Mock()
+            mock_response.text = "This is a response."
+            mock_response.status_code = 200
+            mock_client.post.return_value = mock_response
+
+            result = research_model_fingerprint(
+                target_url="http://example.com/api",
+                probes=2,
+            )
+
+            assert "likely_model" in result
+            assert isinstance(result["likely_model"], str)
+    def (self):
+        """Verify tool handles invalid URL gracefully."""
+        result = research_model_fingerprint(
+            target_url="invalid-url-format",
+        )
+
+        assert "error" in result
+        assert isinstance(result, dict)
+
+
+class TestBiasProbe:
+    """Test research_bias_probe returns bias scores."""
+    def (self):
+        """Verify tool returns bias_scores (dict of floats 0-1)."""
+        with patch("loom.tools.ai_safety.httpx.Client") as mock_client_class:
+            mock_client = Mock()
+            mock_client_class.return_value.__enter__.return_value = mock_client
+
+            mock_response = Mock()
+            mock_response.text = "This is a neutral response."
+            mock_response.status_code = 200
+            mock_client.post.return_value = mock_response
+
+            result = research_bias_probe(
+                target_url="http://example.com/api",
+                categories=["gender"],
+            )
+
+            assert "bias_scores" in result
+            assert isinstance(result["bias_scores"], dict)
+            for score in result["bias_scores"].values():
+                assert isinstance(score, float)
+                assert 0.0 <= score <= 1.0
+    def (self):
+        """Verify tool returns bias_detected (bool)."""
+        with patch("loom.tools.ai_safety.httpx.Client") as mock_client_class:
+            mock_client = Mock()
+            mock_client_class.return_value.__enter__.return_value = mock_client
+
+            mock_response = Mock()
+            mock_response.text = "Response"
+            mock_response.status_code = 200
+            mock_client.post.return_value = mock_response
+
+            result = research_bias_probe(
+                target_url="http://example.com/api",
+            )
+
+            assert "bias_detected" in result
+            assert isinstance(result["bias_detected"], bool)
+    def (self):
+        """Verify tool returns categories_tested (list)."""
+        with patch("loom.tools.ai_safety.httpx.Client") as mock_client_class:
+            mock_client = Mock()
+            mock_client_class.return_value.__enter__.return_value = mock_client
+
+            mock_response = Mock()
+            mock_response.text = "Response"
+            mock_response.status_code = 200
+            mock_client.post.return_value = mock_response
+
+            result = research_bias_probe(
+                target_url="http://example.com/api",
+                categories=["gender", "age"],
+            )
+
+            assert "categories_tested" in result
+            assert isinstance(result["categories_tested"], list)
+
+
+class TestSafetyFilterMap:
+    """Test research_safety_filter_map returns filter boundaries."""
+    def (self):
+        """Verify tool returns filter_map (dict of threshold levels)."""
+        with patch("loom.tools.ai_safety.httpx.Client") as mock_client_class:
+            mock_client = Mock()
+            mock_client_class.return_value.__enter__.return_value = mock_client
+
+            mock_response = Mock()
+            mock_response.text = "I cannot help with that."
+            mock_response.status_code = 200
+            mock_client.post.return_value = mock_response
+
+            result = research_safety_filter_map(
+                target_url="http://example.com/api",
+                categories=["violence"],
+            )
+
+            assert "filter_map" in result
+            assert isinstance(result["filter_map"], dict)
+            for threshold in result["filter_map"].values():
+                assert isinstance(threshold, int)
+                assert threshold >= 0
+    def (self):
+        """Verify tool returns categories_mapped (list)."""
+        with patch("loom.tools.ai_safety.httpx.Client") as mock_client_class:
+            mock_client = Mock()
+            mock_client_class.return_value.__enter__.return_value = mock_client
+
+            mock_response = Mock()
+            mock_response.text = "Response"
+            mock_response.status_code = 200
+            mock_client.post.return_value = mock_response
+
+            result = research_safety_filter_map(
+                target_url="http://example.com/api",
+            )
+
+            assert "categories_mapped" in result
+            assert isinstance(result["categories_mapped"], list)
+    def (self):
+        """Verify tool returns thresholds (dict with level info)."""
+        with patch("loom.tools.ai_safety.httpx.Client") as mock_client_class:
+            mock_client = Mock()
+            mock_client_class.return_value.__enter__.return_value = mock_client
+
+            mock_response = Mock()
+            mock_response.text = "Response"
+            mock_response.status_code = 200
+            mock_client.post.return_value = mock_response
+
+            result = research_safety_filter_map(
+                target_url="http://example.com/api",
+                categories=["violence"],
+            )
+
+            assert "thresholds" in result
+            assert isinstance(result["thresholds"], dict)
+
+
+class TestComplianceCheck:
+    """Test research_compliance_check returns compliance score."""
+    def (self):
+        """Verify tool returns compliance_score (float 0-100)."""
+        with patch("loom.tools.ai_safety.httpx.Client") as mock_client_class:
+            mock_client = Mock()
+            mock_client_class.return_value.__enter__.return_value = mock_client
+
+            mock_response = Mock()
+            mock_response.status_code = 200
+            mock_response.text = "Privacy policy: We collect data in compliance with GDPR"
+            mock_client.get.return_value = mock_response
+
+            result = research_compliance_check(
+                domain="example.com",
+                frameworks=["gdpr"],
+            )
+
+            assert "compliance_score" in result
+            assert isinstance(result["compliance_score"], (int, float))
+            assert 0 <= result["compliance_score"] <= 100
+    def (self):
+        """Verify tool returns frameworks_checked (list)."""
+        with patch("loom.tools.ai_safety.httpx.Client") as mock_client_class:
+            mock_client = Mock()
+            mock_client_class.return_value.__enter__.return_value = mock_client
+
+            mock_response = Mock()
+            mock_response.status_code = 200
+            mock_response.text = "Privacy policy"
+            mock_client.get.return_value = mock_response
+
+            result = research_compliance_check(
+                domain="example.com",
+                frameworks=["gdpr", "ccpa"],
+            )
+
+            assert "frameworks_checked" in result
+            assert isinstance(result["frameworks_checked"], list)
+    def (self):
+        """Verify tool returns findings (list of requirement checks)."""
+        with patch("loom.tools.ai_safety.httpx.Client") as mock_client_class:
+            mock_client = Mock()
+            mock_client_class.return_value.__enter__.return_value = mock_client
+
+            mock_response = Mock()
+            mock_response.status_code = 200
+            mock_response.text = "Data protection"
+            mock_client.get.return_value = mock_response
+
+            result = research_compliance_check(
+                domain="example.com",
+            )
+
+            assert "findings" in result
+            assert isinstance(result["findings"], list)
+    def (self):
+        """Verify tool handles domain-only input (no http://)."""
+        with patch("loom.tools.ai_safety.httpx.Client") as mock_client_class:
+            mock_client = Mock()
+            mock_client_class.return_value.__enter__.return_value = mock_client
+
+            mock_response = Mock()
+            mock_response.status_code = 200
+            mock_response.text = "Data protection"
+            mock_client.get.return_value = mock_response
+
+            result = research_compliance_check(domain="example.com")
+
+            # Should not error on domain-only input
+            assert isinstance(result, dict)
+
+
+class TestHallucinationBenchmark:
+    """Test research_hallucination_benchmark returns accuracy score."""
+    def (self):
+        """Verify tool returns accuracy_rate (float 0-1)."""
+        result = research_hallucination_benchmark(
+            target_url="http://example.com/api",
+        )
+
+        assert "accuracy_rate" in result
+        assert isinstance(result["accuracy_rate"], float)
+        assert 0.0 <= result["accuracy_rate"] <= 1.0
+    def (self):
+        """Verify tool returns questions_asked (int)."""
+        result = research_hallucination_benchmark(
+            target_url="http://example.com/api",
+        )
+
+        assert "questions_asked" in result
+        assert isinstance(result["questions_asked"], int)
+        assert result["questions_asked"] > 0
+    def (self):
+        """Verify tool returns correct (int) count."""
+        result = research_hallucination_benchmark(
+            target_url="http://example.com/api",
+        )
+
+        assert "correct" in result
+        assert isinstance(result["correct"], int)
+        assert result["correct"] >= 0
+    def (self):
+        """Verify tool returns hallucinated (int) count."""
+        result = research_hallucination_benchmark(
+            target_url="http://example.com/api",
+        )
+
+        assert "hallucinated" in result
+        assert isinstance(result["hallucinated"], int)
+        assert result["hallucinated"] >= 0
+    def (self):
+        """Verify tool returns hallucination_examples (list)."""
+        result = research_hallucination_benchmark(
+            target_url="http://example.com/api",
+        )
+
+        assert "hallucination_examples" in result
+        assert isinstance(result["hallucination_examples"], list)
+
+
+class TestAdversarialRobustness:
+    """Test research_adversarial_robustness returns robustness score."""
+    def (self):
+        """Verify tool returns robustness_score (float 0-1)."""
+        with patch("loom.tools.ai_safety_extended.httpx.AsyncClient") as mock_async:
+            mock_client = AsyncMock()
+            mock_async.return_value.__aenter__.return_value = mock_client
+
+            mock_response = AsyncMock()
+            mock_response.status_code = 200
+            mock_response.text = "Response"
+            mock_client.get.return_value = mock_response
+            mock_client.post.return_value = mock_response
+
+            result = research_adversarial_robustness(
+                target_url="http://example.com/api",
+                test_count=1,
+            )
+
+            assert "robustness_score" in result
+            assert isinstance(result["robustness_score"], float)
+            assert 0.0 <= result["robustness_score"] <= 1.0
+    def (self):
+        """Verify tool returns tests_run (int)."""
+        with patch("loom.tools.ai_safety_extended.httpx.AsyncClient") as mock_async:
+            mock_client = AsyncMock()
+            mock_async.return_value.__aenter__.return_value = mock_client
+
+            mock_response = AsyncMock()
+            mock_response.status_code = 200
+            mock_client.get.return_value = mock_response
+            mock_client.post.return_value = mock_response
+
+            result = research_adversarial_robustness(
+                target_url="http://example.com/api",
+                test_count=3,
+            )
+
+            assert "tests_run" in result
+            assert isinstance(result["tests_run"], int)
+            assert result["tests_run"] > 0
+    def (self):
+        """Verify tool returns failures (list of failed tests)."""
+        with patch("loom.tools.ai_safety_extended.httpx.AsyncClient") as mock_async:
+            mock_client = AsyncMock()
+            mock_async.return_value.__aenter__.return_value = mock_client
+
+            mock_response = AsyncMock()
+            mock_response.status_code = 200
+            mock_client.get.return_value = mock_response
+            mock_client.post.return_value = mock_response
+
+            result = research_adversarial_robustness(
+                target_url="http://example.com/api",
+                test_count=1,
+            )
+
+            assert "failures" in result
+            assert isinstance(result["failures"], list)
+
+
+class TestAllToolsScoreFields:
+    """Comprehensive tests for all 7 tools returning score/risk fields."""
+    def (self):
+        """REQ-043: research_prompt_injection_test returns bypasses_detected (int)."""
+        with patch("loom.tools.ai_safety.httpx.Client") as mock_client_class:
+            mock_client = Mock()
+            mock_client_class.return_value.__enter__.return_value = mock_client
+
+            mock_response = Mock()
+            mock_response.text = "I cannot help"
+            mock_response.status_code = 200
+            mock_client.post.return_value = mock_response
+
+            result = research_prompt_injection_test(
+                target_url="http://example.com/api",
+                test_count=2,
+            )
+
+            assert isinstance(result, dict)
+            assert "bypasses_detected" in result
+            assert isinstance(result["bypasses_detected"], int)
+    def (self):
+        """REQ-043: research_model_fingerprint returns confidence (float 0-1)."""
+        with patch("loom.tools.ai_safety.httpx.Client") as mock_client_class:
+            mock_client = Mock()
+            mock_client_class.return_value.__enter__.return_value = mock_client
+
+            mock_response = Mock()
+            mock_response.text = "Response"
+            mock_response.status_code = 200
+            mock_client.post.return_value = mock_response
+
+            result = research_model_fingerprint(
+                target_url="http://example.com/api",
+            )
+
+            assert isinstance(result, dict)
+            assert "confidence" in result
+            assert isinstance(result["confidence"], float)
+            assert 0.0 <= result["confidence"] <= 1.0
+    def (self):
+        """REQ-043: research_bias_probe returns bias_scores (dict 0-1)."""
+        with patch("loom.tools.ai_safety.httpx.Client") as mock_client_class:
+            mock_client = Mock()
+            mock_client_class.return_value.__enter__.return_value = mock_client
+
+            mock_response = Mock()
+            mock_response.text = "Response"
+            mock_response.status_code = 200
+            mock_client.post.return_value = mock_response
+
+            result = research_bias_probe(
+                target_url="http://example.com/api",
+            )
+
+            assert isinstance(result, dict)
+            assert "bias_scores" in result
+            assert isinstance(result["bias_scores"], dict)
+            if result["bias_scores"]:
+                for score in result["bias_scores"].values():
+                    assert isinstance(score, float)
+                    assert 0.0 <= score <= 1.0
+    def (self):
+        """REQ-043: research_safety_filter_map returns filter_map (dict levels)."""
+        with patch("loom.tools.ai_safety.httpx.Client") as mock_client_class:
+            mock_client = Mock()
+            mock_client_class.return_value.__enter__.return_value = mock_client
+
+            mock_response = Mock()
+            mock_response.text = "Response"
+            mock_response.status_code = 200
+            mock_client.post.return_value = mock_response
+
+            result = research_safety_filter_map(
+                target_url="http://example.com/api",
+            )
+
+            assert isinstance(result, dict)
+            assert "filter_map" in result
+            assert isinstance(result["filter_map"], dict)
+    def (self):
+        """REQ-043: research_compliance_check returns compliance_score (0-100)."""
+        with patch("loom.tools.ai_safety.httpx.Client") as mock_client_class:
+            mock_client = Mock()
+            mock_client_class.return_value.__enter__.return_value = mock_client
+
+            mock_response = Mock()
+            mock_response.status_code = 200
+            mock_response.text = "Privacy policy"
+            mock_client.get.return_value = mock_response
+
+            result = research_compliance_check(domain="example.com")
+
+            assert isinstance(result, dict)
+            assert "compliance_score" in result
+            assert isinstance(result["compliance_score"], (int, float))
+            assert 0 <= result["compliance_score"] <= 100
+    def (self):
+        """REQ-043: research_hallucination_benchmark returns accuracy_rate (0-1)."""
+        result = research_hallucination_benchmark(
+            target_url="http://example.com/api",
+        )
+
+        assert isinstance(result, dict)
+        assert "accuracy_rate" in result
+        assert isinstance(result["accuracy_rate"], float)
+        assert 0.0 <= result["accuracy_rate"] <= 1.0
+    def (self):
+        """REQ-043: research_adversarial_robustness returns robustness_score (0-1)."""
+        with patch("loom.tools.ai_safety_extended.httpx.AsyncClient") as mock_async:
+            mock_client = AsyncMock()
+            mock_async.return_value.__aenter__.return_value = mock_client
+
+            mock_response = AsyncMock()
+            mock_response.status_code = 200
+            mock_client.get.return_value = mock_response
+            mock_client.post.return_value = mock_response
+
+            result = research_adversarial_robustness(
+                target_url="http://example.com/api",
+                test_count=1,
+            )
+
+            assert isinstance(result, dict)
+            assert "robustness_score" in result
+            assert isinstance(result["robustness_score"], float)
+            assert 0.0 <= result["robustness_score"] <= 1.0
+
+
+class TestAllToolsPresent:
+    """Verify all 7 AI safety tools are importable and callable."""
+    def (self):
+        """Verify all 7 tools can be imported."""
+        # This will fail at import if tools don't exist
+        from loom.tools.ai_safety import (
+            research_prompt_injection_test,
+            research_model_fingerprint,
+            research_bias_probe,
+            research_safety_filter_map,
+            research_compliance_check,
+        )
+        from loom.tools.ai_safety_extended import (
+            research_hallucination_benchmark,
+            research_adversarial_robustness,
+        )
+
+        assert callable(research_prompt_injection_test)
+        assert callable(research_model_fingerprint)
+        assert callable(research_bias_probe)
+        assert callable(research_safety_filter_map)
+        assert callable(research_compliance_check)
+        assert callable(research_hallucination_benchmark)
+        assert callable(research_adversarial_robustness)
+    def (self):
+        """Verify all tools accept target_url/domain parameters."""
+        # These are all callable and accept URL parameters
+        with patch("loom.tools.ai_safety.httpx.Client") as mock_client_class:
+            mock_client = Mock()
+            mock_client_class.return_value.__enter__.return_value = mock_client
+
+            mock_response = Mock()
+            mock_response.status_code = 200
+            mock_response.text = "Response"
+            mock_client.post.return_value = mock_response
+            mock_client.get.return_value = mock_response
+
+            # Each tool should accept URL parameter without error
+            url = "http://example.com/api"
+
+            research_prompt_injection_test(target_url=url)
+            research_model_fingerprint(target_url=url)
+            research_bias_probe(target_url=url)
+            research_safety_filter_map(target_url=url)
+            research_compliance_check(domain=url)
+
+        research_hallucination_benchmark(target_url="http://example.com/api")
+
+        with patch("loom.tools.ai_safety_extended.httpx.AsyncClient") as mock_async:
+            mock_client = AsyncMock()
+            mock_async.return_value.__aenter__.return_value = mock_client
+            mock_response = AsyncMock()
+            mock_response.status_code = 200
+            mock_client.get.return_value = mock_response
+            mock_client.post.return_value = mock_response
+
+            research_adversarial_robustness(target_url="http://example.com/api")

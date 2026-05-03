@@ -5,14 +5,14 @@ not just strings. Tools tested:
 1. research_company_diligence (async)
 2. research_salary_intelligence (async)
 3. research_supply_chain_risk (async)
-4. research_crypto_trace
-5. research_stego_detect
-6. research_domain_reputation
-7. research_social_graph
-8. research_knowledge_graph
-9. research_fact_check
-10. research_ghost_protocol (signal_detection)
-11. research_temporal_anomaly (signal_detection)
+4. research_crypto_trace (async)
+5. research_stego_detect (sync)
+6. research_domain_reputation (async)
+7. research_social_graph (async)
+8. research_knowledge_graph (async)
+9. research_fact_check (async)
+10. research_ghost_protocol (async)
+11. research_temporal_anomaly (async)
 12. research_persona_profile (async)
 """
 
@@ -86,10 +86,11 @@ class TestIntelligenceToolsStructuredOutput:
 
         print(f"✓ research_supply_chain_risk: {len(result)} fields")
 
-    def test_04_crypto_trace_structured(self):
+    @pytest.mark.asyncio
+    async def test_04_crypto_trace_structured(self):
         """Test 4: research_crypto_trace returns structured dict."""
         # Use a safe Bitcoin address example
-        result = crypto_trace.research_crypto_trace(
+        result = await crypto_trace.research_crypto_trace(
             "1A1z7agoat2WFvZv7j9qLvWRgmYyvS2p9e"
         )
 
@@ -117,9 +118,10 @@ class TestIntelligenceToolsStructuredOutput:
 
         print(f"✓ research_stego_detect: {len(result)} fields")
 
-    def test_06_domain_reputation_structured(self):
+    @pytest.mark.asyncio
+    async def test_06_domain_reputation_structured(self):
         """Test 6: research_domain_reputation returns structured dict."""
-        result = threat_intel.research_domain_reputation("example.com")
+        result = await threat_intel.research_domain_reputation("example.com")
 
         assert isinstance(result, dict), f"Expected dict, got {type(result)}"
         assert "domain" in result or len(result) > 0
@@ -129,9 +131,10 @@ class TestIntelligenceToolsStructuredOutput:
 
         print(f"✓ research_domain_reputation: {len(result)} fields")
 
-    def test_07_social_graph_structured(self):
+    @pytest.mark.asyncio
+    async def test_07_social_graph_structured(self):
         """Test 7: research_social_graph returns structured dict."""
-        result = social_graph.research_social_graph("test_user")
+        result = await social_graph.research_social_graph("test_user")
 
         assert isinstance(result, dict), f"Expected dict, got {type(result)}"
         assert "query" in result or "username" in result or len(result) > 0
@@ -141,9 +144,10 @@ class TestIntelligenceToolsStructuredOutput:
 
         print(f"✓ research_social_graph: {len(result)} fields")
 
-    def test_08_knowledge_graph_structured(self):
+    @pytest.mark.asyncio
+    async def test_08_knowledge_graph_structured(self):
         """Test 8: research_knowledge_graph returns structured dict."""
-        result = knowledge_graph.research_knowledge_graph(
+        result = await knowledge_graph.research_knowledge_graph(
             "machine learning",
             max_nodes=50,
         )
@@ -160,9 +164,10 @@ class TestIntelligenceToolsStructuredOutput:
 
         print(f"✓ research_knowledge_graph: {len(result)} fields")
 
-    def test_09_fact_check_structured(self):
+    @pytest.mark.asyncio
+    async def test_09_fact_check_structured(self):
         """Test 9: research_fact_check returns structured dict."""
-        result = fact_checker.research_fact_check("The Earth is round")
+        result = await fact_checker.research_fact_check("The Earth is round")
 
         assert isinstance(result, dict), f"Expected dict, got {type(result)}"
         assert "claim" in result or "query" in result or len(result) > 0
@@ -172,9 +177,10 @@ class TestIntelligenceToolsStructuredOutput:
 
         print(f"✓ research_fact_check: {len(result)} fields")
 
-    def test_10_ghost_protocol_structured(self):
+    @pytest.mark.asyncio
+    async def test_10_ghost_protocol_structured(self):
         """Test 10: research_ghost_protocol (signal_detection) returns structured dict."""
-        result = signal_detection.research_ghost_protocol("example.com")
+        result = await signal_detection.research_ghost_protocol("example.com")
 
         assert isinstance(result, dict), f"Expected dict, got {type(result)}"
         # This tool returns coordination signals, check for its actual fields
@@ -185,11 +191,12 @@ class TestIntelligenceToolsStructuredOutput:
 
         print(f"✓ research_ghost_protocol: {len(result)} fields")
 
-    def test_11_temporal_anomaly_structured(self):
+    @pytest.mark.asyncio
+    async def test_11_temporal_anomaly_structured(self):
         """Test 11: research_temporal_anomaly (signal_detection) returns structured dict."""
-        result = signal_detection.research_temporal_anomaly(
+        result = await signal_detection.research_temporal_anomaly(
             "example.com",
-            time_window_days=30,
+            check_type="all",
         )
 
         assert isinstance(result, dict), f"Expected dict, got {type(result)}"
@@ -217,9 +224,10 @@ class TestIntelligenceToolsStructuredOutput:
 class TestIntelligenceStructureValidation:
     """Validate that structured fields contain expected data types."""
 
-    def test_crypto_trace_has_nested_structure(self):
+    @pytest.mark.asyncio
+    async def test_crypto_trace_has_nested_structure(self):
         """Verify crypto_trace returns nested dicts, not just strings."""
-        result = crypto_trace.research_crypto_trace(
+        result = await crypto_trace.research_crypto_trace(
             "1A1z7agoat2WFvZv7j9qLvWRgmYyvS2p9e"
         )
 
@@ -231,9 +239,10 @@ class TestIntelligenceStructureValidation:
         assert isinstance(result.get("primary_data"), (dict, type(None)))
         assert isinstance(result.get("blockchair_stats"), (dict, type(None)))
 
-    def test_knowledge_graph_has_nodes_and_edges(self):
+    @pytest.mark.asyncio
+    async def test_knowledge_graph_has_nodes_and_edges(self):
         """Verify knowledge_graph returns lists of structured dicts."""
-        result = knowledge_graph.research_knowledge_graph("test")
+        result = await knowledge_graph.research_knowledge_graph("test")
 
         # Must have nodes and edges as lists
         assert isinstance(result.get("nodes"), list)
@@ -256,17 +265,18 @@ class TestIntelligenceStructureValidation:
 class TestIntelligenceOutputConsistency:
     """Test that structured output is consistent across tools."""
 
-    def test_crypto_trace_and_kg_return_dicts(self):
+    @pytest.mark.asyncio
+    async def test_crypto_trace_and_kg_return_dicts(self):
         """Verify both sync and async tools return dicts with meaningful keys."""
-        # Sync tool
-        crypto_result = crypto_trace.research_crypto_trace(
+        # Async tool
+        crypto_result = await crypto_trace.research_crypto_trace(
             "1A1z7agoat2WFvZv7j9qLvWRgmYyvS2p9e"
         )
         assert isinstance(crypto_result, dict)
         assert len(crypto_result) > 0
 
-        # Sync tool
-        kg_result = knowledge_graph.research_knowledge_graph("test")
+        # Async tool
+        kg_result = await knowledge_graph.research_knowledge_graph("test")
         assert isinstance(kg_result, dict)
         assert len(kg_result) > 0
         assert "nodes" in kg_result
@@ -301,9 +311,9 @@ class TestIntelligenceToolsPassFail:
         except Exception as e:
             results.append(("supply_chain_risk", False))
 
-        # Tool 4: research_crypto_trace (sync)
+        # Tool 4: research_crypto_trace (async)
         try:
-            result = crypto_trace.research_crypto_trace("1A1z7agoat2WFvZv7j9qLvWRgmYyvS2p9e")
+            result = asyncio.run(crypto_trace.research_crypto_trace("1A1z7agoat2WFvZv7j9qLvWRgmYyvS2p9e"))
             results.append(("crypto_trace", isinstance(result, dict) and not isinstance(result, str)))
         except Exception as e:
             results.append(("crypto_trace", False))
@@ -315,44 +325,44 @@ class TestIntelligenceToolsPassFail:
         except Exception as e:
             results.append(("stego_detect", False))
 
-        # Tool 6: research_domain_reputation (sync)
+        # Tool 6: research_domain_reputation (async)
         try:
-            result = threat_intel.research_domain_reputation("example.com")
+            result = asyncio.run(threat_intel.research_domain_reputation("example.com"))
             results.append(("domain_reputation", isinstance(result, dict) and not isinstance(result, str)))
         except Exception as e:
             results.append(("domain_reputation", False))
 
-        # Tool 7: research_social_graph (sync)
+        # Tool 7: research_social_graph (async)
         try:
-            result = social_graph.research_social_graph("test")
+            result = asyncio.run(social_graph.research_social_graph("test"))
             results.append(("social_graph", isinstance(result, dict) and not isinstance(result, str)))
         except Exception as e:
             results.append(("social_graph", False))
 
-        # Tool 8: research_knowledge_graph (sync)
+        # Tool 8: research_knowledge_graph (async)
         try:
-            result = knowledge_graph.research_knowledge_graph("test")
+            result = asyncio.run(knowledge_graph.research_knowledge_graph("test"))
             results.append(("knowledge_graph", isinstance(result, dict) and not isinstance(result, str)))
         except Exception as e:
             results.append(("knowledge_graph", False))
 
-        # Tool 9: research_fact_check (sync)
+        # Tool 9: research_fact_check (async)
         try:
-            result = fact_checker.research_fact_check("test")
+            result = asyncio.run(fact_checker.research_fact_check("test"))
             results.append(("fact_check", isinstance(result, dict) and not isinstance(result, str)))
         except Exception as e:
             results.append(("fact_check", False))
 
-        # Tool 10: research_ghost_protocol (sync)
+        # Tool 10: research_ghost_protocol (async)
         try:
-            result = signal_detection.research_ghost_protocol("example.com")
+            result = asyncio.run(signal_detection.research_ghost_protocol("example.com"))
             results.append(("ghost_protocol", isinstance(result, dict) and not isinstance(result, str)))
         except Exception as e:
             results.append(("ghost_protocol", False))
 
-        # Tool 11: research_temporal_anomaly (sync)
+        # Tool 11: research_temporal_anomaly (async)
         try:
-            result = signal_detection.research_temporal_anomaly("example.com")
+            result = asyncio.run(signal_detection.research_temporal_anomaly("example.com"))
             results.append(("temporal_anomaly", isinstance(result, dict) and not isinstance(result, str)))
         except Exception as e:
             results.append(("temporal_anomaly", False))

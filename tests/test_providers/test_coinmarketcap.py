@@ -16,8 +16,10 @@ def _clear_coinmarketcap_module():
     sys.modules.pop("loom.providers.coinmarketcap", None)
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestSearchCrypto:
-    def test_missing_api_key(self):
+    async def test_missing_api_key(self):
         """Test returns error when COINMARKETCAP_API_KEY is not set."""
         with patch.dict("os.environ", {}, clear=True):
             from loom.providers.coinmarketcap import search_crypto
@@ -27,7 +29,7 @@ class TestSearchCrypto:
             assert result["error"] == "COINMARKETCAP_API_KEY not set"
             assert result["results"] == []
 
-    def test_success_known_crypto(self):
+    async def test_success_known_crypto(self):
         """Test successful search for known cryptocurrency."""
         mock_response = MagicMock()
         mock_response.json.return_value = {
@@ -66,7 +68,7 @@ class TestSearchCrypto:
             assert result["results"][0]["price_usd"] == 45000.50
             assert result["query"] == "bitcoin"
 
-    def test_success_top_cryptos(self):
+    async def test_success_top_cryptos(self):
         """Test successful search for top cryptocurrencies by market cap."""
         mock_response = MagicMock()
         mock_response.json.return_value = {
@@ -114,7 +116,7 @@ class TestSearchCrypto:
             assert result["results"][0]["symbol"] == "BTC"
             assert result["results"][1]["symbol"] == "ETH"
 
-    def test_case_insensitive_matching(self):
+    async def test_case_insensitive_matching(self):
         """Test that query matching is case-insensitive."""
         mock_response = MagicMock()
         mock_response.json.return_value = {
@@ -141,7 +143,7 @@ class TestSearchCrypto:
 
             assert result["results"][0]["symbol"] == "ETH"
 
-    def test_http_error_401(self):
+    async def test_http_error_401(self):
         """Test handling of HTTP 401 unauthorized."""
         mock_response = MagicMock()
         mock_response.status_code = 401
@@ -163,7 +165,7 @@ class TestSearchCrypto:
             assert "error" in result
             assert result["results"] == []
 
-    def test_http_error_429(self):
+    async def test_http_error_429(self):
         """Test handling of HTTP 429 rate limit."""
         mock_response = MagicMock()
         mock_response.status_code = 429
@@ -184,7 +186,7 @@ class TestSearchCrypto:
 
             assert "error" in result
 
-    def test_unknown_crypto(self):
+    async def test_unknown_crypto(self):
         """Test behavior with unknown cryptocurrency."""
         mock_response = MagicMock()
         mock_response.json.return_value = {"data": []}
@@ -203,7 +205,7 @@ class TestSearchCrypto:
 
             assert result["results"] == []
 
-    def test_connection_error(self):
+    async def test_connection_error(self):
         """Test handling of connection error."""
         with patch.dict("os.environ", {"COINMARKETCAP_API_KEY": "key"}), patch(
             "loom.providers.coinmarketcap._get_cmc_client"

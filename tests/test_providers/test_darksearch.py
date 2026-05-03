@@ -9,6 +9,7 @@ Tests cover:
 """
 
 from __future__ import annotations
+import pytest
 
 from unittest.mock import MagicMock, patch
 
@@ -17,10 +18,12 @@ import httpx
 from loom.providers.darksearch_search import search_darksearch
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestDarkSearchSearch:
     """Tests for DarkSearch search functionality."""
 
-    def test_search_darksearch_success(self) -> None:
+    async def test_search_darksearch_success(self) -> None:
         """Test successful DarkSearch API search with results."""
         api_response = {
             "data": [
@@ -51,7 +54,7 @@ class TestDarkSearchSearch:
             assert result["results"][0]["url"] == "https://example.onion/page1"
             assert result["results"][0]["title"] == "Example Onion Market"
 
-    def test_search_darksearch_empty_results(self) -> None:
+    async def test_search_darksearch_empty_results(self) -> None:
         """Test DarkSearch search with no results."""
         api_response = {"data": []}
 
@@ -68,7 +71,7 @@ class TestDarkSearchSearch:
             assert result["results"] == []
             assert "error" not in result
 
-    def test_search_darksearch_rate_limited(self) -> None:
+    async def test_search_darksearch_rate_limited(self) -> None:
         """Test DarkSearch search when rate limited (HTTP 429)."""
         with patch("loom.providers.darksearch_search._get_darksearch_client") as mock_get_client:
             mock_client = MagicMock()
@@ -87,7 +90,7 @@ class TestDarkSearchSearch:
             assert "error" in result
             assert result["error"] == "rate_limited"
 
-    def test_search_darksearch_http_error(self) -> None:
+    async def test_search_darksearch_http_error(self) -> None:
         """Test DarkSearch search with non-429 HTTP error."""
         with patch("loom.providers.darksearch_search._get_darksearch_client") as mock_get_client:
             mock_client = MagicMock()
@@ -106,7 +109,7 @@ class TestDarkSearchSearch:
             assert "error" in result
             assert "HTTP 500" in result["error"]
 
-    def test_search_darksearch_connection_error(self) -> None:
+    async def test_search_darksearch_connection_error(self) -> None:
         """Test DarkSearch search with connection error."""
         with patch("loom.providers.darksearch_search._get_darksearch_client") as mock_get_client:
             mock_client = MagicMock()
@@ -119,7 +122,7 @@ class TestDarkSearchSearch:
             assert result["results"] == []
             assert "error" in result
 
-    def test_search_darksearch_result_format(self) -> None:
+    async def test_search_darksearch_result_format(self) -> None:
         """Test that DarkSearch results follow expected format."""
         api_response = {
             "data": [
@@ -154,7 +157,7 @@ class TestDarkSearchSearch:
                 assert "title" in item
                 assert "snippet" in item
 
-    def test_search_darksearch_result_truncation(self) -> None:
+    async def test_search_darksearch_result_truncation(self) -> None:
         """Test that DarkSearch results are truncated to max length."""
         long_title = "A" * 300
         long_snippet = "B" * 600
@@ -183,7 +186,7 @@ class TestDarkSearchSearch:
                     assert len(item["title"]) <= 200
                     assert len(item["snippet"]) <= 500
 
-    def test_search_darksearch_missing_link(self) -> None:
+    async def test_search_darksearch_missing_link(self) -> None:
         """Test that results without 'link' field are filtered out."""
         api_response = {
             "data": [
@@ -212,7 +215,7 @@ class TestDarkSearchSearch:
             assert len(result["results"]) == 1
             assert result["results"][0]["url"] == "https://valid.onion"
 
-    def test_search_darksearch_max_results_respected(self) -> None:
+    async def test_search_darksearch_max_results_respected(self) -> None:
         """Test that search respects n parameter for max results."""
         api_response = {
             "data": [

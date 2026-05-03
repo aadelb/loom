@@ -7,10 +7,12 @@ from __future__ import annotations
 
 import pytest
 
+pytestmark = pytest.mark.asyncio
+
 pytest.importorskip("loom.journey")
 
 
-def test_journey_report_markdown_output() -> None:
+async def test_journey_report_markdown_output() -> None:
     """JourneyReport.as_markdown() renders all required sections."""
     from loom.journey import JourneyReport, Step
 
@@ -45,7 +47,7 @@ def test_journey_report_markdown_output() -> None:
     assert "✅" in markdown
 
 
-def test_journey_step_to_dict() -> None:
+async def test_journey_step_to_dict() -> None:
     """Step.to_dict() serializes all fields for JSON."""
     from loom.journey import Step
 
@@ -72,7 +74,7 @@ def test_journey_step_to_dict() -> None:
     assert d["error"] is None
 
 
-def test_safe_on_step_catches_exception() -> None:
+async def test_safe_on_step_catches_exception() -> None:
     """_safe_on_step catches callback exceptions and logs warnings."""
     from loom.journey import Step, _safe_on_step
 
@@ -90,7 +92,7 @@ def test_safe_on_step_catches_exception() -> None:
     _safe_on_step(failing_callback, step)
 
 
-def test_safe_on_step_none_callback_noop() -> None:
+async def test_safe_on_step_none_callback_noop() -> None:
     """_safe_on_step with None callback does nothing."""
     from loom.journey import Step, _safe_on_step
 
@@ -105,7 +107,7 @@ def test_safe_on_step_none_callback_noop() -> None:
     _safe_on_step(None, step)
 
 
-def test_format_duration_seconds() -> None:
+async def test_format_duration_seconds() -> None:
     """_format_duration converts milliseconds to seconds for >= 1000ms."""
     from loom.journey import _format_duration
 
@@ -114,7 +116,7 @@ def test_format_duration_seconds() -> None:
     assert _format_duration(2500) == "2.5s"
 
 
-def test_format_duration_milliseconds() -> None:
+async def test_format_duration_milliseconds() -> None:
     """_format_duration keeps milliseconds for < 1000ms."""
     from loom.journey import _format_duration
 

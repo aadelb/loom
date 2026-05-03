@@ -9,6 +9,7 @@ Tests cover:
 """
 
 from __future__ import annotations
+import pytest
 
 from unittest.mock import MagicMock, patch
 
@@ -17,10 +18,12 @@ import httpx
 from loom.providers.ahmia_search import search_ahmia
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestAhmiaSearch:
     """Tests for Ahmia search functionality."""
 
-    def test_search_ahmia_success(self) -> None:
+    async def test_search_ahmia_success(self) -> None:
         """Test successful Ahmia search with .onion results."""
         html_response = """
         <html>
@@ -50,7 +53,7 @@ class TestAhmiaSearch:
             assert len(result["results"]) >= 0
             assert isinstance(result["results"], list)
 
-    def test_search_ahmia_empty_results(self) -> None:
+    async def test_search_ahmia_empty_results(self) -> None:
         """Test Ahmia search with no results."""
         html_response = "<html><body></body></html>"
 
@@ -67,7 +70,7 @@ class TestAhmiaSearch:
             assert result["results"] == []
             assert "error" not in result
 
-    def test_search_ahmia_http_error(self) -> None:
+    async def test_search_ahmia_http_error(self) -> None:
         """Test Ahmia search with HTTP error."""
         with patch("loom.providers.ahmia_search._get_ahmia_client") as mock_get_client:
             mock_client = MagicMock()
@@ -85,7 +88,7 @@ class TestAhmiaSearch:
             assert result["results"] == []
             assert "error" in result
 
-    def test_search_ahmia_connection_error(self) -> None:
+    async def test_search_ahmia_connection_error(self) -> None:
         """Test Ahmia search with connection error."""
         with patch("loom.providers.ahmia_search._get_ahmia_client") as mock_get_client:
             mock_client = MagicMock()
@@ -99,7 +102,7 @@ class TestAhmiaSearch:
             assert "error" in result
             assert "search failed" in result["error"]
 
-    def test_search_ahmia_result_format(self) -> None:
+    async def test_search_ahmia_result_format(self) -> None:
         """Test that Ahmia results follow expected format."""
         html_response = """
         <html>
@@ -135,7 +138,7 @@ class TestAhmiaSearch:
                 assert "title" in item or len(result["results"]) == 0
                 assert "snippet" in item or len(result["results"]) == 0
 
-    def test_search_ahmia_result_truncation(self) -> None:
+    async def test_search_ahmia_result_truncation(self) -> None:
         """Test that Ahmia results are truncated to max length."""
         long_title = "A" * 300
         long_snippet = "B" * 600
@@ -165,7 +168,7 @@ class TestAhmiaSearch:
                     assert len(item["title"]) <= 200
                     assert len(item["snippet"]) <= 500
 
-    def test_search_ahmia_max_results_respected(self) -> None:
+    async def test_search_ahmia_max_results_respected(self) -> None:
         """Test that search respects n parameter for max results."""
         html_response = """
         <html>

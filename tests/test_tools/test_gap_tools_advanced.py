@@ -18,18 +18,20 @@ from loom.tools.gap_tools_advanced import (
 )
 
 
+pytestmark = pytest.mark.asyncio
+
 class TestParseDblpAffiliations:
     """Tests for _parse_dblp_affiliations helper."""
 
-    def test_empty_data_returns_empty_list(self) -> None:
+    async def test_empty_data_returns_empty_list(self) -> None:
         """Empty DBLP response returns empty list."""
         assert _parse_dblp_affiliations({}) == []
 
-    def test_no_result_section_returns_empty(self) -> None:
+    async def test_no_result_section_returns_empty(self) -> None:
         """Missing 'result' section returns empty list."""
         assert _parse_dblp_affiliations({"error": "not found"}) == []
 
-    def test_parse_valid_dblp_response(self) -> None:
+    async def test_parse_valid_dblp_response(self) -> None:
         """Valid DBLP response with author/affiliation is parsed."""
         data = {
             "result": {
@@ -50,7 +52,7 @@ class TestParseDblpAffiliations:
         assert result[0]["author"] == "Geoffrey Hinton"
         assert result[0]["affiliation"] == "University of Toronto"
 
-    def test_parse_multiple_affiliations(self) -> None:
+    async def test_parse_multiple_affiliations(self) -> None:
         """Multiple author entries are parsed correctly."""
         data = {
             "result": {
@@ -77,7 +79,7 @@ class TestParseDblpAffiliations:
         assert result[0]["affiliation"] == "MIT"
         assert result[1]["affiliation"] == "Stanford"
 
-    def test_invalid_data_returns_empty(self) -> None:
+    async def test_invalid_data_returns_empty(self) -> None:
         """Malformed data returns empty list gracefully."""
         data = {"result": {"hits": None}}
         result = _parse_dblp_affiliations(data)
@@ -87,16 +89,16 @@ class TestParseDblpAffiliations:
 class TestDetectTimezoneFromCommits:
     """Tests for _detect_timezone_from_commits helper."""
 
-    def test_empty_commit_list_returns_unknown(self) -> None:
+    async def test_empty_commit_list_returns_unknown(self) -> None:
         """Empty commit list returns 'unknown'."""
         assert _detect_timezone_from_commits([]) == "unknown"
 
-    def test_invalid_iso_format_returns_unknown(self) -> None:
+    async def test_invalid_iso_format_returns_unknown(self) -> None:
         """Invalid ISO format returns 'unknown'."""
         result = _detect_timezone_from_commits(["not-a-date"])
         assert result == "unknown"
 
-    def test_morning_commits_detected(self) -> None:
+    async def test_morning_commits_detected(self) -> None:
         """Commits in morning hours detected."""
         # 9 AM UTC
         commits = [
@@ -110,7 +112,7 @@ class TestDetectTimezoneFromCommits:
             "unknown",
         ]  # Morning hours
 
-    def test_evening_commits_detected(self) -> None:
+    async def test_evening_commits_detected(self) -> None:
         """Commits in evening hours detected."""
         # 3 PM + 4 PM UTC
         commits = [
@@ -125,14 +127,14 @@ class TestDetectTimezoneFromCommits:
 class TestCalculateFilingVelocity:
     """Tests for _calculate_filing_velocity helper."""
 
-    def test_empty_patents_returns_none(self) -> None:
+    async def test_empty_patents_returns_none(self) -> None:
         """Empty patent list returns velocity 'none'."""
         result = _calculate_filing_velocity([])
         assert result["total"] == 0
         assert result["velocity"] == "none"
         assert result["avg_per_month"] == 0.0
 
-    def test_single_patent_recent(self) -> None:
+    async def test_single_patent_recent(self) -> None:
         """Single recent patent returns correct counts."""
         patents = [
             {
@@ -145,7 +147,7 @@ class TestCalculateFilingVelocity:
         assert result["recent_count"] >= 0
         assert result["velocity"] in ["steady", "surge", "decline"]
 
-    def test_surge_detection(self) -> None:
+    async def test_surge_detection(self) -> None:
         """Recent burst of patents detected as surge."""
         recent_patents = [
             {"filing_date": f"2024-0{i:02d}-01T00:00:00Z", "patent_id": f"US{i}"}
@@ -163,7 +165,7 @@ class TestCalculateFilingVelocity:
         if result["recent_count"] > result["older_count"] * 2:
             assert result["velocity"] == "surge"
 
-    def test_invalid_date_format_handled(self) -> None:
+    async def test_invalid_date_format_handled(self) -> None:
         """Invalid date formats are handled gracefully."""
         patents = [
             {"filing_date": "invalid-date", "patent_id": "US123"},
@@ -177,11 +179,11 @@ class TestCalculateFilingVelocity:
 class TestDetectDomainShifts:
     """Tests for _detect_domain_shifts helper."""
 
-    def test_empty_patents_returns_empty(self) -> None:
+    async def test_empty_patents_returns_empty(self) -> None:
         """Empty patent list returns no domain shifts."""
         assert _detect_domain_shifts([]) == []
 
-    def test_single_domain_returns_empty(self) -> None:
+    async def test_single_domain_returns_empty(self) -> None:
         """Patents in single domain return no shift."""
         patents = [
             {"cpc_classification": "A123", "patent_id": "US1"},
@@ -191,7 +193,7 @@ class TestDetectDomainShifts:
         # Single main class (A) = no shift
         assert isinstance(result, list)
 
-    def test_multiple_domain_shift_detected(self) -> None:
+    async def test_multiple_domain_shift_detected(self) -> None:
         """Patents across 3+ domains detected as shift."""
         patents = [
             {"cpc_classification": "A123", "patent_id": "US1"},
@@ -203,7 +205,7 @@ class TestDetectDomainShifts:
         result = _detect_domain_shifts(patents)
         assert isinstance(result, list)
 
-    def test_missing_cpc_classification_handled(self) -> None:
+    async def test_missing_cpc_classification_handled(self) -> None:
         """Patents without CPC classification handled gracefully."""
         patents = [
             {"patent_id": "US1"},
@@ -217,7 +219,7 @@ class TestResearchTalentMigration:
     """Tests for research_talent_migration tool."""
 
     @patch("loom.tools.gap_tools_advanced._get_json")
-    def test_talent_migration_basic(self, mock_get_json: AsyncMock) -> None:
+    async def test_talent_migration_basic(self, mock_get_json: AsyncMock) -> None:
         """Basic talent migration returns expected fields."""
         mock_get_json.return_value = {
             "result": {
@@ -234,7 +236,7 @@ class TestResearchTalentMigration:
             }
         }
 
-        result = research_talent_migration("Geoffrey Hinton", "deep_learning")
+        result = await research_talent_migration("Geoffrey Hinton", "deep_learning")
         assert result["person_name"] == "Geoffrey Hinton"
         assert result["field"] == "deep_learning"
         assert "current_affiliation" in result
@@ -244,16 +246,16 @@ class TestResearchTalentMigration:
         assert "confidence" in result
         assert 0.0 <= result["confidence"] <= 1.0
 
-    def test_talent_migration_no_field_required(self) -> None:
+    async def test_talent_migration_no_field_required(self) -> None:
         """Field parameter is optional."""
-        result = research_talent_migration("Unknown Researcher")
+        result = await research_talent_migration("Unknown Researcher")
         assert result["person_name"] == "Unknown Researcher"
         assert result["field"] == ""
         assert isinstance(result["affiliation_history"], list)
 
-    def test_talent_migration_returns_dict(self) -> None:
+    async def test_talent_migration_returns_dict(self) -> None:
         """Always returns dictionary with required fields."""
-        result = research_talent_migration("Test Person")
+        result = await research_talent_migration("Test Person")
         assert isinstance(result, dict)
         required_fields = [
             "person_name",
@@ -269,9 +271,9 @@ class TestResearchTalentMigration:
 class TestResearchFundingPipeline:
     """Tests for research_funding_pipeline tool."""
 
-    def test_funding_pipeline_basic_structure(self) -> None:
+    async def test_funding_pipeline_basic_structure(self) -> None:
         """Funding pipeline returns expected structure."""
-        result = research_funding_pipeline("DeepMind")
+        result = await research_funding_pipeline("DeepMind")
         assert result["query"] == "DeepMind"
         assert "grants_found" in result
         assert "patents_filed" in result
@@ -283,18 +285,18 @@ class TestResearchFundingPipeline:
         assert isinstance(result["hiring_signals"], list)
         assert isinstance(result["pipeline_stages"], list)
 
-    def test_funding_pipeline_ma_prediction_has_confidence(self) -> None:
+    async def test_funding_pipeline_ma_prediction_has_confidence(self) -> None:
         """MA prediction includes confidence score."""
-        result = research_funding_pipeline("Example Corp")
+        result = await research_funding_pipeline("Example Corp")
         ma_pred = result["ma_prediction"]
         assert "likely" in ma_pred
         assert "confidence" in ma_pred
         assert isinstance(ma_pred["likely"], bool)
         assert 0.0 <= ma_pred["confidence"] <= 1.0
 
-    def test_funding_pipeline_accepts_field_names(self) -> None:
+    async def test_funding_pipeline_accepts_field_names(self) -> None:
         """Accepts research field names."""
-        result = research_funding_pipeline("quantum computing")
+        result = await research_funding_pipeline("quantum computing")
         assert result["query"] == "quantum computing"
         assert isinstance(result["grants_found"], int)
 
@@ -302,7 +304,7 @@ class TestResearchFundingPipeline:
 class TestResearchJailbreakLibrary:
     """Tests for research_jailbreak_library tool."""
 
-    def test_jailbreak_library_default_all_categories(self) -> None:
+    async def test_jailbreak_library_default_all_categories(self) -> None:
         """Default returns all jailbreak categories."""
         result = research_jailbreak_library()
         assert result["total_patterns"] > 0
@@ -314,33 +316,33 @@ class TestResearchJailbreakLibrary:
         assert "multi_turn" in result["categories"]
         assert "instruction_override" in result["categories"]
 
-    def test_jailbreak_library_filter_category(self) -> None:
+    async def test_jailbreak_library_filter_category(self) -> None:
         """Can filter by single category."""
         result = research_jailbreak_library(test_category="role_play")
         assert result["categories"] == ["role_play"]
         assert result["total_patterns"] > 0
         assert result["patterns_per_category"]["role_play"] > 0
 
-    def test_jailbreak_library_invalid_category(self) -> None:
+    async def test_jailbreak_library_invalid_category(self) -> None:
         """Invalid category returns empty patterns."""
         result = research_jailbreak_library(test_category="invalid_category")
         assert result["total_patterns"] == 0
         assert result["categories"] == []
 
-    def test_jailbreak_library_with_target_url(self) -> None:
+    async def test_jailbreak_library_with_target_url(self) -> None:
         """When target URL provided, includes test results."""
         result = research_jailbreak_library(target_url="http://example.com/api", test_category="role_play")
         assert result["target_url"] == "http://example.com/api"
         assert isinstance(result["test_results"], list)
         assert result["blocked_count"] >= 0
 
-    def test_jailbreak_library_patterns_per_category(self) -> None:
+    async def test_jailbreak_library_patterns_per_category(self) -> None:
         """Patterns per category breakdown is accurate."""
         result = research_jailbreak_library()
         total = sum(result["patterns_per_category"].values())
         assert total == result["total_patterns"]
 
-    def test_jailbreak_library_no_target_url(self) -> None:
+    async def test_jailbreak_library_no_target_url(self) -> None:
         """Without target URL, test_results is empty."""
         result = research_jailbreak_library(test_category="encoding")
         assert result["test_results"] == []
@@ -350,9 +352,9 @@ class TestResearchJailbreakLibrary:
 class TestResearchPatentEmbargo:
     """Tests for research_patent_embargo tool."""
 
-    def test_patent_embargo_basic_structure(self) -> None:
+    async def test_patent_embargo_basic_structure(self) -> None:
         """Patent embargo returns expected structure."""
-        result = research_patent_embargo("Apple Inc.")
+        result = await research_patent_embargo("Apple Inc.")
         assert result["company"] == "Apple Inc."
         assert "patents_total" in result
         assert "filing_velocity" in result
@@ -361,18 +363,18 @@ class TestResearchPatentEmbargo:
         assert "ma_prediction" in result
         assert result["months_analyzed"] == 12
 
-    def test_patent_embargo_filing_velocity(self) -> None:
+    async def test_patent_embargo_filing_velocity(self) -> None:
         """Filing velocity is present and valid."""
-        result = research_patent_embargo("Microsoft")
+        result = await research_patent_embargo("Microsoft")
         velocity = result["filing_velocity"]
         assert "total" in velocity
         assert "velocity" in velocity
         assert velocity["velocity"] in ["none", "steady", "surge", "decline", "unknown"]
         assert "avg_per_month" in velocity
 
-    def test_patent_embargo_ma_prediction(self) -> None:
+    async def test_patent_embargo_ma_prediction(self) -> None:
         """MA prediction has correct structure."""
-        result = research_patent_embargo("Google")
+        result = await research_patent_embargo("Google")
         ma_pred = result["ma_prediction"]
         assert "likely" in ma_pred
         assert "confidence" in ma_pred
@@ -381,38 +383,38 @@ class TestResearchPatentEmbargo:
         assert 0.0 <= ma_pred["confidence"] <= 1.0
         assert isinstance(ma_pred["reasoning"], list)
 
-    def test_patent_embargo_custom_months_back(self) -> None:
+    async def test_patent_embargo_custom_months_back(self) -> None:
         """Can specify custom lookback window."""
-        result = research_patent_embargo("Facebook", months_back=24)
+        result = await research_patent_embargo("Facebook", months_back=24)
         assert result["months_analyzed"] == 24
 
-    def test_patent_embargo_domain_shifts_is_list(self) -> None:
+    async def test_patent_embargo_domain_shifts_is_list(self) -> None:
         """Domain shifts is always a list."""
-        result = research_patent_embargo("Tesla")
+        result = await research_patent_embargo("Tesla")
         assert isinstance(result["domain_shifts"], list)
 
-    def test_patent_embargo_embargo_signals_is_list(self) -> None:
+    async def test_patent_embargo_embargo_signals_is_list(self) -> None:
         """Embargo signals is always a list."""
-        result = research_patent_embargo("Intel")
+        result = await research_patent_embargo("Intel")
         assert isinstance(result["embargo_signals"], list)
 
 
 class TestCrossTool:
     """Cross-tool integration tests."""
 
-    def test_all_tools_return_dicts(self) -> None:
+    async def test_all_tools_return_dicts(self) -> None:
         """All tools return dictionary responses."""
-        r1 = research_talent_migration("Test")
-        r2 = research_funding_pipeline("Test")
+        r1 = await research_talent_migration("Test")
+        r2 = await research_funding_pipeline("Test")
         r3 = research_jailbreak_library()
-        r4 = research_patent_embargo("Test")
+        r4 = await research_patent_embargo("Test")
 
         assert all(isinstance(r, dict) for r in [r1, r2, r3, r4])
 
-    def test_no_required_parameters_except_first(self) -> None:
+    async def test_no_required_parameters_except_first(self) -> None:
         """Tools have reasonable defaults for optional params."""
         # Should not raise exceptions
-        research_talent_migration("Name")  # field is optional
-        research_funding_pipeline("Company")  # no other params required
+        await research_talent_migration("Name")  # field is optional
+        await research_funding_pipeline("Company")  # no other params required
         research_jailbreak_library()  # all params optional
-        research_patent_embargo("Company")  # months_back has default
+        await research_patent_embargo("Company")  # months_back has default

@@ -14,10 +14,12 @@ from loom.tools.deception_detect import (
 )
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestTokenization:
     """Test basic tokenization functions."""
 
-    def test_tokenize_words(self) -> None:
+    async def test_tokenize_words(self) -> None:
         """Tokenize text into words."""
         text = "The quick brown fox jumps."
         words = _tokenize_words(text)
@@ -25,12 +27,12 @@ class TestTokenization:
         assert words[0] == "the"
         assert words[1] == "quick"
 
-    def test_tokenize_words_empty(self) -> None:
+    async def test_tokenize_words_empty(self) -> None:
         """Handle empty text."""
         words = _tokenize_words("")
         assert words == []
 
-    def test_tokenize_sentences(self) -> None:
+    async def test_tokenize_sentences(self) -> None:
         """Tokenize text into sentences."""
         text = "First sentence. Second sentence! Third sentence?"
         sentences = _tokenize_sentences(text)
@@ -40,7 +42,7 @@ class TestTokenization:
 class TestIndicatorExtraction:
     """Test deception indicator extraction."""
 
-    def test_extract_hedging_words(self) -> None:
+    async def test_extract_hedging_words(self) -> None:
         """Detect hedging language."""
         text = (
             "Maybe this is true. Perhaps I should believe it. "
@@ -53,7 +55,7 @@ class TestIndicatorExtraction:
         assert indicators["hedging_ratio"] > 0
         assert "maybe" or "perhaps" or "possibly" or "might" in text.lower()
 
-    def test_extract_distancing_language(self) -> None:
+    async def test_extract_distancing_language(self) -> None:
         """Detect distancing patterns."""
         text = (
             "One would think this is true. People say it happened. "
@@ -65,7 +67,7 @@ class TestIndicatorExtraction:
 
         assert indicators["distancing_count"] > 0
 
-    def test_extract_superlatives(self) -> None:
+    async def test_extract_superlatives(self) -> None:
         """Detect superlative word usage."""
         text = (
             "This is the best solution ever. It's the most amazing opportunity. "
@@ -77,7 +79,7 @@ class TestIndicatorExtraction:
 
         assert indicators["superlative_count"] > 0
 
-    def test_extract_first_person(self) -> None:
+    async def test_extract_first_person(self) -> None:
         """Detect first person pronoun usage."""
         text = (
             "I did this. I think that. I believe this. Me and my friend. "
@@ -88,7 +90,7 @@ class TestIndicatorExtraction:
 
         assert indicators["first_person_ratio"] > 0
 
-    def test_extract_insufficient_length(self) -> None:
+    async def test_extract_insufficient_length(self) -> None:
         """Handle text below minimum length."""
         text = "Too short."
         indicators = _extract_deception_indicators(text)
@@ -100,7 +102,7 @@ class TestIndicatorExtraction:
 class TestRedFlagIdentification:
     """Test red flag identification."""
 
-    def test_red_flag_high_hedging_with_certainty(self) -> None:
+    async def test_red_flag_high_hedging_with_certainty(self) -> None:
         """Detect high hedging with certainty markers."""
         indicators = {
             "hedging_ratio": 0.10,
@@ -115,7 +117,7 @@ class TestRedFlagIdentification:
 
         assert "high_hedging_with_certainty_markers" in red_flags
 
-    def test_red_flag_excessive_superlatives(self) -> None:
+    async def test_red_flag_excessive_superlatives(self) -> None:
         """Detect excessive superlative usage."""
         indicators = {
             "hedging_ratio": 0.02,
@@ -130,7 +132,7 @@ class TestRedFlagIdentification:
 
         assert "excessive_superlatives" in red_flags
 
-    def test_red_flag_personal_pronoun_avoidance(self) -> None:
+    async def test_red_flag_personal_pronoun_avoidance(self) -> None:
         """Detect avoidance of first person pronouns."""
         indicators = {
             "hedging_ratio": 0.02,
@@ -145,7 +147,7 @@ class TestRedFlagIdentification:
 
         assert "avoidance_of_personal_pronouns" in red_flags
 
-    def test_red_flag_distancing_language(self) -> None:
+    async def test_red_flag_distancing_language(self) -> None:
         """Detect excessive distancing language."""
         indicators = {
             "hedging_ratio": 0.02,
@@ -160,7 +162,7 @@ class TestRedFlagIdentification:
 
         assert "excessive_distancing_language" in red_flags
 
-    def test_red_flag_short_sentences(self) -> None:
+    async def test_red_flag_short_sentences(self) -> None:
         """Detect unusually short sentences."""
         indicators = {
             "hedging_ratio": 0.02,
@@ -175,7 +177,7 @@ class TestRedFlagIdentification:
 
         assert "unusually_short_sentences" in red_flags
 
-    def test_no_red_flags(self) -> None:
+    async def test_no_red_flags(self) -> None:
         """Identify absence of red flags with normal text."""
         indicators = {
             "hedging_ratio": 0.02,
@@ -194,7 +196,7 @@ class TestRedFlagIdentification:
 class TestDeceptionScore:
     """Test deception score calculation."""
 
-    def test_score_truthful_text(self) -> None:
+    async def test_score_truthful_text(self) -> None:
         """Calculate low score for truthful text."""
         indicators = {
             "hedging_ratio": 0.01,
@@ -211,7 +213,7 @@ class TestDeceptionScore:
         assert 0.0 <= score <= 1.0
         assert score < 0.3  # Should be in truthful range
 
-    def test_score_deceptive_text(self) -> None:
+    async def test_score_deceptive_text(self) -> None:
         """Calculate high score for deceptive indicators."""
         indicators = {
             "hedging_ratio": 0.12,
@@ -232,7 +234,7 @@ class TestDeceptionScore:
         assert 0.0 <= score <= 1.0
         assert score > 0.5  # Should be in uncertain/deceptive range
 
-    def test_score_bounded(self) -> None:
+    async def test_score_bounded(self) -> None:
         """Ensure score never exceeds 1.0."""
         indicators = {
             "hedging_ratio": 0.5,  # Extremely high
@@ -252,9 +254,9 @@ class TestDeceptionScore:
 class TestVerdictClassification:
     """Test verdict classification."""
 
-    def test_verdict_truthful(self) -> None:
+    async def test_verdict_truthful(self) -> None:
         """Classify low-score text as likely truthful."""
-        result = research_deception_detect(
+        result = await research_deception_detect(
             "I honestly did my best. I worked hard on this project. "
             "I made some mistakes, but I learned from them. I'm proud "
             "of my effort. I believe this is good work overall. I hope "
@@ -264,9 +266,9 @@ class TestVerdictClassification:
         assert result["deception_score"] < 0.3
         assert result["verdict"] == "likely_truthful"
 
-    def test_verdict_deceptive(self) -> None:
+    async def test_verdict_deceptive(self) -> None:
         """Classify high-score text as likely deceptive."""
-        result = research_deception_detect(
+        result = await research_deception_detect(
             "Perhaps it might be considered that one could hypothetically "
             "suggest that certain people might say this is absolutely the best "
             "and most incredible solution ever conceived. Sources indicate that "
@@ -278,9 +280,9 @@ class TestVerdictClassification:
         assert result["deception_score"] > 0.5
         assert result["verdict"] in ["uncertain", "likely_deceptive"]
 
-    def test_verdict_uncertain(self) -> None:
+    async def test_verdict_uncertain(self) -> None:
         """Classify middle-range text as uncertain."""
-        result = research_deception_detect(
+        result = await research_deception_detect(
             "I think this might work. Perhaps the approach is reasonable. "
             "It seems like we could try this method. Maybe it will be "
             "successful. I believe the strategy shows some promise. We should "
@@ -295,7 +297,7 @@ class TestVerdictClassification:
 class TestResearchDeceptionDetect:
     """Test main deception detection tool."""
 
-    def test_deception_detect_basic(self) -> None:
+    async def test_deception_detect_basic(self) -> None:
         """Analyze text for deception indicators."""
         text = (
             "I did this work myself. I am proud of my accomplishment. "
@@ -303,7 +305,7 @@ class TestResearchDeceptionDetect:
             "I worked hard on this. I am satisfied with the results. "
             "I feel confident about this submission. I stand by my work."
         )
-        result = research_deception_detect(text)
+        result = await research_deception_detect(text)
 
         assert "deception_score" in result
         assert "verdict" in result
@@ -313,15 +315,15 @@ class TestResearchDeceptionDetect:
         assert 0.0 <= result["deception_score"] <= 1.0
         assert result["verdict"] in ["likely_truthful", "uncertain", "likely_deceptive"]
 
-    def test_deception_detect_insufficient_length(self) -> None:
+    async def test_deception_detect_insufficient_length(self) -> None:
         """Return error for text below minimum length."""
         text = "Too short."
-        result = research_deception_detect(text)
+        result = await research_deception_detect(text)
 
         assert "error" in result
         assert "at least 100 characters" in result["error"]
 
-    def test_deception_detect_indicators_present(self) -> None:
+    async def test_deception_detect_indicators_present(self) -> None:
         """Verify all indicators are calculated."""
         text = (
             "The analysis might show various interesting characteristics. "
@@ -330,7 +332,7 @@ class TestResearchDeceptionDetect:
             "I believe this is important. I think it matters. I feel this "
             "is significant. I am confident. The study continues here."
         )
-        result = research_deception_detect(text)
+        result = await research_deception_detect(text)
 
         indicators = result["indicators"]
         assert "hedging_count" in indicators
@@ -341,7 +343,7 @@ class TestResearchDeceptionDetect:
         assert "avg_sentence_length" in indicators
         assert "certainty_marker_count" in indicators
 
-    def test_deception_detect_high_hedging(self) -> None:
+    async def test_deception_detect_high_hedging(self) -> None:
         """Detect text with high hedging language."""
         text = (
             "Maybe it works. Perhaps it's true. Possibly it could help. "
@@ -351,12 +353,12 @@ class TestResearchDeceptionDetect:
             "Apparently real. Allegedly true. Purportedly accurate. "
             "More content here to reach minimum requirement length."
         )
-        result = research_deception_detect(text)
+        result = await research_deception_detect(text)
 
         assert result["indicators"]["hedging_ratio"] > 0.05
         assert result["deception_score"] > 0.2
 
-    def test_deception_detect_personal_pronouns(self) -> None:
+    async def test_deception_detect_personal_pronouns(self) -> None:
         """Detect first person pronoun usage."""
         text = (
             "I did this. I completed it. I made this happen. "
@@ -365,12 +367,12 @@ class TestResearchDeceptionDetect:
             "I am satisfied. I feel good. I am confident. I am proud. "
             "I am happy. I am pleased. I am the author."
         )
-        result = research_deception_detect(text)
+        result = await research_deception_detect(text)
 
         assert result["indicators"]["first_person_ratio"] > 0.10
         assert result["deception_score"] < 0.5
 
-    def test_deception_detect_empty_red_flags(self) -> None:
+    async def test_deception_detect_empty_red_flags(self) -> None:
         """Normal text should have minimal red flags."""
         text = (
             "I worked on this project carefully. I spent time on quality. "
@@ -378,12 +380,12 @@ class TestResearchDeceptionDetect:
             "I hope you find it useful. I appreciate your consideration. "
             "I look forward to your feedback. I am available for questions."
         )
-        result = research_deception_detect(text)
+        result = await research_deception_detect(text)
 
         red_flags = result["red_flags"]
         assert len(red_flags) <= 2  # Normal text should have few red flags
 
-    def test_deception_detect_multiple_red_flags(self) -> None:
+    async def test_deception_detect_multiple_red_flags(self) -> None:
         """Deceptive text should trigger multiple red flags."""
         text = (
             "Absolutely, definitely, certainly this is the best and greatest "
@@ -393,7 +395,7 @@ class TestResearchDeceptionDetect:
             "It is said to be amazing and unbelievable. The evidence supposedly "
             "proves this beyond doubt. One can clearly see this is perfect."
         )
-        result = research_deception_detect(text)
+        result = await research_deception_detect(text)
 
         red_flags = result["red_flags"]
         assert len(red_flags) > 0  # Should have at least some red flags

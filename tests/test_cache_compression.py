@@ -1,6 +1,7 @@
 """Unit tests for CacheStore gzip compression — space savings, transparent decompression, backward compatibility."""
 
 from __future__ import annotations
+import pytest
 
 import gzip
 import json
@@ -9,10 +10,12 @@ from pathlib import Path
 from loom.cache import CacheStore
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestCacheCompression:
     """CacheStore gzip compression tests."""
 
-    def test_compressed_write(self, tmp_cache_dir: Path) -> None:
+    async def test_compressed_write(self, tmp_cache_dir: Path) -> None:
         """set value, verify .json.gz file exists."""
         cache = CacheStore(tmp_cache_dir)
         key = "test_compressed_write"
@@ -27,7 +30,7 @@ class TestCacheCompression:
         assert len(gz_files) == 1, "Should create exactly one .json.gz file"
         assert len(json_files) == 0, "Should not create legacy .json files"
 
-    def test_compressed_read(self, tmp_cache_dir: Path) -> None:
+    async def test_compressed_read(self, tmp_cache_dir: Path) -> None:
         """set then get, verify data matches after decompression."""
         cache = CacheStore(tmp_cache_dir)
         key = "test_compressed_read"
@@ -49,7 +52,7 @@ class TestCacheCompression:
         assert result["nested"]["a"] == 1
         assert result["nested"]["b"] == 2
 
-    def test_compression_ratio(self, tmp_cache_dir: Path) -> None:
+    async def test_compression_ratio(self, tmp_cache_dir: Path) -> None:
         """set 10KB JSON, verify .gz is < 40% of original (60%+ savings)."""
         cache = CacheStore(tmp_cache_dir)
         key = "test_compression_ratio"
@@ -80,7 +83,7 @@ class TestCacheCompression:
             compression_ratio < 0.40
         ), f"Compression ratio {compression_ratio:.1%} should be < 40% (60%+ savings)"
 
-    def test_legacy_read(self, tmp_cache_dir: Path) -> None:
+    async def test_legacy_read(self, tmp_cache_dir: Path) -> None:
         """create .json file manually, verify get() reads it (backward compat)."""
         cache = CacheStore(tmp_cache_dir)
         key = "test_legacy_read"
@@ -97,7 +100,7 @@ class TestCacheCompression:
         assert result["text"] == "legacy content"
         assert result["status"] == "ok"
 
-    def test_compressed_preferred_over_legacy(self, tmp_cache_dir: Path) -> None:
+    async def test_compressed_preferred_over_legacy(self, tmp_cache_dir: Path) -> None:
         """when both .json.gz and .json exist, prefer .json.gz."""
         cache = CacheStore(tmp_cache_dir)
         key = "test_compressed_preferred_over_legacy"
@@ -119,7 +122,7 @@ class TestCacheCompression:
         assert result is not None
         assert result["source"] == "compressed"
 
-    def test_roundtrip_unicode(self, tmp_cache_dir: Path) -> None:
+    async def test_roundtrip_unicode(self, tmp_cache_dir: Path) -> None:
         """Arabic/Chinese/emoji text survives compression roundtrip."""
         cache = CacheStore(tmp_cache_dir)
         key = "test_roundtrip_unicode"
@@ -139,7 +142,7 @@ class TestCacheCompression:
         assert result["emoji"] == "🚀 🔥 💯"
         assert result["mixed"] == "Hello مرحبا 你好 🌍"
 
-    def test_stats_include_compressed(self, tmp_cache_dir: Path) -> None:
+    async def test_stats_include_compressed(self, tmp_cache_dir: Path) -> None:
         """cache stats count .gz files correctly."""
         cache = CacheStore(tmp_cache_dir)
 
@@ -152,7 +155,7 @@ class TestCacheCompression:
         assert stats["total_bytes"] > 0
         assert isinstance(stats["days_present"], list)
 
-    def test_stats_count_legacy_and_compressed(self, tmp_cache_dir: Path) -> None:
+    async def test_stats_count_legacy_and_compressed(self, tmp_cache_dir: Path) -> None:
         """stats count both legacy .json and .json.gz files."""
         cache = CacheStore(tmp_cache_dir)
 
@@ -168,7 +171,7 @@ class TestCacheCompression:
         assert stats["file_count"] == 2, "Should count both compressed and legacy files"
         assert stats["total_bytes"] > 0
 
-    def test_clear_older_than_removes_compressed(self, tmp_cache_dir: Path) -> None:
+    async def test_clear_older_than_removes_compressed(self, tmp_cache_dir: Path) -> None:
         """clear_older_than removes .json.gz files."""
         import datetime as dt
 
@@ -192,7 +195,7 @@ class TestCacheCompression:
         assert not old_file.exists(), "Old compressed file should be gone"
         assert cache.get("recent") is not None, "Recent entry should remain"
 
-    def test_get_with_metadata_compressed(self, tmp_cache_dir: Path) -> None:
+    async def test_get_with_metadata_compressed(self, tmp_cache_dir: Path) -> None:
         """get_with_metadata works with compressed files."""
         cache = CacheStore(tmp_cache_dir)
         key = "test_metadata_compressed"
@@ -207,7 +210,7 @@ class TestCacheCompression:
         assert result["freshness_hours"] >= 0
         assert result["is_stale"] is False
 
-    def test_get_with_metadata_legacy(self, tmp_cache_dir: Path) -> None:
+    async def test_get_with_metadata_legacy(self, tmp_cache_dir: Path) -> None:
         """get_with_metadata works with legacy uncompressed files."""
         cache = CacheStore(tmp_cache_dir)
         key = "test_metadata_legacy"
@@ -225,7 +228,7 @@ class TestCacheCompression:
         assert result["freshness_hours"] >= 0
         assert result["is_stale"] is False
 
-    def test_compressed_with_special_chars(self, tmp_cache_dir: Path) -> None:
+    async def test_compressed_with_special_chars(self, tmp_cache_dir: Path) -> None:
         """compression works with special chars, quotes, escapes."""
         cache = CacheStore(tmp_cache_dir)
         key = "test_special_chars"
@@ -247,7 +250,7 @@ class TestCacheCompression:
         assert result["tabs"] == "col1\tcol2\tcol3"
         assert result["null_char"] == "before\x00after"
 
-    def test_corrupted_compressed_file_returns_none(self, tmp_cache_dir: Path) -> None:
+    async def test_corrupted_compressed_file_returns_none(self, tmp_cache_dir: Path) -> None:
         """get() returns None if .json.gz file is corrupted."""
         cache = CacheStore(tmp_cache_dir)
         key = "test_corrupted_gz"
@@ -262,7 +265,7 @@ class TestCacheCompression:
         result = cache.get(key)
         assert result is None
 
-    def test_very_large_json_compression(self, tmp_cache_dir: Path) -> None:
+    async def test_very_large_json_compression(self, tmp_cache_dir: Path) -> None:
         """compression works with very large JSON (1MB+)."""
         cache = CacheStore(tmp_cache_dir)
         key = "test_large_json"

@@ -336,7 +336,7 @@ def factorial(n: int) -> int:
         return 1
     return n * factorial(n - 1)
 
-def compute_fibonacci(n: int) -> int:
+async def compute_fibonacci(n: int) -> int:
     if n <= 1:
         return n
     return compute_fibonacci(n - 1) + compute_fibonacci(n - 2)
@@ -358,7 +358,7 @@ This implementation uses recursion. Complexity: O(2^n).
 # Sorting Implementation
 
 ```python
-def quicksort(arr):
+async def quicksort(arr):
     if len(arr) <= 1:
         return arr
     pivot = arr[len(arr) // 2]
@@ -419,7 +419,7 @@ Here is information about Python programming.
 
 في Python، نستخدم الدوال لتنظيم الكود:
 
-def greet(name):
+async def greet(name):
     return f"Hello {name}"
 
 الدوال توفر إعادة استخدام الكود.

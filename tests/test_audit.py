@@ -26,10 +26,12 @@ from loom.audit import (
 )
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestAuditEntry:
     """AuditEntry dataclass tests."""
 
-    def test_audit_entry_creation(self) -> None:
+    async def test_audit_entry_creation(self) -> None:
         """Create AuditEntry with all required fields."""
         entry = AuditEntry(
             client_id="client-123",
@@ -45,7 +47,7 @@ class TestAuditEntry:
         assert entry.duration_ms == 500
         assert entry.status == "success"
 
-    def test_audit_entry_to_json(self) -> None:
+    async def test_audit_entry_to_json(self) -> None:
         """Serialize AuditEntry to JSON string."""
         entry = AuditEntry(
             client_id="client-123",
@@ -63,7 +65,7 @@ class TestAuditEntry:
         assert data["client_id"] == "client-123"
         assert data["checksum"] == "abc123def456"
 
-    def test_audit_entry_to_json_without_checksum(self) -> None:
+    async def test_audit_entry_to_json_without_checksum(self) -> None:
         """Serialize AuditEntry to JSON without checksum field."""
         entry = AuditEntry(
             client_id="client-123",
@@ -81,7 +83,7 @@ class TestAuditEntry:
         assert "checksum" not in data
         assert data["client_id"] == "client-123"
 
-    def test_audit_entry_compute_checksum(self) -> None:
+    async def test_audit_entry_compute_checksum(self) -> None:
         """Compute SHA-256 checksum of entry without checksum field."""
         entry = AuditEntry(
             client_id="client-123",
@@ -98,7 +100,7 @@ class TestAuditEntry:
         assert len(checksum) == 16
         assert all(c in "0123456789abcdef" for c in checksum)
 
-    def test_audit_entry_checksum_deterministic(self) -> None:
+    async def test_audit_entry_checksum_deterministic(self) -> None:
         """Checksum computation is deterministic."""
         entry = AuditEntry(
             client_id="client-123",
@@ -118,7 +120,7 @@ class TestAuditEntry:
 class TestParamRedaction:
     """Parameter redaction tests."""
 
-    def test_redact_api_key(self) -> None:
+    async def test_redact_api_key(self) -> None:
         """Redact 'api_key' parameter."""
         params = {"url": "https://example.com", "api_key": "secret123"}
         redacted = _redact_params(params)
@@ -126,14 +128,14 @@ class TestParamRedaction:
         assert redacted["url"] == "https://example.com"
         assert redacted["api_key"] == "***REDACTED***"
 
-    def test_redact_token(self) -> None:
+    async def test_redact_token(self) -> None:
         """Redact 'token' parameter."""
         params = {"session_token": "abc123def456"}
         redacted = _redact_params(params)
 
         assert redacted["session_token"] == "***REDACTED***"
 
-    def test_redact_password(self) -> None:
+    async def test_redact_password(self) -> None:
         """Redact 'password' parameter."""
         params = {"username": "user", "password": "mypassword"}
         redacted = _redact_params(params)
@@ -141,14 +143,14 @@ class TestParamRedaction:
         assert redacted["username"] == "user"
         assert redacted["password"] == "***REDACTED***"
 
-    def test_redact_secret(self) -> None:
+    async def test_redact_secret(self) -> None:
         """Redact 'secret' parameter."""
         params = {"api_secret": "mysecret"}
         redacted = _redact_params(params)
 
         assert redacted["api_secret"] == "***REDACTED***"
 
-    def test_redact_case_insensitive(self) -> None:
+    async def test_redact_case_insensitive(self) -> None:
         """Redaction is case-insensitive."""
         params = {"API_KEY": "secret", "Token": "token123"}
         redacted = _redact_params(params)
@@ -156,7 +158,7 @@ class TestParamRedaction:
         assert redacted["API_KEY"] == "***REDACTED***"
         assert redacted["Token"] == "***REDACTED***"
 
-    def test_redact_multiple_keys(self) -> None:
+    async def test_redact_multiple_keys(self) -> None:
         """Redact multiple sensitive keys in single dict."""
         params = {
             "url": "https://example.com",
@@ -175,7 +177,7 @@ class TestParamRedaction:
 class TestLogInvocation:
     """log_invocation() function tests."""
 
-    def test_log_creates_file(self, tmp_path: Path) -> None:
+    async def test_log_creates_file(self, tmp_path: Path) -> None:
         """log_invocation() creates audit file."""
         audit_dir = tmp_path / "audit"
 
@@ -197,7 +199,7 @@ class TestLogInvocation:
         assert len(checksum) == 16
         assert all(c in "0123456789abcdef" for c in checksum)
 
-    def test_log_entry_format(self, tmp_path: Path) -> None:
+    async def test_log_entry_format(self, tmp_path: Path) -> None:
         """log_invocation() writes valid JSONL with all required fields."""
         audit_dir = tmp_path / "audit"
 
@@ -227,7 +229,7 @@ class TestLogInvocation:
         assert "timestamp" in entry
         assert "checksum" in entry
 
-    def test_log_checksum_valid(self, tmp_path: Path) -> None:
+    async def test_log_checksum_valid(self, tmp_path: Path) -> None:
         """log_invocation() checksum matches recomputation."""
         audit_dir = tmp_path / "audit"
 
@@ -258,7 +260,7 @@ class TestLogInvocation:
         assert stored_checksum == computed_checksum
         assert stored_checksum == returned_checksum
 
-    def test_log_param_redaction_in_file(self, tmp_path: Path) -> None:
+    async def test_log_param_redaction_in_file(self, tmp_path: Path) -> None:
         """log_invocation() redacts sensitive params before logging."""
         audit_dir = tmp_path / "audit"
 
@@ -288,7 +290,7 @@ class TestLogInvocation:
         assert params["api_key"] == "***REDACTED***"
         assert params["session_token"] == "***REDACTED***"
 
-    def test_log_daily_rotation(self, tmp_path: Path, monkeypatch) -> None:
+    async def test_log_daily_rotation(self, tmp_path: Path, monkeypatch) -> None:
         """log_invocation() creates separate files for different dates."""
         audit_dir = tmp_path / "audit"
 
@@ -330,7 +332,7 @@ class TestLogInvocation:
         log_files = sorted(audit_dir.glob("*.jsonl"))
         assert len(log_files) == 2
 
-    def test_log_multiple_entries(self, tmp_path: Path) -> None:
+    async def test_log_multiple_entries(self, tmp_path: Path) -> None:
         """log_invocation() appends multiple entries to same file."""
         audit_dir = tmp_path / "audit"
 
@@ -365,7 +367,7 @@ class TestLogInvocation:
 class TestVerifyIntegrity:
     """verify_integrity() function tests."""
 
-    def test_verify_empty_file(self, tmp_path: Path) -> None:
+    async def test_verify_empty_file(self, tmp_path: Path) -> None:
         """verify_integrity() handles empty file."""
         audit_dir = tmp_path / "audit"
         audit_dir.mkdir()
@@ -379,7 +381,7 @@ class TestVerifyIntegrity:
         assert result.invalid == 0
         assert result.tampered is False
 
-    def test_verify_nonexistent_file(self, tmp_path: Path) -> None:
+    async def test_verify_nonexistent_file(self, tmp_path: Path) -> None:
         """verify_integrity() handles nonexistent file."""
         log_file = tmp_path / "nonexistent.jsonl"
 
@@ -390,7 +392,7 @@ class TestVerifyIntegrity:
         assert result.invalid == 0
         assert result.tampered is False
 
-    def test_verify_valid_entries(self, tmp_path: Path) -> None:
+    async def test_verify_valid_entries(self, tmp_path: Path) -> None:
         """verify_integrity() validates correct checksums."""
         audit_dir = tmp_path / "audit"
 
@@ -415,7 +417,7 @@ class TestVerifyIntegrity:
         assert result.invalid == 0
         assert result.tampered is False
 
-    def test_tamper_detection_checksum(self, tmp_path: Path) -> None:
+    async def test_tamper_detection_checksum(self, tmp_path: Path) -> None:
         """verify_integrity() detects tampered checksum."""
         audit_dir = tmp_path / "audit"
 
@@ -448,7 +450,7 @@ class TestVerifyIntegrity:
         assert result.invalid == 1
         assert result.tampered is True
 
-    def test_tamper_detection_field_change(self, tmp_path: Path) -> None:
+    async def test_tamper_detection_field_change(self, tmp_path: Path) -> None:
         """verify_integrity() detects tampered field."""
         audit_dir = tmp_path / "audit"
 
@@ -481,7 +483,7 @@ class TestVerifyIntegrity:
         assert result.invalid == 1
         assert result.tampered is True
 
-    def test_tamper_detection_missing_checksum(self, tmp_path: Path) -> None:
+    async def test_tamper_detection_missing_checksum(self, tmp_path: Path) -> None:
         """verify_integrity() detects missing checksum."""
         audit_dir = tmp_path / "audit"
         audit_dir.mkdir()
@@ -505,7 +507,7 @@ class TestVerifyIntegrity:
         assert result.invalid == 1
         assert result.tampered is True
 
-    def test_verify_mixed_valid_invalid(self, tmp_path: Path) -> None:
+    async def test_verify_mixed_valid_invalid(self, tmp_path: Path) -> None:
         """verify_integrity() handles mix of valid and invalid entries."""
         audit_dir = tmp_path / "audit"
 
@@ -539,7 +541,7 @@ class TestVerifyIntegrity:
 class TestExportAudit:
     """export_audit() function tests."""
 
-    def test_export_empty_directory(self, tmp_path: Path) -> None:
+    async def test_export_empty_directory(self, tmp_path: Path) -> None:
         """export_audit() returns empty list for nonexistent directory."""
         audit_dir = tmp_path / "nonexistent"
 
@@ -548,7 +550,7 @@ class TestExportAudit:
         assert result["count"] == 0
         assert result["data"] == []
 
-    def test_export_all_entries(self, tmp_path: Path) -> None:
+    async def test_export_all_entries(self, tmp_path: Path) -> None:
         """export_audit() exports all entries."""
         audit_dir = tmp_path / "audit"
 
@@ -572,7 +574,7 @@ class TestExportAudit:
         assert result["data"][1]["client_id"] == "client-1"
         assert result["data"][2]["client_id"] == "client-2"
 
-    def test_export_with_date_range(self, tmp_path: Path) -> None:
+    async def test_export_with_date_range(self, tmp_path: Path) -> None:
         """export_audit() filters by date range."""
         audit_dir = tmp_path / "audit"
 
@@ -598,7 +600,7 @@ class TestExportAudit:
         assert result["count"] == 1
         assert "2025-04-28" in result["data"][0]["timestamp"]
 
-    def test_export_includes_verification_status(self, tmp_path: Path) -> None:
+    async def test_export_includes_verification_status(self, tmp_path: Path) -> None:
         """export_audit() includes _verified field in entries."""
         audit_dir = tmp_path / "audit"
 

@@ -36,17 +36,19 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestGracefulShutdown:
     """Tests for graceful shutdown on SIGTERM (REQ-072)."""
 
-    def test_sigterm_handler_registered_in_main(self) -> None:
+    async def test_sigterm_handler_registered_in_main(self) -> None:
         """SIGTERM handler is registered when main() is called."""
         from loom.server import _handle_signal
 
         # Verify _handle_signal is callable
         assert callable(_handle_signal)
 
-    def test_shutdown_function_exists_and_is_async(self) -> None:
+    async def test_shutdown_function_exists_and_is_async(self) -> None:
         """_shutdown function exists and is an async callable."""
         from loom.server import _shutdown
         import inspect
@@ -54,7 +56,7 @@ class TestGracefulShutdown:
         assert callable(_shutdown)
         assert inspect.iscoroutinefunction(_shutdown)
 
-    def test_shutdown_closes_browser_sessions(self) -> None:
+    async def test_shutdown_closes_browser_sessions(self) -> None:
         """_shutdown calls cleanup_all_sessions."""
         with patch("loom.server.cleanup_all_sessions") as mock_cleanup:
             mock_cleanup.return_value = {"closed": ["session1"], "errors": []}
@@ -65,7 +67,7 @@ class TestGracefulShutdown:
 
             mock_cleanup.assert_called_once()
 
-    def test_shutdown_closes_http_client(self) -> None:
+    async def test_shutdown_closes_http_client(self) -> None:
         """_shutdown closes the httpx connection pool."""
         with patch("loom.tools.fetch._http_client") as mock_client:
             mock_client.close = MagicMock()
@@ -78,7 +80,7 @@ class TestGracefulShutdown:
             # Verify close was attempted on the mock client
             mock_client.close.assert_called()
 
-    def test_shutdown_closes_llm_providers(self) -> None:
+    async def test_shutdown_closes_llm_providers(self) -> None:
         """_shutdown closes LLM provider clients."""
         with patch("loom.server._optional_tools") as mock_tools:
             mock_tools.__contains__ = MagicMock(return_value=True)
@@ -96,7 +98,7 @@ class TestGracefulShutdown:
             except Exception:
                 pass  # Expected in mock scenario
 
-    def test_handle_signal_creates_task(self) -> None:
+    async def test_handle_signal_creates_task(self) -> None:
         """_handle_signal creates an async task for shutdown."""
         from loom.server import _handle_signal
 
@@ -112,7 +114,7 @@ class TestGracefulShutdown:
                 # Verify create_task was called
                 mock_loop.create_task.assert_called_once()
 
-    def test_handle_signal_runs_shutdown_if_no_loop(self) -> None:
+    async def test_handle_signal_runs_shutdown_if_no_loop(self) -> None:
         """_handle_signal runs _shutdown directly if no event loop."""
         from loom.server import _handle_signal
 
@@ -123,7 +125,7 @@ class TestGracefulShutdown:
                 # Verify asyncio.run was called
                 mock_run.assert_called_once()
 
-    def test_signal_handlers_registered_in_main(self) -> None:
+    async def test_signal_handlers_registered_in_main(self) -> None:
         """main() registers SIGTERM and SIGINT signal handlers."""
         with patch("loom.server.create_app") as mock_create:
             mock_app = MagicMock()
@@ -146,7 +148,7 @@ class TestGracefulShutdown:
 class TestWhatWorksReport:
     """Tests for 'What Works' report generator (REQ-073)."""
 
-    def test_report_has_all_required_fields(self) -> None:
+    async def test_report_has_all_required_fields(self) -> None:
         """'What Works' report contains all required fields."""
         from loom.reports import generate_what_works_report
 
@@ -165,7 +167,7 @@ class TestWhatWorksReport:
         assert "working_categories" in report
         assert "summary" in report
 
-    def test_pass_rate_calculated_correctly(self) -> None:
+    async def test_pass_rate_calculated_correctly(self) -> None:
         """Pass rate is correctly calculated as percentage."""
         from loom.reports import generate_what_works_report
 
@@ -183,7 +185,7 @@ class TestWhatWorksReport:
         assert report["failed"] == 2
         assert report["pass_rate"] == 50.0
 
-    def test_categories_grouped_correctly(self) -> None:
+    async def test_categories_grouped_correctly(self) -> None:
         """Tests are grouped by category correctly."""
         from loom.reports import generate_what_works_report
 
@@ -201,7 +203,7 @@ class TestWhatWorksReport:
         assert len(categories["fetch"]) == 2
         assert len(categories["search"]) == 1
 
-    def test_empty_results_pass_rate_zero(self) -> None:
+    async def test_empty_results_pass_rate_zero(self) -> None:
         """Pass rate is 0 when no tests are passed."""
         from loom.reports import generate_what_works_report
 
@@ -215,7 +217,7 @@ class TestWhatWorksReport:
         assert report["passed"] == 0
         assert report["total_tests"] == 1
 
-    def test_all_passed_pass_rate_100(self) -> None:
+    async def test_all_passed_pass_rate_100(self) -> None:
         """Pass rate is 100 when all tests pass."""
         from loom.reports import generate_what_works_report
 
@@ -231,7 +233,7 @@ class TestWhatWorksReport:
         assert report["passed"] == 3
         assert report["failed"] == 0
 
-    def test_output_to_file(self) -> None:
+    async def test_output_to_file(self) -> None:
         """Report can be written to a file."""
         from loom.reports import generate_what_works_report
 
@@ -251,7 +253,7 @@ class TestWhatWorksReport:
             file_content = json.loads(output_path.read_text())
             assert file_content["pass_rate"] == 100.0
 
-    def test_report_title_correct(self) -> None:
+    async def test_report_title_correct(self) -> None:
         """Report title is 'What Works — Loom v3 Production Readiness'."""
         from loom.reports import generate_what_works_report
 
@@ -261,7 +263,7 @@ class TestWhatWorksReport:
 
         assert report["title"] == "What Works — Loom v3 Production Readiness"
 
-    def test_uncategorized_tests_grouped(self) -> None:
+    async def test_uncategorized_tests_grouped(self) -> None:
         """Tests without a category are grouped as 'uncategorized'."""
         from loom.reports import generate_what_works_report
 
@@ -280,7 +282,7 @@ class TestWhatWorksReport:
 class TestWhatDoesntWorkReport:
     """Tests for 'What Doesn't Work' failure analysis (REQ-074)."""
 
-    def test_report_groups_failures_by_category(self) -> None:
+    async def test_report_groups_failures_by_category(self) -> None:
         """Failures are grouped by category."""
         from loom.reports import generate_failure_report
 
@@ -316,7 +318,7 @@ class TestWhatDoesntWorkReport:
         assert len(categories["fetch"]) == 2
         assert len(categories["search"]) == 1
 
-    def test_error_patterns_counted(self) -> None:
+    async def test_error_patterns_counted(self) -> None:
         """Error patterns are counted and aggregated correctly."""
         from loom.reports import generate_failure_report
 
@@ -344,7 +346,7 @@ class TestWhatDoesntWorkReport:
         assert patterns["TimeoutError"] == 2
         assert patterns["ConnectionError"] == 1
 
-    def test_recommendations_sorted_by_severity(self) -> None:
+    async def test_recommendations_sorted_by_severity(self) -> None:
         """Recommendations are sorted by failure count (severity)."""
         from loom.reports import generate_failure_report
 
@@ -387,7 +389,7 @@ class TestWhatDoesntWorkReport:
         assert "search" in recommendations[1]
         assert "1 failure" in recommendations[1]
 
-    def test_zero_failures_empty_categories(self) -> None:
+    async def test_zero_failures_empty_categories(self) -> None:
         """When no failures, categories and patterns are empty."""
         from loom.reports import generate_failure_report
 
@@ -403,7 +405,7 @@ class TestWhatDoesntWorkReport:
         assert report["error_patterns"] == {}
         assert report["recommendations"] == []
 
-    def test_output_to_file(self) -> None:
+    async def test_output_to_file(self) -> None:
         """Failure report can be written to a file."""
         from loom.reports import generate_failure_report
 
@@ -429,7 +431,7 @@ class TestWhatDoesntWorkReport:
             file_content = json.loads(output_path.read_text())
             assert file_content["total_failures"] == 1
 
-    def test_report_title_correct(self) -> None:
+    async def test_report_title_correct(self) -> None:
         """Report title is 'What Doesn't Work — Loom v3 Known Issues'."""
         from loom.reports import generate_failure_report
 
@@ -439,7 +441,7 @@ class TestWhatDoesntWorkReport:
 
         assert report["title"] == "What Doesn't Work — Loom v3 Known Issues"
 
-    def test_uncategorized_failures_handled(self) -> None:
+    async def test_uncategorized_failures_handled(self) -> None:
         """Failures without category are grouped as 'uncategorized'."""
         from loom.reports import generate_failure_report
 
@@ -452,7 +454,7 @@ class TestWhatDoesntWorkReport:
         categories = report["failure_categories"]
         assert "uncategorized" in categories
 
-    def test_missing_error_fields_handled(self) -> None:
+    async def test_missing_error_fields_handled(self) -> None:
         """Missing error/error_type fields are handled gracefully."""
         from loom.reports import generate_failure_report
 

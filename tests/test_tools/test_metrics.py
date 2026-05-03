@@ -12,15 +12,17 @@ import pytest
 from loom.tools.metrics import research_metrics
 
 
+pytestmark = pytest.mark.asyncio
+
 class TestMetricsCollection:
     """research_metrics collects tool, cost, and cache metrics."""
 
-    def test_metrics_empty_logs(self, tmp_cache_dir: Path) -> None:
+    async def test_metrics_empty_logs(self, tmp_cache_dir: Path) -> None:
         """Metrics on empty cache dir return zero metrics."""
         os.environ["LOOM_CACHE_DIR"] = str(tmp_cache_dir)
 
         try:
-            result = research_metrics()
+            result = await research_metrics()
             assert "timestamp" in result
             assert "metrics" in result
             assert "help" in result
@@ -31,7 +33,7 @@ class TestMetricsCollection:
         finally:
             pass
 
-    def test_metrics_with_tool_logs(self, tmp_cache_dir: Path) -> None:
+    async def test_metrics_with_tool_logs(self, tmp_cache_dir: Path) -> None:
         """Metrics read tool call logs and report call counts."""
         os.environ["LOOM_CACHE_DIR"] = str(tmp_cache_dir)
         logs_dir = tmp_cache_dir / "logs"
@@ -51,7 +53,7 @@ class TestMetricsCollection:
                 + "\n"
             )
 
-            result = research_metrics()
+            result = await research_metrics()
             metrics = result["metrics"]
 
             # Check call counts
@@ -64,7 +66,7 @@ class TestMetricsCollection:
         finally:
             pass
 
-    def test_metrics_with_cost_logs(self, tmp_cache_dir: Path) -> None:
+    async def test_metrics_with_cost_logs(self, tmp_cache_dir: Path) -> None:
         """Metrics aggregate LLM provider costs."""
         os.environ["LOOM_CACHE_DIR"] = str(tmp_cache_dir)
         logs_dir = tmp_cache_dir / "logs"
@@ -88,7 +90,7 @@ class TestMetricsCollection:
                 + "\n"
             )
 
-            result = research_metrics()
+            result = await research_metrics()
             metrics = result["metrics"]
 
             # Check cost aggregation
@@ -97,7 +99,7 @@ class TestMetricsCollection:
         finally:
             pass
 
-    def test_metrics_cache_hits(self, tmp_cache_dir: Path) -> None:
+    async def test_metrics_cache_hits(self, tmp_cache_dir: Path) -> None:
         """Metrics count recent cache files as hits."""
         os.environ["LOOM_CACHE_DIR"] = str(tmp_cache_dir)
 
@@ -108,7 +110,7 @@ class TestMetricsCollection:
             (day_dir / "file1.json").write_text('{"data":"cached"}')
             (day_dir / "file2.json").write_text('{"data":"cached"}')
 
-            result = research_metrics()
+            result = await research_metrics()
             metrics = result["metrics"]
 
             # Should detect recent files
@@ -117,7 +119,7 @@ class TestMetricsCollection:
         finally:
             pass
 
-    def test_metrics_percentile_calculation(self) -> None:
+    async def test_metrics_percentile_calculation(self) -> None:
         """Percentile function correctly calculates p50, p95, p99."""
         from loom.tools.metrics import _percentile
 
@@ -126,12 +128,12 @@ class TestMetricsCollection:
         assert _percentile(values, 95) == 100  # Top ~5%
         assert _percentile(values, 0) == 10  # Min
 
-    def test_metrics_structure_validation(self, tmp_cache_dir: Path) -> None:
+    async def test_metrics_structure_validation(self, tmp_cache_dir: Path) -> None:
         """Metrics result has correct Prometheus structure."""
         os.environ["LOOM_CACHE_DIR"] = str(tmp_cache_dir)
 
         try:
-            result = research_metrics()
+            result = await research_metrics()
 
             # Check all required metric names are present
             required_metrics = [
@@ -153,7 +155,7 @@ class TestMetricsCollection:
         finally:
             pass
 
-    def test_metrics_malformed_json_skipped(self, tmp_cache_dir: Path) -> None:
+    async def test_metrics_malformed_json_skipped(self, tmp_cache_dir: Path) -> None:
         """Metrics gracefully skip malformed log entries."""
         os.environ["LOOM_CACHE_DIR"] = str(tmp_cache_dir)
         logs_dir = tmp_cache_dir / "logs"
@@ -170,7 +172,7 @@ class TestMetricsCollection:
                 + "\n"
             )
 
-            result = research_metrics()
+            result = await research_metrics()
             metrics = result["metrics"]
 
             # Should count valid entries only

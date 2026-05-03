@@ -10,12 +10,13 @@ import pytest
 from loom.tools.realtime_monitor import research_realtime_monitor
 
 
+@pytest.mark.asyncio
 class TestResearchRealtimeMonitor:
     """Test realtime_monitor core functionality."""
 
-    def test_empty_topics_returns_empty_result(self) -> None:
+    async def test_empty_topics_returns_empty_result(self) -> None:
         """Empty topics list returns empty result."""
-        result = research_realtime_monitor([])
+        result = await research_realtime_monitor([])
 
         assert result["topics"] == []
         assert result["total_mentions"] == 0
@@ -23,7 +24,7 @@ class TestResearchRealtimeMonitor:
         assert result["mentions_by_source"] == {}
         assert result["recent_items"] == []
 
-    def test_single_topic_all_sources(self) -> None:
+    async def test_single_topic_all_sources(self) -> None:
         """Query single topic across all sources."""
         mock_items = [
             {
@@ -49,7 +50,7 @@ class TestResearchRealtimeMonitor:
                             mock_news.return_value = []
                             mock_wiki.return_value = []
 
-                            result = research_realtime_monitor(["Python"], hours_back=24)
+                            result = await research_realtime_monitor(["Python"], hours_back=24)
 
                             assert result["topics"] == ["Python"]
                             assert result["time_range_hours"] == 24
@@ -59,7 +60,7 @@ class TestResearchRealtimeMonitor:
                             assert len(result["recent_items"]) == 1
                             assert result["recent_items"][0]["title"] == "Test Story"
 
-    def test_multiple_topics(self) -> None:
+    async def test_multiple_topics(self) -> None:
         """Query multiple topics."""
         items_python = [
             {
@@ -101,7 +102,7 @@ class TestResearchRealtimeMonitor:
                             mock_news.return_value = []
                             mock_wiki.return_value = []
 
-                            result = research_realtime_monitor(["Python", "AI"])
+                            result = await research_realtime_monitor(["Python", "AI"])
 
                             assert result["topics"] == ["Python", "AI"]
                             assert result["total_mentions"] == 2
@@ -109,7 +110,7 @@ class TestResearchRealtimeMonitor:
                             assert result["mentions_by_topic"]["AI"] == 1
                             assert len(result["recent_items"]) == 2
 
-    def test_specific_sources_filter(self) -> None:
+    async def test_specific_sources_filter(self) -> None:
         """Only query specified sources."""
         mock_items = [
             {
@@ -128,7 +129,7 @@ class TestResearchRealtimeMonitor:
                 # If HackerNews is called, fail the test
                 mock_hn.side_effect = AssertionError("HackerNews should not be called")
 
-                result = research_realtime_monitor(["Python"], sources=["reddit"])
+                result = await research_realtime_monitor(["Python"], sources=["reddit"])
 
                 # Verify only Reddit was called
                 mock_reddit.assert_called()
@@ -136,7 +137,7 @@ class TestResearchRealtimeMonitor:
                 # HackerNews should not be in the result
                 assert result["mentions_by_source"].get("hackernews", 0) == 0
 
-    def test_items_sorted_by_timestamp_newest_first(self) -> None:
+    async def test_items_sorted_by_timestamp_newest_first(self) -> None:
         """Results are sorted by timestamp, newest first."""
         older_item = {
             "topic": "News",
@@ -177,7 +178,7 @@ class TestResearchRealtimeMonitor:
                             mock_news.return_value = []
                             mock_wiki.return_value = []
 
-                            result = research_realtime_monitor(["News"])
+                            result = await research_realtime_monitor(["News"])
 
                             items = result["recent_items"]
                             assert len(items) == 3
@@ -186,7 +187,7 @@ class TestResearchRealtimeMonitor:
                             assert items[1]["title"] == "Middle Story"
                             assert items[2]["title"] == "Older Story"
 
-    def test_mentions_by_source_aggregation(self) -> None:
+    async def test_mentions_by_source_aggregation(self) -> None:
         """Mentions are correctly aggregated by source."""
         hn_items = [
             {
@@ -230,13 +231,13 @@ class TestResearchRealtimeMonitor:
                             mock_news.return_value = []
                             mock_wiki.return_value = []
 
-                            result = research_realtime_monitor(["Python"])
+                            result = await research_realtime_monitor(["Python"])
 
                             assert result["mentions_by_source"]["hackernews"] == 2
                             assert result["mentions_by_source"]["reddit"] == 1
                             assert result["total_mentions"] == 3
 
-    def test_hours_back_parameter_passed(self) -> None:
+    async def test_hours_back_parameter_passed(self) -> None:
         """hours_back parameter is passed to HackerNews fetch."""
         with patch("loom.tools.realtime_monitor._fetch_hackernews", new_callable=AsyncMock) as mock_hn:
             with patch("loom.tools.realtime_monitor._fetch_reddit", new_callable=AsyncMock) as mock_reddit:
@@ -251,7 +252,7 @@ class TestResearchRealtimeMonitor:
                             mock_news.return_value = []
                             mock_wiki.return_value = []
 
-                            research_realtime_monitor(["Python"], hours_back=48)
+                            await research_realtime_monitor(["Python"], hours_back=48)
 
                             # Verify hours_back was passed to HackerNews
                             _, kwargs = mock_hn.call_args
@@ -259,7 +260,7 @@ class TestResearchRealtimeMonitor:
                                 len(mock_hn.call_args[0]) >= 3 and mock_hn.call_args[0][2] == 48
                             )
 
-    def test_invalid_sources_ignored(self) -> None:
+    async def test_invalid_sources_ignored(self) -> None:
         """Invalid source names are silently ignored."""
         with patch("loom.tools.realtime_monitor._fetch_hackernews", new_callable=AsyncMock) as mock_hn:
             with patch("loom.tools.realtime_monitor._fetch_reddit", new_callable=AsyncMock) as mock_reddit:
@@ -275,7 +276,7 @@ class TestResearchRealtimeMonitor:
                             mock_wiki.return_value = []
 
                             # Include invalid source name
-                            result = research_realtime_monitor(
+                            result = await research_realtime_monitor(
                                 ["Python"], sources=["reddit", "invalid_source", "arxiv"]
                             )
 
@@ -285,7 +286,7 @@ class TestResearchRealtimeMonitor:
                             assert not mock_hn.called  # hackernews not in sources list
                             assert result["mentions_by_source"].get("invalid_source") is None
 
-    def test_mentions_by_topic_aggregation(self) -> None:
+    async def test_mentions_by_topic_aggregation(self) -> None:
         """Mentions are correctly aggregated by topic."""
         python_items = [
             {
@@ -337,7 +338,7 @@ class TestResearchRealtimeMonitor:
                             mock_news.return_value = []
                             mock_wiki.return_value = []
 
-                            result = research_realtime_monitor(["Python", "Rust"])
+                            result = await research_realtime_monitor(["Python", "Rust"])
 
                             assert result["mentions_by_topic"]["Python"] == 1
                             assert result["mentions_by_topic"]["Rust"] == 2

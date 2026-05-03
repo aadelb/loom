@@ -144,6 +144,22 @@ def _print_result(
             console.print(result)
 
 
+def _safe_asyncio_run(coro: Any) -> Any:
+    """Safely run asyncio coroutine, handling event loop issues.
+
+    If an event loop is already running (e.g., in tests), use it.
+    Otherwise, create a new one.
+    """
+    try:
+        loop = asyncio.get_running_loop()
+        # We're already in an event loop, can't use asyncio.run()
+        # This shouldn't happen in normal CLI usage but helps in tests
+        return loop.run_until_complete(coro)
+    except RuntimeError:
+        # No event loop running, safe to use asyncio.run()
+        return asyncio.run(coro)
+
+
 # ─── SERVE subcommand ────────────────────────────────────────────────────────
 
 
@@ -756,13 +772,11 @@ def tools(
     Use --verbose to show parameter details for each tool.
     Use --category to filter tools by prefix (e.g., 'llm', 'search', 'fetch').
     """
-    import asyncio
-
     from rich.table import Table
 
     from loom.server import create_app
 
-    # Create app and load tools
+    # Create app and load tools - use asyncio.run() to handle async
     app_instance = create_app()
     tool_list = asyncio.run(app_instance.list_tools())
 

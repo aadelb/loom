@@ -229,7 +229,7 @@ class TestShinglingAndSimilarity:
 
         call_count = [0]
 
-        def fetch_side_effect(*args, **kwargs):
+        async def fetch_side_effect(*args, **kwargs):
             call_count[0] += 1
             return fetch_result1 if call_count[0] == 1 else fetch_result2
 

@@ -14,6 +14,7 @@ Tests:
 """
 
 from __future__ import annotations
+import pytest
 
 import json
 from datetime import UTC, datetime
@@ -28,10 +29,12 @@ from loom.billing.meter import (
 )
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestRecordUsage:
     """Tests for recording usage events."""
 
-    def test_record_usage_creates_file(self) -> None:
+    async def test_record_usage_creates_file(self) -> None:
         """record_usage creates JSONL file with customer_id and date."""
         with TemporaryDirectory(prefix="loom_meter_") as tmpdir:
             meter_dir = Path(tmpdir) / "meters"
@@ -42,7 +45,7 @@ class TestRecordUsage:
                 expected_file = meter_dir / f"cust_123_{today}.jsonl"
                 assert expected_file.exists()
 
-    def test_record_usage_writes_jsonl_entry(self) -> None:
+    async def test_record_usage_writes_jsonl_entry(self) -> None:
         """record_usage writes valid JSON object with newline."""
         with TemporaryDirectory(prefix="loom_meter_") as tmpdir:
             meter_dir = Path(tmpdir) / "meters"
@@ -60,7 +63,7 @@ class TestRecordUsage:
                 assert entry["tool_name"] == "research_fetch"
                 assert entry["credits_used"] == 3
 
-    def test_record_usage_includes_timestamp(self) -> None:
+    async def test_record_usage_includes_timestamp(self) -> None:
         """record_usage includes ISO format timestamp."""
         with TemporaryDirectory(prefix="loom_meter_") as tmpdir:
             meter_dir = Path(tmpdir) / "meters"
@@ -76,7 +79,7 @@ class TestRecordUsage:
                 timestamp = datetime.fromisoformat(entry["timestamp"])
                 assert timestamp.year == datetime.now(UTC).year
 
-    def test_record_usage_includes_duration(self) -> None:
+    async def test_record_usage_includes_duration(self) -> None:
         """record_usage includes duration_ms rounded to 1 decimal."""
         with TemporaryDirectory(prefix="loom_meter_") as tmpdir:
             meter_dir = Path(tmpdir) / "meters"
@@ -89,7 +92,7 @@ class TestRecordUsage:
 
                 assert entry["duration_ms"] == 1234.6
 
-    def test_record_usage_returns_entry(self) -> None:
+    async def test_record_usage_returns_entry(self) -> None:
         """record_usage returns entry dict."""
         with TemporaryDirectory(prefix="loom_meter_") as tmpdir:
             meter_dir = Path(tmpdir) / "meters"
@@ -102,7 +105,7 @@ class TestRecordUsage:
                 assert result["duration_ms"] == 500.0
                 assert "timestamp" in result
 
-    def test_record_usage_multiple_records_accumulate(self) -> None:
+    async def test_record_usage_multiple_records_accumulate(self) -> None:
         """Multiple record_usage calls append to same JSONL file."""
         with TemporaryDirectory(prefix="loom_meter_") as tmpdir:
             meter_dir = Path(tmpdir) / "meters"
@@ -116,7 +119,7 @@ class TestRecordUsage:
                 lines = meter_file.read_text().strip().split("\n")
                 assert len(lines) == 3
 
-    def test_record_usage_different_customers_separate_files(self) -> None:
+    async def test_record_usage_different_customers_separate_files(self) -> None:
         """Different customers have separate meter files."""
         with TemporaryDirectory(prefix="loom_meter_") as tmpdir:
             meter_dir = Path(tmpdir) / "meters"
@@ -135,7 +138,7 @@ class TestRecordUsage:
 class TestGetUsage:
     """Tests for retrieving usage statistics."""
 
-    def test_get_usage_returns_correct_totals(self) -> None:
+    async def test_get_usage_returns_correct_totals(self) -> None:
         """get_usage sums total_credits and total_calls."""
         with TemporaryDirectory(prefix="loom_meter_") as tmpdir:
             meter_dir = Path(tmpdir) / "meters"
@@ -150,7 +153,7 @@ class TestGetUsage:
                 assert usage["total_credits"] == 14
                 assert usage["total_calls"] == 3
 
-    def test_get_usage_breakdown_by_tool(self) -> None:
+    async def test_get_usage_breakdown_by_tool(self) -> None:
         """get_usage includes by_tool breakdown."""
         with TemporaryDirectory(prefix="loom_meter_") as tmpdir:
             meter_dir = Path(tmpdir) / "meters"
@@ -165,7 +168,7 @@ class TestGetUsage:
                 assert usage["by_tool"]["research_fetch"] == 6
                 assert usage["by_tool"]["research_search"] == 1
 
-    def test_get_usage_missing_date_returns_zeros(self) -> None:
+    async def test_get_usage_missing_date_returns_zeros(self) -> None:
         """get_usage returns zeros for non-existent date."""
         with TemporaryDirectory(prefix="loom_meter_") as tmpdir:
             meter_dir = Path(tmpdir) / "meters"
@@ -178,7 +181,7 @@ class TestGetUsage:
                 assert usage["total_calls"] == 0
                 assert usage["by_tool"] == {}
 
-    def test_get_usage_defaults_to_today(self) -> None:
+    async def test_get_usage_defaults_to_today(self) -> None:
         """get_usage defaults to today's date when date=None."""
         with TemporaryDirectory(prefix="loom_meter_") as tmpdir:
             meter_dir = Path(tmpdir) / "meters"
@@ -191,7 +194,7 @@ class TestGetUsage:
                 assert usage["date"] == today
                 assert usage["total_credits"] == 3
 
-    def test_get_usage_includes_all_fields(self) -> None:
+    async def test_get_usage_includes_all_fields(self) -> None:
         """get_usage result includes all expected fields."""
         with TemporaryDirectory(prefix="loom_meter_") as tmpdir:
             meter_dir = Path(tmpdir) / "meters"
@@ -207,7 +210,7 @@ class TestGetUsage:
                 assert "total_calls" in usage
                 assert "by_tool" in usage
 
-    def test_get_usage_accumulates_same_tool_multiple_calls(self) -> None:
+    async def test_get_usage_accumulates_same_tool_multiple_calls(self) -> None:
         """get_usage correctly accumulates same tool over multiple calls."""
         with TemporaryDirectory(prefix="loom_meter_") as tmpdir:
             meter_dir = Path(tmpdir) / "meters"
@@ -226,7 +229,7 @@ class TestGetUsage:
 class TestGetTopTools:
     """Tests for top tools retrieval."""
 
-    def test_get_top_tools_returns_sorted_list(self) -> None:
+    async def test_get_top_tools_returns_sorted_list(self) -> None:
         """get_top_tools returns tools sorted by credits descending."""
         with TemporaryDirectory(prefix="loom_meter_") as tmpdir:
             meter_dir = Path(tmpdir) / "meters"
@@ -246,7 +249,7 @@ class TestGetTopTools:
                 assert top[2]["tool"] == "research_search"
                 assert top[2]["credits"] == 1
 
-    def test_get_top_tools_respects_limit(self) -> None:
+    async def test_get_top_tools_respects_limit(self) -> None:
         """get_top_tools respects limit parameter."""
         with TemporaryDirectory(prefix="loom_meter_") as tmpdir:
             meter_dir = Path(tmpdir) / "meters"
@@ -262,7 +265,7 @@ class TestGetTopTools:
                 assert top[0]["credits"] == 19
                 assert top[4]["credits"] == 15
 
-    def test_get_top_tools_returns_empty_for_missing_date(self) -> None:
+    async def test_get_top_tools_returns_empty_for_missing_date(self) -> None:
         """get_top_tools returns empty list for non-existent date."""
         with TemporaryDirectory(prefix="loom_meter_") as tmpdir:
             meter_dir = Path(tmpdir) / "meters"
@@ -271,7 +274,7 @@ class TestGetTopTools:
 
                 assert top == []
 
-    def test_get_top_tools_default_limit_10(self) -> None:
+    async def test_get_top_tools_default_limit_10(self) -> None:
         """get_top_tools default limit is 10."""
         with TemporaryDirectory(prefix="loom_meter_") as tmpdir:
             meter_dir = Path(tmpdir) / "meters"
@@ -284,7 +287,7 @@ class TestGetTopTools:
 
                 assert len(top) == 10
 
-    def test_get_top_tools_includes_tool_and_credits(self) -> None:
+    async def test_get_top_tools_includes_tool_and_credits(self) -> None:
         """get_top_tools items have tool and credits keys."""
         with TemporaryDirectory(prefix="loom_meter_") as tmpdir:
             meter_dir = Path(tmpdir) / "meters"
@@ -302,7 +305,7 @@ class TestGetTopTools:
 class TestMeterIntegration:
     """Integration tests across multiple functions."""
 
-    def test_full_workflow_record_and_retrieve(self) -> None:
+    async def test_full_workflow_record_and_retrieve(self) -> None:
         """Full workflow: record multiple events and retrieve aggregated stats."""
         with TemporaryDirectory(prefix="loom_meter_") as tmpdir:
             meter_dir = Path(tmpdir) / "meters"
@@ -328,7 +331,7 @@ class TestMeterIntegration:
                 assert len(top) == 3
                 assert top[0]["tool"] == "research_deep"
 
-    def test_multiple_customers_isolated(self) -> None:
+    async def test_multiple_customers_isolated(self) -> None:
         """Multiple customers have completely isolated meter data."""
         with TemporaryDirectory(prefix="loom_meter_") as tmpdir:
             meter_dir = Path(tmpdir) / "meters"

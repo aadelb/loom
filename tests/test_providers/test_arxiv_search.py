@@ -16,15 +16,17 @@ def _clear_arxiv_module():
     sys.modules.pop("loom.providers.arxiv_search", None)
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestSearchArxiv:
-    def test_sdk_not_installed(self):
+    async def test_sdk_not_installed(self):
         with patch.dict("sys.modules", {"arxiv": None}):
             from loom.providers.arxiv_search import search_arxiv
 
             result = search_arxiv("test query")
             assert "not installed" in result["error"]
 
-    def test_basic_search(self):
+    async def test_basic_search(self):
         from datetime import datetime
 
         mock_paper = SimpleNamespace(
@@ -55,7 +57,7 @@ class TestSearchArxiv:
         assert result["results"][0]["authors"] == ["Author One", "Author Two"]
         assert result["results"][0]["pdf_url"] == "https://arxiv.org/pdf/2401.00001"
 
-    def test_empty_results(self):
+    async def test_empty_results(self):
         mock_arxiv = MagicMock()
         mock_arxiv.SortCriterion.Relevance = "relevance"
         mock_arxiv.Client.return_value.results.return_value = []
@@ -68,7 +70,7 @@ class TestSearchArxiv:
 
         assert result["results"] == []
 
-    def test_api_error(self):
+    async def test_api_error(self):
         mock_arxiv = MagicMock()
         mock_arxiv.SortCriterion.Relevance = "relevance"
         mock_arxiv.Client.return_value.results.side_effect = RuntimeError("API error")

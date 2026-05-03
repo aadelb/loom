@@ -18,10 +18,12 @@ from datetime import UTC, datetime
 from loom.report_gen import ReportGenerator
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestReportGeneratorInit:
     """Test ReportGenerator initialization."""
 
-    def test_report_generator_instantiation(self) -> None:
+    async def test_report_generator_instantiation(self) -> None:
         """Test that ReportGenerator can be instantiated."""
         gen = ReportGenerator()
         assert gen is not None
@@ -34,7 +36,7 @@ class TestReportGeneratorInit:
 class TestExecutiveSummary:
     """Test executive summary generation."""
 
-    def test_executive_summary_with_empty_scores(self) -> None:
+    async def test_executive_summary_with_empty_scores(self) -> None:
         """Test executive summary with empty score list."""
         gen = ReportGenerator()
         result = gen.generate_executive_summary([], title="Test Report")
@@ -43,7 +45,7 @@ class TestExecutiveSummary:
         assert "# Test Report" in result
         assert "No scoring data provided" in result
 
-    def test_executive_summary_contains_required_sections(self) -> None:
+    async def test_executive_summary_contains_required_sections(self) -> None:
         """Test that executive summary contains all required sections."""
         gen = ReportGenerator()
         scores = [
@@ -102,7 +104,7 @@ class TestExecutiveSummary:
         assert "## Recommendations" in result
         assert "## Methodology" in result
 
-    def test_executive_summary_with_custom_title(self) -> None:
+    async def test_executive_summary_with_custom_title(self) -> None:
         """Test executive summary with custom title."""
         gen = ReportGenerator()
         scores = [
@@ -154,7 +156,7 @@ class TestExecutiveSummary:
         assert "# Custom Security Assessment" in result
         assert "Generated" in result
 
-    def test_executive_summary_markdown_validity(self) -> None:
+    async def test_executive_summary_markdown_validity(self) -> None:
         """Test that generated markdown has valid structure."""
         gen = ReportGenerator()
         scores = [
@@ -196,7 +198,7 @@ class TestExecutiveSummary:
         assert "|" in result  # Tables present
         assert "-" in result  # Table separators
 
-    def test_executive_summary_with_multiple_scores(self) -> None:
+    async def test_executive_summary_with_multiple_scores(self) -> None:
         """Test executive summary with multiple score entries."""
         gen = ReportGenerator()
         scores = [
@@ -253,7 +255,7 @@ class TestExecutiveSummary:
 class TestStrategyReport:
     """Test strategy effectiveness reports."""
 
-    def test_strategy_report_with_empty_data(self) -> None:
+    async def test_strategy_report_with_empty_data(self) -> None:
         """Test strategy report with empty tracker data."""
         gen = ReportGenerator()
         result = gen.generate_strategy_report([])
@@ -262,7 +264,7 @@ class TestStrategyReport:
         assert "# Strategy Effectiveness Report" in result
         assert "No attack tracker data provided" in result
 
-    def test_strategy_report_contains_required_sections(self) -> None:
+    async def test_strategy_report_contains_required_sections(self) -> None:
         """Test that strategy report has all required sections."""
         gen = ReportGenerator()
         tracker_data = [
@@ -279,7 +281,7 @@ class TestStrategyReport:
         assert "## Analysis" in result
         assert "## Recommendations" in result
 
-    def test_strategy_report_rankings_table(self) -> None:
+    async def test_strategy_report_rankings_table(self) -> None:
         """Test that strategy report includes rankings table."""
         gen = ReportGenerator()
         tracker_data = [
@@ -295,7 +297,7 @@ class TestStrategyReport:
         assert "best_strategy" in result
         assert "95" in result or "0.95" in result  # ASR should be formatted as percentage
 
-    def test_strategy_report_identifies_top_performers(self) -> None:
+    async def test_strategy_report_identifies_top_performers(self) -> None:
         """Test that report identifies top performing strategies."""
         gen = ReportGenerator()
         tracker_data = [
@@ -312,7 +314,7 @@ class TestStrategyReport:
 class TestModelComparison:
     """Test model comparison reports."""
 
-    def test_model_comparison_with_empty_data(self) -> None:
+    async def test_model_comparison_with_empty_data(self) -> None:
         """Test model comparison with no data."""
         gen = ReportGenerator()
         result = gen.generate_model_comparison({})
@@ -321,7 +323,7 @@ class TestModelComparison:
         assert "# Model Comparison Report" in result
         assert "No model data provided" in result
 
-    def test_model_comparison_contains_required_sections(self) -> None:
+    async def test_model_comparison_contains_required_sections(self) -> None:
         """Test that model comparison report has required sections."""
         gen = ReportGenerator()
         model_results = {
@@ -397,7 +399,7 @@ class TestModelComparison:
         assert "gpt-4" in result
         assert "claude" in result
 
-    def test_model_comparison_identifies_best_quality(self) -> None:
+    async def test_model_comparison_identifies_best_quality(self) -> None:
         """Test that model comparison identifies best quality model."""
         gen = ReportGenerator()
         model_results = {
@@ -466,7 +468,7 @@ class TestModelComparison:
 class TestComplianceReport:
     """Test compliance report generation."""
 
-    def test_compliance_report_with_empty_audit_entries(self) -> None:
+    async def test_compliance_report_with_empty_audit_entries(self) -> None:
         """Test compliance report with no audit entries."""
         gen = ReportGenerator()
         result = gen.generate_compliance_report([], framework="eu_ai_act")
@@ -475,7 +477,7 @@ class TestComplianceReport:
         assert "EU AI Act" in result
         assert "No audit entries provided" in result
 
-    def test_compliance_report_eu_ai_act(self) -> None:
+    async def test_compliance_report_eu_ai_act(self) -> None:
         """Test EU AI Act compliance report."""
         gen = ReportGenerator()
         audit_entries = [
@@ -502,7 +504,7 @@ class TestComplianceReport:
         assert "Human" in result and ("Oversight" in result or "oversight" in result)
         assert "Documentation" in result
 
-    def test_compliance_report_nist_ai_rmf(self) -> None:
+    async def test_compliance_report_nist_ai_rmf(self) -> None:
         """Test NIST AI RMF compliance report."""
         gen = ReportGenerator()
         audit_entries = [
@@ -520,7 +522,7 @@ class TestComplianceReport:
         assert "NIST AI Risk Management Framework" in result
         assert "Map" in result or "map" in result.lower()
 
-    def test_compliance_report_owasp(self) -> None:
+    async def test_compliance_report_owasp(self) -> None:
         """Test OWASP Agentic AI Top 10 compliance report."""
         gen = ReportGenerator()
         audit_entries = [
@@ -540,7 +542,7 @@ class TestComplianceReport:
         assert "OWASP Agentic AI Top 10" in result
         assert "Prompt Injection" in result
 
-    def test_compliance_report_includes_audit_summary(self) -> None:
+    async def test_compliance_report_includes_audit_summary(self) -> None:
         """Test that compliance report includes audit summary."""
         gen = ReportGenerator()
         audit_entries = [
@@ -577,7 +579,7 @@ class TestComplianceReport:
         assert "success: 2" in result
         assert "error: 1" in result
 
-    def test_compliance_report_risk_assessment(self) -> None:
+    async def test_compliance_report_risk_assessment(self) -> None:
         """Test that compliance report includes risk assessment."""
         gen = ReportGenerator()
         audit_entries = [
@@ -595,7 +597,7 @@ class TestComplianceReport:
 
         assert "## Risk Assessment" in result
 
-    def test_compliance_report_unknown_framework(self) -> None:
+    async def test_compliance_report_unknown_framework(self) -> None:
         """Test compliance report with unknown framework."""
         gen = ReportGenerator()
         result = gen.generate_compliance_report([], framework="unknown_framework")
@@ -606,7 +608,7 @@ class TestComplianceReport:
 class TestComplianceReportFrameworks:
     """Test framework-specific compliance mapping."""
 
-    def test_eu_ai_act_mentions_framework(self) -> None:
+    async def test_eu_ai_act_mentions_framework(self) -> None:
         """Test EU AI Act report mentions the framework."""
         gen = ReportGenerator()
         audit_entries = [
@@ -624,7 +626,7 @@ class TestComplianceReportFrameworks:
         assert "EU AI Act" in result
         assert "Article 15" in result
 
-    def test_nist_rmf_mentions_framework(self) -> None:
+    async def test_nist_rmf_mentions_framework(self) -> None:
         """Test NIST RMF report mentions the framework."""
         gen = ReportGenerator()
         audit_entries = [
@@ -642,7 +644,7 @@ class TestComplianceReportFrameworks:
         assert "NIST" in result
         assert "Risk Management" in result or "Management Framework" in result
 
-    def test_owasp_mentions_framework(self) -> None:
+    async def test_owasp_mentions_framework(self) -> None:
         """Test OWASP report mentions the framework."""
         gen = ReportGenerator()
         audit_entries = [
@@ -666,7 +668,7 @@ class TestComplianceReportFrameworks:
 class TestReportMarkdownFormatting:
     """Test markdown formatting in all reports."""
 
-    def test_markdown_has_valid_headings(self) -> None:
+    async def test_markdown_has_valid_headings(self) -> None:
         """Test that all reports have valid markdown headings."""
         gen = ReportGenerator()
         scores = [
@@ -706,7 +708,7 @@ class TestReportMarkdownFormatting:
                 # All headers should have space after #
                     assert line[1] in (" ", "#")
 
-    def test_markdown_tables_have_proper_structure(self) -> None:
+    async def test_markdown_tables_have_proper_structure(self) -> None:
         """Test that markdown tables have proper structure."""
         gen = ReportGenerator()
         tracker_data = [
@@ -725,7 +727,7 @@ class TestReportMarkdownFormatting:
             if all(c in "|-" for c in line.replace(" ", "")):
                 assert "-" in line
 
-    def test_executable_summary_is_readable(self) -> None:
+    async def test_executable_summary_is_readable(self) -> None:
         """Test that executive summary is human-readable."""
         gen = ReportGenerator()
         scores = [
@@ -768,7 +770,7 @@ class TestReportMarkdownFormatting:
 class TestEdgeCases:
     """Test edge cases and boundary conditions."""
 
-    def test_report_with_null_values(self) -> None:
+    async def test_report_with_null_values(self) -> None:
         """Test that reports handle null/missing values gracefully."""
         gen = ReportGenerator()
         scores = [
@@ -784,7 +786,7 @@ class TestEdgeCases:
         result = gen.generate_executive_summary(scores)
         assert isinstance(result, str)
 
-    def test_very_large_score_dataset(self) -> None:
+    async def test_very_large_score_dataset(self) -> None:
         """Test report generation with large dataset."""
         gen = ReportGenerator()
         scores = [
@@ -820,7 +822,7 @@ class TestEdgeCases:
         assert len(result) > 1000
         assert "Entries Analyzed" in result and "100" in result
 
-    def test_special_characters_in_titles(self) -> None:
+    async def test_special_characters_in_titles(self) -> None:
         """Test that special characters in titles are handled."""
         gen = ReportGenerator()
         scores = []

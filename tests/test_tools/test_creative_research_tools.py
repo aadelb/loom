@@ -28,39 +28,40 @@ from loom.tools.salary_synthesizer import (
     research_salary_synthesize,
 )
 
+pytestmark = pytest.mark.asyncio
 
 class TestDarkwebEarlyWarning:
     """research_darkweb_early_warning function."""
 
-    def test_empty_keywords_returns_error(self) -> None:
+    async def test_empty_keywords_returns_error(self) -> None:
         """Empty keywords list returns error."""
-        result = research_darkweb_early_warning([])
+        result = await research_darkweb_early_warning([])
         assert "error" in result
         assert result["alert_count"] == 0
         assert result["highest_severity"] is None
 
-    def test_keywords_capped_at_ten(self) -> None:
+    async def test_keywords_capped_at_ten(self) -> None:
         """Keywords list capped at 10 items."""
         keywords = [f"keyword_{i}" for i in range(15)]
-        result = research_darkweb_early_warning(keywords)
+        result = await research_darkweb_early_warning(keywords)
         assert len(result["keywords"]) == 10
 
-    def test_severity_estimation_critical(self) -> None:
+    async def test_severity_estimation_critical(self) -> None:
         """Critical severity detected for high-risk keywords."""
         severity = _estimate_severity("zero-day exploit", 15)
         assert severity == "critical"
 
-    def test_severity_estimation_high(self) -> None:
+    async def test_severity_estimation_high(self) -> None:
         """High severity for medium-risk keywords."""
         severity = _estimate_severity("breach", 5)
         assert severity == "high"
 
-    def test_severity_estimation_low(self) -> None:
+    async def test_severity_estimation_low(self) -> None:
         """Low severity for low-mention keywords."""
         severity = _estimate_severity("generic keyword", 1)
         assert severity == "low"
 
-    def test_result_structure(self) -> None:
+    async def test_result_structure(self) -> None:
         """Result has expected structure."""
         with patch("loom.tools.darkweb_early_warning._ahmia_search", new_callable=AsyncMock) as mock_ahmia:
             with patch("loom.tools.darkweb_early_warning._otx_search", new_callable=AsyncMock) as mock_otx:
@@ -71,7 +72,7 @@ class TestDarkwebEarlyWarning:
                         mock_reddit.return_value = []
                         mock_hn.return_value = []
 
-                        result = research_darkweb_early_warning(["malware"])
+                        result = await research_darkweb_early_warning(["malware"])
                         assert "keywords" in result
                         assert "alerts" in result
                         assert "alert_count" in result
@@ -146,32 +147,32 @@ class TestDeceptionJobScanner:
 class TestBiasLens:
     """research_bias_lens function."""
 
-    def test_no_input_returns_error(self) -> None:
+    async def test_no_input_returns_error(self) -> None:
         """No paper_id or text returns error."""
-        result = research_bias_lens()
+        result = await research_bias_lens()
         assert "error" in result
         assert result["bias_score"] == 0
 
-    def test_p_value_extraction(self) -> None:
+    async def test_p_value_extraction(self) -> None:
         """P-values extracted from text."""
         text = "The results were significant (p = 0.03) and replicated (p < 0.05)."
         p_values = _extract_p_values(text)
         assert 0.03 in p_values
         assert any(p < 0.06 for p in p_values)
 
-    def test_hedging_language_detection(self) -> None:
+    async def test_hedging_language_detection(self) -> None:
         """Hedging language counted correctly."""
         text = "These results may suggest that we might have found evidence that perhaps indicates a pattern."
         count = _count_hedging_language(text)
         assert count > 0
 
-    def test_p_hacking_indicators(self) -> None:
+    async def test_p_hacking_indicators(self) -> None:
         """P-hacking patterns detected."""
         text = "Multiple comparisons were performed with Bonferroni correction applied."
         indicators = _detect_p_hacking_indicators(text)
         assert len(indicators) > 0
 
-    def test_citation_network_self_citation_rate(self) -> None:
+    async def test_citation_network_self_citation_rate(self) -> None:
         """Self-citation rate calculated correctly."""
         authors = [{"name": "John Doe"}, {"name": "Jane Smith"}]
         citations = [
@@ -182,22 +183,22 @@ class TestBiasLens:
         assert result["self_citation_rate"] > 0.0
         assert "self_citation_count" in result
 
-    def test_bias_score_range(self) -> None:
+    async def test_bias_score_range(self) -> None:
         """Bias score stays within 0-100 range."""
         text = "These results suggest that perhaps we may have found evidence indicating bias."
-        result = research_bias_lens(text=text)
+        result = await research_bias_lens(text=text)
         assert 0 <= result["bias_score"] <= 100
 
-    def test_empty_text_no_analysis(self) -> None:
+    async def test_empty_text_no_analysis(self) -> None:
         """Very short text returns analysis (no error)."""
-        result = research_bias_lens(text="short")
+        result = await research_bias_lens(text="short")
         assert "bias_score" in result
         assert "bias_types" in result
 
-    def test_result_structure(self) -> None:
+    async def test_result_structure(self) -> None:
         """Result has expected structure."""
         text = "We found that p = 0.04, suggesting our hypothesis may be true based on multiple tests."
-        result = research_bias_lens(text=text)
+        result = await research_bias_lens(text=text)
         assert "bias_score" in result
         assert "bias_types" in result
         assert "p_value_distribution" in result
@@ -207,17 +208,17 @@ class TestBiasLens:
 class TestSalarySynthesizer:
     """research_salary_synthesize function."""
 
-    def test_empty_job_title_returns_error(self) -> None:
+    async def test_empty_job_title_returns_error(self) -> None:
         """Empty job title returns error."""
-        result = research_salary_synthesize("")
+        result = await research_salary_synthesize("")
         assert "error" in result
 
-    def test_job_title_too_short_returns_error(self) -> None:
+    async def test_job_title_too_short_returns_error(self) -> None:
         """Job title shorter than 2 chars returns error."""
-        result = research_salary_synthesize("a")
+        result = await research_salary_synthesize("a")
         assert "error" in result
 
-    def test_salary_statistics_calculation(self) -> None:
+    async def test_salary_statistics_calculation(self) -> None:
         """Salary statistics calculated correctly."""
         salaries = [50000, 60000, 70000, 80000, 90000]
         stats = _calculate_statistics(salaries)
@@ -225,34 +226,34 @@ class TestSalarySynthesizer:
         assert stats["max"] == 90000
         assert stats["median"] == 70000
 
-    def test_salary_statistics_empty_list(self) -> None:
+    async def test_salary_statistics_empty_list(self) -> None:
         """Empty salary list returns zeros."""
         stats = _calculate_statistics([])
         assert stats["min"] == 0
         assert stats["median"] == 0
         assert stats["max"] == 0
 
-    def test_location_adjustment_high_cost(self) -> None:
+    async def test_location_adjustment_high_cost(self) -> None:
         """High-cost locations apply 1.3x multiplier."""
         base = {"min": 100000, "median": 150000, "max": 200000}
         adjusted = _infer_location_adjustment("San Francisco", base)
         assert adjusted["median"] == int(150000 * 1.3)
 
-    def test_location_adjustment_medium_cost(self) -> None:
+    async def test_location_adjustment_medium_cost(self) -> None:
         """Medium-cost locations apply 1.15x multiplier."""
         base = {"min": 100000, "median": 150000, "max": 200000}
         adjusted = _infer_location_adjustment("Seattle", base)
         assert adjusted["median"] == int(150000 * 1.15)
 
-    def test_location_adjustment_remote(self) -> None:
+    async def test_location_adjustment_remote(self) -> None:
         """Remote location applies no adjustment."""
         base = {"min": 100000, "median": 150000, "max": 200000}
         adjusted = _infer_location_adjustment("remote", base)
         assert adjusted["median"] == 150000
 
-    def test_result_structure(self) -> None:
+    async def test_result_structure(self) -> None:
         """Result has expected structure."""
-        result = research_salary_synthesize("software engineer", location="remote")
+        result = await research_salary_synthesize("software engineer", location="remote")
         assert "job_title" in result
         assert "estimated_range" in result
         assert "sources_checked" in result
@@ -260,24 +261,24 @@ class TestSalarySynthesizer:
         assert "confidence" in result
         assert "location" in result
 
-    def test_confidence_based_on_data_points(self) -> None:
+    async def test_confidence_based_on_data_points(self) -> None:
         """Confidence increases with data points."""
-        result = research_salary_synthesize("software engineer")
+        result = await research_salary_synthesize("software engineer")
         assert 0.0 <= result["confidence"] <= 1.0
 
-    def test_skill_premium(self) -> None:
+    async def test_skill_premium(self) -> None:
         """Premium skills increase salary estimate."""
-        base_result = research_salary_synthesize("developer", skills=[])
-        premium_result = research_salary_synthesize(
+        base_result = await research_salary_synthesize("developer", skills=[])
+        premium_result = await research_salary_synthesize(
             "developer", skills=["kubernetes", "aws"]
         )
         # Premium result should generally be higher (accounting for no data)
         assert "skill_premium_applied" in premium_result
         assert premium_result["skill_premium_applied"] >= 0.0
 
-    def test_multiple_sources_checked(self) -> None:
+    async def test_multiple_sources_checked(self) -> None:
         """Multiple sources checked in result."""
-        result = research_salary_synthesize("software engineer")
+        result = await research_salary_synthesize("software engineer")
         assert len(result["sources_checked"]) >= 1
         # Should include at least stack overflow survey
         assert "stackoverflow_survey" in result["sources_checked"]
@@ -286,7 +287,7 @@ class TestSalarySynthesizer:
 class TestIntegration:
     """Integration tests across tools."""
 
-    def test_darkweb_warning_with_data(self) -> None:
+    async def test_darkweb_warning_with_data(self) -> None:
         """Darkweb warning returns structured data."""
         with patch("loom.tools.darkweb_early_warning._ahmia_search", new_callable=AsyncMock) as mock_ahmia:
             with patch("loom.tools.darkweb_early_warning._otx_search", new_callable=AsyncMock) as mock_otx:
@@ -302,7 +303,7 @@ class TestIntegration:
                         mock_reddit.return_value = []
                         mock_hn.return_value = []
 
-                        result = research_darkweb_early_warning(["exploit"])
+                        result = await research_darkweb_early_warning(["exploit"])
                         assert result["alert_count"] > 0
                         assert any("exploit" in alert.get("title", "").lower() for alert in result["alerts"])
 

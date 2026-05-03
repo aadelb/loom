@@ -16,8 +16,10 @@ def _clear_investing_module():
     sys.modules.pop("loom.providers.investing_data", None)
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestSearchInvesting:
-    def test_stock_quote_success(self):
+    async def test_stock_quote_success(self):
         """Test successful stock quote retrieval."""
         mock_response = MagicMock()
         mock_response.json.return_value = {
@@ -62,7 +64,7 @@ class TestSearchInvesting:
             assert result["results"][0]["price"] == 186.25
             assert result["results"][0]["currency"] == "USD"
 
-    def test_forex_pair_success(self):
+    async def test_forex_pair_success(self):
         """Test successful forex pair quote."""
         mock_response = MagicMock()
         mock_response.json.return_value = {
@@ -101,7 +103,7 @@ class TestSearchInvesting:
             assert result["results"][0]["price"] == 1.09
             assert result["results"][0]["change_pct"] == 0.23
 
-    def test_symbol_not_found(self):
+    async def test_symbol_not_found(self):
         """Test handling of unknown symbol."""
         with patch("loom.providers.investing_data.httpx.Client"):
             from loom.providers.investing_data import search_investing
@@ -112,7 +114,7 @@ class TestSearchInvesting:
             assert result["error"] == "search failed"
             assert result["results"] == []
 
-    def test_api_error_response(self):
+    async def test_api_error_response(self):
         """Test handling of API error in response."""
         mock_response = MagicMock()
         mock_response.json.return_value = {
@@ -137,7 +139,7 @@ class TestSearchInvesting:
             assert result["error"] == "search failed"
             assert result["results"] == []
 
-    def test_http_status_error(self):
+    async def test_http_status_error(self):
         """Test handling of HTTP status error."""
         mock_response = MagicMock()
         mock_response.status_code = 401
@@ -157,7 +159,7 @@ class TestSearchInvesting:
             assert "error" in result
             assert result["error"] == "search failed"
 
-    def test_connect_error(self):
+    async def test_connect_error(self):
         """Test handling of connection error."""
         with patch("loom.providers.investing_data.httpx.Client") as mock_client_cls:
             mock_ctx = MagicMock()
@@ -172,7 +174,7 @@ class TestSearchInvesting:
             assert "error" in result
             assert result["error"] == "search failed"
 
-    def test_timeout_error(self):
+    async def test_timeout_error(self):
         """Test handling of timeout error."""
         with patch("loom.providers.investing_data.httpx.Client") as mock_client_cls:
             mock_ctx = MagicMock()
@@ -187,7 +189,7 @@ class TestSearchInvesting:
             assert "error" in result
             assert result["error"] == "search failed"
 
-    def test_price_change_calculation(self):
+    async def test_price_change_calculation(self):
         """Test price change calculation when previous close differs."""
         mock_response = MagicMock()
         mock_response.json.return_value = {
@@ -226,7 +228,7 @@ class TestSearchInvesting:
             assert result["results"][0]["change"] == 5.0
             assert result["results"][0]["change_pct"] == 2.0
 
-    def test_n_capped_at_20(self):
+    async def test_n_capped_at_20(self):
         """Test that n parameter is capped at 20."""
         mock_response = MagicMock()
         mock_response.json.return_value = {

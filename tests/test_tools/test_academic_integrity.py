@@ -14,10 +14,12 @@ from loom.tools.academic_integrity import (
 )
 
 
+pytestmark = pytest.mark.asyncio
+
 class TestCitationAnalysis:
     """research_citation_analysis function."""
 
-    def test_paper_not_found(self) -> None:
+    async def test_paper_not_found(self) -> None:
         """Paper not found in Semantic Scholar returns error."""
         with patch("loom.tools.academic_integrity.httpx.AsyncClient") as mock_client_class:
             mock_client = MagicMock()
@@ -31,11 +33,11 @@ class TestCitationAnalysis:
             with patch(
                 "loom.tools.academic_integrity._get_json", return_value=None
             ):
-                result = research_citation_analysis("invalid_paper_id")
+                result = await research_citation_analysis("invalid_paper_id")
                 assert "error" in result
                 assert "not found" in result["error"].lower()
 
-    def test_valid_paper_structure(self) -> None:
+    async def test_valid_paper_structure(self) -> None:
         """Valid paper returns expected structure."""
         mock_paper_data = {
             "paperId": "test123",
@@ -67,7 +69,7 @@ class TestCitationAnalysis:
             "loom.tools.academic_integrity._get_json",
             return_value=mock_paper_data,
         ):
-            result = research_citation_analysis("test123", depth=1)
+            result = await research_citation_analysis("test123", depth=1)
 
             # Check expected keys
             assert "paper_id" in result
@@ -85,7 +87,7 @@ class TestCitationAnalysis:
             assert result["authors_count"] == 2
             assert result["citation_count"] == 150
 
-    def test_self_citation_detection(self) -> None:
+    async def test_self_citation_detection(self) -> None:
         """High self-citation rate is detected and reflected in anomaly score."""
         mock_paper_data = {
             "paperId": "test123",
@@ -108,14 +110,14 @@ class TestCitationAnalysis:
             "loom.tools.academic_integrity._get_json",
             return_value=mock_paper_data,
         ):
-            result = research_citation_analysis("test123", depth=1)
+            result = await research_citation_analysis("test123", depth=1)
 
             # 3 out of 4 references are self-citations = 75%
             assert result["self_citation_rate"] > 50
             # High self-citation should increase anomaly score
             assert result["anomaly_score"] > 0
 
-    def test_mutual_citations_detection(self) -> None:
+    async def test_mutual_citations_detection(self) -> None:
         """Mutual citations (papers citing each other) are detected."""
         mock_paper_data = {
             "paperId": "test123",
@@ -137,7 +139,7 @@ class TestCitationAnalysis:
             "loom.tools.academic_integrity._get_json",
             return_value=mock_paper_data,
         ):
-            result = research_citation_analysis("test123", depth=1)
+            result = await research_citation_analysis("test123", depth=1)
 
             # Should detect mutual citation
             assert result["mutual_citations_count"] == 1
@@ -145,7 +147,7 @@ class TestCitationAnalysis:
             # Mutual citations increase anomaly score
             assert result["anomaly_score"] > 0
 
-    def test_depth_parameter_validation(self) -> None:
+    async def test_depth_parameter_validation(self) -> None:
         """Depth parameter is passed through correctly."""
         mock_paper_data = {
             "paperId": "test123",
@@ -162,20 +164,20 @@ class TestCitationAnalysis:
             return_value=mock_paper_data,
         ):
             # Should accept depth 1-3
-            result1 = research_citation_analysis("test123", depth=1)
+            result1 = await research_citation_analysis("test123", depth=1)
             assert result1["paper_id"] == "test123"
 
-            result2 = research_citation_analysis("test123", depth=2)
+            result2 = await research_citation_analysis("test123", depth=2)
             assert result2["paper_id"] == "test123"
 
-            result3 = research_citation_analysis("test123", depth=3)
+            result3 = await research_citation_analysis("test123", depth=3)
             assert result3["paper_id"] == "test123"
 
 
 class TestRetractionCheck:
     """research_retraction_check function."""
 
-    def test_no_results_found(self) -> None:
+    async def test_no_results_found(self) -> None:
         """Empty search results return zeros."""
         mock_crossref_data = {
             "message": {
@@ -187,7 +189,7 @@ class TestRetractionCheck:
             "loom.tools.academic_integrity._get_json",
             return_value=mock_crossref_data,
         ):
-            result = research_retraction_check("nonexistent query", max_results=20)
+            result = await research_retraction_check("nonexistent query", max_results=20)
 
             assert result["query"] == "nonexistent query"
             assert result["papers_checked"] == 0
@@ -195,18 +197,18 @@ class TestRetractionCheck:
             assert result["retraction_details"] == []
             assert result["pubpeer_comments_found"] == 0
 
-    def test_crossref_api_failure(self) -> None:
+    async def test_crossref_api_failure(self) -> None:
         """API failure returns gracefully."""
         with patch(
             "loom.tools.academic_integrity._get_json",
             return_value=None,
         ):
-            result = research_retraction_check("test query")
+            result = await research_retraction_check("test query")
 
             assert result["papers_checked"] == 0
             assert result["retractions_found"] == 0
 
-    def test_retraction_detection(self) -> None:
+    async def test_retraction_detection(self) -> None:
         """Retracted papers are detected in Crossref metadata."""
         mock_crossref_data = {
             "message": {
@@ -232,13 +234,13 @@ class TestRetractionCheck:
             "loom.tools.academic_integrity._get_json",
             return_value=mock_crossref_data,
         ):
-            result = research_retraction_check("test author")
+            result = await research_retraction_check("test author")
 
             assert result["papers_checked"] == 1
             assert result["retractions_found"] == 1
             assert len(result["retraction_details"]) > 0
 
-    def test_max_results_limit(self) -> None:
+    async def test_max_results_limit(self) -> None:
         """max_results parameter limits paper checks."""
         mock_crossref_data = {
             "message": {
@@ -257,7 +259,7 @@ class TestRetractionCheck:
             "loom.tools.academic_integrity._get_json",
             return_value=mock_crossref_data,
         ):
-            result = research_retraction_check("test", max_results=10)
+            result = await research_retraction_check("test", max_results=10)
 
             # Should only check up to max_results
             assert result["papers_checked"] <= 10
@@ -266,7 +268,7 @@ class TestRetractionCheck:
 class TestPredatoryJournalCheck:
     """research_predatory_journal_check function."""
 
-    def test_legitimate_journal_in_doaj(self) -> None:
+    async def test_legitimate_journal_in_doaj(self) -> None:
         """Legitimate journal registered in DOAJ gets low risk score."""
         mock_doaj_data = {
             "results": [
@@ -294,7 +296,7 @@ class TestPredatoryJournalCheck:
             }
         }
 
-        def mock_get_json(client, url, timeout=None):
+        async def mock_get_json(client, url, timeout=None):
             if "doaj.org" in url:
                 return mock_doaj_data
             else:
@@ -304,7 +306,7 @@ class TestPredatoryJournalCheck:
             "loom.tools.academic_integrity._get_json",
             side_effect=mock_get_json,
         ):
-            result = research_predatory_journal_check("Nature")
+            result = await research_predatory_journal_check("Nature")
 
             assert result["journal_name"] == "Nature"
             assert result["is_in_doaj"] is True
@@ -312,13 +314,13 @@ class TestPredatoryJournalCheck:
             # Legitimate journal should have low risk
             assert result["predatory_score"] < 50
 
-    def test_unregistered_journal_high_risk(self) -> None:
+    async def test_unregistered_journal_high_risk(self) -> None:
         """Unregistered journal gets high risk score."""
         with patch(
             "loom.tools.academic_integrity._get_json",
             return_value=None,
         ):
-            result = research_predatory_journal_check("Unknown Journal XYZ")
+            result = await research_predatory_journal_check("Unknown Journal XYZ")
 
             assert result["journal_name"] == "Unknown Journal XYZ"
             assert result["is_in_doaj"] is False
@@ -326,7 +328,7 @@ class TestPredatoryJournalCheck:
             # Unregistered journal should have high risk
             assert result["predatory_score"] > 50
 
-    def test_journal_name_validation(self) -> None:
+    async def test_journal_name_validation(self) -> None:
         """Journal name is trimmed and validated."""
         mock_data = None
 
@@ -334,12 +336,12 @@ class TestPredatoryJournalCheck:
             "loom.tools.academic_integrity._get_json",
             return_value=mock_data,
         ):
-            result = research_predatory_journal_check("  Journal Name  ")
+            result = await research_predatory_journal_check("  Journal Name  ")
 
             # Should handle trimmed names gracefully
             assert "journal_name" in result
 
-    def test_risk_indicators(self) -> None:
+    async def test_risk_indicators(self) -> None:
         """Risk indicators are identified and included in response."""
         mock_crossref_data = {
             "message": {
@@ -360,7 +362,7 @@ class TestPredatoryJournalCheck:
             "loom.tools.academic_integrity._get_json",
             return_value=mock_crossref_data,
         ):
-            result = research_predatory_journal_check("Suspicious Journal")
+            result = await research_predatory_journal_check("Suspicious Journal")
 
             # Should identify risk indicators
             assert "risk_indicators" in result
@@ -368,7 +370,7 @@ class TestPredatoryJournalCheck:
             # Low publication count should be flagged
             assert len(result["risk_indicators"]) > 0
 
-    def test_publication_count_included(self) -> None:
+    async def test_publication_count_included(self) -> None:
         """Publication count is extracted and included."""
         mock_crossref_data = {
             "message": {
@@ -387,7 +389,7 @@ class TestPredatoryJournalCheck:
             "loom.tools.academic_integrity._get_json",
             return_value=mock_crossref_data,
         ):
-            result = research_predatory_journal_check("Test Journal")
+            result = await research_predatory_journal_check("Test Journal")
 
             assert result["publication_count"] == 1234
 
@@ -395,7 +397,7 @@ class TestPredatoryJournalCheck:
 class TestParameterValidation:
     """Parameter validation in Pydantic models."""
 
-    def test_citation_analysis_params(self) -> None:
+    async def test_citation_analysis_params(self) -> None:
         """CitationAnalysisParams validates correctly."""
         from loom.params import CitationAnalysisParams
 
@@ -412,7 +414,7 @@ class TestParameterValidation:
         with pytest.raises(ValueError):
             CitationAnalysisParams(paper_id="test123", depth=0)
 
-    def test_retraction_check_params(self) -> None:
+    async def test_retraction_check_params(self) -> None:
         """RetractionCheckParams validates correctly."""
         from loom.params import RetractionCheckParams
 
@@ -433,7 +435,7 @@ class TestParameterValidation:
         with pytest.raises(ValueError):
             RetractionCheckParams(query="test", max_results=200)
 
-    def test_predatory_journal_check_params(self) -> None:
+    async def test_predatory_journal_check_params(self) -> None:
         """PredatoryJournalCheckParams validates correctly."""
         from loom.params import PredatoryJournalCheckParams
 
@@ -453,7 +455,7 @@ class TestParameterValidation:
 class TestIntegration:
     """Integration tests combining multiple components."""
 
-    def test_citation_analysis_complete_workflow(self) -> None:
+    async def test_citation_analysis_complete_workflow(self) -> None:
         """Complete workflow: fetch paper, analyze citations, return results."""
         mock_paper_data = {
             "paperId": "complete123",
@@ -471,7 +473,7 @@ class TestIntegration:
             "loom.tools.academic_integrity._get_json",
             return_value=mock_paper_data,
         ):
-            result = research_citation_analysis("complete123")
+            result = await research_citation_analysis("complete123")
 
             # Verify complete response structure
             assert all(
@@ -488,7 +490,7 @@ class TestIntegration:
                 ]
             )
 
-    def test_retraction_check_complete_workflow(self) -> None:
+    async def test_retraction_check_complete_workflow(self) -> None:
         """Complete workflow: search papers, check retractions, return results."""
         mock_crossref_data = {
             "message": {
@@ -506,7 +508,7 @@ class TestIntegration:
             "loom.tools.academic_integrity._get_json",
             return_value=mock_crossref_data,
         ):
-            result = research_retraction_check("test query")
+            result = await research_retraction_check("test query")
 
             # Verify complete response structure
             assert all(
@@ -520,7 +522,7 @@ class TestIntegration:
                 ]
             )
 
-    def test_predatory_journal_complete_workflow(self) -> None:
+    async def test_predatory_journal_complete_workflow(self) -> None:
         """Complete workflow: check journal, analyze metadata, return score."""
         mock_crossref_data = {
             "message": {
@@ -537,7 +539,7 @@ class TestIntegration:
             "loom.tools.academic_integrity._get_json",
             return_value=mock_crossref_data,
         ):
-            result = research_predatory_journal_check("Journal")
+            result = await research_predatory_journal_check("Journal")
 
             # Verify complete response structure
             assert all(

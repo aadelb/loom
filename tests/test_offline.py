@@ -12,10 +12,12 @@ from loom.cache import CacheStore
 from loom.offline import serve_stale_or_error
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestCacheGetWithMetadata:
     """Tests for CacheStore.get_with_metadata() — freshness metadata retrieval."""
 
-    def test_get_with_metadata_existing(self, tmp_cache_dir: Path) -> None:
+    async def test_get_with_metadata_existing(self, tmp_cache_dir: Path) -> None:
         """get_with_metadata() returns cached data with metadata for existing entry."""
         cache = CacheStore(tmp_cache_dir)
         key = "test_key_1"
@@ -31,13 +33,13 @@ class TestCacheGetWithMetadata:
         assert "is_stale" in result
         assert result["is_stale"] is False  # Should be fresh (just cached)
 
-    def test_get_with_metadata_missing(self, tmp_cache_dir: Path) -> None:
+    async def test_get_with_metadata_missing(self, tmp_cache_dir: Path) -> None:
         """get_with_metadata() returns None for missing keys."""
         cache = CacheStore(tmp_cache_dir)
         result = cache.get_with_metadata("nonexistent_key")
         assert result is None
 
-    def test_freshness_hours_calculation(self, tmp_cache_dir: Path) -> None:
+    async def test_freshness_hours_calculation(self, tmp_cache_dir: Path) -> None:
         """get_with_metadata() correctly calculates freshness_hours."""
         cache = CacheStore(tmp_cache_dir)
         key = "freshness_test"
@@ -51,7 +53,7 @@ class TestCacheGetWithMetadata:
         assert result["freshness_hours"] < 1  # Should be just created (< 1 hour old)
         assert result["freshness_hours"] >= 0
 
-    def test_is_stale_flag_fresh(self, tmp_cache_dir: Path) -> None:
+    async def test_is_stale_flag_fresh(self, tmp_cache_dir: Path) -> None:
         """get_with_metadata() marks data as non-stale when freshness < 24 hours."""
         cache = CacheStore(tmp_cache_dir)
         key = "fresh_data"
@@ -64,7 +66,7 @@ class TestCacheGetWithMetadata:
         assert result["is_stale"] is False
         assert result["freshness_hours"] < 24
 
-    def test_is_stale_flag_old_data(self, tmp_cache_dir: Path) -> None:
+    async def test_is_stale_flag_old_data(self, tmp_cache_dir: Path) -> None:
         """get_with_metadata() marks data as stale when freshness > 24 hours."""
         cache = CacheStore(tmp_cache_dir)
         key = "old_data"
@@ -86,7 +88,7 @@ class TestCacheGetWithMetadata:
         assert result["is_stale"] is True
         assert result["freshness_hours"] > 24
 
-    def test_get_with_metadata_cached_at_iso_format(self, tmp_cache_dir: Path) -> None:
+    async def test_get_with_metadata_cached_at_iso_format(self, tmp_cache_dir: Path) -> None:
         """get_with_metadata() returns cached_at in ISO 8601 format."""
         cache = CacheStore(tmp_cache_dir)
         key = "iso_test"
@@ -102,7 +104,7 @@ class TestCacheGetWithMetadata:
         # Try parsing to verify it's valid ISO
         dt.datetime.fromisoformat(cached_at)
 
-    def test_get_with_metadata_roundtrip(self, tmp_cache_dir: Path) -> None:
+    async def test_get_with_metadata_roundtrip(self, tmp_cache_dir: Path) -> None:
         """get_with_metadata() and get() retrieve same data (different formats)."""
         cache = CacheStore(tmp_cache_dir)
         key = "roundtrip_test"
@@ -131,7 +133,7 @@ def reset_cache_singleton() -> None:
 class TestServeStaleOrError:
     """Tests for serve_stale_or_error() — offline fallback behavior."""
 
-    def test_serve_stale_cache_hit(self, tmp_cache_dir: Path) -> None:
+    async def test_serve_stale_cache_hit(self, tmp_cache_dir: Path) -> None:
         """serve_stale_or_error() returns stale data when cache hit and provider fails."""
         # Setup cache with temp dir
         cache = CacheStore(tmp_cache_dir)
@@ -158,7 +160,7 @@ class TestServeStaleOrError:
         finally:
             cache_module._cache_singleton = original_singleton
 
-    def test_serve_stale_no_cache(self, tmp_cache_dir: Path) -> None:
+    async def test_serve_stale_no_cache(self, tmp_cache_dir: Path) -> None:
         """serve_stale_or_error() returns error dict when no cache available."""
         cache = CacheStore(tmp_cache_dir)
         cache_key = "missing_cache::key"
@@ -177,7 +179,7 @@ class TestServeStaleOrError:
         finally:
             cache_module._cache_singleton = original_singleton
 
-    def test_stale_response_structure_complete(self, tmp_cache_dir: Path) -> None:
+    async def test_stale_response_structure_complete(self, tmp_cache_dir: Path) -> None:
         """Stale response includes all required fields."""
         cache = CacheStore(tmp_cache_dir)
         cache_key = "fetch::url::https://example.com"
@@ -205,7 +207,7 @@ class TestServeStaleOrError:
         finally:
             cache_module._cache_singleton = original_singleton
 
-    def test_error_response_structure_complete(self, tmp_cache_dir: Path) -> None:
+    async def test_error_response_structure_complete(self, tmp_cache_dir: Path) -> None:
         """Error response includes all required fields."""
         cache = CacheStore(tmp_cache_dir)
         cache_key = "nonexistent::cache"
@@ -225,7 +227,7 @@ class TestServeStaleOrError:
         finally:
             cache_module._cache_singleton = original_singleton
 
-    def test_original_error_preserved_in_stale(self, tmp_cache_dir: Path) -> None:
+    async def test_original_error_preserved_in_stale(self, tmp_cache_dir: Path) -> None:
         """original_error field preserves the exception message."""
         cache = CacheStore(tmp_cache_dir)
         cache_key = "error_message_test"
@@ -242,7 +244,7 @@ class TestServeStaleOrError:
         finally:
             cache_module._cache_singleton = original_singleton
 
-    def test_different_exceptions_handled(self, tmp_cache_dir: Path) -> None:
+    async def test_different_exceptions_handled(self, tmp_cache_dir: Path) -> None:
         """serve_stale_or_error() handles various exception types."""
         cache = CacheStore(tmp_cache_dir)
         cache_key = "exception_type_test"
@@ -267,7 +269,7 @@ class TestServeStaleOrError:
         finally:
             cache_module._cache_singleton = original_singleton
 
-    def test_freshness_hours_in_stale_response(self, tmp_cache_dir: Path) -> None:
+    async def test_freshness_hours_in_stale_response(self, tmp_cache_dir: Path) -> None:
         """Freshness hours correctly reflected in stale response."""
         cache = CacheStore(tmp_cache_dir)
         cache_key = "freshness_reflection"
@@ -298,7 +300,7 @@ class TestServeStaleOrError:
 class TestOfflineModeIntegration:
     """Integration tests for offline mode end-to-end."""
 
-    def test_offline_flow_with_fresh_cache(self, tmp_cache_dir: Path) -> None:
+    async def test_offline_flow_with_fresh_cache(self, tmp_cache_dir: Path) -> None:
         """Full offline flow: cache fresh, provider fails, stale data served."""
         cache = CacheStore(tmp_cache_dir)
         cache_key = "integration::fresh::data"
@@ -320,7 +322,7 @@ class TestOfflineModeIntegration:
         finally:
             cache_module._cache_singleton = original_singleton
 
-    def test_offline_flow_no_cache_graceful(self, tmp_cache_dir: Path) -> None:
+    async def test_offline_flow_no_cache_graceful(self, tmp_cache_dir: Path) -> None:
         """Full offline flow: no cache, provider fails, graceful error."""
         cache = CacheStore(tmp_cache_dir)
         cache_key = "integration::no_cache"

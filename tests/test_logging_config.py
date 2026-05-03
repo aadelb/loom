@@ -11,10 +11,12 @@ import pytest
 from loom.logging_config import JsonFormatter, log_tool_invocation, setup_logging
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestJsonFormatter:
     """Tests for JsonFormatter."""
 
-    def test_format_basic_message(self) -> None:
+    async def test_format_basic_message(self) -> None:
         """Test formatting a basic log message."""
         formatter = JsonFormatter()
         record = logging.LogRecord(
@@ -34,7 +36,7 @@ class TestJsonFormatter:
         assert parsed["message"] == "Test message"
         assert "timestamp" in parsed
 
-    def test_format_with_request_id(self) -> None:
+    async def test_format_with_request_id(self) -> None:
         """Test formatting includes request_id when available."""
         from loom.tracing import REQUEST_ID
 
@@ -58,7 +60,7 @@ class TestJsonFormatter:
         # Clean up
         REQUEST_ID.set("")
 
-    def test_format_without_request_id(self) -> None:
+    async def test_format_without_request_id(self) -> None:
         """Test formatting without request_id doesn't include it."""
         from loom.tracing import REQUEST_ID
 
@@ -79,7 +81,7 @@ class TestJsonFormatter:
 
         assert "request_id" not in parsed or parsed["request_id"] == ""
 
-    def test_format_with_exception(self) -> None:
+    async def test_format_with_exception(self) -> None:
         """Test formatting includes exception info when present."""
         formatter = JsonFormatter()
 
@@ -105,7 +107,7 @@ class TestJsonFormatter:
         assert "exception" in parsed
         assert "ValueError: Test exception" in parsed["exception"]
 
-    def test_format_with_args(self) -> None:
+    async def test_format_with_args(self) -> None:
         """Test formatting with message arguments."""
         formatter = JsonFormatter()
         record = logging.LogRecord(
@@ -122,7 +124,7 @@ class TestJsonFormatter:
 
         assert parsed["message"] == "User alice logged in from 192.168.1.1"
 
-    def test_format_with_tool_fields(self) -> None:
+    async def test_format_with_tool_fields(self) -> None:
         """Test formatting includes tool-specific fields when present."""
         formatter = JsonFormatter()
         record = logging.LogRecord(
@@ -150,7 +152,7 @@ class TestJsonFormatter:
         assert parsed["cache_hit"] is True
         assert parsed["client_id"] == "user-123"
 
-    def test_format_with_partial_tool_fields(self) -> None:
+    async def test_format_with_partial_tool_fields(self) -> None:
         """Test formatting with only some tool fields present."""
         formatter = JsonFormatter()
         record = logging.LogRecord(
@@ -177,7 +179,7 @@ class TestJsonFormatter:
         assert "cache_hit" not in parsed
         assert "client_id" not in parsed
 
-    def test_format_ignores_none_tool_fields(self) -> None:
+    async def test_format_ignores_none_tool_fields(self) -> None:
         """Test formatting skips None values for tool fields."""
         formatter = JsonFormatter()
         record = logging.LogRecord(
@@ -206,7 +208,7 @@ class TestJsonFormatter:
 class TestSetupLogging:
     """Tests for setup_logging function."""
 
-    def test_setup_json_logging(self) -> None:
+    async def test_setup_json_logging(self) -> None:
         """Test setting up JSON logging format."""
         target_logger = logging.getLogger("test_json_logger")
 
@@ -221,7 +223,7 @@ class TestSetupLogging:
         )
         assert has_json_formatter
 
-    def test_setup_text_logging(self) -> None:
+    async def test_setup_text_logging(self) -> None:
         """Test setting up text logging format."""
         target_logger = logging.getLogger("test_text_logger")
 
@@ -233,7 +235,7 @@ class TestSetupLogging:
         assert formatter is not None
         assert not isinstance(formatter, JsonFormatter)
 
-    def test_setup_logging_level(self) -> None:
+    async def test_setup_logging_level(self) -> None:
         """Test that setup_logging sets the correct log level."""
         test_logger = logging.getLogger("test_level_logger")
 
@@ -243,7 +245,7 @@ class TestSetupLogging:
         setup_logging(log_level="DEBUG", log_format="text", logger_name="test_level_logger")
         assert test_logger.level == logging.DEBUG
 
-    def test_json_format_is_valid_json(self) -> None:
+    async def test_json_format_is_valid_json(self) -> None:
         """Test that JSON format produces valid JSON."""
         test_stream = StringIO()
         test_handler = logging.StreamHandler(test_stream)
@@ -265,7 +267,7 @@ class TestSetupLogging:
             assert "message" in parsed
             assert parsed["message"] == "Test message"
 
-    def test_setup_logging_defaults(self) -> None:
+    async def test_setup_logging_defaults(self) -> None:
         """Test setup_logging with default parameters."""
         test_logger = logging.getLogger("test_defaults")
 
@@ -279,7 +281,7 @@ class TestSetupLogging:
         )
         assert has_text_formatter
 
-    def test_setup_logging_clears_old_handlers(self) -> None:
+    async def test_setup_logging_clears_old_handlers(self) -> None:
         """Test that setup_logging removes old handlers."""
         test_logger = logging.getLogger("test_clear")
         # Add an initial handler
@@ -302,7 +304,7 @@ class TestSetupLogging:
 class TestLogToolInvocation:
     """Tests for log_tool_invocation function."""
 
-    def test_log_tool_invocation_basic(self) -> None:
+    async def test_log_tool_invocation_basic(self) -> None:
         """Test logging a basic tool invocation."""
         test_stream = StringIO()
         test_handler = logging.StreamHandler(test_stream)
@@ -330,7 +332,7 @@ class TestLogToolInvocation:
         assert parsed["status"] == "ok"
         assert "message" in parsed
 
-    def test_log_tool_invocation_with_all_fields(self) -> None:
+    async def test_log_tool_invocation_with_all_fields(self) -> None:
         """Test logging a tool invocation with all fields."""
         test_stream = StringIO()
         test_handler = logging.StreamHandler(test_stream)
@@ -363,7 +365,7 @@ class TestLogToolInvocation:
         assert parsed["client_id"] == "user-456"
         assert "Multi-URL research completed" in parsed["message"]
 
-    def test_log_tool_invocation_error_status(self) -> None:
+    async def test_log_tool_invocation_error_status(self) -> None:
         """Test logging a tool invocation with error status."""
         test_stream = StringIO()
         test_handler = logging.StreamHandler(test_stream)
@@ -393,7 +395,7 @@ class TestLogToolInvocation:
         assert parsed["cache_hit"] is False
         assert parsed["client_id"] == "api_key"
 
-    def test_log_tool_invocation_request_id_correlation(self) -> None:
+    async def test_log_tool_invocation_request_id_correlation(self) -> None:
         """Test that request_id is correlated in tool invocation logs."""
         from loom.tracing import REQUEST_ID
 
@@ -427,7 +429,7 @@ class TestLogToolInvocation:
         # Clean up
         REQUEST_ID.set("")
 
-    def test_log_tool_invocation_default_logger(self) -> None:
+    async def test_log_tool_invocation_default_logger(self) -> None:
         """Test logging uses default logger when none provided."""
         # This test verifies that no exception is raised when logger is None
         # The default should be loom.tools logger
@@ -442,7 +444,7 @@ class TestLogToolInvocation:
         except Exception as e:
             pytest.fail(f"log_tool_invocation raised exception: {e}")
 
-    def test_log_tool_invocation_without_client_id(self) -> None:
+    async def test_log_tool_invocation_without_client_id(self) -> None:
         """Test logging without client_id doesn't include it."""
         test_stream = StringIO()
         test_handler = logging.StreamHandler(test_stream)

@@ -1,6 +1,7 @@
 """Unit tests for research_search tool — mocked provider SDKs, normalized output."""
 
 from __future__ import annotations
+import pytest
 
 import sys
 from unittest.mock import MagicMock, patch

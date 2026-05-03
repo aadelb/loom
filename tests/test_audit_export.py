@@ -23,10 +23,12 @@ import pytest
 from loom.audit import export_audit, log_invocation
 
 
+
+pytestmark = pytest.mark.asyncio
 class TestExportAuditJSON:
     """export_audit() JSON format tests."""
 
-    def test_export_json_empty_directory(self, tmp_path: Path) -> None:
+    async def test_export_json_empty_directory(self, tmp_path: Path) -> None:
         """Export JSON from empty directory → count=0."""
         audit_dir = tmp_path / "nonexistent"
 
@@ -36,7 +38,7 @@ class TestExportAuditJSON:
         assert result["data"] == []
         assert result["count"] == 0
 
-    def test_export_json_single_entry(self, tmp_path: Path) -> None:
+    async def test_export_json_single_entry(self, tmp_path: Path) -> None:
         """Export JSON with single entry → valid JSON array."""
         audit_dir = tmp_path / "audit"
 
@@ -62,7 +64,7 @@ class TestExportAuditJSON:
         assert entry["tool_name"] == "research_fetch"
         assert entry["_verified"] is True
 
-    def test_export_json_multiple_entries(self, tmp_path: Path) -> None:
+    async def test_export_json_multiple_entries(self, tmp_path: Path) -> None:
         """Export JSON with multiple entries → valid JSON array."""
         audit_dir = tmp_path / "audit"
 
@@ -87,7 +89,7 @@ class TestExportAuditJSON:
         for i, entry in enumerate(result["data"]):
             assert entry["client_id"] == f"client-{i}"
 
-    def test_export_json_has_verification_status(self, tmp_path: Path) -> None:
+    async def test_export_json_has_verification_status(self, tmp_path: Path) -> None:
         """Export JSON includes _verified field for each entry."""
         audit_dir = tmp_path / "audit"
 
@@ -113,7 +115,7 @@ class TestExportAuditJSON:
 class TestExportAuditCSV:
     """export_audit() CSV format tests."""
 
-    def test_export_csv_empty_directory(self, tmp_path: Path) -> None:
+    async def test_export_csv_empty_directory(self, tmp_path: Path) -> None:
         """Export CSV from empty directory → count=0."""
         audit_dir = tmp_path / "nonexistent"
 
@@ -123,7 +125,7 @@ class TestExportAuditCSV:
         assert result["data"] == ""
         assert result["count"] == 0
 
-    def test_export_csv_single_entry(self, tmp_path: Path) -> None:
+    async def test_export_csv_single_entry(self, tmp_path: Path) -> None:
         """Export CSV with single entry → valid CSV with headers."""
         audit_dir = tmp_path / "audit"
 
@@ -153,7 +155,7 @@ class TestExportAuditCSV:
         assert row["tool_name"] == "research_fetch"
         assert row["status"] == "success"
 
-    def test_export_csv_has_headers(self, tmp_path: Path) -> None:
+    async def test_export_csv_has_headers(self, tmp_path: Path) -> None:
         """Export CSV includes all field headers."""
         audit_dir = tmp_path / "audit"
 
@@ -182,7 +184,7 @@ class TestExportAuditCSV:
         assert "checksum" in fieldnames
         assert "_verified" in fieldnames
 
-    def test_export_csv_multiple_entries(self, tmp_path: Path) -> None:
+    async def test_export_csv_multiple_entries(self, tmp_path: Path) -> None:
         """Export CSV with multiple entries → valid CSV rows."""
         audit_dir = tmp_path / "audit"
 
@@ -207,7 +209,7 @@ class TestExportAuditCSV:
         for i, row in enumerate(rows):
             assert row["client_id"] == f"client-{i}"
 
-    def test_export_csv_json_fields_serialized(self, tmp_path: Path) -> None:
+    async def test_export_csv_json_fields_serialized(self, tmp_path: Path) -> None:
         """Export CSV serializes nested JSON objects as strings."""
         audit_dir = tmp_path / "audit"
 
@@ -238,7 +240,7 @@ class TestExportAuditCSV:
 class TestExportAuditDateFiltering:
     """export_audit() date filtering tests."""
 
-    def test_export_with_start_date(self, tmp_path: Path) -> None:
+    async def test_export_with_start_date(self, tmp_path: Path) -> None:
         """Export filters entries with start_date."""
         audit_dir = tmp_path / "audit"
         audit_dir.mkdir()
@@ -265,7 +267,7 @@ class TestExportAuditDateFiltering:
         assert result["data"][0]["client_id"] == "client-2025-04-28"
         assert result["data"][1]["client_id"] == "client-2025-04-29"
 
-    def test_export_with_end_date(self, tmp_path: Path) -> None:
+    async def test_export_with_end_date(self, tmp_path: Path) -> None:
         """Export filters entries with end_date."""
         audit_dir = tmp_path / "audit"
         audit_dir.mkdir()
@@ -292,7 +294,7 @@ class TestExportAuditDateFiltering:
         assert result["data"][0]["client_id"] == "client-2025-04-27"
         assert result["data"][1]["client_id"] == "client-2025-04-28"
 
-    def test_export_with_date_range(self, tmp_path: Path) -> None:
+    async def test_export_with_date_range(self, tmp_path: Path) -> None:
         """Export filters entries with both start_date and end_date."""
         audit_dir = tmp_path / "audit"
         audit_dir.mkdir()
@@ -324,7 +326,7 @@ class TestExportAuditDateFiltering:
         assert result["data"][0]["client_id"] == "client-2025-04-27"
         assert result["data"][1]["client_id"] == "client-2025-04-28"
 
-    def test_export_no_dates_returns_all(self, tmp_path: Path) -> None:
+    async def test_export_no_dates_returns_all(self, tmp_path: Path) -> None:
         """Export without dates returns all entries."""
         audit_dir = tmp_path / "audit"
 
@@ -347,14 +349,14 @@ class TestExportAuditDateFiltering:
 class TestExportAuditValidation:
     """export_audit() parameter validation tests."""
 
-    def test_export_invalid_format_raises_error(self, tmp_path: Path) -> None:
+    async def test_export_invalid_format_raises_error(self, tmp_path: Path) -> None:
         """Export with invalid format raises ValueError."""
         audit_dir = tmp_path / "audit"
 
         with pytest.raises(ValueError, match='format must be "json" or "csv"'):
             export_audit(format="xml", audit_dir=audit_dir)
 
-    def test_export_json_default_format(self, tmp_path: Path) -> None:
+    async def test_export_json_default_format(self, tmp_path: Path) -> None:
         """Export uses JSON as default format."""
         audit_dir = tmp_path / "audit"
 
@@ -377,7 +379,7 @@ class TestExportAuditValidation:
 class TestExportAuditReturnFormat:
     """export_audit() return value format tests."""
 
-    def test_export_returns_dict_with_required_keys(self, tmp_path: Path) -> None:
+    async def test_export_returns_dict_with_required_keys(self, tmp_path: Path) -> None:
         """Export returns dict with format, data, count."""
         audit_dir = tmp_path / "audit"
 
@@ -388,7 +390,7 @@ class TestExportAuditReturnFormat:
         assert "data" in result
         assert "count" in result
 
-    def test_export_count_matches_data_length(self, tmp_path: Path) -> None:
+    async def test_export_count_matches_data_length(self, tmp_path: Path) -> None:
         """Export count field matches data length."""
         audit_dir = tmp_path / "audit"
 
@@ -415,7 +417,7 @@ class TestExportAuditReturnFormat:
 class TestExportAuditIntegration:
     """Integration tests for export_audit()."""
 
-    def test_export_json_and_csv_same_entry_count(self, tmp_path: Path) -> None:
+    async def test_export_json_and_csv_same_entry_count(self, tmp_path: Path) -> None:
         """JSON and CSV exports have same entry count."""
         audit_dir = tmp_path / "audit"
 
@@ -435,7 +437,7 @@ class TestExportAuditIntegration:
 
         assert result_json["count"] == result_csv["count"]
 
-    def test_export_json_matches_csv_entries(self, tmp_path: Path) -> None:
+    async def test_export_json_matches_csv_entries(self, tmp_path: Path) -> None:
         """JSON and CSV exports contain same data."""
         audit_dir = tmp_path / "audit"
 
