@@ -130,9 +130,11 @@ async def research_ghost_weave(
     dead_links: dict[str, dict[str, Any]] = {}  # url -> {error, attempts}
     queue: list[tuple[str, int]] = [(seed_url, 0)]  # (url, current_depth)
     seen_urls = {_normalize_url(seed_url)}
+    import time as _time
+    _crawl_deadline = _time.time() + 120  # 2-minute overall timeout
 
     # Crawl up to max_pages
-    while queue and len(visited) < max_pages:
+    while queue and len(visited) < max_pages and _time.time() < _crawl_deadline:
         current_url, current_depth = queue.pop(0)
 
         # Stop if we've exceeded depth
