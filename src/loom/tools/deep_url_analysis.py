@@ -16,12 +16,19 @@ from typing import Any
 logger = logging.getLogger("loom.tools.deep_url_analysis")
 
 
+_FREE_PROVIDERS = ["ddgs", "arxiv", "wikipedia", "hn_reddit"]
+_PAID_PROVIDERS = ["exa", "tavily", "brave", "firecrawl"]
+_ALL_PROVIDERS = _FREE_PROVIDERS + _PAID_PROVIDERS
+
+
 async def research_deep_url_analysis(
     topic: str,
     num_urls: int = 10,
     search_provider: str = "exa",
     analysis_prompt: str = "",
     max_chars_per_url: int = 50000,
+    use_free_only: bool = False,
+    model: str = "gemini-3.1-pro-preview",
 ) -> dict[str, Any]:
     """Force-find, fetch, and analyze multiple URLs with Gemini 1M context.
 
@@ -30,14 +37,19 @@ async def research_deep_url_analysis(
     2. Fetch full content from each URL (stealthy mode with escalation)
     3. Convert to clean markdown
     4. Concatenate all content
-    5. Send to Gemini 3.1 Pro (1M context) for deep analysis
+    5. Send to long-context model (Gemini 3.1 Pro 1M) for deep analysis
 
     Args:
         topic: Research topic to find URLs about
-        num_urls: Number of URLs to find and fetch (1-30, default 10)
-        search_provider: Search engine to use (exa, tavily, brave, ddgs)
+        num_urls: Number of URLs to find and fetch (1-100, default 10)
+        search_provider: Search engine to use. Options:
+            FREE: ddgs, arxiv, wikipedia, hn_reddit
+            PAID: exa, tavily, brave, firecrawl
+            Use "multi" to search across multiple providers
         analysis_prompt: Custom analysis instructions for Gemini (optional)
         max_chars_per_url: Max characters to extract per URL (default 50K)
+        use_free_only: If True, only use free search providers (ddgs, arxiv, wikipedia)
+        model: Gemini model to use (default: gemini-3.1-pro-preview with 1M context)
 
     Returns:
         Dict with:
@@ -55,22 +67,40 @@ async def research_deep_url_analysis(
     if not topic or len(topic.strip()) < 3:
         return {"error": "Topic too short (min 3 chars)", "topic": topic}
 
-    num_urls = max(1, min(num_urls, 30))
-    max_chars_per_url = max(5000, min(max_chars_per_url, 100000))
+    num_urls = max(1, min(num_urls, 100))
+    max_chars_per_url = max(5000, min(max_chars_per_url, 200000))
 
-    # Stage 1: Find relevant URLs
-    logger.info("deep_url_analysis stage=search topic=%s num_urls=%d", topic[:100], num_urls)
-    search_result = await research_search(
-        query=topic,
-        provider=search_provider,
-        n=num_urls * 2,
-    )
+    # Provider selection
+    if use_free_only:
+        search_provider = "ddgs"
+    if search_provider == "multi":
+        providers_to_use = _FREE_PROVIDERS if use_free_only else _ALL_PROVIDERS
+    else:
+        providers_to_use = [search_provider]
+
+    # Stage 1: Find relevant URLs (multi-provider if requested)
+    logger.info("deep_url_analysis stage=search topic=%s num_urls=%d providers=%s", topic[:100], num_urls, providers_to_use)
 
     urls = []
-    if isinstance(search_result, dict) and "results" in search_result:
-        for r in search_result["results"]:
-            if isinstance(r, dict) and r.get("url"):
-                urls.append({"url": r["url"], "title": r.get("title", "")})
+    seen_urls: set[str] = set()
+
+    for provider in providers_to_use:
+        if len(urls) >= num_urls:
+            break
+        try:
+            search_result = await research_search(
+                query=topic,
+                provider=provider,
+                n=min(num_urls * 2, 50),
+            )
+            if isinstance(search_result, dict) and "results" in search_result:
+                for r in search_result["results"]:
+                    if isinstance(r, dict) and r.get("url") and r["url"] not in seen_urls:
+                        seen_urls.add(r["url"])
+                        urls.append({"url": r["url"], "title": r.get("title", ""), "provider": provider})
+        except Exception as e:
+            logger.warning("deep_url_analysis search_error provider=%s error=%s", provider, str(e)[:100])
+
     urls = urls[:num_urls]
 
     if not urls:
@@ -162,7 +192,7 @@ async def research_deep_url_analysis(
             tmp_path = f.name
 
         result = subprocess.run(
-            ["gemini", "-m", "gemini-3.1-pro-preview", "--approval-mode", "yolo", "-f", tmp_path],
+            ["gemini", "-m", model, "--approval-mode", "yolo", "-f", tmp_path],
             capture_output=True,
             text=True,
             errors="replace",
@@ -195,6 +225,7 @@ async def research_deep_url_analysis(
         "gemini_analysis": gemini_response[:100000],
         "sources": sources,
         "errors": errors,
-        "search_provider": search_provider,
-        "model": "gemini-3.1-pro-preview",
+        "search_providers": providers_to_use,
+        "model": model,
+        "use_free_only": use_free_only,
     }
