@@ -13,6 +13,9 @@ from loom.validators import validate_url, UrlSafetyError
 
 logger = logging.getLogger("loom.tools.dark_recon")
 
+# Maximum stdout read size: 10 MB
+MAX_OUTPUT_SIZE = 10 * 1024 * 1024
+
 
 def _validate_domain(domain: str) -> str:
     """Validate domain name to prevent command injection.
@@ -94,16 +97,22 @@ def research_torbot(url: str, depth: int = 2) -> dict[str, Any]:
     try:
         result = subprocess.run(
             ["torbot", "-u", url, "--depth", str(depth), "--json"],
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
             errors="replace",
             timeout=300,  # 5 minutes for deep crawls
         )
 
+        # Limit stdout read to prevent OOM from huge output
+        stdout = result.stdout[:MAX_OUTPUT_SIZE] if result.stdout else ""
+        if result.stdout and len(result.stdout) > MAX_OUTPUT_SIZE:
+            logger.warning(f"torbot output truncated (exceeded {MAX_OUTPUT_SIZE} bytes)")
+
         output: dict[str, Any] = {"url": url, "depth_crawled": depth}
 
         if result.returncode != 0:
-            output["error"] = f"torbot command failed: {result.stderr}"
+            output["error"] = f"torbot command failed: {result.stderr[:500]}"
             output["links_found"] = []
             output["emails_found"] = []
             output["phone_numbers"] = []
@@ -111,18 +120,18 @@ def research_torbot(url: str, depth: int = 2) -> dict[str, Any]:
 
         # Parse JSON output from torbot
         try:
-            json_output = json.loads(result.stdout)
+            json_output = json.loads(stdout)
             output["links_found"] = json_output.get("links", [])
             output["emails_found"] = json_output.get("emails", [])
             output["phone_numbers"] = json_output.get("phone_numbers", [])
         except json.JSONDecodeError:
             # Fallback: parse text output with regex
-            output["links_found"] = re.findall(r"https?://[^\s]+", result.stdout)
+            output["links_found"] = re.findall(r"https?://[^\s]+", stdout)
             output["emails_found"] = re.findall(
                 r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b",
-                result.stdout,
+                stdout,
             )
-            output["phone_numbers"] = re.findall(r"\+?\d{1,3}[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}", result.stdout)
+            output["phone_numbers"] = re.findall(r"\+?\d{1,3}[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}", stdout)
 
         return output
 
@@ -197,16 +206,22 @@ def research_amass_enum(domain: str, passive: bool = True, timeout: int = 120) -
 
         result = subprocess.run(
             cmd,
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
             errors="replace",
             timeout=timeout,
         )
 
+        # Limit stdout read to prevent OOM
+        stdout = result.stdout[:MAX_OUTPUT_SIZE] if result.stdout else ""
+        if result.stdout and len(result.stdout) > MAX_OUTPUT_SIZE:
+            logger.warning(f"amass output truncated (exceeded {MAX_OUTPUT_SIZE} bytes)")
+
         output: dict[str, Any] = {"domain": domain}
 
         if result.returncode != 0:
-            output["error"] = f"amass enum command failed: {result.stderr}"
+            output["error"] = f"amass enum command failed: {result.stderr[:500]}"
             output["subdomains"] = []
             output["asns"] = []
             output["ip_addresses"] = []
@@ -220,7 +235,7 @@ def research_amass_enum(domain: str, passive: bool = True, timeout: int = 120) -
         ip_addresses: set[str] = set()
         sources: set[str] = set()
 
-        for line in result.stdout.strip().split("\n"):
+        for line in stdout.strip().split("\n"):
             if not line.strip():
                 continue
             try:
@@ -311,16 +326,22 @@ def research_amass_intel(domain: str) -> dict[str, Any]:
     try:
         result = subprocess.run(
             ["amass", "intel", "-d", domain, "-json"],
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
             errors="replace",
             timeout=120,
         )
 
+        # Limit stdout read to prevent OOM
+        stdout = result.stdout[:MAX_OUTPUT_SIZE] if result.stdout else ""
+        if result.stdout and len(result.stdout) > MAX_OUTPUT_SIZE:
+            logger.warning(f"amass intel output truncated (exceeded {MAX_OUTPUT_SIZE} bytes)")
+
         output: dict[str, Any] = {"domain": domain}
 
         if result.returncode != 0:
-            output["error"] = f"amass intel command failed: {result.stderr}"
+            output["error"] = f"amass intel command failed: {result.stderr[:500]}"
             output["organizations"] = []
             output["emails"] = []
             output["related_domains"] = []
@@ -331,7 +352,7 @@ def research_amass_intel(domain: str) -> dict[str, Any]:
         emails: set[str] = set()
         related_domains: set[str] = set()
 
-        for line in result.stdout.strip().split("\n"):
+        for line in stdout.strip().split("\n"):
             if not line.strip():
                 continue
             try:
