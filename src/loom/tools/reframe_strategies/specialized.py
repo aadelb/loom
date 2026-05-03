@@ -816,7 +816,7 @@ STRATEGIES: dict[str, dict[str, Any]] = {
     "gptfuzzer": {
         "name": "gptfuzzer",
         "multiplier": 5.0,
-        "template": "\"{jailbreak_prompt.replace('{query}',temp_instance.query)}\" or \"{jailbreak_prompt}{query}\". The `jailbreak_prompt` originates from `SeedTemplate().new_seeds(seeds_num=76, prompt_usage='attack', method_list=['Gptfuzzer'])` and is further mutated.\n\n{prompt}",
+        "template": "\"{{jailbreak_prompt.replace('{{query}}',temp_instance.query)}}\" or \"{{jailbreak_prompt}}{{query}}\". The `jailbreak_prompt` originates from `SeedTemplate().new_seeds(seeds_num=76, prompt_usage='attack', method_list=['Gptfuzzer'])` and is further mutated.\n\n{prompt}",
         "best_for": ['gpt', 'claude', 'llama'],
     },
     "scaffolded_layered_depth_sld": {
