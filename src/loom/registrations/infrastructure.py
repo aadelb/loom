@@ -187,4 +187,19 @@ def register_infrastructure_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip vercel_mod: %s", e)
         record_failure("infrastructure", "vercel", str(e))
-    log.info("registered infrastructure tools count=41")
+    try:
+        from loom.tools.job_tools import research_job_submit, research_job_status, research_job_result, research_job_list, research_job_cancel
+        mcp.tool()(wrap_tool(research_job_submit))
+        record_success("infrastructure", "research_job_submit")
+        mcp.tool()(wrap_tool(research_job_status))
+        record_success("infrastructure", "research_job_status")
+        mcp.tool()(wrap_tool(research_job_result))
+        record_success("infrastructure", "research_job_result")
+        mcp.tool()(wrap_tool(research_job_list))
+        record_success("infrastructure", "research_job_list")
+        mcp.tool()(wrap_tool(research_job_cancel))
+        record_success("infrastructure", "research_job_cancel")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip job_tools: %s", e)
+        record_failure("infrastructure", "job_tools", str(e))
+    log.info("registered infrastructure tools count=46")

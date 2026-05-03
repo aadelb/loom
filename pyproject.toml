@@ -2,82 +2,97 @@
 name = "loom-mcp"
 version = "0.1.0a1"
 description = "Smart internet research MCP server — scraping, search, LLMs, and persistent browser sessions woven into one research thread"
-authors = [{ name = "Ahmed Adel Bakr Alderai" }]
+authors = [
+    { name = "Ahmed Adel Bakr Alderai" },
+]
 readme = "README.md"
-license = { text = "Apache-2.0" }
 requires-python = ">=3.11"
 keywords = [
-  "mcp",
-  "model-context-protocol",
-  "scraping",
-  "web-scraping",
-  "research",
-  "llm",
-  "claude",
-  "agent",
-  "scrapling",
+    "mcp",
+    "model-context-protocol",
+    "scraping",
+    "web-scraping",
+    "research",
+    "llm",
+    "claude",
+    "agent",
+    "scrapling",
 ]
 classifiers = [
-  "Development Status :: 3 - Alpha",
-  "Intended Audience :: Developers",
-  "Intended Audience :: Science/Research",
-  "License :: OSI Approved :: Apache Software License",
-  "Operating System :: POSIX :: Linux",
-  "Operating System :: MacOS",
-  "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.11",
-  "Programming Language :: Python :: 3.12",
-  "Programming Language :: Python :: 3.13",
-  "Topic :: Internet :: WWW/HTTP",
-  "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
-  "Topic :: Scientific/Engineering :: Artificial Intelligence",
-  "Topic :: Software Development :: Libraries :: Python Modules",
-  "Typing :: Typed",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+dependencies = [
+    "mcp[cli]>=1.27",
+    "fastapi>=0.135",
+    "uvicorn[standard]>=0.44",
+    "pydantic>=2.12",
+    "pydantic-settings>=2.13",
+    "httpx>=0.28",
+    "orjson>=3.11",
+    "typer>=0.24",
+    "rich>=14.3",
+    "scrapling>=0.4.5",
+    "firecrawl-py>=4.22",
+    "exa-py>=2.11",
+    "tavily-python>=0.7",
+    "openai>=2.31",
+    "python-dotenv>=1.2",
+    "aiosqlite>=0.20",
+    "trafilatura>=1.6",
+    "langdetect>=1.0",
+    "redis[hiredis]>=5.0",
 ]
 
-dependencies = [
-  "mcp[cli]>=1.27",
-  "fastapi>=0.135",
-  "uvicorn[standard]>=0.44",
-  "pydantic>=2.12",
-  "pydantic-settings>=2.13",
-  "httpx>=0.28",
-  "orjson>=3.11",
-  "typer>=0.24",
-  "rich>=14.3",
-  "scrapling>=0.4.5",
-  "firecrawl-py>=4.22",
-  "exa-py>=2.11",
-  "tavily-python>=0.7",
-  "openai>=2.31",
-  "python-dotenv>=1.2",
-  "aiosqlite>=0.20",
-  "trafilatura>=1.6",
-  "langdetect>=1.0",
-]
+[project.license]
+text = "Apache-2.0"
 
 [project.optional-dependencies]
 stealth = [
-  "botasaurus>=4.0",
-  "camoufox[geoip]>=0.4",
-  "patchright>=1.58",
-  "tf-playwright-stealth>=1.2",
+    "botasaurus>=4.0",
+    "camoufox[geoip]>=0.4",
+    "patchright>=1.58",
+    "tf-playwright-stealth>=1.2",
 ]
-anthropic = ["anthropic>=0.40"]
-academic = ["arxiv>=2.1"]
-pdf = ["PyPDF2>=3.0"]
-tor = ["stem>=1.8", "socksio>=1.0"]
+anthropic = [
+    "anthropic>=0.40",
+]
+academic = [
+    "arxiv>=2.1",
+]
+pdf = [
+    "PyPDF2>=3.0",
+]
+tor = [
+    "stem>=1.8",
+    "socksio>=1.0",
+]
 dev = [
-  "pytest>=8",
-  "pytest-asyncio>=0.24",
-  "pytest-cov>=5",
-  "pytest-mock>=3.14",
-  "ruff>=0.7",
-  "mypy>=1.13",
-  "pre-commit>=4",
-  "types-requests",
+    "pytest>=8",
+    "pytest-asyncio>=0.24",
+    "pytest-cov>=5",
+    "pytest-mock>=3.14",
+    "ruff>=0.7",
+    "mypy>=1.13",
+    "pre-commit>=4",
+    "types-requests",
 ]
-all = ["loom-mcp[stealth,anthropic,academic,pdf,tor,dev]"]
+all = [
+    "loom-mcp[stealth,anthropic,academic,pdf,tor,dev]",
+]
 
 [project.urls]
 Homepage = "https://github.com/aadelb/loom"
@@ -91,56 +106,68 @@ loom = "loom.cli:app"
 loom-server = "loom.server:main"
 
 [build-system]
-requires = ["hatchling>=1.25"]
+requires = [
+    "hatchling>=1.25",
+]
 build-backend = "hatchling.build"
 
 [tool.hatch.version]
 path = "src/loom/__init__.py"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/loom"]
+packages = [
+    "src/loom",
+]
 
 [tool.hatch.build.targets.sdist]
 include = [
-  "/src",
-  "/tests",
-  "/examples",
-  "/deploy",
-  "/docs",
-  "/README.md",
-  "/LICENSE",
-  "/CHANGELOG.md",
-  "/pyproject.toml",
+    "/src",
+    "/tests",
+    "/examples",
+    "/deploy",
+    "/docs",
+    "/README.md",
+    "/LICENSE",
+    "/CHANGELOG.md",
+    "/pyproject.toml",
 ]
 
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-src = ["src", "tests"]
+src = [
+    "src",
+    "tests",
+]
 
 [tool.ruff.lint]
 select = [
-  "E",   # pycodestyle errors
-  "W",   # pycodestyle warnings
-  "F",   # pyflakes
-  "I",   # isort
-  "B",   # flake8-bugbear
-  "C4",  # flake8-comprehensions
-  "UP",  # pyupgrade
-  "SIM", # flake8-simplify
-  "RUF", # ruff-specific
-  "ASYNC",
-  "S",   # flake8-bandit (security)
+    "E",
+    "W",
+    "F",
+    "I",
+    "B",
+    "C4",
+    "UP",
+    "SIM",
+    "RUF",
+    "ASYNC",
+    "S",
 ]
 ignore = [
-  "S101",  # assert is fine in tests
-  "S603",  # subprocess calls are validated at call sites
-  "E501",  # long lines OK; formatter handles
+    "S101",
+    "S603",
+    "E501",
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S", "B018"]
-"examples/**" = ["S"]
+"tests/**" = [
+    "S",
+    "B018",
+]
+"examples/**" = [
+    "S",
+]
 
 [tool.ruff.format]
 quote-style = "double"
@@ -152,66 +179,73 @@ strict = true
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
-ignore_missing_imports = true  # optional deps may be missing at check time
-# Optional-dep imports (scrapling / camoufox / botasaurus / anthropic etc.)
-# have "# type: ignore[import-untyped]" markers. Whether those markers end
-# up "used" depends on whether the package is installed in the current env,
-# so we explicitly allow unused ignores rather than flip-flop the comments.
+ignore_missing_imports = true
 warn_unused_ignores = false
-plugins = ["pydantic.mypy"]
+plugins = [
+    "pydantic.mypy",
+]
 
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_defs = false
 
-# Optional stealth / scraping backends — treat as fully dynamic
 [[tool.mypy.overrides]]
 module = [
-  "camoufox",
-  "camoufox.*",
-  "botasaurus",
-  "botasaurus.*",
-  "scrapling",
-  "scrapling.*",
-  "patchright",
-  "patchright.*",
+    "camoufox",
+    "camoufox.*",
+    "botasaurus",
+    "botasaurus.*",
+    "scrapling",
+    "scrapling.*",
+    "patchright",
+    "patchright.*",
 ]
 ignore_missing_imports = true
 follow_imports = "skip"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-testpaths = ["tests"]
-python_files = ["test_*.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]
+testpaths = [
+    "tests",
+]
+python_files = [
+    "test_*.py",
+]
+python_classes = [
+    "Test*",
+]
+python_functions = [
+    "test_*",
+]
 addopts = [
-  "-ra",
-  "--strict-markers",
-  "--strict-config",
-  "--cov=src/loom",
-  "--cov-report=term-missing",
-  "--cov-report=xml",
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--cov=src/loom",
+    "--cov-report=term-missing",
+    "--cov-report=xml",
 ]
 markers = [
-  "unit: marks unit tests",
-  "slow: marks tests as slow",
-  "live: marks tests that hit the live network",
-  "integration: marks integration tests",
+    "unit: marks unit tests",
+    "slow: marks tests as slow",
+    "live: marks tests that hit the live network",
+    "integration: marks integration tests",
 ]
 filterwarnings = [
-  "ignore:Use `streamable_http_client`:DeprecationWarning",
-  "ignore:coroutine.*was never awaited:RuntimeWarning",
+    "ignore:Use `streamable_http_client`:DeprecationWarning",
+    "ignore:coroutine.*was never awaited:RuntimeWarning",
 ]
 
 [tool.coverage.run]
 branch = true
-source = ["src/loom"]
+source = [
+    "src/loom",
+]
 
 [tool.coverage.report]
 exclude_lines = [
-  "pragma: no cover",
-  "raise NotImplementedError",
-  "if __name__ == .__main__.:",
-  "if TYPE_CHECKING:",
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
 ]

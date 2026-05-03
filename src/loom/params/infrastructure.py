@@ -22,6 +22,11 @@ __all__ = [
     "ConfigGetParams",
     "ConfigSetParams",
     "EmailReportParams",
+    "JobCancelParams",
+    "JobListParams",
+    "JobResultParams",
+    "JobStatusParams",
+    "JobSubmitParams",
     "NodriverSessionParams",
     "SessionCloseParams",
     "SessionOpenParams",
@@ -565,3 +570,116 @@ class WorkflowStatusParams(BaseModel):
 
 
 
+
+
+class JobSubmitParams(BaseModel):
+    """Parameters for research_job_submit tool."""
+
+    tool_name: str = Field(
+        description="Name of the tool to execute (e.g., 'research_expert')"
+    )
+    params: dict[str, Any] = Field(
+        description="Parameters to pass to the tool as a JSON dict"
+    )
+    callback_url: str | None = Field(
+        None,
+        description="Optional webhook URL for completion callback"
+    )
+
+    model_config = {"extra": "ignore", "strict": True}
+
+    @field_validator("tool_name")
+    @classmethod
+    def validate_tool_name(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("tool_name cannot be empty")
+        if len(v) > 100:
+            raise ValueError("tool_name max 100 chars")
+        return v
+
+    @field_validator("callback_url")
+    @classmethod
+    def validate_callback_url(cls, v: str | None) -> str | None:
+        if v is not None:
+            return validate_url(v)
+        return v
+
+
+class JobStatusParams(BaseModel):
+    """Parameters for research_job_status tool."""
+
+    job_id: str = Field(
+        description="Job ID returned by research_job_submit"
+    )
+
+    model_config = {"extra": "ignore", "strict": True}
+
+    @field_validator("job_id")
+    @classmethod
+    def validate_job_id(cls, v: str) -> str:
+        if not v or len(v) != 36:
+            raise ValueError("job_id must be a valid UUID (36 chars)")
+        return v
+
+
+class JobResultParams(BaseModel):
+    """Parameters for research_job_result tool."""
+
+    job_id: str = Field(
+        description="Job ID returned by research_job_submit"
+    )
+
+    model_config = {"extra": "ignore", "strict": True}
+
+    @field_validator("job_id")
+    @classmethod
+    def validate_job_id(cls, v: str) -> str:
+        if not v or len(v) != 36:
+            raise ValueError("job_id must be a valid UUID (36 chars)")
+        return v
+
+
+class JobListParams(BaseModel):
+    """Parameters for research_job_list tool."""
+
+    status: str | None = Field(
+        None,
+        description="Filter by status: pending, running, completed, failed"
+    )
+    limit: int = Field(
+        20,
+        description="Maximum jobs to return",
+        ge=1,
+        le=100
+    )
+
+    model_config = {"extra": "ignore", "strict": True}
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        valid = {"pending", "running", "completed", "failed"}
+        v = v.strip().lower()
+        if v not in valid:
+            raise ValueError(f"Invalid status: {v}. Must be one of {valid}")
+        return v
+
+
+class JobCancelParams(BaseModel):
+    """Parameters for research_job_cancel tool."""
+
+    job_id: str = Field(
+        description="Job ID returned by research_job_submit"
+    )
+
+    model_config = {"extra": "ignore", "strict": True}
+
+    @field_validator("job_id")
+    @classmethod
+    def validate_job_id(cls, v: str) -> str:
+        if not v or len(v) != 36:
+            raise ValueError("job_id must be a valid UUID (36 chars)")
+        return v

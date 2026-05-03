@@ -7374,3 +7374,4 @@ class LeaderboardViewParams(BaseModel):
                 f"Invalid category: {v}. Must be one of {valid}"
             )
         return v
+

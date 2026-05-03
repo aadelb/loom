@@ -109,6 +109,13 @@ class ConfigModel(BaseModel):
     TOR_ENABLED: bool = False
     TOR_SOCKS5_PROXY: str = "socks5h://127.0.0.1:9050"
 
+    # Docker Sandbox
+    SANDBOX_ENABLED: bool = True
+    SANDBOX_IMAGE: str = "loom-sandbox:latest"
+    SANDBOX_TIMEOUT_SECS: int = Field(default=300, ge=10, le=3600)
+    SANDBOX_MEMORY_LIMIT: str = "512m"
+    SANDBOX_CPU_LIMIT: int = Field(default=1, ge=1, le=4)
+
     # Rate limits (per-minute sliding window)
     RATE_LIMIT_SEARCH_PER_MIN: int = Field(default=30, ge=1, le=200)
     RATE_LIMIT_DEEP_PER_MIN: int = Field(default=5, ge=1, le=50)
