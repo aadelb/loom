@@ -110,3 +110,12 @@ def register_core_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip tool_discovery: %s", e)
         record_failure("core", "tool_discovery", str(e))
     log.info("registered core tools count=17")
+
+    # CloakBrowser stealth (Tier 3.5 — passes all bot detection)
+    try:
+        from loom.tools.cloak_backend import research_cloak_fetch, research_cloak_extract, research_cloak_session
+        mcp.tool()(wrap_tool(research_cloak_fetch))
+        mcp.tool()(wrap_tool(research_cloak_extract))
+        mcp.tool()(wrap_tool(research_cloak_session))
+    except (ImportError, AttributeError) as e:
+        log.debug("skip cloak_backend: %s", e)
