@@ -10,6 +10,8 @@ from typing import Any
 from urllib.parse import urlparse, urljoin
 
 import httpx
+
+from loom.validators import validate_url
 from PIL import Image
 from PIL.ExifTags import TAGS
 from io import BytesIO
@@ -284,6 +286,7 @@ async def research_content_authenticity(url: str) -> dict[str, Any]:
         Dict with url, earliest_snapshot, current_hash, original_hash,
         modified (bool), diff_summary.
     """
+    url = validate_url(url)
 
     async def _run() -> dict[str, Any]:
         async with httpx.AsyncClient(follow_redirects=True, timeout=60.0) as client:
@@ -395,6 +398,7 @@ async def research_deepfake_checker(image_url: str) -> dict[str, Any]:
         Dict with image_url, exif_analysis (dict), editing_software_detected (bool),
         ela_suspicious_regions, authenticity_score (0-100).
     """
+    image_url = validate_url(image_url)
 
     async def _run() -> dict[str, Any]:
         async with httpx.AsyncClient(follow_redirects=True) as client:
