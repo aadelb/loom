@@ -12,7 +12,7 @@ log = logging.getLogger("loom.registrations.infrastructure")
 
 
 def register_infrastructure_tools(mcp: "FastMCP", wrap_tool) -> None:
-    """Register 41 infrastructure tools."""
+    """Register 67 infrastructure tools."""
     from loom.registrations.tracking import record_success, record_failure
 
     try:
@@ -202,4 +202,103 @@ def register_infrastructure_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip job_tools: %s", e)
         record_failure("infrastructure", "job_tools", str(e))
-    log.info("registered infrastructure tools count=46")
+    try:
+        from loom.tools.redis_tools import research_redis_stats, research_redis_flush_cache
+        mcp.tool()(wrap_tool(research_redis_stats))
+        record_success("infrastructure", "research_redis_stats")
+        mcp.tool()(wrap_tool(research_redis_flush_cache))
+        record_success("infrastructure", "research_redis_flush_cache")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip redis_tools: %s", e)
+        record_failure("infrastructure", "redis_tools", str(e))
+    try:
+        from loom.tools.sandbox_tools import research_sandbox_run, research_sandbox_status
+        mcp.tool()(wrap_tool(research_sandbox_run))
+        record_success("infrastructure", "research_sandbox_run")
+        mcp.tool()(wrap_tool(research_sandbox_status))
+        record_success("infrastructure", "research_sandbox_status")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip sandbox_tools: %s", e)
+        record_failure("infrastructure", "sandbox_tools", str(e))
+    try:
+        from loom.tools.pg_store import research_pg_migrate, research_pg_status
+        mcp.tool()(wrap_tool(research_pg_migrate))
+        record_success("infrastructure", "research_pg_migrate")
+        mcp.tool()(wrap_tool(research_pg_status))
+        record_success("infrastructure", "research_pg_status")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip pg_store: %s", e)
+        record_failure("infrastructure", "pg_store", str(e))
+    try:
+        from loom.tools.cache_optimizer import research_cache_optimize, research_cache_analyze
+        mcp.tool()(wrap_tool(research_cache_optimize))
+        record_success("infrastructure", "research_cache_optimize")
+        mcp.tool()(wrap_tool(research_cache_analyze))
+        record_success("infrastructure", "research_cache_analyze")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip cache_optimizer: %s", e)
+        record_failure("infrastructure", "cache_optimizer", str(e))
+    try:
+        from loom.tools.load_balancer import research_lb_status, research_lb_balance
+        mcp.tool()(wrap_tool(research_lb_status))
+        record_success("infrastructure", "research_lb_status")
+        mcp.tool()(wrap_tool(research_lb_balance))
+        record_success("infrastructure", "research_lb_balance")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip load_balancer: %s", e)
+        record_failure("infrastructure", "load_balancer", str(e))
+    try:
+        from loom.tools.docker_tools import research_container_inspect, research_container_logs
+        mcp.tool()(wrap_tool(research_container_inspect))
+        record_success("infrastructure", "research_container_inspect")
+        mcp.tool()(wrap_tool(research_container_logs))
+        record_success("infrastructure", "research_container_logs")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip docker_tools: %s", e)
+        record_failure("infrastructure", "docker_tools", str(e))
+    try:
+        from loom.tools.queue_monitor import research_queue_status, research_queue_stats
+        mcp.tool()(wrap_tool(research_queue_status))
+        record_success("infrastructure", "research_queue_status")
+        mcp.tool()(wrap_tool(research_queue_stats))
+        record_success("infrastructure", "research_queue_stats")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip queue_monitor: %s", e)
+        record_failure("infrastructure", "queue_monitor", str(e))
+    try:
+        from loom.tools.replication_monitor import research_replication_status, research_replication_lag
+        mcp.tool()(wrap_tool(research_replication_status))
+        record_success("infrastructure", "research_replication_status")
+        mcp.tool()(wrap_tool(research_replication_lag))
+        record_success("infrastructure", "research_replication_lag")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip replication_monitor: %s", e)
+        record_failure("infrastructure", "replication_monitor", str(e))
+    try:
+        from loom.tools.cluster_health import research_cluster_health, research_node_status
+        mcp.tool()(wrap_tool(research_cluster_health))
+        record_success("infrastructure", "research_cluster_health")
+        mcp.tool()(wrap_tool(research_node_status))
+        record_success("infrastructure", "research_node_status")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip cluster_health: %s", e)
+        record_failure("infrastructure", "cluster_health", str(e))
+    try:
+        from loom.tools.dns_server import research_dns_query, research_dns_stats
+        mcp.tool()(wrap_tool(research_dns_query))
+        record_success("infrastructure", "research_dns_query")
+        mcp.tool()(wrap_tool(research_dns_stats))
+        record_success("infrastructure", "research_dns_stats")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip dns_server: %s", e)
+        record_failure("infrastructure", "dns_server", str(e))
+    try:
+        from loom.tools.firewall_rules import research_firewall_list, research_firewall_apply
+        mcp.tool()(wrap_tool(research_firewall_list))
+        record_success("infrastructure", "research_firewall_list")
+        mcp.tool()(wrap_tool(research_firewall_apply))
+        record_success("infrastructure", "research_firewall_apply")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip firewall_rules: %s", e)
+        record_failure("infrastructure", "firewall_rules", str(e))
+    log.info("registered infrastructure tools count=67")

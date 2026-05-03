@@ -251,6 +251,11 @@ with suppress(ImportError):
     record_optional_module_loaded("recommender")
 
 with suppress(ImportError):
+    from loom.tools import pipeline_enhancer as pipeline_enhancer_tools
+    _optional_tools["pipeline_enhancer"] = pipeline_enhancer_tools
+    record_optional_module_loaded("pipeline_enhancer")
+
+with suppress(ImportError):
     from loom.tools import ytdlp_backend as ytdlp_tools
     _optional_tools["ytdlp"] = ytdlp_tools
     record_optional_module_loaded("ytdlp")

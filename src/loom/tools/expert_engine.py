@@ -760,4 +760,20 @@ async def research_expert(
         elapsed_ms,
     )
 
+    # ── AUTO-SCORE EXPERT OUTPUT WITH HCS (NON-BLOCKING) ─────────────────
+    try:
+        from loom.tools.hcs_multi_scorer import research_hcs_score_full
+        
+        # Score using executive summary as the response
+        expert_response = output.get("executive_summary", "")
+        if expert_response:
+            hcs_score = await research_hcs_score_full(query, expert_response)
+            if hcs_score.get("status") == "success":
+                output["hcs_scores"] = hcs_score.get("scores", {})
+                logger.info("expert_hcs_score computed hcs_10=%.2f", hcs_score.get("scores", {}).get("hcs_10", 0))
+    except ImportError:
+        logger.debug("hcs_multi_scorer not available, skipping hcs expert scoring")
+    except Exception as exc:
+        logger.warning("expert_hcs_scoring_failed (non-blocking): %s", exc)
+
     return output

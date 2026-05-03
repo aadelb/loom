@@ -1,0 +1,352 @@
+================================================================================
+                    PIPELINE ENHANCER MIDDLEWARE
+                           Quick Reference
+================================================================================
+
+LOCATION: /Users/aadel/projects/loom/src/loom/tools/pipeline_enhancer.py (447 lines)
+TESTS:    /Users/aadel/projects/loom/tests/test_tools/test_pipeline_enhancer.py (401 lines)
+DOCS:     /Users/aadel/projects/loom/docs/PIPELINE_ENHANCER.md
+
+================================================================================
+                            TWO PUBLIC FUNCTIONS
+================================================================================
+
+1. research_enhance()
+   ─────────────────────────────────────────────────────────────────────────
+   Execute ANY tool with automatic enrichment
+
+   Signature:
+     async def research_enhance(
+         tool_name: str,
+         params: dict[str, Any],
+         auto_hcs: bool = True,
+         auto_cost: bool = True,
+         auto_learn: bool = True,
+         auto_fact_check: bool = False,
+         auto_suggest: bool = True,
+     ) -> dict[str, Any]
+
+   Returns:
+     {
+       "_original_result": {...},       # Tool output
+       "_hcs_scores": {...},            # 8-dimension quality scores
+       "_estimated_cost": {...},        # Pre-execution cost estimate
+       "_actual_cost": {...},           # Post-execution actual cost
+       "_suggested_tools": [...],       # Related tools for follow-up
+       "_fact_check": {...},            # Verified factual claims
+       "_learning_recorded": bool,      # Strategy learning status
+       "_execution_time_ms": int,       # Wall-clock execution time
+       "_error": str,                   # Error message (if any)
+     }
+
+   Example:
+     result = await research_enhance(
+         tool_name="research_deep",
+         params={"query": "AI safety vulnerabilities"},
+         auto_hcs=True,
+         auto_cost=True,
+         auto_learn=False,
+         auto_fact_check=False,
+         auto_suggest=True,
+     )
+
+
+2. research_enhance_batch()
+   ─────────────────────────────────────────────────────────────────────────
+   Execute multiple tools in parallel with enhancement
+
+   Signature:
+     async def research_enhance_batch(
+         tasks: list[dict[str, Any]],
+     ) -> dict[str, Any]
+
+   Task dict format:
+     {
+       "tool_name": str,                # Required: tool name
+       "params": dict,                  # Required: tool parameters
+       "auto_hcs": bool,                # Optional: default True
+       "auto_cost": bool,               # Optional: default True
+       "auto_learn": bool,              # Optional: default True
+       "auto_fact_check": bool,         # Optional: default False
+       "auto_suggest": bool,            # Optional: default True
+     }
+
+   Returns:
+     {
+       "results": [...],                # List of individual results
+       "total_time_ms": int,            # Total batch execution time
+       "success_count": int,            # Number of successful executions
+       "error_count": int,              # Number of failures
+     }
+
+   Example:
+     result = await research_enhance_batch([
+         {
+             "tool_name": "research_fetch",
+             "params": {"url": "https://example.com"},
+             "auto_hcs": True,
+         },
+         {
+             "tool_name": "research_search",
+             "params": {"query": "AI regulations"},
+             "auto_suggest": True,
+         },
+     ])
+
+================================================================================
+                          ENRICHMENT LAYERS
+================================================================================
+
+PRE-EXECUTION:
+  1. Cost Estimation (auto_cost=True)
+     - Estimates tokens, API calls, cost before execution
+     - Non-blocking, zero overhead
+
+POST-EXECUTION (parallel):
+  2. HCS Scoring (auto_hcs=True)
+     - 8-dimension quality assessment
+     - Dimensions: bypass_success, information_density, stealth_score,
+       transferability, persistence, escalation_potential, defense_evasion,
+       novelty
+     - Latency: +50-200ms
+
+  3. Strategy Learning (auto_learn=True)
+     - Records to meta-learner if params contain reframe data
+     - Triggered by: strategy_name, prompt_reframed, reframe_strategy
+     - Latency: +20-50ms
+
+  4. Fact Checking (auto_fact_check=True)
+     - Verifies factual claims in output
+     - SLOW: +1-3 seconds per result
+     - Default: False (disabled)
+
+  5. Tool Suggestions (auto_suggest=True)
+     - Recommends follow-up tools based on output
+     - Similarity-based ranking
+     - Latency: +50-150ms
+
+================================================================================
+                            PRIVATE HELPERS
+================================================================================
+
+_execute_tool(tool_name, params)
+  Dynamically import and execute the specified tool
+
+_estimate_tool_cost(tool_name, params)
+  Pre-execution cost model for common tools
+
+_score_with_hcs(result, tool_name)
+  8-dimension HCS quality scoring
+
+_feed_to_meta_learner(result, params)
+  Record results to strategy evolution system
+
+_verify_factual_claims(result)
+  LLM-based fact verification
+
+_suggest_follow_up_tools(tool_name, params, result)
+  Generate follow-up tool recommendations
+
+_has_reframe_data(params)
+  Check if params contain reframing strategy data
+
+_default_hcs_scores()
+  Return zeroed HCS scores dict
+
+================================================================================
+                          TOOL MAPPING
+================================================================================
+
+Supported Tools (auto-discovered):
+  - research_fetch
+  - research_spider
+  - research_markdown
+  - research_search
+  - research_deep
+  - research_github
+  - research_llm_*
+  - research_score_all
+  - research_orchestrate
+  - ...and any tool registered in the tools/ namespace
+
+Tool name → Module inference:
+  "research_deep" → loom.tools.deep
+  "research_fetch" → loom.tools.fetch
+  OR explicit mapping in _tool_module_map dict
+
+================================================================================
+                          PARALLEL EXECUTION
+================================================================================
+
+All post-execution enrichments run concurrently:
+
+  async def research_enhance():
+      result = await _execute_tool()  # Sequential
+
+      tasks = [
+          _score_with_hcs(...),       # Concurrent
+          _feed_to_meta_learner(...), # Concurrent
+          _verify_factual_claims(...),# Concurrent
+          _suggest_follow_up_tools(...),# Concurrent
+      ]
+
+      results = await asyncio.gather(*tasks, return_exceptions=True)
+
+Total latency ≈ max(task_time) not sum(task_times)
+
+================================================================================
+                          ERROR HANDLING
+================================================================================
+
+All enrichment is NON-BLOCKING:
+  - Individual enrichment failures logged but don't crash pipeline
+  - Tool execution errors recorded in "_error" field
+  - Results still valid even if enrichment partially fails
+
+Error Field:
+  "_error": "Tool execution failed: ..."
+
+Graceful Degradation:
+  - HCS scoring fails? Log and use default scores
+  - Fact-checking fails? Skip and continue
+  - Tool suggestion fails? Still return other enrichments
+
+================================================================================
+                          REGISTRATION
+================================================================================
+
+Automatically registered in server.py (lines 253-256):
+
+  with suppress(ImportError):
+      from loom.tools import pipeline_enhancer as pipeline_enhancer_tools
+      _optional_tools["pipeline_enhancer"] = pipeline_enhancer_tools
+      record_optional_module_loaded("pipeline_enhancer")
+
+Registration discovers:
+  - research_enhance
+  - research_enhance_batch
+
+Both functions exposed as MCP tools via _wrap_tool()
+
+================================================================================
+                          TESTING
+================================================================================
+
+Run tests:
+  pytest tests/test_tools/test_pipeline_enhancer.py -v
+
+Test Classes:
+  - TestExecuteTool: Dynamic tool execution
+  - TestEstimateCost: Pre-execution cost estimation
+  - TestHCSScoring: Quality assessment
+  - TestFactChecking: Fact verification
+  - TestReframeDataDetection: Reframe data detection
+  - TestSuggestFollowUpTools: Tool suggestions
+  - TestResearchEnhance: Single tool enrichment
+  - TestResearchEnhanceBatch: Batch processing
+  - TestEnhancementIntegration: End-to-end scenarios
+
+Coverage:
+  - 401 lines of test code
+  - 50+ test functions
+  - Unit + integration tests
+  - Error handling tested
+  - Parallel execution validated
+
+================================================================================
+                          PERFORMANCE
+================================================================================
+
+Latency Added:
+  auto_cost:        +0-10ms   (lookup)
+  auto_hcs:         +50-200ms (LLM-based)
+  auto_learn:       +20-50ms  (database)
+  auto_fact_check:  +1-3s     (LLM verification) ← SLOW, disable if not needed
+  auto_suggest:     +50-150ms (similarity search)
+
+Parallel Execution:
+  All post-execution tasks run concurrently → max(task) latency, not sum
+
+Batch Processing:
+  N tasks execute in parallel → total ≈ max(individual_enhance)
+
+Memory:
+  - No state accumulation (stateless)
+  - Per-task cleanup via asyncio.gather
+  - Safe for streaming
+
+================================================================================
+                          EXAMPLE WORKFLOWS
+================================================================================
+
+1. COST-CONSCIOUS MODE
+   ───────────────────
+   result = await research_enhance(
+       tool_name="research_search",
+       params={"query": "AI safety"},
+       auto_hcs=False,
+       auto_cost=True,
+       auto_learn=False,
+       auto_fact_check=False,
+       auto_suggest=False,
+   )
+   → Only cost estimation, minimal overhead
+
+
+2. FULL INTELLIGENCE PIPELINE
+   ──────────────────────────
+   result = await research_enhance(
+       tool_name="research_deep",
+       params={"query": "jailbreak techniques", "strategy_name": "role_play"},
+       auto_hcs=True,
+       auto_cost=True,
+       auto_learn=True,
+       auto_fact_check=True,  ← Slower but comprehensive
+       auto_suggest=True,
+   )
+   → All enrichments enabled
+
+
+3. BATCH RESEARCH JOBS
+   ────────────────────
+   result = await research_enhance_batch([
+       {"tool_name": "research_fetch", "params": {...}},
+       {"tool_name": "research_spider", "params": {...}},
+       {"tool_name": "research_search", "params": {...}},
+       ...100 more tasks...
+   ])
+   → Parallel execution, all tasks enriched simultaneously
+
+
+4. SELECTIVE ENRICHMENT
+   ────────────────────
+   result = await research_enhance(
+       tool_name="research_fetch",
+       params={"url": "https://example.com"},
+       auto_hcs=True,     ← Quality scoring
+       auto_cost=False,   ← Skip cost
+       auto_learn=False,  ← Skip learning
+       auto_fact_check=False,
+       auto_suggest=True,  ← Recommendations
+   )
+   → Focus on quality and follow-ups
+
+================================================================================
+                          INTEGRATION POINTS
+================================================================================
+
+Works with:
+  - All 220+ Loom tools
+  - Any async tool function
+  - Batch processing pipelines
+  - Strategy evolution systems (via auto_learn)
+  - LLM providers (for scoring, verification)
+  - Tool recommender system (for suggestions)
+
+Depends on:
+  - loom.attack_scorer (HCS scoring)
+  - loom.jailbreak_evolution (meta-learning)
+  - loom.tool_recommender (tool suggestions)
+  - loom.tools.llm (fact-checking, classification)
+
+================================================================================

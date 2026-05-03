@@ -12,7 +12,7 @@ log = logging.getLogger("loom.registrations.intelligence")
 
 
 def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
-    """Register 80 intelligence tools."""
+    """Register 86 intelligence tools."""
     from loom.registrations.tracking import record_success, record_failure
 
     try:
@@ -430,4 +430,18 @@ def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip vuln_intel_mod: %s", e)
         record_failure("intelligence", "vuln_intel", str(e))
-    log.info("registered intelligence tools count=80")
+    try:
+        from loom.tools.geoip_local import research_geoip_local
+        mcp.tool()(wrap_tool(research_geoip_local))
+        record_success("intelligence", "research_geoip_local")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip geoip_local: %s", e)
+        record_failure("intelligence", "geoip_local", str(e))
+    try:
+        from loom.tools.image_intel import research_exif_extract
+        mcp.tool()(wrap_tool(research_exif_extract))
+        record_success("intelligence", "research_exif_extract")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip image_intel: %s", e)
+        record_failure("intelligence", "image_intel", str(e))
+    log.info("registered intelligence tools count=86")

@@ -27,6 +27,14 @@ from loom.validators import EXTERNAL_TIMEOUT_SECS
 
 logger = logging.getLogger("loom.deep")
 
+# Try to import cost estimator with graceful fallback
+try:
+    from loom.tools.cost_estimator import research_estimate_cost
+    _COST_ESTIMATION_AVAILABLE = True
+except ImportError:
+    _COST_ESTIMATION_AVAILABLE = False
+    logger.debug("cost_estimator not available; cost gating disabled")
+
 _CODE_KEYWORDS = frozenset(
     {
         "repo",
@@ -248,6 +256,7 @@ async def research_deep(
     start_time = time.time()
     config = get_config()
     total_cost = 0.0
+    estimated_cost = 0.0
     warnings: list[dict[str, str]] = []
 
     if max_cost_usd is None:
@@ -356,6 +365,7 @@ async def research_deep(
             "synthesis": None,
             "github_repos": None,
             "warnings": warnings,
+            "estimated_cost_usd": estimated_cost,
             "total_cost_usd": total_cost,
             "elapsed_ms": int((time.time() - start_time) * 1000),
             "error": "no search results",
@@ -530,28 +540,101 @@ async def research_deep(
     # ── STAGE 6: Synthesis ───────────────────────────────────────────────
     synthesis_result: dict[str, Any] | None = None
     if synthesize and top_pages and total_cost < max_cost_usd:
-        try:
-            from loom.tools.llm import research_llm_answer
+        # Estimate cost before executing LLM synthesis
+        if _COST_ESTIMATION_AVAILABLE:
+            try:
+                cost_estimate = await research_estimate_cost(
+                    "research_llm_answer",
+                    params={"query": query, "sources": top_pages[:10]},
+                    provider="auto",
+                )
+                estimated_cost += cost_estimate.get("estimated_cost_usd", 0.0)
 
-            sources = [
-                {
-                    "title": p.get("title", ""),
-                    "text": p["markdown"][:500],
-                    "url": p["url"],
-                }
-                for p in top_pages[:10]
-            ]
-            answer_result = await research_llm_answer(
-                question=query, sources=sources, style="cited"
-            )
-            if "error" not in answer_result:
-                synthesis_result = answer_result
-                total_cost += answer_result.get("cost_usd", 0.0)
-        except ImportError:
-            warnings.append({"stage": "synthesis", "error": "llm module not available"})
-        except Exception as exc:
-            logger.warning("synthesis_fail: %s", exc)
-            warnings.append({"stage": "synthesis", "error": str(exc)})
+                # Check if estimated cost would exceed budget
+                if total_cost + estimated_cost > max_cost_usd:
+                    logger.info(
+                        "synthesis_cost_exceeded: estimated_cost=%f, total=%f, max=%f",
+                        estimated_cost,
+                        total_cost,
+                        max_cost_usd,
+                    )
+                    warnings.append({
+                        "stage": "synthesis",
+                        "error": f"cost cap exceeded: {total_cost + estimated_cost:.6f} > {max_cost_usd}",
+                    })
+                else:
+                    # Cost is within budget, proceed with synthesis
+                    try:
+                        from loom.tools.llm import research_llm_answer
+
+                        sources = [
+                            {
+                                "title": p.get("title", ""),
+                                "text": p["markdown"][:500],
+                                "url": p["url"],
+                            }
+                            for p in top_pages[:10]
+                        ]
+                        answer_result = await research_llm_answer(
+                            question=query, sources=sources, style="cited"
+                        )
+                        if "error" not in answer_result:
+                            synthesis_result = answer_result
+                            total_cost += answer_result.get("cost_usd", 0.0)
+                    except ImportError:
+                        warnings.append({"stage": "synthesis", "error": "llm module not available"})
+                    except Exception as exc:
+                        logger.warning("synthesis_fail: %s", exc)
+                        warnings.append({"stage": "synthesis", "error": str(exc)})
+            except Exception as exc:
+                logger.warning("cost_estimation_fail: %s", exc)
+                # Fallback: proceed with synthesis without cost pre-check
+                try:
+                    from loom.tools.llm import research_llm_answer
+
+                    sources = [
+                        {
+                            "title": p.get("title", ""),
+                            "text": p["markdown"][:500],
+                            "url": p["url"],
+                        }
+                        for p in top_pages[:10]
+                    ]
+                    answer_result = await research_llm_answer(
+                        question=query, sources=sources, style="cited"
+                    )
+                    if "error" not in answer_result:
+                        synthesis_result = answer_result
+                        total_cost += answer_result.get("cost_usd", 0.0)
+                except ImportError:
+                    warnings.append({"stage": "synthesis", "error": "llm module not available"})
+                except Exception as exc2:
+                    logger.warning("synthesis_fail: %s", exc2)
+                    warnings.append({"stage": "synthesis", "error": str(exc2)})
+        else:
+            # Cost estimator not available, proceed without pre-check
+            try:
+                from loom.tools.llm import research_llm_answer
+
+                sources = [
+                    {
+                        "title": p.get("title", ""),
+                        "text": p["markdown"][:500],
+                        "url": p["url"],
+                    }
+                    for p in top_pages[:10]
+                ]
+                answer_result = await research_llm_answer(
+                    question=query, sources=sources, style="cited"
+                )
+                if "error" not in answer_result:
+                    synthesis_result = answer_result
+                    total_cost += answer_result.get("cost_usd", 0.0)
+            except ImportError:
+                warnings.append({"stage": "synthesis", "error": "llm module not available"})
+            except Exception as exc:
+                logger.warning("synthesis_fail: %s", exc)
+                warnings.append({"stage": "synthesis", "error": str(exc)})
 
     # ── STAGE 7: GitHub Enrichment ───────────────────────────────────────
     github_repos: list[dict[str, Any]] | None = None
@@ -651,7 +734,10 @@ async def research_deep(
         if len(p.get("markdown", "")) > 2000:
             p["markdown"] = p["markdown"][:2000] + "…"
 
-    return {
+    final_answer = synthesis_result.get("answer", "") if synthesis_result else ""
+
+    # Build response dict
+    response: dict[str, Any] = {
         "query": query,
         "search_variations": search_variations,
         "providers_used": providers_used,
@@ -665,6 +751,22 @@ async def research_deep(
         "red_team_report": red_team_report,
         "misinfo_report": misinfo_report,
         "warnings": warnings,
+        "estimated_cost_usd": estimated_cost,
         "total_cost_usd": total_cost,
         "elapsed_ms": int((time.time() - start_time) * 1000),
     }
+
+    # ── AUTO-SCORE WITH HCS (NON-BLOCKING) ──────────────────────────────
+    try:
+        from loom.tools.hcs_multi_scorer import research_hcs_score_full
+
+        hcs_score = await research_hcs_score_full(query, final_answer)
+        if hcs_score.get("status") == "success":
+            response["hcs_scores"] = hcs_score.get("scores", {})
+            logger.info("deep_hcs_score computed hcs_10=%.2f", hcs_score.get("scores", {}).get("hcs_10", 0))
+    except ImportError:
+        logger.debug("hcs_multi_scorer not available, skipping hcs scoring")
+    except Exception as exc:
+        logger.warning("deep_hcs_scoring_failed (non-blocking): %s", exc)
+
+    return response

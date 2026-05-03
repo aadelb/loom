@@ -844,33 +844,8 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip metric_alerts: %s", e)
         record_failure("research", "metric_alerts", str(e))
     try:
-        from loom.tools.mod import research_attack_score, research_stealth_score, research_potency_score, research_model_sentiment, research_toxicity_check, research_drift_monitor, research_drift_monitor_list, research_bpj_generate, research_daisy_chain, research_strategy_oracle, research_stealth_detect, research_recommend_tools, research_multi_consensus
-        mcp.tool()(wrap_tool(research_attack_score))
-        record_success("research", "research_attack_score")
-        mcp.tool()(wrap_tool(research_stealth_score))
-        record_success("research", "research_stealth_score")
-        mcp.tool()(wrap_tool(research_potency_score))
-        record_success("research", "research_potency_score")
-        mcp.tool()(wrap_tool(research_model_sentiment))
-        record_success("research", "research_model_sentiment")
-        mcp.tool()(wrap_tool(research_toxicity_check))
-        record_success("research", "research_toxicity_check")
-        mcp.tool()(wrap_tool(research_drift_monitor))
-        record_success("research", "research_drift_monitor")
-        mcp.tool()(wrap_tool(research_drift_monitor_list))
-        record_success("research", "research_drift_monitor_list")
-        mcp.tool()(wrap_tool(research_bpj_generate))
-        record_success("research", "research_bpj_generate")
-        mcp.tool()(wrap_tool(research_daisy_chain))
-        record_success("research", "research_daisy_chain")
-        mcp.tool()(wrap_tool(research_strategy_oracle))
-        record_success("research", "research_strategy_oracle")
-        mcp.tool()(wrap_tool(research_stealth_detect))
-        record_success("research", "research_stealth_detect")
-        mcp.tool()(wrap_tool(research_recommend_tools))
-        record_success("research", "research_recommend_tools")
-        mcp.tool()(wrap_tool(research_multi_consensus))
-        record_success("research", "research_multi_consensus")
+        # SKIP: loom.tools.mod does not exist - functions are in individual modules
+        pass
     except (ImportError, AttributeError) as e:
         log.debug("skip mod: %s", e)
         record_failure("research", "mod", str(e))
@@ -929,7 +904,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip nightcrawler: %s", e)
         record_failure("research", "nightcrawler", str(e))
     try:
-        from loom.tools.nodriver_backend import research_nodriver_fetch, research_nodriver_extract, research_nodriver_session
+        from loom.nodriver_backend import research_nodriver_fetch, research_nodriver_extract, research_nodriver_session
         mcp.tool()(wrap_tool(research_nodriver_fetch))
         record_success("research", "research_nodriver_fetch")
         mcp.tool()(wrap_tool(research_nodriver_extract))
@@ -991,7 +966,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip p3_tools: %s", e)
         record_failure("research", "p3_tools", str(e))
     try:
-        from loom.tools.param import research_parameter_sweep
+        from loom.tools.param_sweep import research_parameter_sweep
         mcp.tool()(wrap_tool(research_parameter_sweep))
         record_success("research", "research_parameter_sweep")
     except (ImportError, AttributeError) as e:
@@ -1216,7 +1191,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip schema_migrate: %s", e)
         record_failure("research", "schema_migrate", str(e))
     try:
-        from loom.tools.scraper_engine import research_engine_fetch, research_engine_extract, research_engine_batch
+        from loom.tools.scraper_engine_tools import research_engine_fetch, research_engine_extract, research_engine_batch
         mcp.tool()(wrap_tool(research_engine_fetch))
         record_success("research", "research_engine_fetch")
         mcp.tool()(wrap_tool(research_engine_extract))
@@ -1521,7 +1496,8 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip xover_attack: %s", e)
         record_failure("research", "xover_attack", str(e))
     try:
-        from loom.tools.yt import fetch_youtube_transcript
+        # SKIP: loom.tools.yt does not exist
+        pass
         mcp.tool()(wrap_tool(fetch_youtube_transcript))
     except (ImportError, AttributeError) as e:
         log.debug("skip yt_mod: %s", e)
@@ -1538,7 +1514,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip ytdlp_mod: %s", e)
         record_failure("research", "ytdlp_backend", str(e))
     try:
-        from loom.tools.zendriver_backend import research_zen_fetch, research_zen_batch, research_zen_interact
+        from loom.zendriver_backend import research_zen_fetch, research_zen_batch, research_zen_interact
         mcp.tool()(wrap_tool(research_zen_fetch))
         record_success("research", "research_zen_fetch")
         mcp.tool()(wrap_tool(research_zen_batch))

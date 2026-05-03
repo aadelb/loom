@@ -8,6 +8,14 @@ logger = logging.getLogger("loom.tools.universal_orchestrator")
 _TOOL_INDEX: dict[str, dict[str, Any]] | None = None
 _INDEX_BUILD_TIME: float = 0.0
 
+# Import smart_router with fallback
+try:
+    from . import smart_router
+    _SMART_ROUTER_AVAILABLE = True
+except ImportError:
+    _SMART_ROUTER_AVAILABLE = False
+    logger.warning("smart_router not available; orchestrator will skip router pre-filter")
+
 
 def _build_tool_index() -> dict[str, dict[str, Any]]:
     """Scan tools directory and build index of all research_* functions."""
@@ -91,7 +99,7 @@ async def research_orchestrate_smart(query: str, max_tools: int = 3, strategy: s
         strategy: "auto" (pick 1), "parallel" (top-K), or "sequential"
 
     Returns:
-        Dict with query, tools_discovered, tools_selected, results, aggregated_summary, total_duration_ms
+        Dict with query, tools_discovered, tools_selected, results, aggregated_summary, router_confidence, total_duration_ms
     """
     if not query or len(query.strip()) < 3:
         return {"error": "query too short (min 3 chars)", "query": query}
@@ -102,14 +110,34 @@ async def research_orchestrate_smart(query: str, max_tools: int = 3, strategy: s
     if not tool_index:
         return {"error": "no_tools_discovered", "query": query, "total_duration_ms": (time.time() - total_start) * 1000}
 
+    # Pre-filter using smart_router if available
+    router_confidence = 0.0
+    router_candidates: set[str] = set()
+    if _SMART_ROUTER_AVAILABLE:
+        try:
+            route_result = await smart_router.research_route_query(query)
+            router_confidence = route_result.get("confidence", 0.0)
+            router_candidates = set(route_result.get("recommended_tools", []))
+            router_candidates.update(route_result.get("alternative_tools", []))
+            logger.debug("router_prefilter query=%s confidence=%.2f candidates=%d",
+                        query[:50], router_confidence, len(router_candidates))
+        except Exception as e:
+            logger.warning("smart_router prefilter failed: %s", str(e))
+
+    # Score all tools
     scored = [(n, _score_tool_relevance(query, n, i), i) for n, i in tool_index.items() if n not in _ORCHESTRATOR_BLACKLIST]
+
+    # Apply router bonus: +2 to relevance score for router candidates
+    if router_candidates and router_confidence > 0.7:
+        scored = [(n, s + (2 if n in router_candidates else 0), i) for n, s, i in scored]
+
     scored = sorted([(n, s, i) for n, s, i in scored if s > 0], key=lambda x: x[1], reverse=True)
 
     selected_count = 1 if strategy == "auto" else min(max_tools, len(scored))
     selected = scored[:selected_count]
 
     if not selected:
-        return {"query": query, "tools_discovered": len(tool_index), "tools_selected": [], "results": [], "warning": "no_relevant_tools_found", "total_duration_ms": (time.time() - total_start) * 1000}
+        return {"query": query, "tools_discovered": len(tool_index), "tools_selected": [], "results": [], "warning": "no_relevant_tools_found", "router_confidence": router_confidence, "total_duration_ms": (time.time() - total_start) * 1000}
 
     selections = [{"name": n, "relevance_score": s, "params_used": await _auto_generate_params(n, i, query)} for n, s, i in selected]
 
@@ -129,5 +157,6 @@ async def research_orchestrate_smart(query: str, max_tools: int = 3, strategy: s
             "total_failed": len(results) - len(successful),
             "execution_strategy": strategy,
         },
+        "router_confidence": router_confidence,
         "total_duration_ms": (time.time() - total_start) * 1000,
     }
