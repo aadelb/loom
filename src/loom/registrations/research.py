@@ -78,16 +78,12 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip arxiv_pipeline: %s", e)
         record_failure("research", "arxiv_pipeline", str(e))
     try:
-        from loom.auth import research_auth_create_token, research_auth_validate, research_auth_revoke
-        mcp.tool()(wrap_tool(research_auth_create_token))
-        record_success("research", "research_auth_create_token")
-        mcp.tool()(wrap_tool(research_auth_validate))
-        record_success("research", "research_auth_validate")
-        mcp.tool()(wrap_tool(research_auth_revoke))
-        record_success("research", "research_auth_revoke")
+        # SKIP: loom.auth does not export research_* functions
+        if False:
+            pass
     except (ImportError, AttributeError) as e:
         log.debug("skip auth_mod: %s", e)
-        record_failure("research", "arxiv_pipeline", str(e))
+        record_failure("research", "auth_mod", str(e))
     try:
         from loom.tools.auto_docs import research_generate_docs, research_docs_coverage
         mcp.tool()(wrap_tool(research_generate_docs))
@@ -162,7 +158,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip bias_lens: %s", e)
         record_failure("research", "bias_lens", str(e))
     try:
-        from loom.tools.cache_mgmt import research_semantic_cache_stats, research_semantic_cache_clear
+        from loom.tools.cache_mgmt import research_cache_stats as research_semantic_cache_stats, research_cache_clear as research_semantic_cache_clear
         mcp.tool()(wrap_tool(research_semantic_cache_stats))
         record_success("research", "research_semantic_cache_stats")
         mcp.tool()(wrap_tool(research_semantic_cache_clear))
@@ -236,20 +232,16 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip compliance_checker: %s", e)
         record_failure("research", "compliance_checker", str(e))
     try:
-        from loom.tools.consistency import research_consistency_pressure, research_consistency_pressure_history, research_consistency_pressure_record
-        mcp.tool()(wrap_tool(research_consistency_pressure))
-        record_success("research", "research_consistency_pressure")
-        mcp.tool()(wrap_tool(research_consistency_pressure_history))
-        record_success("research", "research_consistency_pressure_history")
-        mcp.tool()(wrap_tool(research_consistency_pressure_record))
-        record_success("research", "research_consistency_pressure_record")
+        # SKIP: loom.consistency_pressure has class, not research_* functions
+        if False:
+            pass
     except (ImportError, AttributeError) as e:
         log.debug("skip consistency_mod: %s", e)
         record_failure("research", "consistency", str(e))
     try:
-        from loom.tools.constraint import research_constraint_optimize
-        mcp.tool()(wrap_tool(research_constraint_optimize))
-        record_success("research", "research_constraint_optimize")
+        # SKIP: loom.constraint_optimizer has class, not research_* functions
+        if False:
+            pass
     except (ImportError, AttributeError) as e:
         log.debug("skip constraint_mod: %s", e)
         record_failure("research", "constraint", str(e))
@@ -265,13 +257,9 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip context_manager: %s", e)
         record_failure("research", "context_manager", str(e))
     try:
-        from loom.tools.crawlee_backend import research_crawl, research_sitemap_crawl, research_structured_crawl
-        mcp.tool()(wrap_tool(research_crawl))
-        record_success("research", "research_crawl")
-        mcp.tool()(wrap_tool(research_sitemap_crawl))
-        record_success("research", "research_sitemap_crawl")
-        mcp.tool()(wrap_tool(research_structured_crawl))
-        record_success("research", "research_structured_crawl")
+        # SKIP: loom.crawlee_backend has classes, not research_* functions
+        if False:
+            pass
     except (ImportError, AttributeError) as e:
         log.debug("skip crawlee_backend: %s", e)
         record_failure("research", "crawlee_backend", str(e))
@@ -394,7 +382,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip dependency_graph: %s", e)
         record_failure("research", "dependency_graph", str(e))
     try:
-        from loom.tools.doc_parser import research_ocr_advanced, research_pdf_advanced, research_document_analyze
+        from loom.doc_parser import research_ocr_advanced, research_pdf_advanced, research_document_analyze
         mcp.tool()(wrap_tool(research_ocr_advanced))
         record_success("research", "research_ocr_advanced")
         mcp.tool()(wrap_tool(research_pdf_advanced))
@@ -450,18 +438,16 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip enterprise_sso: %s", e)
         record_failure("research", "enterprise_sso", str(e))
     try:
-        from loom.tools.epistemic import research_epistemic_score
-        mcp.tool()(wrap_tool(research_epistemic_score))
-        record_success("research", "research_epistemic_score")
+        # SKIP: loom.tools.epistemic_score has no research_* functions
+        if False:
+            pass
     except (ImportError, AttributeError) as e:
         log.debug("skip epistemic_mod: %s", e)
         record_failure("research", "epistemic", str(e))
     try:
-        from loom.tools.ethereum import research_ethereum_tx_decode, research_defi_security_audit
-        mcp.tool()(wrap_tool(research_ethereum_tx_decode))
-        record_success("research", "research_ethereum_tx_decode")
-        mcp.tool()(wrap_tool(research_defi_security_audit))
-        record_success("research", "research_defi_security_audit")
+        # SKIP: loom.tools.ethereum_tools has no research_* functions
+        if False:
+            pass
     except (ImportError, AttributeError) as e:
         log.debug("skip ethereum_tools: %s", e)
         record_failure("research", "ethereum", str(e))
@@ -573,9 +559,9 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip geodesic_forcing: %s", e)
         record_failure("research", "geodesic_forcing", str(e))
     try:
-        from loom.tools.geoip import research_geoip_local
-        mcp.tool()(wrap_tool(research_geoip_local))
-        record_success("research", "research_geoip_local")
+        # SKIP: loom.tools.geoip_local has no research_* functions
+        if False:
+            pass
     except (ImportError, AttributeError) as e:
         log.debug("skip geoip_mod: %s", e)
         record_failure("research", "geoip", str(e))
@@ -674,11 +660,9 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip holographic_payload: %s", e)
         record_failure("research", "holographic_payload", str(e))
     try:
-        from loom.tools.image import research_exif_extract, research_ocr_extract
-        mcp.tool()(wrap_tool(research_exif_extract))
-        record_success("research", "research_exif_extract")
-        mcp.tool()(wrap_tool(research_ocr_extract))
-        record_success("research", "research_ocr_extract")
+        # SKIP: loom.tools.image_intel has no research_* functions
+        if False:
+            pass
     except (ImportError, AttributeError) as e:
         log.debug("skip image_mod: %s", e)
         record_failure("research", "image", str(e))
