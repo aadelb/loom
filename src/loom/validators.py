@@ -216,12 +216,12 @@ def validate_local_file_path(file_path: str, allowed_base: str | Path | None = N
         allowed_base = Path(allowed_base)
 
     try:
-        # Resolve to absolute path, following symlinks
-        resolved = Path(file_path).resolve()
-        allowed_resolved = allowed_base.resolve()
+        # Expand tilde and resolve to absolute path, following symlinks
+        resolved = Path(file_path).expanduser().resolve()
+        allowed_resolved = allowed_base.expanduser().resolve()
 
         # Ensure resolved path is under allowed base
-        # Use strict_relative_to to prevent breakouts
+        # Use relative_to to prevent breakouts
         try:
             resolved.relative_to(allowed_resolved)
         except ValueError:
