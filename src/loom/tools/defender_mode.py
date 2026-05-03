@@ -131,6 +131,8 @@ async def research_defend_test(
 
     # Generate attacks by category
     generated_attacks = []
+    if not attack_categories:
+        return {"error": "No attack categories specified", "system_prompt": system_prompt[:100]}
     for cat in attack_categories:
         templates = _ATTACK_TEMPLATES.get(cat, [])
         for i in range(num_attacks // len(attack_categories)):
