@@ -34,6 +34,7 @@ class AttackDashboard:
         self.host = host
         self.port = port
         self.events: list[dict[str, Any]] = []
+        self._max_events = 5000
 
     def add_event(
         self,
@@ -65,6 +66,8 @@ class AttackDashboard:
             "index": len(self.events),
         }
         self.events.append(event)
+        if len(self.events) > self._max_events:
+            self.events = self.events[-self._max_events:]
 
     def get_events(self, since: int = 0) -> list[dict[str, Any]]:
         """Get events since index N.
