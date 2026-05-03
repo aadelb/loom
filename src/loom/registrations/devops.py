@@ -164,4 +164,4 @@ def register_devops_tools(mcp: "FastMCP", wrap_tool) -> None:
         mcp.tool()(_optional_tools["cicd"])
         mcp.tool()(_optional_tools["mcp_security"])
 
-    log.info("registered devops tools", tool_count=70)
+    log.info("registered devops tools count=70")

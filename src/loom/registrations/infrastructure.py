@@ -244,4 +244,4 @@ def register_infrastructure_tools(mcp: "FastMCP", wrap_tool) -> None:
         mcp.tool()(wrap_tool(metrics_tools.research_metrics_record))
         mcp.tool()(wrap_tool(metrics_tools.research_metrics_query))
 
-    log.info("registered infrastructure tools", tool_count=104)
+    log.info("registered infrastructure tools count=104")

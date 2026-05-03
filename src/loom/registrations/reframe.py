@@ -71,4 +71,4 @@ def register_reframe_tools(mcp: "FastMCP", wrap_tool) -> None:
     mcp.tool()(wrap_tool(prompt_reframe.research_reframe_roleplay))
     mcp.tool()(wrap_tool(prompt_analyzer.research_detect_refusal_risk))
 
-    log.info("registered reframe tools", tool_count=27)
+    log.info("registered reframe tools count=27")

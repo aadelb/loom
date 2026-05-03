@@ -75,4 +75,4 @@ def register_adversarial_tools(mcp: "FastMCP", wrap_tool) -> None:
         mcp.tool()(_optional_tools["quality_scorer"])
         mcp.tool()(_optional_tools["danger_prescore"])
 
-    log.info("registered adversarial tools", tool_count=22)
+    log.info("registered adversarial tools count=22")

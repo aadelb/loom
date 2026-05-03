@@ -525,4 +525,4 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
     mcp.tool()(_wrap_tool(research_journal.research_journal_search))
     mcp.tool()(_wrap_tool(research_journal.research_journal_timeline))
 
-    log.info("registered research tools", tool_count=315)
+    log.info("registered research tools count=315")

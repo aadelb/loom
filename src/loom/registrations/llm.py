@@ -46,4 +46,4 @@ def register_llm_tools(mcp: "FastMCP", wrap_tool) -> None:
 
         mcp.tool()(wrap_tool(yt_tools.fetch_youtube_transcript, "fetch"))
 
-    log.info("registered llm tools", tool_count=8)
+    log.info("registered llm tools count=8")

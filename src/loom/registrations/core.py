@@ -55,4 +55,4 @@ def register_core_tools(mcp: "FastMCP", wrap_tool) -> None:
     mcp.tool()(wrap_tool(health_dashboard.research_dashboard_html))
     mcp.tool()(wrap_tool(startup_validator.research_validate_startup))
 
-    log.info("registered core tools", tool_count=20)
+    log.info("registered core tools count=20")

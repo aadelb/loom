@@ -189,4 +189,4 @@ def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
     mcp.tool()(wrap_tool(urlhaus_lookup_mod.research_urlhaus_check, "fetch"))
     mcp.tool()(wrap_tool(urlhaus_lookup_mod.research_urlhaus_search, "search"))
 
-    log.info("registered intelligence tools", tool_count=87)
+    log.info("registered intelligence tools count=87")
