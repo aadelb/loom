@@ -48,6 +48,14 @@ from loom import crawlee_backend
 from loom import zendriver_backend
 from loom.sqlite_pool import research_pool_stats, research_pool_reset
 
+# PostgreSQL migration tools (optional, graceful fallback if asyncpg not installed)
+_pg_tools: dict[str, Any] = {}
+with suppress(ImportError):
+    from loom.pg_store import research_pg_migrate, research_pg_status
+    _pg_tools["pg_migrate"] = research_pg_migrate
+    _pg_tools["pg_status"] = research_pg_status
+    record_optional_module_loaded("pg_store")
+
 
 from loom.tracing import install_tracing, new_request_id
 from loom.billing.meter import record_usage
@@ -1036,6 +1044,14 @@ def _register_tools(mcp: FastMCP) -> None:
                         mcp.tool()(_wrap_tool(_func))
                     except Exception:
                         pass
+
+
+    # Register PostgreSQL tools from _pg_tools (optional)
+    for _tool_name, _tool_func in _pg_tools.items():
+        try:
+            mcp.tool()(_wrap_tool(_tool_func))
+        except Exception:
+            pass
 
     # Register core loom.* module tools (sessions, config, orchestrator, scoring, etc.)
     _core_funcs = [
