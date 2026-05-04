@@ -461,9 +461,9 @@ class BatchQueue:
     async def process_pending(self) -> int:
         """Process pending batch items (called by background worker).
 
-        Processes up to `concurrency` pending items in parallel. Items are
-        locked to 'processing' status, executed via registered handler, and
-        marked as 'done' or 'failed'.
+        Fetches up to `concurrency` pending items and processes them in parallel
+        using asyncio.gather(). Items are locked to 'processing' status, executed
+        via registered handler, and marked as 'done' or 'failed'.
 
         Only processes items where next_retry_at is NULL or <= current time.
 
@@ -471,46 +471,76 @@ class BatchQueue:
             number of items processed in this call
         """
         async with self._lock:
-            if self._processing_count >= self.concurrency:
+            # Calculate available slots
+            available_slots = self.concurrency - self._processing_count
+            if available_slots <= 0:
                 return 0
 
-            # Fetch next pending item that is ready to retry
+            # Fetch up to available_slots pending items that are ready to retry
             current_time = time.time()
             with sqlite3.connect(self.db_path) as conn:
                 conn.row_factory = sqlite3.Row
-                row = conn.execute(
+                rows = conn.execute(
                     """
                     SELECT * FROM batch_items
                     WHERE status = 'pending'
                     AND (next_retry_at IS NULL OR next_retry_at <= ?)
                     ORDER BY created_at ASC
-                    LIMIT 1
+                    LIMIT ?
                     """,
-                    (current_time,),
-                ).fetchone()
+                    (current_time, available_slots),
+                ).fetchall()
 
-                if not row:
+                if not rows:
                     return 0
 
-                batch_id = row["id"]
-                tool_name = row["tool_name"]
-                params_json = row["params_json"]
-                retry_count = row["retry_count"]
-                max_retries = row["max_retries"]
-                callback_url = row["callback_url"]
-
-                # Lock item to 'processing'
-                conn.execute(
-                    """
-                    UPDATE batch_items
-                    SET status = 'processing', started_at = ?
-                    WHERE id = ?
-                    """,
-                    (datetime.now(UTC).isoformat(), batch_id),
-                )
+                # Lock all items to 'processing'
+                batch_ids = [row["id"] for row in rows]
+                now_iso = datetime.now(UTC).isoformat()
+                for batch_id in batch_ids:
+                    conn.execute(
+                        """
+                        UPDATE batch_items
+                        SET status = 'processing', started_at = ?
+                        WHERE id = ?
+                        """,
+                        (now_iso, batch_id),
+                    )
                 conn.commit()
 
-            self._processing_count += 1
+                # Extract row data before closing connection
+                items_to_process = [
+                    {
+                        "id": row["id"],
+                        "tool_name": row["tool_name"],
+                        "params_json": row["params_json"],
+                        "retry_count": row["retry_count"],
+                        "max_retries": row["max_retries"],
+                        "callback_url": row["callback_url"],
+                    }
+                    for row in rows
+                ]
+
+            self._processing_count += len(items_to_process)
+
+        # Process all items concurrently
+        tasks = [self._process_single_item(item) for item in items_to_process]
+        await asyncio.gather(*tasks)
+
+        return len(items_to_process)
+
+    async def _process_single_item(self, item: dict[str, Any]) -> None:
+        """Process a single batch item.
+
+        Args:
+            item: dict with id, tool_name, params_json, retry_count, max_retries, callback_url
+        """
+        batch_id = item["id"]
+        tool_name = item["tool_name"]
+        params_json = item["params_json"]
+        retry_count = item["retry_count"]
+        max_retries = item["max_retries"]
+        callback_url = item["callback_url"]
 
         try:
             # Decode params
@@ -602,8 +632,6 @@ class BatchQueue:
         finally:
             async with self._lock:
                 self._processing_count -= 1
-
-        return 1
 
     @staticmethod
     async def _call_handler(handler: Callable[[dict[str, Any]], Any], params: dict[str, Any]) -> Any:

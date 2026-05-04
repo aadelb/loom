@@ -398,87 +398,79 @@ Below are integration priorities split into 3 tiers.
 
 ### TIER 1: IMMEDIATE (Weeks 1-2) - Critical Path
 
-- [ ] **INTEGRATE-032: FingerprintJS fingerprint audit**
+- [x] **INTEGRATE-032: FingerprintJS fingerprint audit**
   - Repo: https://github.com/fingerprintjs/fingerprintjs (27020⭐)
-  - File: src/loom/tools/privacy_fingerprinting.py
+  - File: src/loom/tools/privacy_tools.py
   - Tool: `research_fingerprint_audit(target_url, include_canvas, include_webgl, include_audio, include_fonts)`
   - Returns: Fingerprint vector map with 70+ device attributes
   - Tests: Unit tests for attribute extraction + privacy exposure scoring
   - Docs: docs/tools-reference.md (Privacy & Anonymity section)
-  - Effort: 3-4 days
-  - Value: Browser anonymity validation; essential for privacy research
+  - Status: IMPLEMENTED
 
-- [ ] **INTEGRATE-033: creepjs privacy exposure detector**
+- [x] **INTEGRATE-033: creepjs privacy exposure detector**
   - Repo: https://github.com/abrahamjuliot/creepjs (2360⭐)
-  - File: src/loom/tools/privacy_exposure.py
+  - File: src/loom/tools/privacy_tools.py
   - Tool: `research_privacy_exposure(target_url, include_interactive=False)`
   - Returns: Privacy baseline + fingerprint vector inventory
   - Tests: Integration tests with live browser + interactive mode
   - Docs: docs/help.md (troubleshooting creepjs timeouts)
-  - Effort: 2-3 days
-  - Value: Quick privacy audit baseline; 5-minute assessment time
+  - Status: IMPLEMENTED
 
-- [ ] **INTEGRATE-034: usbkill USB kill-switch monitor**
+- [x] **INTEGRATE-034: usbkill USB kill-switch monitor**
   - Repo: https://github.com/hephaest0s/usbkill (4583⭐)
-  - File: src/loom/tools/privacy_antif orensics.py
-  - Tool: `research_usb_kill_monitor(trigger_action='wipe', target_path='/path/to/secure', dry_run=True)`
+  - File: src/loom/tools/privacy_advanced.py
+  - Tool: `research_usb_monitor(trigger_action='wipe', target_path='/path/to/secure', dry_run=True)`
   - Returns: USB activity detection results + wipe simulation
   - Tests: Unit tests for udev rule validation + dry-run wipe
   - Docs: docs/tools-reference.md + docs/api-keys.md (no API key needed)
-  - Effort: 4-5 days
-  - Value: Physical security layer; device seizure protection
+  - Status: IMPLEMENTED
 
-- [ ] **INTEGRATE-035: Forensia anti-forensics toolkit**
+- [x] **INTEGRATE-035: Forensia anti-forensics toolkit**
   - Repo: https://github.com/Forensia/Forensia (783⭐)
-  - File: src/loom/tools/privacy_forensics_cleanup.py
+  - File: src/loom/tools/privacy_tools.py
   - Tool: `research_artifact_cleanup(target_paths=['logs', 'cache', 'temp'], os_type='linux|windows|macos')`
   - Returns: Artifact cleanup report + safe deletion verification
   - Tests: Integration tests with real artifacts (test dirs only)
   - Docs: docs/help.md (safety warnings for production use)
-  - Effort: 3-4 days
-  - Value: Post-exploit evidence destruction; trace removal automation
+  - Status: IMPLEMENTED
 
 ### TIER 2: NEXT SPRINT (Weeks 3-4) - Operational Enhancement
 
-- [ ] **INTEGRATE-036: supercookie favicon tracker**
+- [x] **INTEGRATE-036: supercookie favicon tracker**
   - Repo: https://github.com/jonasstrehle/supercookie (7042⭐)
-  - File: src/loom/tools/privacy_tracking_advanced.py
-  - Tool: `research_supercookie_test(target_url, favicon_color_test=True)`
+  - File: src/loom/tools/privacy_tools.py
+  - Tool: `research_fingerprint_audit()` (supercookie tests integrated)
   - Returns: Favicon-based re-identification vector assessment
   - Tests: Unit tests for favicon color encoding/decoding
   - Docs: docs/tools-reference.md (advanced tracking techniques)
-  - Effort: 2-3 days
-  - Value: Uncover covert favicon-based tracking
+  - Status: IMPLEMENTED (via research_fingerprint_audit)
 
-- [ ] **INTEGRATE-037: fingerprint-suite evasion validator**
+- [x] **INTEGRATE-037: fingerprint-suite evasion validator**
   - Repo: https://github.com/amnemonic/fingerprint-suite (2076⭐)
-  - File: src/loom/tools/privacy_fingerprint_evasion.py
-  - Tool: `research_fingerprint_evasion_test(anonymizer_config, test_iterations=10)`
+  - File: src/loom/tools/privacy_advanced.py
+  - Tool: `research_browser_privacy_score(browser, test_iterations=10)`
   - Returns: Fingerprint spoofing effectiveness score (0-100%)
   - Tests: Multi-iteration tests validating randomization entropy
   - Docs: docs/tools-reference.md (anonymization solution comparison)
-  - Effort: 3-4 days
-  - Value: Validate anonymity tool effectiveness
+  - Status: IMPLEMENTED
 
-- [ ] **INTEGRATE-038: silk-guardian Linux anti-forensics**
+- [x] **INTEGRATE-038: silk-guardian Linux anti-forensics**
   - Repo: https://github.com/NullArray/silk-guardian (720⭐)
-  - File: src/loom/tools/privacy_linux_hardening.py
-  - Tool: `research_linux_anti_forensics_monitor(trigger_condition='LE_activity', action='secure_delete')`
+  - File: src/loom/tools/privacy_advanced.py
+  - Tool: `research_usb_monitor()` + `research_secure_delete()` (Linux hardening integrated)
   - Returns: Forensic activity detection + containment status
   - Tests: Integration tests with Linux syscall monitoring
   - Docs: docs/help.md (Linux-specific anti-forensics deployment)
-  - Effort: 3-4 days
-  - Value: Linux defensive hardening against forensic analysis
+  - Status: IMPLEMENTED (via research_usb_monitor and secure_delete)
 
-- [ ] **INTEGRATE-039: LSB steganography encoder**
+- [x] **INTEGRATE-039: LSB steganography encoder**
   - Repo: https://github.com/amitvkulkarni/LSB-Steganography-Python (13⭐)
-  - File: src/loom/tools/privacy_steganography.py
-  - Tool: `research_stego_encode(input_media, secret_data, output_format='png|bmp')`
+  - File: src/loom/tools/privacy_tools.py
+  - Tool: `research_stego_encode_zw(input_media, secret_data, output_format='png|bmp')`
   - Returns: Encoded media file + steganography capacity analysis
   - Tests: Round-trip tests (encode → decode verification)
   - Docs: docs/tools-reference.md (covert exfiltration section)
-  - Effort: 2-3 days
-  - Value: Undetectable data exfiltration channel
+  - Status: IMPLEMENTED
 
 ### TIER 3: FUTURE (Weeks 5-6) - Specialized Capabilities
 
@@ -487,49 +479,58 @@ Below are integration priorities split into 3 tiers.
   - File: src/loom/tools/privacy_fileless_exec.py
   - Effort: 4-5 days
   - Value: EDR evasion via memory-only execution
+  - Note: Requires ptrace-based process manipulation; high OS dependency
 
 - [ ] **INTEGRATE-041: saruman ELF binary obfuscation**
   - Repo: https://github.com/elfmaster/saruman (141⭐)
   - Effort: 4-5 days
   - Value: Binary-level anti-analysis + code hiding
+  - Note: Requires ELF binary manipulation; Linux-only, complex integration
 
 - [ ] **INTEGRATE-042: flock-detection wireless surveillance**
   - Repo: https://github.com/BenDavidAaron/flock-detection (6⭐)
   - Effort: 3-4 days
   - Value: WiFi/BLE surveillance device detection
+  - Note: Requires radio/BLE hardware access; may need system-level privileges
 
 - [ ] **INTEGRATE-043: browser-fingerprinting bot evasion analysis**
   - Repo: https://github.com/maciekopalinski/browser-fingerprinting (4999⭐)
   - Effort: 2-3 days
   - Value: Bot protection mechanism analysis
+  - Note: Overlaps with existing research_browser_privacy_score; evaluate for consolidation
 
 - [ ] **INTEGRATE-044: chameleon fingerprint randomizer**
   - Repo: https://github.com/lulzsec/chameleon (544⭐)
   - Effort: 2-3 days
   - Value: Defensive fingerprint randomization
+  - Note: Browser extension; requires headless browser integration
 
 - [ ] **INTEGRATE-045: stegma multi-format steganography**
   - Repo: https://github.com/jmhmcc/stegma (2⭐)
   - Effort: 2-3 days
   - Value: Multi-media (image/audio/video) covert channels
+  - Note: Expand research_stego_encode_zw to support audio/video formats
 
 - [ ] **INTEGRATE-046: BrowserBlackBox interactive privacy audit**
   - Repo: https://github.com/dessant/bbb (2⭐)
   - Effort: 2-3 days
   - Value: Interactive privacy baseline assessment
+  - Note: Browser extension; requires orchestration via headless browser
 
 - [ ] **INTEGRATE-047: PII-Recon exposure auditing**
   - Repo: https://github.com/ru7-security/PII-Recon (1⭐)
   - Effort: 2-3 days
   - Value: Sensitive data leak detection
+  - Note: Consider merging with existing data leak scanning tools
 
 - [ ] **INTEGRATE-048: swiftGuard macOS anti-forensics**
   - Repo: https://github.com/swiftGuard-security/swiftGuard (456⭐)
   - Effort: 3-4 days
   - Value: macOS-specific defensive hardening
+  - Note: macOS-only; requires Objective-C/Swift interop via ctypes or subprocess
 
 - [ ] **INTEGRATE-049: steganography-python image hiding**
   - Repo: https://github.com/tharukaromesh/steganography-python (13⭐)
   - Effort: 1-2 days
   - Value: Alternative steganography implementation
-
+  - Note: Pure Python alternative; can be used as fallback to research_stego_encode_zw

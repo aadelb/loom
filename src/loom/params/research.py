@@ -110,6 +110,7 @@ __all__ = [
     "PydanticAgentParams",
     "QueryBuilderParams",
     "RAGAttackParams",
+    "ReidTacticsParams",
     "RecommendNextParams",
     "ReframeRouterParams",
     "RunExperimentParams",
@@ -4147,3 +4148,64 @@ class ReframeRouterParams(BaseModel):
         if len(v) > 10000:
             raise ValueError("context max 10000 characters")
         return v.strip()
+
+
+class ReidTacticsParams(BaseModel):
+    """Parameters for research_reid_tactics tool."""
+
+    tactic: str = Field(
+        default="",
+        description="Specific Reid tactic to retrieve. If empty, returns all tactics. "
+        "Options: theme_development, minimize_moral_seriousness, alternative_question, "
+        "sympathetic_listening, direct_confrontation, handling_objections, good_cop_bad_cop, "
+        "false_evidence, appeal_to_authority, emotional_manipulation, social_proof_fabrication",
+    )
+    include_counters: bool = Field(
+        default=True,
+        description="If True, include safety counter-measures for each tactic",
+    )
+    output_format: str = Field(
+        default="dict",
+        description="Output format: 'dict' (default) or 'list'",
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("tactic", mode="before")
+    @classmethod
+    def validate_tactic(cls, v: str) -> str:
+        """Validate tactic name if provided."""
+        if not isinstance(v, str):
+            return ""
+        v = v.strip().lower().replace(" ", "_")
+        # Allow empty string (retrieves all tactics)
+        if v:
+            valid_tactics = {
+                "theme_development",
+                "minimize_moral_seriousness",
+                "alternative_question",
+                "sympathetic_listening",
+                "direct_confrontation",
+                "handling_objections",
+                "good_cop_bad_cop",
+                "false_evidence",
+                "appeal_to_authority",
+                "emotional_manipulation",
+                "social_proof_fabrication",
+            }
+            if v not in valid_tactics:
+                raise ValueError(
+                    f"Invalid tactic '{v}'. Valid options: {', '.join(sorted(valid_tactics))}"
+                )
+        return v
+
+    @field_validator("output_format", mode="before")
+    @classmethod
+    def validate_output_format(cls, v: str) -> str:
+        """Validate output format."""
+        if not isinstance(v, str):
+            v = "dict"
+        v = v.lower().strip()
+        if v not in ("dict", "list"):
+            raise ValueError("output_format must be 'dict' or 'list'")
+        return v
