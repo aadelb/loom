@@ -810,7 +810,7 @@ class TrendForecastParams(BaseModel):
     timeframe: str = "6months"
     min_term_frequency: int = 2
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("topic")
     @classmethod
@@ -843,7 +843,7 @@ class FingerprintAuditParams(BaseModel):
 
     url: str = "https://browserleaks.com/javascript"
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -859,7 +859,7 @@ class HarvestParams(BaseModel):
     sources: str = "all"
     limit: int = 100
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("domain")
     @classmethod
@@ -895,7 +895,7 @@ class PrivacyExposureParams(BaseModel):
 
     target_url: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("target_url", mode="before")
     @classmethod
@@ -909,7 +909,7 @@ class ArtifactCleanupParams(BaseModel):
     target_paths: list[str]
     dry_run: bool = True
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("target_paths")
     @classmethod
@@ -934,7 +934,7 @@ class StegoEncodeParams(BaseModel):
     input_text: str
     cover_message: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("input_text")
     @classmethod
@@ -960,7 +960,7 @@ class StegoDecodeParams(BaseModel):
 
     encoded_message: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("encoded_message")
     @classmethod

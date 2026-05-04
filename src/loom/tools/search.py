@@ -14,6 +14,17 @@ from loom.tools.source_reputation import filter_by_reputation
 
 logger = logging.getLogger("loom.tools.search")
 
+# Free search providers (no API key required or unlimited free tier)
+_FREE_PROVIDERS = frozenset({
+    "ddgs",           # DuckDuckGo (free)
+    "wikipedia",      # Wikipedia (free)
+    "arxiv",          # arXiv academic search (free)
+    "hackernews",     # HackerNews via Algolia (free)
+    "reddit",         # Reddit JSON API (free)
+    "ahmia",          # Ahmia Tor search (free)
+    "darksearch",     # DarkSearch darkweb (free)
+})
+
 
 def _apply_reputation_filter(result: dict[str, Any]) -> dict[str, Any]:
     """Apply reputation filtering to search results."""
@@ -33,6 +44,7 @@ async def research_search(
     end_date: str | None = None,
     language: str | None = None,
     provider_config: dict[str, Any] | None = None,
+    free_only: bool = False,
 ) -> dict[str, Any]:
     """Search the web using the configured provider.
 
@@ -47,9 +59,11 @@ async def research_search(
         end_date: ISO yyyy-mm-dd end date
         language: language hint (ISO 639-1)
         provider_config: provider-specific kwargs
+        free_only: if True, only use free providers (DDG, Wikipedia, ArXiv, HN, Reddit, etc.)
 
     Returns:
-        Dict with keys: provider, query, results (list of dicts), error (if any)
+        Dict with keys: provider, query, results (list of dicts), error (if any),
+        cost_estimate_usd, free_tier (bool)
     """
     from loom.config import get_config
     from loom.validators import filter_provider_config
@@ -57,6 +71,12 @@ async def research_search(
     config = get_config()
     if provider is None:
         provider = config.get("DEFAULT_SEARCH_PROVIDER", "exa")
+
+    # If free_only is True, validate that provider is in free list
+    if free_only and provider not in _FREE_PROVIDERS:
+        logger.warning("free_only=True but provider=%s is not free; switching to ddgs", provider)
+        provider = "ddgs"
+
     provider_config = filter_provider_config(provider, provider_config)
 
     # Validate and normalize
@@ -66,11 +86,14 @@ async def research_search(
     if exclude_domains is not None:
         exclude_domains = [d.lower().strip() for d in exclude_domains]
 
+    is_free = provider in _FREE_PROVIDERS
+
     logger.info(
-        "search query=%s provider=%s n=%d",
+        "search query=%s provider=%s n=%d free_only=%s",
         query[:50],
         provider,
         n,
+        free_only,
     )
 
     try:
@@ -87,6 +110,8 @@ async def research_search(
                 **provider_config,
             )
             result["provider"] = "exa"
+            result["cost_estimate_usd"] = 0.05  # Estimated per-call cost
+            result["free_tier"] = False
             return _apply_reputation_filter(result)  # type: ignore[no-any-return]
 
         elif provider == "tavily":
@@ -102,6 +127,8 @@ async def research_search(
                 **provider_config,
             )
             result["provider"] = "tavily"
+            result["cost_estimate_usd"] = 0.03  # Estimated per-call cost
+            result["free_tier"] = False
             return _apply_reputation_filter(result)  # type: ignore[no-any-return]
 
         elif provider == "firecrawl":
@@ -115,6 +142,8 @@ async def research_search(
                 **provider_config,
             )
             result["provider"] = "firecrawl"
+            result["cost_estimate_usd"] = 0.02  # Estimated per-call cost
+            result["free_tier"] = False
             return _apply_reputation_filter(result)  # type: ignore[no-any-return]
 
         elif provider == "brave":
@@ -124,6 +153,8 @@ async def research_search(
                 search_brave, query=query, n=n, **provider_config
             )
             result["provider"] = "brave"
+            result["cost_estimate_usd"] = 0.01  # Brave free tier is cheap
+            result["free_tier"] = False
             return _apply_reputation_filter(result)  # type: ignore[no-any-return]
 
         elif provider == "ddgs":
@@ -135,6 +166,8 @@ async def research_search(
                 **provider_config,
             )
             result["provider"] = "ddgs"
+            result["cost_estimate_usd"] = 0.0  # Free
+            result["free_tier"] = True
             return _apply_reputation_filter(result)  # type: ignore[no-any-return]
 
         elif provider == "arxiv":
@@ -146,6 +179,8 @@ async def research_search(
                 **provider_config,
             )
             result["provider"] = "arxiv"
+            result["cost_estimate_usd"] = 0.0  # Free
+            result["free_tier"] = True
             return _apply_reputation_filter(result)  # type: ignore[no-any-return]
 
         elif provider == "wikipedia":
@@ -157,6 +192,8 @@ async def research_search(
                 **provider_config,
             )
             result["provider"] = "wikipedia"
+            result["cost_estimate_usd"] = 0.0  # Free
+            result["free_tier"] = True
             return _apply_reputation_filter(result)  # type: ignore[no-any-return]
 
         elif provider == "hackernews":
@@ -168,6 +205,8 @@ async def research_search(
                 **provider_config,
             )
             result["provider"] = "hackernews"
+            result["cost_estimate_usd"] = 0.0  # Free
+            result["free_tier"] = True
             return _apply_reputation_filter(result)  # type: ignore[no-any-return]
 
         elif provider == "reddit":
@@ -179,6 +218,8 @@ async def research_search(
                 **provider_config,
             )
             result["provider"] = "reddit"
+            result["cost_estimate_usd"] = 0.0  # Free
+            result["free_tier"] = True
             return _apply_reputation_filter(result)  # type: ignore[no-any-return]
 
         elif provider == "newsapi":
@@ -190,6 +231,8 @@ async def research_search(
                 **provider_config,
             )
             result["provider"] = "newsapi"
+            result["cost_estimate_usd"] = 0.0  # NewsAPI has free tier
+            result["free_tier"] = False
             return _apply_reputation_filter(result)  # type: ignore[no-any-return]
 
         elif provider == "crypto":
@@ -201,6 +244,8 @@ async def research_search(
                 **provider_config,
             )
             result["provider"] = "crypto"
+            result["cost_estimate_usd"] = 0.0  # CoinMarketCap free data
+            result["free_tier"] = True
             return _apply_reputation_filter(result)  # type: ignore[no-any-return]
 
         elif provider == "coindesk":
@@ -212,6 +257,8 @@ async def research_search(
                 **provider_config,
             )
             result["provider"] = "coindesk"
+            result["cost_estimate_usd"] = 0.0  # Free
+            result["free_tier"] = True
             return _apply_reputation_filter(result)  # type: ignore[no-any-return]
 
         elif provider == "binance":
@@ -223,6 +270,8 @@ async def research_search(
                 **provider_config,
             )
             result["provider"] = "binance"
+            result["cost_estimate_usd"] = 0.0  # Free
+            result["free_tier"] = True
             return _apply_reputation_filter(result)  # type: ignore[no-any-return]
 
         elif provider == "investing":
@@ -234,6 +283,8 @@ async def research_search(
                 **provider_config,
             )
             result["provider"] = "investing"
+            result["cost_estimate_usd"] = 0.01
+            result["free_tier"] = False
             return _apply_reputation_filter(result)  # type: ignore[no-any-return]
 
         elif provider == "ahmia":
@@ -245,6 +296,8 @@ async def research_search(
                 **provider_config,
             )
             result["provider"] = "ahmia"
+            result["cost_estimate_usd"] = 0.0  # Free
+            result["free_tier"] = True
             return _apply_reputation_filter(result)  # type: ignore[no-any-return]
 
         elif provider == "darksearch":
@@ -256,6 +309,8 @@ async def research_search(
                 **provider_config,
             )
             result["provider"] = "darksearch"
+            result["cost_estimate_usd"] = 0.0  # Free
+            result["free_tier"] = True
             return _apply_reputation_filter(result)  # type: ignore[no-any-return]
 
         elif provider == "ummro":
@@ -267,6 +322,8 @@ async def research_search(
                 **provider_config,
             )
             result["provider"] = "ummro"
+            result["cost_estimate_usd"] = 0.0
+            result["free_tier"] = True
             return _apply_reputation_filter(result)  # type: ignore[no-any-return]
 
         elif provider == "onionsearch":
@@ -278,6 +335,8 @@ async def research_search(
                 **provider_config,
             )
             result["provider"] = "onionsearch"
+            result["cost_estimate_usd"] = 0.0  # Free
+            result["free_tier"] = True
             return _apply_reputation_filter(result)  # type: ignore[no-any-return]
 
         elif provider == "torcrawl":
@@ -288,6 +347,8 @@ async def research_search(
                 **provider_config,
             )
             result["provider"] = "torcrawl"
+            result["cost_estimate_usd"] = 0.0
+            result["free_tier"] = True
             return _apply_reputation_filter(result)  # type: ignore[no-any-return]
 
         elif provider == "darkweb_cti":
@@ -299,6 +360,8 @@ async def research_search(
                 **provider_config,
             )
             result["provider"] = "darkweb_cti"
+            result["cost_estimate_usd"] = 0.0
+            result["free_tier"] = True
             return _apply_reputation_filter(result)  # type: ignore[no-any-return]
 
         elif provider == "robin_osint":
@@ -310,6 +373,8 @@ async def research_search(
                 **provider_config,
             )
             result["provider"] = "robin_osint"
+            result["cost_estimate_usd"] = 0.0
+            result["free_tier"] = True
             return _apply_reputation_filter(result)  # type: ignore[no-any-return]
 
         else:
@@ -319,6 +384,8 @@ async def research_search(
                 "query": query,
                 "results": [],
                 "error": f"Unknown provider: {provider}",
+                "cost_estimate_usd": 0.0,
+                "free_tier": False,
             }
 
     except Exception as exc:
@@ -328,6 +395,8 @@ async def research_search(
             "query": query,
             "results": [],
             "error": str(exc),
+            "cost_estimate_usd": 0.0,
+            "free_tier": is_free,
         }
 
 

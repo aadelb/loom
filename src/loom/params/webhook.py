@@ -21,7 +21,7 @@ class WebhookRegisterParams(BaseModel):
         description="HMAC secret for signature verification (generated if not provided)"
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("url", mode="before")
     @classmethod
@@ -63,7 +63,7 @@ class WebhookUnregisterParams(BaseModel):
 
     webhook_id: str = Field(description="ID of webhook to unregister")
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("webhook_id")
     @classmethod
@@ -80,7 +80,7 @@ class WebhookTestParams(BaseModel):
 
     webhook_id: str = Field(description="ID of webhook to test")
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("webhook_id")
     @classmethod

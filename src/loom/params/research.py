@@ -3870,7 +3870,7 @@ class GenerateReportParams(BaseModel):
     include_methodology: bool = True
     include_recommendations: bool = True
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("topic")
     @classmethod
@@ -3910,7 +3910,7 @@ class ReportFromResultsParams(BaseModel):
     include_methodology: bool = True
     include_recommendations: bool = True
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("results")
     @classmethod
@@ -3937,7 +3937,7 @@ class FactVerifyParams(BaseModel):
     sources: int = 3
     min_confidence: float = 0.6
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("claim")
     @classmethod
@@ -3971,7 +3971,7 @@ class BatchVerifyParams(BaseModel):
     sources: int = 3
     min_confidence: float = 0.6
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("claims")
     @classmethod
@@ -4011,7 +4011,7 @@ class AITransparencyCheckParams(BaseModel):
     model_response: str
     model_name: str = ""
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("model_response")
     @classmethod
@@ -4034,7 +4034,7 @@ class AIBiasAuditParams(BaseModel):
     prompts: list[str]
     responses: list[str]
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("prompts")
     @classmethod
@@ -4063,7 +4063,7 @@ class AIRobustnessTestParams(BaseModel):
     model_name: str
     test_prompts: list[str]
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("model_name")
     @classmethod
@@ -4088,7 +4088,7 @@ class AIDataGovernanceParams(BaseModel):
 
     system_description: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("system_description")
     @classmethod
@@ -4103,7 +4103,7 @@ class AIRiskClassifyParams(BaseModel):
 
     system_description: str
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}
 
     @field_validator("system_description")
     @classmethod

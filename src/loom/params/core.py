@@ -194,9 +194,11 @@ class DeepParams(BaseModel):
 
     query: str
     max_results: int = 20
+    max_urls: int = 10
     include_community: bool = True
     include_citations: bool = True
     mode: Literal["fast", "thorough"] = "thorough"
+    provider_tier: Literal["free_only", "paid_ok", "auto"] = "auto"
 
     model_config = {"extra": "ignore", "strict": True}
 
@@ -215,6 +217,13 @@ class DeepParams(BaseModel):
     def validate_max_results(cls, v: int) -> int:
         if v < 1 or v > 100:
             raise ValueError("max_results must be 1-100")
+        return v
+
+    @field_validator("max_urls")
+    @classmethod
+    def validate_max_urls(cls, v: int) -> int:
+        if v < 1 or v > 100:
+            raise ValueError("max_urls must be 1-100")
         return v
 
 
@@ -827,6 +836,7 @@ class SearchParams(BaseModel):
     region: str | None = None
     language: str | None = None
     freshness: str | None = None
+    free_only: bool = False
 
     model_config = {"extra": "ignore", "strict": True, "populate_by_name": True}
 
@@ -1002,6 +1012,8 @@ class ZenFetchParams(BaseModel):
 
 
 
+
+
 class AnalyticsDashboardParams(BaseModel):
     """Parameters for research_analytics_dashboard tool."""
 
@@ -1014,4 +1026,4 @@ class AnalyticsDashboardParams(BaseModel):
         description="Optional list of all available tool names for unused detection"
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "ignore", "strict": True}

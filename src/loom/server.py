@@ -1905,13 +1905,18 @@ def create_app() -> FastMCP:
     @mcp.custom_route("/v1/health", methods=["GET"])
     async def v1_health_endpoint(request: Request) -> JSONResponse:
         """Health check endpoint for API v1 (with version header)."""
-        from loom.registrations import get_registration_stats
+        from loom.registrations import get_registration_stats, get_registration_errors
         
         uptime = int(time.time() - _start_time)
         tool_count = len(mcp._tool_manager._tools) if hasattr(mcp, "_tool_manager") else 346
         
         # Get registration statistics
         reg_stats = get_registration_stats()
+        reg_errors = get_registration_errors()
+        
+        # Determine overall health status based on registration failure rate
+        reg_health = reg_stats.get("health_status", "healthy")
+        overall_status = "degraded" if reg_health == "degraded" else "healthy"
         
         # Try to get memory usage
         memory_mb = None
@@ -1923,7 +1928,8 @@ def create_app() -> FastMCP:
         
         health_response = {
             "api_version": "v1",
-            "status": "healthy",
+            "status": overall_status,
+            "registration_health": reg_health,
             "startup_validation_status": _health_status,
             "startup_validation_result": _startup_validation_result,
             "uptime_seconds": uptime,
@@ -1934,6 +1940,8 @@ def create_app() -> FastMCP:
             "import_failures": reg_stats.get("import_failures", []),
             "total_tools_loaded": reg_stats.get("total_loaded", 0),
             "total_tools_failed": reg_stats.get("total_failed", 0),
+            "failure_rate_percent": reg_stats.get("failure_rate_percent", 0.0),
+            "registration_errors": reg_errors,
             "validation_errors_found": _validation_error_count,
             "prometheus_enabled": _prometheus_enabled,
             "timestamp": datetime.now(UTC).isoformat(),
