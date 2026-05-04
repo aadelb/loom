@@ -925,3 +925,63 @@ class StegoDecodeParams(BaseModel):
         if not v or not isinstance(v, str):
             raise ValueError("encoded_message must be non-empty string")
         return v
+
+
+class BrowserPrivacyScoreParams(BaseModel):
+    """Parameters for research_browser_privacy_score tool."""
+
+    browser: Literal["chromium", "firefox", "safari", "edge"] = "chromium"
+
+    model_config = {"extra": "ignore", "strict": True}
+
+    @field_validator("browser")
+    @classmethod
+    def validate_browser(cls, v: str) -> str:
+        valid = {"chromium", "firefox", "safari", "edge"}
+        if v not in valid:
+            raise ValueError(f"browser must be one of {valid}")
+        return v
+
+
+class USBMonitorParams(BaseModel):
+    """Parameters for research_usb_monitor tool."""
+
+    dry_run: bool = True
+
+    model_config = {"extra": "ignore", "strict": True}
+
+
+class NetworkAnomalyParams(BaseModel):
+    """Parameters for research_network_anomaly tool."""
+
+    interface: str = "eth0"
+    duration_sec: int = Field(default=5, ge=1, le=60)
+
+    model_config = {"extra": "ignore", "strict": True}
+
+    @field_validator("interface")
+    @classmethod
+    def validate_interface(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("interface must be non-empty")
+        if len(v) > 50:
+            raise ValueError("interface max 50 characters")
+        return v
+
+
+class MetadataStripParams(BaseModel):
+    """Parameters for research_metadata_strip tool."""
+
+    file_path: str
+    strip_type: Literal["all", "exif", "xmp", "iptc"] = "all"
+
+    model_config = {"extra": "ignore", "strict": True}
+
+    @field_validator("file_path")
+    @classmethod
+    def validate_file_path(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("file_path must be non-empty")
+        if len(v) > 1000:
+            raise ValueError("file_path max 1000 characters")
+        return v

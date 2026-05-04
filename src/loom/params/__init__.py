@@ -81,6 +81,7 @@ from loom.params.llm import (
 
 # INTELLIGENCE tools
 from loom.params.intelligence import (
+    ArtifactCleanupParams,
     CitationGraphParams,
     GraphParams,
     CompanyDiligenceParams,
@@ -106,6 +107,7 @@ from loom.params.intelligence import (
     SocialProfileParams,
     SocialSearchParams,
     StegoAnalyzeParams,
+    StegoDecodeParams,
     StegoDetectParams,
     StegoEncodeParams,
     StylometryParams,
@@ -113,6 +115,8 @@ from loom.params.intelligence import (
     ThreatProfileParams,
     TransactionGraphParams,
     TrendForecastParams,
+    FingerprintAuditParams,
+    PrivacyExposureParams,
 )
 
 # ADVERSARIAL tools
@@ -358,6 +362,7 @@ __all__ = [
     "NodriverFetchParams",
     "PDFSearchParams",
     "PolyglotSearchParams",
+    "PrivacyExposureParams",
     "PropagandaDetectorParams",
     "RSSFetchParams",
     "RSSSearchParams",
@@ -415,6 +420,7 @@ __all__ = [
     "SocialProfileParams",
     "SocialSearchParams",
     "StegoAnalyzeParams",
+    "StegoDecodeParams",
     "StegoDetectParams",
     "StegoEncodeParams",
     "StylometryParams",
@@ -426,6 +432,7 @@ __all__ = [
     "AdversarialDebateAttackerParams",
     "AttackEconomyLeaderboardParams",
     "AttackEconomySubmitParams",
+    "ArtifactCleanupParams",
     "AttackerTargetDebateParams",
     "CaptureHarParams",
     "CraftAdversarialParams",
@@ -535,6 +542,7 @@ __all__ = [
     "ExportJsonParams",
     "ExportListParams",
     "FOIATrackerParams",
+    "FingerprintAuditParams",
     "FingerprintBehaviorParams",
     "FingerprintEvasionParams",
     "FingerprintModelParams",

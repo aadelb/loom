@@ -37,6 +37,7 @@ __all__ = [
     "StructuredCrawlParams",
     "StructuredLLMParams",
     "UnstructuredDocumentExtractParams",
+    "CompressPromptParams",
 ]
 
 
@@ -712,3 +713,30 @@ class UnstructuredDocumentExtractParams(BaseModel):
 
 
 
+
+
+class CompressPromptParams(BaseModel):
+    """Parameters for research_compress_prompt tool."""
+
+    text: str
+    target_ratio: float = 0.5
+
+    model_config = {"extra": "ignore", "strict": True}
+
+    @field_validator("text")
+    @classmethod
+    def validate_text(cls, v: str) -> str:
+        if not v or not isinstance(v, str) or not v.strip():
+            raise ValueError("text must be a non-empty string")
+        if len(v) > 1_000_000:
+            raise ValueError("text max 1,000,000 characters")
+        return v
+
+    @field_validator("target_ratio")
+    @classmethod
+    def validate_target_ratio(cls, v: float) -> float:
+        if not isinstance(v, (int, float)):
+            raise ValueError("target_ratio must be a number")
+        if not 0.1 <= v <= 0.9:
+            raise ValueError("target_ratio must be between 0.1 and 0.9")
+        return float(v)

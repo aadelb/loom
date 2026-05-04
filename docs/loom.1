@@ -1,0 +1,1152 @@
+.TH LOOM 1 "May 2026" "loom 0.1.0a1" "User Commands"
+.SH NAME
+loom \- Smart internet research MCP client for web scraping, searching, and LLM-powered analysis
+.SH SYNOPSIS
+.B loom
+[\fIOPTIONS\fR]
+.B COMMAND
+[\fIARGS\fR]
+
+.B loom
+\fBserve\fR [OPTIONS]
+
+.B loom
+\fBfetch\fR \fIURL\fR [OPTIONS]
+
+.B loom
+\fBspider\fR \fIURLSFILE\fR [OPTIONS]
+
+.B loom
+\fBmarkdown\fR \fIURL\fR [OPTIONS]
+
+.B loom
+\fBsearch\fR \fIQUERY\fR [OPTIONS]
+
+.B loom
+\fBdeep\fR \fIQUERY\fR [OPTIONS]
+
+.B loom
+\fBgithub\fR \fIKIND\fR \fIQUERY\fR [OPTIONS]
+
+.B loom
+\fBcamoufox\fR \fIURL\fR [OPTIONS]
+
+.B loom
+\fBbotasaurus\fR \fIURL\fR [OPTIONS]
+
+.B loom
+\fBsession\fR \fIACTION\fR [\fINAME\fR] [OPTIONS]
+
+.B loom
+\fBconfig\fR \fIACTION\fR [\fIKEY\fR] [\fIVALUE\fR] [OPTIONS]
+
+.B loom
+\fBcache\fR \fIACTION\fR [OPTIONS]
+
+.B loom
+\fBllm\fR \fIACTION\fR [\fITEXT\fR] [OPTIONS]
+
+.B loom
+\fBtools\fR [OPTIONS]
+
+.B loom
+\fBversion\fR
+
+.B loom
+\fBcompletions\fR \fIACTION\fR
+
+.B loom
+\fBrepl\fR [OPTIONS]
+
+.B loom
+\fBjourney-test\fR [OPTIONS]
+
+.SH DESCRIPTION
+.B loom
+is a powerful command-line client for the Loom MCP (Model Context Protocol) research server.
+It provides unified access to 220+ research and attack tools including web scraping, multi-provider search,
+LLM processing, persistent browser sessions, and intelligent research pipelines.
+
+The server runs on localhost:8787 by default and communicates via the streamable-http MCP transport.
+
+.SH GLOBAL OPTIONS
+.TP
+.B \-\-help
+Show help information and exit.
+
+.TP
+.B \-\-version
+Show version number and exit.
+
+.TP
+.B \-\-server
+\fIURL\fR
+MCP server endpoint (default: http://127.0.0.1:8787/mcp).
+Also controlled by environment variable
+.B LOOM_SERVER.
+
+.TP
+.B \-\-json
+Output results as JSON instead of pretty-printed tables.
+Useful for piping to other tools.
+
+.TP
+.B \-\-pretty
+Pretty-print output with colors (default). Can be used to override
+.B \-\-json
+in scripts.
+
+.TP
+.B \-\-quiet
+Suppress all output. Exit code indicates success/failure.
+
+.TP
+.B \-\-timeout
+\fISECONDS\fR
+Request timeout in seconds (default: 120). Applies to all tool invocations.
+
+.SH COMMANDS
+
+.SS serve
+Start the Loom MCP server.
+
+.B Usage:
+loom serve [\-\-host HOST] [\-\-port PORT] [\-\-reload]
+
+.B Options:
+.RS
+.TP
+.B \-\-host
+\fIHOST\fR
+Server bind address (default: 127.0.0.1).
+
+.TP
+.B \-\-port
+\fIPORT\fR
+Server port (default: 8787).
+
+.TP
+.B \-\-reload
+Enable auto-reload on code changes. Useful for development.
+.RE
+
+.B Examples:
+.RS
+.TP
+# Start server on default port
+loom serve
+
+.TP
+# Listen on all interfaces
+loom serve --host 0.0.0.0 --port 9000
+
+.TP
+# Development mode with auto-reload
+loom serve --reload
+.RE
+
+.SS fetch
+Fetch a single URL with adaptive anti-bot strategies.
+Automatically escalates from HTTP → stealthy (custom headers) → dynamic (Playwright) on bot detection.
+
+.B Usage:
+loom fetch \fIURL\fR [OPTIONS]
+
+.B Options:
+.RS
+.TP
+.B \-\-mode
+\fIMODE\fR
+Fetch strategy: http, stealthy, or dynamic (default: stealthy).
+
+.TP
+.B \-\-return-format
+\fIFORMAT\fR
+Output format: text, html, json, or screenshot (default: text).
+
+.TP
+.B \-\-header
+\fIK:V\fR
+Custom HTTP header (repeatable). Example: \-\-header "X-API-Key:secret"
+
+.TP
+.B \-\-user-agent
+\fIUSER_AGENT\fR
+Custom User-Agent string.
+
+.TP
+.B \-\-proxy
+\fIURL\fR
+HTTP proxy URL (e.g., http://127.0.0.1:8080).
+
+.TP
+.B \-\-cookie
+\fIK=V\fR
+Cookie pair (repeatable). Example: \-\-cookie "session=abc123"
+
+.TP
+.B \-\-accept-language
+\fILANG\fR
+Accept-Language header (default: en-US,en;q=0.9).
+
+.TP
+.B \-\-wait-for
+\fISELECTOR\fR
+CSS selector to wait for before returning (dynamic mode only).
+
+.TP
+.B \-\-session
+\fINAME\fR
+Persistent browser session name. Create with: loom session open \-\-name NAME
+
+.TP
+.B \-\-save
+\fIFILE\fR
+Save response to file (JSON format).
+.RE
+
+.B Examples:
+.RS
+.TP
+# Fetch with default stealthy mode
+loom fetch "https://example.com"
+
+.TP
+# JavaScript-heavy page with dynamic rendering
+loom fetch "https://example.com" --mode dynamic --wait-for "#content"
+
+.TP
+# Custom headers and proxy
+loom fetch "https://api.example.com/data" \\
+  --header "Authorization:Bearer TOKEN" \\
+  --proxy "http://127.0.0.1:8080"
+
+.TP
+# Save to file as JSON
+loom fetch "https://example.com" --json --save result.json
+
+.TP
+# Use persistent session (must be created first)
+loom fetch "https://example.com" --session my_session
+.RE
+
+.SS spider
+Bulk fetch multiple URLs from a file with concurrency control and deduplication.
+
+.B Usage:
+loom spider \fIURLSFILE\fR [OPTIONS]
+
+.B Options:
+.RS
+.TP
+.B \-\-concurrency
+\fIN\fR
+Maximum parallel fetches (default: 5).
+
+.TP
+.B \-\-mode
+\fIMODE\fR
+Fetch strategy: http, stealthy, or dynamic (default: stealthy).
+
+.TP
+.B \-\-out
+\fIDIR\fR
+Output directory. If specified, saves each response to a file.
+
+.TP
+.B \-\-fail-fast
+Stop on first error instead of continuing with remaining URLs.
+
+.TP
+.B \-\-dedupe, \-\-no-dedupe
+Enable/disable URL deduplication (default: enabled).
+.RE
+
+.B Examples:
+.RS
+.TP
+# Create a file with URLs (one per line)
+cat > urls.txt << EOF
+https://example.com
+https://example.org
+https://example.net
+EOF
+
+.TP
+# Fetch all with 10 parallel workers
+loom spider urls.txt --concurrency 10
+
+.TP
+# Save results to directory
+loom spider urls.txt --out ./results --mode dynamic
+
+.TP
+# Stop on first error
+loom spider urls.txt --fail-fast --concurrency 3
+.RE
+
+.SS markdown
+Convert a URL to clean, structured markdown with citations and metadata.
+Uses Crawl4AI for HTML parsing and Trafilatura as fallback.
+
+.B Usage:
+loom markdown \fIURL\fR [OPTIONS]
+
+.B Options:
+.RS
+.TP
+.B \-\-css
+\fISELECTOR\fR
+CSS selector to extract specific portion of page.
+
+.TP
+.B \-\-screenshot
+Include screenshot of rendered page.
+
+.TP
+.B \-\-session
+\fINAME\fR
+Persistent browser session name.
+.RE
+
+.B Examples:
+.RS
+.TP
+# Convert page to markdown
+loom markdown "https://example.com"
+
+.TP
+# Extract specific content
+loom markdown "https://example.com" --css "article.main-content"
+
+.TP
+# Include screenshot
+loom markdown "https://example.com" --screenshot
+.RE
+
+.SS search
+Search across multiple providers (Exa, Tavily, Firecrawl, Brave) with filtering and date ranges.
+
+.B Usage:
+loom search \fIQUERY\fR [OPTIONS]
+
+.B Options:
+.RS
+.TP
+.B \-\-provider
+\fIPROVIDER\fR
+Search provider: exa, tavily, firecrawl, or brave (default: exa).
+
+.TP
+.B \-\-n
+\fINUM\fR
+Number of results to return (default: 10).
+
+.TP
+.B \-\-include-domain
+\fIDOMAIN\fR
+Include only results from domain (repeatable).
+
+.TP
+.B \-\-exclude-domain
+\fIDOMAIN\fR
+Exclude results from domain (repeatable).
+
+.TP
+.B \-\-start-date
+\fIYYYY-MM-DD\fR
+Only results published after this date.
+
+.TP
+.B \-\-end-date
+\fIYYYY-MM-DD\fR
+Only results published before this date.
+.RE
+
+.B Examples:
+.RS
+.TP
+# Basic search
+loom search "machine learning research"
+
+.TP
+# Domain filtering
+loom search "pytorch tutorial" \\
+  --include-domain arxiv.org \\
+  --include-domain github.com
+
+.TP
+# Recent news
+loom search "AI safety" \\
+  --start-date 2026-01-01 \\
+  --provider tavily \\
+  --n 20
+.RE
+
+.SS deep
+One-shot deep research pipeline: search → fetch → markdown → extraction.
+Automatically detects query intent and selects appropriate search provider.
+
+.B Usage:
+loom deep \fIQUERY\fR [OPTIONS]
+
+.B Options:
+.RS
+.TP
+.B \-\-depth
+\fIDEPTH\fR
+Research depth: 1 (quick), 2 (moderate), 3 (thorough) (default: 2).
+
+.TP
+.B \-\-provider
+\fIPROVIDER\fR
+Override search provider (exa, tavily, firecrawl, brave).
+.RE
+
+.B Examples:
+.RS
+.TP
+# Quick research (auto-detects intent)
+loom deep "transformer architecture papers"
+
+.TP
+# Deep research with multiple sources
+loom deep "supply chain resilience" --depth 3
+
+.TP
+# Override provider
+loom deep "neural networks" --provider tavily --depth 2
+.RE
+
+.SS github
+Search GitHub repositories, code, or issues with language and owner filtering.
+
+.B Usage:
+loom github \fIKIND\fR \fIQUERY\fR [OPTIONS]
+
+.B Kind:
+repo, code, or issues.
+
+.B Options:
+.RS
+.TP
+.B \-\-sort
+\fIFIELD\fR
+Sort by: stars, forks, updated (default: stars).
+
+.TP
+.B \-\-order
+\fIORDER\fR
+asc or desc (default: desc).
+
+.TP
+.B \-\-language
+\fILANG\fR
+Programming language filter (e.g., python, rust, javascript).
+
+.TP
+.B \-\-owner
+\fIOWNER\fR
+Limit to specific owner/organization.
+
+.TP
+.B \-\-repo
+\fIREPO\fR
+Limit to specific repository.
+
+.TP
+.B \-\-limit
+\fIN\fR
+Maximum results (default: 20).
+.RE
+
+.B Examples:
+.RS
+.TP
+# Find popular Python projects
+loom github repo "machine learning" --language python --limit 30
+
+.TP
+# Search code in specific repo
+loom github code "async/await" --repo rust-lang/rust
+
+.TP
+# Find recent issues
+loom github issues "memory leak" --order asc --sort updated
+.RE
+
+.SS camoufox
+Scrape a URL using Camoufox, a stealth browser based on Firefox with anti-detection features.
+Requires: pip install loom-mcp[stealth] && loom install-browsers
+
+.B Usage:
+loom camoufox \fIURL\fR [OPTIONS]
+
+.B Options:
+.RS
+.TP
+.B \-\-session
+\fINAME\fR
+Persistent browser session name.
+
+.TP
+.B \-\-screenshot
+Capture screenshot of rendered page.
+.RE
+
+.B Examples:
+.RS
+.TP
+# Scrape with Camoufox stealth browser
+loom camoufox "https://example.com"
+
+.TP
+# Include screenshot
+loom camoufox "https://example.com" --screenshot
+.RE
+
+.SS botasaurus
+Scrape a URL using Botasaurus, an anti-bot framework with rotation and captcha-bypass features.
+Requires: pip install loom-mcp[stealth] && loom install-browsers
+
+.B Usage:
+loom botasaurus \fIURL\fR [OPTIONS]
+
+.B Options:
+.RS
+.TP
+.B \-\-session
+\fINAME\fR
+Persistent browser session name.
+.RE
+
+.B Examples:
+.RS
+.TP
+# Scrape with Botasaurus framework
+loom botasaurus "https://example.com"
+.RE
+
+.SS session
+Manage persistent browser sessions for authenticated or multi-step scraping.
+
+.B Usage:
+loom session \fIACTION\fR [\fINAME\fR] [OPTIONS]
+
+.B Actions:
+.RS
+.TP
+.B open
+Create new persistent session.
+
+.TP
+.B list
+Show all active sessions.
+
+.TP
+.B close
+Terminate a session.
+.RE
+
+.B Options:
+.RS
+.TP
+.B \-\-browser
+\fIBROWSER\fR
+Browser type: camoufox, chromium, or firefox (default: camoufox).
+
+.TP
+.B \-\-login-url
+\fIURL\fR
+Auto-navigate to login URL (manual login).
+
+.TP
+.B \-\-login-script
+\fIFILE\fR
+JavaScript file for automated login.
+
+.TP
+.B \-\-ttl
+\fISECONDS\fR
+Session lifetime in seconds (default: 3600).
+.RE
+
+.B Examples:
+.RS
+.TP
+# Create a session
+loom session open --name my_session
+
+.TP
+# Auto-navigate to login
+loom session open --name github_session --login-url "https://github.com/login"
+
+.TP
+# List sessions
+loom session list
+
+.TP
+# Use session in fetch
+loom fetch "https://example.com/private" --session my_session
+
+.TP
+# Close session
+loom session close --name my_session
+.RE
+
+.SS config
+Get, set, or list configuration values (API keys, cache settings, etc.).
+
+.B Usage:
+loom config \fIACTION\fR [\fIKEY\fR] [\fIVALUE\fR]
+
+.B Actions:
+.RS
+.TP
+.B get
+[KEY] - Get config value or all config if KEY omitted.
+
+.TP
+.B set
+KEY VALUE - Set config key to value.
+
+.TP
+.B list
+Show all configuration keys and values.
+.RE
+
+.B Examples:
+.RS
+.TP
+# Get all config
+loom config get
+
+.TP
+# Get specific value
+loom config get EXA_API_KEY
+
+.TP
+# Set API key
+loom config set EXA_API_KEY "your-api-key-here"
+
+.TP
+# List keys
+loom config list
+.RE
+
+.SS cache
+View or manage the response cache (SHA-256 content-hash keyed).
+
+.B Usage:
+loom cache \fIACTION\fR [OPTIONS]
+
+.B Actions:
+.RS
+.TP
+.B stats
+Show cache statistics (size, entry count, age).
+
+.TP
+.B clear
+Remove cached entries older than threshold.
+.RE
+
+.B Options:
+.RS
+.TP
+.B \-\-older-than-days
+\fIDAYS\fR
+Age threshold for clearing (default: 30).
+.RE
+
+.B Examples:
+.RS
+.TP
+# Show cache stats
+loom cache stats
+
+.TP
+# Clear old entries
+loom cache clear --older-than-days 7
+.RE
+
+.SS llm
+Call LLM tools for text processing: summarization, extraction, classification, translation, expansion,
+question answering, embedding, and chat.
+
+.B Usage:
+loom llm \fIACTION\fR [\fITEXT\fR] [OPTIONS]
+
+.B Actions:
+.RS
+.TP
+.B summarize
+Summarize input text.
+
+.TP
+.B extract
+Extract data using JSON schema.
+
+.TP
+.B classify
+Classify text into labels.
+
+.TP
+.B translate
+Translate to target language.
+
+.TP
+.B expand
+Expand query into related queries.
+
+.TP
+.B answer
+Answer question given sources.
+
+.TP
+.B embed
+Generate embeddings for text.
+
+.TP
+.B chat
+Chat with LLM.
+.RE
+
+.B Options:
+.RS
+.TP
+.B \-\-file
+\fIFILE\fR
+Read input from file instead of stdin/argument.
+
+.TP
+.B \-\-schema
+\fISCHEMA\fR
+JSON schema for extraction.
+
+.TP
+.B \-\-labels
+\fILABELS\fR
+Comma-separated labels for classification.
+
+.TP
+.B \-\-target-lang
+\fILANG\fR
+Target language code (default: en).
+
+.TP
+.B \-\-n
+\fIN\fR
+Number of expanded queries (default: 5).
+
+.TP
+.B \-\-max-tokens
+\fITOKENS\fR
+Maximum output tokens (default: 200).
+.RE
+
+.B Examples:
+.RS
+.TP
+# Summarize from stdin
+echo "Long text..." | loom llm summarize
+
+.TP
+# Extract structured data
+loom llm extract --file article.txt \\
+  --schema '{"properties": {"title": {"type": "string"}}}'
+
+.TP
+# Classify text
+loom llm classify "Great product!" --labels "positive,negative,neutral"
+
+.TP
+# Translate
+echo "Bonjour!" | loom llm translate --target-lang en
+
+.TP
+# Expand query
+loom llm expand "machine learning"
+.RE
+
+.SS tools
+List all 220+ available MCP tools with filtering and detailed parameter information.
+
+.B Usage:
+loom tools [OPTIONS]
+
+.B Options:
+.RS
+.TP
+.B \-\-verbose, -v
+Show detailed parameter information for each tool.
+
+.TP
+.B \-\-category, -c
+\fICATEGORY\fR
+Filter tools by category (e.g., llm, search, fetch).
+
+.TP
+.B \-\-json
+Output as JSON.
+.RE
+
+.B Examples:
+.RS
+.TP
+# List all tools
+loom tools
+
+.TP
+# Show tool details
+loom tools --verbose
+
+.TP
+# Filter by category
+loom tools --category llm
+
+.TP
+# JSON output for scripting
+loom tools --json --category search
+.RE
+
+.SS completions
+Manage shell completion installation.
+
+.B Usage:
+loom completions \fIACTION\fR
+
+.B Actions:
+.RS
+.TP
+.B install
+Install shell completions for bash, zsh, or fish.
+Auto-detects shell unless specified.
+.RE
+
+.B Examples:
+.RS
+.TP
+# Auto-detect and install
+loom completions install
+
+.TP
+# Manual install via script
+bash completions/install.sh zsh
+.RE
+
+.SS version
+Show version number and tool count.
+
+.B Usage:
+loom version
+
+.B Output:
+.RS
+Displays: loom version 0.1.0a1, 220+ tools available
+.RE
+
+.SS repl
+Interactive REPL shell for Loom commands with command history and completions.
+
+.B Usage:
+loom repl [OPTIONS]
+
+.B Options:
+.RS
+.TP
+.B \-\-server
+\fIURL\fR
+MCP server endpoint (default: http://127.0.0.1:8787/mcp).
+.RE
+
+.B Features:
+.RS
+.TP
+Command history saved to ~/.loom_history
+.TP
+Tab completion for commands
+.TP
+Multi-line input support
+.RE
+
+.B Built-in Commands:
+.RS
+.TP
+.B exit, quit
+Exit REPL.
+
+.TP
+.B help
+Show available commands.
+.RE
+
+.B Examples:
+.RS
+.TP
+# Start REPL
+loom repl
+
+.TP
+# In REPL:
+loom> fetch https://example.com
+loom> search "machine learning"
+loom> github repo "pytorch"
+loom> tools --category llm
+loom> exit
+.RE
+
+.SS journey-test
+Run comprehensive end-to-end journey test exercising all 23 tools.
+Useful for validation after installation or upgrades.
+
+.B Usage:
+loom journey-test [OPTIONS]
+
+.B Options:
+.RS
+.TP
+.B \-\-topic
+\fITOPIC\fR
+Research topic (default: "llama model family").
+
+.TP
+.B \-\-live
+Run against real network instead of mocked responses.
+
+.TP
+.B \-\-record
+Record screenshots during journey.
+
+.TP
+.B \-\-fixtures
+\fIDIR\fR
+Fixtures directory for mocked mode.
+
+.TP
+.B \-\-out
+\fIDIR\fR
+Output directory for journey report (default: ./journey-out).
+
+.TP
+.B \-\-server
+\fIURL\fR
+MCP server endpoint.
+.RE
+
+.B Examples:
+.RS
+.TP
+# Run mocked journey test
+loom journey-test
+
+.TP
+# Run against real network
+loom journey-test --live --record
+
+.TP
+# Custom topic
+loom journey-test --topic "Rust programming" --depth 2
+.RE
+
+.SS install-browsers
+Install Playwright Chromium and Firefox browsers, and Camoufox stealth browser.
+Required once after: pip install loom-mcp[stealth]
+
+.B Usage:
+loom install-browsers
+
+.B Notes:
+.RS
+This command runs:
+  - playwright install chromium firefox
+  - camoufox fetch
+
+Downloads large browser binaries (~500MB total).
+.RE
+
+.SH ENVIRONMENT VARIABLES
+
+.TP
+.B LOOM_SERVER
+MCP server URL (default: http://127.0.0.1:8787/mcp).
+Can be overridden with
+.B \-\-server
+flag.
+
+.TP
+.B LOOM_CONFIG_PATH
+Path to config.json (default: ./config.json).
+
+.TP
+.B LOOM_CACHE_DIR
+Cache directory root (default: ~/.cache/loom).
+
+.TP
+.B LOOM_SESSIONS_DIR
+Sessions directory (default: ~/.loom/sessions).
+
+.TP
+.B TOR_ENABLED
+Enable Tor network features (default: false).
+
+.TP
+.B TOR_SOCKS5_PROXY
+Tor SOCKS5 proxy address (default: 127.0.0.1:9050).
+
+.TP
+.B GROQ_API_KEY, NVIDIA_NIM_API_KEY, DEEPSEEK_API_KEY, GOOGLE_AI_KEY, MOONSHOT_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY
+LLM provider API keys.
+
+.TP
+.B EXA_API_KEY, TAVILY_API_KEY, FIRECRAWL_API_KEY, BRAVE_API_KEY
+Search provider API keys.
+
+.SH FILES
+
+.TP
+.B ~/.loom_history
+REPL command history.
+
+.TP
+.B ~/.loom/sessions/
+Persistent browser session storage.
+
+.TP
+.B ~/.cache/loom/
+Response cache (organized by date: YYYY-MM-DD/).
+
+.TP
+.B config.json
+Configuration file in current directory or specified by LOOM_CONFIG_PATH.
+
+.SH EXAMPLES
+
+.SS Basic Research Flow
+
+.RS
+.nf
+# Start server in background
+loom serve &
+
+# Search for topic
+loom search "transformer architecture" --n 20
+
+# Fetch full article
+loom fetch "https://arxiv.org/abs/1706.03762"
+
+# Convert to markdown
+loom markdown "https://arxiv.org/abs/1706.03762" --screenshot
+
+# Extract with LLM
+loom llm extract --file article.md \\
+  --schema '{"properties": {"authors": {"type": "array"}}}'
+.fi
+.RE
+
+.SS Bulk Scraping with Sessions
+
+.RS
+.nf
+# Create authenticated session
+loom session open --name github_session \\
+  --login-url "https://github.com/login"
+
+# Bulk fetch with session
+loom spider urls.txt --session github_session --out ./results
+
+# Monitor cache
+loom cache stats
+
+# Cleanup old data
+loom cache clear --older-than-days 30
+.fi
+.RE
+
+.SS Deep Research on Topic
+
+.RS
+.nf
+# One-shot research pipeline
+loom deep "renewable energy breakthroughs" --depth 3
+
+# Expand query variations
+loom llm expand "renewable energy breakthroughs" --n 10
+
+# Search each variation
+for query in $(loom llm expand "renewable" | jq -r '.[].query'); do
+  loom search "$query" --n 5 --json
+done
+.fi
+.RE
+
+.SS Interactive REPL Session
+
+.RS
+.nf
+loom repl
+
+loom> search "machine learning" --n 10
+loom> github repo "transformers" --language python
+loom> tools --category fetch
+loom> cache stats
+loom> exit
+.fi
+.RE
+
+.SH DIAGNOSTICS
+
+Exit codes:
+.RS
+.TP
+.B 0
+Success.
+
+.TP
+.B 1
+Tool error or network failure.
+
+.TP
+.B 2
+Invalid arguments or missing required input.
+
+.TP
+.B 3
+Server connection failed.
+.RE
+
+Common issues:
+.RS
+.TP
+.B Server unreachable
+Check that
+.B loom serve
+is running. Verify with: loom --server http://127.0.0.1:8787/mcp tools
+
+.TP
+.B Dynamic mode fails
+Install browsers: loom install-browsers
+
+.TP
+.B API key errors
+Verify with: loom config get EXA_API_KEY
+Set with: loom config set EXA_API_KEY "your-key"
+
+.TP
+.B Cache issues
+Clear with: loom cache clear --older-than-days 0
+.RE
+
+.SH SEE ALSO
+.TP
+MCP Documentation: https://modelcontextprotocol.io/
+.TP
+Loom GitHub: https://github.com/aadel90/loom
+.TP
+Typer Documentation: https://typer.tiangolo.com/
+
+.SH AUTHOR
+Ahmed Adel Bakr Alderai <ahmedalderai22@gmail.com>
+
+.SH LICENSE
+Apache License 2.0

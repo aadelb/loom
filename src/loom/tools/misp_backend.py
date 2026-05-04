@@ -49,9 +49,12 @@ def _detect_indicator_type(indicator: str) -> str:
         return "email"
 
     # Check for domain (basic heuristic)
-    if "." in indicator and "/" not in indicator:
-        if re.match(r"^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$", indicator):
-            return "domain"
+    if (
+        "." in indicator
+        and "/" not in indicator
+        and re.match(r"^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$", indicator)
+    ):
+        return "domain"
 
     return "unknown"
 
