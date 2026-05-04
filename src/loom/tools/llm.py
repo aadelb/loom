@@ -811,7 +811,7 @@ async def _call_with_refusal_handling(
     for attempt in range(1, max_reframe_attempts + 1):
         refusal_meta["reframe_attempts"] = attempt
 
-        reframe_result = research_prompt_reframe(
+        reframe_result = await research_prompt_reframe(
             user_prompt,
             strategy="auto",
             model=provider_name,
@@ -822,7 +822,7 @@ async def _call_with_refusal_handling(
             all_variants = reframe_result.get("all_variants", {})
             for alt_name in all_variants:
                 if alt_name not in strategies_tried:
-                    reframe_result = research_prompt_reframe(
+                    reframe_result = await research_prompt_reframe(
                         user_prompt,
                         strategy=alt_name,
                         model=provider_name,
