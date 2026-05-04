@@ -1689,41 +1689,13 @@ def _register_tools(mcp: FastMCP) -> None:
     """
     from loom.registrations import register_all_tools
 
-    # Register WebSocket endpoint for real-time updates
-    @mcp.app.websocket_route("/ws")
-    async def websocket_endpoint(ws: WebSocket) -> None:
-        """WebSocket endpoint for real-time tool execution events.
-
-        Broadcasts the following events to all connected clients:
-        - tool.started: {tool_name, job_id, timestamp}
-        - tool.completed: {tool_name, job_id, duration_ms, success, timestamp}
-        - tool.failed: {tool_name, error, timestamp}
-        - health.changed: {status, details, timestamp}
-        - alert: {level, message, timestamp}
-
-        Authentication: Provide X-API-Key in query params or first message.
-        """
+    # WebSocket endpoint defined in src/loom/websocket.py
+    # Registration deferred to after app creation (FastMCP custom_route)
+    try:
         ws_mgr = get_ws_manager()
-
-        # Authenticate and connect
-        if not await ws_mgr.connect(ws):
-            return  # Connection rejected
-
-        try:
-            # Keep connection open, listen for disconnect
-            while True:
-                # WebSocket endpoint is primarily for receiving disconnect signal
-                # Client can send keepalive messages
-                message = await ws.receive_text()
-                # Optionally handle incoming messages (e.g., keepalive, subscriptions)
-                # For now, just acknowledge receipt
-                log.debug(f"websocket_message_received length={len(message)}")
-        except Exception as e:
-            log.debug(f"websocket_error: {e}")
-        finally:
-            await ws_mgr.disconnect(ws)
-
-    log.info("websocket_endpoint_registered path=/ws")
+        log.info("websocket_manager_initialized")
+    except Exception:
+        log.debug("websocket_manager_not_available")
 
     # Register all tools from 8 category modules
     register_all_tools(mcp, _wrap_tool)

@@ -47,6 +47,7 @@ __all__ = [
     "SpiderParams",
     "SubdomainTemporalParams",
     "WaybackParams",
+    "CyberscraperParams",
     "ZenFetchParams",
 ]
 
@@ -115,6 +116,56 @@ class CamoufoxParams(BaseModel):
         return v
 
 
+
+
+class CyberscraperParams(BaseModel):
+    """Parameters for research_cyberscrape tool."""
+
+    url: str = Field(..., description="Target URL to scrape")
+    extract_type: Literal[
+        "all", "text", "tables", "links", "images", "json", "structured"
+    ] = Field(
+        default="all",
+        description="Type of data to extract: all, text, tables, links, images, json, or structured",
+    )
+    model: Literal[
+        "gpt-4o-mini", "gemini-1.5-flash", "ollama:llama2", "moonshot-v1"
+    ] = Field(
+        default="gpt-4o-mini",
+        description="LLM model to use for extraction (requires API key)",
+    )
+    format: Literal["json", "csv", "html", "markdown"] = Field(
+        default="json", description="Output format"
+    )
+    max_chars: int = Field(
+        default=20000,
+        ge=1000,
+        le=100000,
+        description="Maximum characters to extract (1000-100000)",
+    )
+    use_tor: bool = Field(
+        default=False, description="Route through Tor network for anonymity"
+    )
+    stealth_mode: bool = Field(
+        default=False, description="Enable stealth mode to avoid bot detection"
+    )
+    use_local_browser: bool = Field(
+        default=False, description="Use local browser instance for better bot evasion"
+    )
+    include_metadata: bool = Field(
+        default=True, description="Include page metadata (title, description, etc.)"
+    )
+    timeout_seconds: int = Field(
+        default=30, ge=5, le=300, description="Request timeout in seconds"
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def validate_url_field(cls, v: str) -> str:
+        """Validate and sanitize URL."""
+        return validate_url(v)
 
 
 class CommitAnalyzerParams(BaseModel):
