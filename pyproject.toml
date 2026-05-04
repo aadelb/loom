@@ -236,6 +236,7 @@ markers = [
     "live: marks tests that hit the live network",
     "integration: marks integration tests",
     "property: marks property-based tests using hypothesis",
+    "chaos: marks chaos engineering and resilience tests",
 ]
 filterwarnings = [
     "ignore:Use `streamable_http_client`:DeprecationWarning",
