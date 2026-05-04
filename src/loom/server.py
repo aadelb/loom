@@ -50,10 +50,71 @@ from loom.sqlite_pool import research_pool_stats, research_pool_reset
 
 
 from loom.tracing import install_tracing, new_request_id
+from loom.versioning import (
+    get_version_info,
+    is_version_supported,
+    DEFAULT_VERSION,
+)
 from loom.billing.meter import record_usage
+from loom.billing.token_economy import get_tool_cost, check_balance, deduct_credits
+from loom.analytics import ToolAnalytics, research_analytics_dashboard
 
 log = logging.getLogger("loom.server")
 from loom.registrations.tracking import record_optional_module_loaded, record_import_failure
+
+# ── Prometheus metrics (optional, graceful fallback if not installed) ──
+try:
+    from prometheus_client import Counter, Histogram, CollectorRegistry, generate_latest
+
+    # Create a registry for Loom metrics
+    _PROMETHEUS_REGISTRY = CollectorRegistry()
+
+    # Define metrics
+    _loom_tool_calls_total = Counter(
+        "loom_tool_calls_total",
+        "Total MCP tool calls",
+        labelnames=["tool_name", "status"],
+        registry=_PROMETHEUS_REGISTRY,
+    )
+
+    _loom_tool_duration_seconds = Histogram(
+        "loom_tool_duration_seconds",
+        "Tool execution duration in seconds",
+        labelnames=["tool_name"],
+        registry=_PROMETHEUS_REGISTRY,
+        buckets=(0.1, 0.5, 1.0, 2.5, 5.0, 10.0, 30.0, 60.0, float("inf")),
+    )
+
+    _loom_tool_errors_total = Counter(
+        "loom_tool_errors_total",
+        "Total MCP tool errors by type",
+        labelnames=["tool_name", "error_type"],
+        registry=_PROMETHEUS_REGISTRY,
+    )
+
+    _prometheus_enabled = True
+
+except ImportError:
+    # Stub classes for when prometheus_client is not installed
+    _prometheus_enabled = False
+    _PROMETHEUS_REGISTRY = None
+
+    class _StubCounter:
+        def labels(self, **kwargs):
+            return self
+        def inc(self, amount=1):
+            pass
+
+    class _StubHistogram:
+        def labels(self, **kwargs):
+            return self
+        def observe(self, value):
+            pass
+
+    _loom_tool_calls_total = _StubCounter()
+    _loom_tool_duration_seconds = _StubHistogram()
+    _loom_tool_errors_total = _StubCounter()
+
 
 # PostgreSQL migration tools (optional, graceful fallback if asyncpg not installed)
 _pg_tools: dict[str, Any] = {}
@@ -511,6 +572,12 @@ with suppress(ImportError):
     _optional_tools["mcp_auth"] = mcp_auth_tools
     record_optional_module_loaded("mcp_auth")
 
+with suppress(ImportError):
+    from loom.tools import retry_stats as retry_stats_tools
+
+    _optional_tools["retry_stats"] = retry_stats_tools
+    record_optional_module_loaded("retry_stats")
+
 _start_time = time.time()
 
 
@@ -862,9 +929,10 @@ def _fuzzy_correct_params(func: Callable[..., Any], kwargs: dict) -> tuple[dict,
 
 
 def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callable[..., Any]:
-    """Wrap tool with tracing, rate limiting, and optional billing.
+    """Wrap tool with tracing, rate limiting, metrics, and optional billing.
 
     Handles both sync and async tool functions correctly.
+    Instruments tools with Prometheus metrics (call count, duration, errors).
     """
     import inspect
 
@@ -872,6 +940,8 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
 
     tool_timeout = 60  # seconds
     billing_enabled = os.getenv("LOOM_BILLING_ENABLED", "").lower() == "true"
+    token_economy_enabled = os.getenv("LOOM_TOKEN_ECONOMY", "").lower() == "true"
+    tool_name = func.__name__
 
     if is_async:
         if category:
@@ -884,34 +954,121 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
             # Auto-correct parameters
             corrected_kwargs, corrections = _fuzzy_correct_params(func, kwargs)
             if corrections:
-                log.debug(f"Parameter corrections for {func.__name__}: {corrections}")
+                log.debug(f"Parameter corrections for {tool_name}: {corrections}")
+
+            # Token Economy: check credits before execution (if enabled)
+            user_id = os.getenv("LOOM_USER_ID", "anonymous")
+            current_balance = int(os.getenv("LOOM_USER_BALANCE", "0"))
+            token_economy_result = {}
+            
+            if token_economy_enabled:
+                balance_check = check_balance(user_id, current_balance, tool_name)
+                
+                if not balance_check["sufficient"]:
+                    log.warning(
+                        "insufficient_credits",
+                        user_id=user_id,
+                        tool_name=tool_name,
+                        required=balance_check["required"],
+                        balance=balance_check["balance"],
+                        shortfall=balance_check["shortfall"],
+                    )
+                    return {
+                        "error": "insufficient_credits",
+                        "message": f"Tool '{tool_name}' requires {balance_check['required']} credits, but you have {balance_check['balance']}. Need {balance_check['shortfall']} more credits.",
+                        "tool": tool_name,
+                        "required_credits": balance_check["required"],
+                        "available_credits": balance_check["balance"],
+                        "shortfall": balance_check["shortfall"],
+                    }
+                
+                token_economy_result = {
+                    "cost": balance_check["required"],
+                    "balance_before": current_balance,
+                }
             
             # Billing: check credits before execution (if enabled)
             customer_id = os.getenv("LOOM_CUSTOMER_ID", "default")
             if billing_enabled:
                 # Credit check would go here; for now we just record
-                log.debug(f"Billing enabled for tool {func.__name__}, customer {customer_id}")
-            
+                log.debug(f"Billing enabled for tool {tool_name}, customer {customer_id}")
+
             try:
                 result = await asyncio.wait_for(func(*args, **corrected_kwargs), timeout=tool_timeout)
                 # Add correction metadata if there were corrections
                 if corrections and isinstance(result, dict):
                     result["_param_corrections"] = corrections
-                
+
+                # Token Economy: deduct credits after successful execution
+                if token_economy_enabled:
+                    cost = get_tool_cost(tool_name)
+                    new_balance = max(0, current_balance - cost)
+                    token_economy_result["balance_after"] = new_balance
+                    
+                    log.info(
+                        "token_economy_deduction",
+                        user_id=user_id,
+                        tool_name=tool_name,
+                        cost=cost,
+                        balance_before=current_balance,
+                        balance_after=new_balance,
+                    )
+                    
+                    if isinstance(result, dict):
+                        result["_token_economy"] = token_economy_result
+
+                # Prometheus: record success
+                _loom_tool_calls_total.labels(tool_name=tool_name, status="success").inc()
+                duration = time.time() - start_time
+                _loom_tool_duration_seconds.labels(tool_name=tool_name).observe(duration)
+
                 # Billing: record usage after successful execution
                 if billing_enabled:
-                    duration_ms = (time.time() - start_time) * 1000
+                    duration_ms = duration * 1000
                     # Estimate credits: 1 credit per second of execution
                     credits_used = max(1, int(duration_ms / 1000))
                     try:
-                        record_usage(customer_id, func.__name__, credits_used, duration_ms)
-                        log.debug(f"Billed {credits_used} credits to {customer_id} for {func.__name__}")
+                        record_usage(customer_id, tool_name, credits_used, duration_ms)
+                        log.debug(f"Billed {credits_used} credits to {customer_id} for {tool_name}")
                     except Exception as e:
-                        log.error(f"Billing error for {func.__name__}: {e}", exc_info=False)
+                        log.error(f"Billing error for {tool_name}: {e}", exc_info=False)
+
                 
+                # Analytics: record tool call
+                try:
+                    analytics = ToolAnalytics.get_instance()
+                    duration_ms = duration * 1000
+                    user_id = os.getenv("LOOM_USER_ID", "anonymous")
+                    analytics.record_call(tool_name, duration_ms, True, user_id)
+                except Exception as e:
+                    log.debug(f"Analytics recording error: {e}")
+
                 return result
             except asyncio.TimeoutError:
-                return {"error": f"Tool timed out after {tool_timeout}s", "tool": func.__name__}
+                # Prometheus: record timeout error
+                _loom_tool_calls_total.labels(tool_name=tool_name, status="error").inc()
+                _loom_tool_errors_total.labels(tool_name=tool_name, error_type="timeout").inc()
+                duration = time.time() - start_time
+                _loom_tool_duration_seconds.labels(tool_name=tool_name).observe(duration)
+                
+                # Analytics: record tool call error
+                try:
+                    analytics = ToolAnalytics.get_instance()
+                    duration_ms = duration * 1000
+                    user_id = os.getenv("LOOM_USER_ID", "anonymous")
+                    analytics.record_call(tool_name, duration_ms, False, user_id)
+                except Exception as e:
+                    log.debug(f"Analytics recording error: {e}")
+
+                return {"error": f"Tool timed out after {tool_timeout}s", "tool": tool_name}
+            except Exception as e:
+                # Prometheus: record error
+                error_type = type(e).__name__
+                _loom_tool_calls_total.labels(tool_name=tool_name, status="error").inc()
+                _loom_tool_errors_total.labels(tool_name=tool_name, error_type=error_type).inc()
+                duration = time.time() - start_time
+                _loom_tool_duration_seconds.labels(tool_name=tool_name).observe(duration)
+                raise
 
         return async_wrapper
     else:
@@ -926,31 +1083,125 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
             # Auto-correct parameters
             corrected_kwargs, corrections = _fuzzy_correct_params(func, kwargs)
             if corrections:
-                log.debug(f"Parameter corrections for {func.__name__}: {corrections}")
+                log.debug(f"Parameter corrections for {tool_name}: {corrections}")
+
+            # Token Economy: check credits before execution (if enabled)
+            user_id = os.getenv("LOOM_USER_ID", "anonymous")
+            current_balance = int(os.getenv("LOOM_USER_BALANCE", "0"))
+            token_economy_result = {}
+            
+            if token_economy_enabled:
+                balance_check = check_balance(user_id, current_balance, tool_name)
+                
+                if not balance_check["sufficient"]:
+                    log.warning(
+                        "insufficient_credits",
+                        user_id=user_id,
+                        tool_name=tool_name,
+                        required=balance_check["required"],
+                        balance=balance_check["balance"],
+                        shortfall=balance_check["shortfall"],
+                    )
+                    return {
+                        "error": "insufficient_credits",
+                        "message": f"Tool '{tool_name}' requires {balance_check['required']} credits, but you have {balance_check['balance']}. Need {balance_check['shortfall']} more credits.",
+                        "tool": tool_name,
+                        "required_credits": balance_check["required"],
+                        "available_credits": balance_check["balance"],
+                        "shortfall": balance_check["shortfall"],
+                    }
+                
+                token_economy_result = {
+                    "cost": balance_check["required"],
+                    "balance_before": current_balance,
+                }
+            
+            # Token Economy: check credits before execution (if enabled)
+            user_id = os.getenv("LOOM_USER_ID", "anonymous")
+            current_balance = int(os.getenv("LOOM_USER_BALANCE", "0"))
+            token_economy_result = {}
+            
+            if token_economy_enabled:
+                balance_check = check_balance(user_id, current_balance, tool_name)
+                
+                if not balance_check["sufficient"]:
+                    log.warning(
+                        "insufficient_credits",
+                        user_id=user_id,
+                        tool_name=tool_name,
+                        required=balance_check["required"],
+                        balance=balance_check["balance"],
+                        shortfall=balance_check["shortfall"],
+                    )
+                    return {
+                        "error": "insufficient_credits",
+                        "message": f"Tool '{tool_name}' requires {balance_check['required']} credits, but you have {balance_check['balance']}. Need {balance_check['shortfall']} more credits.",
+                        "tool": tool_name,
+                        "required_credits": balance_check["required"],
+                        "available_credits": balance_check["balance"],
+                        "shortfall": balance_check["shortfall"],
+                    }
+                
+                token_economy_result = {
+                    "cost": balance_check["required"],
+                    "balance_before": current_balance,
+                }
             
             # Billing: check credits before execution (if enabled)
             customer_id = os.getenv("LOOM_CUSTOMER_ID", "default")
             if billing_enabled:
                 # Credit check would go here; for now we just record
-                log.debug(f"Billing enabled for tool {func.__name__}, customer {customer_id}")
-            
-            result = func(*args, **corrected_kwargs)
-            # Add correction metadata if there were corrections
-            if corrections and isinstance(result, dict):
-                result["_param_corrections"] = corrections
-            
-            # Billing: record usage after successful execution
-            if billing_enabled:
-                duration_ms = (time.time() - start_time) * 1000
-                # Estimate credits: 1 credit per second of execution
-                credits_used = max(1, int(duration_ms / 1000))
-                try:
-                    record_usage(customer_id, func.__name__, credits_used, duration_ms)
-                    log.debug(f"Billed {credits_used} credits to {customer_id} for {func.__name__}")
-                except Exception as e:
-                    log.error(f"Billing error for {func.__name__}: {e}", exc_info=False)
-            
-            return result
+                log.debug(f"Billing enabled for tool {tool_name}, customer {customer_id}")
+
+            try:
+                result = func(*args, **corrected_kwargs)
+                # Add correction metadata if there were corrections
+                if corrections and isinstance(result, dict):
+                    result["_param_corrections"] = corrections
+
+                # Token Economy: deduct credits after successful execution
+                if token_economy_enabled:
+                    cost = get_tool_cost(tool_name)
+                    new_balance = max(0, current_balance - cost)
+                    token_economy_result["balance_after"] = new_balance
+                    
+                    log.info(
+                        "token_economy_deduction",
+                        user_id=user_id,
+                        tool_name=tool_name,
+                        cost=cost,
+                        balance_before=current_balance,
+                        balance_after=new_balance,
+                    )
+                    
+                    if isinstance(result, dict):
+                        result["_token_economy"] = token_economy_result
+
+                # Prometheus: record success
+                _loom_tool_calls_total.labels(tool_name=tool_name, status="success").inc()
+                duration = time.time() - start_time
+                _loom_tool_duration_seconds.labels(tool_name=tool_name).observe(duration)
+
+                # Billing: record usage after successful execution
+                if billing_enabled:
+                    duration_ms = duration * 1000
+                    # Estimate credits: 1 credit per second of execution
+                    credits_used = max(1, int(duration_ms / 1000))
+                    try:
+                        record_usage(customer_id, tool_name, credits_used, duration_ms)
+                        log.debug(f"Billed {credits_used} credits to {customer_id} for {tool_name}")
+                    except Exception as e:
+                        log.error(f"Billing error for {tool_name}: {e}", exc_info=False)
+
+                return result
+            except Exception as e:
+                # Prometheus: record error
+                error_type = type(e).__name__
+                _loom_tool_calls_total.labels(tool_name=tool_name, status="error").inc()
+                _loom_tool_errors_total.labels(tool_name=tool_name, error_type=error_type).inc()
+                duration = time.time() - start_time
+                _loom_tool_duration_seconds.labels(tool_name=tool_name).observe(duration)
+                raise
 
         return sync_wrapper
 
@@ -1030,6 +1281,57 @@ async def research_full_spectrum(
 
 
 
+async def research_cpu_pool_status() -> dict[str, Any]:
+    """Get health and status of the CPU executor pool.
+
+    Returns executor pool metrics including worker count, active tasks,
+    and current status (idle, busy, saturated).
+
+    Returns:
+        Dict with:
+        - pool_initialized: bool
+        - max_workers: Configured number of workers
+        - active_tasks: Currently executing tasks
+        - pending_tasks: Tasks in queue
+        - status: "idle", "healthy", "busy", or "saturated"
+        - configuration: Environment variables used
+    """
+    try:
+        from loom.cpu_executor import get_pool_status
+        return await get_pool_status()
+    except Exception as exc:
+        log.error("cpu_pool_status failed: %s", exc)
+        return {
+            "status": "error",
+            "error": str(exc)[:100],
+        }
+
+
+async def research_cpu_executor_shutdown() -> dict[str, Any]:
+    """Gracefully shut down the CPU executor pool.
+
+    Waits for all pending tasks to complete before shutting down
+    worker processes. Should be called during server shutdown.
+
+    Returns:
+        Dict with shutdown result:
+        - status: "success" or "error"
+        - message: Human-readable status message
+        - tasks_waited: Number of tasks that were waiting
+    """
+    try:
+        from loom.cpu_executor import shutdown_executor
+        return await shutdown_executor()
+    except Exception as exc:
+        log.error("cpu_executor_shutdown failed: %s", exc)
+        return {
+            "status": "error",
+            "message": str(exc)[:100],
+            "tasks_waited": 0,
+        }
+
+
+
 def _register_tools(mcp: FastMCP) -> None:
     """Register all MCP tools from modular registration system.
 
@@ -1067,6 +1369,8 @@ def _register_tools(mcp: FastMCP) -> None:
         research_benchmark_run, research_consensus_build, research_consensus_pressure,
         research_crescendo_loop, research_model_profile, research_reid_pipeline,
         research_pool_stats, research_pool_reset, export_audit,
+        research_cpu_pool_status, research_cpu_executor_shutdown,
+        research_analytics_dashboard,
     ]
     for _func in _core_funcs:
         try:
@@ -1205,7 +1509,7 @@ def create_app() -> FastMCP:
 
     # Register custom HTTP endpoints (health check, root)
     from starlette.requests import Request
-    from starlette.responses import JSONResponse
+    from starlette.responses import JSONResponse, Response
 
     @mcp.custom_route("/", methods=["GET"])
     async def root_endpoint(request: Request) -> JSONResponse:
@@ -1215,7 +1519,13 @@ def create_app() -> FastMCP:
             "description": "Loom MCP Research Server — 303 tools, 957 strategies",
             "mcp_endpoint": "/mcp",
             "health_endpoint": "/health",
+            "health_endpoint_v1": "/v1/health",
+            "metrics_endpoint": "/metrics" if _prometheus_enabled else None,
+            "metrics_endpoint_v1": "/v1/metrics" if _prometheus_enabled else None,
+            "versions_endpoint": "/versions",
+            "api_versions": ["v1"],
             "status": "running",
+            "deprecation": "Unversioned endpoints (/, /health, /metrics) are deprecated. Use /v1/ prefixed versions instead.",
         })
 
     @mcp.custom_route("/health", methods=["GET"])
@@ -1246,13 +1556,259 @@ def create_app() -> FastMCP:
             "import_failures": reg_stats.get("import_failures", []),
             "total_tools_loaded": reg_stats.get("total_loaded", 0),
             "total_tools_failed": reg_stats.get("total_failed", 0),
+            "prometheus_enabled": _prometheus_enabled,
             "timestamp": datetime.now(UTC).isoformat(),
         }
         
         if memory_mb is not None:
             health_response["memory_mb"] = memory_mb
+        return JSONResponse(health_response)
         
         return JSONResponse(health_response)
+
+    # Register Prometheus metrics endpoint if available
+    if _prometheus_enabled:
+        @mcp.custom_route("/metrics", methods=["GET"])
+        async def metrics_endpoint(request: Request) -> Response:
+            """Prometheus metrics endpoint (OpenMetrics format)."""
+            metrics_output = generate_latest(_PROMETHEUS_REGISTRY)
+            return Response(
+                content=metrics_output,
+                media_type="text/plain; charset=utf-8; version=0.0.4",
+            )
+        log.info("prometheus_metrics_endpoint_registered")
+
+    # API versioning endpoints
+    @mcp.custom_route("/versions", methods=["GET"])
+    async def versions_endpoint(request: Request) -> JSONResponse:
+        """Get available API versions and their status."""
+        return JSONResponse(get_version_info())
+
+    # Versioned routes: /v1/ prefix routes
+    @mcp.custom_route("/v1/", methods=["GET"])
+    async def v1_root_endpoint(request: Request) -> JSONResponse:
+        """API v1 root endpoint with version info."""
+        return JSONResponse({
+            "api_version": "v1",
+            "service": "loom",
+            "version": "3.0.0",
+            "description": "Loom MCP Research Server — 303 tools, 957 strategies",
+            "endpoints": {
+                "health": "/v1/health",
+                "metrics": "/v1/metrics" if _prometheus_enabled else None,
+            },
+            "status": "running",
+        })
+
+    @mcp.custom_route("/v1/health", methods=["GET"])
+    async def v1_health_endpoint(request: Request) -> JSONResponse:
+        """Health check endpoint for API v1 (with version header)."""
+        from loom.registrations import get_registration_stats
+        
+        uptime = int(time.time() - _start_time)
+        tool_count = len(mcp._tool_manager._tools) if hasattr(mcp, "_tool_manager") else 346
+        
+        # Get registration statistics
+        reg_stats = get_registration_stats()
+        
+        # Try to get memory usage
+        memory_mb = None
+        try:
+            import psutil
+            memory_mb = round(psutil.Process().memory_info().rss / 1024 / 1024, 1)
+        except (ImportError, Exception):
+            pass
+        
+        health_response = {
+            "api_version": "v1",
+            "status": "healthy",
+            "uptime_seconds": uptime,
+            "tool_count": tool_count,
+            "strategy_count": 957,
+            "registration_stats": reg_stats.get("registration_stats", {}),
+            "optional_modules_loaded": reg_stats.get("optional_modules_loaded", 0),
+            "import_failures": reg_stats.get("import_failures", []),
+            "total_tools_loaded": reg_stats.get("total_loaded", 0),
+            "total_tools_failed": reg_stats.get("total_failed", 0),
+            "prometheus_enabled": _prometheus_enabled,
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+        
+        if memory_mb is not None:
+            health_response["memory_mb"] = memory_mb
+        return JSONResponse(health_response)
+        
+
+    @mcp.custom_route("/v1/health/deep", methods=["GET"])
+    async def v1_health_deep_endpoint(request: Request) -> JSONResponse:
+        """Deep diagnostics health check endpoint for API v1.
+
+        Performs comprehensive subsystem checks:
+        - Database connectivity (Redis, PostgreSQL)
+        - LLM provider API validation
+        - Search provider API validation
+        - Disk space and cache health
+        - Memory and CPU metrics
+        - Tool registry verification
+        - Import diagnostics
+        - Rate limiter state
+        - Circuit breaker status
+        """
+        try:
+            from loom.tools.health_deep import research_health_deep
+
+            result = await research_health_deep()
+            return JSONResponse(result)
+        except Exception as e:
+            log.error("health_deep_check_failed error=%s", str(e))
+            return JSONResponse(
+                {
+                    "status": "unhealthy",
+                    "error": "Deep health check failed",
+                    "details": str(e),
+                    "timestamp": datetime.now(UTC).isoformat(),
+                },
+                status_code=500,
+            )
+
+    @mcp.custom_route("/health/deep", methods=["GET"])
+    async def health_deep_endpoint(request: Request) -> JSONResponse:
+        """Deep diagnostics health check endpoint (unversioned, deprecated).
+
+        Performs comprehensive subsystem checks. Prefer /v1/health/deep.
+        """
+        try:
+            from loom.tools.health_deep import research_health_deep
+
+            result = await research_health_deep()
+            return JSONResponse(result)
+        except Exception as e:
+            log.error("health_deep_check_failed error=%s", str(e))
+            return JSONResponse(
+                {
+                    "status": "unhealthy",
+                    "error": "Deep health check failed",
+                    "details": str(e),
+                    "timestamp": datetime.now(UTC).isoformat(),
+                },
+                status_code=500,
+            )
+
+
+    # Register Prometheus metrics endpoint for v1 if available
+    if _prometheus_enabled:
+        @mcp.custom_route("/v1/metrics", methods=["GET"])
+        async def v1_metrics_endpoint(request: Request) -> Response:
+            """Prometheus metrics endpoint for API v1 (with version header)."""
+            metrics_output = generate_latest(_PROMETHEUS_REGISTRY)
+            return Response(
+                content=metrics_output,
+                media_type="text/plain; charset=utf-8; version=0.0.4",
+            )
+        log.info("prometheus_metrics_v1_endpoint_registered")
+
+
+    # Register OpenAPI schema endpoint
+    @mcp.custom_route("/openapi.json", methods=["GET"])
+    async def openapi_endpoint(request: Request) -> JSONResponse:
+        """Serve OpenAPI 3.1 specification for all registered tools."""
+        from loom.openapi_gen import get_openapi_spec
+
+        try:
+            spec = get_openapi_spec(mcp, bypass_cache=False)
+            return JSONResponse(spec)
+        except Exception as e:
+            log.error("openapi_spec_generation_failed error=%s", e)
+            return JSONResponse(
+                {"error": "Failed to generate OpenAPI spec", "details": str(e)},
+                status_code=500,
+            )
+
+    # Register Swagger UI endpoint
+    @mcp.custom_route("/docs", methods=["GET"])
+    async def swagger_ui_endpoint(request: Request) -> Response:
+        """Serve interactive Swagger UI for API documentation."""
+        html = """
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Loom API Documentation</title>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@3/swagger-ui.css">
+    <style>
+      html {
+        box-sizing: border-box;
+        overflow: -moz-scrollbars-vertical;
+        overflow-y: scroll;
+      }
+      *, *:before, *:after {
+        box-sizing: inherit;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="swagger-ui"></div>
+    <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@3/swagger-ui-bundle.js"></script>
+    <script>
+      window.onload = function() {
+        const ui = SwaggerUIBundle({
+          url: "/openapi.json",
+          dom_id: '#swagger-ui',
+          presets: [
+            SwaggerUIBundle.presets.apis,
+            SwaggerUIBundle.SwaggerUIStandalonePreset
+          ],
+          layout: "BaseLayout",
+          requestInterceptor: (request) => {
+            // Add Bearer token if present in localStorage
+            const token = localStorage.getItem('api_token');
+            if (token) {
+              request.headers['Authorization'] = `Bearer ${token}`;
+            }
+            return request;
+          }
+        })
+        window.ui = ui
+      }
+    </script>
+  </body>
+</html>
+        """
+        return Response(content=html, media_type="text/html")
+
+    # Register ReDoc endpoint (alternative documentation)
+    @mcp.custom_route("/redoc", methods=["GET"])
+    async def redoc_endpoint(request: Request) -> Response:
+        """Serve ReDoc alternative API documentation."""
+        html = """
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Loom API Documentation</title>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,700|Roboto:300,400,700" rel="stylesheet">
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <redoc spec-url="/openapi.json"></redoc>
+    <script src="https://cdn.jsdelivr.net/npm/redoc@latest/bundles/redoc.standalone.js"></script>
+  </body>
+</html>
+        """
+        return Response(content=html, media_type="text/html")
+
+    log.info("openapi_endpoints_registered paths=/openapi.json,/docs,/redoc")
 
     # Register all tools
     _register_tools(mcp)
@@ -1270,10 +1826,11 @@ def create_app() -> FastMCP:
         log.warning("startup_cache_cleanup_failed: %s", exc)
 
     log.info(
-        "Loom MCP server initialized: name=%s host=%s port=%d",
+        "Loom MCP server initialized: name=%s host=%s port=%d prometheus_enabled=%s",
         "loom",
         host,
         port,
+        _prometheus_enabled,
     )
 
     return mcp
