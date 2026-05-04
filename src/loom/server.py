@@ -26,7 +26,7 @@ from starlette.websockets import WebSocket
 from loom.websocket import get_ws_manager, WebSocketManager
 
 from loom.config import load_config, research_config_get, research_config_set
-from loom.feature_flags import research_feature_flags
+from loom.feature_flags import research_feature_flags, get_feature_flags
 from loom.orchestrator import research_orchestrate
 from loom.audit import export_audit, log_invocation
 from loom.backup_manager import (
@@ -73,6 +73,11 @@ from loom.scheduler import (
     register_default_tasks,
 )
 
+from loom.scheduler import (
+    get_scheduler,
+    register_default_tasks,
+)
+
 from loom.api_auth import ApiKeyAuthMiddleware
 from loom.request_id_middleware import RequestIdMiddleware
 
@@ -98,6 +103,7 @@ from loom.startup_validator import (
 )
 from loom.tool_latency import get_latency_tracker
 from loom.tool_rate_limiter import check_tool_rate_limit, research_rate_limits
+from loom.tools.scheduler_status import research_scheduler_status
 from loom.sla_monitor import get_sla_monitor
 
 # ── Prometheus metrics (optional, graceful fallback if not installed) ──
@@ -1222,6 +1228,18 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                 except Exception as e:
                     log.debug(f'Latency tracking error: {e}')
 
+                # SLA Monitor: record successful request
+                try:
+                    sla_monitor = get_sla_monitor()
+                    sla_monitor.record_request(
+                        success=True,
+                        latency_ms=duration_ms,
+                        tool_name=tool_name,
+                    )
+                    sla_monitor.check_and_alert()
+                except Exception as e:
+                    log.debug(f'SLA monitoring error: {e}')
+
                 # Billing: record usage after successful execution
                 if billing_enabled:
                     duration_ms = duration * 1000
@@ -1474,6 +1492,18 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                         result['_latency_p95_ms'] = stats['p95']
                 except Exception as e:
                     log.debug(f'Latency tracking error: {e}')
+
+                # SLA Monitor: record successful request
+                try:
+                    sla_monitor = get_sla_monitor()
+                    sla_monitor.record_request(
+                        success=True,
+                        latency_ms=duration_ms,
+                        tool_name=tool_name,
+                    )
+                    sla_monitor.check_and_alert()
+                except Exception as e:
+                    log.debug(f'SLA monitoring error: {e}')
 
                 # Billing: record usage after successful execution
                 if billing_enabled:
@@ -1734,6 +1764,7 @@ def _register_tools(mcp: FastMCP) -> None:
         research_rate_limits,
         research_validate_startup,
         research_latency_report,
+        research_scheduler_status,
     ]
     for _func in _core_funcs:
         try:
@@ -2287,7 +2318,16 @@ def create_app() -> FastMCP:
         log.info("cors_middleware_disabled")
 
 
-    # Start batch queue background processing
+    # Register and start background task scheduler
+    try:
+        register_default_tasks()
+        scheduler = get_scheduler()
+        asyncio.create_task(scheduler.start())
+        log.info("background_task_scheduler_started")
+    except Exception as exc:
+        log.error("scheduler_startup_failed: %s", exc)
+
+        # Start batch queue background processing
     try:
         start_batch_queue_background()
         log.info("batch_queue_background_started")
@@ -2374,7 +2414,15 @@ async def _shutdown() -> None:
     except Exception as exc:
         log.error("shutdown_providers_error: %s", exc)
 
-    # Stop batch queue background processing
+    # Stop background task scheduler
+    try:
+        scheduler = get_scheduler()
+        await scheduler.stop()
+        log.info("background_task_scheduler_stopped")
+    except Exception as exc:
+        log.error("scheduler_shutdown_failed: %s", exc)
+
+        # Stop batch queue background processing
     try:
         stop_batch_queue_background()
         log.info("batch_queue_background_stopped")

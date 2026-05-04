@@ -74,7 +74,7 @@ class TestSendAlert:
             "results": [],
         }
 
-        with patch("loom.alerting.get_webhook_manager", return_value=mock_manager):
+        with patch("loom.webhooks.get_webhook_manager", return_value=mock_manager):
             with patch("loom.alerting.logger"):
                 result = await send_alert(
                     "critical",
@@ -148,7 +148,7 @@ class TestSendAlert:
         mock_manager = AsyncMock()
         mock_manager.notify.return_value = {"succeeded": 1, "total_webhooks": 1}
 
-        with patch("loom.alerting.get_webhook_manager", return_value=mock_manager):
+        with patch("loom.webhooks.get_webhook_manager", return_value=mock_manager):
             with patch("loom.alerting.logger"):
                 details = {
                     "tool": "research_fetch",
@@ -237,7 +237,7 @@ async def test_alerting_integration():
     mock_webhook = AsyncMock()
     mock_webhook.notify.return_value = {"succeeded": 1, "total_webhooks": 1}
 
-    with patch("loom.alerting.get_webhook_manager", return_value=mock_webhook):
+    with patch("loom.webhooks.get_webhook_manager", return_value=mock_webhook):
         with patch("loom.alerting.logger"):
             error = RuntimeError("circuit_breaker timeout")
             await handle_tool_error("research_deep", error, 45000.0)
