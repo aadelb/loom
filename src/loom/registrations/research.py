@@ -424,6 +424,27 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip embedding_collision: %s", e)
         record_failure("research", "embedding_collision", str(e))
     try:
+        from loom.tools.eu_ai_act import (
+            research_ai_transparency_check,
+            research_ai_bias_audit,
+            research_ai_robustness_test,
+            research_ai_data_governance,
+            research_ai_risk_classify,
+        )
+        mcp.tool()(wrap_tool(research_ai_transparency_check))
+        record_success("research", "research_ai_transparency_check")
+        mcp.tool()(wrap_tool(research_ai_bias_audit))
+        record_success("research", "research_ai_bias_audit")
+        mcp.tool()(wrap_tool(research_ai_robustness_test))
+        record_success("research", "research_ai_robustness_test")
+        mcp.tool()(wrap_tool(research_ai_data_governance))
+        record_success("research", "research_ai_data_governance")
+        mcp.tool()(wrap_tool(research_ai_risk_classify))
+        record_success("research", "research_ai_risk_classify")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip eu_ai_act: %s", e)
+        record_failure("research", "eu_ai_act", str(e))
+    try:
         from loom.tools.enrich import research_detect_language, research_wayback
         mcp.tool()(wrap_tool(research_detect_language))
         record_success("research", "research_detect_language")

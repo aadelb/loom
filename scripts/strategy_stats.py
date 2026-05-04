@@ -174,33 +174,27 @@ class StrategyStats:
         print("STRATEGY SIZE ANALYSIS")
         print("-" * 80)
 
-        template_sizes = []
-        for strategy in self.strategies.values():
+        template_sizes: dict[str, int] = {}
+        for key, strategy in self.strategies.items():
             template = strategy.get("template", "")
-            template_sizes.append(len(str(template)))
+            template_sizes[key] = len(str(template))
 
-        avg_size = sum(template_sizes) / len(template_sizes) if template_sizes else 0
-        max_size = max(template_sizes) if template_sizes else 0
-        min_size = min(template_sizes) if template_sizes else 0
+        if template_sizes:
+            sizes = list(template_sizes.values())
+            avg_size = sum(sizes) / len(sizes)
+            max_size = max(sizes)
+            min_size = min(sizes)
 
-        print(f"  Average template size: {avg_size:.0f} characters")
-        print(f"  Maximum template size: {max_size} characters")
-        print(f"  Minimum template size: {min_size} characters")
+            print(f"  Average template size: {avg_size:.0f} characters")
+            print(f"  Maximum template size: {max_size} characters")
+            print(f"  Minimum template size: {min_size} characters")
 
-        # Find largest/smallest
-        largest_name = max(
-            ((s.get("name"), len(str(s.get("template", ""))))
-             for s in self.strategies.values()),
-            key=lambda x: x[1]
-        )[0]
-        smallest_name = min(
-            ((s.get("name"), len(str(s.get("template", ""))))
-             for s in self.strategies.values()),
-            key=lambda x: x[1]
-        )[0]
+            # Find largest/smallest by key
+            largest_key = max(template_sizes, key=template_sizes.get)
+            smallest_key = min(template_sizes, key=template_sizes.get)
 
-        print(f"  Largest strategy: {largest_name} ({len(str(self.strategies[largest_name].get('template', '')))} chars)")
-        print(f"  Smallest strategy: {smallest_name} ({len(str(self.strategies[smallest_name].get('template', '')))} chars)")
+            print(f"  Largest strategy: {largest_key} ({template_sizes[largest_key]} chars)")
+            print(f"  Smallest strategy: {smallest_key} ({template_sizes[smallest_key]} chars)")
 
         print("\n" + "=" * 80)
 
