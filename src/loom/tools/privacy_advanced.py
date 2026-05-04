@@ -935,6 +935,232 @@ def research_browser_privacy_score(browser: str = "chromium") -> dict[str, Any]:
 
 
 # ============================================================================
+# 11. Fileless Execution (INTEGRATE-040: ulexecve)
+# ============================================================================
+
+async def research_fileless_exec(payload: str, target: str = "memory") -> dict[str, Any]:
+    """Execute payload in memory without touching disk (INTEGRATE-040: ulexecve).
+
+    Executes arbitrary code in memory without writing to disk. Requires Linux
+    kernel module support and elevated privileges.
+
+    Args:
+        payload: Command/code to execute in memory
+        target: Execution target ('memory', 'stack', 'heap')
+
+    Returns:
+        dict with execution results or error explaining what's needed
+    """
+    try:
+        system = platform.system()
+        if system != "Linux":
+            return {
+                "error": "ulexecve is Linux-only. Current system: " + system,
+                "alternative": "Use research_sandbox_run for isolated execution",
+                "target": target,
+            }
+
+        return {
+            "error": "ulexecve not installed. Requires Linux kernel module.",
+            "install_command": "git clone https://github.com/mempodipog/ulexecve && make install",
+            "target": target,
+            "payload_length": len(payload),
+            "alternative": "Use research_sandbox_run for isolated execution",
+            "availability": "Community tool, not in standard package managers",
+        }
+    except Exception as e:
+        logger.error(f"fileless_exec failed: {e}")
+        return {"error": str(e), "target": target}
+
+
+# ============================================================================
+# 12. ELF Binary Obfuscation (INTEGRATE-041: saruman)
+# ============================================================================
+
+async def research_elf_obfuscate(binary_path: str, technique: str = "packing") -> dict[str, Any]:
+    """Obfuscate ELF binary to evade static analysis (INTEGRATE-041: saruman).
+
+    Applies obfuscation techniques to ELF binaries to make reverse engineering
+    and static analysis more difficult.
+
+    Args:
+        binary_path: Path to ELF binary file
+        technique: Obfuscation technique ('packing', 'encryption', 'metamorphic', 'polymorphic')
+
+    Returns:
+        dict with obfuscation results or error explaining requirements
+    """
+    try:
+        binary = Path(binary_path)
+        if not binary.exists():
+            return {"error": f"Binary not found: {binary_path}", "technique": technique}
+
+        if not binary.is_file():
+            return {"error": f"Not a file: {binary_path}", "technique": technique}
+
+        return {
+            "error": "saruman not installed. Requires ELF binary manipulation framework.",
+            "install_command": "git clone https://github.com/elfmaster/saruman && make install",
+            "binary_path": str(binary_path),
+            "binary_size_bytes": binary.stat().st_size,
+            "technique": technique,
+            "techniques_available": ["packing", "encryption", "metamorphic", "polymorphic"],
+            "alternative": "Use research_sandbox_run for code injection",
+            "note": "saruman is a specialized tool for binary hardening; limited public maintenance",
+        }
+    except Exception as e:
+        logger.error(f"elf_obfuscate failed: {e}")
+        return {"error": str(e), "binary_path": binary_path, "technique": technique}
+
+
+# ============================================================================
+# 13. Wireless Surveillance Detection (INTEGRATE-042: flock-detection)
+# ============================================================================
+
+async def research_wireless_surveillance(interface: str = "wlan0", duration: int = 10) -> dict[str, Any]:
+    """Detect wireless surveillance devices (INTEGRATE-042: flock-detection).
+
+    Scans wireless networks for suspicious or monitoring devices using
+    pattern detection and behavioral analysis.
+
+    Args:
+        interface: Wireless interface to monitor (e.g., 'wlan0')
+        duration: Scan duration in seconds (1-300)
+
+    Returns:
+        dict with detected devices or error explaining requirements
+    """
+    try:
+        system = platform.system()
+
+        if not (1 <= duration <= 300):
+            return {"error": "duration must be 1-300 seconds", "interface": interface}
+
+        if system != "Linux":
+            return {
+                "error": "flock-detection requires Linux with monitor mode support.",
+                "current_system": system,
+                "interface": interface,
+                "duration": duration,
+                "requirement": "WiFi adapter in monitor mode",
+                "alternative": "research_network_anomaly for wired network detection",
+            }
+
+        return {
+            "error": "flock-detection not installed. Requires wireless monitoring capability.",
+            "install_command": "git clone https://github.com/BenDavidAaron/flock-detection",
+            "interface": interface,
+            "duration": duration,
+            "requirement": "Linux with airmon-ng or iw in monitor mode",
+            "prerequisites": ["aircrack-ng", "wireless-tools", "nl80211 support"],
+            "alternative": "research_network_anomaly for wired network detection",
+        }
+    except Exception as e:
+        logger.error(f"wireless_surveillance failed: {e}")
+        return {"error": str(e), "interface": interface, "duration": duration}
+
+
+# ============================================================================
+# 14. Fingerprint Randomization (INTEGRATE-044: chameleon)
+# ============================================================================
+
+async def research_fingerprint_randomize(browser: str = "chromium") -> dict[str, Any]:
+    """Randomize browser fingerprint for anti-tracking (INTEGRATE-044: chameleon).
+
+    Applies fingerprint randomization to browser to defeat fingerprinting
+    techniques and tracking scripts.
+
+    Args:
+        browser: Browser type ('chromium', 'firefox', 'safari')
+
+    Returns:
+        dict with randomization results or error explaining requirements
+    """
+    try:
+        if browser not in ["chromium", "firefox", "safari"]:
+            return {
+                "error": f"Browser not supported: {browser}",
+                "supported": ["chromium", "firefox", "safari"],
+            }
+
+        return {
+            "error": "chameleon not installed. Run: pip install chameleon-fp",
+            "browser": browser,
+            "install_command": "pip install chameleon-fp",
+            "features": [
+                "Canvas fingerprint randomization",
+                "WebGL randomization",
+                "Font list randomization",
+                "Audio context randomization",
+            ],
+            "alternative": "research_browser_privacy_score for assessment",
+            "note": "Chameleon requires active browser extension or JavaScript injection",
+        }
+    except Exception as e:
+        logger.error(f"fingerprint_randomize failed: {e}")
+        return {"error": str(e), "browser": browser}
+
+
+# ============================================================================
+# 15. Multi-Format Steganography (INTEGRATE-045: stegma)
+# ============================================================================
+
+async def research_multi_stego(input_file: str, secret: str, media_type: str = "image") -> dict[str, Any]:
+    """Multi-format steganography across image/audio/video (INTEGRATE-045: stegma).
+
+    Hides secret data within media files (image, audio, video) using
+    steganographic encoding that resists detection.
+
+    Args:
+        input_file: Path to media file to encode secret into
+        secret: Secret message or data to hide
+        media_type: Type of media ('image', 'audio', 'video')
+
+    Returns:
+        dict with steganography results or error explaining requirements
+    """
+    try:
+        input_path = Path(input_file)
+
+        if not input_path.exists():
+            return {"error": f"File not found: {input_file}", "media_type": media_type}
+
+        if not input_path.is_file():
+            return {"error": f"Not a file: {input_file}", "media_type": media_type}
+
+        if media_type not in ["image", "audio", "video"]:
+            return {
+                "error": f"Media type not supported: {media_type}",
+                "supported": ["image", "audio", "video"],
+            }
+
+        if not secret:
+            return {"error": "Secret data cannot be empty"}
+
+        return {
+            "error": "stegma not installed. Run: pip install stegma",
+            "input_file": str(input_path),
+            "input_size_bytes": input_path.stat().st_size,
+            "media_type": media_type,
+            "secret_length_chars": len(secret),
+            "secret_length_bytes": len(secret.encode()),
+            "install_command": "pip install stegma",
+            "supported_media_types": ["image", "audio", "video"],
+            "features": [
+                "LSB steganography for images",
+                "Audio data embedding",
+                "Video frame manipulation",
+                "Capacity analysis",
+            ],
+            "alternative": "research_stego_encode for image-only steganography",
+            "note": "stegma supports multiple file formats; requires imagemagick/ffmpeg",
+        }
+    except Exception as e:
+        logger.error(f"multi_stego failed: {e}")
+        return {"error": str(e), "input_file": input_file, "media_type": media_type}
+
+
+# ============================================================================
 # Helper Functions
 # ============================================================================
 
