@@ -55,6 +55,7 @@ dependencies = [
     "trafilatura>=1.6",
     "langdetect>=1.0",
     "redis[hiredis]>=5.0",
+    "cryptography>=43.0",
 ]
 
 [project.license]
@@ -80,6 +81,9 @@ tor = [
     "stem>=1.8",
     "socksio>=1.0",
 ]
+encryption = [
+    "sqlcipher3>=3.11",
+]
 dev = [
     "pytest>=8",
     "pytest-asyncio>=0.24",
@@ -92,7 +96,7 @@ dev = [
     "types-requests",
 ]
 all = [
-    "loom-mcp[stealth,anthropic,academic,pdf,tor,dev]",
+    "loom-mcp[stealth,anthropic,academic,pdf,tor,encryption,dev]",
 ]
 
 [project.urls]
