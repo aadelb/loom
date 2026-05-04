@@ -161,6 +161,11 @@ class TestRetryExecute:
             assert call_count == 2
 
     @pytest.mark.asyncio
+    async def test_timeout_error_retry(self):
+        """Test retry on TimeoutError."""
+        with patch("importlib.import_module") as mock_import:
+            mock_module = MagicMock()
+
             def raise_timeout(**kwargs):
                 raise TimeoutError("Timeout")
 
