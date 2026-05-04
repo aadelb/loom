@@ -29,6 +29,12 @@ from loom.config import load_config, research_config_get, research_config_set
 from loom.feature_flags import research_feature_flags
 from loom.orchestrator import research_orchestrate
 from loom.audit import export_audit, log_invocation
+from loom.backup_manager import (
+    research_backup_create,
+    research_backup_restore,
+    research_backup_list,
+    research_backup_cleanup,
+)
 from loom.alerting import handle_tool_error
 from loom.logging_config import setup_logging
 from loom.rate_limiter import rate_limited
@@ -84,6 +90,7 @@ log = logging.getLogger("loom.server")
 from loom.registrations.tracking import record_optional_module_loaded, record_import_failure
 from loom.secret_manager import get_secret_manager, research_secret_health
 from loom.tools.quota_status import research_quota_status
+from loom.tools.sla_status import research_sla_status
 from loom.startup_validator import (
     validate_all_tools,
     validate_registrations,
@@ -91,6 +98,7 @@ from loom.startup_validator import (
 )
 from loom.tool_latency import get_latency_tracker
 from loom.tool_rate_limiter import check_tool_rate_limit, research_rate_limits
+from loom.sla_monitor import get_sla_monitor
 
 # ── Prometheus metrics (optional, graceful fallback if not installed) ──
 try:
@@ -1089,6 +1097,10 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
     billing_enabled = os.getenv("LOOM_BILLING_ENABLED", "").lower() == "true"
     token_economy_enabled = os.getenv("LOOM_TOKEN_ECONOMY", "").lower() == "true"
     tool_name = func.__name__
+    
+    # Detect if function is CPU-bound
+    is_cpu_bound_func = getattr(func, "_cpu_bound", False) is True
+
 
     if is_async:
         if category:
@@ -1162,6 +1174,14 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                 log.debug(f"Billing enabled for tool {tool_name}, customer {customer_id}")
 
             try:
+                # WebSocket: broadcast tool started
+                try:
+                    ws_mgr = get_ws_manager()
+                    job_id = request_id
+                    await ws_mgr.broadcast_tool_started(tool_name, job_id)
+                except Exception as ws_e:
+                    log.debug(f"WebSocket broadcast error (tool.started): {ws_e}")
+
                 result = await asyncio.wait_for(func(*args, **corrected_kwargs), timeout=tool_timeout)
                 # Add correction metadata if there were corrections
                 if corrections and isinstance(result, dict):
@@ -1238,6 +1258,15 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                 except Exception as audit_e:
                     log.debug(f"Audit logging error at success: {audit_e}")
 
+                # WebSocket: broadcast tool completed (success)
+                try:
+                    ws_mgr = get_ws_manager()
+                    duration_ms = int(duration * 1000)
+                    job_id = request_id
+                    await ws_mgr.broadcast_tool_completed(tool_name, job_id, duration_ms, True)
+                except Exception as ws_e:
+                    log.debug(f"WebSocket broadcast error (tool.completed): {ws_e}")
+
                 return result
             except asyncio.TimeoutError:
                 # Prometheus: record timeout error
@@ -1271,6 +1300,15 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
 
                 return {"error": f"Tool timed out after {tool_timeout}s", "tool": tool_name}
             except Exception as e:
+                # WebSocket: broadcast tool failed
+                try:
+                    ws_mgr = get_ws_manager()
+                    error_msg = str(e)
+                    job_id = request_id
+                    await ws_mgr.broadcast_tool_failed(tool_name, error_msg)
+                except Exception as ws_e:
+                    log.debug(f"WebSocket broadcast error (tool.failed): {ws_e}")
+
                 # Prometheus: record error
                 error_type = type(e).__name__
                 _loom_tool_calls_total.labels(tool_name=tool_name, status="error").inc()
@@ -1523,7 +1561,6 @@ async def research_full_spectrum(
     # Real LLM model function using cascade
     try:
         from loom.tools.llm import _call_with_cascade
-from loom.tools.sla_status import research_sla_status
 
         async def cascade_model(prompt: str = "") -> str:
             try:
@@ -1624,6 +1661,42 @@ def _register_tools(mcp: FastMCP) -> None:
     """
     from loom.registrations import register_all_tools
 
+    # Register WebSocket endpoint for real-time updates
+    @mcp.app.websocket_route("/ws")
+    async def websocket_endpoint(ws: WebSocket) -> None:
+        """WebSocket endpoint for real-time tool execution events.
+
+        Broadcasts the following events to all connected clients:
+        - tool.started: {tool_name, job_id, timestamp}
+        - tool.completed: {tool_name, job_id, duration_ms, success, timestamp}
+        - tool.failed: {tool_name, error, timestamp}
+        - health.changed: {status, details, timestamp}
+        - alert: {level, message, timestamp}
+
+        Authentication: Provide X-API-Key in query params or first message.
+        """
+        ws_mgr = get_ws_manager()
+
+        # Authenticate and connect
+        if not await ws_mgr.connect(ws):
+            return  # Connection rejected
+
+        try:
+            # Keep connection open, listen for disconnect
+            while True:
+                # WebSocket endpoint is primarily for receiving disconnect signal
+                # Client can send keepalive messages
+                message = await ws.receive_text()
+                # Optionally handle incoming messages (e.g., keepalive, subscriptions)
+                # For now, just acknowledge receipt
+                log.debug(f"websocket_message_received length={len(message)}")
+        except Exception as e:
+            log.debug(f"websocket_error: {e}")
+        finally:
+            await ws_mgr.disconnect(ws)
+
+    log.info("websocket_endpoint_registered path=/ws")
+
     # Register all tools from 8 category modules
     register_all_tools(mcp, _wrap_tool)
 
@@ -1655,6 +1728,7 @@ def _register_tools(mcp: FastMCP) -> None:
         research_crescendo_loop, research_model_profile, research_reid_pipeline,
         research_pool_stats, research_pool_reset, export_audit,
         research_audit_query, research_audit_stats,
+        research_backup_create, research_backup_restore, research_backup_list, research_backup_cleanup,
         research_cpu_pool_status, research_cpu_executor_shutdown,
         research_analytics_dashboard, research_secret_health, research_quota_status, research_sla_status,
         research_rate_limits,
