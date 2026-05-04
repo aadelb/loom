@@ -275,3 +275,33 @@ def fixture_journey_dir() -> Path:
         )
 
     return fixture_dir
+
+
+@pytest.fixture(autouse=True)
+def reset_analytics_state():
+    """Reset analytics module-level state before each test in test_analytics.py."""
+    # Only reset if running analytics tests
+    import inspect
+    test_frame = inspect.currentframe()
+    if test_frame and test_frame.f_back:
+        test_file = inspect.getfile(test_frame.f_back)
+        if "test_analytics" in test_file:
+            from loom import analytics
+
+            analytics._call_records.clear()
+            analytics._tool_usage.clear()
+            analytics._tool_errors.clear()
+            analytics._tool_durations.clear()
+            analytics.ToolAnalytics._instance = None
+
+    yield
+
+    if test_frame and test_frame.f_back:
+        test_file = inspect.getfile(test_frame.f_back)
+        if "test_analytics" in test_file:
+            from loom import analytics
+
+            analytics._call_records.clear()
+            analytics._tool_usage.clear()
+            analytics._tool_errors.clear()
+            analytics._tool_durations.clear()

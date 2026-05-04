@@ -445,3 +445,203 @@ def _default_hcs_scores() -> dict[str, float]:
         "defense_evasion": 0.0,
         "novelty": 0.0,
     }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Dependency-Aware Pipeline Composition
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+async def research_enhance_with_dependencies(
+    tool_names: list[str],
+    params_map: dict[str, dict[str, Any]] | None = None,
+    auto_resolve_deps: bool = True,
+    execute_dependencies: bool = True,
+    auto_hcs: bool = True,
+    auto_cost: bool = True,
+    auto_learn: bool = True,
+    auto_fact_check: bool = False,
+    auto_suggest: bool = True,
+) -> dict[str, Any]:
+    """Execute multiple tools respecting dependency order with enrichment.
+
+    This function resolves tool dependencies, organizes them into
+    parallel execution groups, and executes each group sequentially
+    while executing tools within a group in parallel.
+
+    Args:
+        tool_names: List of tool names to execute
+        params_map: Dict mapping tool_name -> params dict (optional)
+        auto_resolve_deps: Resolve and execute dependencies (default True)
+        execute_dependencies: Include dependencies in execution (default True)
+        auto_hcs: Enable HCS scoring (default True)
+        auto_cost: Enable cost estimation (default True)
+        auto_learn: Enable meta-learning (default True)
+        auto_fact_check: Enable fact checking (default False)
+        auto_suggest: Enable tool suggestions (default True)
+
+    Returns:
+        Dict with:
+        - requested_tools: Original list
+        - execution_plan: Organized parallel groups
+        - execution_order: Actual execution order taken
+        - results: List of tool results
+        - total_time_ms: Total execution time
+        - success_count: Number of successful tools
+        - error_count: Number of failed tools
+        - dependency_info: Information about resolved dependencies
+    """
+    start_time = time.time()
+    params_map = params_map or {}
+
+    try:
+        # Step 1: Resolve dependencies
+        from loom.tools.tool_dependencies import prepare_tool_execution
+
+        prep_result = await prepare_tool_execution(tool_names)
+
+        if not prep_result["valid"]:
+            logger.warning(f"Dependency issues found: {prep_result['dependency_warnings']}")
+
+        execution_plan = prep_result["execution_plan"]
+        all_tools = prep_result["all_tools"]
+        execution_order = []
+        results_map: dict[str, dict[str, Any]] = {}
+
+        # Step 2: Execute each parallel group sequentially
+        for group_idx, group in enumerate(execution_plan):
+            logger.info(f"Executing group {group_idx}: {group}")
+            execution_order.extend(group)
+
+            # Skip tool dependencies if execute_dependencies is False
+            if not execute_dependencies:
+                group = [t for t in group if t in tool_names]
+
+            if not group:
+                continue
+
+            # Create enhancement tasks for all tools in group
+            enhance_tasks = [
+                research_enhance(
+                    tool_name,
+                    params_map.get(tool_name, {}),
+                    auto_hcs=auto_hcs,
+                    auto_cost=auto_cost,
+                    auto_learn=auto_learn,
+                    auto_fact_check=auto_fact_check,
+                    auto_suggest=auto_suggest,
+                )
+                for tool_name in group
+            ]
+
+            # Execute all tools in group in parallel
+            group_results = await asyncio.gather(*enhance_tasks, return_exceptions=True)
+
+            # Collect results
+            for tool_name, result in zip(group, group_results):
+                if isinstance(result, Exception):
+                    logger.error(f"Tool {tool_name} failed: {result}")
+                    results_map[tool_name] = {
+                        "_error": str(result),
+                        "_execution_time_ms": 0,
+                    }
+                else:
+                    results_map[tool_name] = result
+
+        # Step 3: Aggregate results
+        results = [results_map.get(t, {"_error": "No result"}) for t in tool_names]
+        success_count = sum(1 for r in results if "_error" not in r)
+        error_count = len(results) - success_count
+
+        return {
+            "requested_tools": tool_names,
+            "execution_plan": execution_plan,
+            "execution_order": execution_order,
+            "results": results,
+            "results_by_tool": results_map,
+            "total_time_ms": int((time.time() - start_time) * 1000),
+            "success_count": success_count,
+            "error_count": error_count,
+            "dependency_info": {
+                "all_tools_executed": all_tools,
+                "warnings": prep_result.get("dependency_warnings", []),
+                "valid": prep_result["valid"],
+            },
+        }
+
+    except Exception as e:
+        logger.error(f"Dependency-aware batch enhancement failed: {e}", exc_info=True)
+        return {
+            "error": str(e),
+            "requested_tools": tool_names,
+            "results": [],
+            "total_time_ms": int((time.time() - start_time) * 1000),
+            "success_count": 0,
+            "error_count": len(tool_names),
+        }
+
+
+async def research_compose_pipeline(
+    primary_tools: list[str],
+    config: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Compose and execute an intelligent research pipeline.
+
+    Selects optimal execution strategy based on tool types and dependencies.
+    Automatically organizes tools into efficient parallel groups.
+
+    Args:
+        primary_tools: Main tools user wants to execute
+        config: Optional pipeline config with execution preferences
+
+    Returns:
+        Dict with pipeline execution result and metadata
+    """
+    config = config or {}
+    start_time = time.time()
+
+    try:
+        from loom.tools.tool_dependencies import (
+            get_execution_plan,
+            resolve_dependencies,
+        )
+
+        # Resolve full dependency tree
+        all_tools = resolve_dependencies(primary_tools)
+        execution_plan = get_execution_plan(primary_tools)
+
+        # Extract enhancement settings from config
+        auto_hcs = config.get("auto_hcs", True)
+        auto_cost = config.get("auto_cost", True)
+        auto_learn = config.get("auto_learn", True)
+        auto_fact_check = config.get("auto_fact_check", False)
+        auto_suggest = config.get("auto_suggest", True)
+
+        # Get parameters for each tool from config
+        params_map = config.get("params_map", {})
+
+        # Execute with dependency awareness
+        result = await research_enhance_with_dependencies(
+            list(primary_tools),
+            params_map=params_map,
+            auto_resolve_deps=True,
+            execute_dependencies=config.get("execute_dependencies", True),
+            auto_hcs=auto_hcs,
+            auto_cost=auto_cost,
+            auto_learn=auto_learn,
+            auto_fact_check=auto_fact_check,
+            auto_suggest=auto_suggest,
+        )
+
+        result["pipeline_config"] = config
+        result["elapsed_ms"] = int((time.time() - start_time) * 1000)
+
+        return result
+
+    except Exception as e:
+        logger.error(f"Pipeline composition failed: {e}", exc_info=True)
+        return {
+            "error": str(e),
+            "primary_tools": primary_tools,
+            "total_time_ms": int((time.time() - start_time) * 1000),
+        }

@@ -747,5 +747,54 @@ class TransactionGraphParams(BaseModel):
         return v
 
 
+class GraphParams(BaseModel):
+    """Unified parameters for research_graph tool with action-based dispatch."""
+
+    action: Literal["extract", "query", "merge", "visualize"] = Field(
+        default="extract", description="Graph operation: extract, query, merge, or visualize"
+    )
+    query: str | None = Field(
+        default=None, description="Search query for extraction (action='extract')"
+    )
+    max_nodes: int = Field(
+        default=100, ge=1, le=500, description="Max nodes to return (action='extract')"
+    )
+    sources: list[str] | None = Field(
+        default=None, description="Graph sources: semantic_scholar, wikipedia, wikidata (action='extract')"
+    )
+    graphs: list[dict[str, Any]] | None = Field(
+        default=None, description="Graphs to merge (action='merge')"
+    )
+    nodes: list[dict[str, Any]] | None = Field(
+        default=None, description="Node list for visualization (action='visualize')"
+    )
+    edges: list[dict[str, Any]] | None = Field(
+        default=None, description="Edge list for visualization (action='visualize')"
+    )
+    search_query: str | None = Field(
+        default=None, description="Search query for graph lookup (action='query')"
+    )
+    max_depth: int = Field(
+        default=2, ge=1, le=5, description="Traversal depth for query (action='query')"
+    )
+    format: Literal["dot", "mermaid"] = Field(
+        default="mermaid", description="Visualization format (action='visualize')"
+    )
+
+    model_config = {"extra": "ignore", "strict": True}
+
+    @field_validator("sources")
+    @classmethod
+    def validate_sources(cls, v: list[str] | None) -> list[str] | None:
+        if v is None:
+            return v
+        valid = {"semantic_scholar", "wikipedia", "wikidata"}
+        normalized = [s.lower().strip() for s in v if s]
+        if not all(s in valid for s in normalized):
+            raise ValueError(f"sources must be subset of {valid}")
+        return normalized if normalized else None
+
+
+
 
 

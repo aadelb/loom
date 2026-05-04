@@ -16,6 +16,7 @@ _DEFAULT_ACCEPT_LANG = CONFIG.get("DEFAULT_ACCEPT_LANGUAGE", "en-US,en;q=0.9,ar;
 
 
 __all__ = [
+    "AnalyticsDashboardParams",
     "BotasaurusParams",
     "CamoufoxParams",
     "CommitAnalyzerParams",
@@ -999,3 +1000,18 @@ class ZenFetchParams(BaseModel):
 
 
 
+
+
+class AnalyticsDashboardParams(BaseModel):
+    """Parameters for research_analytics_dashboard tool."""
+
+    include_unused: bool = Field(
+        default=False,
+        description="Include count of tools that have never been called"
+    )
+    all_tools: list[str] | None = Field(
+        default=None,
+        description="Optional list of all available tool names for unused detection"
+    )
+
+    model_config = {"extra": "forbid", "strict": True}

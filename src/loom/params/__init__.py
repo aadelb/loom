@@ -20,6 +20,7 @@ from __future__ import annotations
 
 # CORE tools
 from loom.params.core import (
+    AnalyticsDashboardParams,
     BotasaurusParams,
     CamoufoxParams,
     CommitAnalyzerParams,
@@ -81,6 +82,7 @@ from loom.params.llm import (
 # INTELLIGENCE tools
 from loom.params.intelligence import (
     CitationGraphParams,
+    GraphParams,
     CompanyDiligenceParams,
     CompetitiveIntelParams,
     CredentialMonitorParams,
@@ -192,6 +194,13 @@ from loom.params.security import (
     ShodanSearchParams,
     URLhausSearchParams,
     WhoisParams,
+)
+
+# WEBHOOK tools
+from loom.params.webhook import (
+    WebhookRegisterParams,
+    WebhookUnregisterParams,
+    WebhookTestParams,
 )
 
 # RESEARCH tools
@@ -323,6 +332,7 @@ from loom.params.research import (
 )
 
 __all__ = [
+    "AnalyticsDashboardParams",
     "BotasaurusParams",
     "CamoufoxParams",
     "CommitAnalyzerParams",
@@ -595,4 +605,7 @@ __all__ = [
     "WikiEventCorrelatorParams",
     "ZenBatchParams",
     "ZenInteractParams",
+    "WebhookRegisterParams",
+    "WebhookUnregisterParams",
+    "WebhookTestParams",
 ]

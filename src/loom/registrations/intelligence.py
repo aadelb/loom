@@ -415,6 +415,17 @@ def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip universal_orchestrator: %s", e)
         record_failure("intelligence", "universal_orchestrator", str(e))
     try:
+        from loom.tools.semantic_router import research_semantic_route, research_semantic_batch_route, research_semantic_router_rebuild
+        mcp.tool()(wrap_tool(research_semantic_route))
+        record_success("intelligence", "research_semantic_route")
+        mcp.tool()(wrap_tool(research_semantic_batch_route))
+        record_success("intelligence", "research_semantic_batch_route")
+        mcp.tool()(wrap_tool(research_semantic_router_rebuild))
+        record_success("intelligence", "research_semantic_router_rebuild")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip semantic_router: %s", e)
+        record_failure("intelligence", "semantic_router", str(e))
+    try:
         from loom.tools.urlhaus_lookup import research_urlhaus_check, research_urlhaus_search
         mcp.tool()(wrap_tool(research_urlhaus_check))
         record_success("intelligence", "research_urlhaus_check")
@@ -444,4 +455,4 @@ def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip image_intel: %s", e)
         record_failure("intelligence", "image_intel", str(e))
-    log.info("registered intelligence tools count=86")
+    log.info("registered intelligence tools count=89")

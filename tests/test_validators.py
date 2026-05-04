@@ -139,3 +139,67 @@ class TestOnionUrlValidation:
 
         with patch("loom.config.get_config", return_value={"TOR_ENABLED": False}), pytest.raises(UrlSafetyError):
             validate_url("http://exampleonion.onion/path")
+
+
+class TestDNSCaching:
+    """Test DNS caching functionality with Redis fallback."""
+
+    async def test_dns_cache_get_set_local(self) -> None:
+        """Test local DNS cache get/set."""
+        from loom.validators import _get_cached_dns, _set_cached_dns
+
+        # Clear cache first
+        from loom.validators import _dns_cache
+        _dns_cache.clear()
+
+        host = "test-example.com"
+        ips = ["1.2.3.4", "5.6.7.8"]
+
+        # Initially should be None
+        result = _get_cached_dns(host)
+        assert result is None
+
+        # Set the cache
+        _set_cached_dns(host, ips)
+
+        # Should now return the IPs
+        cached = _get_cached_dns(host)
+        assert cached == ips
+
+    async def test_dns_cache_expiration(self) -> None:
+        """Test DNS cache expiration after TTL."""
+        from loom.validators import _get_cached_dns, _set_cached_dns, _DNS_CACHE_TTL, _dns_cache
+        import time
+
+        _dns_cache.clear()
+
+        host = "expiring-example.com"
+        ips = ["1.2.3.4"]
+
+        # Set cache
+        _set_cached_dns(host, ips)
+        assert _get_cached_dns(host) == ips
+
+        # Manually expire the cache entry
+        if host in _dns_cache:
+            old_ips, _ = _dns_cache[host]
+            _dns_cache[host] = (old_ips, time.time() - _DNS_CACHE_TTL - 1)
+
+        # Should now be expired and return None
+        result = _get_cached_dns(host)
+        assert result is None
+
+    async def test_validate_url_caches_dns(self) -> None:
+        """Test that validate_url caches DNS results."""
+        from loom.validators import validate_url, get_validated_dns, _dns_cache
+
+        _dns_cache.clear()
+
+        url = "https://huggingface.co"
+        validate_url(url)
+
+        # DNS for huggingface.co should now be cached
+        ips = get_validated_dns("huggingface.co")
+        assert ips is not None
+        assert len(ips) > 0
+        assert all(isinstance(ip, str) for ip in ips)

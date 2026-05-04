@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import math
@@ -54,7 +55,7 @@ def _tokenize_words(text: str) -> list[str]:
 
 
 def _extract_features(text: str) -> dict[str, Any]:
-    """Extract linguistic features from text.
+    """Extract linguistic features from text (CPU-bound).
 
     Returns dict with:
     - avg_word_length, avg_sentence_length
@@ -64,6 +65,8 @@ def _extract_features(text: str) -> dict[str, Any]:
     - punctuation_profile
     - function_word_profile
     - word_count, sentence_count
+
+    This is a pure sync function suitable for CPU executor.
     """
     if not text or len(text) < 100:
         return {
@@ -194,11 +197,14 @@ def _flatten_features(features: dict[str, Any]) -> dict[str, float]:
     return flat
 
 
-def research_stylometry(text: str, compare_texts: list[str] | None = None) -> dict[str, Any]:
-    """Analyze text for stylometric fingerprinting.
+async def research_stylometry(
+    text: str, compare_texts: list[str] | None = None
+) -> dict[str, Any]:
+    """Analyze text for stylometric fingerprinting (async with CPU executor).
 
     Extracts linguistic features to identify author writing style.
-    Optionally compares against reference texts.
+    Optionally compares against reference texts. Feature extraction
+    runs in the CPU executor to avoid blocking the event loop.
 
     Args:
         text: Text to analyze (minimum 100 characters)
@@ -215,8 +221,18 @@ def research_stylometry(text: str, compare_texts: list[str] | None = None) -> di
             "sentence_count": len(_tokenize_sentences(text)) if text else 0,
         }
 
-    # Extract features from main text
-    features = _extract_features(text)
+    # Run CPU-intensive feature extraction in executor
+    try:
+        from loom.cpu_executor import run_cpu_bound
+
+        features = await run_cpu_bound(_extract_features, text)
+    except Exception as exc:
+        logger.error("stylometry cpu_executor failed: %s", exc)
+        return {
+            "error": f"Feature extraction failed: {str(exc)[:100]}",
+            "text_length": len(text),
+        }
+
     words = _tokenize_words(text)
     sentences = _tokenize_sentences(text)
 
@@ -242,9 +258,22 @@ def research_stylometry(text: str, compare_texts: list[str] | None = None) -> di
                 )
                 continue
 
-            compare_features = _extract_features(compare_text)
-            compare_features_flat = _flatten_features(compare_features)
+            # Run each comparison's feature extraction in executor
+            try:
+                compare_features = await run_cpu_bound(_extract_features, compare_text)
+            except Exception as exc:
+                logger.warning("stylometry comparison %d failed: %s", idx, exc)
+                comparisons.append(
+                    {
+                        "index": idx,
+                        "similarity": 0.0,
+                        "verdict": "extraction_error",
+                        "error": str(exc)[:50],
+                    }
+                )
+                continue
 
+            compare_features_flat = _flatten_features(compare_features)
             similarity = _cosine_similarity(main_features_flat, compare_features_flat)
 
             # Determine verdict based on thresholds
@@ -271,6 +300,21 @@ def research_stylometry(text: str, compare_texts: list[str] | None = None) -> di
 def tool_stylometry(
     text: str, compare_texts: list[str] | None = None
 ) -> list[TextContent]:
-    """MCP wrapper for research_stylometry."""
-    result = research_stylometry(text, compare_texts)
+    """MCP wrapper for research_stylometry.
+
+    Note: This is a sync wrapper that must be called from async context.
+    The MCP framework will handle async/sync conversion.
+    """
+    # Run async function in new event loop if needed
+    try:
+        loop = asyncio.get_running_loop()
+        # Already in async context, create task
+        task = loop.create_task(research_stylometry(text, compare_texts))
+        # This is a sync wrapper, so we need to use asyncio.run or wait
+        # For now, return a sync version that calls the async function
+        result = asyncio.run(research_stylometry(text, compare_texts))
+    except RuntimeError:
+        # No running loop, create new one
+        result = asyncio.run(research_stylometry(text, compare_texts))
+
     return [TextContent(type="text", text=json.dumps(result, indent=2))]

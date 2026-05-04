@@ -14,6 +14,8 @@ Combines all available Loom tools into a single orchestrated 12-stage pipeline:
 11. Misinformation stress test on claims (optional)
 12. Fact-checking of top claims from synthesis
 13. Build response
+
+NOTE: Bidirectional connection with research_full_pipeline via shared cache.
 """
 
 from __future__ import annotations
@@ -36,6 +38,14 @@ try:
 except ImportError:
     _COST_ESTIMATION_AVAILABLE = False
     logger.debug("cost_estimator not available; cost gating disabled")
+
+# Try to import shared cache
+try:
+    from loom.tools.research_cache_shared import check_shared_cache, store_shared_cache
+    _SHARED_CACHE_AVAILABLE = True
+except ImportError:
+    _SHARED_CACHE_AVAILABLE = False
+    logger.debug("research_cache_shared not available; cache disabled")
 
 _CODE_KEYWORDS = frozenset(
     {
@@ -177,6 +187,33 @@ def _detect_query_type(query: str) -> set[str]:
     return types
 
 
+def _is_complex_query(query: str) -> bool:
+    """Detect complex queries (multi-part, comparison, 2+ domain categories)."""
+    query_lower = query.lower()
+    word_count = len(query.split())
+
+    # Comparison operators
+    comparison_ops = {"vs", "versus", "compare", "difference between", "compared to"}
+    if any(op in query_lower for op in comparison_ops):
+        return True
+
+    # Multiple questions (semicolons)
+    if ";" in query:
+        return True
+
+    # Multi-domain (2+ categories)
+    query_types = _detect_query_type(query)
+    if len(query_types) >= 2:
+        return True
+
+    # Multi-part patterns
+    multi_part_markers = {"step", "steps", "phase", "phases", "stages", "multiple", "several"}
+    if any(marker in query_lower for marker in multi_part_markers) and word_count > 10:
+        return True
+
+    return False
+
+
 def _normalize_url(url: str) -> str:
     """Normalize a URL for deduplication (strip fragment, trailing slash)."""
     parsed = urlparse(url)
@@ -211,16 +248,14 @@ def _extract_factual_claims(text: str, max_claims: int = 3) -> list[str]:
     if not text:
         return []
 
-    # Split into sentences
     sentences = re.split(r'[.!?]+', text)
     claims = []
 
     for sentence in sentences:
         sentence = sentence.strip()
-        if len(sentence) < 20:  # Skip very short sentences
+        if len(sentence) < 20:
             continue
 
-        # Look for sentences with numbers, years, or capitalized proper nouns
         has_number = bool(re.search(r'\d+', sentence))
         has_year = bool(re.search(r'\b(19|20)\d{2}\b', sentence))
         has_proper_noun = bool(re.search(r'\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b', sentence))
@@ -251,33 +286,36 @@ async def research_deep(
     include_red_team: bool = False,
     include_misinfo_check: bool = False,
     max_cost_usd: float | None = None,
+    allow_escalation: bool = True,
 ) -> dict[str, Any]:
-    """Full-pipeline deep research using all available tools.
+    """Full-pipeline deep research.
 
-    Orchestrates query expansion, multi-provider search, parallel fetch,
-    LLM extraction, relevance ranking, answer synthesis, and optional
-    GitHub enrichment.
+    Supports bidirectional escalation:
+    - Checks shared cache to avoid duplicate work
+    - If query is complex and results are thin (<3), delegates to full_pipeline
+    - Stores results in shared cache for full_pipeline to reuse
 
     Args:
         query: search query string
-        depth: controls result volume (1-10)
-        include_domains: only search within these domains
-        exclude_domains: exclude these domains
+        depth: result volume control (1-10)
+        include_domains: domain whitelist
+        exclude_domains: domain blacklist
         start_date: ISO yyyy-mm-dd start date
         end_date: ISO yyyy-mm-dd end date
         language: language hint
         provider_config: provider-specific kwargs
-        search_providers: list of search providers to use (default from config)
+        search_providers: list of providers (default from config)
         expand_queries: enable LLM query expansion
         extract: enable LLM content extraction
         synthesize: enable LLM answer synthesis
-        include_github: enable GitHub enrichment for code queries
-        max_cost_usd: total LLM cost cap for this call
+        include_github: enable GitHub enrichment
+        allow_escalation: allow escalation to full_pipeline (default True)
+        max_cost_usd: LLM cost cap
 
     Returns:
         Dict with query, search_variations, providers_used, pages_searched,
         pages_fetched, top_pages, synthesis, github_repos, total_cost_usd,
-        elapsed_ms, and fact_checks (if synthesis succeeded).
+        elapsed_ms, and fact_checks.
     """
     from loom.config import get_config
     from loom.tools.search import research_search
@@ -299,6 +337,13 @@ async def research_deep(
     include_community = include_community or config.get("RESEARCH_COMMUNITY_SENTIMENT", False)
     include_red_team = include_red_team or config.get("RESEARCH_RED_TEAM", False)
     include_misinfo_check = include_misinfo_check or config.get("RESEARCH_MISINFO_CHECK", False)
+
+    # ── Check shared cache for pre-existing results ──
+    if _SHARED_CACHE_AVAILABLE:
+        cached = check_shared_cache(query)
+        if cached:
+            logger.info("deep_cache_hit query=%s", query[:60])
+            return cached
 
     # Auto-detect query type and add specialized providers
     query_types = _detect_query_type(query)
@@ -383,6 +428,56 @@ async def research_deep(
     pages_searched = len(all_search_results)
     merged_hits = _merge_search_results(all_search_results, max_urls=depth * 5)
 
+    # ── ESCALATION: Complex + thin results → delegate to full_pipeline ──
+    is_complex = _is_complex_query(query)
+    results_are_thin = len(merged_hits) < 3
+    should_escalate = allow_escalation and is_complex and results_are_thin
+
+    if should_escalate:
+        logger.info(
+            "deep_escalate_to_full_pipeline query=%s complex=%s thin=%s",
+            query[:60],
+            is_complex,
+            results_are_thin,
+        )
+        try:
+            from loom.tools.full_pipeline import research_full_pipeline
+
+            fp_result = await research_full_pipeline(
+                query=query,
+                darkness_level=3,
+                max_models=2,
+                target_hcs=7.0,
+                max_escalation_attempts=3,
+                output_format="report",
+                max_cost_usd=max_cost_usd,
+            )
+
+            escalation_result = {
+                "query": query,
+                "search_variations": search_variations,
+                "providers_used": ["full_pipeline"] + providers_used,
+                "pages_searched": pages_searched,
+                "pages_fetched": 0,
+                "top_pages": [],
+                "synthesis": {"answer": fp_result.get("synthesis", ""), "sources": []},
+                "github_repos": None,
+                "warnings": warnings + [{"stage": "escalation", "action": "delegated_to_full_pipeline"}],
+                "estimated_cost_usd": estimated_cost + fp_result.get("estimated_cost_usd", 0.0),
+                "total_cost_usd": total_cost + fp_result.get("estimated_cost_usd", 0.0),
+                "elapsed_ms": int((time.time() - start_time) * 1000),
+                "escalation_source": "full_pipeline",
+            }
+
+            if _SHARED_CACHE_AVAILABLE:
+                store_shared_cache(query, escalation_result)
+
+            return escalation_result
+
+        except Exception as exc:
+            logger.warning("deep_escalation_failed: %s", exc)
+            warnings.append({"stage": "escalation", "error": str(exc)})
+
     if not merged_hits:
         return {
             "query": query,
@@ -416,7 +511,6 @@ async def research_deep(
             markdown = ""
             md_title = ""
 
-            # Check if URL is YouTube and try transcript extraction
             if _is_youtube_url(url):
                 try:
                     from loom.providers.youtube_transcripts import fetch_youtube_transcript
@@ -431,13 +525,13 @@ async def research_deep(
                             markdown = yt_result.get("description", "")
                         md_title = yt_result.get("title", "")
                 except ImportError:
-                    logger.debug("youtube_transcripts not available (yt-dlp not installed)")
+                    logger.debug("youtube_transcripts not available")
                 except Exception as exc:
                     logger.warning("youtube_transcript_extraction_failed url=%s error=%s", url, exc)
             else:
-                # Auto-set Tor proxy for .onion URLs
                 proxy = None
                 from urllib.parse import urlparse as _urlparse
+
                 _host = _urlparse(url).hostname or ""
                 if _host.endswith(".onion"):
                     proxy = config.get("TOR_SOCKS5_PROXY", "socks5h://127.0.0.1:9050")
@@ -458,11 +552,9 @@ async def research_deep(
 
                 markdown = md_result.get("markdown", "")
                 md_title = md_result.get("title", "")
-                # Fallback: use fetched text if markdown extraction failed
                 if len(markdown) < 100 and fetch_result.get("text"):
                     markdown = fetch_result["text"]
 
-            # Wayback fallback for dead links (404, empty content)
             if len(markdown) < 100:
                 try:
                     from loom.tools.enrich import research_wayback
@@ -521,7 +613,6 @@ async def research_deep(
                 "relevance_score": "number",
             }
 
-            # Limit concurrent extractions to avoid exceeding cost cap
             extract_concurrency = config.get("LLM_EXTRACT_CONCURRENCY", 3)
             extract_sem = asyncio.Semaphore(extract_concurrency)
 
@@ -546,7 +637,6 @@ async def research_deep(
                         logger.warning("extract_fail url=%s error=%s", page["url"], exc)
                         warnings.append({"stage": "extract", "url": page["url"], "error": str(exc)})
 
-            # Extract in parallel up to cost limit
             extract_tasks = [_extract_single(page) for page in pages]
             await asyncio.gather(*extract_tasks, return_exceptions=True)
 
@@ -569,7 +659,6 @@ async def research_deep(
     # ── STAGE 6: Synthesis ───────────────────────────────────────────────
     synthesis_result: dict[str, Any] | None = None
     if synthesize and top_pages and total_cost < max_cost_usd:
-        # Estimate cost before executing LLM synthesis
         if _COST_ESTIMATION_AVAILABLE:
             try:
                 cost_estimate = await research_estimate_cost(
@@ -579,7 +668,6 @@ async def research_deep(
                 )
                 estimated_cost += cost_estimate.get("estimated_cost_usd", 0.0)
 
-                # Check if estimated cost would exceed budget
                 if total_cost + estimated_cost > max_cost_usd:
                     logger.info(
                         "synthesis_cost_exceeded: estimated_cost=%f, total=%f, max=%f",
@@ -592,7 +680,6 @@ async def research_deep(
                         "error": f"cost cap exceeded: {total_cost + estimated_cost:.6f} > {max_cost_usd}",
                     })
                 else:
-                    # Cost is within budget, proceed with synthesis
                     try:
                         from loom.tools.llm import research_llm_answer
 
@@ -617,7 +704,6 @@ async def research_deep(
                         warnings.append({"stage": "synthesis", "error": str(exc)})
             except Exception as exc:
                 logger.warning("cost_estimation_fail: %s", exc)
-                # Fallback: proceed with synthesis without cost pre-check
                 try:
                     from loom.tools.llm import research_llm_answer
 
@@ -641,7 +727,6 @@ async def research_deep(
                     logger.warning("synthesis_fail: %s", exc2)
                     warnings.append({"stage": "synthesis", "error": str(exc2)})
         else:
-            # Cost estimator not available, proceed without pre-check
             try:
                 from loom.tools.llm import research_llm_answer
 
@@ -679,7 +764,6 @@ async def research_deep(
                 )
                 if isinstance(gh_result, dict) and "error" not in gh_result:
                     repos = gh_result.get("results", [])
-                    # Enrich top repo with README
                     if repos:
                         top_repo = repos[0]
                         if "name" in top_repo and "/" in top_repo["name"]:
@@ -788,7 +872,6 @@ async def research_deep(
 
     final_answer = synthesis_result.get("answer", "") if synthesis_result else ""
 
-    # Build response dict
     response: dict[str, Any] = {
         "query": query,
         "search_variations": search_variations,
@@ -809,7 +892,6 @@ async def research_deep(
         "elapsed_ms": int((time.time() - start_time) * 1000),
     }
 
-    # ── AUTO-SCORE WITH HCS (NON-BLOCKING) ──────────────────────────────
     try:
         from loom.tools.hcs_multi_scorer import research_hcs_score_full
 
@@ -821,5 +903,8 @@ async def research_deep(
         logger.debug("hcs_multi_scorer not available, skipping hcs scoring")
     except Exception as exc:
         logger.warning("deep_hcs_scoring_failed (non-blocking): %s", exc)
+
+    if _SHARED_CACHE_AVAILABLE:
+        store_shared_cache(query, response)
 
     return response

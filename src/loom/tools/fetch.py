@@ -25,6 +25,7 @@ except ImportError:  # pragma: no cover — optional HTML parser
 from loom.cache import get_cache
 from loom.params import FetchParams
 from loom.validators import EXTERNAL_TIMEOUT_SECS, MAX_FETCH_CHARS, get_validated_dns
+from loom.retry import with_retry
 
 logger = logging.getLogger("loom.tools.fetch")
 
@@ -159,6 +160,7 @@ def _is_cloudflare_block(result: FetchResult) -> bool:
         return True
     return result.status_code == 503 and "cloudflare" in text
 
+@with_retry(max_attempts=3, backoff_base=1.0)
 
 def research_fetch(
     url: str,

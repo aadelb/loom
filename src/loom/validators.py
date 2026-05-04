@@ -2,6 +2,9 @@
 
 Provides SSRF-safe URL validation, character capping, GitHub query
 sanitization, and local file path validation for safe file operations.
+
+DNS resolution cache uses Redis for distributed caching across multiple
+uvicorn workers, with graceful fallback to in-memory dict if Redis unavailable.
 """
 
 from __future__ import annotations
@@ -57,6 +60,7 @@ def get_max_fetch_chars() -> int:
     """Get max fetch chars from config."""
     return _get_max_chars_hard_cap()
 
+
 MAX_FETCH_CHARS = 200_000  # Default; actual value should be read via get_max_fetch_chars()
 
 # Default timeout (seconds) for stealth browser tools (camoufox, botasaurus).
@@ -65,10 +69,11 @@ STEALTH_TIMEOUT = 60
 # GitHub CLI query allow-list regex (prevents flag injection)
 GH_QUERY_RE = re.compile(r"^[\w\s\-./:@#'\"?!()+,=\[\]&*~|<>]+$")
 
-# DNS resolution cache for TOCTOU prevention (thread-safe, 5-minute TTL)
+# DNS resolution cache for TOCTOU prevention (thread-safe, 1-hour Redis TTL)
+# Fallback to local dict if Redis unavailable
 _dns_cache_lock = threading.Lock()
 _dns_cache: dict[str, tuple[list[str], float]] = {}
-_DNS_CACHE_TTL = 300  # seconds
+_DNS_CACHE_TTL = 3600  # seconds (1 hour, shared with Redis TTL)
 
 # Header names that are safe for user-provided fetch requests.
 # Security-sensitive headers (Authorization, Host, Cookie, etc.) are excluded.
@@ -237,8 +242,40 @@ def validate_local_file_path(file_path: str, allowed_base: str | Path | None = N
         raise PathSafetyError(f"file path validation failed: {exc}") from None
 
 
+def _get_redis_store_sync() -> Any | None:
+    """Get Redis store instance synchronously.
+
+    Returns the global Redis store if available, None if not initialized
+    or if Redis is unavailable. Uses sync wrapper for async operations.
+
+    Returns:
+        RedisStore instance or None.
+    """
+    try:
+        import asyncio
+
+        from loom.redis_store import get_redis_store
+
+        # Try to get or create the store in a sync context
+        try:
+            # If we're already in an async context, this will fail
+            loop = asyncio.get_running_loop()
+            # We're in an async context but this is a sync function
+            # Fall back to local cache
+            return None
+        except RuntimeError:
+            # Not in an async context, safe to use asyncio.run()
+            store = asyncio.run(get_redis_store())
+            return store
+    except (ImportError, Exception) as e:
+        logger.debug("redis_store_unavailable error=%s", str(e))
+        return None
+
+
 def _get_cached_dns(host: str) -> list[str] | None:
     """Retrieve cached resolved IPs for a host if fresh (within TTL).
+
+    Tries Redis first, falls back to local in-memory dict if Redis unavailable.
 
     Args:
         host: hostname to look up in cache
@@ -246,11 +283,27 @@ def _get_cached_dns(host: str) -> list[str] | None:
     Returns:
         List of resolved IP strings, or None if cache miss or expired.
     """
+    # Try Redis first
+    redis_store = _get_redis_store_sync()
+    if redis_store:
+        try:
+            import asyncio
+            key = f"dns:{host}"
+            # Create and run coroutine synchronously
+            coro = redis_store.cache_get(key)
+            value = asyncio.run(coro)
+            if value is not None:
+                logger.debug("dns_cache_hit host=%s source=redis", host)
+                return value
+        except Exception as e:
+            logger.debug("redis_dns_cache_get_failed host=%s error=%s", host, str(e))
+
+    # Fall back to local dict
     with _dns_cache_lock:
         if host in _dns_cache:
             ips, timestamp = _dns_cache[host]
             if time.time() - timestamp < _DNS_CACHE_TTL:
-                logger.debug("dns_cache_hit host=%s ips=%s", host, ips)
+                logger.debug("dns_cache_hit host=%s source=local", host, ips)
                 return ips
             else:
                 del _dns_cache[host]
@@ -260,13 +313,30 @@ def _get_cached_dns(host: str) -> list[str] | None:
 def _set_cached_dns(host: str, ips: list[str]) -> None:
     """Store resolved IPs for a host in the cache.
 
+    Stores in Redis for distributed cache across workers, with local dict fallback.
+
     Args:
         host: hostname
         ips: list of resolved IP strings
     """
+    # Try Redis first
+    redis_store = _get_redis_store_sync()
+    if redis_store:
+        try:
+            import asyncio
+            key = f"dns:{host}"
+            # Create and run coroutine synchronously
+            coro = redis_store.cache_set(key, ips, ttl_seconds=_DNS_CACHE_TTL)
+            asyncio.run(coro)
+            logger.debug("dns_cache_set host=%s source=redis ips=%s", host, ips)
+            return
+        except Exception as e:
+            logger.debug("redis_dns_cache_set_failed host=%s error=%s", host, str(e))
+
+    # Fall back to local dict
     with _dns_cache_lock:
         _dns_cache[host] = (ips, time.time())
-        logger.debug("dns_cache_set host=%s ips=%s", host, ips)
+        logger.debug("dns_cache_set host=%s source=local ips=%s", host, ips)
 
 
 def validate_url(url: str) -> str:
@@ -275,7 +345,7 @@ def validate_url(url: str) -> str:
     link-local, loopback, multicast, reserved, and unspecified IPs.
 
     Also caches resolved IPs to prevent TOCTOU rebinding attacks. The cache
-    uses a 5-minute TTL; downstream code should retrieve cached IPs via
+    uses a 1-hour TTL in Redis; downstream code should retrieve cached IPs via
     get_validated_dns() to ensure the request uses the same IP that was
     validated.
 

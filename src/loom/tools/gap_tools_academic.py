@@ -254,7 +254,9 @@ async def research_author_clustering(field: str, max_authors: int = 50) -> dict[
 
 
 async def research_citation_cartography(paper_id: str, depth: int = 2) -> dict[str, Any]:
-    """Map citation flow with manipulation detection.
+    """DEPRECATED: Use research_graph(action="extract", ...) instead.
+
+    Map citation flow with manipulation detection.
 
     Fetches a paper from Semantic Scholar, builds a citation graph up to
     specified depth, and detects anomalies like circular citations or

@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any
 
 from loom.config import CONFIG, load_config
+from loom.retry import with_retry
 from loom.providers.anthropic_provider import AnthropicProvider
 from loom.providers.base import LLMResponse
 from loom.providers.deepseek_provider import DeepSeekProvider
@@ -108,6 +109,92 @@ def _record_provider_success(provider_name: str) -> None:
             "state": "closed",
         }
         logger.info("circuit_reset provider=%s", provider_name)
+
+
+
+async def _call_provider_with_retry(
+    provider: Any,
+    messages: list[dict[str, str]],
+    *,
+    model: str,
+    max_tokens: int,
+    temperature: float,
+    response_format: dict[str, Any] | None,
+    timeout: int,
+) -> LLMResponse:
+    """Call a provider with automatic retry on transient errors.
+
+    Applies exponential backoff for transient errors (timeout, connection errors).
+    Does NOT retry on permanent errors (auth, invalid request, etc.).
+    
+    This works WITHIN a single provider attempt. Cascading to other providers
+    is handled at a higher level (_call_with_cascade).
+
+    Args:
+        provider: Provider instance with chat() method
+        messages: Chat messages
+        model: Model identifier
+        max_tokens: Max tokens in response
+        temperature: Sampling temperature
+        response_format: Optional JSON schema
+        timeout: Per-call timeout in seconds
+
+    Returns:
+        LLMResponse from the provider
+
+    Raises:
+        Exception: Non-retryable errors or after max retries exhausted
+    """
+    max_attempts = 3
+    retryable_errors = (TimeoutError, ConnectionError, OSError)
+    
+    for attempt in range(max_attempts):
+        try:
+            response = await provider.chat(
+                messages,
+                model=model,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                response_format=response_format,
+                timeout=timeout,
+            )
+            if attempt > 0:
+                logger.info(
+                    "provider_call_recovered provider=%s attempt=%d",
+                    provider.name,
+                    attempt + 1,
+                )
+            return response
+        except Exception as exc:
+            # Non-retryable errors: raise immediately
+            if not isinstance(exc, retryable_errors):
+                logger.error(
+                    "provider_call_non_retryable provider=%s error=%s",
+                    provider.name,
+                    type(exc).__name__,
+                )
+                raise
+            
+            # Last attempt: give up
+            if attempt == max_attempts - 1:
+                logger.error(
+                    "provider_call_exhausted provider=%s max_attempts=%d",
+                    provider.name,
+                    max_attempts,
+                )
+                raise
+            
+            # Calculate backoff
+            delay = 1.0 * (2 ** attempt)  # 1s, 2s, 4s
+            logger.warning(
+                "provider_call_retry provider=%s attempt=%d backoff_secs=%d error=%s",
+                provider.name,
+                attempt + 1,
+                delay,
+                type(exc).__name__,
+            )
+            import asyncio
+            await asyncio.sleep(delay)
 
 
 def _get_provider(name: str) -> Any:
@@ -484,7 +571,8 @@ async def _call_with_cascade(
 
         attempts.append(provider.name)
         try:
-            response: LLMResponse = await provider.chat(
+            response: LLMResponse = await _call_provider_with_retry(
+                provider,
                 messages,
                 model=model,
                 max_tokens=max_tokens,

@@ -9,9 +9,12 @@ from typing import Any
 
 from mcp.types import TextContent
 
+from loom.retry import with_retry
+
 logger = logging.getLogger("loom.tools.search")
 
 
+@with_retry(max_attempts=3, backoff_base=1.0)
 async def research_search(
     query: str,
     provider: str | None = None,

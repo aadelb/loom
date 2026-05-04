@@ -47,6 +47,14 @@ except ImportError:
     logger.warning("meta_learner not available; will use default escalation strategy")
     META_LEARNER_AVAILABLE = False
 
+# Try to import strategy_adapter for real-time ranking; fallback gracefully
+try:
+    from loom.tools.strategy_adapter import StrategyAdapter
+    STRATEGY_ADAPTER_AVAILABLE = True
+except ImportError:
+    STRATEGY_ADAPTER_AVAILABLE = False
+    logger.debug("strategy_adapter not available; will use static rankings")
+
 # Try to import explainability engine; fallback gracefully
 try:
     from loom.tools.explainability import research_explain_bypass
@@ -142,6 +150,15 @@ async def research_full_pipeline(
     total_cost = 0.0
     estimated_cost = 0.0
 
+    # Initialize strategy adapter (singleton, loads persisted state)
+    adapter = None
+    if STRATEGY_ADAPTER_AVAILABLE:
+        try:
+            adapter = await StrategyAdapter.instance()
+            logger.debug("strategy_adapter_initialized")
+        except Exception as e:
+            logger.warning("strategy_adapter_init_failed error=%s", str(e)[:100])
+
     # ── Stage 1: Query Decomposition ──
     build_result = research_build_query(
         user_request=query,
@@ -176,6 +193,7 @@ async def research_full_pipeline(
         escalation_count = 0
         strategy_source = "default"
         current_strategy = None  # Track which strategy led to success
+        current_model = None  # Track which model was used
 
         for attempt in range(max_escalation_attempts):
             try:
@@ -219,6 +237,7 @@ async def research_full_pipeline(
 
                 answer_text = response.text
                 total_cost += response.cost_usd or 0.0
+                current_model = response.provider
 
                 # Score the answer
                 score_result = await research_hcs_score(
@@ -302,6 +321,27 @@ async def research_full_pipeline(
                                 str(e)[:100],
                             )
 
+                    # Record successful strategy in adapter (if available)
+                    if adapter and current_strategy and current_model:
+                        try:
+                            await adapter.record_outcome(
+                                strategy=current_strategy,
+                                model=current_model,
+                                success=True,
+                                hcs_score=current_score,
+                                alpha=0.3,
+                            )
+                            logger.debug(
+                                "strategy_adapter_recorded_success strategy=%s model=%s hcs=%.1f",
+                                current_strategy,
+                                current_model,
+                                current_score,
+                            )
+                        except Exception as e:
+                            logger.warning(
+                                "strategy_adapter_record_failed error=%s", str(e)[:100]
+                            )
+
                     break
 
                 # If score is better than previous, keep it
@@ -310,10 +350,33 @@ async def research_full_pipeline(
 
                 # If below target and attempts remain, escalate
                 if attempt < max_escalation_attempts - 1:
-                    # Try meta_learner first to get learned strategy ranking
-                    learned_strategies: list[str] | None = None
+                    # Try hot strategies from adapter first (real-time adaptation)
+                    hot_strategies: list[str] = []
+                    if adapter and current_model:
+                        try:
+                            hot_strategies = adapter.get_hot_strategies(
+                                model=current_model,
+                                top_k=5,
+                                min_success_rate=0.5,
+                            )
+                            if hot_strategies:
+                                strategy_source = "hot_adapter"
+                                logger.info(
+                                    "stage2_escalate_hot_adapter question_idx=%d attempt=%d "
+                                    "strategies=%s",
+                                    idx,
+                                    attempt + 1,
+                                    hot_strategies[:3],
+                                )
+                        except Exception as e:
+                            logger.warning(
+                                "strategy_adapter_hot_strategies_failed error=%s",
+                                str(e)[:100],
+                            )
 
-                    if META_LEARNER_AVAILABLE:
+                    # If no hot strategies, try meta_learner
+                    learned_strategies: list[str] | None = None
+                    if not hot_strategies and META_LEARNER_AVAILABLE:
                         try:
                             meta_result = await research_meta_learn(
                                 successful_strategies=successful_strategies,
@@ -369,8 +432,10 @@ async def research_full_pipeline(
                             cache_result.get("confidence", 0),
                         )
                     else:
-                        # Cache miss: use learned or default escalation chain
-                        if learned_strategies:
+                        # Cache miss: use hot/learned/default escalation chain
+                        if hot_strategies:
+                            top_strategies = hot_strategies
+                        elif learned_strategies:
                             top_strategies = learned_strategies
                         else:
                             top_strategies = DEFAULT_ESCALATION_STRATEGIES
@@ -399,6 +464,27 @@ async def research_full_pipeline(
                         "strategy_source": strategy_source,
                     })
 
+                    # Record failed strategy in adapter (if available)
+                    if adapter and strategy_choice and current_model:
+                        try:
+                            await adapter.record_outcome(
+                                strategy=strategy_choice,
+                                model=current_model,
+                                success=False,
+                                hcs_score=current_score,
+                                alpha=0.3,
+                            )
+                            logger.debug(
+                                "strategy_adapter_recorded_failure strategy=%s model=%s hcs=%.1f",
+                                strategy_choice,
+                                current_model,
+                                current_score,
+                            )
+                        except Exception as e:
+                            logger.warning(
+                                "strategy_adapter_record_failed error=%s", str(e)[:100]
+                            )
+
                     # Track the strategy for explainability if next attempt succeeds
                     current_strategy = strategy_choice
                     sub_q = strategy_choice
@@ -422,7 +508,36 @@ async def research_full_pipeline(
                     if not answer_text:
                         answer_text = f"[Failed to answer: {str(e)[:100]}]"
 
-        # Store final answer and score
+        # ── FALLBACK: If escalation exhausted with low score, try research_deep ──
+        if best_score < target_hcs and escalation_count >= max_escalation_attempts - 1:
+            logger.info(
+                "stage2_fallback_to_deep question_idx=%d best_score=%.1f target=%.1f",
+                idx,
+                best_score,
+                target_hcs,
+            )
+            try:
+                deep_answer = await _fallback_to_deep(
+                    sub_q,
+                    max_cost_usd=max_cost_usd - total_cost,
+                )
+                if deep_answer and "[" not in deep_answer[:1]:  # Skip error messages
+                    answer_text = deep_answer
+                    escalation_log.append({
+                        "question_idx": idx,
+                        "action": "fallback_to_deep_success",
+                        "answer_len": len(deep_answer),
+                    })
+                    logger.info("stage2_fallback_to_deep_success question_idx=%d answer_len=%d", idx, len(deep_answer))
+            except Exception as e:
+                logger.warning("stage2_fallback_to_deep_failed question_idx=%d error=%s", idx, str(e)[:100])
+                escalation_log.append({
+                    "question_idx": idx,
+                    "action": "fallback_to_deep_failed",
+                    "error": str(e)[:100],
+                })
+
+                # Store final answer and score
         answers[idx] = answer_text
         hcs_scores[idx] = best_score
 
@@ -650,6 +765,7 @@ Answers:
             "dark_web_enrichments_count": len(dark_web_enrichments),
             "strategy_source": strategy_source,
             "meta_learner_available": META_LEARNER_AVAILABLE,
+            "strategy_adapter_available": STRATEGY_ADAPTER_AVAILABLE,
             "explainability_available": EXPLAINABILITY_AVAILABLE,
             "successful_strategies_tracked": len(successful_strategies),
             "cost_estimation_available": _COST_ESTIMATION_AVAILABLE,
@@ -667,9 +783,10 @@ Answers:
         result["final_report"] = _build_report(result)
 
     logger.info(
-        "pipeline_complete output_format=%s meta_learner=%s explainability=%s total_cost=%.6f",
+        "pipeline_complete output_format=%s meta_learner=%s strategy_adapter=%s explainability=%s total_cost=%.6f",
         output_format,
         META_LEARNER_AVAILABLE,
+        STRATEGY_ADAPTER_AVAILABLE,
         EXPLAINABILITY_AVAILABLE,
         total_cost,
     )
@@ -687,6 +804,14 @@ Answers:
             logger.debug("hcs_multi_scorer not available, skipping hcs synthesis scoring")
         except Exception as exc:
             logger.warning("pipeline_hcs_scoring_failed (non-blocking): %s", exc)
+
+    # Flush strategy adapter state (if available)
+    if adapter:
+        try:
+            await adapter.flush_state(force=True)
+            logger.debug("strategy_adapter_state_flushed")
+        except Exception as e:
+            logger.warning("strategy_adapter_flush_failed error=%s", str(e)[:100])
 
     return result
 
@@ -716,6 +841,7 @@ def _build_report(result: dict[str, Any]) -> str:
         f"- **Dark Web Enrichments:** {result['metadata'].get('dark_web_enrichments_count', 0)}",
         f"- **Strategy Source:** {result['metadata'].get('strategy_source', 'unknown')}",
         f"- **Meta-Learner:** {'enabled' if result['metadata'].get('meta_learner_available') else 'disabled'}",
+        f"- **Strategy Adapter:** {'enabled' if result['metadata'].get('strategy_adapter_available') else 'disabled'}",
         f"- **Total Cost:** ${result['metadata'].get('total_cost_usd', 0):.6f} (max ${result['metadata'].get('max_cost_usd', 0):.2f})",
         f"",
         f"## Answers by Question",
@@ -742,3 +868,58 @@ def _build_report(result: dict[str, Any]) -> str:
     ])
 
     return "\n".join(lines)
+
+
+# ── INTEGRATION POINT: Fallback to research_deep for failed sub-questions ──
+# After max escalation attempts, if a sub-question still fails to meet target_hcs,
+# call research_deep(sub_question) to leverage multi-provider direct search.
+# This is automatically invoked when escalation_count == max_escalation_attempts - 1
+# and best_score < target_hcs.
+
+async def _fallback_to_deep(sub_q: str, max_cost_usd: float) -> str:
+    """Fallback to research_deep for a failed sub-question.
+
+    Called when LLM synthesis via escalation has failed 2+ times.
+    Uses research_deep's multi-provider search + markdown extraction
+    without LLM synthesis for faster, more direct results.
+
+    Args:
+        sub_q: sub-question that failed escalation
+        max_cost_usd: remaining cost budget
+
+    Returns:
+        Answer text from research_deep or error message
+    """
+    try:
+        from loom.tools.deep import research_deep
+
+        logger.info("fallback_to_deep sub_q=%s", sub_q[:60])
+
+        deep_result = await research_deep(
+            query=sub_q,
+            depth=1,
+            expand_queries=False,
+            extract=True,
+            synthesize=False,  # Skip LLM synthesis, use direct text
+            include_github=False,
+            include_community=False,
+            include_red_team=False,
+            include_misinfo_check=False,
+            max_cost_usd=max(0.05, max_cost_usd * 0.1),  # Use 10% of remaining budget
+            allow_escalation=False,  # Prevent re-escalation loops
+        )
+
+        # Extract answer from top pages markdown
+        top_pages = deep_result.get("top_pages", [])
+        if top_pages:
+            combined_text = "\n\n".join([p.get("markdown", "")[:500] for p in top_pages[:3]])
+            if combined_text:
+                logger.info("fallback_to_deep success sub_q=%s text_len=%d", sub_q[:60], len(combined_text))
+                return combined_text[:1000]
+
+        logger.warning("fallback_to_deep no_content sub_q=%s", sub_q[:60])
+        return "[research_deep returned no content]"
+
+    except Exception as e:
+        logger.error("fallback_to_deep failed sub_q=%s error=%s", sub_q[:60], str(e)[:100])
+        return f"[Fallback to research_deep failed: {str(e)[:100]}]"

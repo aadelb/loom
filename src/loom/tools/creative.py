@@ -499,7 +499,9 @@ async def research_citation_graph(
     depth: int = 1,
     max_papers: int = 10,
 ) -> dict[str, Any]:
-    """Build a citation graph from a seed paper query.
+    """DEPRECATED: Use research_graph(action="extract", ...) instead.
+
+    Build a citation graph from a seed paper query.
 
     Uses Semantic Scholar API (free, no key for basic) to traverse
     citations and references. Includes retry logic with exponential backoff

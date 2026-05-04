@@ -1,4 +1,10 @@
-"""Neo4j-backed graph via SQLite. Stores entities/relationships with FTS and traversal."""
+"""Neo4j-backed graph via SQLite. Stores entities/relationships with FTS and traversal.
+
+DEPRECATED: Use research_graph() unified interface instead.
+- research_graph_store → use research_graph(action="merge", ...)
+- research_graph_query → use research_graph(action="query", ...)
+- research_graph_visualize → use research_graph(action="visualize", ...)
+"""
 from __future__ import annotations
 import json, logging, sqlite3
 from datetime import UTC, datetime
@@ -22,7 +28,15 @@ def _init_graph_db() -> None:
     conn.close()
 
 def research_graph_store(entities: list[dict[str, Any]], relationships: list[dict[str, Any]]) -> dict[str, Any]:
-    """Store entities and relationships in graph database. Returns {nodes_created, edges_created, total_nodes, total_edges, timestamp}"""
+    """Store entities and relationships in graph database.
+
+    DEPRECATED: Use research_graph(action="merge", graphs=[...]) instead.
+
+    Returns {nodes_created, edges_created, total_nodes, total_edges, timestamp}
+    """
+    logger.warning(
+        "research_graph_store is deprecated; use research_graph(action='merge', ...) instead"
+    )
     _init_graph_db()
     conn = sqlite3.connect(str(_GRAPH_DB))
     c = conn.cursor()
@@ -65,7 +79,15 @@ def research_graph_store(entities: list[dict[str, Any]], relationships: list[dic
         conn.close()
 
 def research_graph_query(query: str, max_depth: int = 2) -> dict[str, Any]:
-    """Search and traverse the graph database. Returns {query, matches, paths, subgraph {nodes, edges}, path_count}"""
+    """Search and traverse the graph database.
+
+    DEPRECATED: Use research_graph(action="query", search_query=...) instead.
+
+    Returns {query, matches, paths, subgraph {nodes, edges}, path_count}
+    """
+    logger.warning(
+        "research_graph_query is deprecated; use research_graph(action='query', ...) instead"
+    )
     max_depth = max(1, min(max_depth, 5))
     _init_graph_db()
     conn = sqlite3.connect(str(_GRAPH_DB))
@@ -105,7 +127,15 @@ def _traverse(c: sqlite3.Cursor, node_id: int, max_depth: int, current_depth: in
         paths.append(current_path[:])
 
 def research_graph_visualize(entity: str) -> dict[str, Any]:
-    """Return ego-graph (1-hop neighbors) around an entity. Returns {center, nodes, edges, node_count, edge_count}"""
+    """Return ego-graph (1-hop neighbors) around an entity.
+
+    DEPRECATED: Use research_graph(action="visualize", nodes=[...], edges=[...]) instead.
+
+    Returns {center, nodes, edges, node_count, edge_count}
+    """
+    logger.warning(
+        "research_graph_visualize is deprecated; use research_graph(action='visualize', ...) instead"
+    )
     _init_graph_db()
     conn = sqlite3.connect(str(_GRAPH_DB))
     c = conn.cursor()

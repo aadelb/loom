@@ -9,6 +9,7 @@ import shutil
 import subprocess
 from typing import Any
 
+from loom.billing import requires_tier
 from loom.validators import validate_url, UrlSafetyError
 
 logger = logging.getLogger("loom.tools.dark_recon")
@@ -54,11 +55,14 @@ def _is_tool_available(tool_name: str) -> bool:
     return shutil.which(tool_name) is not None
 
 
+@requires_tier("pro")
 def research_torbot(url: str, depth: int = 2) -> dict[str, Any]:
     """Dark web OSINT crawling via TorBot subprocess.
 
     Uses the TorBot tool to crawl a URL through Tor and extract information
     including linked URLs, email addresses, and phone numbers.
+
+    Requires: Pro tier or higher
 
     Args:
         url: URL to crawl (must be valid HTTP/HTTPS or onion address)
@@ -156,11 +160,14 @@ def research_torbot(url: str, depth: int = 2) -> dict[str, Any]:
         }
 
 
+@requires_tier("pro")
 def research_amass_enum(domain: str, passive: bool = True, timeout: int = 120) -> dict[str, Any]:
     """Attack surface mapping and asset discovery via OWASP Amass enum.
 
     Uses the Amass tool to enumerate subdomains, ASNs, and IP addresses
     associated with a domain.
+
+    Requires: Pro tier or higher
 
     Args:
         domain: domain name to enumerate
@@ -290,11 +297,14 @@ def research_amass_enum(domain: str, passive: bool = True, timeout: int = 120) -
         }
 
 
+@requires_tier("pro")
 def research_amass_intel(domain: str) -> dict[str, Any]:
     """OSINT intelligence gathering via OWASP Amass intel.
 
     Uses the Amass intel command to gather passive reconnaissance information
     including organizations, emails, and related domains.
+
+    Requires: Pro tier or higher
 
     Args:
         domain: domain name to investigate

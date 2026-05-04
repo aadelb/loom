@@ -119,3 +119,23 @@ def register_core_tools(mcp: "FastMCP", wrap_tool) -> None:
         mcp.tool()(wrap_tool(research_cloak_session))
     except (ImportError, AttributeError) as e:
         log.debug("skip cloak_backend: %s", e)
+
+    # Webhook management tools
+    try:
+        from loom.tools.webhooks import (
+            research_webhook_register,
+            research_webhook_list,
+            research_webhook_unregister,
+            research_webhook_test,
+        )
+        mcp.tool()(wrap_tool(research_webhook_register))
+        record_success("core", "research_webhook_register")
+        mcp.tool()(wrap_tool(research_webhook_list))
+        record_success("core", "research_webhook_list")
+        mcp.tool()(wrap_tool(research_webhook_unregister))
+        record_success("core", "research_webhook_unregister")
+        mcp.tool()(wrap_tool(research_webhook_test))
+        record_success("core", "research_webhook_test")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip webhooks: %s", e)
+        record_failure("core", "webhooks", str(e))

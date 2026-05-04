@@ -2,7 +2,7 @@
 
 Provides:
 - Create/cancel subscriptions with Stripe price mapping
-- One-time charges for overage or credits
+- One-time charges for overage or credits with idempotency
 - Invoice retrieval and listing
 - Checkout session creation for signup flows
 - Async httpx-based API calls (no stripe package dependency)
@@ -14,7 +14,6 @@ import base64
 import json
 import logging
 import os
-import uuid
 from typing import Any
 
 import httpx
@@ -46,7 +45,7 @@ class StripeIntegration:
 
     Manages subscription lifecycle, invoices, and one-time charges via
     Stripe REST API using httpx for HTTP calls. Requires STRIPE_LIVE_KEY
-    environment variable.
+    environment variable. Supports idempotency for charge operations.
     """
 
     def __init__(self, api_key: str = "") -> None:
@@ -91,13 +90,17 @@ class StripeIntegration:
         await self.close()
 
     async def create_subscription(
-        self, customer_id: str, tier: str
+        self,
+        customer_id: str,
+        tier: str,
+        idempotency_key: str | None = None,
     ) -> dict[str, Any]:
         """Create Stripe subscription for a customer tier.
 
         Args:
             customer_id: Loom customer ID (used as Stripe customer reference)
             tier: One of 'free', 'pro', 'team', 'enterprise'
+            idempotency_key: Optional idempotency key for Stripe request
 
         Returns:
             Dict with subscription details:
@@ -131,11 +134,15 @@ class StripeIntegration:
             "expand[]": "latest_invoice.payment_intent",
         }
 
+        headers = {}
+        if idempotency_key:
+            headers["Idempotency-Key"] = idempotency_key
+
         try:
             response = await client.post(
                 f"{STRIPE_API_BASE}/subscriptions",
                 data=data,
-                headers={"Idempotency-Key": str(uuid.uuid4())},
+                headers=headers,
             )
             response.raise_for_status()
             result = response.json()
@@ -156,14 +163,19 @@ class StripeIntegration:
             raise
 
     async def create_charge(
-        self, customer_id: str, amount_cents: int, description: str
+        self,
+        customer_id: str,
+        amount_cents: int,
+        description: str,
+        idempotency_key: str | None = None,
     ) -> dict[str, Any]:
-        """Create one-time charge for overage or credits.
+        """Create one-time charge for overage or credits with idempotency.
 
         Args:
             customer_id: Loom customer ID (Stripe customer)
             amount_cents: Charge amount in cents (e.g., 9999 = $99.99)
             description: Charge description (e.g., "Overage charges for April")
+            idempotency_key: Optional idempotency key (Stripe deduplication)
 
         Returns:
             Dict with charge details:
@@ -172,6 +184,7 @@ class StripeIntegration:
             - amount: Amount in cents
             - description: Description provided
             - created: Creation timestamp (Unix timestamp)
+            - idempotency_key: The key used (for reference)
 
         Raises:
             ValueError: If amount <= 0
@@ -188,11 +201,15 @@ class StripeIntegration:
             "description": description,
         }
 
+        headers = {}
+        if idempotency_key:
+            headers["Idempotency-Key"] = idempotency_key
+
         try:
             response = await client.post(
                 f"{STRIPE_API_BASE}/invoiceitems",
                 data=data,
-                headers={"Idempotency-Key": str(uuid.uuid4())},
+                headers=headers,
             )
             response.raise_for_status()
             result = response.json()
@@ -205,6 +222,7 @@ class StripeIntegration:
                 "amount": result.get("amount"),
                 "description": result.get("description"),
                 "created": result.get("created"),
+                "idempotency_key": idempotency_key or "not_provided",
             }
         except httpx.HTTPError as e:
             log.error(f"Failed to create Stripe charge for {customer_id}: {e}")
@@ -355,6 +373,7 @@ class StripeIntegration:
         tier: str,
         success_url: str,
         cancel_url: str,
+        idempotency_key: str | None = None,
     ) -> dict[str, Any]:
         """Create Stripe Checkout session for subscription signup.
 
@@ -363,6 +382,7 @@ class StripeIntegration:
             tier: One of 'pro', 'team', 'enterprise' (not 'free')
             success_url: URL to redirect on successful payment
             cancel_url: URL to redirect if payment cancelled
+            idempotency_key: Optional idempotency key for Stripe request
 
         Returns:
             Dict with checkout session details:
@@ -397,11 +417,15 @@ class StripeIntegration:
             "cancel_url": cancel_url,
         }
 
+        headers = {}
+        if idempotency_key:
+            headers["Idempotency-Key"] = idempotency_key
+
         try:
             response = await client.post(
                 f"{STRIPE_API_BASE}/checkout/sessions",
                 data=data,
-                headers={"Idempotency-Key": str(uuid.uuid4())},
+                headers=headers,
             )
             response.raise_for_status()
             result = response.json()

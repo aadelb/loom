@@ -453,7 +453,9 @@ def _extract_hn_topics(title: str, url: str) -> list[str]:
 async def research_social_graph(
     username: str, platforms: list[str] | None = None
 ) -> dict[str, Any]:
-    """Build a social relationship graph from public data across platforms.
+    """Build a social relationship graph
+
+    DEPRECATED: Use research_graph(action="extract", ...) for unified graph interface. from public data across platforms.
 
     Analyzes relationships across GitHub (co-contributors), Reddit (mentions),
     HackerNews (topic interests), and Semantic Scholar (co-authorship).

@@ -1,5 +1,8 @@
 """research_graph_analyze and research_transaction_graph — Pure Python graph tools.
 
+DEPRECATED: Use research_graph() unified interface instead.
+- research_graph_analyze → use research_graph(action="visualize", ...) for visualization
+
 Provides PageRank, community detection, centrality, shortest path algorithms
 and blockchain transaction graph building via blockchain.info. No networkx/pytorch_geometric.
 """
@@ -83,7 +86,13 @@ def _community_detect(node_list: list[str], adj: dict[int, set[int]]) -> dict[in
 
 
 async def research_graph_analyze(nodes: list[dict[str, Any]], edges: list[dict[str, Any]], algorithm: str = "pagerank") -> dict[str, Any]:
-    """Analyze graph using PageRank, community detection, centrality, or shortest_path."""
+    """Analyze graph using PageRank, community detection, centrality, or shortest_path.
+
+    DEPRECATED: Use research_graph(action="visualize", nodes=..., edges=...) instead.
+    """
+    logger.warning(
+        "research_graph_analyze is deprecated; use research_graph(action='visualize', ...) instead"
+    )
     try:
         node_map: dict[str, dict[str, Any]] = {n["id"]: n for n in nodes if "id" in n}
         if not node_map:
@@ -140,7 +149,13 @@ async def research_graph_analyze(nodes: list[dict[str, Any]], edges: list[dict[s
 
 
 async def research_transaction_graph(addresses: list[str], chain: str = "bitcoin") -> dict[str, Any]:
-    """Build transaction graph from blockchain addresses via blockchain.info."""
+    """Build transaction graph from blockchain addresses via blockchain.info.
+
+    DEPRECATED: Use research_graph() for unified graph interface.
+    """
+    logger.warning(
+        "research_transaction_graph is deprecated; use research_graph() for unified interface"
+    )
     if chain not in ("bitcoin", "ethereum"):
         return {"nodes": [], "edges": [], "clusters": [], "suspicious_patterns": [], "error": f"Unsupported chain: {chain}"}
 

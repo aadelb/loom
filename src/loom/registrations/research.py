@@ -382,6 +382,21 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip dependency_graph: %s", e)
         record_failure("research", "dependency_graph", str(e))
     try:
+        from loom.tools.tool_dependencies import (
+            research_tool_dependencies,
+            research_get_execution_plan,
+            research_dependency_graph_stats,
+        )
+        mcp.tool()(wrap_tool(research_tool_dependencies))
+        record_success("research", "research_tool_dependencies")
+        mcp.tool()(wrap_tool(research_get_execution_plan))
+        record_success("research", "research_get_execution_plan")
+        mcp.tool()(wrap_tool(research_dependency_graph_stats))
+        record_success("research", "research_dependency_graph_stats")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip tool_dependencies: %s", e)
+        record_failure("research", "tool_dependencies", str(e))
+    try:
         from loom.doc_parser import research_ocr_advanced, research_pdf_advanced, research_document_analyze
         mcp.tool()(wrap_tool(research_ocr_advanced))
         record_success("research", "research_ocr_advanced")

@@ -85,6 +85,7 @@ dev = [
     "pytest-asyncio>=0.24",
     "pytest-cov>=5",
     "pytest-mock>=3.14",
+    "hypothesis>=6.0",
     "ruff>=0.7",
     "mypy>=1.13",
     "pre-commit>=4",
@@ -230,11 +231,17 @@ markers = [
     "slow: marks tests as slow",
     "live: marks tests that hit the live network",
     "integration: marks integration tests",
+    "property: marks property-based tests using hypothesis",
 ]
 filterwarnings = [
     "ignore:Use `streamable_http_client`:DeprecationWarning",
     "ignore:coroutine.*was never awaited:RuntimeWarning",
 ]
+
+[tool.hypothesis]
+# Hypothesis configuration for property-based tests
+phases = ["generate", "target"]
+max_examples = 100  # Default; overridden per test with @settings
 
 [tool.coverage.run]
 branch = true

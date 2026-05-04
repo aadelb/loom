@@ -252,7 +252,9 @@ async def research_graph_scrape(
     query: str,
     model: str = "auto",
 ) -> dict[str, Any]:
-    """Scrape a URL using LLM-powered graph extraction.
+    """DEPRECATED: Use research_graph() unified interface.
+
+    Scrape a URL using LLM-powered graph extraction.
 
     Uses ScrapeGraphAI if available, otherwise falls back to Loom's LLM
     providers for structured data extraction from fetched content.
@@ -446,7 +448,9 @@ async def research_multi_page_graph(
     urls: list[str],
     query: str,
 ) -> dict[str, Any]:
-    """Scrape multiple pages and build a unified knowledge graph.
+    """DEPRECATED: Use research_graph() unified interface.
+
+    Scrape multiple pages and build a unified knowledge graph.
 
     Args:
         urls: List of URLs to scrape

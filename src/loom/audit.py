@@ -1,6 +1,7 @@
 """EU AI Act compliant audit logging for Loom MCP server.
 
 Provides append-only JSONL audit logs with tamper-proof HMAC-SHA256 signatures.
+All PII is scrubbed from audit entries before logging.
 
 Public API:
     log_invocation()    Log a tool invocation with params, status, duration
@@ -22,6 +23,8 @@ from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+
+from loom.pii_scrubber import scrub_dict, scrub_pii
 
 logger = logging.getLogger("loom.audit")
 
@@ -94,11 +97,14 @@ class AuditEntry:
 def _redact_params(params: dict[str, Any]) -> dict[str, Any]:
     """Redact sensitive parameters containing key/token/password/secret.
 
+    Also applies PII scrubbing to remove email addresses, phone numbers, IPs, etc.
+
     Args:
         params: Original parameters dict
 
     Returns:
         New dict with sensitive values replaced with "***REDACTED***"
+        and PII scrubbed from all string values
     """
     sensitive_keys = {"key", "token", "password", "secret"}
     redacted = {}
@@ -110,7 +116,8 @@ def _redact_params(params: dict[str, Any]) -> dict[str, Any]:
         else:
             redacted[key] = value
 
-    return redacted
+    # Apply PII scrubbing to all string values
+    return scrub_dict(redacted)
 
 
 def log_invocation(
@@ -126,11 +133,12 @@ def log_invocation(
 
     Creates daily JSONL files (YYYY-MM-DD.jsonl) in audit directory.
     Each line is a complete JSON entry with HMAC-SHA256 signature.
+    All PII is scrubbed before logging.
 
     Args:
         client_id: Client identifier (e.g., session ID, user ID)
         tool_name: Name of tool invoked
-        params: Input parameters (will be redacted for sensitive values)
+        params: Input parameters (will be redacted for sensitive values and scrubbed for PII)
         result_summary: Summary of result (not full result to save space)
         duration_ms: Execution duration in milliseconds
         status: Status code (e.g., "success", "error", "timeout")
@@ -158,10 +166,13 @@ def log_invocation(
     iso_timestamp = now_utc.isoformat()
     date_str = now_utc.strftime("%Y-%m-%d")
 
-    # Create audit entry with redacted params
+    # Create audit entry with redacted and scrubbed params
     redacted_params = _redact_params(params)
+    scrubbed_result_summary = scrub_pii(result_summary)
+    scrubbed_client_id = scrub_pii(client_id)
+
     entry = AuditEntry(
-        client_id=client_id,
+        client_id=scrubbed_client_id,
         tool_name=tool_name,
         params_summary=redacted_params,
         timestamp=iso_timestamp,
@@ -191,7 +202,7 @@ def log_invocation(
         # Set secure file permissions (0o600 = read/write for owner only)
         os.chmod(log_file, 0o600)
 
-        logger.debug("audit_logged tool=%s client=%s signature=%s status=%s", tool_name, client_id, signature, status)
+        logger.debug("audit_logged tool=%s client=%s signature=%s status=%s", tool_name, scrubbed_client_id, signature, status)
     except OSError as e:
         logger.error("audit_write_failed file=%s error=%s", str(log_file), str(e))
         raise

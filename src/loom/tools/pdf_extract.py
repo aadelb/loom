@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import io
 import logging
 import os
@@ -22,13 +23,114 @@ MAX_PDF_SIZE_BYTES = 50 * 1024 * 1024
 MAX_EXTRACTED_TEXT = 50000
 
 
-def research_pdf_extract(
+def _extract_pdf_text_sync(pdf_bytes: bytes, start_page: int | None, end_page: int | None) -> tuple[str | None, str | None, int | None]:
+    """Extract text from PDF bytes using PyPDF2 (CPU-bound sync function).
+
+    Args:
+        pdf_bytes: Raw PDF file bytes
+        start_page: 1-indexed start page or None
+        end_page: 1-indexed end page or None
+
+    Returns:
+        Tuple of (extracted_text, extraction_method, page_count) or (None, None, None) on failure
+    """
+    try:
+        from PyPDF2 import PdfReader  # type: ignore
+
+        reader = PdfReader(io.BytesIO(pdf_bytes))
+        page_count = len(reader.pages)
+
+        # Determine which pages to extract
+        if start_page is not None:
+            # Convert 1-indexed to 0-indexed
+            pages_to_extract = range(start_page - 1, min(end_page, page_count))
+        else:
+            pages_to_extract = range(page_count)
+
+        text_parts = []
+        for page_num in pages_to_extract:
+            page = reader.pages[page_num]
+            text = page.extract_text()
+            if text:
+                text_parts.append(text)
+
+        extracted_text = "\n".join(text_parts)
+        logger.info("pdf_extraction_pypdf2_success pages=%d", len(pages_to_extract))
+        return extracted_text, "pypdf2", page_count
+
+    except ImportError:
+        logger.debug("PyPDF2 not available")
+        return None, None, None
+    except Exception as exc:
+        logger.debug("PyPDF2 extraction failed: %s", exc)
+        return None, None, None
+
+
+def _extract_pdf_text_pdftotext(pdf_bytes: bytes, start_page: int | None, end_page: int | None) -> tuple[str | None, str | None, int | None]:
+    """Extract text from PDF using pdftotext CLI (CPU-bound sync function).
+
+    Args:
+        pdf_bytes: Raw PDF file bytes
+        start_page: 1-indexed start page or None
+        end_page: 1-indexed end page or None
+
+    Returns:
+        Tuple of (extracted_text, extraction_method, page_count) or (None, None, None) on failure
+    """
+    tmp_path = None
+    try:
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+            tmp.write(pdf_bytes)
+            tmp_path = tmp.name
+
+        cmd = ["pdftotext"]
+
+        # Add page range if specified
+        if start_page is not None:
+            cmd.extend(["-f", str(start_page), "-l", str(end_page)])
+
+        cmd.extend([tmp_path, "-"])
+
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+
+        if result.returncode != 0:
+            logger.warning("pdftotext_failed returncode=%d", result.returncode)
+            return None, None, None
+
+        logger.info("pdf_extraction_pdftotext_success")
+        # pdftotext doesn't report page count
+        return result.stdout, "pdftotext", None
+
+    except FileNotFoundError:
+        logger.error("pdftotext_not_found")
+        return None, None, None
+    except subprocess.TimeoutExpired:
+        logger.warning("pdftotext_timeout")
+        return None, None, None
+    except Exception as exc:
+        logger.error("pdftotext_extraction_error: %s", exc)
+        return None, None, None
+    finally:
+        if tmp_path and os.path.exists(tmp_path):
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+
+
+async def research_pdf_extract(
     url: str, pages: str | None = None
 ) -> dict[str, Any]:
     """Extract text from a PDF URL.
 
     Downloads the PDF, extracts text using PyPDF2 or pdftotext CLI.
-    Optionally extracts only specified pages.
+    Optionally extracts only specified pages. CPU-intensive parsing
+    runs in the process pool to avoid blocking the event loop.
 
     Args:
         url: URL to PDF file
@@ -86,101 +188,42 @@ def research_pdf_extract(
 
         logger.info("pdf_downloaded url=%s size=%d", url, len(pdf_bytes))
 
-        # Try PyPDF2 first
+        # Try PyPDF2 first (CPU-bound, run in executor)
         extracted_text = None
         extraction_method = None
         page_count = None
 
         try:
-            from PyPDF2 import PdfReader  # type: ignore
+            from loom.cpu_executor import run_cpu_bound
 
-            reader = PdfReader(io.BytesIO(pdf_bytes))
-            page_count = len(reader.pages)
+            extracted_text, extraction_method, page_count = await run_cpu_bound(
+                _extract_pdf_text_sync, pdf_bytes, start_page, end_page
+            )
 
-            # Determine which pages to extract
-            if start_page is not None:
-                # Convert 1-indexed to 0-indexed
-                pages_to_extract = range(start_page - 1, min(end_page, page_count))
-            else:
-                pages_to_extract = range(page_count)
-
-            text_parts = []
-            for page_num in pages_to_extract:
-                page = reader.pages[page_num]
-                text = page.extract_text()
-                if text:
-                    text_parts.append(text)
-
-            extracted_text = "\n".join(text_parts)
-            extraction_method = "pypdf2"
-            logger.info("pdf_extraction_pypdf2_success url=%s pages=%d", url, len(pages_to_extract))
-
-        except ImportError:
-            logger.debug("PyPDF2 not available, falling back to pdftotext")
         except Exception as exc:
-            logger.debug("PyPDF2 extraction failed: %s, trying pdftotext", exc)
+            logger.debug("cpu_executor failed for PyPDF2: %s, trying pdftotext", exc)
 
-        # Fall back to pdftotext CLI
+        # Fall back to pdftotext CLI if PyPDF2 failed
         if extracted_text is None:
-            tmp_path = None
             try:
-                with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
-                    tmp.write(pdf_bytes)
-                    tmp_path = tmp.name
+                from loom.cpu_executor import run_cpu_bound
 
-                cmd = ["pdftotext"]
-
-                # Add page range if specified
-                if start_page is not None:
-                    cmd.extend(["-f", str(start_page), "-l", str(end_page)])
-
-                cmd.extend([tmp_path, "-"])
-
-                result = subprocess.run(
-                    cmd,
-                    capture_output=True,
-                    text=True,
-                    timeout=30,
+                extracted_text, extraction_method, page_count = await run_cpu_bound(
+                    _extract_pdf_text_pdftotext, pdf_bytes, start_page, end_page
                 )
 
-                if result.returncode != 0:
-                    logger.warning(
-                        "pdftotext_failed url=%s returncode=%d",
-                        url, result.returncode
-                    )
-                    return {
-                        **output,
-                        "error": f"pdftotext failed: {result.stderr}",
-                    }
-
-                extracted_text = result.stdout
-                extraction_method = "pdftotext"
-
-                # Get page count from pdftotext if we don't have it
-                if page_count is None:
-                    # pdftotext doesn't report page count, try to estimate or use 0
-                    page_count = 0
-
-                logger.info("pdf_extraction_pdftotext_success url=%s", url)
-
-            except FileNotFoundError:
-                logger.error("pdftotext_not_found")
+            except Exception as exc:
+                logger.error("cpu_executor failed for pdftotext: %s", exc)
                 return {
                     **output,
-                    "error": "pdftotext command not found (install poppler-utils)",
+                    "error": f"PDF extraction failed: {str(exc)[:100]}",
                 }
-            except subprocess.TimeoutExpired:
-                logger.warning("pdftotext_timeout url=%s", url)
-                return {**output, "error": "pdftotext command timed out (>30s)"}
-            except Exception as exc:
-                logger.exception("pdf_extraction_failed url=%s", url)
-                return {**output, "error": str(exc)}
-            finally:
-                if tmp_path and os.path.exists(tmp_path):
-                    try:
-                        os.unlink(tmp_path)
-                    except OSError:
-                        pass
+
+        if extracted_text is None:
+            return {
+                **output,
+                "error": "PDF extraction failed (PyPDF2 and pdftotext both unavailable)",
+            }
 
         # Cap extracted text
         if len(extracted_text) > MAX_EXTRACTED_TEXT:
@@ -212,7 +255,7 @@ def research_pdf_extract(
         return {**output, "error": str(exc)}
 
 
-def research_pdf_search(url: str, query: str) -> dict[str, Any]:
+async def research_pdf_search(url: str, query: str) -> dict[str, Any]:
     """Search for text within a PDF.
 
     Downloads and extracts all pages from the PDF, then searches for the
@@ -251,7 +294,7 @@ def research_pdf_search(url: str, query: str) -> dict[str, Any]:
 
     try:
         # Download and extract PDF
-        extract_result = research_pdf_extract(url)
+        extract_result = await research_pdf_extract(url)
 
         if "error" in extract_result:
             return {**output, "error": extract_result["error"]}

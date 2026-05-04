@@ -162,6 +162,29 @@ class PgStore:
                 ON audit_log(customer_id)
             """)
 
+
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS idempotency_keys (
+                    id SERIAL PRIMARY KEY,
+                    idempotency_key TEXT UNIQUE NOT NULL,
+                    customer_id TEXT,
+                    operation TEXT NOT NULL,
+                    result JSONB NOT NULL,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    expires_at TIMESTAMPTZ DEFAULT NOW() + INTERVAL '24 hours'
+                )
+            """)
+
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_idempotency_key_expires
+                ON idempotency_keys(idempotency_key, expires_at)
+            """)
+
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_idempotency_customer_created
+                ON idempotency_keys(customer_id, created_at)
+            """)
+
             log.info("pg_schema_ready")
 
     # ===== Customers =====

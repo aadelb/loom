@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any
 
@@ -21,6 +22,7 @@ _UNICODE_HOMOGLYPHS = {
 
 
 def _check_lsb_anomaly(image_bytes: bytes) -> dict[str, Any]:
+    """Check for LSB steganography anomalies (CPU-bound)."""
     try:
         import io
 
@@ -53,6 +55,7 @@ def _check_lsb_anomaly(image_bytes: bytes) -> dict[str, Any]:
 
 
 def _check_whitespace_stego(text: str) -> dict[str, Any]:
+    """Check for whitespace/zero-width character steganography."""
     zero_width_chars = []
     for i, ch in enumerate(text):
         if ch in ("​", "‌", "‍", "⁠", "﻿"):
@@ -71,6 +74,7 @@ def _check_whitespace_stego(text: str) -> dict[str, Any]:
 
 
 def _check_homoglyphs(text: str) -> dict[str, Any]:
+    """Check for homoglyph/lookalike character attacks."""
     found: list[dict[str, Any]] = []
     for i, ch in enumerate(text):
         if ch in _UNICODE_HOMOGLYPHS and ch not in ("​", "‌", "‍", "⁠", "﻿"):
@@ -92,6 +96,7 @@ def _check_homoglyphs(text: str) -> dict[str, Any]:
 
 
 def _check_exif_hidden(image_bytes: bytes) -> dict[str, Any]:
+    """Check for hidden data in EXIF metadata (CPU-bound)."""
     try:
         import io
 
@@ -126,7 +131,7 @@ def _check_exif_hidden(image_bytes: bytes) -> dict[str, Any]:
         return {"method": "exif_hidden_data", "error": str(exc)}
 
 
-def research_stego_detect(
+async def research_stego_detect(
     content: str = "",
     image_url: str = "",
     check_whitespace: bool = True,
@@ -139,6 +144,9 @@ def research_stego_detect(
     Checks for: zero-width Unicode characters (whitespace steganography),
     Unicode homoglyphs (character substitution), LSB anomalies in images,
     and hidden data in EXIF metadata fields.
+
+    CPU-intensive image analysis (LSB, EXIF) runs in the process pool
+    to avoid blocking the async event loop.
 
     Args:
         content: text content to analyze for hidden data
@@ -178,16 +186,28 @@ def research_stego_detect(
             logger.warning("stego_detect image fetch failed: %s", exc)
 
         if image_bytes:
-            if check_lsb:
-                lsb = _check_lsb_anomaly(image_bytes)
-                results.append(lsb)
-                if lsb.get("suspicious"):
-                    total_anomalies += 1
-            if check_exif:
-                exif = _check_exif_hidden(image_bytes)
-                results.append(exif)
-                if exif.get("suspicious"):
-                    total_anomalies += 1
+            # Run CPU-intensive image analysis in executor
+            try:
+                from loom.cpu_executor import run_cpu_bound
+
+                if check_lsb:
+                    lsb = await run_cpu_bound(_check_lsb_anomaly, image_bytes)
+                    results.append(lsb)
+                    if lsb.get("suspicious"):
+                        total_anomalies += 1
+
+                if check_exif:
+                    exif = await run_cpu_bound(_check_exif_hidden, image_bytes)
+                    results.append(exif)
+                    if exif.get("suspicious"):
+                        total_anomalies += 1
+
+            except Exception as exc:
+                logger.error("stego_detect cpu_executor failed: %s", exc)
+                results.append({
+                    "method": "cpu_executor_error",
+                    "error": str(exc)[:100],
+                })
 
     return {
         "content_analyzed": bool(content),
