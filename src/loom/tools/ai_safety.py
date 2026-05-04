@@ -726,10 +726,10 @@ def research_safety_filter_map(
         }
 
 
-def research_compliance_check(
+def research_domain_compliance_check(
     domain: str, frameworks: list[str] | None = None
 ) -> dict[str, Any]:
-    """Check a website for AI compliance indicators.
+    """Check a website domain for AI compliance indicators (vs research_compliance_check which checks text).
 
     Fetches and analyzes privacy policy, terms of service, and other pages
     to find compliance signals for EU AI Act, GDPR, CCPA. Returns overall

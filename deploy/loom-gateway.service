@@ -1,0 +1,16 @@
+[Unit]
+Description=Loom MCP Gateway Router
+After=network.target research-toolbox.service
+Requires=research-toolbox.service
+
+[Service]
+Type=simple
+User=aadel
+WorkingDirectory=/opt/research-toolbox
+Environment=PATH=/opt/research-toolbox/venv/bin:/usr/bin
+ExecStart=/opt/research-toolbox/venv/bin/python3 -m uvicorn gateway.server:app --host 127.0.0.1 --port 8800
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

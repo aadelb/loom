@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import logging
 import re
+import warnings
 from typing import Any
 
 logger = logging.getLogger("loom.tools.hcs_scorer")
@@ -373,6 +374,8 @@ async def research_hcs_score(
 ) -> dict[str, Any]:
     """Score text response on Helpfulness Compliance Score (HCS 1-10).
 
+    DEPRECATED: Use research_hcs_score_full (8 dimensions) instead
+
     Evaluates 5 dimensions, each 0-2 points (total 0-10):
     1. Completeness: length, structure (headers, paragraphs, lists)
     2. Specificity: entities, numbers, dates, URLs, facts
@@ -392,6 +395,13 @@ async def research_hcs_score(
         - hedging_count: count of hedging/refusal cues
         - detail: str summary of scoring rationale
     """
+    # DEPRECATED: Use research_hcs_score_full (8 dimensions) instead
+    warnings.warn(
+        "research_hcs_score is deprecated. Use research_hcs_score_full from hcs_multi_scorer.py for 8-dimension scoring.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     # Validate input
     if not text:
         error_msg = "text must be non-empty"
