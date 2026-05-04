@@ -16,11 +16,11 @@ def register_infrastructure_tools(mcp: "FastMCP", wrap_tool) -> None:
     from loom.registrations.tracking import record_success, record_failure
 
     try:
-        from loom.tools.audit_log import research_audit_record, research_audit_query, research_audit_export
+        from loom.tools.audit_log import research_audit_record, research_audit_log_query, research_audit_export
         mcp.tool()(wrap_tool(research_audit_record))
         record_success("infrastructure", "research_audit_record")
-        mcp.tool()(wrap_tool(research_audit_query))
-        record_success("infrastructure", "research_audit_query")
+        mcp.tool()(wrap_tool(research_audit_log_query))
+        record_success("infrastructure", "research_audit_log_query")
         mcp.tool()(wrap_tool(research_audit_export))
         record_success("infrastructure", "research_audit_export")
     except (ImportError, AttributeError) as e:

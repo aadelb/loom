@@ -224,9 +224,9 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
 
     # ── Graph & Visualization Tools ──
     try:
-        from loom.tools.graph_scraper import research_graph
-        mcp.tool()(wrap_tool(research_graph))
-        record_success("research", "research_graph")
+        from loom.tools.graph_scraper import research_graph_scrape
+        mcp.tool()(wrap_tool(research_graph_scrape))
+        record_success("research", "research_graph_scrape")
     except (ImportError, AttributeError) as e:
         log.debug("skip graph_scraper: %s", e)
         record_failure("research", "graph_scraper", str(e))

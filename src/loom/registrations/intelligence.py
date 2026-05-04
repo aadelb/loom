@@ -105,16 +105,16 @@ def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip dark_recon_mod: %s", e)
         record_failure("intelligence", "dark_recon", str(e))
     try:
-        from loom.tools.darkweb_early_warning import research_darkweb_monitor
-        mcp.tool()(wrap_tool(research_darkweb_monitor))
-        record_success("intelligence", "research_darkweb_monitor")
+        from loom.tools.darkweb_early_warning import research_darkweb_early_warning
+        mcp.tool()(wrap_tool(research_darkweb_early_warning))
+        record_success("intelligence", "research_darkweb_early_warning")
     except (ImportError, AttributeError) as e:
         log.debug("skip darkweb_early_warning_mod: %s", e)
         record_failure("intelligence", "darkweb_early_warning", str(e))
     try:
-        from loom.tools.domain_intel import research_domain_intel
-        mcp.tool()(wrap_tool(research_domain_intel))
-        record_success("intelligence", "research_domain_intel")
+        from loom.tools.domain_intel import research_whois
+        mcp.tool()(wrap_tool(research_whois))
+        record_success("intelligence", "research_whois")
     except (ImportError, AttributeError) as e:
         log.debug("skip domain_intel: %s", e)
         record_failure("intelligence", "domain_intel", str(e))
@@ -144,9 +144,9 @@ def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip infra_analysis_mod: %s", e)
         record_failure("intelligence", "infra_analysis", str(e))
     try:
-        from loom.tools.infra_correlator import research_correlate_infrastructure
-        mcp.tool()(wrap_tool(research_correlate_infrastructure))
-        record_success("intelligence", "research_correlate_infrastructure")
+        from loom.tools.infra_correlator import research_infra_correlator
+        mcp.tool()(wrap_tool(research_infra_correlator))
+        record_success("intelligence", "research_infra_correlator")
     except (ImportError, AttributeError) as e:
         log.debug("skip infra_correlator: %s", e)
         record_failure("intelligence", "infra_correlator", str(e))
@@ -172,9 +172,9 @@ def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip leak_scan: %s", e)
         record_failure("intelligence", "leak_scan", str(e))
     try:
-        from loom.tools.metadata_forensics import research_metadata_extract
-        mcp.tool()(wrap_tool(research_metadata_extract))
-        record_success("intelligence", "research_metadata_extract")
+        from loom.tools.metadata_forensics import research_metadata_forensics
+        mcp.tool()(wrap_tool(research_metadata_forensics))
+        record_success("intelligence", "research_metadata_forensics")
     except (ImportError, AttributeError) as e:
         log.debug("skip metadata_forensics: %s", e)
         record_failure("intelligence", "metadata_forensics", str(e))
@@ -214,9 +214,9 @@ def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip stego_detect: %s", e)
         record_failure("intelligence", "stego_detect", str(e))
     try:
-        from loom.tools.threat_intel import research_threat_intel, research_malware_bazaar
-        mcp.tool()(wrap_tool(research_threat_intel))
-        record_success("intelligence", "research_threat_intel")
+        from loom.tools.threat_intel import research_dark_market_monitor, research_malware_bazaar
+        mcp.tool()(wrap_tool(research_dark_market_monitor))
+        record_success("intelligence", "research_dark_market_monitor")
         mcp.tool()(wrap_tool(research_malware_bazaar))
         record_success("intelligence", "research_malware_bazaar")
     except (ImportError, AttributeError) as e:

@@ -1116,11 +1116,11 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip result_aggregator: %s", e)
         record_failure("remaining", "result_aggregator", str(e))
     try:
-        from loom.tools.retry_middleware import research_retry_execute, research_retry_stats
+        from loom.tools.retry_middleware import research_retry_execute, research_retry_middleware_stats
         mcp.tool()(wrap_tool(research_retry_execute))
         record_success("remaining", "research_retry_execute")
-        mcp.tool()(wrap_tool(research_retry_stats))
-        record_success("remaining", "research_retry_stats")
+        mcp.tool()(wrap_tool(research_retry_middleware_stats))
+        record_success("remaining", "research_retry_middleware_stats")
     except (ImportError, AttributeError) as e:
         log.debug("skip retry_middleware: %s", e)
         record_failure("remaining", "retry_middleware", str(e))

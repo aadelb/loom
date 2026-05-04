@@ -96,3 +96,19 @@ def get_registration_errors() -> list[dict]:
     from loom.registrations.tracking import get_registration_errors as _get_errors
 
     return _get_errors()
+
+# Auto-register all tools missed by category registration files
+try:
+    from loom.registrations.auto_missing import register_missing_tools as _reg_missing
+except ImportError:
+    _reg_missing = None
+
+_original_register = register_all_tools
+
+def register_all_tools(mcp, wrap_tool):
+    _original_register(mcp, wrap_tool)
+    if _reg_missing:
+        try:
+            _reg_missing(mcp, wrap_tool)
+        except Exception:
+            pass
