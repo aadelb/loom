@@ -237,6 +237,7 @@ markers = [
     "integration: marks integration tests",
     "property: marks property-based tests using hypothesis",
     "chaos: marks chaos engineering and resilience tests",
+    "fuzzing: marks fuzzing tests with hypothesis property-based testing",
 ]
 filterwarnings = [
     "ignore:Use `streamable_http_client`:DeprecationWarning",
