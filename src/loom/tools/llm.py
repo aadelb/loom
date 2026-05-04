@@ -13,7 +13,7 @@ import logging
 import os
 import re
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -32,6 +32,82 @@ logger = logging.getLogger("loom.llm")
 
 # Global provider instances (lazy-initialized)
 _PROVIDERS: dict[str, Any] = {}
+
+# ============================================================================
+# Circuit Breaker Pattern for Provider Resilience
+# ============================================================================
+# Tracks failure state per provider: {provider_name: {failure_count, last_failure_time, state}}
+_CIRCUIT_STATE: dict[str, dict[str, Any]] = {}
+
+_CIRCUIT_FAILURE_THRESHOLD = 3  # failures before opening
+_CIRCUIT_OPEN_DURATION = 60  # seconds to keep circuit open
+_CIRCUIT_HALF_OPEN_RESET = 300  # 5 minutes before trying half-open
+
+
+def _check_circuit(provider_name: str) -> bool:
+    """Check if a provider's circuit is healthy.
+
+    Returns True if circuit is CLOSED (healthy) or can be tried (HALF-OPEN).
+    Returns False if circuit is OPEN (failed too many times recently).
+    """
+    if provider_name not in _CIRCUIT_STATE:
+        return True  # New provider, circuit is CLOSED
+
+    state_info = _CIRCUIT_STATE[provider_name]
+    current_time = datetime.now(UTC)
+    last_failure = state_info.get("last_failure_time")
+    failure_count = state_info.get("failure_count", 0)
+    circuit_state = state_info.get("state", "closed")
+
+    # OPEN: Too many failures within the window
+    if circuit_state == "open":
+        if last_failure and (current_time - last_failure).total_seconds() > _CIRCUIT_OPEN_DURATION:
+            # Window elapsed, transition to HALF-OPEN
+            _CIRCUIT_STATE[provider_name]["state"] = "half_open"
+            logger.info("circuit_half_open provider=%s", provider_name)
+            return True  # Try once in half-open
+        return False  # Still OPEN, skip this provider
+
+    # HALF-OPEN: Recovering from failure, try once
+    if circuit_state == "half_open":
+        return True  # Allow one attempt
+
+    # CLOSED: Healthy
+    return True
+
+
+def _record_provider_failure(provider_name: str) -> None:
+    """Record a provider failure and update circuit state."""
+    if provider_name not in _CIRCUIT_STATE:
+        _CIRCUIT_STATE[provider_name] = {
+            "failure_count": 0,
+            "last_failure_time": None,
+            "state": "closed",
+        }
+
+    state_info = _CIRCUIT_STATE[provider_name]
+    state_info["failure_count"] += 1
+    state_info["last_failure_time"] = datetime.now(UTC)
+
+    # If threshold exceeded, open the circuit
+    if state_info["failure_count"] >= _CIRCUIT_FAILURE_THRESHOLD:
+        state_info["state"] = "open"
+        logger.warning(
+            "circuit_open provider=%s failure_count=%d",
+            provider_name,
+            state_info["failure_count"],
+        )
+
+
+def _record_provider_success(provider_name: str) -> None:
+    """Record a provider success and reset circuit to CLOSED."""
+    if provider_name in _CIRCUIT_STATE:
+        _CIRCUIT_STATE[provider_name] = {
+            "failure_count": 0,
+            "last_failure_time": None,
+            "state": "closed",
+        }
+        logger.info("circuit_reset provider=%s", provider_name)
 
 
 def _get_provider(name: str) -> Any:
@@ -356,6 +432,9 @@ async def _call_with_cascade(
     - timeout
     - any other HTTP error
 
+    Also uses circuit breaker to skip providers that have failed 3+ times
+    in the last 60 seconds.
+
     Args:
         messages: message list for chat
         model: model override ("auto" uses config default)
@@ -394,6 +473,15 @@ async def _call_with_cascade(
             logger.debug("provider %s not available, skipping", provider.name)
             continue
 
+        # Circuit breaker check: skip if open (too many failures)
+        if not _check_circuit(provider.name):
+            logger.debug("circuit_open provider=%s, skipping", provider.name)
+            all_errors.append({
+                "provider": provider.name,
+                "error": "circuit breaker is open (too many recent failures)"
+            })
+            continue
+
         attempts.append(provider.name)
         try:
             response: LLMResponse = await provider.chat(
@@ -419,6 +507,9 @@ async def _call_with_cascade(
                 logger.error("daily cost cap exceeded: %s", e)
                 raise
 
+            # Success: reset circuit to CLOSED
+            _record_provider_success(provider.name)
+
             logger.info(
                 "llm_call_ok provider=%s model=%s latency=%dms tokens=%d/%d cost=$%.5f",
                 response.provider,
@@ -433,6 +524,8 @@ async def _call_with_cascade(
         except (TimeoutError, Exception) as e:
             error_msg = _sanitize_error(_safe_error_str(e))
             all_errors.append({"provider": provider.name, "error": error_msg})
+            # Failure: record and potentially open circuit
+            _record_provider_failure(provider.name)
             logger.warning(
                 "llm_provider_failed provider=%s attempt=%d error=%s",
                 provider.name,
@@ -638,8 +731,28 @@ async def _call_with_refusal_handling(
 
 
 # ============================================================================
-# MCP Tool Functions (8 total)
+# MCP Tool Functions (9 total: 8 LLM tools + 1 circuit status tool)
 # ============================================================================
+
+
+async def research_circuit_status() -> dict[str, Any]:
+    """Show circuit breaker status for all LLM providers.
+
+    Returns:
+        Dict mapping provider names to their circuit state:
+        - failure_count: number of failures recorded
+        - last_failure_time: ISO timestamp of last failure (null if healthy)
+        - state: 'closed' (healthy), 'open' (failed), or 'half_open' (recovering)
+    """
+    result = {}
+    for provider_name, state_info in _CIRCUIT_STATE.items():
+        last_failure = state_info.get("last_failure_time")
+        result[provider_name] = {
+            "failure_count": state_info.get("failure_count", 0),
+            "last_failure_time": last_failure.isoformat() if last_failure else None,
+            "state": state_info.get("state", "closed"),
+        }
+    return result
 
 
 async def research_llm_summarize(

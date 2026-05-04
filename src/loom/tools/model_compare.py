@@ -79,7 +79,20 @@ async def research_model_consensus(
     responses: list[dict],
     threshold: float = 0.7,
 ) -> dict[str, Any]:
-    """Find consensus claims across models."""
+    """Find consensus claims across models.
+
+    DEPRECATED: This tool analyzes pre-collected responses for claim consensus.
+    For unified multi-model LLM consensus building with configurable methods
+    (voting, debate, weighted), use research_consensus_build() from
+    consensus_builder.py instead.
+
+    Args:
+        responses: List of dicts with "text" and "model" fields
+        threshold: Minimum agreement threshold (0.0-1.0)
+
+    Returns:
+        Dict with consensus_claims, disputed_claims, consensus_score.
+    """
     if not responses:
         return {"error": "No responses", "models_count": 0, "consensus_claims": [], "consensus_score": 0.0}
 

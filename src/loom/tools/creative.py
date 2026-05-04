@@ -3,7 +3,7 @@
 Tools:
 - research_red_team: adversarial counter-argument search
 - research_multilingual: cross-lingual information arbitrage
-- research_consensus: multi-engine voting and consensus scoring
+- research_consensus: multi-engine voting and consensus scoring (DEPRECATED: use research_consensus_build from consensus_builder.py)
 - research_misinfo_check: misinformation stress test
 - research_temporal_diff: Wayback Machine content comparison
 - research_citation_graph: academic citation traversal
@@ -234,6 +234,10 @@ async def research_consensus(
     n: int = 10,
 ) -> dict[str, Any]:
     """Run query across all search engines, score results by consensus.
+
+    DEPRECATED: This tool is for search provider consensus only. For multi-model
+    LLM consensus building (voting, debate, weighted synthesis), use
+    research_consensus_build() from consensus_builder.py instead.
 
     Results appearing on multiple engines get higher confidence scores.
 

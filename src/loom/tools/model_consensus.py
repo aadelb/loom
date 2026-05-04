@@ -4,6 +4,10 @@ Sends the same question to multiple LLM providers simultaneously,
 collects responses, analyzes agreement/contradictions/unique insights,
 and returns a structured consensus result with the most detailed answer
 enriched with unique insights from other models.
+
+DEPRECATED: Use research_consensus_build() from consensus_builder.py instead,
+which provides unified consensus building with configurable methods
+(voting, debate, weighted) and more advanced synthesis techniques.
 """
 
 from __future__ import annotations
@@ -28,6 +32,10 @@ async def research_multi_consensus(
     max_tokens: int = 2000,
 ) -> dict[str, Any]:
     """Query multiple LLM providers in parallel and synthesize consensus.
+
+    DEPRECATED: This tool builds consensus through enrichment.
+    For unified consensus building with configurable methods (voting, debate, weighted),
+    use research_consensus_build() from consensus_builder.py instead.
 
     Sends the same question to 3+ different LLM providers simultaneously,
     collects all responses, analyzes agreement/contradictions/unique insights,
