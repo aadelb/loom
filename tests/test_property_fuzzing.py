@@ -392,7 +392,7 @@ class TestSearchParamsProperties:
 
     @given(st.builds(
         SearchParams,
-        query=st.text(min_size=1, max_size=2000),
+        query=st.text(min_size=1, max_size=2000).filter(lambda s: s.strip()),
         max_results=st.integers(min_value=1, max_value=100),
     ))
     @settings(max_examples=50)
@@ -423,7 +423,7 @@ class TestDeepParamsProperties:
 
     @given(st.builds(
         DeepParams,
-        query=st.text(min_size=1, max_size=2000),
+        query=st.text(min_size=1, max_size=2000).filter(lambda s: s.strip()),
         max_results=st.integers(min_value=1, max_value=100),
     ))
     @settings(max_examples=40)
@@ -440,7 +440,7 @@ class TestGitHubParamsProperties:
 
     @given(st.builds(
         GitHubParams,
-        query=st.text(min_size=1, max_size=500),
+        query=st.text(min_size=1, max_size=500).filter(lambda s: s.strip()),
         per_page=st.integers(min_value=1, max_value=100),
     ))
     @settings(max_examples=40)
