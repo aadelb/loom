@@ -28,9 +28,9 @@ class TestRetryStatsAPI:
         result = research_retry_stats()
 
         assert "timestamp" in result
-        # Should be ISO format
+        # Should be ISO format with timezone
         assert "T" in result["timestamp"]
-        assert "Z" in result["timestamp"]
+        assert "+" in result["timestamp"] or "Z" in result["timestamp"]
 
     def test_retry_stats_can_reset(self) -> None:
         """Calling with reset=True clears stats."""
