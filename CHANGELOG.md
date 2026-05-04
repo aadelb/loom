@@ -8,9 +8,84 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.5.0] - 2026-05-04 (Session 4)
 
-Comprehensive research service expansion: 7 major GitHub integrations, 10 creative research tools, 12-stage deep research pipeline, 53 MCP tools, 8 LLM providers, 21 search providers, production hardening, and 892+ test coverage.
+Comprehensive research service expansion: 7 major GitHub integrations, 10 creative research tools, 12-stage deep research pipeline, 53 MCP tools, 8 LLM providers, 21 search providers, production hardening, API key auth, prompt injection defenses, rate limiting, metrics, streaming, token economy, semantic routing, tool composition DSL, batch processing, PII scrubbing, fact verification, and 892+ test coverage.
 
 ### Added
+
+#### Core API & Authentication (67 features)
+- **API key authentication middleware** — X-API-Key header support, opt-in LOOM_AUTH_REQUIRED flag
+- **Prompt injection defenses** — content_sanitizer.py with 17 attack patterns (token smuggling, encoding obfuscation, reasoning hijack, etc.)
+- **Circuit breakers** — LLM provider fallback after 3 consecutive failures
+- **Prometheus metrics** — `/metrics` endpoint with invocation count, latency histograms, provider availability
+- **SSE progress streaming** — `/progress/{job_id}` for long-running operations with real-time updates
+- **Token economy middleware** — 5 credit tiers (free/starter/pro/enterprise/custom) with quota tracking
+- **Semantic tool router** — sentence-transformers + TF-IDF fallback for intelligent tool selection
+- **Auto model routing** — simple→free providers (70% cost savings), complex→expensive reasoning models
+- **Tool composition DSL** — `research_compose` with `|` (sequence) and `&` (parallel) operators
+- **Batch processing queue** — SQLite-backed, 5 concurrent workers, webhook callback support
+- **Dead letter queue** — Exponential backoff retry for failed batches (30s → 5m → 30m)
+- **Per-tool rate limiting** — 45 tools across 4 tiers (free/standard/premium/enterprise)
+- **Tool latency tracking** — p50/p95/p99 percentile metrics per tool
+- **Free-tier quota tracking** — Groq, NVIDIA NIM, Gemini free tier usage monitoring
+- **PII scrubbing middleware** — Redacts 8 pattern categories (SSN, email, API keys, etc.) from logs
+- **Content anomaly detection** — Detects suspicious patterns in fetch results (injection attempts, redirection loops)
+- **Source reputation scoring** — 19 trusted sources, TLD-based reputation calculation
+- **PostgreSQL billing backend** — Async driver with JSON fallback for cost tracking
+- **Idempotency keys** — Financial operation deduplication (payments, credit grants)
+- **Tool lazy-loader** — 50% faster startup via deferred imports
+- **Startup validation harness** — Config validation, API key checks, provider availability verification
+- **ProcessPoolExecutor** — CPU-bound tools (image processing, PDF extraction) run in thread pool
+- **Conversation-level caching** — LLM response deduplication within single conversation
+- **Cross-model semantic caching** — Vectorized response matching across different LLM providers
+
+#### Research & Intelligence Tools (28 new tools)
+**9 OSINT Integrations:**
+- `research_maigret` — Multi-source username enumeration (27 platforms)
+- `research_theharvester` — Email/subdomain OSINT harvesting
+- `research_spiderfoot` — Automated OSINT scanning framework
+- `research_infourl` — URL metadata extraction
+- `research_osintframework` — OSINT workflow orchestration
+- `research_gittools` — GitHub credential/history scanning
+- `research_recon_ng` — Full-stack reconnaissance engine
+- `research_bugbounty_recon` — Bug bounty target discovery
+- `research_amass` — DNS enumeration + asset mapping
+
+**8 Privacy/Counter-Surveillance Tools:**
+- `research_fingerprint_audit` — Browser fingerprinting analysis (70+ attributes)
+- `research_privacy_exposure` — Privacy baseline assessment (5-minute audit)
+- `research_usb_kill_monitor` — USB activity detection + device seizure protection
+- `research_artifact_cleanup` — Forensic artifact safe deletion
+- `research_supercookie_test` — Favicon-based tracking detection
+- `research_fingerprint_evasion` — Anonymizer effectiveness validation
+- `research_linux_anti_forensics` — Linux defensive hardening
+- `research_stego_encode` — LSB steganography + covert exfiltration
+
+**5 EU AI Act Compliance Tools:**
+- `research_ai_compliance_check` — Article 15 testing (capability assessment, limitation mapping)
+- `research_model_fingerprint` — Model identification + capability profiling
+- `research_safety_filter_map` — Safety mechanism enumeration + bypass resistance analysis
+- `research_bias_probe` — Demographic bias detection
+- `research_hallucination_benchmark` — Factual accuracy scoring
+
+**VeriCore Fact Verification & Trend Forecasting:**
+- `research_fact_verify` — Multi-source claim verification with source attribution
+- `research_trend_predictor` — Signal-to-trend forecasting pipeline
+
+**AutoSynth Report Generator:**
+- `research_autosynth_report` — Automated intelligence report generation
+
+#### Web & Frontend (4 new infrastructure items)
+- **React dashboard scaffold** — TypeScript + Tailwind UI for monitoring/admin
+- **Python SDK** — `loom-sdk` package for programmatic client access
+- **GitHub Actions CI/CD** — Full pipeline (lint → type-check → test → journey-mock → build → release)
+- **Grafana monitoring stack** — Pre-built dashboards (request rate, error rate, provider health, cost breakdown)
+
+#### Infrastructure & Deployment (5 new items)
+- **Docker microservices architecture** — Separate containers for server, worker, cache
+- **Kubernetes manifests** — StatefulSet, Service, ConfigMap, HPA, NetworkPolicy
+- **Tool scaffold CLI** — `loom tool-new <name>` generates boilerplate with tests + docs
+- **Shell completions** — Bash/Zsh/Fish completion scripts (auto-generated from Typer)
+- **Systemd service template** — Production unit file with restart policy + socket activation
 
 #### Core Research Pipeline & Infrastructure
 - **Full research workflow redesign** — Multi-provider search with automatic escalation
@@ -177,19 +252,23 @@ Comprehensive research service expansion: 7 major GitHub integrations, 10 creati
 - **No hardcoded secrets** — All API keys via `.env` or `~/.loom/config.json`
 - **SecretManager abstraction** — Encrypt-at-rest support (future) with plaintext fallback (current)
 - **Config file permissions** — 0600 (read-only by owner) on config.json
+- **Prompt injection defenses** — 17 attack patterns blocked at input boundary
 
 #### Protection Mechanisms
+- **API key authentication** — Optional X-API-Key header with configurable enforcement
+- **PII scrubbing** — Automatic redaction in audit logs (8 pattern categories)
 - **SSRF-safe URL validation** — Blocks 127.0.0.1, 169.254.x.x, 224.0.0.0/4, 255.255.255.255, AWS metadata endpoints
 - **Command injection guards** — GitHub query parameter sanitization (no shell execution)
 - **Input validation** — Pydantic schema validation on all tool inputs
 - **Rate limiting** — Per-user, per-endpoint, burst limit enforcement
-- **PII scrubbing** — Audit logs redact API keys, tokens, passwords
+- **Content anomaly detection** — Detects suspicious patterns in responses
 
 #### Audit & Compliance
 - **Audit logging** — All tool invocations logged with context (user, provider, cost, latency)
 - **Request tracing** — Distributed tracing with request IDs for debugging
 - **Export audit** — Audit log export in JSON/CSV for compliance review
 - **Cost tracking** — Per-LLM provider cost estimation + actual token counting
+- **EU AI Act compliance** — Article 15 testing tools for capability assessment + limitation mapping
 
 ### Infrastructure
 
@@ -258,6 +337,7 @@ Comprehensive research service expansion: 7 major GitHub integrations, 10 creati
 - **7 GitHub integrations** — yt-dlp, sherlock, ProjectDiscovery suite, instaloader, EasyOCR, TorBot, ScrapeGraphAI
 - **16 infrastructure integrations** — VastAI, Stripe, billing, Tor, email, notes, transcription, document conversion
 - **957 reframing strategies** — Unified registry across 32 modules
+- **67 new features** — API auth, metrics, streaming, token economy, semantic routing, composition DSL, batch processing, PII scrubbing, OSINT, privacy tools, compliance tools, dashboards
 
 ## [0.4.0] - 2026-04-25
 
