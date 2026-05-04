@@ -605,6 +605,336 @@ def research_privacy_score(url: str = "") -> dict[str, Any]:
 
 
 # ============================================================================
+# 8. USB Device Monitor
+# ============================================================================
+
+def research_usb_monitor(dry_run: bool = True) -> dict[str, Any]:
+    """Monitor USB device connections (dry-run by default).
+
+    Parses /sys/bus/usb/devices on Linux to detect connected USB devices.
+    Maintains no persistent state between calls; detects based on device info.
+
+    Args:
+        dry_run: If True, only reads data. If False, may take action.
+
+    Returns:
+        dict with devices_connected, new_since_last_check, suspicious indicators
+    """
+    try:
+        system = platform.system()
+
+        devices_connected = []
+        suspicious = False
+        suspicious_reasons = []
+
+        if system == "Linux":
+            usb_base = Path("/sys/bus/usb/devices")
+            if not usb_base.exists():
+                return {
+                    "error": f"USB device path not found: {usb_base}",
+                    "system": system,
+                    "dry_run": dry_run,
+                }
+
+            try:
+                for device_dir in usb_base.iterdir():
+                    if not device_dir.is_dir():
+                        continue
+
+                    device_info = {"device": device_dir.name}
+
+                    # Read manufacturer, product, serial if available
+                    mfr_file = device_dir / "manufacturer"
+                    prod_file = device_dir / "product"
+                    serial_file = device_dir / "serial"
+
+                    if mfr_file.exists():
+                        device_info["manufacturer"] = mfr_file.read_text(errors="ignore").strip()[:50]
+                    if prod_file.exists():
+                        device_info["product"] = prod_file.read_text(errors="ignore").strip()[:50]
+                    if serial_file.exists():
+                        device_info["serial"] = serial_file.read_text(errors="ignore").strip()[:50]
+
+                    # Check for suspicious characteristics
+                    if "idProduct" in device_dir.name or "hub" in str(device_info).lower():
+                        device_info["type"] = "hub"
+                    else:
+                        device_info["type"] = "generic"
+
+                    devices_connected.append(device_info)
+
+                    # Suspicious checks
+                    if device_info.get("manufacturer") and device_info.get("manufacturer").lower() in [
+                        "unknown", "generic", ""
+                    ]:
+                        suspicious = True
+                        suspicious_reasons.append(f"Device {device_info.get('product', 'unknown')} has unknown manufacturer")
+            except Exception as e:
+                logger.debug(f"USB device enumeration failed: {e}")
+
+        elif system == "Darwin":  # macOS
+            try:
+                result = subprocess.run(
+                    ["system_profiler", "SPUSBDataType"],
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                )
+                output = result.stdout
+                # Parse macOS USB output (simplified)
+                if output:
+                    devices_connected.append({"system_profiler": "USB devices detected", "count": output.count("Product ID")})
+            except Exception as e:
+                logger.debug(f"macOS USB detection failed: {e}")
+
+        elif system == "Windows":
+            try:
+                result = subprocess.run(
+                    ["Get-PnpDevice", "-Class", "USB"],
+                    shell=True,
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                )
+                if result.stdout:
+                    devices_connected.append({"windows_devices": result.stdout[:200]})
+            except Exception as e:
+                logger.debug(f"Windows USB detection failed: {e}")
+
+        return {
+            "system": system,
+            "devices_connected": devices_connected,
+            "new_since_last_check": [],  # No state tracking in stateless function
+            "device_count": len(devices_connected),
+            "suspicious": suspicious,
+            "suspicious_reasons": suspicious_reasons,
+            "dry_run": dry_run,
+            "timestamp": datetime.now().isoformat(),
+        }
+    except Exception as e:
+        logger.error(f"usb_monitor failed: {e}")
+        return {"error": str(e), "dry_run": dry_run, "devices_connected": []}
+
+
+# ============================================================================
+# 9. Network Anomaly Detection
+# ============================================================================
+
+def research_network_anomaly(
+    interface: str = "eth0",
+    duration_sec: int = 5,
+) -> dict[str, Any]:
+    """Quick network traffic analysis (packet counts, unusual ports).
+
+    Uses subprocess to call ss, netstat, or psutil for network connection analysis.
+    Duration is for scan window (not actual monitoring duration).
+
+    Args:
+        interface: Network interface to analyze (e.g., 'eth0')
+        duration_sec: Analysis window duration in seconds (1-60)
+
+    Returns:
+        dict with connections, listening_ports, unusual_connections, score 0-100
+    """
+    try:
+        if duration_sec < 1 or duration_sec > 60:
+            return {"error": "duration_sec must be 1-60", "duration_sec": duration_sec}
+
+        system = platform.system()
+        connections = 0
+        listening_ports = []
+        unusual_connections = []
+        score = 50
+
+        try:
+            if system == "Linux" or system == "Darwin":
+                # Try ss first (Linux/macOS)
+                try:
+                    result = subprocess.run(
+                        ["ss", "-tunp"],
+                        capture_output=True,
+                        text=True,
+                        timeout=5,
+                    )
+                    output = result.stdout
+                    lines = output.split("\n")
+                    connections = len([l for l in lines if l.strip() and "ESTAB" in l])
+
+                    # Extract listening ports
+                    for line in lines:
+                        if "LISTEN" in line:
+                            parts = line.split()
+                            if len(parts) >= 4:
+                                try:
+                                    port = int(parts[3].split(":")[-1])
+                                    if port not in listening_ports:
+                                        listening_ports.append(port)
+                                except (ValueError, IndexError):
+                                    pass
+                except Exception as e:
+                    logger.debug(f"ss command failed: {e}")
+
+                # Fallback: netstat
+                if connections == 0:
+                    try:
+                        result = subprocess.run(
+                            ["netstat", "-an"],
+                            capture_output=True,
+                            text=True,
+                            timeout=5,
+                        )
+                        output = result.stdout
+                        connections = output.count("ESTABLISHED")
+                    except Exception as e:
+                        logger.debug(f"netstat command failed: {e}")
+
+        except Exception as e:
+            logger.debug(f"Network analysis failed: {e}")
+
+        # Analyze for unusual ports
+        high_risk_ports = [135, 139, 445, 389, 3389]  # SMB, RDP, LDAP, etc.
+        for port in listening_ports:
+            if port in high_risk_ports:
+                unusual_connections.append(f"High-risk port {port} listening")
+                score -= 10
+
+        # Check connection count anomaly
+        if connections > 100:
+            unusual_connections.append(f"Unusually high connections: {connections}")
+            score -= 15
+
+        # Score calculation
+        score = max(0, min(100, score))
+
+        return {
+            "interface": interface,
+            "system": system,
+            "connections": connections,
+            "listening_ports": sorted(listening_ports)[:20],  # First 20
+            "port_count": len(listening_ports),
+            "unusual_connections": unusual_connections,
+            "score": score,
+            "duration_sec": duration_sec,
+            "risk_level": "HIGH" if score < 40 else "MEDIUM" if score < 70 else "LOW",
+            "timestamp": datetime.now().isoformat(),
+        }
+    except Exception as e:
+        logger.error(f"network_anomaly failed: {e}")
+        return {"error": str(e), "score": 50, "connections": 0}
+
+
+# ============================================================================
+# 10. Browser Privacy Score
+# ============================================================================
+
+def research_browser_privacy_score(browser: str = "chromium") -> dict[str, Any]:
+    """Assess browser privacy configuration.
+
+    Checks: Do Not Track, cookies policy, WebRTC leak, canvas fingerprint.
+    Note: This is a static assessment based on known browser defaults.
+
+    Args:
+        browser: Browser type ('chromium', 'firefox', 'safari', 'edge')
+
+    Returns:
+        dict with score (0-100), issues list, recommendations list
+    """
+    try:
+        if browser not in ["chromium", "firefox", "safari", "edge"]:
+            return {"error": f"Unknown browser: {browser}", "browser": browser}
+
+        score = 50
+        issues = []
+        recommendations = []
+
+        # Browser-specific privacy defaults
+        browser_profiles = {
+            "chromium": {
+                "default_score": 45,
+                "dnt_support": False,
+                "3rd_party_cookies_blocked": False,
+                "webrtc_leak_risk": True,
+                "canvas_fingerprint_blocked": False,
+            },
+            "firefox": {
+                "default_score": 70,
+                "dnt_support": True,
+                "3rd_party_cookies_blocked": True,
+                "webrtc_leak_risk": False,
+                "canvas_fingerprint_blocked": True,
+            },
+            "safari": {
+                "default_score": 75,
+                "dnt_support": True,
+                "3rd_party_cookies_blocked": True,
+                "webrtc_leak_risk": False,
+                "canvas_fingerprint_blocked": True,
+            },
+            "edge": {
+                "default_score": 50,
+                "dnt_support": True,
+                "3rd_party_cookies_blocked": False,
+                "webrtc_leak_risk": True,
+                "canvas_fingerprint_blocked": False,
+            },
+        }
+
+        profile = browser_profiles.get(browser, browser_profiles["chromium"])
+        score = profile["default_score"]
+
+        # Evaluate privacy settings
+        if not profile["dnt_support"]:
+            issues.append("Do Not Track (DNT) not supported")
+            recommendations.append("Use browser extensions for DNT enforcement")
+        else:
+            score += 5
+
+        if not profile["3rd_party_cookies_blocked"]:
+            issues.append("Third-party cookies not blocked by default")
+            recommendations.append("Enable strict tracking protection in browser settings")
+            score -= 10
+        else:
+            score += 10
+
+        if profile["webrtc_leak_risk"]:
+            issues.append("WebRTC may leak real IP address")
+            recommendations.append("Use WebRTC leak protection extension")
+            score -= 15
+        else:
+            score += 10
+
+        if not profile["canvas_fingerprint_blocked"]:
+            issues.append("Canvas fingerprinting is not blocked")
+            recommendations.append("Enable canvas fingerprint protection")
+            score -= 10
+        else:
+            score += 5
+
+        # Additional recommendations
+        if not issues:
+            recommendations.append("Your browser privacy settings are strong. Keep browser updated.")
+            recommendations.append("Consider using a VPN alongside privacy-focused browser settings.")
+        else:
+            recommendations.append("Review browser extensions for privacy (uBlock Origin, Privacy Badger)")
+
+        # Ensure score is within bounds
+        score = max(0, min(100, score))
+
+        return {
+            "browser": browser,
+            "privacy_score": score,
+            "risk_level": "HIGH" if score < 40 else "MEDIUM" if score < 70 else "LOW",
+            "issues": issues,
+            "recommendations": recommendations,
+            "timestamp": datetime.now().isoformat(),
+            "assessment_type": "static_defaults",
+        }
+    except Exception as e:
+        logger.error(f"browser_privacy_score failed: {e}")
+        return {"error": str(e), "browser": browser, "privacy_score": 0}
+
+
+# ============================================================================
 # Helper Functions
 # ============================================================================
 

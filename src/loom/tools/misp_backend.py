@@ -1,7 +1,7 @@
-"""research_misp_lookup — Threat intelligence lookup via MISP API.
+"""MISP (Malware Information Sharing Platform) threat intelligence integration.
 
-Provides indicator enrichment and threat correlation using MISP
-(Malware Information Sharing Platform) instances.
+Connects to MISP instances to search for indicators of compromise (IoCs)
+including IPs, domains, hashes, and emails.
 """
 
 from __future__ import annotations
@@ -10,331 +10,149 @@ import asyncio
 import logging
 import os
 import re
-from typing import Any
-
-try:
-    from pymisp import PyMISP
-
-    _HAS_PYMISP = True
-except ImportError:
-    _HAS_PYMISP = False
+from typing import Any, Literal
 
 logger = logging.getLogger("loom.tools.misp_backend")
 
-# Constraints
-INDICATOR_TYPE_MAP = {
-    "auto": "auto",
-    "domain": "domain",
-    "url": "url",
-    "ip": "ip-dst",
-    "ip-src": "ip-src",
-    "ip-dst": "ip-dst",
-    "email": "email-src",
-    "hash": "md5",
-    "md5": "md5",
-    "sha1": "sha1",
-    "sha256": "sha256",
-    "filename": "filename",
-    "user-account": "user-account",
-    "x509": "x509-fingerprint-sha1",
-}
 
-MAX_INDICATOR_LEN = 500
-VALID_THREAT_LEVELS = ["low", "medium", "high", "critical"]
-
-
-def _auto_detect_indicator_type(indicator: str) -> str:
-    """Auto-detect indicator type from format.
+def _detect_indicator_type(indicator: str) -> str:
+    """Automatically detect indicator type from its format.
 
     Args:
-        indicator: Raw indicator string
+        indicator: The indicator string to classify
 
     Returns:
-        MISP indicator type
+        Type string: 'ip', 'domain', 'hash', 'email', or 'unknown'
     """
     indicator = indicator.strip().lower()
 
-    # Check for IP addresses (IPv4 and IPv6)
-    ipv4_pattern = r"^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$"
-    ipv6_pattern = r"^(?:[0-9a-f]{0,4}:)+[0-9a-f]{0,4}$"
+    # Check for IPv4
+    if re.match(r"^(\d{1,3}\.){3}\d{1,3}$", indicator):
+        parts = indicator.split(".")
+        if all(0 <= int(p) <= 255 for p in parts):
+            return "ip"
 
-    if re.match(ipv4_pattern, indicator) or re.match(ipv6_pattern, indicator):
-        return "ip-dst"
+    # Check for IPv6
+    if ":" in indicator and re.match(r"^([0-9a-f]{0,4}:){2,}", indicator):
+        return "ip"
 
-    # Check for MD5, SHA1, SHA256 hashes
+    # Check for hash (MD5: 32 hex, SHA1: 40 hex, SHA256: 64 hex)
     if re.match(r"^[a-f0-9]{32}$", indicator):
-        return "md5"
+        return "hash"  # MD5
     if re.match(r"^[a-f0-9]{40}$", indicator):
-        return "sha1"
+        return "hash"  # SHA1
     if re.match(r"^[a-f0-9]{64}$", indicator):
-        return "sha256"
+        return "hash"  # SHA256
 
     # Check for email
-    if re.match(r"^[^@]+@[^@]+\.[^@]+$", indicator):
-        return "email-src"
-
-    # Check for URL
-    if indicator.startswith(("http://", "https://", "ftp://")):
-        return "url"
+    if "@" in indicator and re.match(r"^[^@]+@[^@]+\.[^@]+$", indicator):
+        return "email"
 
     # Check for domain (basic heuristic)
-    if "." in indicator and not indicator.startswith(("http://", "https://", "ftp://")):
-        return "domain"
+    if "." in indicator and "/" not in indicator:
+        if re.match(r"^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$", indicator):
+            return "domain"
 
-    # Default to URL or domain-like
-    return "domain"
+    return "unknown"
 
 
 async def research_misp_lookup(
     indicator: str,
-    indicator_type: str = "auto",
-    misp_url: str | None = None,
-    include_related: bool = True,
+    indicator_type: str | Literal["auto", "ip", "domain", "hash", "email"] = "auto",
 ) -> dict[str, Any]:
-    """Search for indicator in MISP instance.
+    """Search MISP for indicators of compromise.
 
-    Looks up malware hashes, IPs, domains, and other indicators
-    against a MISP instance and returns threat intelligence.
+    Connects to a MISP instance (via MISP_URL and MISP_API_KEY env vars)
+    and searches for the given indicator. Returns matching events with
+    threat levels and metadata.
 
     Args:
-        indicator: Indicator to search (IP, domain, hash, URL, email, etc.)
-        indicator_type: Type of indicator: 'auto', 'domain', 'url', 'ip',
-                       'ip-src', 'ip-dst', 'email', 'hash', 'md5', 'sha1',
-                       'sha256', 'filename', 'user-account', 'x509'
-                       (default: 'auto')
-        misp_url: MISP instance URL (default: MISP_URL env var)
-        include_related: Include related indicators in results (default: True)
+        indicator: The IoC to search for (IP, domain, hash, email, etc)
+        indicator_type: Type hint ('auto' for auto-detection, or explicit type)
 
     Returns:
         Dict with keys:
-        - indicator: Input indicator
-        - type: Resolved indicator type
-        - events: List of MISP events with {id, name, threat_level, date}
-        - attributes: List of matching attributes with {type, value, comment}
-        - threat_level: Overall threat level (low/medium/high/critical)
-        - count: Total number of events found
-        - error: Error message if operation failed (optional)
+        - indicator: The searched indicator
+        - type: Detected or provided indicator type
+        - events: List of matching MISP events [id, info, threat_level, date, ...]
+        - total_events: Count of matching events
+        - error: Error message if any (instead of events on failure)
     """
-    # Input validation
-    if not indicator or not isinstance(indicator, str):
-        return {
-            "indicator": indicator,
-            "error": "indicator must be a non-empty string",
-            "type": "unknown",
-            "events": [],
-            "attributes": [],
-            "threat_level": "unknown",
-            "count": 0,
-        }
+    await asyncio.sleep(0)
 
-    indicator = indicator.strip()
-    if len(indicator) > MAX_INDICATOR_LEN:
-        return {
-            "indicator": indicator[:MAX_INDICATOR_LEN],
-            "error": f"indicator length max {MAX_INDICATOR_LEN} chars",
-            "type": "unknown",
-            "events": [],
-            "attributes": [],
-            "threat_level": "unknown",
-            "count": 0,
-        }
+    # Auto-detect type if needed
+    if indicator_type == "auto":
+        indicator_type = _detect_indicator_type(indicator)
 
-    # Resolve indicator type
-    if indicator_type not in INDICATOR_TYPE_MAP:
-        indicator_type = "auto"
+    result: dict[str, Any] = {
+        "indicator": indicator,
+        "type": indicator_type,
+        "total_events": 0,
+        "events": [],
+    }
 
-    resolved_type = INDICATOR_TYPE_MAP.get(indicator_type, "auto")
-
-    if resolved_type == "auto":
-        resolved_type = _auto_detect_indicator_type(indicator)
-
-    # Get MISP URL
-    if not misp_url:
-        misp_url = os.environ.get("MISP_URL", "")
-
-    if not misp_url:
-        return {
-            "indicator": indicator,
-            "error": "MISP_URL not configured. Set MISP_URL environment variable.",
-            "type": resolved_type,
-            "events": [],
-            "attributes": [],
-            "threat_level": "unknown",
-            "count": 0,
-        }
-
-    # Ensure URL format
-    misp_url = str(misp_url).strip()
-    if not misp_url.startswith(("http://", "https://")):
-        misp_url = f"https://{misp_url}"
-
-    # Check if PyMISP is installed
-    if not _HAS_PYMISP:
-        return {
-            "indicator": indicator,
-            "error": "pymisp library not installed. Install with: pip install pymisp",
-            "type": resolved_type,
-            "events": [],
-            "attributes": [],
-            "threat_level": "unknown",
-            "count": 0,
-            "library_installed": False,
-        }
-
+    # Check if PyMISP is available
     try:
-        # Run in executor to avoid blocking event loop
-        result = await asyncio.get_event_loop().run_in_executor(
-            None,
-            _run_misp_lookup,
-            indicator,
-            resolved_type,
-            misp_url,
-            include_related,
-        )
+        from pymisp import PyMISP
+    except ImportError:
+        logger.debug("pymisp not installed")
+        result["error"] = "pymisp not installed"
         return result
 
-    except Exception as e:
-        logger.error("misp_lookup_failed indicator=%s: %s", indicator[:30], e)
-        return {
-            "indicator": indicator,
-            "error": f"MISP lookup error: {str(e)}",
-            "type": resolved_type,
-            "events": [],
-            "attributes": [],
-            "threat_level": "unknown",
-            "count": 0,
-        }
+    # Get MISP credentials from environment
+    misp_url = os.environ.get("MISP_URL")
+    misp_api_key = os.environ.get("MISP_API_KEY")
 
+    if not misp_url or not misp_api_key:
+        logger.debug("MISP_URL or MISP_API_KEY not configured")
+        result["error"] = "MISP_URL or MISP_API_KEY not configured in environment"
+        return result
 
-def _run_misp_lookup(
-    indicator: str,
-    resolved_type: str,
-    misp_url: str,
-    include_related: bool,
-) -> dict[str, Any]:
-    """Run MISP lookup in executor thread.
-
-    Args:
-        indicator: Indicator to search
-        resolved_type: Resolved indicator type
-        misp_url: MISP instance URL
-        include_related: Include related indicators
-
-    Returns:
-        Lookup result dict
-    """
     try:
-        logger.info(
-            "misp_lookup_start indicator=%s type=%s misp_url=%s",
-            indicator[:30],
-            resolved_type,
-            misp_url,
-        )
-
-        # Get API key
-        misp_api_key = os.environ.get("MISP_API_KEY", "")
-        if not misp_api_key:
-            return {
-                "indicator": indicator,
-                "error": "MISP_API_KEY not configured. Set MISP_API_KEY environment variable.",
-                "type": resolved_type,
-                "events": [],
-                "attributes": [],
-                "threat_level": "unknown",
-                "count": 0,
-            }
-
-        # Initialize MISP client
+        # Initialize MISP connection
         misp = PyMISP(misp_url, misp_api_key, ssl=True)
 
-        # Search for indicator
-        results = misp.search(
+        # Search for the indicator
+        response = misp.search(
             controller="attributes",
-            type_attribute=resolved_type,
             value=indicator,
-            include_context=True,
+            includeEventUuid=True,
+            includeEventInfo=True,
+            returnFormat="json",
         )
 
-        # Parse results
-        events = []
-        attributes = []
-        threat_levels = []
+        # Parse response
+        if isinstance(response, dict) and "response" in response:
+            attributes = response["response"]
+            if isinstance(attributes, list):
+                events_dict: dict[str, dict[str, Any]] = {}
 
-        if isinstance(results, dict):
-            # Handle response format
-            response_data = results.get("response", results.get("Attribute", []))
+                # Aggregate events from attributes
+                for attr in attributes:
+                    if isinstance(attr, dict) and "Attribute" in attr:
+                        attr_data = attr["Attribute"]
+                        event_id = attr_data.get("event_id")
+                        if event_id:
+                            if event_id not in events_dict:
+                                events_dict[event_id] = {
+                                    "id": event_id,
+                                    "info": attr_data.get("Event", {}).get("info", ""),
+                                    "threat_level": attr_data.get("Event", {}).get("threat_level_id"),
+                                    "date": attr_data.get("Event", {}).get("date"),
+                                    "attribute_count": 0,
+                                }
+                            events_dict[event_id]["attribute_count"] += 1
 
-            if isinstance(response_data, list):
-                for item in response_data:
-                    if isinstance(item, dict):
-                        # Extract attribute
-                        attr_data = item.get("Attribute", item)
-                        if isinstance(attr_data, dict):
-                            attributes.append({
-                                "type": attr_data.get("type", ""),
-                                "value": attr_data.get("value", ""),
-                                "comment": attr_data.get("comment", ""),
-                                "timestamp": attr_data.get("timestamp"),
-                            })
-
-                            # Extract associated event
-                            if "Event" in attr_data:
-                                event = attr_data["Event"]
-                                if isinstance(event, dict):
-                                    event_dict = {
-                                        "id": event.get("id", ""),
-                                        "name": event.get("name", event.get("info", "")),
-                                        "threat_level": event.get("threat_level_id", ""),
-                                        "date": event.get("date", ""),
-                                    }
-                                    if event_dict not in events:
-                                        events.append(event_dict)
-
-                                    # Collect threat levels
-                                    level_id = event.get("threat_level_id")
-                                    if level_id:
-                                        threat_levels.append(level_id)
-
-        # Determine overall threat level
-        threat_level = "unknown"
-        if threat_levels:
-            # Simple heuristic: if any critical, result is critical
-            if "4" in threat_levels:  # 4 = critical
-                threat_level = "critical"
-            elif "3" in threat_levels:  # 3 = high
-                threat_level = "high"
-            elif "2" in threat_levels:  # 2 = medium
-                threat_level = "medium"
+                result["events"] = list(events_dict.values())
+                result["total_events"] = len(events_dict)
+                logger.info("misp_lookup_success: found %d events for %s", len(events_dict), indicator_type)
             else:
-                threat_level = "low"
-
-        logger.info(
-            "misp_lookup_complete indicator=%s type=%s events=%d attributes=%d threat=%s",
-            indicator[:30],
-            resolved_type,
-            len(events),
-            len(attributes),
-            threat_level,
-        )
-
-        return {
-            "indicator": indicator,
-            "type": resolved_type,
-            "events": events,
-            "attributes": attributes,
-            "threat_level": threat_level,
-            "count": len(events),
-            "library_installed": True,
-        }
+                logger.debug("unexpected misp response format: %s", type(attributes))
+        else:
+            logger.debug("unexpected misp response structure: %s", response)
 
     except Exception as e:
-        logger.error("misp_lookup_internal_error indicator=%s: %s", indicator[:30], e)
-        return {
-            "indicator": indicator,
-            "error": f"MISP lookup error: {str(e)}",
-            "type": resolved_type,
-            "events": [],
-            "attributes": [],
-            "threat_level": "unknown",
-            "count": 0,
-        }
+        logger.error("misp_lookup_error: %s", e)
+        result["error"] = f"MISP lookup failed: {e!s}"
+
+    return result

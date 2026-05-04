@@ -1,19 +1,20 @@
-"""Maigret username OSINT backend — search for usernames across 2000+ services.
+"""Maigret username OSINT backend — search for usernames across 2000+ social networks.
 
-Maigret is a powerful open-source tool that searches for given usernames
-across 2000+ services including social networks, forums, code repositories,
-and more. This module provides a library wrapper around the Maigret CLI
-with subprocess execution and JSON output parsing.
+Maigret is an advanced open-source OSINT tool that searches for usernames
+across 2000+ websites and social networks. This module provides a library wrapper
+around the Maigret CLI with subprocess execution and JSON output parsing.
+
+Uses Maigret as a subprocess since it's not easily pip-installable as a library.
 """
 
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
 import re
 import subprocess
 import tempfile
+import time
 from typing import Any
 
 logger = logging.getLogger("loom.tools.maigret_backend")
@@ -47,27 +48,6 @@ def _validate_username(username: str) -> str:
     return username
 
 
-def _validate_timeout(timeout: int) -> int:
-    """Validate timeout value.
-
-    Args:
-        timeout: timeout in seconds
-
-    Returns:
-        The validated timeout value
-
-    Raises:
-        ValueError: if timeout is invalid
-    """
-    if not isinstance(timeout, int):
-        raise ValueError("timeout must be an integer")
-
-    if timeout < 1 or timeout > 3600:
-        raise ValueError("timeout must be between 1 and 3600 seconds")
-
-    return timeout
-
-
 def _check_maigret_available() -> tuple[bool, str]:
     """Check if Maigret CLI is available.
 
@@ -86,45 +66,42 @@ def _check_maigret_available() -> tuple[bool, str]:
         else:
             return False, f"Maigret version check failed: {result.stderr}"
     except FileNotFoundError:
-        return False, (
-            "Maigret CLI not found. Install with: pip install maigret"
-        )
+        return False, "Maigret CLI not found. Install with: pip install maigret"
     except subprocess.TimeoutExpired:
         return False, "Maigret CLI timeout during version check"
     except Exception as exc:
         return False, f"Maigret availability check error: {str(exc)}"
 
 
-async def research_maigret(
-    username: str, timeout: int = 120
-) -> dict[str, Any]:
-    """Search for a username across 2000+ services using Maigret.
+def research_maigret(username: str, timeout: int = 60) -> dict[str, Any]:
+    """Search for a username across 2000+ sites using Maigret.
 
-    Searches for the given username across social networks, forums, code
-    repositories, and other services. Returns a list of where the account
-    was found, along with direct URLs.
+    Searches for the given username across 2000+ websites and social networks
+    and returns a list of where the account was found, along with direct URLs.
 
     Args:
         username: username to search for
-        timeout: timeout in seconds for the lookup (default 120)
+        timeout: timeout in seconds for the lookup (default 60)
 
     Returns:
         Dict with:
         - username: the searched username
-        - sites_found: list of dicts with {site, url, found, verified}
-        - total_checked: count of sites checked
-        - total_found: count of sites where username was found
+        - accounts_found: count of accounts discovered
+        - accounts: list of dicts with {site, url, status}
+        - duration_ms: execution time in milliseconds
         - maigret_available: bool indicating if Maigret CLI is available
         - error: error message if lookup failed (optional)
     """
     try:
         username = _validate_username(username)
-        timeout = _validate_timeout(timeout)
     except ValueError as exc:
         return {
             "username": username,
             "error": str(exc),
             "maigret_available": False,
+            "accounts_found": 0,
+            "accounts": [],
+            "duration_ms": 0,
         }
 
     # Check if maigret is available
@@ -134,7 +111,12 @@ async def research_maigret(
             "username": username,
             "error": msg,
             "maigret_available": False,
+            "accounts_found": 0,
+            "accounts": [],
+            "duration_ms": 0,
         }
+
+    start_time = time.time()
 
     try:
         # Create temp file for JSON output
@@ -143,72 +125,108 @@ async def research_maigret(
         ) as tmp:
             output_file = tmp.name
 
-        # Build maigret command with ndjson output
-        cmd = [
-            "maigret",
-            username,
-            "--json",
-            output_file,
-            "--timeout",
-            str(timeout),
-        ]
+        # Build maigret command
+        # maigret outputs JSON with: maigret username --json
+        # We need to capture the output to parse it
+        cmd = ["maigret", username, "--json", "--timeout", str(timeout)]
 
-        # Run maigret asynchronously
-        result = await asyncio.to_thread(
-            subprocess.run,
+        # Run maigret
+        result = subprocess.run(
             cmd,
             capture_output=True,
             text=True,
-            timeout=timeout + 30,
+            timeout=timeout + 10,  # Give subprocess extra time beyond maigret's timeout
         )
 
-        # Parse the JSON output
+        duration_ms = int((time.time() - start_time) * 1000)
+
+        # Parse the JSON output from stdout or file
         output: dict[str, Any] = {
             "username": username,
             "maigret_available": True,
+            "duration_ms": duration_ms,
         }
 
+        accounts_list: list[dict[str, Any]] = []
+        accounts_found = 0
+
         try:
-            with open(output_file, "r") as f:
-                maigret_output = json.load(f)
+            # Try to parse from stdout first
+            if result.stdout:
+                try:
+                    maigret_output = json.loads(result.stdout)
+                except json.JSONDecodeError:
+                    # If stdout is not valid JSON, try reading the file
+                    maigret_output = None
 
-            # Maigret output format: {site: {username: {url, found, verified, ...}}}
-            sites_found = []
-            total_checked = 0
+                if maigret_output:
+                    # Maigret output format: {username: {site: {url, status, ...}}}
+                    if isinstance(maigret_output, dict):
+                        # Handle both direct format and username-nested format
+                        data_to_process = maigret_output
+                        if username in maigret_output:
+                            data_to_process = maigret_output[username]
 
-            if isinstance(maigret_output, dict):
-                for site, data in maigret_output.items():
-                    total_checked += 1
-                    if isinstance(data, dict):
-                        site_entry = {
-                            "site": site,
-                            "found": data.get("found", False),
-                            "verified": data.get("verified", False),
-                            "url": data.get("url", ""),
-                            "status": data.get("status", "unknown"),
-                        }
-                        if site_entry["found"]:
-                            sites_found.append(site_entry)
+                        if isinstance(data_to_process, dict):
+                            for site, site_data in data_to_process.items():
+                                if isinstance(site_data, dict):
+                                    # Check if this is a found account
+                                    url = site_data.get("url", "")
+                                    status = site_data.get("status", "unknown")
 
-            output["sites_found"] = sites_found
-            output["total_found"] = len(sites_found)
-            output["total_checked"] = total_checked
+                                    # Maigret uses status codes or 'found', 'not found', etc.
+                                    # Consider it found if status is 'found' or 200
+                                    if (
+                                        status == "found"
+                                        or status == 200
+                                        or (isinstance(status, int) and 200 <= status < 300)
+                                    ):
+                                        accounts_found += 1
+                                        accounts_list.append(
+                                            {
+                                                "site": site,
+                                                "url": url,
+                                                "status": status,
+                                            }
+                                        )
+                                    elif url:
+                                        # Include URL if present even without explicit found status
+                                        accounts_list.append(
+                                            {
+                                                "site": site,
+                                                "url": url,
+                                                "status": status,
+                                            }
+                                        )
+                                        accounts_found += 1
 
-        except (json.JSONDecodeError, IOError) as exc:
+            output["accounts"] = accounts_list
+            output["accounts_found"] = accounts_found
+
+        except (json.JSONDecodeError, IOError, KeyError) as exc:
             output["error"] = f"Failed to parse Maigret output: {str(exc)}"
+            output["accounts"] = []
+            output["accounts_found"] = 0
 
         return output
 
     except subprocess.TimeoutExpired:
+        duration_ms = int((time.time() - start_time) * 1000)
         return {
             "username": username,
             "error": f"Maigret lookup timed out after {timeout} seconds",
             "maigret_available": True,
+            "accounts_found": 0,
+            "accounts": [],
+            "duration_ms": duration_ms,
         }
     except Exception as exc:
-        logger.exception("Maigret lookup failed")
+        duration_ms = int((time.time() - start_time) * 1000)
         return {
             "username": username,
             "error": f"Maigret lookup error: {str(exc)}",
             "maigret_available": True,
+            "accounts_found": 0,
+            "accounts": [],
+            "duration_ms": duration_ms,
         }

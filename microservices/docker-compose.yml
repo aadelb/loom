@@ -1,0 +1,248 @@
+version: '3.8'
+
+services:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Shared Infrastructure
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  redis:
+    image: redis:7-alpine
+    container_name: loom-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - loom-network
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: loom-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: loom
+      POSTGRES_PASSWORD: loom_secure_password_change_in_prod
+      POSTGRES_DB: loom_shared
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U loom"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - loom-network
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Microservices (each runs on distinct port with LOOM_SERVICE env var)
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  loom-core:
+    build:
+      context: ..
+      dockerfile: microservices/Dockerfile
+      args:
+        SERVICE_NAME: loom-core
+    container_name: loom-core
+    ports:
+      - "8787:8787"
+    environment:
+      LOOM_SERVICE: core
+      LOOM_HOST: 0.0.0.0
+      LOOM_PORT: 8787
+      LOOM_CONFIG_PATH: /etc/loom/core/config.json
+      REDIS_URL: redis://redis:6379/0
+      DATABASE_URL: postgresql://loom:loom_secure_password_change_in_prod@postgres:5432/loom_shared
+      LOG_LEVEL: INFO
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ./services/core/config.json:/etc/loom/core/config.json:ro
+      - loom_cache_core:/root/.cache/loom
+      - loom_sessions_core:/root/.loom/sessions
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - loom-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8787/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  loom-redteam:
+    build:
+      context: ..
+      dockerfile: microservices/Dockerfile
+      args:
+        SERVICE_NAME: loom-redteam
+    container_name: loom-redteam
+    ports:
+      - "8788:8788"
+    environment:
+      LOOM_SERVICE: redteam
+      LOOM_HOST: 0.0.0.0
+      LOOM_PORT: 8788
+      LOOM_CONFIG_PATH: /etc/loom/redteam/config.json
+      REDIS_URL: redis://redis:6379/1
+      DATABASE_URL: postgresql://loom:loom_secure_password_change_in_prod@postgres:5432/loom_shared
+      LOG_LEVEL: INFO
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ./services/redteam/config.json:/etc/loom/redteam/config.json:ro
+      - loom_cache_redteam:/root/.cache/loom
+      - loom_sessions_redteam:/root/.loom/sessions
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - loom-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8788/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  loom-intel:
+    build:
+      context: ..
+      dockerfile: microservices/Dockerfile
+      args:
+        SERVICE_NAME: loom-intel
+    container_name: loom-intel
+    ports:
+      - "8789:8789"
+    environment:
+      LOOM_SERVICE: intel
+      LOOM_HOST: 0.0.0.0
+      LOOM_PORT: 8789
+      LOOM_CONFIG_PATH: /etc/loom/intel/config.json
+      REDIS_URL: redis://redis:6379/2
+      DATABASE_URL: postgresql://loom:loom_secure_password_change_in_prod@postgres:5432/loom_shared
+      LOG_LEVEL: INFO
+      PYTHONUNBUFFERED: "1"
+      TOR_ENABLED: "false"
+      TOR_SOCKS5_PROXY: tor:9050
+    volumes:
+      - ./services/intel/config.json:/etc/loom/intel/config.json:ro
+      - loom_cache_intel:/root/.cache/loom
+      - loom_sessions_intel:/root/.loom/sessions
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - loom-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8789/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  loom-infra:
+    build:
+      context: ..
+      dockerfile: microservices/Dockerfile
+      args:
+        SERVICE_NAME: loom-infra
+    container_name: loom-infra
+    ports:
+      - "8790:8790"
+    environment:
+      LOOM_SERVICE: infra
+      LOOM_HOST: 0.0.0.0
+      LOOM_PORT: 8790
+      LOOM_CONFIG_PATH: /etc/loom/infra/config.json
+      REDIS_URL: redis://redis:6379/3
+      DATABASE_URL: postgresql://loom:loom_secure_password_change_in_prod@postgres:5432/loom_shared
+      LOG_LEVEL: INFO
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ./services/infra/config.json:/etc/loom/infra/config.json:ro
+      - loom_cache_infra:/root/.cache/loom
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - loom-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8790/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # API Gateway (Routes to correct microservice)
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  loom-gateway:
+    image: nginx:1.27-alpine
+    container_name: loom-gateway
+    ports:
+      - "8800:8800"
+    volumes:
+      - ./gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      loom-core:
+        condition: service_healthy
+      loom-redteam:
+        condition: service_healthy
+      loom-intel:
+        condition: service_healthy
+      loom-infra:
+        condition: service_healthy
+    networks:
+      - loom-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8800/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  loom-network:
+    driver: bridge
+
+volumes:
+  redis_data:
+    driver: local
+  postgres_data:
+    driver: local
+  loom_cache_core:
+    driver: local
+  loom_sessions_core:
+    driver: local
+  loom_cache_redteam:
+    driver: local
+  loom_sessions_redteam:
+    driver: local
+  loom_cache_intel:
+    driver: local
+  loom_sessions_intel:
+    driver: local
+  loom_cache_infra:
+    driver: local

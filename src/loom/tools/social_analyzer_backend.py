@@ -1,258 +1,190 @@
-"""research_social_analyze — Username analysis across social media platforms.
+"""Social Analyzer integration for cross-platform username reconnaissance.
 
-Provides cross-platform username enumeration and profile detection using
-the social-analyzer library.
+Searches for a username across 300+ social media platforms and returns
+presence, URLs, and metadata for each discovered profile.
 """
 
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
-import os
 from typing import Any
 
-try:
-    from social_analyzer import SocialAnalyzer
-
-    _HAS_SOCIAL_ANALYZER = True
-except ImportError:
-    _HAS_SOCIAL_ANALYZER = False
-
 logger = logging.getLogger("loom.tools.social_analyzer_backend")
-
-# Constraints
-MIN_USERNAME_LEN = 1
-MAX_USERNAME_LEN = 128
-MAX_PLATFORMS = 50
 
 
 async def research_social_analyze(
     username: str,
     platforms: list[str] | None = None,
-    timeout: int = 30,
-    extract_emails: bool = True,
 ) -> dict[str, Any]:
-    """Analyze username across social media platforms.
+    """Search for a username across social media platforms.
 
-    Uses the social-analyzer library to search for a username across
-    multiple social networks and return findings.
+    Uses the social-analyzer CLI tool to perform cross-platform username
+    reconnaissance. Searches across 300+ platforms including social media,
+    forums, code repositories, job sites, and more.
 
     Args:
-        username: Username or account name to search for
-        platforms: List of platform names to search (e.g., ['twitter', 'github', 'linkedin']).
-                  If None, searches all supported platforms.
-        timeout: Request timeout in seconds (1-120)
-        extract_emails: Extract email addresses from profiles (default: True)
+        username: Username to search for
+        platforms: Optional list of platform names to search (e.g., ['twitter', 'github'])
+                   If empty/None, searches all platforms
 
     Returns:
         Dict with keys:
-        - username: Input username
-        - profiles_found: Number of profiles found
-        - platforms_checked: List of platforms searched
-        - results: List of dicts with {platform, url, found, username_match, profile_url}
-        - total_platforms: Total number of platforms checked
-        - error: Error message if operation failed (optional)
+        - username: The searched username
+        - profiles_found: List of discovered profiles [{platform, url, exists, ...}]
+        - total_found: Count of profiles found
+        - error: Error message if any (instead of profiles on failure)
     """
-    # Input validation
-    if not username or not isinstance(username, str):
-        return {
-            "username": username,
-            "error": "username must be a non-empty string",
-            "profiles_found": 0,
-            "platforms_checked": [],
-            "results": [],
-            "total_platforms": 0,
-        }
+    await asyncio.sleep(0)
 
-    username = username.strip()
-    if len(username) < MIN_USERNAME_LEN or len(username) > MAX_USERNAME_LEN:
-        return {
-            "username": username,
-            "error": f"username length must be {MIN_USERNAME_LEN}-{MAX_USERNAME_LEN} chars",
-            "profiles_found": 0,
-            "platforms_checked": [],
-            "results": [],
-            "total_platforms": 0,
-        }
+    result: dict[str, Any] = {
+        "username": username,
+        "total_found": 0,
+        "profiles_found": [],
+    }
 
-    # Validate timeout
-    if not isinstance(timeout, int) or timeout < 1 or timeout > 120:
-        timeout = 30
-
-    # Validate platforms list
-    if platforms is not None:
-        if not isinstance(platforms, list):
-            return {
-                "username": username,
-                "error": "platforms must be a list of strings",
-                "profiles_found": 0,
-                "platforms_checked": [],
-                "results": [],
-                "total_platforms": 0,
-            }
-        if len(platforms) > MAX_PLATFORMS:
-            return {
-                "username": username,
-                "error": f"platforms list max {MAX_PLATFORMS} items",
-                "profiles_found": 0,
-                "platforms_checked": [],
-                "results": [],
-                "total_platforms": 0,
-            }
-        # Sanitize platform names
-        platforms = [str(p).strip().lower() for p in platforms if p]
-
-    # Check if library is installed
-    if not _HAS_SOCIAL_ANALYZER:
-        return {
-            "username": username,
-            "error": "social-analyzer library not installed. Install with: pip install social-analyzer",
-            "profiles_found": 0,
-            "platforms_checked": [],
-            "results": [],
-            "total_platforms": 0,
-            "library_installed": False,
-        }
-
+    # Try library import first
     try:
-        # Run in executor to avoid blocking event loop
-        result = await asyncio.get_event_loop().run_in_executor(
-            None,
-            _run_social_analyzer,
-            username,
-            platforms,
-            timeout,
-            extract_emails,
-        )
-        return result
+        import importlib.util
 
-    except Exception as e:
-        logger.error("social_analyze_failed username=%s: %s", username, e)
-        return {
-            "username": username,
-            "error": f"social-analyzer execution error: {str(e)}",
-            "profiles_found": 0,
-            "platforms_checked": platforms or [],
-            "results": [],
-            "total_platforms": 0,
-        }
+        spec = importlib.util.find_spec("social_analyzer")
+        if spec is not None:
+            return await _search_with_library(username, platforms, result)
+    except (ImportError, ValueError):
+        logger.debug("social_analyzer library not installed, falling back to CLI")
+
+    # Fall back to CLI
+    return await _search_with_cli(username, platforms, result)
 
 
-def _run_social_analyzer(
+async def _search_with_library(
     username: str,
     platforms: list[str] | None,
-    timeout: int,
-    extract_emails: bool,
+    result: dict[str, Any],
 ) -> dict[str, Any]:
-    """Run social analyzer in executor thread.
-
-    Args:
-        username: Username to analyze
-        platforms: List of platform names to check
-        timeout: Request timeout
-        extract_emails: Extract email addresses
-
-    Returns:
-        Analysis result dict
-    """
+    """Search using social-analyzer Python library if available."""
     try:
-        # Initialize analyzer
-        analyzer = SocialAnalyzer()
+        from social_analyzer import analyze
 
-        # Build options dict
-        options = {
+        # Prepare arguments
+        kwargs = {
             "username": username,
-            "timeout": timeout,
-            "extract_emails": extract_emails,
+            "output": "json",
+            "timeout": 10,
         }
 
         if platforms:
-            options["platforms"] = platforms
+            kwargs["platforms"] = platforms
 
         # Run analysis
-        logger.info("social_analyze_start username=%s platforms=%s", username, len(platforms or []))
+        response = analyze(**kwargs)
 
-        # Call analyze method - behavior depends on library version
-        # Most versions support a dict-based approach or direct method calls
-        try:
-            # Try newer API
-            result = analyzer.analyze(options)
-        except (AttributeError, TypeError):
-            # Fallback to older API
-            try:
-                result = analyzer.run({
-                    "username": username,
-                    "sites": platforms or [],
-                    "fast": False,
-                    "output": None,
-                })
-            except Exception as e:
-                logger.warning("social_analyzer_fallback_failed: %s", e)
-                return {
-                    "username": username,
-                    "error": f"social-analyzer error: {str(e)}",
-                    "profiles_found": 0,
-                    "platforms_checked": [],
-                    "results": [],
-                    "total_platforms": 0,
-                }
-
-        # Parse results
-        profiles_found = 0
-        results = []
-
-        # Handle different result formats
-        if isinstance(result, dict):
-            # Extract found profiles
-            if "profiles" in result:
-                profiles = result["profiles"]
-                if isinstance(profiles, dict):
-                    for platform, data in profiles.items():
-                        if isinstance(data, dict) and data.get("found"):
-                            profiles_found += 1
-                            results.append({
-                                "platform": platform,
-                                "found": True,
-                                "url": data.get("url", ""),
-                                "username_match": data.get("username_match", True),
-                                "profile_url": data.get("profile_url", ""),
-                            })
-                elif isinstance(profiles, list):
-                    for profile in profiles:
-                        if isinstance(profile, dict) and profile.get("found"):
-                            profiles_found += 1
-                            results.append({
-                                "platform": profile.get("platform", "unknown"),
-                                "found": True,
-                                "url": profile.get("url", ""),
-                                "username_match": profile.get("username_match", True),
-                                "profile_url": profile.get("profile_url", ""),
-                            })
-
-        platforms_checked = platforms or []
-
-        logger.info(
-            "social_analyze_complete username=%s profiles_found=%d",
-            username,
-            profiles_found,
-        )
-
-        return {
-            "username": username,
-            "profiles_found": profiles_found,
-            "platforms_checked": platforms_checked,
-            "results": results,
-            "total_platforms": len(platforms_checked) if platforms_checked else 150,
-            "library_installed": True,
-        }
+        # Parse response
+        if isinstance(response, dict):
+            found = response.get("found", [])
+            if isinstance(found, list):
+                result["profiles_found"] = found
+                result["total_found"] = len(found)
+                logger.info("social_analyze_success: found %d profiles for %s", len(found), username)
+            else:
+                logger.debug("unexpected social_analyzer response format for found: %s", type(found))
+        else:
+            logger.debug("unexpected social_analyzer response type: %s", type(response))
 
     except Exception as e:
-        logger.error("social_analyzer_internal_error username=%s: %s", username, e)
-        return {
-            "username": username,
-            "error": f"social-analyzer execution error: {str(e)}",
-            "profiles_found": 0,
-            "platforms_checked": platforms or [],
-            "results": [],
-            "total_platforms": 0,
-        }
+        logger.error("social_analyzer_library_error: %s", e)
+        result["error"] = f"social_analyzer library failed: {e!s}"
+
+    return result
+
+
+async def _search_with_cli(
+    username: str,
+    platforms: list[str] | None,
+    result: dict[str, Any],
+) -> dict[str, Any]:
+    """Search using social-analyzer CLI tool."""
+    try:
+        # Build CLI command
+        cmd = [
+            "social-analyzer",
+            "--username",
+            username,
+            "--output",
+            "json",
+        ]
+
+        # Add platforms if specified
+        if platforms:
+            cmd.extend(["--platforms", ",".join(platforms)])
+
+        # Run with timeout
+        process = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+
+        try:
+            stdout, stderr = await asyncio.wait_for(
+                process.communicate(),
+                timeout=60.0,
+            )
+        except TimeoutError:
+            process.kill()
+            await process.wait()
+            logger.error("social_analyzer_cli_timeout: exceeded 60 seconds")
+            result["error"] = "social-analyzer CLI timeout after 60 seconds"
+            return result
+
+        # Check return code
+        if process.returncode != 0:
+            logger.error("social_analyzer_cli_error: exit code %d", process.returncode)
+            if stderr:
+                logger.error("social_analyzer_stderr: %s", stderr.decode("utf-8", errors="ignore"))
+            result["error"] = f"social-analyzer CLI failed with exit code {process.returncode}"
+            return result
+
+        # Parse JSON output
+        try:
+            output_str = stdout.decode("utf-8")
+            response = json.loads(output_str)
+
+            # Extract profiles
+            profiles = []
+            if isinstance(response, dict):
+                # Handle various response formats
+                if "results" in response:
+                    results = response["results"]
+                    if isinstance(results, dict):
+                        for platform, data in results.items():
+                            if isinstance(data, dict) and data.get("found"):
+                                profiles.append(
+                                    {
+                                        "platform": platform,
+                                        "url": data.get("url"),
+                                        "exists": data.get("found", False),
+                                        "is_similar": data.get("is_similar", False),
+                                        "accuracy": data.get("accuracy"),
+                                    }
+                                )
+                elif "found_profiles" in response:
+                    profiles = response["found_profiles"]
+
+            result["profiles_found"] = profiles
+            result["total_found"] = len(profiles)
+            logger.info("social_analyze_success: found %d profiles for %s via CLI", len(profiles), username)
+
+        except json.JSONDecodeError as e:
+            logger.error("social_analyzer_json_parse_error: %s", e)
+            result["error"] = f"Failed to parse social-analyzer JSON output: {e!s}"
+
+    except FileNotFoundError:
+        logger.error("social_analyzer_cli_not_found")
+        result["error"] = "social-analyzer CLI tool not found in PATH"
+    except Exception as e:
+        logger.error("social_analyzer_cli_error: %s", e)
+        result["error"] = f"social-analyzer CLI failed: {e!s}"
+
+    return result

@@ -1249,6 +1249,13 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip sherlock_backend: %s", e)
         record_failure("research", "sherlock_backend", str(e))
     try:
+        from loom.tools.harvester_backend import research_harvest
+        mcp.tool()(wrap_tool(research_harvest))
+        record_success("research", "research_harvest")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip harvester_backend: %s", e)
+        record_failure("research", "harvester_backend", str(e))
+    try:
         from loom.tools.silk_guardian import research_silk_guardian_monitor
         mcp.tool()(wrap_tool(research_silk_guardian_monitor))
         record_success("research", "research_silk_guardian_monitor")
@@ -1628,4 +1635,18 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip auto_report: %s", e)
         record_failure("research", "auto_report", str(e))
 
-    log.info("registered research tools count=383")
+    try:
+        from loom.tools.gpt_researcher_backend import research_gpt_researcher
+        mcp.tool()(wrap_tool(research_gpt_researcher))
+        record_success("research", "research_gpt_researcher")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip gpt_researcher_backend: %s", e)
+        record_failure("research", "gpt_researcher_backend", str(e))
+    try:
+        from loom.tools.docsgpt_backend import research_docs_ai
+        mcp.tool()(wrap_tool(research_docs_ai))
+        record_success("research", "research_docs_ai")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip docsgpt_backend: %s", e)
+        record_failure("research", "docsgpt_backend", str(e))
+    log.info("registered research tools count=385")

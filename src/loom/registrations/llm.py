@@ -30,3 +30,24 @@ def register_llm_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip multi_llm: %s", e)
         record_failure("llm", "multi_llm", str(e))
     log.info("registered llm tools count=2")
+
+def register_compression_tools(mcp: "FastMCP", wrap_tool) -> None:
+    """Register 3 prompt compression tools."""
+    from loom.registrations.tracking import record_success, record_failure
+
+    try:
+        from loom.tools.prompt_compression import (
+            research_compress_prompt,
+            research_compression_stats,
+            research_compression_reset,
+        )
+        mcp.tool()(wrap_tool(research_compress_prompt))
+        record_success("compression", "research_compress_prompt")
+        mcp.tool()(wrap_tool(research_compression_stats))
+        record_success("compression", "research_compression_stats")
+        mcp.tool()(wrap_tool(research_compression_reset))
+        record_success("compression", "research_compression_reset")
+        log.info("registered compression tools count=3")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip compression tools: %s", e)
+        record_failure("compression", "prompt_compression", str(e))

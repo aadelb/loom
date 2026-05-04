@@ -16,6 +16,7 @@ _DEFAULT_ACCEPT_LANG = CONFIG.get("DEFAULT_ACCEPT_LANGUAGE", "en-US,en;q=0.9,ar;
 
 
 __all__ = [
+    "ArtifactCleanupParams",
     "CitationGraphParams",
     "CompanyDiligenceParams",
     "CompetitiveIntelParams",
@@ -26,6 +27,7 @@ __all__ = [
     "DependencyAuditParams",
     "EthereumTxDecodeParams",
     "FindExpertsParams",
+    "FingerprintAuditParams",
     "GraphAnalyzeParams",
     "GraphScraperParams",
     "LeakScanParams",
@@ -34,12 +36,14 @@ __all__ = [
     "MultilingualBenchmarkParams",
     "MultilingualParams",
     "PatentLandscapeParams",
+    "PrivacyExposureParams",
     "RedTeamParams",
     "SalaryIntelligenceParams",
     "SocialGraphParams",
     "SocialProfileParams",
     "SocialSearchParams",
     "StegoAnalyzeParams",
+    "StegoDecodeParams",
     "StegoDetectParams",
     "StegoEncodeParams",
     "StylometryParams",
@@ -827,4 +831,97 @@ class TrendForecastParams(BaseModel):
     def validate_min_term_frequency(cls, v: int) -> int:
         if v < 1 or v > 10:
             raise ValueError("min_term_frequency must be 1-10")
+        return v
+
+
+class FingerprintAuditParams(BaseModel):
+    """Parameters for research_fingerprint_audit tool."""
+
+    url: str = "https://browserleaks.com/javascript"
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def validate_url_field(cls, v: str) -> str:
+        return validate_url(v)
+
+
+class PrivacyExposureParams(BaseModel):
+    """Parameters for research_privacy_exposure tool."""
+
+    target_url: str
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("target_url", mode="before")
+    @classmethod
+    def validate_url_field(cls, v: str) -> str:
+        return validate_url(v)
+
+
+class ArtifactCleanupParams(BaseModel):
+    """Parameters for research_artifact_cleanup tool."""
+
+    target_paths: list[str]
+    dry_run: bool = True
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("target_paths")
+    @classmethod
+    def validate_paths(cls, v: list[str]) -> list[str]:
+        if not v:
+            raise ValueError("target_paths list cannot be empty")
+        if len(v) > 20:
+            raise ValueError("target_paths max 20 items")
+        return v
+
+    @field_validator("dry_run")
+    @classmethod
+    def validate_dry_run(cls, v: bool) -> bool:
+        if not isinstance(v, bool):
+            raise ValueError("dry_run must be boolean")
+        return v
+
+
+class StegoEncodeParams(BaseModel):
+    """Parameters for research_stego_encode tool."""
+
+    input_text: str
+    cover_message: str
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("input_text")
+    @classmethod
+    def validate_input_text(cls, v: str) -> str:
+        if not v or not isinstance(v, str):
+            raise ValueError("input_text must be non-empty string")
+        if len(v) > 256:
+            raise ValueError("input_text max 256 characters")
+        return v
+
+    @field_validator("cover_message")
+    @classmethod
+    def validate_cover_message(cls, v: str) -> str:
+        if not v or not isinstance(v, str):
+            raise ValueError("cover_message must be non-empty string")
+        if len(v) > 5000:
+            raise ValueError("cover_message max 5000 characters")
+        return v
+
+
+class StegoDecodeParams(BaseModel):
+    """Parameters for research_stego_decode tool."""
+
+    encoded_message: str
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("encoded_message")
+    @classmethod
+    def validate_encoded_message(cls, v: str) -> str:
+        if not v or not isinstance(v, str):
+            raise ValueError("encoded_message must be non-empty string")
         return v

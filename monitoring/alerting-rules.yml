@@ -1,0 +1,137 @@
+groups:
+  - name: loom_alerts
+    interval: 30s
+    rules:
+      - alert: LoomHighErrorRate
+        expr: |
+          (
+            rate(loom_tool_errors_total[5m]) /
+            (rate(loom_tool_calls_total[5m]) + 1e-9)
+          ) * 100 > 5
+        for: 5m
+        labels:
+          severity: warning
+          component: loom
+        annotations:
+          summary: "Loom error rate is high (>5%)"
+          description: "Error rate for Loom MCP server has exceeded 5% threshold for the last 5 minutes. Current rate: {{ $value | humanizePercentage }}"
+          runbook_url: "https://github.com/yourusername/loom/docs/runbooks/high-error-rate.md"
+
+      - alert: LoomHighLatency
+        expr: histogram_quantile(0.95, rate(loom_tool_duration_seconds_bucket[5m])) > 10
+        for: 5m
+        labels:
+          severity: warning
+          component: loom
+        annotations:
+          summary: "Loom P95 latency is high (>10s)"
+          description: "P95 latency for Loom MCP server has exceeded 10 seconds for the last 5 minutes. Current value: {{ $value | humanizeDuration }}"
+          runbook_url: "https://github.com/yourusername/loom/docs/runbooks/high-latency.md"
+
+      - alert: LoomVeryHighLatency
+        expr: histogram_quantile(0.95, rate(loom_tool_duration_seconds_bucket[5m])) > 30
+        for: 2m
+        labels:
+          severity: critical
+          component: loom
+        annotations:
+          summary: "Loom P95 latency is critically high (>30s)"
+          description: "P95 latency for Loom MCP server has exceeded 30 seconds. Current value: {{ $value | humanizeDuration }}. Immediate investigation required."
+          runbook_url: "https://github.com/yourusername/loom/docs/runbooks/critical-latency.md"
+
+      - alert: LoomCircuitOpen
+        expr: loom_circuit_breaker_open > 0
+        for: 5m
+        labels:
+          severity: critical
+          component: loom
+        annotations:
+          summary: "Loom circuit breaker is open for {{ $labels.tool_name }}"
+          description: "Circuit breaker for {{ $labels.tool_name }} has been open for more than 5 minutes. This indicates repeated failures in the service."
+          runbook_url: "https://github.com/yourusername/loom/docs/runbooks/circuit-breaker-open.md"
+
+      - alert: LoomHighMemory
+        expr: process_resident_memory_bytes{job="loom"} > 6e9
+        for: 10m
+        labels:
+          severity: warning
+          component: loom
+        annotations:
+          summary: "Loom memory usage is high (>6GB)"
+          description: "Loom MCP server memory usage has exceeded 6GB for more than 10 minutes. Current usage: {{ $value | humanize }}B. Consider restarting the service or investigating for memory leaks."
+          runbook_url: "https://github.com/yourusername/loom/docs/runbooks/high-memory.md"
+
+      - alert: LoomCriticalMemory
+        expr: process_resident_memory_bytes{job="loom"} > 8e9
+        for: 2m
+        labels:
+          severity: critical
+          component: loom
+        annotations:
+          summary: "Loom memory usage is critically high (>8GB)"
+          description: "Loom MCP server memory usage has exceeded 8GB. Current usage: {{ $value | humanize }}B. Immediate action required to prevent OOM."
+          runbook_url: "https://github.com/yourusername/loom/docs/runbooks/critical-memory.md"
+
+      - alert: LoomDown
+        expr: up{job="loom"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: loom
+        annotations:
+          summary: "Loom MCP server is down"
+          description: "Loom MCP server has been unreachable for more than 1 minute at {{ $labels.instance }}. Check server logs and restart service if needed."
+          runbook_url: "https://github.com/yourusername/loom/docs/runbooks/server-down.md"
+
+      - alert: LoomNoToolCalls
+        expr: rate(loom_tool_calls_total[5m]) == 0
+        for: 10m
+        labels:
+          severity: warning
+          component: loom
+        annotations:
+          summary: "Loom has received no tool calls in the last 10 minutes"
+          description: "No tool calls have been recorded for Loom MCP server in the last 10 minutes. The service may be idle or experiencing issues."
+          runbook_url: "https://github.com/yourusername/loom/docs/runbooks/no-tool-calls.md"
+
+      - alert: LoomCacheHitRateLow
+        expr: |
+          (
+            loom_cache_hits / (loom_cache_hits + loom_cache_misses + 1e-9)
+          ) * 100 < 30
+        for: 15m
+        labels:
+          severity: info
+          component: loom
+        annotations:
+          summary: "Loom cache hit rate is low (<30%)"
+          description: "Cache hit rate for Loom has dropped below 30% for the last 15 minutes. Current rate: {{ $value | humanizePercentage }}. Consider reviewing cache strategy or TTL settings."
+          runbook_url: "https://github.com/yourusername/loom/docs/runbooks/low-cache-hit-rate.md"
+
+  - name: loom_recording_rules
+    interval: 30s
+    rules:
+      - record: "loom:calls:rate1m"
+        expr: rate(loom_tool_calls_total[1m])
+
+      - record: "loom:errors:rate1m"
+        expr: rate(loom_tool_errors_total[1m])
+
+      - record: "loom:error_rate:percentage"
+        expr: |
+          (
+            rate(loom_tool_errors_total[5m]) /
+            (rate(loom_tool_calls_total[5m]) + 1e-9)
+          ) * 100
+
+      - record: "loom:latency:p95"
+        expr: histogram_quantile(0.95, rate(loom_tool_duration_seconds_bucket[5m]))
+
+      - record: "loom:latency:p99"
+        expr: histogram_quantile(0.99, rate(loom_tool_duration_seconds_bucket[5m]))
+
+      - record: "loom:cache_hit_rate:percentage"
+        expr: |
+          (
+            loom_cache_hits / (loom_cache_hits + loom_cache_misses + 1e-9)
+          ) * 100

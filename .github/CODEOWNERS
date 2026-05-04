@@ -1,0 +1,51 @@
+# Code ownership and review policies for Loom MCP Server
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Global owners for any PR that doesn't match a more specific rule
+* @aadelb
+
+# Core infrastructure and MCP server
+src/loom/server.py @aadelb
+src/loom/config.py @aadelb
+src/loom/params.py @aadelb
+src/loom/auth.py @aadelb
+
+# Tool implementations (220+ tools)
+src/loom/tools/ @aadelb
+
+# Research and attack pipelines
+src/loom/evidence_pipeline.py @aadelb
+src/loom/cross_model_transfer.py @aadelb
+src/loom/context_poisoning.py @aadelb
+src/loom/daisy_chain.py @aadelb
+src/loom/adversarial_debate.py @aadelb
+
+# LLM Providers and integration
+src/loom/providers/ @aadelb
+
+# Scoring and evaluation systems
+src/loom/attack_scorer.py @aadelb
+src/loom/stealth_calc.py @aadelb
+src/loom/quality_scorer.py @aadelb
+src/loom/unified_scorer.py @aadelb
+
+# Billing subsystem
+src/loom/billing/ @aadelb
+
+# Strategy definitions (957 reframing strategies)
+src/loom/tools/reframe_strategies/ @aadelb
+
+# Tests and CI/CD
+tests/ @aadelb
+.github/ @aadelb
+scripts/ @aadelb
+
+# Documentation
+docs/ @aadelb
+README.md @aadelb
+CHANGELOG.md @aadelb
+
+# Build configuration
+pyproject.toml @aadelb
+setup.py @aadelb
+setup.cfg @aadelb

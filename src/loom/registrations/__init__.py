@@ -18,7 +18,7 @@ def register_all_tools(mcp: "FastMCP", wrap_tool) -> None:
     by delegating to category-specific registration functions.
     """
     from loom.registrations.core import register_core_tools
-    from loom.registrations.llm import register_llm_tools
+    from loom.registrations.llm import register_llm_tools, register_compression_tools
     from loom.registrations.reframe import register_reframe_tools
     from loom.registrations.adversarial import register_adversarial_tools
     from loom.registrations.infrastructure import register_infrastructure_tools
@@ -32,6 +32,7 @@ def register_all_tools(mcp: "FastMCP", wrap_tool) -> None:
     _categories = [
         ("core", register_core_tools),
         ("llm", register_llm_tools),
+        ("compression", register_compression_tools),
         ("reframe", register_reframe_tools),
         ("adversarial", register_adversarial_tools),
         ("infrastructure", register_infrastructure_tools),

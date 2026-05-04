@@ -1,269 +1,399 @@
-"""SpiderFoot OSINT backend — modular reconnaissance and footprinting.
-
-SpiderFoot is a reconnaissance and footprinting tool that automates OSINT
-data collection from 200+ data sources. This module provides a wrapper around
-the SpiderFoot CLI with subprocess execution and output parsing.
-"""
+"""SpiderFoot passive reconnaissance integration — OSINT scanning via SpiderFoot framework."""
 
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
 import re
+import shutil
 import subprocess
-import tempfile
-import uuid
+import time
 from typing import Any
+
+import httpx
+
+from loom.validators import validate_url, UrlSafetyError
 
 logger = logging.getLogger("loom.tools.spiderfoot_backend")
 
+# Maximum output size: 50 MB
+MAX_OUTPUT_SIZE = 50 * 1024 * 1024
+
+# SpiderFoot API endpoint (default)
+SPIDERFOOT_API_URL = "http://localhost:5001"
+
 
 def _validate_target(target: str) -> str:
-    """Validate target (IP, domain, email, or username).
+    """Validate target (domain, IP, email, phone) to prevent command injection.
+
+    Allows alphanumeric, dots, hyphens, underscores, @, and +.
+    Returns the validated target.
 
     Args:
-        target: target to validate
+        target: target identifier to validate
 
     Returns:
         The validated target string
 
     Raises:
-        ValueError: if target is invalid
+        ValueError: if target contains disallowed characters
     """
-    target = target.strip() if isinstance(target, str) else ""
+    if not target or len(target) > 512:
+        raise ValueError("target must be 1-512 characters")
 
-    if not target or len(target) > 255:
-        raise ValueError("target must be 1-255 characters")
-
-    # Allow IP addresses, domains, emails, usernames
-    # Basic check: alphanumeric, dots, hyphens, underscores, @ symbol
-    if not re.match(r"^[a-z0-9._\-@]+$", target, re.IGNORECASE):
+    # Allow alphanumeric, dots, hyphens, underscores, @, +, :
+    if not re.match(r"^[a-z0-9._\-@+:]+$", target, re.IGNORECASE):
         raise ValueError("target contains disallowed characters")
 
     return target
 
 
-def _validate_scan_type(scan_type: str) -> str:
-    """Validate scan type parameter.
+def _is_tool_available(tool_name: str) -> bool:
+    """Check if a tool is available in the system PATH.
 
     Args:
-        scan_type: scan type (e.g., "passive", "all", "web", etc.)
+        tool_name: name of the tool to check (e.g., 'spiderfoot')
 
     Returns:
-        The validated scan type
-
-    Raises:
-        ValueError: if scan type is invalid
+        True if tool is available, False otherwise
     """
-    scan_type = scan_type.strip() if isinstance(scan_type, str) else ""
-
-    if not scan_type or len(scan_type) > 100:
-        raise ValueError("scan_type must be 1-100 characters")
-
-    # Allow alphanumeric and underscores
-    if not re.match(r"^[a-z0-9_-]+$", scan_type, re.IGNORECASE):
-        raise ValueError("scan_type contains disallowed characters")
-
-    return scan_type
+    return shutil.which(tool_name) is not None
 
 
-def _validate_modules(modules: list[str] | None) -> list[str] | None:
-    """Validate module list.
+def _is_api_available() -> bool:
+    """Check if SpiderFoot API is available.
+
+    Returns:
+        True if API is reachable, False otherwise
+    """
+    try:
+        resp = httpx.get(f"{SPIDERFOOT_API_URL}/api/v2/info", timeout=5)
+        return resp.status_code == 200
+    except Exception:
+        return False
+
+
+def _parse_spiderfoot_json(json_str: str) -> dict[str, Any]:
+    """Parse SpiderFoot JSON output and extract findings.
 
     Args:
-        modules: list of module names to use
+        json_str: JSON string from SpiderFoot output
 
     Returns:
-        The validated module list or None
-
-    Raises:
-        ValueError: if modules list is invalid
-    """
-    if modules is None:
-        return None
-
-    if not isinstance(modules, list):
-        raise ValueError("modules must be a list of strings")
-
-    if len(modules) > 100:
-        raise ValueError("too many modules specified (max 100)")
-
-    validated = []
-    for mod in modules:
-        mod = mod.strip() if isinstance(mod, str) else ""
-        if not mod or len(mod) > 100:
-            raise ValueError(f"invalid module name: {mod}")
-
-        if not re.match(r"^[a-z0-9_-]+$", mod, re.IGNORECASE):
-            raise ValueError(f"module name contains disallowed characters: {mod}")
-
-        validated.append(mod)
-
-    return validated if validated else None
-
-
-def _check_spiderfoot_available() -> tuple[bool, str]:
-    """Check if SpiderFoot CLI is available.
-
-    Returns:
-        Tuple of (available: bool, message: str)
+        Dict with parsed findings organized by module and data type
     """
     try:
-        # Try sf command (SpiderFoot CLI)
-        result = subprocess.run(
-            ["sf", "-h"],
-            capture_output=True,
-            text=True,
-            timeout=5,
-        )
-        if result.returncode == 0 or "usage" in result.stdout.lower():
-            return True, "SpiderFoot CLI found"
-    except (FileNotFoundError, subprocess.TimeoutExpired):
-        pass
-
-    try:
-        # Try spiderfoot command (alternative name)
-        result = subprocess.run(
-            ["spiderfoot", "-h"],
-            capture_output=True,
-            text=True,
-            timeout=5,
-        )
-        if result.returncode == 0 or "usage" in result.stdout.lower():
-            return True, "SpiderFoot CLI found"
-    except (FileNotFoundError, subprocess.TimeoutExpired):
-        pass
-
-    return False, (
-        "SpiderFoot CLI not found. Install with: pip install spiderfoot"
-    )
+        data = json.loads(json_str)
+        return data
+    except json.JSONDecodeError as exc:
+        logger.warning("failed to parse spiderfoot json: %s", exc)
+        return {}
 
 
-async def research_spiderfoot_scan(
-    target: str,
-    scan_type: str = "passive",
-    modules: list[str] | None = None,
+def _run_spiderfoot_cli(
+    target: str, modules: str = "all", timeout: int = 120
 ) -> dict[str, Any]:
-    """Perform reconnaissance on a target using SpiderFoot.
-
-    Runs a modular reconnaissance scan on the given target (IP, domain, email,
-    or username) and returns findings from 200+ data sources.
+    """Run SpiderFoot via CLI subprocess.
 
     Args:
-        target: target to scan (IP address, domain, email, or username)
-        scan_type: type of scan - "passive" (default), "web", "dns", "mail", etc.
-        modules: optional list of specific modules to run. If None, uses default modules.
+        target: target identifier (domain, IP, email, etc.)
+        modules: comma-separated module list or 'all'
+        timeout: command timeout in seconds
 
     Returns:
-        Dict with:
-        - target: the scanned target
-        - scan_type: the type of scan performed
-        - modules_run: list of modules that were executed
-        - findings: list of findings from the scan
-        - total_findings: count of findings discovered
-        - categories: dict mapping finding categories to counts
-        - spiderfoot_available: bool indicating if SpiderFoot CLI is available
-        - error: error message if scan failed (optional)
+        Dict with findings, duration, and status
     """
-    try:
-        target = _validate_target(target)
-        scan_type = _validate_scan_type(scan_type)
-        modules = _validate_modules(modules)
-    except ValueError as exc:
+    if not _is_tool_available("spiderfoot"):
         return {
             "target": target,
-            "error": str(exc),
-            "spiderfoot_available": False,
-        }
-
-    # Check if spiderfoot is available
-    available, msg = _check_spiderfoot_available()
-    if not available:
-        return {
-            "target": target,
-            "error": msg,
-            "spiderfoot_available": False,
+            "error": "spiderfoot not installed",
+            "warning": "Install SpiderFoot: pip install spiderfoot",
+            "findings": [],
+            "total_findings": 0,
+            "duration_ms": 0,
         }
 
     try:
-        # Create temp file for JSON output
-        output_file = f"/tmp/spiderfoot_{uuid.uuid4().hex}.json"
+        start_time = time.time()
 
-        # Determine which binary to use
-        binary = "sf"  # Try sf first, subprocess will fail if not available
+        cmd = ["spiderfoot", "-s", target, "-o", "json"]
+        if modules != "all":
+            cmd.extend(["-m", modules])
 
-        # Build spiderfoot command
-        cmd = [
-            binary,
-            "-s",
-            target,
-            "-t",
-            scan_type,
-            "-o",
-            "json",
-            "-f",
-            output_file,
-        ]
-
-        # Add specific modules if provided
-        if modules:
-            cmd.extend(["-m", ",".join(modules)])
-
-        # Run spiderfoot asynchronously
-        result = await asyncio.to_thread(
-            subprocess.run,
+        result = subprocess.run(
             cmd,
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
-            timeout=600,  # SpiderFoot scans can take a while
+            errors="replace",
+            timeout=timeout,
         )
 
-        # Parse the JSON output
+        duration_ms = int((time.time() - start_time) * 1000)
+
+        stdout = result.stdout[:MAX_OUTPUT_SIZE] if result.stdout else ""
+        if result.stdout and len(result.stdout) > MAX_OUTPUT_SIZE:
+            logger.warning(
+                "spiderfoot output truncated (exceeded %d bytes)",
+                MAX_OUTPUT_SIZE,
+            )
+
         output: dict[str, Any] = {
             "target": target,
-            "scan_type": scan_type,
-            "spiderfoot_available": True,
+            "duration_ms": duration_ms,
+            "findings": [],
+            "total_findings": 0,
         }
 
-        try:
-            with open(output_file, "r") as f:
-                scan_data = json.load(f)
+        if result.returncode != 0:
+            output["error"] = f"spiderfoot command failed: {result.stderr[:500]}"
+            return output
 
-            # Extract scan results
-            findings = scan_data.get("findings", [])
-            modules_run = scan_data.get("modules_run", [])
+        # Parse JSON output
+        parsed = _parse_spiderfoot_json(stdout)
+        if not parsed:
+            output["warning"] = "no findings or unparseable output"
+            return output
 
-            # Categorize findings
-            categories: dict[str, int] = {}
-            for finding in findings:
-                cat = finding.get("type", "unknown")
-                categories[cat] = categories.get(cat, 0) + 1
+        # Extract findings from parsed JSON
+        findings: list[dict[str, Any]] = []
 
-            output["findings"] = findings
-            output["modules_run"] = modules_run
-            output["total_findings"] = len(findings)
-            output["categories"] = categories
+        # SpiderFoot JSON format: {"data": {"module": [{"data_type": "...", "value": "...", ...}]}}
+        if isinstance(parsed, dict):
+            data_section = parsed.get("data", {})
+            if isinstance(data_section, dict):
+                for module, module_findings in data_section.items():
+                    if isinstance(module_findings, list):
+                        for finding in module_findings:
+                            if isinstance(finding, dict):
+                                findings.append(
+                                    {
+                                        "module": module,
+                                        "data_type": finding.get("type", "unknown"),
+                                        "value": finding.get("value", ""),
+                                        "source": finding.get("source", ""),
+                                    }
+                                )
 
-        except (json.JSONDecodeError, IOError, FileNotFoundError) as exc:
-            output["error"] = f"Failed to parse SpiderFoot output: {str(exc)}"
-            output["findings"] = []
-            output["modules_run"] = []
-            output["total_findings"] = 0
-            output["categories"] = {}
+        output["findings"] = findings[:1000]  # Cap at 1000 findings
+        output["total_findings"] = len(findings)
 
+        logger.info(
+            "spiderfoot_cli_success target=%s findings=%d duration_ms=%d",
+            target,
+            len(findings),
+            duration_ms,
+        )
         return output
 
     except subprocess.TimeoutExpired:
         return {
             "target": target,
-            "error": "SpiderFoot scan timed out after 600 seconds",
-            "spiderfoot_available": True,
+            "error": f"spiderfoot scan timed out (exceeded {timeout} seconds)",
+            "findings": [],
+            "total_findings": 0,
+            "duration_ms": timeout * 1000,
         }
     except Exception as exc:
-        logger.exception("SpiderFoot scan failed")
+        logger.exception("spiderfoot_cli_failed target=%s", target)
         return {
             "target": target,
-            "error": f"SpiderFoot scan error: {str(exc)}",
-            "spiderfoot_available": True,
+            "error": str(exc),
+            "findings": [],
+            "total_findings": 0,
+            "duration_ms": 0,
         }
+
+
+def _run_spiderfoot_api(
+    target: str, modules: str = "all", timeout: int = 120
+) -> dict[str, Any]:
+    """Run SpiderFoot via REST API.
+
+    Args:
+        target: target identifier (domain, IP, email, etc.)
+        modules: comma-separated module list or 'all'
+        timeout: request timeout in seconds
+
+    Returns:
+        Dict with findings, duration, and status
+    """
+    if not _is_api_available():
+        return {
+            "target": target,
+            "error": f"spiderfoot api not available at {SPIDERFOOT_API_URL}",
+            "warning": "Start SpiderFoot API: spiderfoot -l 127.0.0.1:5001",
+            "findings": [],
+            "total_findings": 0,
+            "duration_ms": 0,
+        }
+
+    try:
+        start_time = time.time()
+
+        # Create a scan job via API
+        scan_payload = {
+            "scanname": f"loom-{target}-{int(start_time)}",
+            "scantarget": target,
+            "modulesfilt": modules if modules != "all" else "",
+        }
+
+        with httpx.Client(timeout=float(timeout)) as client:
+            # Create scan
+            create_resp = client.post(
+                f"{SPIDERFOOT_API_URL}/api/v2/scan",
+                json=scan_payload,
+            )
+
+            if create_resp.status_code != 200:
+                return {
+                    "target": target,
+                    "error": f"failed to create scan: {create_resp.text[:200]}",
+                    "findings": [],
+                    "total_findings": 0,
+                    "duration_ms": 0,
+                }
+
+            scan_data = create_resp.json()
+            scan_id = scan_data.get("scan_id")
+
+            if not scan_id:
+                return {
+                    "target": target,
+                    "error": "no scan_id returned from API",
+                    "findings": [],
+                    "total_findings": 0,
+                    "duration_ms": 0,
+                }
+
+            # Wait for scan to complete
+            max_wait = time.time() + timeout
+            while time.time() < max_wait:
+                status_resp = client.get(
+                    f"{SPIDERFOOT_API_URL}/api/v2/scan/{scan_id}",
+                )
+
+                if status_resp.status_code != 200:
+                    break
+
+                status_data = status_resp.json()
+                status = status_data.get("status", "")
+
+                if status in ("COMPLETED", "ABORTED", "FAILED"):
+                    break
+
+                time.sleep(2)  # Poll every 2 seconds
+
+            duration_ms = int((time.time() - start_time) * 1000)
+
+            # Get findings
+            findings_resp = client.get(
+                f"{SPIDERFOOT_API_URL}/api/v2/scan/{scan_id}/results",
+            )
+
+            output: dict[str, Any] = {
+                "target": target,
+                "scan_id": scan_id,
+                "duration_ms": duration_ms,
+                "findings": [],
+                "total_findings": 0,
+            }
+
+            if findings_resp.status_code != 200:
+                output["warning"] = "failed to retrieve findings"
+                return output
+
+            findings_data = findings_resp.json()
+            findings: list[dict[str, Any]] = []
+
+            if isinstance(findings_data, list):
+                for finding in findings_data:
+                    if isinstance(finding, dict):
+                        findings.append(
+                            {
+                                "module": finding.get("module", "unknown"),
+                                "data_type": finding.get("type", "unknown"),
+                                "value": finding.get("data", ""),
+                                "source": finding.get("source", ""),
+                            }
+                        )
+
+            output["findings"] = findings[:1000]  # Cap at 1000 findings
+            output["total_findings"] = len(findings)
+
+            logger.info(
+                "spiderfoot_api_success target=%s scan_id=%s findings=%d duration_ms=%d",
+                target,
+                scan_id,
+                len(findings),
+                duration_ms,
+            )
+            return output
+
+    except httpx.TimeoutException:
+        return {
+            "target": target,
+            "error": f"spiderfoot api request timed out (exceeded {timeout} seconds)",
+            "findings": [],
+            "total_findings": 0,
+            "duration_ms": timeout * 1000,
+        }
+    except Exception as exc:
+        logger.exception("spiderfoot_api_failed target=%s", target)
+        return {
+            "target": target,
+            "error": str(exc),
+            "findings": [],
+            "total_findings": 0,
+            "duration_ms": 0,
+        }
+
+
+def research_spiderfoot_scan(
+    target: str, modules: str = "all", timeout: int = 120, api: bool = False
+) -> dict[str, Any]:
+    """Run SpiderFoot passive reconnaissance scan.
+
+    Executes a SpiderFoot OSINT scan against a target (domain, IP, email, phone).
+    Automatically detects and uses SpiderFoot API (if running as web service at
+    http://localhost:5001) or falls back to CLI mode.
+
+    Args:
+        target: target identifier (domain, IP, email address, phone number, etc.)
+        modules: comma-separated module list or 'all' (default: all modules)
+        timeout: scan timeout in seconds (default: 120)
+        api: force API mode if True, prefer CLI if False (default: False)
+
+    Returns:
+        Dict with:
+        - target: the queried target
+        - findings: list of dicts with {module, data_type, value, source}
+        - total_findings: count of findings
+        - duration_ms: execution time in milliseconds
+        - scan_id: scan identifier (API mode only)
+        - error: error message if scan failed
+        - warning: warning message if tool/API unavailable
+
+    Example:
+        >>> result = research_spiderfoot_scan("example.com", modules="all")
+        >>> print(f"Found {result['total_findings']} OSINT results")
+        >>> for finding in result['findings'][:5]:
+        ...     print(f"{finding['module']}: {finding['value']}")
+    """
+    try:
+        target = _validate_target(target)
+    except ValueError as exc:
+        return {"target": target, "error": str(exc)}
+
+    # Validate timeout
+    if not isinstance(timeout, int) or timeout < 10 or timeout > 3600:
+        return {"target": target, "error": "timeout must be 10-3600 seconds"}
+
+    # Try API mode first if not explicitly disabled
+    if not api or _is_api_available():
+        result = _run_spiderfoot_api(target, modules, timeout)
+        if "error" not in result or "api not available" not in result.get("error", ""):
+            return result
+
+    # Fall back to CLI mode
+    return _run_spiderfoot_cli(target, modules, timeout)
