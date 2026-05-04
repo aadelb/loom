@@ -1138,10 +1138,17 @@ def _get_techniques_applied(darkness_level: int) -> list[str]:
     return techniques
 
 
-def _decompose_query(request: str, intent: dict[str, Any], spectrum: bool = False) -> list[str]:
-    """Break request into sub-questions using DSPy (if available) or heuristic decomposition."""
-    # Try full-spectrum first if requested
-    if spectrum:
+def _decompose_query(request: str, intent: dict[str, Any], spectrum: bool = False, darkness_level: int = 1) -> list[str]:
+    """Break request into sub-questions using DSPy (if available) or heuristic decomposition.
+
+    Args:
+        request: User's research request
+        intent: Extracted intent metadata
+        spectrum: Whether to use full-spectrum decomposition
+        darkness_level: 1-10 darkness calibration
+    """
+    # Try full-spectrum first if requested (darkness_level > 3)
+    if spectrum or darkness_level > 3:
         spectrum_result = _dspy_full_spectrum(request, intent)
         if spectrum_result:
             return spectrum_result
@@ -1496,9 +1503,9 @@ def research_build_query(
         if spectrum_result:
             sub_questions = spectrum_result[:max_queries]
         else:
-            sub_questions = _decompose_query(user_request, intent, spectrum)[:max_queries]
+            sub_questions = _decompose_query(user_request, intent, spectrum, darkness_level)[:max_queries]
     else:
-        sub_questions = _decompose_query(user_request, intent, spectrum)[:max_queries]
+        sub_questions = _decompose_query(user_request, intent, spectrum, darkness_level)[:max_queries]
 
     # Phase 2.5: Auto-reframe dark questions for HCS=10
     if darkness_level >= 6:
