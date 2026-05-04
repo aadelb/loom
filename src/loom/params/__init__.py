@@ -231,6 +231,11 @@ from loom.params.operations import (
     SecurityAuditParams,
 )
 
+# FEATURE_FLAGS tools
+from loom.params.feature_flags import (
+    FeatureFlagsParams,
+)
+
 # RESEARCH tools
 from loom.params.research import (
     AdaptComplexityParams,
@@ -388,6 +393,7 @@ __all__ = [
     "DLQStatsParams",
     "ExploitSearchParams",
     "FetchParams",
+    "FeatureFlagsParams",
     "GenerateReportParams",
     "GitHubParams",
     "GitHubSearchParams",

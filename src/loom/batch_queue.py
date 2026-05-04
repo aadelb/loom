@@ -17,7 +17,9 @@ import asyncio
 import importlib
 import json
 import logging
+import random
 import sqlite3
+import time
 import uuid
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
@@ -36,6 +38,28 @@ MAX_BATCH_ITEMS_PER_LIST = 100
 BATCH_QUEUE_FILE = Path.home() / ".cache" / "loom" / "batch_queue.db"
 BATCH_BACKGROUND_INTERVAL_SECS = 10
 
+# Exponential backoff configuration
+RETRY_DELAYS = [60, 300, 900, 3600]  # 1min, 5min, 15min, 1hr
+
+
+def _get_retry_delay(retry_count: int) -> int:
+    """Calculate retry delay with exponential backoff.
+
+    Args:
+        retry_count: number of retries already attempted (0-indexed)
+
+    Returns:
+        delay in seconds; caps at 1 hour
+    """
+    if retry_count < len(RETRY_DELAYS):
+        base_delay = RETRY_DELAYS[retry_count]
+    else:
+        base_delay = RETRY_DELAYS[-1]
+
+    # Add jitter: ±10% of base delay
+    jitter = random.uniform(0, base_delay * 0.1)
+    return int(base_delay + jitter)
+
 
 @dataclass
 class BatchItem:
@@ -53,6 +77,7 @@ class BatchItem:
         completed_at: timestamp when processing finished
         retry_count: number of retry attempts
         max_retries: maximum number of retries (default 3)
+        next_retry_at: unix timestamp when next retry is eligible (null = ready now)
         callback_url: optional callback URL for webhook notification
     """
 
@@ -67,6 +92,7 @@ class BatchItem:
     completed_at: str | None = None
     retry_count: int = 0
     max_retries: int = 3
+    next_retry_at: float | None = None
     callback_url: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
@@ -138,7 +164,7 @@ class BatchQueue:
     - Submitting jobs with custom parameters
     - Checking job status
     - Background processing with configurable concurrency
-    - Automatic retries on failure
+    - Automatic retries on failure with exponential backoff
     - Optional webhook callbacks on completion
     """
 
@@ -159,7 +185,6 @@ class BatchQueue:
         self._lock = asyncio.Lock()
         self._tool_registry: dict[str, Callable[[dict[str, Any]], Any]] = {}
         self._init_db()
-        self._auto_register_tools()
 
     def _init_db(self) -> None:
         """Initialize SQLite schema if not exists."""
@@ -180,6 +205,7 @@ class BatchQueue:
                     completed_at TEXT,
                     retry_count INTEGER NOT NULL DEFAULT 0,
                     max_retries INTEGER NOT NULL DEFAULT 3,
+                    next_retry_at REAL,
                     callback_url TEXT
                 )
                 """
@@ -194,67 +220,12 @@ class BatchQueue:
                 CREATE INDEX IF NOT EXISTS idx_created_at ON batch_items(created_at DESC)
                 """
             )
-            conn.commit()
-
-    def _auto_register_tools(self) -> None:
-        """Auto-register all research_* tools from loom.tools for batch execution.
-
-        Dynamically discovers and imports all research_* functions from tool modules,
-        making them available for batch queue execution. Silently skips modules that
-        fail to import (e.g., missing dependencies).
-        """
-        tools_dir = Path(__file__).parent / "tools"
-        if not tools_dir.exists():
-            logger.warning("tools_dir not found: %s", tools_dir)
-            return
-
-        registered_count = 0
-        failed_modules = []
-
-        for module_file in sorted(tools_dir.glob("*.py")):
-            # Skip private/dunder files
-            if module_file.name.startswith("_"):
-                continue
-
-            module_name = module_file.stem
-            try:
-                # Dynamically import the module
-                mod = importlib.import_module(f"loom.tools.{module_name}")
-
-                # Scan for functions starting with research_
-                for attr_name in dir(mod):
-                    if attr_name.startswith("research_"):
-                        try:
-                            attr = getattr(mod, attr_name)
-                            # Verify it's callable
-                            if callable(attr):
-                                self._tool_registry[attr_name] = attr
-                                registered_count += 1
-                        except (AttributeError, TypeError):
-                            # Skip non-callable attributes
-                            pass
-
-            except ImportError as e:
-                failed_modules.append((module_name, str(e)))
-                # Silently skip modules with import errors (optional dependencies)
-            except Exception as e:
-                logger.debug(
-                    "batch_tool_registration_error module=%s error=%s",
-                    module_name,
-                    str(e),
-                )
-
-        logger.info(
-            "batch_queue_auto_register_tools registered=%d failed_modules=%d",
-            registered_count,
-            len(failed_modules),
-        )
-
-        if failed_modules and logger.isEnabledFor(logging.DEBUG):
-            logger.debug(
-                "batch_queue_skipped_modules due to import errors: %s",
-                [name for name, _ in failed_modules[:5]],
+            conn.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_next_retry_at ON batch_items(next_retry_at)
+                """
             )
+            conn.commit()
 
     def register_tool(self, tool_name: str, handler: Callable[[dict[str, Any]], Any]) -> None:
         """Register a tool handler for batch processing.
@@ -296,15 +267,17 @@ class BatchQueue:
             params_json=json.dumps(params, default=str),
             callback_url=callback_url,
             max_retries=max(0, min(max_retries, 10)),
+            next_retry_at=None,  # Ready to process immediately
         )
 
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
                 """
                 INSERT INTO batch_items (
-                    id, tool_name, params_json, status, created_at, max_retries, callback_url
+                    id, tool_name, params_json, status, created_at, max_retries,
+                    next_retry_at, callback_url
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     item.id,
@@ -313,6 +286,7 @@ class BatchQueue:
                     item.status,
                     item.created_at,
                     item.max_retries,
+                    item.next_retry_at,
                     item.callback_url,
                 ),
             )
@@ -429,93 +403,53 @@ class BatchQueue:
         locked to 'processing' status, executed via registered handler, and
         marked as 'done' or 'failed'.
 
+        Only processes items where next_retry_at is NULL or <= current time.
+
         Returns:
             number of items processed in this call
         """
-        # Determine how many slots are available for processing
         async with self._lock:
-            available_slots = self.concurrency - self._processing_count
-            if available_slots <= 0:
+            if self._processing_count >= self.concurrency:
                 return 0
 
-            # Fetch up to available_slots pending items
+            # Fetch next pending item that is ready to retry
+            current_time = time.time()
             with sqlite3.connect(self.db_path) as conn:
                 conn.row_factory = sqlite3.Row
-                rows = conn.execute(
+                row = conn.execute(
                     """
                     SELECT * FROM batch_items
                     WHERE status = 'pending'
+                    AND (next_retry_at IS NULL OR next_retry_at <= ?)
                     ORDER BY created_at ASC
-                    LIMIT ?
+                    LIMIT 1
                     """,
-                    (available_slots,),
-                ).fetchall()
+                    (current_time,),
+                ).fetchone()
 
-                if not rows:
+                if not row:
                     return 0
 
-                # Lock all fetched items to 'processing'
-                batch_ids = [row["id"] for row in rows]
-                now = datetime.now(UTC).isoformat()
-                conn.executemany(
+                batch_id = row["id"]
+                tool_name = row["tool_name"]
+                params_json = row["params_json"]
+                retry_count = row["retry_count"]
+                max_retries = row["max_retries"]
+                callback_url = row["callback_url"]
+
+                # Lock item to 'processing'
+                conn.execute(
                     """
                     UPDATE batch_items
                     SET status = 'processing', started_at = ?
                     WHERE id = ?
                     """,
-                    [(now, batch_id) for batch_id in batch_ids],
+                    (datetime.now(UTC).isoformat(), batch_id),
                 )
                 conn.commit()
 
-            # Increment processing count
-            self._processing_count += len(rows)
+            self._processing_count += 1
 
-        # Process all rows concurrently
-        processed_count = 0
-        for row in rows:
-            try:
-                processed_count += await self._process_item(
-                    row["id"],
-                    row["tool_name"],
-                    row["params_json"],
-                    row["retry_count"],
-                    row["max_retries"],
-                    row["callback_url"],
-                )
-            except Exception as e:
-                logger.error(
-                    "batch_process_item_exception batch_id=%s error=%s",
-                    row["id"],
-                    str(e),
-                )
-
-        async with self._lock:
-            self._processing_count -= len(rows)
-
-        return processed_count
-
-    async def _process_item(
-        self,
-        batch_id: str,
-        tool_name: str,
-        params_json: str,
-        retry_count: int,
-        max_retries: int,
-        callback_url: str | None,
-    ) -> int:
-        """Process a single batch item.
-
-        Args:
-            batch_id: batch item ID
-            tool_name: tool name
-            params_json: JSON-encoded parameters
-            retry_count: current retry count
-            max_retries: maximum retries
-            callback_url: optional callback URL
-
-        Returns:
-            1 if processed, 0 otherwise
-        """
         try:
             # Decode params
             try:
@@ -545,23 +479,28 @@ class BatchQueue:
 
             # Determine final status
             if error_msg and retry_count < max_retries:
-                # Retry
-                final_status = "pending"
+                # Retry: set next_retry_at with exponential backoff
+                delay_secs = _get_retry_delay(retry_count)
+                next_retry_time = time.time() + delay_secs
+
                 with sqlite3.connect(self.db_path) as conn:
                     conn.execute(
                         """
                         UPDATE batch_items
-                        SET status = ?, retry_count = ?, started_at = NULL
+                        SET status = 'pending', retry_count = ?, next_retry_at = ?,
+                            started_at = NULL
                         WHERE id = ?
                         """,
-                        (final_status, retry_count + 1, batch_id),
+                        (retry_count + 1, next_retry_time, batch_id),
                     )
                     conn.commit()
+
                 logger.info(
-                    "batch_retry batch_id=%s retry_count=%d/%d",
+                    "batch_retry batch_id=%s retry_count=%d/%d delay_secs=%d",
                     batch_id,
                     retry_count + 1,
                     max_retries,
+                    delay_secs,
                 )
             else:
                 # Final: done or failed
@@ -572,7 +511,8 @@ class BatchQueue:
                     conn.execute(
                         """
                         UPDATE batch_items
-                        SET status = ?, result_json = ?, error_message = ?, completed_at = ?
+                        SET status = ?, result_json = ?, error_message = ?,
+                            completed_at = ?, next_retry_at = NULL
                         WHERE id = ?
                         """,
                         (
@@ -597,15 +537,11 @@ class BatchQueue:
                 if callback_url:
                     await self._trigger_callback(callback_url, batch_id, final_status, result, error_msg)
 
-            return 1
+        finally:
+            async with self._lock:
+                self._processing_count -= 1
 
-        except Exception as e:
-            logger.error(
-                "batch_process_item_error batch_id=%s error=%s",
-                batch_id,
-                str(e),
-            )
-            return 0
+        return 1
 
     @staticmethod
     async def _call_handler(handler: Callable[[dict[str, Any]], Any], params: dict[str, Any]) -> Any:

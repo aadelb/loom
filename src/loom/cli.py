@@ -757,8 +757,42 @@ def journey_test(
         raise typer.Exit(code=1)
 
 
-
 # ─── TOOLS subcommand ────────────────────────────────────────────────────────
+
+
+def _get_tool_cost(tool_name: str) -> int:
+    """Get cost for a tool by looking up in TOOL_COSTS.
+
+    Args:
+        tool_name: Tool name (with or without research_ prefix)
+
+    Returns:
+        Credit cost (int >= 0)
+    """
+    from loom.billing.token_economy import get_tool_cost
+
+    return get_tool_cost(tool_name)
+
+
+def _format_cost_label(cost: int) -> str:
+    """Format cost as a human-readable label with color.
+
+    Args:
+        cost: Credit cost
+
+    Returns:
+        Formatted string with color codes for Rich
+    """
+    if cost == 0:
+        return "[green]free[/green]"
+    elif cost == 1:
+        return "[blue]1 credit[/blue]"
+    elif cost <= 5:
+        return f"[yellow]{cost} credits[/yellow]"
+    elif cost <= 10:
+        return f"[orange1]{cost} credits[/orange1]"
+    else:
+        return f"[red]{cost} credits[/red]"
 
 
 @app.command()
@@ -767,24 +801,28 @@ def tools(
     json_mode: bool = OutputJSON,
     category: str | None = typer.Option(None, "--category", "-c", help="Filter by category"),
 ) -> None:
-    """List all available MCP tools on the server.
+    """List all available MCP tools with costs.
 
-    By default displays tool names and descriptions in a formatted table.
+    By default displays tool names, costs, and descriptions in a formatted table.
     Use --verbose to show parameter details for each tool.
     Use --category to filter tools by prefix (e.g., 'llm', 'search', 'fetch').
+    Use --json to output full catalog as JSON with cost breakdown.
     """
     from rich.table import Table
 
     from loom.server import create_app
 
-    # Create app and load tools - use asyncio.run() to handle async
+    # Create app and load tools
     app_instance = create_app()
     tool_list = asyncio.run(app_instance.list_tools())
 
-    # Build category map by extracting prefix from tool name
-    # e.g., "research_llm_summarize" -> category "llm"
+    # Build category map and collect cost statistics
     tool_map: dict[str, list[Any]] = {}
+    cost_counts: dict[int, int] = {}  # cost -> count
+    total_cost = 0
+
     for tool in tool_list:
+        # Extract category
         parts = tool.name.split("_")
         if len(parts) >= 3:
             cat = parts[1]  # "research_<category>_..."
@@ -796,6 +834,11 @@ def tools(
         if cat not in tool_map:
             tool_map[cat] = []
         tool_map[cat].append(tool)
+
+        # Track costs
+        cost = _get_tool_cost(tool.name)
+        cost_counts[cost] = cost_counts.get(cost, 0) + 1
+        total_cost += cost
 
     # Filter by category if specified
     if category:
@@ -812,27 +855,53 @@ def tools(
     if json_mode:
         tools_data = []
         for tool in sorted(filtered_tools, key=lambda t: t.name):
+            cost = _get_tool_cost(tool.name)
             tool_dict = {
                 "name": tool.name,
                 "description": tool.description or "No description",
                 "title": tool.title or tool.name,
+                "cost": cost,
             }
             if verbose and hasattr(tool, "inputSchema"):
                 tool_dict["parameters"] = tool.inputSchema.get("properties", {})
             tools_data.append(tool_dict)
-        console.print_json(data={"tools": tools_data, "count": len(tools_data)})
+
+        # Build cost summary
+        summary = {
+            "total_tools": len(filtered_tools),
+            "cost_summary": {
+                "free": cost_counts.get(0, 0),
+                "basic_1": cost_counts.get(1, 0),
+                "medium_5": cost_counts.get(5, 0),
+                "heavy_10": cost_counts.get(10, 0),
+                "premium_20": cost_counts.get(20, 0),
+                "total_cost": total_cost,
+                "average_cost": round(total_cost / len(tool_list), 2) if tool_list else 0,
+            },
+        }
+
+        console.print_json(
+            data={
+                "tools": tools_data,
+                "count": len(tools_data),
+                "summary": summary,
+            }
+        )
         return
 
-    # Display as formatted table
+    # Display as formatted table with costs
     table = Table(title=f"Loom MCP Tools{category_display}")
     table.add_column("Tool Name", style="cyan", no_wrap=False)
+    table.add_column("Cost", style="white", width=15)
     table.add_column("Description", style="white")
     if verbose:
         table.add_column("Parameters", style="dim")
 
     for tool in sorted(filtered_tools, key=lambda t: t.name):
-        desc = (tool.description or "No description")[:70]
-        if len(tool.description or "") > 70:
+        cost = _get_tool_cost(tool.name)
+        cost_label = _format_cost_label(cost)
+        desc = (tool.description or "No description")[:60]
+        if len(tool.description or "") > 60:
             desc += "..."
 
         if verbose:
@@ -840,13 +909,24 @@ def tools(
             if hasattr(tool, "inputSchema"):
                 props = tool.inputSchema.get("properties", {})
                 if props:
-                    params = ", ".join(props.keys())[:50]
-            table.add_row(tool.name, desc, params)
+                    params = ", ".join(props.keys())[:40]
+            table.add_row(tool.name, cost_label, desc, params)
         else:
-            table.add_row(tool.name, desc)
+            table.add_row(tool.name, cost_label, desc)
 
     console.print(table)
-    console.print(f"\n[dim]Total: {len(filtered_tools)} tools[/dim]")
+
+    # Print summary statistics
+    console.print(f"\n[bold]Cost Summary[/bold]")
+    console.print(f"  Total: [cyan]{len(filtered_tools)}[/cyan] tools")
+    console.print(f"  Free: [green]{cost_counts.get(0, 0)}[/green]")
+    console.print(f"  Basic (1): [blue]{cost_counts.get(1, 0)}[/blue]")
+    console.print(f"  Medium (5): [yellow]{cost_counts.get(5, 0)}[/yellow]")
+    console.print(f"  Heavy (10): [orange1]{cost_counts.get(10, 0)}[/orange1]")
+    console.print(f"  Premium (20): [red]{cost_counts.get(20, 0)}[/red]")
+    if len(filtered_tools) == len(tool_list):
+        avg_cost = round(total_cost / len(tool_list), 2) if tool_list else 0
+        console.print(f"  [dim]Average cost per tool: {avg_cost} credits[/dim]")
 
     # Show category summary if not filtered
     if not category:
@@ -1001,8 +1081,6 @@ def repl(server_url: str = ServerURL) -> None:
             break
 
 
-
-
 # ─── COMPLETIONS subcommand ──────────────────────────────────────────────────
 
 
@@ -1057,6 +1135,7 @@ def version() -> None:
 
     console.print(f"[cyan]loom[/cyan] version [green]0.1.0a1[/green]")
     console.print(f"[dim]220+ tools available ({tool_count} loaded)[/dim]")
+
 
 if __name__ == "__main__":
     app()

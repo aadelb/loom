@@ -8,10 +8,12 @@ of model) or model-specific caching (different models have separate cache entrie
 
 from __future__ import annotations
 
+import gzip
 import hashlib
 import json
 import logging
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import Any, cast
 
 from loom.cache import get_cache
@@ -111,7 +113,7 @@ def get_cached_conversation(conv_hash: str) -> str | None:
     """Retrieve a cached conversation response if valid.
 
     Checks cache for key with prefix "conv:", validates TTL, and returns
-    response text if found and not expired.
+    response text if found and not expired. Deletes expired entries immediately.
 
     Args:
         conv_hash: conversation hash from hash_conversation()
@@ -143,6 +145,8 @@ def get_cached_conversation(conv_hash: str) -> str | None:
 
         if age > ttl:
             logger.debug("conversation_cache_expired conv_hash=%s age_secs=%d ttl=%d", conv_hash, int(age), ttl)
+            # Delete expired entry from cache
+            cache.delete(cache_key)
             return None
 
         logger.debug("conversation_cache_hit conv_hash=%s age_secs=%d", conv_hash, int(age))
@@ -156,6 +160,7 @@ def get_cached_conversation_with_metadata(conv_hash: str) -> dict[str, Any] | No
     """Retrieve a cached conversation response with freshness metadata.
 
     Extends get_cached_conversation() to include timestamps and freshness info.
+    Does NOT delete expired entries (use get_cached_conversation() for that).
 
     Args:
         conv_hash: conversation hash from hash_conversation()
@@ -203,6 +208,102 @@ def get_cached_conversation_with_metadata(conv_hash: str) -> dict[str, Any] | No
     except (ValueError, TypeError) as e:
         logger.warning("conversation_cache_metadata_invalid conv_hash=%s error=%s", conv_hash, e)
         return None
+
+
+def cleanup_expired_conversations(max_age_hours: int = 24) -> dict[str, Any]:
+    """Delete all expired conversation cache entries.
+
+    Scans all cache entries by examining JSON files, checks if they contain
+    conversation cache metadata (cached_at + ttl fields), verifies expiration,
+    and deletes expired ones. Returns count of deleted entries.
+
+    Args:
+        max_age_hours: entries older than this many hours are examined
+                      (note: respects individual entry TTL, not this parameter)
+
+    Returns:
+        Dict with keys:
+            - deleted: number of entries removed
+            - scanned: number of entries examined (with conversation metadata)
+            - errors: number of entries that failed to delete
+    """
+    cache = get_cache()
+    deleted = 0
+    scanned = 0
+    errors = 0
+
+    base_dir = cache.base_dir
+
+    # Scan all cache files
+    try:
+        for day_dir in base_dir.iterdir():
+            if not day_dir.is_dir():
+                continue
+
+            # Check both compressed and legacy files
+            for pattern in ("*.json.gz", "*.json"):
+                for cache_file in day_dir.glob(pattern):
+                    try:
+                        # Read and parse the cache file
+                        if pattern == "*.json.gz":
+                            try:
+                                compressed_data = cache_file.read_bytes()
+                                decompressed = gzip.decompress(compressed_data)
+                                file_data = json.loads(decompressed.decode("utf-8"))
+                            except Exception:
+                                # Not a valid gzip file, skip
+                                continue
+                        else:
+                            file_data = json.loads(cache_file.read_text(encoding="utf-8"))
+
+                        # Check if this looks like a conversation cache entry
+                        if "cached_at" not in file_data or "ttl" not in file_data:
+                            # Not a conversation entry, skip
+                            continue
+
+                        scanned += 1
+
+                        # Check expiration
+                        try:
+                            cached_at = datetime.fromisoformat(file_data["cached_at"])
+                            now = datetime.now(UTC)
+                            age = (now - cached_at).total_seconds()
+                            ttl = file_data.get("ttl", 3600)
+
+                            if age > ttl:
+                                # Expired - delete the file
+                                try:
+                                    cache_file.unlink()
+                                    deleted += 1
+                                    logger.debug("conversation_cleanup_deleted file=%s", cache_file)
+                                except FileNotFoundError:
+                                    # Already deleted by another process
+                                    deleted += 1
+                        except (ValueError, TypeError):
+                            # Invalid timestamp/ttl, skip
+                            continue
+
+                    except json.JSONDecodeError:
+                        # Not valid JSON, skip
+                        continue
+                    except Exception as e:
+                        errors += 1
+                        logger.warning("conversation_cleanup_scan_error file=%s: %s", cache_file, e)
+
+    except Exception as e:
+        logger.error("conversation_cleanup_failed: %s", e)
+
+    logger.info(
+        "conversation_cleanup_complete deleted=%d scanned=%d errors=%d",
+        deleted,
+        scanned,
+        errors,
+    )
+    return {
+        "deleted": deleted,
+        "scanned": scanned,
+        "errors": errors,
+    }
 
 
 async def research_conversation_cache_stats() -> dict[str, Any]:

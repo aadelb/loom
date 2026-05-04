@@ -71,23 +71,37 @@ async def _get_executor() -> ProcessPoolExecutor:
         return _executor
 
 
+def is_cpu_bound(func: Callable[..., Any]) -> bool:
+    """Check if a function is marked as CPU-bound.
+
+    Args:
+        func: Function to check
+
+    Returns:
+        True if function has _cpu_bound attribute set to True
+    """
+    return getattr(func, "_cpu_bound", False) is True
+
+
 def cpu_bound(func: Callable[..., Any]) -> Callable[..., Any]:
     """Decorator to mark a sync function as CPU-bound.
 
-    Wraps the function so that calling it returns a coroutine that
-    executes the function in the process pool via run_cpu_bound().
+    Sets _cpu_bound = True on the wrapper so that _wrap_tool can detect
+    and route to the process pool instead of thread pool.
 
     Args:
         func: Synchronous function to wrap
 
     Returns:
-        Async wrapper that executes func in the process pool
+        Wrapper with _cpu_bound = True attribute set
     """
 
     @wraps(func)
     async def wrapper(*args: Any, **kwargs: Any) -> Any:
         return await run_cpu_bound(func, *args, **kwargs)
 
+    # Mark the wrapper as CPU-bound
+    wrapper._cpu_bound = True  # type: ignore
     return wrapper
 
 
@@ -248,6 +262,7 @@ signal.signal(signal.SIGINT, _handle_shutdown_signal)
 
 __all__ = [
     "cpu_bound",
+    "is_cpu_bound",
     "run_cpu_bound",
     "get_pool_status",
     "shutdown_executor",

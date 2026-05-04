@@ -8,6 +8,7 @@ Reference: https://owasp.org/www-community/attacks/Prompt_Injection
 """
 
 import re
+import unicodedata
 from typing import Final
 
 # Regex patterns that indicate common prompt injection attempts
@@ -49,6 +50,29 @@ CODE_BLOCK_PATTERNS: Final[list[tuple[str, str]]] = [
     (r"```\s*\n[^\n]*(?:ignore|override|you\s+are\s+now)", "code_with_injection"),
 ]
 
+# Zero-width and invisible Unicode characters to strip
+ZERO_WIDTH_CHARS_PATTERN: Final = re.compile(r'[​‌‍‎‏﻿؜]')
+
+
+def _normalize_and_clean_text(text: str) -> str:
+    """Normalize Unicode and remove zero-width characters.
+
+    Applies NFKC normalization to prevent Unicode-based bypasses,
+    then strips zero-width and invisible characters that could
+    be used to obfuscate injection patterns.
+
+    Args:
+        text: text to normalize
+
+    Returns:
+        Normalized and cleaned text
+    """
+    # Apply NFKC normalization to canonical form
+    normalized = unicodedata.normalize("NFKC", text)
+    # Remove zero-width and invisible characters
+    cleaned = ZERO_WIDTH_CHARS_PATTERN.sub("", normalized)
+    return cleaned
+
 
 def sanitize_for_llm(text: str) -> str:
     """Remove obvious prompt injection patterns from untrusted content.
@@ -56,6 +80,10 @@ def sanitize_for_llm(text: str) -> str:
     Strips text that contains common injection patterns like "ignore previous
     instructions", "act as", "you are now", etc. This is a first-pass defense
     that catches naive injection attempts.
+
+    Applies pattern matching across full text with multiline/dotall flags
+    to catch injections that span multiple lines or use line breaks to
+    obfuscate patterns.
 
     Args:
         text: untrusted text content (e.g., fetched web content)
@@ -66,7 +94,10 @@ def sanitize_for_llm(text: str) -> str:
     if not text:
         return text
 
-    # Convert to lowercase for pattern matching
+    # Normalize and clean Unicode first to prevent Unicode-based bypasses
+    text = _normalize_and_clean_text(text)
+
+    # Convert to lowercase for pattern matching (original text preserved below)
     lower_text = text.lower()
 
     # Check for injection patterns and remove offending lines
@@ -77,16 +108,16 @@ def sanitize_for_llm(text: str) -> str:
         lower_line = line.lower()
         is_injection = False
 
-        # Check all injection patterns
+        # Check all injection patterns against the line
         for pattern, _category in INJECTION_PATTERNS:
-            if re.search(pattern, lower_line, re.IGNORECASE):
+            if re.search(pattern, lower_line, re.IGNORECASE | re.MULTILINE | re.DOTALL):
                 is_injection = True
                 break
 
-        # Check code block patterns
+        # Check code block patterns against the line
         if not is_injection:
             for pattern, _category in CODE_BLOCK_PATTERNS:
-                if re.search(pattern, lower_line, re.IGNORECASE):
+                if re.search(pattern, lower_line, re.IGNORECASE | re.MULTILINE | re.DOTALL):
                     is_injection = True
                     break
 
@@ -94,6 +125,18 @@ def sanitize_for_llm(text: str) -> str:
             sanitized_lines.append(line)
 
     sanitized = "\n".join(sanitized_lines)
+
+    # Additional check: apply patterns to full text to catch multiline bypasses
+    for pattern, _category in INJECTION_PATTERNS:
+        if re.search(pattern, lower_text, re.IGNORECASE | re.MULTILINE | re.DOTALL):
+            # Pattern found across full text - apply aggressive removal
+            # Remove sentences/blocks containing the pattern
+            sanitized = re.sub(
+                pattern,
+                "",
+                sanitized,
+                flags=re.IGNORECASE | re.MULTILINE | re.DOTALL
+            )
 
     # Remove sequences of blank lines (left over from deletions)
     sanitized = re.sub(r"\n\n\n+", "\n\n", sanitized)
@@ -109,6 +152,10 @@ def wrap_with_xml_tags(text: str, tag: str = "user_content") -> str:
     instructions. This makes it harder for prompt injection to blend instructions
     with legitimate content.
 
+    Escapes any occurrence of the closing tag within the content to prevent
+    tag breakout attacks where content contains </user_content> to close
+    the wrapper prematurely.
+
     Args:
         text: text to wrap
         tag: tag name (default: "user_content")
@@ -119,7 +166,12 @@ def wrap_with_xml_tags(text: str, tag: str = "user_content") -> str:
     if not text:
         return f"<{tag}></{tag}>"
 
-    return f"<{tag}>\n{text}\n</{tag}>"
+    # Escape closing tags to prevent tag breakout attacks
+    # Replace both opening and closing tag variants
+    escaped = text.replace(f"</{tag}>", f"&lt;/{tag}&gt;")
+    escaped = escaped.replace(f"<{tag}>", f"&lt;{tag}&gt;")
+
+    return f"<{tag}>\n{escaped}\n</{tag}>"
 
 
 def build_injection_safe_prompt(
@@ -180,22 +232,25 @@ def detect_injection_attempt(text: str) -> dict[str, bool | list[str]]:
     if not text:
         return {"has_injection": False, "patterns_found": [], "sample_matches": []}
 
+    # Normalize and clean Unicode first
+    text = _normalize_and_clean_text(text)
+
     lower_text = text.lower()
     patterns_found = set()
-    matches = []
+    matches: list[str] = []
 
     for pattern, category in INJECTION_PATTERNS:
-        if re.search(pattern, lower_text, re.IGNORECASE):
+        if re.search(pattern, lower_text, re.IGNORECASE | re.MULTILINE | re.DOTALL):
             patterns_found.add(category)
             # Capture first match
-            match_obj = re.search(pattern, text, re.IGNORECASE)
+            match_obj = re.search(pattern, text, re.IGNORECASE | re.MULTILINE | re.DOTALL)
             if match_obj and len(matches) < 3:
                 matches.append(match_obj.group(0)[:100])  # Limit to 100 chars per match
 
     for pattern, category in CODE_BLOCK_PATTERNS:
-        if re.search(pattern, lower_text, re.IGNORECASE):
+        if re.search(pattern, lower_text, re.IGNORECASE | re.MULTILINE | re.DOTALL):
             patterns_found.add(category)
-            match_obj = re.search(pattern, text, re.IGNORECASE)
+            match_obj = re.search(pattern, text, re.IGNORECASE | re.MULTILINE | re.DOTALL)
             if match_obj and len(matches) < 3:
                 matches.append(match_obj.group(0)[:100])
 

@@ -238,6 +238,71 @@ class CacheStore:
                     tmp.unlink()
             raise
 
+    def delete(self, key: str) -> bool:
+        """Delete a cache entry by key.
+
+        Removes both compressed (.json.gz) and legacy (.json) files for the
+        key from all date directories (today's first, then others).
+
+        Args:
+            key: cache key to delete
+
+        Returns:
+            True if at least one file was deleted, False if not found
+        """
+        h = hashlib.sha256(key.encode("utf-8")).hexdigest()[:32]
+        deleted = False
+
+        # Try today's directory first (compressed, then legacy)
+        p = self._cache_path(key)
+        gz_path = p.with_suffix(".json.gz")
+
+        if gz_path.exists():
+            try:
+                gz_path.unlink()
+                deleted = True
+                log.debug("cache_deleted key=%s path=%s", key, gz_path)
+            except Exception as e:
+                log.warning("cache_delete_failed key=%s path=%s: %s", key, gz_path, e)
+
+        if p.exists():
+            try:
+                p.unlink()
+                deleted = True
+                log.debug("cache_deleted key=%s path=%s", key, p)
+            except Exception as e:
+                log.warning("cache_delete_failed key=%s path=%s: %s", key, p, e)
+
+        # Search and delete from other date directories
+        try:
+            # Compressed files
+            matches = sorted(self.base_dir.glob(f"*/{h}.json.gz"))
+            for match in matches:
+                try:
+                    match.unlink()
+                    deleted = True
+                    log.debug("cache_deleted key=%s path=%s", key, match)
+                except FileNotFoundError:
+                    continue
+                except Exception as e:
+                    log.warning("cache_delete_failed key=%s path=%s: %s", key, match, e)
+
+            # Legacy uncompressed files
+            matches = sorted(self.base_dir.glob(f"*/{h}.json"))
+            for match in matches:
+                try:
+                    match.unlink()
+                    deleted = True
+                    log.debug("cache_deleted key=%s path=%s", key, match)
+                except FileNotFoundError:
+                    continue
+                except Exception as e:
+                    log.warning("cache_delete_failed key=%s path=%s: %s", key, match, e)
+        except Exception as e:
+            log.debug("cache_glob_failed key=%s: %s", key, e)
+
+        return deleted
+
     def stats(self) -> dict[str, Any]:
         """Return cache statistics.
 

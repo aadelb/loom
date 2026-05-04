@@ -22,9 +22,14 @@ from mcp.server import FastMCP
 from mcp.server.auth.settings import AuthSettings
 from starlette.middleware.cors import CORSMiddleware
 
+from starlette.websockets import WebSocket
+from loom.websocket import get_ws_manager, WebSocketManager
+
 from loom.config import load_config, research_config_get, research_config_set
+from loom.feature_flags import research_feature_flags
 from loom.orchestrator import research_orchestrate
 from loom.audit import export_audit, log_invocation
+from loom.alerting import handle_tool_error
 from loom.logging_config import setup_logging
 from loom.rate_limiter import rate_limited
 from loom.sessions import (
@@ -55,6 +60,11 @@ from loom.batch_queue import (
     research_batch_list,
     start_batch_queue_background,
     stop_batch_queue_background,
+)
+
+from loom.scheduler import (
+    get_scheduler,
+    register_default_tasks,
 )
 
 from loom.api_auth import ApiKeyAuthMiddleware
@@ -638,6 +648,27 @@ def _shutdown_grace_time_remaining() -> float:
     return remaining
 
 
+# ── Dynamic strategy count caching ──
+_STRATEGY_COUNT: int | None = None
+
+def _get_strategy_count() -> int:
+    """Get cached strategy count from ALL_STRATEGIES registry.
+    
+    Strategies don't change at runtime, so we cache the count
+    to avoid repeated imports and len() calls.
+    
+    Returns:
+        Total count of registered reframing strategies
+    """
+    global _STRATEGY_COUNT
+    if _STRATEGY_COUNT is None:
+        try:
+            from loom.tools.reframe_strategies import ALL_STRATEGIES
+            _STRATEGY_COUNT = len(ALL_STRATEGIES)
+        except (ImportError, Exception):
+            _STRATEGY_COUNT = 0
+    return _STRATEGY_COUNT
+
 
 async def research_audit_export(
     start_date: str | None = None,
@@ -842,7 +873,7 @@ async def research_health_check() -> dict[str, Any]:
         "status": overall_status,
         "uptime_seconds": uptime_seconds,
         "tool_count": 346,
-        "strategy_count": 957,
+        "strategy_count": _get_strategy_count(),
         "llm_providers": llm_providers,
         "search_providers": search_providers,
         "cache": cache_info,
@@ -1246,6 +1277,13 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                 _loom_tool_errors_total.labels(tool_name=tool_name, error_type=error_type).inc()
                 duration = time.time() - start_time
                 _loom_tool_duration_seconds.labels(tool_name=tool_name).observe(duration)
+                
+                # Send alert for critical errors via webhook/email
+                try:
+                    await handle_tool_error(tool_name, e, execution_time_ms=duration * 1000)
+                except Exception as alert_e:
+                    log.error(f"Alerting error for {tool_name}: {alert_e}", exc_info=False)
+                
                 # Audit: Log tool call error
                 try:
                     client_id = os.getenv("LOOM_CLIENT_ID", os.getenv("LOOM_USER_ID", "anonymous"))
@@ -1485,6 +1523,7 @@ async def research_full_spectrum(
     # Real LLM model function using cascade
     try:
         from loom.tools.llm import _call_with_cascade
+from loom.tools.sla_status import research_sla_status
 
         async def cascade_model(prompt: str = "") -> str:
             try:
@@ -1610,14 +1649,14 @@ def _register_tools(mcp: FastMCP) -> None:
     # Register core loom.* module tools (sessions, config, orchestrator, scoring, etc.)
     _core_funcs = [
         research_session_open, research_session_list, research_session_close,
-        research_config_get, research_config_set,
+        research_config_get, research_config_set, research_feature_flags,
         research_orchestrate, research_score_all, research_unified_score,
         research_benchmark_run, research_consensus_build, research_consensus_pressure,
         research_crescendo_loop, research_model_profile, research_reid_pipeline,
         research_pool_stats, research_pool_reset, export_audit,
         research_audit_query, research_audit_stats,
         research_cpu_pool_status, research_cpu_executor_shutdown,
-        research_analytics_dashboard, research_secret_health, research_quota_status,
+        research_analytics_dashboard, research_secret_health, research_quota_status, research_sla_status,
         research_rate_limits,
         research_validate_startup,
         research_latency_report,
@@ -1858,7 +1897,7 @@ def create_app() -> FastMCP:
             "startup_validation_result": _startup_validation_result,
             "uptime_seconds": uptime,
             "tool_count": tool_count,
-            "strategy_count": 957,
+            "strategy_count": _get_strategy_count(),
             "registration_stats": reg_stats.get("registration_stats", {}),
             "optional_modules_loaded": reg_stats.get("optional_modules_loaded", 0),
             "import_failures": reg_stats.get("import_failures", []),
@@ -1939,7 +1978,7 @@ def create_app() -> FastMCP:
             "startup_validation_result": _startup_validation_result,
             "uptime_seconds": uptime,
             "tool_count": tool_count,
-            "strategy_count": 957,
+            "strategy_count": _get_strategy_count(),
             "registration_stats": reg_stats.get("registration_stats", {}),
             "optional_modules_loaded": reg_stats.get("optional_modules_loaded", 0),
             "import_failures": reg_stats.get("import_failures", []),
