@@ -301,4 +301,82 @@ def register_infrastructure_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip firewall_rules: %s", e)
         record_failure("infrastructure", "firewall_rules", str(e))
-    log.info("registered infrastructure tools count=67")
+    # ── Data Export Tools ──
+    try:
+        from loom.tools.data_export import research_export_config, research_export_strategies, research_export_cache
+        mcp.tool()(wrap_tool(research_export_config))
+        record_success("infrastructure", "research_export_config")
+        mcp.tool()(wrap_tool(research_export_strategies))
+        record_success("infrastructure", "research_export_strategies")
+        mcp.tool()(wrap_tool(research_export_cache))
+        record_success("infrastructure", "research_export_cache")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip data_export: %s", e)
+        record_failure("infrastructure", "data_export", str(e))
+
+    # ── Reporting & Diagnostics Tools ──
+    try:
+        from loom.tools.latency_report import research_latency_report
+        mcp.tool()(wrap_tool(research_latency_report))
+        record_success("infrastructure", "research_latency_report")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip latency_report: %s", e)
+        record_failure("infrastructure", "latency_report", str(e))
+    try:
+        from loom.tools.usage_report import research_usage_report
+        mcp.tool()(wrap_tool(research_usage_report))
+        record_success("infrastructure", "research_usage_report")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip usage_report: %s", e)
+        record_failure("infrastructure", "usage_report", str(e))
+
+    # ── DLQ (Dead Letter Queue) Management Tools ──
+    try:
+        from loom.tools.dlq_management import research_dlq_stats, research_dlq_retry_now, research_dlq_clear_failed
+        mcp.tool()(wrap_tool(research_dlq_stats))
+        record_success("infrastructure", "research_dlq_stats")
+        mcp.tool()(wrap_tool(research_dlq_retry_now))
+        record_success("infrastructure", "research_dlq_retry_now")
+        mcp.tool()(wrap_tool(research_dlq_clear_failed))
+        record_success("infrastructure", "research_dlq_clear_failed")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip dlq_management: %s", e)
+        record_failure("infrastructure", "dlq_management", str(e))
+
+    # ── Loader Statistics Tools ──
+    try:
+        from loom.tools.loader_stats import research_loader_stats
+        mcp.tool()(wrap_tool(research_loader_stats))
+        record_success("infrastructure", "research_loader_stats")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip loader_stats: %s", e)
+        record_failure("infrastructure", "loader_stats", str(e))
+
+    # ── Quota & Usage Monitoring Tools ──
+    try:
+        from loom.tools.quota_status import research_quota_status
+        mcp.tool()(wrap_tool(research_quota_status))
+        record_success("infrastructure", "research_quota_status")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip quota_status: %s", e)
+        record_failure("infrastructure", "quota_status", str(e))
+
+    # ── Security Audit Tools ──
+    try:
+        from loom.tools.security_auditor import research_security_audit
+        mcp.tool()(wrap_tool(research_security_audit))
+        record_success("infrastructure", "research_security_audit")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip security_auditor: %s", e)
+        record_failure("infrastructure", "security_auditor", str(e))
+
+    # ── Startup Validation Tools ──
+    try:
+        from loom.tools.startup_validator import research_validate_startup
+        mcp.tool()(wrap_tool(research_validate_startup))
+        record_success("infrastructure", "research_validate_startup")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip startup_validator: %s", e)
+        record_failure("infrastructure", "startup_validator", str(e))
+
+    log.info("registered infrastructure tools count=84")

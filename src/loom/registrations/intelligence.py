@@ -349,4 +349,76 @@ def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip maigret_backend: %s", e)
         record_failure("intelligence", "maigret_backend", str(e))
-    log.info("registered intelligence tools count=96")
+    # ── Trend & Content Analysis Tools ──
+    try:
+        from loom.tools.trend_forecaster import research_trend_forecast
+        mcp.tool()(wrap_tool(research_trend_forecast))
+        record_success("intelligence", "research_trend_forecast")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip trend_forecaster: %s", e)
+        record_failure("intelligence", "trend_forecaster", str(e))
+    try:
+        from loom.tools.content_anomaly import research_content_anomaly
+        mcp.tool()(wrap_tool(research_content_anomaly))
+        record_success("intelligence", "research_content_anomaly")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip content_anomaly: %s", e)
+        record_failure("intelligence", "content_anomaly", str(e))
+
+    # ── Privacy & Fingerprinting Tools ──
+    try:
+        from loom.tools.privacy_advanced import research_browser_privacy_score, research_network_anomaly
+        mcp.tool()(wrap_tool(research_browser_privacy_score))
+        record_success("intelligence", "research_browser_privacy_score")
+        mcp.tool()(wrap_tool(research_network_anomaly))
+        record_success("intelligence", "research_network_anomaly")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip privacy_advanced: %s", e)
+        record_failure("intelligence", "privacy_advanced", str(e))
+    try:
+        from loom.tools.privacy_tools import research_fingerprint_audit, research_privacy_exposure
+        mcp.tool()(wrap_tool(research_fingerprint_audit))
+        record_success("intelligence", "research_fingerprint_audit")
+        mcp.tool()(wrap_tool(research_privacy_exposure))
+        record_success("intelligence", "research_privacy_exposure")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip privacy_tools: %s", e)
+        record_failure("intelligence", "privacy_tools", str(e))
+
+    # ── Metadata & Data Sanitization Tools ──
+    try:
+        from loom.tools.metadata_tools import research_metadata_strip
+        mcp.tool()(wrap_tool(research_metadata_strip))
+        record_success("intelligence", "research_metadata_strip")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip metadata_tools: %s", e)
+        record_failure("intelligence", "metadata_tools", str(e))
+
+    # ── USB & Hardware Monitoring Tools ──
+    try:
+        from loom.tools.usb_monitor_tool import research_usb_monitor
+        mcp.tool()(wrap_tool(research_usb_monitor))
+        record_success("intelligence", "research_usb_monitor")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip usb_monitor_tool: %s", e)
+        record_failure("intelligence", "usb_monitor_tool", str(e))
+
+    # ── Intelligence & Reputation Tools ──
+    try:
+        from loom.tools.reputation_scorer import research_source_reputation
+        mcp.tool()(wrap_tool(research_source_reputation))
+        record_success("intelligence", "research_source_reputation")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip reputation_scorer: %s", e)
+        record_failure("intelligence", "reputation_scorer", str(e))
+
+    # ── Compliance & Compliance Tools ──
+    try:
+        from loom.tools.ai_safety import research_domain_compliance_check
+        mcp.tool()(wrap_tool(research_domain_compliance_check))
+        record_success("intelligence", "research_domain_compliance_check")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip ai_safety compliance: %s", e)
+        record_failure("intelligence", "ai_safety", str(e))
+
+    log.info("registered intelligence tools count=116")
