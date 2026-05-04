@@ -44,7 +44,7 @@ async def research_usage_record(tool_name: str, caller: str = "mcp") -> dict[str
     }
 
 
-async def research_usage_report(period: str = "today") -> dict[str, Any]:
+async def research_tool_usage_report(period: str = "today") -> dict[str, Any]:
     """Generate usage report for a specified period.
 
     Args:

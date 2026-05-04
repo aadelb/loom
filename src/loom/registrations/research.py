@@ -1449,11 +1449,11 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip unique_tools: %s", e)
         record_failure("research", "unique_tools", str(e))
     try:
-        from loom.tools.usage_analytics import research_usage_record, research_usage_report, research_usage_trends
+        from loom.tools.usage_analytics import research_usage_record, research_tool_usage_report, research_usage_trends
         mcp.tool()(wrap_tool(research_usage_record))
         record_success("research", "research_usage_record")
-        mcp.tool()(wrap_tool(research_usage_report))
-        record_success("research", "research_usage_report")
+        mcp.tool()(wrap_tool(research_tool_usage_report))
+        record_success("research", "research_tool_usage_report")
         mcp.tool()(wrap_tool(research_usage_trends))
         record_success("research", "research_usage_trends")
     except (ImportError, AttributeError) as e:

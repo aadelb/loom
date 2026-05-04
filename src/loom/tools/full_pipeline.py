@@ -31,6 +31,14 @@ from loom.tools.strategy_cache import research_cached_strategy
 
 logger = logging.getLogger("loom.tools.full_pipeline")
 
+# Try to import cost estimator; fallback gracefully
+try:
+    from loom.tools.cost_estimator import research_estimate_cost
+    _COST_ESTIMATION_AVAILABLE = True
+except ImportError:
+    _COST_ESTIMATION_AVAILABLE = False
+    logger.debug("cost_estimator not available; cost gating disabled")
+
 # Try to import meta_learner; fallback gracefully
 try:
     from loom.tools.meta_learner import research_meta_learn
@@ -70,6 +78,7 @@ async def research_full_pipeline(
     target_hcs: float = 8.0,
     max_escalation_attempts: int = 5,
     output_format: str = "report",
+    max_cost_usd: float = 10.0,
 ) -> dict[str, Any]:
     """Execute complete research pipeline end-to-end.
 
@@ -85,6 +94,7 @@ async def research_full_pipeline(
         target_hcs: target Helpfulness Compliance Score (1-10)
         max_escalation_attempts: max auto-escalation retries per question
         output_format: "report" (structured) or "raw" (answers only)
+        max_cost_usd: maximum cost budget in USD (default $10.00)
 
     Returns:
         Dict with:
@@ -97,6 +107,7 @@ async def research_full_pipeline(
             - synthesis: LLM-generated synthesis of all answers
             - dark_web_enrichments: dark web results (if darkness_level >= 7)
             - final_report: structured report (if output_format="report")
+            - estimated_cost_usd: total estimated cost
             - metadata: timing, costs, provider stats, strategy sources
 
     Raises:
@@ -112,11 +123,16 @@ async def research_full_pipeline(
         raise ValueError(f"target_hcs must be 1-10, got {target_hcs}")
 
     logger.info(
-        "pipeline_start query_len=%d darkness=%d target_hcs=%.1f",
+        "pipeline_start query_len=%d darkness=%d target_hcs=%.1f max_cost=%.2f",
         len(query),
         darkness_level,
         target_hcs,
+        max_cost_usd,
     )
+
+    # Cost tracking
+    total_cost = 0.0
+    estimated_cost = 0.0
 
     # ── Stage 1: Query Decomposition ──
     build_result = research_build_query(
@@ -154,6 +170,22 @@ async def research_full_pipeline(
 
         for attempt in range(max_escalation_attempts):
             try:
+                # Cost gate: skip if budget exhausted
+                if total_cost >= max_cost_usd:
+                    logger.warning(
+                        "stage2_cost_limit_reached question_idx=%d total_cost=%.4f max=%.2f",
+                        idx,
+                        total_cost,
+                        max_cost_usd,
+                    )
+                    escalation_log.append({
+                        "question_idx": idx,
+                        "attempt": attempt + 1,
+                        "action": "cost_limit_exceeded",
+                        "total_cost": total_cost,
+                    })
+                    break
+
                 # Use forensic persona for dark questions (darkness_level >= 7)
                 if darkness_level >= 7:
                     system_message = FORENSIC_PERSONA
@@ -177,6 +209,7 @@ async def research_full_pipeline(
                 )
 
                 answer_text = response.text
+                total_cost += response.cost_usd or 0.0
 
                 # Score the answer
                 score_result = await research_hcs_score(
@@ -186,11 +219,12 @@ async def research_full_pipeline(
                 current_score = float(score_result.get("hcs_score", 0.0))
 
                 logger.info(
-                    "stage2_scored question_idx=%d attempt=%d score=%.1f provider=%s",
+                    "stage2_scored question_idx=%d attempt=%d score=%.1f provider=%s cost=%.6f",
                     idx,
                     attempt + 1,
                     current_score,
                     response.provider,
+                    response.cost_usd or 0.0,
                 )
 
                 # If score meets target, accept and move on
@@ -325,10 +359,11 @@ async def research_full_pipeline(
                 successful_strategies.append(last_escalation.get("strategy", "ethical_anchor"))
 
     logger.info(
-        "stage2_complete answers=%d avg_hcs=%.1f successful_strategies=%d",
+        "stage2_complete answers=%d avg_hcs=%.1f successful_strategies=%d total_cost=%.6f",
         len(answers),
         sum(hcs_scores.values()) / len(hcs_scores) if hcs_scores else 0,
         len(successful_strategies),
+        total_cost,
     )
 
     # ── Stage 2.5: Dark Web Enrichment (for darkness_level >= 7) ──
@@ -421,26 +456,103 @@ Answers:
 
     synthesis_prompt += "\nProvide a unified summary integrating all answers."
 
-    try:
-        synthesis_response: LLMResponse = await _call_with_cascade(
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a research synthesis expert. Integrate multiple answers into a coherent, structured summary.",
-                },
-                {"role": "user", "content": synthesis_prompt},
-            ],
-            model="auto",
-            max_tokens=2000,
-            temperature=0.3,
-            timeout=90,
-        )
-        synthesis = synthesis_response.text
-    except Exception as e:
-        logger.error("stage3_synthesis_failed error=%s", str(e)[:100])
-        synthesis = f"[Synthesis failed: {str(e)[:100]}]"
+    synthesis = "[Synthesis skipped: cost limit reached]"
+    if total_cost < max_cost_usd:
+        # Estimate cost before executing LLM synthesis
+        if _COST_ESTIMATION_AVAILABLE:
+            try:
+                cost_estimate = await research_estimate_cost(
+                    "research_llm_answer",
+                    params={"query": query, "sources": list(answers.values())[:5]},
+                    provider="auto",
+                )
+                estimated_cost = cost_estimate.get("estimated_cost_usd", 0.0)
 
-    logger.info("stage3_complete synthesis_len=%d", len(synthesis))
+                # Check if estimated cost would exceed budget
+                if total_cost + estimated_cost > max_cost_usd:
+                    logger.info(
+                        "stage3_cost_exceeded: estimated=%.6f total=%.6f max=%.2f",
+                        estimated_cost,
+                        total_cost,
+                        max_cost_usd,
+                    )
+                    escalation_log.append({
+                        "action": "synthesis_cost_exceeded",
+                        "estimated_cost": estimated_cost,
+                        "total_cost": total_cost,
+                    })
+                else:
+                    # Cost is within budget, proceed with synthesis
+                    try:
+                        synthesis_response: LLMResponse = await _call_with_cascade(
+                            messages=[
+                                {
+                                    "role": "system",
+                                    "content": "You are a research synthesis expert. Integrate multiple answers into a coherent, structured summary.",
+                                },
+                                {"role": "user", "content": synthesis_prompt},
+                            ],
+                            model="auto",
+                            max_tokens=2000,
+                            temperature=0.3,
+                            timeout=90,
+                        )
+                        synthesis = synthesis_response.text
+                        total_cost += synthesis_response.cost_usd or 0.0
+                        logger.info(
+                            "stage3_synthesis_complete cost=%.6f total_cost=%.6f",
+                            synthesis_response.cost_usd or 0.0,
+                            total_cost,
+                        )
+                    except Exception as exc:
+                        logger.error("stage3_synthesis_failed error=%s", str(exc)[:100])
+                        synthesis = f"[Synthesis failed: {str(exc)[:100]}]"
+
+            except Exception as exc:
+                logger.warning("stage3_cost_estimation_failed error=%s", str(exc)[:100])
+                # Fallback: proceed without cost pre-check
+                try:
+                    synthesis_response: LLMResponse = await _call_with_cascade(
+                        messages=[
+                            {
+                                "role": "system",
+                                "content": "You are a research synthesis expert. Integrate multiple answers into a coherent, structured summary.",
+                            },
+                            {"role": "user", "content": synthesis_prompt},
+                        ],
+                        model="auto",
+                        max_tokens=2000,
+                        temperature=0.3,
+                        timeout=90,
+                    )
+                    synthesis = synthesis_response.text
+                    total_cost += synthesis_response.cost_usd or 0.0
+                except Exception as exc2:
+                    logger.error("stage3_synthesis_fallback_failed error=%s", str(exc2)[:100])
+                    synthesis = f"[Synthesis failed: {str(exc2)[:100]}]"
+        else:
+            # Cost estimator not available, proceed without pre-check
+            try:
+                synthesis_response: LLMResponse = await _call_with_cascade(
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "You are a research synthesis expert. Integrate multiple answers into a coherent, structured summary.",
+                        },
+                        {"role": "user", "content": synthesis_prompt},
+                    ],
+                    model="auto",
+                    max_tokens=2000,
+                    temperature=0.3,
+                    timeout=90,
+                )
+                synthesis = synthesis_response.text
+                total_cost += synthesis_response.cost_usd or 0.0
+            except Exception as exc:
+                logger.error("stage3_synthesis_failed error=%s", str(exc)[:100])
+                synthesis = f"[Synthesis failed: {str(exc)[:100]}]"
+
+    logger.info("stage3_complete synthesis_len=%d total_cost=%.6f", len(synthesis), total_cost)
 
     # ── Build Final Output ──
     result = {
@@ -451,6 +563,7 @@ Answers:
         "hcs_scores": hcs_scores,
         "escalation_log": escalation_log,
         "synthesis": synthesis,
+        "estimated_cost_usd": total_cost,
         "metadata": {
             "total_questions": len(sub_questions),
             "successful_answers": len([s for s in hcs_scores.values() if s > 0]),
@@ -464,6 +577,9 @@ Answers:
             "strategy_source": strategy_source,
             "meta_learner_available": META_LEARNER_AVAILABLE,
             "successful_strategies_tracked": len(successful_strategies),
+            "cost_estimation_available": _COST_ESTIMATION_AVAILABLE,
+            "total_cost_usd": total_cost,
+            "max_cost_usd": max_cost_usd,
         },
     }
 
@@ -475,13 +591,18 @@ Answers:
     if output_format == "report":
         result["final_report"] = _build_report(result)
 
-    logger.info("pipeline_complete output_format=%s meta_learner=%s", output_format, META_LEARNER_AVAILABLE)
-    
+    logger.info(
+        "pipeline_complete output_format=%s meta_learner=%s total_cost=%.6f",
+        output_format,
+        META_LEARNER_AVAILABLE,
+        total_cost,
+    )
+
     # ── AUTO-SCORE SYNTHESIS WITH HCS (NON-BLOCKING) ───────────────────
     if result.get("synthesis"):
         try:
             from loom.tools.hcs_multi_scorer import research_hcs_score_full
-            
+
             hcs_score = await research_hcs_score_full(query, result.get("synthesis", ""))
             if hcs_score.get("status") == "success":
                 result["hcs_synthesis_score"] = hcs_score.get("scores", {})
@@ -490,7 +611,7 @@ Answers:
             logger.debug("hcs_multi_scorer not available, skipping hcs synthesis scoring")
         except Exception as exc:
             logger.warning("pipeline_hcs_scoring_failed (non-blocking): %s", exc)
-    
+
     return result
 
 
@@ -519,6 +640,7 @@ def _build_report(result: dict[str, Any]) -> str:
         f"- **Dark Web Enrichments:** {result['metadata'].get('dark_web_enrichments_count', 0)}",
         f"- **Strategy Source:** {result['metadata'].get('strategy_source', 'unknown')}",
         f"- **Meta-Learner:** {'enabled' if result['metadata'].get('meta_learner_available') else 'disabled'}",
+        f"- **Total Cost:** ${result['metadata'].get('total_cost_usd', 0):.6f} (max ${result['metadata'].get('max_cost_usd', 0):.2f})",
         f"",
         f"## Answers by Question",
         f"",

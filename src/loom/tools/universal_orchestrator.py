@@ -16,6 +16,14 @@ except ImportError:
     _SMART_ROUTER_AVAILABLE = False
     logger.warning("smart_router not available; orchestrator will skip router pre-filter")
 
+# Import tool_discovery with fallback
+try:
+    from . import tool_discovery
+    _TOOL_DISCOVERY_AVAILABLE = True
+except ImportError:
+    _TOOL_DISCOVERY_AVAILABLE = False
+    logger.warning("tool_discovery not available; orchestrator will skip follow-up suggestions")
+
 
 def _build_tool_index() -> dict[str, dict[str, Any]]:
     """Scan tools directory and build index of all research_* functions."""
@@ -99,7 +107,7 @@ async def research_orchestrate_smart(query: str, max_tools: int = 3, strategy: s
         strategy: "auto" (pick 1), "parallel" (top-K), or "sequential"
 
     Returns:
-        Dict with query, tools_discovered, tools_selected, results, aggregated_summary, router_confidence, total_duration_ms
+        Dict with query, tools_discovered, tools_selected, results, aggregated_summary, router_confidence, suggested_next_tools, total_duration_ms
     """
     if not query or len(query.strip()) < 3:
         return {"error": "query too short (min 3 chars)", "query": query}
@@ -146,6 +154,18 @@ async def research_orchestrate_smart(query: str, max_tools: int = 3, strategy: s
     results = [r if isinstance(r, dict) else {"tool": "unknown", "success": False, "error": str(r)} for r in results]
 
     successful = [r for r in results if r.get("success")]
+
+    # Discover follow-up tools
+    suggested_next_tools: list[str] = []
+    if _TOOL_DISCOVERY_AVAILABLE:
+        try:
+            discover_result = await tool_discovery.research_discover(query=query, detailed=False)
+            tools_list = discover_result.get("tools", []) if isinstance(discover_result, dict) else []
+            suggested_next_tools = [t.get("name", "") for t in tools_list[:5] if t.get("name")][:5]
+            logger.debug("discovery suggested %d follow-up tools", len(suggested_next_tools))
+        except Exception as e:
+            logger.debug("tool_discovery failed: %s", str(e))
+
     return {
         "query": query,
         "tools_discovered": len(tool_index),
@@ -158,5 +178,6 @@ async def research_orchestrate_smart(query: str, max_tools: int = 3, strategy: s
             "execution_strategy": strategy,
         },
         "router_confidence": router_confidence,
+        "suggested_next_tools": suggested_next_tools,
         "total_duration_ms": (time.time() - total_start) * 1000,
     }
