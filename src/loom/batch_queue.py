@@ -25,6 +25,8 @@ from typing import Any, Callable, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
+from loom.validators import UrlSafetyError, validate_url
+
 logger = logging.getLogger("loom.batch_queue")
 
 # Constraints
@@ -518,6 +520,10 @@ class BatchQueue:
     ) -> None:
         """Trigger webhook callback on completion.
 
+        Validates the callback URL against SSRF before making the request.
+        Blocks private IPs, loopback, link-local, multicast, reserved, and
+        unspecified addresses. Logs security events if validation fails.
+
         Args:
             callback_url: webhook URL
             batch_id: batch ID
@@ -525,6 +531,18 @@ class BatchQueue:
             result: execution result
             error_msg: error message if failed
         """
+        # SSRF validation: reject private/internal IPs
+        try:
+            validate_url(callback_url)
+        except UrlSafetyError as e:
+            logger.warning(
+                "callback_ssrf_blocked batch_id=%s url=%s error=%s",
+                batch_id,
+                callback_url,
+                str(e),
+            )
+            return  # Skip callback
+
         try:
             import aiohttp
 
