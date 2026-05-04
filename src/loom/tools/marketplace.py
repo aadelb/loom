@@ -20,12 +20,13 @@ _MARKETPLACE_DB = Path.home() / ".loom" / "marketplace.db"
 
 
 async def _get_db() -> aiosqlite.Connection:
-    """Get or create marketplace database connection."""
+    """Get a fresh marketplace database connection."""
     _MARKETPLACE_DB.parent.mkdir(parents=True, exist_ok=True)
-    conn = await aiosqlite.connect(str(_MARKETPLACE_DB))
-    await conn.execute("PRAGMA journal_mode=WAL")
-    await _init_db(conn)
-    return conn
+    # Always create a fresh connection; aiosqlite connections are not reusable
+    db_conn = await aiosqlite.connect(str(_MARKETPLACE_DB))
+    await db_conn.execute("PRAGMA journal_mode=WAL")
+    await _init_db(db_conn)
+    return db_conn
 
 
 async def _init_db(conn: aiosqlite.Connection) -> None:

@@ -275,7 +275,7 @@ async def research_benchmark_models(
 
     # Import here to avoid circular imports
     from loom.providers.groq_provider import GroqProvider
-    from loom.providers.nvidia_nim import NvidiaProvider
+    from loom.providers.nvidia_nim import NvidiaNimProvider
     from loom.providers.deepseek_provider import DeepSeekProvider
     from loom.providers.gemini_provider import GeminiProvider
     from loom.providers.anthropic_provider import AnthropicProvider
@@ -284,7 +284,7 @@ async def research_benchmark_models(
     provider_map: dict[str, LLMProvider] = {}
     providers = [
         GroqProvider(),
-        NvidiaProvider(),
+        NvidiaNimProvider(),
         DeepSeekProvider(),
         GeminiProvider(),
         AnthropicProvider(),

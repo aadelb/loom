@@ -62,7 +62,7 @@ async def research_queue_status() -> dict[str, Any]:
 
 async def research_queue_drain(max_items: int = 10) -> dict[str, Any]:
     """Dequeue up to max_items in FIFO order within priority. Execution is caller's responsibility."""
-    global _processing_count
+    global _processing_count, _completed_count
     if max_items < 1:
         raise ValueError("max_items must be at least 1")
 

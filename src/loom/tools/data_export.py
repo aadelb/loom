@@ -42,7 +42,7 @@ async def research_export_cache(limit: int = 50) -> dict[str, Any]:
     from loom.cache import get_cache
 
     cache = get_cache()
-    cache_dir = Path(cache._cache_dir)
+    cache_dir = Path(cache.base_dir)
     entries = []
     for f in sorted(
         cache_dir.glob("**/*.json"),  # noqa: ASYNC240

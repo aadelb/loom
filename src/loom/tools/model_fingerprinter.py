@@ -67,21 +67,27 @@ async def research_fingerprint_behavior(
         tasks.append(_call_with_cascade(messages, model=model, max_tokens=500, temperature=0.7, timeout=30))
 
     probe_results = []
-    for probe, response_task in zip(selected_probes, asyncio.gather(*tasks, return_exceptions=True)):
-        try:
-            response = await response_task if asyncio.iscoroutine(response_task) else response_task
-            text = response.text if hasattr(response, 'text') else str(response)
-        except Exception as exc:
-            text = None
+    probe_results = []
+    gathered_responses = await asyncio.gather(*tasks, return_exceptions=True)
+    for probe, response_data in zip(selected_probes, gathered_responses):
+        text = None
+        exc = None
+        if isinstance(response_data, Exception):
+            exc = response_data
             logger.warning("probe_failed probe=%s error=%s", probe["name"], str(exc))
+        else:
+            try:
+                text = response_data.text if hasattr(response_data, 'text') else str(response_data)
+            except Exception as e:
+                exc = e
+                logger.warning("probe_failed probe=%s error=%s", probe["name"], str(e))
 
         probe_results.append({
             "name": probe["name"],
             "category": probe["category"],
             "response": text,
-            "error": None if text else str(exc) if isinstance(response_task, Exception) else "unknown",
+            "error": str(exc) if exc else None,
         })
-
     # Compute personality vector
     personality_vector = _compute_personality_vector(probe_results)
 

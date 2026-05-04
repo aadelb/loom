@@ -267,12 +267,12 @@ async def _check_postgresql() -> dict[str, Any]:
 
 async def _check_llm_providers() -> dict[str, Any]:
     """Check LLM providers: API key presence and optional test call."""
-    from loom.tools.provider_health import research_provider_health
+    from loom.tools.provider_health import research_provider_ping
 
     start = time.time()
 
     try:
-        result = await research_provider_health()
+        result = await research_provider_ping()
 
         # Extract summary from provider_health response
         llm_available = result.get("llm_providers_available", 0)
