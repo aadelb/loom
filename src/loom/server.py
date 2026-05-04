@@ -97,6 +97,7 @@ from loom.startup_validator import (
     research_validate_startup,
 )
 from loom.tool_latency import get_latency_tracker
+from loom.tools.latency_report import research_latency_report
 from loom.tool_rate_limiter import check_tool_rate_limit, research_rate_limits
 from loom.tools.scheduler_status import research_scheduler_status
 from loom.sla_monitor import get_sla_monitor
