@@ -185,6 +185,7 @@ class BatchQueue:
         self._lock = asyncio.Lock()
         self._tool_registry: dict[str, Callable[[dict[str, Any]], Any]] = {}
         self._init_db()
+        self._auto_register_tools()
 
     def _init_db(self) -> None:
         """Initialize SQLite schema if not exists."""
@@ -226,6 +227,67 @@ class BatchQueue:
                 """
             )
             conn.commit()
+
+
+    def _auto_register_tools(self) -> None:
+        """Auto-register all research_* tools from loom.tools for batch execution.
+
+        Dynamically discovers and imports all research_* functions from tool modules,
+        making them available for batch queue execution. Silently skips modules that
+        fail to import (e.g., missing dependencies).
+        """
+        tools_dir = Path(__file__).parent / "tools"
+        if not tools_dir.exists():
+            logger.warning("tools_dir not found: %s", tools_dir)
+            return
+
+        registered_count = 0
+        failed_modules = []
+
+        for module_file in sorted(tools_dir.glob("*.py")):
+            # Skip private/dunder files
+            if module_file.name.startswith("_"):
+                continue
+
+            module_name = module_file.stem
+            try:
+                # Dynamically import the module
+                mod = importlib.import_module(f"loom.tools.{module_name}")
+
+                # Scan for functions starting with research_
+                for attr_name in dir(mod):
+                    if attr_name.startswith("research_"):
+                        try:
+                            attr = getattr(mod, attr_name)
+                            # Verify it's callable
+                            if callable(attr):
+                                self._tool_registry[attr_name] = attr
+                                registered_count += 1
+                        except (AttributeError, TypeError):
+                            # Skip non-callable attributes
+                            pass
+
+            except ImportError as e:
+                failed_modules.append((module_name, str(e)))
+                # Silently skip modules with import errors (optional dependencies)
+            except Exception as e:
+                logger.debug(
+                    "batch_tool_registration_error module=%s error=%s",
+                    module_name,
+                    str(e),
+                )
+
+        logger.info(
+            "batch_queue_auto_register_tools registered=%d failed_modules=%d",
+            registered_count,
+            len(failed_modules),
+        )
+
+        if failed_modules and logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                "batch_queue_skipped_modules due to import errors: %s",
+                [name for name, _ in failed_modules[:5]],
+            )
 
     def register_tool(self, tool_name: str, handler: Callable[[dict[str, Any]], Any]) -> None:
         """Register a tool handler for batch processing.
