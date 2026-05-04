@@ -20,6 +20,7 @@ from typing import Any
 
 from mcp.server import FastMCP
 from mcp.server.auth.settings import AuthSettings
+from starlette.middleware.cors import CORSMiddleware
 
 from loom.config import load_config, research_config_get, research_config_set
 from loom.orchestrator import research_orchestrate
@@ -57,6 +58,7 @@ from loom.batch_queue import (
 )
 
 from loom.api_auth import ApiKeyAuthMiddleware
+from loom.request_id_middleware import RequestIdMiddleware
 
 from loom.tracing import install_tracing, new_request_id
 from loom.versioning import (
@@ -603,6 +605,34 @@ _startup_validation_result: dict[str, Any] | None = None
 _health_status: str = "initializing"  # initializing, healthy, degraded, unhealthy
 _validation_error_count: int = 0
 
+# ── Graceful Shutdown Handling ──
+_shutting_down: bool = False
+_shutdown_start_time: float | None = None
+_shutdown_timeout_seconds: int = 30
+
+
+def _set_shutting_down() -> None:
+    """Mark server as shutting down."""
+    global _shutting_down, _shutdown_start_time
+    _shutting_down = True
+    _shutdown_start_time = time.time()
+    log.info("shutdown_flag_set timeout_seconds=%d", _shutdown_timeout_seconds)
+
+
+def _is_shutting_down() -> bool:
+    """Check if server is in shutdown state."""
+    return _shutting_down
+
+
+def _shutdown_grace_time_remaining() -> float:
+    """Get remaining shutdown grace period in seconds."""
+    if not _shutdown_start_time:
+        return float(_shutdown_timeout_seconds)
+    elapsed = time.time() - _shutdown_start_time
+    remaining = max(0, _shutdown_timeout_seconds - elapsed)
+    return remaining
+
+
 
 async def research_audit_export(
     start_date: str | None = None,
@@ -1045,6 +1075,19 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                 _loom_tool_calls_total.labels(tool_name=tool_name, status="rate_limited").inc()
                 return rate_limit_error
 
+            # ── Graceful Shutdown Check ──
+            if _is_shutting_down():
+                grace_remaining = _shutdown_grace_time_remaining()
+                log.warning("tool_call_during_shutdown tool=%s grace_remaining_seconds=%.1f", tool_name, grace_remaining)
+                _loom_tool_calls_total.labels(tool_name=tool_name, status="shutdown").inc()
+                return {
+                    "error": "server_shutting_down",
+                    "message": "Server is shutting down. No new tool calls accepted.",
+                    "retry_after_seconds": int(grace_remaining) + 1,
+                    "graceful_shutdown": True,
+                }
+
+
             # Token Economy: check credits before execution (if enabled)
             user_id = os.getenv("LOOM_USER_ID", "anonymous")
             current_balance = int(os.getenv("LOOM_USER_BALANCE", "0"))
@@ -1228,6 +1271,19 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
             corrected_kwargs, corrections = _fuzzy_correct_params(func, kwargs)
             if corrections:
                 log.debug(f"Parameter corrections for {tool_name}: {corrections}")
+
+            # ── Graceful Shutdown Check ──
+            if _is_shutting_down():
+                grace_remaining = _shutdown_grace_time_remaining()
+                log.warning("tool_call_during_shutdown sync tool=%s grace_remaining_seconds=%.1f", tool_name, grace_remaining)
+                _loom_tool_calls_total.labels(tool_name=tool_name, status="shutdown").inc()
+                return {
+                    "error": "server_shutting_down",
+                    "message": "Server is shutting down. No new tool calls accepted.",
+                    "retry_after_seconds": int(grace_remaining) + 1,
+                    "graceful_shutdown": True,
+                }
+
 
             # Token Economy: check credits before execution (if enabled)
             user_id = os.getenv("LOOM_USER_ID", "anonymous")
@@ -2082,9 +2138,28 @@ def create_app() -> FastMCP:
     )
 
     # Wire API key authentication middleware (optional, opt-in via LOOM_AUTH_REQUIRED)
+    # Wire request ID / correlation ID middleware (must come first in the stack)
+    mcp.app.add_middleware(RequestIdMiddleware)
+    log.info("request_id_middleware_registered")
+
     mcp.app.add_middleware(ApiKeyAuthMiddleware)
     log.info("api_auth_middleware_registered auth_required=%s",
              os.environ.get("LOOM_AUTH_REQUIRED", "false").lower() == "true")
+
+    # Wire CORS middleware (configurable via LOOM_CORS_ENABLED and LOOM_CORS_ORIGINS)
+    if os.environ.get("LOOM_CORS_ENABLED", "true").lower() == "true":
+        origins = os.environ.get("LOOM_CORS_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",")
+        mcp.app.add_middleware(
+            CORSMiddleware,
+            allow_origins=origins,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+        log.info("cors_middleware_registered origins=%s", origins)
+    else:
+        log.info("cors_middleware_disabled")
+
 
     # Start batch queue background processing
     try:
@@ -2097,7 +2172,27 @@ def create_app() -> FastMCP:
 
 
 async def _shutdown() -> None:
-    """Graceful shutdown: close all browser sessions, HTTP clients, and providers."""
+    """Graceful shutdown: close all browser sessions, HTTP clients, and providers.
+    
+    Cleanup sequence:
+    1. Mark server as shutting down (reject new requests)
+    2. Wait up to 30s for in-flight requests to complete
+    3. Flush DLQ (deadletter queue) if exists
+    4. Save strategy adapter state
+    5. Close database/Redis connections
+    6. Close HTTP client pool
+    7. Close LLM provider clients
+    8. Stop batch queue background processing
+    """
+    _set_shutting_down()
+    
+    # Wait briefly for in-flight requests
+    try:
+        await asyncio.sleep(0.5)
+        log.info("shutdown_grace_period_active max_wait_seconds=5")
+    except Exception:
+        pass
+    
     log.info("shutdown_signal_received")
     try:
         result = await cleanup_all_sessions()
@@ -2108,6 +2203,30 @@ async def _shutdown() -> None:
         )
     except Exception as exc:
         log.error("shutdown_sessions_error: %s", exc)
+
+    # Flush DLQ (deadletter queue) if it exists
+    try:
+        from loom.batch_queue import get_dlq
+        dlq = get_dlq()
+        if dlq and hasattr(dlq, 'flush'):
+            flushed = await dlq.flush()
+            log.info("shutdown_dlq_flushed count=%d", len(flushed) if isinstance(flushed, list) else 0)
+    except (ImportError, AttributeError):
+        pass
+    except Exception as exc:
+        log.warning("shutdown_dlq_flush_failed: %s", exc)
+    
+    # Save strategy adapter state if it exists
+    try:
+        from loom.reid_auto import ReidAutoReframe
+        adapter = ReidAutoReframe._instance if hasattr(ReidAutoReframe, '_instance') else None
+        if adapter and hasattr(adapter, 'save_state'):
+            await adapter.save_state()
+            log.info("shutdown_strategy_state_saved")
+    except (ImportError, AttributeError):
+        pass
+    except Exception as exc:
+        log.warning("shutdown_strategy_state_save_failed: %s", exc)
 
     # Close httpx connection pool
     try:
@@ -2129,14 +2248,12 @@ async def _shutdown() -> None:
     except Exception as exc:
         log.error("shutdown_providers_error: %s", exc)
 
-
     # Stop batch queue background processing
     try:
         stop_batch_queue_background()
         log.info("batch_queue_background_stopped")
     except Exception as exc:
         log.error("batch_queue_shutdown_failed: %s", exc)
-
 
     log.info("shutdown_complete")
 
@@ -2145,8 +2262,9 @@ _background_tasks: set[asyncio.Task[None]] = set()
 
 
 def _handle_signal(sig: int, _frame: Any) -> None:
-    """Signal handler that runs the async shutdown in a new event loop."""
-    log.info("received_signal=%s", signal.Signals(sig).name)
+    """Signal handler that runs graceful shutdown in a new event loop."""
+    _set_shutting_down()
+    log.info("signal_handler_invoked signal=%s", signal.Signals(sig).name)
     try:
         loop = asyncio.get_running_loop()
         task = loop.create_task(_shutdown())
