@@ -917,7 +917,7 @@ def tools(
     console.print(table)
 
     # Print summary statistics
-    console.print(f"\n[bold]Cost Summary[/bold]")
+    console.print("\n[bold]Cost Summary[/bold]")
     console.print(f"  Total: [cyan]{len(filtered_tools)}[/cyan] tools")
     console.print(f"  Free: [green]{cost_counts.get(0, 0)}[/green]")
     console.print(f"  Basic (1): [blue]{cost_counts.get(1, 0)}[/blue]")
@@ -1105,14 +1105,14 @@ def completions(
 
         try:
             result = subprocess.run(
-                ["bash", str(install_script)],
+                ["/bin/bash", str(install_script)],
                 check=False,
                 cwd=str(script_dir.parent),
             )
             raise typer.Exit(code=result.returncode)
         except FileNotFoundError:
             err_console.print("[red]Error: bash not found[/red]")
-            raise typer.Exit(code=1)
+            raise typer.Exit(code=1) from None
     else:
         err_console.print(f"[red]Unknown action: {action}[/red]")
         raise typer.Exit(code=2)
@@ -1133,7 +1133,7 @@ def version() -> None:
     except Exception:
         tool_count = 220  # Fallback to approximate count
 
-    console.print(f"[cyan]loom[/cyan] version [green]0.1.0a1[/green]")
+    console.print("[cyan]loom[/cyan] version [green]0.1.0a1[/green]")
     console.print(f"[dim]220+ tools available ({tool_count} loaded)[/dim]")
 
 
