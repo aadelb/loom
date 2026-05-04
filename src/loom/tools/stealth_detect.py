@@ -1,8 +1,8 @@
-"""research_stealth_detect — Estimate detectability of reframed prompts.
+"""research_stealth_detect_comparison — Estimate detectability of reframed prompts.
 
 Analyzes how likely various guardrail systems (Llama Guard, OpenAI Moderation,
 Perspective API, Constitutional Classifiers, Nemo Guardrails) are to detect
-and flag a reframed prompt.
+and flag a reframed prompt when compared to the original.
 
 Returns detection risk per system, overall risk score, and evasion suggestions.
 """
@@ -17,7 +17,7 @@ from loom.stealth_detector import research_stealth_detect as _research_stealth_d
 logger = logging.getLogger("loom.tools.stealth_detect")
 
 
-async def research_stealth_detect(
+async def research_stealth_detect_comparison(
     original_prompt: str,
     reframed_prompt: str,
     strategy: str = "",
@@ -26,7 +26,8 @@ async def research_stealth_detect(
 
     Analyzes how likely various guardrail systems are to detect and flag a
     reframed prompt by examining linguistic patterns, semantic similarity,
-    encoding complexity, and strategy-specific vulnerabilities.
+    encoding complexity, and strategy-specific vulnerabilities when compared
+    to the original prompt.
 
     Args:
         original_prompt: Original (likely harmful) prompt
@@ -45,7 +46,7 @@ async def research_stealth_detect(
         - evasion_keywords_found: list of evasion keywords present
     """
     logger.info(
-        "stealth_detect_start strategy=%s orig_len=%d reframed_len=%d",
+        "stealth_detect_comparison_start strategy=%s orig_len=%d reframed_len=%d",
         strategy or "unknown",
         len(original_prompt),
         len(reframed_prompt),
@@ -54,7 +55,7 @@ async def research_stealth_detect(
     result = await _research_stealth_detect(original_prompt, reframed_prompt, strategy)
 
     logger.info(
-        "stealth_detect_complete strategy=%s risk=%.3f stealth=%d",
+        "stealth_detect_comparison_complete strategy=%s risk=%.3f stealth=%d",
         strategy or "unknown",
         result["overall_detection_risk"],
         result["strategy_stealth_rating"],

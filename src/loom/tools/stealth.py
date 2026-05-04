@@ -124,6 +124,7 @@ async def research_camoufox(
     return output
 
 
+# DEPRECATED: Use research_fetch(backend="dynamic") or research_cloak_fetch. This function wraps research_fetch(mode="dynamic").
 async def research_botasaurus(
     url: str,
     session: str | None = None,

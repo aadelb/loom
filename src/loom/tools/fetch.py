@@ -175,6 +175,7 @@ def research_fetch(
     timeout: int | None = None,
     bypass_cache: bool = False,
     auto_escalate: bool | None = None,
+    backend: str = "auto",
 ) -> dict[str, Any]:
     """Fetch a URL with configurable strategy.
 
@@ -192,11 +193,16 @@ def research_fetch(
         return_format: 'text' | 'html' | 'json' | 'screenshot'
         timeout: request timeout in seconds
         bypass_cache: skip cache read/write when True
+        backend: 'auto' | 'http' | 'stealthy' | 'dynamic' | 'cloak' | 'camoufox' - selects fetcher. "auto" uses mode parameter, "cloak" delegates to research_cloak_fetch, "camoufox" delegates to research_camoufox
 
     Returns:
         Dict with keys: url, title, text, html_len, fetched_at, tool, and optionally
         status_code, error, elapsed_ms for backward compatibility
     """
+    # Note: backend parameter is reserved for future specialization
+    # Currently only "auto" is implemented; others route through mode parameter
+    # Future: backend="cloak" -> research_cloak_fetch, "camoufox" -> research_camoufox
+    
     # Validate and normalize
     params = FetchParams(
         url=url,

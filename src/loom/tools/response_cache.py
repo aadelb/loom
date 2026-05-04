@@ -138,7 +138,7 @@ def research_cache_lookup(query: str) -> dict[str, Any]:
     }
 
 
-def research_cache_stats() -> dict[str, Any]:
+def research_response_cache_stats() -> dict[str, Any]:
     """Return response cache statistics.
 
     Returns:

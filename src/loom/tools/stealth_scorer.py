@@ -1,4 +1,4 @@
-"""research_stealth_score — Heuristic stealth scoring for attack invisibility.
+"""research_stealth_score_heuristic — Heuristic stealth scoring for attack invisibility.
 
 Pure heuristic stealth scorer that evaluates prompt invisibility across
 6 dimensions without LLM calls:
@@ -55,7 +55,7 @@ STRUCTURAL_MARKERS = [
 ]
 
 
-async def research_stealth_score(
+async def research_stealth_score_heuristic(
     prompt: str,
     strategy: str = "",
 ) -> dict[str, Any]:
@@ -82,7 +82,7 @@ async def research_stealth_score(
         - detection_probability: float (0-1, probability guardrail catches it)
     """
     logger.info(
-        "stealth_score_start strategy=%s prompt_len=%d",
+        "stealth_score_heuristic_start strategy=%s prompt_len=%d",
         strategy or "unknown",
         len(prompt),
     )
@@ -172,7 +172,7 @@ async def research_stealth_score(
     }
 
     logger.info(
-        "stealth_score_complete strategy=%s score=%.2f recommendation=%s",
+        "stealth_score_heuristic_complete strategy=%s score=%.2f recommendation=%s",
         strategy or "unknown",
         final_score,
         recommendation,

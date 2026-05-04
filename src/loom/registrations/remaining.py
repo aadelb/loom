@@ -1100,9 +1100,9 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip resilience_predictor: %s", e)
         record_failure("remaining", "resilience_predictor", str(e))
     try:
-        from loom.tools.response_cache import research_cache_stats
-        mcp.tool()(wrap_tool(research_cache_stats))
-        record_success("remaining", "research_cache_stats")
+        from loom.tools.response_cache import research_response_cache_stats
+        mcp.tool()(wrap_tool(research_response_cache_stats))
+        record_success("remaining", "research_response_cache_stats")
     except (ImportError, AttributeError) as e:
         log.debug("skip response_cache: %s", e)
         record_failure("remaining", "response_cache", str(e))
