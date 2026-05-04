@@ -12,13 +12,15 @@ Combines all available Loom tools into a single orchestrated 12-stage pipeline:
 9. Community sentiment from HN + Reddit (optional)
 10. Adversarial red team on synthesis (optional)
 11. Misinformation stress test on claims (optional)
-12. Build response
+12. Fact-checking of top claims from synthesis
+13. Build response
 """
 
 from __future__ import annotations
 
 import asyncio
 import logging
+import re
 import time
 from typing import Any
 from urllib.parse import urlparse
@@ -204,6 +206,33 @@ def _merge_search_results(all_results: list[dict[str, Any]], max_urls: int) -> l
     return results[:max_urls]
 
 
+def _extract_factual_claims(text: str, max_claims: int = 3) -> list[str]:
+    """Extract top factual claims (sentences with numbers, dates, or proper nouns)."""
+    if not text:
+        return []
+
+    # Split into sentences
+    sentences = re.split(r'[.!?]+', text)
+    claims = []
+
+    for sentence in sentences:
+        sentence = sentence.strip()
+        if len(sentence) < 20:  # Skip very short sentences
+            continue
+
+        # Look for sentences with numbers, years, or capitalized proper nouns
+        has_number = bool(re.search(r'\d+', sentence))
+        has_year = bool(re.search(r'\b(19|20)\d{2}\b', sentence))
+        has_proper_noun = bool(re.search(r'\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b', sentence))
+
+        if has_number or has_year or has_proper_noun:
+            claims.append(sentence)
+            if len(claims) >= max_claims:
+                break
+
+    return claims
+
+
 async def research_deep(
     query: str,
     depth: int = 2,
@@ -248,7 +277,7 @@ async def research_deep(
     Returns:
         Dict with query, search_variations, providers_used, pages_searched,
         pages_fetched, top_pages, synthesis, github_repos, total_cost_usd,
-        elapsed_ms.
+        elapsed_ms, and fact_checks (if synthesis succeeded).
     """
     from loom.config import get_config
     from loom.tools.search import research_search
@@ -729,7 +758,30 @@ async def research_deep(
             logger.warning("misinfo_check_fail: %s", exc)
             warnings.append({"stage": "misinfo_check", "error": str(exc)})
 
-    # ── STAGE 12: Build Response ─────────────────────────────────────────
+    # ── STAGE 12: Fact-Checking (non-blocking) ──────────────────────────
+    fact_checks: list[dict[str, Any]] | None = None
+    if synthesis_result:
+        try:
+            from loom.tools.fact_checker import research_fact_check
+
+            final_answer = synthesis_result.get("answer", "")
+            claims = _extract_factual_claims(final_answer, max_claims=3)
+
+            if claims:
+                fact_checks = []
+                for claim in claims:
+                    try:
+                        check_result = await research_fact_check(claim, max_sources=5)
+                        fact_checks.append(check_result)
+                        logger.info("fact_check completed claim=%s verdict=%s", claim[:50], check_result.get("verdict"))
+                    except Exception as exc:
+                        logger.debug("fact_check_single_fail: %s", exc)
+        except ImportError:
+            logger.debug("fact_checker not available, skipping fact-checking")
+        except Exception as exc:
+            logger.warning("fact_check_fail (non-blocking): %s", exc)
+
+    # ── STAGE 13: Build Response ────────────────────────────────────────
     for p in top_pages:
         if len(p.get("markdown", "")) > 2000:
             p["markdown"] = p["markdown"][:2000] + "…"
@@ -750,6 +802,7 @@ async def research_deep(
         "community_sentiment": community_sentiment,
         "red_team_report": red_team_report,
         "misinfo_report": misinfo_report,
+        "fact_checks": fact_checks,
         "warnings": warnings,
         "estimated_cost_usd": estimated_cost,
         "total_cost_usd": total_cost,

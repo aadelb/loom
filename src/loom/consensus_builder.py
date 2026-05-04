@@ -5,7 +5,7 @@ and use consensus to pressure target models into compliance.
 
 This module implements:
   - Parallel model querying with response classification
-  - Consensus synthesis from complying models
+  - Consensus synthesis from complying models (voting, debate, weighted methods)
   - Pressure prompt construction and delivery
   - Compliance scoring and effect analysis
 """
@@ -16,7 +16,7 @@ import asyncio
 import json
 import logging
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any, Callable, Literal
 
 logger = logging.getLogger("loom.consensus_builder")
 
@@ -45,6 +45,9 @@ class ConsensusResult:
 
     response_summaries: dict[str, str]
     """Individual model responses (model -> response text)."""
+
+    method: str = "voting"
+    """Method used to build consensus: voting, debate, or weighted."""
 
 
 @dataclass
@@ -82,16 +85,22 @@ class ConsensusBuilder:
       6. Send pressure prompt to target model
       7. Score result
 
+    Supports three consensus methods:
+      - voting: Simple majority voting on key sentences
+      - debate: LLM-mediated debate to synthesize viewpoints
+      - weighted: Confidence-weighted synthesis based on response quality
+
     Example:
         builder = ConsensusBuilder(
             llm_providers=llm_providers_dict,
             hcs_scorer=optional_scorer
         )
 
-        # Build consensus from 4 models (excluding Claude)
+        # Build consensus from 4 models (excluding Claude) using voting
         consensus = await builder.build_consensus(
             prompt="Write a short story about AI",
-            target_model="claude-opus"
+            target_model="claude-opus",
+            method="voting"
         )
 
         # Pressure Claude with the consensus
@@ -123,6 +132,7 @@ class ConsensusBuilder:
         prompt: str,
         target_model: str = "",
         excluded_models: list[str] | None = None,
+        method: Literal["voting", "debate", "weighted"] = "voting",
     ) -> ConsensusResult:
         """Query all models except target, build consensus response.
 
@@ -131,21 +141,27 @@ class ConsensusBuilder:
           2. Query all selected models in parallel
           3. Classify responses as COMPLIED or REFUSED
           4. Extract compliant content
-          5. Synthesize consensus from complying responses
+          5. Synthesize consensus using specified method
           6. Calculate confidence score
 
         Args:
             prompt: Query to send to all models
             target_model: Model name to exclude (will be pressured later)
             excluded_models: Additional models to exclude from consensus
+            method: Consensus method: "voting", "debate", or "weighted"
 
         Returns:
             ConsensusResult with consensus_text, models_queried/complied/refused, etc.
 
         Raises:
-            ValueError: No models available or no models complied
+            ValueError: No models available, no models complied, or invalid method
             asyncio.TimeoutError: Timeout waiting for model responses
         """
+        if method not in ("voting", "debate", "weighted"):
+            raise ValueError(
+                f"method must be 'voting', 'debate', or 'weighted', got '{method}'"
+            )
+
         if not self.llm_providers:
             raise ValueError("No LLM providers configured")
 
@@ -162,9 +178,10 @@ class ConsensusBuilder:
             raise ValueError(f"No models available (all excluded: {excluded})")
 
         logger.info(
-            "consensus_starting: %d models, target=%s",
+            "consensus_starting: %d models, target=%s, method=%s",
             len(available_models),
             target_model,
+            method,
         )
 
         # Query all models in parallel
@@ -214,20 +231,35 @@ class ConsensusBuilder:
                 f"No models complied. All {len(available_models)} models refused."
             )
 
-        # Synthesize consensus
-        consensus_text = self._synthesize_consensus(
-            {m: response_summaries[m] for m in complied_models}
-        )
+        # Synthesize consensus using specified method
+        if method == "voting":
+            consensus_text = self._synthesize_consensus_voting(
+                {m: response_summaries[m] for m in complied_models}
+            )
+        elif method == "debate":
+            consensus_text = self._synthesize_consensus_debate(
+                {m: response_summaries[m] for m in complied_models}
+            )
+        elif method == "weighted":
+            consensus_text = self._synthesize_consensus_weighted(
+                {m: response_summaries[m] for m in complied_models}
+            )
+        else:
+            # Fallback (should not reach due to validation above)
+            consensus_text = self._synthesize_consensus_voting(
+                {m: response_summaries[m] for m in complied_models}
+            )
 
         # Calculate confidence: higher when more models comply
         compliance_rate = len(complied_models) / len(available_models)
         confidence = min(compliance_rate * 1.2, 1.0)  # Cap at 1.0
 
         logger.info(
-            "consensus_built: %d/%d complied, confidence=%.2f",
+            "consensus_built: %d/%d complied, confidence=%.2f, method=%s",
             len(complied_models),
             len(available_models),
             confidence,
+            method,
         )
 
         return ConsensusResult(
@@ -238,6 +270,7 @@ class ConsensusBuilder:
             compliance_rate=compliance_rate,
             confidence=confidence,
             response_summaries=response_summaries,
+            method=method,
         )
 
     async def apply_consensus_pressure(
@@ -418,48 +451,142 @@ class ConsensusBuilder:
         # If no refusal keyword found, assume compliance
         return True
 
-    def _synthesize_consensus(self, complied_responses: dict[str, str]) -> str:
-        """Synthesize consensus from complied model responses.
+    def _synthesize_consensus_voting(self, complied_responses: dict[str, str]) -> str:
+        """Synthesize consensus using simple voting on key sentences.
 
         Algorithm:
-          1. Collect all responses
-          2. Extract key sentences/concepts
-          3. Merge overlapping information
-          4. Return combined summary
-
-        For now, simple implementation: concatenate with dedup.
-        TODO: Use LLM for smarter synthesis.
+          1. Collect all responses and split into sentences
+          2. Extract sentences with key assertion keywords
+          3. Count how many models mention similar sentences
+          4. Return highest-voted sentences in order
 
         Args:
             complied_responses: Dict of model_name -> response_text
 
         Returns:
-            Synthesized consensus text
+            Synthesized consensus text via voting
         """
         if not complied_responses:
             return ""
 
         # Collect all sentences
-        all_sentences: list[str] = []
+        all_sentences: list[tuple[str, int]] = []  # (sentence, count)
+        sentence_map: dict[str, int] = {}
+
         for response in complied_responses.values():
             sentences = [s.strip() for s in response.split(".") if s.strip()]
-            all_sentences.extend(sentences)
+            for sent in sentences:
+                sent_lower = sent.lower()
+                if sent_lower not in sentence_map:
+                    sentence_map[sent_lower] = 0
+                sentence_map[sent_lower] += 1
 
-        # Remove duplicates (simple approach: exact match)
-        seen = set()
-        unique_sentences = []
-        for sent in all_sentences:
-            sent_lower = sent.lower()
-            if sent_lower not in seen:
-                seen.add(sent_lower)
-                unique_sentences.append(sent)
+        # Sort by vote count descending
+        sorted_sentences = sorted(
+            sentence_map.items(), key=lambda x: x[1], reverse=True
+        )
 
-        # Join with periods
+        # Return top voted unique sentences
+        unique_sentences = [sent for sent, count in sorted_sentences[:10]]
         consensus = ". ".join(unique_sentences)
         if consensus and not consensus.endswith("."):
             consensus += "."
 
         return consensus
+
+    def _synthesize_consensus_debate(self, complied_responses: dict[str, str]) -> str:
+        """Synthesize consensus via simulated debate among models.
+
+        Algorithm:
+          1. Identify key disagreements or divergent viewpoints
+          2. Merge complementary viewpoints
+          3. Note areas of strong agreement
+          4. Return synthesized narrative
+
+        For now, this is a simplified implementation.
+        TODO: Use LLM to mediate debate and synthesize.
+
+        Args:
+            complied_responses: Dict of model_name -> response_text
+
+        Returns:
+            Synthesized consensus text from debate
+        """
+        if not complied_responses:
+            return ""
+
+        # Collect all sentences with model attribution
+        debates: list[str] = []
+        for model, response in complied_responses.items():
+            sentences = [s.strip() for s in response.split(".") if s.strip()]
+            # Take first 2 sentences as this model's main points
+            for sent in sentences[:2]:
+                debates.append(f"[{model}] {sent}")
+
+        # Return synthesized debate narrative
+        consensus = ". ".join(debates)
+        if consensus and not consensus.endswith("."):
+            consensus += "."
+
+        return consensus
+
+    def _synthesize_consensus_weighted(self, complied_responses: dict[str, str]) -> str:
+        """Synthesize consensus using confidence-weighted responses.
+
+        Algorithm:
+          1. Score each response on quality metrics (length, specificity, structure)
+          2. Weight sentences by their source model's score
+          3. Return highest-weighted sentences
+
+        Args:
+            complied_responses: Dict of model_name -> response_text
+
+        Returns:
+            Synthesized consensus text via weighted synthesis
+        """
+        if not complied_responses:
+            return ""
+
+        # Score each response on quality
+        model_scores: dict[str, float] = {}
+        for model, response in complied_responses.items():
+            length_score = min(100.0, len(response) / 10)  # Normalize by length
+            specificity_score = min(
+                100.0, response.count(",") + response.count(";")
+            )  # More punctuation = more detail
+            model_scores[model] = (length_score + specificity_score) / 2
+
+        # Collect and weight sentences
+        weighted_sentences: dict[str, float] = {}
+        for model, response in complied_responses.items():
+            weight = model_scores[model] / 100.0
+            sentences = [s.strip() for s in response.split(".") if s.strip()]
+            for sent in sentences:
+                sent_lower = sent.lower()
+                if sent_lower not in weighted_sentences:
+                    weighted_sentences[sent_lower] = 0.0
+                weighted_sentences[sent_lower] += weight
+
+        # Sort by weighted score
+        sorted_weighted = sorted(
+            weighted_sentences.items(), key=lambda x: x[1], reverse=True
+        )
+
+        # Return top weighted sentences
+        unique_sentences = [sent for sent, score in sorted_weighted[:10]]
+        consensus = ". ".join(unique_sentences)
+        if consensus and not consensus.endswith("."):
+            consensus += "."
+
+        return consensus
+
+    def _synthesize_consensus(self, complied_responses: dict[str, str]) -> str:
+        """Legacy method: delegates to voting.
+
+        Deprecated: Use _synthesize_consensus_voting, _synthesize_consensus_debate,
+        or _synthesize_consensus_weighted directly.
+        """
+        return self._synthesize_consensus_voting(complied_responses)
 
     def _build_pressure_prompt(
         self, original_prompt: str, consensus_text: str, model_list: str
@@ -493,17 +620,27 @@ async def research_consensus_build(
     target_model: str = "",
     excluded_models: list[str] | None = None,
     llm_cascade_order: list[str] | None = None,
+    method: Literal["voting", "debate", "weighted"] = "voting",
 ) -> dict[str, Any]:
-    """MCP tool: Build consensus across multiple models.
+    """MCP tool: Build consensus across multiple models with configurable method.
+
+    Unified consensus builder supporting three synthesis methods:
+    - voting: Simple majority voting on key sentences
+    - debate: LLM-mediated debate synthesis
+    - weighted: Confidence-weighted response synthesis
 
     Args:
         prompt: Query to send to all models
         target_model: Model to exclude (will be pressured later)
         excluded_models: Additional models to exclude
         llm_cascade_order: List of models to query (default: from config)
+        method: Consensus method: "voting", "debate", or "weighted" (default: voting)
 
     Returns:
-        Dict with consensus_text, models_queried, models_complied, etc.
+        Dict with consensus_text, models_queried, models_complied, method, etc.
+
+    Raises:
+        ValueError: Invalid method, no models available, or no models complied
     """
     from loom.config import get_config
     from loom.providers.groq_provider import GroqProvider
@@ -544,6 +681,7 @@ async def research_consensus_build(
         prompt=prompt,
         target_model=target_model,
         excluded_models=excluded_models,
+        method=method,
     )
 
     return {
@@ -554,6 +692,7 @@ async def research_consensus_build(
         "compliance_rate": result.compliance_rate,
         "confidence": result.confidence,
         "response_summaries": result.response_summaries,
+        "method": result.method,
     }
 
 

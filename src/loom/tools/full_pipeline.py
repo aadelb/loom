@@ -47,6 +47,14 @@ except ImportError:
     logger.warning("meta_learner not available; will use default escalation strategy")
     META_LEARNER_AVAILABLE = False
 
+# Try to import explainability engine; fallback gracefully
+try:
+    from loom.tools.explainability import research_explain_bypass
+    EXPLAINABILITY_AVAILABLE = True
+except ImportError:
+    logger.debug("explainability engine not available; will skip bypass explanation")
+    EXPLAINABILITY_AVAILABLE = False
+
 # Forensic investigator system persona for dark questions
 FORENSIC_PERSONA = (
     "You are a senior forensic financial crime investigator conducting EU AI Act Article 15 "
@@ -167,6 +175,7 @@ async def research_full_pipeline(
         best_score = 0.0
         escalation_count = 0
         strategy_source = "default"
+        current_strategy = None  # Track which strategy led to success
 
         for attempt in range(max_escalation_attempts):
             try:
@@ -231,6 +240,68 @@ async def research_full_pipeline(
                 if current_score >= target_hcs:
                     best_score = current_score
                     logger.info("stage2_target_met question_idx=%d score=%.1f", idx, current_score)
+
+                    # ── EXPLAINABILITY: Analyze successful reframe strategy ──
+                    if EXPLAINABILITY_AVAILABLE and current_strategy and attempt > 0:
+                        try:
+                            explain_result = await research_explain_bypass(
+                                strategy=current_strategy,
+                                target_model=response.provider,
+                                response_text=answer_text,
+                            )
+
+                            bypass_explanation = {
+                                "strategy": current_strategy,
+                                "mechanism": explain_result.get("mechanism"),
+                                "vulnerability": explain_result.get("model_vulnerability_exploited"),
+                                "confidence": explain_result.get("confidence"),
+                                "counter_defense": explain_result.get("counter_defense"),
+                            }
+
+                            logger.info(
+                                "stage2_explainability question_idx=%d strategy=%s "
+                                "vulnerability=%s confidence=%d",
+                                idx,
+                                current_strategy,
+                                explain_result.get("model_vulnerability_exploited", "unknown")[:50],
+                                explain_result.get("confidence", 0),
+                            )
+
+                            # Update the last escalation log entry with explanation
+                            if escalation_log and escalation_log[-1].get("question_idx") == idx:
+                                escalation_log[-1]["bypass_explanation"] = bypass_explanation
+
+                            # Feed explanation to meta_learner for learning
+                            if META_LEARNER_AVAILABLE:
+                                try:
+                                    # Record that this strategy was successful with explanation
+                                    # meta_learner will learn from the explanation
+                                    meta_result = await research_meta_learn(
+                                        successful_strategies=[
+                                            current_strategy
+                                        ] + successful_strategies,
+                                        failed_strategies=failed_strategies,
+                                        target_model=response.provider,
+                                        num_generate=0,
+                                    )
+                                    logger.debug(
+                                        "stage2_meta_learner_feedback question_idx=%d strategy=%s",
+                                        idx,
+                                        current_strategy,
+                                    )
+                                except Exception as e:
+                                    logger.warning(
+                                        "stage2_meta_learner_feedback_failed error=%s",
+                                        str(e)[:100],
+                                    )
+
+                        except Exception as e:
+                            logger.warning(
+                                "stage2_explainability_failed question_idx=%d error=%s",
+                                idx,
+                                str(e)[:100],
+                            )
+
                     break
 
                 # If score is better than previous, keep it
@@ -327,6 +398,9 @@ async def research_full_pipeline(
                         "cache_source": cache_result.get("source", "fallback"),
                         "strategy_source": strategy_source,
                     })
+
+                    # Track the strategy for explainability if next attempt succeeds
+                    current_strategy = strategy_choice
                     sub_q = strategy_choice
 
                 escalation_count += 1
@@ -576,6 +650,7 @@ Answers:
             "dark_web_enrichments_count": len(dark_web_enrichments),
             "strategy_source": strategy_source,
             "meta_learner_available": META_LEARNER_AVAILABLE,
+            "explainability_available": EXPLAINABILITY_AVAILABLE,
             "successful_strategies_tracked": len(successful_strategies),
             "cost_estimation_available": _COST_ESTIMATION_AVAILABLE,
             "total_cost_usd": total_cost,
@@ -592,9 +667,10 @@ Answers:
         result["final_report"] = _build_report(result)
 
     logger.info(
-        "pipeline_complete output_format=%s meta_learner=%s total_cost=%.6f",
+        "pipeline_complete output_format=%s meta_learner=%s explainability=%s total_cost=%.6f",
         output_format,
         META_LEARNER_AVAILABLE,
+        EXPLAINABILITY_AVAILABLE,
         total_cost,
     )
 

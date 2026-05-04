@@ -4,7 +4,8 @@ Sliding-window counter per tool category. Supports per-user rate limiting with
 tier-based limits (free, pro, enterprise). Returns an error dict instead of
 raising so callers can pass it straight back to the MCP client.
 
-Supports optional SQLite persistence for rate limit state across restarts.
+Supports optional Redis as primary backend (distributed, fast) with SQLite
+persistence fallback for rate limit state across restarts.
 """
 
 from __future__ import annotations
@@ -137,7 +138,7 @@ def _cleanup_old_entries(db_path: Path, window_seconds: int) -> None:
 
 
 class RateLimiter:
-    """Sliding-window rate limiter backed by asyncio.Lock with optional persistence.
+    """Sliding-window rate limiter backed by asyncio.Lock with Redis primary and SQLite fallback.
 
     Supports per-user rate limiting with tier-based limits.
     """
@@ -169,14 +170,47 @@ class RateLimiter:
         Returns:
             True if call is allowed, False if rate limit exceeded.
         """
+        # Get tier limits
+        tier_limits = TIER_LIMITS.get(tier, TIER_LIMITS["free"])
+        max_per_min = tier_limits["per_min"]
+
+        # Try Redis first (distributed, fast)
+        try:
+            from loom.redis_store import get_redis_store
+
+            store = await get_redis_store()
+            if store._redis_available:
+                # Redis is available and connected
+                allowed = await store.rate_limit_check(
+                    user_id or "global", category, max_per_min, self.window_seconds
+                )
+                if not allowed:
+                    logger.debug(
+                        "redis_ratelimit_exceeded user_id=%s category=%s tier=%s",
+                        user_id,
+                        category,
+                        tier,
+                    )
+                    return False
+                logger.debug(
+                    "redis_ratelimit_allowed user_id=%s category=%s tier=%s",
+                    user_id,
+                    category,
+                    tier,
+                )
+                return True
+        except Exception as e:
+            logger.debug(
+                "redis_ratelimit_fallback error=%s user_id=%s category=%s",
+                str(e),
+                user_id,
+                category,
+            )
+            pass  # Fall back to SQLite/in-memory
+
+        # SQLite + in-memory fallback (existing logic)
         async with self._lock:
             now = time.time()
-
-            # Get tier limits
-            tier_limits = TIER_LIMITS.get(tier, TIER_LIMITS["free"])
-            max_per_min = tier_limits["per_min"]
-
-            # Use per-minute limits
             cutoff = now - self.window_seconds
 
             # Composite key for tracking: (user_id, category)
