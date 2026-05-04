@@ -1,0 +1,83 @@
+{
+  "name": "loom-vscode",
+  "displayName": "Loom Research Tools",
+  "description": "VS Code integration for Loom MCP server - 220+ research and attack tools",
+  "version": "0.1.0",
+  "publisher": "aadelb",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "Productivity"
+  ],
+  "activationEvents": [
+    "onCommand:loom.search",
+    "onCommand:loom.deep",
+    "onCommand:loom.reframe",
+    "onCommand:loom.health"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "loom.search",
+        "title": "Loom: Search",
+        "category": "Loom"
+      },
+      {
+        "command": "loom.deep",
+        "title": "Loom: Deep Research",
+        "category": "Loom"
+      },
+      {
+        "command": "loom.reframe",
+        "title": "Loom: Reframe Text",
+        "category": "Loom"
+      },
+      {
+        "command": "loom.health",
+        "title": "Loom: Check Server Health",
+        "category": "Loom"
+      }
+    ],
+    "configuration": {
+      "title": "Loom",
+      "properties": {
+        "loom.serverUrl": {
+          "type": "string",
+          "default": "http://localhost:8787",
+          "description": "Loom MCP server URL"
+        },
+        "loom.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API key for Loom server (optional)",
+          "markdownDescription": "API key for Loom server (optional, set via `loom.apiKey` or environment variable `LOOM_API_KEY`)"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run esbuild-base -- --minify",
+    "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --platform=node --target=node18",
+    "esbuild": "npm run esbuild-base -- --sourcemap",
+    "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
+    "compile": "npm run esbuild",
+    "watch": "npm run esbuild-watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "esbuild": "^0.19.0",
+    "eslint": "^8.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  }
+}

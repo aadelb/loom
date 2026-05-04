@@ -1,0 +1,16 @@
+.git
+.gitignore
+.vscode
+.vscode-test
+dist
+**/*.ts
+!dist/extension.js
+node_modules
+npm-debug.log
+.DS_Store
+.eslintignore
+.eslintrc.json
+jest.config.js
+*.test.ts
+src/**
+tsconfig.json

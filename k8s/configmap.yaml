@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: loom-config
+  namespace: loom
+  labels:
+    app: loom-mcp
+    component: config
+data:
+  LOOM_HOST: "0.0.0.0"
+  LOOM_PORT: "8787"
+  LOG_LEVEL: "INFO"
+  SPIDER_CONCURRENCY: "10"
+  EXTERNAL_TIMEOUT_SECS: "30"
+  MAX_CHARS_HARD_CAP: "200000"
+  MAX_SPIDER_URLS: "100"
+  CACHE_TTL_DAYS: "30"
+  SEMANTIC_CACHE_THRESHOLD: "0.95"
+  SEMANTIC_CACHE_CROSS_MODEL: "true"
+  DEFAULT_SEARCH_PROVIDER: "exa"
+  DEFAULT_ACCEPT_LANGUAGE: "en-US,en;q=0.9,ar;q=0.8"
+  LLM_DEFAULT_CHAT_MODEL: "meta/llama-4-maverick-17b-128e-instruct"
+  LLM_DEFAULT_EMBED_MODEL: "nvidia/nv-embedqa-e5-v5"
+  LLM_DEFAULT_TRANSLATE_MODEL: "moonshotai/kimi-k2-instruct"
+  LLM_MAX_PARALLEL: "12"
+  LLM_DAILY_COST_CAP_USD: "10.0"
+  LLM_EXTRACT_CONCURRENCY: "3"
+  LLM_CASCADE_ORDER: "groq,nvidia,deepseek,gemini,moonshot,openai,anthropic,vllm"
+  RESEARCH_SEARCH_PROVIDERS: "exa,brave"
+  RESEARCH_EXPAND_QUERIES: "true"
+  RESEARCH_EXTRACT: "true"
+  RESEARCH_SYNTHESIZE: "true"
+  # Redis configuration
+  REDIS_HOST: "loom-redis"
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"
