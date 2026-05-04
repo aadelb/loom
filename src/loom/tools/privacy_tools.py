@@ -3,12 +3,9 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import logging
-import os
 import pathlib
-import re
-from typing import Any, Literal
+from typing import Any
 
 logger = logging.getLogger("loom.tools.privacy_tools")
 

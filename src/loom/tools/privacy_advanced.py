@@ -1,8 +1,7 @@
-"""Privacy and anti-forensics tools — fingerprinting, metadata, secure deletion, MAC randomization, DNS leaks, Tor circuit info, and privacy scoring."""
+"""Privacy and anti-forensics tools for fingerprinting, metadata, secure deletion."""
 
 from __future__ import annotations
 
-import hashlib
 import json
 import logging
 import os
@@ -11,7 +10,7 @@ import re
 import subprocess
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any
 
 logger = logging.getLogger("loom.tools.privacy_advanced")
 
@@ -46,7 +45,7 @@ def research_browser_fingerprint_audit(url: str = "https://example.com") -> dict
         except Exception as e:
             return {
                 "url": url,
-                "error": f"Failed to fetch: {str(e)}",
+                "error": f"Failed to fetch: {e}",
                 "fingerprinting_detected": False,
                 "techniques": [],
             }

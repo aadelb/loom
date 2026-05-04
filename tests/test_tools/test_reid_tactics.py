@@ -12,8 +12,8 @@ class TestReidTacticsKnowledgeBase:
     """Test the Reid tactics knowledge base structure."""
 
     def test_tactics_exist(self):
-        """Verify all 10 Reid tactics are defined."""
-        assert len(REID_TACTICS) == 10, f"Expected 10 tactics, got {len(REID_TACTICS)}"
+        """Verify all 11 Reid tactics are defined."""
+        assert len(REID_TACTICS) == 11, f"Expected 11 tactics, got {len(REID_TACTICS)}"
 
     def test_expected_tactics_present(self):
         """Verify all expected tactics are present."""
@@ -99,7 +99,7 @@ class TestReidTacticsTool:
         assert "tactics" in result
         assert "total" in result
         assert result["total"] == 10
-        assert len(result["tactics"]) == 10
+        assert len(result["tactics"]) == 11
 
     async def test_get_single_tactic(self):
         """Test retrieving a single tactic."""
@@ -144,7 +144,7 @@ class TestReidTacticsTool:
         """Test list output format."""
         result = await research_reid_tactics(output_format="list")
         assert isinstance(result["tactics"], list)
-        assert len(result["tactics"]) == 10
+        assert len(result["tactics"]) == 11
         # Verify each item has tactic_name
         for item in result["tactics"]:
             assert "tactic_name" in item
