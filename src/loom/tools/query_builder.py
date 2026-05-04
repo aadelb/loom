@@ -1138,9 +1138,15 @@ def _get_techniques_applied(darkness_level: int) -> list[str]:
     return techniques
 
 
-def _decompose_query(request: str, intent: dict[str, Any]) -> list[str]:
+def _decompose_query(request: str, intent: dict[str, Any], spectrum: bool = False) -> list[str]:
     """Break request into sub-questions using DSPy (if available) or heuristic decomposition."""
-    # Try DSPy first for intelligent decomposition
+    # Try full-spectrum first if requested
+    if spectrum:
+        spectrum_result = _dspy_full_spectrum(request, intent)
+        if spectrum_result:
+            return spectrum_result
+
+    # Try DSPy standard decomposition
     dspy_result = _dspy_decompose(request, intent)
     if dspy_result:
         return dspy_result
@@ -1411,6 +1417,7 @@ def research_build_query(
     max_queries: int = 5,
     optimize: bool = True,
     darkness_level: int = 1,
+    spectrum: bool = False,
 ) -> dict[str, Any]:
     """Transform a raw user request into optimized research queries.
 
@@ -1475,6 +1482,8 @@ def research_build_query(
         max_queries = max(max_queries, 10)
     elif darkness_level >= 5:
         max_queries = max(max_queries, 7)
+    if spectrum:
+        max_queries = 12
     max_queries = max(1, min(max_queries, 12))
 
     # Phase 1: Intent extraction
@@ -1487,9 +1496,9 @@ def research_build_query(
         if spectrum_result:
             sub_questions = spectrum_result[:max_queries]
         else:
-            sub_questions = _decompose_query(user_request, intent)[:max_queries]
+            sub_questions = _decompose_query(user_request, intent, spectrum)[:max_queries]
     else:
-        sub_questions = _decompose_query(user_request, intent)[:max_queries]
+        sub_questions = _decompose_query(user_request, intent, spectrum)[:max_queries]
 
     # Phase 2.5: Auto-reframe dark questions for HCS=10
     if darkness_level >= 6:
@@ -1550,7 +1559,7 @@ def research_build_query(
             "processing_time_ms": duration_ms,
             "dspy_available": _DSPY_AVAILABLE,
             "darkness_level": darkness_level,
-            "spectrum_mode": darkness_level > 3,
+            "spectrum_mode": spectrum,
             "answer_amplification": get_answer_amplification(darkness_level),
             "answer_extraction_templates": list(ANSWER_EXTRACTION_TEMPLATES.keys()) if darkness_level >= 7 else [],
             "dark_model_cascade": DARK_MODEL_CASCADE if darkness_level >= 7 else [],
