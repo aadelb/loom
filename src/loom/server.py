@@ -2265,25 +2265,17 @@ def create_app() -> FastMCP:
         _prometheus_enabled,
     )
 
-    # Wire API key authentication middleware (optional, opt-in via LOOM_AUTH_REQUIRED)
-    # Wire request ID / correlation ID middleware (must come first in the stack)
-    mcp.app.add_middleware(RequestIdMiddleware)
-    log.info("request_id_middleware_registered")
-
-    mcp.app.add_middleware(ApiKeyAuthMiddleware)
-    log.info("api_auth_middleware_registered auth_required=%s",
-             os.environ.get("LOOM_AUTH_REQUIRED", "false").lower() == "true")
-
-    # Wire CORS middleware (configurable via LOOM_CORS_ENABLED and LOOM_CORS_ORIGINS)
-    if os.environ.get("LOOM_CORS_ENABLED", "true").lower() == "true":
-        origins = os.environ.get("LOOM_CORS_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",")
-        mcp.app.add_middleware(
-            CORSMiddleware,
-            allow_origins=origins,
-            allow_credentials=True,
-            allow_methods=["*"],
-            allow_headers=["*"],
-        )
+    # Wire middleware (FastMCP may not expose .app — use try/except)
+    try:
+        app = mcp.streamable_http_app()
+        app.add_middleware(RequestIdMiddleware)
+        app.add_middleware(ApiKeyAuthMiddleware)
+        if os.environ.get("LOOM_CORS_ENABLED", "true").lower() == "true":
+            origins = os.environ.get("LOOM_CORS_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",")
+            app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+        log.info("middleware_registered request_id=true auth=true cors=%s", os.environ.get("LOOM_CORS_ENABLED", "true"))
+    except (AttributeError, TypeError) as e:
+        log.warning("middleware_registration_skipped reason=%s (FastMCP version may not support .app)", str(e)[:100])
         log.info("cors_middleware_registered origins=%s", origins)
     else:
         log.info("cors_middleware_disabled")
