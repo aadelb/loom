@@ -7499,3 +7499,180 @@ class HcsBatchParams(BaseModel):
             if not pair["response"] or not pair["response"].strip():
                 raise ValueError(f"pair {idx} response must be non-empty")
         return v
+
+class WebhookRegisterParams(BaseModel):
+    """Parameters for research_webhook_register tool."""
+
+    url: str = Field(description="Webhook URL to POST to (must start with http:// or https://)")
+    events: list[str] = Field(
+        description="List of events to subscribe to",
+        min_items=1,
+        max_items=5,
+    )
+    secret: str | None = Field(
+        default=None,
+        description="HMAC secret for signature verification (generated if not provided)"
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def validate_url_field(cls, v: str) -> str:
+        if not isinstance(v, str):
+            raise ValueError("url must be a string")
+        if not v.startswith(("http://", "https://")):
+            raise ValueError("url must start with http:// or https://")
+        if len(v) > 2048:
+            raise ValueError("url max 2048 characters")
+        return v
+
+    @field_validator("events")
+    @classmethod
+    def validate_events(cls, v: list[str]) -> list[str]:
+        from loom.webhooks import SUPPORTED_EVENTS
+        
+        invalid = set(v) - SUPPORTED_EVENTS
+        if invalid:
+            raise ValueError(
+                f"invalid events: {invalid}. "
+                f"supported: {sorted(SUPPORTED_EVENTS)}"
+            )
+        return v
+
+    @field_validator("secret")
+    @classmethod
+    def validate_secret(cls, v: str | None) -> str | None:
+        if v is not None:
+            if not isinstance(v, str) or len(v) < 8:
+                raise ValueError("secret must be at least 8 characters")
+            if len(v) > 256:
+                raise ValueError("secret max 256 characters")
+        return v
+
+
+class WebhookUnregisterParams(BaseModel):
+    """Parameters for research_webhook_unregister tool."""
+
+    webhook_id: str = Field(description="ID of webhook to unregister")
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("webhook_id")
+    @classmethod
+    def validate_webhook_id(cls, v: str) -> str:
+        if not v or len(v) < 1:
+            raise ValueError("webhook_id must not be empty")
+        if len(v) > 64:
+            raise ValueError("webhook_id max 64 characters")
+        return v
+
+
+class WebhookTestParams(BaseModel):
+    """Parameters for research_webhook_test tool."""
+
+    webhook_id: str = Field(description="ID of webhook to test")
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("webhook_id")
+    @classmethod
+    def validate_webhook_id(cls, v: str) -> str:
+        if not v or len(v) < 1:
+            raise ValueError("webhook_id must not be empty")
+        if len(v) > 64:
+            raise ValueError("webhook_id max 64 characters")
+        return v
+
+
+class ComposeParams(BaseModel):
+    """Parameters for research_compose tool."""
+
+    pipeline: str = Field(
+        ...,
+        min_length=1,
+        max_length=2000,
+        description="Pipeline DSL string (e.g., 'search($) | fetch($.urls[0]) | markdown($)')"
+    )
+    initial_input: str = Field(
+        default="",
+        max_length=10000,
+        description="Initial input value for first step"
+    )
+    continue_on_error: bool = Field(
+        default=False,
+        description="Continue execution if a step fails"
+    )
+    timeout_ms: int | None = Field(
+        default=None,
+        description="Optional timeout in milliseconds"
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("pipeline")
+    @classmethod
+    def validate_pipeline(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("pipeline must be non-empty")
+        # Basic syntax check: should contain tool names and operators
+        if not any(c in v for c in ("(", "|", "&")):
+            # Could be an alias
+            valid_aliases = {
+                "deep_research",
+                "osint_sweep",
+                "code_search",
+                "breach_scan",
+            }
+            if v.strip() not in valid_aliases:
+                raise ValueError(
+                    f"pipeline must contain tool calls like 'tool(arg)' "
+                    f"or be a valid alias: {', '.join(valid_aliases)}"
+                )
+        return v
+
+    @field_validator("initial_input")
+    @classmethod
+    def validate_initial_input(cls, v: str) -> str:
+        return v
+
+    @field_validator("timeout_ms")
+    @classmethod
+    def validate_timeout_ms(cls, v: int | None) -> int | None:
+        if v is not None and (v < 100 or v > 3600000):
+            raise ValueError("timeout_ms must be 100-3600000 (100ms-1hr)")
+        return v
+
+
+class ComposeValidateParams(BaseModel):
+    """Parameters for research_compose_validate tool."""
+
+    pipeline: str = Field(
+        ...,
+        min_length=1,
+        max_length=2000,
+        description="Pipeline DSL string to validate"
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("pipeline")
+    @classmethod
+    def validate_pipeline(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("pipeline must be non-empty")
+        return v
+
+class AnalyticsDashboardParams(BaseModel):
+    """Parameters for research_analytics_dashboard tool."""
+
+    include_unused: bool = Field(
+        default=False,
+        description="Include count of tools that have never been called"
+    )
+    all_tools: list[str] | None = Field(
+        default=None,
+        description="Optional list of all available tool names for unused detection"
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
