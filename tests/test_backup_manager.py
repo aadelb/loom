@@ -566,6 +566,14 @@ class TestComputeFileHash:
 class TestSingletonPattern:
     """Test BackupManager singleton pattern."""
 
+    @pytest.fixture(autouse=True)
+    def reset_singleton(self) -> None:
+        """Reset singleton after each test."""
+        import loom.backup_manager
+        loom.backup_manager._backup_manager_instance = None
+        yield
+        loom.backup_manager._backup_manager_instance = None
+
     def test_get_backup_manager_singleton(self) -> None:
         """Test get_backup_manager returns singleton."""
         manager1 = get_backup_manager()
