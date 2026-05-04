@@ -1,0 +1,82 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: loom-redis
+  namespace: loom
+  labels:
+    app: loom-mcp
+    component: redis
+spec:
+  clusterIP: None
+  selector:
+    app: loom-mcp
+    component: redis
+  ports:
+    - port: 6379
+      targetPort: 6379
+      name: redis
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: loom-redis
+  namespace: loom
+  labels:
+    app: loom-mcp
+    component: redis
+spec:
+  serviceName: loom-redis
+  replicas: 1
+  selector:
+    matchLabels:
+      app: loom-mcp
+      component: redis
+  template:
+    metadata:
+      labels:
+        app: loom-mcp
+        component: redis
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        fsGroup: 999
+      containers:
+        - name: redis
+          image: redis:7.2-alpine
+          ports:
+            - containerPort: 6379
+              name: redis
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            exec:
+              command:
+                - redis-cli
+                - ping
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command:
+                - redis-cli
+                - ping
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+  volumeClaimTemplates:
+    - metadata:
+        name: redis-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 5Gi

@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: loom-server
+  namespace: loom
+  labels:
+    app: loom-mcp
+    component: server
+spec:
+  type: ClusterIP
+  selector:
+    app: loom-mcp
+    component: server
+  ports:
+    - name: http
+      port: 8787
+      targetPort: 8787
+      protocol: TCP
+    - name: metrics
+      port: 8789
+      targetPort: 8789
+      protocol: TCP
+  sessionAffinity: None
