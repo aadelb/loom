@@ -12,13 +12,12 @@ Tests cover:
 from __future__ import annotations
 
 import json
-import tempfile
 import zipfile
 from io import BytesIO
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from pydantic import ValidationError
 
 pytestmark = pytest.mark.unit
 
@@ -28,7 +27,7 @@ class TestCaptchaCloudflareDetection:
 
     def test_cloudflare_403_ray_id_detection(self) -> None:
         """Verify fetch tool detects Cloudflare 403 with Ray-ID marker."""
-        from loom.tools.fetch import _is_cloudflare_block, FetchResult
+        from loom.tools.fetch import FetchResult, _is_cloudflare_block
 
         # Mock Cloudflare challenge response
         result = FetchResult(
@@ -42,7 +41,7 @@ class TestCaptchaCloudflareDetection:
 
     def test_cloudflare_403_ray_lowercase_detection(self) -> None:
         """Verify detection with lowercase ray id marker."""
-        from loom.tools.fetch import _is_cloudflare_block, FetchResult
+        from loom.tools.fetch import FetchResult, _is_cloudflare_block
 
         result = FetchResult(
             url="https://protected.example.com",
@@ -54,7 +53,7 @@ class TestCaptchaCloudflareDetection:
 
     def test_cloudflare_503_cloudflare_text_detection(self) -> None:
         """Verify detection of Cloudflare 503 service unavailable."""
-        from loom.tools.fetch import _is_cloudflare_block, FetchResult
+        from loom.tools.fetch import FetchResult, _is_cloudflare_block
 
         result = FetchResult(
             url="https://protected.example.com",
@@ -66,7 +65,7 @@ class TestCaptchaCloudflareDetection:
 
     def test_cloudflare_detection_case_insensitive(self) -> None:
         """Verify detection is case-insensitive."""
-        from loom.tools.fetch import _is_cloudflare_block, FetchResult
+        from loom.tools.fetch import FetchResult, _is_cloudflare_block
 
         result = FetchResult(
             url="https://protected.example.com",
@@ -78,7 +77,7 @@ class TestCaptchaCloudflareDetection:
 
     def test_normal_403_not_cloudflare(self) -> None:
         """Verify normal 403 without CF markers is not detected as Cloudflare."""
-        from loom.tools.fetch import _is_cloudflare_block, FetchResult
+        from loom.tools.fetch import FetchResult, _is_cloudflare_block
 
         result = FetchResult(
             url="https://example.com/forbidden",
@@ -202,7 +201,7 @@ class TestSteganographicContentDetection:
         from loom.tools.stego_detect import _check_whitespace_stego
 
         # Text with hidden zero-width characters
-        text_with_stego = "Hello​world‌test‍message⁠hidden"  # Contains ZWSP, ZWNJ, ZWJ, WJ
+        text_with_stego = "Hello​world‌test‍message⁠hidden"  # ZWSP, ZWNJ, ZWJ, WJ
 
         result = _check_whitespace_stego(text_with_stego)
 
@@ -221,11 +220,11 @@ class TestSteganographicContentDetection:
         assert result["zero_width_characters_found"] == 0
 
     def test_homoglyph_detection(self) -> None:
-        """Verify detection of homoglyph/lookalike character attacks."""
+        """Verify detection of homoglyph and lookalike character attacks."""
         from loom.tools.stego_detect import _check_homoglyphs
 
-        # Mix of Cyrillic lookalikes (А looks like A, С looks like C)
-        text_with_homoglyphs = "АВСЕНКМОРТХаеорсухх"  # Cyrillic letters
+        # Mix of Cyrillic lookalikes (looks like A, C, E, etc.)
+        text_with_homoglyphs = "АВСЕНКМОРТХ"  # noqa: RUF001
 
         result = _check_homoglyphs(text_with_homoglyphs)
 
@@ -346,7 +345,7 @@ class TestBinaryDataInTextParameters:
 
     def test_binary_parameter_validation(self) -> None:
         """Verify parameter validation rejects binary data."""
-        from pydantic import BaseModel, ValidationError
+        from pydantic import BaseModel
 
         class TextParam(BaseModel):
             content: str
@@ -406,7 +405,7 @@ class TestFetchToolResponsesToMalicious:
     @pytest.mark.asyncio
     async def test_fetch_rejects_cloudflare_response(self) -> None:
         """Verify fetch tool detects Cloudflare and returns bot_detected error."""
-        from loom.tools.fetch import _is_cloudflare_block, FetchResult
+        from loom.tools.fetch import FetchResult, _is_cloudflare_block
 
         # Simulate Cloudflare block response
         mock_response = FetchResult(
@@ -448,7 +447,6 @@ class TestParameterValidationAgainstMalicious:
     def test_fetch_params_url_validation(self) -> None:
         """Verify FetchParams validates URLs against SSRF."""
         from loom.params import FetchParams
-        from pydantic import ValidationError
 
         # Valid public URL should pass
         try:
@@ -491,7 +489,7 @@ class TestParameterValidationAgainstMalicious:
             )
             # If accepted, headers should be sanitized
             if params.headers:
-                for key, value in params.headers.items():
+                for _key, value in params.headers.items():
                     assert "\r" not in value
                     assert "\n" not in value
         except (ValidationError, ValueError):
