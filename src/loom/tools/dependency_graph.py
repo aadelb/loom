@@ -31,7 +31,7 @@ def _extract_tool_imports(source_code: str) -> set[str]:
     return imports
 
 
-async def research_tool_dependencies() -> dict[str, Any]:
+async def research_dependency_graph() -> dict[str, Any]:
     """Analyze tool modules to find inter-tool dependencies.
 
     Scans src/loom/tools/*.py for imports of other tool modules,

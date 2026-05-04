@@ -332,6 +332,11 @@ with suppress(ImportError):
     record_optional_module_loaded("recommender")
 
 with suppress(ImportError):
+    from loom.tools import reframe_router as reframe_router_tools
+    _optional_tools["reframe_router"] = reframe_router_tools
+    record_optional_module_loaded("reframe_router")
+
+with suppress(ImportError):
     from loom.tools import pipeline_enhancer as pipeline_enhancer_tools
     _optional_tools["pipeline_enhancer"] = pipeline_enhancer_tools
     record_optional_module_loaded("pipeline_enhancer")

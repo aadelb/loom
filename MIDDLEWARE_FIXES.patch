@@ -1,0 +1,231 @@
+MIDDLEWARE FIXES FOR _wrap_tool() FUNCTION
+File: /Users/aadel/projects/loom/src/loom/server.py
+Date: 2026-05-04
+
+ISSUE 1: Add async error handler analytics (after line 1243)
+─────────────────────────────────────────────────────────────
+Location: Lines 1237-1258 (async error handler)
+Add these lines after line 1243 (after duration observation):
+
+            except Exception as e:
+                # Prometheus: record error
+                error_type = type(e).__name__
+                _loom_tool_calls_total.labels(tool_name=tool_name, status="error").inc()
+                _loom_tool_errors_total.labels(tool_name=tool_name, error_type=error_type).inc()
+                duration = time.time() - start_time
+                _loom_tool_duration_seconds.labels(tool_name=tool_name).observe(duration)
+
++               # Latency Tracker: record error latency
++               try:
++                   duration_ms = duration * 1000
++                   latency_tracker = get_latency_tracker()
++                   latency_tracker.record(tool_name, duration_ms)
++               except Exception as le:
++                   log.debug(f'Latency tracking error: {le}')
++
++               # Analytics: record tool call error
++               try:
++                   analytics = ToolAnalytics.get_instance()
++                   duration_ms = duration * 1000
++                   user_id = os.getenv("LOOM_USER_ID", "anonymous")
++                   analytics.record_call(tool_name, duration_ms, False, user_id)
++               except Exception as ae:
++                   log.debug(f"Analytics recording error: {ae}")
++
+                # Audit: Log tool call error
+                ...
+
+─────────────────────────────────────────────────────────────
+
+ISSUE 2: Add rate limit check to sync wrapper (after line 1273)
+─────────────────────────────────────────────────────────────
+Location: Sync wrapper, after parameter correction
+Insert after line 1273 (after log.debug for corrections):
+
+        def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
+            request_id = new_request_id()
+            start_time = time.time()
+            # Auto-correct parameters
+            corrected_kwargs, corrections = _fuzzy_correct_params(func, kwargs)
+            if corrections:
+                log.debug(f"Parameter corrections for {tool_name}: {corrections}")
+
++           # Tool-specific rate limiting (per-tool granular limits)
++           user_id_for_rate = os.getenv("LOOM_USER_ID", "default")
++           rate_limit_error = check_tool_rate_limit_sync(tool_name, user_id_for_rate)
++           if rate_limit_error:
++               log.warning("tool_rate_limit_exceeded", tool=tool_name, user_id=user_id_for_rate)
++               _loom_tool_calls_total.labels(tool_name=tool_name, status="rate_limited").inc()
++               return rate_limit_error
+
+            # ── Graceful Shutdown Check ──
+            ...
+
+NOTE: Need to check if check_tool_rate_limiter has a sync version.
+If not, may need to use threading or sync wrapper on async version.
+
+─────────────────────────────────────────────────────────────
+
+ISSUE 3: Remove duplicate token economy code in sync wrapper (DELETE lines 1319-1348)
+─────────────────────────────────────────────────────────────
+Location: Lines 1319-1348 (exact duplicate of 1288-1317)
+DELETE ENTIRE BLOCK:
+
+-           # Token Economy: check credits before execution (if enabled)
+-           user_id = os.getenv("LOOM_USER_ID", "anonymous")
+-           current_balance = int(os.getenv("LOOM_USER_BALANCE", "0"))
+-           token_economy_result = {}
+-
+-           if token_economy_enabled:
+-               balance_check = check_balance(user_id, current_balance, tool_name)
+-
+-               if not balance_check["sufficient"]:
+-                   log.warning(
+-                       "insufficient_credits",
+-                       user_id=user_id,
+-                       tool_name=tool_name,
+-                       required=balance_check["required"],
+-                       balance=balance_check["balance"],
+-                       shortfall=balance_check["shortfall"],
+-                   )
+-                   return {
+-                       "error": "insufficient_credits",
+-                       "message": f"Tool '{tool_name}' requires {balance_check['required']} credits, but you have {balance_check['balance']}. Need {balance_check['shortfall']} more credits.",
+-                       "tool": tool_name,
+-                       "required_credits": balance_check["required"],
+-                       "available_credits": balance_check["balance"],
+-                       "shortfall": balance_check["shortfall"],
+-                   }
+-
+-               token_economy_result = {
+-                   "cost": balance_check["required"],
+-                   "balance_before": current_balance,
+-               }
+
+─────────────────────────────────────────────────────────────
+
+ISSUE 4: Add analytics recording to sync success path (after line 1406)
+─────────────────────────────────────────────────────────────
+Location: Sync wrapper success path, after billing section
+Insert after line 1406 (after billing log statement):
+
+                # Billing: record usage after successful execution
+                if billing_enabled:
+                    duration_ms = duration * 1000
+                    # Estimate credits: 1 credit per second of execution
+                    credits_used = max(1, int(duration_ms / 1000))
+                    try:
+                        record_usage(customer_id, tool_name, credits_used, duration_ms)
+                        log.debug(f"Billed {credits_used} credits to {customer_id} for {tool_name}")
+                    except Exception as e:
+                        log.error(f"Billing error for {tool_name}: {e}", exc_info=False)
+
++               # Analytics: record tool call (sync wrapper)
++               try:
++                   analytics = ToolAnalytics.get_instance()
++                   duration_ms = duration * 1000
++                   user_id = os.getenv("LOOM_USER_ID", "anonymous")
++                   analytics.record_call(tool_name, duration_ms, True, user_id)
++               except Exception as e:
++                   log.debug(f"Analytics recording error (sync): {e}")
+
+                # Audit: Log tool call success (sync wrapper)
+                ...
+
+─────────────────────────────────────────────────────────────
+
+ISSUE 5: Add analytics + latency to sync error path (after line 1430)
+─────────────────────────────────────────────────────────────
+Location: Sync wrapper error handler, after Prometheus metrics
+Insert after line 1430 (after duration observation):
+
+            except Exception as e:
+                # Prometheus: record error
+                error_type = type(e).__name__
+                _loom_tool_calls_total.labels(tool_name=tool_name, status="error").inc()
+                _loom_tool_errors_total.labels(tool_name=tool_name, error_type=error_type).inc()
+                duration = time.time() - start_time
+                _loom_tool_duration_seconds.labels(tool_name=tool_name).observe(duration)
+
++               # Latency Tracker: record error latency (sync wrapper)
++               try:
++                   duration_ms = duration * 1000
++                   latency_tracker = get_latency_tracker()
++                   latency_tracker.record(tool_name, duration_ms)
++               except Exception as le:
++                   log.debug(f'Latency tracking error: {le}')
++
++               # Analytics: record tool call error (sync wrapper)
++               try:
++                   analytics = ToolAnalytics.get_instance()
++                   duration_ms = duration * 1000
++                   user_id = os.getenv("LOOM_USER_ID", "anonymous")
++                   analytics.record_call(tool_name, duration_ms, False, user_id)
++               except Exception as ae:
++                   log.debug(f"Analytics recording error (sync): {ae}")
+
+                # Audit: Log tool call error (sync wrapper)
+                ...
+
+─────────────────────────────────────────────────────────────
+
+OPTIONAL (MEDIUM PRIORITY): Add latency tracking to async timeout
+─────────────────────────────────────────────────────────────
+Location: Lines 1206-1236 (async timeout handler)
+Insert after line 1211 (after Prometheus metric observation):
+
+            except asyncio.TimeoutError:
+                # Prometheus: record timeout error
+                _loom_tool_calls_total.labels(tool_name=tool_name, status="error").inc()
+                _loom_tool_errors_total.labels(tool_name=tool_name, error_type="timeout").inc()
+                duration = time.time() - start_time
+                _loom_tool_duration_seconds.labels(tool_name=tool_name).observe(duration)
+
++               # Latency Tracker: record timeout latency
++               try:
++                   duration_ms = duration * 1000
++                   latency_tracker = get_latency_tracker()
++                   latency_tracker.record(tool_name, duration_ms)
++               except Exception as le:
++                   log.debug(f'Latency tracking error: {le}')
+
+                # Analytics: record tool call error
+                ...
+
+═════════════════════════════════════════════════════════════
+
+VERIFICATION STEPS AFTER APPLYING FIXES:
+
+1. Check all imports are present (run at top of server.py):
+   - from loom.analytics import ToolAnalytics ✓ (line 71)
+   - from loom.tool_latency import get_latency_tracker ✓ (line 82)
+   - from loom.tool_rate_limiter import check_tool_rate_limit ✓ (line 83)
+   - from loom.audit import log_invocation ✓ (line 27)
+
+2. Search for each middleware in both wrappers:
+   grep -n "analytics.record_call" src/loom/server.py
+   grep -n "latency_tracker.record" src/loom/server.py
+   grep -n "check_tool_rate_limit" src/loom/server.py
+   grep -n "log_invocation" src/loom/server.py
+   grep -n "_loom_tool_calls_total" src/loom/server.py
+   grep -n "record_usage" src/loom/server.py
+
+3. Count occurrences expected:
+   - analytics.record_call: 6 (async success, timeout, error; sync success, error) [currently 3]
+   - latency_tracker.record: 5 (async success, timeout, error; sync success, error) [currently 2]
+   - check_tool_rate_limit: 2 (async, sync) [currently 1]
+   - log_invocation: 6 (all error/success paths)
+   - _loom_tool_calls_total: 8+ (various paths)
+   - record_usage: 2 (async, sync success)
+
+4. Run syntax check:
+   python -m py_compile src/loom/server.py
+
+5. Run type check:
+   mypy src/loom/server.py --strict
+
+6. Run linter:
+   ruff check src/loom/server.py
+   ruff format src/loom/server.py
+
+═════════════════════════════════════════════════════════════

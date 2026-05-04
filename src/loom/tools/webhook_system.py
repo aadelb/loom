@@ -65,7 +65,7 @@ def _sign(payload: str, secret: str) -> str:
     ).hexdigest()
 
 
-async def research_webhook_register(
+async def research_webhook_system_register(
     url: str, events: list[str] | None = None, secret: str = ""
 ) -> dict[str, Any]:
     """Register webhook URL for task notifications."""
@@ -93,7 +93,7 @@ async def research_webhook_register(
     }
 
 
-async def research_webhook_fire(
+async def research_webhook_system_fire(
     event: str, payload: dict[str, Any]
 ) -> dict[str, Any]:
     """Fire webhook event to all registered listeners."""
@@ -153,7 +153,7 @@ async def _send_webhook(
         return False
 
 
-async def research_webhook_list() -> dict[str, Any]:
+async def research_webhook_system_list() -> dict[str, Any]:
     """List all registered webhooks."""
     await _init_db()
     async with aiosqlite.connect(_db_path()) as db:

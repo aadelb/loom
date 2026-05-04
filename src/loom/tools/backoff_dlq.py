@@ -61,7 +61,7 @@ async def research_dlq_push(
     return {"id": item_id, "tool_name": tool_name, "retry_count": retry_count, "next_retry_at": next_retry}
 
 
-async def research_dlq_list(status: str = "pending") -> dict[str, Any]:
+async def research_backoff_dlq_list(status: str = "pending") -> dict[str, Any]:
     """List items in the Dead Letter Queue."""
     await _ensure_dlq_table()
     query = "SELECT id, tool_name, error, retry_count, created, next_retry FROM dead_letters"

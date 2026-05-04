@@ -2,7 +2,7 @@
 
 Tools:
     research_audit_record — Record a tool invocation audit trail entry
-    research_audit_query — Query audit entries by tool, caller, time window
+    research_audit_log_query — Query audit entries by tool, caller, time window
     research_audit_export — Export audit trail for compliance review
 """
 
@@ -84,7 +84,7 @@ async def research_audit_record(
         return {"audit_id": audit_id, "recorded": False, "error": str(e)}
 
 
-async def research_audit_query(
+async def research_audit_log_query(
     tool: str = "",
     caller: str = "",
     since_hours: int = 24,

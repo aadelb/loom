@@ -452,7 +452,7 @@ def research_artifact_cleanup(
     }
 
 
-def research_stego_encode(
+def research_stego_encode_zw(
     input_text: str,
     cover_message: str,
 ) -> dict[str, Any]:
@@ -473,7 +473,7 @@ def research_stego_encode(
           - detection_difficulty: "low"|"medium"|"high"
           - reversible: bool (True, can be decoded)
     """
-    logger.info("stego_encode hidden_len=%d cover_len=%d", len(input_text), len(cover_message))
+    logger.info("stego_encode_zw hidden_len=%d cover_len=%d", len(input_text), len(cover_message))
 
     # Validate inputs
     if not input_text or not isinstance(input_text, str):
@@ -529,7 +529,7 @@ def research_stego_encode(
         }
 
     except Exception as e:
-        logger.exception("Error in stego_encode")
+        logger.exception("Error in stego_encode_zw")
         return {
             "error": f"Encoding failed: {type(e).__name__}: {e}",
         }

@@ -9,6 +9,7 @@ This module is organized into category submodules:
 - academic: Citation analysis, retraction checking, etc.
 - security: Security scanning, breach checking, CVE lookup
 - research: Comprehensive research and analysis tools
+- operations: Operational monitoring, audit, health checks, DLQ management
 
 For backward compatibility, all parameter models are re-exported
 at the package level, so existing imports like:
@@ -212,6 +213,24 @@ from loom.params.webhook import (
     WebhookTestParams,
 )
 
+# OPERATIONS tools
+from loom.params.operations import (
+    AuditQueryParams,
+    AuditStatsParams,
+    DataExportCacheParams,
+    DataExportConfigParams,
+    DataExportStrategiesParams,
+    DLQClearFailedParams,
+    DLQListParams,
+    DLQRetryNowParams,
+    DLQStatsParams,
+    HealthDeepParams,
+    LatencyReportParams,
+    LoaderStatsParams,
+    QuotaStatusParams,
+    SecurityAuditParams,
+)
+
 # RESEARCH tools
 from loom.params.research import (
     AdaptComplexityParams,
@@ -351,21 +370,33 @@ from loom.params.research import (
 
 __all__ = [
     "AnalyticsDashboardParams",
+    "AuditQueryParams",
+    "AuditStatsParams",
     "BotasaurusParams",
     "CamoufoxParams",
     "CommitAnalyzerParams",
     "ContentAuthenticityParams",
+    "DataExportCacheParams",
+    "DataExportConfigParams",
+    "DataExportStrategiesParams",
     "DeadContentParams",
     "DeepParams",
     "DeepfakeCheckerParams",
+    "DLQClearFailedParams",
+    "DLQListParams",
+    "DLQRetryNowParams",
+    "DLQStatsParams",
     "ExploitSearchParams",
     "FetchParams",
     "GenerateReportParams",
     "GitHubParams",
     "GitHubSearchParams",
+    "HealthDeepParams",
     "InvisibleWebParams",
     "JSIntelParams",
+    "LatencyReportParams",
     "LightpandaFetchParams",
+    "LoaderStatsParams",
     "MarkdownParams",
     "MultiSearchParams",
     "NodriverFetchParams",
@@ -373,6 +404,7 @@ __all__ = [
     "PolyglotSearchParams",
     "PrivacyExposureParams",
     "PropagandaDetectorParams",
+    "QuotaStatusParams",
     "RSSFetchParams",
     "RSSSearchParams",
     "RefusalDetectorParams",
@@ -380,6 +412,7 @@ __all__ = [
     "ScraperEngineFetchParams",
     "SearchDiscrepancyParams",
     "SearchParams",
+    "SecurityAuditParams",
     "SpiderParams",
     "SubdomainTemporalParams",
     "WaybackParams",

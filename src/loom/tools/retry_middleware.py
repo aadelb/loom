@@ -139,7 +139,7 @@ async def research_retry_execute(
     }
 
 
-async def research_retry_stats() -> dict[str, Any]:
+async def research_retry_middleware_stats() -> dict[str, Any]:
     """Return retry statistics across all tool invocations.
 
     Returns:

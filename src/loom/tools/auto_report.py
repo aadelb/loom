@@ -1,4 +1,4 @@
-"""research_generate_report — Structured intelligence report generation.
+"""research_auto_report — Structured intelligence report generation.
 
 Orchestrates a multi-stage pipeline combining search, fetch, and summarization
 into comprehensive research reports with configurable depth and formatting.
@@ -18,7 +18,7 @@ logger = logging.getLogger("loom.tools.auto_report")
 
 
 @with_retry(max_attempts=2, backoff_base=1.0)
-async def research_generate_report(
+async def research_auto_report(
     topic: str,
     depth: Literal["brief", "standard", "comprehensive"] = "standard",
     format: Literal["markdown", "json", "html"] = "markdown",
@@ -75,7 +75,7 @@ async def research_generate_report(
         num_sources = {"brief": 3, "standard": 5, "comprehensive": 10}.get(depth, 5)
     num_sources = max(1, min(num_sources, 20))
 
-    logger.info("generate_report topic=%s depth=%s num_sources=%d", topic[:50], depth, num_sources)
+    logger.info("auto_report topic=%s depth=%s num_sources=%d", topic[:50], depth, num_sources)
 
     try:
         # Stage 1: Search for sources
@@ -228,7 +228,7 @@ async def research_report_from_results(
         include_recommendations: Include recommendations section
 
     Returns:
-        Dict with same structure as research_generate_report response
+        Dict with same structure as research_auto_report response
     """
     if not results or len(results) == 0:
         return _error_response("results list cannot be empty")

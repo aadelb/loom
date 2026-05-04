@@ -89,7 +89,7 @@ def research_usb_kill_monitor(
     }
 
 
-def research_artifact_cleanup(
+def research_forensics_cleanup(
     target_paths: list[str] | None = None,
     os_type: str | None = None,
 ) -> dict[str, Any]:

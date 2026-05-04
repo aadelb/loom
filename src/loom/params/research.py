@@ -111,6 +111,7 @@ __all__ = [
     "QueryBuilderParams",
     "RAGAttackParams",
     "RecommendNextParams",
+    "ReframeRouterParams",
     "RunExperimentParams",
     "SafetyCircuitMapParams",
     "SaveNoteParams",
@@ -4111,3 +4112,38 @@ class AIRiskClassifyParams(BaseModel):
         if not v or len(v) > 50000:
             raise ValueError("system_description must be 1-50000 characters")
         return v
+
+
+class ReframeRouterParams(BaseModel):
+    """Parameters for research_reframe_or_integrate tool."""
+
+    query: str = Field(
+        ...,
+        description="The research query to classify"
+    )
+    context: str = Field(
+        default="",
+        description="Optional additional context for better classification"
+    )
+
+    model_config = {"extra": "ignore", "strict": True}
+
+    @field_validator("query", mode="before")
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        """Validate query is non-empty string."""
+        if not isinstance(v, str) or not v.strip():
+            raise ValueError("query must be a non-empty string")
+        if len(v) > 10000:
+            raise ValueError("query max 10000 characters")
+        return v.strip()
+
+    @field_validator("context", mode="before")
+    @classmethod
+    def validate_context(cls, v: str) -> str:
+        """Validate context is a string."""
+        if not isinstance(v, str):
+            return ""
+        if len(v) > 10000:
+            raise ValueError("context max 10000 characters")
+        return v.strip()
