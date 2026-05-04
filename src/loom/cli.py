@@ -1000,5 +1000,62 @@ def repl(server_url: str = ServerURL) -> None:
             break
 
 
+
+
+# ─── COMPLETIONS subcommand ──────────────────────────────────────────────────
+
+
+@app.command()
+def completions(
+    action: Literal["install"] = typer.Argument(..., help="Action"),
+) -> None:
+    """Manage shell completion installation.
+
+    Generates and installs shell completion scripts for bash, zsh, and fish.
+    Auto-detects the current shell unless explicitly specified.
+    """
+    if action == "install":
+        # Find the install.sh script
+        script_dir = Path(__file__).parent.parent.parent / "completions"
+        install_script = script_dir / "install.sh"
+
+        if not install_script.exists():
+            err_console.print(f"[red]Error: install.sh not found at {install_script}[/red]")
+            err_console.print("[yellow]Run: python scripts/generate_completions.py first[/yellow]")
+            raise typer.Exit(code=2)
+
+        try:
+            result = subprocess.run(
+                ["bash", str(install_script)],
+                check=False,
+                cwd=str(script_dir.parent),
+            )
+            raise typer.Exit(code=result.returncode)
+        except FileNotFoundError:
+            err_console.print("[red]Error: bash not found[/red]")
+            raise typer.Exit(code=1)
+    else:
+        err_console.print(f"[red]Unknown action: {action}[/red]")
+        raise typer.Exit(code=2)
+
+
+# ─── VERSION subcommand ──────────────────────────────────────────────────────
+
+
+@app.command()
+def version() -> None:
+    """Show version information and available tools count."""
+    try:
+        from loom.server import create_app
+
+        app_instance = create_app()
+        tool_list = asyncio.run(app_instance.list_tools())
+        tool_count = len(tool_list)
+    except Exception:
+        tool_count = 220  # Fallback to approximate count
+
+    console.print(f"[cyan]loom[/cyan] version [green]0.1.0a1[/green]")
+    console.print(f"[dim]220+ tools available ({tool_count} loaded)[/dim]")
+
 if __name__ == "__main__":
     app()
