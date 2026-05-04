@@ -254,7 +254,3 @@ async def test_research_reframe_or_integrate_response_format() -> None:
     assert isinstance(result["suggested_tools"], list)
     assert isinstance(result["suggested_strategies"], list)
     assert isinstance(result["reasoning"], str)
-
-
-@pytest.mark.asyncio
-@pytest.mark.asyncio
