@@ -287,8 +287,10 @@ async def research_deep(
     include_misinfo_check: bool = False,
     max_cost_usd: float | None = None,
     allow_escalation: bool = True,
+    provider_tier: str = "auto",
+    max_urls: int = 10,
 ) -> dict[str, Any]:
-    """Full-pipeline deep research.
+    """Full-pipeline deep research with dynamic provider selection.
 
     Supports bidirectional escalation:
     - Checks shared cache to avoid duplicate work
@@ -311,11 +313,15 @@ async def research_deep(
         include_github: enable GitHub enrichment
         allow_escalation: allow escalation to full_pipeline (default True)
         max_cost_usd: LLM cost cap
+        provider_tier: "free_only" (Groq, NIM, DDG, Wikipedia, ArXiv, HN, Reddit),
+                       "paid_ok" (full cascade including OpenAI, Anthropic),
+                       "auto" (free first, escalate to paid if needed)
+        max_urls: max URLs to process (1-100, default 10)
 
     Returns:
         Dict with query, search_variations, providers_used, pages_searched,
         pages_fetched, top_pages, synthesis, github_repos, total_cost_usd,
-        elapsed_ms, and fact_checks.
+        elapsed_ms, fact_checks, provider_tier, and cost_estimate_usd.
     """
     from loom.config import get_config
     from loom.tools.search import research_search
@@ -325,6 +331,9 @@ async def research_deep(
     total_cost = 0.0
     estimated_cost = 0.0
     warnings: list[dict[str, str]] = []
+
+    # Validate max_urls
+    max_urls = max(1, min(max_urls, 100))
 
     if max_cost_usd is None:
         max_cost_usd = float(config.get("RESEARCH_MAX_COST_USD", 0.50))
@@ -366,6 +375,15 @@ async def research_deep(
     if "ddgs" not in search_providers:
         search_providers.append("ddgs")
 
+    # Apply provider_tier filtering to search_providers
+    if provider_tier == "free_only":
+        from loom.tools.search import _FREE_PROVIDERS
+        search_providers = [p for p in search_providers if p in _FREE_PROVIDERS]
+        if not search_providers:
+            # Fallback to at least ddgs
+            search_providers = ["ddgs"]
+        logger.info("deep_provider_tier=free_only filtered_providers=%s", search_providers)
+
     loop = asyncio.get_running_loop()
 
     # ── STAGE 1: Query Expansion ─────────────────────────────────────────
@@ -398,6 +416,7 @@ async def research_deep(
                 end_date=end_date,
                 language=language,
                 provider_config=provider_config,
+                free_only=(provider_tier == "free_only"),
             ),
         )
 
@@ -415,6 +434,8 @@ async def research_deep(
 
     all_search_results: list[dict[str, Any]] = []
     providers_used: list[str] = []
+    total_search_cost = 0.0
+
     for resp in search_responses:
         if isinstance(resp, dict):
             pname = resp.get("provider", "unknown")
@@ -423,10 +444,13 @@ async def research_deep(
             else:
                 if pname not in providers_used:
                     providers_used.append(pname)
+                # Accumulate cost estimates from search
+                total_search_cost += resp.get("cost_estimate_usd", 0.0)
             all_search_results.extend(resp.get("results", []))
 
+    total_cost += total_search_cost
     pages_searched = len(all_search_results)
-    merged_hits = _merge_search_results(all_search_results, max_urls=depth * 5)
+    merged_hits = _merge_search_results(all_search_results, max_urls=max_urls)
 
     # ── ESCALATION: Complex + thin results → delegate to full_pipeline ──
     is_complex = _is_complex_query(query)
@@ -467,6 +491,7 @@ async def research_deep(
                 "total_cost_usd": total_cost + fp_result.get("estimated_cost_usd", 0.0),
                 "elapsed_ms": int((time.time() - start_time) * 1000),
                 "escalation_source": "full_pipeline",
+                "provider_tier": provider_tier,
             }
 
             if _SHARED_CACHE_AVAILABLE:
@@ -493,6 +518,7 @@ async def research_deep(
             "total_cost_usd": total_cost,
             "elapsed_ms": int((time.time() - start_time) * 1000),
             "error": "no search results",
+            "provider_tier": provider_tier,
         }
 
     # ── STAGE 3: Parallel Fetch + Markdown ───────────────────────────────
@@ -890,6 +916,8 @@ async def research_deep(
         "estimated_cost_usd": estimated_cost,
         "total_cost_usd": total_cost,
         "elapsed_ms": int((time.time() - start_time) * 1000),
+        "provider_tier": provider_tier,
+        "cost_estimate_usd": estimated_cost + total_cost,
     }
 
     try:
