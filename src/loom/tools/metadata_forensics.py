@@ -126,6 +126,7 @@ def _extract_image_urls(html: str, base_url: str) -> list[str]:
 
 
 def _extract_exif(image_bytes: bytes) -> dict[str, Any]:
+    """Extract EXIF data from image bytes (blocking I/O)."""
     try:
         import io
 
@@ -203,7 +204,8 @@ async def research_metadata_forensics(
                     image_urls, image_data, strict=False
                 ):
                     if isinstance(data, bytes) and len(data) > 100:
-                        exif = _extract_exif(data)
+                        # Run blocking EXIF extraction in executor
+                        exif = await asyncio.to_thread(_extract_exif, data)
                         if exif:
                             image_exif.append({"url": img_url, "exif": exif})
 

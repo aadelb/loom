@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import warnings
 from typing import Any
 
 from mcp.types import TextContent
@@ -124,19 +125,19 @@ async def research_camoufox(
     return output
 
 
-# DEPRECATED: Use research_fetch(backend="dynamic") or research_cloak_fetch. This function wraps research_fetch(mode="dynamic").
 async def research_botasaurus(
     url: str,
     session: str | None = None,
     screenshot: bool = False,
     timeout: int | None = None,  # noqa: ASYNC109
 ) -> dict[str, Any]:
-    """Fetch a URL using Botasaurus stealth browser (second stealth escalation).
+    """Fetch a URL using Botasaurus stealth browser.
 
-    Thin wrapper over ``research_fetch(url, mode="dynamic")`` which routes
-    through Botasaurus' ``@browser`` decorator. Exposed as a distinct MCP tool
-    so callers can explicitly request the Chrome-based stealth path when
-    Camoufox (Firefox) is blocked by the target.
+    DEPRECATED: Use research_fetch(backend='botasaurus') instead.
+
+    This is a thin wrapper over research_fetch(backend='botasaurus') which
+    routes through Botasaurus' @browser decorator. The unified research_fetch
+    interface is preferred for consistency.
 
     Args:
         url: URL to fetch
@@ -147,6 +148,13 @@ async def research_botasaurus(
     Returns:
         Dict with keys: url, title, text, html_len, fetched_at, tool, error (if any)
     """
+    warnings.warn(
+        "research_botasaurus is deprecated; use research_fetch(url, backend='botasaurus') instead",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    logger.warning("botasaurus_deprecated: use research_fetch(backend='botasaurus')")
+
     from loom.tools.fetch import research_fetch
 
     logger.info("botasaurus_start url=%s", url)
@@ -155,6 +163,7 @@ async def research_botasaurus(
         mode="dynamic",
         return_format="screenshot" if screenshot else "text",
         timeout=timeout,
+        backend="botasaurus",
     )
     result.setdefault("tool", "botasaurus")
     return result

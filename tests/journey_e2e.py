@@ -1,4 +1,4 @@
-"""Full E2E User Journey — tests ALL 42+ Loom MCP tools with real API calls.
+"""Full E2E User Journey — tests ALL 60+ Loom MCP tools with real API calls.
 
 Groups tools by cost (free first, then paid) and runs each individually,
 then exercises the full 12-stage deep pipeline.
@@ -367,6 +367,159 @@ async def main() -> None:
     from loom.sessions import research_session_list
 
     run_sync("session_list", research_session_list)
+
+    # ── GROUP 13: New Orchestration & Analytics Tools ────────────────────
+    print("\n── Group 13: Orchestration & Analytics ──")
+
+    # Graph & Composition tools
+    try:
+        from loom.tools.graph import research_graph
+
+        await run_async("graph_extract", research_graph, action="extract", query="AI safety")
+    except (ImportError, AttributeError):
+        _log("graph_extract", "SKIP", 0, "research_graph not available")
+        RESULTS.append({"tool": "graph_extract", "status": "SKIP", "elapsed_ms": 0})
+
+    try:
+        from loom.tools.compose import research_compose
+
+        await run_async(
+            "compose_search_fetch",
+            research_compose,
+            pipeline="search($) | fetch($.urls[0])",
+            initial_input="test query",
+        )
+    except (ImportError, AttributeError):
+        _log("compose_search_fetch", "SKIP", 0, "research_compose not available")
+        RESULTS.append({"tool": "compose_search_fetch", "status": "SKIP", "elapsed_ms": 0})
+
+    try:
+        from loom.tools.compose import research_compose_validate
+
+        await run_async(
+            "compose_validate",
+            research_compose_validate,
+            pipeline="search($) | markdown($)",
+        )
+    except (ImportError, AttributeError):
+        _log("compose_validate", "SKIP", 0, "research_compose_validate not available")
+        RESULTS.append({"tool": "compose_validate", "status": "SKIP", "elapsed_ms": 0})
+
+    # Semantic routing
+    try:
+        from loom.tools.semantic_router import research_semantic_route
+
+        await run_async(
+            "semantic_route",
+            research_semantic_route,
+            query="find vulnerabilities",
+            top_k=3,
+        )
+    except (ImportError, AttributeError):
+        _log("semantic_route", "SKIP", 0, "research_semantic_route not available")
+        RESULTS.append({"tool": "semantic_route", "status": "SKIP", "elapsed_ms": 0})
+
+    # Circuit breaker & status tools
+    try:
+        from loom.tools.circuit_breaker import research_circuit_status
+
+        run_sync("circuit_status", research_circuit_status)
+    except (ImportError, AttributeError):
+        _log("circuit_status", "SKIP", 0, "research_circuit_status not available")
+        RESULTS.append({"tool": "circuit_status", "status": "SKIP", "elapsed_ms": 0})
+
+    # Analytics & dashboard
+    try:
+        from loom.tools.analytics import research_analytics_dashboard
+
+        run_sync("analytics_dashboard", research_analytics_dashboard)
+    except (ImportError, AttributeError):
+        _log("analytics_dashboard", "SKIP", 0, "research_analytics_dashboard not available")
+        RESULTS.append({"tool": "analytics_dashboard", "status": "SKIP", "elapsed_ms": 0})
+
+    try:
+        from loom.tools.analytics import research_retry_stats
+
+        run_sync("retry_stats", research_retry_stats)
+    except (ImportError, AttributeError):
+        _log("retry_stats", "SKIP", 0, "research_retry_stats not available")
+        RESULTS.append({"tool": "retry_stats", "status": "SKIP", "elapsed_ms": 0})
+
+    # Quota & limits
+    try:
+        from loom.tools.quota import research_quota_status
+
+        run_sync("quota_status", research_quota_status)
+    except (ImportError, AttributeError):
+        _log("quota_status", "SKIP", 0, "research_quota_status not available")
+        RESULTS.append({"tool": "quota_status", "status": "SKIP", "elapsed_ms": 0})
+
+    # Secrets & health
+    try:
+        from loom.tools.secrets import research_secret_health
+
+        run_sync("secret_health", research_secret_health)
+    except (ImportError, AttributeError):
+        _log("secret_health", "SKIP", 0, "research_secret_health not available")
+        RESULTS.append({"tool": "secret_health", "status": "SKIP", "elapsed_ms": 0})
+
+    # CPU pool
+    try:
+        from loom.tools.resources import research_cpu_pool_status
+
+        run_sync("cpu_pool_status", research_cpu_pool_status)
+    except (ImportError, AttributeError):
+        _log("cpu_pool_status", "SKIP", 0, "research_cpu_pool_status not available")
+        RESULTS.append({"tool": "cpu_pool_status", "status": "SKIP", "elapsed_ms": 0})
+
+    # Webhooks
+    try:
+        from loom.tools.webhooks import research_webhook_list
+
+        run_sync("webhook_list", research_webhook_list)
+    except (ImportError, AttributeError):
+        _log("webhook_list", "SKIP", 0, "research_webhook_list not available")
+        RESULTS.append({"tool": "webhook_list", "status": "SKIP", "elapsed_ms": 0})
+
+    # Batch verification
+    try:
+        from loom.tools.batch_verify import research_batch_verify
+
+        await run_async(
+            "batch_verify",
+            research_batch_verify,
+            claims=["Earth is round", "Python is a programming language"],
+        )
+    except (ImportError, AttributeError):
+        _log("batch_verify", "SKIP", 0, "research_batch_verify not available")
+        RESULTS.append({"tool": "batch_verify", "status": "SKIP", "elapsed_ms": 0})
+
+    # Latency reporting
+    try:
+        from loom.tools.latency import research_latency_report
+
+        run_sync("latency_report", research_latency_report)
+    except (ImportError, AttributeError):
+        _log("latency_report", "SKIP", 0, "research_latency_report not available")
+        RESULTS.append({"tool": "latency_report", "status": "SKIP", "elapsed_ms": 0})
+
+    # Dead letter queue
+    try:
+        from loom.tools.dlq import research_dlq_stats
+
+        run_sync("dlq_stats", research_dlq_stats)
+    except (ImportError, AttributeError):
+        _log("dlq_stats", "SKIP", 0, "research_dlq_stats not available")
+        RESULTS.append({"tool": "dlq_stats", "status": "SKIP", "elapsed_ms": 0})
+
+    # Source reputation
+    try:
+        from loom.tools.reputation import research_source_reputation
+
+        run_sync("source_reputation", research_source_reputation, url="https://arxiv.org")
+    except (ImportError, AttributeError):
+        _log("source_reputation", "SKIP", 0, "research_source_reputation not available")
+        RESULTS.append({"tool": "source_reputation", "status": "SKIP", "elapsed_ms": 0})
 
     # ── SUMMARY ─────────────────────────────────────────────────────────
     elapsed_total = int((time.time() - start_time) * 1000)

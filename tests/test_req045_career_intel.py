@@ -63,7 +63,7 @@ class TestStealthHireScanner:
     async def test_dubai_software_engineer_jobs(self):
         """Test finding hidden software engineer jobs in Dubai."""
         result = await research_stealth_hire_scanner(
-            keywords="software engineer",
+            keywords=["software engineer"],
             location="Dubai, UAE"
         )
         assert isinstance(result, dict)
@@ -74,7 +74,7 @@ class TestStealthHireScanner:
     async def test_abu_dhabi_data_scientist_jobs(self):
         """Test finding hidden data scientist jobs in Abu Dhabi."""
         result = await research_stealth_hire_scanner(
-            keywords="data scientist",
+            keywords=["data scientist"],
             location="Abu Dhabi"
         )
         assert isinstance(result, dict)
@@ -353,7 +353,7 @@ class TestIntegrationUAECareerFlow:
         """Test complete job search and market analysis workflow for Emirates."""
         # Step 1: Find hidden job opportunities
         stealth_results = await research_stealth_hire_scanner(
-            keywords="software engineer",
+            keywords=["software engineer"],
             location="Dubai, UAE"
         )
         assert isinstance(stealth_results, dict)

@@ -23,7 +23,7 @@ from mcp.server.auth.settings import AuthSettings
 
 from loom.config import load_config, research_config_get, research_config_set
 from loom.orchestrator import research_orchestrate
-from loom.audit import export_audit
+from loom.audit import export_audit, log_invocation
 from loom.logging_config import setup_logging
 from loom.rate_limiter import rate_limited
 from loom.sessions import (
@@ -48,6 +48,15 @@ from loom import crawlee_backend
 from loom import zendriver_backend
 from loom.sqlite_pool import research_pool_stats, research_pool_reset
 
+from loom.batch_queue import (
+    research_batch_submit,
+    research_batch_status,
+    research_batch_list,
+    start_batch_queue_background,
+    stop_batch_queue_background,
+)
+
+from loom.api_auth import ApiKeyAuthMiddleware
 
 from loom.tracing import install_tracing, new_request_id
 from loom.versioning import (
@@ -63,6 +72,13 @@ log = logging.getLogger("loom.server")
 from loom.registrations.tracking import record_optional_module_loaded, record_import_failure
 from loom.secret_manager import get_secret_manager, research_secret_health
 from loom.tools.quota_status import research_quota_status
+from loom.startup_validator import (
+    validate_all_tools,
+    validate_registrations,
+    research_validate_startup,
+)
+from loom.tool_latency import get_latency_tracker
+from loom.tool_rate_limiter import check_tool_rate_limit, research_rate_limits
 
 # ── Prometheus metrics (optional, graceful fallback if not installed) ──
 try:
@@ -582,6 +598,11 @@ with suppress(ImportError):
 
 _start_time = time.time()
 
+# ── Startup validation results (populated in create_app) ──
+_startup_validation_result: dict[str, Any] | None = None
+_health_status: str = "initializing"  # initializing, healthy, degraded, unhealthy
+_validation_error_count: int = 0
+
 
 async def research_audit_export(
     start_date: str | None = None,
@@ -616,6 +637,64 @@ async def research_audit_export(
     )
 
 
+
+
+async def research_audit_query(
+    tool_name: str = "",
+    hours: int = 24,
+    limit: int = 100,
+) -> dict[str, Any]:
+    """Query audit log entries by tool name and time range.
+
+    Searches audit logs from the last N hours and returns matching entries.
+    Entries include tool name, execution duration, status, and parameters (PII-scrubbed).
+
+    Args:
+        tool_name: Filter by tool name (empty = all tools)
+        hours: Look back N hours (1-720, default 24)
+        limit: Maximum entries to return (1-1000, default 100)
+
+    Returns:
+        Dict with keys:
+        - entries: List of audit entries matching the query
+        - count: Number of entries returned
+        - total_count: Total matching entries in audit log
+        - timestamp: Query timestamp (ISO UTC)
+        - query_duration_ms: Query execution time
+    """
+    from loom.tools.audit_query import research_audit_query as _research_audit_query
+    return await _research_audit_query(tool_name=tool_name, hours=hours, limit=limit)
+
+
+async def research_audit_stats(
+    hours: int = 24,
+) -> dict[str, Any]:
+    """Generate audit statistics for compliance reporting.
+
+    Summarizes tool call metrics: success/failure counts, top tools, error types,
+    duration statistics, and cost estimates.
+
+    Args:
+        hours: Look back N hours (1-720, default 24)
+
+    Returns:
+        Dict with keys:
+        - total_calls: Total tool invocations
+        - successful_calls: Calls with status == "success"
+        - failed_calls: Calls with status == "error"
+        - timeout_calls: Calls with status == "timeout"
+        - other_error_calls: Other error statuses
+        - top_tools: Dict of {tool_name: call_count}, top 10
+        - top_errors: Dict of {error_type: count}, top 10
+        - avg_duration_ms: Average execution duration
+        - min_duration_ms: Minimum execution duration
+        - max_duration_ms: Maximum execution duration
+        - total_duration_ms: Sum of all durations
+        - total_cost_credits: Estimated total credits used
+        - timestamp: Stats timestamp (ISO UTC)
+    """
+    from loom.tools.audit_query import research_audit_stats as _research_audit_stats
+    return await _research_audit_stats(hours=hours)
 async def research_health_check() -> dict[str, Any]:
     """Return comprehensive server health status for monitoring.
 
@@ -958,6 +1037,14 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
             if corrections:
                 log.debug(f"Parameter corrections for {tool_name}: {corrections}")
 
+            # Tool-specific rate limiting (per-tool granular limits)
+            user_id_for_rate = os.getenv("LOOM_USER_ID", "default")
+            rate_limit_error = await check_tool_rate_limit(tool_name, user_id_for_rate)
+            if rate_limit_error:
+                log.warning("tool_rate_limit_exceeded", tool=tool_name, user_id=user_id_for_rate)
+                _loom_tool_calls_total.labels(tool_name=tool_name, status="rate_limited").inc()
+                return rate_limit_error
+
             # Token Economy: check credits before execution (if enabled)
             user_id = os.getenv("LOOM_USER_ID", "anonymous")
             current_balance = int(os.getenv("LOOM_USER_BALANCE", "0"))
@@ -1024,6 +1111,18 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                 duration = time.time() - start_time
                 _loom_tool_duration_seconds.labels(tool_name=tool_name).observe(duration)
 
+                # Latency Tracker: record per-tool latency
+                try:
+                    duration_ms = duration * 1000
+                    latency_tracker = get_latency_tracker()
+                    latency_tracker.record(tool_name, duration_ms)
+                    # Add p95 to response if duration slow (>1000ms)
+                    if duration_ms > 1000 and isinstance(result, dict):
+                        stats = latency_tracker.get_percentiles(tool_name)
+                        result['_latency_p95_ms'] = stats['p95']
+                except Exception as e:
+                    log.debug(f'Latency tracking error: {e}')
+
                 # Billing: record usage after successful execution
                 if billing_enabled:
                     duration_ms = duration * 1000
@@ -1045,6 +1144,21 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                 except Exception as e:
                     log.debug(f"Analytics recording error: {e}")
 
+                # Audit: Log tool call success
+                try:
+                    client_id = os.getenv("LOOM_CLIENT_ID", os.getenv("LOOM_USER_ID", "anonymous"))
+                    result_size = len(str(result)) if result else 0
+                    log_invocation(
+                        client_id=client_id,
+                        tool_name=tool_name,
+                        params=corrected_kwargs,
+                        result_summary=f"success: {result_size} bytes",
+                        duration_ms=int(duration_ms),
+                        status="success"
+                    )
+                except Exception as audit_e:
+                    log.debug(f"Audit logging error at success: {audit_e}")
+
                 return result
             except asyncio.TimeoutError:
                 # Prometheus: record timeout error
@@ -1062,6 +1176,20 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                 except Exception as e:
                     log.debug(f"Analytics recording error: {e}")
 
+                # Audit: Log tool call timeout
+                try:
+                    client_id = os.getenv("LOOM_CLIENT_ID", os.getenv("LOOM_USER_ID", "anonymous"))
+                    log_invocation(
+                        client_id=client_id,
+                        tool_name=tool_name,
+                        params=corrected_kwargs,
+                        result_summary="timeout_error",
+                        duration_ms=int(duration * 1000),
+                        status="timeout"
+                    )
+                except Exception as audit_e:
+                    log.debug(f"Audit logging error at timeout: {audit_e}")
+
                 return {"error": f"Tool timed out after {tool_timeout}s", "tool": tool_name}
             except Exception as e:
                 # Prometheus: record error
@@ -1070,6 +1198,20 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                 _loom_tool_errors_total.labels(tool_name=tool_name, error_type=error_type).inc()
                 duration = time.time() - start_time
                 _loom_tool_duration_seconds.labels(tool_name=tool_name).observe(duration)
+                # Audit: Log tool call error
+                try:
+                    client_id = os.getenv("LOOM_CLIENT_ID", os.getenv("LOOM_USER_ID", "anonymous"))
+                    log_invocation(
+                        client_id=client_id,
+                        tool_name=tool_name,
+                        params=corrected_kwargs,
+                        result_summary=f"error: {error_type}",
+                        duration_ms=int(duration * 1000),
+                        status="error"
+                    )
+                except Exception as audit_e:
+                    log.debug(f"Audit logging error at error: {audit_e}")
+
                 raise
 
         return async_wrapper
@@ -1184,6 +1326,18 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                 duration = time.time() - start_time
                 _loom_tool_duration_seconds.labels(tool_name=tool_name).observe(duration)
 
+                # Latency Tracker: record per-tool latency (sync wrapper)
+                try:
+                    duration_ms = duration * 1000
+                    latency_tracker = get_latency_tracker()
+                    latency_tracker.record(tool_name, duration_ms)
+                    # Add p95 to response if duration slow (>1000ms)
+                    if duration_ms > 1000 and isinstance(result, dict):
+                        stats = latency_tracker.get_percentiles(tool_name)
+                        result['_latency_p95_ms'] = stats['p95']
+                except Exception as e:
+                    log.debug(f'Latency tracking error: {e}')
+
                 # Billing: record usage after successful execution
                 if billing_enabled:
                     duration_ms = duration * 1000
@@ -1195,6 +1349,21 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                     except Exception as e:
                         log.error(f"Billing error for {tool_name}: {e}", exc_info=False)
 
+                # Audit: Log tool call success (sync wrapper)
+                try:
+                    client_id = os.getenv("LOOM_CLIENT_ID", os.getenv("LOOM_USER_ID", "anonymous"))
+                    result_size = len(str(result)) if result else 0
+                    log_invocation(
+                        client_id=client_id,
+                        tool_name=tool_name,
+                        params=corrected_kwargs,
+                        result_summary=f"success: {result_size} bytes",
+                        duration_ms=int(duration_ms),
+                        status="success"
+                    )
+                except Exception as audit_e:
+                    log.debug(f"Audit logging error at success (sync): {audit_e}")
+
                 return result
             except Exception as e:
                 # Prometheus: record error
@@ -1203,6 +1372,20 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                 _loom_tool_errors_total.labels(tool_name=tool_name, error_type=error_type).inc()
                 duration = time.time() - start_time
                 _loom_tool_duration_seconds.labels(tool_name=tool_name).observe(duration)
+                # Audit: Log tool call error (sync wrapper)
+                try:
+                    client_id = os.getenv("LOOM_CLIENT_ID", os.getenv("LOOM_USER_ID", "anonymous"))
+                    log_invocation(
+                        client_id=client_id,
+                        tool_name=tool_name,
+                        params=corrected_kwargs,
+                        result_summary=f"error: {error_type}",
+                        duration_ms=int(duration * 1000),
+                        status="error"
+                    )
+                except Exception as audit_e:
+                    log.debug(f"Audit logging error at error (sync): {audit_e}")
+
                 raise
 
         return sync_wrapper
@@ -1371,8 +1554,12 @@ def _register_tools(mcp: FastMCP) -> None:
         research_benchmark_run, research_consensus_build, research_consensus_pressure,
         research_crescendo_loop, research_model_profile, research_reid_pipeline,
         research_pool_stats, research_pool_reset, export_audit,
+        research_audit_query, research_audit_stats,
         research_cpu_pool_status, research_cpu_executor_shutdown,
         research_analytics_dashboard, research_secret_health, research_quota_status,
+        research_rate_limits,
+        research_validate_startup,
+        research_latency_report,
     ]
     for _func in _core_funcs:
         try:
@@ -1479,6 +1666,42 @@ def create_app() -> FastMCP:
     # Validate environment
     _validate_environment()
 
+    # Run startup validation on tools
+    global _startup_validation_result, _health_status, _validation_error_count
+    try:
+        _startup_validation_result = validate_all_tools()
+        if _startup_validation_result["failed"] > 0:
+            failure_rate = (_startup_validation_result["failed"] / max(1, _startup_validation_result["total"])) * 100
+            _validation_error_count = _startup_validation_result["failed"]
+            if failure_rate > 20:
+                _health_status = "unhealthy"
+                log.error(
+                    "startup_validation_unhealthy failure_rate=%.2f%% tools_passed=%d tools_failed=%d",
+                    failure_rate,
+                    _startup_validation_result["passed"],
+                    _startup_validation_result["failed"],
+                )
+            else:
+                _health_status = "degraded"
+                log.warning(
+                    "startup_validation_degraded failure_rate=%.2f%% tools_passed=%d tools_failed=%d",
+                    failure_rate,
+                    _startup_validation_result["passed"],
+                    _startup_validation_result["failed"],
+                )
+        else:
+            _health_status = "healthy"
+            log.info(
+                "startup_validation_passed total=%d duration_ms=%.2f",
+                _startup_validation_result["total"],
+                _startup_validation_result["duration_ms"],
+            )
+    except Exception as e:
+        log.error("startup_validation_error error=%s", str(e))
+        _health_status = "unhealthy"
+        _validation_error_count = 1
+
+
     # Initialize and validate API keys (SecretManager singleton)
     try:
         secret_mgr = get_secret_manager()
@@ -1570,6 +1793,8 @@ def create_app() -> FastMCP:
         
         health_response = {
             "status": "healthy",
+            "startup_validation_status": _health_status,
+            "startup_validation_result": _startup_validation_result,
             "uptime_seconds": uptime,
             "tool_count": tool_count,
             "strategy_count": 957,
@@ -1578,14 +1803,13 @@ def create_app() -> FastMCP:
             "import_failures": reg_stats.get("import_failures", []),
             "total_tools_loaded": reg_stats.get("total_loaded", 0),
             "total_tools_failed": reg_stats.get("total_failed", 0),
+            "validation_errors_found": _validation_error_count,
             "prometheus_enabled": _prometheus_enabled,
             "timestamp": datetime.now(UTC).isoformat(),
         }
         
         if memory_mb is not None:
             health_response["memory_mb"] = memory_mb
-        return JSONResponse(health_response)
-        
         return JSONResponse(health_response)
 
     # Register Prometheus metrics endpoint if available
@@ -1644,6 +1868,8 @@ def create_app() -> FastMCP:
         health_response = {
             "api_version": "v1",
             "status": "healthy",
+            "startup_validation_status": _health_status,
+            "startup_validation_result": _startup_validation_result,
             "uptime_seconds": uptime,
             "tool_count": tool_count,
             "strategy_count": 957,
@@ -1652,6 +1878,7 @@ def create_app() -> FastMCP:
             "import_failures": reg_stats.get("import_failures", []),
             "total_tools_loaded": reg_stats.get("total_loaded", 0),
             "total_tools_failed": reg_stats.get("total_failed", 0),
+            "validation_errors_found": _validation_error_count,
             "prometheus_enabled": _prometheus_enabled,
             "timestamp": datetime.now(UTC).isoformat(),
         }
@@ -1659,7 +1886,6 @@ def create_app() -> FastMCP:
         if memory_mb is not None:
             health_response["memory_mb"] = memory_mb
         return JSONResponse(health_response)
-        
 
     @mcp.custom_route("/v1/health/deep", methods=["GET"])
     async def v1_health_deep_endpoint(request: Request) -> JSONResponse:
@@ -1855,6 +2081,18 @@ def create_app() -> FastMCP:
         _prometheus_enabled,
     )
 
+    # Wire API key authentication middleware (optional, opt-in via LOOM_AUTH_REQUIRED)
+    mcp.app.add_middleware(ApiKeyAuthMiddleware)
+    log.info("api_auth_middleware_registered auth_required=%s",
+             os.environ.get("LOOM_AUTH_REQUIRED", "false").lower() == "true")
+
+    # Start batch queue background processing
+    try:
+        start_batch_queue_background()
+        log.info("batch_queue_background_started")
+    except Exception as exc:
+        log.error("batch_queue_startup_failed: %s", exc)
+
     return mcp
 
 
@@ -1890,6 +2128,15 @@ async def _shutdown() -> None:
             log.info("shutdown_providers_closed")
     except Exception as exc:
         log.error("shutdown_providers_error: %s", exc)
+
+
+    # Stop batch queue background processing
+    try:
+        stop_batch_queue_background()
+        log.info("batch_queue_background_stopped")
+    except Exception as exc:
+        log.error("batch_queue_shutdown_failed: %s", exc)
+
 
     log.info("shutdown_complete")
 

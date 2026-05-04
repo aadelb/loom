@@ -112,6 +112,7 @@ from loom.params.intelligence import (
     SupplyChainRiskParams,
     ThreatProfileParams,
     TransactionGraphParams,
+    TrendForecastParams,
 )
 
 # ADVERSARIAL tools
@@ -329,6 +330,10 @@ from loom.params.research import (
     WikiEventCorrelatorParams,
     ZenBatchParams,
     ZenInteractParams,
+    GenerateReportParams,
+    ReportFromResultsParams,
+    BatchVerifyParams,
+    FactVerifyParams,
 )
 
 __all__ = [
@@ -342,6 +347,7 @@ __all__ = [
     "DeepfakeCheckerParams",
     "ExploitSearchParams",
     "FetchParams",
+    "GenerateReportParams",
     "GitHubParams",
     "GitHubSearchParams",
     "InvisibleWebParams",
@@ -605,7 +611,10 @@ __all__ = [
     "WikiEventCorrelatorParams",
     "ZenBatchParams",
     "ZenInteractParams",
+    "ReportFromResultsParams",
     "WebhookRegisterParams",
     "WebhookUnregisterParams",
     "WebhookTestParams",
+    "BatchVerifyParams",
+    "FactVerifyParams",
 ]

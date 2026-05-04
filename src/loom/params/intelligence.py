@@ -46,6 +46,7 @@ __all__ = [
     "SupplyChainRiskParams",
     "ThreatProfileParams",
     "TransactionGraphParams",
+    "TrendForecastParams",
 ]
 
 
@@ -794,7 +795,36 @@ class GraphParams(BaseModel):
             raise ValueError(f"sources must be subset of {valid}")
         return normalized if normalized else None
 
+class TrendForecastParams(BaseModel):
+    """Parameters for research_trend_forecast tool."""
 
+    topic: str
+    timeframe: str = "6months"
+    min_term_frequency: int = 2
 
+    model_config = {"extra": "forbid", "strict": True}
 
+    @field_validator("topic")
+    @classmethod
+    def validate_topic(cls, v: str) -> str:
+        v = v.strip()
+        if not v or len(v) > 200:
+            raise ValueError("topic must be 1-200 characters")
+        if not re.match(r"^[a-zA-Z0-9\s\-_.()&+]+$", v):
+            raise ValueError("topic contains invalid characters")
+        return v
 
+    @field_validator("timeframe")
+    @classmethod
+    def validate_timeframe(cls, v: str) -> str:
+        allowed = {"3months", "6months", "1year"}
+        if v not in allowed:
+            raise ValueError(f"timeframe must be one of: {', '.join(allowed)}")
+        return v
+
+    @field_validator("min_term_frequency")
+    @classmethod
+    def validate_min_term_frequency(cls, v: int) -> int:
+        if v < 1 or v > 10:
+            raise ValueError("min_term_frequency must be 1-10")
+        return v

@@ -41,11 +41,21 @@ class StructuredLogger:
                 "metadata": metadata or {},
             }
             try:
-                with open(log_file, "a") as f:
-                    f.write(json.dumps(entry) + "\n")
+                # Run blocking file I/O in executor
+                await asyncio.to_thread(
+                    self._write_entry,
+                    log_file,
+                    entry,
+                )
             except OSError as e:
                 logger.error("write_failed: %s", e)
             await self._cleanup_old_logs()
+
+    @staticmethod
+    def _write_entry(log_file: Path, entry: dict[str, Any]) -> None:
+        """Write entry to log file (blocking I/O)."""
+        with open(log_file, "a") as f:
+            f.write(json.dumps(entry) + "\n")
 
     async def _cleanup_old_logs(self) -> None:
         cutoff = (datetime.now(UTC) - timedelta(days=7)).timestamp()
@@ -66,18 +76,23 @@ def get_structured_logger() -> StructuredLogger:
     return _instance
 
 
-async def research_log_query(
-    level: str = "all",
-    tool: str = "",
-    limit: int = 100,
-    since_minutes: int = 60,
-) -> dict[str, Any]:
-    """Query structured logs with filtering."""
-    logger_inst = get_structured_logger()
+def _query_logs(log_dir: Path, limit: int, since_minutes: int, level: str, tool: str) -> tuple[list[dict[str, Any]], int]:
+    """Query logs from disk (blocking I/O).
+
+    Args:
+        log_dir: log directory path
+        limit: max entries to return
+        since_minutes: time window in minutes
+        level: log level filter
+        tool: tool name filter
+
+    Returns:
+        Tuple of (entries, count)
+    """
     cutoff = datetime.now(UTC) - timedelta(minutes=since_minutes)
     entries, count = [], 0
     try:
-        for log_file in sorted(logger_inst.log_dir.glob("*.jsonl")):
+        for log_file in sorted(log_dir.glob("*.jsonl")):
             if count >= limit:
                 break
             with open(log_file) as f:
@@ -97,15 +112,49 @@ async def research_log_query(
                         pass
     except OSError as e:
         logger.error("query_failed: %s", e)
-    return {"entries": entries, "total_count": count, "filters_applied": {"level": level, "tool": tool, "since_minutes": since_minutes}}
+    return entries, count
 
 
-async def research_log_stats() -> dict[str, Any]:
-    """Return log statistics: level counts, top erroring tools, requests/minute."""
+async def research_log_query(
+    level: str = "all",
+    tool: str = "",
+    limit: int = 100,
+    since_minutes: int = 60,
+) -> dict[str, Any]:
+    """Query structured logs with filtering."""
     logger_inst = get_structured_logger()
+    # Run blocking file I/O in executor
+    entries, count = await asyncio.to_thread(
+        _query_logs,
+        logger_inst.log_dir,
+        limit,
+        since_minutes,
+        level,
+        tool,
+    )
+    return {
+        "entries": entries,
+        "total_count": count,
+        "filters_applied": {
+            "level": level,
+            "tool": tool,
+            "since_minutes": since_minutes,
+        },
+    }
+
+
+def _get_log_stats(log_dir: Path) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], int]:
+    """Get log statistics (blocking I/O).
+
+    Args:
+        log_dir: log directory path
+
+    Returns:
+        Tuple of (counts, errors, minutes, total)
+    """
     counts, errors, minutes, total = {}, {}, {}, 0
     try:
-        for log_file in logger_inst.log_dir.glob("*.jsonl"):
+        for log_file in log_dir.glob("*.jsonl"):
             with open(log_file) as f:
                 for line in f:
                     try:
@@ -124,6 +173,17 @@ async def research_log_stats() -> dict[str, Any]:
                         pass
     except OSError as e:
         logger.error("stats_failed: %s", e)
+    return counts, errors, minutes, total
+
+
+async def research_log_stats() -> dict[str, Any]:
+    """Return log statistics: level counts, top erroring tools, requests/minute."""
+    logger_inst = get_structured_logger()
+    # Run blocking file I/O in executor
+    counts, errors, minutes, total = await asyncio.to_thread(
+        _get_log_stats,
+        logger_inst.log_dir,
+    )
     return {
         "counts_by_level": counts,
         "top_erroring_tools": dict(sorted(errors.items(), key=lambda x: x[1], reverse=True)[:5]),

@@ -33,6 +33,65 @@ logger = logging.getLogger("loom.tools.fetch")
 _http_client: httpx.Client | None = None
 _client_lock = threading.Lock()
 
+# Escalation tier timeout configuration (seconds).
+ESCALATION_TIERS = {
+    "http": 10,
+    "stealthy": 15,
+    "dynamic": 30,
+    "cloak": 45,
+    "camoufox": 60,
+}
+
+# Default total timeout budget (seconds)
+DEFAULT_TOTAL_TIMEOUT = 90
+
+# TTL-based unreachable URL tracking
+_unreachable_urls: dict[str, tuple[int, float]] = {}
+_unreachable_lock = threading.Lock()
+UNREACHABLE_TTL_SECONDS = 3600
+UNREACHABLE_FAILURE_THRESHOLD = 3
+
+
+class UnreachableURLTracker:
+    """Thread-safe TTL-based tracker for unreachable URLs."""
+
+    @staticmethod
+    def record_failure(url: str) -> None:
+        """Record a failure for a URL. If 3+ failures within 1 hour, mark unreachable."""
+        with _unreachable_lock:
+            now = time.time()
+            if url in _unreachable_urls:
+                count, expiry = _unreachable_urls[url]
+                if now > expiry:
+                    _unreachable_urls[url] = (1, now + UNREACHABLE_TTL_SECONDS)
+                else:
+                    _unreachable_urls[url] = (count + 1, expiry)
+            else:
+                _unreachable_urls[url] = (1, now + UNREACHABLE_TTL_SECONDS)
+
+    @staticmethod
+    def is_unreachable(url: str) -> bool:
+        """Check if URL has 3+ failures within the TTL window."""
+        with _unreachable_lock:
+            now = time.time()
+            if url in _unreachable_urls:
+                count, expiry = _unreachable_urls[url]
+                if now > expiry:
+                    del _unreachable_urls[url]
+                    return False
+                return count >= UNREACHABLE_FAILURE_THRESHOLD
+            return False
+
+    @staticmethod
+    def cleanup_expired() -> None:
+        """Remove expired entries from the tracker."""
+        with _unreachable_lock:
+            now = time.time()
+            expired_urls = [url for url, (_, expiry) in _unreachable_urls.items() if now > expiry]
+            for url in expired_urls:
+                del _unreachable_urls[url]
+
+
 
 def _get_http_client() -> httpx.Client:
     """Return a shared httpx client with connection pooling.
@@ -74,6 +133,8 @@ class FetchResult(BaseModel):
     error: str | None = None
     tool: str = "unknown"
     elapsed_ms: int = 0
+    escalation_path: list[str] = Field(default_factory=list)
+    timeouts_hit: int = 0
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -160,6 +221,12 @@ def _is_cloudflare_block(result: FetchResult) -> bool:
         return True
     return result.status_code == 503 and "cloudflare" in text
 
+
+def _get_tier_timeout(tier: str) -> int:
+    """Get the base timeout for a specific escalation tier (seconds)."""
+    return ESCALATION_TIERS.get(tier, EXTERNAL_TIMEOUT_SECS)
+
+
 @with_retry(max_attempts=3, backoff_base=1.0)
 
 def research_fetch(
@@ -201,14 +268,62 @@ def research_fetch(
         Dict with keys: url, title, text, html_len, fetched_at, tool, and optionally
         status_code, error, elapsed_ms for backward compatibility
     """
-    # Note: backend parameter is reserved for future specialization
-    # Currently only "auto" is implemented; others route through mode parameter
-    # Future: backend="cloak" -> research_cloak_fetch, "camoufox" -> research_camoufox
+    # Normalize backend parameter and route to appropriate implementation
+    backend_lower = backend.lower().strip()
+    mode_to_use = mode
+    
+    # Handle backend aliases
+    if backend_lower == "camoufox":
+        mode_to_use = "stealthy"
+    elif backend_lower == "botasaurus":
+        mode_to_use = "dynamic"
+    elif backend_lower == "cloak":
+        # Delegate to CloakBrowser for superior bot detection bypass
+        try:
+            from loom.tools.cloak_backend import research_cloak_fetch
+            logger.info("fetch_delegating_to_cloak url=%s", url)
+            result_dict = research_cloak_fetch(
+                url=url,
+                wait_for=wait_for or "",
+                humanize=True,
+                timeout=timeout or 30,
+                screenshot=(return_format == "screenshot"),
+            )
+            # Handle async result if needed
+            import asyncio
+            if asyncio.iscoroutine(result_dict):
+                result_dict = asyncio.run(result_dict)
+            # Convert to standard output format
+            output = {
+                "url": result_dict.get("url", url),
+                "tool": "cloak",
+                "text": result_dict.get("text", ""),
+                "html": result_dict.get("html"),
+                "title": result_dict.get("title", ""),
+                "status_code": result_dict.get("status_code"),
+                "screenshot": result_dict.get("screenshot_b64"),
+                "error": result_dict.get("error"),
+                "elapsed_ms": result_dict.get("duration_ms", 0),
+            }
+            if not output.get("error"):
+                output["fetched_at"] = datetime.now(UTC).isoformat()
+            return {k: v for k, v in output.items() if v is not None}
+        except ImportError:
+            logger.warning("cloak_backend not available, falling back to mode parameter")
+            mode_to_use = mode
+    elif backend_lower in ("http", "stealthy", "dynamic", "auto"):
+        mode_to_use = mode if backend_lower == "auto" else backend_lower
+    else:
+        return {
+            "url": url,
+            "error": f"Unknown backend: {backend}. Must be 'auto' | 'http' | 'stealthy' | 'dynamic' | 'cloak' | 'camoufox' | 'botasaurus'",
+            "tool": "unknown",
+        }
     
     # Validate and normalize
     params = FetchParams(
         url=url,
-        mode=cast(Literal["http", "stealthy", "dynamic"], mode),
+        mode=cast(Literal["http", "stealthy", "dynamic"], mode_to_use),
         max_chars=min(max_chars, MAX_FETCH_CHARS),
         solve_cloudflare=solve_cloudflare,
         headers=headers,
@@ -228,8 +343,9 @@ def research_fetch(
         auto_escalate = get_config().get("FETCH_AUTO_ESCALATE", False)
 
     logger.info(
-        "fetch_start url=%s mode=%s return=%s bypass_cache=%s auto_escalate=%s",
+        "fetch_start url=%s backend=%s mode=%s return=%s bypass_cache=%s auto_escalate=%s",
         url,
+        backend,
         params.mode,
         params.return_format,
         bypass_cache,
@@ -280,6 +396,30 @@ def research_fetch(
     # For mode='http', transform result to Scrapling-compatible schema
     if params.mode == "http" and not output.get("error"):
         output = _to_scrapling_schema(output, params.max_chars)
+
+    # Content anomaly detection: if expected_snippet provided, check for mismatches
+    if expected_snippet and not output.get("error"):
+        try:
+            from loom.tools.content_anomaly import detect_anomaly
+
+            anomaly_result = detect_anomaly(expected_snippet, output.get("text", ""))
+            # Add anomaly metadata to output
+            output["metadata"] = output.get("metadata", {})
+            output["metadata"]["anomaly_score"] = anomaly_result["similarity_score"]
+            output["metadata"]["anomaly_type"] = anomaly_result["type"]
+
+            # Log warning if anomaly detected
+            if anomaly_result["anomaly_detected"]:
+                logger.warning(
+                    "content_anomaly_detected url=%s type=%s similarity=%.2f",
+                    url,
+                    anomaly_result["type"],
+                    anomaly_result["similarity_score"],
+                )
+        except ImportError:
+            logger.debug("content_anomaly module not available")
+        except Exception as e:
+            logger.warning("content_anomaly_check_failed url=%s error=%s", url, e)
 
     # Cache all successful results (any mode)
     if not output.get("error") and not bypass_cache:

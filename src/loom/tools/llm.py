@@ -24,6 +24,11 @@ from loom.content_sanitizer import (
     sanitize_for_llm,
     wrap_with_xml_tags,
 )
+from loom.conversation_cache import (
+    cache_conversation,
+    get_cached_conversation_with_metadata,
+    hash_conversation,
+)
 from loom.retry import with_retry
 from loom.providers.anthropic_provider import AnthropicProvider
 from loom.providers.base import LLMResponse
@@ -1451,10 +1456,14 @@ async def research_llm_chat(
     temperature: float = 0.2,
     response_format: dict[str, Any] | None = None,
     provider_override: str | None = None,
+    use_cache: bool = True,
+    cache_ttl: int = 3600,
 ) -> dict[str, Any]:
-    """Raw pass-through to LLM chat endpoint.
+    """Raw pass-through to LLM chat endpoint with optional conversation caching.
 
-    For use cases not covered by the other tools.
+    For use cases not covered by the other tools. Supports optional caching
+    of entire conversations (system prompt + message list) to avoid redundant
+    API calls when the same dialogue is repeated.
 
     Args:
         messages: list of message dicts with 'role' and 'content'
@@ -1463,6 +1472,8 @@ async def research_llm_chat(
         temperature: sampling temperature
         response_format: optional JSON schema
         provider_override: force a provider
+        use_cache: if True, check cache before calling LLM (default True)
+        cache_ttl: cache time-to-live in seconds (default 1 hour)
 
     Returns:
         Dict with keys:
@@ -1473,8 +1484,37 @@ async def research_llm_chat(
             - input_tokens: tokens consumed
             - output_tokens: tokens generated
             - finish_reason: stop reason
+            - cached: bool — True if response was from cache
+            - cache_age_seconds: int — age of cache entry (only if cached)
     """
+    # Extract system prompt if present
+    system_prompt = ""
+    for msg in messages:
+        if msg.get("role") == "system":
+            system_prompt = msg["content"]
+            break
+
     try:
+        # Step 1: Attempt cache hit if enabled
+        if use_cache:
+            conv_hash = hash_conversation(system_prompt, messages, model="" if not provider_override else model)
+            cached_meta = get_cached_conversation_with_metadata(conv_hash)
+
+            if cached_meta and not cached_meta["is_expired"]:
+                logger.info("conversation_cache_hit conv_hash=%s age_secs=%d", conv_hash, cached_meta["cache_age_seconds"])
+                return {
+                    "text": cached_meta["response"],
+                    "model": model if model != "auto" else "cached",
+                    "provider": "cache",
+                    "cost_usd": 0.0,
+                    "input_tokens": 0,
+                    "output_tokens": 0,
+                    "finish_reason": "cached",
+                    "cached": True,
+                    "cache_age_seconds": cached_meta["cache_age_seconds"],
+                }
+
+        # Step 2: Call LLM
         response, refusal_meta = await _call_with_refusal_handling(
             messages,
             model=model,
@@ -1484,6 +1524,16 @@ async def research_llm_chat(
             response_format=response_format,
         )
 
+        # Step 3: Cache the response (even if use_cache=False, store for future use)
+        if use_cache:
+            conv_hash = hash_conversation(system_prompt, messages, model="" if not provider_override else model)
+            try:
+                cache_conversation(conv_hash, response.text, ttl=cache_ttl)
+                logger.debug("conversation_cached conv_hash=%s ttl=%d", conv_hash, cache_ttl)
+            except Exception as e:
+                logger.warning("conversation_cache_write_failed: %s", e)
+                # Continue even if cache write fails; it's not critical
+
         result = {
             "text": response.text,
             "model": response.model,
@@ -1492,6 +1542,7 @@ async def research_llm_chat(
             "input_tokens": response.input_tokens,
             "output_tokens": response.output_tokens,
             "finish_reason": response.finish_reason,
+            "cached": False,
         }
         if refusal_meta["refused"]:
             result["refusal_meta"] = refusal_meta

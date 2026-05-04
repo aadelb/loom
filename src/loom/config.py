@@ -54,6 +54,8 @@ class ConfigModel(BaseModel):
 
     # Cache
     CACHE_TTL_DAYS: int = Field(default=30, ge=1, le=365)
+    SEMANTIC_CACHE_THRESHOLD: float = Field(default=0.95, ge=0.0, le=1.0)
+    SEMANTIC_CACHE_CROSS_MODEL: bool = True
 
     # Search defaults
     DEFAULT_SEARCH_PROVIDER: Literal[

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import importlib
 import json
 import logging
@@ -22,6 +23,24 @@ import loom
 logger = logging.getLogger("loom.tools.env_inspector")
 
 
+def _get_installed_packages() -> int:
+    """Get installed packages count (blocking I/O).
+
+    Returns:
+        Count of installed packages
+    """
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "pip", "list", "--format=json"],
+            capture_output=True, text=True, timeout=10
+        )
+        if result.returncode == 0:
+            return len(json.loads(result.stdout))
+    except Exception:
+        pass
+    return 0
+
+
 async def research_env_inspect() -> dict[str, Any]:
     """Inspect the full runtime environment.
 
@@ -33,14 +52,8 @@ async def research_env_inspect() -> dict[str, Any]:
     memory = psutil.virtual_memory()
     disk = shutil.disk_usage("/")
 
-    try:
-        result = subprocess.run(
-            [sys.executable, "-m", "pip", "list", "--format=json"],
-            capture_output=True, text=True, timeout=10
-        )
-        packages_count = len(json.loads(result.stdout)) if result.returncode == 0 else 0
-    except Exception:
-        packages_count = 0
+    # Run blocking subprocess in executor
+    packages_count = await asyncio.to_thread(_get_installed_packages)
 
     try:
         from loom.tools.reframe_strategies import ALL_STRATEGIES

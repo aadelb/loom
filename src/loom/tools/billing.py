@@ -7,6 +7,7 @@ Tools:
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
@@ -19,6 +20,70 @@ import httpx
 logger = logging.getLogger("loom.tools.billing")
 
 _STRIPE_API_BASE = "https://api.stripe.com/v1"
+
+
+def _read_billing_logs(cache_dir: Path, cutoff_date: datetime) -> tuple[float, dict[str, dict[str, Any]], dict[str, float], dict[str, float], int]:
+    """Read and aggregate billing logs (blocking I/O).
+
+    Args:
+        cache_dir: Path to cache directory
+        cutoff_date: Earliest timestamp to include
+
+    Returns:
+        Tuple of (total_cost, calls_by_provider, calls_by_day, model_costs, call_count)
+    """
+    total_cost = 0.0
+    calls_by_provider: dict[str, dict[str, Any]] = {}
+    calls_by_day: dict[str, float] = {}
+    model_costs: dict[str, float] = {}
+    call_count = 0
+
+    for log_file in sorted(cache_dir.glob("llm_cost_*.json")):
+        try:
+            file_stat = log_file.stat()
+            file_time = datetime.fromtimestamp(file_stat.st_mtime)
+
+            if file_time < cutoff_date:
+                continue
+
+            with open(log_file, encoding="utf-8") as f:
+                for line in f:
+                    try:
+                        entry = json.loads(line.strip())
+                        if not entry:
+                            continue
+
+                        cost = entry.get("cost_usd", 0.0)
+                        provider = entry.get("provider", "unknown")
+                        model = entry.get("model", "unknown")
+                        timestamp = entry.get("timestamp", "")
+
+                        total_cost += cost
+                        call_count += 1
+
+                        # Track by provider
+                        if provider not in calls_by_provider:
+                            calls_by_provider[provider] = {
+                                "count": 0,
+                                "total_cost": 0.0,
+                            }
+                        calls_by_provider[provider]["count"] += 1
+                        calls_by_provider[provider]["total_cost"] += cost
+
+                        # Track by day
+                        day = timestamp[:10] if timestamp else "unknown"
+                        calls_by_day[day] = calls_by_day.get(day, 0.0) + cost
+
+                        # Track top models
+                        model_costs[model] = model_costs.get(model, 0.0) + cost
+
+                    except (json.JSONDecodeError, ValueError):
+                        continue
+        except Exception as e:
+            logger.warning("usage_report_file_error file=%s: %s", log_file.name, e)
+            continue
+
+    return total_cost, calls_by_provider, calls_by_day, model_costs, call_count
 
 
 async def research_usage_report(days: int = 7) -> dict[str, Any]:
@@ -46,57 +111,12 @@ async def research_usage_report(days: int = 7) -> dict[str, Any]:
         }
 
     cutoff_date = datetime.now() - timedelta(days=days)
-    total_cost = 0.0
-    calls_by_provider: dict[str, dict[str, Any]] = {}
-    calls_by_day: dict[str, float] = {}
-    model_costs: dict[str, float] = {}
-    call_count = 0
 
     try:
-        for log_file in sorted(cache_dir.glob("llm_cost_*.json")):
-            try:
-                file_stat = log_file.stat()
-                file_time = datetime.fromtimestamp(file_stat.st_mtime)
-
-                if file_time < cutoff_date:
-                    continue
-
-                with open(log_file, encoding="utf-8") as f:
-                    for line in f:
-                        try:
-                            entry = json.loads(line.strip())
-                            if not entry:
-                                continue
-
-                            cost = entry.get("cost_usd", 0.0)
-                            provider = entry.get("provider", "unknown")
-                            model = entry.get("model", "unknown")
-                            timestamp = entry.get("timestamp", "")
-
-                            total_cost += cost
-                            call_count += 1
-
-                            # Track by provider
-                            if provider not in calls_by_provider:
-                                calls_by_provider[provider] = {
-                                    "count": 0,
-                                    "total_cost": 0.0,
-                                }
-                            calls_by_provider[provider]["count"] += 1
-                            calls_by_provider[provider]["total_cost"] += cost
-
-                            # Track by day
-                            day = timestamp[:10] if timestamp else "unknown"
-                            calls_by_day[day] = calls_by_day.get(day, 0.0) + cost
-
-                            # Track top models
-                            model_costs[model] = model_costs.get(model, 0.0) + cost
-
-                        except (json.JSONDecodeError, ValueError):
-                            continue
-            except Exception as e:
-                logger.warning("usage_report_file_error file=%s: %s", log_file.name, e)
-                continue
+        # Run blocking I/O in executor
+        total_cost, calls_by_provider, calls_by_day, model_costs, call_count = await asyncio.to_thread(
+            _read_billing_logs, cache_dir, cutoff_date
+        )
 
         # Sort models by cost
         top_models = sorted(model_costs.items(), key=lambda x: x[1], reverse=True)[:10]

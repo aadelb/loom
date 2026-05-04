@@ -408,6 +408,13 @@ def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip trend_predictor: %s", e)
         record_failure("intelligence", "trend_predictor", str(e))
     try:
+        from loom.tools.trend_forecaster import research_trend_forecast
+        mcp.tool()(wrap_tool(research_trend_forecast))
+        record_success("intelligence", "research_trend_forecast")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip trend_forecaster: %s", e)
+        record_failure("intelligence", "trend_forecaster", str(e))
+    try:
         from loom.tools.universal_orchestrator import research_orchestrate_smart
         mcp.tool()(wrap_tool(research_orchestrate_smart))
         record_success("intelligence", "research_orchestrate_smart")

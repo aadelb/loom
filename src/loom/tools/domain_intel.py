@@ -67,6 +67,42 @@ def _validate_ip_or_domain(target: str) -> str:
     return _validate_domain(target)
 
 
+def _run_whois(domain: str) -> tuple[str, int, str]:
+    """Run whois command (blocking I/O).
+
+    Args:
+        domain: domain to query
+
+    Returns:
+        Tuple of (stdout, returncode, stderr)
+    """
+    result = subprocess.run(
+        ["whois", domain],
+        capture_output=True,
+        text=True,
+        timeout=15,
+    )
+    return result.stdout, result.returncode, result.stderr
+
+
+def _run_nmap(cmd: list[str]) -> tuple[str, int]:
+    """Run nmap command (blocking I/O).
+
+    Args:
+        cmd: nmap command as list
+
+    Returns:
+        Tuple of (stdout, returncode)
+    """
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    return result.stdout, result.returncode
+
+
 async def research_whois(domain: str) -> dict[str, Any]:
     """Run whois lookup on a domain.
 
@@ -91,24 +127,17 @@ async def research_whois(domain: str) -> dict[str, Any]:
         - raw_text: truncated raw whois output (2000 chars max)
         - error: error message if lookup failed
     """
-    await asyncio.sleep(0)
     try:
         domain = _validate_domain(domain)
     except ValueError as exc:
         return {"domain": domain, "error": str(exc)}
 
     try:
-        result = subprocess.run(
-            ["whois", domain],
-            capture_output=True,
-            text=True,
-            timeout=15,
-        )
+        # Run blocking subprocess in executor
+        raw_text, returncode, stderr = await asyncio.to_thread(_run_whois, domain)
 
-        if result.returncode != 0:
-            return {"domain": domain, "error": f"whois command failed: {result.stderr}"}
-
-        raw_text = result.stdout
+        if returncode != 0:
+            return {"domain": domain, "error": f"whois command failed: {stderr}"}
 
         # Parse common whois fields using regex patterns
         output: dict[str, Any] = {"domain": domain}
@@ -225,7 +254,6 @@ async def research_dns_lookup(
         - ip_addresses: flattened list of all A/AAAA records
         - error: error message if lookup failed
     """
-    await asyncio.sleep(0)
     try:
         domain = _validate_domain(domain)
     except ValueError as exc:
@@ -336,7 +364,6 @@ async def research_nmap_scan(
         - host_up: whether the host responded
         - error: error message if scan failed
     """
-    await asyncio.sleep(0)
     try:
         target = _validate_ip_or_domain(target)
     except ValueError as exc:
@@ -369,18 +396,14 @@ async def research_nmap_scan(
 
         cmd.append(target)
 
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=60,
-        )
+        # Run blocking subprocess in executor
+        nmap_output, returncode = await asyncio.to_thread(_run_nmap, cmd)
 
-        if result.returncode not in (0, 1):  # nmap returns 1 if no ports found
-            logger.warning("nmap_scan_failed target=%s code=%d", target, result.returncode)
+        if returncode not in (0, 1):  # nmap returns 1 if no ports found
+            logger.warning("nmap_scan_failed target=%s code=%d", target, returncode)
             return {
                 **output,
-                "error": f"nmap command failed with code {result.returncode}",
+                "error": f"nmap command failed with code {returncode}",
             }
 
         # Parse output for open ports
@@ -388,7 +411,7 @@ async def research_nmap_scan(
             r"(\d+)/tcp\s+(\w+)\s+(?:(\S+))?"
         )
 
-        for match in port_pattern.finditer(result.stdout):
+        for match in port_pattern.finditer(nmap_output):
             port_num = int(match.group(1))
             state = match.group(2).lower()
             service = match.group(3) or "unknown"
@@ -400,7 +423,7 @@ async def research_nmap_scan(
                 )
 
         # Check if host is up (look for Nmap output indicating host alive)
-        host_up = "Host is up" in result.stdout or len(output["ports"]) > 0
+        host_up = "Host is up" in nmap_output or len(output["ports"]) > 0
         output["host_up"] = host_up
 
         logger.info(

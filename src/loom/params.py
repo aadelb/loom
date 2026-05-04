@@ -7499,3 +7499,73 @@ class HcsBatchParams(BaseModel):
             if not pair["response"] or not pair["response"].strip():
                 raise ValueError(f"pair {idx} response must be non-empty")
         return v
+
+class GenerateReportParams(BaseModel):
+    """Parameters for research_generate_report tool."""
+
+    topic: str
+    depth: Literal["brief", "standard", "comprehensive"] = "standard"
+    format: Literal["markdown", "json", "html"] = "markdown"
+    search_provider: str | None = None
+    num_sources: int | None = None
+    include_methodology: bool = True
+    include_recommendations: bool = True
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("topic")
+    @classmethod
+    def validate_topic(cls, v: str) -> str:
+        v = v.strip()
+        if not v or len(v) > 2000:
+            raise ValueError("topic must be 1-2000 characters")
+        return v
+
+    @field_validator("search_provider")
+    @classmethod
+    def validate_search_provider(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        valid = {"exa", "tavily", "firecrawl", "brave", "ddgs", "arxiv", "wikipedia", "hackernews", "reddit"}
+        if v.lower() not in valid:
+            raise ValueError(f"search_provider must be one of {valid}")
+        return v.lower()
+
+    @field_validator("num_sources")
+    @classmethod
+    def validate_num_sources(cls, v: int | None) -> int | None:
+        if v is None:
+            return v
+        if v < 1 or v > 20:
+            raise ValueError("num_sources must be 1-20")
+        return v
+
+
+class ReportFromResultsParams(BaseModel):
+    """Parameters for research_report_from_results tool."""
+
+    results: list[dict[str, Any]]
+    title: str
+    depth: Literal["brief", "standard", "comprehensive"] = "standard"
+    format: Literal["markdown", "json", "html"] = "markdown"
+    include_methodology: bool = True
+    include_recommendations: bool = True
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("results")
+    @classmethod
+    def validate_results(cls, v: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        if not v:
+            raise ValueError("results list cannot be empty")
+        if len(v) > 50:
+            raise ValueError("results max 50 items")
+        return v
+
+    @field_validator("title")
+    @classmethod
+    def validate_title(cls, v: str) -> str:
+        v = v.strip()
+        if not v or len(v) > 500:
+            raise ValueError("title must be 1-500 characters")
+        return v

@@ -490,6 +490,15 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip fact_checker: %s", e)
         record_failure("research", "fact_checker", str(e))
     try:
+        from loom.tools.fact_verifier import research_fact_verify, research_batch_verify
+        mcp.tool()(wrap_tool(research_fact_verify))
+        record_success("research", "research_fact_verify")
+        mcp.tool()(wrap_tool(research_batch_verify))
+        record_success("research", "research_batch_verify")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip fact_verifier: %s", e)
+        record_failure("research", "fact_verifier", str(e))
+    try:
         from loom.tools.feature_flags import research_flag_check, research_flag_toggle, research_flag_list
         mcp.tool()(wrap_tool(research_flag_check))
         record_success("research", "research_flag_check")
@@ -1609,4 +1618,14 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip ask_all_models: %s", e)
         record_failure("research", "ask_all_models", str(e))
+    try:
+        from loom.tools.auto_report import research_generate_report, research_report_from_results
+        mcp.tool()(wrap_tool(research_generate_report))
+        record_success("research", "research_generate_report")
+        mcp.tool()(wrap_tool(research_report_from_results))
+        record_success("research", "research_report_from_results")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip auto_report: %s", e)
+        record_failure("research", "auto_report", str(e))
+
     log.info("registered research tools count=383")

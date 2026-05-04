@@ -5,6 +5,12 @@ responses for semantically similar queries. No heavy dependencies (numpy/sklearn
 
 Stores cache entries in daily directories with model-specific keys. Tracks
 cache statistics (hit rate, estimated cost savings).
+
+Features:
+- Higher precision matching with 0.95 default threshold
+- Configurable via LOOM_CACHE_THRESHOLD env var
+- Cross-model cache support: queries from one model can hit cache from another
+- Cache metadata tracking: hit status, age, original model
 """
 
 from __future__ import annotations
@@ -18,6 +24,7 @@ import json
 import logging
 import os
 import re
+import time
 import uuid
 from pathlib import Path
 from typing import Any
@@ -25,9 +32,29 @@ from typing import Any
 log = logging.getLogger("loom.semantic_cache")
 
 
+def _get_cache_threshold() -> float:
+    """Get similarity threshold from environment or use default.
+
+    Returns:
+        Similarity threshold [0.0, 1.0]. Default 0.95 for high precision.
+    """
+    threshold_str = os.environ.get("LOOM_CACHE_THRESHOLD", "0.95")
+    try:
+        threshold = float(threshold_str)
+        return max(0.0, min(1.0, threshold))
+    except ValueError:
+        log.warning("invalid LOOM_CACHE_THRESHOLD=%s, using default 0.95", threshold_str)
+        return 0.95
+
+
 def _utc_now_iso() -> str:
     """Return current UTC time in ISO 8601 format."""
     return _dt.datetime.now(_dt.UTC).isoformat()
+
+
+def _utc_now_timestamp() -> float:
+    """Return current UTC time as UNIX timestamp."""
+    return time.time()
 
 
 def _tokenize(text: str) -> list[str]:
@@ -147,21 +174,23 @@ class SemanticCache:
     and reuse cached responses for semantically similar queries. No external
     dependencies — pure Python implementation.
 
-    Cache entries are organized in daily directories by content hash. Model
-    names are included in cache keys to support model-specific caching.
+    Cache entries are organized in daily directories by content hash. Supports
+    both model-specific and cross-model cache matching.
 
     Attributes:
         cache_dir: Root directory for cache storage
         threshold: Minimum similarity score [0.0, 1.0] to return cached response
+        cross_model_cache: Enable cross-model cache hits
         index: In-memory index of {hash: entry_dict}
-        _stats: Cache statistics (hits, misses, total_queries)
+        _stats: Cache statistics (hits, misses, total_queries, etc.)
         _lock: Asyncio lock for thread-safe operations
     """
 
     def __init__(
         self,
         cache_dir: str | Path | None = None,
-        similarity_threshold: float = 0.92,
+        similarity_threshold: float | None = None,
+        cross_model_cache: bool = True,
     ) -> None:
         """Initialize semantic cache.
 
@@ -169,13 +198,24 @@ class SemanticCache:
             cache_dir: Root directory for cache storage. If None, defaults to
                       ~/.cache/loom/semantic/
             similarity_threshold: Minimum similarity score [0.0, 1.0] to return
-                                 cached response (default 0.92)
+                                 cached response. If None, reads from
+                                 LOOM_CACHE_THRESHOLD env var (default 0.95)
+            cross_model_cache: Enable cross-model cache hits (default True).
+                             When True, a query from one model can hit cache
+                             from another model with metadata indicating the
+                             original model.
         """
         if cache_dir is None:
             cache_dir = Path.home() / ".cache" / "loom" / "semantic"
         self.cache_dir = Path(cache_dir).expanduser()
         self.cache_dir.mkdir(parents=True, exist_ok=True)
-        self.threshold = max(0.0, min(1.0, similarity_threshold))
+
+        if similarity_threshold is None:
+            self.threshold = _get_cache_threshold()
+        else:
+            self.threshold = max(0.0, min(1.0, similarity_threshold))
+
+        self.cross_model_cache = cross_model_cache
 
         self.index: dict[str, dict[str, Any]] = {}
         self._stats = {
@@ -183,11 +223,19 @@ class SemanticCache:
             "cache_hits": 0,
             "cache_misses": 0,
             "semantic_hits": 0,
+            "cross_model_hits": 0,
         }
         self._lock = asyncio.Lock()
 
         # Load existing index from disk
         self._load_index()
+
+        log.info(
+            "semantic_cache_initialized threshold=%.2f cross_model=%s entries=%d",
+            self.threshold,
+            self.cross_model_cache,
+            len(self.index),
+        )
 
     def _load_index(self) -> None:
         """Load index from all date directories on disk.
@@ -269,21 +317,27 @@ class SemanticCache:
         tfidf_sim = _compute_tfidf_similarity(tokens1, tokens2)
 
         # Weighted combination
-        similarity = (
-            word_overlap * 0.4 + ngram_overlap * 0.3 + tfidf_sim * 0.3
-        )
+        similarity = word_overlap * 0.4 + ngram_overlap * 0.3 + tfidf_sim * 0.3
 
         return max(0.0, min(1.0, similarity))
 
-    async def get(self, query: str, model: str = "") -> dict[str, Any] | None:
+    async def get(
+        self,
+        query: str,
+        model: str = "",
+        cross_model_cache: bool | None = None,
+    ) -> dict[str, Any] | None:
         """Check if a semantically similar query was already cached.
 
         Searches the cache index for entries with similarity >= threshold.
         Returns the best match if found, or None otherwise.
 
+        First attempts model-specific match, then (if enabled) cross-model match.
+
         Args:
             query: LLM query/prompt
             model: Model name (for model-specific caching)
+            cross_model_cache: Override class-level cross_model_cache setting
 
         Returns:
             Dict with keys:
@@ -291,7 +345,10 @@ class SemanticCache:
             - similarity_score: Similarity [0.0, 1.0]
             - original_query: The original cached query
             - cached_at: ISO 8601 timestamp
+            - cached_from_model: Model that originally cached (if cross-model hit)
             - is_semantic_match: True if match via similarity (not exact)
+            - cache_age_seconds: Seconds since cache entry was created
+            - cache_hit: Always True
             Or None if no cache hit
         """
         async with self._lock:
@@ -301,55 +358,120 @@ class SemanticCache:
                 self._stats["cache_misses"] += 1
                 return None
 
-            # Create cache key with model
-            cache_key = f"{model}::{query}"
+            use_cross_model = cross_model_cache if cross_model_cache is not None else self.cross_model_cache
 
-            # Check for exact match first
-            exact_hash = hashlib.sha256(cache_key.encode("utf-8")).hexdigest()
-            if exact_hash in self.index:
-                entry = self.index[exact_hash]
+            # Try model-specific match first
+            result = self._find_best_match(query, model, cross_model=False)
+
+            # Try cross-model match if enabled and no model-specific match
+            if result is None and use_cross_model:
+                result = self._find_best_match(query, model, cross_model=True)
+
+                if result is not None:
+                    self._stats["cross_model_hits"] += 1
+
+            if result is not None:
                 self._stats["cache_hits"] += 1
-                return {
-                    "cached_response": entry["response"],
-                    "similarity_score": 1.0,
-                    "original_query": entry["query"],
-                    "cached_at": entry["cached_at"],
-                    "is_semantic_match": False,
-                }
-
-            # Search for semantic match (best similarity >= threshold)
-            best_match = None
-            best_similarity = 0.0
-
-            for entry_hash, entry in self.index.items():
-                # Only match same model
-                if entry.get("model") != model:
-                    continue
-
-                # Skip exact matches (already checked)
-                if entry_hash == exact_hash:
-                    continue
-
-                # Compute similarity
-                sim = self.similarity(query, entry["query"])
-
-                if sim > best_similarity and sim >= self.threshold:
-                    best_similarity = sim
-                    best_match = entry
-
-            if best_match:
-                self._stats["cache_hits"] += 1
-                self._stats["semantic_hits"] += 1
-                return {
-                    "cached_response": best_match["response"],
-                    "similarity_score": round(best_similarity, 4),
-                    "original_query": best_match["query"],
-                    "cached_at": best_match["cached_at"],
-                    "is_semantic_match": True,
-                }
+                if result.get("is_semantic_match"):
+                    self._stats["semantic_hits"] += 1
+                return result
 
             self._stats["cache_misses"] += 1
             return None
+
+    def _find_best_match(
+        self,
+        query: str,
+        model: str,
+        cross_model: bool = False,
+    ) -> dict[str, Any] | None:
+        """Find best cache match (internal helper).
+
+        Args:
+            query: LLM query/prompt
+            model: Model name for filtering
+            cross_model: If True, ignore model filter; if False, match model only
+
+        Returns:
+            Cache result dict or None
+        """
+        cache_key = f"{model}::{query}"
+
+        # Check for exact match first
+        exact_hash = hashlib.sha256(cache_key.encode("utf-8")).hexdigest()
+        if exact_hash in self.index:
+            entry = self.index[exact_hash]
+            return self._build_result(entry, exact_hash, is_semantic=False)
+
+        # Search for semantic match (best similarity >= threshold)
+        best_match = None
+        best_similarity = 0.0
+        best_hash = None
+
+        for entry_hash, entry in self.index.items():
+            # Filter by model unless cross_model is True
+            if not cross_model and entry.get("model") != model:
+                continue
+
+            # Skip exact matches (already checked)
+            if entry_hash == exact_hash:
+                continue
+
+            # Compute similarity
+            sim = self.similarity(query, entry["query"])
+
+            if sim > best_similarity and sim >= self.threshold:
+                best_similarity = sim
+                best_match = entry
+                best_hash = entry_hash
+
+        if best_match:
+            return self._build_result(best_match, best_hash or "", is_semantic=True, similarity=best_similarity)
+
+        return None
+
+    def _build_result(
+        self,
+        entry: dict[str, Any],
+        entry_hash: str,
+        is_semantic: bool,
+        similarity: float | None = None,
+    ) -> dict[str, Any]:
+        """Build cache result dict with metadata.
+
+        Args:
+            entry: Cache entry dict
+            entry_hash: Entry hash (for timestamp parsing if needed)
+            is_semantic: True if semantic match, False if exact
+            similarity: Similarity score (for semantic matches)
+
+        Returns:
+            Result dict with cache hit metadata
+        """
+        result = {
+            "cached_response": entry["response"],
+            "similarity_score": similarity if similarity is not None else 1.0,
+            "original_query": entry["query"],
+            "cached_at": entry["cached_at"],
+            "is_semantic_match": is_semantic,
+            "cache_hit": True,
+        }
+
+        # Add model info if this is a cross-model hit
+        cached_model = entry.get("model", "")
+        if cached_model:
+            result["cached_from_model"] = cached_model
+
+        # Calculate cache age in seconds
+        try:
+            cached_dt = _dt.datetime.fromisoformat(entry["cached_at"])
+            now_dt = _dt.datetime.now(_dt.UTC)
+            age_seconds = int((now_dt - cached_dt).total_seconds())
+            result["cache_age_seconds"] = max(0, age_seconds)
+        except (ValueError, KeyError):
+            result["cache_age_seconds"] = 0
+
+        return result
 
     async def put(
         self,
@@ -383,13 +505,14 @@ class SemanticCache:
             # Extract features
             tokens = _tokenize(query)
 
-            # Build entry
+            # Build entry with timestamp
+            cached_at = _utc_now_iso()
             entry = {
                 "query": query,
                 "response": response,
                 "model": model,
                 "tokens": tokens,
-                "cached_at": _utc_now_iso(),
+                "cached_at": cached_at,
                 "query_length": len(query),
                 "response_length": len(response),
             }
@@ -428,9 +551,12 @@ class SemanticCache:
             - cache_hits: Successful cache hits (exact + semantic)
             - cache_misses: Cache misses
             - semantic_hits: Hits via semantic matching (not exact)
+            - cross_model_hits: Hits via cross-model matching
             - hit_rate: Hit rate percentage [0.0, 100.0]
             - entries_cached: Total cached entries
             - estimated_savings_usd: Estimated cost savings from cache hits
+            - threshold: Current similarity threshold
+            - cross_model_cache_enabled: Whether cross-model caching is enabled
         """
         hit_rate = (
             100.0 * self._stats["cache_hits"] / self._stats["total_queries"]
@@ -447,9 +573,12 @@ class SemanticCache:
             "cache_hits": self._stats["cache_hits"],
             "cache_misses": self._stats["cache_misses"],
             "semantic_hits": self._stats["semantic_hits"],
+            "cross_model_hits": self._stats["cross_model_hits"],
             "hit_rate": round(hit_rate, 2),
             "entries_cached": len(self.index),
             "estimated_savings_usd": round(estimated_savings, 4),
+            "threshold": round(self.threshold, 2),
+            "cross_model_cache_enabled": self.cross_model_cache,
         }
 
     async def clear_older_than(self, days: int = 30) -> int:
@@ -503,13 +632,16 @@ _semantic_cache_singleton: SemanticCache | None = None
 
 def get_semantic_cache(
     cache_dir: str | Path | None = None,
-    similarity_threshold: float = 0.92,
+    similarity_threshold: float | None = None,
+    cross_model_cache: bool = True,
 ) -> SemanticCache:
     """Get or create the process-wide SemanticCache singleton.
 
     Args:
         cache_dir: Cache directory (only used on first call)
-        similarity_threshold: Similarity threshold (only used on first call)
+        similarity_threshold: Similarity threshold (only used on first call).
+                            If None, reads from LOOM_CACHE_THRESHOLD env var.
+        cross_model_cache: Enable cross-model caching (only used on first call)
 
     Returns:
         SemanticCache singleton instance
@@ -519,5 +651,6 @@ def get_semantic_cache(
         _semantic_cache_singleton = SemanticCache(
             cache_dir=cache_dir,
             similarity_threshold=similarity_threshold,
+            cross_model_cache=cross_model_cache,
         )
     return _semantic_cache_singleton
