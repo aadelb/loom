@@ -13,6 +13,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import inspect
 import asyncio
 import json
 import logging
@@ -160,7 +161,7 @@ class SoakTester:
         result_keys = None
 
         try:
-            result = tool_func() if not asyncio.iscoroutinefunction(tool_func) else (
+            result = tool_func() if not inspect.iscoroutinefunction(tool_func) else (
                 await tool_func()
             )
             if isinstance(result, dict):
