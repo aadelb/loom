@@ -43,6 +43,13 @@ from loom.quota_tracker import get_quota_tracker, record_usage
 
 logger = logging.getLogger("loom.llm")
 
+try:
+    from loom.tools.model_router import classify_query_complexity
+    _MODEL_ROUTER_AVAILABLE = True
+except ImportError:
+    _MODEL_ROUTER_AVAILABLE = False
+
+
 # Global provider instances (lazy-initialized)
 _PROVIDERS: dict[str, Any] = {}
 
@@ -536,6 +543,7 @@ async def _call_with_cascade(
     temperature: float = 0.2,
     response_format: dict[str, Any] | None = None,
     timeout: int = 60,  # noqa: ASYNC109
+    auto_route: bool = True,
 ) -> LLMResponse:
     """Call LLM with cascade fallback.
 
@@ -577,6 +585,26 @@ async def _call_with_cascade(
     # Resolve default model
     if model == "auto":
         model = CONFIG.get("LLM_DEFAULT_CHAT_MODEL", "meta/llama-4-maverick-17b-128e-instruct")
+
+    # Auto-route based on query complexity if enabled
+    if auto_route and _MODEL_ROUTER_AVAILABLE and not provider_override:
+        query_content = ""
+        for msg in messages:
+            if msg.get("role") == "user":
+                query_content = msg.get("content", "")
+                break
+        if query_content:
+            complexity = classify_query_complexity(query_content)
+            logger.debug("query_routed_by_complexity complexity=%s", complexity)
+            if complexity == "simple":
+                free_providers = [p for p in chain if p.name in ("groq", "nvidia")]
+                if free_providers:
+                    chain = free_providers + [p for p in chain if p not in free_providers]
+            elif complexity == "medium":
+                cheap_providers = [p for p in chain if p.name in ("groq", "nvidia", "deepseek", "gemini")]
+                if cheap_providers:
+                    chain = cheap_providers + [p for p in chain if p not in cheap_providers]
+
 
     attempts: list[str] = []
     all_errors: list[dict[str, str]] = []
