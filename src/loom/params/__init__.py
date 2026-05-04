@@ -58,6 +58,7 @@ from loom.params.core import (
 from loom.params.llm import (
     ArticleExtractParams,
     CamelotTableExtractParams,
+    CompressPromptParams,
     EmbeddingCollideParams,
     ExtractCookiesParams,
     InstructorStructuredExtractParams,
@@ -116,6 +117,7 @@ from loom.params.intelligence import (
     TransactionGraphParams,
     TrendForecastParams,
     FingerprintAuditParams,
+    HarvestParams,
     PrivacyExposureParams,
 )
 

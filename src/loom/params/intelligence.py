@@ -17,6 +17,7 @@ _DEFAULT_ACCEPT_LANG = CONFIG.get("DEFAULT_ACCEPT_LANGUAGE", "en-US,en;q=0.9,ar;
 
 __all__ = [
     "ArtifactCleanupParams",
+    "BrowserPrivacyScoreParams",
     "CitationGraphParams",
     "CompanyDiligenceParams",
     "CompetitiveIntelParams",
@@ -32,9 +33,11 @@ __all__ = [
     "GraphScraperParams",
     "LeakScanParams",
     "MetadataForensicsParams",
+    "MetadataStripParams",
     "MultiPageGraphParams",
     "MultilingualBenchmarkParams",
     "MultilingualParams",
+    "NetworkAnomalyParams",
     "PatentLandscapeParams",
     "PrivacyExposureParams",
     "RedTeamParams",
@@ -51,6 +54,7 @@ __all__ = [
     "ThreatProfileParams",
     "TransactionGraphParams",
     "TrendForecastParams",
+    "USBMonitorParams",
 ]
 
 
@@ -847,6 +851,45 @@ class FingerprintAuditParams(BaseModel):
         return validate_url(v)
 
 
+
+class HarvestParams(BaseModel):
+    """Parameters for research_harvest tool."""
+
+    domain: str
+    sources: str = "all"
+    limit: int = 100
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("domain")
+    @classmethod
+    def validate_domain(cls, v: str) -> str:
+        v = v.strip().lower()
+        if not v or len(v) > 255:
+            raise ValueError("domain must be 1-255 characters")
+        if not re.match(r"^[a-z0-9.-]+$", v):
+            raise ValueError("domain contains disallowed characters")
+        return v
+
+    @field_validator("sources")
+    @classmethod
+    def validate_sources(cls, v: str) -> str:
+        v = v.strip().lower()
+        if not v or len(v) > 255:
+            raise ValueError("sources must be 1-255 characters")
+        if not re.match(r"^[a-z0-9,\-]+$", v):
+            raise ValueError("sources contains disallowed characters")
+        return v
+
+    @field_validator("limit")
+    @classmethod
+    def validate_limit(cls, v: int) -> int:
+        if not isinstance(v, int):
+            raise ValueError("limit must be an integer")
+        if v < 1 or v > 10000:
+            raise ValueError("limit must be 1-10000")
+        return v
+
 class PrivacyExposureParams(BaseModel):
     """Parameters for research_privacy_exposure tool."""
 
@@ -984,4 +1027,59 @@ class MetadataStripParams(BaseModel):
             raise ValueError("file_path must be non-empty")
         if len(v) > 1000:
             raise ValueError("file_path max 1000 characters")
+        return v
+
+
+class MispLookupParams(BaseModel):
+    """Parameters for research_misp_lookup tool."""
+
+    indicator: str
+    indicator_type: str | Literal["auto", "ip", "domain", "hash", "email"] = "auto"
+
+    model_config = {"extra": "ignore", "strict": True}
+
+    @field_validator("indicator")
+    @classmethod
+    def validate_indicator(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("indicator must be non-empty")
+        if len(v) > 500:
+            raise ValueError("indicator max 500 characters")
+        return v
+
+    @field_validator("indicator_type")
+    @classmethod
+    def validate_indicator_type(cls, v: str) -> str:
+        valid = {"auto", "ip", "domain", "hash", "email", "unknown"}
+        if v not in valid:
+            raise ValueError(f"indicator_type must be one of {valid}")
+        return v
+
+
+class SocialAnalyzerParams(BaseModel):
+    """Parameters for research_social_analyze tool."""
+
+    username: str
+    platforms: list[str] | None = None
+
+    model_config = {"extra": "ignore", "strict": True}
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("username must be non-empty")
+        if len(v) > 100:
+            raise ValueError("username max 100 characters")
+        return v
+
+    @field_validator("platforms")
+    @classmethod
+    def validate_platforms(cls, v: list[str] | None) -> list[str] | None:
+        if v:
+            if len(v) > 50:
+                raise ValueError("platforms list max 50 items")
+            return [p.strip().lower() for p in v if p.strip()]
         return v

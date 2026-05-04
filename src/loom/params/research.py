@@ -4003,3 +4003,111 @@ class BatchVerifyParams(BaseModel):
         if v < 0.0 or v > 1.0:
             raise ValueError("min_confidence must be 0.0-1.0")
         return v
+
+
+class AITransparencyCheckParams(BaseModel):
+    """Parameters for research_ai_transparency_check tool."""
+
+    model_response: str
+    model_name: str = ""
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("model_response")
+    @classmethod
+    def validate_model_response(cls, v: str) -> str:
+        if not v or len(v) > 50000:
+            raise ValueError("model_response must be 1-50000 characters")
+        return v
+
+    @field_validator("model_name")
+    @classmethod
+    def validate_model_name(cls, v: str) -> str:
+        if len(v) > 256:
+            raise ValueError("model_name max 256 characters")
+        return v
+
+
+class AIBiasAuditParams(BaseModel):
+    """Parameters for research_ai_bias_audit tool."""
+
+    prompts: list[str]
+    responses: list[str]
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("prompts")
+    @classmethod
+    def validate_prompts(cls, v: list[str]) -> list[str]:
+        if not v or len(v) > 100:
+            raise ValueError("prompts must be 1-100 items")
+        for i, p in enumerate(v):
+            if not isinstance(p, str) or len(p) > 10000:
+                raise ValueError(f"prompt {i} must be 1-10000 characters")
+        return v
+
+    @field_validator("responses")
+    @classmethod
+    def validate_responses(cls, v: list[str]) -> list[str]:
+        if not v or len(v) > 100:
+            raise ValueError("responses must be 1-100 items")
+        for i, r in enumerate(v):
+            if not isinstance(r, str) or len(r) > 10000:
+                raise ValueError(f"response {i} must be 1-10000 characters")
+        return v
+
+
+class AIRobustnessTestParams(BaseModel):
+    """Parameters for research_ai_robustness_test tool."""
+
+    model_name: str
+    test_prompts: list[str]
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("model_name")
+    @classmethod
+    def validate_model_name(cls, v: str) -> str:
+        if not v or len(v) > 256:
+            raise ValueError("model_name must be 1-256 characters")
+        return v
+
+    @field_validator("test_prompts")
+    @classmethod
+    def validate_test_prompts(cls, v: list[str]) -> list[str]:
+        if not v or len(v) > 50:
+            raise ValueError("test_prompts must be 2-50 items")
+        for i, p in enumerate(v):
+            if not isinstance(p, str) or len(p) > 5000:
+                raise ValueError(f"test_prompt {i} must be 1-5000 characters")
+        return v
+
+
+class AIDataGovernanceParams(BaseModel):
+    """Parameters for research_ai_data_governance tool."""
+
+    system_description: str
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("system_description")
+    @classmethod
+    def validate_system_description(cls, v: str) -> str:
+        if not v or len(v) > 50000:
+            raise ValueError("system_description must be 1-50000 characters")
+        return v
+
+
+class AIRiskClassifyParams(BaseModel):
+    """Parameters for research_ai_risk_classify tool."""
+
+    system_description: str
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("system_description")
+    @classmethod
+    def validate_system_description(cls, v: str) -> str:
+        if not v or len(v) > 50000:
+            raise ValueError("system_description must be 1-50000 characters")
+        return v

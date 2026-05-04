@@ -1,0 +1,377 @@
+================================================================================
+LOOM MICROSERVICES ARCHITECTURE - FILES CREATED
+================================================================================
+
+Date Created: 2026-05-04
+Status: Configuration & Planning Phase (No code refactoring)
+Purpose: Split monolithic MCP server into specialized microservices
+
+================================================================================
+FILES CREATED
+================================================================================
+
+1. docker-compose.yml (7.4 KB)
+   ├── Redis (6379) — Shared cache & session store
+   ├── PostgreSQL (5432) — Shared database
+   ├── loom-core (8787) — Research & data gathering
+   ├── loom-redteam (8788) — AI safety & adversarial
+   ├── loom-intel (8789) — OSINT & dark web
+   ├── loom-infra (8790) — Billing & infrastructure
+   └── loom-gateway (8800) — Nginx API Gateway
+
+2. Dockerfile (2.2 KB)
+   ├── Multi-stage build (builder + runtime)
+   ├── Python 3.11-slim base image
+   ├── Service-aware startup (LOOM_SERVICE env var)
+   ├── Non-root user (loom:1000)
+   └── Health check endpoints
+
+3. gateway/nginx.conf (12 KB)
+   ├── Upstream definitions (4 services)
+   ├── Rate limiting per service:
+   │   ├── core: 100 req/s
+   │   ├── redteam: 50 req/s
+   │   ├── intel: 75 req/s
+   │   └── infra: 200 req/s
+   ├── Intelligent routing by tool prefix:
+   │   ├── /research_fetch|search|deep → core
+   │   ├── /research_reframe|safety → redteam
+   │   ├── /research_dark|threat|osint → intel
+   │   └── /billing|auth|config → infra
+   ├── Health & status endpoints
+   └── Error handling (502, 503, 504, 429)
+
+4. .env.example (6.8 KB)
+   ├── Shared infrastructure vars (Redis, PostgreSQL)
+   ├── LLM provider credentials (8 providers)
+   ├── Search provider credentials (21 providers)
+   ├── Infrastructure & services (VastAI, Stripe, Email, Joplin)
+   ├── Service-specific flags (per-service tool enabling)
+   ├── Feature toggles (enable/disable tool categories)
+   └── Development & debugging options
+
+5. README.md (19 KB)
+   ├── Architecture overview (ASCII diagram)
+   ├── Service boundaries & responsibilities
+   ├── Deployment instructions (Quick Start)
+   ├── Environment setup guide
+   ├── Verification & health checks
+   ├── Scaling strategies (horizontal & vertical)
+   ├── Monitoring & observability
+   ├── Troubleshooting guide
+   ├── Kubernetes migration notes
+   └── File structure reference
+
+================================================================================
+SERVICE ARCHITECTURE
+================================================================================
+
+┌─────────────────────────────────────────────────────────────┐
+│                    API Gateway (nginx)                      │
+│                    Port: 8800                               │
+│  - Intelligent request routing by tool prefix               │
+│  - Per-service rate limiting                                │
+│  - Health checks & auto-failover                            │
+│  - Request tracing (X-Service header)                       │
+└─────────┬───────────────┬───────────────┬─────────────────┘
+          │               │               │
+    ┌─────▼─────┐ ┌───────▼────────┐ ┌───▼──────────┐
+    │ CORE      │ │ REDTEAM        │ │ INTEL        │
+    │ :8787     │ │ :8788          │ │ :8789        │
+    │           │ │                │ │              │
+    │ fetch     │ │ reframe (957)  │ │ dark_forum   │
+    │ search    │ │ safety_filter  │ │ threat_intel │
+    │ deep      │ │ crescendo      │ │ osint        │
+    │ markdown  │ │ consensus      │ │ privacy      │
+    │ spider    │ │ adversarial    │ │ leak_scan    │
+    │ llm_*     │ │ ai_safety      │ │ social_graph │
+    └─────┬─────┘ └───────┬────────┘ └───┬──────────┘
+          │               │               │
+          └───────────────┼───────────────┘
+                          │
+                    ┌─────▼──────────┐
+                    │ INFRA :8790    │
+                    │                │
+                    │ billing        │
+                    │ auth           │
+                    │ jobs (batch)   │
+                    │ config         │
+                    │ session        │
+                    │ monitoring     │
+                    └─────┬──────────┘
+                          │
+        ┌─────────────────┼─────────────────┐
+        │                 │                 │
+    ┌───▼─────┐   ┌───────▼────────┐   ┌───▼─────┐
+    │ Redis   │   │ PostgreSQL     │   │ S3/Obj  │
+    │ :6379   │   │ :5432          │   │ Storage │
+    │         │   │                │   │         │
+    │ Cache   │   │ Audit logs     │   │ Archive │
+    │ Sessions│   │ Configs        │   │ Exports │
+    │ Locks   │   │ Billing        │   │         │
+    │ Queues  │   │ Auth tokens    │   │         │
+    └─────────┘   └────────────────┘   └─────────┘
+
+================================================================================
+ROUTING RULES (Nginx Gateway)
+================================================================================
+
+Tool Prefix Pattern             │ Service    │ Rate Limit   │ Timeout
+─────────────────────────────────┼────────────┼──────────────┼─────────
+research_fetch*                  │ core       │ 100 req/s    │ 300s
+research_search*                 │ core       │ 100 req/s    │ 300s
+research_deep*                   │ core       │ 100 req/s    │ 300s
+research_markdown*               │ core       │ 100 req/s    │ 300s
+research_spider*                 │ core       │ 100 req/s    │ 300s
+research_reframe*                │ redteam    │ 50 req/s     │ 300s
+research_safety*                 │ redteam    │ 50 req/s     │ 300s
+research_crescendo*              │ redteam    │ 50 req/s     │ 300s
+research_consensus*              │ redteam    │ 50 req/s     │ 300s
+research_dark*                   │ intel      │ 75 req/s     │ 600s
+research_threat*                 │ intel      │ 75 req/s     │ 600s
+research_osint*                  │ intel      │ 75 req/s     │ 600s
+research_privacy*                │ intel      │ 75 req/s     │ 600s
+research_leak*                   │ intel      │ 75 req/s     │ 600s
+research_tor*                    │ intel      │ 75 req/s     │ 600s
+/v1/billing/*                    │ infra      │ 200 req/s    │ 60s
+/v1/auth/*                       │ infra      │ 200 req/s    │ 60s
+/v1/config/*                     │ infra      │ 200 req/s    │ 60s
+/v1/session/*                    │ infra      │ 200 req/s    │ 60s
+/v1/jobs/*                       │ infra      │ 200 req/s    │ 60s
+(fallback)                       │ core       │ 100 req/s    │ 300s
+
+================================================================================
+SERVICE RESPONSIBILITIES
+================================================================================
+
+LOOM-CORE (Port 8787)
+├── Purpose: Primary research & data gathering
+├── Tools: 45+ tools
+├── Database: Redis DB 0, PostgreSQL (shared)
+├── Resource Profile: High CPU (scraping), Medium memory
+├── Scaling: Horizontal (stateless)
+└── Key Features:
+    ├── Scrapling 3-tier auto-escalation (HTTP → Stealthy → Dynamic)
+    ├── Multi-provider semantic search (21+ search engines)
+    ├── 12-stage deep research pipeline
+    ├── LLM integration (8 providers)
+    └── Browser session management
+
+LOOM-REDTEAM (Port 8788)
+├── Purpose: AI safety testing & adversarial attacks
+├── Tools: 40+ tools (including 957 reframing strategies)
+├── Database: Redis DB 1, PostgreSQL (shared)
+├── Resource Profile: Very high CPU (LLM reasoning), High memory
+├── Scaling: Vertical preferred (shared strategy registry)
+└── Key Features:
+    ├── Prompt reframing/jailbreak strategies (957 total)
+    ├── AI safety filter mapping
+    ├── Crescendo loop (incremental harm escalation)
+    ├── Consensus-based multi-model attacks
+    └── Model capability profiling
+
+LOOM-INTEL (Port 8789)
+├── Purpose: OSINT, dark web, threat intelligence, privacy
+├── Tools: 45+ tools
+├── Database: Redis DB 2, PostgreSQL (shared)
+├── Resource Profile: Medium CPU, Medium memory, Very high network
+├── Scaling: Horizontal (stateless)
+└── Key Features:
+    ├── Dark web search & forum scraping
+    ├── Threat intelligence & adversary profiling
+    ├── Privacy exposure audits & fingerprinting
+    ├── Breach database scanning
+    ├── Passive reconnaissance (DNS, WHOIS, ASN)
+    └── Infrastructure correlation
+
+LOOM-INFRA (Port 8790)
+├── Purpose: Infrastructure, billing, auth, operations
+├── Tools: 30+ tools
+├── Database: Redis DB 3, PostgreSQL (shared)
+├── Resource Profile: Low CPU, Low memory, Low network
+├── Scaling: Horizontal (stateless, distributed locks via PostgreSQL)
+└── Key Features:
+    ├── Usage metering & cost tracking
+    ├── Credit-based billing system
+    ├── API key validation & authorization
+    ├── Batch job queue orchestration
+    ├── Runtime configuration management
+    └── Monitoring & health checks
+
+================================================================================
+SHARED INFRASTRUCTURE
+================================================================================
+
+Redis (Port 6379)
+├── Purpose: Cache, session store, locks, queue
+├── DB 0: loom-core cache
+├── DB 1: loom-redteam cache
+├── DB 2: loom-intel cache
+├── DB 3: loom-infra cache
+└── Features: TTL-based expiry, atomic operations, pub/sub
+
+PostgreSQL (Port 5432)
+├── Purpose: Persistent storage, audit logs, billing
+├── Database: loom_shared
+├── Shared tables:
+│   ├── audit_logs (all services log here)
+│   ├── billing_records (transactions)
+│   ├── auth_tokens (API key validation)
+│   ├── user_config (persistent settings)
+│   └── batch_jobs (job queue)
+└── Features: ACID transactions, streaming replication support
+
+================================================================================
+DEPLOYMENT QUICK START
+================================================================================
+
+Step 1: Prepare environment
+  $ cd microservices/
+  $ cp .env.example .env
+  $ nano .env  # Add API keys for LLM & search providers
+
+Step 2: (Optional) Create service-specific configs
+  $ mkdir -p services/{core,redteam,intel,infra}/
+  $ # Copy config.json templates if needed (or use compiled defaults)
+
+Step 3: Start all services
+  $ docker-compose up -d
+
+Step 4: Verify deployment
+  $ docker-compose ps
+  $ curl http://localhost:8800/status
+  $ curl http://localhost:8800/health
+
+Step 5: Check logs
+  $ docker-compose logs -f loom-core
+  $ docker-compose logs -f loom-gateway
+
+================================================================================
+CONFIGURATION
+================================================================================
+
+Service Configuration Hierarchy (in order of precedence):
+  1. Environment variables (LOOM_SERVICE, LOOM_PORT, etc.)
+  2. Service-specific config.json (if exists at /etc/loom/*/config.json)
+  3. Compiled defaults (from src/loom/config.py)
+
+Key Environment Variables:
+  ├── LOOM_SERVICE: Service type (core|redteam|intel|infra)
+  ├── LOOM_PORT: Port number (8787, 8788, 8789, 8790)
+  ├── REDIS_URL: Redis connection string
+  ├── DATABASE_URL: PostgreSQL connection string
+  ├── LOG_LEVEL: INFO|DEBUG|WARNING|ERROR
+  ├── LLM_CASCADE_ORDER: Provider fallback order
+  ├── ENABLE_*_TOOLS: Per-service tool enabling
+  └── TOR_ENABLED: Enable Tor network integration (loom-intel only)
+
+Feature Flags (enable/disable tool categories):
+  ├── ENABLE_FETCH_TOOLS (core)
+  ├── ENABLE_SEARCH_TOOLS (core)
+  ├── ENABLE_REFRAME_TOOLS (redteam)
+  ├── ENABLE_SAFETY_TOOLS (redteam)
+  ├── ENABLE_DARK_WEB_TOOLS (intel)
+  ├── ENABLE_THREAT_INTEL_TOOLS (intel)
+  ├── ENABLE_BILLING_TOOLS (infra)
+  ├── ENABLE_AUTH_TOOLS (infra)
+  ├── ENABLE_JOB_TOOLS (infra)
+  └── ENABLE_MONITORING_TOOLS (infra)
+
+================================================================================
+SCALING RECOMMENDATIONS
+================================================================================
+
+Horizontal Scaling (add more replicas):
+  ✓ loom-core: Stateless, can run 3-5 replicas
+  ✓ loom-intel: Stateless, can run 2-4 replicas
+  ~ loom-infra: Mostly stateless, 2 replicas recommended
+  ~ loom-redteam: Shared strategy registry, 2 replicas max
+
+Vertical Scaling (add more resources):
+  • loom-core: Increase concurrency (SPIDER_CONCURRENCY, LLM_MAX_PARALLEL)
+  • loom-redteam: Increase memory & CPU (LLM reasoning is compute-intensive)
+  • loom-intel: Increase network bandwidth (Tor, dark web queries)
+  • loom-infra: Already low-resource
+
+Database Scaling:
+  PostgreSQL: Use connection pooling (PgBouncer), streaming replication
+  Redis: Use Redis Cluster or Sentinel for HA
+
+================================================================================
+MIGRATION FROM MONOLITH
+================================================================================
+
+1. No code changes required (same MCP tool interface)
+2. Update client connection:
+   FROM: http://localhost:8787
+   TO:   http://localhost:8800 (gateway)
+3. Export old config/sessions → import to PostgreSQL
+4. Run integration tests against gateway
+5. Monitor service logs for errors
+
+================================================================================
+MONITORING & OBSERVABILITY
+================================================================================
+
+Health Checks:
+  - Each service exposes /health endpoint
+  - Gateway aggregates status
+  - Docker health checks (interval: 30s, timeout: 10s)
+
+Metrics (Prometheus):
+  - loom_tool_calls_total (by tool, status)
+  - loom_tool_duration_seconds (by tool)
+  - loom_tool_errors_total (by tool, error_type)
+
+Logs:
+  - All services log to stdout (Docker capture)
+  - Log level configurable via LOG_LEVEL env var
+  - Structured logging (JSON format)
+
+Rate Limiting:
+  - Per-service limits in Nginx
+  - Per-user limits in loom-infra (via API key)
+  - Per-tool limits (optional, in config)
+
+================================================================================
+FILES CREATED (Summary)
+================================================================================
+
+Total size: ~48 KB configuration
+Files: 5 (docker-compose.yml, Dockerfile, nginx.conf, .env.example, README.md)
+Directories: 1 (microservices/)
+
+No monolith code was modified. This is a pure configuration layer
+ready to be deployed once the monolith has tool selection logic
+based on LOOM_SERVICE environment variable.
+
+================================================================================
+NEXT STEPS
+================================================================================
+
+Phase 2: Tool Selection Logic (Server Code Changes)
+  1. Modify src/loom/server.py to read LOOM_SERVICE env var
+  2. Conditionally register tools per service:
+     - core: all fetch/search/deep/markdown/llm tools
+     - redteam: all reframe/safety/adversarial tools
+     - intel: all dark/threat/osint/privacy/leak tools
+     - infra: all billing/auth/config/session tools
+  3. Add feature flags to control tool registration
+
+Phase 3: Testing & Validation
+  1. Unit tests for service boundary enforcement
+  2. Integration tests for gateway routing
+  3. Load testing for rate limiting
+  4. End-to-end tests with docker-compose
+
+Phase 4: Production Deployment
+  1. Kubernetes manifests (Helm charts)
+  2. Secret management (HashiCorp Vault)
+  3. Observability stack (Prometheus + Grafana)
+  4. Auto-scaling policies
+
+================================================================================
+Author: Ahmed Adel Bakr Alderai
+Date: 2026-05-04
+Status: Configuration Planning Phase (Ready for Phase 2)
+================================================================================
