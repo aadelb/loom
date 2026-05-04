@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 import time
-from datetime import datetime
+from datetime import datetime, UTC
 from unittest import mock
 
 from loom.sla_monitor import (
@@ -81,7 +81,7 @@ class TestBreachEvent:
 
     def test_breach_event_creation(self) -> None:
         """BreachEvent should store breach details."""
-        now = datetime.now(datetime.UTC)
+        now = datetime.now(UTC)
         breach = BreachEvent(
             metric="uptime_percent",
             target=99.9,
@@ -97,7 +97,7 @@ class TestBreachEvent:
 
     def test_breach_event_string_representation(self) -> None:
         """BreachEvent string representation should be readable."""
-        now = datetime.now(datetime.UTC)
+        now = datetime.now(UTC)
         breach = BreachEvent(
             metric="p95_latency_ms",
             target=5000.0,
@@ -395,7 +395,7 @@ class TestReset:
         assert len(monitor.get_breaches()) == 0
 
 
-class TestSliding Window:
+class TestSlidingWindow:
     """Test sliding window behavior."""
 
     def test_maxlen_enforcement(self, monitor: SLAMonitor) -> None:

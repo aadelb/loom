@@ -276,7 +276,9 @@ class BackupManager:
 
                 # Load existing metadata
                 metadata_list = self._load_file_metadata(file_path)
-                metadata_list.append(metadata.to_dict())
+                metadata_dict = metadata.to_dict()
+                metadata_dict['backup_path'] = str(backup_path)
+                metadata_list.append(metadata_dict)
 
                 # Save updated metadata
                 self._save_file_metadata(file_path, metadata_list)

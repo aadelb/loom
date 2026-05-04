@@ -73,11 +73,6 @@ from loom.scheduler import (
     register_default_tasks,
 )
 
-from loom.scheduler import (
-    get_scheduler,
-    register_default_tasks,
-)
-
 from loom.api_auth import ApiKeyAuthMiddleware
 from loom.request_id_middleware import RequestIdMiddleware
 
@@ -1122,12 +1117,15 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                 log.debug(f"Parameter corrections for {tool_name}: {corrections}")
 
             # Tool-specific rate limiting (per-tool granular limits)
-            user_id_for_rate = os.getenv("LOOM_USER_ID", "default")
-            rate_limit_error = await check_tool_rate_limit(tool_name, user_id_for_rate)
-            if rate_limit_error:
-                log.warning("tool_rate_limit_exceeded", tool=tool_name, user_id=user_id_for_rate)
-                _loom_tool_calls_total.labels(tool_name=tool_name, status="rate_limited").inc()
-                return rate_limit_error
+            # Check feature flag before applying per-tool rate limiting
+            ff = get_feature_flags()
+            if ff.is_enabled("per_tool_rate_limit"):
+                user_id_for_rate = os.getenv("LOOM_USER_ID", "default")
+                rate_limit_error = await check_tool_rate_limit(tool_name, user_id_for_rate)
+                if rate_limit_error:
+                    log.warning("tool_rate_limit_exceeded", tool=tool_name, user_id=user_id_for_rate)
+                    _loom_tool_calls_total.labels(tool_name=tool_name, status="rate_limited").inc()
+                    return rate_limit_error
 
             # ── Graceful Shutdown Check ──
             if _is_shutting_down():

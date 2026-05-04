@@ -16,7 +16,7 @@ import logging
 import time
 from collections import deque
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from typing import Any
 
 log = logging.getLogger("loom.sla_monitor")
@@ -139,7 +139,7 @@ class SLAMonitor:
                 "p95_latency_ms": {"actual": 0.0, "target": self._sla_targets["p95_latency_ms"]},
                 "error_rate_percent": {"actual": 0.0, "target": self._sla_targets["error_rate_percent"]},
                 "tool_availability_percent": {"actual": 100.0, "target": self._sla_targets["tool_availability_percent"]},
-                "timestamp": datetime.now(datetime.UTC),
+                "timestamp": datetime.now(UTC),
                 "metrics_count": 0,
                 "window_age_seconds": 0.0,
             }
@@ -188,7 +188,7 @@ class SLAMonitor:
                 "actual": tool_availability_percent,
                 "target": self._sla_targets["tool_availability_percent"],
             },
-            "timestamp": datetime.fromtimestamp(now, tz=datetime.UTC),
+            "timestamp": datetime.fromtimestamp(now, tz=UTC),
             "metrics_count": total_requests,
             "window_age_seconds": window_age,
         }
@@ -221,7 +221,7 @@ class SLAMonitor:
         Updates internal breach tracking and logs warnings for new/ongoing breaches.
         """
         sla = self.get_current_sla()
-        now = datetime.now(datetime.UTC)
+        now = datetime.now(UTC)
 
         # Check each metric for breach
         checks = [
