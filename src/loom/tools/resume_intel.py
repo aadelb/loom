@@ -340,12 +340,12 @@ async def _fetch_company_values(company: str) -> list[str] | None:
     try:
         from loom.tools.search import research_search
 
-        results = research_search(
+        results = await research_search(
             query=f"{company} company values mission",
             n=3,
         )
 
-        if results.get("results"):
+        if results and isinstance(results, dict) and results.get("results"):
             # Extract values from search results
             values_text = " ".join(
                 [r.get("description", "") for r in results["results"][:2]]

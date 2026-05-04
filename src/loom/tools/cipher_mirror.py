@@ -202,8 +202,10 @@ async def research_cipher_mirror(
         return_exceptions=True,
     )
     all_results: list[dict[str, Any]] = []
-    for result in gather_results:
-        if isinstance(result, list):
+    for i, result in enumerate(gather_results):
+        if isinstance(result, Exception):
+            logger.warning("cipher_mirror gather task %d failed: %s", i, result)
+        elif isinstance(result, list):
             all_results.extend(result)
 
     # Deduplicate by URL

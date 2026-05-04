@@ -455,4 +455,11 @@ def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip image_intel: %s", e)
         record_failure("intelligence", "image_intel", str(e))
-    log.info("registered intelligence tools count=89")
+    try:
+        from loom.tools.epistemic_score import research_epistemic_score
+        mcp.tool()(wrap_tool(research_epistemic_score))
+        record_success("intelligence", "research_epistemic_score")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip epistemic_score: %s", e)
+        record_failure("intelligence", "epistemic_score", str(e))
+    log.info("registered intelligence tools count=90")

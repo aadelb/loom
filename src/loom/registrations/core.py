@@ -139,3 +139,46 @@ def register_core_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip webhooks: %s", e)
         record_failure("core", "webhooks", str(e))
+
+    # MCP authentication tools
+    try:
+        from loom.tools.mcp_auth import (
+            research_auth_create_token,
+            research_auth_validate,
+            research_auth_revoke,
+        )
+        mcp.tool()(wrap_tool(research_auth_create_token))
+        record_success("core", "research_auth_create_token")
+        mcp.tool()(wrap_tool(research_auth_validate))
+        record_success("core", "research_auth_validate")
+        mcp.tool()(wrap_tool(research_auth_revoke))
+        record_success("core", "research_auth_revoke")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip mcp_auth: %s", e)
+        record_failure("core", "mcp_auth", str(e))
+
+    # CPU pool and circuit breaker status tools
+    try:
+        from loom.server import research_cpu_pool_status
+        mcp.tool()(wrap_tool(research_cpu_pool_status))
+        record_success("core", "research_cpu_pool_status")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip cpu_pool_status: %s", e)
+        record_failure("core", "cpu_pool_status", str(e))
+
+    try:
+        from loom.tools.llm import research_circuit_status
+        mcp.tool()(wrap_tool(research_circuit_status))
+        record_success("core", "research_circuit_status")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip circuit_status: %s", e)
+        record_failure("core", "circuit_status", str(e))
+
+    # Analytics dashboard tool
+    try:
+        from loom.analytics import research_analytics_dashboard
+        mcp.tool()(wrap_tool(research_analytics_dashboard))
+        record_success("core", "research_analytics_dashboard")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip analytics_dashboard: %s", e)
+        record_failure("core", "analytics_dashboard", str(e))

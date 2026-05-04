@@ -61,6 +61,8 @@ from loom.analytics import ToolAnalytics, research_analytics_dashboard
 
 log = logging.getLogger("loom.server")
 from loom.registrations.tracking import record_optional_module_loaded, record_import_failure
+from loom.secret_manager import get_secret_manager, research_secret_health
+from loom.tools.quota_status import research_quota_status
 
 # ── Prometheus metrics (optional, graceful fallback if not installed) ──
 try:
@@ -1370,7 +1372,7 @@ def _register_tools(mcp: FastMCP) -> None:
         research_crescendo_loop, research_model_profile, research_reid_pipeline,
         research_pool_stats, research_pool_reset, export_audit,
         research_cpu_pool_status, research_cpu_executor_shutdown,
-        research_analytics_dashboard,
+        research_analytics_dashboard, research_secret_health, research_quota_status,
     ]
     for _func in _core_funcs:
         try:
@@ -1476,6 +1478,26 @@ def create_app() -> FastMCP:
 
     # Validate environment
     _validate_environment()
+
+    # Initialize and validate API keys (SecretManager singleton)
+    try:
+        secret_mgr = get_secret_manager()
+        validation_results = secret_mgr.validate_all_keys()
+        health = secret_mgr.get_health()
+        log.info(
+            "secret_manager_initialized status=%s valid_keys=%d missing_keys=%d",
+            health["overall_status"],
+            health["valid_keys"],
+            health["missing_keys"],
+        )
+        if health["stale_keys"]:
+            log.warning(
+                "stale_keys_detected providers=%s days_threshold=%d",
+                health["stale_keys"],
+                health["stale_threshold_days"],
+            )
+    except Exception as e:
+        log.error("secret_manager_init_failed error=%s", str(e))
 
     # Create FastMCP instance
     host = os.environ.get("LOOM_HOST", "127.0.0.1")

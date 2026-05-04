@@ -459,9 +459,16 @@ async def research_funding_signal(company: str, domain: str = "") -> dict[str, A
             sec_task = _fetch_sec_filings(client, company_clean)
             github_task = _fetch_github_activity(client, company_clean)
 
-            sec_data, github_data = await asyncio.gather(
+            results = await asyncio.gather(
                 sec_task, github_task, return_exceptions=True
             )
+            sec_data = results[0]
+            github_data = results[1]
+
+            # Log any exceptions that were returned
+            for i, result in enumerate(results):
+                if isinstance(result, Exception):
+                    logger.warning("funding_signal task %d failed: %s", i, result)
 
             new_subdomains = []
             if domain and len(domain) < 100:
@@ -580,9 +587,17 @@ async def research_stealth_hire_scanner(
             hackernews_task = _fetch_hackernews_hiring(client, keywords_clean)
             reddit_task = _fetch_reddit_hiring(client, keywords_clean)
 
-            github_jobs, hackernews_jobs, reddit_jobs = await asyncio.gather(
+            results = await asyncio.gather(
                 github_task, hackernews_task, reddit_task, return_exceptions=True
             )
+            github_jobs = results[0]
+            hackernews_jobs = results[1]
+            reddit_jobs = results[2]
+
+            # Log any exceptions that were returned
+            for i, result in enumerate(results):
+                if isinstance(result, Exception):
+                    logger.warning("stealth_hire_scanner task %d failed: %s", i, result)
 
             # Consolidate results
             all_jobs = []
@@ -664,9 +679,17 @@ async def research_interviewer_profiler(
             scholar_task = _fetch_semantic_scholar(client, person_clean)
             hackernews_task = _fetch_hackernews_activity(client, person_clean)
 
-            github_data, scholar_data, hn_data = await asyncio.gather(
+            results = await asyncio.gather(
                 github_task, scholar_task, hackernews_task, return_exceptions=True
             )
+            github_data = results[0]
+            scholar_data = results[1]
+            hn_data = results[2]
+
+            # Log any exceptions that were returned
+            for i, result in enumerate(results):
+                if isinstance(result, Exception):
+                    logger.warning("interviewer_profiler task %d failed: %s", i, result)
 
             # Build tech stack from multiple sources
             tech_stack = []
