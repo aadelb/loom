@@ -16,15 +16,23 @@ logger = logging.getLogger("loom.tools.content_anomaly")
 # Injection pattern signatures for common attack vectors
 _INJECTION_PATTERNS = [
     # SQL injection patterns
-    r"(?i)(union\s+.*select|select\s+.*from|drop\s+table|insert\s+into|update\s+set)",
+    r"(?i)union.*select",
+    r"(?i)select.*from",
+    r"(?i)drop\s+table",
+    r"(?i)insert\s+into",
+    r"(?i)update\s+set",
     # Script injection patterns
-    r"(?i)(<script|javascript:|onerror=|onload=)",
+    r"(?i)<script",
+    r"(?i)javascript:",
+    r"(?i)onerror=",
+    r"(?i)onload=",
     # Command injection patterns
-    r"(?i)(bash|cmd|exec|system|shell)",
-    # XXE/XML injection (escaped properly)
-    r"(?i)(<!ENTITY|DOCTYPE.*SYSTEM)",
-    # LDAP injection
-    r"(?i)(\*\)|(&\()",
+    r"(?i)bash",
+    r"(?i)exec",
+    r"(?i)system",
+    # XXE/XML injection
+    r"(?i)<!ENTITY",
+    r"(?i)DOCTYPE.*SYSTEM",
 ]
 
 
