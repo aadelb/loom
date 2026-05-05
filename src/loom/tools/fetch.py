@@ -245,6 +245,7 @@ def research_fetch(
     bypass_cache: bool = False,
     auto_escalate: bool | None = None,
     backend: str = "auto",
+    expected_snippet: str | None = None,
 ) -> dict[str, Any]:
     """Fetch a URL with configurable strategy.
 
