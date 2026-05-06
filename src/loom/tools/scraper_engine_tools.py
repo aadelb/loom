@@ -22,6 +22,27 @@ from loom.tools.fetch import research_fetch
 logger = logging.getLogger("loom.tools.scraper_engine_tools")
 
 
+def _map_engine_mode_to_fetch_mode(engine_mode: str) -> str:
+    """Map ScraperEngine modes to research_fetch modes.
+
+    ScraperEngine modes: ["auto", "stealth", "max", "fast"]
+    research_fetch modes: ["http", "stealthy", "dynamic"]
+
+    Mapping:
+    - "fast" -> "http" (fastest, least stealthy)
+    - "auto" -> "stealthy" (balanced)
+    - "stealth" -> "stealthy" (stealthy)
+    - "max" -> "dynamic" (most thorough with browser)
+    """
+    mode_map = {
+        "fast": "http",
+        "auto": "stealthy",
+        "stealth": "stealthy",
+        "max": "dynamic",
+    }
+    return mode_map.get(engine_mode, "stealthy")
+
+
 async def research_engine_fetch(params: ScraperEngineFetchParams) -> dict[str, Any]:
     """Fetch URL with automatic backend escalation.
 
@@ -44,20 +65,28 @@ async def research_engine_fetch(params: ScraperEngineFetchParams) -> dict[str, A
     """
     # Extract URL from params (handle both Pydantic objects and dicts)
     url = params.url if hasattr(params, "url") else params.get("url", str(params))
-    mode = params.mode if hasattr(params, "mode") else params.get("mode", "standard")
+    engine_mode = params.mode if hasattr(params, "mode") else params.get("mode", "auto")
     max_escalation = (
         params.max_escalation
         if hasattr(params, "max_escalation")
         else params.get("max_escalation", 7)
     )
 
-    logger.info("engine_fetch_start url=%s mode=%s max_escalation=%s", url, mode, max_escalation)
+    # Map engine mode to fetch mode
+    fetch_mode = _map_engine_mode_to_fetch_mode(engine_mode)
+
+    logger.info(
+        "engine_fetch_start url=%s engine_mode=%s fetch_mode=%s max_escalation=%s",
+        url,
+        engine_mode,
+        fetch_mode,
+        max_escalation,
+    )
 
     # Delegate to research_fetch which handles the actual escalation
     result = await research_fetch(
         url=url,
-        stealthy=mode == "stealthy",
-        dynamic=mode == "dynamic",
+        mode=fetch_mode,
     )
 
     logger.info(
@@ -116,7 +145,10 @@ async def research_engine_extract(params: ScraperEngineExtractParams) -> dict[st
         else params.get("xpath_selector")
     )
     model = params.model if hasattr(params, "model") else params.get("model", "auto")
-    mode = params.mode if hasattr(params, "mode") else params.get("mode", "standard")
+    engine_mode = params.mode if hasattr(params, "mode") else params.get("mode", "auto")
+
+    # Map engine mode to fetch mode
+    fetch_mode = _map_engine_mode_to_fetch_mode(engine_mode)
 
     logger.info(
         "engine_extract_start url=%s query=%s css=%s xpath=%s model=%s",
@@ -130,8 +162,7 @@ async def research_engine_extract(params: ScraperEngineExtractParams) -> dict[st
     # First fetch the content
     fetch_result = await research_fetch(
         url=url,
-        stealthy=mode == "stealth",
-        dynamic=mode == "max",
+        mode=fetch_mode,
     )
 
     if not fetch_result.get("success"):
@@ -269,7 +300,7 @@ async def research_engine_batch(params: ScraperEngineBatchParams) -> dict[str, A
     """
     # Extract URLs from params (handle both Pydantic objects and dicts)
     urls = params.urls if hasattr(params, "urls") else params.get("urls", [])
-    mode = params.mode if hasattr(params, "mode") else params.get("mode", "standard")
+    engine_mode = params.mode if hasattr(params, "mode") else params.get("mode", "auto")
     max_concurrent = (
         params.max_concurrent
         if hasattr(params, "max_concurrent")
@@ -277,10 +308,14 @@ async def research_engine_batch(params: ScraperEngineBatchParams) -> dict[str, A
     )
     fail_fast = params.fail_fast if hasattr(params, "fail_fast") else params.get("fail_fast", False)
 
+    # Map engine mode to fetch mode
+    fetch_mode = _map_engine_mode_to_fetch_mode(engine_mode)
+
     logger.info(
-        "engine_batch_start urls_count=%d mode=%s max_concurrent=%d fail_fast=%s",
+        "engine_batch_start urls_count=%d engine_mode=%s fetch_mode=%s max_concurrent=%d fail_fast=%s",
         len(urls),
-        mode,
+        engine_mode,
+        fetch_mode,
         max_concurrent,
         fail_fast,
     )
@@ -299,8 +334,7 @@ async def research_engine_batch(params: ScraperEngineBatchParams) -> dict[str, A
             try:
                 result = await research_fetch(
                     url=url,
-                    stealthy=mode == "stealthy",
-                    dynamic=mode == "dynamic",
+                    mode=fetch_mode,
                 )
                 return result
             except Exception as e:

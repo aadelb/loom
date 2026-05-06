@@ -77,7 +77,6 @@ async def research_red_team(
     Returns:
         Dict with ``counter_arguments`` list, each with evidence.
     """
-    loop = asyncio.get_running_loop()
     total_cost = 0.0
 
     try:
@@ -162,7 +161,6 @@ async def research_multilingual(
     if languages is None:
         languages = ["ar", "es", "de", "zh", "ru"]
 
-    loop = asyncio.get_running_loop()
     from loom.tools.search import research_search
 
     region_map = {
@@ -252,7 +250,6 @@ async def research_consensus(
     if providers is None:
         providers = ["exa", "tavily", "brave", "ddgs"]
 
-    loop = asyncio.get_running_loop()
     from loom.tools.deep import _normalize_url
     from loom.tools.search import research_search
 
@@ -333,7 +330,6 @@ async def research_misinfo_check(
     Returns:
         Dict with stress_score, flagged_sources, verification results.
     """
-    loop = asyncio.get_running_loop()
 
     try:
         from loom.tools.llm import research_llm_chat
@@ -365,9 +361,8 @@ async def research_misinfo_check(
         if not isinstance(false_claim, str):
             continue
         try:
-            results = await loop.run_in_executor(
-                None,
-                partial(research_search, false_claim, provider="ddgs", n=n_sources),
+            results = await research_search(
+                false_claim, provider="ddgs", n=n_sources
             )
             for r in results.get("results", []):
                 flagged_sources.append(
@@ -380,9 +375,8 @@ async def research_misinfo_check(
         except Exception as exc:
             logger.debug("creative_tool_error: %s", exc)
 
-    true_results = await loop.run_in_executor(
-        None,
-        lambda: research_search(claim, provider="ddgs", n=n_sources),
+    true_results = await research_search(
+        claim, provider="ddgs", n=n_sources
     )
     true_source_count = len(true_results.get("results", []))
 
@@ -445,7 +439,6 @@ async def research_temporal_diff(
     except ImportError:
         return {"url": url, "error": "trafilatura not available"}
 
-    loop = asyncio.get_running_loop()
     current_text, archive_text = "", ""
 
     try:
@@ -519,7 +512,6 @@ async def research_citation_graph(
     papers: dict[str, dict[str, Any]] = {}
     edges: list[dict[str, str]] = []
 
-    loop = asyncio.get_running_loop()
 
     def _fetch_citation_data() -> tuple[dict[str, dict[str, Any]], list[dict[str, str]]]:
         """Sync wrapper for citation graph fetching."""
@@ -707,7 +699,6 @@ async def research_curriculum(
     Returns:
         Dict with ``levels`` (beginner/intermediate/advanced), each with resources.
     """
-    loop = asyncio.get_running_loop()
     from loom.tools.search import research_search
 
     levels: dict[str, list[dict[str, Any]]] = {
@@ -787,7 +778,6 @@ async def research_community_sentiment(
     Returns:
         Dict with HN and Reddit results, combined sentiment indicators.
     """
-    loop = asyncio.get_running_loop()
 
     hn_results: dict[str, Any] = {"results": []}
     reddit_results: dict[str, Any] = {"results": []}
@@ -850,7 +840,6 @@ async def research_wiki_ghost(
         return {"topic": topic, "error": "language must be 2-3 lowercase letters (e.g., 'en', 'ar')"}
 
     base = f"https://{language}.wikipedia.org"
-    loop = asyncio.get_running_loop()
 
     def _fetch_wiki_data() -> dict[str, Any]:
         """Sync wrapper for Wikipedia data fetching."""
@@ -967,7 +956,6 @@ async def research_semantic_sitemap(
     """
     from urllib.parse import urlparse
 
-    loop = asyncio.get_running_loop()
 
     from loom.validators import UrlSafetyError, validate_url
 
