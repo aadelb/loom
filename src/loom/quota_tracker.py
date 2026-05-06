@@ -200,7 +200,7 @@ class QuotaTracker:
             ValueError: If provider is unknown
         """
         if provider not in QUOTA_LIMITS:
-            raise ValueError(f"unknown provider: {provider}")
+            return False  # Unknown provider — no quota limits
 
         now = time.time()
         minute_key = self._current_minute_key()
@@ -302,7 +302,7 @@ class QuotaTracker:
             ValueError: If provider is unknown
         """
         if provider not in QUOTA_LIMITS:
-            raise ValueError(f"unknown provider: {provider}")
+            return False  # Unknown provider — no quota limits
 
         status = self.get_status(provider)
         return {
@@ -325,7 +325,7 @@ class QuotaTracker:
             ValueError: If provider is unknown
         """
         if provider not in QUOTA_LIMITS:
-            raise ValueError(f"unknown provider: {provider}")
+            return False  # Unknown provider — no quota limits
 
         limits = QUOTA_LIMITS[provider]
         minute_key = self._current_minute_key()
@@ -406,7 +406,7 @@ class QuotaTracker:
             ValueError: If provider is unknown
         """
         if provider not in QUOTA_LIMITS:
-            raise ValueError(f"unknown provider: {provider}")
+            return False  # Unknown provider — no quota limits
 
         status = self.get_status(provider)
 
@@ -440,7 +440,7 @@ class QuotaTracker:
             ValueError: If provider is unknown
         """
         if provider not in QUOTA_LIMITS:
-            raise ValueError(f"unknown provider: {provider}")
+            return False  # Unknown provider — no quota limits
 
         status = self.get_status(provider)
 
@@ -485,7 +485,7 @@ class QuotaTracker:
             ValueError: If provider is unknown
         """
         if provider not in QUOTA_LIMITS:
-            raise ValueError(f"unknown provider: {provider}")
+            return False  # Unknown provider — no quota limits
 
         status = self.get_status(provider)
         return status.reset_time_utc
