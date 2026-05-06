@@ -35,7 +35,7 @@ async def research_dlq_stats() -> dict[str, Any]:
         dlq = get_dlq()
         stats = dlq.get_stats()
 
-        log.info("dlq_stats_retrieved", stats=stats)
+        log.info("dlq_stats_retrieved stats=%s", stats)
 
         return {
             "status": "success",
@@ -43,7 +43,7 @@ async def research_dlq_stats() -> dict[str, Any]:
             "message": f"DLQ has {stats['pending']} pending and {stats['failed']} failed items",
         }
     except Exception as e:
-        log.error("dlq_stats_error", error=str(e), exc_info=True)
+        log.error("dlq_stats_error error=%s", str(e), exc_info=True)
         return {
             "status": "error",
             "error": "failed_to_retrieve_stats",
@@ -101,10 +101,10 @@ async def research_dlq_retry_now(dlq_id: int) -> dict[str, Any]:
                 conn.commit()
 
         log.info(
-            "dlq_retry_now",
-            dlq_id=dlq_id,
-            tool_name=target_item["tool_name"],
-            retry_count=target_item["retry_count"],
+            "dlq_retry_now dlq_id=%d tool_name=%s retry_count=%d",
+            dlq_id,
+            target_item["tool_name"],
+            target_item["retry_count"],
         )
 
         return {
@@ -115,7 +115,7 @@ async def research_dlq_retry_now(dlq_id: int) -> dict[str, Any]:
             "message": f"Scheduled immediate retry for {target_item['tool_name']} (retry #{target_item['retry_count'] + 1})",
         }
     except Exception as e:
-        log.error("dlq_retry_now_error", dlq_id=dlq_id, error=str(e), exc_info=True)
+        log.error("dlq_retry_now_error dlq_id=%d error=%s", dlq_id, str(e), exc_info=True)
         return {
             "status": "error",
             "error": "retry_failed",
@@ -167,7 +167,7 @@ async def research_dlq_list(tool_name: str | None = None, include_failed: bool =
             except (json.JSONDecodeError, TypeError):
                 item["params"] = {}
 
-        log.info("dlq_list_retrieved", count=len(items), tool_name=tool_name)
+        log.info("dlq_list_retrieved count=%d tool_name=%s", len(items), tool_name)
 
         return {
             "status": "success",
@@ -175,7 +175,7 @@ async def research_dlq_list(tool_name: str | None = None, include_failed: bool =
             "items": items,
         }
     except Exception as e:
-        log.error("dlq_list_error", error=str(e), exc_info=True)
+        log.error("dlq_list_error error=%s", str(e), exc_info=True)
         return {
             "status": "error",
             "error": "list_failed",
@@ -203,7 +203,7 @@ async def research_dlq_clear_failed(days: int = 30) -> dict[str, Any]:
         dlq = get_dlq()
         deleted = dlq.cleanup_old_failed(days=days)
 
-        log.info("dlq_clear_failed", days=days, deleted=deleted)
+        log.info("dlq_clear_failed days=%d deleted=%d", days, deleted)
 
         return {
             "status": "success",
@@ -212,7 +212,7 @@ async def research_dlq_clear_failed(days: int = 30) -> dict[str, Any]:
             "message": f"Deleted {deleted} failed items older than {days} days",
         }
     except Exception as e:
-        log.error("dlq_clear_failed_error", error=str(e), exc_info=True)
+        log.error("dlq_clear_failed_error error=%s", str(e), exc_info=True)
         return {
             "status": "error",
             "error": "cleanup_failed",

@@ -64,7 +64,11 @@ def _read_audit_entries(audit_dir: Path, cutoff: datetime) -> list[dict[str, Any
         return entries
     for log_file in sorted(audit_dir.glob("*.jsonl")):
         try:
-            if datetime.fromisoformat(log_file.stem) < cutoff:
+            file_dt = datetime.fromisoformat(log_file.stem)
+            # Ensure both datetimes have timezone awareness for comparison
+            if file_dt.tzinfo is None:
+                file_dt = file_dt.replace(tzinfo=UTC)
+            if file_dt < cutoff:
                 continue
         except ValueError:
             continue

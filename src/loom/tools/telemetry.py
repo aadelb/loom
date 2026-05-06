@@ -30,7 +30,7 @@ async def research_telemetry_record(
         "success": bool(success),
         "timestamp": timestamp,
     })
-    logger.debug("telemetry_record", tool_name=tool_name, duration_ms=duration_ms, success=success)
+    logger.debug("telemetry_record tool_name=%s duration_ms=%s success=%s", tool_name, duration_ms, success)
     return {
         "recorded": True,
         "tool_name": tool_name,
@@ -99,5 +99,5 @@ async def research_telemetry_reset() -> dict[str, Any]:
     start = datetime.fromtimestamp(_buffer_start_time, UTC).isoformat() if _buffer_start_time else None
     _telemetry_buffer.clear()
     _buffer_start_time = None
-    logger.info("telemetry_reset", cleared_records=cleared)
+    logger.info("telemetry_reset cleared_records=%d", cleared)
     return {"cleared_records": cleared, "previous_window_start": start, "reset_at": datetime.now(UTC).isoformat()}

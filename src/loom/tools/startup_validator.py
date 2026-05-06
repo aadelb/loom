@@ -100,6 +100,5 @@ async def research_validate_startup() -> dict[str, Any]:
     if results["import_errors"] and len(results["import_errors"]) > 5:
         results["overall_health"] = "critical"
 
-    logger.info("startup_validation", health=results["overall_health"],
-                loaded=results["loaded_ok"], total=results["total_modules"])
+    logger.info("startup_validation health=%s loaded=%d total=%d", results["overall_health"], results["loaded_ok"], results["total_modules"])
     return results

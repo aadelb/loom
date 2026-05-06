@@ -66,10 +66,10 @@ async def research_hub_share(
                 (finding_id, finding_type, title, content, json.dumps(tags or []), visibility, "anonymous", timestamp),
             )
             await conn.commit()
-        logger.info("hub_share", finding_id=finding_id, type=finding_type)
+        logger.info("hub_share finding_id=%s type=%s", finding_id, finding_type)
         return {"success": True, "finding_id": finding_id, "type": finding_type, "title": title, "visibility": visibility, "timestamp": timestamp}
     except Exception as e:
-        logger.error("hub_share_failed", error=str(e))
+        logger.error("hub_share_failed error=%s", str(e))
         return {"success": False, "error": str(e)}
 
 
@@ -102,7 +102,7 @@ async def research_hub_feed(
         } for r in rows]
         return {"findings": findings, "total": len(findings), "type_filter": type_filter}
     except Exception as e:
-        logger.error("hub_feed_failed", error=str(e))
+        logger.error("hub_feed_failed error=%s", str(e))
         return {"findings": [], "total": 0, "error": str(e)}
 
 
@@ -128,8 +128,8 @@ async def research_hub_vote(
             new_votes = row[0] + vote
             await conn.execute("UPDATE findings SET votes = ? WHERE id = ?", (new_votes, finding_id))
             await conn.commit()
-        logger.info("hub_vote", finding_id=finding_id, vote=vote, new_count=new_votes)
+        logger.info("hub_vote finding_id=%s vote=%d new_count=%d", finding_id, vote, new_votes)
         return {"success": True, "finding_id": finding_id, "new_vote_count": new_votes}
     except Exception as e:
-        logger.error("hub_vote_failed", error=str(e))
+        logger.error("hub_vote_failed error=%s", str(e))
         return {"success": False, "error": str(e)}

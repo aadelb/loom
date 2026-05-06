@@ -48,18 +48,18 @@ async def research_event_emit(
     subscribers_notified = 0
     for sub in _subscribers.get(event_type, []):
         logger.info(
-            "event_notify",
-            event_id=event_id,
-            event_type=event_type,
-            callback_tool=sub.get("callback_tool", "unknown"),
+            "event_notify event_id=%s event_type=%s callback_tool=%s",
+            event_id,
+            event_type,
+            sub.get("callback_tool", "unknown"),
         )
         subscribers_notified += 1
 
     logger.info(
-        "event_emitted",
-        event_id=event_id,
-        event_type=event_type,
-        subscribers=subscribers_notified,
+        "event_emitted event_id=%s event_type=%s subscribers=%d",
+        event_id,
+        event_type,
+        subscribers_notified,
     )
 
     return {
@@ -94,10 +94,10 @@ async def research_event_subscribe(
     _subscribers[event_type].append(subscription)
 
     logger.info(
-        "subscription_created",
-        event_type=event_type,
-        subscription_id=subscription_id,
-        callback_tool=callback_tool,
+        "subscription_created event_type=%s subscription_id=%s callback_tool=%s",
+        event_type,
+        subscription_id,
+        callback_tool,
     )
 
     return {
@@ -131,10 +131,10 @@ async def research_event_history(
     recent_events = all_events[-limit:][::-1]
 
     logger.info(
-        "history_retrieved",
-        event_type=event_type if event_type else "all",
-        count=len(recent_events),
-        total=len(all_events),
+        "history_retrieved event_type=%s count=%d total=%d",
+        event_type if event_type else "all",
+        len(recent_events),
+        len(all_events),
     )
 
     return {

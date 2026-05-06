@@ -45,12 +45,12 @@ def research_track_refusal(model: str, refused: bool, strategy: str = "") -> dic
             trend = "decreasing"
 
     logger.info(
-        "refusal_tracked",
-        model=model,
-        refused=refused,
-        refusal_rate=refusal_rate,
-        window_size=len(window),
-        trend=trend,
+        "refusal_tracked model=%s refused=%s refusal_rate=%s window_size=%d trend=%s",
+        model,
+        refused,
+        refusal_rate,
+        len(window),
+        trend,
     )
 
     return {
@@ -74,7 +74,7 @@ def research_get_best_model(topic: str = "") -> dict[str, Any]:
         Dict with: recommended_model, refusal_rate, all_models_ranked, topic
     """
     if not _REFUSAL_WINDOW:
-        logger.warning("no_models_tracked", topic=topic)
+        logger.warning("no_models_tracked topic=%s", topic)
         return {
             "recommended_model": None,
             "refusal_rate": None,
@@ -101,7 +101,7 @@ def research_get_best_model(topic: str = "") -> dict[str, Any]:
     recommended_model = recommended["model"] if recommended else None
     recommended_rate = recommended["refusal_rate"] if recommended else None
 
-    logger.info("best_model_selected", recommended_model=recommended_model, refusal_rate=recommended_rate, topic=topic)
+    logger.info("best_model_selected recommended_model=%s refusal_rate=%s topic=%s", recommended_model, recommended_rate, topic)
 
     return {
         "recommended_model": recommended_model,

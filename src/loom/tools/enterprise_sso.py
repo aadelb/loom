@@ -26,7 +26,7 @@ def _load_sso_config() -> dict[str, Any]:
         try:
             return json.loads(SSO_CONFIG_PATH.read_text())
         except Exception as e:
-            logger.warning("sso_config_load_failed", error=str(e))
+            logger.warning("sso_config_load_failed error=%s", str(e))
             return {}
     return {}
 
@@ -60,7 +60,7 @@ def _decode_jwt_parts(token: str) -> tuple[dict, dict] | None:
 
         return (header, payload)
     except Exception as e:
-        logger.debug("jwt_decode_failed", error=str(e))
+        logger.debug("jwt_decode_failed error=%s", str(e))
         return None
 
 
@@ -105,7 +105,7 @@ async def research_sso_configure(
         # Save config
         _save_sso_config(config)
 
-        logger.info("sso_configured", provider=provider, client_id=client_id or "not_set")
+        logger.info("sso_configured provider=%s client_id=%s", provider, client_id or "not_set")
 
         return {
             "configured": True,
@@ -115,7 +115,7 @@ async def research_sso_configure(
         }
 
     except Exception as e:
-        logger.error("sso_configure_failed", provider=provider, error=str(e))
+        logger.error("sso_configure_failed provider=%s error=%s", provider, str(e))
         return {
             "configured": False,
             "provider": provider,
@@ -189,7 +189,7 @@ async def research_sso_validate_token(
                         "reason": f"Issuer mismatch: {token_iss} not from {configured_iss}",
                     }
 
-        logger.info("sso_token_valid", provider=provider, sub=payload.get("sub", "unknown"))
+        logger.info("sso_token_valid provider=%s sub=%s", provider, payload.get("sub", "unknown"))
 
         return {
             "valid": True,
@@ -200,7 +200,7 @@ async def research_sso_validate_token(
         }
 
     except Exception as e:
-        logger.error("sso_validate_failed", provider=provider, error=str(e))
+        logger.error("sso_validate_failed provider=%s error=%s", provider, str(e))
         return {"valid": False, "provider": provider, "reason": str(e)}
 
 
@@ -261,7 +261,7 @@ async def research_sso_user_info(token: str) -> dict[str, Any]:
 
         provider = payload.get("iss", "unknown")
 
-        logger.info("sso_user_extracted", user_id=user_id, email=email)
+        logger.info("sso_user_extracted user_id=%s email=%s", user_id, email)
 
         return {
             "user_id": user_id,
@@ -273,7 +273,7 @@ async def research_sso_user_info(token: str) -> dict[str, Any]:
         }
 
     except Exception as e:
-        logger.error("sso_user_info_failed", error=str(e))
+        logger.error("sso_user_info_failed error=%s", str(e))
         return {
             "user_id": None,
             "email": None,

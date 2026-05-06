@@ -40,7 +40,7 @@ async def research_chain_define(name: str, steps: list[dict]) -> dict[str, Any]:
     chain_path = chains_dir / f"{name}.json"
     chain_data = {"name": name, "steps": steps, "created": datetime.now(UTC).isoformat(), "runs": 0}
     chain_path.write_text(json.dumps(chain_data, indent=2))
-    logger.info("chain_defined", name=name, steps_count=len(steps))
+    logger.info("chain_defined name=%s steps_count=%d", name, len(steps))
     return {"chain_name": name, "steps_count": len(steps), "saved": True}
 
 
@@ -63,8 +63,8 @@ async def research_chain_list() -> dict[str, Any]:
                     "last_run": data.get("last_run"),
                 })
             except (json.JSONDecodeError, OSError) as e:
-                logger.warning("chain_list_error", path=chain_file, error=str(e))
-    logger.info("chain_list_retrieved", total=len(chains))
+                logger.warning("chain_list_error path=%s error=%s", chain_file, str(e))
+    logger.info("chain_list_retrieved total=%d", len(chains))
     return {"chains": chains, "total": len(chains)}
 
 
@@ -91,7 +91,7 @@ async def research_chain_describe(name: str) -> dict[str, Any]:
         "params_summary": ", ".join(step.get("params", {}).keys()),
         "condition": step.get("condition", "always"),
     } for step in data.get("steps", [])]
-    logger.info("chain_described", name=name, steps_count=len(steps_summary))
+    logger.info("chain_described name=%s steps_count=%d", name, len(steps_summary))
     return {
         "name": name,
         "steps": steps_summary,

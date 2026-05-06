@@ -90,11 +90,11 @@ def research_retry_stats(
         logger.info("retry_stats_reset")
 
     logger.info(
-        "retry_stats_retrieved",
-        total_retries=total_retries,
-        success_after_retry=success_after_retry,
-        permanent_failure=permanent_failure,
-        functions_tracked=len(stats),
+        "retry_stats_retrieved total_retries=%d success_after_retry=%d permanent_failure=%d functions_tracked=%d",
+        total_retries,
+        success_after_retry,
+        permanent_failure,
+        len(stats),
     )
 
     return result

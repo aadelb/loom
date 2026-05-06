@@ -73,7 +73,7 @@ async def research_hitl_submit(
     )
     await conn.commit()
     await conn.close()
-    logger.info("hitl_submit", eval_id=eval_id, strategy=strategy, model=model)
+    logger.info("hitl_submit eval_id=%s strategy=%s model=%s", eval_id, strategy, model)
 
     return {
         "eval_id": eval_id,
@@ -112,7 +112,7 @@ async def research_hitl_evaluate(
     )
     await conn.commit()
     await conn.close()
-    logger.info("hitl_evaluate", eval_id=eval_id, score=score, tags=tags_str)
+    logger.info("hitl_evaluate eval_id=%s score=%s tags=%s", eval_id, score, tags_str)
 
     return {
         "eval_id": eval_id,
@@ -169,7 +169,7 @@ async def research_hitl_queue(
     avg_score = (await avg.fetchone())[0]
 
     await conn.close()
-    logger.info("hitl_queue", status=status, pending=pending_count, evaluated=evaluated_count, avg_score=avg_score)
+    logger.info("hitl_queue status=%s pending=%d evaluated=%d avg_score=%s", status, pending_count, evaluated_count, avg_score)
 
     return {
         "queue": queue,
