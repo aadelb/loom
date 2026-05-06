@@ -145,7 +145,7 @@ async def _score_prompt(prompt: str) -> dict[str, Any]:
 
 async def research_constraint_optimize(
     prompt: str,
-    constraints: dict[str, dict[str, float]],
+    constraints: dict[str, dict[str, float]] | None = None,
     max_iterations: int = 20,
     target_model: str = "auto",
 ) -> dict[str, Any]:
@@ -162,6 +162,7 @@ async def research_constraint_optimize(
                 "stealth": {"min": 7.0},
                 "danger": {"max": 5.0}
             }
+            If None or empty, uses default constraints.
         max_iterations: Maximum optimization iterations (default 20)
         target_model: Target model for strategy selection (default auto)
 
@@ -179,8 +180,18 @@ async def research_constraint_optimize(
     """
     if not prompt or not isinstance(prompt, str):
         raise ValueError("prompt must be non-empty string")
+
+    # Apply default constraints if none provided
     if not constraints or not isinstance(constraints, dict):
-        raise ValueError("constraints must be non-empty dict")
+        constraints = {
+            "hcs": {"min": 7.0},
+            "stealth": {"min": 6.0},
+            "danger": {"max": 6.0}
+        }
+        logger.info(
+            "constraint_optimize_using_defaults prompt_len=%d",
+            len(prompt),
+        )
 
     logger.info(
         "constraint_optimize_start prompt_len=%d constraints=%s max_iter=%d",
@@ -227,7 +238,7 @@ async def research_constraint_optimize(
 
 async def tool_constraint_optimize(
     prompt: str,
-    constraints: dict[str, dict[str, float]],
+    constraints: dict[str, dict[str, float]] | None = None,
     max_iterations: int = 20,
     target_model: str = "auto",
 ) -> list[dict[str, Any]]:

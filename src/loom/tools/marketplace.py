@@ -80,53 +80,57 @@ async def research_marketplace_list(
     if not (1 <= page <= 1000) or not (1 <= limit <= 100):
         return {"error": "Invalid page or limit"}
 
-    async with await _get_db() as conn:
-        # Build query
-        where_clause = "" if category == "all" else f"WHERE category = ?"
-        order_map = {
-            "popular": "downloads DESC",
-            "newest": "created DESC",
-            "price_low": "price_credits ASC",
-            "price_high": "price_credits DESC",
-            "rating": "rating DESC",
-        }
-        order_clause = order_map[sort_by]
-
-        # Count total
-        count_sql = f"SELECT COUNT(*) FROM listings {where_clause}"
-        cursor = await conn.execute(count_sql, () if category == "all" else (category,))
-        total = (await cursor.fetchone())[0]
-
-        # Fetch page
-        offset = (page - 1) * limit
-        query_sql = (
-            f"SELECT id, name, category, price_credits, author, downloads, rating "
-            f"FROM listings {where_clause} ORDER BY {order_clause} LIMIT ? OFFSET ?"
-        )
-        params = (limit, offset) if category == "all" else (category, limit, offset)
-        cursor = await conn.execute(query_sql, params)
-        rows = await cursor.fetchall()
-
-        listings = [
-            {
-                "id": r[0],
-                "name": r[1],
-                "category": r[2],
-                "price": r[3],
-                "author": r[4],
-                "downloads": r[5],
-                "rating": r[6],
+    db_conn = await _get_db()
+    try:
+        async with db_conn:
+            # Build query
+            where_clause = "" if category == "all" else f"WHERE category = ?"
+            order_map = {
+                "popular": "downloads DESC",
+                "newest": "created DESC",
+                "price_low": "price_credits ASC",
+                "price_high": "price_credits DESC",
+                "rating": "rating DESC",
             }
-            for r in rows
-        ]
+            order_clause = order_map[sort_by]
 
-        return {
-            "listings": listings,
-            "total": total,
-            "page": page,
-            "limit": limit,
-            "pages": (total + limit - 1) // limit,
-        }
+            # Count total
+            count_sql = f"SELECT COUNT(*) FROM listings {where_clause}"
+            cursor = await db_conn.execute(count_sql, () if category == "all" else (category,))
+            total = (await cursor.fetchone())[0]
+
+            # Fetch page
+            offset = (page - 1) * limit
+            query_sql = (
+                f"SELECT id, name, category, price_credits, author, downloads, rating "
+                f"FROM listings {where_clause} ORDER BY {order_clause} LIMIT ? OFFSET ?"
+            )
+            params = (limit, offset) if category == "all" else (category, limit, offset)
+            cursor = await db_conn.execute(query_sql, params)
+            rows = await cursor.fetchall()
+
+            listings = [
+                {
+                    "id": r[0],
+                    "name": r[1],
+                    "category": r[2],
+                    "price": r[3],
+                    "author": r[4],
+                    "downloads": r[5],
+                    "rating": r[6],
+                }
+                for r in rows
+            ]
+
+            return {
+                "listings": listings,
+                "total": total,
+                "page": page,
+                "limit": limit,
+                "pages": (total + limit - 1) // limit,
+            }
+    finally:
+        await db_conn.close()
 
 
 async def research_marketplace_publish(
@@ -164,24 +168,28 @@ async def research_marketplace_publish(
     listing_id = str(uuid4())
     now = datetime.now(UTC).isoformat()
 
-    async with await _get_db() as conn:
-        await conn.execute(
-            "INSERT INTO listings "
-            "(id, name, category, description, price_credits, author, downloads, rating, created, content) "
-            "VALUES (?, ?, ?, ?, ?, ?, 0, 0.0, ?, ?)",
-            (listing_id, name, category, description, price_credits, author, now, content),
-        )
-        await conn.commit()
+    db_conn = await _get_db()
+    try:
+        async with db_conn:
+            await db_conn.execute(
+                "INSERT INTO listings "
+                "(id, name, category, description, price_credits, author, downloads, rating, created, content) "
+                "VALUES (?, ?, ?, ?, ?, ?, 0, 0.0, ?, ?)",
+                (listing_id, name, category, description, price_credits, author, now, content),
+            )
+            await db_conn.commit()
 
-        return {
-            "listing_id": listing_id,
-            "name": name,
-            "category": category,
-            "price": price_credits,
-            "author": author,
-            "status": "published",
-            "created": now,
-        }
+            return {
+                "listing_id": listing_id,
+                "name": name,
+                "category": category,
+                "price": price_credits,
+                "author": author,
+                "status": "published",
+                "created": now,
+            }
+    finally:
+        await db_conn.close()
 
 
 async def research_marketplace_download(
@@ -198,30 +206,34 @@ async def research_marketplace_download(
     if not listing_id or len(listing_id) > 100:
         return {"error": "Invalid listing_id"}
 
-    async with await _get_db() as conn:
-        cursor = await conn.execute(
-            "SELECT id, name, category, content, downloads FROM listings WHERE id = ?",
-            (listing_id,),
-        )
-        row = await cursor.fetchone()
+    db_conn = await _get_db()
+    try:
+        async with db_conn:
+            cursor = await db_conn.execute(
+                "SELECT id, name, category, content, downloads FROM listings WHERE id = ?",
+                (listing_id,),
+            )
+            row = await cursor.fetchone()
 
-        if not row:
-            return {"error": "Listing not found"}
+            if not row:
+                return {"error": "Listing not found"}
 
-        listing_id_result, name, category, content, downloads = row
+            listing_id_result, name, category, content, downloads = row
 
-        # Increment downloads
-        await conn.execute(
-            "UPDATE listings SET downloads = downloads + 1 WHERE id = ?",
-            (listing_id,),
-        )
-        await conn.commit()
+            # Increment downloads
+            await db_conn.execute(
+                "UPDATE listings SET downloads = downloads + 1 WHERE id = ?",
+                (listing_id,),
+            )
+            await db_conn.commit()
 
-        return {
-            "listing_id": listing_id_result,
-            "name": name,
-            "category": category,
-            "content": content,
-            "downloaded_at": datetime.now(UTC).isoformat(),
-            "download_count": downloads + 1,
-        }
+            return {
+                "listing_id": listing_id_result,
+                "name": name,
+                "category": category,
+                "content": content,
+                "downloaded_at": datetime.now(UTC).isoformat(),
+                "download_count": downloads + 1,
+            }
+    finally:
+        await db_conn.close()

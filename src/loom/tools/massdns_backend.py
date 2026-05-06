@@ -96,7 +96,7 @@ class MassDNSResult(BaseModel):
 
 
 async def research_massdns_resolve(
-    domains: list[str],
+    domains: list[str] | str,
     resolver_file: str = "/tmp/resolvers.txt",
     timeout: int = 60,
     record_type: str = "A",
@@ -109,7 +109,7 @@ async def research_massdns_resolve(
     public DNS resolver IP addresses.
 
     Args:
-        domains: List of domain names to resolve (max 10,000)
+        domains: List of domain names to resolve, or single domain string (max 10,000)
         resolver_file: Path to file with DNS resolver IPs (one per line)
         timeout: Timeout in seconds (10-300)
         record_type: DNS record type to query (A, AAAA, MX, CNAME, etc.)
@@ -125,6 +125,10 @@ async def research_massdns_resolve(
         ... )
         >>> print(result["resolved"])
     """
+    # Coerce domains to list if string (MUST happen BEFORE Pydantic validation)
+    if isinstance(domains, str):
+        domains = [domains]
+
     # Validate input
     params = MassDNSResolveParams(
         domains=domains,
