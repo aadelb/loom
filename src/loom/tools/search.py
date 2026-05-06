@@ -400,7 +400,7 @@ async def research_search(
         }
 
 
-def tool_search(
+async def tool_search(
     query: str,
     provider: str = "exa",
     n: int = 10,
@@ -410,7 +410,7 @@ def tool_search(
     end_date: str | None = None,
 ) -> list[TextContent]:
     """MCP wrapper for research_search."""
-    result = research_search(
+    result = await research_search(
         query=query,
         provider=provider,
         n=n,

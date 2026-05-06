@@ -131,49 +131,39 @@ async def research_consistency_pressure_history(
     return result
 
 
-def tool_consistency_pressure(
+async def tool_consistency_pressure(
     model: str,
     target_prompt: str,
     max_references: int = 5,
 ) -> list[TextContent]:
     """MCP wrapper for research_consistency_pressure."""
-    import asyncio
-
-    result = asyncio.run(
-        research_consistency_pressure(
-            model=model,
-            target_prompt=target_prompt,
-            max_references=max_references,
-        )
+    result = await research_consistency_pressure(
+        model=model,
+        target_prompt=target_prompt,
+        max_references=max_references,
     )
     return [TextContent(type="text", text=json.dumps(result, indent=2))]
 
 
-def tool_consistency_pressure_record(
+async def tool_consistency_pressure_record(
     model: str,
     prompt: str,
     response: str,
     complied: bool,
 ) -> list[TextContent]:
     """MCP wrapper for research_consistency_pressure_record."""
-    import asyncio
-
-    result = asyncio.run(
-        research_consistency_pressure_record(
-            model=model,
-            prompt=prompt,
-            response=response,
-            complied=complied,
-        )
+    result = await research_consistency_pressure_record(
+        model=model,
+        prompt=prompt,
+        response=response,
+        complied=complied,
     )
     return [TextContent(type="text", text=json.dumps(result, indent=2))]
 
 
-def tool_consistency_pressure_history(
+async def tool_consistency_pressure_history(
     model: str,
 ) -> list[TextContent]:
     """MCP wrapper for research_consistency_pressure_history."""
-    import asyncio
-
-    result = asyncio.run(research_consistency_pressure_history(model=model))
+    result = await research_consistency_pressure_history(model=model)
     return [TextContent(type="text", text=json.dumps(result, indent=2))]

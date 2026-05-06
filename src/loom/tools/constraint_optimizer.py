@@ -225,35 +225,17 @@ async def research_constraint_optimize(
     return result
 
 
-def tool_constraint_optimize(
+async def tool_constraint_optimize(
     prompt: str,
     constraints: dict[str, dict[str, float]],
     max_iterations: int = 20,
     target_model: str = "auto",
 ) -> list[dict[str, Any]]:
     """MCP wrapper for research_constraint_optimize."""
-    try:
-        result = asyncio.run(
-            research_constraint_optimize(
-                prompt=prompt,
-                constraints=constraints,
-                max_iterations=max_iterations,
-                target_model=target_model,
-            )
-        )
-        return [{"type": "text", "text": json.dumps(result, indent=2)}]
-    except RuntimeError:
-        # Handle nested event loop
-        loop = asyncio.new_event_loop()
-        try:
-            result = loop.run_until_complete(
-                research_constraint_optimize(
-                    prompt=prompt,
-                    constraints=constraints,
-                    max_iterations=max_iterations,
-                    target_model=target_model,
-                )
-            )
-            return [{"type": "text", "text": json.dumps(result, indent=2)}]
-        finally:
-            loop.close()
+    result = await research_constraint_optimize(
+        prompt=prompt,
+        constraints=constraints,
+        max_iterations=max_iterations,
+        target_model=target_model,
+    )
+    return [{"type": "text", "text": json.dumps(result, indent=2)}]

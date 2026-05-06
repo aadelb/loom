@@ -73,64 +73,19 @@ async def research_trace_query(operation: str = "", limit: int = 50, min_duratio
     return {"traces": results, "total": len(results), "avg_duration_ms": avg, "p95_duration_ms": p95}
 
 
-async def _async_trace_create(operation: str, parent_trace_id: str = "") -> dict[str, Any]:
-    """Async wrapper for trace creation."""
-    return await research_trace_create(operation, parent_trace_id)
-
-
-async def _async_trace_complete(trace_id: str, span_id: str = "", status: str = "ok", metadata: dict[str, Any] | None = None) -> dict[str, Any]:
-    """Async wrapper for trace completion."""
-    return await research_trace_complete(trace_id, span_id, status, metadata)
-
-
-async def _async_trace_query(operation: str = "", limit: int = 50, min_duration_ms: float = 0) -> dict[str, Any]:
-    """Async wrapper for trace query."""
-    return await research_trace_query(operation, limit, min_duration_ms)
-
-
-def tool_trace_create(operation: str, parent_trace_id: str = "") -> list[TextContent]:
+async def tool_trace_create(operation: str, parent_trace_id: str = "") -> list[TextContent]:
     """MCP wrapper for research_trace_create."""
-    try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        # No running loop, create one
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        result = loop.run_until_complete(_async_trace_create(operation, parent_trace_id))
-        loop.close()
-    else:
-        # Running loop exists, create task
-        result = loop.run_until_complete(_async_trace_create(operation, parent_trace_id))
+    result = await research_trace_create(operation, parent_trace_id)
     return [TextContent(type="text", text=json.dumps(result, indent=2))]
 
 
-def tool_trace_complete(trace_id: str, span_id: str = "", status: str = "ok", metadata: dict[str, Any] | None = None) -> list[TextContent]:
+async def tool_trace_complete(trace_id: str, span_id: str = "", status: str = "ok", metadata: dict[str, Any] | None = None) -> list[TextContent]:
     """MCP wrapper for research_trace_complete."""
-    try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        # No running loop, create one
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        result = loop.run_until_complete(_async_trace_complete(trace_id, span_id, status, metadata))
-        loop.close()
-    else:
-        # Running loop exists, create task
-        result = loop.run_until_complete(_async_trace_complete(trace_id, span_id, status, metadata))
+    result = await research_trace_complete(trace_id, span_id, status, metadata)
     return [TextContent(type="text", text=json.dumps(result, indent=2))]
 
 
-def tool_trace_query(operation: str = "", limit: int = 50, min_duration_ms: float = 0) -> list[TextContent]:
+async def tool_trace_query(operation: str = "", limit: int = 50, min_duration_ms: float = 0) -> list[TextContent]:
     """MCP wrapper for research_trace_query."""
-    try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        # No running loop, create one
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        result = loop.run_until_complete(_async_trace_query(operation, limit, min_duration_ms))
-        loop.close()
-    else:
-        # Running loop exists, create task
-        result = loop.run_until_complete(_async_trace_query(operation, limit, min_duration_ms))
+    result = await research_trace_query(operation, limit, min_duration_ms)
     return [TextContent(type="text", text=json.dumps(result, indent=2))]

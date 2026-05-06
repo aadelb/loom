@@ -158,7 +158,7 @@ async def research_botasaurus(
     from loom.tools.fetch import research_fetch
 
     logger.info("botasaurus_start url=%s", url)
-    result: dict[str, Any] = research_fetch(
+    result: dict[str, Any] = await research_fetch(
         url=url,
         mode="dynamic",
         return_format="screenshot" if screenshot else "text",
@@ -169,12 +169,12 @@ async def research_botasaurus(
     return result
 
 
-def tool_camoufox(
+async def tool_camoufox(
     url: str,
     session: str | None = None,
     screenshot: bool = False,
     timeout: int | None = None,
 ) -> list[TextContent]:
     """MCP wrapper for research_camoufox."""
-    result = asyncio.run(research_camoufox(url, session, screenshot, timeout))
+    result = await research_camoufox(url, session, screenshot, timeout)
     return [TextContent(type="text", text=json.dumps(result, indent=2))]
