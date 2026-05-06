@@ -159,15 +159,43 @@ def research_traces_list(
 
 
 def tool_trace_start(operation: str, metadata: dict[str, Any] | None = None) -> list[TextContent]:
+    """Start a new distributed trace for an operation (MCP wrapper).
+
+    Args:
+        operation: operation name to trace
+        metadata: optional metadata dict to attach to trace
+
+    Returns:
+        Formatted trace information (trace_id, operation, started_at)
+    """
     result = research_trace_start(operation, metadata)
     return [TextContent(type="text", text=json.dumps(result, indent=2))]
 
 
 def tool_trace_end(trace_id: str, status: str = "success", result_summary: str = "") -> list[TextContent]:
+    """End a distributed trace and record final status and duration (MCP wrapper).
+
+    Args:
+        trace_id: trace ID from tool_trace_start
+        status: final status (success, failure, warning, cancelled, etc.)
+        result_summary: optional summary of trace outcome
+
+    Returns:
+        Formatted trace completion information (trace_id, duration_ms, status)
+    """
     result = research_trace_end(trace_id, status, result_summary)
     return [TextContent(type="text", text=json.dumps(result, indent=2))]
 
 
 def tool_traces_list(limit: int = 20, operation: str | None = None) -> list[TextContent]:
+    """List recent distributed traces with timing statistics (MCP wrapper).
+
+    Args:
+        limit: max number of traces to return
+        operation: filter by operation name (None for all operations)
+
+    Returns:
+        Formatted list of traces with total count and average duration statistics
+    """
     result = research_traces_list(limit, operation)
     return [TextContent(type="text", text=json.dumps(result, indent=2))]

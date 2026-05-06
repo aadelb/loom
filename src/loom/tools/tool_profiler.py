@@ -6,6 +6,15 @@ from typing import Any
 logger = logging.getLogger("loom.tools.tool_profiler")
 
 async def research_profile_tool(tool_name: str, iterations: int = 5) -> dict[str, Any]:
+    """Profile a single tool to identify performance bottlenecks and memory usage.
+
+    Args:
+        tool_name: Name of the research_* function to profile
+        iterations: Number of execution iterations (1-20)
+
+    Returns:
+        Dict with tool, module, timings (min/avg/max in ms), memory delta, and bottleneck analysis
+    """
     try:
         if not isinstance(tool_name, str) or not tool_name.strip() or not (1 <= iterations <= 20):
             return {"error": "invalid params"}
@@ -25,7 +34,8 @@ async def research_profile_tool(tool_name: str, iterations: int = 5) -> dict[str
                 if hasattr(module, tool_name):
                     tool_func, tool_module = getattr(module, tool_name), mf.stem
                     break
-            except: pass
+            except Exception as e:  # FIX: Changed from bare except: to except Exception
+                logger.debug("Failed to load module %s: %s", mf.stem, type(e).__name__)
         if not tool_func:
             return {"error": f"tool {tool_name} not found"}
         gc.collect()
@@ -36,9 +46,12 @@ async def research_profile_tool(tool_name: str, iterations: int = 5) -> dict[str
                 start = time.perf_counter_ns()
                 await tool_func()
                 timings_ms.append((time.perf_counter_ns() - start) / 1_000_000)
-            except:
-                try: await tool_func()
-                except: pass
+            except Exception as e:  # FIX: Changed from bare except: to except Exception
+                logger.debug("Tool execution failed: %s", type(e).__name__)
+                try:
+                    await tool_func()
+                except Exception as e2:  # FIX: Changed from bare except: to except Exception
+                    logger.debug("Retry failed: %s", type(e2).__name__)
                 timings_ms.append(0.0)
         gc.collect()
         mem_after = psutil.Process().memory_info().rss / 1024
@@ -50,6 +63,14 @@ async def research_profile_tool(tool_name: str, iterations: int = 5) -> dict[str
         return {"error": str(e)}
 
 async def research_profile_hotspots(top_n: int = 10) -> dict[str, Any]:
+    """Identify slowest-to-import tool modules (hotspots) across the codebase.
+
+    Args:
+        top_n: Number of slowest modules to return (1-50)
+
+    Returns:
+        Dict with hotspots list, total_modules, average/total import times, and hotspot count
+    """
     try:
         if not (1 <= top_n <= 50): return {"error": "top_n 1-50"}
         tools_dir = Path(__file__).parent
@@ -65,7 +86,8 @@ async def research_profile_hotspots(top_n: int = 10) -> dict[str, Any]:
                 spec.loader.exec_module(module)
                 hotspots.append({"module": mf.stem, "import_ms": round((time.perf_counter_ns() - start) / 1_000_000, 3)})
                 if mf.stem in sys.modules: del sys.modules[mf.stem]
-            except: pass
+            except Exception as e:  # FIX: Changed from bare except: to except Exception
+                logger.debug("Failed to profile module %s: %s", mf.stem, type(e).__name__)
         hotspots.sort(key=lambda x: x["import_ms"], reverse=True)
         hotspots = hotspots[:top_n]
         total_modules = len([f for f in tools_dir.glob("*.py") if f.name not in ("__init__.py", "tool_profiler.py")])

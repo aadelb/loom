@@ -38,7 +38,9 @@ def search_arxiv(
         }
         sort_criterion = sort_map.get(sort_by, arxiv.SortCriterion.Relevance)
 
-        client = arxiv.Client()
+        # FIX: Reduce retries to 1 and delay to 1.0s to avoid 60s+ timeout on rate limit (429).
+        # arxiv library retries with exponential backoff: with 3 retries it becomes 3+6+12=21s+ delays.
+        client = arxiv.Client(num_retries=1, delay_seconds=1.0)
         search = arxiv.Search(
             query=query,
             max_results=n,

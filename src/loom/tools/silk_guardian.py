@@ -11,4 +11,16 @@ from typing import Any
 # Reference: https://github.com/NullArray/silk-guardian
 
 async def research_silk_guardian_monitor(check_usb: bool = True, check_processes: bool = True, check_mounts: bool = True, trigger_action: str = "alert", dry_run: bool = True) -> dict[str, Any]:
+    """Monitor Linux system for forensic activity and trigger defensive actions (STUB).
+
+    Args:
+        check_usb: Monitor for USB device connections/disconnections
+        check_processes: Monitor for suspicious process execution patterns
+        check_mounts: Monitor for mount/unmount activity
+        trigger_action: Action on detection (alert, lock, wipe)
+        dry_run: If True, simulate action without executing it
+
+    Returns:
+        Dict with risk_level, risk_score, findings list, and dry_run status
+    """
     return {"risk_level": "low", "risk_score": 0, "findings": [], "findings_count": 0, "dry_run": dry_run}

@@ -23,7 +23,8 @@ async def research_benchmark_run(tools: list[str] | None = None, iterations: int
             for _ in range(warmup):
                 try:
                     await func(**params) if asyncio.iscoroutinefunction(func) else func(**params)
-                except: pass
+                except Exception as e:  # FIX: Changed from bare except: to except Exception
+                    logger.debug("Warmup iteration failed for %s: %s", tool_name, type(e).__name__)
 
             times_ns = []
             for _ in range(iterations):
@@ -31,7 +32,8 @@ async def research_benchmark_run(tools: list[str] | None = None, iterations: int
                     start = time.perf_counter_ns()
                     await func(**params) if asyncio.iscoroutinefunction(func) else func(**params)
                     times_ns.append(time.perf_counter_ns() - start)
-                except: pass
+                except Exception as e:  # FIX: Changed from bare except: to except Exception
+                    logger.debug("Benchmark iteration failed for %s: %s", tool_name, type(e).__name__)
 
             if not times_ns: continue
             times_ms = sorted([ns / 1e6 for ns in times_ns])
@@ -63,14 +65,16 @@ async def research_benchmark_compare(tool_a: str, tool_b: str, iterations: int =
             start = time.perf_counter_ns()
             await func_a(**params_a) if asyncio.iscoroutinefunction(func_a) else func_a(**params_a)
             times_a.append((time.perf_counter_ns() - start) / 1e6)
-        except: pass
+        except Exception as e:  # FIX: Changed from bare except: to except Exception
+            logger.debug("tool_a iteration failed: %s", type(e).__name__)
 
     for _ in range(iterations):
         try:
             start = time.perf_counter_ns()
             await func_b(**params_b) if asyncio.iscoroutinefunction(func_b) else func_b(**params_b)
             times_b.append((time.perf_counter_ns() - start) / 1e6)
-        except: pass
+        except Exception as e:  # FIX: Changed from bare except: to except Exception
+            logger.debug("tool_b iteration failed: %s", type(e).__name__)
 
     if not times_a or not times_b: return {"error": "Insufficient successful runs"}
     times_a.sort()
@@ -91,7 +95,8 @@ def _get_tool_function(tool_name: str) -> Any | None:
         try:
             mod = importlib.import_module(f"loom.tools.{mod_name}")
             if hasattr(mod, tool_name): return getattr(mod, tool_name)
-        except: pass
+        except ImportError:  # FIX: Changed from bare except: to except ImportError
+            pass
     return None
 
 
