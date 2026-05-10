@@ -127,7 +127,7 @@ async def research_monitor_competitors(
         competitors = DEFAULT_COMPETITORS
 
     try:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             tasks = [
                 _fetch_repo_stats(client, *repo.split("/"))
                 for repo in competitors

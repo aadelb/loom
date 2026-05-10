@@ -176,7 +176,7 @@ async def _fetch_stackoverflow_survey_data() -> dict[str, Any]:
     }
 
     try:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             # Attempt to fetch 2024 Stack Overflow survey
             url = "https://survey.stackoverflow.co/2024/"
             text = await _get_text(client, url, timeout=10.0)

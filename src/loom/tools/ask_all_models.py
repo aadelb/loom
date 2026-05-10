@@ -388,7 +388,7 @@ async def research_ask_all_models(
     async def _run() -> dict[str, Any]:
         responses: list[dict[str, Any]] = []
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             tasks: list[tuple[str, str, str, Any]] = []
 
             for provider, model_list in _API_MODELS.items():

@@ -316,7 +316,7 @@ async def _fetch_semanticscholar_data(
     edges: list[tuple[str, str, str, int]] = []
 
     try:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             # Search for author
             search_url = f"https://api.semanticscholar.org/graph/v1/author/search?query={author_name}&limit=1"
             search_data = await _get_json(client, search_url)
@@ -519,7 +519,7 @@ async def research_social_graph(
         all_edges: list[dict[str, Any]] = []
         platforms_analyzed: list[str] = []
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             # GitHub fetch
             if "github" in platforms_to_use:
                 try:

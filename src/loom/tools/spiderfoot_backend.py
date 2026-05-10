@@ -282,7 +282,7 @@ def _run_spiderfoot_api(
                 if status in ("COMPLETED", "ABORTED", "FAILED"):
                     break
 
-                time.sleep(2)  # Poll every 2 seconds
+                time.sleep(2)
 
             duration_ms = int((time.time() - start_time) * 1000)
 
