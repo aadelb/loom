@@ -101,6 +101,16 @@ from loom.tool_rate_limiter import check_tool_rate_limit, research_rate_limits
 from loom.tools.scheduler_status import research_scheduler_status
 from loom.sla_monitor import get_sla_monitor
 
+# ── Extracted modules (Phase 2 A+ rewrite) ──
+# New canonical locations for extracted code:
+#   loom.server_state — shared state (_health_status, _start_time, etc.)
+#   loom.middleware — _wrap_tool, _fuzzy_correct_params, _normalize_result
+#   loom.routes — register_http_routes (12 HTTP endpoints)
+#   loom.shutdown — _shutdown, _handle_signal
+#   loom.tool_functions — research_health_check, _check_*_provider_available
+#   loom.responses — ToolResponse model
+# Original code remains here for backward compatibility until Phase 2F cleanup.
+
 # ── Prometheus metrics (optional, graceful fallback if not installed) ──
 try:
     from prometheus_client import Counter, Histogram, CollectorRegistry, generate_latest
