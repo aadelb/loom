@@ -108,7 +108,7 @@ async def research_markdown(
         try:
             from loom.providers.trafilatura_extract import extract_with_trafilatura
 
-            traf_result = extract_with_trafilatura(url=params.url)
+            traf_result = await asyncio.to_thread(extract_with_trafilatura, url=params.url)
             result_dict: dict[str, Any] = {
                 "url": params.url,
                 "title": traf_result.get("title", ""),

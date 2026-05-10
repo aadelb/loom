@@ -342,7 +342,8 @@ async def research_search(
         elif provider == "torcrawl":
             from loom.providers.torcrawl import crawl_onion
 
-            result = crawl_onion(
+            result = await asyncio.to_thread(
+                crawl_onion,
                 url=query,
                 **provider_config,
             )

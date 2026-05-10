@@ -581,7 +581,7 @@ async def research_deep(
                 try:
                     from loom.tools.enrich import research_wayback
 
-                    wb = research_wayback(url, limit=1)
+                    wb = await asyncio.to_thread(research_wayback, url, 1)
                     snapshots = wb.get("snapshots", [])
                     if snapshots:
                         archive_url = snapshots[0]["archive_url"]
@@ -812,7 +812,7 @@ async def research_deep(
         for page in top_pages:
             snippet = page.get("markdown", "")[:1000]
             if snippet:
-                lang_result = research_detect_language(snippet)
+                lang_result = await asyncio.to_thread(research_detect_language, snippet)
                 lang = lang_result.get("language", "unknown")
                 language_stats[lang] = language_stats.get(lang, 0) + 1
                 page["detected_language"] = lang
