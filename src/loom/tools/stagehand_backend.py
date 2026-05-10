@@ -153,7 +153,7 @@ async def research_stagehand_act(url: str, instruction: str, screenshot: bool = 
         return result
 
 
-async def research_stagehand_extract(url: str, schema: dict[str, Any]) -> dict[str, Any]:
+async def research_stagehand_extract(url: str, schema: dict[str, Any] | str) -> dict[str, Any]:
     """Extract structured data from page matching schema using LLM vision.
 
     Args:
@@ -163,6 +163,10 @@ async def research_stagehand_extract(url: str, schema: dict[str, Any]) -> dict[s
     Returns:
         Dict with url, extracted_data, confidence, error.
     """
+    # Coerce string schema to dict
+    if isinstance(schema, str):
+        schema = {"extract": schema}
+
     params = StagehandExtractParams(url=url, schema=schema)
     result: dict[str, Any] = {"url": params.url, "extracted_data": {}, "confidence": 0.0}
 

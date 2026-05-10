@@ -297,25 +297,12 @@ async def research_stylometry(
     return result
 
 
-def tool_stylometry(
+async def tool_stylometry(
     text: str, compare_texts: list[str] | None = None
 ) -> list[TextContent]:
     """MCP wrapper for research_stylometry.
 
-    Sync wrapper that handles async context properly.
-    Uses asyncio.get_running_loop() to detect if already in async context,
-    and falls back to asyncio.run() if not.
+    Async wrapper that properly awaits the async research function.
     """
-    try:
-        loop = asyncio.get_running_loop()
-        # Already in async context: create new event loop for this call
-        new_loop = asyncio.new_event_loop()
-        try:
-            result = new_loop.run_until_complete(research_stylometry(text, compare_texts))
-        finally:
-            new_loop.close()
-    except RuntimeError:
-        # No running loop: safe to use asyncio.run()
-        result = asyncio.run(research_stylometry(text, compare_texts))
-
+    result = await research_stylometry(text, compare_texts)
     return [TextContent(type="text", text=json.dumps(result, indent=2))]

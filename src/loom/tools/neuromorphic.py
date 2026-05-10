@@ -146,7 +146,7 @@ def _calculate_resonance_schedule(
 
 
 async def research_neuromorphic_schedule(
-    tools: list[str],
+    tools: list[str] | str,
     timing_pattern: Literal["burst", "gamma", "theta", "spike_train", "resonance"] = "burst",
     interval_ms: int = 100,
 ) -> NeuromorphicSchedule:
@@ -162,6 +162,10 @@ async def research_neuromorphic_schedule(
     Returns:
         NeuromorphicSchedule with execution plan, parallelism score, and risk assessment.
     """
+    # Coerce string to list before validation
+    if isinstance(tools, str):
+        tools = [tools]
+
     # Validate
     params = NeuromorphicScheduleParams(
         tools=tools, timing_pattern=timing_pattern, interval_ms=interval_ms

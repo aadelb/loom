@@ -40,7 +40,7 @@ class GeminiProvider(LLMProvider):
     """
 
     name = "gemini"
-    default_model = "gemini-2.0-flash"
+    default_model = "gemini-3-pro-preview"
 
     def __init__(self, max_parallel: int = 15) -> None:
         """Initialize Gemini provider.
@@ -100,7 +100,8 @@ class GeminiProvider(LLMProvider):
         """
         # Validate timeout to prevent abuse
         timeout = max(1, min(int(timeout), 600))
-        model = model or self.default_model
+        if not model or not model.startswith(("gemini", "models/")):
+            model = self.default_model
         async with self.semaphore:
             return await self._chat_impl(
                 messages,
@@ -171,7 +172,7 @@ class GeminiProvider(LLMProvider):
             raise
 
         try:
-            data = await response.json()
+            data = response.json()
         except (json.JSONDecodeError, ValueError):
             raise RuntimeError(f"Invalid JSON from gemini: {response.text[:200]}")
 

@@ -27,7 +27,7 @@ def _init_graph_db() -> None:
     conn.commit()
     conn.close()
 
-def research_graph_store(entities: list[dict[str, Any]], relationships: list[dict[str, Any]]) -> dict[str, Any]:
+def research_graph_store(entities: list[dict[str, Any]] | dict | str, relationships: list[dict[str, Any]] | dict | str) -> dict[str, Any]:
     """Store entities and relationships in graph database.
 
     DEPRECATED: Use research_graph(action="merge", graphs=[...]) instead.
@@ -37,6 +37,18 @@ def research_graph_store(entities: list[dict[str, Any]], relationships: list[dic
     logger.warning(
         "research_graph_store is deprecated; use research_graph(action='merge', ...) instead"
     )
+
+    # Coerce string or dict inputs to lists
+    if isinstance(entities, str):
+        entities = [{"name": entities, "type": "unknown", "properties": {}}]
+    elif isinstance(entities, dict):
+        entities = [entities]
+
+    if isinstance(relationships, str):
+        relationships = [{"source": "unknown", "target": relationships, "relation": "unknown", "properties": {}}]
+    elif isinstance(relationships, dict):
+        relationships = [relationships]
+
     _init_graph_db()
     conn = sqlite3.connect(str(_GRAPH_DB))
     c = conn.cursor()

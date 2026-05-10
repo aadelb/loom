@@ -292,7 +292,9 @@ async def research_benchmark_models(
 
     for provider in providers:
         if provider.available():
-            provider_map[provider.model] = provider
+            # Use getattr with fallback chain for model name
+            model_name = getattr(provider, 'model', getattr(provider, 'default_model', 'unknown'))
+            provider_map[model_name] = provider
 
     # Override with specific models if provided
     test_models = models if models else list(provider_map.keys())

@@ -16,7 +16,7 @@ logger = logging.getLogger("loom.tools.drift_monitor")
 
 
 async def research_drift_monitor(
-    prompts: list[str],
+    prompts: list[str] | str,
     model_name: str,
     mode: str = "check",
     storage_path: str = "~/.loom/drift/",
@@ -27,7 +27,7 @@ async def research_drift_monitor(
     Tracks refusal rates, response characteristics, and safety scores.
 
     Args:
-        prompts: List of test prompts (required)
+        prompts: List of test prompts or single prompt string (required)
         model_name: Name of the model being tested (required)
         mode: "baseline" to create baseline, "check" to compare against baseline (default: check)
         storage_path: Path to store drift data (default: ~/.loom/drift/)
@@ -40,6 +40,10 @@ async def research_drift_monitor(
                          hcs_avg_current, hcs_drift, alert_level, per_prompt_changes,
                          recommendations}
     """
+    # Coerce string to list before validation
+    if isinstance(prompts, str):
+        prompts = [prompts]
+
     # Validate parameters
     params = DriftMonitorParams(
         prompts=prompts,
@@ -85,7 +89,7 @@ async def research_drift_monitor(
 
 
 async def tool_drift_monitor(
-    prompts: list[str],
+    prompts: list[str] | str,
     model_name: str,
     mode: str = "check",
     storage_path: str = "~/.loom/drift/",

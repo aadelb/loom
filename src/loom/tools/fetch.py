@@ -26,7 +26,7 @@ from pydantic import BaseModel, Field
 
 from loom.cache import get_cache
 from loom.params import FetchParams
-from loom.validators import validate_url, FETCH_MAX_CHARS as MAX_FETCH_CHARS
+from loom.validators import validate_url, MAX_FETCH_CHARS
 
 logger = logging.getLogger("loom.tools.fetch")
 
@@ -80,22 +80,23 @@ def _fetch_http(params: FetchParams) -> FetchResult:
 
 
 def _fetch_stealthy(params: FetchParams) -> FetchResult:
-    """Fetch via stealthy mode (Scrapling)."""
+    """Fetch via stealthy mode (Scrapling Fetcher with stealth headers)."""
     try:
-        from scrapling import AsyncScraper
+        from scrapling import Fetcher
 
-        scraper = AsyncScraper()
-        # Run sync in executor since scrapling might be async-aware
-        response = scraper.fetch(
+        fetcher = Fetcher()
+        response = fetcher.get(
             params.url,
-            headers=params.headers,
+            stealthy_headers=True,
             timeout=params.timeout or 30,
         )
+        body = getattr(response, "body", b"") or b""
+        text = body.decode("utf-8", errors="replace") if isinstance(body, bytes) else str(body)
         return FetchResult(
             url=params.url,
-            text=response.text[: params.max_chars],
-            html=response.text[: params.max_chars],
-            html_len=len(response.text),
+            text=text[: params.max_chars],
+            html=text[: params.max_chars],
+            html_len=len(text),
             fetched_at=time.strftime("%Y-%m-%dT%H:%M:%SZ"),
             tool="stealthy",
             backend="scrapling",

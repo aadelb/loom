@@ -404,20 +404,17 @@ async def research_deep(
 
     # ── STAGE 2: Multi-Provider Search ───────────────────────────────────
     async def _run_search(q: str, provider: str) -> dict[str, Any]:
-        return await loop.run_in_executor(
-            None,
-            lambda: research_search(
-                q,
-                provider=provider,
-                n=depth * 5,
-                include_domains=include_domains,
-                exclude_domains=exclude_domains,
-                start_date=start_date,
-                end_date=end_date,
-                language=language,
-                provider_config=provider_config,
-                free_only=(provider_tier == "free_only"),
-            ),
+        return await research_search(
+            q,
+            provider=provider,
+            n=depth * 5,
+            include_domains=include_domains,
+            exclude_domains=exclude_domains,
+            start_date=start_date,
+            end_date=end_date,
+            language=language,
+            provider_config=provider_config,
+            free_only=(provider_tier == "free_only"),
         )
 
     search_tasks = [_run_search(q, p) for q in search_variations for p in search_providers]
@@ -563,9 +560,8 @@ async def research_deep(
                     proxy = config.get("TOR_SOCKS5_PROXY", "socks5h://127.0.0.1:9050")
 
                 try:
-                    fetch_result = await loop.run_in_executor(
-                        None,
-                        lambda: research_fetch(url, mode="http", auto_escalate=True, proxy=proxy),
+                    fetch_result = await research_fetch(
+                        url=url, mode="http", auto_escalate=True, proxy=proxy,
                     )
                 except Exception as exc:
                     logger.warning("deep_fetch_fail url=%s error=%s", url, exc)

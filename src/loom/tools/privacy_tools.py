@@ -20,6 +20,7 @@ _ZERO_WIDTH_CHARS = {
 
 def research_fingerprint_audit(
     url: str = "https://browserleaks.com/javascript",
+    target_url: str = "",
 ) -> dict[str, Any]:
     """Launch headless browser and extract fingerprint vectors from target URL.
 
@@ -42,6 +43,9 @@ def research_fingerprint_audit(
           - uniqueness_score: int (0-100, higher = more unique)
           - error: str (if playwright not installed)
     """
+    if target_url:
+        url = target_url
+
     try:
         import playwright
         from playwright.sync_api import sync_playwright

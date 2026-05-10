@@ -293,7 +293,7 @@ async def research_audit_query(
     query_duration = (datetime.now(UTC) - query_start).total_seconds() * 1000
 
     return {
-        "entries": [asdict(e) if isinstance(e, dict) else e for e in entries],
+        "entries": entries,
         "count": len(entries),
         "total_count": len(entries),  # Approximation; actual total would require scan
         "timestamp": datetime.now(UTC).isoformat(),

@@ -3,17 +3,6 @@
 Exports the FastMCP instance with all research tools registered
 via dynamic tool discovery from the loom.tools namespace.
 """
-# Load .env file for API keys (works in both direct and systemd mode)
-try:
-    from dotenv import load_dotenv
-    from pathlib import Path
-    for env_path in [Path("/opt/research-toolbox/.env"), Path(".env"), Path(__file__).parent.parent.parent / ".env"]:
-        if env_path.exists():
-            load_dotenv(env_path)
-            break
-except ImportError:
-    pass
-
 from __future__ import annotations
 
 import asyncio
@@ -1840,6 +1829,17 @@ def create_app() -> FastMCP:
     Returns:
         Configured FastMCP instance ready to run
     """
+    # Load .env file for API keys
+    try:
+        from dotenv import load_dotenv
+        from pathlib import Path
+        for env_path in [Path('/opt/research-toolbox/.env'), Path('.env'), Path(__file__).parent.parent.parent / '.env']:
+            if env_path.exists():
+                load_dotenv(env_path)
+                break
+    except ImportError:
+        pass
+
     # Load runtime config
     config = load_config()
 

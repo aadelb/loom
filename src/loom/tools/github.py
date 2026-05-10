@@ -40,10 +40,9 @@ def research_github(
         Dict with results list and metadata.
     """
     # Validate
-    if kind not in ("repo", "repos", "code", "issues"):
-        return {"error": f"Invalid kind: {kind}"}
-    # Normalize "repos" to "repo"
-    if kind == "repos":
+    if kind not in ("repo", "repos", "repositories", "code", "issues"):
+        return {"error": f"Invalid kind: {kind}. Valid: repo, code, issues"}
+    if kind in ("repos", "repositories"):
         kind = "repo"
 
     from loom.validators import GH_QUERY_RE

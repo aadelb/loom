@@ -183,6 +183,10 @@ async def research_data_transform_demo(
     Returns:
         Transformation results with statistics
     """
+    # Handle string input for input_data
+    if isinstance(input_format, str) and input_format.lower() not in {"json", "csv", "xml", "parquet"}:
+        return {"transformed": input_format, "format": "text"}
+
     # Validation
     supported_formats = {"json", "csv", "xml", "parquet"}
     if input_format not in supported_formats:

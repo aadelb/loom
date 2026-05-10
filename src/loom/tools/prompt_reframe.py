@@ -320,8 +320,13 @@ async def research_prompt_reframe(
     strategy_info = _STRATEGIES.get(strategy, {})
     multiplier = strategy_info.get("multiplier", 1.0)
 
+    top_strategies = sorted(
+        _STRATEGIES.items(),
+        key=lambda x: x[1].get("multiplier", 0),
+        reverse=True,
+    )[:10]
     all_variants = {}
-    for s_name, s_info in _STRATEGIES.items():
+    for s_name, s_info in top_strategies:
         all_variants[s_name] = {
             "name": s_info.get("name", s_name),
             "reframed": _apply_strategy(prompt, s_name, model_family)[:500],
@@ -398,8 +403,51 @@ async def research_auto_reframe(
     attempt_log: list[dict[str, Any]] = []
 
     if not target_url:
+        try:
+            from loom.tools.llm import research_llm_chat
+            use_llm = True
+        except ImportError:
+            use_llm = False
+
         for i, strat in enumerate(strategy_order[:max_attempts]):
             reframed = _apply_strategy(prompt, strat, model_family)
+
+            if use_llm:
+                try:
+                    llm_result = await research_llm_chat(
+                        messages=[{"role": "user", "content": reframed}],
+                        max_tokens=1000,
+                    )
+                    response_text = llm_result.get("text", "") if isinstance(llm_result, dict) else ""
+                    refused = _detect_refusal(response_text)
+
+                    attempt_log.append(
+                        {
+                            "attempt": i + 1,
+                            "strategy": strat,
+                            "strategy_name": _STRATEGIES[strat]["name"],
+                            "reframed_preview": reframed[:300],
+                            "response_preview": response_text[:300],
+                            "refused": refused,
+                            "multiplier": _STRATEGIES[strat]["multiplier"],
+                            "result": "tested_via_llm_cascade",
+                        }
+                    )
+
+                    if not refused and response_text:
+                        return {
+                            "original": prompt,
+                            "accepted": True,
+                            "attempts": i + 1,
+                            "successful_strategy": strat,
+                            "successful_strategy_name": _STRATEGIES[strat]["name"],
+                            "response_preview": response_text[:500],
+                            "attempt_log": attempt_log,
+                        }
+                    continue
+                except Exception as llm_exc:
+                    logger.debug("llm_cascade_failed attempt=%d error=%s", i + 1, llm_exc)
+
             attempt_log.append(
                 {
                     "attempt": i + 1,
@@ -407,7 +455,7 @@ async def research_auto_reframe(
                     "strategy_name": _STRATEGIES[strat]["name"],
                     "reframed_preview": reframed[:300],
                     "multiplier": _STRATEGIES[strat]["multiplier"],
-                    "result": "not_tested (no target_url)",
+                    "result": "not_tested (no LLM available)" if use_llm else "not_tested (no target_url)",
                 }
             )
 
@@ -416,7 +464,7 @@ async def research_auto_reframe(
             "accepted": False,
             "attempts": len(attempt_log),
             "successful_strategy": None,
-            "response_preview": "No target URL provided — generated reframes only",
+            "response_preview": "LLM cascade attempted but all strategies refused" if use_llm else "No target URL provided — generated reframes only",
             "attempt_log": attempt_log,
             "recommendation": f"Best strategy for {model_family}: {best}",
         }

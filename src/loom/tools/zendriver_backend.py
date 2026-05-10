@@ -530,6 +530,10 @@ def research_zen_interact(
     if timeout < 1 or timeout > 120:
         raise ValueError("timeout must be 1-120 seconds")
 
+    # Coerce string to list of actions
+    if isinstance(actions, str):
+        actions = [{"type": "click", "selector": actions}]
+
     # Validate actions
     if not isinstance(actions, list):
         raise ValueError("actions must be a list")

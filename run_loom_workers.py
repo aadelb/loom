@@ -24,6 +24,16 @@ if env_file.exists():
             os.environ.setdefault(k.strip(), v.strip())
 
 from loom.server import create_app
+from loom.rest_api import create_rest_app
 
 _mcp = create_app()
-asgi_app = _mcp.streamable_http_app()
+_mcp_asgi = _mcp.streamable_http_app()
+_rest_app = create_rest_app(_mcp)
+
+
+async def asgi_app(scope, receive, send):
+    """Route /api/* to REST API, everything else to MCP."""
+    if scope["type"] == "http" and scope["path"].startswith("/api/"):
+        await _rest_app(scope, receive, send)
+    else:
+        await _mcp_asgi(scope, receive, send)

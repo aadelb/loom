@@ -109,7 +109,8 @@ class AnthropicProvider(LLMProvider):
         """
         # Validate timeout to prevent abuse (HIGH #8)
         timeout = max(1, min(int(timeout), 600))
-        model = model or self.default_model
+        if not model or not model.startswith(("claude", "anthropic")):
+            model = self.default_model
         client = self._get_client()
         start = time.time()
 
@@ -124,7 +125,7 @@ class AnthropicProvider(LLMProvider):
         except Exception as e:
             safe = _sanitize(str(e))[:200]
             logger.error("Anthropic error: %s", safe)
-            raise type(e)(safe) from None
+            raise RuntimeError(safe) from None
 
         latency_ms = int((time.time() - start) * 1000)
 

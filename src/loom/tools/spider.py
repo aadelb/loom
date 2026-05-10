@@ -144,20 +144,17 @@ async def research_spider(
         async with sem:
             try:
                 return await asyncio.wait_for(
-                    loop.run_in_executor(
-                        None,
-                        lambda: research_fetch(
-                            u,
-                            mode=params.mode,
-                            max_chars=params.max_chars_each,
-                            solve_cloudflare=params.solve_cloudflare,
-                            headers=params.headers,
-                            user_agent=params.user_agent,
-                            proxy=params.proxy,
-                            cookies=params.cookies,
-                            accept_language=params.accept_language,
-                            timeout=inner_timeout,
-                        ),
+                    research_fetch(
+                        url=u,
+                        mode=params.mode,
+                        max_chars=params.max_chars_each,
+                        solve_cloudflare=params.solve_cloudflare,
+                        headers=params.headers,
+                        user_agent=params.user_agent,
+                        proxy=params.proxy,
+                        cookies=params.cookies,
+                        accept_language=params.accept_language,
+                        timeout=inner_timeout,
                     ),
                     timeout=outer_wait_for_timeout,
                 )

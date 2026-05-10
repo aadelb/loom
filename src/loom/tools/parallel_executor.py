@@ -43,7 +43,7 @@ class ParallelPlanExecutorParams(BaseModel):
 
 
 async def research_parallel_execute(
-    tools: list[dict[str, Any]], timeout_seconds: int = 30
+    tools: list[dict[str, Any]] | str, timeout_seconds: int = 30
 ) -> dict[str, Any]:
     """Execute multiple tools in parallel.
 
@@ -54,6 +54,10 @@ async def research_parallel_execute(
     Returns:
         Dict with results, timing stats, and speedup factor
     """
+    # Coerce string to list of dict
+    if isinstance(tools, str):
+        tools = [{"tool": tools, "params": {}}]
+
     start_time = time.perf_counter()
     results = []
     tasks = []

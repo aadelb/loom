@@ -22,7 +22,7 @@ HIBP_RANGE_URL = "https://api.pwnedpasswords.com/range"
 HIBP_BREACH_URL = "https://haveibeenpwned.com/api/v3/breachedaccount"
 
 
-async def research_breach_check(email: str) -> dict[str, Any]:
+async def research_breach_check(email: str = "", query: str = "") -> dict[str, Any]:
     """Check if an email appears in known data breaches.
 
     Uses HaveIBeenPwned API (v3) to query breached accounts. Requires
@@ -31,6 +31,7 @@ async def research_breach_check(email: str) -> dict[str, Any]:
 
     Args:
         email: Email address to check
+        query: Alias for email (for convenience)
 
     Returns:
         Dict with keys:
@@ -40,6 +41,8 @@ async def research_breach_check(email: str) -> dict[str, Any]:
           - api_available: bool (whether API key is configured)
           - error: str (if validation failed)
     """
+    if not email and query:
+        email = query
     await asyncio.sleep(0)
     # Validate email format (basic check)
     if not _is_valid_email(email):

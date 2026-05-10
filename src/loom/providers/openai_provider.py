@@ -34,7 +34,7 @@ class OpenAIProvider(LLMProvider):
     """
 
     name = "openai"
-    default_model = "gpt-5-mini"
+    default_model = "gpt-4o-mini"
 
     def __init__(self) -> None:
         """Initialize OpenAI provider."""
@@ -101,18 +101,25 @@ class OpenAIProvider(LLMProvider):
         """
         # Validate timeout to prevent abuse (HIGH #8)
         timeout = max(1, min(int(timeout), 600))
-        model = model or self.default_model
+        if not model or model.startswith(("meta/", "accounts/")):
+            model = self.default_model
+        if isinstance(messages, str):
+            messages = [{"role": "user", "content": messages}]
         client = self._get_client()
         start = time.time()
 
         kwargs: dict[str, Any] = {
             "model": model,
             "messages": messages,
-            "max_tokens": max_tokens,
-            "temperature": temperature,
             # Thread per-call timeout through to the OpenAI SDK (HIGH #8).
             "timeout": float(timeout),
         }
+        # Newer models (o3, o4, gpt-5) use max_completion_tokens, no temperature
+        if model and any(x in model for x in ("o3", "o4", "gpt-5")):
+            kwargs["max_completion_tokens"] = max_tokens
+        else:
+            kwargs["max_tokens"] = max_tokens
+            kwargs["temperature"] = temperature
 
         # Add response_format if provided
         if response_format is not None:
@@ -125,7 +132,7 @@ class OpenAIProvider(LLMProvider):
             # or re-raising (HIGH #5).
             safe = _sanitize(str(e))[:200]
             logger.error("OpenAI error: %s", safe)
-            raise type(e)(safe) from None
+            raise RuntimeError(safe) from None
 
         latency_ms = int((time.time() - start) * 1000)
 
@@ -193,7 +200,7 @@ class OpenAIProvider(LLMProvider):
         except Exception as e:
             safe = _sanitize(str(e))[:200]
             logger.error("OpenAI embeddings error: %s", safe)
-            raise type(e)(safe) from None
+            raise RuntimeError(safe) from None
 
         latency_ms = int((time.time() - start) * 1000)
 

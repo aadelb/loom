@@ -155,7 +155,7 @@ async def _patch_and_call_instructor(
 
 async def research_structured_extract(
     text: str,
-    output_schema: dict[str, str],
+    output_schema: dict[str, str] | str,
     model: str = "auto",
     max_retries: int = 3,
     provider_override: str | None = None,
@@ -188,6 +188,10 @@ async def research_structured_extract(
         ValueError: if output_schema is invalid
         RuntimeError: if all retries exhausted or all providers fail
     """
+    # Coerce string to dict before validation
+    if isinstance(output_schema, str):
+        output_schema = {"extract": output_schema}
+
     # If instructor not available, fall back to research_llm_extract
     if not _INSTRUCTOR_AVAILABLE:
         logger.info(

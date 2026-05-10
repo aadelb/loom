@@ -322,8 +322,9 @@ def _is_valid_domain(domain: str) -> bool:
 
 
 async def research_leak_scan(
-    target: str,
+    target: str = "",
     target_type: str = "domain",
+    query: str = "",
 ) -> dict[str, Any]:
     """Scan for data exposure across ethical public sources.
 
@@ -331,6 +332,11 @@ async def research_leak_scan(
     GitHub code search (exposed secrets), Shodan InternetDB (exposed databases),
     Certificate Transparency (email disclosure), Pastebin (pastes), and
     Trello (public boards).
+
+    Args:
+        target: Target to scan (domain or email)
+        target_type: Type of target ('domain' or 'email')
+        query: Alias for target (for convenience)
 
     Args:
         target: The target to scan (domain, email, IP, or keyword)
@@ -345,6 +351,10 @@ async def research_leak_scan(
           - exposures: list of dicts {source, type, description, severity, url}
           - errors: dict of {source: error_message} if any failed
     """
+
+    # Accept 'query' as alias for 'target'
+    if not target and query:
+        target = query
 
     # Validate target based on type
     if target_type == "email":

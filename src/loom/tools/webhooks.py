@@ -16,7 +16,7 @@ logger = logging.getLogger("loom.tools.webhooks")
 
 async def research_webhook_register(
     url: str,
-    events: list[str],
+    events: list[str] | str,
     secret: str | None = None,
 ) -> dict[str, Any]:
     """Register a new webhook for Loom tool events.
@@ -48,6 +48,10 @@ async def research_webhook_register(
     Raises:
         ValueError: If URL or events are invalid
     """
+    # Coerce string to list before validation
+    if isinstance(events, str):
+        events = [events]
+
     params = WebhookRegisterParams(url=url, events=events, secret=secret)
 
     manager = get_webhook_manager()

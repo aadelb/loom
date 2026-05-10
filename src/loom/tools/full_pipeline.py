@@ -275,7 +275,7 @@ async def research_full_pipeline(
             logger.warning("strategy_adapter_init_failed error=%s", str(e)[:100])
 
     # ── Stage 1: Query Decomposition ──
-    build_result = await research_build_query(
+    build_result = research_build_query(
         user_request=query,
         context="",
         output_type="research",

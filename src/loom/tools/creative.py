@@ -926,6 +926,8 @@ async def research_wiki_ghost(
             logger.warning("wiki_ghost_failed topic=%s: %s", topic, exc)
             return {"topic": topic, "error": str(exc)}
 
+    # Run the sync function in the default executor
+    loop = asyncio.get_event_loop()
     return await loop.run_in_executor(None, _fetch_wiki_data)
 
 

@@ -66,6 +66,7 @@ async def research_identity_resolve(
     check_gravatar: bool = True,
     check_pgp: bool = True,
     check_github: bool = True,
+    username: str = "",
 ) -> dict[str, Any]:
     """Link online identities using only public data.
 
@@ -83,6 +84,10 @@ async def research_identity_resolve(
     Returns:
         Dict with results based on query_type.
     """
+    if not query and username:
+        query = username
+        query_type = "username"
+
     result: dict[str, Any] = {
         "query": query,
         "query_type": query_type,

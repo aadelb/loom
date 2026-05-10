@@ -354,12 +354,58 @@ src/loom/                        61 core modules:
 
 ## Documentation
 
-Four comprehensive documentation files in `docs/`:
+Five documentation files in `docs/`:
 
+- **tool_params.json** — Machine-readable source of truth for ALL 806 tool parameters (auto-generated from source inspection)
+- **TOOL_PARAMS_REFERENCE.md** — Human-readable param reference for all 806 tools (auto-generated from tool_params.json)
 - **tools-reference.md** — Complete reference for 220+ tools, parameters, and examples
 - **api-keys.md** — API key setup for all 8 LLM providers + 21 search providers + infrastructure/communication/media services
 - **architecture.md** — Deep dive into pipeline design, escalation strategy, and tool composition
 - **help.md** — Troubleshooting, common patterns, and FAQ
+
+### REST API (alongside MCP)
+
+```bash
+# Health check
+GET /api/v1/health
+
+# List all tools with param types
+GET /api/v1/tools
+
+# Get a tool's signature, docstring, and params
+GET /api/v1/tools/{name}/info
+
+# Call any tool with JSON body
+POST /api/v1/tools/{name}  {"param1": "value", "param2": 42}
+```
+
+### Commonly Confused Parameters
+
+These cause most test failures — use the correct names:
+
+| Wrong (common mistake) | Correct | Tool(s) |
+|------------------------|---------|---------|
+| `command` | `kind` | research_github (values: "repo", "code", "issues") |
+| `max_results` | `depth` | research_deep, research_citation_analysis |
+| `max_results` | `n` | research_search, research_llm_query_expand |
+| `max_results` | `limit` | research_github, research_multi_search(=max_results) |
+| `providers` | `engines` | research_multi_search |
+| `target_language` | `target_lang` | research_llm_translate |
+| `text` / `input` | `query` | research_search, research_deep, research_multi_search |
+| `model_name` | `model` | all LLM tools (research_llm_*) |
+| `args` | `query` | research_github |
+| `strategy_name` | `strategy` | research_prompt_reframe |
+| `url_list` | `urls` | research_spider |
+| `search repos` | `repo` | research_github kind param |
+
+### Sync vs Async Tools
+
+Most tools are async. Notable SYNC tools (do NOT await):
+- `research_github` — sync (calls `gh` CLI subprocess)
+- `research_build_query` — sync (heuristic decomposition)
+- `research_cache_stats` / `research_cache_clear` — sync
+
+Check with: `GET /api/v1/tools/{name}/info` → `"async": true/false`
 
 ## Code style
 
