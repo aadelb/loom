@@ -716,6 +716,7 @@ def _register_tools(mcp: FastMCP) -> None:
         research_pool_stats, research_pool_reset, export_audit,
         research_backup_create, research_backup_restore, research_backup_list, research_backup_cleanup,
         research_cpu_pool_status, research_cpu_executor_shutdown,
+        research_health_check, research_coverage_run,
         research_analytics_dashboard, research_secret_health, research_quota_status, research_sla_status,
         research_rate_limits,
         research_validate_startup,
