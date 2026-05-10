@@ -159,7 +159,7 @@ def register_core_tools(mcp: "FastMCP", wrap_tool) -> None:
 
     # CPU pool and circuit breaker status tools
     try:
-        from loom.server import research_cpu_pool_status
+        from loom.tool_functions import research_cpu_pool_status
         mcp.tool()(wrap_tool(research_cpu_pool_status))
         record_success("core", "research_cpu_pool_status")
     except (ImportError, AttributeError) as e:

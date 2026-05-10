@@ -310,7 +310,7 @@ async def _periodic_strategy_flush() -> None:
 async def _periodic_health_check() -> None:
     """Internal health verification and metrics collection."""
     try:
-        from loom.server import _health_status
+        from loom.server_state import get_health_status as _health_status
 
         log.debug("periodic_health_check health_status=%s", _health_status)
     except Exception as exc:

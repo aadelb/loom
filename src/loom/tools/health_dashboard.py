@@ -21,7 +21,7 @@ async def research_dashboard_html() -> dict[str, Any]:
         Dict with html (complete page), generated_at (ISO timestamp),
         metrics_summary (key metrics dict)
     """
-    from loom.server import research_health_check
+    from loom.tool_functions import research_health_check
     health = await research_health_check()
     process = psutil.Process()
     memory_mb = round(process.memory_info().rss / (1024 * 1024), 1)

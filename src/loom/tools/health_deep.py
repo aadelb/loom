@@ -67,7 +67,7 @@ async def research_health_deep() -> dict[str, Any]:
     """
     from datetime import UTC, datetime
     from loom import __version__
-    from loom.server import _start_time
+    from loom.server_state import get_start_time
 
     start_time = time.time()
     timestamp = datetime.now(UTC).isoformat()
@@ -305,7 +305,7 @@ async def _check_search_providers() -> dict[str, Any]:
     start = time.time()
 
     try:
-        from loom.server import _check_search_provider_available
+        from loom.tool_functions import _check_search_provider_available
 
         provider_names = [
             "exa", "tavily", "firecrawl", "brave", "ddgs",
