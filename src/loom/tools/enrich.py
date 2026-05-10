@@ -62,13 +62,16 @@ def research_wayback(
     Useful for recovering content from dead links (404, timeouts).
 
     Args:
-        url: the original URL to look up
+        url: the original URL to look up (SSRF-validated)
         limit: max number of snapshots to return
 
     Returns:
         Dict with ``snapshots`` list (each has ``timestamp``,
         ``archive_url``, ``status_code``) and ``original_url``.
     """
+    from loom.validators import validate_url
+    validate_url(url)
+
     try:
         with httpx.Client(timeout=30.0) as client:
             resp = client.get(
