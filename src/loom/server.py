@@ -1084,6 +1084,58 @@ def _fuzzy_correct_params(func: Callable[..., Any], kwargs: dict) -> tuple[dict,
     return corrected, corrections
 
 
+def _normalize_result(
+    result: Any, tool_name: str, category: str | None, duration: float
+) -> dict[str, Any]:
+    """Normalize any tool return type into the standard ToolResponse envelope.
+
+    Handles: dict, list[TextContent], list, str, None.
+    Uses setdefault on dicts to never overwrite existing keys.
+    """
+    import json as _json
+
+    elapsed_ms = int(duration * 1000)
+
+    if isinstance(result, dict):
+        result.setdefault("source", tool_name)
+        result.setdefault("category", category or "")
+        result.setdefault("elapsed_ms", elapsed_ms)
+        return result
+
+    # Handle TextContent lists (20 tool files return this format)
+    if isinstance(result, list) and result and hasattr(result[0], "text"):
+        try:
+            inner = _json.loads(result[0].text)
+            if isinstance(inner, dict):
+                inner.setdefault("source", tool_name)
+                inner.setdefault("category", category or "")
+                inner.setdefault("elapsed_ms", elapsed_ms)
+                return inner
+        except (ValueError, AttributeError, IndexError):
+            pass
+        return {
+            "results": [getattr(r, "text", str(r)) for r in result],
+            "total_count": len(result),
+            "source": tool_name,
+            "category": category or "",
+            "elapsed_ms": elapsed_ms,
+        }
+
+    if isinstance(result, list):
+        return {
+            "results": result,
+            "total_count": len(result),
+            "source": tool_name,
+            "category": category or "",
+            "elapsed_ms": elapsed_ms,
+        }
+
+    if result is None:
+        return {"results": None, "source": tool_name, "category": category or "", "elapsed_ms": elapsed_ms}
+
+    return {"results": result, "source": tool_name, "category": category or "", "elapsed_ms": elapsed_ms}
+
+
 def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callable[..., Any]:
     """Wrap tool with tracing, rate limiting, metrics, and optional billing.
 
@@ -1283,6 +1335,7 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                 except Exception as ws_e:
                     log.debug(f"WebSocket broadcast error (tool.completed): {ws_e}")
 
+                result = _normalize_result(result, tool_name, category, duration)
                 return result
             except asyncio.TimeoutError:
                 # Prometheus: record timeout error
@@ -1529,6 +1582,7 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                 except Exception as audit_e:
                     log.debug(f"Audit logging error at success (sync): {audit_e}")
 
+                result = _normalize_result(result, tool_name, category, duration)
                 return result
             except Exception as e:
                 # Prometheus: record error
