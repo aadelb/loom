@@ -251,13 +251,13 @@ async def research_fetch(
             cached["elapsed_ms"] = int((time.time() - start) * 1000)
             return cached
 
-    # Route to appropriate fetcher
+    # Route to appropriate fetcher (sync helpers run in thread pool)
     if params.mode == "http":
-        result = _fetch_http(params)
+        result = await asyncio.to_thread(_fetch_http, params)
     elif params.mode == "stealthy":
-        result = _fetch_stealthy(params)
+        result = await asyncio.to_thread(_fetch_stealthy, params)
     elif params.mode == "dynamic":
-        result = _fetch_dynamic(params)
+        result = await asyncio.to_thread(_fetch_dynamic, params)
     else:
         result = FetchResult(
             url=url,
@@ -270,12 +270,12 @@ async def research_fetch(
     if auto_escalate and params.mode == "http" and _is_cloudflare_block(result):
         logger.info("auto_escalate http -> stealthy url=%s", url)
         params.mode = "stealthy"
-        result = _fetch_stealthy(params)
+        result = await asyncio.to_thread(_fetch_stealthy, params)
 
         if _is_cloudflare_block(result):
             logger.info("auto_escalate stealthy -> dynamic url=%s", url)
             params.mode = "dynamic"
-            result = _fetch_dynamic(params)
+            result = await asyncio.to_thread(_fetch_dynamic, params)
 
     # Cache successful result
     if not result.error:
