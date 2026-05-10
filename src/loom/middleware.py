@@ -512,37 +512,6 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                     "balance_before": current_balance,
                 }
             
-            # Token Economy: check credits before execution (if enabled)
-            user_id = os.getenv("LOOM_USER_ID", "anonymous")
-            current_balance = int(os.getenv("LOOM_USER_BALANCE", "0"))
-            token_economy_result = {}
-            
-            if token_economy_enabled:
-                balance_check = check_balance(user_id, current_balance, tool_name)
-                
-                if not balance_check["sufficient"]:
-                    log.warning(
-                        "insufficient_credits",
-                        user_id=user_id,
-                        tool_name=tool_name,
-                        required=balance_check["required"],
-                        balance=balance_check["balance"],
-                        shortfall=balance_check["shortfall"],
-                    )
-                    return {
-                        "error": "insufficient_credits",
-                        "message": f"Tool '{tool_name}' requires {balance_check['required']} credits, but you have {balance_check['balance']}. Need {balance_check['shortfall']} more credits.",
-                        "tool": tool_name,
-                        "required_credits": balance_check["required"],
-                        "available_credits": balance_check["balance"],
-                        "shortfall": balance_check["shortfall"],
-                    }
-                
-                token_economy_result = {
-                    "cost": balance_check["required"],
-                    "balance_before": current_balance,
-                }
-            
             # Billing: check credits before execution (if enabled)
             customer_id = os.getenv("LOOM_CUSTOMER_ID", "default")
             if billing_enabled:
