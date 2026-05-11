@@ -9,6 +9,7 @@ Implements three core operations:
 from __future__ import annotations
 
 import logging
+import re
 import shutil
 from datetime import UTC, datetime
 from pathlib import Path
@@ -29,10 +30,18 @@ def _get_backup_dir() -> Path:
     return backup_dir
 
 
+_VALID_TARGETS = {"all", "sqlite", "cache", "config"}
+_BACKUP_ID_RE = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{6}$")
+
+
 def _get_sqlite_files() -> list[Path]:
-    """Get all SQLite database files in ~/.loom."""
+    """Get all SQLite database files in ~/.loom (including subdirectories)."""
     loom_dir = _get_loom_data_dir()
-    db_files = list(loom_dir.glob("*.db"))
+    backups_dir = _get_backup_dir()
+    db_files = [
+        f for f in loom_dir.rglob("*.db")
+        if not str(f).startswith(str(backups_dir))
+    ]
     return sorted(db_files)
 
 
@@ -77,7 +86,9 @@ async def research_backup_create(
         - total_size_mb: Total backup size in MB
         - timestamp: ISO 8601 timestamp
     """
-    # Generate backup ID from current timestamp
+    if target not in _VALID_TARGETS:
+        return {"error": f"Invalid target '{target}', must be one of: {', '.join(sorted(_VALID_TARGETS))}"}
+
     now = datetime.now(UTC)
     backup_id = now.strftime("%Y-%m-%d_%H%M%S")
     backup_path = _get_backup_dir() / backup_id
@@ -90,9 +101,12 @@ async def research_backup_create(
         # Backup SQLite files
         if target in ("all", "sqlite"):
             sqlite_files = _get_sqlite_files()
+            loom_dir = _get_loom_data_dir()
             for db_file in sqlite_files:
                 try:
-                    dest = backup_path / db_file.name
+                    rel_path = db_file.relative_to(loom_dir)
+                    dest = backup_path / "sqlite" / rel_path
+                    dest.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(db_file, dest)
                     files_backed_up.append(str(db_file))
                     total_size_mb += _calculate_size_mb(dest)
@@ -230,10 +244,16 @@ async def research_backup_restore(
         - dry_run: Whether this was a dry-run
         - warnings: List of warning messages
     """
-    backup_path = _get_backup_dir() / backup_id
     warnings: list[str] = []
     restored_files: list[str] = []
 
+    if target not in _VALID_TARGETS:
+        return {"backup_id": backup_id, "restored_files": [], "dry_run": dry_run, "warnings": [f"Invalid target '{target}'"]}
+
+    if not _BACKUP_ID_RE.match(backup_id):
+        return {"backup_id": backup_id, "restored_files": [], "dry_run": dry_run, "warnings": ["Invalid backup_id format (expected YYYY-MM-DD_HHMMSS)"]}
+
+    backup_path = _get_backup_dir() / backup_id
     if not backup_path.exists():
         warnings.append(f"Backup '{backup_id}' not found")
         return {
@@ -246,9 +266,13 @@ async def research_backup_restore(
     try:
         # Restore SQLite files
         if target in ("all", "sqlite"):
-            for db_file in backup_path.glob("*.db"):
+            sqlite_backup = backup_path / "sqlite"
+            search_path = sqlite_backup if sqlite_backup.is_dir() else backup_path
+            for db_file in search_path.rglob("*.db"):
                 try:
-                    original_path = _get_loom_data_dir() / db_file.name
+                    rel = db_file.relative_to(search_path) if sqlite_backup.is_dir() else Path(db_file.name)
+                    original_path = _get_loom_data_dir() / rel
+                    original_path.parent.mkdir(parents=True, exist_ok=True)
                     if not dry_run:
                         shutil.copy2(db_file, original_path)
                     restored_files.append(str(original_path))
@@ -264,9 +288,7 @@ async def research_backup_restore(
                 try:
                     cache_dest = _get_cache_dir()
                     if not dry_run:
-                        if cache_dest.exists():
-                            shutil.rmtree(cache_dest, ignore_errors=True)
-                        shutil.copytree(cache_backup, cache_dest)
+                        shutil.copytree(cache_backup, cache_dest, dirs_exist_ok=True)
                     restored_files.append(str(cache_dest))
                 except Exception as e:
                     warnings.append(f"Failed to restore cache: {e}")

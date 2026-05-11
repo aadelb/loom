@@ -58,7 +58,7 @@ async def research_dlq_push(
                     (item_id, tool_name, json.dumps(params), error, retry_count, now, next_retry, status),
                 )
                 await db.commit()
-        logger.info("dlq_push", item_id=item_id, tool_name=tool_name, retry_count=retry_count)
+        logger.info("dlq_push item_id=%s tool_name=%s retry_count=%d", item_id, tool_name, retry_count)
         return {"id": item_id, "tool_name": tool_name, "retry_count": retry_count, "next_retry_at": next_retry}
     except Exception as exc:
         return {"error": str(exc), "tool": "research_dlq_push"}
@@ -106,6 +106,10 @@ async def research_dlq_retry(item_id: str = "") -> dict[str, Any]:
                         (new_retry_count, new_status, _calculate_next_retry(new_retry_count), item_id),
                     )
                     retried_count, exhausted_count = (1, 0) if new_status == "retrying" else (0, 1)
+                    await db.commit()
+                    remaining = (await (await db.execute(
+                        "SELECT COUNT(*) FROM dead_letters WHERE status IN ('pending', 'retrying')"
+                    )).fetchone())[0]
                 else:
                     now = datetime.now(UTC).isoformat()
                     rows = await (await db.execute(
