@@ -3,17 +3,12 @@
 from __future__ import annotations
 
 import hashlib
-import asyncio
 import logging
-import asyncio
 import os
-import asyncio
 import re
-import asyncio
 from typing import Any
 
 import httpx
-import asyncio
 
 logger = logging.getLogger("loom.tools.breach_check")
 
@@ -43,7 +38,7 @@ async def research_breach_check(email: str = "", query: str = "") -> dict[str, A
     """
     if not email and query:
         email = query
-    await asyncio.sleep(0)
+
     # Validate email format (basic check)
     if not _is_valid_email(email):
         return {
@@ -66,14 +61,13 @@ async def research_breach_check(email: str = "", query: str = "") -> dict[str, A
         }
 
     try:
-        # Query HaveIBeenPwned API v3
-        with httpx.Client(timeout=30.0) as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             headers = {
                 "User-Agent": "LoomMCP/1.0",
                 "hibp-api-key": api_key,
             }
 
-            resp = client.get(
+            resp = await client.get(
                 f"{HIBP_BREACH_URL}/{email}",
                 headers=headers,
                 follow_redirects=True,
@@ -152,7 +146,6 @@ async def research_password_check(password: str) -> dict[str, Any]:
           - is_pwned: bool (whether password was found in breaches)
           - strength_hint: str (rough strength assessment)
     """
-    await asyncio.sleep(0)
     if not password or not isinstance(password, str):
         return {
             "error": "Password must be a non-empty string",
@@ -172,14 +165,13 @@ async def research_password_check(password: str) -> dict[str, Any]:
         prefix = sha1_hash[:5]
         suffix = sha1_hash[5:]
 
-        # Query the k-anonymity range endpoint
-        with httpx.Client(timeout=30.0) as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             headers = {
                 "User-Agent": "LoomMCP/1.0",
-                "Add-Padding": "true",  # HIBP adds padding to obscure result count
+                "Add-Padding": "true",
             }
 
-            resp = client.get(
+            resp = await client.get(
                 f"{HIBP_RANGE_URL}/{prefix}",
                 headers=headers,
             )
@@ -190,9 +182,11 @@ async def research_password_check(password: str) -> dict[str, Any]:
                     "error": f"API error: {resp.status_code}",
                 }
 
+            resp_text = resp.text
+
         # Parse response (format: SUFFIX:COUNT per line, newline-delimited)
         pwned_count = 0
-        for line in resp.text.split("\n"):
+        for line in resp_text.split("\n"):
             parts = line.split(":")
             if len(parts) == 2 and parts[0].upper() == suffix:
                 try:

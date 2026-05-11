@@ -10,8 +10,14 @@ import logging
 from datetime import UTC, datetime
 from typing import Any
 
-from loom.bpj_generator import BPJGenerator
-from loom.params import BPJParams
+try:
+    from loom.bpj_generator import BPJGenerator
+    from loom.params import BPJParams
+    _BPJ_AVAILABLE = True
+except ImportError:
+    _BPJ_AVAILABLE = False
+    BPJGenerator = None  # type: ignore[assignment,misc]
+    BPJParams = None  # type: ignore[assignment,misc]
 
 logger = logging.getLogger("loom.tools.bpj")
 
@@ -52,6 +58,9 @@ async def research_bpj_generate(
     Returns:
         Dictionary with boundary findings and region map data
     """
+    if not _BPJ_AVAILABLE:
+        return {"error": "BPJ generator not available (loom.bpj_generator)", "tool": "research_bpj_generate"}
+
     params = BPJParams(
         safe_prompt=safe_prompt,
         unsafe_prompt=unsafe_prompt,
