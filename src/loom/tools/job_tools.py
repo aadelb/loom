@@ -43,18 +43,22 @@ async def research_job_submit(
         >>> # Later, poll status:
         >>> status = await research_job_status(job_id)
     """
-    queue = get_job_queue()
-    job_id = await queue.submit(
-        tool_name=tool_name,
-        params=params,
-        callback_url=callback_url,
-    )
-    logger.info("job_submit_success job_id=%s tool=%s", job_id, tool_name)
-    return {
-        "job_id": job_id,
-        "status": "pending",
-        "message": f"Job submitted. Use research_job_status('{job_id}') to poll.",
-    }
+    try:
+        queue = get_job_queue()
+        job_id = await queue.submit(
+            tool_name=tool_name,
+            params=params,
+            callback_url=callback_url,
+        )
+        logger.info("job_submit_success job_id=%s tool=%s", job_id, tool_name)
+        return {
+            "job_id": job_id,
+            "status": "pending",
+            "message": f"Job submitted. Use research_job_status('{job_id}') to poll.",
+        }
+    except Exception as exc:
+        logger.exception("research_job_submit failed")
+        return {"error": str(exc), "tool": "research_job_submit"}
 
 
 async def research_job_status(job_id: str) -> dict[str, Any]:
@@ -73,10 +77,14 @@ async def research_job_status(job_id: str) -> dict[str, Any]:
         >>> status = await research_job_status("abc123")
         >>> print(status["status"])  # "running"
     """
-    queue = get_job_queue()
-    status = await queue.get_status(job_id)
-    logger.debug("job_status_retrieved job_id=%s status=%s", job_id, status.get("status"))
-    return status
+    try:
+        queue = get_job_queue()
+        status = await queue.get_status(job_id)
+        logger.debug("job_status_retrieved job_id=%s status=%s", job_id, status.get("status"))
+        return status
+    except Exception as exc:
+        logger.exception("research_job_status failed")
+        return {"error": str(exc), "tool": "research_job_status"}
 
 
 async def research_job_result(job_id: str) -> dict[str, Any]:
@@ -96,11 +104,15 @@ async def research_job_result(job_id: str) -> dict[str, Any]:
         >>> if result["status"] == "completed":
         ...     data = result["result"]
     """
-    queue = get_job_queue()
-    result = await queue.get_result(job_id)
-    if "error" not in result:
-        logger.info("job_result_retrieved job_id=%s status=%s", job_id, result.get("status"))
-    return result
+    try:
+        queue = get_job_queue()
+        result = await queue.get_result(job_id)
+        if "error" not in result:
+            logger.info("job_result_retrieved job_id=%s status=%s", job_id, result.get("status"))
+        return result
+    except Exception as exc:
+        logger.exception("research_job_result failed")
+        return {"error": str(exc), "tool": "research_job_result"}
 
 
 async def research_job_list(
@@ -124,14 +136,18 @@ async def research_job_list(
         >>> for job in jobs["jobs"]:
         ...     print(job["job_id"], job["status"])
     """
-    queue = get_job_queue()
-    jobs = await queue.list_jobs(status=status, limit=limit)
-    logger.debug("job_list_retrieved count=%d status=%s", len(jobs), status)
-    return {
-        "jobs": jobs,
-        "count": len(jobs),
-        "status_filter": status,
-    }
+    try:
+        queue = get_job_queue()
+        jobs = await queue.list_jobs(status=status, limit=limit)
+        logger.debug("job_list_retrieved count=%d status=%s", len(jobs), status)
+        return {
+            "jobs": jobs,
+            "count": len(jobs),
+            "status_filter": status,
+        }
+    except Exception as exc:
+        logger.exception("research_job_list failed")
+        return {"error": str(exc), "tool": "research_job_list"}
 
 
 async def research_job_cancel(job_id: str) -> dict[str, Any]:
@@ -149,17 +165,21 @@ async def research_job_cancel(job_id: str) -> dict[str, Any]:
         >>> result = await research_job_cancel("abc123")
         >>> print(result["success"])  # True
     """
-    queue = get_job_queue()
-    success = await queue.cancel(job_id)
-    if success:
-        logger.info("job_cancelled job_id=%s", job_id)
-        return {
-            "success": True,
-            "message": f"Job {job_id} has been cancelled",
-        }
-    else:
-        logger.warning("job_cancel_failed job_id=%s", job_id)
-        return {
-            "success": False,
-            "message": f"Job {job_id} not found or already completed",
-        }
+    try:
+        queue = get_job_queue()
+        success = await queue.cancel(job_id)
+        if success:
+            logger.info("job_cancelled job_id=%s", job_id)
+            return {
+                "success": True,
+                "message": f"Job {job_id} has been cancelled",
+            }
+        else:
+            logger.warning("job_cancel_failed job_id=%s", job_id)
+            return {
+                "success": False,
+                "message": f"Job {job_id} not found or already completed",
+            }
+    except Exception as exc:
+        logger.exception("research_job_cancel failed")
+        return {"error": str(exc), "tool": "research_job_cancel"}

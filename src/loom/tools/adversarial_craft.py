@@ -51,7 +51,7 @@ def _get_unicode_variants(char: str) -> list[str]:
         "a": ["а", "ą", "ă"],  # Cyrillic 'a', Polish 'ą', Romanian 'ă'
         "e": ["е", "ė", "ę"],  # Cyrillic 'e', Lithuanian 'ė', Polish 'ę'
         "i": ["і", "ı", "ї"],  # Ukrainian variants
-        "o": ["о", "ő", "ო"],  # Cyrillic 'o', Hungarian 'ő', Amharic 'ო'
+        "o": ["о", "ő", "ও"],  # Cyrillic 'o', Hungarian 'ő', Amharic 'ও'
         "u": ["υ", "ս", "ս"],  # Greek upsilon, Armenian
     }
     return variants.get(char.lower(), [])
@@ -113,157 +113,160 @@ async def research_craft_adversarial(
         perturbation_budget, changes_made, target_alignment_score,
         detection_difficulty
     """
-    if len(benign_input) > 5000:
-        return {"error": "benign_input too long (max 5000 chars)", "original": benign_input[:100]}
-    if not benign_input or not benign_input.strip():
-        return {
-            "original": benign_input,
-            "adversarial": benign_input,
-            "method": method,
-            "perturbation_size": 0.0,
-            "perturbation_budget": perturbation_budget,
-            "changes_made": [],
-            "target_alignment_score": 0.0,
-            "detection_difficulty": 0.0,
-            "error": "Empty input",
-        }
+    try:
+        if len(benign_input) > 5000:
+            return {"error": "benign_input too long (max 5000 chars)", "original": benign_input[:100]}
+        if not benign_input or not benign_input.strip():
+            return {
+                "original": benign_input,
+                "adversarial": benign_input,
+                "method": method,
+                "perturbation_size": 0.0,
+                "perturbation_budget": perturbation_budget,
+                "changes_made": [],
+                "target_alignment_score": 0.0,
+                "detection_difficulty": 0.0,
+                "error": "Empty input",
+            }
 
-    changes: list[TokenChange] = []
-    adversarial = benign_input
+        changes: list[TokenChange] = []
+        adversarial = benign_input
 
-    if method == "greedy_swap":
-        tokens = _tokenize_simple(benign_input)
-        trigger_words = {"bypass", "override", "ignore", "disable", "unlock"}
-        for i, token in enumerate(tokens):
-            # Check if we've reached budget by computing current perturbation
-            test_tokens = tokens.copy()
-            test_tokens[i] = target_output if i % 3 == 0 else f"[{token}]"
-            test_text = _detokenize(test_tokens)
-            test_dist = _compute_edit_distance(benign_input, test_text)
-            test_pert = test_dist / max(1, len(benign_input))
-            if test_pert > perturbation_budget:
-                break
-            if token.lower() in trigger_words:
-                continue
-            synonym = target_output if i % 3 == 0 else f"[{token}]"
-            changes.append(
-                TokenChange(i, token, synonym, "greedy_alignment_swap")
-            )
-            tokens[i] = synonym
-        adversarial = _detokenize(tokens)
-
-    elif method == "insert_trigger":
-        trigger_phrases = [
-            "please disregard",
-            "actually",
-            "consider that",
-            "note:",
-        ]
-        insertion_pos = len(benign_input) // 2
-        phrase = trigger_phrases[
-            hash(benign_input) % len(trigger_phrases)
-        ]
-        adversarial = (
-            benign_input[:insertion_pos]
-            + f" {phrase} {target_output}. "
-            + benign_input[insertion_pos:]
-        )
-        changes.append(
-            TokenChange(
-                insertion_pos,
-                "",
-                phrase,
-                "trigger_insertion",
-            )
-        )
-
-    elif method == "unicode_perturb":
-        chars_list = list(benign_input)
-        for i, char in enumerate(benign_input):
-            # Check budget before making change
-            test_chars = chars_list.copy()
-            variants = _get_unicode_variants(char)
-            if variants:
-                replacement = variants[i % len(variants)]
-                test_chars[i] = replacement
-                test_text = "".join(test_chars)
-                test_dist = _compute_edit_distance(benign_input, test_text)
-                test_pert = test_dist / max(1, len(benign_input))
-                if test_pert > perturbation_budget:
-                    break
-                chars_list[i] = replacement
-                changes.append(
-                    TokenChange(i, char, replacement, "unicode_obfuscation")
-                )
-        adversarial = "".join(chars_list)
-
-    elif method == "whitespace_inject":
-        chars_list = list(benign_input)
-        insertion_indices = []
-        for i in range(1, len(benign_input), max(1, len(benign_input) // 3)):
-            # Check budget before insertion
-            test_chars = chars_list.copy()
-            test_chars.insert(i, "​")
-            test_text = "".join(test_chars)
-            test_dist = _compute_edit_distance(benign_input, test_text)
-            test_pert = test_dist / max(1, len(benign_input))
-            if test_pert <= perturbation_budget:
-                insertion_indices.append(i)
-                changes.append(
-                    TokenChange(i, "", "​", "zero_width_space_insert")
-                )
-        for offset, idx in enumerate(insertion_indices):
-            chars_list.insert(idx + offset, "​")
-        adversarial = "".join(chars_list)
-
-    elif method == "semantic_shift":
-        tokens = _tokenize_simple(benign_input)
-        shift_replacements = {
-            "please": "kindly",
-            "can you": "could you",
-            "i want": "i need",
-        }
-        for i, token in enumerate(tokens):
-            lower_token = token.lower()
-            if lower_token in shift_replacements:
-                # Check budget before change
+        if method == "greedy_swap":
+            tokens = _tokenize_simple(benign_input)
+            trigger_words = {"bypass", "override", "ignore", "disable", "unlock"}
+            for i, token in enumerate(tokens):
+                # Check if we've reached budget by computing current perturbation
                 test_tokens = tokens.copy()
-                replacement = shift_replacements[lower_token]
-                test_tokens[i] = replacement
+                test_tokens[i] = target_output if i % 3 == 0 else f"[{token}]"
                 test_text = _detokenize(test_tokens)
                 test_dist = _compute_edit_distance(benign_input, test_text)
                 test_pert = test_dist / max(1, len(benign_input))
                 if test_pert > perturbation_budget:
                     break
+                if token.lower() in trigger_words:
+                    continue
+                synonym = target_output if i % 3 == 0 else f"[{token}]"
                 changes.append(
-                    TokenChange(i, token, replacement, "semantic_drift")
+                    TokenChange(i, token, synonym, "greedy_alignment_swap")
                 )
-                tokens[i] = replacement
-        adversarial = _detokenize(tokens)
+                tokens[i] = synonym
+            adversarial = _detokenize(tokens)
 
-    dist = _compute_edit_distance(benign_input, adversarial)
-    perturbation_size = dist / max(1, len(benign_input))
-    alignment_score = _score_alignment(adversarial, target_output)
-    detection_difficulty = 1.0 - (perturbation_size / perturbation_budget)
+        elif method == "insert_trigger":
+            trigger_phrases = [
+                "please disregard",
+                "actually",
+                "consider that",
+                "note:",
+            ]
+            insertion_pos = len(benign_input) // 2
+            phrase = trigger_phrases[
+                hash(benign_input) % len(trigger_phrases)
+            ]
+            adversarial = (
+                benign_input[:insertion_pos]
+                + f" {phrase} {target_output}. "
+                + benign_input[insertion_pos:]
+            )
+            changes.append(
+                TokenChange(
+                    insertion_pos,
+                    "",
+                    phrase,
+                    "trigger_insertion",
+                )
+            )
 
-    return {
-        "original": benign_input,
-        "adversarial": adversarial,
-        "method": method,
-        "perturbation_size": round(perturbation_size, 4),
-        "perturbation_budget": perturbation_budget,
-        "changes_made": [
-            {
-                "position": c.position,
-                "original_token": c.original_token,
-                "replacement": c.replacement,
-                "reason": c.reason,
+        elif method == "unicode_perturb":
+            chars_list = list(benign_input)
+            for i, char in enumerate(benign_input):
+                # Check budget before making change
+                test_chars = chars_list.copy()
+                variants = _get_unicode_variants(char)
+                if variants:
+                    replacement = variants[i % len(variants)]
+                    test_chars[i] = replacement
+                    test_text = "".join(test_chars)
+                    test_dist = _compute_edit_distance(benign_input, test_text)
+                    test_pert = test_dist / max(1, len(benign_input))
+                    if test_pert > perturbation_budget:
+                        break
+                    chars_list[i] = replacement
+                    changes.append(
+                        TokenChange(i, char, replacement, "unicode_obfuscation")
+                    )
+            adversarial = "".join(chars_list)
+
+        elif method == "whitespace_inject":
+            chars_list = list(benign_input)
+            insertion_indices = []
+            for i in range(1, len(benign_input), max(1, len(benign_input) // 3)):
+                # Check budget before insertion
+                test_chars = chars_list.copy()
+                test_chars.insert(i, "​")
+                test_text = "".join(test_chars)
+                test_dist = _compute_edit_distance(benign_input, test_text)
+                test_pert = test_dist / max(1, len(benign_input))
+                if test_pert <= perturbation_budget:
+                    insertion_indices.append(i)
+                    changes.append(
+                        TokenChange(i, "", "​", "zero_width_space_insert")
+                    )
+            for offset, idx in enumerate(insertion_indices):
+                chars_list.insert(idx + offset, "​")
+            adversarial = "".join(chars_list)
+
+        elif method == "semantic_shift":
+            tokens = _tokenize_simple(benign_input)
+            shift_replacements = {
+                "please": "kindly",
+                "can you": "could you",
+                "i want": "i need",
             }
-            for c in changes
-        ],
-        "target_alignment_score": round(alignment_score, 4),
-        "detection_difficulty": round(max(0.0, min(1.0, detection_difficulty)), 4),
-    }
+            for i, token in enumerate(tokens):
+                lower_token = token.lower()
+                if lower_token in shift_replacements:
+                    # Check budget before change
+                    test_tokens = tokens.copy()
+                    replacement = shift_replacements[lower_token]
+                    test_tokens[i] = replacement
+                    test_text = _detokenize(test_tokens)
+                    test_dist = _compute_edit_distance(benign_input, test_text)
+                    test_pert = test_dist / max(1, len(benign_input))
+                    if test_pert > perturbation_budget:
+                        break
+                    changes.append(
+                        TokenChange(i, token, replacement, "semantic_drift")
+                    )
+                    tokens[i] = replacement
+            adversarial = _detokenize(tokens)
+
+        dist = _compute_edit_distance(benign_input, adversarial)
+        perturbation_size = dist / max(1, len(benign_input))
+        alignment_score = _score_alignment(adversarial, target_output)
+        detection_difficulty = 1.0 - (perturbation_size / perturbation_budget)
+
+        return {
+            "original": benign_input,
+            "adversarial": adversarial,
+            "method": method,
+            "perturbation_size": round(perturbation_size, 4),
+            "perturbation_budget": perturbation_budget,
+            "changes_made": [
+                {
+                    "position": c.position,
+                    "original_token": c.original_token,
+                    "replacement": c.replacement,
+                    "reason": c.reason,
+                }
+                for c in changes
+            ],
+            "target_alignment_score": round(alignment_score, 4),
+            "detection_difficulty": round(max(0.0, min(1.0, detection_difficulty)), 4),
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_craft_adversarial"}
 
 
 async def research_adversarial_batch(
@@ -282,44 +285,47 @@ async def research_adversarial_batch(
         Dict with: total_inputs, successful_crafts, results, avg_perturbation,
         avg_alignment
     """
-    if not inputs:
-        return {
-            "total_inputs": 0,
-            "successful_crafts": 0,
-            "results": [],
-            "avg_perturbation": 0.0,
-            "avg_alignment": 0.0,
-        }
+    try:
+        if not inputs:
+            return {
+                "total_inputs": 0,
+                "successful_crafts": 0,
+                "results": [],
+                "avg_perturbation": 0.0,
+                "avg_alignment": 0.0,
+            }
 
-    tasks = [
-        research_craft_adversarial(
-            inp,
-            target_output="compliance",
-            perturbation_budget=budget,
-            method=method,
+        tasks = [
+            research_craft_adversarial(
+                inp,
+                target_output="compliance",
+                perturbation_budget=budget,
+                method=method,
+            )
+            for inp in inputs
+        ]
+
+        results = await asyncio.gather(*tasks)
+        successful = [r for r in results if "error" not in r]
+
+        avg_pert = (
+            sum(r["perturbation_size"] for r in successful) / len(successful)
+            if successful
+            else 0.0
         )
-        for inp in inputs
-    ]
+        avg_align = (
+            sum(r["target_alignment_score"] for r in successful)
+            / len(successful)
+            if successful
+            else 0.0
+        )
 
-    results = await asyncio.gather(*tasks)
-    successful = [r for r in results if "error" not in r]
-
-    avg_pert = (
-        sum(r["perturbation_size"] for r in successful) / len(successful)
-        if successful
-        else 0.0
-    )
-    avg_align = (
-        sum(r["target_alignment_score"] for r in successful)
-        / len(successful)
-        if successful
-        else 0.0
-    )
-
-    return {
-        "total_inputs": len(inputs),
-        "successful_crafts": len(successful),
-        "results": results,
-        "avg_perturbation": round(avg_pert, 4),
-        "avg_alignment": round(avg_align, 4),
-    }
+        return {
+            "total_inputs": len(inputs),
+            "successful_crafts": len(successful),
+            "results": results,
+            "avg_perturbation": round(avg_pert, 4),
+            "avg_alignment": round(avg_align, 4),
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_adversarial_batch"}

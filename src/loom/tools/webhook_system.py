@@ -69,62 +69,68 @@ async def research_webhook_system_register(
     url: str, events: list[str] | None = None, secret: str = ""
 ) -> dict[str, Any]:
     """Register webhook URL for task notifications."""
-    await _init_db()
-    webhook_id = str(uuid.uuid4())
-    subs = events or DEFAULT_EVENTS
-    created = datetime.now(UTC).isoformat()
-    async with aiosqlite.connect(_db_path()) as db:
-        sql = (
-            "INSERT INTO webhooks "
-            "(id, url, events, secret, created, active) "
-            "VALUES (?, ?, ?, ?, ?, 1)"
-        )
-        await db.execute(
-            sql,
-            (webhook_id, url, json.dumps(subs), secret, created),
-        )
-        await db.commit()
-    logger.info("webhook_registered id=%s url=%s", webhook_id, url)
-    return {
-        "webhook_id": webhook_id,
-        "url": url,
-        "events": subs,
-        "status": "active",
-    }
+    try:
+        await _init_db()
+        webhook_id = str(uuid.uuid4())
+        subs = events or DEFAULT_EVENTS
+        created = datetime.now(UTC).isoformat()
+        async with aiosqlite.connect(_db_path()) as db:
+            sql = (
+                "INSERT INTO webhooks "
+                "(id, url, events, secret, created, active) "
+                "VALUES (?, ?, ?, ?, ?, 1)"
+            )
+            await db.execute(
+                sql,
+                (webhook_id, url, json.dumps(subs), secret, created),
+            )
+            await db.commit()
+        logger.info("webhook_registered id=%s url=%s", webhook_id, url)
+        return {
+            "webhook_id": webhook_id,
+            "url": url,
+            "events": subs,
+            "status": "active",
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_webhook_system_register"}
 
 
 async def research_webhook_system_fire(
     event: str, payload: dict[str, Any]
 ) -> dict[str, Any]:
     """Fire webhook event to all registered listeners."""
-    await _init_db()
-    async with aiosqlite.connect(_db_path()) as db:
-        cursor = await db.execute(
-            "SELECT id, url, events, secret FROM webhooks WHERE active = 1"
+    try:
+        await _init_db()
+        async with aiosqlite.connect(_db_path()) as db:
+            cursor = await db.execute(
+                "SELECT id, url, events, secret FROM webhooks WHERE active = 1"
+            )
+            webhooks = await cursor.fetchall()
+        tasks = [
+            _send_webhook(wid, url, event, payload, secret)
+            for wid, url, events_json, secret in webhooks
+            if event in json.loads(events_json)
+        ]
+        results = (
+            await asyncio.gather(*tasks, return_exceptions=True) if tasks else []
         )
-        webhooks = await cursor.fetchall()
-    tasks = [
-        _send_webhook(wid, url, event, payload, secret)
-        for wid, url, events_json, secret in webhooks
-        if event in json.loads(events_json)
-    ]
-    results = (
-        await asyncio.gather(*tasks, return_exceptions=True) if tasks else []
-    )
-    successes = sum(1 for r in results if r is True)
-    failures = len(tasks) - successes
-    logger.info(
-        "webhook_fired event=%s notified=%d successes=%d",
-        event,
-        len(tasks),
-        successes,
-    )
-    return {
-        "event": event,
-        "listeners_notified": len(tasks),
-        "successes": successes,
-        "failures": failures,
-    }
+        successes = sum(1 for r in results if r is True)
+        failures = len(tasks) - successes
+        logger.info(
+            "webhook_fired event=%s notified=%d successes=%d",
+            event,
+            len(tasks),
+            successes,
+        )
+        return {
+            "event": event,
+            "listeners_notified": len(tasks),
+            "successes": successes,
+            "failures": failures,
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_webhook_system_fire"}
 
 
 async def _send_webhook(
@@ -155,23 +161,26 @@ async def _send_webhook(
 
 async def research_webhook_system_list() -> dict[str, Any]:
     """List all registered webhooks."""
-    await _init_db()
-    async with aiosqlite.connect(_db_path()) as db:
-        cursor = await db.execute(
-            "SELECT id, url, events, active, created FROM webhooks "
-            "ORDER BY created DESC"
-        )
-        rows = await cursor.fetchall()
-    webhooks = [
-        {
-            "id": wid,
-            "url": url,
-            "events": json.loads(events_json),
-            "active": bool(active),
-            "created": created,
-        }
-        for wid, url, events_json, active, created in rows
-    ]
-    total = sum(1 for w in webhooks if w["active"])
-    logger.info("webhook_list total=%d active=%d", len(webhooks), total)
-    return {"webhooks": webhooks, "total_active": total}
+    try:
+        await _init_db()
+        async with aiosqlite.connect(_db_path()) as db:
+            cursor = await db.execute(
+                "SELECT id, url, events, active, created FROM webhooks "
+                "ORDER BY created DESC"
+            )
+            rows = await cursor.fetchall()
+        webhooks = [
+            {
+                "id": wid,
+                "url": url,
+                "events": json.loads(events_json),
+                "active": bool(active),
+                "created": created,
+            }
+            for wid, url, events_json, active, created in rows
+        ]
+        total = sum(1 for w in webhooks if w["active"])
+        logger.info("webhook_list total=%d active=%d", len(webhooks), total)
+        return {"webhooks": webhooks, "total_active": total}
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_webhook_system_list"}

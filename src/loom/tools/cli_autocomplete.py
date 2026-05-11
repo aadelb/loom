@@ -21,12 +21,15 @@ async def research_generate_completions(shell: str = "zsh") -> dict[str, Any]:
     Returns:
         Dict with keys: shell, script, tools_count, install_instruction
     """
-    if shell not in ("zsh", "bash", "fish"):
-        raise ValueError(f"Unsupported shell: {shell}")
-    tools = _collect_tools()
-    gens = {"zsh": _zsh, "bash": _bash, "fish": _fish}
-    insts = {"zsh": "~/.zfunc/_loom (add to ~/.zshrc: fpath=(~/.zfunc $fpath))", "bash": "/etc/bash_completion.d/loom", "fish": "~/.config/fish/completions/loom.fish"}
-    return {"shell": shell, "script": gens[shell](tools), "tools_count": len(tools), "install_instruction": insts[shell]}
+    try:
+        if shell not in ("zsh", "bash", "fish"):
+            raise ValueError(f"Unsupported shell: {shell}")
+        tools = _collect_tools()
+        gens = {"zsh": _zsh, "bash": _bash, "fish": _fish}
+        insts = {"zsh": "~/.zfunc/_loom (add to ~/.zshrc: fpath=(~/.zfunc $fpath))", "bash": "/etc/bash_completion.d/loom", "fish": "~/.config/fish/completions/loom.fish"}
+        return {"shell": shell, "script": gens[shell](tools), "tools_count": len(tools), "install_instruction": insts[shell]}
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_generate_completions"}
 
 
 async def research_tool_help(tool_name: str) -> dict[str, Any]:
@@ -38,11 +41,14 @@ async def research_tool_help(tool_name: str) -> dict[str, Any]:
     Returns:
         Dict with tool_name, description, parameters, examples, source_file
     """
-    tools = _collect_tools()
-    tool = next((t for t in tools if t["name"] == tool_name), None)
-    if not tool:
-        raise ValueError(f"Tool not found: {tool_name}")
-    return {"tool_name": tool["name"], "description": tool["description"], "parameters": tool["parameters"], "examples": tool.get("examples", []), "source_file": tool.get("source_file", "unknown")}
+    try:
+        tools = _collect_tools()
+        tool = next((t for t in tools if t["name"] == tool_name), None)
+        if not tool:
+            raise ValueError(f"Tool not found: {tool_name}")
+        return {"tool_name": tool["name"], "description": tool["description"], "parameters": tool["parameters"], "examples": tool.get("examples", []), "source_file": tool.get("source_file", "unknown")}
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_tool_help"}
 
 
 def _collect_tools() -> list[dict[str, Any]]:

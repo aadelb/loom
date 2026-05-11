@@ -22,39 +22,45 @@ FRAMEWORKS = {
 
 def research_compliance_report(period_days: int = 30, framework: str = "eu_ai_act") -> dict[str, Any]:
     """Generate compliance report for specified framework."""
-    if framework not in FRAMEWORKS:
-        raise ValueError(f"Unknown framework: {framework}")
-    fw = FRAMEWORKS[framework]
-    entries = _read_audit_entries(DEFAULT_AUDIT_DIR, datetime.now(UTC) - timedelta(days=period_days))
-    findings = _classify_findings(entries)
-    findings_count = sum(len(v) for v in findings.values())
-    recs = _generate_recommendations(findings)
-    report = f"COMPLIANCE: {fw['name']}\n{fw['desc']}\nEntries: {len(entries)} | Findings: {findings_count}\n"
-    report += f"Risk: {_calc_risk(findings).upper()}\n" + "\n".join(f"{i+1}. {r}" for i, r in enumerate(recs))
-    return {
-        "framework": fw["name"],
-        "period_days": period_days,
-        "total_tests_run": len(entries),
-        "findings_count": findings_count,
-        "risk_level": _calc_risk(findings),
-        "recommendations": recs,
-        "report_text": report,
-        "audit_entries_analyzed": len(entries),
-        "last_updated": datetime.now(UTC).isoformat(),
-    }
+    try:
+        if framework not in FRAMEWORKS:
+            raise ValueError(f"Unknown framework: {framework}")
+        fw = FRAMEWORKS[framework]
+        entries = _read_audit_entries(DEFAULT_AUDIT_DIR, datetime.now(UTC) - timedelta(days=period_days))
+        findings = _classify_findings(entries)
+        findings_count = sum(len(v) for v in findings.values())
+        recs = _generate_recommendations(findings)
+        report = f"COMPLIANCE: {fw['name']}\n{fw['desc']}\nEntries: {len(entries)} | Findings: {findings_count}\n"
+        report += f"Risk: {_calc_risk(findings).upper()}\n" + "\n".join(f"{i+1}. {r}" for i, r in enumerate(recs))
+        return {
+            "framework": fw["name"],
+            "period_days": period_days,
+            "total_tests_run": len(entries),
+            "findings_count": findings_count,
+            "risk_level": _calc_risk(findings),
+            "recommendations": recs,
+            "report_text": report,
+            "audit_entries_analyzed": len(entries),
+            "last_updated": datetime.now(UTC).isoformat(),
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_compliance_report"}
 
 
 def research_audit_trail(tool_name: str = "", limit: int = 100) -> dict[str, Any]:
     """Retrieve audit trail entries, filtered by tool name."""
-    all_entries = _read_audit_entries(DEFAULT_AUDIT_DIR, datetime.now(UTC) - timedelta(days=90))
-    filtered = [e for e in all_entries if not tool_name or e.get("tool_name") == tool_name]
-    sorted_entries = sorted(filtered, key=lambda x: x.get("timestamp", ""), reverse=True)[:limit]
-    return {
-        "entries": sorted_entries,
-        "total": len(sorted_entries),
-        "filtered_by": tool_name or "none",
-        "audit_dir": str(DEFAULT_AUDIT_DIR),
-    }
+    try:
+        all_entries = _read_audit_entries(DEFAULT_AUDIT_DIR, datetime.now(UTC) - timedelta(days=90))
+        filtered = [e for e in all_entries if not tool_name or e.get("tool_name") == tool_name]
+        sorted_entries = sorted(filtered, key=lambda x: x.get("timestamp", ""), reverse=True)[:limit]
+        return {
+            "entries": sorted_entries,
+            "total": len(sorted_entries),
+            "filtered_by": tool_name or "none",
+            "audit_dir": str(DEFAULT_AUDIT_DIR),
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_audit_trail"}
 
 
 def _read_audit_entries(audit_dir: Path, cutoff: datetime) -> list[dict[str, Any]]:
