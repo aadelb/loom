@@ -293,11 +293,28 @@ async def research_darkweb_early_warning(
                             highest_severity_val = severity_map.get(severity, 0)
                             highest_severity = severity
 
+                # Compute per-keyword mention counts for severity
+                keyword_mentions: dict[str, int] = {}
+                for alert in alerts:
+                    kw = alert["keyword"]
+                    keyword_mentions[kw] = keyword_mentions.get(kw, 0) + 1
+
+                # Re-score severity with actual mention counts
+                highest_severity_val = 0
+                highest_severity = None
+                for alert in alerts:
+                    severity = _estimate_severity(alert["keyword"], keyword_mentions.get(alert["keyword"], 1))
+                    alert["severity"] = severity
+                    if severity_map.get(severity, 0) > highest_severity_val:
+                        highest_severity_val = severity_map.get(severity, 0)
+                        highest_severity = severity
+
                 return {
                     "keywords": keywords,
                     "alerts": alerts,
                     "alert_count": len(alerts),
                     "highest_severity": highest_severity,
+                    "keyword_mention_counts": keyword_mentions,
                     "search_hours_back": hours_back,
                     "timestamp": datetime.now(UTC).isoformat(),
                 }
