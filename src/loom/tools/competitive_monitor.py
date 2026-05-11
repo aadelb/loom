@@ -108,7 +108,7 @@ async def _fetch_repo_stats(
         }
 
     except Exception as exc:
-        logger.error(f"Error fetching {owner}/{repo}: {exc}")
+        logger.error("Error fetching %s/%s: %s", owner, repo, exc)
         return {"owner": owner, "repo": repo, "error": str(exc)}
 
 
@@ -166,7 +166,7 @@ async def research_monitor_competitors(
             }
 
     except Exception as exc:
-        logger.error(f"Error monitoring competitors: {exc}")
+        logger.error("Error monitoring competitors: %s", exc)
         return {
             "timestamp": datetime.now(UTC).isoformat(),
             "error": str(exc),
@@ -226,7 +226,7 @@ def research_competitive_advantage() -> dict[str, Any]:
         }
 
     except Exception as exc:
-        logger.error(f"Error analyzing competitive advantage: {exc}")
+        logger.error("Error analyzing competitive advantage: %s", exc)
         return {
             "timestamp": datetime.now(UTC).isoformat(),
             "error": str(exc),
