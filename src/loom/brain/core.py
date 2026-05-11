@@ -12,11 +12,12 @@ import time
 from typing import Any
 
 from loom.brain.action import execute_step
+from loom.brain.chains import match_chain
 from loom.brain.memory import get_memory
 from loom.brain.perception import parse_intent
 from loom.brain.reasoning import plan_workflow, select_tools
 from loom.brain.reflection import evaluate_result, reflect_with_llm
-from loom.brain.types import QualityMode, SmartCallResult
+from loom.brain.types import QualityMode, SmartCallResult, PlanStep, ExecutionPlan
 
 logger = logging.getLogger("loom.brain.core")
 
@@ -93,13 +94,20 @@ async def research_smart_call(
     # --- Layer 2: Memory ---
     recent_context = memory.get_recent_context(n=3)
 
-    # --- Layer 3: Reasoning (tool selection + planning) ---
-    matched = select_tools(
-        query=query,
-        quality_mode=mode,
-        max_tools=10 if mode == QualityMode.MAX else 5,
-        forced_tools=forced_tools,
-    )
+    # --- Layer 3: Reasoning (chain detection + tool selection + planning) ---
+    # Check for predefined chains first (strongest signal)
+    chain_match = match_chain(query) if not forced_tools else None
+    if chain_match:
+        logger.info("brain_chain_matched chain=%s tools=%s", chain_match["chain_name"], chain_match["tools"])
+        from loom.brain.types import ToolMatch
+        matched = [ToolMatch(tool_name=t, confidence=0.9, match_source="chain") for t in chain_match["tools"]]
+    else:
+        matched = select_tools(
+            query=query,
+            quality_mode=mode,
+            max_tools=10 if mode == QualityMode.MAX else 5,
+            forced_tools=forced_tools,
+        )
 
     if not matched:
         elapsed_ms = int((time.time() - start) * 1000)
