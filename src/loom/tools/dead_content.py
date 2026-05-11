@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import quote
 
@@ -104,7 +104,7 @@ async def research_dead_content(
                         snapshots.append(
                             {
                                 "source": "archive_today",
-                                "archive_url": resp.url,
+                                "archive_url": str(resp.url),
                             }
                         )
             except Exception as e:
@@ -180,14 +180,11 @@ async def research_dead_content(
             except Exception as e:
                 logger.debug("cached_search_check_failed url=%s error=%s", url, str(e))
 
-    # Determine if deleted (found in archive but no longer live)
-    is_deleted = len(found_in) > 0
-
     return {
         "url": url,
         "found_in": found_in,
         "snapshots": snapshots,
-        "is_deleted": is_deleted,
+        "has_archive_copies": len(found_in) > 0,
         "total_sources_checked": sources_checked,
-        "checked_at": datetime.now().isoformat(),
+        "checked_at": datetime.now(UTC).isoformat(),
     }
