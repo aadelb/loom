@@ -293,7 +293,6 @@ async def _research_with_http_api(
 
 async def _async_stream_wrapper(sync_iterator):
     """Wrap a synchronous iterator for async iteration."""
-    loop = asyncio.get_event_loop()
     for item in sync_iterator:
         yield item
         await asyncio.sleep(0)  # Yield control
