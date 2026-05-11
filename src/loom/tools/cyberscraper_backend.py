@@ -28,12 +28,28 @@ from pathlib import Path
 from typing import Any, Literal
 from urllib.parse import urlparse
 
-from mcp.types import TextContent
+try:
+    from mcp.types import TextContent
+except ImportError:
+    TextContent = None  # type: ignore[assignment,misc]
+
 from pydantic import BaseModel, Field, field_validator
 
-from loom.cache import get_cache
+try:
+    from loom.cache import get_cache
+    _CACHE_AVAILABLE = True
+except ImportError:
+    _CACHE_AVAILABLE = False
+    get_cache = None  # type: ignore[assignment]
+
 from loom.validators import validate_url
-from loom.params import CyberscraperParams
+
+try:
+    from loom.params import CyberscraperParams
+    _PARAMS_AVAILABLE = True
+except ImportError:
+    _PARAMS_AVAILABLE = False
+    CyberscraperParams = None  # type: ignore[assignment,misc]
 
 logger = logging.getLogger("loom.tools.cyberscraper")
 
@@ -52,7 +68,7 @@ try:
 
         _CYBERSCRAPER_AVAILABLE = True
 except ImportError as e:  # pragma: no cover
-    logger.debug(f"CyberScraper-2077 not available: {e}")
+    logger.debug("CyberScraper-2077 not available: %s", e)
 
 
 
@@ -72,7 +88,7 @@ def _get_cyberscraper_extractor(
     try:
         scraper_config_obj = ScraperConfig(**config)
     except Exception as e:
-        logger.warning(f"Invalid scraper config: {e}. Using defaults.")
+        logger.warning("Invalid scraper config: %s. Using defaults.", e)
         scraper_config_obj = ScraperConfig()
 
     try:
@@ -81,7 +97,7 @@ def _get_cyberscraper_extractor(
             scraper_config=scraper_config_obj,
         )
     except Exception as e:
-        logger.error(f"Failed to initialize WebExtractor with model {model}: {e}")
+        logger.error("Failed to initialize WebExtractor with model %s: %s", model, e)
         raise
 
 
@@ -159,12 +175,12 @@ async def research_cyberscrape(
     cache_key = f"cyberscrape:{params.url}:{params.extract_type}:{params.model}"
     cached = cache.get(cache_key)
     if cached:
-        logger.info(f"Cache hit for {params.url}")
+        logger.info("Cache hit for %s", params.url)
         return TextContent(type="text", text=cached)
 
     try:
         logger.info(
-            f"Scraping {params.url} with model={params.model}, extract_type={params.extract_type}"
+            "Scraping %s with model=%s, extract_type=%s", params.url, params.model, params.extract_type
         )
 
         if not _CYBERSCRAPER_AVAILABLE:
@@ -220,12 +236,11 @@ async def research_cyberscrape(
 
                 return result
             except Exception as e:
-                logger.error(f"Extraction failed: {e}")
+                logger.error("Extraction failed: %s", e)
                 raise
 
         # Run blocking operation in thread pool
-        loop = asyncio.get_event_loop()
-        result = await loop.run_in_executor(None, _extract)
+        result = await asyncio.to_thread(_extract)
 
         # Format output as requested
         if params.format == "json":
@@ -236,9 +251,9 @@ async def research_cyberscrape(
                 result = json.dumps({"content": result, "format": "text"})
 
         # Cache result
-        cache.set(cache_key, result)
+        cache.put(cache_key, result)
 
-        logger.info(f"Successfully scraped {params.url} ({len(result)} chars)")
+        logger.info("Successfully scraped %s (%d chars)", params.url, len(result))
 
         return TextContent(type="text", text=result)
 
@@ -287,8 +302,7 @@ async def research_cyberscrape_direct(
         def _extract():
             return extractor.process_message(extraction_prompt)
 
-        loop = asyncio.get_event_loop()
-        result = await loop.run_in_executor(None, _extract)
+        result = await asyncio.to_thread(_extract)
 
         if isinstance(result, str):
             return TextContent(type="text", text=result)
@@ -296,5 +310,5 @@ async def research_cyberscrape_direct(
             return TextContent(type="text", text=json.dumps(result))
 
     except Exception as e:
-        logger.error(f"Direct extraction failed: {e}")
+        logger.error("Direct extraction failed: %s", e)
         return TextContent(type="text", text=f"Error: {str(e)}")
