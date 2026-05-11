@@ -98,99 +98,63 @@ def _count_pattern_matches(text: str, patterns: list[str]) -> int:
     text_lower = text.lower()
     for pattern in patterns:
         if pattern.lower() in text_lower:
-            count += re.findall(re.escape(pattern.lower()), text_lower).__len__()
+            count += len(re.findall(re.escape(pattern.lower()), text_lower))
     return count
 
 
-def _estimate_domain_age(domain: str) -> int | None:
-    """Estimate domain age in days via WHOIS lookup.
-
-    Returns:
-        Age in days or None if lookup fails
-    """
-
-    async def _whois_lookup() -> int | None:
-        try:
-            async with httpx.AsyncClient(
-                headers={"User-Agent": "Loom-Research/1.0"},
-                timeout=30.0,
-            ) as client:
-                # Use whois.arin.net simple lookup
-                resp = await client.get(
-                    f"https://www.whois.com/whois/{domain}",
-                    timeout=10.0,
-                    follow_redirects=False,
-                )
-                if resp.status_code == 200:
-                    text = resp.text
-                    # Look for "Created Date" or "registration date"
-                    created_match = re.search(
-                        r"created[:\s]*(\d{4}-\d{2}-\d{2})", text, re.IGNORECASE
-                    )
-                    if created_match:
-                        try:
-                            created_date = datetime.fromisoformat(
-                                created_match.group(1)
-                            ).replace(tzinfo=UTC)
-                            age_days = (datetime.now(UTC) - created_date).days
-                            return age_days
-                        except (ValueError, AttributeError):
-                            pass
-        except Exception as exc:
-            logger.debug("whois lookup failed: %s", exc)
-        return None
-
+async def _estimate_domain_age(domain: str) -> int | None:
+    """Estimate domain age in days via WHOIS lookup."""
     try:
-        return asyncio.run(_whois_lookup())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_whois_lookup())
-        finally:
-            loop.close()
-
-
-def _search_company_glassdoor(company_name: str) -> int:
-    """Count Glassdoor mentions for company via search.
-
-    Returns:
-        Number of Glassdoor reviews/mentions found
-    """
-
-    async def _glassdoor_search() -> int:
-        try:
-            async with httpx.AsyncClient(
-                headers={"User-Agent": "Loom-Research/1.0"},
-                timeout=30.0,
-            ) as client:
-                # Search Google for "company glassdoor reviews"
-                search_url = (
-                    f"https://duckduckgo.com/?q={quote(company_name)}+glassdoor+"
-                    f"reviews&format=json"
+        async with httpx.AsyncClient(
+            headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
+        ) as client:
+            resp = await client.get(
+                f"https://www.whois.com/whois/{domain}",
+                timeout=10.0,
+                follow_redirects=False,
+            )
+            if resp.status_code == 200:
+                created_match = re.search(
+                    r"created[:\s]*(\d{4}-\d{2}-\d{2})", resp.text, re.IGNORECASE
                 )
-                resp = await client.get(search_url, timeout=10.0)
-                if resp.status_code == 200:
-                    data = resp.json()
-                    # DuckDuckGo returns results, count mentions
-                    results = data.get("results", [])
-                    return len(
-                        [r for r in results if "glassdoor" in r.get("url", "").lower()]
-                    )
-        except Exception as exc:
-            logger.debug("glassdoor search failed: %s", exc)
-        return 0
+                if created_match:
+                    try:
+                        created_date = datetime.fromisoformat(
+                            created_match.group(1)
+                        ).replace(tzinfo=UTC)
+                        return (datetime.now(UTC) - created_date).days
+                    except (ValueError, AttributeError):
+                        pass
+    except Exception as exc:
+        logger.debug("whois lookup failed: %s", exc)
+    return None
 
+
+async def _search_company_glassdoor(company_name: str) -> int:
+    """Count Glassdoor mentions for company via search."""
     try:
-        return asyncio.run(_glassdoor_search())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_glassdoor_search())
-        finally:
-            loop.close()
+        async with httpx.AsyncClient(
+            headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
+        ) as client:
+            search_url = (
+                f"https://duckduckgo.com/?q={quote(company_name)}+glassdoor+"
+                f"reviews&format=json"
+            )
+            resp = await client.get(search_url, timeout=10.0)
+            if resp.status_code == 200:
+                data = resp.json()
+                results = data.get("results", [])
+                return len(
+                    [r for r in results if "glassdoor" in r.get("url", "").lower()]
+                )
+    except Exception as exc:
+        logger.debug("glassdoor search failed: %s", exc)
+    return 0
 
 
-def research_deception_job_scan(
+async def research_deception_job_scan(
     job_url: str = "", job_text: str = ""
 ) -> dict[str, Any]:
     """Analyze job posting for deception signals.
@@ -291,7 +255,7 @@ def research_deception_job_scan(
 
         if company_name and len(company_name) > 2 and len(company_name) < 100:
             # Try to get WHOIS age
-            company_age_days = _estimate_domain_age(company_name)
+            company_age_days = await _estimate_domain_age(company_name)
             if company_age_days is not None and company_age_days < 30:
                 red_flags.append("brand_new_domain")
                 risk_score += 15
@@ -303,7 +267,7 @@ def research_deception_job_scan(
                 risk_score -= 5
 
             # Check Glassdoor presence
-            glassdoor_mentions = _search_company_glassdoor(company_name)
+            glassdoor_mentions = await _search_company_glassdoor(company_name)
             if glassdoor_mentions > 0:
                 green_flags.append("verified_on_glassdoor")
                 risk_score -= 10
