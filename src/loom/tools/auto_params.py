@@ -160,16 +160,17 @@ async def research_auto_params(
             - confidence: score 0-100 based on inference quality
     """
     try:
-        # Dynamic import and function lookup
-        parts = tool_name.rsplit("_", 1)
-        if len(parts) == 2:
-            module_name, func_suffix = parts
-            module = importlib.import_module(f"loom.tools.{module_name}")
-        else:
-            module = importlib.import_module(f"loom.tools.{tool_name}")
-
-        # Find the function — exact lookup only
-        func = getattr(module, tool_name, None)
+        # Dynamic import: strip "research_" prefix and try module name variants
+        base = tool_name.replace("research_", "")
+        func = None
+        for candidate_module in [base, base.split("_")[0], tool_name]:
+            try:
+                module = importlib.import_module(f"loom.tools.{candidate_module}")
+                func = getattr(module, tool_name, None)
+                if func and callable(func):
+                    break
+            except ImportError:
+                continue
 
         if not func or not callable(func):
             return {
