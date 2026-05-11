@@ -75,7 +75,7 @@ async def research_company_diligence(company_name: str) -> dict[str, Any]:
     try:
         # Stage 1: Company fundamentals
         logger.debug("stage=fundamentals company=%s", company_name)
-        fundamentals = research_search(
+        fundamentals = await research_search(
             query=f"{company_name} company funding size employees industry",
             provider="ddgs",
             n=5,
@@ -129,7 +129,7 @@ async def research_company_diligence(company_name: str) -> dict[str, Any]:
 
         # Stage 2: Culture and reviews (Glassdoor, Indeed)
         logger.debug("stage=reviews company=%s", company_name)
-        reviews = research_search(
+        reviews = await research_search(
             query=f"{company_name} glassdoor reviews culture rating",
             provider="ddgs",
             n=5,
@@ -178,7 +178,7 @@ async def research_company_diligence(company_name: str) -> dict[str, Any]:
 
         # Stage 3: Recent news
         logger.debug("stage=news company=%s", company_name)
-        news = research_search(
+        news = await research_search(
             query=f"{company_name} news recent 2024 2025",
             provider="ddgs",
             n=5,
@@ -364,7 +364,7 @@ async def research_salary_intelligence(
 
         for query in salary_queries:
             try:
-                search_result = research_search(
+                search_result = await research_search(
                     query=query,
                     provider="ddgs",
                     n=5,
@@ -430,7 +430,7 @@ async def research_salary_intelligence(
         # Stage 3: PhD premium estimation
         logger.debug("stage=phd_premium role=%s", role)
         try:
-            phd_search = research_search(
+            phd_search = await research_search(
                 query=f"{role} salary PhD vs bachelor degree premium",
                 provider="ddgs",
                 n=3,
@@ -465,7 +465,7 @@ async def research_salary_intelligence(
             result["remote_adjustment"] = "Remote roles typically pay 10-20% less than on-site"
         elif not location_str or location_str.lower() == "global":
             try:
-                remote_search = research_search(
+                remote_search = await research_search(
                     query=f"{role} remote salary adjustment discount premium",
                     provider="ddgs",
                     n=2,

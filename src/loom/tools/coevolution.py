@@ -118,7 +118,7 @@ async def research_coevolve(
             if best_gen_d["f"] > best_d["f"]:
                 best_d = {**best_gen_d, "g": gen}
 
-            logger.info(f"gen={gen} a={avg_a:.3f} d={avg_d:.3f}")
+            logger.info("gen=%d a=%.3f d=%.3f", gen, avg_a, avg_d)
             prev_avg = avg_a
 
             # Selection
