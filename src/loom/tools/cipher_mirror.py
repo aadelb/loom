@@ -189,7 +189,7 @@ async def research_cipher_mirror(
                     research_search,
                     search_q,
                     provider="ddgs",
-                    n=n // len(search_queries),
+                    n=max(1, n // len(search_queries)),
                 ),
             )
             return result.get("results", [])  # type: ignore[return-value]

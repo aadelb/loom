@@ -7,7 +7,7 @@ timeline dependencies, critical path, and leverage points.
 from __future__ import annotations
 
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 logger = logging.getLogger("loom.tools.chronos")
@@ -278,7 +278,7 @@ async def research_chronos_reverse(
             "timeline_unit": "months",
             "confidence": round(base_confidence, 2),
             "actionable_now": actionable_now,
-            "generated_at": datetime.now().isoformat(),
+            "generated_at": datetime.now(UTC).isoformat(),
         }
     except Exception as exc:
         return {"error": str(exc), "tool": "research_chronos_reverse"}
