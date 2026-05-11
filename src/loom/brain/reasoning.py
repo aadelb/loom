@@ -30,6 +30,28 @@ _LLM_AVAILABLE = False
 _tool_name_index: dict[str, str] | None = None
 _server_tools: dict[str, ToolMeta] | None = None
 _brain_index_loaded = False
+_tool_examples: dict[str, list[str]] | None = None
+
+
+def _load_tool_examples() -> dict[str, list[str]]:
+    """Load few-shot examples for tool matching."""
+    global _tool_examples
+    if _tool_examples is not None:
+        return _tool_examples
+
+    import json as _json
+
+    examples_path = Path(__file__).parent / "tool_examples.json"
+    if examples_path.exists():
+        try:
+            _tool_examples = _json.loads(examples_path.read_text(encoding="utf-8"))
+            logger.info("loaded examples for %d tools", len(_tool_examples))
+            return _tool_examples
+        except Exception:
+            pass
+
+    _tool_examples = {}
+    return _tool_examples
 
 
 def _select_best_provider(quality_mode: QualityMode) -> str:
@@ -193,12 +215,15 @@ def select_tools(
 
     # Adaptive weights: boost category when domain is specific (not "general")
     has_specific_domain = domains and domains != ["general"]
-    w_keyword = 0.30
-    w_semantic = 0.20
-    w_signature = 0.15  # Boosted: entity-param alignment is very informative
-    w_category = 0.20 if has_specific_domain else 0.08
+    w_keyword = 0.25
+    w_semantic = 0.15
+    w_signature = 0.15
+    w_category = 0.18 if has_specific_domain else 0.08
     w_usage = 0.05
-    w_name_match = 0.10  # New: direct tool name match bonus
+    w_name_match = 0.10
+    w_example = 0.12  # Few-shot example matching
+
+    examples = _load_tool_examples()
 
     for tool_name, meta in server_tools.items():
         keyword_score = _keyword_score(tool_name, meta, keywords, domains)
@@ -207,6 +232,7 @@ def select_tools(
         category_score = _category_score(meta, domains)
         usage_score = _usage_score(tool_name)
         name_match_score = _name_match_score(tool_name, keywords)
+        example_score = _example_match_score(tool_name, query, keywords, examples)
 
         composite = (
             keyword_score * w_keyword
@@ -215,7 +241,12 @@ def select_tools(
             + category_score * w_category
             + usage_score * w_usage
             + name_match_score * w_name_match
+            + example_score * w_example
         )
+
+        # High-confidence example boost: if example matches >0.8, it's almost certainly the right tool
+        if example_score > 0.8:
+            composite += 0.15
 
         if composite > 0.08:
             scored.append((tool_name, composite, "composite"))
@@ -262,6 +293,40 @@ def _keyword_score(
 
     score = (exact_hits * 1.0 + substring_hits * 0.5) / max(len(keywords), 1)
     return min(score, 1.0)
+
+
+def _example_match_score(
+    tool_name: str, query: str, keywords: list[str], examples: dict[str, list[str]]
+) -> float:
+    """Score based on similarity to stored few-shot examples for this tool.
+
+    Compares query keywords against example phrases. High overlap = high confidence.
+    """
+    tool_examples = examples.get(tool_name, [])
+    if not tool_examples or not keywords:
+        return 0.0
+
+    query_lower = query.lower()
+    best_score = 0.0
+
+    for example in tool_examples:
+        example_lower = example.lower()
+        # Word overlap between query and example
+        example_words = set(example_lower.split())
+        query_words = set(query_lower.split())
+        overlap = len(query_words & example_words)
+        total = max(len(query_words | example_words), 1)
+        jaccard = overlap / total
+
+        # Keyword overlap (stronger signal)
+        example_keywords = set(w for w in example_words if len(w) > 3)
+        kw_overlap = sum(1 for kw in keywords if kw in example_keywords)
+        kw_score = kw_overlap / max(len(keywords), 1)
+
+        score = jaccard * 0.4 + kw_score * 0.6
+        best_score = max(best_score, score)
+
+    return min(best_score, 1.0)
 
 
 def _name_match_score(tool_name: str, keywords: list[str]) -> float:

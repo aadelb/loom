@@ -1,0 +1,197 @@
+{
+  "research_search": [
+    "search for recent AI safety papers",
+    "find articles about climate change",
+    "look up information on quantum computing"
+  ],
+  "research_fetch": [
+    "get the content of this URL",
+    "scrape this webpage",
+    "fetch the HTML from example.com"
+  ],
+  "research_markdown": [
+    "extract clean text from this page",
+    "convert this URL to markdown",
+    "get readable content from this article"
+  ],
+  "research_deep": [
+    "do deep research on transformer architectures",
+    "comprehensive investigation into dark web marketplaces",
+    "thorough analysis of UAE cybersecurity regulations"
+  ],
+  "research_github": [
+    "find GitHub repos for web scraping",
+    "search code for SSRF prevention patterns",
+    "look up issues in the loom repository"
+  ],
+  "research_nuclei_scan": [
+    "scan example.com for vulnerabilities",
+    "check security of this domain",
+    "run vulnerability assessment on target"
+  ],
+  "research_cve_lookup": [
+    "look up CVE-2024-1234",
+    "find vulnerabilities for Apache 2.4",
+    "check CVE details for log4j"
+  ],
+  "research_llm_summarize": [
+    "summarize this long article",
+    "give me a brief overview of this text",
+    "condense this report into key points"
+  ],
+  "research_llm_translate": [
+    "translate this to Arabic",
+    "convert this text to French",
+    "translate from English to Spanish"
+  ],
+  "research_llm_classify": [
+    "classify this text by sentiment",
+    "categorize these documents",
+    "determine the topic of this article"
+  ],
+  "research_video_download": [
+    "download this YouTube video",
+    "get video from this URL",
+    "save this video locally"
+  ],
+  "research_citation_analysis": [
+    "analyze citations for this paper",
+    "check citation network anomalies",
+    "find self-citation patterns"
+  ],
+  "research_retraction_check": [
+    "has this paper been retracted",
+    "check for retractions by this author",
+    "find retracted papers on this topic"
+  ],
+  "research_predatory_journal_check": [
+    "is this journal predatory",
+    "check journal quality and legitimacy",
+    "verify if this is a legitimate publication"
+  ],
+  "research_dark_forum": [
+    "search dark web forums for this keyword",
+    "find dark web discussions about hacking",
+    "look for leaked data mentions on forums"
+  ],
+  "research_onion_discover": [
+    "find onion sites related to this topic",
+    "discover Tor hidden services",
+    "search for .onion URLs"
+  ],
+  "research_leak_scan": [
+    "check if my email was in a data breach",
+    "scan for leaked credentials",
+    "find data leaks for this domain"
+  ],
+  "research_crypto_trace": [
+    "trace this Bitcoin address",
+    "analyze cryptocurrency transactions",
+    "track blockchain wallet activity"
+  ],
+  "research_job_list": [
+    "find AI engineering jobs in Dubai",
+    "search for remote Python developer positions",
+    "look for cybersecurity jobs"
+  ],
+  "research_spiderfoot_scan": [
+    "run OSINT scan on this domain",
+    "passive reconnaissance on target",
+    "gather intelligence on this organization"
+  ],
+  "research_camoufox": [
+    "browse this site without being detected",
+    "stealth scrape a protected page",
+    "access Cloudflare-protected content"
+  ],
+  "research_multi_search": [
+    "search across multiple engines simultaneously",
+    "parallel search on all providers",
+    "comprehensive multi-engine search"
+  ],
+  "research_prompt_reframe": [
+    "reframe this prompt for better results",
+    "apply jailbreak strategy to this prompt",
+    "use ethical anchor on this query"
+  ],
+  "research_smart_call": [
+    "intelligently find the best tool for this task",
+    "auto-route this query to the right tool",
+    "let the brain decide which tool to use"
+  ],
+  "research_security_headers": [
+    "check security headers of this website",
+    "analyze HTTP security configuration",
+    "verify HSTS and CSP headers"
+  ],
+  "research_whois": [
+    "who owns this domain",
+    "lookup WHOIS for example.com",
+    "find domain registration details"
+  ],
+  "research_nmap_scan": [
+    "port scan this IP address",
+    "find open ports on this server",
+    "network scan target host"
+  ],
+  "research_tor_status": [
+    "check Tor connection status",
+    "is Tor working properly",
+    "verify Tor circuit"
+  ],
+  "research_fingerprint_audit": [
+    "check browser fingerprinting on this site",
+    "analyze tracking vectors",
+    "audit privacy exposure"
+  ],
+  "research_fact_check": [
+    "verify if this claim is true",
+    "fact-check this statement",
+    "is this news article accurate"
+  ],
+  "research_llm_embed": [
+    "generate embeddings for this text",
+    "create vector representation",
+    "embed these sentences"
+  ],
+  "research_llm_answer": [
+    "answer this question using AI",
+    "get an LLM response to this prompt",
+    "ask the model about this topic"
+  ],
+  "research_breach_check": [
+    "check if this email was compromised",
+    "has this account been breached",
+    "lookup breached credentials"
+  ],
+  "research_metadata_forensics": [
+    "extract metadata from this file",
+    "analyze EXIF data in this image",
+    "find hidden metadata in document"
+  ],
+  "research_stego_encode_zw": [
+    "hide a message in this image",
+    "encode secret data using steganography",
+    "embed hidden text in media file"
+  ],
+  "research_social_graph": [
+    "map social connections for this person",
+    "build relationship graph",
+    "analyze social network of target"
+  ],
+  "research_threat_intel": [
+    "get threat intelligence for this IOC",
+    "analyze malware indicators",
+    "check if this IP is malicious"
+  ],
+  "research_company_diligence": [
+    "research this company's background",
+    "due diligence on organization",
+    "find company intelligence"
+  ],
+  "research_arxiv_ingest": [
+    "find papers on arxiv about transformers",
+    "search arxiv for recent NLP research",
+    "get arxiv papers on this topic"
+  ]
+}
