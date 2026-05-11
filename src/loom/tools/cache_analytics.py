@@ -11,13 +11,20 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from loom.cache import get_cache
+try:
+    from loom.cache import get_cache
+    _CACHE_AVAILABLE = True
+except ImportError:
+    _CACHE_AVAILABLE = False
+    get_cache = None  # type: ignore[assignment]
 
 logger = logging.getLogger("loom.tools.cache_analytics")
 
 
 def research_cache_analyze() -> dict[str, Any]:
     """Analyze cache usage: total size, oldest/newest, daily stats, largest files, hit rate estimate."""
+    if not _CACHE_AVAILABLE:
+        return {"error": "Cache module not available", "total_entries": 0}
     cache = get_cache()
     cache_dir = Path(cache.base_dir)
     if not cache_dir.exists():
@@ -108,6 +115,8 @@ def research_cache_optimize(
     max_age_days: int = 30, max_size_mb: int = 500, dry_run: bool = True
 ) -> dict[str, Any]:
     """Optimize cache: remove entries older than max_age_days or exceeding max_size_mb."""
+    if not _CACHE_AVAILABLE:
+        return {"error": "Cache module not available", "dry_run": dry_run}
     cache = get_cache()
     cache_dir = Path(cache.base_dir)
     if not cache_dir.exists():

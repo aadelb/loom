@@ -9,9 +9,17 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from mcp.types import TextContent
+try:
+    from mcp.types import TextContent
+except ImportError:
+    TextContent = None  # type: ignore[assignment,misc]
 
-from loom.cache import get_cache
+try:
+    from loom.cache import get_cache
+    _CACHE_AVAILABLE = True
+except ImportError:
+    _CACHE_AVAILABLE = False
+    get_cache = None  # type: ignore[assignment]
 
 logger = logging.getLogger("loom.tools.cache")
 
@@ -41,9 +49,10 @@ def research_cache_stats() -> dict[str, Any]:
     for f in cache_dir.rglob("*.json"):
         try:
             if f.is_file():
-                total_bytes += f.stat().st_size
+                st = f.stat()
+                total_bytes += st.st_size
                 entry_count += 1
-                timestamps.append(f.stat().st_mtime)
+                timestamps.append(st.st_mtime)
         except FileNotFoundError:
             # File deleted by another process between is_file() and stat()
             continue
@@ -90,8 +99,11 @@ def research_cache_clear(older_than_days: int | None = None) -> dict[str, Any]:
 
     for f in cache_dir.rglob("*.json"):
         try:
-            if f.is_file() and f.stat().st_mtime < cutoff:
-                freed_bytes += f.stat().st_size
+            if not f.is_file():
+                continue
+            st = f.stat()
+            if st.st_mtime < cutoff:
+                freed_bytes += st.st_size
                 f.unlink()
                 deleted_count += 1
         except FileNotFoundError:
