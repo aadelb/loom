@@ -533,19 +533,33 @@ async def _execute_step(step: PipelineStep, input_value: Any) -> Any:
     # Get tool function
     tool_func = _get_tool_function(step.tool_name)
 
-    # Convert resolved args to kwargs
+    # Map positional args to tool function's actual parameter names
+    import inspect
+    sig = inspect.signature(tool_func)
+    param_names = [
+        name for name, p in sig.parameters.items()
+        if name not in ("self", "cls") and p.kind in (
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+            inspect.Parameter.KEYWORD_ONLY,
+        )
+    ]
+
     kwargs = {}
     for i, arg in enumerate(resolved_args):
-        if isinstance(arg, str):
-            # Try to parse as JSON first
-            try:
-                kwargs[f"arg{i}"] = json.loads(arg)
-            except (json.JSONDecodeError, ValueError):
-                kwargs[f"arg{i}"] = arg
+        if i < len(param_names):
+            key = param_names[i]
         else:
-            kwargs[f"arg{i}"] = arg
+            key = f"arg{i}"
 
-    # Call tool - may be sync or async
+        if isinstance(arg, str):
+            try:
+                kwargs[key] = json.loads(arg)
+            except (json.JSONDecodeError, ValueError):
+                kwargs[key] = arg
+        else:
+            kwargs[key] = arg
+
+    # Call tool — may be sync or async
     if asyncio.iscoroutinefunction(tool_func):
         result = await tool_func(**kwargs)
     else:
