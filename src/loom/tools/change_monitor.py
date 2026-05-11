@@ -139,15 +139,15 @@ def _store_snapshot(url: str, content_hash: str, content_preview: str) -> None:
 
     row = cursor.fetchone()
     if row:
-        check_count, first_seen, last_changed = row
+        check_count, first_seen, prev_last_changed = row
         new_check_count = check_count + 1
         cursor.execute(
             """
             UPDATE url_metadata
-            SET check_count = ?, last_changed = ?
+            SET check_count = ?
             WHERE url = ?
             """,
-            (new_check_count, now, url),
+            (new_check_count, url),
         )
     else:
         cursor.execute(
@@ -182,8 +182,13 @@ def _compute_diff(old_content: str, new_content: str) -> tuple[str, int]:
         )
     )
 
-    # Count lines that are actual changes (start with + or -)
-    changed_count = sum(1 for line in diff_lines if line.startswith(("+", "-")))
+    # Count lines that are actual changes (exclude --- and +++ headers)
+    changed_count = sum(
+        1 for line in diff_lines
+        if (line.startswith("+") or line.startswith("-"))
+        and not line.startswith("---")
+        and not line.startswith("+++")
+    )
 
     diff_text = "\n".join(diff_lines)
     return diff_text, changed_count
@@ -255,7 +260,11 @@ def research_change_monitor(url: str, store_result: bool = True) -> dict[str, An
             - first_seen: ISO timestamp of first check
             - last_changed: ISO timestamp of last change detected
     """
-    validate_url(url)
+    try:
+        validate_url(url)
+    except (UrlSafetyError, ValueError) as exc:
+        return {"url": url, "error": str(exc), "changed": False, "change_type": "error"}
+
     _init_db()
 
     # Fetch current content
@@ -320,6 +329,13 @@ def research_change_monitor(url: str, store_result: bool = True) -> dict[str, An
     if store_result:
         content_preview = current_content[: max(1000, len(current_content) // 10)]
         _store_snapshot(url, current_hash, content_preview)
+
+    # Update last_changed only when content actually changed
+    if changed and store_result:
+        conn = sqlite3.connect(_DB_PATH)
+        conn.execute("UPDATE url_metadata SET last_changed = ? WHERE url = ?", (datetime.now(UTC).isoformat(), url))
+        conn.commit()
+        conn.close()
 
     # Get metadata
     check_count, first_seen, last_changed = _get_metadata(url)

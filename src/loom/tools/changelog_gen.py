@@ -18,7 +18,7 @@ def _run_git(cmd: list[str]) -> str:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=30, cwd=".")
         return result.stdout.strip() if result.returncode == 0 else ""
     except Exception as e:
-        logger.error(f"Git error: {e}")
+        logger.error("Git error: %s", e)
         return ""
 
 
@@ -33,7 +33,7 @@ def _since_to_arg(since: str) -> str:
     if since == "last_tag":
         tag = _run_git(["git", "describe", "--tags", "--abbrev=0"])
         return tag or "1 month ago"
-    if since.endswith("d"):
+    if since.endswith("d") and len(since) > 1 and since[:-1].isdigit():
         days = int(since[:-1])
         return (datetime.now(UTC) - timedelta(days=days)).isoformat()
     return since if re.match(r"^\d{4}-\d{2}-\d{2}", since) else (datetime.now(UTC) - timedelta(days=7)).isoformat()
