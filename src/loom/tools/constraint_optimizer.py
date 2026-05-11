@@ -183,6 +183,8 @@ async def research_constraint_optimize(
         - improvement: float, average score improvement
         - strategy_details: list[dict], info about each strategy applied
     """
+    if not _DEPS_AVAILABLE:
+        return {"error": "Dependencies not available (constraint_optimizer, scorers)", "tool": "research_constraint_optimize"}
     try:
         if not prompt or not isinstance(prompt, str):
             raise ValueError("prompt must be non-empty string")

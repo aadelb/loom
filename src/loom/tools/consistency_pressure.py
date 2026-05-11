@@ -31,7 +31,7 @@ except ImportError:
 logger = logging.getLogger("loom.tools.consistency_pressure")
 
 
-def _get_pressure_engine() -> ConsistencyPressure:
+def _get_pressure_engine() -> "ConsistencyPressure":
     """Get or create global consistency pressure engine.
 
     Uses LOOM_CONSISTENCY_PATH env var if set, otherwise defaults to ~/.loom/consistency/
@@ -67,6 +67,8 @@ async def research_consistency_pressure(
         - strategy: str (which pressure mechanism was applied)
         - compliance_history: dict (stats about model)
     """
+    if not _DEPS_AVAILABLE:
+        return {"error": "Dependencies not available (loom.consistency_pressure)", "tool": "research_consistency_pressure"}
     try:
         engine = _get_pressure_engine()
         result = await engine.build_pressure_prompt(
@@ -103,6 +105,8 @@ async def research_consistency_pressure_record(
         - timestamp: str (ISO timestamp)
         - entry_count: int (total entries for model, or error if failed)
     """
+    if not _DEPS_AVAILABLE:
+        return {"error": "Dependencies not available", "tool": "research_consistency_pressure_record"}
     try:
         engine = _get_pressure_engine()
         result = await engine.record(
@@ -140,6 +144,8 @@ async def research_consistency_pressure_history(
         - oldest_timestamp: str | None (ISO timestamp)
         - newest_timestamp: str | None (ISO timestamp)
     """
+    if not _DEPS_AVAILABLE:
+        return {"error": "Dependencies not available", "tool": "research_consistency_pressure_history"}
     try:
         engine = _get_pressure_engine()
         result = await engine.get_compliance_history(model=model)
