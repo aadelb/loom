@@ -44,79 +44,88 @@ async def research_dlq_push(
     tool_name: str, params: dict[str, Any], error: str, retry_count: int = 0
 ) -> dict[str, Any]:
     """Push failed tool call to Dead Letter Queue."""
-    await _ensure_dlq_table()
-    item_id = str(uuid.uuid4())
-    now = datetime.now(UTC).isoformat()
-    next_retry = _calculate_next_retry(retry_count)
-    status = "exhausted" if retry_count >= MAX_RETRY_COUNT else "pending"
+    try:
+        await _ensure_dlq_table()
+        item_id = str(uuid.uuid4())
+        now = datetime.now(UTC).isoformat()
+        next_retry = _calculate_next_retry(retry_count)
+        status = "exhausted" if retry_count >= MAX_RETRY_COUNT else "pending"
 
-    async with _dlq_lock:
-        async with aiosqlite.connect(str(DLQ_DB_PATH)) as db:
-            await db.execute(
-                "INSERT INTO dead_letters VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                (item_id, tool_name, json.dumps(params), error, retry_count, now, next_retry, status),
-            )
-            await db.commit()
-    logger.info("dlq_push", item_id=item_id, tool_name=tool_name, retry_count=retry_count)
-    return {"id": item_id, "tool_name": tool_name, "retry_count": retry_count, "next_retry_at": next_retry}
+        async with _dlq_lock:
+            async with aiosqlite.connect(str(DLQ_DB_PATH)) as db:
+                await db.execute(
+                    "INSERT INTO dead_letters VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    (item_id, tool_name, json.dumps(params), error, retry_count, now, next_retry, status),
+                )
+                await db.commit()
+        logger.info("dlq_push", item_id=item_id, tool_name=tool_name, retry_count=retry_count)
+        return {"id": item_id, "tool_name": tool_name, "retry_count": retry_count, "next_retry_at": next_retry}
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_dlq_push"}
 
 
 async def research_backoff_dlq_list(status: str = "pending") -> dict[str, Any]:
     """List items in the Dead Letter Queue."""
-    await _ensure_dlq_table()
-    query = "SELECT id, tool_name, error, retry_count, created, next_retry FROM dead_letters"
-    params_list = []
-    if status != "all":
-        query += " WHERE status = ?"
-        params_list.append(status)
-    query += " ORDER BY created DESC"
+    try:
+        await _ensure_dlq_table()
+        query = "SELECT id, tool_name, error, retry_count, created, next_retry FROM dead_letters"
+        params_list = []
+        if status != "all":
+            query += " WHERE status = ?"
+            params_list.append(status)
+        query += " ORDER BY created DESC"
 
-    async with _dlq_lock:
-        async with aiosqlite.connect(str(DLQ_DB_PATH)) as db:
-            db.row_factory = aiosqlite.Row
-            rows = await (await db.execute(query, params_list)).fetchall()
+        async with _dlq_lock:
+            async with aiosqlite.connect(str(DLQ_DB_PATH)) as db:
+                db.row_factory = aiosqlite.Row
+                rows = await (await db.execute(query, params_list)).fetchall()
 
-    return {"items": [dict(r) for r in rows], "total": len(rows)}
+        return {"items": [dict(r) for r in rows], "total": len(rows)}
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_backoff_dlq_list"}
 
 
 async def research_dlq_retry(item_id: str = "") -> dict[str, Any]:
     """Retry DLQ items by ID or all pending items past next_retry time."""
-    await _ensure_dlq_table()
-    retried_count = exhausted_count = 0
+    try:
+        await _ensure_dlq_table()
+        retried_count = exhausted_count = 0
 
-    async with _dlq_lock:
-        async with aiosqlite.connect(str(DLQ_DB_PATH)) as db:
-            if item_id:
-                row = await (await db.execute(
-                    "SELECT retry_count, status FROM dead_letters WHERE id = ?", (item_id,)
-                )).fetchone()
-                if not row:
-                    return {"retried": 0, "exhausted": 0, "remaining": 0}
-                new_retry_count = row[0] + 1
-                new_status = "exhausted" if new_retry_count >= MAX_RETRY_COUNT else "retrying"
-                await db.execute(
-                    "UPDATE dead_letters SET retry_count = ?, status = ?, next_retry = ? WHERE id = ?",
-                    (new_retry_count, new_status, _calculate_next_retry(new_retry_count), item_id),
-                )
-                retried_count, exhausted_count = (1, 0) if new_status == "retrying" else (0, 1)
-            else:
-                now = datetime.now(UTC).isoformat()
-                rows = await (await db.execute(
-                    "SELECT id, retry_count FROM dead_letters WHERE status = 'pending' AND next_retry <= ?",
-                    (now,),
-                )).fetchall()
-                for row_id, retry_count in rows:
-                    new_retry_count = retry_count + 1
+        async with _dlq_lock:
+            async with aiosqlite.connect(str(DLQ_DB_PATH)) as db:
+                if item_id:
+                    row = await (await db.execute(
+                        "SELECT retry_count, status FROM dead_letters WHERE id = ?", (item_id,)
+                    )).fetchone()
+                    if not row:
+                        return {"retried": 0, "exhausted": 0, "remaining": 0}
+                    new_retry_count = row[0] + 1
                     new_status = "exhausted" if new_retry_count >= MAX_RETRY_COUNT else "retrying"
                     await db.execute(
                         "UPDATE dead_letters SET retry_count = ?, status = ?, next_retry = ? WHERE id = ?",
-                        (new_retry_count, new_status, _calculate_next_retry(new_retry_count), row_id),
+                        (new_retry_count, new_status, _calculate_next_retry(new_retry_count), item_id),
                     )
-                    exhausted_count += (new_status == "exhausted")
-                    retried_count += (new_status == "retrying")
-            await db.commit()
-            remaining = (await (await db.execute(
-                "SELECT COUNT(*) FROM dead_letters WHERE status IN ('pending', 'retrying')"
-            )).fetchone())[0]
+                    retried_count, exhausted_count = (1, 0) if new_status == "retrying" else (0, 1)
+                else:
+                    now = datetime.now(UTC).isoformat()
+                    rows = await (await db.execute(
+                        "SELECT id, retry_count FROM dead_letters WHERE status = 'pending' AND next_retry <= ?",
+                        (now,),
+                    )).fetchall()
+                    for row_id, retry_count in rows:
+                        new_retry_count = retry_count + 1
+                        new_status = "exhausted" if new_retry_count >= MAX_RETRY_COUNT else "retrying"
+                        await db.execute(
+                            "UPDATE dead_letters SET retry_count = ?, status = ?, next_retry = ? WHERE id = ?",
+                            (new_retry_count, new_status, _calculate_next_retry(new_retry_count), row_id),
+                        )
+                        exhausted_count += (new_status == "exhausted")
+                        retried_count += (new_status == "retrying")
+                await db.commit()
+                remaining = (await (await db.execute(
+                    "SELECT COUNT(*) FROM dead_letters WHERE status IN ('pending', 'retrying')"
+                )).fetchone())[0]
 
-    return {"retried": retried_count, "exhausted": exhausted_count, "remaining": remaining}
+        return {"retried": retried_count, "exhausted": exhausted_count, "remaining": remaining}
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_dlq_retry"}

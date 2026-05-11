@@ -60,26 +60,29 @@ async def research_context_set(
     Returns:
         {key, scope, set: True, set_at}
     """
-    if not key or len(key) > 256:
-        return {"error": "key must be 1-256 chars"}
-    if not isinstance(value, str) or len(value) > 10000:
-        return {"error": "value must be string, max 10000 chars"}
+    try:
+        if not key or len(key) > 256:
+            return {"error": "key must be 1-256 chars"}
+        if not isinstance(value, str) or len(value) > 10000:
+            return {"error": "value must be string, max 10000 chars"}
 
-    now = datetime.now(UTC).isoformat()
+        now = datetime.now(UTC).isoformat()
 
-    if scope == "session":
-        _session_context[key] = {"value": value, "set_at": now}
-        logger.info("context_set_session key=%s", key)
-        return {"key": key, "scope": "session", "set": True, "set_at": now}
+        if scope == "session":
+            _session_context[key] = {"value": value, "set_at": now}
+            logger.info("context_set_session key=%s", key)
+            return {"key": key, "scope": "session", "set": True, "set_at": now}
 
-    elif scope == "persistent":
-        context = _load_persistent_context()
-        context[key] = {"value": value, "set_at": now}
-        _save_persistent_context(context)
-        logger.info("context_set_persistent key=%s", key)
-        return {"key": key, "scope": "persistent", "set": True, "set_at": now}
+        elif scope == "persistent":
+            context = _load_persistent_context()
+            context[key] = {"value": value, "set_at": now}
+            _save_persistent_context(context)
+            logger.info("context_set_persistent key=%s", key)
+            return {"key": key, "scope": "persistent", "set": True, "set_at": now}
 
-    return {"error": f"invalid scope: {scope}"}
+        return {"error": f"invalid scope: {scope}"}
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_context_set"}
 
 
 async def research_context_get(key: str = "") -> dict[str, Any]:
@@ -91,30 +94,33 @@ async def research_context_get(key: str = "") -> dict[str, Any]:
     Returns:
         {key, value, scope, set_at} or {context: dict} if key empty
     """
-    # Merge session + persistent for retrieval
-    merged = {}
-    persistent = _load_persistent_context()
-    merged.update(persistent)
-    merged.update(_session_context)
+    try:
+        # Merge session + persistent for retrieval
+        merged = {}
+        persistent = _load_persistent_context()
+        merged.update(persistent)
+        merged.update(_session_context)
 
-    if not key:
-        # Return all context (stripped of metadata)
-        result = {k: v.get("value") for k, v in merged.items()}
-        logger.info("context_get_all count=%d", len(result))
-        return {"context": result, "total": len(result)}
+        if not key:
+            # Return all context (stripped of metadata)
+            result = {k: v.get("value") for k, v in merged.items()}
+            logger.info("context_get_all count=%d", len(result))
+            return {"context": result, "total": len(result)}
 
-    if key in merged:
-        entry = merged[key]
-        logger.info("context_get_found key=%s", key)
-        return {
-            "key": key,
-            "value": entry.get("value"),
-            "scope": "persistent" if key in persistent else "session",
-            "set_at": entry.get("set_at"),
-        }
+        if key in merged:
+            entry = merged[key]
+            logger.info("context_get_found key=%s", key)
+            return {
+                "key": key,
+                "value": entry.get("value"),
+                "scope": "persistent" if key in persistent else "session",
+                "set_at": entry.get("set_at"),
+            }
 
-    logger.info("context_get_not_found key=%s", key)
-    return {"key": key, "found": False}
+        logger.info("context_get_not_found key=%s", key)
+        return {"key": key, "found": False}
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_context_get"}
 
 
 async def research_context_clear(
@@ -128,22 +134,25 @@ async def research_context_clear(
     Returns:
         {cleared: int, scope}
     """
-    global _session_context
+    try:
+        global _session_context
 
-    if scope in ("session", "all"):
-        cleared_session = len(_session_context)
-        _session_context.clear()
-        logger.info("context_clear_session cleared=%d", cleared_session)
-    else:
-        cleared_session = 0
+        if scope in ("session", "all"):
+            cleared_session = len(_session_context)
+            _session_context.clear()
+            logger.info("context_clear_session cleared=%d", cleared_session)
+        else:
+            cleared_session = 0
 
-    if scope in ("persistent", "all"):
-        persistent = _load_persistent_context()
-        cleared_persistent = len(persistent)
-        _save_persistent_context({})
-        logger.info("context_clear_persistent cleared=%d", cleared_persistent)
-    else:
-        cleared_persistent = 0
+        if scope in ("persistent", "all"):
+            persistent = _load_persistent_context()
+            cleared_persistent = len(persistent)
+            _save_persistent_context({})
+            logger.info("context_clear_persistent cleared=%d", cleared_persistent)
+        else:
+            cleared_persistent = 0
 
-    total_cleared = cleared_session + cleared_persistent
-    return {"cleared": total_cleared, "scope": scope}
+        total_cleared = cleared_session + cleared_persistent
+        return {"cleared": total_cleared, "scope": scope}
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_context_clear"}

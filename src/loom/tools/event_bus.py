@@ -32,42 +32,45 @@ async def research_event_emit(
     Returns:
         Dict with keys: emitted (bool), event_type, subscribers_notified (int), event_id
     """
-    event_id = str(uuid4())
-    timestamp = datetime.now(UTC).isoformat()
+    try:
+        event_id = str(uuid4())
+        timestamp = datetime.now(UTC).isoformat()
 
-    event = {
-        "event_id": event_id,
-        "event_type": event_type,
-        "data": data,
-        "timestamp": timestamp,
-    }
+        event = {
+            "event_id": event_id,
+            "event_type": event_type,
+            "data": data,
+            "timestamp": timestamp,
+        }
 
-    _events.append(event)
+        _events.append(event)
 
-    # Notify all subscribers for this event type
-    subscribers_notified = 0
-    for sub in _subscribers.get(event_type, []):
+        # Notify all subscribers for this event type
+        subscribers_notified = 0
+        for sub in _subscribers.get(event_type, []):
+            logger.info(
+                "event_notify event_id=%s event_type=%s callback_tool=%s",
+                event_id,
+                event_type,
+                sub.get("callback_tool", "unknown"),
+            )
+            subscribers_notified += 1
+
         logger.info(
-            "event_notify event_id=%s event_type=%s callback_tool=%s",
+            "event_emitted event_id=%s event_type=%s subscribers=%d",
             event_id,
             event_type,
-            sub.get("callback_tool", "unknown"),
+            subscribers_notified,
         )
-        subscribers_notified += 1
 
-    logger.info(
-        "event_emitted event_id=%s event_type=%s subscribers=%d",
-        event_id,
-        event_type,
-        subscribers_notified,
-    )
-
-    return {
-        "emitted": True,
-        "event_type": event_type,
-        "event_id": event_id,
-        "subscribers_notified": subscribers_notified,
-    }
+        return {
+            "emitted": True,
+            "event_type": event_type,
+            "event_id": event_id,
+            "subscribers_notified": subscribers_notified,
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_event_emit"}
 
 
 async def research_event_subscribe(
@@ -83,28 +86,31 @@ async def research_event_subscribe(
     Returns:
         Dict with keys: subscribed (bool), event_type, subscription_id
     """
-    subscription_id = str(uuid4())
+    try:
+        subscription_id = str(uuid4())
 
-    subscription = {
-        "subscription_id": subscription_id,
-        "callback_tool": callback_tool,
-        "subscribed_at": datetime.now(UTC).isoformat(),
-    }
+        subscription = {
+            "subscription_id": subscription_id,
+            "callback_tool": callback_tool,
+            "subscribed_at": datetime.now(UTC).isoformat(),
+        }
 
-    _subscribers[event_type].append(subscription)
+        _subscribers[event_type].append(subscription)
 
-    logger.info(
-        "subscription_created event_type=%s subscription_id=%s callback_tool=%s",
-        event_type,
-        subscription_id,
-        callback_tool,
-    )
+        logger.info(
+            "subscription_created event_type=%s subscription_id=%s callback_tool=%s",
+            event_type,
+            subscription_id,
+            callback_tool,
+        )
 
-    return {
-        "subscribed": True,
-        "event_type": event_type,
-        "subscription_id": subscription_id,
-    }
+        return {
+            "subscribed": True,
+            "event_type": event_type,
+            "subscription_id": subscription_id,
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_event_subscribe"}
 
 
 async def research_event_history(
@@ -120,24 +126,27 @@ async def research_event_history(
     Returns:
         Dict with keys: events (list of event dicts), total (total count)
     """
-    # Clamp limit to valid range
-    limit = max(1, min(limit, 1000))
+    try:
+        # Clamp limit to valid range
+        limit = max(1, min(limit, 1000))
 
-    # Filter and reverse to get most recent first
-    all_events = list(_events)
-    if event_type:
-        all_events = [e for e in all_events if e["event_type"] == event_type]
+        # Filter and reverse to get most recent first
+        all_events = list(_events)
+        if event_type:
+            all_events = [e for e in all_events if e["event_type"] == event_type]
 
-    recent_events = all_events[-limit:][::-1]
+        recent_events = all_events[-limit:][::-1]
 
-    logger.info(
-        "history_retrieved event_type=%s count=%d total=%d",
-        event_type if event_type else "all",
-        len(recent_events),
-        len(all_events),
-    )
+        logger.info(
+            "history_retrieved event_type=%s count=%d total=%d",
+            event_type if event_type else "all",
+            len(recent_events),
+            len(all_events),
+        )
 
-    return {
-        "events": recent_events,
-        "total": len(all_events),
-    }
+        return {
+            "events": recent_events,
+            "total": len(all_events),
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_event_history"}

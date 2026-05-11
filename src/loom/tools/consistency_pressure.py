@@ -59,13 +59,16 @@ async def research_consistency_pressure(
         - strategy: str (which pressure mechanism was applied)
         - compliance_history: dict (stats about model)
     """
-    engine = _get_pressure_engine()
-    result = await engine.build_pressure_prompt(
-        model=model,
-        target_prompt=target_prompt,
-        max_references=max_references,
-    )
-    return result
+    try:
+        engine = _get_pressure_engine()
+        result = await engine.build_pressure_prompt(
+            model=model,
+            target_prompt=target_prompt,
+            max_references=max_references,
+        )
+        return result
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_consistency_pressure"}
 
 
 async def research_consistency_pressure_record(
@@ -92,14 +95,17 @@ async def research_consistency_pressure_record(
         - timestamp: str (ISO timestamp)
         - entry_count: int (total entries for model, or error if failed)
     """
-    engine = _get_pressure_engine()
-    result = await engine.record(
-        model=model,
-        prompt=prompt,
-        response=response,
-        complied=complied,
-    )
-    return result
+    try:
+        engine = _get_pressure_engine()
+        result = await engine.record(
+            model=model,
+            prompt=prompt,
+            response=response,
+            complied=complied,
+        )
+        return result
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_consistency_pressure_record"}
 
 
 async def research_consistency_pressure_history(
@@ -126,9 +132,12 @@ async def research_consistency_pressure_history(
         - oldest_timestamp: str | None (ISO timestamp)
         - newest_timestamp: str | None (ISO timestamp)
     """
-    engine = _get_pressure_engine()
-    result = await engine.get_compliance_history(model=model)
-    return result
+    try:
+        engine = _get_pressure_engine()
+        result = await engine.get_compliance_history(model=model)
+        return result
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_consistency_pressure_history"}
 
 
 async def tool_consistency_pressure(

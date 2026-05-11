@@ -267,50 +267,53 @@ async def research_optimize_workflow(
     Returns:
         Optimized workflow with steps and metadata
     """
-    metadata = _get_tool_metadata()
+    try:
+        metadata = _get_tool_metadata()
 
-    # Match goal to tool pattern
-    matched_tools = _match_goal_pattern(goal)
+        # Match goal to tool pattern
+        matched_tools = _match_goal_pattern(goal)
 
-    # Filter to available tools
-    if available_tools:
-        matched_tools = [t for t in matched_tools if t in available_tools]
+        # Filter to available tools
+        if available_tools:
+            matched_tools = [t for t in matched_tools if t in available_tools]
 
-    # Topologically sort by dependencies
-    sorted_tools = _topological_sort(matched_tools)
+        # Topologically sort by dependencies
+        sorted_tools = _topological_sort(matched_tools)
 
-    # Sort by optimization criterion
-    if optimize_for == "cost":
-        sorted_tools.sort(key=lambda t: metadata.get(t, {}).get("cost", "high"))
-    elif optimize_for == "speed":
-        sorted_tools.sort(key=lambda t: metadata.get(t, {}).get("time", 9999))
-    # "quality" keeps all matched tools
+        # Sort by optimization criterion
+        if optimize_for == "cost":
+            sorted_tools.sort(key=lambda t: metadata.get(t, {}).get("cost", "high"))
+        elif optimize_for == "speed":
+            sorted_tools.sort(key=lambda t: metadata.get(t, {}).get("time", 9999))
+        # "quality" keeps all matched tools
 
-    # Build workflow steps with reasons
-    steps: list[WorkflowStep] = []
-    total_ms = 0
-    for idx, tool in enumerate(sorted_tools, 1):
-        meta = metadata.get(tool, {})
-        time_ms = meta.get("time", 1000)
-        reason = f"[{meta.get('category', 'unknown')}] {tool.replace('research_', '')}"
-        steps.append(WorkflowStep(step=idx, tool=tool, reason=reason, estimated_ms=time_ms))
-        total_ms += time_ms
+        # Build workflow steps with reasons
+        steps: list[WorkflowStep] = []
+        total_ms = 0
+        for idx, tool in enumerate(sorted_tools, 1):
+            meta = metadata.get(tool, {})
+            time_ms = meta.get("time", 1000)
+            reason = f"[{meta.get('category', 'unknown')}] {tool.replace('research_', '')}"
+            steps.append(WorkflowStep(step=idx, tool=tool, reason=reason, estimated_ms=time_ms))
+            total_ms += time_ms
 
-    return {
-        "goal": goal,
-        "optimization_strategy": optimize_for,
-        "optimized_workflow": [
-            {
-                "step": s.step,
-                "tool": s.tool,
-                "reason": s.reason,
-                "estimated_ms": s.estimated_ms,
-            }
-            for s in steps
-        ],
-        "total_estimated_ms": total_ms,
-        "tool_count": len(sorted_tools),
-    }
+        return {
+            "goal": goal,
+            "optimization_strategy": optimize_for,
+            "optimized_workflow": [
+                {
+                    "step": s.step,
+                    "tool": s.tool,
+                    "reason": s.reason,
+                    "estimated_ms": s.estimated_ms,
+                }
+                for s in steps
+            ],
+            "total_estimated_ms": total_ms,
+            "tool_count": len(sorted_tools),
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_optimize_workflow"}
 
 
 async def research_parallel_plan(tools: list[str]) -> dict[str, Any]:
@@ -322,48 +325,51 @@ async def research_parallel_plan(tools: list[str]) -> dict[str, Any]:
     Returns:
         Execution plan with parallel groups and speedup factor
     """
-    metadata = _get_tool_metadata()
+    try:
+        metadata = _get_tool_metadata()
 
-    # Find parallel groups
-    parallel_groups = _find_parallel_groups(tools)
+        # Find parallel groups
+        parallel_groups = _find_parallel_groups(tools)
 
-    # Compute sequential chains (longest path through dependency graph)
-    sequential_chains: list[list[str]] = []
-    visited = set()
+        # Compute sequential chains (longest path through dependency graph)
+        sequential_chains: list[list[str]] = []
+        visited = set()
 
-    for tool in tools:
-        if tool not in visited:
-            chain = [tool]
-            meta = metadata.get(tool, {})
-            for dep in meta.get("deps", []):
-                if dep in tools:
-                    chain.insert(0, dep)
-            sequential_chains.append(chain)
-            visited.update(chain)
+        for tool in tools:
+            if tool not in visited:
+                chain = [tool]
+                meta = metadata.get(tool, {})
+                for dep in meta.get("deps", []):
+                    if dep in tools:
+                        chain.insert(0, dep)
+                sequential_chains.append(chain)
+                visited.update(chain)
 
-    # Estimate speedup: sequential total / parallel critical path
-    sequential_total_ms = sum(
-        metadata.get(t, {}).get("time", 1000) for t in tools
-    )
-    parallel_critical_ms = max(
-        sum(metadata.get(t, {}).get("time", 1000) for t in group)
-        for group in parallel_groups
-    ) if parallel_groups else 1
+        # Estimate speedup: sequential total / parallel critical path
+        sequential_total_ms = sum(
+            metadata.get(t, {}).get("time", 1000) for t in tools
+        )
+        parallel_critical_ms = max(
+            sum(metadata.get(t, {}).get("time", 1000) for t in group)
+            for group in parallel_groups
+        ) if parallel_groups else 1
 
-    speedup = sequential_total_ms / max(parallel_critical_ms, 1)
+        speedup = sequential_total_ms / max(parallel_critical_ms, 1)
 
-    return {
-        "total_tools": len(tools),
-        "parallel_groups": parallel_groups,
-        "sequential_chains": sequential_chains,
-        "estimated_speedup_factor": round(speedup, 2),
-        "execution_plan": {
-            "phase": "parallel_then_sequential",
-            "group_count": len(parallel_groups),
-            "estimated_parallel_ms": parallel_critical_ms,
-            "estimated_sequential_ms": sequential_total_ms,
-        },
-    }
+        return {
+            "total_tools": len(tools),
+            "parallel_groups": parallel_groups,
+            "sequential_chains": sequential_chains,
+            "estimated_speedup_factor": round(speedup, 2),
+            "execution_plan": {
+                "phase": "parallel_then_sequential",
+                "group_count": len(parallel_groups),
+                "estimated_parallel_ms": parallel_critical_ms,
+                "estimated_sequential_ms": sequential_total_ms,
+            },
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_parallel_plan"}
 
 
 async def research_optimizer_rebuild() -> dict[str, Any]:
@@ -372,30 +378,33 @@ async def research_optimizer_rebuild() -> dict[str, Any]:
     Returns:
         Metadata discovery result with tool count and coverage
     """
-    global _TOOL_METADATA
-    async with _METADATA_LOCK:
-        _TOOL_METADATA = None
-    metadata = _get_tool_metadata()
+    try:
+        global _TOOL_METADATA
+        async with _METADATA_LOCK:
+            _TOOL_METADATA = None
+        metadata = _get_tool_metadata()
 
-    # Compute coverage stats
-    cost_distribution = {}
-    time_distribution = {}
-    category_distribution = {}
+        # Compute coverage stats
+        cost_distribution = {}
+        time_distribution = {}
+        category_distribution = {}
 
-    for tool_meta in metadata.values():
-        cost = tool_meta.get("cost", "unknown")
-        time = tool_meta.get("time", 0)
-        category = tool_meta.get("category", "unknown")
+        for tool_meta in metadata.values():
+            cost = tool_meta.get("cost", "unknown")
+            time = tool_meta.get("time", 0)
+            category = tool_meta.get("category", "unknown")
 
-        cost_distribution[cost] = cost_distribution.get(cost, 0) + 1
-        time_distribution[time] = time_distribution.get(time, 0) + 1
-        category_distribution[category] = category_distribution.get(category, 0) + 1
+            cost_distribution[cost] = cost_distribution.get(cost, 0) + 1
+            time_distribution[time] = time_distribution.get(time, 0) + 1
+            category_distribution[category] = category_distribution.get(category, 0) + 1
 
-    return {
-        "success": True,
-        "total_tools": len(metadata),
-        "cost_distribution": cost_distribution,
-        "time_distribution": time_distribution,
-        "category_distribution": category_distribution,
-        "cache_status": "rebuilt",
-    }
+        return {
+            "success": True,
+            "total_tools": len(metadata),
+            "cost_distribution": cost_distribution,
+            "time_distribution": time_distribution,
+            "category_distribution": category_distribution,
+            "cache_status": "rebuilt",
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_optimizer_rebuild"}

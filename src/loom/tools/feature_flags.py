@@ -53,17 +53,20 @@ async def research_flag_check(flag_name: str) -> dict[str, Any]:
     Returns:
         Dict with flag status: {flag, enabled, description, last_toggled}
     """
-    flags = _load_flags()
-    if flag_name not in flags:
-        return {"error": f"flag '{flag_name}' not found", "available": list(flags.keys())}
+    try:
+        flags = _load_flags()
+        if flag_name not in flags:
+            return {"error": f"flag '{flag_name}' not found", "available": list(flags.keys())}
 
-    flag_data = flags[flag_name]
-    return {
-        "flag": flag_name,
-        "enabled": flag_data["enabled"],
-        "description": flag_data.get("description", ""),
-        "last_toggled": flag_data.get("last_toggled"),
-    }
+        flag_data = flags[flag_name]
+        return {
+            "flag": flag_name,
+            "enabled": flag_data["enabled"],
+            "description": flag_data.get("description", ""),
+            "last_toggled": flag_data.get("last_toggled"),
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_flag_check"}
 
 
 async def research_flag_toggle(flag_name: str, enabled: bool, description: str = "") -> dict[str, Any]:
@@ -77,25 +80,28 @@ async def research_flag_toggle(flag_name: str, enabled: bool, description: str =
     Returns:
         Dict with result: {flag, enabled, toggled_at, description}
     """
-    flags = _load_flags()
-    if flag_name not in flags:
-        return {"error": f"flag '{flag_name}' not found", "available": list(flags.keys())}
+    try:
+        flags = _load_flags()
+        if flag_name not in flags:
+            return {"error": f"flag '{flag_name}' not found", "available": list(flags.keys())}
 
-    now = datetime.now(UTC).isoformat()
-    flags[flag_name]["enabled"] = enabled
-    if description:
-        flags[flag_name]["description"] = description
-    flags[flag_name]["last_toggled"] = now
+        now = datetime.now(UTC).isoformat()
+        flags[flag_name]["enabled"] = enabled
+        if description:
+            flags[flag_name]["description"] = description
+        flags[flag_name]["last_toggled"] = now
 
-    _save_flags(flags)
-    logger.info("flag_toggled", flag=flag_name, enabled=enabled, timestamp=now)
+        _save_flags(flags)
+        logger.info("flag_toggled", flag=flag_name, enabled=enabled, timestamp=now)
 
-    return {
-        "flag": flag_name,
-        "enabled": enabled,
-        "toggled_at": now,
-        "description": flags[flag_name].get("description", ""),
-    }
+        return {
+            "flag": flag_name,
+            "enabled": enabled,
+            "toggled_at": now,
+            "description": flags[flag_name].get("description", ""),
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_flag_toggle"}
 
 
 async def research_flag_list() -> dict[str, Any]:
@@ -104,23 +110,26 @@ async def research_flag_list() -> dict[str, Any]:
     Returns:
         Dict with flags array and summary counts
     """
-    flags = _load_flags()
-    flags_list = [
-        {
-            "name": name,
-            "enabled": data["enabled"],
-            "description": data.get("description", ""),
-            "last_toggled": data.get("last_toggled"),
+    try:
+        flags = _load_flags()
+        flags_list = [
+            {
+                "name": name,
+                "enabled": data["enabled"],
+                "description": data.get("description", ""),
+                "last_toggled": data.get("last_toggled"),
+            }
+            for name, data in sorted(flags.items())
+        ]
+
+        enabled_count = sum(1 for f in flags_list if f["enabled"])
+        disabled_count = len(flags_list) - enabled_count
+
+        return {
+            "flags": flags_list,
+            "total": len(flags_list),
+            "enabled_count": enabled_count,
+            "disabled_count": disabled_count,
         }
-        for name, data in sorted(flags.items())
-    ]
-
-    enabled_count = sum(1 for f in flags_list if f["enabled"])
-    disabled_count = len(flags_list) - enabled_count
-
-    return {
-        "flags": flags_list,
-        "total": len(flags_list),
-        "enabled_count": enabled_count,
-        "disabled_count": disabled_count,
-    }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_flag_list"}
