@@ -56,6 +56,7 @@ async def research_cloak_fetch(
             "fallback": "Use research_camoufox or research_fetch with mode=dynamic",
         }
 
+    browser = None
     try:
         browser = launch(headless=True, humanize=humanize)
         page = browser.new_page()
@@ -91,7 +92,6 @@ async def research_cloak_fetch(
         cookies = page.context.cookies()
         result["cookies"] = [{"name": c["name"], "domain": c["domain"]} for c in cookies[:20]]
 
-        browser.close()
         return result
 
     except Exception as e:
@@ -101,6 +101,12 @@ async def research_cloak_fetch(
             "error": f"CloakBrowser error: {type(e).__name__}: {str(e)[:200]}",
             "duration_ms": int((time.time() - start) * 1000),
         }
+    finally:
+        if browser:
+            try:
+                browser.close()
+            except Exception:
+                pass
 
 
 async def research_cloak_extract(
@@ -135,6 +141,7 @@ async def research_cloak_extract(
     except ImportError:
         return {"url": url, "error": "cloakbrowser not installed"}
 
+    browser = None
     try:
         browser = launch(headless=True, humanize=humanize)
         page = browser.new_page()
@@ -166,7 +173,6 @@ async def research_cloak_extract(
             result["images"] = images
 
         result["duration_ms"] = int((time.time() - start) * 1000)
-        browser.close()
         return result
 
     except Exception as e:
@@ -175,6 +181,12 @@ async def research_cloak_extract(
             "error": f"CloakBrowser extract error: {str(e)[:200]}",
             "duration_ms": int((time.time() - start) * 1000),
         }
+    finally:
+        if browser:
+            try:
+                browser.close()
+            except Exception:
+                pass
 
 
 async def research_cloak_session(
@@ -208,6 +220,7 @@ async def research_cloak_session(
     except ImportError:
         return {"error": "cloakbrowser not installed"}
 
+    browser = None
     try:
         browser = launch(headless=True, humanize=humanize)
         page = browser.new_page()
@@ -236,7 +249,6 @@ async def research_cloak_session(
                 await asyncio.sleep(delay_between)
 
         cookies = page.context.cookies()
-        browser.close()
 
         return {
             "pages": pages_result,
@@ -250,3 +262,9 @@ async def research_cloak_session(
             "error": f"CloakBrowser session error: {str(e)[:200]}",
             "session_duration_ms": int((time.time() - start) * 1000),
         }
+    finally:
+        if browser:
+            try:
+                browser.close()
+            except Exception:
+                pass

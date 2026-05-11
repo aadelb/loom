@@ -60,12 +60,12 @@ def _collect_tools() -> list[dict[str, Any]]:
         try:
             tree = ast.parse(py_file.read_text(), filename=str(py_file))
             for node in ast.walk(tree):
-                if isinstance(node, ast.FunctionDef) and node.name.startswith("research_"):
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("research_"):
                     doc = ast.get_docstring(node) or ""
                     tools.append({"name": node.name, "description": (doc.split("\n")[0] if doc else ""), "parameters": _params(node), "source_file": py_file.name})
         except Exception as e:
             if logger:
-                logger.debug(f"Parse error {py_file}: {e}")
+                logger.debug("Parse error %s: %s", py_file, e)
     return tools
 
 
