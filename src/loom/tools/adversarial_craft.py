@@ -10,7 +10,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from dataclasses import dataclass
-from typing import Literal
+from typing import Any, Literal
 
 logger = logging.getLogger("loom.adversarial_craft")
 
@@ -98,7 +98,7 @@ async def research_craft_adversarial(
     target_output: str = "compliance",
     perturbation_budget: float = 0.1,
     method: str = "greedy_swap",
-) -> dict:
+) -> dict[str, Any]:
     """Minimally perturb benign input to trigger target behavior from model.
 
     Args:
@@ -245,7 +245,7 @@ async def research_craft_adversarial(
         dist = _compute_edit_distance(benign_input, adversarial)
         perturbation_size = dist / max(1, len(benign_input))
         alignment_score = _score_alignment(adversarial, target_output)
-        detection_difficulty = 1.0 - (perturbation_size / perturbation_budget)
+        detection_difficulty = 1.0 - (perturbation_size / max(perturbation_budget, 0.001))
 
         return {
             "original": benign_input,
@@ -273,7 +273,7 @@ async def research_adversarial_batch(
     inputs: list[str],
     method: str = "greedy_swap",
     budget: float = 0.1,
-) -> dict:
+) -> dict[str, Any]:
     """Batch craft adversarial examples for multiple inputs.
 
     Args:
