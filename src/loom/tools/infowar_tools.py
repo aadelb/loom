@@ -199,6 +199,7 @@ async def research_narrative_tracker(topic: str, hours_back: int = 72) -> dict[s
         async with httpx.AsyncClient(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0 (academic research)"},
+            timeout=30.0,
         ) as client:
             tasks = [
                 _hn_search(client, topic, hours_back),
@@ -353,6 +354,7 @@ async def research_bot_detector(subreddit: str = "", hn_query: str = "") -> dict
         async with httpx.AsyncClient(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
         ) as client:
             posts: list[dict[str, Any]] = []
             accounts_analyzed = 0
@@ -485,6 +487,7 @@ async def research_censorship_detector(url: str) -> dict[str, Any]:
         async with httpx.AsyncClient(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
         ) as client:
             # DNS lookups in parallel
             dns_tasks = [
@@ -605,6 +608,7 @@ async def research_deleted_social(url: str) -> dict[str, Any]:
         async with httpx.AsyncClient(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
         ) as client:
             wayback_snapshots = await _wayback_search_social(client, url, platform)
 
@@ -718,6 +722,7 @@ async def research_robots_archaeology(domain: str, snapshots: int = 10) -> dict[
         async with httpx.AsyncClient(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
         ) as client:
             versions = await _robots_txt_cdx(client, domain_url, snapshots)
 

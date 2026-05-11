@@ -256,6 +256,7 @@ async def research_fact_check(
         async with httpx.AsyncClient(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
         ) as client:
             # Run all searches in parallel
             google_task = _search_google_fact_check(client, claim)

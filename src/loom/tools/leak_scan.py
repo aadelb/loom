@@ -395,6 +395,7 @@ async def research_leak_scan(
         async with httpx.AsyncClient(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
         ) as client:
             exposures: list[dict[str, Any]] = []
             sources_checked: list[str] = []

@@ -444,6 +444,7 @@ async def research_funding_signal(company: str, domain: str = "") -> dict[str, A
         async with httpx.AsyncClient(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
         ) as client:
             company_clean = company.strip()
 
@@ -571,6 +572,7 @@ async def research_stealth_hire_scanner(
         async with httpx.AsyncClient(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
         ) as client:
             keywords_clean = keywords.strip()
 
@@ -659,6 +661,7 @@ async def research_interviewer_profiler(
         async with httpx.AsyncClient(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
         ) as client:
             person_clean = person_name.strip()
 

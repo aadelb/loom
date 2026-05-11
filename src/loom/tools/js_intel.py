@@ -138,6 +138,7 @@ async def research_js_intel(
 		async with httpx.AsyncClient(
 			follow_redirects=True,
 			headers={"User-Agent": "Loom-Research/1.0"},
+			timeout=30.0,
 		) as client:
 			html = await _fetch_text(client, url)
 			if not html:

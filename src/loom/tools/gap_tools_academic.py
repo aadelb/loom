@@ -108,6 +108,7 @@ async def research_ideological_drift(field: str, years: int = 10) -> dict[str, A
         async with httpx.AsyncClient(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
         ) as client:
             keyword_evolution: dict[int, list[str]] = {}
             drift_scores: list[float] = []
@@ -183,6 +184,7 @@ async def research_author_clustering(field: str, max_authors: int = 50) -> dict[
         async with httpx.AsyncClient(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
         ) as client:
             # Query recent papers in field
             url = (
@@ -274,6 +276,7 @@ async def research_citation_cartography(paper_id: str, depth: int = 2) -> dict[s
         async with httpx.AsyncClient(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
         ) as client:
             nodes: dict[str, dict[str, Any]] = {}
             edges: list[dict[str, str]] = []

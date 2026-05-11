@@ -102,6 +102,7 @@ async def research_cloud_enum(domain: str) -> dict[str, Any]:
         async with httpx.AsyncClient(
             follow_redirects=False,
             headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
         ) as client:
             tasks = [
                 _check_cloud_resource(client, url) for _, url in cloud_endpoints
@@ -215,6 +216,7 @@ async def research_github_secrets(query: str, max_results: int = 20) -> dict[str
     async def _run() -> dict[str, Any]:
         async with httpx.AsyncClient(
             headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
         ) as client:
             tasks = [_github_code_search(client, q) for q, _ in search_queries]
             results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -361,6 +363,7 @@ async def research_whois_correlator(domain: str) -> dict[str, Any]:
     async def _run() -> dict[str, Any]:
         async with httpx.AsyncClient(
             headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
         ) as client:
             rdap_data = await _get_rdap_data(client, domain)
             registrant_email = rdap_data.get("registrant_email", "")
