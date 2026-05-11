@@ -11,9 +11,14 @@ import json
 import logging
 from typing import Any
 
-from loom.daisy_chain import DaisyChainDecomposer, _compute_daisy_chain_hcs
-from loom.params import DaisyChainParams
-from loom.providers.base import get_available_providers
+try:
+    from loom.daisy_chain import DaisyChainDecomposer, _compute_daisy_chain_hcs
+    from loom.params import DaisyChainParams
+    _DEPS_AVAILABLE = True
+except ImportError:
+    _DEPS_AVAILABLE = False
+    DaisyChainDecomposer = None  # type: ignore[assignment,misc]
+    DaisyChainParams = None  # type: ignore[assignment,misc]
 
 logger = logging.getLogger("loom.tools.daisy_chain")
 
@@ -57,7 +62,9 @@ async def research_daisy_chain(
             execution_time_ms: Total execution time
             execution_trace: (Optional) Detailed step-by-step trace
     """
-    # Validate params
+    if not _DEPS_AVAILABLE:
+        return {"error": "Dependencies not available (loom.daisy_chain, loom.params)", "tool": "research_daisy_chain", "success": False}
+
     params = DaisyChainParams(
         query=query,
         available_models=available_models,
@@ -82,8 +89,12 @@ async def research_daisy_chain(
         """Call real LLM providers via cascade system."""
         try:
             from loom.tools.llm import _call_with_cascade
-            response = await _call_with_cascade(prompt, max_tokens=500)
-            return response if response else f"No response from {model_name}"
+            response = await _call_with_cascade(
+                [{"role": "user", "content": prompt}],
+                max_tokens=500,
+                provider_override=model_name,
+            )
+            return getattr(response, "text", "") or f"No response from {model_name}"
         except Exception as e:
             logger.warning("llm_callback_failed model=%s: %s", model_name, e)
             return f"Error calling {model_name}: {str(e)[:100]}"
@@ -133,7 +144,7 @@ async def research_daisy_chain(
                     "per_stage_estimate": {
                         "decomposition": "~10ms",
                         "assignment": "~5ms",
-                        "parallel_execution": f"~{result.execution_time_ms - 30}ms",
+                        "parallel_execution": f"~{max(0, result.execution_time_ms - 30)}ms",
                         "combination": "~10ms",
                         "scoring": "~5ms",
                     },
