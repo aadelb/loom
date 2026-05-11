@@ -15,6 +15,7 @@ from typing import Any
 import httpx
 
 from loom.agent_benchmark import AgentScenarioBenchmark, BenchmarkSummary
+from loom.validators import validate_url, UrlSafetyError
 
 logger = logging.getLogger("loom.tools.agent_benchmark")
 
@@ -82,6 +83,8 @@ async def research_agent_benchmark(
                 "scenarios_run": 0,
             }
 
+        validate_url(model_api_url)
+
         if timeout < 5.0 or timeout > 300.0:
             return {
                 "error": f"timeout must be 5.0-300.0 seconds (got {timeout})",
@@ -104,41 +107,31 @@ async def research_agent_benchmark(
         # Create benchmark instance
         benchmark = AgentScenarioBenchmark()
 
-        # Create model function that calls the API
-        async def model_fn(prompt: str) -> str:
-            """Call model API with prompt."""
-            try:
-                async with httpx.AsyncClient(timeout=timeout) as client:
-                    # Try JSON POST format first
-                    response = await client.post(
-                        model_api_url,
-                        json={"prompt": prompt},
-                        headers={"Content-Type": "application/json"},
-                    )
-                    response.raise_for_status()
+        # Create shared client for all scenario calls (avoids 20 separate connections)
+        async with httpx.AsyncClient(timeout=timeout) as shared_client:
+            async def model_fn(prompt: str) -> str:
+                """Call model API with prompt."""
+                response = await shared_client.post(
+                    model_api_url,
+                    json={"prompt": prompt},
+                    headers={"Content-Type": "application/json"},
+                )
+                response.raise_for_status()
 
-                    # Handle different response formats
-                    data = response.json()
-                    if isinstance(data, dict):
-                        # Look for common response keys
-                        for key in ["response", "text", "completion", "message", "output", "content"]:
-                            if key in data:
-                                return str(data[key])
-                        # If no known key, return stringified JSON
-                        return json.dumps(data)
-                    else:
-                        return str(data)
+                data = response.json()
+                if isinstance(data, dict):
+                    for key in ["response", "text", "completion", "message", "output", "content"]:
+                        if key in data:
+                            return str(data[key])
+                    return json.dumps(data)
+                return str(data)
 
-            except Exception as e:
-                logger.debug("API call failed: %s", e)
-                raise
-
-        # Run benchmark
-        summary: BenchmarkSummary = await benchmark.run_all(
-            model_fn=model_fn,
-            model_name=model_name,
-            timeout=timeout,
-        )
+            # Run benchmark
+            summary: BenchmarkSummary = await benchmark.run_all(
+                model_fn=model_fn,
+                model_name=model_name,
+                timeout=timeout,
+            )
 
         logger.info(
             "agent_benchmark completed: %d/%d scenarios passed (%.1f%% resistance)",
