@@ -13,14 +13,13 @@ async def research_api_version() -> dict[str, Any]:
     """Return current API version info with system metadata."""
     try:
         return {
-            "version": "4.0.0",
+            "version": "4.1.0",
             "api_level": 4,
-            "release_date": "2026-05-02",
-            "tools_count": 346,
+            "release_date": "2026-05-11",
+            "tools_count": 829,
             "strategies_count": 957,
             "llm_providers_count": 8,
             "search_providers_count": 21,
-            "core_modules": 273,
             "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
             "uptime_seconds": int(time.time() - _start_time),
             "status": "stable",
