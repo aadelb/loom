@@ -15,18 +15,36 @@ import logging
 import re
 from typing import Any, Literal
 
-from bs4 import BeautifulSoup, Comment
-from mcp.types import TextContent
+try:
+    from bs4 import BeautifulSoup, Comment
+    _BS4_AVAILABLE = True
+except ImportError:
+    _BS4_AVAILABLE = False
+
+try:
+    from mcp.types import TextContent
+except ImportError:
+    TextContent = None  # type: ignore[assignment,misc]
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from loom.cache import get_cache
-from loom.providers.anthropic_provider import AnthropicProvider
-from loom.providers.base import LLMResponse
-from loom.providers.deepseek_provider import DeepSeekProvider
-from loom.providers.gemini_provider import GeminiProvider
-from loom.providers.groq_provider import GroqProvider
-from loom.providers.nvidia_nim import NvidiaNimProvider
-from loom.providers.openai_provider import OpenAIProvider
+try:
+    from loom.cache import get_cache
+except ImportError:
+    get_cache = None  # type: ignore[assignment]
+
+try:
+    from loom.providers.anthropic_provider import AnthropicProvider
+    from loom.providers.base import LLMResponse
+    from loom.providers.deepseek_provider import DeepSeekProvider
+    from loom.providers.gemini_provider import GeminiProvider
+    from loom.providers.groq_provider import GroqProvider
+    from loom.providers.nvidia_nim import NvidiaNimProvider
+    from loom.providers.openai_provider import OpenAIProvider
+    _PROVIDERS_AVAILABLE = True
+except ImportError:
+    _PROVIDERS_AVAILABLE = False
+
 from loom.validators import validate_url
 
 logger = logging.getLogger("loom.tools.cyberscraper")
@@ -259,7 +277,7 @@ class _PatchrightAdapter:
                         ],
                     )
                 except Exception as e:
-                    logger.warning(f"Patchright launch failed: {e}, falling back to httpx")
+                    logger.warning("Patchright launch failed: %s, falling back to httpx", e)
                     return await self._fetch_with_httpx(url)
 
             context = await self._browser.new_context()
@@ -290,7 +308,7 @@ class _PatchrightAdapter:
             logger.debug("Patchright not available, falling back to httpx")
             return await self._fetch_with_httpx(url)
         except Exception as e:
-            logger.error(f"Patchright fetch failed: {e}")
+            logger.error("Patchright fetch failed: %s", e)
             return await self._fetch_with_httpx(url)
 
     async def _fetch_with_httpx(self, url: str) -> dict[str, Any]:
@@ -365,7 +383,7 @@ class _WebPreprocessor:
             return "\n".join(chunk for chunk in chunks if chunk)
 
         except Exception as e:
-            logger.warning(f"HTML preprocessing failed: {e}, returning raw text")
+            logger.warning("HTML preprocessing failed: %s, returning raw text", e)
             return html
 
 
@@ -519,7 +537,7 @@ Return ONLY valid JSON (array or object) with no additional text. If no data mat
         )
 
         model_used = llm.__class__.__name__
-        response_text = response.content[0].text if response.content else ""
+        response_text = getattr(response, "text", "") or ""
 
         # Step 5: Extract JSON
         extracted = _JSONExtractor.extract_json(response_text)
@@ -541,7 +559,7 @@ Return ONLY valid JSON (array or object) with no additional text. If no data mat
         )
 
     except Exception as e:
-        logger.error(f"smart_extract failed: {e}", exc_info=True)
+        logger.error("smart_extract failed: %s", e, exc_info=True)
         return SmartExtractResult(
             url=url,
             query=query,
@@ -656,7 +674,7 @@ async def research_paginate_scrape(
         )
 
     except Exception as e:
-        logger.error(f"paginate_scrape failed: {e}", exc_info=True)
+        logger.error("paginate_scrape failed: %s", e, exc_info=True)
         return PaginateScrapeResult(
             url=url,
             query=query,
@@ -731,7 +749,7 @@ async def research_stealth_browser(
             await browser.close()
 
     except Exception as e:
-        logger.error(f"stealth_browser failed: {e}", exc_info=True)
+        logger.error("stealth_browser failed: %s", e, exc_info=True)
         return StealthBrowserResult(
             url=url,
             html="",
@@ -841,7 +859,7 @@ Return ONLY a JSON array of objects. If no matches, return [].
             max_tokens=2048,
         )
 
-        response_text = response.content[0].text if response.content else ""
+        response_text = getattr(response, "text", "") or ""
         extracted = _JSONExtractor.extract_json(response_text)
 
         if isinstance(extracted, list):
@@ -852,5 +870,5 @@ Return ONLY a JSON array of objects. If no matches, return [].
             return {"items": [], "error": "Failed to extract JSON"}
 
     except Exception as e:
-        logger.error(f"Failed to scrape page {url}: {e}")
+        logger.error("Failed to scrape page %s: %s", url, e)
         return {"error": str(e), "items": []}
