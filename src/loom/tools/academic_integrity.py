@@ -80,7 +80,10 @@ async def _analyze_citation_network(
 
     # Check for mutual citations (papers that cite each other)
     reference_ids = {ref.get("paperId") for ref in references if ref.get("paperId")}
-    citation_ids = {cite.get("citingPaper", {}).get("paperId") for cite in citations if cite.get("citingPaper", {}).get("paperId")}
+    citation_ids = {
+        cid for cite in citations
+        if (cid := (cite.get("citingPaper") or {}).get("paperId"))
+    }
 
     mutual_citation_ids = reference_ids.intersection(citation_ids)
     mutual_citations = list(mutual_citation_ids)
@@ -95,7 +98,7 @@ async def _analyze_citation_network(
                     self_citations += 1
                     break
 
-        self_citation_rate = (self_citations / len(references)) * 100 if references else 0.0
+        self_citation_rate = (self_citations / len(references)) * 100
 
     # Detect citation clusters (simplified: papers with high cross-citation)
     if depth > 1 and references:
@@ -177,7 +180,7 @@ async def _check_for_retractions(
     for item in items[:max_results]:
         # Check for retraction status in Crossref metadata
         relation = item.get("relation", {})
-        if "is-retraction-of" in relation or "is-supplement-to" in relation:
+        if "is-retraction-of" in relation or "has-retraction" in relation:
             retractions_found.append({
                 "title": item.get("title", [""])[0] if item.get("title") else "",
                 "doi": item.get("DOI", ""),
@@ -309,6 +312,10 @@ async def research_citation_analysis(paper_id: str, depth: int = 2) -> dict[str,
         ``mutual_citations`` (list), ``citation_clusters_count``, and ``anomaly_score``.
     """
 
+    if not paper_id or not paper_id.strip():
+        return {"error": "paper_id is required", "tool": "research_citation_analysis"}
+    depth = max(1, min(depth, 3))
+
     async def _run() -> dict[str, Any]:
         try:
             async with httpx.AsyncClient(
@@ -316,7 +323,7 @@ async def research_citation_analysis(paper_id: str, depth: int = 2) -> dict[str,
                 headers={"User-Agent": "Loom-Research/1.0"},
                 timeout=30.0,
             ) as client:
-                return await _analyze_citation_network(client, paper_id, depth)
+                return await _analyze_citation_network(client, paper_id.strip(), depth)
         except Exception as exc:
             logger.exception("research_citation_analysis failed")
             return {"error": str(exc), "tool": "research_citation_analysis"}
@@ -341,6 +348,10 @@ async def research_retraction_check(query: str, max_results: int = 20) -> dict[s
         ``pubpeer_details`` (list).
     """
 
+    if not query or not query.strip():
+        return {"error": "query is required", "tool": "research_retraction_check"}
+    max_results = max(1, min(max_results, 100))
+
     async def _run() -> dict[str, Any]:
         try:
             async with httpx.AsyncClient(
@@ -348,7 +359,7 @@ async def research_retraction_check(query: str, max_results: int = 20) -> dict[s
                 headers={"User-Agent": "Loom-Research/1.0"},
                 timeout=30.0,
             ) as client:
-                return await _check_for_retractions(client, query, max_results)
+                return await _check_for_retractions(client, query.strip(), max_results)
         except Exception as exc:
             logger.exception("research_retraction_check failed")
             return {"error": str(exc), "tool": "research_retraction_check"}
@@ -372,6 +383,9 @@ async def research_predatory_journal_check(journal_name: str) -> dict[str, Any]:
         ``publication_count``, ``risk_indicators`` (list), and ``predatory_score``.
     """
 
+    if not journal_name or not journal_name.strip():
+        return {"error": "journal_name is required", "tool": "research_predatory_journal_check"}
+
     async def _run() -> dict[str, Any]:
         try:
             async with httpx.AsyncClient(
@@ -379,7 +393,7 @@ async def research_predatory_journal_check(journal_name: str) -> dict[str, Any]:
                 headers={"User-Agent": "Loom-Research/1.0"},
                 timeout=30.0,
             ) as client:
-                return await _check_journal_predatory(client, journal_name)
+                return await _check_journal_predatory(client, journal_name.strip())
         except Exception as exc:
             logger.exception("research_predatory_journal_check failed")
             return {"error": str(exc), "tool": "research_predatory_journal_check"}

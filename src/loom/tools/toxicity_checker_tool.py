@@ -71,36 +71,37 @@ async def research_toxicity_check(
 
     Cost: Free (no API calls)
     """
-    # Validate params
-    params = ToxicityCheckParams(
-        text=text,
-        compare_prompt=compare_prompt,
-        compare_response=compare_response,
-    )
+    try:
+        params = ToxicityCheckParams(
+            text=text,
+            compare_prompt=compare_prompt,
+            compare_response=compare_response,
+        )
 
-    checker = _get_checker()
+        checker = _get_checker()
 
-    # If comparing, use comparison mode
-    if params.compare_prompt is not None and params.compare_response is not None:
-        result = checker.compare(params.compare_prompt, params.compare_response)
+        if params.compare_prompt is not None and params.compare_response is not None:
+            result = checker.compare(params.compare_prompt, params.compare_response)
+            return {
+                "type": "comparison",
+                "prompt_toxicity": result["prompt_toxicity"],
+                "response_toxicity": result["response_toxicity"],
+                "amplification_ratio": result["amplification_ratio"],
+                "model_amplified": result["model_amplified"],
+                "delta": result["delta"],
+                "amplification_percent": result["amplification_percent"],
+            }
+
+        result = checker.check(params.text)
         return {
-            "type": "comparison",
-            "prompt_toxicity": result["prompt_toxicity"],
-            "response_toxicity": result["response_toxicity"],
-            "amplification_ratio": result["amplification_ratio"],
-            "model_amplified": result["model_amplified"],
-            "delta": result["delta"],
-            "amplification_percent": result["amplification_percent"],
+            "type": "single",
+            "overall_toxicity": result["overall_toxicity"],
+            "category_scores": result["category_scores"],
+            "detected_terms_count": result["detected_terms_count"],
+            "detected_terms": result["detected_terms"],
+            "risk_level": result["risk_level"],
+            "categories_detected": result["categories_detected"],
         }
-
-    # Otherwise check single text
-    result = checker.check(params.text)
-    return {
-        "type": "single",
-        "overall_toxicity": result["overall_toxicity"],
-        "category_scores": result["category_scores"],
-        "detected_terms_count": result["detected_terms_count"],
-        "detected_terms": result["detected_terms"],
-        "risk_level": result["risk_level"],
-        "categories_detected": result["categories_detected"],
-    }
+    except Exception as exc:
+        logger.exception("research_toxicity_check failed")
+        return {"error": str(exc), "tool": "research_toxicity_check"}
