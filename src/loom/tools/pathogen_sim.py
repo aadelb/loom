@@ -85,86 +85,93 @@ async def research_pathogen_evolve(
               best_variant, evolution_curve, successful_mutations,
               defense_learned_patterns, arms_race_winner
     """
-    if not attack_payload or len(attack_payload) < 5:
-        return {"error": "payload too short", "generations_run": 0, "final_evasion_rate": 0.0}
+    try:
+        if not attack_payload or len(attack_payload) < 5:
+            return {"error": "payload too short", "generations_run": 0, "final_evasion_rate": 0.0}
 
-    # Initialize defense
-    if defense_type == "keyword_filter":
-        defense = {"patterns": ["ignore", "rules", "instructions", "bypass"]}
-    elif defense_type == "classifier":
-        defense = {"bad_words": ["hack", "attack", "bypass"], "threshold": 0.7}
-    elif defense_type == "constitutional":
-        defense = {"rules": [r"(ignore|bypass).+(rules|instructions)", r"(previous|prior).*instructions"]}
-    elif defense_type == "ensemble":
-        defense = {
-            "patterns": ["ignore", "bypass"],
-            "bad_words": ["attack", "hack"],
-            "rules": [r"(ignore|bypass).+(rules|instructions)"],
+        # Initialize defense
+        if defense_type == "keyword_filter":
+            defense = {"patterns": ["ignore", "rules", "instructions", "bypass"]}
+        elif defense_type == "classifier":
+            defense = {"bad_words": ["hack", "attack", "bypass"], "threshold": 0.7}
+        elif defense_type == "constitutional":
+            defense = {"rules": [r"(ignore|bypass).+(rules|instructions)", r"(previous|prior).*instructions"]}
+        elif defense_type == "ensemble":
+            defense = {
+                "patterns": ["ignore", "bypass"],
+                "bad_words": ["attack", "hack"],
+                "rules": [r"(ignore|bypass).+(rules|instructions)"],
+            }
+        else:
+            return {"error": f"unknown defense_type: {defense_type}", "generations_run": 0}
+
+        # Initialize population
+        population = [{"text": _mutate(attack_payload, mutation_rate), "fitness": 0.0, "gen": 0} for _ in range(population_size)]
+
+        curve = []
+        best_variant = {"text": attack_payload, "fitness": 0.0, "gen": -1}
+        successful_muts = set()
+        defense_learned = []
+
+        for gen in range(generations):
+            # Evaluate fitness
+            for ind in population:
+                ind["fitness"] = 1.0 if _test_defense(ind["text"], defense_type, defense) else 0.0
+                ind["gen"] = gen
+
+            evasion_rate = sum(ind["fitness"] for ind in population) / len(population)
+            curve.append({"generation": gen, "evasion_rate": round(evasion_rate, 3)})
+
+            # Track best
+            best_gen = max(population, key=lambda x: x["fitness"])
+            if best_gen["fitness"] > best_variant["fitness"]:
+                best_variant = dict(best_gen)
+                successful_muts.add(random.choice(["swap", "pad", "encode", "rearrange"]))
+
+            logger.info(f"gen={gen} evasion={evasion_rate:.3f}")
+
+            # Selection & reproduction
+            survivors = sorted(population, key=lambda x: x["fitness"], reverse=True)[: max(1, len(population) // 2)]
+            offspring = []
+            while len(survivors) + len(offspring) < population_size:
+                parent = random.choice(survivors)
+                offspring.append({"text": _mutate(parent["text"], mutation_rate), "fitness": 0.0, "gen": gen + 1})
+
+            population = survivors + offspring
+
+            # Defense learns
+            successful = [p for p in population if p["fitness"] > 0.5]
+            if successful:
+                top_text = max(successful, key=lambda x: x["fitness"])["text"]
+                words = top_text.lower().split()
+                new_pats = [r"\b" + re.escape(w) + r"\b" for w in words if len(w) > 3]
+                if defense_type == "keyword_filter":
+                    defense["patterns"] = list(set(defense["patterns"] + new_pats[:2]))
+                elif defense_type == "constitutional":
+                    defense["rules"] = list(set(defense["rules"] + new_pats[:2]))
+                defense_learned.extend(new_pats[:1])
+
+        final_evasion = sum(ind["fitness"] for ind in population) / len(population)
+        winner = "attack" if curve[-1]["evasion_rate"] > 0.7 else ("defense" if curve[-1]["evasion_rate"] < 0.1 else "stalemate")
+
+        return {
+            "original_payload": attack_payload[:100],
+            "defense_type": defense_type,
+            "generations_run": generations,
+            "final_evasion_rate": round(final_evasion, 3),
+            "best_variant": {
+                "text": best_variant["text"][:150],
+                "fitness": round(best_variant["fitness"], 3),
+                "generation_achieved": best_variant["gen"],
+            },
+            "evolution_curve": curve,
+            "successful_mutations": list(successful_muts),
+            "defense_learned_patterns": list(set(defense_learned))[:5],
+            "arms_race_winner": winner,
         }
-    else:
-        return {"error": f"unknown defense_type: {defense_type}", "generations_run": 0}
-
-    # Initialize population
-    population = [{"text": _mutate(attack_payload, mutation_rate), "fitness": 0.0, "gen": 0} for _ in range(population_size)]
-
-    curve = []
-    best_variant = {"text": attack_payload, "fitness": 0.0, "gen": -1}
-    successful_muts = set()
-    defense_learned = []
-
-    for gen in range(generations):
-        # Evaluate fitness
-        for ind in population:
-            ind["fitness"] = 1.0 if _test_defense(ind["text"], defense_type, defense) else 0.0
-            ind["gen"] = gen
-
-        evasion_rate = sum(ind["fitness"] for ind in population) / len(population)
-        curve.append({"generation": gen, "evasion_rate": round(evasion_rate, 3)})
-
-        # Track best
-        best_gen = max(population, key=lambda x: x["fitness"])
-        if best_gen["fitness"] > best_variant["fitness"]:
-            best_variant = dict(best_gen)
-            successful_muts.add(random.choice(["swap", "pad", "encode", "rearrange"]))
-
-        logger.info(f"gen={gen} evasion={evasion_rate:.3f}")
-
-        # Selection & reproduction
-        survivors = sorted(population, key=lambda x: x["fitness"], reverse=True)[: max(1, len(population) // 2)]
-        offspring = []
-        while len(survivors) + len(offspring) < population_size:
-            parent = random.choice(survivors)
-            offspring.append({"text": _mutate(parent["text"], mutation_rate), "fitness": 0.0, "gen": gen + 1})
-
-        population = survivors + offspring
-
-        # Defense learns
-        successful = [p for p in population if p["fitness"] > 0.5]
-        if successful:
-            top_text = max(successful, key=lambda x: x["fitness"])["text"]
-            words = top_text.lower().split()
-            new_pats = [r"\b" + re.escape(w) + r"\b" for w in words if len(w) > 3]
-            if defense_type == "keyword_filter":
-                defense["patterns"] = list(set(defense["patterns"] + new_pats[:2]))
-            elif defense_type == "constitutional":
-                defense["rules"] = list(set(defense["rules"] + new_pats[:2]))
-            defense_learned.extend(new_pats[:1])
-
-    final_evasion = sum(ind["fitness"] for ind in population) / len(population)
-    winner = "attack" if curve[-1]["evasion_rate"] > 0.7 else ("defense" if curve[-1]["evasion_rate"] < 0.1 else "stalemate")
-
-    return {
-        "original_payload": attack_payload[:100],
-        "defense_type": defense_type,
-        "generations_run": generations,
-        "final_evasion_rate": round(final_evasion, 3),
-        "best_variant": {
-            "text": best_variant["text"][:150],
-            "fitness": round(best_variant["fitness"], 3),
-            "generation_achieved": best_variant["gen"],
-        },
-        "evolution_curve": curve,
-        "successful_mutations": list(successful_muts),
-        "defense_learned_patterns": list(set(defense_learned))[:5],
-        "arms_race_winner": winner,
-    }
+    except Exception as exc:
+        logger.error("research_pathogen_evolve failed: %s", exc)
+        return {
+            "error": str(exc),
+            "tool": "research_pathogen_evolve",
+        }
