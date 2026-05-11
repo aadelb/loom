@@ -63,8 +63,10 @@ async def _call_loom_llm_locally(query: str) -> str:
     try:
         from loom.tools.llm import _call_with_cascade
 
-        response = await _call_with_cascade(query, max_tokens=500)
-        return response if response else ""
+        response = await _call_with_cascade(
+            [{"role": "user", "content": query}], max_tokens=500
+        )
+        return getattr(response, "text", "") or ""
     except Exception as exc:
         logger.debug("llm_query_failed: %s", exc)
         return ""

@@ -113,8 +113,11 @@ async def research_parameter_sweep(
     async def real_model_callback(prompt: str, params: dict[str, Any]) -> str:
         """Call real LLM via cascade system with given parameters."""
         try:
-            response = await _call_with_cascade(prompt, max_tokens=params.get("max_tokens", 500))
-            return response if response else f"No response (T={params.get('temperature')}, P={params.get('top_p')})"
+            response = await _call_with_cascade(
+                [{"role": "user", "content": prompt}],
+                max_tokens=params.get("max_tokens", 500),
+            )
+            return getattr(response, "text", "") or f"No response (T={params.get('temperature')}, P={params.get('top_p')})"
         except Exception as e:
             logger.debug("model_callback_failed: %s", e)
             return f"Error: {str(e)[:50]}"
