@@ -140,7 +140,7 @@ async def _decompose_query(query: str, depth: int) -> list[str]:
             f"Return only the sub-questions, one per line.\n\nQuery: {query}"
         )
 
-        result = research_llm_answer(prompt, model="nvidia", max_tokens=300)
+        result = await research_llm_answer(prompt, model="nvidia", max_tokens=300)
         if result.get("answer"):
             lines = [
                 line.strip() for line in result["answer"].split("\n") if line.strip()
@@ -232,7 +232,7 @@ async def _synthesize_findings(
             f"Synthesize the key insights in 2-3 paragraphs."
         )
 
-        result = research_llm_answer(prompt, model=model, max_tokens=500)
+        result = await research_llm_answer(prompt, model=model, max_tokens=500)
         synthesis = result.get("answer", "")
 
         # Simple confidence scoring: based on number of sources and content length
