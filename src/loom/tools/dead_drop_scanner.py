@@ -12,9 +12,13 @@ import logging
 from datetime import UTC, datetime
 from typing import Any
 
-from loom.config import get_config
-from loom.tools.fetch import research_fetch
-from loom.validators import validate_url
+try:
+    from loom.config import get_config
+    from loom.tools.fetch import research_fetch
+    from loom.validators import validate_url
+    _DEPS_AVAILABLE = True
+except ImportError:
+    _DEPS_AVAILABLE = False
 
 logger = logging.getLogger("loom.tools.dead_drop_scanner")
 
@@ -84,7 +88,9 @@ async def research_dead_drop_scanner(
             - reuse_pairs: list of {url1, url2, similarity_score} pairs above threshold
             - scan_timestamp: ISO datetime of scan
     """
-    # Clamp parameters
+    if not _DEPS_AVAILABLE:
+        return {"error": "Dependencies not available", "tool": "research_dead_drop_scanner", "scanned": 0}
+
     if not urls:
         return {
             "error": "urls list is empty",
@@ -134,7 +140,7 @@ async def research_dead_drop_scanner(
         # Fetch URL
         try:
             logger.info("dead_drop_scanner_fetch url=%s", url)
-            result = research_fetch(
+            result = await research_fetch(
                 url,
                 mode="dynamic",
                 max_chars=100000,
