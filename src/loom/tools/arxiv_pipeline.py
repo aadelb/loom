@@ -155,14 +155,15 @@ async def research_arxiv_ingest(
         query_str = " OR ".join(query_parts)
         search_query = f"search_query={quote(query_str)}&start=0&max_results={max_papers}&sortBy=submittedDate&sortOrder=descending"
 
-        url = f"http://export.arxiv.org/api/query?{search_query}"
+        url = f"https://export.arxiv.org/api/query?{search_query}"
 
         async with httpx.AsyncClient(timeout=30.0) as client:
             resp = await client.get(url)
             resp.raise_for_status()
+            resp_text = resp.text
 
         # Parse Atom XML response
-        root = ET.fromstring(resp.text)
+        root = ET.fromstring(resp_text)
         namespace = {"atom": "http://www.w3.org/2005/Atom"}
 
         papers: list[dict[str, Any]] = []
