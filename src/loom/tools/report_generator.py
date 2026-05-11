@@ -317,6 +317,7 @@ async def research_generate_report(
         async with httpx.AsyncClient(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0 (report generation)"},
+            timeout=30.0,
         ) as client:
             # Run all data collection tasks in parallel
             overview_task = _wikipedia_overview(client, topic)

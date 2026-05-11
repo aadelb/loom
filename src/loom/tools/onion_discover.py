@@ -199,6 +199,7 @@ async def research_onion_discover(
             async with httpx.AsyncClient(
                 follow_redirects=True,
                 headers={"User-Agent": "Loom-Research/1.0"},
+                timeout=30.0,
             ) as client:
                 # Run all 5 methods in parallel with return_exceptions=True
                 # to ensure partial results even if individual sources fail

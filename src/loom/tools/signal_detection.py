@@ -185,7 +185,10 @@ async def research_ghost_protocol(
     """
 
     async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(follow_redirects=True) as client:
+        async with httpx.AsyncClient(
+            follow_redirects=True,
+            timeout=30.0,
+        ) as client:
             all_events: dict[str, list[dict[str, Any]]] = {
                 "GitHub": [],
                 "HackerNews": [],
@@ -432,7 +435,10 @@ async def research_temporal_anomaly(
     """
 
     async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(follow_redirects=True) as client:
+        async with httpx.AsyncClient(
+            follow_redirects=True,
+            timeout=30.0,
+        ) as client:
             tasks = []
             results_map: dict[str, Any] = {}
 
@@ -516,7 +522,10 @@ async def research_sec_tracker(
         # Using CSV output format for easier parsing
         search_url = f"{_SEC_EDGAR}?action=getcompany&company={quote(company)}&output=csv"
 
-        async with httpx.AsyncClient(follow_redirects=True) as client:
+        async with httpx.AsyncClient(
+            follow_redirects=True,
+            timeout=30.0,
+        ) as client:
             try:
                 resp = await client.get(search_url, timeout=20.0)
                 if resp.status_code != 200:
