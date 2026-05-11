@@ -118,7 +118,7 @@ def _load_jsonl_entries(
     log_path = _get_jsonl_log_path()
 
     if not log_path.exists():
-        logger.debug(f"Audit log not found: {log_path}")
+        logger.debug("Audit log not found: %s", log_path)
         return entries
 
     try:
@@ -154,11 +154,11 @@ def _load_jsonl_entries(
                         break
 
                 except json.JSONDecodeError:
-                    logger.debug(f"Failed to parse audit entry: {line}")
+                    logger.debug("Failed to parse audit entry: %s", line[:100])
                     continue
 
     except OSError as e:
-        logger.error(f"Error reading audit log: {e}")
+        logger.error("Error reading audit log: %s", e)
 
     return entries
 
@@ -182,7 +182,7 @@ def _load_daily_jsonl_entries(
     audit_dir = _get_audit_dir()
 
     if not audit_dir.exists():
-        logger.debug(f"Audit directory not found: {audit_dir}")
+        logger.debug("Audit directory not found: %s", audit_dir)
         return entries
 
     # Calculate date range
@@ -243,11 +243,11 @@ def _load_daily_jsonl_entries(
                             continue
 
             except OSError as e:
-                logger.debug(f"Error reading audit file {log_file}: {e}")
+                logger.debug("Error reading audit file %s: %s", log_file, e)
                 continue
 
     except OSError as e:
-        logger.error(f"Error scanning audit directory: {e}")
+        logger.error("Error scanning audit directory: %s", e)
 
     return entries
 
