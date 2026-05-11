@@ -112,7 +112,8 @@ def _estimate_domain_age(domain: str) -> int | None:
     async def _whois_lookup() -> int | None:
         try:
             async with httpx.AsyncClient(
-                headers={"User-Agent": "Loom-Research/1.0"}
+                headers={"User-Agent": "Loom-Research/1.0"},
+                timeout=30.0,
             ) as client:
                 # Use whois.arin.net simple lookup
                 resp = await client.get(
@@ -159,7 +160,8 @@ def _search_company_glassdoor(company_name: str) -> int:
     async def _glassdoor_search() -> int:
         try:
             async with httpx.AsyncClient(
-                headers={"User-Agent": "Loom-Research/1.0"}
+                headers={"User-Agent": "Loom-Research/1.0"},
+                timeout=30.0,
             ) as client:
                 # Search Google for "company glassdoor reviews"
                 search_url = (

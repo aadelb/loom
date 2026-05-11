@@ -274,6 +274,7 @@ async def research_realtime_monitor(
         async with httpx.AsyncClient(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
         ) as client:
             # Build task list: (topic, source) -> coroutine
             tasks: dict[tuple[str, str], asyncio.Task[list[dict[str, Any]]]] = {}

@@ -188,6 +188,7 @@ async def research_supply_chain_risk(
     async def _run() -> dict[str, Any]:
         async with httpx.AsyncClient(
             follow_redirects=True,
+            timeout=30.0,
             headers={"User-Agent": "Loom-Research/1.0"},
         ) as client:
             if ecosystem == "pypi":
@@ -352,6 +353,7 @@ async def research_patent_landscape(query: str, max_results: int = 20) -> dict[s
     async def _run() -> dict[str, Any]:
         async with httpx.AsyncClient(
             follow_redirects=True,
+            timeout=30.0,
             headers={"User-Agent": "Loom-Research/1.0"},
         ) as client:
             # Try USPTO API
@@ -511,6 +513,7 @@ async def research_dependency_audit(repo_url: str) -> dict[str, Any]:
 
         async with httpx.AsyncClient(
             follow_redirects=True,
+            timeout=30.0,
             headers={"User-Agent": "Loom-Research/1.0"},
         ) as client:
             dependencies: dict[str, str] = {}

@@ -172,6 +172,7 @@ async def research_infra_correlator(
         async with httpx.AsyncClient(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
         ) as client:
             tasks: dict[str, Any] = {}
             if check_favicon:

@@ -123,6 +123,7 @@ async def research_dark_forum(
         async with httpx.AsyncClient(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
         ) as client:
             ahmia_task = _search_ahmia(client, query)
             otx_task = _search_otx(client, query)

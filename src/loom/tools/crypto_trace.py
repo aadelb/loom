@@ -171,6 +171,7 @@ async def research_crypto_trace(
         async with httpx.AsyncClient(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
         ) as client:
             tasks = []
             if chain == "bitcoin":

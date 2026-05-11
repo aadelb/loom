@@ -267,6 +267,7 @@ async def research_talent_migration(
         async with httpx.AsyncClient(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
         ) as client:
             # Query DBLP for affiliation history
             dblp_url = f"https://dblp.org/search/author/api?q={quote(person_name)}&format=json"
@@ -322,6 +323,7 @@ async def research_funding_pipeline(company_or_field: str) -> dict[str, Any]:
         async with httpx.AsyncClient(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
         ) as client:
             grants_found = 0
             patents_found = 0
@@ -429,6 +431,7 @@ async def research_patent_embargo(
         async with httpx.AsyncClient(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
         ) as client:
             patents: list[dict[str, Any]] = []
             try:
