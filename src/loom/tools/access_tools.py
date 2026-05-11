@@ -12,8 +12,14 @@ from urllib.parse import urlparse, urljoin
 import httpx
 
 from loom.validators import validate_url
-from PIL import Image
-from PIL.ExifTags import TAGS
+
+try:
+    from PIL import Image
+    from PIL.ExifTags import TAGS
+    _PIL_AVAILABLE = True
+except ImportError:
+    _PIL_AVAILABLE = False
+
 from io import BytesIO
 
 logger = logging.getLogger("loom.tools.access_tools")
@@ -75,6 +81,8 @@ async def _get_bytes(
 
 def _extract_exif(image_data: bytes) -> dict[str, Any]:
     """Extract EXIF metadata from image bytes."""
+    if not _PIL_AVAILABLE:
+        return {"error": "PIL/Pillow not installed"}
     exif_info: dict[str, Any] = {}
     try:
         image = Image.open(BytesIO(image_data))
@@ -82,7 +90,7 @@ def _extract_exif(image_data: bytes) -> dict[str, Any]:
         if exif_data:
             for tag_id, value in exif_data.items():
                 tag_name = TAGS.get(tag_id, tag_id)
-                exif_info[tag_name] = str(value)[:100]  # Cap value length
+                exif_info[str(tag_name)] = str(value)[:100]
     except Exception as exc:
         logger.debug("EXIF extraction failed: %s", exc)
     return exif_info
@@ -95,6 +103,8 @@ def _compute_ela(original_bytes: bytes, quality: int = 95) -> dict[str, Any]:
     Returns dict with suspicious_regions_count and error_level_score.
     """
     result: dict[str, Any] = {"suspicious_regions_count": 0, "error_level_score": 0.0}
+    if not _PIL_AVAILABLE:
+        return result
     try:
         original_img = Image.open(BytesIO(original_bytes))
         if original_img.mode != "RGB":
@@ -146,7 +156,8 @@ async def research_legal_takedown(domain: str) -> dict[str, Any]:
                 sources_checked: list[str] = []
 
                 # Query Lumen Database
-                lumen_url = f"{_LUMEN_API}?term={domain}&per_page=10"
+                from urllib.parse import quote
+                lumen_url = f"{_LUMEN_API}?term={quote(domain)}&per_page=10"
                 lumen_data = await _get_json(client, lumen_url, timeout=20.0)
                 if lumen_data and isinstance(lumen_data, dict):
                     sources_checked.append("Lumen Database")
@@ -315,24 +326,21 @@ async def research_content_authenticity(url: str) -> dict[str, Any]:
                 cdx_data = await _get_json(client, cdx_url, timeout=20.0)
 
                 if cdx_data and isinstance(cdx_data, list) and len(cdx_data) > 1:
-                    # cdx_data[0] is header, cdx_data[1:] are results
-                    if len(cdx_data) > 1:
-                        first_result = cdx_data[1]
-                        timestamp = first_result[1] if len(first_result) > 1 else ""
-                        if timestamp:
-                            earliest_snapshot = f"{_WAYBACK_SNAPSHOT}/{timestamp}/{url}"
+                    first_result = cdx_data[1]
+                    timestamp = first_result[1] if len(first_result) > 1 else ""
+                    if timestamp:
+                        earliest_snapshot = f"{_WAYBACK_SNAPSHOT}/{timestamp}/{url}"
 
-                            # Fetch earliest snapshot
-                            original_text = await _get_text(client, earliest_snapshot, timeout=20.0)
-                            if original_text:
-                                original_hash = hashlib.sha256(original_text.encode()).hexdigest()
-                                modified = current_hash != original_hash
+                        # Fetch earliest snapshot
+                        original_text = await _get_text(client, earliest_snapshot, timeout=20.0)
+                        if original_text:
+                            original_hash = hashlib.sha256(original_text.encode()).hexdigest()
+                            modified = current_hash != original_hash
 
-                                # Create diff summary
-                                if modified:
-                                    current_len = len(current_text)
-                                    original_len = len(original_text)
-                                    diff_summary = f"Content length changed: {original_len} → {current_len} chars"
+                            if modified:
+                                current_len = len(current_text)
+                                original_len = len(original_text)
+                                diff_summary = f"Content length changed: {original_len} → {current_len} chars"
 
                 return {
                     "url": url,
