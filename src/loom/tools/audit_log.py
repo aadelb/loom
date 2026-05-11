@@ -73,10 +73,8 @@ async def research_audit_record(
         with audit_file.open("a") as f:
             f.write(json.dumps(entry) + "\n")
         logger.info(
-            "audit_record",
-            audit_id=audit_id,
-            tool=tool_name,
-            caller=caller,
+            "audit_record audit_id=%s tool=%s caller=%s",
+            audit_id, tool_name, caller,
         )
         return {"audit_id": audit_id, "recorded": True}
     except Exception as e:
@@ -111,7 +109,7 @@ async def research_audit_log_query(
     for audit_file in sorted(AUDIT_DIR.glob("*.jsonl")):
         try:
             file_date_str = audit_file.stem
-            file_date = datetime.fromisoformat(file_date_str).replace(tzinfo=UTC)
+            file_date = datetime.strptime(file_date_str, "%Y-%m-%d").replace(tzinfo=UTC)
             if file_date < cutoff:
                 continue
         except (ValueError, AttributeError):
@@ -123,7 +121,10 @@ async def research_audit_log_query(
                     if not line.strip():
                         continue
                     entry = json.loads(line)
-                    entry_time = datetime.fromisoformat(entry.get("timestamp", ""))
+                    ts = entry.get("timestamp", "")
+                    if not ts:
+                        continue
+                    entry_time = datetime.fromisoformat(ts)
 
                     # Filter by time
                     if entry_time < cutoff:
@@ -186,7 +187,7 @@ async def research_audit_export(
     for audit_file in sorted(AUDIT_DIR.glob("*.jsonl")):
         try:
             file_date_str = audit_file.stem
-            file_date = datetime.fromisoformat(file_date_str).replace(tzinfo=UTC)
+            file_date = datetime.strptime(file_date_str, "%Y-%m-%d").replace(tzinfo=UTC)
             if file_date < cutoff:
                 continue
         except (ValueError, AttributeError):
