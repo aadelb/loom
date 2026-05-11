@@ -183,7 +183,7 @@ async def _fetch_sources_for_question(
                 continue
 
             try:
-                fetch_result = research_fetch(url, mode="stealthy", max_chars=5000)
+                fetch_result = await research_fetch(url, mode="stealthy", max_chars=5000)
                 if fetch_result.get("content"):
                     title = result.get("title", "Unknown")
                     sources.append(url)

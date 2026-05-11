@@ -148,7 +148,7 @@ async def research_ghost_weave(
 
         try:
             logger.info("ghost_weave_fetch url=%s depth=%d", current_url, current_depth)
-            result = research_fetch(
+            result = await research_fetch(
                 current_url,
                 mode="dynamic",
                 max_chars=50000,
