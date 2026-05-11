@@ -5,6 +5,8 @@ import logging
 from typing import Any
 from urllib.parse import urlparse
 
+from loom.validators import validate_url, UrlSafetyError
+
 logger = logging.getLogger("loom.tools.source_reputation")
 
 BLOCKLIST = frozenset({
@@ -118,6 +120,7 @@ async def research_source_reputation(url: str) -> dict[str, Any]:
     Returns:
         Dict with url, domain, reputation_score, blocked, high_quality flags
     """
+    validate_url(url)
     score = score_source(url)
     netloc = urlparse(url).netloc.lower()
     if netloc.startswith("www."):

@@ -23,6 +23,8 @@ from urllib.parse import urlparse
 
 import httpx
 
+from loom.validators import validate_url, UrlSafetyError
+
 logger = logging.getLogger("loom.tools.unique_tools")
 
 # Default timeout for HTTP operations
@@ -232,6 +234,7 @@ async def research_source_credibility(url: str) -> dict[str, Any]:
         Dict with ``url``, ``domain_age_days``, ``wikipedia_referenced``,
         ``academic_citations``, ``security_score``, and ``credibility_score`` (0-100).
     """
+    validate_url(url)
 
     async def _run() -> dict[str, Any]:
         async with httpx.AsyncClient(
@@ -518,6 +521,7 @@ async def research_web_time_machine(url: str, snapshots: int = 10) -> dict[str, 
         Dict with ``url``, ``evolution`` (list of {date, technologies}),
         and ``tech_changes`` (list of {date, added, removed}).
     """
+    validate_url(url)
 
     async def _run() -> dict[str, Any]:
         async with httpx.AsyncClient(

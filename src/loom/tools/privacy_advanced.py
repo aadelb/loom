@@ -12,6 +12,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from loom.validators import validate_url, UrlSafetyError
+
 logger = logging.getLogger("loom.tools.privacy_advanced")
 
 
@@ -31,6 +33,7 @@ def research_browser_fingerprint_audit(url: str = "https://example.com") -> dict
     Returns:
         dict with detection results, techniques found, and privacy risk score
     """
+    validate_url(url)
     try:
         import httpx
 
@@ -531,6 +534,8 @@ def research_privacy_score(url: str = "") -> dict[str, Any]:
     Returns:
         dict with privacy score (0-100), risk areas, and recommendations
     """
+    if url:
+        validate_url(url)
     try:
         components = {}
         weights = {}
@@ -950,6 +955,7 @@ async def research_fileless_exec(payload: str, target: str = "memory") -> dict[s
     Returns:
         dict with execution results or error explaining what's needed
     """
+    import asyncio
     import shutil
     try:
         system = platform.system()
@@ -986,9 +992,9 @@ async def research_fileless_exec(payload: str, target: str = "memory") -> dict[s
         if memfd < 0:
             return {"error": "memfd_create failed — kernel too old?", "target": target}
 
-        import os
-        os.write(memfd, payload.encode() if isinstance(payload, str) else payload)
-        os.lseek(memfd, 0, 0)
+        import os as os_module
+        os_module.write(memfd, payload.encode() if isinstance(payload, str) else payload)
+        os_module.lseek(memfd, 0, 0)
 
         return {
             "target": target,

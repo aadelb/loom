@@ -12,6 +12,8 @@ from urllib.parse import quote, urlparse
 
 import httpx
 
+from loom.validators import validate_url, UrlSafetyError
+
 logger = logging.getLogger("loom.tools.infowar_tools")
 
 _HN_ALGOLIA_SEARCH = "https://hn.algolia.com/api/v1/search_by_date"
@@ -474,6 +476,7 @@ async def research_censorship_detector(url: str) -> dict[str, Any]:
         Dict with ``url``, ``dns_consistent`` (bool), ``blocked_providers`` list,
         ``takedown_notices`` count, and ``notices`` list.
     """
+    validate_url(url)
 
     async def _run() -> dict[str, Any]:
         parsed = urlparse(url)
@@ -578,6 +581,7 @@ async def research_deleted_social(url: str) -> dict[str, Any]:
         Dict with ``url``, ``platform`` (detected), ``snapshots_found``,
         and ``recovered_content_preview`` (list of snapshots).
     """
+    validate_url(url)
 
     async def _run() -> dict[str, Any]:
         parsed = urlparse(url)

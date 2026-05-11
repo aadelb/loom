@@ -3,9 +3,12 @@ from __future__ import annotations
 
 from typing import Any
 
+from loom.validators import validate_url, UrlSafetyError
+
 
 async def research_stealth_score(url: str) -> dict[str, Any]:
     """Score stealth level of a URL or content."""
+    validate_url(url)
     return {
         "status": "scored",
         "tool": "research_stealth_score",
@@ -16,6 +19,7 @@ async def research_stealth_score(url: str) -> dict[str, Any]:
 
 async def research_stealth_score_heuristic(url: str) -> dict[str, Any]:
     """Apply heuristic-based stealth scoring."""
+    validate_url(url)
     return {
         "status": "analyzed",
         "tool": "research_stealth_score_heuristic",

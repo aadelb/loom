@@ -115,6 +115,14 @@ from loom.tool_functions import (  # noqa: E402
     research_coverage_run,
 )
 
+# ── Brain cognitive layer (optional — graceful if deps missing) ──
+try:
+    from loom.brain.core import research_smart_call
+    _BRAIN_AVAILABLE = True
+except ImportError:
+    _BRAIN_AVAILABLE = False
+    research_smart_call = None  # type: ignore[assignment]
+
 # ── Prometheus metrics (optional, graceful fallback if not installed) ──
 try:
     from prometheus_client import Counter, Histogram, CollectorRegistry, generate_latest
@@ -723,6 +731,9 @@ def _register_tools(mcp: FastMCP) -> None:
         research_latency_report,
         research_scheduler_status,
     ]
+    # Add Brain if available
+    if _BRAIN_AVAILABLE and research_smart_call is not None:
+        _core_funcs.append(research_smart_call)
     for _func in _core_funcs:
         try:
             mcp.tool()(_wrap_tool(_func))

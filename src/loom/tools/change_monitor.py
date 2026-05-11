@@ -12,6 +12,8 @@ from typing import Any
 
 import httpx
 
+from loom.validators import validate_url, UrlSafetyError
+
 logger = logging.getLogger("loom.tools.change_monitor")
 
 _DB_PATH = Path.home() / ".loom" / "change_monitor.db"
@@ -253,6 +255,7 @@ def research_change_monitor(url: str, store_result: bool = True) -> dict[str, An
             - first_seen: ISO timestamp of first check
             - last_changed: ISO timestamp of last change detected
     """
+    validate_url(url)
     _init_db()
 
     # Fetch current content

@@ -7,6 +7,8 @@ import logging
 from datetime import datetime
 from typing import Any, TypedDict
 
+from loom.validators import validate_url, UrlSafetyError
+
 try:
     import instaloader
     from instaloader import Profile, Instaloader
@@ -173,6 +175,7 @@ async def research_article_extract(url: str) -> dict[str, Any]:
     Raises:
         ValueError: If newspaper3k is not installed
     """
+    validate_url(url)
     if not url or not isinstance(url, str):
         return {"error": "invalid url", "url": url}
 

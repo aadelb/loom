@@ -17,6 +17,8 @@ from urllib.parse import quote
 
 import httpx
 
+from loom.validators import validate_url, UrlSafetyError
+
 logger = logging.getLogger("loom.tools.supply_chain_intel")
 
 _PYPI_API = "https://pypi.org/pypi/{package}/json"
@@ -479,6 +481,7 @@ async def research_dependency_audit(repo_url: str) -> dict[str, Any]:
         - outdated: list of {dependency, last_update, staleness_days}
         - risk_summary: "critical", "high", "medium", or "low"
     """
+    validate_url(repo_url)
     if not repo_url or "github.com" not in repo_url.lower():
         return {
             "repo_url": repo_url,

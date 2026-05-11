@@ -9,6 +9,8 @@ from typing import Any, Literal
 import httpx
 import asyncio
 
+from loom.validators import validate_url, UrlSafetyError
+
 logger = logging.getLogger("loom.tools.urlhaus_lookup")
 
 _URLHAUS_BASE = "https://urlhaus-api.abuse.ch/v1"
@@ -26,6 +28,7 @@ async def research_urlhaus_check(url: str) -> dict[str, Any]:
     Returns:
         Dict with keys: url, threat, status, tags, date_added, threat_type
     """
+    validate_url(url)
     await asyncio.sleep(0)
     if not url or not (url.startswith("http://") or url.startswith("https://")):
         return {

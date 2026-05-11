@@ -9,6 +9,8 @@ from typing import Any
 import httpx
 from mcp.types import TextContent
 
+from loom.validators import validate_url, UrlSafetyError
+
 logger = logging.getLogger("loom.tools.traffic_capture")
 
 
@@ -46,6 +48,7 @@ async def research_capture_har(url: str, duration_seconds: int = 10, include_bod
     Returns:
         HAR dict with entries, domains_contacted, total_bytes
     """
+    validate_url(url)
     if not 1 <= duration_seconds <= 60:
         return {"error": "duration_seconds must be 1-60", "url": url, "entries_count": 0}
 
@@ -88,6 +91,7 @@ async def research_extract_cookies(url: str, follow_redirects: bool = True) -> d
     Returns:
         Cookies list with categories and security flags
     """
+    validate_url(url)
     cookies_list, redirect_chain, security_issues = [], [url], 0
     try:
         async with httpx.AsyncClient(follow_redirects=follow_redirects, timeout=10) as client:

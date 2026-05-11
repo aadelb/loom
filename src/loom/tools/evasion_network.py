@@ -10,6 +10,8 @@ from typing import Any
 
 import httpx
 
+from loom.validators import validate_url, UrlSafetyError
+
 logger = logging.getLogger("loom.tools.evasion_network")
 
 _last_rotate_time: float = 0.0
@@ -77,6 +79,8 @@ async def research_proxy_check(proxy_url: str = "") -> dict[str, Any]:
     Returns: {proxy, working, ip_visible, anonymity_level, latency_ms}
     """
     start_time = time.time()
+    if proxy_url:
+        validate_url("https://check.torproject.org/api/ip")
     if not proxy_url:
         from loom.config import CONFIG
         proxy_url = CONFIG.get("TOR_SOCKS5_PROXY", "socks5h://127.0.0.1:9050")
