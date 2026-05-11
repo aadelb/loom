@@ -23,4 +23,7 @@ async def research_silk_guardian_monitor(check_usb: bool = True, check_processes
     Returns:
         Dict with risk_level, risk_score, findings list, and dry_run status
     """
-    return {"risk_level": "low", "risk_score": 0, "findings": [], "findings_count": 0, "dry_run": dry_run}
+    try:
+        return {"risk_level": "low", "risk_score": 0, "findings": [], "findings_count": 0, "dry_run": dry_run}
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_silk_guardian_monitor"}

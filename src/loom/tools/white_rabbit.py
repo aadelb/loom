@@ -75,65 +75,68 @@ async def research_white_rabbit(
     Returns:
         Rabbit hole discovery map with path, discoveries, and recommendations.
     """
-    depth = min(max(1, depth), 10)
-    branch_factor = min(max(1, branch_factor), 5)
-    curiosity_threshold = min(max(0.0, curiosity_threshold), 1.0)
+    try:
+        depth = min(max(1, depth), 10)
+        branch_factor = min(max(1, branch_factor), 5)
+        curiosity_threshold = min(max(0.0, curiosity_threshold), 1.0)
 
-    path = []
-    discoveries = []
-    dead_ends = []
-    tree = []
-    context = starting_point
-    keywords = _extract_keywords(starting_point)
+        path = []
+        discoveries = []
+        dead_ends = []
+        tree = []
+        context = starting_point
+        keywords = _extract_keywords(starting_point)
 
-    for level in range(depth):
-        # Generate tangential curiosity probes
-        probes = [
-            f"What unexpected connections exist between {keywords[0] if keywords else 'this'} and ancient history?",
-            f"What contradicts mainstream view of {context}?",
-            f"What recent developments challenge assumptions about {context}?",
-        ] if keywords else []
+        for level in range(depth):
+            # Generate tangential curiosity probes
+            probes = [
+                f"What unexpected connections exist between {keywords[0] if keywords else 'this'} and ancient history?",
+                f"What contradicts mainstream view of {context}?",
+                f"What recent developments challenge assumptions about {context}?",
+            ] if keywords else []
 
-        level_results = []
-        for probe in probes[:branch_factor]:
-            score = _score_anomaly(probe)
-            entities = _extract_keywords(probe)
-            node = {"depth": level, "probe": probe, "anomaly_score": round(score, 3), "entities": entities}
-            level_results.append(node)
-            path.append(node)
+            level_results = []
+            for probe in probes[:branch_factor]:
+                score = _score_anomaly(probe)
+                entities = _extract_keywords(probe)
+                node = {"depth": level, "probe": probe, "anomaly_score": round(score, 3), "entities": entities}
+                level_results.append(node)
+                path.append(node)
 
-            if score > curiosity_threshold:
-                discoveries.append({
-                    "connection": f"{context} <-> {probe}",
-                    "novelty_score": round(score, 3),
-                    "entities": entities,
-                })
-                context = probe
-                keywords = entities
-            else:
-                dead_ends.append({"probe": probe, "anomaly_score": round(score, 3)})
+                if score > curiosity_threshold:
+                    discoveries.append({
+                        "connection": f"{context} <-> {probe}",
+                        "novelty_score": round(score, 3),
+                        "entities": entities,
+                    })
+                    context = probe
+                    keywords = entities
+                else:
+                    dead_ends.append({"probe": probe, "anomaly_score": round(score, 3)})
 
-        tree.append({
-            "depth": level,
-            "context": context,
-            "branches": len(level_results),
-            "discoveries": len([d for d in discoveries if d["novelty_score"] > curiosity_threshold]),
-        })
+            tree.append({
+                "depth": level,
+                "context": context,
+                "branches": len(level_results),
+                "discoveries": len([d for d in discoveries if d["novelty_score"] > curiosity_threshold]),
+            })
 
-    rec = (
-        "High novelty - continue deeper" if len(discoveries) >= 3
-        else "Moderate anomalies - selective paths" if len(discoveries) >= 1
-        else "Low anomaly - broaden starting point"
-    )
+        rec = (
+            "High novelty - continue deeper" if len(discoveries) >= 3
+            else "Moderate anomalies - selective paths" if len(discoveries) >= 1
+            else "Low anomaly - broaden starting point"
+        )
 
-    return {
-        "starting_point": starting_point,
-        "path_taken": path,
-        "discoveries": discoveries,
-        "dead_ends": dead_ends,
-        "total_depth": len(tree),
-        "rabbit_hole_tree": tree,
-        "discovery_count": len(discoveries),
-        "dead_end_count": len(dead_ends),
-        "recommendation": rec,
-    }
+        return {
+            "starting_point": starting_point,
+            "path_taken": path,
+            "discoveries": discoveries,
+            "dead_ends": dead_ends,
+            "total_depth": len(tree),
+            "rabbit_hole_tree": tree,
+            "discovery_count": len(discoveries),
+            "dead_end_count": len(dead_ends),
+            "recommendation": rec,
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_white_rabbit"}

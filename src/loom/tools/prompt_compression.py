@@ -58,46 +58,53 @@ async def research_compress_prompt(
     Raises:
         ValueError: If text is empty or target_ratio is invalid
     """
-    if not text or not isinstance(text, str):
-        raise ValueError("text must be a non-empty string")
+    try:
+        if not text or not isinstance(text, str):
+            raise ValueError("text must be a non-empty string")
 
-    if not 0.1 <= target_ratio <= 0.9:
-        raise ValueError("target_ratio must be between 0.1 and 0.9")
+        if not 0.1 <= target_ratio <= 0.9:
+            raise ValueError("target_ratio must be between 0.1 and 0.9")
 
-    # Get compressor instance
-    compressor = get_compressor(use_llmlingua=True)
+        # Get compressor instance
+        compressor = get_compressor(use_llmlingua=True)
 
-    # Estimate original token count
-    original_tokens = estimate_tokens(text)
+        # Estimate original token count
+        original_tokens = estimate_tokens(text)
 
-    # Perform compression
-    compressed_text = compressor.compress(text, target_ratio=target_ratio)
+        # Perform compression
+        compressed_text = compressor.compress(text, target_ratio=target_ratio)
 
-    # Estimate compressed token count
-    compressed_tokens = estimate_tokens(compressed_text)
+        # Estimate compressed token count
+        compressed_tokens = estimate_tokens(compressed_text)
 
-    # Calculate actual compression ratio
-    actual_ratio = compressed_tokens / original_tokens if original_tokens > 0 else 0
+        # Calculate actual compression ratio
+        actual_ratio = compressed_tokens / original_tokens if original_tokens > 0 else 0
 
-    # Calculate reduction percentage
-    reduction_percent = int((1.0 - actual_ratio) * 100)
+        # Calculate reduction percentage
+        reduction_percent = int((1.0 - actual_ratio) * 100)
 
-    logger.info(
-        "compress_prompt orig_tokens=%d comp_tokens=%d reduction=%d%% method=%s",
-        original_tokens,
-        compressed_tokens,
-        reduction_percent,
-        compressor.get_stats()["method"],
-    )
+        logger.info(
+            "compress_prompt orig_tokens=%d comp_tokens=%d reduction=%d%% method=%s",
+            original_tokens,
+            compressed_tokens,
+            reduction_percent,
+            compressor.get_stats()["method"],
+        )
 
-    return {
-        "original_tokens": original_tokens,
-        "compressed_tokens": compressed_tokens,
-        "ratio": round(actual_ratio, 3),
-        "compressed_text": compressed_text,
-        "method": compressor.get_stats()["method"],
-        "reduction_percent": reduction_percent,
-    }
+        return {
+            "original_tokens": original_tokens,
+            "compressed_tokens": compressed_tokens,
+            "ratio": round(actual_ratio, 3),
+            "compressed_text": compressed_text,
+            "method": compressor.get_stats()["method"],
+            "reduction_percent": reduction_percent,
+        }
+    except Exception as exc:
+        logger.exception("Error in research_compress_prompt")
+        return {
+            "error": str(exc),
+            "tool": "research_compress_prompt",
+        }
 
 
 async def research_compression_stats() -> dict[str, Any]:
@@ -121,29 +128,36 @@ async def research_compression_stats() -> dict[str, Any]:
         If 100,000 input tokens compressed to 50,000 output tokens with avg
         provider cost of $0.50/1M input tokens, estimated savings ~$0.025.
     """
-    compressor = get_compressor()
-    stats = compressor.get_stats()
+    try:
+        compressor = get_compressor()
+        stats = compressor.get_stats()
 
-    # Rough cost estimation (assuming average provider at $0.50/1M tokens)
-    # and average output cost at $1.50/1M tokens
-    tokens_input_cost = stats["total_input_tokens"] * (0.50 / 1_000_000)
-    tokens_output_cost = stats["total_output_tokens"] * (1.50 / 1_000_000)
-    total_input_cost = tokens_input_cost + tokens_output_cost
+        # Rough cost estimation (assuming average provider at $0.50/1M tokens)
+        # and average output cost at $1.50/1M tokens
+        tokens_input_cost = stats["total_input_tokens"] * (0.50 / 1_000_000)
+        tokens_output_cost = stats["total_output_tokens"] * (1.50 / 1_000_000)
+        total_input_cost = tokens_input_cost + tokens_output_cost
 
-    saved_tokens_cost = stats["tokens_saved"] * (0.50 / 1_000_000)
+        saved_tokens_cost = stats["tokens_saved"] * (0.50 / 1_000_000)
 
-    stats["compression_cost_estimate_usd"] = round(saved_tokens_cost, 6)
-    stats["total_cost_estimate_usd"] = round(total_input_cost, 6)
+        stats["compression_cost_estimate_usd"] = round(saved_tokens_cost, 6)
+        stats["total_cost_estimate_usd"] = round(total_input_cost, 6)
 
-    logger.info(
-        "compression_stats compressions=%d avg_ratio=%.3f tokens_saved=%d method=%s",
-        stats["compressions_done"],
-        stats["avg_ratio"],
-        stats["tokens_saved"],
-        stats["method"],
-    )
+        logger.info(
+            "compression_stats compressions=%d avg_ratio=%.3f tokens_saved=%d method=%s",
+            stats["compressions_done"],
+            stats["avg_ratio"],
+            stats["tokens_saved"],
+            stats["method"],
+        )
 
-    return stats
+        return stats
+    except Exception as exc:
+        logger.exception("Error in research_compression_stats")
+        return {
+            "error": str(exc),
+            "tool": "research_compression_stats",
+        }
 
 
 async def research_compression_reset() -> dict[str, str]:
@@ -155,12 +169,19 @@ async def research_compression_reset() -> dict[str, str]:
     Returns:
         Dict confirming reset: {"status": "stats_reset", "message": "..."}
     """
-    compressor = get_compressor()
-    compressor.reset_stats()
+    try:
+        compressor = get_compressor()
+        compressor.reset_stats()
 
-    logger.info("compression_stats_reset")
+        logger.info("compression_stats_reset")
 
-    return {
-        "status": "stats_reset",
-        "message": "Compression statistics cleared",
-    }
+        return {
+            "status": "stats_reset",
+            "message": "Compression statistics cleared",
+        }
+    except Exception as exc:
+        logger.exception("Error in research_compression_reset")
+        return {
+            "error": str(exc),
+            "tool": "research_compression_reset",
+        }

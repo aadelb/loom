@@ -159,42 +159,45 @@ async def research_crypto_trace(
         ``total_sent``, ``transaction_count``, ``recent_transactions``,
         and ``blockchair_stats``.
     """
-    if chain == "auto":
-        if address.startswith("0x") and len(address) == 42:
-            chain = "ethereum"
-        elif address.startswith(("1", "3", "bc1")):
-            chain = "bitcoin"
-        else:
-            chain = "bitcoin"
+    try:
+        if chain == "auto":
+            if address.startswith("0x") and len(address) == 42:
+                chain = "ethereum"
+            elif address.startswith(("1", "3", "bc1")):
+                chain = "bitcoin"
+            else:
+                chain = "bitcoin"
 
-    async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(
-            follow_redirects=True,
-            headers={"User-Agent": "Loom-Research/1.0"},
-            timeout=30.0,
-        ) as client:
-            tasks = []
-            if chain == "bitcoin":
-                tasks.append(_bitcoin_address_info(client, address))
-                tasks.append(_blockchair_stats(client, address, "bitcoin"))
-            elif chain == "ethereum":
-                tasks.append(_etherscan_address(client, address))
-                tasks.append(_blockchair_stats(client, address, "ethereum"))
+        async def _run() -> dict[str, Any]:
+            async with httpx.AsyncClient(
+                follow_redirects=True,
+                headers={"User-Agent": "Loom-Research/1.0"},
+                timeout=30.0,
+            ) as client:
+                tasks = []
+                if chain == "bitcoin":
+                    tasks.append(_bitcoin_address_info(client, address))
+                    tasks.append(_blockchair_stats(client, address, "bitcoin"))
+                elif chain == "ethereum":
+                    tasks.append(_etherscan_address(client, address))
+                    tasks.append(_blockchair_stats(client, address, "ethereum"))
 
-            if not tasks:
-                return {"address": address, "chain": chain, "error": "unsupported chain"}
+                if not tasks:
+                    return {"address": address, "chain": chain, "error": "unsupported chain"}
 
-            results = await asyncio.gather(*tasks, return_exceptions=True)
+                results = await asyncio.gather(*tasks, return_exceptions=True)
 
-            primary = results[0] if results and isinstance(results[0], dict) else {}
-            blockchair = results[1] if len(results) > 1 and isinstance(results[1], dict) else {}
+                primary = results[0] if results and isinstance(results[0], dict) else {}
+                blockchair = results[1] if len(results) > 1 and isinstance(results[1], dict) else {}
 
-            return {
-                "address": address,
-                "chain": chain,
-                "primary_data": primary,
-                "blockchair_stats": blockchair,
-                "sources_checked": ["blockchain.info" if chain == "bitcoin" else "etherscan", "blockchair"],
-            }
+                return {
+                    "address": address,
+                    "chain": chain,
+                    "primary_data": primary,
+                    "blockchair_stats": blockchair,
+                    "sources_checked": ["blockchain.info" if chain == "bitcoin" else "etherscan", "blockchair"],
+                }
 
-    return await _run()
+        return await _run()
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_crypto_trace"}

@@ -312,114 +312,120 @@ async def research_generate_report(
         Dict with ``topic``, ``depth``, ``sections`` (list of dicts with title/content/sources),
         ``total_sources``, ``word_count``, ``markdown_report``, ``generated_at``.
     """
+    try:
+        async def _run() -> dict[str, Any]:
+            async with httpx.AsyncClient(
+                follow_redirects=True,
+                headers={"User-Agent": "Loom-Research/1.0 (report generation)"},
+                timeout=30.0,
+            ) as client:
+                # Run all data collection tasks in parallel
+                overview_task = _wikipedia_overview(client, topic)
+                key_papers_task = _semantic_scholar_papers(client, topic)
+                recent_task = _arxiv_recent(client, topic)
+                discussion_task = _hackernews_discussion(client, topic)
 
-    async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(
-            follow_redirects=True,
-            headers={"User-Agent": "Loom-Research/1.0 (report generation)"},
-            timeout=30.0,
-        ) as client:
-            # Run all data collection tasks in parallel
-            overview_task = _wikipedia_overview(client, topic)
-            key_papers_task = _semantic_scholar_papers(client, topic)
-            recent_task = _arxiv_recent(client, topic)
-            discussion_task = _hackernews_discussion(client, topic)
+                (overview_data, papers_data, recent_data, discussion_data) = await asyncio.gather(
+                    overview_task,
+                    key_papers_task,
+                    recent_task,
+                    discussion_task,
+                    return_exceptions=True,
+                )
 
-            (overview_data, papers_data, recent_data, discussion_data) = await asyncio.gather(
-                overview_task,
-                key_papers_task,
-                recent_task,
-                discussion_task,
-                return_exceptions=True,
-            )
+                # Handle exceptions
+                if isinstance(overview_data, Exception):
+                    overview_data = {"title": topic, "overview": "", "source": "wikipedia"}
+                if isinstance(papers_data, Exception):
+                    papers_data = {"papers": [], "source": "semantic_scholar"}
+                if isinstance(recent_data, Exception):
+                    recent_data = {"papers": [], "source": "arxiv"}
+                if isinstance(discussion_data, Exception):
+                    discussion_data = {"discussions": [], "source": "hackernews"}
 
-            # Handle exceptions
-            if isinstance(overview_data, Exception):
-                overview_data = {"title": topic, "overview": "", "source": "wikipedia"}
-            if isinstance(papers_data, Exception):
-                papers_data = {"papers": [], "source": "semantic_scholar"}
-            if isinstance(recent_data, Exception):
-                recent_data = {"papers": [], "source": "arxiv"}
-            if isinstance(discussion_data, Exception):
-                discussion_data = {"discussions": [], "source": "hackernews"}
+                # Organize sections data
+                sections_data = {
+                    "overview": overview_data,
+                    "key_papers": papers_data,
+                    "recent_developments": recent_data,
+                    "community_discussion": discussion_data,
+                }
 
-            # Organize sections data
-            sections_data = {
-                "overview": overview_data,
-                "key_papers": papers_data,
-                "recent_developments": recent_data,
-                "community_discussion": discussion_data,
-            }
+                # Generate markdown report
+                markdown_report = _generate_markdown_report(topic, depth, sections_data)
 
-            # Generate markdown report
-            markdown_report = _generate_markdown_report(topic, depth, sections_data)
+                # Build sections list for output
+                output_sections = []
 
-            # Build sections list for output
-            output_sections = []
+                if overview_data.get("overview"):
+                    output_sections.append({
+                        "title": "Overview",
+                        "content": overview_data["overview"],
+                        "sources": ["wikipedia"],
+                    })
 
-            if overview_data.get("overview"):
-                output_sections.append({
-                    "title": "Overview",
-                    "content": overview_data["overview"],
-                    "sources": ["wikipedia"],
-                })
+                if papers_data.get("papers"):
+                    papers_summary = "\n".join([
+                        f"- {p.get('title', '')}: {p.get('citations', 0)} citations"
+                        for p in papers_data["papers"][:5]
+                    ])
+                    output_sections.append({
+                        "title": "Key Papers",
+                        "content": papers_summary,
+                        "sources": ["semantic_scholar"],
+                    })
 
-            if papers_data.get("papers"):
-                papers_summary = "\n".join([
-                    f"- {p.get('title', '')}: {p.get('citations', 0)} citations"
-                    for p in papers_data["papers"][:5]
-                ])
-                output_sections.append({
-                    "title": "Key Papers",
-                    "content": papers_summary,
-                    "sources": ["semantic_scholar"],
-                })
+                if recent_data.get("papers"):
+                    recent_summary = "\n".join([
+                        f"- [{p.get('date', '')}] {p.get('title', '')}"
+                        for p in recent_data["papers"][:5]
+                    ])
+                    output_sections.append({
+                        "title": "Recent Developments",
+                        "content": recent_summary,
+                        "sources": ["arxiv"],
+                    })
 
-            if recent_data.get("papers"):
-                recent_summary = "\n".join([
-                    f"- [{p.get('date', '')}] {p.get('title', '')}"
-                    for p in recent_data["papers"][:5]
-                ])
-                output_sections.append({
-                    "title": "Recent Developments",
-                    "content": recent_summary,
-                    "sources": ["arxiv"],
-                })
+                if discussion_data.get("discussions"):
+                    discussion_summary = "\n".join([
+                        f"- {d.get('title', '')} ({d.get('points', 0)} pts)"
+                        for d in discussion_data["discussions"][:5]
+                    ])
+                    output_sections.append({
+                        "title": "Community Discussion",
+                        "content": discussion_summary,
+                        "sources": ["hackernews"],
+                    })
 
-            if discussion_data.get("discussions"):
-                discussion_summary = "\n".join([
-                    f"- {d.get('title', '')} ({d.get('points', 0)} pts)"
-                    for d in discussion_data["discussions"][:5]
-                ])
-                output_sections.append({
-                    "title": "Community Discussion",
-                    "content": discussion_summary,
-                    "sources": ["hackernews"],
-                })
+                # Count total sources
+                sources_set = set()
+                for section_data in sections_data.values():
+                    if isinstance(section_data, dict):
+                        source = section_data.get("source")
+                        if source:
+                            sources_set.add(source)
 
-            # Count total sources
-            sources_set = set()
-            for section_data in sections_data.values():
-                if isinstance(section_data, dict):
-                    source = section_data.get("source")
-                    if source:
-                        sources_set.add(source)
+                # Calculate word count
+                word_count = len(markdown_report.split())
 
-            # Calculate word count
-            word_count = len(markdown_report.split())
+                return {
+                    "topic": topic,
+                    "depth": depth,
+                    "sections": output_sections,
+                    "total_sources": len(sources_set),
+                    "sources_used": list(sources_set),
+                    "word_count": word_count,
+                    "markdown_report": markdown_report,
+                    "generated_at": datetime.now(UTC).isoformat(),
+                }
 
-            return {
-                "topic": topic,
-                "depth": depth,
-                "sections": output_sections,
-                "total_sources": len(sources_set),
-                "sources_used": list(sources_set),
-                "word_count": word_count,
-                "markdown_report": markdown_report,
-                "generated_at": datetime.now(UTC).isoformat(),
-            }
-
-    return await _run()
+        return await _run()
+    except Exception as exc:
+        logger.exception("Error in research_generate_report")
+        return {
+            "error": str(exc),
+            "tool": "research_generate_report",
+        }
 
 
 async def research_generate_executive_report(
@@ -459,44 +465,51 @@ async def research_generate_executive_report(
     Returns:
         Dict with "report_type", "title", "markdown", "generated_at", and optional metadata
     """
-    from loom.report_gen import ReportGenerator
+    try:
+        from loom.report_gen import ReportGenerator
 
-    gen = ReportGenerator()
-    markdown = ""
-    metadata: dict[str, Any] = {}
+        gen = ReportGenerator()
+        markdown = ""
+        metadata: dict[str, Any] = {}
 
-    if report_type == "executive_summary":
-        if not scores:
-            markdown = "# Executive Summary\n\nNo scoring data provided. Please provide scores from score_all().\n"
+        if report_type == "executive_summary":
+            if not scores:
+                markdown = "# Executive Summary\n\nNo scoring data provided. Please provide scores from score_all().\n"
+            else:
+                markdown = gen.generate_executive_summary(scores, title)
+                metadata["entries_analyzed"] = len(scores)
+        elif report_type == "strategy":
+            if not tracker_data:
+                markdown = "# Strategy Effectiveness Report\n\nNo attack tracker data provided.\n"
+            else:
+                markdown = gen.generate_strategy_report(tracker_data)
+                metadata["strategies_analyzed"] = len(tracker_data)
+        elif report_type == "model_comparison":
+            if not model_results:
+                markdown = "# Model Comparison Report\n\nNo model data provided.\n"
+            else:
+                markdown = gen.generate_model_comparison(model_results)
+                metadata["models_compared"] = len(model_results)
+        elif report_type == "compliance":
+            if not audit_entries:
+                markdown = f"# {framework.replace('_', ' ').title()}\n\nNo audit entries provided.\n"
+            else:
+                markdown = gen.generate_compliance_report(audit_entries, framework)
+                metadata["audit_entries_reviewed"] = len(audit_entries)
+                metadata["framework"] = framework
         else:
-            markdown = gen.generate_executive_summary(scores, title)
-            metadata["entries_analyzed"] = len(scores)
-    elif report_type == "strategy":
-        if not tracker_data:
-            markdown = "# Strategy Effectiveness Report\n\nNo attack tracker data provided.\n"
-        else:
-            markdown = gen.generate_strategy_report(tracker_data)
-            metadata["strategies_analyzed"] = len(tracker_data)
-    elif report_type == "model_comparison":
-        if not model_results:
-            markdown = "# Model Comparison Report\n\nNo model data provided.\n"
-        else:
-            markdown = gen.generate_model_comparison(model_results)
-            metadata["models_compared"] = len(model_results)
-    elif report_type == "compliance":
-        if not audit_entries:
-            markdown = f"# {framework.replace('_', ' ').title()}\n\nNo audit entries provided.\n"
-        else:
-            markdown = gen.generate_compliance_report(audit_entries, framework)
-            metadata["audit_entries_reviewed"] = len(audit_entries)
-            metadata["framework"] = framework
-    else:
-        markdown = f"Unknown report type: {report_type}"
+            markdown = f"Unknown report type: {report_type}"
 
-    return {
-        "report_type": report_type,
-        "title": title,
-        "markdown": markdown,
-        "generated_at": datetime.now(UTC).isoformat(),
-        **metadata,
-    }
+        return {
+            "report_type": report_type,
+            "title": title,
+            "markdown": markdown,
+            "generated_at": datetime.now(UTC).isoformat(),
+            **metadata,
+        }
+    except Exception as exc:
+        logger.exception("Error in research_generate_executive_report")
+        return {
+            "error": str(exc),
+            "tool": "research_generate_executive_report",
+        }

@@ -247,58 +247,65 @@ async def research_multi_search(
         ``total_deduplicated``, ``results`` list (each with title, url,
         source, snippet, score, rank_score), and ``sources_breakdown``.
     """
-    default_engines = [
-        "duckduckgo", "hackernews", "reddit", "wikipedia",
-        "arxiv", "marginalia", "crt_sh",
-    ]
-    active_engines = engines or default_engines
+    try:
+        default_engines = [
+            "duckduckgo", "hackernews", "reddit", "wikipedia",
+            "arxiv", "marginalia", "crt_sh",
+        ]
+        active_engines = engines or default_engines
 
-    engine_map = {
-        "duckduckgo": _search_ddgs,
-        "hackernews": _search_hackernews,
-        "reddit": _search_reddit,
-        "wikipedia": _search_wikipedia,
-        "arxiv": _search_arxiv,
-        "marginalia": _search_marginalia,
-        "crt_sh": _search_crt_sh,
-    }
+        engine_map = {
+            "duckduckgo": _search_ddgs,
+            "hackernews": _search_hackernews,
+            "reddit": _search_reddit,
+            "wikipedia": _search_wikipedia,
+            "arxiv": _search_arxiv,
+            "marginalia": _search_marginalia,
+            "crt_sh": _search_crt_sh,
+        }
 
-    async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(
-            follow_redirects=True,
-            headers={"User-Agent": "Loom-Research/1.0"},
-            timeout=30.0,
-        ) as client:
-            tasks = []
-            engines_used = []
-            for eng in active_engines:
-                if eng in engine_map:
-                    tasks.append(engine_map[eng](client, query))
-                    engines_used.append(eng)
+        async def _run() -> dict[str, Any]:
+            async with httpx.AsyncClient(
+                follow_redirects=True,
+                headers={"User-Agent": "Loom-Research/1.0"},
+                timeout=30.0,
+            ) as client:
+                tasks = []
+                engines_used = []
+                for eng in active_engines:
+                    if eng in engine_map:
+                        tasks.append(engine_map[eng](client, query))
+                        engines_used.append(eng)
 
-            all_results_raw = await asyncio.gather(*tasks, return_exceptions=True)
+                all_results_raw = await asyncio.gather(*tasks, return_exceptions=True)
 
-            all_results: list[dict[str, Any]] = []
-            for result in all_results_raw:
-                if isinstance(result, list):
-                    all_results.extend(result)
+                all_results: list[dict[str, Any]] = []
+                for result in all_results_raw:
+                    if isinstance(result, list):
+                        all_results.extend(result)
 
-            total_raw = len(all_results)
-            deduped = _deduplicate(all_results)
-            ranked = _rank_results(deduped)[:max_results]
+                total_raw = len(all_results)
+                deduped = _deduplicate(all_results)
+                ranked = _rank_results(deduped)[:max_results]
 
-            source_breakdown: dict[str, int] = {}
-            for r in ranked:
-                src = r.get("source", "unknown")
-                source_breakdown[src] = source_breakdown.get(src, 0) + 1
+                source_breakdown: dict[str, int] = {}
+                for r in ranked:
+                    src = r.get("source", "unknown")
+                    source_breakdown[src] = source_breakdown.get(src, 0) + 1
 
-            return {
-                "query": query,
-                "engines_queried": engines_used,
-                "total_raw_results": total_raw,
-                "total_deduplicated": len(ranked),
-                "results": ranked,
-                "sources_breakdown": source_breakdown,
-            }
+                return {
+                    "query": query,
+                    "engines_queried": engines_used,
+                    "total_raw_results": total_raw,
+                    "total_deduplicated": len(ranked),
+                    "results": ranked,
+                    "sources_breakdown": source_breakdown,
+                }
 
-    return await _run()
+        return await _run()
+    except Exception as exc:
+        logger.error("research_multi_search failed: %s", exc)
+        return {
+            "error": str(exc),
+            "tool": "research_multi_search",
+        }

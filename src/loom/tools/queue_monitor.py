@@ -6,20 +6,32 @@ from typing import Any
 
 async def research_queue_status() -> dict[str, Any]:
     """Get batch queue status."""
-    return {
-        "status": "operational",
-        "tool": "research_queue_status",
-        "queue_depth": 0,
-        "pending_jobs": []
-    }
+    try:
+        return {
+            "status": "operational",
+            "tool": "research_queue_status",
+            "queue_depth": 0,
+            "pending_jobs": []
+        }
+    except Exception as exc:
+        return {
+            "error": str(exc),
+            "tool": "research_queue_status",
+        }
 
 
 async def research_queue_stats() -> dict[str, Any]:
     """Get detailed queue statistics."""
-    return {
-        "status": "analyzed",
-        "tool": "research_queue_stats",
-        "dlq_count": 0,
-        "processing_count": 0,
-        "completed_count": 0
-    }
+    try:
+        return {
+            "status": "analyzed",
+            "tool": "research_queue_stats",
+            "dlq_count": 0,
+            "processing_count": 0,
+            "completed_count": 0
+        }
+    except Exception as exc:
+        return {
+            "error": str(exc),
+            "tool": "research_queue_stats",
+        }

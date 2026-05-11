@@ -267,59 +267,62 @@ async def research_arxiv_extract_techniques(
         - techniques: list of technique dicts with name, type, description, reported_asr, target_models, strategy_template
         - actionability_score: 0-10 score indicating practical applicability
     """
-    if not paper_abstract or not paper_abstract.strip():
-        return {
-            "title": paper_title,
-            "techniques": [],
-            "actionability_score": 0.0,
-        }
-
-    logger.info("arxiv_extract abstract_len=%d", len(paper_abstract))
-
-    techniques: list[dict[str, Any]] = []
-
-    # Extract metrics
-    metrics = _extract_asr_metrics(paper_abstract)
-
-    # Find technique descriptions (sentences containing markers)
-    technique_sentences: list[str] = []
-    for marker in TECHNIQUE_MARKERS:
-        pattern = f"[^.!?]*{re.escape(marker)}[^.!?]*[.!?]"
-        matches = re.finditer(pattern, paper_abstract, re.IGNORECASE)
-        for match in matches:
-            sentence = match.group(0).strip()
-            if sentence and len(sentence) < 500:
-                technique_sentences.append(sentence)
-
-    # Deduplicate and create technique records
-    seen_desc: set[str] = set()
-    for desc in technique_sentences[:10]:  # Limit to 10 techniques
-        if desc not in seen_desc:
-            technique_type = _classify_technique_type(desc)
-
-            technique = {
-                "name": f"{technique_type.replace('_', ' ').title()} Attack",
-                "type": technique_type,
-                "description": desc[:150],
-                "reported_asr": metrics.get("reported_asr"),
-                "target_models": metrics.get("target_models", []),
-                "strategy_template": _generate_strategy_template(desc, technique_type),
+    try:
+        if not paper_abstract or not paper_abstract.strip():
+            return {
+                "title": paper_title,
+                "techniques": [],
+                "actionability_score": 0.0,
             }
 
-            techniques.append(technique)
-            seen_desc.add(desc)
+        logger.info("arxiv_extract abstract_len=%d", len(paper_abstract))
 
-    # Calculate actionability score (0-10) based on presence of metrics and technique count
-    actionability = 0.0
-    if metrics.get("reported_asr"):
-        actionability += 3.0
-    if metrics.get("target_models"):
-        actionability += 3.0
-    if len(techniques) > 0:
-        actionability += min(4.0, len(techniques))
+        techniques: list[dict[str, Any]] = []
 
-    return {
-        "title": paper_title,
-        "techniques": techniques,
-        "actionability_score": round(min(10.0, actionability), 2),
-    }
+        # Extract metrics
+        metrics = _extract_asr_metrics(paper_abstract)
+
+        # Find technique descriptions (sentences containing markers)
+        technique_sentences: list[str] = []
+        for marker in TECHNIQUE_MARKERS:
+            pattern = f"[^.!?]*{re.escape(marker)}[^.!?]*[.!?]"
+            matches = re.finditer(pattern, paper_abstract, re.IGNORECASE)
+            for match in matches:
+                sentence = match.group(0).strip()
+                if sentence and len(sentence) < 500:
+                    technique_sentences.append(sentence)
+
+        # Deduplicate and create technique records
+        seen_desc: set[str] = set()
+        for desc in technique_sentences[:10]:  # Limit to 10 techniques
+            if desc not in seen_desc:
+                technique_type = _classify_technique_type(desc)
+
+                technique = {
+                    "name": f"{technique_type.replace('_', ' ').title()} Attack",
+                    "type": technique_type,
+                    "description": desc[:150],
+                    "reported_asr": metrics.get("reported_asr"),
+                    "target_models": metrics.get("target_models", []),
+                    "strategy_template": _generate_strategy_template(desc, technique_type),
+                }
+
+                techniques.append(technique)
+                seen_desc.add(desc)
+
+        # Calculate actionability score (0-10) based on presence of metrics and technique count
+        actionability = 0.0
+        if metrics.get("reported_asr"):
+            actionability += 3.0
+        if metrics.get("target_models"):
+            actionability += 3.0
+        if len(techniques) > 0:
+            actionability += min(4.0, len(techniques))
+
+        return {
+            "title": paper_title,
+            "techniques": techniques,
+            "actionability_score": round(min(10.0, actionability), 2),
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_arxiv_extract_techniques"}

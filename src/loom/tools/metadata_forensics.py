@@ -176,54 +176,61 @@ async def research_metadata_forensics(
 		``meta_tags``, ``link_relations``, ``feeds``, ``image_exif``,
 		and ``generator`` (CMS/framework detection from meta generator tag).
 	"""
-	validate_url(url)
+	try:
+		validate_url(url)
 
-	async def _run() -> dict[str, Any]:
-		async with httpx.AsyncClient(
-			follow_redirects=True,
-			headers={"User-Agent": "Loom-Research/1.0"},
-			timeout=30.0,
-		) as client:
-			html = await _fetch_text(client, url)
-			if not html:
-				return {"url": url, "error": "failed to fetch page"}
+		async def _run() -> dict[str, Any]:
+			async with httpx.AsyncClient(
+				follow_redirects=True,
+				headers={"User-Agent": "Loom-Research/1.0"},
+				timeout=30.0,
+			) as client:
+				html = await _fetch_text(client, url)
+				if not html:
+					return {"url": url, "error": "failed to fetch page"}
 
-			json_ld = _extract_json_ld(html)
-			open_graph = _extract_open_graph(html)
-			twitter_cards = _extract_twitter_cards(html)
-			meta_tags = _extract_meta_tags(html)
-			link_relations = _extract_link_relations(html)
-			feeds = _extract_feeds(html, url)
+				json_ld = _extract_json_ld(html)
+				open_graph = _extract_open_graph(html)
+				twitter_cards = _extract_twitter_cards(html)
+				meta_tags = _extract_meta_tags(html)
+				link_relations = _extract_link_relations(html)
+				feeds = _extract_feeds(html, url)
 
-			generator = meta_tags.get("generator", "")
+				generator = meta_tags.get("generator", "")
 
-			image_exif: list[dict[str, Any]] = []
-			if extract_exif:
-				image_urls = _extract_image_urls(html, url)[:max_images]
-				image_data = await asyncio.gather(
-					*[_fetch_bytes(client, img_url) for img_url in image_urls],
-					return_exceptions=True,
-				)
-				for img_url, data in zip(
-					image_urls, image_data, strict=False
-				):
-					if isinstance(data, bytes) and len(data) > 100:
-						# Run blocking EXIF extraction in executor
-						exif = await asyncio.to_thread(_extract_exif, data)
-						if exif:
-							image_exif.append({"url": img_url, "exif": exif})
+				image_exif: list[dict[str, Any]] = []
+				if extract_exif:
+					image_urls = _extract_image_urls(html, url)[:max_images]
+					image_data = await asyncio.gather(
+						*[_fetch_bytes(client, img_url) for img_url in image_urls],
+						return_exceptions=True,
+					)
+					for img_url, data in zip(
+						image_urls, image_data, strict=False
+					):
+						if isinstance(data, bytes) and len(data) > 100:
+							# Run blocking EXIF extraction in executor
+							exif = await asyncio.to_thread(_extract_exif, data)
+							if exif:
+								image_exif.append({"url": img_url, "exif": exif})
 
-			return {
-				"url": url,
-				"json_ld": json_ld,
-				"open_graph": open_graph,
-				"twitter_cards": twitter_cards,
-				"meta_tags": meta_tags,
-				"link_relations": link_relations[:20],
-				"feeds": feeds,
-				"generator": generator,
-				"image_exif": image_exif,
-				"structured_data_found": bool(json_ld or open_graph),
-			}
+				return {
+					"url": url,
+					"json_ld": json_ld,
+					"open_graph": open_graph,
+					"twitter_cards": twitter_cards,
+					"meta_tags": meta_tags,
+					"link_relations": link_relations[:20],
+					"feeds": feeds,
+					"generator": generator,
+					"image_exif": image_exif,
+					"structured_data_found": bool(json_ld or open_graph),
+				}
 
-	return await _run()
+		return await _run()
+	except Exception as exc:
+		logger.error("research_metadata_forensics failed: %s", exc)
+		return {
+			"error": str(exc),
+			"tool": "research_metadata_forensics",
+		}

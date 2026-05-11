@@ -118,53 +118,55 @@ async def research_dark_forum(
         ``results`` list (each with source, url, title, description),
         and ``sources_breakdown``.
     """
+    try:
+        async def _run() -> dict[str, Any]:
+            async with httpx.AsyncClient(
+                follow_redirects=True,
+                headers={"User-Agent": "Loom-Research/1.0"},
+                timeout=30.0,
+            ) as client:
+                ahmia_task = _search_ahmia(client, query)
+                otx_task = _search_otx(client, query)
+                reddit_darknet_task = _search_reddit_sub(client, query, "darknet")
+                reddit_onions_task = _search_reddit_sub(client, query, "onions")
 
-    async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(
-            follow_redirects=True,
-            headers={"User-Agent": "Loom-Research/1.0"},
-            timeout=30.0,
-        ) as client:
-            ahmia_task = _search_ahmia(client, query)
-            otx_task = _search_otx(client, query)
-            reddit_darknet_task = _search_reddit_sub(client, query, "darknet")
-            reddit_onions_task = _search_reddit_sub(client, query, "onions")
+                results = await asyncio.gather(
+                    ahmia_task,
+                    otx_task,
+                    reddit_darknet_task,
+                    reddit_onions_task,
+                    return_exceptions=True,
+                )
 
-            results = await asyncio.gather(
-                ahmia_task,
-                otx_task,
-                reddit_darknet_task,
-                reddit_onions_task,
-                return_exceptions=True,
-            )
+                all_items: list[dict[str, str]] = []
+                sources_with_results = 0
+                for result in results:
+                    if isinstance(result, list) and result:
+                        sources_with_results += 1
+                        all_items.extend(result)
 
-            all_items: list[dict[str, str]] = []
-            sources_with_results = 0
-            for result in results:
-                if isinstance(result, list) and result:
-                    sources_with_results += 1
-                    all_items.extend(result)
+                seen_urls: set[str] = set()
+                unique_items: list[dict[str, str]] = []
+                for item in all_items:
+                    url = item.get("url", "")
+                    if url and url not in seen_urls:
+                        seen_urls.add(url)
+                        unique_items.append(item)
 
-            seen_urls: set[str] = set()
-            unique_items: list[dict[str, str]] = []
-            for item in all_items:
-                url = item.get("url", "")
-                if url and url not in seen_urls:
-                    seen_urls.add(url)
-                    unique_items.append(item)
+                source_breakdown: dict[str, int] = {}
+                for item in unique_items:
+                    src = item.get("source", "unknown")
+                    source_breakdown[src] = source_breakdown.get(src, 0) + 1
 
-            source_breakdown: dict[str, int] = {}
-            for item in unique_items:
-                src = item.get("source", "unknown")
-                source_breakdown[src] = source_breakdown.get(src, 0) + 1
+                return {
+                    "query": query,
+                    "sources_checked": 4,
+                    "sources_with_results": sources_with_results,
+                    "total_results": len(unique_items),
+                    "results": unique_items[:max_results],
+                    "sources_breakdown": source_breakdown,
+                }
 
-            return {
-                "query": query,
-                "sources_checked": 4,
-                "sources_with_results": sources_with_results,
-                "total_results": len(unique_items),
-                "results": unique_items[:max_results],
-                "sources_breakdown": source_breakdown,
-            }
-
-    return await _run()
+        return await _run()
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_dark_forum"}

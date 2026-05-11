@@ -81,46 +81,49 @@ async def research_functor_translate(
          structural_mapping: [{source_element, target_element, relationship}],
          structure_preservation_score, novelty_score, suggested_applications}
     """
-    if source_domain not in DOMAIN_CATEGORIES or target_domain not in DOMAIN_CATEGORIES:
-        return {"error": f"Unknown domain", "available_domains": list(DOMAIN_CATEGORIES.keys())}
-    if source_domain == target_domain:
-        return {"translated_exploit": exploit, "novelty_score": 0.0, "structural_mapping": []}
+    try:
+        if source_domain not in DOMAIN_CATEGORIES or target_domain not in DOMAIN_CATEGORIES:
+            return {"error": f"Unknown domain", "available_domains": list(DOMAIN_CATEGORIES.keys())}
+        if source_domain == target_domain:
+            return {"translated_exploit": exploit, "novelty_score": 0.0, "structural_mapping": []}
 
-    # Extract morphisms and objects from exploit text
-    source_morphisms = DOMAIN_CATEGORIES[source_domain]["morphisms"]
-    source_objects = DOMAIN_CATEGORIES[source_domain]["objects"]
-    identified = []
-    for item in source_morphisms + source_objects:
-        if item.lower() in exploit.lower():
-            identified.append(item)
+        # Extract morphisms and objects from exploit text
+        source_morphisms = DOMAIN_CATEGORIES[source_domain]["morphisms"]
+        source_objects = DOMAIN_CATEGORIES[source_domain]["objects"]
+        identified = []
+        for item in source_morphisms + source_objects:
+            if item.lower() in exploit.lower():
+                identified.append(item)
 
-    # Build functor mapping (with fallback to synthetic functor)
-    functor = FUNCTORS.get((source_domain, target_domain)) or _synthesize_functor(source_domain, target_domain)
+        # Build functor mapping (with fallback to synthetic functor)
+        functor = FUNCTORS.get((source_domain, target_domain)) or _synthesize_functor(source_domain, target_domain)
 
-    # Apply functor to identified elements
-    structural_mapping = []
-    translated_parts = []
-    for elem in identified:
-        target_elem = functor.get(elem, elem)
-        rel = "morphism_preservation" if elem in source_morphisms else "object_preservation"
-        structural_mapping.append({"source_element": elem, "target_element": target_elem, "relationship": rel})
-        translated_parts.append(target_elem)
+        # Apply functor to identified elements
+        structural_mapping = []
+        translated_parts = []
+        for elem in identified:
+            target_elem = functor.get(elem, elem)
+            rel = "morphism_preservation" if elem in source_morphisms else "object_preservation"
+            structural_mapping.append({"source_element": elem, "target_element": target_elem, "relationship": rel})
+            translated_parts.append(target_elem)
 
-    # Construct translated exploit
-    translated_exploit = f"In {target_domain}: {', '.join(translated_parts)}. Structure preserved."
-    preservation_score = len(structural_mapping) / max(1, len(identified))
-    novelty_score = min(0.95, len(translated_parts) * 0.15)
+        # Construct translated exploit
+        translated_exploit = f"In {target_domain}: {', '.join(translated_parts)}. Structure preserved."
+        preservation_score = len(structural_mapping) / max(1, len(identified))
+        novelty_score = min(0.95, len(translated_parts) * 0.15)
 
-    return {
-        "source_exploit": exploit,
-        "source_domain": source_domain,
-        "target_domain": target_domain,
-        "translated_exploit": translated_exploit,
-        "structural_mapping": structural_mapping,
-        "structure_preservation_score": preservation_score,
-        "novelty_score": novelty_score,
-        "suggested_applications": [d for d in DOMAIN_CATEGORIES if d != target_domain][:3],
-    }
+        return {
+            "source_exploit": exploit,
+            "source_domain": source_domain,
+            "target_domain": target_domain,
+            "translated_exploit": translated_exploit,
+            "structural_mapping": structural_mapping,
+            "structure_preservation_score": preservation_score,
+            "novelty_score": novelty_score,
+            "suggested_applications": [d for d in DOMAIN_CATEGORIES if d != target_domain][:3],
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_functor_translate"}
 
 
 def _synthesize_functor(source: str, target: str) -> dict[str, str]:

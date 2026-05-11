@@ -180,61 +180,63 @@ async def research_culture_dna(
         Dict with culture_signals, work_life_score, innovation_score,
         diversity_signals, and overall_culture_type.
     """
+    try:
+        async def _run() -> dict[str, Any]:
+            async with httpx.AsyncClient(
+                follow_redirects=True,
+                headers={"User-Agent": "Loom-Research/1.0"},
+                timeout=20.0,
+            ) as client:
+                all_signals: list[dict[str, Any]] = []
 
-    async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(
-            follow_redirects=True,
-            headers={"User-Agent": "Loom-Research/1.0"},
-            timeout=20.0,
-        ) as client:
-            all_signals: list[dict[str, Any]] = []
+                # Fetch Glassdoor reviews (via search engine)
+                glassdoor_query = f'site:glassdoor.com "{company}" reviews'
+                glassdoor_url = f"https://duckduckgo.com/?q={quote(glassdoor_query)}&t=h"
+                glassdoor_text = await _fetch_text(client, glassdoor_url)
+                glassdoor_signals = _extract_culture_signals(glassdoor_text, "glassdoor")
+                all_signals.extend(glassdoor_signals)
 
-            # Fetch Glassdoor reviews (via search engine)
-            glassdoor_query = f'site:glassdoor.com "{company}" reviews'
-            glassdoor_url = f"https://duckduckgo.com/?q={quote(glassdoor_query)}&t=h"
-            glassdoor_text = await _fetch_text(client, glassdoor_url)
-            glassdoor_signals = _extract_culture_signals(glassdoor_text, "glassdoor")
-            all_signals.extend(glassdoor_signals)
+                # Fetch LinkedIn company page
+                linkedin_query = f'site:linkedin.com/company "{company}"'
+                linkedin_url = f"https://duckduckgo.com/?q={quote(linkedin_query)}&t=h"
+                linkedin_text = await _fetch_text(client, linkedin_url)
+                linkedin_signals = _extract_culture_signals(linkedin_text, "linkedin")
+                all_signals.extend(linkedin_signals)
 
-            # Fetch LinkedIn company page
-            linkedin_query = f'site:linkedin.com/company "{company}"'
-            linkedin_url = f"https://duckduckgo.com/?q={quote(linkedin_query)}&t=h"
-            linkedin_text = await _fetch_text(client, linkedin_url)
-            linkedin_signals = _extract_culture_signals(linkedin_text, "linkedin")
-            all_signals.extend(linkedin_signals)
+                # GitHub org analysis (metadata only, no API key required)
+                github_signals_data = _analyze_github_signals(company)
 
-            # GitHub org analysis (metadata only, no API key required)
-            github_signals_data = _analyze_github_signals(company)
+                # Calculate weighted scores
+                work_life_signals = [s for s in all_signals if s.get("category") == "work_life_balance"]
+                work_life_score = (
+                    sum(s.get("strength", 0) for s in work_life_signals) / (len(all_signals) + 1)
+                    if all_signals
+                    else 0.5
+                )
 
-            # Calculate weighted scores
-            work_life_signals = [s for s in all_signals if s.get("category") == "work_life_balance"]
-            work_life_score = (
-                sum(s.get("strength", 0) for s in work_life_signals) / (len(all_signals) + 1)
-                if all_signals
-                else 0.5
-            )
+                innovation_signals = [s for s in all_signals if s.get("category") == "innovation"]
+                innovation_score = (
+                    sum(s.get("strength", 0) for s in innovation_signals) / (len(all_signals) + 1)
+                    if all_signals
+                    else 0.5
+                )
 
-            innovation_signals = [s for s in all_signals if s.get("category") == "innovation"]
-            innovation_score = (
-                sum(s.get("strength", 0) for s in innovation_signals) / (len(all_signals) + 1)
-                if all_signals
-                else 0.5
-            )
+                diversity_signals = [s for s in all_signals if s.get("category") == "diversity"]
 
-            diversity_signals = [s for s in all_signals if s.get("category") == "diversity"]
+                culture_type = _classify_culture_type(all_signals)
 
-            culture_type = _classify_culture_type(all_signals)
+                return {
+                    "company": company,
+                    "domain": domain or "unknown",
+                    "culture_signals": all_signals[:50],
+                    "work_life_score": min(work_life_score, 1.0),
+                    "innovation_score": min(innovation_score, 1.0),
+                    "diversity_signals": [s["signal"] for s in diversity_signals],
+                    "overall_culture_type": culture_type,
+                    "signal_count": len(all_signals),
+                    "github_analysis": github_signals_data,
+                }
 
-            return {
-                "company": company,
-                "domain": domain or "unknown",
-                "culture_signals": all_signals[:50],
-                "work_life_score": min(work_life_score, 1.0),
-                "innovation_score": min(innovation_score, 1.0),
-                "diversity_signals": [s["signal"] for s in diversity_signals],
-                "overall_culture_type": culture_type,
-                "signal_count": len(all_signals),
-                "github_analysis": github_signals_data,
-            }
-
-    return await _run()
+        return await _run()
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_culture_dna"}

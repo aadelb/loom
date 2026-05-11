@@ -74,59 +74,62 @@ async def research_deer_flow(
         - error: Error message if operation failed (optional)
         - note: Additional context (e.g., "Fallback mode used")
     """
-    # Input validation
-    if not query or not isinstance(query, str):
-        return {
-            "query": query,
-            "error": "query must be a non-empty string",
-            "agents_used": 0,
-            "findings": [],
-            "synthesis": "",
-            "backend": "none",
-        }
+    try:
+        # Input validation
+        if not query or not isinstance(query, str):
+            return {
+                "query": query,
+                "error": "query must be a non-empty string",
+                "agents_used": 0,
+                "findings": [],
+                "synthesis": "",
+                "backend": "none",
+            }
 
-    query = query.strip()
-    if len(query) < MIN_QUERY_LEN or len(query) > MAX_QUERY_LEN:
-        return {
-            "query": query,
-            "error": f"query length must be {MIN_QUERY_LEN}-{MAX_QUERY_LEN} chars",
-            "agents_used": 0,
-            "findings": [],
-            "synthesis": "",
-            "backend": "none",
-        }
+        query = query.strip()
+        if len(query) < MIN_QUERY_LEN or len(query) > MAX_QUERY_LEN:
+            return {
+                "query": query,
+                "error": f"query length must be {MIN_QUERY_LEN}-{MAX_QUERY_LEN} chars",
+                "agents_used": 0,
+                "findings": [],
+                "synthesis": "",
+                "backend": "none",
+            }
 
-    # Validate depth
-    if depth not in VALID_DEPTHS:
-        depth = "standard"
+        # Validate depth
+        if depth not in VALID_DEPTHS:
+            depth = "standard"
 
-    # Validate max_agents
-    if not isinstance(max_agents, int) or max_agents < 1 or max_agents > MAX_AGENTS:
-        max_agents = 5
+        # Validate max_agents
+        if not isinstance(max_agents, int) or max_agents < 1 or max_agents > MAX_AGENTS:
+            max_agents = 5
 
-    # Validate timeout
-    if not isinstance(timeout, int) or timeout < 10 or timeout > 600:
-        timeout = 120
+        # Validate timeout
+        if not isinstance(timeout, int) or timeout < 10 or timeout > 600:
+            timeout = 120
 
-    # Try embedded client first (Python 3.12+)
-    if _HAS_DEERFLOW_CLIENT:
-        result = await _research_with_embedded_client(query, depth, max_agents, timeout)
-        if result:
-            return result
+        # Try embedded client first (Python 3.12+)
+        if _HAS_DEERFLOW_CLIENT:
+            result = await _research_with_embedded_client(query, depth, max_agents, timeout)
+            if result:
+                return result
 
-    # Try HTTP API if configured
-    if DEERFLOW_HTTP_URL:
-        result = await _research_with_http_api(query, depth, max_agents, timeout)
-        if result:
-            return result
+        # Try HTTP API if configured
+        if DEERFLOW_HTTP_URL:
+            result = await _research_with_http_api(query, depth, max_agents, timeout)
+            if result:
+                return result
 
-    # Fall back to enhanced fallback mode
-    logger.info(
-        "deerflow_unavailable, using enhanced fallback pipeline query=%s depth=%s",
-        query[:50],
-        depth,
-    )
-    return _fallback_multi_agent_research(query, depth, max_agents, timeout)
+        # Fall back to enhanced fallback mode
+        logger.info(
+            "deerflow_unavailable, using enhanced fallback pipeline query=%s depth=%s",
+            query[:50],
+            depth,
+        )
+        return _fallback_multi_agent_research(query, depth, max_agents, timeout)
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_deer_flow"}
 
 
 async def _research_with_embedded_client(

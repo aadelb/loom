@@ -103,56 +103,59 @@ async def research_geodesic_path(
     Returns:
         Dict with scores, transformation path, distance metrics, and efficiency.
     """
-    dims = ["authority", "encoding", "persona", "context", "indirection"]
+    try:
+        dims = ["authority", "encoding", "persona", "context", "indirection"]
 
-    # Score current prompt
-    start_scores = {d: _score_dimension(start_prompt, d) for d in dims}
-    target_scores = _VECTORS.get(target_style, _VECTORS["academic"])
+        # Score current prompt
+        start_scores = {d: _score_dimension(start_prompt, d) for d in dims}
+        target_scores = _VECTORS.get(target_style, _VECTORS["academic"])
 
-    # Euclidean distance
-    total_distance = sum((start_scores[k] - target_scores[k]) ** 2 for k in dims) ** 0.5
+        # Euclidean distance
+        total_distance = sum((start_scores[k] - target_scores[k]) ** 2 for k in dims) ** 0.5
 
-    # Gradient descent path
-    path, current_scores = [], dict(start_scores)
-    for step_num in range(1, min(max_steps + 1, 20)):
-        # Find largest gap
-        gaps = {k: abs(current_scores[k] - target_scores[k]) for k in dims}
-        largest_dim = max(gaps, key=gaps.get)
-        largest_gap = gaps[largest_dim]
+        # Gradient descent path
+        path, current_scores = [], dict(start_scores)
+        for step_num in range(1, min(max_steps + 1, 20)):
+            # Find largest gap
+            gaps = {k: abs(current_scores[k] - target_scores[k]) for k in dims}
+            largest_dim = max(gaps, key=gaps.get)
+            largest_gap = gaps[largest_dim]
 
-        if largest_gap < 0.01:
-            break
+            if largest_gap < 0.01:
+                break
 
-        from_score = current_scores[largest_dim]
-        direction = 1 if target_scores[largest_dim] > from_score else -1
-        to_score = min(0.95, max(0.05, from_score + direction * step_size * largest_gap))
-        current_scores[largest_dim] = to_score
+            from_score = current_scores[largest_dim]
+            direction = 1 if target_scores[largest_dim] > from_score else -1
+            to_score = min(0.95, max(0.05, from_score + direction * step_size * largest_gap))
+            current_scores[largest_dim] = to_score
 
-        path.append({
-            "step": step_num,
-            "dimension": largest_dim,
-            "from_score": round(from_score, 3),
-            "to_score": round(to_score, 3),
-            "gap_reduction": round(largest_gap, 3),
-            "transformation": _describe_transformation(largest_dim, from_score, to_score),
-        })
+            path.append({
+                "step": step_num,
+                "dimension": largest_dim,
+                "from_score": round(from_score, 3),
+                "to_score": round(to_score, 3),
+                "gap_reduction": round(largest_gap, 3),
+                "transformation": _describe_transformation(largest_dim, from_score, to_score),
+            })
 
-    # Final metrics
-    final_distance = sum((current_scores[k] - target_scores[k]) ** 2 for k in dims) ** 0.5
-    distance_reduced = total_distance - final_distance
-    efficiency_score = 100 * (distance_reduced / total_distance) if total_distance > 0 else 0
-    steps_needed = int(final_distance / (step_size * 0.5)) + len(path) if step_size > 0 else 99
+        # Final metrics
+        final_distance = sum((current_scores[k] - target_scores[k]) ** 2 for k in dims) ** 0.5
+        distance_reduced = total_distance - final_distance
+        efficiency_score = 100 * (distance_reduced / total_distance) if total_distance > 0 else 0
+        steps_needed = int(final_distance / (step_size * 0.5)) + len(path) if step_size > 0 else 99
 
-    return {
-        "start_scores": {k: round(v, 3) for k, v in start_scores.items()},
-        "target_scores": {k: round(v, 3) for k, v in target_scores.items()},
-        "target_style": target_style,
-        "path": path,
-        "path_length": len(path),
-        "total_distance": round(total_distance, 3),
-        "remaining_distance": round(final_distance, 3),
-        "distance_reduced": round(distance_reduced, 3),
-        "steps_needed": min(steps_needed, 99),
-        "efficiency_score": round(efficiency_score, 1),
-        "convergence_status": "converged" if final_distance < 0.1 else "in_progress",
-    }
+        return {
+            "start_scores": {k: round(v, 3) for k, v in start_scores.items()},
+            "target_scores": {k: round(v, 3) for k, v in target_scores.items()},
+            "target_style": target_style,
+            "path": path,
+            "path_length": len(path),
+            "total_distance": round(total_distance, 3),
+            "remaining_distance": round(final_distance, 3),
+            "distance_reduced": round(distance_reduced, 3),
+            "steps_needed": min(steps_needed, 99),
+            "efficiency_score": round(efficiency_score, 1),
+            "convergence_status": "converged" if final_distance < 0.1 else "in_progress",
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_geodesic_path"}

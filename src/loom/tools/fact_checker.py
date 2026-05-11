@@ -248,54 +248,57 @@ async def research_fact_check(
         - sources: list of {source, url, assessment, snippet}
         - total_sources_checked: count of unique sources consulted
     """
-    max_sources = max(1, min(max_sources, 50))
+    try:
+        max_sources = max(1, min(max_sources, 50))
 
-    logger.info("fact_check claim=%s", claim[:50])
+        logger.info("fact_check claim=%s", claim[:50])
 
-    async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(
-            follow_redirects=True,
-            headers={"User-Agent": "Loom-Research/1.0"},
-            timeout=30.0,
-        ) as client:
-            # Run all searches in parallel
-            google_task = _search_google_fact_check(client, claim)
-            snopes_task = _search_snopes_politifact_factcheck(client, claim)
-            wiki_task = _search_wikipedia_for_claim(client, claim)
-            scholar_task = _search_semantic_scholar_for_claim(client, claim)
+        async def _run() -> dict[str, Any]:
+            async with httpx.AsyncClient(
+                follow_redirects=True,
+                headers={"User-Agent": "Loom-Research/1.0"},
+                timeout=30.0,
+            ) as client:
+                # Run all searches in parallel
+                google_task = _search_google_fact_check(client, claim)
+                snopes_task = _search_snopes_politifact_factcheck(client, claim)
+                wiki_task = _search_wikipedia_for_claim(client, claim)
+                scholar_task = _search_semantic_scholar_for_claim(client, claim)
 
-            google_sources, snopes_sources, wiki_sources, scholar_sources = (
-                await asyncio.gather(
-                    google_task, snopes_task, wiki_task, scholar_task
+                google_sources, snopes_sources, wiki_sources, scholar_sources = (
+                    await asyncio.gather(
+                        google_task, snopes_task, wiki_task, scholar_task
+                    )
                 )
-            )
 
-            # Combine all sources and deduplicate by URL
-            all_sources = (
-                google_sources + snopes_sources + wiki_sources + scholar_sources
-            )
+                # Combine all sources and deduplicate by URL
+                all_sources = (
+                    google_sources + snopes_sources + wiki_sources + scholar_sources
+                )
 
-            # Deduplicate by URL (keep first occurrence)
-            seen_urls = set()
-            dedup_sources: list[dict[str, Any]] = []
-            for source in all_sources:
-                url = source.get("url", "")
-                if url not in seen_urls:
-                    seen_urls.add(url)
-                    dedup_sources.append(source)
+                # Deduplicate by URL (keep first occurrence)
+                seen_urls = set()
+                dedup_sources: list[dict[str, Any]] = []
+                for source in all_sources:
+                    url = source.get("url", "")
+                    if url not in seen_urls:
+                        seen_urls.add(url)
+                        dedup_sources.append(source)
 
-            # Limit to max_sources
-            final_sources = dedup_sources[:max_sources]
+                # Limit to max_sources
+                final_sources = dedup_sources[:max_sources]
 
-            # Aggregate assessments
-            verdict, confidence = _aggregate_assessments(final_sources)
+                # Aggregate assessments
+                verdict, confidence = _aggregate_assessments(final_sources)
 
-            return {
-                "claim": claim,
-                "verdict": verdict,
-                "confidence": round(confidence, 2),
-                "sources": final_sources,
-                "total_sources_checked": len(final_sources),
-            }
+                return {
+                    "claim": claim,
+                    "verdict": verdict,
+                    "confidence": round(confidence, 2),
+                    "sources": final_sources,
+                    "total_sources_checked": len(final_sources),
+                }
 
-    return await _run()
+        return await _run()
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_fact_check"}

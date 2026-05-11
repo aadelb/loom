@@ -29,10 +29,13 @@ async def research_semantic_cache_stats() -> dict[str, Any]:
         - estimated_savings_usd: Estimated cost savings
         - cache_dir: Cache directory path
     """
-    cache = get_semantic_cache()
-    stats = cache.get_stats()
-    stats["cache_dir"] = str(cache.cache_dir)
-    return stats
+    try:
+        cache = get_semantic_cache()
+        stats = cache.get_stats()
+        stats["cache_dir"] = str(cache.cache_dir)
+        return stats
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_semantic_cache_stats"}
 
 
 async def research_semantic_cache_clear(older_than_days: int = 30) -> dict[str, Any]:
@@ -46,12 +49,15 @@ async def research_semantic_cache_clear(older_than_days: int = 30) -> dict[str, 
         - deleted_count: Number of files removed
         - older_than_days: Cutoff days used
     """
-    cache = get_semantic_cache()
-    deleted_count = await cache.clear_older_than(older_than_days)
-    return {
-        "deleted_count": deleted_count,
-        "older_than_days": older_than_days,
-    }
+    try:
+        cache = get_semantic_cache()
+        deleted_count = await cache.clear_older_than(older_than_days)
+        return {
+            "deleted_count": deleted_count,
+            "older_than_days": older_than_days,
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_semantic_cache_clear"}
 
 
 async def tool_semantic_cache_stats() -> list[TextContent]:

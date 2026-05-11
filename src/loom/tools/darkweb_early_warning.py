@@ -188,117 +188,120 @@ async def research_darkweb_early_warning(
         Dict with keywords, alerts (list of {keyword, source, title, url,
         severity, timestamp}), alert_count, and highest_severity
     """
-    if not keywords:
-        return {
-            "error": "At least one keyword required",
-            "keywords": [],
-            "alerts": [],
-            "alert_count": 0,
-            "highest_severity": None,
-        }
-
-    if len(keywords) > 10:
-        keywords = keywords[:10]
-
-    async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(
-            follow_redirects=True,
-            headers={"User-Agent": "Loom-Research/1.0"},
-            timeout=30.0,
-        ) as client:
-            alerts: list[dict[str, Any]] = []
-            severity_map = {"critical": 4, "high": 3, "medium": 2, "low": 1}
-            highest_severity_val = 0
-            highest_severity = None
-
-            for keyword in keywords:
-                # Run all searches in parallel
-                ahmia_results, otx_results, reddit_results, hn_results = (
-                    await asyncio.gather(
-                        _ahmia_search(client, keyword),
-                        _otx_search(client, keyword),
-                        _reddit_darknet_search(client, keyword),
-                        _hackernews_search(client, keyword),
-                    )
-                )
-
-                # Process Ahmia results
-                for result in ahmia_results:
-                    severity = _estimate_severity(keyword, 1)
-                    alerts.append(
-                        {
-                            "keyword": keyword,
-                            "source": "ahmia",
-                            "title": result.get("title", ""),
-                            "url": result.get("url", ""),
-                            "severity": severity,
-                            "timestamp": datetime.now(UTC).isoformat(),
-                        }
-                    )
-                    if severity_map.get(severity, 0) > highest_severity_val:
-                        highest_severity_val = severity_map.get(severity, 0)
-                        highest_severity = severity
-
-                # Process OTX results
-                for result in otx_results:
-                    severity = _estimate_severity(keyword, 1)
-                    alerts.append(
-                        {
-                            "keyword": keyword,
-                            "source": "alienvault_otx",
-                            "title": result.get("name", ""),
-                            "url": "",
-                            "severity": severity,
-                            "timestamp": result.get("modified", ""),
-                        }
-                    )
-                    if severity_map.get(severity, 0) > highest_severity_val:
-                        highest_severity_val = severity_map.get(severity, 0)
-                        highest_severity = severity
-
-                # Process Reddit results
-                for result in reddit_results:
-                    created_ts = result.get("created_utc", 0)
-                    created_dt = datetime.fromtimestamp(created_ts, UTC).isoformat()
-                    severity = _estimate_severity(keyword, 1)
-                    alerts.append(
-                        {
-                            "keyword": keyword,
-                            "source": "reddit_darknet",
-                            "title": result.get("title", ""),
-                            "url": result.get("url", ""),
-                            "severity": severity,
-                            "timestamp": created_dt,
-                        }
-                    )
-                    if severity_map.get(severity, 0) > highest_severity_val:
-                        highest_severity_val = severity_map.get(severity, 0)
-                        highest_severity = severity
-
-                # Process HackerNews results
-                for result in hn_results:
-                    severity = _estimate_severity(keyword, 1)
-                    alerts.append(
-                        {
-                            "keyword": keyword,
-                            "source": "hackernews",
-                            "title": result.get("title", ""),
-                            "url": result.get("url", ""),
-                            "severity": severity,
-                            "timestamp": result.get("created_at", ""),
-                        }
-                    )
-                    if severity_map.get(severity, 0) > highest_severity_val:
-                        highest_severity_val = severity_map.get(severity, 0)
-                        highest_severity = severity
-
+    try:
+        if not keywords:
             return {
-                "keywords": keywords,
-                "alerts": alerts,
-                "alert_count": len(alerts),
-                "highest_severity": highest_severity,
-                "search_hours_back": hours_back,
-                "timestamp": datetime.now(UTC).isoformat(),
+                "error": "At least one keyword required",
+                "keywords": [],
+                "alerts": [],
+                "alert_count": 0,
+                "highest_severity": None,
             }
 
-    return await _run()
+        if len(keywords) > 10:
+            keywords = keywords[:10]
+
+        async def _run() -> dict[str, Any]:
+            async with httpx.AsyncClient(
+                follow_redirects=True,
+                headers={"User-Agent": "Loom-Research/1.0"},
+                timeout=30.0,
+            ) as client:
+                alerts: list[dict[str, Any]] = []
+                severity_map = {"critical": 4, "high": 3, "medium": 2, "low": 1}
+                highest_severity_val = 0
+                highest_severity = None
+
+                for keyword in keywords:
+                    # Run all searches in parallel
+                    ahmia_results, otx_results, reddit_results, hn_results = (
+                        await asyncio.gather(
+                            _ahmia_search(client, keyword),
+                            _otx_search(client, keyword),
+                            _reddit_darknet_search(client, keyword),
+                            _hackernews_search(client, keyword),
+                        )
+                    )
+
+                    # Process Ahmia results
+                    for result in ahmia_results:
+                        severity = _estimate_severity(keyword, 1)
+                        alerts.append(
+                            {
+                                "keyword": keyword,
+                                "source": "ahmia",
+                                "title": result.get("title", ""),
+                                "url": result.get("url", ""),
+                                "severity": severity,
+                                "timestamp": datetime.now(UTC).isoformat(),
+                            }
+                        )
+                        if severity_map.get(severity, 0) > highest_severity_val:
+                            highest_severity_val = severity_map.get(severity, 0)
+                            highest_severity = severity
+
+                    # Process OTX results
+                    for result in otx_results:
+                        severity = _estimate_severity(keyword, 1)
+                        alerts.append(
+                            {
+                                "keyword": keyword,
+                                "source": "alienvault_otx",
+                                "title": result.get("name", ""),
+                                "url": "",
+                                "severity": severity,
+                                "timestamp": result.get("modified", ""),
+                            }
+                        )
+                        if severity_map.get(severity, 0) > highest_severity_val:
+                            highest_severity_val = severity_map.get(severity, 0)
+                            highest_severity = severity
+
+                    # Process Reddit results
+                    for result in reddit_results:
+                        created_ts = result.get("created_utc", 0)
+                        created_dt = datetime.fromtimestamp(created_ts, UTC).isoformat()
+                        severity = _estimate_severity(keyword, 1)
+                        alerts.append(
+                            {
+                                "keyword": keyword,
+                                "source": "reddit_darknet",
+                                "title": result.get("title", ""),
+                                "url": result.get("url", ""),
+                                "severity": severity,
+                                "timestamp": created_dt,
+                            }
+                        )
+                        if severity_map.get(severity, 0) > highest_severity_val:
+                            highest_severity_val = severity_map.get(severity, 0)
+                            highest_severity = severity
+
+                    # Process HackerNews results
+                    for result in hn_results:
+                        severity = _estimate_severity(keyword, 1)
+                        alerts.append(
+                            {
+                                "keyword": keyword,
+                                "source": "hackernews",
+                                "title": result.get("title", ""),
+                                "url": result.get("url", ""),
+                                "severity": severity,
+                                "timestamp": result.get("created_at", ""),
+                            }
+                        )
+                        if severity_map.get(severity, 0) > highest_severity_val:
+                            highest_severity_val = severity_map.get(severity, 0)
+                            highest_severity = severity
+
+                return {
+                    "keywords": keywords,
+                    "alerts": alerts,
+                    "alert_count": len(alerts),
+                    "highest_severity": highest_severity,
+                    "search_hours_back": hours_back,
+                    "timestamp": datetime.now(UTC).isoformat(),
+                }
+
+        return await _run()
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_darkweb_early_warning"}

@@ -164,67 +164,70 @@ async def research_infra_correlator(
         Dict with ``domain``, ``favicon_hash``, ``analytics_ids``,
         ``cert_sans``, ``http_fingerprint``, and ``correlation_signals``.
     """
-    domain = domain.strip().lower()
-    if not domain or not _DOMAIN_RE.match(domain) or len(domain) > 253:
-        return {"error": "Invalid domain format", "domain": domain}
+    try:
+        domain = domain.strip().lower()
+        if not domain or not _DOMAIN_RE.match(domain) or len(domain) > 253:
+            return {"error": "Invalid domain format", "domain": domain}
 
-    async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(
-            follow_redirects=True,
-            headers={"User-Agent": "Loom-Research/1.0"},
-            timeout=30.0,
-        ) as client:
-            tasks: dict[str, Any] = {}
-            if check_favicon:
-                tasks["favicon"] = _get_favicon_hash(client, domain)
-            if check_analytics:
-                tasks["analytics"] = _extract_analytics_ids(client, domain)
-            if check_certs:
-                tasks["certs"] = _get_cert_sans(client, domain)
-            if check_http:
-                tasks["http"] = _get_http_fingerprint(client, domain)
+        async def _run() -> dict[str, Any]:
+            async with httpx.AsyncClient(
+                follow_redirects=True,
+                headers={"User-Agent": "Loom-Research/1.0"},
+                timeout=30.0,
+            ) as client:
+                tasks: dict[str, Any] = {}
+                if check_favicon:
+                    tasks["favicon"] = _get_favicon_hash(client, domain)
+                if check_analytics:
+                    tasks["analytics"] = _extract_analytics_ids(client, domain)
+                if check_certs:
+                    tasks["certs"] = _get_cert_sans(client, domain)
+                if check_http:
+                    tasks["http"] = _get_http_fingerprint(client, domain)
 
-            results = {}
-            if tasks:
-                gathered = await asyncio.gather(
-                    *tasks.values(), return_exceptions=True
-                )
-                for key, val in zip(tasks.keys(), gathered, strict=False):
-                    if not isinstance(val, Exception):
-                        results[key] = val
+                results = {}
+                if tasks:
+                    gathered = await asyncio.gather(
+                        *tasks.values(), return_exceptions=True
+                    )
+                    for key, val in zip(tasks.keys(), gathered, strict=False):
+                        if not isinstance(val, Exception):
+                            results[key] = val
 
-            favicon_hash = results.get("favicon", 0)
-            analytics_ids = results.get("analytics", [])
-            cert_sans = results.get("certs", [])
-            http_fp = results.get("http", {})
+                favicon_hash = results.get("favicon", 0)
+                analytics_ids = results.get("analytics", [])
+                cert_sans = results.get("certs", [])
+                http_fp = results.get("http", {})
 
-            correlation_signals: list[dict[str, str]] = []
-            if favicon_hash:
-                correlation_signals.append(
-                    {
-                        "type": "favicon_hash",
-                        "value": str(favicon_hash),
-                        "description": f"Search Shodan for http.favicon.hash:{favicon_hash}",
-                    }
-                )
-            for aid in analytics_ids:
-                correlation_signals.append(
-                    {
-                        "type": f"analytics_{aid['type']}",
-                        "value": aid["id"],
-                        "description": f"Search PublicWWW for {aid['id']} to find related domains",
-                    }
-                )
+                correlation_signals: list[dict[str, str]] = []
+                if favicon_hash:
+                    correlation_signals.append(
+                        {
+                            "type": "favicon_hash",
+                            "value": str(favicon_hash),
+                            "description": f"Search Shodan for http.favicon.hash:{favicon_hash}",
+                        }
+                    )
+                for aid in analytics_ids:
+                    correlation_signals.append(
+                        {
+                            "type": f"analytics_{aid['type']}",
+                            "value": aid["id"],
+                            "description": f"Search PublicWWW for {aid['id']} to find related domains",
+                        }
+                    )
 
-            return {
-                "domain": domain,
-                "favicon_hash": favicon_hash,
-                "analytics_ids": analytics_ids,
-                "cert_sans": cert_sans[:100],
-                "cert_sans_count": len(cert_sans),
-                "http_fingerprint": http_fp,
-                "correlation_signals": correlation_signals,
-                "total_signals": len(correlation_signals),
-            }
+                return {
+                    "domain": domain,
+                    "favicon_hash": favicon_hash,
+                    "analytics_ids": analytics_ids,
+                    "cert_sans": cert_sans[:100],
+                    "cert_sans_count": len(cert_sans),
+                    "http_fingerprint": http_fp,
+                    "correlation_signals": correlation_signals,
+                    "total_signals": len(correlation_signals),
+                }
 
-    return await _run()
+        return await _run()
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_infra_correlator"}

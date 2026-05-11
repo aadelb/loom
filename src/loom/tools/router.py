@@ -1,25 +1,36 @@
 """Smart routing and tool recommendation tools."""
 from __future__ import annotations
 
+import logging
 from typing import Any
+
+logger = logging.getLogger("loom.tools.router")
 
 
 async def research_route_to_model(query: str) -> dict[str, Any]:
     """Route query to appropriate model or service."""
-    return {
-        "status": "routed",
-        "tool": "research_route_to_model",
-        "query": query,
-        "recommended_model": None,
-        "confidence": 0.0
-    }
+    try:
+        return {
+            "status": "routed",
+            "tool": "research_route_to_model",
+            "query": query,
+            "recommended_model": None,
+            "confidence": 0.0
+        }
+    except Exception as exc:
+        logger.error("route_to_model_error: %s", exc)
+        return {"error": str(exc), "tool": "research_route_to_model"}
 
 
 async def research_recommend_tools(query: str) -> dict[str, Any]:
     """Recommend tools for a given query."""
-    return {
-        "status": "analyzed",
-        "tool": "research_recommend_tools",
-        "query": query,
-        "recommended_tools": []
-    }
+    try:
+        return {
+            "status": "analyzed",
+            "tool": "research_recommend_tools",
+            "query": query,
+            "recommended_tools": []
+        }
+    except Exception as exc:
+        logger.error("recommend_tools_error: %s", exc)
+        return {"error": str(exc), "tool": "research_recommend_tools"}

@@ -65,95 +65,98 @@ async def research_health_deep() -> dict[str, Any]:
             "summary": "..."
         }
     """
-    from datetime import UTC, datetime
-    from loom import __version__
-    from loom.server_state import get_start_time
+    try:
+        from datetime import UTC, datetime
+        from loom import __version__
+        from loom.server_state import get_start_time
 
-    start_time = time.time()
-    timestamp = datetime.now(UTC).isoformat()
-    uptime_seconds = int(time.time() - _start_time)
+        start_time = time.time()
+        timestamp = datetime.now(UTC).isoformat()
+        uptime_seconds = int(time.time() - _start_time)
 
-    subsystems: dict[str, dict[str, Any]] = {}
-    import_errors: list[str] = []
+        subsystems: dict[str, dict[str, Any]] = {}
+        import_errors: list[str] = []
 
-    # 1. Check Redis connection
-    subsystems["redis"] = await _check_redis()
+        # 1. Check Redis connection
+        subsystems["redis"] = await _check_redis()
 
-    # 2. Check PostgreSQL connection
-    subsystems["postgresql"] = await _check_postgresql()
+        # 2. Check PostgreSQL connection
+        subsystems["postgresql"] = await _check_postgresql()
 
-    # 3. Check LLM providers with API validation
-    subsystems["llm_providers"] = await _check_llm_providers()
+        # 3. Check LLM providers with API validation
+        subsystems["llm_providers"] = await _check_llm_providers()
 
-    # 4. Check search providers
-    subsystems["search_providers"] = await _check_search_providers()
+        # 4. Check search providers
+        subsystems["search_providers"] = await _check_search_providers()
 
-    # 5. Check disk space
-    subsystems["disk_cache"] = _check_disk_space()
+        # 5. Check disk space
+        subsystems["disk_cache"] = _check_disk_space()
 
-    # 6. Check memory and CPU
-    subsystems["system_resources"] = _check_system_resources()
+        # 6. Check memory and CPU
+        subsystems["system_resources"] = _check_system_resources()
 
-    # 7. Check tool registry
-    tool_info = _check_tool_registry()
-    subsystems["tool_registry"] = {
-        "status": "ok" if tool_info["missing"] == [] else "warn",
-        "details": f"{tool_info['registered']} registered, {tool_info['expected']} expected",
-        "latency_ms": None,
-    }
+        # 7. Check tool registry
+        tool_info = _check_tool_registry()
+        subsystems["tool_registry"] = {
+            "status": "ok" if tool_info["missing"] == [] else "warn",
+            "details": f"{tool_info['registered']} registered, {tool_info['expected']} expected",
+            "latency_ms": None,
+        }
 
-    # 8. Check imports
-    import_errors = _check_imports()
-    subsystems["imports"] = {
-        "status": "ok" if len(import_errors) == 0 else "fail",
-        "details": f"{len(import_errors)} import errors" if import_errors else "All imports successful",
-        "latency_ms": None,
-    }
+        # 8. Check imports
+        import_errors = _check_imports()
+        subsystems["imports"] = {
+            "status": "ok" if len(import_errors) == 0 else "fail",
+            "details": f"{len(import_errors)} import errors" if import_errors else "All imports successful",
+            "latency_ms": None,
+        }
 
-    # 9. Check cache stats
-    subsystems["cache"] = _check_cache_stats()
+        # 9. Check cache stats
+        subsystems["cache"] = _check_cache_stats()
 
-    # 10. Check rate limiter
-    subsystems["rate_limiter"] = _check_rate_limiter_state()
+        # 10. Check rate limiter
+        subsystems["rate_limiter"] = _check_rate_limiter_state()
 
-    # 11. Check circuit breakers
-    subsystems["circuit_breakers"] = await _check_circuit_breakers()
+        # 11. Check circuit breakers
+        subsystems["circuit_breakers"] = await _check_circuit_breakers()
 
-    # Calculate overall status
-    failed = [k for k, v in subsystems.items() if v.get("status") == "fail"]
-    warn = [k for k, v in subsystems.items() if v.get("status") == "warn"]
+        # Calculate overall status
+        failed = [k for k, v in subsystems.items() if v.get("status") == "fail"]
+        warn = [k for k, v in subsystems.items() if v.get("status") == "warn"]
 
-    if failed:
-        overall_status = "unhealthy"
-    elif warn:
-        overall_status = "degraded"
-    else:
-        overall_status = "healthy"
+        if failed:
+            overall_status = "unhealthy"
+        elif warn:
+            overall_status = "degraded"
+        else:
+            overall_status = "healthy"
 
-    # Resource metrics summary
-    resource_metrics = subsystems["system_resources"]
-    memory_mb = resource_metrics.get("details", {}).split(",")[0].split("=")[1].strip() if "=" in resource_metrics.get("details", "") else "unknown"
+        # Resource metrics summary
+        resource_metrics = subsystems["system_resources"]
+        memory_mb = resource_metrics.get("details", {}).split(",")[0].split("=")[1].strip() if "=" in resource_metrics.get("details", "") else "unknown"
 
-    elapsed_ms = int((time.time() - start_time) * 1000)
+        elapsed_ms = int((time.time() - start_time) * 1000)
 
-    return {
-        "status": overall_status,
-        "timestamp": timestamp,
-        "uptime_seconds": uptime_seconds,
-        "version": __version__,
-        "subsystems": subsystems,
-        "tool_count": tool_info,
-        "import_errors": import_errors,
-        "resource_metrics": {
-            "memory_mb": resource_metrics.get("memory_mb", 0),
-            "memory_percent": resource_metrics.get("memory_percent", 0),
-            "cpu_percent": resource_metrics.get("cpu_percent", 0),
-            "disk_cache_mb": resource_metrics.get("disk_cache_mb", 0),
-            "disk_cache_percent": resource_metrics.get("disk_cache_percent", 0),
-        },
-        "diagnostics_latency_ms": elapsed_ms,
-        "summary": f"{overall_status.upper()}: {len(failed)} critical issues, {len(warn)} warnings, {len(subsystems) - len(failed) - len(warn)} OK",
-    }
+        return {
+            "status": overall_status,
+            "timestamp": timestamp,
+            "uptime_seconds": uptime_seconds,
+            "version": __version__,
+            "subsystems": subsystems,
+            "tool_count": tool_info,
+            "import_errors": import_errors,
+            "resource_metrics": {
+                "memory_mb": resource_metrics.get("memory_mb", 0),
+                "memory_percent": resource_metrics.get("memory_percent", 0),
+                "cpu_percent": resource_metrics.get("cpu_percent", 0),
+                "disk_cache_mb": resource_metrics.get("disk_cache_mb", 0),
+                "disk_cache_percent": resource_metrics.get("disk_cache_percent", 0),
+            },
+            "diagnostics_latency_ms": elapsed_ms,
+            "summary": f"{overall_status.upper()}: {len(failed)} critical issues, {len(warn)} warnings, {len(subsystems) - len(failed) - len(warn)} OK",
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_health_deep"}
 
 
 async def _check_redis() -> dict[str, Any]:

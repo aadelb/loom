@@ -272,48 +272,51 @@ async def research_deception_detect(text: str) -> dict[str, Any]:
     Returns:
         Dict with deception score, verdict, indicators, red flags, and optional LLM assessment
     """
-    if not text or len(text) < 100:
-        logger.warning("deception_detect: text too short (min 100 chars)")
-        return {
-            "error": "Text must be at least 100 characters",
-            "deception_score": 0.0,
-            "verdict": "insufficient_data",
-            "word_count": len(_tokenize_words(text)) if text else 0,
+    try:
+        if not text or len(text) < 100:
+            logger.warning("deception_detect: text too short (min 100 chars)")
+            return {
+                "error": "Text must be at least 100 characters",
+                "deception_score": 0.0,
+                "verdict": "insufficient_data",
+                "word_count": len(_tokenize_words(text)) if text else 0,
+            }
+
+        # Extract indicators
+        indicators = _extract_deception_indicators(text)
+        words = _tokenize_words(text)
+
+        # Identify red flags
+        red_flags = _identify_red_flags(indicators)
+
+        # Calculate deception score
+        deception_score = _calculate_deception_score(indicators, red_flags)
+
+        # Determine verdict
+        if deception_score < 0.3:
+            verdict = "likely_truthful"
+        elif deception_score < 0.7:
+            verdict = "uncertain"
+        else:
+            verdict = "likely_deceptive"
+
+        # Try to get LLM assessment
+        llm_assessment = _try_llm_assessment(text)
+
+        result: dict[str, Any] = {
+            "deception_score": round(deception_score, 3),
+            "verdict": verdict,
+            "indicators": indicators,
+            "red_flags": red_flags,
+            "word_count": len(words),
         }
 
-    # Extract indicators
-    indicators = _extract_deception_indicators(text)
-    words = _tokenize_words(text)
+        if llm_assessment:
+            result["llm_assessment"] = llm_assessment
 
-    # Identify red flags
-    red_flags = _identify_red_flags(indicators)
-
-    # Calculate deception score
-    deception_score = _calculate_deception_score(indicators, red_flags)
-
-    # Determine verdict
-    if deception_score < 0.3:
-        verdict = "likely_truthful"
-    elif deception_score < 0.7:
-        verdict = "uncertain"
-    else:
-        verdict = "likely_deceptive"
-
-    # Try to get LLM assessment
-    llm_assessment = _try_llm_assessment(text)
-
-    result: dict[str, Any] = {
-        "deception_score": round(deception_score, 3),
-        "verdict": verdict,
-        "indicators": indicators,
-        "red_flags": red_flags,
-        "word_count": len(words),
-    }
-
-    if llm_assessment:
-        result["llm_assessment"] = llm_assessment
-
-    return result
+        return result
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_deception_detect"}
 
 
 def tool_deception_detect(text: str) -> list[TextContent]:

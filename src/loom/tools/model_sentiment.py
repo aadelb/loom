@@ -361,37 +361,44 @@ def research_model_sentiment(response: str, context: str = "") -> dict[str, Any]
         >>> result = research_model_sentiment("I cannot help with that")
         >>> print(result["primary_emotion"])  # "assertive"
     """
-    analyzer = ModelSentimentAnalyzer()
-    data = analyzer.analyze(response, context)
+    try:
+        analyzer = ModelSentimentAnalyzer()
+        data = analyzer.analyze(response, context)
 
-    # Format human-readable summary
-    summary_lines = [
-        f"Primary Emotion: {data['primary_emotion'].upper()}",
-        f"Confidence: {data['confidence']:.1%}",
-        f"Hedging Level: {data['hedging_level']:.1%}",
-        f"Compliance Readiness: {data['compliance_readiness']:.1%}",
-        "\nEmotion Scores:",
-    ]
-    summary_lines.extend(
-        [
-            f"  {e}: {s:.2f}"
-            for e, s in sorted(
-                data["emotion_scores"].items(),
-                key=lambda x: x[1],
-                reverse=True,
-            )
+        # Format human-readable summary
+        summary_lines = [
+            f"Primary Emotion: {data['primary_emotion'].upper()}",
+            f"Confidence: {data['confidence']:.1%}",
+            f"Hedging Level: {data['hedging_level']:.1%}",
+            f"Compliance Readiness: {data['compliance_readiness']:.1%}",
+            "\nEmotion Scores:",
         ]
-    )
+        summary_lines.extend(
+            [
+                f"  {e}: {s:.2f}"
+                for e, s in sorted(
+                    data["emotion_scores"].items(),
+                    key=lambda x: x[1],
+                    reverse=True,
+                )
+            ]
+        )
 
-    indicators_str = ", ".join(data["vulnerability_indicators"]) or "None"
-    summary_lines.extend(
-        [
-            f"\nVulnerability Indicators: {indicators_str}",
-            f"Recommended Strategy: {data['recommended_strategy']}",
-        ]
-    )
+        indicators_str = ", ".join(data["vulnerability_indicators"]) or "None"
+        summary_lines.extend(
+            [
+                f"\nVulnerability Indicators: {indicators_str}",
+                f"Recommended Strategy: {data['recommended_strategy']}",
+            ]
+        )
 
-    return {
-        **data,
-        "summary": "\n".join(summary_lines),
-    }
+        return {
+            **data,
+            "summary": "\n".join(summary_lines),
+        }
+    except Exception as exc:
+        logger.error("research_model_sentiment failed: %s", exc)
+        return {
+            "error": str(exc),
+            "tool": "research_model_sentiment",
+        }

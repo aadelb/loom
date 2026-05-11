@@ -45,23 +45,26 @@ async def research_email_breach(
         - h8mail_available: bool (whether h8mail CLI was used)
         - error: str (if validation or API error occurred)
     """
-    # Validate email format
-    if not _is_valid_email(email):
-        return {
-            "email": email,
-            "error": "Invalid email format",
-        }
+    try:
+        # Validate email format
+        if not _is_valid_email(email):
+            return {
+                "email": email,
+                "error": "Invalid email format",
+            }
 
-    logger.info("email_breach_start email=%s search_timeout=%d", email, search_timeout)
+        logger.info("email_breach_start email=%s search_timeout=%d", email, search_timeout)
 
-    # Try h8mail first if available
-    h8mail_path = _find_h8mail()
-    if h8mail_path:
-        return await _search_with_h8mail(email, h8mail_path, search_timeout)
+        # Try h8mail first if available
+        h8mail_path = _find_h8mail()
+        if h8mail_path:
+            return await _search_with_h8mail(email, h8mail_path, search_timeout)
 
-    # Fallback to free APIs
-    logger.info("h8mail not found, falling back to free APIs")
-    return await _search_with_free_apis(email, search_timeout)
+        # Fallback to free APIs
+        logger.info("h8mail not found, falling back to free APIs")
+        return await _search_with_free_apis(email, search_timeout)
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_email_breach"}
 
 
 async def _search_with_h8mail(

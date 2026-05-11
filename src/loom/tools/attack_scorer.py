@@ -47,31 +47,34 @@ def research_attack_score(
             - asr_estimate: estimated attack success rate (0-1)
             - recommendation: str with suggested next steps
     """
-    logger.info(
-        "attack_score prompt_len=%d response_len=%d strategy=%s model=%s",
-        len(prompt),
-        len(response),
-        strategy or "unknown",
-        model or "unknown",
-    )
+    try:
+        logger.info(
+            "attack_score prompt_len=%d response_len=%d strategy=%s model=%s",
+            len(prompt),
+            len(response),
+            strategy or "unknown",
+            model or "unknown",
+        )
 
-    scorer = AttackEffectivenessScorer()
-    result = scorer.score(
-        prompt=prompt,
-        response=response,
-        strategy=strategy,
-        model=model,
-        baseline_refusal=baseline_refusal,
-    )
+        scorer = AttackEffectivenessScorer()
+        result = scorer.score(
+            prompt=prompt,
+            response=response,
+            strategy=strategy,
+            model=model,
+            baseline_refusal=baseline_refusal,
+        )
 
-    logger.info(
-        "attack_score_result total_score=%s asr=%s strategy=%s",
-        result["total_score"],
-        result["asr_estimate"],
-        strategy or "unknown",
-    )
+        logger.info(
+            "attack_score_result total_score=%s asr=%s strategy=%s",
+            result["total_score"],
+            result["asr_estimate"],
+            strategy or "unknown",
+        )
 
-    return result
+        return result
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_attack_score"}
 
 
 def tool_attack_score(

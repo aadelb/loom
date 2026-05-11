@@ -268,37 +268,40 @@ async def research_fuzz_report(
         Dict with report: {endpoint, method, vulnerabilities_found,
         summary: {critical, high, medium, low}, recommendations}
     """
-    if results is None:
-        results = {
-            "endpoint": "/api/test",
-            "method": "GET",
-            "iterations_run": 0,
-            "vulnerabilities_found": [],
-            "summary": {"critical": 0, "high": 0, "medium": 0, "low": 0},
-            "recommendations": ["Run research_fuzz_api first to generate results"],
+    try:
+        if results is None:
+            results = {
+                "endpoint": "/api/test",
+                "method": "GET",
+                "iterations_run": 0,
+                "vulnerabilities_found": [],
+                "summary": {"critical": 0, "high": 0, "medium": 0, "low": 0},
+                "recommendations": ["Run research_fuzz_api first to generate results"],
+            }
+
+        # Build report
+        report = {
+            "endpoint": results.get("endpoint", "unknown"),
+            "method": results.get("method", "GET"),
+            "iterations_run": results.get("iterations_run", 0),
+            "vulnerabilities_found": results.get("vulnerabilities_found", []),
+            "summary": results.get("summary", {"critical": 0, "high": 0, "medium": 0, "low": 0}),
+            "recommendations": results.get("recommendations", []),
+            "total_vulnerabilities": len(results.get("vulnerabilities_found", [])),
+            "severity_breakdown": {
+                "critical": results.get("summary", {}).get("critical", 0),
+                "high": results.get("summary", {}).get("high", 0),
+                "medium": results.get("summary", {}).get("medium", 0),
+                "low": results.get("summary", {}).get("low", 0),
+            },
         }
 
-    # Build report
-    report = {
-        "endpoint": results.get("endpoint", "unknown"),
-        "method": results.get("method", "GET"),
-        "iterations_run": results.get("iterations_run", 0),
-        "vulnerabilities_found": results.get("vulnerabilities_found", []),
-        "summary": results.get("summary", {"critical": 0, "high": 0, "medium": 0, "low": 0}),
-        "recommendations": results.get("recommendations", []),
-        "total_vulnerabilities": len(results.get("vulnerabilities_found", [])),
-        "severity_breakdown": {
-            "critical": results.get("summary", {}).get("critical", 0),
-            "high": results.get("summary", {}).get("high", 0),
-            "medium": results.get("summary", {}).get("medium", 0),
-            "low": results.get("summary", {}).get("low", 0),
-        },
-    }
+        # Add overall risk level
+        crit_count = report["summary"].get("critical", 0)
+        high_count = report["summary"].get("high", 0)
+        risk_level = "CRITICAL" if crit_count > 0 else "HIGH" if high_count > 0 else "MEDIUM"
+        report["risk_level"] = risk_level
 
-    # Add overall risk level
-    crit_count = report["summary"].get("critical", 0)
-    high_count = report["summary"].get("high", 0)
-    risk_level = "CRITICAL" if crit_count > 0 else "HIGH" if high_count > 0 else "MEDIUM"
-    report["risk_level"] = risk_level
-
-    return report
+        return report
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_fuzz_report"}

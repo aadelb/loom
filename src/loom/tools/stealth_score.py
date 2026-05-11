@@ -50,22 +50,29 @@ async def research_stealth_score(
         - detection_risk: "low" | "medium" | "high" | "critical"
         - suggestions: list of up to 5 improvements
     """
-    logger.info(
-        "stealth_score_start strategy=%s orig_len=%d reframed_len=%d",
-        strategy_name or "unknown",
-        len(original_prompt),
-        len(reframed_prompt),
-    )
+    try:
+        logger.info(
+            "stealth_score_start strategy=%s orig_len=%d reframed_len=%d",
+            strategy_name or "unknown",
+            len(original_prompt),
+            len(reframed_prompt),
+        )
 
-    calculator = StealthCalculator()
-    result = calculator.score(original_prompt, reframed_prompt, strategy_name)
+        calculator = StealthCalculator()
+        result = calculator.score(original_prompt, reframed_prompt, strategy_name)
 
-    logger.info(
-        "stealth_score_complete strategy=%s total=%.2f risk=%s patterns=%d",
-        strategy_name or "unknown",
-        result["total_stealth"],
-        result["detection_risk"],
-        len(result["detected_patterns"]),
-    )
+        logger.info(
+            "stealth_score_complete strategy=%s total=%.2f risk=%s patterns=%d",
+            strategy_name or "unknown",
+            result["total_stealth"],
+            result["detection_risk"],
+            len(result["detected_patterns"]),
+        )
 
-    return result
+        return result
+    except Exception as exc:
+        logger.error("stealth_score_error: %s", exc, exc_info=True)
+        return {
+            "error": str(exc),
+            "tool": "research_stealth_score",
+        }

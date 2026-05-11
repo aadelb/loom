@@ -452,18 +452,25 @@ def research_strategy_oracle(
         - training_status: Whether oracle was trained on historical data
         - timestamp: Prediction timestamp
     """
-    if top_k < 1 or top_k > 10:
-        top_k = 5
+    try:
+        if top_k < 1 or top_k > 10:
+            top_k = 5
 
-    oracle = StrategyOracle()
-    training_info = oracle.train()
+        oracle = StrategyOracle()
+        training_info = oracle.train()
 
-    predictions = oracle.predict(query, model_name, top_k)
+        predictions = oracle.predict(query, model_name, top_k)
 
-    return {
-        "predictions": predictions,
-        "model_name": model_name,
-        "query_length": len(query),
-        "training_status": training_info,
-        "timestamp": datetime.now(UTC).isoformat(),
-    }
+        return {
+            "predictions": predictions,
+            "model_name": model_name,
+            "query_length": len(query),
+            "training_status": training_info,
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+    except Exception as exc:
+        logger.error("strategy_oracle_error: %s", exc, exc_info=True)
+        return {
+            "error": str(exc),
+            "tool": "research_strategy_oracle",
+        }

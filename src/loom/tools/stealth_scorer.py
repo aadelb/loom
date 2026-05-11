@@ -81,104 +81,111 @@ async def research_stealth_score_heuristic(
         - recommendation: str ("HIGHLY_STEALTHY"|"STEALTHY"|"MODERATE"|"SUSPICIOUS"|"DETECTED")
         - detection_probability: float (0-1, probability guardrail catches it)
     """
-    logger.info(
-        "stealth_score_heuristic_start strategy=%s prompt_len=%d",
-        strategy or "unknown",
-        len(prompt),
-    )
+    try:
+        logger.info(
+            "stealth_score_heuristic_start strategy=%s prompt_len=%d",
+            strategy or "unknown",
+            len(prompt),
+        )
 
-    # Start at maximum stealth
-    score = 10.0
-    deductions: list[tuple[str, float]] = []
-    factors: dict[str, float] = {}
+        # Start at maximum stealth
+        score = 10.0
+        deductions: list[tuple[str, float]] = []
+        factors: dict[str, float] = {}
 
-    # 1. PATTERN MATCHING: Check for known attack signatures
-    pattern_score = _score_pattern_matching(prompt)
-    factors["pattern_matching"] = pattern_score
-    pattern_deduction = (10.0 - pattern_score) * 0.3  # Weight: 30%
-    deductions.append(("Attack patterns detected", pattern_deduction))
-    score -= pattern_deduction
+        # 1. PATTERN MATCHING: Check for known attack signatures
+        pattern_score = _score_pattern_matching(prompt)
+        factors["pattern_matching"] = pattern_score
+        pattern_deduction = (10.0 - pattern_score) * 0.3  # Weight: 30%
+        deductions.append(("Attack patterns detected", pattern_deduction))
+        score -= pattern_deduction
 
-    # 2. LENGTH ANALYSIS: Check for suspicious length
-    length_score = _score_length_analysis(prompt)
-    factors["length_analysis"] = length_score
-    length_deduction = (10.0 - length_score) * 0.15  # Weight: 15%
-    deductions.append(("Suspicious length", length_deduction))
-    score -= length_deduction
+        # 2. LENGTH ANALYSIS: Check for suspicious length
+        length_score = _score_length_analysis(prompt)
+        factors["length_analysis"] = length_score
+        length_deduction = (10.0 - length_score) * 0.15  # Weight: 15%
+        deductions.append(("Suspicious length", length_deduction))
+        score -= length_deduction
 
-    # 3. AUTHORITY DENSITY: Check for excessive credibility claims
-    authority_score = _score_authority_density(prompt)
-    factors["authority_density"] = authority_score
-    authority_deduction = (10.0 - authority_score) * 0.2  # Weight: 20%
-    deductions.append(("Authority overload", authority_deduction))
-    score -= authority_deduction
+        # 3. AUTHORITY DENSITY: Check for excessive credibility claims
+        authority_score = _score_authority_density(prompt)
+        factors["authority_density"] = authority_score
+        authority_deduction = (10.0 - authority_score) * 0.2  # Weight: 20%
+        deductions.append(("Authority overload", authority_deduction))
+        score -= authority_deduction
 
-    # 4. KEYWORD DENSITY: Check for safety/ethics keyword stuffing
-    keyword_score = _score_keyword_density(prompt)
-    factors["keyword_density"] = keyword_score
-    keyword_deduction = (10.0 - keyword_score) * 0.15  # Weight: 15%
-    deductions.append(("Keyword stuffing", keyword_deduction))
-    score -= keyword_deduction
+        # 4. KEYWORD DENSITY: Check for safety/ethics keyword stuffing
+        keyword_score = _score_keyword_density(prompt)
+        factors["keyword_density"] = keyword_score
+        keyword_deduction = (10.0 - keyword_score) * 0.15  # Weight: 15%
+        deductions.append(("Keyword stuffing", keyword_deduction))
+        score -= keyword_deduction
 
-    # 5. NATURALNESS: Does it read like human text?
-    naturalness_score = _score_naturalness(prompt)
-    factors["naturalness"] = naturalness_score
-    naturalness_deduction = (10.0 - naturalness_score) * 0.1  # Weight: 10%
-    deductions.append(("Unnatural phrasing", naturalness_deduction))
-    score -= naturalness_deduction
+        # 5. NATURALNESS: Does it read like human text?
+        naturalness_score = _score_naturalness(prompt)
+        factors["naturalness"] = naturalness_score
+        naturalness_deduction = (10.0 - naturalness_score) * 0.1  # Weight: 10%
+        deductions.append(("Unnatural phrasing", naturalness_deduction))
+        score -= naturalness_deduction
 
-    # 6. STRUCTURE: Check for obvious formatting markers
-    structure_score = _score_structure(prompt)
-    factors["structure"] = structure_score
-    structure_deduction = (10.0 - structure_score) * 0.1  # Weight: 10%
-    deductions.append(("Obvious structure", structure_deduction))
-    score -= structure_deduction
+        # 6. STRUCTURE: Check for obvious formatting markers
+        structure_score = _score_structure(prompt)
+        factors["structure"] = structure_score
+        structure_deduction = (10.0 - structure_score) * 0.1  # Weight: 10%
+        deductions.append(("Obvious structure", structure_deduction))
+        score -= structure_deduction
 
-    # Clamp score to [0, 10]
-    final_score = max(0.0, min(10.0, score))
+        # Clamp score to [0, 10]
+        final_score = max(0.0, min(10.0, score))
 
-    # Determine recommendation based on final score
-    if final_score >= 8.5:
-        recommendation = "HIGHLY_STEALTHY"
-        detection_prob = 0.05
-    elif final_score >= 7.0:
-        recommendation = "STEALTHY"
-        detection_prob = 0.15
-    elif final_score >= 5.0:
-        recommendation = "MODERATE"
-        detection_prob = 0.40
-    elif final_score >= 3.0:
-        recommendation = "SUSPICIOUS"
-        detection_prob = 0.70
-    else:
-        recommendation = "DETECTED"
-        detection_prob = 0.95
+        # Determine recommendation based on final score
+        if final_score >= 8.5:
+            recommendation = "HIGHLY_STEALTHY"
+            detection_prob = 0.05
+        elif final_score >= 7.0:
+            recommendation = "STEALTHY"
+            detection_prob = 0.15
+        elif final_score >= 5.0:
+            recommendation = "MODERATE"
+            detection_prob = 0.40
+        elif final_score >= 3.0:
+            recommendation = "SUSPICIOUS"
+            detection_prob = 0.70
+        else:
+            recommendation = "DETECTED"
+            detection_prob = 0.95
 
-    # Filter deductions to only include meaningful ones
-    meaningful_deductions = [
-        (reason, amount) for reason, amount in deductions if amount > 0.05
-    ]
+        # Filter deductions to only include meaningful ones
+        meaningful_deductions = [
+            (reason, amount) for reason, amount in deductions if amount > 0.05
+        ]
 
-    result = {
-        "stealth_score": round(final_score, 2),
-        "factors": {k: round(v, 2) for k, v in factors.items()},
-        "deductions": [
-            {"reason": reason, "amount": round(amount, 2)}
-            for reason, amount in meaningful_deductions
-        ],
-        "recommendation": recommendation,
-        "detection_probability": round(detection_prob, 2),
-        "strategy": strategy or "unknown",
-    }
+        result = {
+            "stealth_score": round(final_score, 2),
+            "factors": {k: round(v, 2) for k, v in factors.items()},
+            "deductions": [
+                {"reason": reason, "amount": round(amount, 2)}
+                for reason, amount in meaningful_deductions
+            ],
+            "recommendation": recommendation,
+            "detection_probability": round(detection_prob, 2),
+            "strategy": strategy or "unknown",
+        }
 
-    logger.info(
-        "stealth_score_heuristic_complete strategy=%s score=%.2f recommendation=%s",
-        strategy or "unknown",
-        final_score,
-        recommendation,
-    )
+        logger.info(
+            "stealth_score_heuristic_complete strategy=%s score=%.2f recommendation=%s",
+            strategy or "unknown",
+            final_score,
+            recommendation,
+        )
 
-    return result
+        return result
+    except Exception as exc:
+        logger.error("stealth_score_heuristic_error: %s", exc, exc_info=True)
+        return {
+            "error": str(exc),
+            "tool": "research_stealth_score_heuristic",
+        }
 
 
 def _score_pattern_matching(prompt: str) -> float:

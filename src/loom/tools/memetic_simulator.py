@@ -332,34 +332,41 @@ async def research_memetic_simulate(
         >>> result['R0']  # 2.5 (reproduction number)
         >>> result['recommendation']  # Deployment guidance
     """
-    # Validate inputs
-    if not isinstance(idea, str) or not idea.strip():
-        raise ValueError("idea must be a non-empty string")
+    try:
+        # Validate inputs
+        if not isinstance(idea, str) or not idea.strip():
+            raise ValueError("idea must be a non-empty string")
 
-    if population_size < 100 or population_size > 10000:
-        raise ValueError("population_size must be 100-10000")
+        if population_size < 100 or population_size > 10000:
+            raise ValueError("population_size must be 100-10000")
 
-    if generations < 10 or generations > 500:
-        raise ValueError("generations must be 10-500")
+        if generations < 10 or generations > 500:
+            raise ValueError("generations must be 10-500")
 
-    if not (0.0 <= mutation_rate <= 1.0):
-        raise ValueError("mutation_rate must be 0.0-1.0")
+        if not (0.0 <= mutation_rate <= 1.0):
+            raise ValueError("mutation_rate must be 0.0-1.0")
 
-    # Run simulation
-    simulator = MemeticSimulator(
-        population_size=population_size,
-        generations=generations,
-        mutation_rate=mutation_rate,
-    )
+        # Run simulation
+        simulator = MemeticSimulator(
+            population_size=population_size,
+            generations=generations,
+            mutation_rate=mutation_rate,
+        )
 
-    results = simulator.simulate(idea.strip())
+        results = simulator.simulate(idea.strip())
 
-    logger.info(
-        "memetic_simulate completed",
-        idea=idea[:50],
-        r0=results["R0"],
-        virality_class=results["virality_class"],
-        reach_pct=results["total_reach_pct"],
-    )
+        logger.info(
+            "memetic_simulate completed",
+            idea=idea[:50],
+            r0=results["R0"],
+            virality_class=results["virality_class"],
+            reach_pct=results["total_reach_pct"],
+        )
 
-    return results
+        return results
+    except Exception as exc:
+        logger.error("research_memetic_simulate failed: %s", exc)
+        return {
+            "error": str(exc),
+            "tool": "research_memetic_simulate",
+        }

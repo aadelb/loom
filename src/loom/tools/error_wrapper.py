@@ -130,24 +130,27 @@ async def research_error_stats() -> dict[str, Any]:
     Returns:
         Dict with per-tool error statistics including count, error_types, and timestamps
     """
-    if not _error_stats:
+    try:
+        if not _error_stats:
+            return {
+                "status": "ok",
+                "message": "No errors recorded",
+                "total_errors": 0,
+                "total_tools_with_errors": 0,
+                "error_data": {},
+            }
+
+        total_count = sum(stats["count"] for stats in _error_stats.values())
+
         return {
             "status": "ok",
-            "message": "No errors recorded",
-            "total_errors": 0,
-            "total_tools_with_errors": 0,
-            "error_data": {},
+            "timestamp": datetime.now(UTC).isoformat(),
+            "total_errors": total_count,
+            "total_tools_with_errors": len(_error_stats),
+            "error_data": dict(_error_stats),
         }
-
-    total_count = sum(stats["count"] for stats in _error_stats.values())
-
-    return {
-        "status": "ok",
-        "timestamp": datetime.now(UTC).isoformat(),
-        "total_errors": total_count,
-        "total_tools_with_errors": len(_error_stats),
-        "error_data": dict(_error_stats),
-    }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_error_stats"}
 
 
 async def research_error_clear() -> dict[str, Any]:
@@ -159,15 +162,18 @@ async def research_error_clear() -> dict[str, Any]:
     Returns:
         Dict with cleared status and count of previously recorded errors
     """
-    global _error_stats
-    previous_count = sum(stats["count"] for stats in _error_stats.values())
-    _error_stats = {}
+    try:
+        global _error_stats
+        previous_count = sum(stats["count"] for stats in _error_stats.values())
+        _error_stats = {}
 
-    log.info(f"Error statistics cleared: {previous_count} errors removed")
+        log.info(f"Error statistics cleared: {previous_count} errors removed")
 
-    return {
-        "status": "ok",
-        "cleared": True,
-        "previous_error_count": previous_count,
-        "timestamp": datetime.now(UTC).isoformat(),
-    }
+        return {
+            "status": "ok",
+            "cleared": True,
+            "previous_error_count": previous_count,
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_error_clear"}

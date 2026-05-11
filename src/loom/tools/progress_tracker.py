@@ -66,36 +66,43 @@ async def research_progress_create(
     Returns:
         dict with investigation_id, name, total_steps, progress_pct, created_at
     """
-    if not investigation or not investigation.strip():
-        return {"error": "Investigation name is required"}
-    if total_steps < 1 or total_steps > 10000:
-        return {"error": "total_steps must be between 1 and 10000"}
+    try:
+        if not investigation or not investigation.strip():
+            return {"error": "Investigation name is required"}
+        if total_steps < 1 or total_steps > 10000:
+            return {"error": "total_steps must be between 1 and 10000"}
 
-    inv_id = str(uuid.uuid4())[:8]
-    now = datetime.now(UTC).isoformat()
+        inv_id = str(uuid.uuid4())[:8]
+        now = datetime.now(UTC).isoformat()
 
-    data = _load_investigations()
-    data[inv_id] = {
-        "id": inv_id,
-        "name": investigation.strip(),
-        "description": description.strip(),
-        "total_steps": total_steps,
-        "current_step": 0,
-        "progress_pct": 0,
-        "notes": [],
-        "created_at": now,
-        "last_updated": now,
-        "completed_at": None,
-    }
-    _save_investigations(data)
+        data = _load_investigations()
+        data[inv_id] = {
+            "id": inv_id,
+            "name": investigation.strip(),
+            "description": description.strip(),
+            "total_steps": total_steps,
+            "current_step": 0,
+            "progress_pct": 0,
+            "notes": [],
+            "created_at": now,
+            "last_updated": now,
+            "completed_at": None,
+        }
+        _save_investigations(data)
 
-    return {
-        "investigation_id": inv_id,
-        "name": investigation.strip(),
-        "total_steps": total_steps,
-        "progress_pct": 0,
-        "created_at": now,
-    }
+        return {
+            "investigation_id": inv_id,
+            "name": investigation.strip(),
+            "total_steps": total_steps,
+            "progress_pct": 0,
+            "created_at": now,
+        }
+    except Exception as exc:
+        log.exception("Error in research_progress_create")
+        return {
+            "error": str(exc),
+            "tool": "research_progress_create",
+        }
 
 
 async def research_progress_update(
@@ -113,51 +120,58 @@ async def research_progress_update(
     Returns:
         dict with investigation_id, step, total_steps, progress_pct, eta_hours
     """
-    data = _load_investigations()
-    if investigation_id not in data:
-        return {"error": f"Investigation {investigation_id} not found"}
+    try:
+        data = _load_investigations()
+        if investigation_id not in data:
+            return {"error": f"Investigation {investigation_id} not found"}
 
-    inv = data[investigation_id]
-    total = inv["total_steps"]
+        inv = data[investigation_id]
+        total = inv["total_steps"]
 
-    if step < 0 or step > total:
-        return {"error": f"step must be between 0 and {total}"}
+        if step < 0 or step > total:
+            return {"error": f"step must be between 0 and {total}"}
 
-    inv["current_step"] = step
-    inv["progress_pct"] = int((step / total * 100)) if total > 0 else 0
-    inv["last_updated"] = datetime.now(UTC).isoformat()
+        inv["current_step"] = step
+        inv["progress_pct"] = int((step / total * 100)) if total > 0 else 0
+        inv["last_updated"] = datetime.now(UTC).isoformat()
 
-    if note:
-        inv["notes"].append({
+        if note:
+            inv["notes"].append({
+                "step": step,
+                "text": note.strip(),
+                "timestamp": inv["last_updated"],
+            })
+
+        if step >= total:
+            inv["completed_at"] = inv["last_updated"]
+
+        _save_investigations(data)
+
+        created = datetime.fromisoformat(inv["created_at"])
+        now = datetime.now(UTC)
+        elapsed = (now - created).total_seconds() / 3600
+        if step > 0:
+            rate = elapsed / step
+            eta_hours = int(rate * (total - step))
+        else:
+            eta_hours = 0
+
+        return {
+            "investigation_id": investigation_id,
+            "name": inv["name"],
             "step": step,
-            "text": note.strip(),
-            "timestamp": inv["last_updated"],
-        })
-
-    if step >= total:
-        inv["completed_at"] = inv["last_updated"]
-
-    _save_investigations(data)
-
-    created = datetime.fromisoformat(inv["created_at"])
-    now = datetime.now(UTC)
-    elapsed = (now - created).total_seconds() / 3600
-    if step > 0:
-        rate = elapsed / step
-        eta_hours = int(rate * (total - step))
-    else:
-        eta_hours = 0
-
-    return {
-        "investigation_id": investigation_id,
-        "name": inv["name"],
-        "step": step,
-        "total_steps": total,
-        "progress_pct": inv["progress_pct"],
-        "note": note,
-        "estimated_completion_hours": eta_hours,
-        "last_updated": inv["last_updated"],
-    }
+            "total_steps": total,
+            "progress_pct": inv["progress_pct"],
+            "note": note,
+            "estimated_completion_hours": eta_hours,
+            "last_updated": inv["last_updated"],
+        }
+    except Exception as exc:
+        log.exception("Error in research_progress_update")
+        return {
+            "error": str(exc),
+            "tool": "research_progress_update",
+        }
 
 
 async def research_progress_dashboard() -> dict[str, Any]:
@@ -166,42 +180,49 @@ async def research_progress_dashboard() -> dict[str, Any]:
     Returns:
         dict with active (list), completed (count), total (count)
     """
-    data = _load_investigations()
+    try:
+        data = _load_investigations()
 
-    active = []
-    completed_count = 0
+        active = []
+        completed_count = 0
 
-    for inv_id, inv in data.items():
-        is_done = inv.get("completed_at") is not None
-        if is_done:
-            completed_count += 1
-        else:
-            created = datetime.fromisoformat(inv["created_at"])
-            last_updated = datetime.fromisoformat(inv["last_updated"])
-            now = datetime.now(UTC)
-            elapsed_hours = (now - created).total_seconds() / 3600
-
-            step = inv["current_step"]
-            total = inv["total_steps"]
-            if step > 0:
-                rate = elapsed_hours / step
-                eta_hours = int(rate * (total - step))
+        for inv_id, inv in data.items():
+            is_done = inv.get("completed_at") is not None
+            if is_done:
+                completed_count += 1
             else:
-                eta_hours = 0
+                created = datetime.fromisoformat(inv["created_at"])
+                last_updated = datetime.fromisoformat(inv["last_updated"])
+                now = datetime.now(UTC)
+                elapsed_hours = (now - created).total_seconds() / 3600
 
-            active.append({
-                "id": inv_id,
-                "name": inv["name"],
-                "progress_pct": inv["progress_pct"],
-                "step": step,
-                "total_steps": total,
-                "last_updated": last_updated.isoformat(),
-                "eta_hours": eta_hours,
-                "notes_count": len(inv["notes"]),
-            })
+                step = inv["current_step"]
+                total = inv["total_steps"]
+                if step > 0:
+                    rate = elapsed_hours / step
+                    eta_hours = int(rate * (total - step))
+                else:
+                    eta_hours = 0
 
-    return {
-        "active": active,
-        "completed": completed_count,
-        "total": len(data),
-    }
+                active.append({
+                    "id": inv_id,
+                    "name": inv["name"],
+                    "progress_pct": inv["progress_pct"],
+                    "step": step,
+                    "total_steps": total,
+                    "last_updated": last_updated.isoformat(),
+                    "eta_hours": eta_hours,
+                    "notes_count": len(inv["notes"]),
+                })
+
+        return {
+            "active": active,
+            "completed": completed_count,
+            "total": len(data),
+        }
+    except Exception as exc:
+        log.exception("Error in research_progress_dashboard")
+        return {
+            "error": str(exc),
+            "tool": "research_progress_dashboard",
+        }

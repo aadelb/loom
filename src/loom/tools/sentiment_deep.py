@@ -149,81 +149,84 @@ async def research_sentiment_deep(
     Returns:
         Dict with emotions, valence/arousal metrics, and manipulation scores.
     """
-    # Validate input
-    if not text or not isinstance(text, str):
-        logger.warning("research_sentiment_deep: empty or invalid text")
-        return {
-            "emotions": dict.fromkeys(_EMOTION_KEYWORDS, 0.0),
-            "dominant_emotion": "neutral",
-            "valence": 0.0,
-            "arousal": 0.0,
-            "manipulation": {
-                "score": 0.0,
-                "urgency": 0.0,
-                "fear_appeal": 0.0,
-                "social_proof": 0.0,
-                "authority_claim": 0.0,
-                "techniques_found": [],
-            },
-            "word_count": 0,
-            "language": language,
-        }
+    try:
+        # Validate input
+        if not text or not isinstance(text, str):
+            logger.warning("research_sentiment_deep: empty or invalid text")
+            return {
+                "emotions": dict.fromkeys(_EMOTION_KEYWORDS, 0.0),
+                "dominant_emotion": "neutral",
+                "valence": 0.0,
+                "arousal": 0.0,
+                "manipulation": {
+                    "score": 0.0,
+                    "urgency": 0.0,
+                    "fear_appeal": 0.0,
+                    "social_proof": 0.0,
+                    "authority_claim": 0.0,
+                    "techniques_found": [],
+                },
+                "word_count": 0,
+                "language": language,
+            }
 
-    # Run async work (currently only CPU-bound keyword matching)
-    loop = asyncio.get_running_loop()
+        # Run async work (currently only CPU-bound keyword matching)
+        loop = asyncio.get_running_loop()
 
-    def _analyze() -> dict[str, Any]:
-        # Emotion scoring
-        emotions = {}
-        for emotion, keywords in _EMOTION_KEYWORDS.items():
-            emotions[emotion] = _score_emotion_category(text, keywords)
+        def _analyze() -> dict[str, Any]:
+            # Emotion scoring
+            emotions = {}
+            for emotion, keywords in _EMOTION_KEYWORDS.items():
+                emotions[emotion] = _score_emotion_category(text, keywords)
 
-        # Dominant emotion
-        dominant_emotion = max(emotions.items(), key=lambda x: x[1])[0]
-        if emotions[dominant_emotion] < 0.01:
-            dominant_emotion = "neutral"
+            # Dominant emotion
+            dominant_emotion = max(emotions.items(), key=lambda x: x[1])[0]
+            if emotions[dominant_emotion] < 0.01:
+                dominant_emotion = "neutral"
 
-        # Valence: joy + trust + anticipation (positive) vs. fear + anger + sadness + disgust (negative)
-        positive_valence = emotions["joy"] + emotions["trust"] + emotions["anticipation"]
-        negative_valence = emotions["fear"] + emotions["anger"] + emotions["sadness"] + emotions["disgust"]
-        valence = (positive_valence - negative_valence) / max(1.0, positive_valence + negative_valence)
+            # Valence: joy + trust + anticipation (positive) vs. fear + anger + sadness + disgust (negative)
+            positive_valence = emotions["joy"] + emotions["trust"] + emotions["anticipation"]
+            negative_valence = emotions["fear"] + emotions["anger"] + emotions["sadness"] + emotions["disgust"]
+            valence = (positive_valence - negative_valence) / max(1.0, positive_valence + negative_valence)
 
-        # Arousal: intensity (anger, fear, joy, surprise high; sadness, trust low)
-        arousal = (emotions["anger"] + emotions["fear"] + emotions["joy"] + emotions["surprise"]) / 4.0
+            # Arousal: intensity (anger, fear, joy, surprise high; sadness, trust low)
+            arousal = (emotions["anger"] + emotions["fear"] + emotions["joy"] + emotions["surprise"]) / 4.0
 
-        # Manipulation detection
-        urgency_score, urgency_found = _detect_pattern_presence(text, _URGENCY_PATTERNS)
-        fear_appeal_score, fear_found = _detect_pattern_presence(text, _FEAR_APPEAL_PATTERNS)
-        social_proof_score, social_proof_found = _detect_pattern_presence(text, _SOCIAL_PROOF_PATTERNS)
-        authority_score, authority_found = _detect_pattern_presence(text, _AUTHORITY_PATTERNS)
+            # Manipulation detection
+            urgency_score, urgency_found = _detect_pattern_presence(text, _URGENCY_PATTERNS)
+            fear_appeal_score, fear_found = _detect_pattern_presence(text, _FEAR_APPEAL_PATTERNS)
+            social_proof_score, social_proof_found = _detect_pattern_presence(text, _SOCIAL_PROOF_PATTERNS)
+            authority_score, authority_found = _detect_pattern_presence(text, _AUTHORITY_PATTERNS)
 
-        all_techniques = urgency_found + fear_found + social_proof_found + authority_found
-        manipulation_score = (urgency_score + fear_appeal_score + social_proof_score + authority_score) / 4.0
+            all_techniques = urgency_found + fear_found + social_proof_found + authority_found
+            manipulation_score = (urgency_score + fear_appeal_score + social_proof_score + authority_score) / 4.0
 
-        word_count = len(text.split())
+            word_count = len(text.split())
 
-        return {
-            "emotions": emotions,
-            "dominant_emotion": dominant_emotion,
-            "valence": round(valence, 3),
-            "arousal": round(arousal, 3),
-            "manipulation": {
-                "score": round(manipulation_score, 3),
-                "urgency": round(urgency_score, 3),
-                "fear_appeal": round(fear_appeal_score, 3),
-                "social_proof": round(social_proof_score, 3),
-                "authority_claim": round(authority_score, 3),
-                "techniques_found": all_techniques,
-            },
-            "word_count": word_count,
-            "language": language,
-        }
+            return {
+                "emotions": emotions,
+                "dominant_emotion": dominant_emotion,
+                "valence": round(valence, 3),
+                "arousal": round(arousal, 3),
+                "manipulation": {
+                    "score": round(manipulation_score, 3),
+                    "urgency": round(urgency_score, 3),
+                    "fear_appeal": round(fear_appeal_score, 3),
+                    "social_proof": round(social_proof_score, 3),
+                    "authority_claim": round(authority_score, 3),
+                    "techniques_found": all_techniques,
+                },
+                "word_count": word_count,
+                "language": language,
+            }
 
-    result = await loop.run_in_executor(None, _analyze)
-    logger.info(
-        "sentiment_deep_analyzed words=%d emotion=%s manipulation=%.2f",
-        result["word_count"],
-        result["dominant_emotion"],
-        result["manipulation"]["score"],
-    )
-    return result
+        result = await loop.run_in_executor(None, _analyze)
+        logger.info(
+            "sentiment_deep_analyzed words=%d emotion=%s manipulation=%.2f",
+            result["word_count"],
+            result["dominant_emotion"],
+            result["manipulation"]["score"],
+        )
+        return result
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_sentiment_deep"}

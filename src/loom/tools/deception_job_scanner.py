@@ -207,129 +207,132 @@ def research_deception_job_scan(
         Dict with risk_score (0-100), red_flags list, green_flags list,
         company_age_days, and glassdoor_mentions
     """
-    if not job_text:
-        return {
-            "error": "job_text is required",
-            "risk_score": 0,
-            "red_flags": [],
-            "green_flags": [],
-            "company_age_days": None,
-            "glassdoor_mentions": 0,
-        }
+    try:
+        if not job_text:
+            return {
+                "error": "job_text is required",
+                "risk_score": 0,
+                "red_flags": [],
+                "green_flags": [],
+                "company_age_days": None,
+                "glassdoor_mentions": 0,
+            }
 
-    if len(job_text) < 50:
-        return {
-            "error": "job_text must be at least 50 characters",
-            "risk_score": 0,
-            "red_flags": [],
-            "green_flags": [],
-            "company_age_days": None,
-            "glassdoor_mentions": 0,
-        }
+        if len(job_text) < 50:
+            return {
+                "error": "job_text must be at least 50 characters",
+                "risk_score": 0,
+                "red_flags": [],
+                "green_flags": [],
+                "company_age_days": None,
+                "glassdoor_mentions": 0,
+            }
 
-    red_flags: list[str] = []
-    green_flags: list[str] = []
-    risk_score = 0
+        red_flags: list[str] = []
+        green_flags: list[str] = []
+        risk_score = 0
 
-    # Check salary information
-    salary_info = _extract_salary_range(job_text)
-    if salary_info is None:
-        red_flags.append("no_salary_mentioned")
-        risk_score += 15
-    elif salary_info[2]:  # is_vague
-        red_flags.append("vague_salary_range")
-        risk_score += 10
-    else:
-        green_flags.append("explicit_salary_range")
-
-    # Check for urgency language
-    urgency_count = _count_pattern_matches(job_text, URGENCY_KEYWORDS)
-    if urgency_count >= 3:
-        red_flags.append("excessive_urgency_language")
-        risk_score += 20
-    elif urgency_count >= 1:
-        red_flags.append("some_urgency_language")
-        risk_score += 5
-
-    # Check for MLM patterns
-    mlm_count = _count_pattern_matches(job_text, MLM_KEYWORDS)
-    if mlm_count >= 2:
-        red_flags.append("mlm_characteristics")
-        risk_score += 25
-    elif mlm_count >= 1:
-        red_flags.append("potential_mlm_elements")
-        risk_score += 10
-
-    # Check for advance fee language
-    fee_count = _count_pattern_matches(job_text, ADVANCE_FEE_KEYWORDS)
-    if fee_count >= 2:
-        red_flags.append("advance_fee_scam_indicators")
-        risk_score += 30
-    elif fee_count >= 1:
-        red_flags.append("potential_fees_mentioned")
-        risk_score += 10
-
-    # Check for green flags
-    green_count = _count_pattern_matches(job_text, GREEN_FLAG_KEYWORDS)
-    if green_count >= 3:
-        green_flags.append("comprehensive_benefits_mentioned")
-        risk_score -= 10
-    elif green_count >= 1:
-        green_flags.append("some_benefits_mentioned")
-        risk_score -= 5
-
-    # Extract company name and check domain age
-    company_match = re.search(
-        r"(?:company|employer|hiring|at)[\s:]*([A-Za-z0-9\s&\-]+?)(?:\.|,|$)",
-        job_text,
-        re.IGNORECASE,
-    )
-    company_name = company_match.group(1).strip() if company_match else None
-    company_age_days = None
-    glassdoor_mentions = 0
-
-    if company_name and len(company_name) > 2 and len(company_name) < 100:
-        # Try to get WHOIS age
-        company_age_days = _estimate_domain_age(company_name)
-        if company_age_days is not None and company_age_days < 30:
-            red_flags.append("brand_new_domain")
+        # Check salary information
+        salary_info = _extract_salary_range(job_text)
+        if salary_info is None:
+            red_flags.append("no_salary_mentioned")
             risk_score += 15
-        elif company_age_days is not None and company_age_days < 180:
-            red_flags.append("recently_registered_domain")
+        elif salary_info[2]:  # is_vague
+            red_flags.append("vague_salary_range")
+            risk_score += 10
+        else:
+            green_flags.append("explicit_salary_range")
+
+        # Check for urgency language
+        urgency_count = _count_pattern_matches(job_text, URGENCY_KEYWORDS)
+        if urgency_count >= 3:
+            red_flags.append("excessive_urgency_language")
+            risk_score += 20
+        elif urgency_count >= 1:
+            red_flags.append("some_urgency_language")
             risk_score += 5
-        elif company_age_days is not None:
-            green_flags.append("established_domain")
+
+        # Check for MLM patterns
+        mlm_count = _count_pattern_matches(job_text, MLM_KEYWORDS)
+        if mlm_count >= 2:
+            red_flags.append("mlm_characteristics")
+            risk_score += 25
+        elif mlm_count >= 1:
+            red_flags.append("potential_mlm_elements")
+            risk_score += 10
+
+        # Check for advance fee language
+        fee_count = _count_pattern_matches(job_text, ADVANCE_FEE_KEYWORDS)
+        if fee_count >= 2:
+            red_flags.append("advance_fee_scam_indicators")
+            risk_score += 30
+        elif fee_count >= 1:
+            red_flags.append("potential_fees_mentioned")
+            risk_score += 10
+
+        # Check for green flags
+        green_count = _count_pattern_matches(job_text, GREEN_FLAG_KEYWORDS)
+        if green_count >= 3:
+            green_flags.append("comprehensive_benefits_mentioned")
+            risk_score -= 10
+        elif green_count >= 1:
+            green_flags.append("some_benefits_mentioned")
             risk_score -= 5
 
-        # Check Glassdoor presence
-        glassdoor_mentions = _search_company_glassdoor(company_name)
-        if glassdoor_mentions > 0:
-            green_flags.append("verified_on_glassdoor")
-            risk_score -= 10
-        else:
-            red_flags.append("no_glassdoor_presence")
-            risk_score += 10
+        # Extract company name and check domain age
+        company_match = re.search(
+            r"(?:company|employer|hiring|at)[\s:]*([A-Za-z0-9\s&\-]+?)(?:\.|,|$)",
+            job_text,
+            re.IGNORECASE,
+        )
+        company_name = company_match.group(1).strip() if company_match else None
+        company_age_days = None
+        glassdoor_mentions = 0
 
-    # Check for requirement inflation
-    requirement_match = re.findall(
-        r"(\d+)\+?\s*years?\s+of\s+experience", job_text, re.IGNORECASE
-    )
-    if requirement_match:
-        total_exp = sum(int(m) for m in requirement_match)
-        if total_exp > 20:
-            red_flags.append("excessive_experience_requirements")
-            risk_score += 10
+        if company_name and len(company_name) > 2 and len(company_name) < 100:
+            # Try to get WHOIS age
+            company_age_days = _estimate_domain_age(company_name)
+            if company_age_days is not None and company_age_days < 30:
+                red_flags.append("brand_new_domain")
+                risk_score += 15
+            elif company_age_days is not None and company_age_days < 180:
+                red_flags.append("recently_registered_domain")
+                risk_score += 5
+            elif company_age_days is not None:
+                green_flags.append("established_domain")
+                risk_score -= 5
 
-    # Clamp risk score to 0-100
-    risk_score = max(0, min(100, risk_score))
+            # Check Glassdoor presence
+            glassdoor_mentions = _search_company_glassdoor(company_name)
+            if glassdoor_mentions > 0:
+                green_flags.append("verified_on_glassdoor")
+                risk_score -= 10
+            else:
+                red_flags.append("no_glassdoor_presence")
+                risk_score += 10
 
-    return {
-        "risk_score": risk_score,
-        "red_flags": red_flags,
-        "green_flags": green_flags,
-        "company_age_days": company_age_days,
-        "glassdoor_mentions": glassdoor_mentions,
-        "company_name": company_name,
-        "job_url": job_url,
-        "analysis_timestamp": datetime.now(UTC).isoformat(),
-    }
+        # Check for requirement inflation
+        requirement_match = re.findall(
+            r"(\d+)\+?\s*years?\s+of\s+experience", job_text, re.IGNORECASE
+        )
+        if requirement_match:
+            total_exp = sum(int(m) for m in requirement_match)
+            if total_exp > 20:
+                red_flags.append("excessive_experience_requirements")
+                risk_score += 10
+
+        # Clamp risk score to 0-100
+        risk_score = max(0, min(100, risk_score))
+
+        return {
+            "risk_score": risk_score,
+            "red_flags": red_flags,
+            "green_flags": green_flags,
+            "company_age_days": company_age_days,
+            "glassdoor_mentions": glassdoor_mentions,
+            "company_name": company_name,
+            "job_url": job_url,
+            "analysis_timestamp": datetime.now(UTC).isoformat(),
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_deception_job_scan"}

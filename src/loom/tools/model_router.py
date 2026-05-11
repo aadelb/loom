@@ -314,55 +314,62 @@ async def research_route_to_model(
         >>> result["estimated_cost_usd"]
         0.0
     """
-    # Determine complexity
-    if override_complexity and override_complexity in MODEL_ROUTING:
-        complexity = override_complexity
-    else:
-        complexity = classify_query_complexity(query)
+    try:
+        # Determine complexity
+        if override_complexity and override_complexity in MODEL_ROUTING:
+            complexity = override_complexity
+        else:
+            complexity = classify_query_complexity(query)
 
-    tier_config = MODEL_ROUTING[complexity]
-    providers = tier_config["providers"]
-    recommended = providers[0] if providers else "groq"
-    alternatives = providers[1:] if len(providers) > 1 else []
+        tier_config = MODEL_ROUTING[complexity]
+        providers = tier_config["providers"]
+        recommended = providers[0] if providers else "groq"
+        alternatives = providers[1:] if len(providers) > 1 else []
 
-    # Estimate tokens and cost
-    input_tokens = estimate_token_count(query)
-    output_tokens = estimate_response_tokens(complexity)
-    estimated_cost = estimate_call_cost(complexity, recommended, query, output_tokens)
+        # Estimate tokens and cost
+        input_tokens = estimate_token_count(query)
+        output_tokens = estimate_response_tokens(complexity)
+        estimated_cost = estimate_call_cost(complexity, recommended, query, output_tokens)
 
-    result = {
-        "complexity": complexity,
-        "recommended_provider": recommended,
-        "alternatives": alternatives,
-        "tier_cost": tier_config["tier"],
-        "estimated_input_tokens": input_tokens,
-        "estimated_output_tokens": output_tokens,
-        "estimated_total_tokens": input_tokens + output_tokens,
-        "estimated_cost_usd": round(estimated_cost, 5),
-        "tier_config": {
-            "tier": tier_config["tier"],
-            "providers": tier_config["providers"],
-            "max_tokens": tier_config["max_tokens"],
-            "description": tier_config["description"],
-        },
-        "explanation": (
-            f"Query classified as {complexity} (tier: {tier_config['tier']}) "
-            f"— routing to {recommended}. "
-            f"Estimated cost: ${estimated_cost:.5f}. "
-            f"Alternative providers: {', '.join(alternatives) if alternatives else 'none'}"
-        ),
-    }
+        result = {
+            "complexity": complexity,
+            "recommended_provider": recommended,
+            "alternatives": alternatives,
+            "tier_cost": tier_config["tier"],
+            "estimated_input_tokens": input_tokens,
+            "estimated_output_tokens": output_tokens,
+            "estimated_total_tokens": input_tokens + output_tokens,
+            "estimated_cost_usd": round(estimated_cost, 5),
+            "tier_config": {
+                "tier": tier_config["tier"],
+                "providers": tier_config["providers"],
+                "max_tokens": tier_config["max_tokens"],
+                "description": tier_config["description"],
+            },
+            "explanation": (
+                f"Query classified as {complexity} (tier: {tier_config['tier']}) "
+                f"— routing to {recommended}. "
+                f"Estimated cost: ${estimated_cost:.5f}. "
+                f"Alternative providers: {', '.join(alternatives) if alternatives else 'none'}"
+            ),
+        }
 
-    logger.info(
-        "query_routed complexity=%s provider=%s cost=$%.5f tokens=%d+%d",
-        complexity,
-        recommended,
-        estimated_cost,
-        input_tokens,
-        output_tokens,
-    )
+        logger.info(
+            "query_routed complexity=%s provider=%s cost=$%.5f tokens=%d+%d",
+            complexity,
+            recommended,
+            estimated_cost,
+            input_tokens,
+            output_tokens,
+        )
 
-    return result
+        return result
+    except Exception as exc:
+        logger.error("research_route_to_model failed: %s", exc)
+        return {
+            "error": str(exc),
+            "tool": "research_route_to_model",
+        }
 
 
 def get_starting_provider(complexity: Literal["simple", "medium", "complex"]) -> str:

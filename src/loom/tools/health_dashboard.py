@@ -21,44 +21,45 @@ async def research_dashboard_html() -> dict[str, Any]:
         Dict with html (complete page), generated_at (ISO timestamp),
         metrics_summary (key metrics dict)
     """
-    from loom.tool_functions import research_health_check
-    health = await research_health_check()
-    process = psutil.Process()
-    memory_mb = round(process.memory_info().rss / (1024 * 1024), 1)
-    cpu_percent = round(process.cpu_percent(interval=0.1), 1)
+    try:
+        from loom.tool_functions import research_health_check
+        health = await research_health_check()
+        process = psutil.Process()
+        memory_mb = round(process.memory_info().rss / (1024 * 1024), 1)
+        cpu_percent = round(process.cpu_percent(interval=0.1), 1)
 
-    llm_up = sum(1 for p in health.get("llm_providers", {}).values() if p.get("status") == "up")
-    search_up = sum(1 for p in health.get("search_providers", {}).values() if p.get("status") == "up")
+        llm_up = sum(1 for p in health.get("llm_providers", {}).values() if p.get("status") == "up")
+        search_up = sum(1 for p in health.get("search_providers", {}).values() if p.get("status") == "up")
 
-    status = health.get("status", "unknown")
-    status_color = "#4CAF50" if status == "healthy" else "#FF9800" if status == "degraded" else "#F44336"
+        status = health.get("status", "unknown")
+        status_color = "#4CAF50" if status == "healthy" else "#FF9800" if status == "degraded" else "#F44336"
 
-    uptime_sec = health.get("uptime_seconds", 0)
-    uptime_str = f"{uptime_sec // 86400}d {(uptime_sec % 86400) // 3600}h {(uptime_sec % 3600) // 60}m"
+        uptime_sec = health.get("uptime_seconds", 0)
+        uptime_str = f"{uptime_sec // 86400}d {(uptime_sec % 86400) // 3600}h {(uptime_sec % 3600) // 60}m"
 
-    llm_html = "".join(
-        f'<div class="pi"><div class="ps-{"up" if p.get("status") == "up" else "dn"}"></div>{k}</div>'
-        for k, p in health.get("llm_providers", {}).items()
-    )
-    search_html = "".join(
-        f'<div class="pi"><div class="ps-{"up" if p.get("status") == "up" else "dn"}"></div>{k}</div>'
-        for k, p in health.get("search_providers", {}).items()
-    )
+        llm_html = "".join(
+            f'<div class="pi"><div class="ps-{"up" if p.get("status") == "up" else "dn"}"></div>{k}</div>'
+            for k, p in health.get("llm_providers", {}).items()
+        )
+        search_html = "".join(
+            f'<div class="pi"><div class="ps-{"up" if p.get("status") == "up" else "dn"}"></div>{k}</div>'
+            for k, p in health.get("search_providers", {}).items()
+        )
 
-    metrics_summary = {
-        "status": status,
-        "uptime_seconds": health.get("uptime_seconds", 0),
-        "tool_count": health.get("tool_count", 0),
-        "memory_mb": memory_mb,
-        "cpu_percent": cpu_percent,
-        "llm_providers_up": llm_up,
-        "search_providers_up": search_up,
-        "cache_entries": health.get("cache", {}).get("entries", 0),
-        "cache_size_mb": health.get("cache", {}).get("size_mb", 0),
-        "active_sessions": health.get("sessions", {}).get("active", 0),
-    }
+        metrics_summary = {
+            "status": status,
+            "uptime_seconds": health.get("uptime_seconds", 0),
+            "tool_count": health.get("tool_count", 0),
+            "memory_mb": memory_mb,
+            "cpu_percent": cpu_percent,
+            "llm_providers_up": llm_up,
+            "search_providers_up": search_up,
+            "cache_entries": health.get("cache", {}).get("entries", 0),
+            "cache_size_mb": health.get("cache", {}).get("size_mb", 0),
+            "active_sessions": health.get("sessions", {}).get("active", 0),
+        }
 
-    html = f"""<!DOCTYPE html>
+        html = f"""<!DOCTYPE html>
 <html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Loom Health</title><style>
 *{{margin:0;padding:0;box-sizing:border-box}}body{{background:#1a1a2e;color:#eee;font-family:system-ui,sans-serif;padding:20px;line-height:1.6}}
@@ -86,8 +87,10 @@ async def research_dashboard_html() -> dict[str, Any]:
 <div class="ft">Loom v{health.get("version", "?")} • {datetime.now(UTC).isoformat()}</div>
 </div></body></html>"""
 
-    return {
-        "html": html,
-        "generated_at": datetime.now(UTC).isoformat(),
-        "metrics_summary": metrics_summary,
-    }
+        return {
+            "html": html,
+            "generated_at": datetime.now(UTC).isoformat(),
+            "metrics_summary": metrics_summary,
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_dashboard_html"}

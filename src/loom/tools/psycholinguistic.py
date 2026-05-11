@@ -188,89 +188,95 @@ def research_psycholinguistic(
         Dict with text_length, emotional_profile, cognitive_complexity_score,
         deception_indicators, urgency_score, and threat_level.
     """
+    try:
+        text_clean = text.strip()
+        if not text_clean:
+            return {
+                "error": "text_empty",
+                "text_length": 0,
+                "author_name": author_name,
+            }
 
-    text_clean = text.strip()
-    if not text_clean:
+        # Word counts and analysis
+        text_lower = text_clean.lower()
+        word_count = len(text_clean.split())
+        sentence_count = len(re.split(r"[.!?]+", text_clean)) - 1
+        sentence_count = max(sentence_count, 1)
+
+        # Emotional analysis
+        positive_emotion_count = _count_words(text_clean, _POSITIVE_EMOTIONS)
+        negative_emotion_count = _count_words(text_clean, _NEGATIVE_EMOTIONS)
+        emotion_ratio = (
+            (positive_emotion_count - negative_emotion_count) / max(word_count, 1)
+        )
+
+        # Certainty analysis
+        certainty_count = _count_words(text_clean, _CERTAINTY_MARKERS)
+        uncertainty_count = _count_words(text_clean, _UNCERTAINTY_MARKERS)
+
+        # Anger analysis
+        anger_count = _count_words(text_clean, _ANGER_INDICATORS)
+        anger_score = min(anger_count / max(sentence_count, 1), 1.0)
+
+        # Deception indicators
+        deception_indicators = _detect_deception_indicators(text_clean)
+
+        # Cognitive complexity
+        cognitive_complexity = _calculate_cognitive_complexity(text_clean)
+
+        # Urgency score
+        urgency_score = _calculate_urgency_score(text_clean)
+
+        # Threat classification
+        threat_level = _classify_threat_level(
+            negative_emotion_count,
+            anger_score,
+            urgency_score,
+            len(deception_indicators),
+        )
+
         return {
-            "error": "text_empty",
-            "text_length": 0,
-            "author_name": author_name,
+            "text_length": len(text_clean),
+            "word_count": word_count,
+            "sentence_count": sentence_count,
+            "author_name": author_name or "unknown",
+            "emotional_profile": {
+                "positive_emotion_words": positive_emotion_count,
+                "negative_emotion_words": negative_emotion_count,
+                "emotion_ratio": min(max(emotion_ratio, -1.0), 1.0),
+                "overall_sentiment": "positive"
+                if emotion_ratio > 0.1
+                else "negative"
+                if emotion_ratio < -0.1
+                else "neutral",
+            },
+            "certainty_markers": {
+                "certainty_words": certainty_count,
+                "uncertainty_words": uncertainty_count,
+                "certainty_ratio": min(
+                    (certainty_count - uncertainty_count) / max(word_count, 1), 1.0
+                ),
+            },
+            "cognitive_complexity_score": cognitive_complexity,
+            "vocabulary_richness": _calculate_ttr(text_clean),
+            "avg_sentence_length": _calculate_avg_sentence_length(text_clean),
+            "deception_indicators": deception_indicators,
+            "urgency_score": urgency_score,
+            "anger_indicators": {
+                "anger_words": anger_count,
+                "anger_score": anger_score,
+            },
+            "threat_level": threat_level,
+            "threat_indicators_summary": {
+                "negative_emotions": negative_emotion_count > 3,
+                "high_anger": anger_score > 0.3,
+                "high_urgency": urgency_score > 0.4,
+                "deception_patterns": len(deception_indicators) > 0,
+            },
         }
-
-    # Word counts and analysis
-    text_lower = text_clean.lower()
-    word_count = len(text_clean.split())
-    sentence_count = len(re.split(r"[.!?]+", text_clean)) - 1
-    sentence_count = max(sentence_count, 1)
-
-    # Emotional analysis
-    positive_emotion_count = _count_words(text_clean, _POSITIVE_EMOTIONS)
-    negative_emotion_count = _count_words(text_clean, _NEGATIVE_EMOTIONS)
-    emotion_ratio = (
-        (positive_emotion_count - negative_emotion_count) / max(word_count, 1)
-    )
-
-    # Certainty analysis
-    certainty_count = _count_words(text_clean, _CERTAINTY_MARKERS)
-    uncertainty_count = _count_words(text_clean, _UNCERTAINTY_MARKERS)
-
-    # Anger analysis
-    anger_count = _count_words(text_clean, _ANGER_INDICATORS)
-    anger_score = min(anger_count / max(sentence_count, 1), 1.0)
-
-    # Deception indicators
-    deception_indicators = _detect_deception_indicators(text_clean)
-
-    # Cognitive complexity
-    cognitive_complexity = _calculate_cognitive_complexity(text_clean)
-
-    # Urgency score
-    urgency_score = _calculate_urgency_score(text_clean)
-
-    # Threat classification
-    threat_level = _classify_threat_level(
-        negative_emotion_count,
-        anger_score,
-        urgency_score,
-        len(deception_indicators),
-    )
-
-    return {
-        "text_length": len(text_clean),
-        "word_count": word_count,
-        "sentence_count": sentence_count,
-        "author_name": author_name or "unknown",
-        "emotional_profile": {
-            "positive_emotion_words": positive_emotion_count,
-            "negative_emotion_words": negative_emotion_count,
-            "emotion_ratio": min(max(emotion_ratio, -1.0), 1.0),
-            "overall_sentiment": "positive"
-            if emotion_ratio > 0.1
-            else "negative"
-            if emotion_ratio < -0.1
-            else "neutral",
-        },
-        "certainty_markers": {
-            "certainty_words": certainty_count,
-            "uncertainty_words": uncertainty_count,
-            "certainty_ratio": min(
-                (certainty_count - uncertainty_count) / max(word_count, 1), 1.0
-            ),
-        },
-        "cognitive_complexity_score": cognitive_complexity,
-        "vocabulary_richness": _calculate_ttr(text_clean),
-        "avg_sentence_length": _calculate_avg_sentence_length(text_clean),
-        "deception_indicators": deception_indicators,
-        "urgency_score": urgency_score,
-        "anger_indicators": {
-            "anger_words": anger_count,
-            "anger_score": anger_score,
-        },
-        "threat_level": threat_level,
-        "threat_indicators_summary": {
-            "negative_emotions": negative_emotion_count > 3,
-            "high_anger": anger_score > 0.3,
-            "high_urgency": urgency_score > 0.4,
-            "deception_patterns": len(deception_indicators) > 0,
-        },
-    }
+    except Exception as exc:
+        logger.exception("Error in research_psycholinguistic")
+        return {
+            "error": str(exc),
+            "tool": "research_psycholinguistic",
+        }

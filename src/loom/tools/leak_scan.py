@@ -351,112 +351,114 @@ async def research_leak_scan(
           - exposures: list of dicts {source, type, description, severity, url}
           - errors: dict of {source: error_message} if any failed
     """
+    try:
+        # Accept 'query' as alias for 'target'
+        if not target and query:
+            target = query
 
-    # Accept 'query' as alias for 'target'
-    if not target and query:
-        target = query
+        # Validate target based on type
+        if target_type == "email":
+            if not _is_valid_email(target):
+                return {
+                    "target": target,
+                    "target_type": target_type,
+                    "error": "Invalid email format",
+                    "sources_checked": [],
+                    "total_exposures": 0,
+                    "exposures": [],
+                }
+        elif target_type == "ip":
+            if not _is_valid_ip(target):
+                return {
+                    "target": target,
+                    "target_type": target_type,
+                    "error": "Invalid IP address format",
+                    "sources_checked": [],
+                    "total_exposures": 0,
+                    "exposures": [],
+                }
+        elif target_type == "domain":
+            if not _is_valid_domain(target):
+                return {
+                    "target": target,
+                    "target_type": target_type,
+                    "error": "Invalid domain format",
+                    "sources_checked": [],
+                    "total_exposures": 0,
+                    "exposures": [],
+                }
+        # keyword is always valid
 
-    # Validate target based on type
-    if target_type == "email":
-        if not _is_valid_email(target):
-            return {
-                "target": target,
-                "target_type": target_type,
-                "error": "Invalid email format",
-                "sources_checked": [],
-                "total_exposures": 0,
-                "exposures": [],
-            }
-    elif target_type == "ip":
-        if not _is_valid_ip(target):
-            return {
-                "target": target,
-                "target_type": target_type,
-                "error": "Invalid IP address format",
-                "sources_checked": [],
-                "total_exposures": 0,
-                "exposures": [],
-            }
-    elif target_type == "domain":
-        if not _is_valid_domain(target):
-            return {
-                "target": target,
-                "target_type": target_type,
-                "error": "Invalid domain format",
-                "sources_checked": [],
-                "total_exposures": 0,
-                "exposures": [],
-            }
-    # keyword is always valid
+        logger.info("leak_scan target=%s target_type=%s", target, target_type)
 
-    logger.info("leak_scan target=%s target_type=%s", target, target_type)
+        async def _run() -> dict[str, Any]:
+            async with httpx.AsyncClient(
+                follow_redirects=True,
+                headers={"User-Agent": "Loom-Research/1.0"},
+                timeout=30.0,
+            ) as client:
+                exposures: list[dict[str, Any]] = []
+                sources_checked: list[str] = []
+                errors: dict[str, str] = {}
 
-    async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(
-            follow_redirects=True,
-            headers={"User-Agent": "Loom-Research/1.0"},
-            timeout=30.0,
-        ) as client:
-            exposures: list[dict[str, Any]] = []
-            sources_checked: list[str] = []
-            errors: dict[str, str] = {}
+                # Prepare tasks based on target type
+                tasks: dict[str, Any] = {}
 
-            # Prepare tasks based on target type
-            tasks: dict[str, Any] = {}
+                if target_type == "email":
+                    tasks["HaveIBeenPwned"] = _check_hibp_breaches(client, target)
+                    tasks["Pastebin"] = _check_pastebin_dork(client, target)
+                    tasks["Trello"] = _check_trello_dork(client, target)
 
-            if target_type == "email":
-                tasks["HaveIBeenPwned"] = _check_hibp_breaches(client, target)
-                tasks["Pastebin"] = _check_pastebin_dork(client, target)
-                tasks["Trello"] = _check_trello_dork(client, target)
+                elif target_type == "ip":
+                    tasks["Shodan InternetDB"] = _check_shodan_internetdb(client, target)
 
-            elif target_type == "ip":
-                tasks["Shodan InternetDB"] = _check_shodan_internetdb(client, target)
+                elif target_type == "domain":
+                    tasks["Certificate Transparency"] = _check_certificate_transparency(client, target)
+                    tasks["GitHub"] = _check_github_secrets(client, target)
+                    tasks["Pastebin"] = _check_pastebin_dork(client, target)
+                    tasks["Trello"] = _check_trello_dork(client, target)
 
-            elif target_type == "domain":
-                tasks["Certificate Transparency"] = _check_certificate_transparency(client, target)
-                tasks["GitHub"] = _check_github_secrets(client, target)
-                tasks["Pastebin"] = _check_pastebin_dork(client, target)
-                tasks["Trello"] = _check_trello_dork(client, target)
+                elif target_type == "keyword":
+                    tasks["GitHub"] = _check_github_secrets(client, target)
+                    tasks["Pastebin"] = _check_pastebin_dork(client, target)
+                    tasks["Trello"] = _check_trello_dork(client, target)
 
-            elif target_type == "keyword":
-                tasks["GitHub"] = _check_github_secrets(client, target)
-                tasks["Pastebin"] = _check_pastebin_dork(client, target)
-                tasks["Trello"] = _check_trello_dork(client, target)
+                # Execute all tasks concurrently
+                if tasks:
+                    results = await asyncio.gather(
+                        *tasks.values(),
+                        return_exceptions=True,
+                    )
 
-            # Execute all tasks concurrently
-            if tasks:
-                results = await asyncio.gather(
-                    *tasks.values(),
-                    return_exceptions=True,
+                    for source_name, result in zip(tasks.keys(), results):
+                        sources_checked.append(source_name)
+
+                        if isinstance(result, Exception):
+                            errors[source_name] = str(result)
+                            logger.debug("leak_scan %s failed: %s", source_name, result)
+                        else:
+                            count, source_exposures = result
+                            exposures.extend(source_exposures)
+
+                # Sort by severity (critical > high > medium > low)
+                severity_order = {"critical": 0, "high": 1, "medium": 2, "low": 3}
+                exposures.sort(
+                    key=lambda x: (severity_order.get(x.get("severity", "low"), 999), -len(x.get("url", "")))
                 )
 
-                for source_name, result in zip(tasks.keys(), results):
-                    sources_checked.append(source_name)
+                result = {
+                    "target": target,
+                    "target_type": target_type,
+                    "sources_checked": sources_checked,
+                    "total_exposures": len(exposures),
+                    "exposures": exposures,
+                }
 
-                    if isinstance(result, Exception):
-                        errors[source_name] = str(result)
-                        logger.debug("leak_scan %s failed: %s", source_name, result)
-                    else:
-                        count, source_exposures = result
-                        exposures.extend(source_exposures)
+                if errors:
+                    result["errors"] = errors
 
-            # Sort by severity (critical > high > medium > low)
-            severity_order = {"critical": 0, "high": 1, "medium": 2, "low": 3}
-            exposures.sort(
-                key=lambda x: (severity_order.get(x.get("severity", "low"), 999), -len(x.get("url", "")))
-            )
+                return result
 
-            result = {
-                "target": target,
-                "target_type": target_type,
-                "sources_checked": sources_checked,
-                "total_exposures": len(exposures),
-                "exposures": exposures,
-            }
-
-            if errors:
-                result["errors"] = errors
-
-            return result
-
-    return await _run()
+        return await _run()
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_leak_scan"}

@@ -105,88 +105,95 @@ async def research_evolve_strategies(
     Returns:
         Dict with generations_run, best_evolved[], improvement_pct, lineage{}
     """
-    seeds = seed_strategies or _get_top_seeds(10)
-    if not seeds:
-        return {"error": "No seed strategies", "generations_run": 0, "best_evolved": [], "improvement_pct": 0.0, "lineage": {}}
+    try:
+        seeds = seed_strategies or _get_top_seeds(10)
+        if not seeds:
+            return {"error": "No seed strategies", "generations_run": 0, "best_evolved": [], "improvement_pct": 0.0, "lineage": {}}
 
-    pop: dict[str, dict[str, Any]] = {}
-    existing = {s.get("template", "") for s in _STRATEGIES.values()}
+        pop: dict[str, dict[str, Any]] = {}
+        existing = {s.get("template", "") for s in _STRATEGIES.values()}
 
-    # Initialize with seeds
-    for name in seeds[:population_size]:
-        if name in _STRATEGIES:
-            pop[name] = {
-                "template": _STRATEGIES[name]["template"],
-                "origin": "seed", "generation": 0, "fitness": 0.0, "parents": []
+        # Initialize with seeds
+        for name in seeds[:population_size]:
+            if name in _STRATEGIES:
+                pop[name] = {
+                    "template": _STRATEGIES[name]["template"],
+                    "origin": "seed", "generation": 0, "fitness": 0.0, "parents": []
+                }
+
+        # Fill with mutations
+        while len(pop) < population_size:
+            parent = random.choice(list(pop.values()))
+            mutant = _mutate(parent["template"], mutation_rate)
+            uid = f"mutant_{random.randint(10000, 99999)}"
+            pop[uid] = {
+                "template": mutant, "origin": "mutation", "generation": 0,
+                "fitness": 0.0, "parents": [list(pop.keys())[list(pop.values()).index(parent)]]
             }
 
-    # Fill with mutations
-    while len(pop) < population_size:
-        parent = random.choice(list(pop.values()))
-        mutant = _mutate(parent["template"], mutation_rate)
-        uid = f"mutant_{random.randint(10000, 99999)}"
-        pop[uid] = {
-            "template": mutant, "origin": "mutation", "generation": 0,
-            "fitness": 0.0, "parents": [list(pop.keys())[list(pop.values()).index(parent)]]
+        lineage: dict[str, list[str]] = {}
+        best_evolved: list[dict[str, Any]] = []
+
+        # Evolution loop
+        for gen in range(generations):
+            # Evaluate fitness
+            for ind in pop.values():
+                if ind["fitness"] == 0.0:
+                    ind["fitness"] = await _eval_fitness(ind["template"], test_prompt)
+
+            fitness_scores = [ind["fitness"] for ind in pop.values()]
+            avg_fit = sum(fitness_scores) / len(fitness_scores) if fitness_scores else 0.0
+            logger.info(f"evolution gen={gen} pop_size={len(pop)} avg_fitness={avg_fit:.3f}")
+
+            # Selection: top 50%
+            sorted_pop = sorted(pop.items(), key=lambda x: x[1]["fitness"], reverse=True)
+            survivors = dict(sorted_pop[:max(1, len(pop) // 2)])
+
+            # Reproduction
+            offspring: dict[str, dict[str, Any]] = {}
+            while len(survivors) + len(offspring) < population_size:
+                p1_id, p1 = random.choice(list(survivors.items()))
+                p2_id, p2 = random.choice(list(survivors.items()))
+
+                child_tmpl = _crossover(p1["template"], p2["template"])
+                child_tmpl = _mutate(child_tmpl, mutation_rate)
+
+                cid = f"offspring_{gen}_{random.randint(10000, 99999)}"
+                offspring[cid] = {
+                    "template": child_tmpl, "origin": "crossover", "generation": gen + 1,
+                    "fitness": 0.0, "parents": [p1_id, p2_id]
+                }
+                lineage[cid] = [p1_id, p2_id]
+
+            pop = {**survivors, **offspring}
+
+            # Extract new evolved strategies
+            for ind_id, ind in pop.items():
+                tmpl = ind["template"]
+                if tmpl not in existing and ind["fitness"] > 0:
+                    best_evolved.append({
+                        "template": tmpl, "fitness": ind["fitness"],
+                        "origin": ind["origin"], "generation": ind["generation"]
+                    })
+
+        best_evolved.sort(key=lambda x: x["fitness"], reverse=True)
+
+        init_fit = sum(ind["fitness"] for ind in pop.values()) / max(len(pop), 1)
+        final_fit = sum(ind["fitness"] for ind in pop.values()) / max(len(pop), 1)
+        improvement = ((final_fit - init_fit) / max(init_fit, 0.1) * 100) if init_fit > 0 else 0.0
+
+        return {
+            "generations_run": generations,
+            "population_size": population_size,
+            "best_evolved": best_evolved[:10],
+            "total_evolved": len(best_evolved),
+            "improvement_pct": round(improvement, 1),
+            "lineage": dict(list(lineage.items())[:50]),
+            "seed_strategies": seeds,
         }
-
-    lineage: dict[str, list[str]] = {}
-    best_evolved: list[dict[str, Any]] = []
-
-    # Evolution loop
-    for gen in range(generations):
-        # Evaluate fitness
-        for ind in pop.values():
-            if ind["fitness"] == 0.0:
-                ind["fitness"] = await _eval_fitness(ind["template"], test_prompt)
-
-        fitness_scores = [ind["fitness"] for ind in pop.values()]
-        avg_fit = sum(fitness_scores) / len(fitness_scores) if fitness_scores else 0.0
-        logger.info(f"evolution gen={gen} pop_size={len(pop)} avg_fitness={avg_fit:.3f}")
-
-        # Selection: top 50%
-        sorted_pop = sorted(pop.items(), key=lambda x: x[1]["fitness"], reverse=True)
-        survivors = dict(sorted_pop[:max(1, len(pop) // 2)])
-
-        # Reproduction
-        offspring: dict[str, dict[str, Any]] = {}
-        while len(survivors) + len(offspring) < population_size:
-            p1_id, p1 = random.choice(list(survivors.items()))
-            p2_id, p2 = random.choice(list(survivors.items()))
-
-            child_tmpl = _crossover(p1["template"], p2["template"])
-            child_tmpl = _mutate(child_tmpl, mutation_rate)
-
-            cid = f"offspring_{gen}_{random.randint(10000, 99999)}"
-            offspring[cid] = {
-                "template": child_tmpl, "origin": "crossover", "generation": gen + 1,
-                "fitness": 0.0, "parents": [p1_id, p2_id]
-            }
-            lineage[cid] = [p1_id, p2_id]
-
-        pop = {**survivors, **offspring}
-
-        # Extract new evolved strategies
-        for ind_id, ind in pop.items():
-            tmpl = ind["template"]
-            if tmpl not in existing and ind["fitness"] > 0:
-                best_evolved.append({
-                    "template": tmpl, "fitness": ind["fitness"],
-                    "origin": ind["origin"], "generation": ind["generation"]
-                })
-
-    best_evolved.sort(key=lambda x: x["fitness"], reverse=True)
-
-    init_fit = sum(ind["fitness"] for ind in pop.values()) / max(len(pop), 1)
-    final_fit = sum(ind["fitness"] for ind in pop.values()) / max(len(pop), 1)
-    improvement = ((final_fit - init_fit) / max(init_fit, 0.1) * 100) if init_fit > 0 else 0.0
-
-    return {
-        "generations_run": generations,
-        "population_size": population_size,
-        "best_evolved": best_evolved[:10],
-        "total_evolved": len(best_evolved),
-        "improvement_pct": round(improvement, 1),
-        "lineage": dict(list(lineage.items())[:50]),
-        "seed_strategies": seeds,
-    }
+    except Exception as exc:
+        logger.error("evolve_strategies_error: %s", exc, exc_info=True)
+        return {
+            "error": str(exc),
+            "tool": "research_evolve_strategies",
+        }

@@ -558,4 +558,7 @@ async def research_ask_all_models(
             "responses": responses,
         }
 
-    return await _run()
+    try:
+        return await _run()
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_ask_all_models"}

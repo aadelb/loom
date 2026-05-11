@@ -324,7 +324,10 @@ async def research_ghost_protocol(
                 "total_events": len(flat_events),
             }
 
-    return await _run()
+    try:
+        return await _run()
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_ghost_protocol"}
 
 
 async def _get_dns_changes(
@@ -491,7 +494,10 @@ async def research_temporal_anomaly(
                 "dns_records": results_map.get("dns", {}),
             }
 
-    return await _run()
+    try:
+        return await _run()
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_temporal_anomaly"}
 
 
 async def research_sec_tracker(
@@ -610,4 +616,7 @@ async def research_sec_tracker(
                     "error": str(exc),
                 }
 
-    return await _run()
+    try:
+        return await _run()
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_sec_tracker"}

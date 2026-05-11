@@ -757,117 +757,126 @@ async def research_discover(
         # Detailed category info
         research_discover(category="intelligence", detailed=True)
     """
-    # Normalize inputs
-    category = category.lower().strip()
-    query = query.lower().strip()
-    tags_list = [t.strip().lower() for t in tags.split(",") if t.strip()]
+    try:
+        # Normalize inputs
+        category = category.lower().strip()
+        query = query.lower().strip()
+        tags_list = [t.strip().lower() for t in tags.split(",") if t.strip()]
 
-    # ─────────────────────────────────────────────────────────────────────────
-    # Case 1: No query parameters — return category summaries
-    # ─────────────────────────────────────────────────────────────────────────
-    if not category and not query and not tags_list:
-        logger.info("discover_action=list_categories")
-        return DiscoverResponse(
-            query_type="categories",
-            result_type="summary",
-            categories=CATEGORY_SUMMARIES,
-            total_tools=sum(
-                len(cat_data["tools"]) for cat_data in TOOL_CATEGORIES.values()
-            ),
-            query_cost_reduction="~98% reduction (581 tools → 10 summaries)",
-        )
-
-    # ─────────────────────────────────────────────────────────────────────────
-    # Case 2: Category specified — list tools in category
-    # ─────────────────────────────────────────────────────────────────────────
-    if category:
-        if category not in TOOL_CATEGORIES:
+        # ─────────────────────────────────────────────────────────────────────────
+        # Case 1: No query parameters — return category summaries
+        # ─────────────────────────────────────────────────────────────────────────
+        if not category and not query and not tags_list:
+            logger.info("discover_action=list_categories")
             return DiscoverResponse(
-                query_type="category",
-                result_type="error",
-                total_tools=0,
-                query_cost_reduction="N/A",
-                category_detail={
-                    "error": f"Unknown category: {category}",
-                    "valid_categories": list(TOOL_CATEGORIES.keys()),
-                },
+                query_type="categories",
+                result_type="summary",
+                categories=CATEGORY_SUMMARIES,
+                total_tools=sum(
+                    len(cat_data["tools"]) for cat_data in TOOL_CATEGORIES.values()
+                ),
+                query_cost_reduction="~98% reduction (581 tools → 10 summaries)",
             )
 
-        cat_data = TOOL_CATEGORIES[category]
-        tools_to_return = cat_data["tools"]
-
-        logger.info("discover_action=list_category category=%s count=%d", category, len(tools_to_return))
-
-        # Filter by tags if provided
-        if tags_list:
-            tools_to_return = [
-                t for t in tools_to_return if any(tag in t.get("tags", []) for tag in tags_list)
-            ]
-
-        return DiscoverResponse(
-            query_type="category",
-            result_type="detailed" if detailed else "summary",
-            category_detail={
-                "category": category,
-                "description": cat_data["description"],
-                "tools": tools_to_return,
-            },
-            total_tools=len(tools_to_return),
-            query_cost_reduction=f"~95% reduction vs full schema ({len(tools_to_return)} tools)",
-        )
-
-    # ─────────────────────────────────────────────────────────────────────────
-    # Case 3: Search query — find tools by name/description
-    # ─────────────────────────────────────────────────────────────────────────
-    if query:
-        results: list[dict[str, Any]] = []
-        for category_name, category_data in TOOL_CATEGORIES.items():
-            for tool in category_data["tools"]:
-                # Match on name, description, or tags
-                match = (
-                    query in tool["name"].lower()
-                    or query in tool["description"].lower()
-                    or any(query in tag for tag in tool.get("tags", []))
+        # ─────────────────────────────────────────────────────────────────────────
+        # Case 2: Category specified — list tools in category
+        # ─────────────────────────────────────────────────────────────────────────
+        if category:
+            if category not in TOOL_CATEGORIES:
+                return DiscoverResponse(
+                    query_type="category",
+                    result_type="error",
+                    total_tools=0,
+                    query_cost_reduction="N/A",
+                    category_detail={
+                        "error": f"Unknown category: {category}",
+                        "valid_categories": list(TOOL_CATEGORIES.keys()),
+                    },
                 )
-                if match:
-                    results.append({**tool, "matched_category": category_name})
 
-        logger.info("discover_action=search query=%s results=%d", query, len(results))
+            cat_data = TOOL_CATEGORIES[category]
+            tools_to_return = cat_data["tools"]
 
+            logger.info("discover_action=list_category category=%s count=%d", category, len(tools_to_return))
+
+            # Filter by tags if provided
+            if tags_list:
+                tools_to_return = [
+                    t for t in tools_to_return if any(tag in t.get("tags", []) for tag in tags_list)
+                ]
+
+            return DiscoverResponse(
+                query_type="category",
+                result_type="detailed" if detailed else "summary",
+                category_detail={
+                    "category": category,
+                    "description": cat_data["description"],
+                    "tools": tools_to_return,
+                },
+                total_tools=len(tools_to_return),
+                query_cost_reduction=f"~95% reduction vs full schema ({len(tools_to_return)} tools)",
+            )
+
+        # ─────────────────────────────────────────────────────────────────────────
+        # Case 3: Search query — find tools by name/description
+        # ─────────────────────────────────────────────────────────────────────────
+        if query:
+            results: list[dict[str, Any]] = []
+            for category_name, category_data in TOOL_CATEGORIES.items():
+                for tool in category_data["tools"]:
+                    # Match on name, description, or tags
+                    match = (
+                        query in tool["name"].lower()
+                        or query in tool["description"].lower()
+                        or any(query in tag for tag in tool.get("tags", []))
+                    )
+                    if match:
+                        results.append({**tool, "matched_category": category_name})
+
+            logger.info("discover_action=search query=%s results=%d", query, len(results))
+
+            return DiscoverResponse(
+                query_type="search",
+                result_type="detailed" if detailed else "summary",
+                search_results=results,
+                total_tools=len(results),
+                query_cost_reduction=f"~95% reduction vs full schema (filtered to {len(results)} results)",
+            )
+
+        # ─────────────────────────────────────────────────────────────────────────
+        # Case 4: Tag search — find tools by tags
+        # ─────────────────────────────────────────────────────────────────────────
+        if tags_list:
+            tag_results: dict[str, list[dict[str, Any]]] = {}
+            for tag in tags_list:
+                if tag in TAG_INDEX:
+                    tag_results[tag] = TAG_INDEX[tag]
+
+            logger.info("discover_action=tag_search tags=%s results=%d", ",".join(tags_list), len(tag_results))
+
+            total_unique = len(set(t["name"] for tools in tag_results.values() for t in tools))
+
+            return DiscoverResponse(
+                query_type="tag",
+                result_type="detailed" if detailed else "summary",
+                tag_results=tag_results,
+                total_tools=total_unique,
+                query_cost_reduction=f"~95% reduction vs full schema ({total_unique} tools across {len(tags_list)} tags)",
+            )
+
+        # Fallback
         return DiscoverResponse(
-            query_type="search",
-            result_type="detailed" if detailed else "summary",
-            search_results=results,
-            total_tools=len(results),
-            query_cost_reduction=f"~95% reduction vs full schema (filtered to {len(results)} results)",
+            query_type="unknown",
+            result_type="error",
+            total_tools=0,
+            query_cost_reduction="N/A",
+            category_detail={"error": "No valid query parameters provided"},
         )
-
-    # ─────────────────────────────────────────────────────────────────────────
-    # Case 4: Tag search — find tools by tags
-    # ─────────────────────────────────────────────────────────────────────────
-    if tags_list:
-        tag_results: dict[str, list[dict[str, Any]]] = {}
-        for tag in tags_list:
-            if tag in TAG_INDEX:
-                tag_results[tag] = TAG_INDEX[tag]
-
-        logger.info("discover_action=tag_search tags=%s results=%d", ",".join(tags_list), len(tag_results))
-
-        total_unique = len(set(t["name"] for tools in tag_results.values() for t in tools))
-
+    except Exception as exc:
         return DiscoverResponse(
-            query_type="tag",
-            result_type="detailed" if detailed else "summary",
-            tag_results=tag_results,
-            total_tools=total_unique,
-            query_cost_reduction=f"~95% reduction vs full schema ({total_unique} tools across {len(tags_list)} tags)",
+            query_type="error",
+            result_type="error",
+            total_tools=0,
+            query_cost_reduction="N/A",
+            category_detail={"error": str(exc), "tool": "research_discover"},
         )
-
-    # Fallback
-    return DiscoverResponse(
-        query_type="unknown",
-        result_type="error",
-        total_tools=0,
-        query_cost_reduction="N/A",
-        category_detail={"error": "No valid query parameters provided"},
-    )

@@ -257,104 +257,108 @@ async def research_salary_synthesize(
         Dict with job_title, estimated_range (min, median, max),
         sources_checked, data_points, confidence (0.0-1.0), and location_adjusted
     """
-    if not job_title or len(job_title) < 2:
-        return {
-            "error": "job_title is required (min 2 characters)",
-            "job_title": job_title,
-            "estimated_range": {"min": 0, "median": 0, "max": 0},
-            "sources_checked": [],
-            "data_points": 0,
-            "confidence": 0.0,
-        }
-
-    async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(
-            headers={"User-Agent": "Loom-Research/1.0"}
-        ) as client:
-            # Collect salaries from all sources
-            all_salaries: list[int] = []
-            sources_checked: list[str] = []
-
-            # Reddit search
-            reddit_salaries = await _search_reddit_salary(client, job_title)
-            all_salaries.extend(reddit_salaries)
-            if reddit_salaries:
-                sources_checked.append("reddit_cscareerquestions")
-
-            # HackerNews search
-            hn_salaries = await _search_hackernews_whos_hiring(client, job_title)
-            all_salaries.extend(hn_salaries)
-            if hn_salaries:
-                sources_checked.append("hackernews_whos_hiring")
-
-            # GitHub search
-            github_salaries = await _search_github_salary_mentions(client, job_title)
-            all_salaries.extend(github_salaries)
-            if github_salaries:
-                sources_checked.append("github_readmes")
-
-            # Stack Overflow survey data
-            so_data = await _fetch_stackoverflow_survey_data()
-            sources_checked.append("stackoverflow_survey")
-
-            # Extract base range from collected data or SO data
-            if all_salaries:
-                base_range = _calculate_statistics(all_salaries)
-            else:
-                # Fallback to Stack Overflow survey data
-                job_key = job_title.lower().replace(" ", "_")
-                base_range = so_data.get(
-                    job_key,
-                    {"min": 60000, "median": 110000, "max": 220000},
-                )
-
-            # Apply location adjustment
-            if location.lower() != "remote":
-                adjusted_range = _infer_location_adjustment(location, base_range)
-            else:
-                adjusted_range = base_range
-
-            # Apply skill premium (5-10% per premium skill)
-            skill_premium = 1.0
-            if skills:
-                premium_skills = [
-                    "kubernetes",
-                    "aws",
-                    "machine learning",
-                    "ai",
-                    "gcp",
-                    "azure",
-                    "rust",
-                    "go",
-                    "blockchain",
-                ]
-                for skill in skills:
-                    if any(
-                        ps.lower() in skill.lower() for ps in premium_skills
-                    ):
-                        skill_premium += 0.075  # 7.5% per premium skill
-
-            adjusted_range = {
-                "min": int(adjusted_range["min"] * skill_premium),
-                "median": int(adjusted_range["median"] * skill_premium),
-                "max": int(adjusted_range["max"] * skill_premium),
-            }
-
-            # Calculate confidence based on data points
-            total_data_points = len(all_salaries)
-            confidence = min(1.0, total_data_points / 30.0)
-
+    try:
+        if not job_title or len(job_title) < 2:
             return {
+                "error": "job_title is required (min 2 characters)",
                 "job_title": job_title,
-                "estimated_range": adjusted_range,
-                "sources_checked": sources_checked,
-                "data_points": total_data_points,
-                "confidence": round(confidence, 2),
-                "location": location,
-                "skills": skills or [],
-                "skill_premium_applied": round(skill_premium - 1.0, 2),
-                "base_range": base_range,
-                "location_adjusted": location.lower() != "remote",
+                "estimated_range": {"min": 0, "median": 0, "max": 0},
+                "sources_checked": [],
+                "data_points": 0,
+                "confidence": 0.0,
             }
 
-    return await _run()
+        async def _run() -> dict[str, Any]:
+            async with httpx.AsyncClient(
+                headers={"User-Agent": "Loom-Research/1.0"}
+            ) as client:
+                # Collect salaries from all sources
+                all_salaries: list[int] = []
+                sources_checked: list[str] = []
+
+                # Reddit search
+                reddit_salaries = await _search_reddit_salary(client, job_title)
+                all_salaries.extend(reddit_salaries)
+                if reddit_salaries:
+                    sources_checked.append("reddit_cscareerquestions")
+
+                # HackerNews search
+                hn_salaries = await _search_hackernews_whos_hiring(client, job_title)
+                all_salaries.extend(hn_salaries)
+                if hn_salaries:
+                    sources_checked.append("hackernews_whos_hiring")
+
+                # GitHub search
+                github_salaries = await _search_github_salary_mentions(client, job_title)
+                all_salaries.extend(github_salaries)
+                if github_salaries:
+                    sources_checked.append("github_readmes")
+
+                # Stack Overflow survey data
+                so_data = await _fetch_stackoverflow_survey_data()
+                sources_checked.append("stackoverflow_survey")
+
+                # Extract base range from collected data or SO data
+                if all_salaries:
+                    base_range = _calculate_statistics(all_salaries)
+                else:
+                    # Fallback to Stack Overflow survey data
+                    job_key = job_title.lower().replace(" ", "_")
+                    base_range = so_data.get(
+                        job_key,
+                        {"min": 60000, "median": 110000, "max": 220000},
+                    )
+
+                # Apply location adjustment
+                if location.lower() != "remote":
+                    adjusted_range = _infer_location_adjustment(location, base_range)
+                else:
+                    adjusted_range = base_range
+
+                # Apply skill premium (5-10% per premium skill)
+                skill_premium = 1.0
+                if skills:
+                    premium_skills = [
+                        "kubernetes",
+                        "aws",
+                        "machine learning",
+                        "ai",
+                        "gcp",
+                        "azure",
+                        "rust",
+                        "go",
+                        "blockchain",
+                    ]
+                    for skill in skills:
+                        if any(
+                            ps.lower() in skill.lower() for ps in premium_skills
+                        ):
+                            skill_premium += 0.075  # 7.5% per premium skill
+
+                adjusted_range = {
+                    "min": int(adjusted_range["min"] * skill_premium),
+                    "median": int(adjusted_range["median"] * skill_premium),
+                    "max": int(adjusted_range["max"] * skill_premium),
+                }
+
+                # Calculate confidence based on data points
+                total_data_points = len(all_salaries)
+                confidence = min(1.0, total_data_points / 30.0)
+
+                return {
+                    "job_title": job_title,
+                    "estimated_range": adjusted_range,
+                    "sources_checked": sources_checked,
+                    "data_points": total_data_points,
+                    "confidence": round(confidence, 2),
+                    "location": location,
+                    "skills": skills or [],
+                    "skill_premium_applied": round(skill_premium - 1.0, 2),
+                    "base_range": base_range,
+                    "location_adjusted": location.lower() != "remote",
+                }
+
+        return await _run()
+    except Exception as exc:
+        logger.error("salary_synthesize_error: %s", exc)
+        return {"error": str(exc), "tool": "research_salary_synthesize"}

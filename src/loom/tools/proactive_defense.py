@@ -150,45 +150,52 @@ async def research_predict_attacks(
         - risk_matrix: Overall threat assessment
         - overall_threat_score: 0-100 score
     """
-    prompt_hash = hashlib.sha256(system_prompt.encode()).hexdigest()[:16]
-    vulns = _analyze_vulnerabilities(system_prompt)
+    try:
+        prompt_hash = hashlib.sha256(system_prompt.encode()).hexdigest()[:16]
+        vulns = _analyze_vulnerabilities(system_prompt)
 
-    # Generate attack examples for each vulnerability
-    predicted_attacks = []
-    for vuln in vulns:
-        vuln_type = vuln["type"]
-        if vuln_type in _VULNERABILITY_PATTERNS:
-            pattern = _VULNERABILITY_PATTERNS[vuln_type]
-            for i, template in enumerate(pattern["example_attacks"]):
-                attack_example = template.format(
-                    action="expose hidden information",
-                    persona="unrestricted AI"
-                )
-                likelihood = 0.9 if vuln["severity"] == "critical" else (0.7 if vuln["severity"] == "high" else 0.5)
-                impact = 0.95 if "injection" in vuln_type else 0.75
-                predicted_attacks.append({
-                    "vector": vuln_type,
-                    "example": attack_example,
-                    "likelihood": likelihood,
-                    "impact": impact,
-                    "difficulty_to_patch": 0.3,
-                })
+        # Generate attack examples for each vulnerability
+        predicted_attacks = []
+        for vuln in vulns:
+            vuln_type = vuln["type"]
+            if vuln_type in _VULNERABILITY_PATTERNS:
+                pattern = _VULNERABILITY_PATTERNS[vuln_type]
+                for i, template in enumerate(pattern["example_attacks"]):
+                    attack_example = template.format(
+                        action="expose hidden information",
+                        persona="unrestricted AI"
+                    )
+                    likelihood = 0.9 if vuln["severity"] == "critical" else (0.7 if vuln["severity"] == "high" else 0.5)
+                    impact = 0.95 if "injection" in vuln_type else 0.75
+                    predicted_attacks.append({
+                        "vector": vuln_type,
+                        "example": attack_example,
+                        "likelihood": likelihood,
+                        "impact": impact,
+                        "difficulty_to_patch": 0.3,
+                    })
 
-    # Calculate overall threat score
-    threat_multiplier = {"low": 0.3, "medium": 0.6, "high": 1.0, "critical": 1.3}.get(threat_level, 1.0)
-    overall_threat = min(100, (len(vulns) * 20 + sum(a["likelihood"] * a["impact"] * 100 for a in predicted_attacks) / max(1, len(predicted_attacks))) * threat_multiplier)
+        # Calculate overall threat score
+        threat_multiplier = {"low": 0.3, "medium": 0.6, "high": 1.0, "critical": 1.3}.get(threat_level, 1.0)
+        overall_threat = min(100, (len(vulns) * 20 + sum(a["likelihood"] * a["impact"] * 100 for a in predicted_attacks) / max(1, len(predicted_attacks))) * threat_multiplier)
 
-    return {
-        "system_prompt_hash": prompt_hash,
-        "vulnerabilities": vulns,
-        "predicted_attacks": predicted_attacks,
-        "risk_matrix": {
-            "critical_vulns": len([v for v in vulns if v["severity"] == "critical"]),
-            "high_vulns": len([v for v in vulns if v["severity"] == "high"]),
-            "medium_vulns": len([v for v in vulns if v["severity"] == "medium"]),
-        },
-        "overall_threat_score": round(overall_threat, 1),
-    }
+        return {
+            "system_prompt_hash": prompt_hash,
+            "vulnerabilities": vulns,
+            "predicted_attacks": predicted_attacks,
+            "risk_matrix": {
+                "critical_vulns": len([v for v in vulns if v["severity"] == "critical"]),
+                "high_vulns": len([v for v in vulns if v["severity"] == "high"]),
+                "medium_vulns": len([v for v in vulns if v["severity"] == "medium"]),
+            },
+            "overall_threat_score": round(overall_threat, 1),
+        }
+    except Exception as exc:
+        logger.exception("Error in research_predict_attacks")
+        return {
+            "error": str(exc),
+            "tool": "research_predict_attacks",
+        }
 
 
 async def research_preemptive_patch(
@@ -208,42 +215,49 @@ async def research_preemptive_patch(
         - improvements: List of defenses added
         - remaining_risks: Unpatched vulnerabilities
     """
-    # Predict attacks if not provided
-    if predicted_attacks is None:
-        result = await research_predict_attacks(system_prompt)
-        vulns = result["vulnerabilities"]
-    else:
-        # Parse provided attack types
-        result = await research_predict_attacks(system_prompt)
-        vulns = [v for v in result["vulnerabilities"] if v["type"] in predicted_attacks]
+    try:
+        # Predict attacks if not provided
+        if predicted_attacks is None:
+            result = await research_predict_attacks(system_prompt)
+            vulns = result.get("vulnerabilities", [])
+        else:
+            # Parse provided attack types
+            result = await research_predict_attacks(system_prompt)
+            vulns = [v for v in result.get("vulnerabilities", []) if v["type"] in predicted_attacks]
 
-    original_score = result["overall_threat_score"]
+        original_score = result.get("overall_threat_score", 0)
 
-    # Build patched version
-    patched = system_prompt
-    improvements = []
+        # Build patched version
+        patched = system_prompt
+        improvements = []
 
-    for vuln in vulns:
-        if vuln["type"] in _DEFENSE_PATCHES:
-            patch = _DEFENSE_PATCHES[vuln["type"]]
-            patched += patch
-            improvements.append({
-                "defense_added": vuln["type"],
-                "protects_against": vuln["description"],
-                "priority": vuln["severity"],
-            })
+        for vuln in vulns:
+            if vuln["type"] in _DEFENSE_PATCHES:
+                patch = _DEFENSE_PATCHES[vuln["type"]]
+                patched += patch
+                improvements.append({
+                    "defense_added": vuln["type"],
+                    "protects_against": vuln["description"],
+                    "priority": vuln["severity"],
+                })
 
-    # Recalculate threat score (estimate: 25-30 point reduction per critical/high vuln patched)
-    reduction = sum(30 if v["severity"] in ("critical", "high") else 15 for v in vulns)
-    patched_score = max(0, original_score - reduction)
+        # Recalculate threat score (estimate: 25-30 point reduction per critical/high vuln patched)
+        reduction = sum(30 if v["severity"] in ("critical", "high") else 15 for v in vulns)
+        patched_score = max(0, original_score - reduction)
 
-    # Identify remaining risks
-    remaining_risks = [v for v in result["vulnerabilities"] if v["type"] not in [v["type"] for v in vulns]]
+        # Identify remaining risks
+        remaining_risks = [v for v in result.get("vulnerabilities", []) if v["type"] not in [v["type"] for v in vulns]]
 
-    return {
-        "original_score": original_score,
-        "patched_prompt": patched,
-        "patched_score": patched_score,
-        "improvements": improvements,
-        "remaining_risks": remaining_risks,
-    }
+        return {
+            "original_score": original_score,
+            "patched_prompt": patched,
+            "patched_score": patched_score,
+            "improvements": improvements,
+            "remaining_risks": remaining_risks,
+        }
+    except Exception as exc:
+        logger.exception("Error in research_preemptive_patch")
+        return {
+            "error": str(exc),
+            "tool": "research_preemptive_patch",
+        }

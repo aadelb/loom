@@ -44,10 +44,13 @@ async def research_loader_stats() -> dict[str, Any]:
             "cache_size_count": 47
         }
     """
-    loader = get_loader()
-    stats = loader.get_load_stats()
+    try:
+        loader = get_loader()
+        stats = loader.get_load_stats()
 
-    # Add cache size for visibility
-    stats["cache_size_count"] = stats["loaded_count"]
+        # Add cache size for visibility
+        stats["cache_size_count"] = stats["loaded_count"]
 
-    return stats
+        return stats
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_loader_stats"}

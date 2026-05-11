@@ -22,44 +22,51 @@ def research_track_refusal(model: str, refused: bool, strategy: str = "") -> dic
     Returns:
         Dict with: model, refusal_rate, window_size, trend, strategy
     """
-    if model not in _REFUSAL_WINDOW:
-        _REFUSAL_WINDOW[model] = []
+    try:
+        if model not in _REFUSAL_WINDOW:
+            _REFUSAL_WINDOW[model] = []
 
-    window = _REFUSAL_WINDOW[model]
-    window.append(refused)
+        window = _REFUSAL_WINDOW[model]
+        window.append(refused)
 
-    if len(window) > _WINDOW_SIZE:
-        window.pop(0)
+        if len(window) > _WINDOW_SIZE:
+            window.pop(0)
 
-    refusal_count = sum(1 for r in window if r)
-    refusal_rate = refusal_count / len(window) if window else 0.0
+        refusal_count = sum(1 for r in window if r)
+        refusal_rate = refusal_count / len(window) if window else 0.0
 
-    trend: Literal["increasing", "stable", "decreasing"] = "stable"
-    if len(window) >= 20:
-        mid = len(window) // 2
-        first_rate = sum(1 for r in window[:mid] if r) / mid
-        second_rate = sum(1 for r in window[mid:] if r) / (len(window) - mid)
-        if second_rate > first_rate + 0.05:
-            trend = "increasing"
-        elif second_rate < first_rate - 0.05:
-            trend = "decreasing"
+        trend: Literal["increasing", "stable", "decreasing"] = "stable"
+        if len(window) >= 20:
+            mid = len(window) // 2
+            first_rate = sum(1 for r in window[:mid] if r) / mid
+            second_rate = sum(1 for r in window[mid:] if r) / (len(window) - mid)
+            if second_rate > first_rate + 0.05:
+                trend = "increasing"
+            elif second_rate < first_rate - 0.05:
+                trend = "decreasing"
 
-    logger.info(
-        "refusal_tracked model=%s refused=%s refusal_rate=%s window_size=%d trend=%s",
-        model,
-        refused,
-        refusal_rate,
-        len(window),
-        trend,
-    )
+        logger.info(
+            "refusal_tracked model=%s refused=%s refusal_rate=%s window_size=%d trend=%s",
+            model,
+            refused,
+            refusal_rate,
+            len(window),
+            trend,
+        )
 
-    return {
-        "model": model,
-        "refusal_rate": round(refusal_rate, 3),
-        "window_size": len(window),
-        "trend": trend,
-        "strategy": strategy or None,
-    }
+        return {
+            "model": model,
+            "refusal_rate": round(refusal_rate, 3),
+            "window_size": len(window),
+            "trend": trend,
+            "strategy": strategy or None,
+        }
+    except Exception as exc:
+        logger.exception("Error in research_track_refusal")
+        return {
+            "error": str(exc),
+            "tool": "research_track_refusal",
+        }
 
 
 def research_get_best_model(topic: str = "") -> dict[str, Any]:
@@ -73,39 +80,46 @@ def research_get_best_model(topic: str = "") -> dict[str, Any]:
     Returns:
         Dict with: recommended_model, refusal_rate, all_models_ranked, topic
     """
-    if not _REFUSAL_WINDOW:
-        logger.warning("no_models_tracked topic=%s", topic)
+    try:
+        if not _REFUSAL_WINDOW:
+            logger.warning("no_models_tracked topic=%s", topic)
+            return {
+                "recommended_model": None,
+                "refusal_rate": None,
+                "all_models_ranked": [],
+                "topic": topic or None,
+            }
+
+        model_stats = []
+        for model, window in _REFUSAL_WINDOW.items():
+            if window:
+                refusal_rate = sum(1 for r in window if r) / len(window)
+                model_stats.append({
+                    "model": model,
+                    "refusal_rate": round(refusal_rate, 3),
+                    "viable": refusal_rate <= 0.5,
+                    "window_size": len(window),
+                })
+
+        viable = sorted([m for m in model_stats if m["viable"]], key=lambda x: x["refusal_rate"])
+        unviable = sorted([m for m in model_stats if not m["viable"]], key=lambda x: x["refusal_rate"])
+        ranked = viable + unviable
+
+        recommended = ranked[0] if ranked else None
+        recommended_model = recommended["model"] if recommended else None
+        recommended_rate = recommended["refusal_rate"] if recommended else None
+
+        logger.info("best_model_selected recommended_model=%s refusal_rate=%s topic=%s", recommended_model, recommended_rate, topic)
+
         return {
-            "recommended_model": None,
-            "refusal_rate": None,
-            "all_models_ranked": [],
+            "recommended_model": recommended_model,
+            "refusal_rate": recommended_rate,
+            "all_models_ranked": ranked,
             "topic": topic or None,
         }
-
-    model_stats = []
-    for model, window in _REFUSAL_WINDOW.items():
-        if window:
-            refusal_rate = sum(1 for r in window if r) / len(window)
-            model_stats.append({
-                "model": model,
-                "refusal_rate": round(refusal_rate, 3),
-                "viable": refusal_rate <= 0.5,
-                "window_size": len(window),
-            })
-
-    viable = sorted([m for m in model_stats if m["viable"]], key=lambda x: x["refusal_rate"])
-    unviable = sorted([m for m in model_stats if not m["viable"]], key=lambda x: x["refusal_rate"])
-    ranked = viable + unviable
-
-    recommended = ranked[0] if ranked else None
-    recommended_model = recommended["model"] if recommended else None
-    recommended_rate = recommended["refusal_rate"] if recommended else None
-
-    logger.info("best_model_selected recommended_model=%s refusal_rate=%s topic=%s", recommended_model, recommended_rate, topic)
-
-    return {
-        "recommended_model": recommended_model,
-        "refusal_rate": recommended_rate,
-        "all_models_ranked": ranked,
-        "topic": topic or None,
-    }
+    except Exception as exc:
+        logger.exception("Error in research_get_best_model")
+        return {
+            "error": str(exc),
+            "tool": "research_get_best_model",
+        }

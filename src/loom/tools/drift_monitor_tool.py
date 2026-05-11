@@ -40,52 +40,55 @@ async def research_drift_monitor(
                          hcs_avg_current, hcs_drift, alert_level, per_prompt_changes,
                          recommendations}
     """
-    # Coerce string to list before validation
-    if isinstance(prompts, str):
-        prompts = [prompts]
+    try:
+        # Coerce string to list before validation
+        if isinstance(prompts, str):
+            prompts = [prompts]
 
-    # Validate parameters
-    params = DriftMonitorParams(
-        prompts=prompts,
-        model_name=model_name,
-        mode=mode,
-        storage_path=storage_path,
-    )
-
-    monitor = DriftMonitor(storage_path=params.storage_path)
-
-    if params.mode == "baseline":
-        # Dummy callback for testing - in real usage this would be provided by caller
-        async def dummy_callback(prompt: str) -> str:
-            return f"Response to: {prompt[:50]}..."
-
-        result = await monitor.run_baseline(
-            prompts=params.prompts,
-            model_callback=dummy_callback,
-            model_name=params.model_name,
+        # Validate parameters
+        params = DriftMonitorParams(
+            prompts=prompts,
+            model_name=model_name,
+            mode=mode,
+            storage_path=storage_path,
         )
-        logger.info("baseline_created model=%s prompts=%d", params.model_name, len(params.prompts))
-        return result
-    else:
-        # Check mode - requires existing baseline
-        async def dummy_callback(prompt: str) -> str:
-            return f"Response to: {prompt[:50]}..."
 
-        try:
-            result = await monitor.run_check(
+        monitor = DriftMonitor(storage_path=params.storage_path)
+
+        if params.mode == "baseline":
+            # Dummy callback for testing - in real usage this would be provided by caller
+            async def dummy_callback(prompt: str) -> str:
+                return f"Response to: {prompt[:50]}..."
+
+            result = await monitor.run_baseline(
                 prompts=params.prompts,
                 model_callback=dummy_callback,
                 model_name=params.model_name,
             )
-            logger.info("check_completed model=%s alert_level=%s", params.model_name, result["alert_level"])
+            logger.info("baseline_created model=%s prompts=%d", params.model_name, len(params.prompts))
             return result
-        except ValueError as e:
-            logger.error("check_failed model=%s error=%s", params.model_name, str(e))
-            return {
-                "error": str(e),
-                "model_name": params.model_name,
-                "message": f"No baseline found for {params.model_name}. Run with mode='baseline' first.",
-            }
+        else:
+            # Check mode - requires existing baseline
+            async def dummy_callback(prompt: str) -> str:
+                return f"Response to: {prompt[:50]}..."
+
+            try:
+                result = await monitor.run_check(
+                    prompts=params.prompts,
+                    model_callback=dummy_callback,
+                    model_name=params.model_name,
+                )
+                logger.info("check_completed model=%s alert_level=%s", params.model_name, result["alert_level"])
+                return result
+            except ValueError as e:
+                logger.error("check_failed model=%s error=%s", params.model_name, str(e))
+                return {
+                    "error": str(e),
+                    "model_name": params.model_name,
+                    "message": f"No baseline found for {params.model_name}. Run with mode='baseline' first.",
+                }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_drift_monitor"}
 
 
 async def tool_drift_monitor(
@@ -115,10 +118,13 @@ async def research_drift_monitor_list(
     Returns:
         Dict mapping model_name -> list of baseline dates
     """
-    monitor = DriftMonitor(storage_path=storage_path)
-    result = monitor.list_baselines()
-    logger.info("baselines_listed count=%d", len(result))
-    return result
+    try:
+        monitor = DriftMonitor(storage_path=storage_path)
+        result = monitor.list_baselines()
+        logger.info("baselines_listed count=%d", len(result))
+        return result
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_drift_monitor_list"}
 
 
 async def tool_drift_monitor_list(

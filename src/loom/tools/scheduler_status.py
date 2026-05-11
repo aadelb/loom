@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from loom.scheduler import get_scheduler
+
+logger = logging.getLogger("loom.tools.scheduler_status")
 
 
 async def research_scheduler_status() -> dict[str, Any]:
@@ -29,5 +32,9 @@ async def research_scheduler_status() -> dict[str, Any]:
                 - is_running (bool): whether task is currently executing
             - timestamp (str): ISO 8601 timestamp of response
     """
-    scheduler = get_scheduler()
-    return scheduler.get_status()
+    try:
+        scheduler = get_scheduler()
+        return scheduler.get_status()
+    except Exception as exc:
+        logger.error("scheduler_status_error: %s", exc)
+        return {"error": str(exc), "tool": "research_scheduler_status"}

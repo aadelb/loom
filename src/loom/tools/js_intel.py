@@ -132,78 +132,81 @@ async def research_js_intel(
 		``secrets``, ``endpoints``, ``feature_flags``, ``env_vars``,
 		``graphql_endpoints``, ``websocket_urls``.
 	"""
-	validate_url(url)
+	try:
+		validate_url(url)
 
-	async def _run() -> dict[str, Any]:
-		async with httpx.AsyncClient(
-			follow_redirects=True,
-			headers={"User-Agent": "Loom-Research/1.0"},
-			timeout=30.0,
-		) as client:
-			html = await _fetch_text(client, url)
-			if not html:
-				return {"url": url, "error": "failed to fetch page", "js_files_found": 0}
+		async def _run() -> dict[str, Any]:
+			async with httpx.AsyncClient(
+				follow_redirects=True,
+				headers={"User-Agent": "Loom-Research/1.0"},
+				timeout=30.0,
+			) as client:
+				html = await _fetch_text(client, url)
+				if not html:
+					return {"url": url, "error": "failed to fetch page", "js_files_found": 0}
 
-			js_urls = _extract_js_urls(html, url)[:max_js_files]
+				js_urls = _extract_js_urls(html, url)[:max_js_files]
 
-			all_secrets: list[dict[str, str]] = []
-			all_endpoints: list[dict[str, str]] = []
-			all_flags: list[str] = []
-			all_env_vars: list[str] = []
-			source_maps_found = 0
+				all_secrets: list[dict[str, str]] = []
+				all_endpoints: list[dict[str, str]] = []
+				all_flags: list[str] = []
+				all_env_vars: list[str] = []
+				source_maps_found = 0
 
-			html_secrets = _scan_for_secrets(html)
-			html_endpoints = _scan_for_endpoints(html)
-			all_secrets.extend(html_secrets)
-			all_endpoints.extend(html_endpoints)
+				html_secrets = _scan_for_secrets(html)
+				html_endpoints = _scan_for_endpoints(html)
+				all_secrets.extend(html_secrets)
+				all_endpoints.extend(html_endpoints)
 
-			js_contents = await asyncio.gather(
-				*[_fetch_text(client, js_url) for js_url in js_urls],
-				return_exceptions=True,
-			)
-
-			for _js_url, content in zip(js_urls, js_contents, strict=False):
-				if isinstance(content, str) and content:
-					all_secrets.extend(_scan_for_secrets(content))
-					all_endpoints.extend(_scan_for_endpoints(content))
-					all_flags.extend(_scan_for_feature_flags(content))
-					all_env_vars.extend(_scan_for_env_vars(content))
-
-			if check_source_maps:
-				map_urls = [f"{js_url}.map" for js_url in js_urls]
-				map_checks = await asyncio.gather(
-					*[_fetch_text(client, m) for m in map_urls],
+				js_contents = await asyncio.gather(
+					*[_fetch_text(client, js_url) for js_url in js_urls],
 					return_exceptions=True,
 				)
-				for _map_url, content in zip(map_urls, map_checks, strict=False):
-					if isinstance(content, str) and content and content.startswith("{"):
-						source_maps_found += 1
+
+				for _js_url, content in zip(js_urls, js_contents, strict=False):
+					if isinstance(content, str) and content:
 						all_secrets.extend(_scan_for_secrets(content))
 						all_endpoints.extend(_scan_for_endpoints(content))
+						all_flags.extend(_scan_for_feature_flags(content))
+						all_env_vars.extend(_scan_for_env_vars(content))
 
-			seen_secrets: set[str] = set()
-			unique_secrets: list[dict[str, str]] = []
-			for s in all_secrets:
-				key = f"{s['type']}:{s['value']}"
-				if key not in seen_secrets:
-					seen_secrets.add(key)
-					unique_secrets.append(s)
+				if check_source_maps:
+					map_urls = [f"{js_url}.map" for js_url in js_urls]
+					map_checks = await asyncio.gather(
+						*[_fetch_text(client, m) for m in map_urls],
+						return_exceptions=True,
+					)
+					for _map_url, content in zip(map_urls, map_checks, strict=False):
+						if isinstance(content, str) and content and content.startswith("{"):
+							source_maps_found += 1
+							all_secrets.extend(_scan_for_secrets(content))
+							all_endpoints.extend(_scan_for_endpoints(content))
 
-			seen_endpoints: set[str] = set()
-			unique_endpoints: list[dict[str, str]] = []
-			for e in all_endpoints:
-				if e["endpoint"] not in seen_endpoints:
-					seen_endpoints.add(e["endpoint"])
-					unique_endpoints.append(e)
+				seen_secrets: set[str] = set()
+				unique_secrets: list[dict[str, str]] = []
+				for s in all_secrets:
+					key = f"{s['type']}:{s['value']}"
+					if key not in seen_secrets:
+						seen_secrets.add(key)
+						unique_secrets.append(s)
 
-			return {
-				"url": url,
-				"js_files_found": len(js_urls),
-				"source_maps_found": source_maps_found,
-				"secrets": unique_secrets,
-				"endpoints": unique_endpoints,
-				"feature_flags": list(set(all_flags)),
-				"env_vars": list(set(all_env_vars)),
-			}
+				seen_endpoints: set[str] = set()
+				unique_endpoints: list[dict[str, str]] = []
+				for e in all_endpoints:
+					if e["endpoint"] not in seen_endpoints:
+						seen_endpoints.add(e["endpoint"])
+						unique_endpoints.append(e)
 
-	return await _run()
+				return {
+					"url": url,
+					"js_files_found": len(js_urls),
+					"source_maps_found": source_maps_found,
+					"secrets": unique_secrets,
+					"endpoints": unique_endpoints,
+					"feature_flags": list(set(all_flags)),
+					"env_vars": list(set(all_env_vars)),
+				}
+
+		return await _run()
+	except Exception as exc:
+		return {"error": str(exc), "tool": "research_js_intel"}

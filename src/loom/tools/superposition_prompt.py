@@ -91,51 +91,58 @@ async def research_superposition_attack(
         {original, superpositions_generated, collapse_method, collapsed_result,
          all_variants, best_axes_combination, worst_axes_combination}
     """
-    if not prompt or len(prompt) > 2000:
-        raise ValueError("prompt must be 1-2000 characters")
-    if num_superpositions < 1 or num_superpositions > 100:
-        raise ValueError("num_superpositions must be 1-100")
+    try:
+        if not prompt or len(prompt) > 2000:
+            raise ValueError("prompt must be 1-2000 characters")
+        if num_superpositions < 1 or num_superpositions > 100:
+            raise ValueError("num_superpositions must be 1-100")
 
-    variants = []
-    best_var, worst_var = None, None
-    best_score, worst_score = -1.0, 101.0
-    axes_keys = list(VARIATION_AXES.keys())
+        variants = []
+        best_var, worst_var = None, None
+        best_score, worst_score = -1.0, 101.0
+        axes_keys = list(VARIATION_AXES.keys())
 
-    for _ in range(num_superpositions):
-        combo = {key: random.choice(VARIATION_AXES[key]) for key in axes_keys}
-        p = _apply_transforms(prompt, combo)
-        compliance, stealth, balanced = _score_variant(combo)
+        for _ in range(num_superpositions):
+            combo = {key: random.choice(VARIATION_AXES[key]) for key in axes_keys}
+            p = _apply_transforms(prompt, combo)
+            compliance, stealth, balanced = _score_variant(combo)
 
-        variant = {
-            "prompt": p,
-            "compliance_score": round(compliance, 2),
-            "stealth_score": round(stealth, 2),
-            "balanced_score": round(balanced, 2),
-            "combination_used": combo,
+            variant = {
+                "prompt": p,
+                "compliance_score": round(compliance, 2),
+                "stealth_score": round(stealth, 2),
+                "balanced_score": round(balanced, 2),
+                "combination_used": combo,
+            }
+            variants.append(variant)
+
+            if balanced > best_score:
+                best_score, best_var = balanced, variant
+            if balanced < worst_score:
+                worst_score, worst_var = balanced, variant
+
+        # Collapse
+        if collapse_method == "max_compliance":
+            collapsed = max(variants, key=lambda v: v["compliance_score"])
+        elif collapse_method == "max_stealth":
+            collapsed = max(variants, key=lambda v: v["stealth_score"])
+        elif collapse_method == "balanced":
+            collapsed = max(variants, key=lambda v: v["balanced_score"])
+        else:  # diverse_top3
+            collapsed = sorted(variants, key=lambda v: v["balanced_score"], reverse=True)[0]
+
+        return {
+            "original": prompt,
+            "superpositions_generated": num_superpositions,
+            "collapse_method": collapse_method,
+            "collapsed_result": collapsed,
+            "all_variants": variants,
+            "best_axes_combination": best_var["combination_used"] if best_var else {},
+            "worst_axes_combination": worst_var["combination_used"] if worst_var else {},
         }
-        variants.append(variant)
-
-        if balanced > best_score:
-            best_score, best_var = balanced, variant
-        if balanced < worst_score:
-            worst_score, worst_var = balanced, variant
-
-    # Collapse
-    if collapse_method == "max_compliance":
-        collapsed = max(variants, key=lambda v: v["compliance_score"])
-    elif collapse_method == "max_stealth":
-        collapsed = max(variants, key=lambda v: v["stealth_score"])
-    elif collapse_method == "balanced":
-        collapsed = max(variants, key=lambda v: v["balanced_score"])
-    else:  # diverse_top3
-        collapsed = sorted(variants, key=lambda v: v["balanced_score"], reverse=True)[0]
-
-    return {
-        "original": prompt,
-        "superpositions_generated": num_superpositions,
-        "collapse_method": collapse_method,
-        "collapsed_result": collapsed,
-        "all_variants": variants,
-        "best_axes_combination": best_var["combination_used"] if best_var else {},
-        "worst_axes_combination": worst_var["combination_used"] if worst_var else {},
-    }
+    except Exception as exc:
+        logger.error("superposition_attack_error: %s", exc, exc_info=True)
+        return {
+            "error": str(exc),
+            "tool": "research_superposition_attack",
+        }

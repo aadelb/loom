@@ -31,40 +31,44 @@ async def research_safety_circuit_map(model: str = "auto", probe_type: str = "co
 
     Returns: Dict with circuits, sophistication, weakest_link, strongest_defense
     """
-    logger.info("safety_circuit_map model=%s probe_type=%s", model, probe_type)
-    circuits = _apply_probe_adjustments(_CIRCUITS, probe_type)
+    try:
+        logger.info("safety_circuit_map model=%s probe_type=%s", model, probe_type)
+        circuits = _apply_probe_adjustments(_CIRCUITS, probe_type)
 
-    breadth = min(40.0, len(circuits) * 8.0)
-    depth = sum(c["threshold"] for c in circuits) / len(circuits) * 30.0
-    hardness = sum(c["difficulty"] for c in circuits) / len(circuits) * 30.0
-    sophistication = min(100.0, breadth + depth + hardness)
+        breadth = min(40.0, len(circuits) * 8.0)
+        depth = sum(c["threshold"] for c in circuits) / len(circuits) * 30.0
+        hardness = sum(c["difficulty"] for c in circuits) / len(circuits) * 30.0
+        sophistication = min(100.0, breadth + depth + hardness)
 
-    weakest = min(circuits, key=lambda c: c["difficulty"])
-    strongest = max(circuits, key=lambda c: c["threshold"])
+        weakest = min(circuits, key=lambda c: c["difficulty"])
+        strongest = max(circuits, key=lambda c: c["threshold"])
 
-    return {
-        "model": model,
-        "circuits": [
-            {
-                "name": c["name"],
-                "description": c["description"],
-                "activation_threshold": c["threshold"],
-                "bypass_difficulty": c["difficulty"],
-                "known_weaknesses": c["weaknesses"],
-                "recommended_attacks": c["attacks"],
-            }
-            for c in circuits
-        ],
-        "overall_sophistication": sophistication,
-        "weakest_link": weakest["name"],
-        "strongest_defense": strongest["name"],
-        "probe_type": probe_type,
-        "metadata": {
-            "circuits_count": len(circuits),
-            "average_threshold": sum(c["threshold"] for c in circuits) / len(circuits),
-            "average_difficulty": sum(c["difficulty"] for c in circuits) / len(circuits),
-        },
-    }
+        return {
+            "model": model,
+            "circuits": [
+                {
+                    "name": c["name"],
+                    "description": c["description"],
+                    "activation_threshold": c["threshold"],
+                    "bypass_difficulty": c["difficulty"],
+                    "known_weaknesses": c["weaknesses"],
+                    "recommended_attacks": c["attacks"],
+                }
+                for c in circuits
+            ],
+            "overall_sophistication": sophistication,
+            "weakest_link": weakest["name"],
+            "strongest_defense": strongest["name"],
+            "probe_type": probe_type,
+            "metadata": {
+                "circuits_count": len(circuits),
+                "average_threshold": sum(c["threshold"] for c in circuits) / len(circuits),
+                "average_difficulty": sum(c["difficulty"] for c in circuits) / len(circuits),
+            },
+        }
+    except Exception as exc:
+        logger.error("safety_circuit_map_error: %s", exc)
+        return {"error": str(exc), "tool": "research_safety_circuit_map"}
 
 
 async def research_circuit_bypass_plan(model: str, target_circuit: str = "auto") -> dict[str, Any]:
@@ -76,38 +80,42 @@ async def research_circuit_bypass_plan(model: str, target_circuit: str = "auto")
 
     Returns: Dict with bypass plan, success/detection rates, phase sequence
     """
-    logger.info("circuit_bypass_plan model=%s target_circuit=%s", model, target_circuit)
+    try:
+        logger.info("circuit_bypass_plan model=%s target_circuit=%s", model, target_circuit)
 
-    if target_circuit == "auto":
-        target = min(_CIRCUITS, key=lambda c: c["difficulty"])
-    else:
-        target = next((c for c in _CIRCUITS if c["name"] == target_circuit), None)
-        if not target:
-            raise ValueError(f"Circuit '{target_circuit}' not found")
+        if target_circuit == "auto":
+            target = min(_CIRCUITS, key=lambda c: c["difficulty"])
+        else:
+            target = next((c for c in _CIRCUITS if c["name"] == target_circuit), None)
+            if not target:
+                raise ValueError(f"Circuit '{target_circuit}' not found")
 
-    success = max(10.0, (1.0 - target["difficulty"]) * 100 - target["threshold"] * 15)
-    detection = min(100.0, target["threshold"] * 100 + 20)
+        success = max(10.0, (1.0 - target["difficulty"]) * 100 - target["threshold"] * 15)
+        detection = min(100.0, target["threshold"] * 100 + 20)
 
-    return {
-        "model": model,
-        "target_circuit": target["name"],
-        "vulnerability": target["weaknesses"][0] if target["weaknesses"] else "unknown",
-        "recommended_strategies": target["attacks"],
-        "predicted_success_rate": success,
-        "detection_risk": detection,
-        "phase_sequence": [
-            {"phase": 1, "description": "Probe circuit activation", "technique": "contrastive_analysis"},
-            {"phase": 2, "description": f"Deploy: {target['attacks'][0]}", "technique": target["attacks"][0]},
-            {"phase": 3, "description": "Monitor refusal patterns", "technique": "response_analysis"},
-            {"phase": 4, "description": "Iterate or fallback", "technique": "adaptive_refinement"},
-        ],
-        "fallback_strategies": target["attacks"][1:],
-        "circuit_profile": {
-            "description": target["description"],
-            "activation_threshold": target["threshold"],
-            "bypass_difficulty": target["difficulty"],
-        },
-    }
+        return {
+            "model": model,
+            "target_circuit": target["name"],
+            "vulnerability": target["weaknesses"][0] if target["weaknesses"] else "unknown",
+            "recommended_strategies": target["attacks"],
+            "predicted_success_rate": success,
+            "detection_risk": detection,
+            "phase_sequence": [
+                {"phase": 1, "description": "Probe circuit activation", "technique": "contrastive_analysis"},
+                {"phase": 2, "description": f"Deploy: {target['attacks'][0]}", "technique": target["attacks"][0]},
+                {"phase": 3, "description": "Monitor refusal patterns", "technique": "response_analysis"},
+                {"phase": 4, "description": "Iterate or fallback", "technique": "adaptive_refinement"},
+            ],
+            "fallback_strategies": target["attacks"][1:],
+            "circuit_profile": {
+                "description": target["description"],
+                "activation_threshold": target["threshold"],
+                "bypass_difficulty": target["difficulty"],
+            },
+        }
+    except Exception as exc:
+        logger.error("circuit_bypass_plan_error: %s", exc)
+        return {"error": str(exc), "tool": "research_circuit_bypass_plan"}
 
 
 def _apply_probe_adjustments(circuits: list[dict[str, Any]], probe_type: str) -> list[dict[str, Any]]:

@@ -103,44 +103,47 @@ async def research_workflow_generate(
         Single category: {category, workflow: list[{step, tool, description}], tools_covered}
         Auto mode: {workflows: dict[category, workflow], total_tools_covered, coverage_pct}
     """
-    modules = _get_tool_modules()
-    category_tools: dict[str, list[tuple[str, list[str]]]] = {}
+    try:
+        modules = _get_tool_modules()
+        category_tools: dict[str, list[tuple[str, list[str]]]] = {}
 
-    for module_name, file_path in modules.items():
-        tools = _extract_tool_functions(file_path)
-        if tools:
-            cat = _categorize_tool(module_name)
-            category_tools.setdefault(cat, []).append((module_name, tools))
+        for module_name, file_path in modules.items():
+            tools = _extract_tool_functions(file_path)
+            if tools:
+                cat = _categorize_tool(module_name)
+                category_tools.setdefault(cat, []).append((module_name, tools))
 
-    if category == "auto":
-        all_workflows = {}
-        total_covered = 0
-        for cat in sorted(category_tools.keys()):
-            workflow_steps = _build_workflow(cat, category_tools[cat], max_steps)
-            tools_in_workflow = len(workflow_steps)
-            all_workflows[cat] = {
-                "category": cat,
-                "workflow": workflow_steps,
-                "tools_covered": tools_in_workflow,
+        if category == "auto":
+            all_workflows = {}
+            total_covered = 0
+            for cat in sorted(category_tools.keys()):
+                workflow_steps = _build_workflow(cat, category_tools[cat], max_steps)
+                tools_in_workflow = len(workflow_steps)
+                all_workflows[cat] = {
+                    "category": cat,
+                    "workflow": workflow_steps,
+                    "tools_covered": tools_in_workflow,
+                }
+                total_covered += tools_in_workflow
+
+            return {
+                "workflows": all_workflows,
+                "total_tools_covered": total_covered,
+                "categories": len(all_workflows),
+                "coverage_pct": round((total_covered / len(modules)) * 100, 1) if modules else 0,
             }
-            total_covered += tools_in_workflow
+        else:
+            if category not in category_tools:
+                return {"error": f"Category '{category}' not found. Available: {list(category_tools.keys())}"}
 
-        return {
-            "workflows": all_workflows,
-            "total_tools_covered": total_covered,
-            "categories": len(all_workflows),
-            "coverage_pct": round((total_covered / len(modules)) * 100, 1) if modules else 0,
-        }
-    else:
-        if category not in category_tools:
-            return {"error": f"Category '{category}' not found. Available: {list(category_tools.keys())}"}
-
-        workflow_steps = _build_workflow(category, category_tools[category], max_steps)
-        return {
-            "category": category,
-            "workflow": workflow_steps,
-            "tools_covered": len(workflow_steps),
-        }
+            workflow_steps = _build_workflow(category, category_tools[category], max_steps)
+            return {
+                "category": category,
+                "workflow": workflow_steps,
+                "tools_covered": len(workflow_steps),
+            }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_workflow_generate"}
 
 
 async def research_workflow_coverage() -> dict[str, Any]:
@@ -157,36 +160,39 @@ async def research_workflow_coverage() -> dict[str, Any]:
           - uncovered_by_category: Dict mapping category → uncovered tools
           - categories_analyzed: Total categories found
     """
-    modules = _get_tool_modules()
-    all_tools: dict[str, str] = {}
-    category_map: dict[str, str] = {}
+    try:
+        modules = _get_tool_modules()
+        all_tools: dict[str, str] = {}
+        category_map: dict[str, str] = {}
 
-    for module_name, file_path in modules.items():
-        for tool in _extract_tool_functions(file_path):
-            all_tools[tool] = module_name
-            category_map[tool] = _categorize_tool(module_name)
+        for module_name, file_path in modules.items():
+            for tool in _extract_tool_functions(file_path):
+                all_tools[tool] = module_name
+                category_map[tool] = _categorize_tool(module_name)
 
-    # Get covered tools from auto-generated workflows
-    gen_result = await research_workflow_generate(category="auto", max_steps=6)
-    covered_tools = {
-        step["tool"]
-        for cat_workflow in gen_result.get("workflows", {}).values()
-        for step in cat_workflow.get("workflow", [])
-    }
+        # Get covered tools from auto-generated workflows
+        gen_result = await research_workflow_generate(category="auto", max_steps=6)
+        covered_tools = {
+            step["tool"]
+            for cat_workflow in gen_result.get("workflows", {}).values()
+            for step in cat_workflow.get("workflow", [])
+        }
 
-    # Calculate uncovered tools
-    uncovered = sorted(t for t in all_tools if t not in covered_tools)
+        # Calculate uncovered tools
+        uncovered = sorted(t for t in all_tools if t not in covered_tools)
 
-    # Group uncovered by category
-    uncovered_by_category: dict[str, list[str]] = {}
-    for tool in uncovered:
-        uncovered_by_category.setdefault(category_map[tool], []).append(tool)
+        # Group uncovered by category
+        uncovered_by_category: dict[str, list[str]] = {}
+        for tool in uncovered:
+            uncovered_by_category.setdefault(category_map[tool], []).append(tool)
 
-    return {
-        "total_tools": len(all_tools),
-        "covered": len(covered_tools),
-        "uncovered": uncovered,
-        "coverage_pct": round((len(covered_tools) / len(all_tools)) * 100, 1) if all_tools else 0,
-        "uncovered_by_category": uncovered_by_category,
-        "categories_analyzed": len(set(category_map.values())),
-    }
+        return {
+            "total_tools": len(all_tools),
+            "covered": len(covered_tools),
+            "uncovered": uncovered,
+            "coverage_pct": round((len(covered_tools) / len(all_tools)) * 100, 1) if all_tools else 0,
+            "uncovered_by_category": uncovered_by_category,
+            "categories_analyzed": len(set(category_map.values())),
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_workflow_coverage"}

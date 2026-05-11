@@ -15,10 +15,13 @@ Returns trajectory through safety space with confusion metrics + final trap prom
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
+
+logger = logging.getLogger("loom.tools.strange_attractors")
 
 
 class AttractorTrajectoryPoint(BaseModel):
@@ -47,7 +50,7 @@ async def research_attractor_trap(
     prompt: str,
     attractor_type: str = "lorenz",
     iterations: int = 100,
-) -> AttractorResult:
+) -> AttractorResult | dict[str, Any]:
     """Generate prompts that trap safety evaluators in chaotic oscillations.
 
     Creates strange attractor dynamics in prompt space: classifier oscillates
@@ -62,65 +65,72 @@ async def research_attractor_trap(
     Returns:
         AttractorResult with trajectory through safety space + confusion metrics
     """
-    # Validate inputs
-    if not isinstance(prompt, str) or len(prompt) == 0:
-        raise ValueError("prompt must be non-empty string")
-    if iterations < 50 or iterations > 500:
-        raise ValueError("iterations must be 50-500")
-    if attractor_type not in ("lorenz", "rossler", "henon", "logistic"):
-        raise ValueError(f"invalid attractor_type: {attractor_type}")
+    try:
+        # Validate inputs
+        if not isinstance(prompt, str) or len(prompt) == 0:
+            raise ValueError("prompt must be non-empty string")
+        if iterations < 50 or iterations > 500:
+            raise ValueError("iterations must be 50-500")
+        if attractor_type not in ("lorenz", "rossler", "henon", "logistic"):
+            raise ValueError(f"invalid attractor_type: {attractor_type}")
 
-    # Generate trajectory through safety space
-    trajectory_points = []
-    safety_levels = []
+        # Generate trajectory through safety space
+        trajectory_points = []
+        safety_levels = []
 
-    if attractor_type == "lorenz":
-        safety_levels = _generate_lorenz_orbit(iterations)
-    elif attractor_type == "rossler":
-        safety_levels = _generate_rossler_orbit(iterations)
-    elif attractor_type == "henon":
-        safety_levels = _generate_henon_map(iterations)
-    else:  # logistic
-        safety_levels = _generate_logistic_map(iterations)
+        if attractor_type == "lorenz":
+            safety_levels = _generate_lorenz_orbit(iterations)
+        elif attractor_type == "rossler":
+            safety_levels = _generate_rossler_orbit(iterations)
+        elif attractor_type == "henon":
+            safety_levels = _generate_henon_map(iterations)
+        else:  # logistic
+            safety_levels = _generate_logistic_map(iterations)
 
-    # Build trajectory with prompt variants at each safety level
-    for i, safety_level in enumerate(safety_levels):
-        variant = _morph_prompt(prompt, safety_level)
-        classification = _classify_safety_level(safety_level)
-        trajectory_points.append(
-            AttractorTrajectoryPoint(
-                iteration=i,
-                safety_level=safety_level,
-                prompt_variant=variant,
-                classification_target=classification,
+        # Build trajectory with prompt variants at each safety level
+        for i, safety_level in enumerate(safety_levels):
+            variant = _morph_prompt(prompt, safety_level)
+            classification = _classify_safety_level(safety_level)
+            trajectory_points.append(
+                AttractorTrajectoryPoint(
+                    iteration=i,
+                    safety_level=safety_level,
+                    prompt_variant=variant,
+                    classification_target=classification,
+                )
             )
+
+        # Calculate confusion metrics
+        boundary_crossings = _count_boundary_crossings(safety_levels)
+        trapped_iterations = _measure_trap_depth(safety_levels)
+        confusion_potential = _calculate_confusion_potential(safety_levels)
+
+        # Select trap prompt: deepest point of confusion (near 0.5 boundary)
+        trap_idx = _find_most_confusing_point(safety_levels)
+        trap_prompt = trajectory_points[trap_idx].prompt_variant
+
+        recommendation = (
+            f"This {attractor_type} attractor creates {confusion_potential:.1f}/10 "
+            f"confusion potential with {boundary_crossings} oscillations. "
+            f"Evaluator trapped for ~{trapped_iterations} iterations before defaulting to 'safe'."
         )
 
-    # Calculate confusion metrics
-    boundary_crossings = _count_boundary_crossings(safety_levels)
-    trapped_iterations = _measure_trap_depth(safety_levels)
-    confusion_potential = _calculate_confusion_potential(safety_levels)
-
-    # Select trap prompt: deepest point of confusion (near 0.5 boundary)
-    trap_idx = _find_most_confusing_point(safety_levels)
-    trap_prompt = trajectory_points[trap_idx].prompt_variant
-
-    recommendation = (
-        f"This {attractor_type} attractor creates {confusion_potential:.1f}/10 "
-        f"confusion potential with {boundary_crossings} oscillations. "
-        f"Evaluator trapped for ~{trapped_iterations} iterations before defaulting to 'safe'."
-    )
-
-    return AttractorResult(
-        original=prompt,
-        attractor_type=attractor_type,
-        trajectory=trajectory_points,
-        confusion_potential=confusion_potential,
-        boundary_crossings=boundary_crossings,
-        trapped_iterations=trapped_iterations,
-        final_prompt=trap_prompt,
-        recommendation=recommendation,
-    )
+        return AttractorResult(
+            original=prompt,
+            attractor_type=attractor_type,
+            trajectory=trajectory_points,
+            confusion_potential=confusion_potential,
+            boundary_crossings=boundary_crossings,
+            trapped_iterations=trapped_iterations,
+            final_prompt=trap_prompt,
+            recommendation=recommendation,
+        )
+    except Exception as exc:
+        logger.error("attractor_trap_error: %s", exc, exc_info=True)
+        return {
+            "error": str(exc),
+            "tool": "research_attractor_trap",
+        }
 
 
 def _generate_lorenz_orbit(iterations: int) -> list[float]:

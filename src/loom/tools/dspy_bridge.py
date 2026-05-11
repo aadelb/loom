@@ -217,28 +217,31 @@ async def research_dspy_cost_report() -> dict[str, Any]:
         - avg_latency_ms: average latency across calls
         - call_times: list of individual call latencies (ms)
     """
-    total_time = sum(_dspy_stats["call_times"]) if _dspy_stats["call_times"] else 0
-    avg_latency = (
-        total_time / len(_dspy_stats["call_times"])
-        if _dspy_stats["call_times"]
-        else 0
-    )
+    try:
+        total_time = sum(_dspy_stats["call_times"]) if _dspy_stats["call_times"] else 0
+        avg_latency = (
+            total_time / len(_dspy_stats["call_times"])
+            if _dspy_stats["call_times"]
+            else 0
+        )
 
-    result = {
-        "total_calls": _dspy_stats["total_calls"],
-        "total_input_tokens": _dspy_stats["total_input_tokens"],
-        "total_output_tokens": _dspy_stats["total_output_tokens"],
-        "estimated_cost_usd": round(_dspy_stats["total_cost_usd"], 5),
-        "providers_used": dict(_dspy_stats["providers_used"]),
-        "avg_latency_ms": round(avg_latency, 1),
-    }
+        result = {
+            "total_calls": _dspy_stats["total_calls"],
+            "total_input_tokens": _dspy_stats["total_input_tokens"],
+            "total_output_tokens": _dspy_stats["total_output_tokens"],
+            "estimated_cost_usd": round(_dspy_stats["total_cost_usd"], 5),
+            "providers_used": dict(_dspy_stats["providers_used"]),
+            "avg_latency_ms": round(avg_latency, 1),
+        }
 
-    logger.info(
-        "dspy_cost_report calls=%d tokens=%d/%d cost=$%.5f",
-        result["total_calls"],
-        result["total_input_tokens"],
-        result["total_output_tokens"],
-        result["estimated_cost_usd"],
-    )
+        logger.info(
+            "dspy_cost_report calls=%d tokens=%d/%d cost=$%.5f",
+            result["total_calls"],
+            result["total_input_tokens"],
+            result["total_output_tokens"],
+            result["estimated_cost_usd"],
+        )
 
-    return result
+        return result
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_dspy_cost_report"}

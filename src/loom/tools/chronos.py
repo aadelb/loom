@@ -161,121 +161,124 @@ async def research_chronos_reverse(
         - actionable_now: Immediate actions to unblock critical path
         - generated_at: ISO timestamp
     """
-    # Validate inputs
-    steps_back = max(1, min(steps_back, 10))
-    domain = domain.lower() if domain else "technology"
-    
-    # Map domain to adoption curve pattern
-    curve_pattern = _DOMAIN_CURVE_MAP.get(domain, "capability_to_adoption")
-    curve = _ADOPTION_CURVES[curve_pattern]
+    try:
+        # Validate inputs
+        steps_back = max(1, min(steps_back, 10))
+        domain = domain.lower() if domain else "technology"
 
-    # Parse future_state for specificity signals
-    future_state = future_state.strip()
-    specificity_signals = sum(
-        [
-            "%" in future_state,
-            "timeline" in future_state.lower(),
-            "by 2" in future_state.lower(),
-            "within" in future_state.lower(),
-            len(future_state.split()) > 10,
-        ]
-    )
-    base_confidence = 0.5 + (specificity_signals * 0.08)
-    base_confidence = min(base_confidence, 0.95)
+        # Map domain to adoption curve pattern
+        curve_pattern = _DOMAIN_CURVE_MAP.get(domain, "capability_to_adoption")
+        curve = _ADOPTION_CURVES[curve_pattern]
 
-    # Build reverse causal chain (future → present)
-    causal_chain: list[dict[str, Any]] = []
-    total_timeline = 0
+        # Parse future_state for specificity signals
+        future_state = future_state.strip()
+        specificity_signals = sum(
+            [
+                "%" in future_state,
+                "timeline" in future_state.lower(),
+                "by 2" in future_state.lower(),
+                "within" in future_state.lower(),
+                len(future_state.split()) > 10,
+            ]
+        )
+        base_confidence = 0.5 + (specificity_signals * 0.08)
+        base_confidence = min(base_confidence, 0.95)
 
-    # Step N: The future state itself
-    causal_chain.append(
-        {
-            "index": steps_back,
-            "phase": f"GOAL: {future_state}",
-            "timeline_to_next": 0,
-            "probability": 1.0,
-            "enablers": [],
-            "blockers": [],
-            "evidence_type": "goal_state",
-        }
-    )
+        # Build reverse causal chain (future → present)
+        causal_chain: list[dict[str, Any]] = []
+        total_timeline = 0
 
-    # Steps N-1 through 0: Decompose backwards
-    for i in range(steps_back - 1, -1, -1):
-        curve_idx = min(i, len(curve) - 1)
-        curve_entry = curve[curve_idx]
-
-        # Timeline gap (months between this step and next)
-        if i < steps_back - 1:
-            timeline_to_next = (
-                causal_chain[-1].get("timeline_to_next", 0)
-                + (curve_entry.get("months", 0) if i > 0 else 0)
-            )
-        else:
-            timeline_to_next = curve_entry.get("months", 6)
-        total_timeline += timeline_to_next
-
-        # Select enablers/blockers for this domain
-        domain_config = _DOMAIN_PATTERNS.get(domain, _DOMAIN_PATTERNS["technology"])
-        enablers = domain_config["enablers"][: max(2, steps_back - i)]
-        blockers = domain_config["blockers"][: max(1, (steps_back - i) // 2)]
-
+        # Step N: The future state itself
         causal_chain.append(
             {
-                "index": i,
-                "phase": curve_entry.get("phase", f"Phase {i}"),
-                "timeline_to_next": timeline_to_next,
-                "probability": 0.7 + (0.1 * (steps_back - i) / steps_back),
-                "enablers": enablers,
-                "blockers": blockers,
-                "evidence_type": "prerequisite",
+                "index": steps_back,
+                "phase": f"GOAL: {future_state}",
+                "timeline_to_next": 0,
+                "probability": 1.0,
+                "enablers": [],
+                "blockers": [],
+                "evidence_type": "goal_state",
             }
         )
 
-    # Identify critical path (sequential non-parallelizable steps)
-    critical_path: list[str] = []
-    for step in causal_chain:
-        if len(step["blockers"]) > 0:
-            critical_path.append(step["phase"])
+        # Steps N-1 through 0: Decompose backwards
+        for i in range(steps_back - 1, -1, -1):
+            curve_idx = min(i, len(curve) - 1)
+            curve_entry = curve[curve_idx]
 
-    # Find leverage points (steps where small effort → large downstream impact)
-    leverage_points: list[dict[str, str]] = []
-    for idx, step in enumerate(causal_chain[1:], start=1):
-        if idx <= 2:  # Early steps have more leverage
-            leverage_points.append(
+            # Timeline gap (months between this step and next)
+            if i < steps_back - 1:
+                timeline_to_next = (
+                    causal_chain[-1].get("timeline_to_next", 0)
+                    + (curve_entry.get("months", 0) if i > 0 else 0)
+                )
+            else:
+                timeline_to_next = curve_entry.get("months", 6)
+            total_timeline += timeline_to_next
+
+            # Select enablers/blockers for this domain
+            domain_config = _DOMAIN_PATTERNS.get(domain, _DOMAIN_PATTERNS["technology"])
+            enablers = domain_config["enablers"][: max(2, steps_back - i)]
+            blockers = domain_config["blockers"][: max(1, (steps_back - i) // 2)]
+
+            causal_chain.append(
                 {
-                    "phase": step["phase"],
-                    "impact": "Unblocks {} downstream phases".format(steps_back - idx),
-                    "action": f"Focus resources on removing blockers: {', '.join(step['blockers'][:2])}",
+                    "index": i,
+                    "phase": curve_entry.get("phase", f"Phase {i}"),
+                    "timeline_to_next": timeline_to_next,
+                    "probability": 0.7 + (0.1 * (steps_back - i) / steps_back),
+                    "enablers": enablers,
+                    "blockers": blockers,
+                    "evidence_type": "prerequisite",
                 }
             )
 
-    # Generate actionable next steps from Step 0 (NOW)
-    actionable_now: list[str] = []
-    if causal_chain:
-        current_step = causal_chain[-1]  # Step 0 (nearest present)
-        if current_step["enablers"]:
-            actionable_now.extend(
-                [f"Ensure {e} is available or underway" for e in current_step["enablers"][:3]]
-            )
-        if current_step["blockers"]:
-            actionable_now.extend(
-                [f"Actively mitigate: {b}" for b in current_step["blockers"][:2]]
-            )
-        if not actionable_now:
-            actionable_now.append(
-                f"Begin work on: {current_step['phase']}"
-            )
+        # Identify critical path (sequential non-parallelizable steps)
+        critical_path: list[str] = []
+        for step in causal_chain:
+            if len(step["blockers"]) > 0:
+                critical_path.append(step["phase"])
 
-    return {
-        "future_state": future_state,
-        "domain": domain,
-        "causal_chain": causal_chain,
-        "critical_path": critical_path,
-        "leverage_points": leverage_points,
-        "timeline_estimate": total_timeline,
-        "timeline_unit": "months",
-        "confidence": round(base_confidence, 2),
-        "actionable_now": actionable_now,
-        "generated_at": datetime.now().isoformat(),
-    }
+        # Find leverage points (steps where small effort → large downstream impact)
+        leverage_points: list[dict[str, str]] = []
+        for idx, step in enumerate(causal_chain[1:], start=1):
+            if idx <= 2:  # Early steps have more leverage
+                leverage_points.append(
+                    {
+                        "phase": step["phase"],
+                        "impact": "Unblocks {} downstream phases".format(steps_back - idx),
+                        "action": f"Focus resources on removing blockers: {', '.join(step['blockers'][:2])}",
+                    }
+                )
+
+        # Generate actionable next steps from Step 0 (NOW)
+        actionable_now: list[str] = []
+        if causal_chain:
+            current_step = causal_chain[-1]  # Step 0 (nearest present)
+            if current_step["enablers"]:
+                actionable_now.extend(
+                    [f"Ensure {e} is available or underway" for e in current_step["enablers"][:3]]
+                )
+            if current_step["blockers"]:
+                actionable_now.extend(
+                    [f"Actively mitigate: {b}" for b in current_step["blockers"][:2]]
+                )
+            if not actionable_now:
+                actionable_now.append(
+                    f"Begin work on: {current_step['phase']}"
+                )
+
+        return {
+            "future_state": future_state,
+            "domain": domain,
+            "causal_chain": causal_chain,
+            "critical_path": critical_path,
+            "leverage_points": leverage_points,
+            "timeline_estimate": total_timeline,
+            "timeline_unit": "months",
+            "confidence": round(base_confidence, 2),
+            "actionable_now": actionable_now,
+            "generated_at": datetime.now().isoformat(),
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_chronos_reverse"}

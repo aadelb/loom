@@ -30,58 +30,61 @@ async def research_latency_report(tool_name: str = "") -> dict[str, Any]:
         - If tool_name empty: list of all tools sorted by p95 descending
         - Always includes 'slow_tools' list (p95 > 1000ms)
     """
-    tracker = get_latency_tracker()
+    try:
+        tracker = get_latency_tracker()
 
-    if tool_name.strip():
-        # Get stats for specific tool
-        stats = tracker.get_percentiles(tool_name)
-        if stats["count"] == 0:
+        if tool_name.strip():
+            # Get stats for specific tool
+            stats = tracker.get_percentiles(tool_name)
+            if stats["count"] == 0:
+                return {
+                    "error": f"no_data",
+                    "message": f"Tool '{tool_name}' has no recorded latencies yet.",
+                    "tool": tool_name,
+                }
             return {
-                "error": f"no_data",
-                "message": f"Tool '{tool_name}' has no recorded latencies yet.",
                 "tool": tool_name,
+                "stats": stats,
+                "is_slow": stats["p95"] > 1000,
+                "slow_warning": "p95 exceeds 1000ms" if stats["p95"] > 1000 else None,
             }
-        return {
-            "tool": tool_name,
-            "stats": stats,
-            "is_slow": stats["p95"] > 1000,
-            "slow_warning": "p95 exceeds 1000ms" if stats["p95"] > 1000 else None,
-        }
-    else:
-        # Get stats for all tools
-        all_stats = tracker.get_all_latencies()
+        else:
+            # Get stats for all tools
+            all_stats = tracker.get_all_latencies()
 
-        if not all_stats:
-            return {
-                "error": "no_tools_tracked",
-                "message": "No latency data collected yet. Tools must be called first.",
-                "total_tools": 0,
-            }
+            if not all_stats:
+                return {
+                    "error": "no_tools_tracked",
+                    "message": "No latency data collected yet. Tools must be called first.",
+                    "total_tools": 0,
+                }
 
-        # Sort by p95 descending
-        sorted_tools = sorted(
-            [s for s in all_stats.values() if s["count"] > 0],
-            key=lambda x: x["p95"],
-            reverse=True,
-        )
-        
-        # Guard: ensure we have at least two data points for meaningful stats
-        if len(sorted_tools) < 2:
+            # Sort by p95 descending
+            sorted_tools = sorted(
+                [s for s in all_stats.values() if s["count"] > 0],
+                key=lambda x: x["p95"],
+                reverse=True,
+            )
+
+            # Guard: ensure we have at least two data points for meaningful stats
+            if len(sorted_tools) < 2:
+                return {
+                    "error": "insufficient_data",
+                    "message": "At least 2 tools with data needed for comparison",
+                    "total_tools_tracked": len(all_stats),
+                    "total_tools_with_data": len(sorted_tools),
+                }
+
+            # Find slow tools (p95 > 1000ms)
+            slow_tools = [s for s in sorted_tools if s["p95"] > 1000]
+
             return {
-                "error": "insufficient_data",
-                "message": "At least 2 tools with data needed for comparison",
                 "total_tools_tracked": len(all_stats),
                 "total_tools_with_data": len(sorted_tools),
+                "tools": sorted_tools,
+                "slow_tools": slow_tools,
+                "slow_count": len(slow_tools),
+                "slow_threshold_ms": 1000,
             }
-
-        # Find slow tools (p95 > 1000ms)
-        slow_tools = [s for s in sorted_tools if s["p95"] > 1000]
-
-        return {
-            "total_tools_tracked": len(all_stats),
-            "total_tools_with_data": len(sorted_tools),
-            "tools": sorted_tools,
-            "slow_tools": slow_tools,
-            "slow_count": len(slow_tools),
-            "slow_threshold_ms": 1000,
-        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_latency_report"}

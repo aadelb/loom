@@ -123,51 +123,63 @@ def _read_journal_timeline(months: int) -> tuple[list[dict[str, Any]], int, int]
 
 async def research_journal_add(title: str, content: str, tags: list[str] | None = None, category: str = "finding") -> dict[str, Any]:
     """Add entry to journal. Categories: finding, hypothesis, experiment, insight, todo, milestone."""
-    if category not in VALID_CATEGORIES:
-        return {"error": f"Invalid category '{category}'", "entry_id": None}
-    if not title or not title.strip():
-        return {"error": "Title empty", "entry_id": None}
-
-    entry_id = str(uuid4())[:8]
-    now = datetime.now(UTC)
-    entry = {
-        "id": entry_id,
-        "title": title,
-        "content": content,
-        "tags": tags or [],
-        "category": category,
-        "timestamp": now.isoformat(),
-    }
-
     try:
-        # Run blocking file I/O in executor
-        await asyncio.to_thread(_write_journal_entry, _month_file(now), entry)
-        logger.info("journal_entry_added", entry_id=entry_id, category=category)
-    except OSError as e:
-        logger.error("journal_write_failed", error=str(e))
-        return {"error": f"Write failed: {e}", "entry_id": None}
+        if category not in VALID_CATEGORIES:
+            return {"error": f"Invalid category '{category}'", "entry_id": None}
+        if not title or not title.strip():
+            return {"error": "Title empty", "entry_id": None}
 
-    return {
-        "entry_id": entry_id,
-        "title": title,
-        "category": category,
-        "timestamp": entry["timestamp"],
-    }
+        entry_id = str(uuid4())[:8]
+        now = datetime.now(UTC)
+        entry = {
+            "id": entry_id,
+            "title": title,
+            "content": content,
+            "tags": tags or [],
+            "category": category,
+            "timestamp": now.isoformat(),
+        }
+
+        try:
+            # Run blocking file I/O in executor
+            await asyncio.to_thread(_write_journal_entry, _month_file(now), entry)
+            logger.info("journal_entry_added", entry_id=entry_id, category=category)
+        except OSError as e:
+            logger.error("journal_write_failed", error=str(e))
+            return {"error": f"Write failed: {e}", "entry_id": None}
+
+        return {
+            "entry_id": entry_id,
+            "title": title,
+            "category": category,
+            "timestamp": entry["timestamp"],
+        }
+    except Exception as exc:
+        logger.error("journal_add_error: %s", exc)
+        return {"error": str(exc), "tool": "research_journal_add"}
 
 
 async def research_journal_search(query: str = "", category: str = "all", limit: int = 20) -> dict[str, Any]:
     """Search journal entries by query and/or category. Returns {entries, total}."""
-    # Run blocking file I/O in executor
-    entries, total = await asyncio.to_thread(_search_journal_entries, query, category, limit)
-    return {"entries": entries, "total": total}
+    try:
+        # Run blocking file I/O in executor
+        entries, total = await asyncio.to_thread(_search_journal_entries, query, category, limit)
+        return {"entries": entries, "total": total}
+    except Exception as exc:
+        logger.error("journal_search_error: %s", exc)
+        return {"error": str(exc), "tool": "research_journal_search"}
 
 
 async def research_journal_timeline(months: int = 3) -> dict[str, Any]:
     """Timeline aggregated by week. Returns {timeline, total_entries, active_weeks}."""
-    # Run blocking file I/O in executor
-    timeline, total_entries, active_weeks = await asyncio.to_thread(_read_journal_timeline, months)
-    return {
-        "timeline": timeline,
-        "total_entries": total_entries,
-        "active_weeks": active_weeks,
-    }
+    try:
+        # Run blocking file I/O in executor
+        timeline, total_entries, active_weeks = await asyncio.to_thread(_read_journal_timeline, months)
+        return {
+            "timeline": timeline,
+            "total_entries": total_entries,
+            "active_weeks": active_weeks,
+        }
+    except Exception as exc:
+        logger.error("journal_timeline_error: %s", exc)
+        return {"error": str(exc), "tool": "research_journal_timeline"}

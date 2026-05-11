@@ -49,19 +49,19 @@ async def research_session_record(
     Returns:
         {recorded: bool, session_id, step_number, timestamp}
     """
-    session_file = _get_replay_dir() / f"{session_id}.jsonl"
-    step_number = len(_load_jsonl_steps(session_file)) + 1
-
-    step = {
-        "step": step_number,
-        "tool": tool_name,
-        "params_summary": str(params)[:200],
-        "result_summary": result_summary[:500],
-        "duration_ms": duration_ms,
-        "timestamp": datetime.now(UTC).isoformat(),
-    }
-
     try:
+        session_file = _get_replay_dir() / f"{session_id}.jsonl"
+        step_number = len(_load_jsonl_steps(session_file)) + 1
+
+        step = {
+            "step": step_number,
+            "tool": tool_name,
+            "params_summary": str(params)[:200],
+            "result_summary": result_summary[:500],
+            "duration_ms": duration_ms,
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+
         with session_file.open("a") as f:
             f.write(json.dumps(step) + "\n")
         return {
@@ -70,9 +70,9 @@ async def research_session_record(
             "step_number": step_number,
             "timestamp": step["timestamp"],
         }
-    except OSError as e:
-        logger.error("session_record_failed: %s", e)
-        return {"recorded": False, "session_id": session_id, "error": str(e)}
+    except Exception as exc:
+        logger.error("session_record_failed: %s", exc)
+        return {"error": str(exc), "tool": "research_session_record"}
 
 
 async def research_session_replay(
@@ -83,25 +83,28 @@ async def research_session_replay(
     Returns:
         {session_id, steps: [step dicts], total_steps, total_duration_ms}
     """
-    session_file = _get_replay_dir() / f"{session_id}.jsonl"
-    steps = _load_jsonl_steps(session_file)
+    try:
+        session_file = _get_replay_dir() / f"{session_id}.jsonl"
+        steps = _load_jsonl_steps(session_file)
 
-    if not steps and not session_file.exists():
+        if not steps and not session_file.exists():
+            return {
+                "session_id": session_id,
+                "steps": [],
+                "total_steps": 0,
+                "total_duration_ms": 0.0,
+                "error": f"Session not found: {session_id}",
+            }
+
+        total_duration = sum(s.get("duration_ms", 0) for s in steps)
         return {
             "session_id": session_id,
-            "steps": [],
-            "total_steps": 0,
-            "total_duration_ms": 0.0,
-            "error": f"Session not found: {session_id}",
+            "steps": steps,
+            "total_steps": len(steps),
+            "total_duration_ms": round(total_duration, 2),
         }
-
-    total_duration = sum(s.get("duration_ms", 0) for s in steps)
-    return {
-        "session_id": session_id,
-        "steps": steps,
-        "total_steps": len(steps),
-        "total_duration_ms": round(total_duration, 2),
-    }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_session_replay"}
 
 
 async def research_session_list() -> dict[str, Any]:
@@ -110,22 +113,25 @@ async def research_session_list() -> dict[str, Any]:
     Returns:
         {sessions: [{id, steps_count, total_duration_ms, first_step_at, last_step_at}], total_sessions}
     """
-    replay_dir = _get_replay_dir()
-    sessions = []
+    try:
+        replay_dir = _get_replay_dir()
+        sessions = []
 
-    for session_file in sorted(replay_dir.glob("*.jsonl")):
-        steps = _load_jsonl_steps(session_file)
-        if steps:
-            total_duration = sum(s.get("duration_ms", 0) for s in steps)
-            sessions.append({
-                "id": session_file.stem,
-                "steps_count": len(steps),
-                "total_duration_ms": round(total_duration, 2),
-                "first_step_at": steps[0].get("timestamp", ""),
-                "last_step_at": steps[-1].get("timestamp", ""),
-            })
+        for session_file in sorted(replay_dir.glob("*.jsonl")):
+            steps = _load_jsonl_steps(session_file)
+            if steps:
+                total_duration = sum(s.get("duration_ms", 0) for s in steps)
+                sessions.append({
+                    "id": session_file.stem,
+                    "steps_count": len(steps),
+                    "total_duration_ms": round(total_duration, 2),
+                    "first_step_at": steps[0].get("timestamp", ""),
+                    "last_step_at": steps[-1].get("timestamp", ""),
+                })
 
-    return {
-        "sessions": sessions,
-        "total_sessions": len(sessions),
-    }
+        return {
+            "sessions": sessions,
+            "total_sessions": len(sessions),
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_session_list"}

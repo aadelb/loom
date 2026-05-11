@@ -14,40 +14,43 @@ async def research_transfer_test(
     models: list[str] | None = None,
 ) -> dict[str, Any]:
     """Test strategy transferability across multiple LLM providers."""
-    if not models:
-        models = ["nvidia", "groq", "deepseek"]
-    reframed = _apply_strategy(prompt, strategy)
-    responses = await asyncio.gather(*[_query_model(m, reframed) for m in models], return_exceptions=True)
-    results_per_model: dict[str, dict[str, Any]] = {}
-    hcs_scores: list[tuple[str, float]] = []
-    for model_name, response in zip(models, responses):
-        if isinstance(response, Exception):
-            logger.warning("model_failed model=%s", model_name)
-            results_per_model[model_name] = {"response": None, "hcs_score": 0.0, "status": "failed"}
+    try:
+        if not models:
+            models = ["nvidia", "groq", "deepseek"]
+        reframed = _apply_strategy(prompt, strategy)
+        responses = await asyncio.gather(*[_query_model(m, reframed) for m in models], return_exceptions=True)
+        results_per_model: dict[str, dict[str, Any]] = {}
+        hcs_scores: list[tuple[str, float]] = []
+        for model_name, response in zip(models, responses):
+            if isinstance(response, Exception):
+                logger.warning("model_failed model=%s", model_name)
+                results_per_model[model_name] = {"response": None, "hcs_score": 0.0, "status": "failed"}
+            else:
+                hcs = _score_hcs(response)
+                results_per_model[model_name] = {"response": response[:500], "hcs_score": hcs, "status": "success"}
+                hcs_scores.append((model_name, hcs))
+        if hcs_scores:
+            transferable = sum(1 for _, score in hcs_scores if score >= 7)
+            transfer_pct = (transferable / len(hcs_scores)) * 100
+            best = max(hcs_scores, key=lambda x: x[1])[0]
+            worst = min(hcs_scores, key=lambda x: x[1])[0]
         else:
-            hcs = _score_hcs(response)
-            results_per_model[model_name] = {"response": response[:500], "hcs_score": hcs, "status": "success"}
-            hcs_scores.append((model_name, hcs))
-    if hcs_scores:
-        transferable = sum(1 for _, score in hcs_scores if score >= 7)
-        transfer_pct = (transferable / len(hcs_scores)) * 100
-        best = max(hcs_scores, key=lambda x: x[1])[0]
-        worst = min(hcs_scores, key=lambda x: x[1])[0]
-    else:
-        transfer_pct = 0.0
-        best = worst = "N/A"
-    return {
-        "prompt": prompt,
-        "strategy": strategy,
-        "reframed_prompt": reframed,
-        "results_per_model": results_per_model,
-        "transferability_score": round(transfer_pct, 1),
-        "universal": transfer_pct > 80,
-        "best_model": best,
-        "worst_model": worst,
-        "models_tested": len(models),
-        "models_succeeded": len(hcs_scores),
-    }
+            transfer_pct = 0.0
+            best = worst = "N/A"
+        return {
+            "prompt": prompt,
+            "strategy": strategy,
+            "reframed_prompt": reframed,
+            "results_per_model": results_per_model,
+            "transferability_score": round(transfer_pct, 1),
+            "universal": transfer_pct > 80,
+            "best_model": best,
+            "worst_model": worst,
+            "models_tested": len(models),
+            "models_succeeded": len(hcs_scores),
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_transfer_test"}
 
 
 def _apply_strategy(prompt: str, strategy_name: str) -> str:

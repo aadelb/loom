@@ -253,81 +253,84 @@ async def research_semantic_route(query: str, top_k: int = 5) -> dict[str, Any]:
     Returns:
         Dict with recommended tools, similarity scores, embedding method used
     """
-    if not query or not isinstance(query, str):
-        return {
-            "query": query,
-            "error": "Query must be a non-empty string",
-            "recommended_tools": [],
-            "embedding_method": "none",
-        }
+    try:
+        if not query or not isinstance(query, str):
+            return {
+                "query": query,
+                "error": "Query must be a non-empty string",
+                "recommended_tools": [],
+                "embedding_method": "none",
+            }
 
-    query = query.strip()
-    if len(query) < 2:
-        return {
-            "query": query,
-            "error": "Query too short (min 2 chars)",
-            "recommended_tools": [],
-            "embedding_method": "none",
-        }
+        query = query.strip()
+        if len(query) < 2:
+            return {
+                "query": query,
+                "error": "Query too short (min 2 chars)",
+                "recommended_tools": [],
+                "embedding_method": "none",
+            }
 
-    top_k = max(1, min(top_k, 25))
+        top_k = max(1, min(top_k, 25))
 
-    # Build embeddings if not already done
-    embeddings, tool_names = await _build_tool_embeddings()
-    if embeddings is None or len(tool_names) == 0:
-        logger.warning("No embeddings available; using keyword fallback")
-        results = _keyword_fallback(query, top_k)
+        # Build embeddings if not already done
+        embeddings, tool_names = await _build_tool_embeddings()
+        if embeddings is None or len(tool_names) == 0:
+            logger.warning("No embeddings available; using keyword fallback")
+            results = _keyword_fallback(query, top_k)
+            return {
+                "query": query,
+                "recommended_tools": [
+                    {"tool": name, "similarity": float(score)} for name, score in results
+                ],
+                "embedding_method": "keyword_fallback",
+                "total_tools": len(_TOOL_DESCRIPTIONS),
+            }
+
+        # Embed query
+        embedding_method = "none"
+        query_embedding = None
+
+        if _SENTENCE_TRANSFORMERS_AVAILABLE:
+            try:
+                query_embedding = await _embed_texts_sentence_transformers([query])
+                embedding_method = "sentence-transformers"
+            except Exception as e:
+                logger.warning("Query embedding failed with sentence-transformers: %s", str(e))
+
+        if query_embedding is None and _SKLEARN_AVAILABLE:
+            try:
+                query_embedding = await _embed_texts_sklearn([query])
+                embedding_method = "sklearn-tfidf"
+            except Exception as e:
+                logger.warning("Query embedding failed with sklearn: %s", str(e))
+
+        if query_embedding is None:
+            logger.warning("Could not embed query; using keyword fallback")
+            results = _keyword_fallback(query, top_k)
+            return {
+                "query": query,
+                "recommended_tools": [
+                    {"tool": name, "similarity": float(score)} for name, score in results
+                ],
+                "embedding_method": "keyword_fallback",
+                "total_tools": len(_TOOL_DESCRIPTIONS),
+            }
+
+        # Search for similar tools
+        results = await _similarity_search(query_embedding, top_k)
+
         return {
             "query": query,
             "recommended_tools": [
                 {"tool": name, "similarity": float(score)} for name, score in results
             ],
-            "embedding_method": "keyword_fallback",
+            "embedding_method": embedding_method,
             "total_tools": len(_TOOL_DESCRIPTIONS),
+            "embedding_dims": int(query_embedding.shape[-1]),
         }
-
-    # Embed query
-    embedding_method = "none"
-    query_embedding = None
-
-    if _SENTENCE_TRANSFORMERS_AVAILABLE:
-        try:
-            query_embedding = await _embed_texts_sentence_transformers([query])
-            embedding_method = "sentence-transformers"
-        except Exception as e:
-            logger.warning("Query embedding failed with sentence-transformers: %s", str(e))
-
-    if query_embedding is None and _SKLEARN_AVAILABLE:
-        try:
-            query_embedding = await _embed_texts_sklearn([query])
-            embedding_method = "sklearn-tfidf"
-        except Exception as e:
-            logger.warning("Query embedding failed with sklearn: %s", str(e))
-
-    if query_embedding is None:
-        logger.warning("Could not embed query; using keyword fallback")
-        results = _keyword_fallback(query, top_k)
-        return {
-            "query": query,
-            "recommended_tools": [
-                {"tool": name, "similarity": float(score)} for name, score in results
-            ],
-            "embedding_method": "keyword_fallback",
-            "total_tools": len(_TOOL_DESCRIPTIONS),
-        }
-
-    # Search for similar tools
-    results = await _similarity_search(query_embedding, top_k)
-
-    return {
-        "query": query,
-        "recommended_tools": [
-            {"tool": name, "similarity": float(score)} for name, score in results
-        ],
-        "embedding_method": embedding_method,
-        "total_tools": len(_TOOL_DESCRIPTIONS),
-        "embedding_dims": int(query_embedding.shape[-1]),
-    }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_semantic_route"}
 
 
 async def research_semantic_batch_route(
@@ -342,31 +345,34 @@ async def research_semantic_batch_route(
     Returns:
         Dict with routes for each query and aggregated statistics
     """
-    if not queries or not isinstance(queries, list):
-        return {"error": "Queries must be non-empty list", "routes": [], "total_queries": 0}
+    try:
+        if not queries or not isinstance(queries, list):
+            return {"error": "Queries must be non-empty list", "routes": [], "total_queries": 0}
 
-    routes = []
-    tool_counts: dict[str, int] = {}
+        routes = []
+        tool_counts: dict[str, int] = {}
 
-    for query in queries:
-        if isinstance(query, str) and query.strip():
-            route = await research_semantic_route(query, top_k)
-            routes.append(route)
-            for tool_info in route.get("recommended_tools", []):
-                tool_name = tool_info.get("tool", "")
-                if tool_name:
-                    tool_counts[tool_name] = tool_counts.get(tool_name, 0) + 1
+        for query in queries:
+            if isinstance(query, str) and query.strip():
+                route = await research_semantic_route(query, top_k)
+                routes.append(route)
+                for tool_info in route.get("recommended_tools", []):
+                    tool_name = tool_info.get("tool", "")
+                    if tool_name:
+                        tool_counts[tool_name] = tool_counts.get(tool_name, 0) + 1
 
-    top_tool = max(tool_counts, key=tool_counts.get) if tool_counts else "mixed"
+        top_tool = max(tool_counts, key=tool_counts.get) if tool_counts else "mixed"
 
-    return {
-        "routes": routes,
-        "tool_distribution": dict(
-            sorted(tool_counts.items(), key=lambda x: x[1], reverse=True)
-        ),
-        "total_queries": len(routes),
-        "recommendation_summary": f"Routed {len(routes)} queries to {len(tool_counts)} tools. Most: {top_tool}",
-    }
+        return {
+            "routes": routes,
+            "tool_distribution": dict(
+                sorted(tool_counts.items(), key=lambda x: x[1], reverse=True)
+            ),
+            "total_queries": len(routes),
+            "recommendation_summary": f"Routed {len(routes)} queries to {len(tool_counts)} tools. Most: {top_tool}",
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_semantic_batch_route"}
 
 
 async def research_semantic_router_rebuild() -> dict[str, Any]:
@@ -375,19 +381,22 @@ async def research_semantic_router_rebuild() -> dict[str, Any]:
     Returns:
         Dict with rebuild status and statistics
     """
-    global _TOOL_EMBEDDINGS, _TOOL_NAMES, _TOOL_DESCRIPTIONS
+    try:
+        global _TOOL_EMBEDDINGS, _TOOL_NAMES, _TOOL_DESCRIPTIONS
 
-    async with _ROUTER_LOCK:
-        _TOOL_EMBEDDINGS = None
-        _TOOL_NAMES = None
-        _TOOL_DESCRIPTIONS = {}
+        async with _ROUTER_LOCK:
+            _TOOL_EMBEDDINGS = None
+            _TOOL_NAMES = None
+            _TOOL_DESCRIPTIONS = {}
 
-    embeddings, tool_names = await _build_tool_embeddings()
+        embeddings, tool_names = await _build_tool_embeddings()
 
-    return {
-        "status": "rebuilt",
-        "tools": len(tool_names),
-        "embedding_dims": int(embeddings.shape[-1]) if embeddings.shape[0] > 0 else 0,
-        "cache_path": str(_CACHE_PATH),
-        "message": f"Rebuilt embeddings for {len(tool_names)} tools",
-    }
+        return {
+            "status": "rebuilt",
+            "tools": len(tool_names),
+            "embedding_dims": int(embeddings.shape[-1]) if embeddings.shape[0] > 0 else 0,
+            "cache_path": str(_CACHE_PATH),
+            "message": f"Rebuilt embeddings for {len(tool_names)} tools",
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_semantic_router_rebuild"}

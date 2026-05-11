@@ -721,18 +721,21 @@ async def research_merge(arg0: dict[str, Any] | None = None, **kwargs: Any) -> d
     Returns:
         Merged result dict
     """
-    if arg0 is None:
-        arg0 = {}
+    try:
+        if arg0 is None:
+            arg0 = {}
 
-    result = {}
+        result = {}
 
-    if isinstance(arg0, dict):
-        result.update(arg0)
+        if isinstance(arg0, dict):
+            result.update(arg0)
 
-    result.update(kwargs)
+        result.update(kwargs)
 
-    return {
-        "merged": True,
-        "sources": list(result.keys()),
-        "data": result,
-    }
+        return {
+            "merged": True,
+            "sources": list(result.keys()),
+            "data": result,
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_merge"}

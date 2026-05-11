@@ -58,43 +58,47 @@ def research_retry_stats(
             "timestamp": "2026-05-04T10:30:45Z"
         }
     """
-    from datetime import UTC, datetime
+    try:
+        from datetime import UTC, datetime
 
-    stats = get_retry_stats()
+        stats = get_retry_stats()
 
-    # Calculate summary
-    total_retries = sum(s.get("total_retries", 0) for s in stats.values())
-    success_after_retry = sum(s.get("success_after_retry", 0) for s in stats.values())
-    permanent_failure = sum(s.get("permanent_failure", 0) for s in stats.values())
+        # Calculate summary
+        total_retries = sum(s.get("total_retries", 0) for s in stats.values())
+        success_after_retry = sum(s.get("success_after_retry", 0) for s in stats.values())
+        permanent_failure = sum(s.get("permanent_failure", 0) for s in stats.values())
 
-    # Calculate recovery rate (what percentage of retries succeeded)
-    recovery_rate = (
-        success_after_retry / total_retries if total_retries > 0 else 0
-    )
+        # Calculate recovery rate (what percentage of retries succeeded)
+        recovery_rate = (
+            success_after_retry / total_retries if total_retries > 0 else 0
+        )
 
-    result: dict[str, Any] = {
-        "summary": {
-            "total_retries": total_retries,
-            "success_after_retry": success_after_retry,
-            "permanent_failure": permanent_failure,
-            "recovery_rate": round(recovery_rate, 3),
-        },
-        "by_function": stats,
-        "functions_tracked": len(stats),
-        "timestamp": datetime.now(UTC).isoformat(),
-    }
+        result: dict[str, Any] = {
+            "summary": {
+                "total_retries": total_retries,
+                "success_after_retry": success_after_retry,
+                "permanent_failure": permanent_failure,
+                "recovery_rate": round(recovery_rate, 3),
+            },
+            "by_function": stats,
+            "functions_tracked": len(stats),
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
 
-    if reset:
-        reset_retry_stats()
-        result["reset"] = True
-        logger.info("retry_stats_reset")
+        if reset:
+            reset_retry_stats()
+            result["reset"] = True
+            logger.info("retry_stats_reset")
 
-    logger.info(
-        "retry_stats_retrieved total_retries=%d success_after_retry=%d permanent_failure=%d functions_tracked=%d",
-        total_retries,
-        success_after_retry,
-        permanent_failure,
-        len(stats),
-    )
+        logger.info(
+            "retry_stats_retrieved total_retries=%d success_after_retry=%d permanent_failure=%d functions_tracked=%d",
+            total_retries,
+            success_after_retry,
+            permanent_failure,
+            len(stats),
+        )
 
-    return result
+        return result
+    except Exception as exc:
+        logger.error("retry_stats_error: %s", exc)
+        return {"error": str(exc), "tool": "research_retry_stats"}

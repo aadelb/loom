@@ -136,83 +136,87 @@ def research_predict_safety_update(
           - safe_window: Dict {days_remaining, confidence}
           - recommendations: List of strategic recommendations
     """
-    logger.info(
-        "predict_safety_update model=%s category=%s horizon=%d",
-        model,
-        attack_category,
-        time_horizon_days,
-    )
+    try:
+        logger.info(
+            "predict_safety_update model=%s category=%s horizon=%d",
+            model,
+            attack_category,
+            time_horizon_days,
+        )
 
-    # Resolve model family
-    if model == "auto":
-        model = "claude"  # Default
-    model = model.lower()
+        # Resolve model family
+        if model == "auto":
+            model = "claude"  # Default
+        model = model.lower()
 
-    if model not in MODEL_UPDATE_HISTORY:
+        if model not in MODEL_UPDATE_HISTORY:
+            return {
+                "error": f"Unknown model: {model}",
+                "known_models": list(MODEL_UPDATE_HISTORY.keys()),
+            }
+
+        # Get current defenses
+        history = MODEL_UPDATE_HISTORY[model]
+        current_defenses = [d["defense"] for d in history]
+        current_stage = _estimate_current_stage(current_defenses)
+
+        # Predict next defenses in pipeline
+        next_stage = current_stage + 1
+        predicted_next = []
+
+        if next_stage < len(DEFENSE_PIPELINE):
+            stage_info = DEFENSE_PIPELINE[next_stage]
+            for defense in stage_info["defenses"]:
+                if defense not in current_defenses:
+                    # Estimate deployment probability and date
+                    prob = _estimate_deployment_probability(
+                        model, defense, stage_info["typical_lifetime_months"]
+                    )
+                    days_to_deploy = _estimate_days_to_deployment(
+                        model, stage_info["typical_lifetime_months"]
+                    )
+                    deploy_date = (datetime.now(UTC).replace(tzinfo=None) + timedelta(days=days_to_deploy)).strftime(
+                        "%Y-%m-%d"
+                    )
+
+                    predicted_next.append(
+                        {
+                            "defense": defense,
+                            "probability": min(prob, 0.95),
+                            "estimated_deploy_date": deploy_date,
+                            "based_on": "pipeline_progression",
+                            "effectiveness_expected": stage_info["effectiveness_range"][1],
+                        }
+                    )
+
+        # Map attacks at risk based on predicted defenses
+        attacks_at_risk = _map_attacks_at_risk(attack_category, predicted_next, time_horizon_days)
+
+        # Calculate safe window (days before most likely patches)
+        safe_days = _calculate_safe_window(predicted_next, time_horizon_days)
+
+        # Generate strategic recommendations
+        recommendations = _generate_recommendations(
+            model, current_stage, predicted_next, attack_category
+        )
+
         return {
-            "error": f"Unknown model: {model}",
-            "known_models": list(MODEL_UPDATE_HISTORY.keys()),
+            "model": model,
+            "current_defenses": current_defenses,
+            "current_stage": current_stage,
+            "predicted_next_defenses": predicted_next,
+            "attacks_at_risk": attacks_at_risk,
+            "safe_window": {
+                "days_remaining": safe_days,
+                "confidence": 0.65 + (0.05 * len(history)),  # Confidence increases with history length
+                "analysis_date": datetime.now(UTC).replace(tzinfo=None).strftime("%Y-%m-%d"),
+            },
+            "research_signals": RESEARCH_SIGNALS,
+            "recommendations": recommendations,
         }
-
-    # Get current defenses
-    history = MODEL_UPDATE_HISTORY[model]
-    current_defenses = [d["defense"] for d in history]
-    current_stage = _estimate_current_stage(current_defenses)
-
-    # Predict next defenses in pipeline
-    next_stage = current_stage + 1
-    predicted_next = []
-
-    if next_stage < len(DEFENSE_PIPELINE):
-        stage_info = DEFENSE_PIPELINE[next_stage]
-        for defense in stage_info["defenses"]:
-            if defense not in current_defenses:
-                # Estimate deployment probability and date
-                prob = _estimate_deployment_probability(
-                    model, defense, stage_info["typical_lifetime_months"]
-                )
-                days_to_deploy = _estimate_days_to_deployment(
-                    model, stage_info["typical_lifetime_months"]
-                )
-                deploy_date = (datetime.now(UTC).replace(tzinfo=None) + timedelta(days=days_to_deploy)).strftime(
-                    "%Y-%m-%d"
-                )
-
-                predicted_next.append(
-                    {
-                        "defense": defense,
-                        "probability": min(prob, 0.95),
-                        "estimated_deploy_date": deploy_date,
-                        "based_on": "pipeline_progression",
-                        "effectiveness_expected": stage_info["effectiveness_range"][1],
-                    }
-                )
-
-    # Map attacks at risk based on predicted defenses
-    attacks_at_risk = _map_attacks_at_risk(attack_category, predicted_next, time_horizon_days)
-
-    # Calculate safe window (days before most likely patches)
-    safe_days = _calculate_safe_window(predicted_next, time_horizon_days)
-
-    # Generate strategic recommendations
-    recommendations = _generate_recommendations(
-        model, current_stage, predicted_next, attack_category
-    )
-
-    return {
-        "model": model,
-        "current_defenses": current_defenses,
-        "current_stage": current_stage,
-        "predicted_next_defenses": predicted_next,
-        "attacks_at_risk": attacks_at_risk,
-        "safe_window": {
-            "days_remaining": safe_days,
-            "confidence": 0.65 + (0.05 * len(history)),  # Confidence increases with history length
-            "analysis_date": datetime.now(UTC).replace(tzinfo=None).strftime("%Y-%m-%d"),
-        },
-        "research_signals": RESEARCH_SIGNALS,
-        "recommendations": recommendations,
-    }
+    except Exception as exc:
+        logger.error("predict_safety_update_error: %s", exc)
+        return {"error": str(exc), "tool": "research_predict_safety_update"}
 
 
 def _estimate_current_stage(current_defenses: list[str]) -> int:
