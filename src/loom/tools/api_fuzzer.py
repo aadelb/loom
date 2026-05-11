@@ -136,7 +136,7 @@ async def research_fuzz_api(
 
     # Cap iterations
     iterations = min(iterations, 1000)
-    fuzz_params = fuzz_params or {"q", "id", "name", "email", "search"}
+    fuzz_param_names = list(fuzz_params.keys()) if fuzz_params else ["q", "id", "name", "email", "search"]
 
     vulnerabilities: list[dict[str, Any]] = []
     response_codes: dict[int, int] = {}
@@ -149,10 +149,10 @@ async def research_fuzz_api(
                 # Pick random category and payload
                 category = random.choice(list(FUZZ_PAYLOADS.keys()))
                 payload = random.choice(FUZZ_PAYLOADS[category])
-                param_name = random.choice(list(fuzz_params))
+                param_name = random.choice(fuzz_param_names)
 
                 # Build request
-                url = base_url.rstrip("/") + endpoint.lstrip("/")
+                url = base_url.rstrip("/") + "/" + endpoint.lstrip("/")
                 params = {param_name: payload}
 
                 try:
@@ -299,7 +299,8 @@ async def research_fuzz_report(
         # Add overall risk level
         crit_count = report["summary"].get("critical", 0)
         high_count = report["summary"].get("high", 0)
-        risk_level = "CRITICAL" if crit_count > 0 else "HIGH" if high_count > 0 else "MEDIUM"
+        medium_count = report["summary"].get("medium", 0)
+        risk_level = "CRITICAL" if crit_count > 0 else "HIGH" if high_count > 0 else "MEDIUM" if medium_count > 0 else "LOW"
         report["risk_level"] = risk_level
 
         return report
