@@ -231,6 +231,7 @@ async def research_dark_market_monitor(keywords: list[str]) -> dict[str, Any]:
         async with httpx.AsyncClient(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
         ) as client:
             for keyword in keywords[:10]:  # Limit to 10 keywords
                 keyword = keyword.strip()
@@ -320,6 +321,7 @@ async def research_ransomware_tracker(
         async with httpx.AsyncClient(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
         ) as client:
             try:
                 # Search OTX for ransomware activity
@@ -396,6 +398,7 @@ async def research_phishing_mapper(domain: str) -> dict[str, Any]:
         async with httpx.AsyncClient(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
         ) as client:
             # Find lookalike domains via Certificate Transparency
             try:
@@ -475,6 +478,7 @@ async def research_botnet_tracker(ioc: str, ioc_type: str = "ip") -> dict[str, A
         async with httpx.AsyncClient(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
         ) as client:
             # Check Feodo Tracker for C2 IPs
             if ioc_type == "ip":
@@ -569,6 +573,7 @@ async def research_malware_intel(hash_value: str) -> dict[str, Any]:
         async with httpx.AsyncClient(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
         ) as client:
             try:
                 # Query MalwareBazaar
@@ -656,6 +661,7 @@ async def research_domain_reputation(domain: str) -> dict[str, Any]:
         async with httpx.AsyncClient(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
         ) as client:
             # Check URLhaus
             try:
@@ -784,6 +790,7 @@ async def research_ioc_enrich(ioc: str, ioc_type: str = "auto") -> dict[str, Any
         async with httpx.AsyncClient(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
         ) as client:
             try:
                 # Search OTX

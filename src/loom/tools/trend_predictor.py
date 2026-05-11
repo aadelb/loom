@@ -328,6 +328,7 @@ async def research_trend_predict(topic: str, time_range_days: int = 90) -> dict[
         async with httpx.AsyncClient(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0 (trend analysis)"},
+            timeout=30.0,
         ) as client:
             # Run all data collection tasks in parallel
             arxiv_task = _arxiv_publication_rate(client, topic)
