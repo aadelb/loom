@@ -3,13 +3,10 @@
 from __future__ import annotations
 
 import logging
-import asyncio
 import re
-import asyncio
 from typing import Any
 
 import httpx
-import asyncio
 
 logger = logging.getLogger("loom.tools.cve_lookup")
 
@@ -33,17 +30,14 @@ async def research_cve_lookup(query: str, limit: int = 10) -> dict[str, Any]:
     Returns:
         Dict with keys: query, total_results, cves (list of CVE details)
     """
-    await asyncio.sleep(0)
-    # Validate inputs
     if not query or len(query.strip()) == 0:
         return {"query": query, "total_results": 0, "cves": [], "error": "query required"}
 
-    # Clamp limit to valid range [1, 100]
     limit = max(1, min(limit, 100))
 
     try:
-        with httpx.Client(timeout=30.0) as client:
-            resp = client.get(
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.get(
                 _NVD_API_BASE,
                 params={
                     "keywordSearch": query,
@@ -136,8 +130,6 @@ async def research_cve_detail(cve_id: str) -> dict[str, Any]:
         Dict with detailed CVE info: id, description, cvss, severity, dates,
         references, affected_products, weaknesses
     """
-    await asyncio.sleep(0)
-    # Validate CVE ID format
     if not _validate_cve_id(cve_id):
         return {
             "cve_id": cve_id,
@@ -145,8 +137,8 @@ async def research_cve_detail(cve_id: str) -> dict[str, Any]:
         }
 
     try:
-        with httpx.Client(timeout=30.0) as client:
-            resp = client.get(
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.get(
                 _NVD_API_BASE,
                 params={"cveId": cve_id.upper()},
             )
