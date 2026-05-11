@@ -42,6 +42,9 @@ def research_config_watch(config_path: str | None = None) -> dict[str, Any]:
     Returns:
         Dict with keys: watching, config_path, last_modified (ISO format)
     """
+    if not _CONFIG_AVAILABLE:
+        return {"watching": False, "error": "loom.config module not available"}
+
     global _watch_state
 
     cfg_path = _resolve_path(config_path)
@@ -91,6 +94,9 @@ def research_config_check(config_path: str | None = None) -> dict[str, Any]:
     Returns:
         Dict with keys: changed, reloaded, current_settings (top-level keys)
     """
+    if not _CONFIG_AVAILABLE:
+        return {"changed": False, "reloaded": False, "error": "loom.config module not available"}
+
     global _watch_state
 
     if config_path:
@@ -156,6 +162,8 @@ def research_config_diff(key: str = "") -> dict[str, Any]:
     Returns:
         Dict with keys: changes (list of {key, old_value, new_value}), unchanged_count
     """
+    if not _CONFIG_AVAILABLE:
+        return {"changes": [], "error": "loom.config module not available"}
     try:
         old_config = _watch_state.get("last_config", {})
         current_config = dict(get_config())
