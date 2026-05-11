@@ -20,6 +20,37 @@ from loom.brain.types import QualityMode, SmartCallResult
 
 logger = logging.getLogger("loom.brain.core")
 
+# Known escalation chains — when tool A fails, try tool B
+_ESCALATION_CHAINS: dict[str, str] = {
+    "research_fetch": "research_camoufox",
+    "research_camoufox": "research_botasaurus",
+    "research_search": "research_multi_search",
+    "research_nuclei_scan": "research_cve_lookup",
+}
+
+
+def _find_fallback_tool(
+    failed_tool: str,
+    all_matches: list[Any],
+    already_tried: list[str],
+) -> Any | None:
+    """Find a fallback tool when the primary one fails.
+
+    Priority: explicit escalation chain > next best match from candidates.
+    """
+    # Check explicit escalation
+    escalation = _ESCALATION_CHAINS.get(failed_tool)
+    if escalation and escalation not in already_tried:
+        from loom.brain.types import ToolMatch
+        return ToolMatch(tool_name=escalation, confidence=0.9, match_source="escalation")
+
+    # Fall back to next untried candidate
+    for match in all_matches:
+        if match.tool_name not in already_tried and match.tool_name != failed_tool:
+            return match
+
+    return None
+
 
 async def research_smart_call(
     query: str,
@@ -131,6 +162,28 @@ async def research_smart_call(
 
                     if step_result.get("success"):
                         final_output = step_result.get("result")
+                    elif mode != QualityMode.ECONOMY:
+                        # Error recovery: try next best tool from matched list
+                        fallback = _find_fallback_tool(
+                            step.tool_name, matched, [s.tool_name for s in plan.steps]
+                        )
+                        if fallback:
+                            logger.info("brain_fallback from=%s to=%s", step.tool_name, fallback.tool_name)
+                            from loom.brain.types import PlanStep as _PS
+                            fallback_step = _PS(tool_name=fallback.tool_name, timeout=step.timeout)
+                            fallback_result = await execute_step(
+                                step=fallback_step, query=query, quality_mode=mode, context=step_context,
+                            )
+                            step_outputs.append(fallback_result)
+                            memory.record_call(
+                                tool_name=fallback.tool_name, query=query,
+                                params=fallback_result.get("params_used", {}),
+                                success=fallback_result.get("success", False),
+                                elapsed_ms=fallback_result.get("elapsed_ms", 0),
+                                error=fallback_result.get("error"),
+                            )
+                            if fallback_result.get("success"):
+                                final_output = fallback_result.get("result")
 
                 # --- Layer 5: Reflection ---
                 if final_output is not None:

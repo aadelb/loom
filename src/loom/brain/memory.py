@@ -113,6 +113,30 @@ class BrainMemory:
             return 0.0
         return stats["total_ms"] / stats["calls"]
 
+    def get_affinity_boost(self, tool_name: str, recent_tool: str | None = None) -> float:
+        """Get affinity boost for a tool based on what was recently used.
+
+        If tool_name frequently follows recent_tool, returns a positive boost (0.0–0.3).
+        """
+        if not recent_tool:
+            if self._history:
+                recent_tool = self._history[-1].tool_name
+            else:
+                return 0.0
+
+        pair_count = self._tool_pairs.get((recent_tool, tool_name), 0)
+        if pair_count == 0:
+            return 0.0
+
+        total_from_recent = sum(
+            count for (prev, _), count in self._tool_pairs.items() if prev == recent_tool
+        )
+        if total_from_recent == 0:
+            return 0.0
+
+        ratio = pair_count / total_from_recent
+        return min(ratio * 0.3, 0.3)
+
     def clear(self) -> None:
         """Clear all memory (for testing)."""
         self._history.clear()

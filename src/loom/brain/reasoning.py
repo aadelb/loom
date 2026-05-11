@@ -282,9 +282,11 @@ def _category_score(meta: ToolMeta, domains: list[str]) -> float:
 
 
 def _usage_score(tool_name: str) -> float:
-    """Score based on historical reliability from memory."""
+    """Score based on historical reliability + affinity from memory."""
     memory = get_memory()
-    return memory.get_tool_reliability(tool_name)
+    reliability = memory.get_tool_reliability(tool_name)
+    affinity = memory.get_affinity_boost(tool_name)
+    return min(reliability + affinity, 1.0)
 
 
 def _fallback_keyword_match(
