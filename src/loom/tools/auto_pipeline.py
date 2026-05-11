@@ -60,7 +60,7 @@ def _get_tool_registry() -> dict[str, dict[str, Any]]:
         try:
             tree = ast.parse(py_file.read_text(encoding="utf-8"))
             for node in ast.walk(tree):
-                if isinstance(node, ast.FunctionDef) and node.name.startswith("research_"):
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("research_"):
                     doc = ast.get_docstring(node) or ""
                     summary = doc.split("\n")[0]
                     keywords = set(re.findall(r"\b[a-z_]+\b", (summary + " " + node.name).lower()))
@@ -104,12 +104,12 @@ def _select_tools(tasks: list[dict[str, Any]], registry: dict[str, dict[str, Any
                 best_tool = tool_name
 
         if not best_tool:
-            # Fallback: pick first tool from registry
             best_tool = next(iter(registry.keys())) if registry else "research_search"
 
+        tool_info = registry.get(best_tool, {"module": "search", "keywords": set()})
         selected.append({
             "tool": best_tool,
-            "module": registry[best_tool]["module"],
+            "module": tool_info["module"],
             "stage": task["stage"],
         })
 
@@ -178,8 +178,8 @@ def _estimate_time(tools: list[dict[str, Any]], optimize_for: str) -> dict[str, 
         else:
             stages[pg] = max(stages[pg], time_ms)
 
-    sequential_ms = sum(stages.values())
-    parallel_ms = max(stages.values()) if stages else 0
+    sequential_ms = sum(_STAGE_TIMES.get(t["stage"], 1000) for t in tools)
+    parallel_ms = sum(stages.values()) if stages else 0
 
     # Apply optimization
     if optimize_for == "speed":
