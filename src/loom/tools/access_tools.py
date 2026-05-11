@@ -141,7 +141,7 @@ async def research_legal_takedown(domain: str) -> dict[str, Any]:
     """
 
     async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(follow_redirects=True) as client:
+        async with httpx.AsyncClient(follow_redirects=True, timeout=30.0) as client:
             takedowns: list[dict[str, Any]] = []
             sources_checked: list[str] = []
 
@@ -207,7 +207,7 @@ async def research_open_access(doi: str = "", title: str = "") -> dict[str, Any]
                 "error": "Provide either DOI or title",
             }
 
-        async with httpx.AsyncClient(follow_redirects=True) as client:
+        async with httpx.AsyncClient(follow_redirects=True, timeout=30.0) as client:
             sources: list[str] = []
             alternatives: list[dict[str, Any]] = []
             primary_oa_url = ""
@@ -355,7 +355,7 @@ async def research_credential_monitor(target: str, target_type: str = "email") -
     """
 
     async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(follow_redirects=True) as client:
+        async with httpx.AsyncClient(follow_redirects=True, timeout=30.0) as client:
             breaches: list[dict[str, Any]] = []
 
             # Query HIBP API (requires User-Agent, no API key for basic lookup)
@@ -401,7 +401,7 @@ async def research_deepfake_checker(image_url: str) -> dict[str, Any]:
     image_url = validate_url(image_url)
 
     async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(follow_redirects=True) as client:
+        async with httpx.AsyncClient(follow_redirects=True, timeout=30.0) as client:
             exif_data: dict[str, Any] = {}
             editing_software_detected = False
             ela_result: dict[str, Any] = {"suspicious_regions_count": 0, "error_level_score": 0.0}

@@ -212,7 +212,8 @@ async def research_bias_lens(paper_id: str = "", text: str = "") -> dict[str, An
 
     async def _run() -> dict[str, Any]:
         async with httpx.AsyncClient(
-            headers={"User-Agent": "Loom-Research/1.0"}
+            headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
         ) as client:
             paper_data: dict[str, Any] | None = None
             full_text = text or ""

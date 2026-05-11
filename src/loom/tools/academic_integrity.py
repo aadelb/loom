@@ -313,6 +313,7 @@ async def research_citation_analysis(paper_id: str, depth: int = 2) -> dict[str,
         async with httpx.AsyncClient(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
         ) as client:
             return await _analyze_citation_network(client, paper_id, depth)
 
@@ -340,6 +341,7 @@ async def research_retraction_check(query: str, max_results: int = 20) -> dict[s
         async with httpx.AsyncClient(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
         ) as client:
             return await _check_for_retractions(client, query, max_results)
 
@@ -366,6 +368,7 @@ async def research_predatory_journal_check(journal_name: str) -> dict[str, Any]:
         async with httpx.AsyncClient(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
         ) as client:
             return await _check_journal_predatory(client, journal_name)
 

@@ -204,6 +204,7 @@ async def research_darkweb_early_warning(
         async with httpx.AsyncClient(
             follow_redirects=True,
             headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
         ) as client:
             alerts: list[dict[str, Any]] = []
             severity_map = {"critical": 4, "high": 3, "medium": 2, "low": 1}
