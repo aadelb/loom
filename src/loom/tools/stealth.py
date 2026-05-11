@@ -90,39 +90,42 @@ async def research_camoufox(
     Returns:
         Dict with keys: url, title, html, text, screenshot (optional), error (optional)
     """
-    logger.info("camoufox_start url=%s screenshot=%s", url, screenshot)
-
-    if timeout is None:
-        timeout = STEALTH_TIMEOUT
-
-    loop = asyncio.get_running_loop()
     try:
-        result = await asyncio.wait_for(
-            loop.run_in_executor(
-                None,
-                lambda: _fetch_camoufox(url, session, screenshot),
-            ),
-            timeout=timeout,
-        )
-    except TimeoutError:
-        logger.warning("camoufox_timeout url=%s", url)
-        return {
-            "url": url,
-            "error": "timeout",
-            "tool": "camoufox",
-        }
-    except Exception as exc:
-        logger.exception("camoufox_unexpected_error url=%s", url)
-        return {
-            "url": url,
-            "error": str(exc),
-            "tool": "camoufox",
-        }
+        logger.info("camoufox_start url=%s screenshot=%s", url, screenshot)
 
-    # Convert to dict
-    output = result.model_dump(exclude_none=True)
-    output["tool"] = "camoufox"
-    return output
+        if timeout is None:
+            timeout = STEALTH_TIMEOUT
+
+        loop = asyncio.get_running_loop()
+        try:
+            result = await asyncio.wait_for(
+                loop.run_in_executor(
+                    None,
+                    lambda: _fetch_camoufox(url, session, screenshot),
+                ),
+                timeout=timeout,
+            )
+        except TimeoutError:
+            logger.warning("camoufox_timeout url=%s", url)
+            return {
+                "url": url,
+                "error": "timeout",
+                "tool": "camoufox",
+            }
+        except Exception as exc:
+            logger.exception("camoufox_unexpected_error url=%s", url)
+            return {
+                "url": url,
+                "error": str(exc),
+                "tool": "camoufox",
+            }
+
+        # Convert to dict
+        output = result.model_dump(exclude_none=True)
+        output["tool"] = "camoufox"
+        return output
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_camoufox"}
 
 
 async def research_botasaurus(
@@ -148,25 +151,28 @@ async def research_botasaurus(
     Returns:
         Dict with keys: url, title, text, html_len, fetched_at, tool, error (if any)
     """
-    warnings.warn(
-        "research_botasaurus is deprecated; use research_fetch(url, backend='botasaurus') instead",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    logger.warning("botasaurus_deprecated: use research_fetch(backend='botasaurus')")
+    try:
+        warnings.warn(
+            "research_botasaurus is deprecated; use research_fetch(url, backend='botasaurus') instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        logger.warning("botasaurus_deprecated: use research_fetch(backend='botasaurus')")
 
-    from loom.tools.fetch import research_fetch
+        from loom.tools.fetch import research_fetch
 
-    logger.info("botasaurus_start url=%s", url)
-    result: dict[str, Any] = await research_fetch(
-        url=url,
-        mode="dynamic",
-        return_format="screenshot" if screenshot else "text",
-        timeout=timeout,
-        backend="botasaurus",
-    )
-    result.setdefault("tool", "botasaurus")
-    return result
+        logger.info("botasaurus_start url=%s", url)
+        result: dict[str, Any] = await research_fetch(
+            url=url,
+            mode="dynamic",
+            return_format="screenshot" if screenshot else "text",
+            timeout=timeout,
+            backend="botasaurus",
+        )
+        result.setdefault("tool", "botasaurus")
+        return result
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_botasaurus"}
 
 
 async def tool_camoufox(

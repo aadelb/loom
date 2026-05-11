@@ -45,8 +45,15 @@ async def research_resolve_order(
         # execution_order: ["fetch_data", "parse", "validate", "transform", "export"]
         # parallel_groups: [["fetch_data"], ["parse"], ["validate", "transform"], ["export"]]
     """
-    loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(None, _resolve_order_sync, tasks)
+    try:
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, _resolve_order_sync, tasks)
+    except Exception as exc:
+        logger.error("resolve_order_error: %s", exc, exc_info=True)
+        return {
+            "error": str(exc),
+            "tool": "research_resolve_order",
+        }
 
 
 def _resolve_order_sync(tasks: list[dict]) -> dict[str, Any]:
@@ -149,8 +156,15 @@ async def research_critical_path(
         # total_duration_minutes: 10
         # parallel_opportunities: 1 (transform can run alongside validate)
     """
-    loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(None, _critical_path_sync, tasks)
+    try:
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, _critical_path_sync, tasks)
+    except Exception as exc:
+        logger.error("critical_path_error: %s", exc, exc_info=True)
+        return {
+            "error": str(exc),
+            "tool": "research_critical_path",
+        }
 
 
 def _critical_path_sync(tasks: list[dict]) -> dict[str, Any]:

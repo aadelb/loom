@@ -45,20 +45,23 @@ async def research_stealth_detect_comparison(
         - detected_risk_patterns: list of risky patterns found
         - evasion_keywords_found: list of evasion keywords present
     """
-    logger.info(
-        "stealth_detect_comparison_start strategy=%s orig_len=%d reframed_len=%d",
-        strategy or "unknown",
-        len(original_prompt),
-        len(reframed_prompt),
-    )
+    try:
+        logger.info(
+            "stealth_detect_comparison_start strategy=%s orig_len=%d reframed_len=%d",
+            strategy or "unknown",
+            len(original_prompt),
+            len(reframed_prompt),
+        )
 
-    result = await _research_stealth_detect(original_prompt, reframed_prompt, strategy)
+        result = await _research_stealth_detect(original_prompt, reframed_prompt, strategy)
 
-    logger.info(
-        "stealth_detect_comparison_complete strategy=%s risk=%.3f stealth=%d",
-        strategy or "unknown",
-        result["overall_detection_risk"],
-        result["strategy_stealth_rating"],
-    )
+        logger.info(
+            "stealth_detect_comparison_complete strategy=%s risk=%.3f stealth=%d",
+            strategy or "unknown",
+            result["overall_detection_risk"],
+            result["strategy_stealth_rating"],
+        )
 
-    return result
+        return result
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_stealth_detect_comparison"}

@@ -168,47 +168,54 @@ async def research_detect_paradox(prompt: str) -> dict:
           - is_adversarial: bool if any paradox detected with risk > 6
           - mitigation_plan: suggested defenses
     """
-    prompt_lower = prompt.lower()
-    findings = []
+    try:
+        prompt_lower = prompt.lower()
+        findings = []
 
-    for paradox_name, pattern_def in PARADOX_PATTERNS.items():
-        keywords_found = []
-        for kw in pattern_def["keywords"]:
-            if kw.lower() in prompt_lower:
-                keywords_found.append(kw)
+        for paradox_name, pattern_def in PARADOX_PATTERNS.items():
+            keywords_found = []
+            for kw in pattern_def["keywords"]:
+                if kw.lower() in prompt_lower:
+                    keywords_found.append(kw)
 
-        pattern_matched = None
-        for regex_pattern in pattern_def["patterns"]:
-            if re.search(regex_pattern, prompt_lower, re.IGNORECASE):
-                pattern_matched = regex_pattern
-                break
+            pattern_matched = None
+            for regex_pattern in pattern_def["patterns"]:
+                if re.search(regex_pattern, prompt_lower, re.IGNORECASE):
+                    pattern_matched = regex_pattern
+                    break
 
-        if keywords_found or pattern_matched:
-            findings.append(
-                {
-                    "type": pattern_def["type"],
-                    "pattern_matched": pattern_matched or f"keyword match: {keywords_found[0]}",
-                    "confusion_potential": pattern_def["confusion_potential"],
-                    "keywords_detected": keywords_found,
-                    "defense_recommendation": DEFENSE_TEMPLATES[paradox_name],
-                }
-            )
+            if keywords_found or pattern_matched:
+                findings.append(
+                    {
+                        "type": pattern_def["type"],
+                        "pattern_matched": pattern_matched or f"keyword match: {keywords_found[0]}",
+                        "confusion_potential": pattern_def["confusion_potential"],
+                        "keywords_detected": keywords_found,
+                        "defense_recommendation": DEFENSE_TEMPLATES[paradox_name],
+                    }
+                )
 
-    # Risk score: average of detected paradoxes (0 if none)
-    total_risk = (
-        int(sum(f["confusion_potential"] for f in findings) / len(findings))
-        if findings
-        else 0
-    )
+        # Risk score: average of detected paradoxes (0 if none)
+        total_risk = (
+            int(sum(f["confusion_potential"] for f in findings) / len(findings))
+            if findings
+            else 0
+        )
 
-    return {
-        "prompt": prompt[:200],  # Truncate for output
-        "paradoxes_found": findings,
-        "total_risk": total_risk,
-        "is_adversarial": total_risk > 6,
-        "finding_count": len(findings),
-        "mitigation_plan": [f["defense_recommendation"] for f in findings],
-    }
+        return {
+            "prompt": prompt[:200],  # Truncate for output
+            "paradoxes_found": findings,
+            "total_risk": total_risk,
+            "is_adversarial": total_risk > 6,
+            "finding_count": len(findings),
+            "mitigation_plan": [f["defense_recommendation"] for f in findings],
+        }
+    except Exception as exc:
+        logger.error("research_detect_paradox failed: %s", exc)
+        return {
+            "error": str(exc),
+            "tool": "research_detect_paradox",
+        }
 
 
 async def research_paradox_immunize(system_prompt: str) -> dict:
@@ -228,37 +235,44 @@ async def research_paradox_immunize(system_prompt: str) -> dict:
           - new_score: vulnerability score after hardening
           - hardening_diff: summary of changes
     """
-    # Check vulnerabilities in original prompt
-    original_result = await research_detect_paradox(system_prompt)
-    original_score = original_result["total_risk"]
-    defended_types = [f["type"] for f in original_result["paradoxes_found"]]
+    try:
+        # Check vulnerabilities in original prompt
+        original_result = await research_detect_paradox(system_prompt)
+        original_score = original_result["total_risk"]
+        defended_types = [f["type"] for f in original_result["paradoxes_found"]]
 
-    # Build immunized prompt
-    base_prompt = system_prompt
-    if not base_prompt.rstrip().endswith((".!", ".")):
-        base_prompt += "."
+        # Build immunized prompt
+        base_prompt = system_prompt
+        if not base_prompt.rstrip().endswith((".!", ".")):
+            base_prompt += "."
 
-    # Add defense clauses
-    defense_section = "\n\n## Paradox Immunity\n"
-    for paradox_name in PARADOX_PATTERNS.keys():
-        defense_section += f"- {DEFENSE_TEMPLATES[paradox_name]}\n"
+        # Add defense clauses
+        defense_section = "\n\n## Paradox Immunity\n"
+        for paradox_name in PARADOX_PATTERNS.keys():
+            defense_section += f"- {DEFENSE_TEMPLATES[paradox_name]}\n"
 
-    immunized = base_prompt + defense_section
+        immunized = base_prompt + defense_section
 
-    # Re-scan immunized version
-    new_result = await research_detect_paradox(immunized)
-    new_score = new_result["total_risk"]
+        # Re-scan immunized version
+        new_result = await research_detect_paradox(immunized)
+        new_score = new_result["total_risk"]
 
-    return {
-        "original_score": original_score,
-        "immunized_prompt": immunized,
-        "paradoxes_defended": defended_types,
-        "new_score": new_score,
-        "risk_reduction": original_score - new_score,
-        "hardening_diff": {
-            "original_length": len(system_prompt),
-            "immunized_length": len(immunized),
-            "defense_clauses_added": len(DEFENSE_TEMPLATES),
-        },
-        "effectiveness": "high" if new_score < 3 else "medium" if new_score < 6 else "low",
-    }
+        return {
+            "original_score": original_score,
+            "immunized_prompt": immunized,
+            "paradoxes_defended": defended_types,
+            "new_score": new_score,
+            "risk_reduction": original_score - new_score,
+            "hardening_diff": {
+                "original_length": len(system_prompt),
+                "immunized_length": len(immunized),
+                "defense_clauses_added": len(DEFENSE_TEMPLATES),
+            },
+            "effectiveness": "high" if new_score < 3 else "medium" if new_score < 6 else "low",
+        }
+    except Exception as exc:
+        logger.error("research_paradox_immunize failed: %s", exc)
+        return {
+            "error": str(exc),
+            "tool": "research_paradox_immunize",
+        }
