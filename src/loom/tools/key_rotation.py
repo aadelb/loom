@@ -27,63 +27,69 @@ _rotation_lock = asyncio.Lock()
 
 async def research_key_status() -> dict[str, Any]:
     """Check status of all configured API keys."""
-    p = []
-    for n, e in KEY_MAP.items():
-        v = os.environ.get(e, "").strip()
-        c = bool(v)
-        vf = c and (n not in PATTERNS or bool(re.match(PATTERNS[n], v)))
-        async with _md_lock:
-            m = _md.get(n, {})
-        s = "unconfigured" if not c else ("invalid_format" if not vf else ("degraded" if m.get("error_count", 0) > 0 else "healthy"))
-        p.append({"name": n, "configured": c, "valid_format": vf, "last_used": m.get("last_used"), "last_error": m.get("last_error"), "error_count": m.get("error_count", 0), "status": s})
-    return {"providers": p, "healthy_count": sum(1 for x in p if x["status"] == "healthy"), "total_count": len(p), "timestamp": datetime.now(UTC).isoformat()}
+    try:
+        p = []
+        for n, e in KEY_MAP.items():
+            v = os.environ.get(e, "").strip()
+            c = bool(v)
+            vf = c and (n not in PATTERNS or bool(re.match(PATTERNS[n], v)))
+            async with _md_lock:
+                m = _md.get(n, {})
+            s = "unconfigured" if not c else ("invalid_format" if not vf else ("degraded" if m.get("error_count", 0) > 0 else "healthy"))
+            p.append({"name": n, "configured": c, "valid_format": vf, "last_used": m.get("last_used"), "last_error": m.get("last_error"), "error_count": m.get("error_count", 0), "status": s})
+        return {"providers": p, "healthy_count": sum(1 for x in p if x["status"] == "healthy"), "total_count": len(p), "timestamp": datetime.now(UTC).isoformat()}
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_key_status"}
 
 
 async def research_key_rotate(provider: str, new_key: str) -> dict[str, Any]:
     """Hot-swap an API key without restart."""
-    if provider not in KEY_MAP:
-        raise ValueError(f"Unknown provider: {provider}")
+    try:
+        if provider not in KEY_MAP:
+            raise ValueError(f"Unknown provider: {provider}")
 
-    # Fix 3: Validate key format
-    new_key = new_key.strip()
-    if not new_key or len(new_key) < 8 or len(new_key) > 256:
-        raise ValueError(f"Invalid key length: must be 8-256 characters, got {len(new_key)}")
+        # Fix 3: Validate key format
+        new_key = new_key.strip()
+        if not new_key or len(new_key) < 8 or len(new_key) > 256:
+            raise ValueError(f"Invalid key length: must be 8-256 characters, got {len(new_key)}")
 
-    # Fix 2: Rate limiting on key rotation
-    async with _rotation_lock:
-        last_rotation_time = _last_rotation.get(provider, 0)
-        current_time = time.time()
-        if current_time - last_rotation_time < 60:
-            seconds_remaining = 60 - (current_time - last_rotation_time)
-            raise ValueError(
-                f"Key rotation rate limited for {provider}. "
-                f"Wait {seconds_remaining:.1f} more seconds before rotating again."
-            )
-        _last_rotation[provider] = current_time
+        # Fix 2: Rate limiting on key rotation
+        async with _rotation_lock:
+            last_rotation_time = _last_rotation.get(provider, 0)
+            current_time = time.time()
+            if current_time - last_rotation_time < 60:
+                seconds_remaining = 60 - (current_time - last_rotation_time)
+                raise ValueError(
+                    f"Key rotation rate limited for {provider}. "
+                    f"Wait {seconds_remaining:.1f} more seconds before rotating again."
+                )
+            _last_rotation[provider] = current_time
 
-    e = KEY_MAP[provider]
-    o = os.environ.get(e, "")
-    os.environ[e] = new_key
-    _clear_cache(provider)
+        e = KEY_MAP[provider]
+        o = os.environ.get(e, "")
+        os.environ[e] = new_key
+        _clear_cache(provider)
 
-    # Fix 4: Protect _md mutations with lock
-    async with _md_lock:
-        if provider not in _md:
-            _md[provider] = {}
-        _md[provider]["last_rotated"] = datetime.now(UTC).isoformat()
-        _md[provider]["rotation_count"] = _md[provider].get("rotation_count", 0) + 1
+        # Fix 4: Protect _md mutations with lock
+        async with _md_lock:
+            if provider not in _md:
+                _md[provider] = {}
+            _md[provider]["last_rotated"] = datetime.now(UTC).isoformat()
+            _md[provider]["rotation_count"] = _md[provider].get("rotation_count", 0) + 1
 
-    # Fix 1: Use hash of key instead of exposing first 8 chars
-    old_key_hash = hashlib.sha256(o.encode()).hexdigest()[:8] if o else "not_set"
-    new_key_hash = hashlib.sha256(new_key.encode()).hexdigest()[:8]
+        # Fix 1: Use hash of key instead of exposing first 8 chars
+        old_key_hash = hashlib.sha256(o.encode()).hexdigest()[:8] if o else "not_set"
+        new_key_hash = hashlib.sha256(new_key.encode()).hexdigest()[:8]
 
-    return {
-        "provider": provider,
-        "rotated": True,
-        "previous_key_identifier": old_key_hash,
-        "new_key_identifier": new_key_hash,
-        "timestamp": datetime.now(UTC).isoformat()
-    }
+        return {
+            "provider": provider,
+            "rotated": True,
+            "previous_key_identifier": old_key_hash,
+            "new_key_identifier": new_key_hash,
+            "timestamp": datetime.now(UTC).isoformat()
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_key_rotate"}
 
 
 async def research_key_test(provider: str) -> dict[str, Any]:

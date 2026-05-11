@@ -6,17 +6,23 @@ from typing import Any
 
 async def research_firewall_list() -> dict[str, Any]:
     """List active firewall rules."""
-    return {
-        "status": "listed",
-        "tool": "research_firewall_list",
-        "rules": []
-    }
+    try:
+        return {
+            "status": "listed",
+            "tool": "research_firewall_list",
+            "rules": []
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_firewall_list"}
 
 
 async def research_firewall_apply() -> dict[str, Any]:
     """Apply firewall rule changes."""
-    return {
-        "status": "applied",
-        "tool": "research_firewall_apply",
-        "message": "firewall rules updated"
-    }
+    try:
+        return {
+            "status": "applied",
+            "tool": "research_firewall_apply",
+            "message": "firewall rules updated"
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_firewall_apply"}
