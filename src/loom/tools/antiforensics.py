@@ -84,7 +84,7 @@ def research_usb_kill_monitor(
         "target_path": target_path,
         "dry_run": dry_run,
         "status": status,
-        "timestamp": datetime.datetime.utcnow().isoformat(),
+        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "note": "DRY-RUN MODE: No data was deleted or modified." if dry_run else "",
     }
 
@@ -167,7 +167,15 @@ def research_forensics_cleanup(
         try:
             if artifact_path.exists():
                 if artifact_path.is_dir():
-                    size_bytes = sum(f.stat().st_size for f in artifact_path.rglob("*") if f.is_file())
+                    size_bytes = 0
+                    for i, f in enumerate(artifact_path.rglob("*")):
+                        if i >= 10000:
+                            break
+                        if f.is_file():
+                            try:
+                                size_bytes += f.stat().st_size
+                            except OSError:
+                                pass
                 else:
                     size_bytes = artifact_path.stat().st_size
 
@@ -204,6 +212,6 @@ def research_forensics_cleanup(
         "cleanup_plan": cleanup_plan,
         "os_type": os_type,
         "dry_run": True,
-        "timestamp": datetime.datetime.utcnow().isoformat(),
+        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "note": "DRY-RUN MODE: No data was deleted. This is a simulation only.",
     }
