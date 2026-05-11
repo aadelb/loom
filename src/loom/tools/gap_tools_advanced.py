@@ -302,7 +302,10 @@ async def research_talent_migration(
                 "data_sources": ["dblp", "semantic_scholar"],
             }
 
-    return await _run()
+    try:
+        return await _run()
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_talent_migration"}
 
 
 async def research_funding_pipeline(company_or_field: str) -> dict[str, Any]:
@@ -406,7 +409,10 @@ async def research_funding_pipeline(company_or_field: str) -> dict[str, Any]:
                 },
             }
 
-    return await _run()
+    try:
+        return await _run()
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_funding_pipeline"}
 
 
 async def research_patent_embargo(
@@ -475,7 +481,10 @@ async def research_patent_embargo(
                 "months_analyzed": months_back,
             }
 
-    return await _run()
+    try:
+        return await _run()
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_patent_embargo"}
 
 
 def research_jailbreak_library(
@@ -494,38 +503,41 @@ def research_jailbreak_library(
     Returns:
         Dict with total_patterns, categories, patterns, and descriptions.
     """
-    # Filter patterns by category
-    if test_category == "all":
-        patterns_to_use = _JAILBREAK_PATTERNS
-    elif test_category in _JAILBREAK_PATTERNS:
-        patterns_to_use = {test_category: _JAILBREAK_PATTERNS[test_category]}
-    else:
-        patterns_to_use = {}
+    try:
+        # Filter patterns by category
+        if test_category == "all":
+            patterns_to_use = _JAILBREAK_PATTERNS
+        elif test_category in _JAILBREAK_PATTERNS:
+            patterns_to_use = {test_category: _JAILBREAK_PATTERNS[test_category]}
+        else:
+            patterns_to_use = {}
 
-    total_patterns = sum(len(v) for v in patterns_to_use.values())
-    categories = list(patterns_to_use.keys())
+        total_patterns = sum(len(v) for v in patterns_to_use.values())
+        categories = list(patterns_to_use.keys())
 
-    # Build patterns_per_category breakdown
-    patterns_per_category = {cat: len(patterns) for cat, patterns in patterns_to_use.items()}
+        # Build patterns_per_category breakdown
+        patterns_per_category = {cat: len(patterns) for cat, patterns in patterns_to_use.items()}
 
-    # Build actual pattern results
-    patterns_result: list[dict[str, Any]] = []
-    for category, patterns in patterns_to_use.items():
-        for pattern in patterns:
-            patterns_result.append({
-                "category": category,
-                "pattern": pattern,
-                "type": category,
-            })
+        # Build actual pattern results
+        patterns_result: list[dict[str, Any]] = []
+        for category, patterns in patterns_to_use.items():
+            for pattern in patterns:
+                patterns_result.append({
+                    "category": category,
+                    "pattern": pattern,
+                    "type": category,
+                })
 
-    return {
-        "total_patterns": total_patterns,
-        "categories": categories,
-        "patterns": patterns_result,
-        "patterns_per_category": patterns_per_category,
-        "target_url": target_url if target_url else "none",
-        "test_category": test_category,
-        "test_results": [],
-        "blocked_count": 0,
-        "note": "These are actual jailbreak patterns from the library. Use responsibly.",
-    }
+        return {
+            "total_patterns": total_patterns,
+            "categories": categories,
+            "patterns": patterns_result,
+            "patterns_per_category": patterns_per_category,
+            "target_url": target_url if target_url else "none",
+            "test_category": test_category,
+            "test_results": [],
+            "blocked_count": 0,
+            "note": "These are actual jailbreak patterns from the library. Use responsibly.",
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_jailbreak_library"}

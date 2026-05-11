@@ -207,108 +207,111 @@ async def research_personalize_output(
     Returns:
         Dict with personalized_content, adaptations_made, style_applied, structure_used
     """
-    # Validate inputs
-    valid_audiences = {"executive", "technical", "academic", "journalist", "investor", "regulator"}
-    valid_styles = {"visual", "analytical", "narrative", "procedural"}
-    valid_levels = {"novice", "intermediate", "expert", "domain_expert"}
+    try:
+        # Validate inputs
+        valid_audiences = {"executive", "technical", "academic", "journalist", "investor", "regulator"}
+        valid_styles = {"visual", "analytical", "narrative", "procedural"}
+        valid_levels = {"novice", "intermediate", "expert", "domain_expert"}
 
-    if audience not in valid_audiences:
+        if audience not in valid_audiences:
+            return {
+                "error": f"Invalid audience. Must be one of {valid_audiences}",
+                "status": "error",
+            }
+        if cognitive_style not in valid_styles:
+            return {
+                "error": f"Invalid cognitive_style. Must be one of {valid_styles}",
+                "status": "error",
+            }
+        if expertise_level not in valid_levels:
+            return {
+                "error": f"Invalid expertise_level. Must be one of {valid_levels}",
+                "status": "error",
+            }
+
+        # Get style template
+        template_key = (audience, cognitive_style)
+        template = STYLE_TEMPLATES.get(template_key, STYLE_TEMPLATES.get((audience, "visual"), {}))
+
+        adaptations = []
+        personalized = content
+
+        # Apply expertise-level adjustments
+        if expertise_level == "novice":
+            # Add explanations, reduce jargon
+            personalized = f"**Note for beginners:** This content has been simplified for clarity.\n\n{personalized}"
+            adaptations.append("added_beginner_note")
+        elif expertise_level == "domain_expert":
+            # Add advanced references, technical depth
+            personalized = f"**Advanced Context:** For domain experts with specialized knowledge.\n\n{personalized}"
+            adaptations.append("added_expert_context")
+
+        # Apply audience-specific transformations
+        if audience == "executive":
+            # BLUF (bottom-line-up-front), ROI focus
+            intro_phrase = "Key Takeaway"
+            summary_lines = content.split("\n")[:3]
+            summary = " ".join(summary_lines)
+            personalized = f"{intro_phrase}: {summary}\n\n{personalized}"
+            adaptations.append("executive_bluf_format")
+
+        elif audience == "technical":
+            # Add implementation context
+            if "code" not in personalized.lower() and "implement" not in personalized.lower():
+                personalized += "\n\n**Implementation Note:** See documentation for code examples."
+                adaptations.append("added_technical_reference")
+
+        elif audience == "academic":
+            # Emphasize methodology and rigor
+            personalized = f"**Academic Standards:** This content emphasizes peer-reviewed sources and methodology.\n\n{personalized}"
+            adaptations.append("academic_rigor_format")
+
+        elif audience == "journalist":
+            # Inverted pyramid style (headline first, details follow)
+            first_line = content.split("\n")[0] if content else ""
+            if first_line and not first_line.isupper():
+                headline = first_line.upper()[:80]
+                remaining = "\n".join(content.split("\n")[1:])
+                personalized = f"{headline}\n\nLEDE:\n{remaining}"
+                adaptations.append("inverted_pyramid_format")
+
+        elif audience == "investor":
+            # ROI and market focus
+            personalized = f"**Investment Thesis:**\n{personalized}\n\n**Expected Return:** [Derived from analysis]"
+            adaptations.append("investor_roi_format")
+
+        elif audience == "regulator":
+            # Compliance and framework focus
+            personalized = f"**Regulatory Framework:**\n{personalized}\n\n**Compliance Status:** [To be assessed]"
+            adaptations.append("regulator_compliance_format")
+
+        # Cognitive style aids
+        if cognitive_style == "visual":
+            personalized += "\n\n[Visual Aid: Conceptual diagram would be inserted here]"
+            adaptations.append("visual_aids_noted")
+        elif cognitive_style == "analytical":
+            personalized += "\n\n[Data Table: Key metrics and statistics here]"
+            adaptations.append("analytical_tables_noted")
+        elif cognitive_style == "narrative":
+            personalized += "\n\n[Narrative Flow: Story arc from context → challenge → resolution]"
+            adaptations.append("narrative_structure_noted")
+        elif cognitive_style == "procedural":
+            personalized += "\n\n[Step-by-Step: Implementation guide structure]"
+            adaptations.append("procedural_steps_noted")
+
         return {
-            "error": f"Invalid audience. Must be one of {valid_audiences}",
-            "status": "error",
+            "status": "success",
+            "personalized_content": personalized,
+            "audience": audience,
+            "cognitive_style": cognitive_style,
+            "expertise_level": expertise_level,
+            "template": template,
+            "adaptations_made": adaptations,
+            "original_length": len(content),
+            "personalized_length": len(personalized),
         }
-    if cognitive_style not in valid_styles:
-        return {
-            "error": f"Invalid cognitive_style. Must be one of {valid_styles}",
-            "status": "error",
-        }
-    if expertise_level not in valid_levels:
-        return {
-            "error": f"Invalid expertise_level. Must be one of {valid_levels}",
-            "status": "error",
-        }
-
-    # Get style template
-    template_key = (audience, cognitive_style)
-    template = STYLE_TEMPLATES.get(template_key, STYLE_TEMPLATES.get((audience, "visual"), {}))
-
-    adaptations = []
-    personalized = content
-
-    # Apply expertise-level adjustments
-    if expertise_level == "novice":
-        # Add explanations, reduce jargon
-        personalized = f"**Note for beginners:** This content has been simplified for clarity.\n\n{personalized}"
-        adaptations.append("added_beginner_note")
-    elif expertise_level == "domain_expert":
-        # Add advanced references, technical depth
-        personalized = f"**Advanced Context:** For domain experts with specialized knowledge.\n\n{personalized}"
-        adaptations.append("added_expert_context")
-
-    # Apply audience-specific transformations
-    if audience == "executive":
-        # BLUF (bottom-line-up-front), ROI focus
-        intro_phrase = "Key Takeaway"
-        summary_lines = content.split("\n")[:3]
-        summary = " ".join(summary_lines)
-        personalized = f"{intro_phrase}: {summary}\n\n{personalized}"
-        adaptations.append("executive_bluf_format")
-
-    elif audience == "technical":
-        # Add implementation context
-        if "code" not in personalized.lower() and "implement" not in personalized.lower():
-            personalized += "\n\n**Implementation Note:** See documentation for code examples."
-            adaptations.append("added_technical_reference")
-
-    elif audience == "academic":
-        # Emphasize methodology and rigor
-        personalized = f"**Academic Standards:** This content emphasizes peer-reviewed sources and methodology.\n\n{personalized}"
-        adaptations.append("academic_rigor_format")
-
-    elif audience == "journalist":
-        # Inverted pyramid style (headline first, details follow)
-        first_line = content.split("\n")[0] if content else ""
-        if first_line and not first_line.isupper():
-            headline = first_line.upper()[:80]
-            remaining = "\n".join(content.split("\n")[1:])
-            personalized = f"{headline}\n\nLEDE:\n{remaining}"
-            adaptations.append("inverted_pyramid_format")
-
-    elif audience == "investor":
-        # ROI and market focus
-        personalized = f"**Investment Thesis:**\n{personalized}\n\n**Expected Return:** [Derived from analysis]"
-        adaptations.append("investor_roi_format")
-
-    elif audience == "regulator":
-        # Compliance and framework focus
-        personalized = f"**Regulatory Framework:**\n{personalized}\n\n**Compliance Status:** [To be assessed]"
-        adaptations.append("regulator_compliance_format")
-
-    # Cognitive style aids
-    if cognitive_style == "visual":
-        personalized += "\n\n[Visual Aid: Conceptual diagram would be inserted here]"
-        adaptations.append("visual_aids_noted")
-    elif cognitive_style == "analytical":
-        personalized += "\n\n[Data Table: Key metrics and statistics here]"
-        adaptations.append("analytical_tables_noted")
-    elif cognitive_style == "narrative":
-        personalized += "\n\n[Narrative Flow: Story arc from context → challenge → resolution]"
-        adaptations.append("narrative_structure_noted")
-    elif cognitive_style == "procedural":
-        personalized += "\n\n[Step-by-Step: Implementation guide structure]"
-        adaptations.append("procedural_steps_noted")
-
-    return {
-        "status": "success",
-        "personalized_content": personalized,
-        "audience": audience,
-        "cognitive_style": cognitive_style,
-        "expertise_level": expertise_level,
-        "template": template,
-        "adaptations_made": adaptations,
-        "original_length": len(content),
-        "personalized_length": len(personalized),
-    }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_personalize_output"}
 
 
 async def research_adapt_complexity(
@@ -324,56 +327,59 @@ async def research_adapt_complexity(
     Returns:
         Dict with adapted_content, original_stats, target_level, adaptations_made
     """
-    # Validate input
-    if target_reading_level < 1 or target_reading_level > 20:
-        return {
-            "error": "target_reading_level must be 1-20",
-            "status": "error",
+    try:
+        # Validate input
+        if target_reading_level < 1 or target_reading_level > 20:
+            return {
+                "error": "target_reading_level must be 1-20",
+                "status": "error",
+            }
+
+        # Estimate original reading level
+        original_level = _estimate_reading_level(content)
+
+        # Calculate stats
+        words = content.split()
+        sentences = re.split(r"[.!?]+", content)
+        sentences = [s.strip() for s in sentences if s.strip()]
+
+        original_stats = {
+            "word_count": len(words),
+            "sentence_count": len(sentences),
+            "avg_sentence_length": len(words) / max(1, len(sentences)),
+            "avg_word_length": sum(len(w) for w in words) / max(1, len(words)),
+            "estimated_reading_level": round(original_level, 1),
+            "vocabulary_level": _get_target_vocabulary(int(original_level)),
         }
 
-    # Estimate original reading level
-    original_level = _estimate_reading_level(content)
+        # Simplify if needed
+        if original_level > target_reading_level:
+            adapted_content, adaptations = _simplify_text(content, target_reading_level)
+        else:
+            adapted_content = content
+            adaptations = ["no_simplification_needed" if original_level <= target_reading_level else "content_already_complex"]
 
-    # Calculate stats
-    words = content.split()
-    sentences = re.split(r"[.!?]+", content)
-    sentences = [s.strip() for s in sentences if s.strip()]
+        # Recalculate stats for adapted content
+        adapted_words = adapted_content.split()
+        adapted_sentences = re.split(r"[.!?]+", adapted_content)
+        adapted_sentences = [s.strip() for s in adapted_sentences if s.strip()]
 
-    original_stats = {
-        "word_count": len(words),
-        "sentence_count": len(sentences),
-        "avg_sentence_length": len(words) / max(1, len(sentences)),
-        "avg_word_length": sum(len(w) for w in words) / max(1, len(words)),
-        "estimated_reading_level": round(original_level, 1),
-        "vocabulary_level": _get_target_vocabulary(int(original_level)),
-    }
+        adapted_level = _estimate_reading_level(adapted_content)
 
-    # Simplify if needed
-    if original_level > target_reading_level:
-        adapted_content, adaptations = _simplify_text(content, target_reading_level)
-    else:
-        adapted_content = content
-        adaptations = ["no_simplification_needed" if original_level <= target_reading_level else "content_already_complex"]
-
-    # Recalculate stats for adapted content
-    adapted_words = adapted_content.split()
-    adapted_sentences = re.split(r"[.!?]+", adapted_content)
-    adapted_sentences = [s.strip() for s in adapted_sentences if s.strip()]
-
-    adapted_level = _estimate_reading_level(adapted_content)
-
-    return {
-        "status": "success",
-        "adapted_content": adapted_content,
-        "original_stats": original_stats,
-        "target_reading_level": target_reading_level,
-        "adapted_stats": {
-            "word_count": len(adapted_words),
-            "sentence_count": len(adapted_sentences),
-            "avg_sentence_length": len(adapted_words) / max(1, len(adapted_sentences)),
-            "avg_word_length": sum(len(w) for w in adapted_words) / max(1, len(adapted_words)),
-            "estimated_reading_level": round(adapted_level, 1),
-        },
-        "adaptations_made": adaptations,
-        "complexity_reduction": round(original_level - adapted_level, 2),
-    }
+        return {
+            "status": "success",
+            "adapted_content": adapted_content,
+            "original_stats": original_stats,
+            "target_reading_level": target_reading_level,
+            "adapted_stats": {
+                "word_count": len(adapted_words),
+                "sentence_count": len(adapted_sentences),
+                "avg_sentence_length": len(adapted_words) / max(1, len(adapted_sentences)),
+                "avg_word_length": sum(len(w) for w in adapted_words) / max(1, len(adapted_words)),
+                "estimated_reading_level": round(adapted_level, 1),
+            },
+            "adaptations_made": adaptations,
+            "complexity_reduction": round(original_level - adapted_level, 2),
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_adapt_complexity"}

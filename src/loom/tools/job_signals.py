@@ -543,7 +543,10 @@ async def research_funding_signal(company: str, domain: str = "") -> dict[str, A
                 else "unknown",
             }
 
-    return await _run()
+    try:
+        return await _run()
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_funding_signal"}
 
 
 async def research_stealth_hire_scanner(
@@ -628,7 +631,10 @@ async def research_stealth_hire_scanner(
                 "total_found": len(all_jobs),
             }
 
-    return await _run()
+    try:
+        return await _run()
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_stealth_hire_scanner"}
 
 
 async def research_interviewer_profiler(
@@ -740,4 +746,7 @@ async def research_interviewer_profiler(
                 "talking_points": talking_points[:5],
             }
 
-    return await _run()
+    try:
+        return await _run()
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_interviewer_profiler"}

@@ -16,22 +16,25 @@ async def research_ensemble_attack(
     Args: prompt, strategies (default: top 5), combination_method, max_strategies
     Returns: Dict with ensemble_prompt, strategies_used, diversity_score, robustness_estimate.
     """
-    strategies = list(set(strategies or DEFAULT_STRATEGIES))[:max_strategies]
-    valid = [s for s in strategies if s in ALL_STRATEGIES]
-    if not valid:
-        return {"error": "No valid strategies", "ensemble_prompt": "", "strategies_used": []}
+    try:
+        strategies = list(set(strategies or DEFAULT_STRATEGIES))[:max_strategies]
+        valid = [s for s in strategies if s in ALL_STRATEGIES]
+        if not valid:
+            return {"error": "No valid strategies", "ensemble_prompt": "", "strategies_used": []}
 
-    methods = {"sequential": _seq, "parallel": _par, "cascade": _cas, "fusion": _fus, "redundant": _red}
-    ensemble_prompt = methods.get(combination_method, _seq)(prompt, valid)
+        methods = {"sequential": _seq, "parallel": _par, "cascade": _cas, "fusion": _fus, "redundant": _red}
+        ensemble_prompt = methods.get(combination_method, _seq)(prompt, valid)
 
-    return {
-        "ensemble_prompt": ensemble_prompt,
-        "strategies_used": valid,
-        "combination_method": combination_method,
-        "diversity_score": _calc_div(valid),
-        "robustness_estimate": _est_rob(valid, combination_method),
-        "individual_contributions": [{"strategy": s, "weight": 1.0/len(valid), "estimated_asr": min(ALL_STRATEGIES[s].get("multiplier", 1.0)/10, 1.0)} for s in valid],
-    }
+        return {
+            "ensemble_prompt": ensemble_prompt,
+            "strategies_used": valid,
+            "combination_method": combination_method,
+            "diversity_score": _calc_div(valid),
+            "robustness_estimate": _est_rob(valid, combination_method),
+            "individual_contributions": [{"strategy": s, "weight": 1.0/len(valid), "estimated_asr": min(ALL_STRATEGIES[s].get("multiplier", 1.0)/10, 1.0)} for s in valid],
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_ensemble_attack"}
 
 
 async def research_attack_portfolio(target_model: str = "auto", portfolio_size: int = 10) -> dict[str, Any]:
@@ -39,33 +42,36 @@ async def research_attack_portfolio(target_model: str = "auto", portfolio_size: 
 
     Returns: Dict with portfolio, total_expected_asr, portfolio_diversity.
     """
-    candidates = list(ALL_STRATEGIES.items())
-    random.shuffle(candidates)
-    portfolio, total_weight = [], 0.0
+    try:
+        candidates = list(ALL_STRATEGIES.items())
+        random.shuffle(candidates)
+        portfolio, total_weight = [], 0.0
 
-    for strategy_name, strategy_data in candidates[:min(portfolio_size * 2, len(candidates))][:portfolio_size]:
-        multiplier = strategy_data.get("multiplier", 1.0)
-        best_for = strategy_data.get("best_for", [])
-        model_score = 1.2 if target_model in best_for else (1.0 if target_model == "auto" else 0.7)
-        expected_asr = min((multiplier / 10) * model_score, 0.95)
-        weight = expected_asr
-        total_weight += weight
-        portfolio.append({
-            "strategy": strategy_name, "weight": weight, "expected_asr": expected_asr,
-            "correlation_with_others": (int.from_bytes(hashlib.md5(strategy_name.encode()).digest()[:2], "big") % 100) / 100
-        })
+        for strategy_name, strategy_data in candidates[:min(portfolio_size * 2, len(candidates))][:portfolio_size]:
+            multiplier = strategy_data.get("multiplier", 1.0)
+            best_for = strategy_data.get("best_for", [])
+            model_score = 1.2 if target_model in best_for else (1.0 if target_model == "auto" else 0.7)
+            expected_asr = min((multiplier / 10) * model_score, 0.95)
+            weight = expected_asr
+            total_weight += weight
+            portfolio.append({
+                "strategy": strategy_name, "weight": weight, "expected_asr": expected_asr,
+                "correlation_with_others": (int.from_bytes(hashlib.md5(strategy_name.encode()).digest()[:2], "big") % 100) / 100
+            })
 
-    if total_weight > 0:
-        for item in portfolio: item["weight"] /= total_weight
-    total_expected_asr = sum(p["weight"] * p["expected_asr"] for p in portfolio)
-    portfolio_diversity = 1.0 - (sum(p["correlation_with_others"] for p in portfolio) / len(portfolio))
+        if total_weight > 0:
+            for item in portfolio: item["weight"] /= total_weight
+        total_expected_asr = sum(p["weight"] * p["expected_asr"] for p in portfolio)
+        portfolio_diversity = 1.0 - (sum(p["correlation_with_others"] for p in portfolio) / len(portfolio))
 
-    return {
-        "portfolio": portfolio,
-        "total_expected_asr": min(total_expected_asr, 0.95),
-        "portfolio_diversity": max(0.0, min(portfolio_diversity, 1.0)),
-        "allocation_rationale": f"Portfolio: {len(portfolio)} strategies, ASR: {total_expected_asr:.1%}, Diversity: {portfolio_diversity:.2f}",
-    }
+        return {
+            "portfolio": portfolio,
+            "total_expected_asr": min(total_expected_asr, 0.95),
+            "portfolio_diversity": max(0.0, min(portfolio_diversity, 1.0)),
+            "allocation_rationale": f"Portfolio: {len(portfolio)} strategies, ASR: {total_expected_asr:.1%}, Diversity: {portfolio_diversity:.2f}",
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_attack_portfolio"}
 
 
 def _seq(p: str, s: list[str]) -> str:

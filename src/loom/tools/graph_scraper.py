@@ -276,108 +276,111 @@ async def research_graph_scrape(
             - extraction_method: "scrapegraphai" or "llm_fallback"
             - timestamp: ISO timestamp of extraction
     """
-    validate_url(url)
-    cache = get_cache()
-    cache_key = f"graph_scrape_{url}_{query}"
+    try:
+        validate_url(url)
+        cache = get_cache()
+        cache_key = f"graph_scrape_{url}_{query}"
 
-    # Check cache
-    cached = cache.get(cache_key)
-    if cached:
-        logger.debug("Found cached graph scrape result")
-        return cached
+        # Check cache
+        cached = cache.get(cache_key)
+        if cached:
+            logger.debug("Found cached graph scrape result")
+            return cached
 
-    start_time = time.time()
-    total_cost = 0.0
-    extraction_method = "llm_fallback"
-    model_used = "unknown"
+        start_time = time.time()
+        total_cost = 0.0
+        extraction_method = "llm_fallback"
+        model_used = "unknown"
 
-    # Try ScrapeGraphAI if available
-    if SCRAPEGRAPHAI_AVAILABLE:
-        try:
-            logger.debug("Attempting ScrapeGraphAI extraction")
-            config = _parse_scrapegraphai_config()
-            graph = SmartScraperGraph(prompt=query, source=url, config=config)
-            sga_result = graph.run()
+        # Try ScrapeGraphAI if available
+        if SCRAPEGRAPHAI_AVAILABLE:
+            try:
+                logger.debug("Attempting ScrapeGraphAI extraction")
+                config = _parse_scrapegraphai_config()
+                graph = SmartScraperGraph(prompt=query, source=url, config=config)
+                sga_result = graph.run()
 
-            extraction_method = "scrapegraphai"
-            model_used = config.get("llm", {}).get("model", "unknown")
+                extraction_method = "scrapegraphai"
+                model_used = config.get("llm", {}).get("model", "unknown")
 
-            # Parse ScrapeGraphAI result
-            if isinstance(sga_result, dict):
-                extracted_data = sga_result
-            else:
-                extracted_data = {"raw_result": str(sga_result)}
+                # Parse ScrapeGraphAI result
+                if isinstance(sga_result, dict):
+                    extracted_data = sga_result
+                else:
+                    extracted_data = {"raw_result": str(sga_result)}
 
-            result = {
+                result = {
+                    "url": url,
+                    "query": query,
+                    "extracted_data": extracted_data,
+                    "model_used": model_used,
+                    "graph_nodes": _extract_nodes(extracted_data),
+                    "graph_edges": _extract_edges(extracted_data),
+                    "cost_usd": 0.0,  # GROQ/NVIDIA NIM are free
+                    "extraction_method": extraction_method,
+                    "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                }
+
+                cache.put(cache_key, result)
+                return result
+            except Exception as e:
+                logger.warning("ScrapeGraphAI extraction failed, falling back to LLM: %s", e)
+
+        # Fallback: Fetch URL and use LLM extraction
+        logger.debug("Using LLM fallback extraction")
+        content = await _fetch_url_content(url)
+
+        if not content:
+            return {
                 "url": url,
                 "query": query,
-                "extracted_data": extracted_data,
-                "model_used": model_used,
-                "graph_nodes": _extract_nodes(extracted_data),
-                "graph_edges": _extract_edges(extracted_data),
-                "cost_usd": 0.0,  # GROQ/NVIDIA NIM are free
-                "extraction_method": extraction_method,
+                "extracted_data": {},
+                "model_used": "none",
+                "graph_nodes": [],
+                "graph_edges": [],
+                "cost_usd": 0.0,
+                "extraction_method": "failed",
+                "error": "Could not fetch URL content",
                 "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
             }
 
-            cache.put(cache_key, result)
-            return result
-        except Exception as e:
-            logger.warning("ScrapeGraphAI extraction failed, falling back to LLM: %s", e)
+        # Get LLM provider
+        provider = _get_llm_provider()
+        if not provider:
+            return {
+                "url": url,
+                "query": query,
+                "extracted_data": {},
+                "model_used": "none",
+                "graph_nodes": [],
+                "graph_edges": [],
+                "cost_usd": 0.0,
+                "extraction_method": "failed",
+                "error": "No LLM provider configured",
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            }
 
-    # Fallback: Fetch URL and use LLM extraction
-    logger.debug("Using LLM fallback extraction")
-    content = await _fetch_url_content(url)
+        model_used = provider.default_model
+        extraction_result = await _extract_with_llm(
+            content, query, provider=provider, entity_types=None
+        )
 
-    if not content:
-        return {
+        result = {
             "url": url,
             "query": query,
-            "extracted_data": {},
-            "model_used": "none",
-            "graph_nodes": [],
-            "graph_edges": [],
-            "cost_usd": 0.0,
-            "extraction_method": "failed",
-            "error": "Could not fetch URL content",
+            "extracted_data": extraction_result,
+            "model_used": model_used,
+            "graph_nodes": extraction_result.get("entities", []),
+            "graph_edges": extraction_result.get("relationships", []),
+            "cost_usd": total_cost,
+            "extraction_method": "llm_fallback",
             "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
         }
 
-    # Get LLM provider
-    provider = _get_llm_provider()
-    if not provider:
-        return {
-            "url": url,
-            "query": query,
-            "extracted_data": {},
-            "model_used": "none",
-            "graph_nodes": [],
-            "graph_edges": [],
-            "cost_usd": 0.0,
-            "extraction_method": "failed",
-            "error": "No LLM provider configured",
-            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
-        }
-
-    model_used = provider.default_model
-    extraction_result = await _extract_with_llm(
-        content, query, provider=provider, entity_types=None
-    )
-
-    result = {
-        "url": url,
-        "query": query,
-        "extracted_data": extraction_result,
-        "model_used": model_used,
-        "graph_nodes": extraction_result.get("entities", []),
-        "graph_edges": extraction_result.get("relationships", []),
-        "cost_usd": total_cost,
-        "extraction_method": "llm_fallback",
-        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
-    }
-
-    cache.put(cache_key, result)
-    return result
+        cache.put(cache_key, result)
+        return result
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_graph_scrape"}
 
 
 async def research_knowledge_extract(
@@ -400,48 +403,51 @@ async def research_knowledge_extract(
             - relationship_count: Number of relationships extracted
             - model_used: LLM model identifier
     """
-    cache = get_cache()
-    entity_types_key = sorted(entity_types or [])
-    cache_key = f"knowledge_extract_{hash(text)}_{hash(tuple(entity_types_key))}"
+    try:
+        cache = get_cache()
+        entity_types_key = sorted(entity_types or [])
+        cache_key = f"knowledge_extract_{hash(text)}_{hash(tuple(entity_types_key))}"
 
-    # Check cache
-    cached = cache.get(cache_key)
-    if cached:
-        logger.debug("Found cached knowledge extraction result")
-        return cached
+        # Check cache
+        cached = cache.get(cache_key)
+        if cached:
+            logger.debug("Found cached knowledge extraction result")
+            return cached
 
-    # Get LLM provider
-    provider = _get_llm_provider()
-    if not provider:
-        return {
-            "entities": [],
-            "relationships": [],
-            "graph_summary": "Extraction failed: no LLM provider configured",
-            "entity_count": 0,
-            "relationship_count": 0,
-            "model_used": "none",
-            "error": "No LLM provider configured",
+        # Get LLM provider
+        provider = _get_llm_provider()
+        if not provider:
+            return {
+                "entities": [],
+                "relationships": [],
+                "graph_summary": "Extraction failed: no LLM provider configured",
+                "entity_count": 0,
+                "relationship_count": 0,
+                "model_used": "none",
+                "error": "No LLM provider configured",
+            }
+
+        # Extract knowledge
+        extraction = await _extract_with_llm(
+            text, "Extract all entities and relationships", provider=provider, entity_types=entity_types
+        )
+
+        entities = extraction.get("entities", [])
+        relationships = extraction.get("relationships", [])
+
+        result = {
+            "entities": entities,
+            "relationships": relationships,
+            "graph_summary": extraction.get("summary", ""),
+            "entity_count": len(entities),
+            "relationship_count": len(relationships),
+            "model_used": provider.default_model,
         }
 
-    # Extract knowledge
-    extraction = await _extract_with_llm(
-        text, "Extract all entities and relationships", provider=provider, entity_types=entity_types
-    )
-
-    entities = extraction.get("entities", [])
-    relationships = extraction.get("relationships", [])
-
-    result = {
-        "entities": entities,
-        "relationships": relationships,
-        "graph_summary": extraction.get("summary", ""),
-        "entity_count": len(entities),
-        "relationship_count": len(relationships),
-        "model_used": provider.default_model,
-    }
-
-    cache.put(cache_key, result)
-    return result
+        cache.put(cache_key, result)
+        return result
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_knowledge_extract"}
 
 
 async def research_multi_page_graph(
@@ -466,68 +472,71 @@ async def research_multi_page_graph(
             - page_results: List of per-page extraction results
             - total_cost_usd: Combined cost of all extractions
     """
-    if not urls:
-        return {
-            "pages_processed": 0,
-            "pages_failed": 0,
-            "unified_graph": {"entities": [], "relationships": []},
-            "entities_count": 0,
-            "relationships_count": 0,
-            "page_results": [],
-            "total_cost_usd": 0.0,
-            "error": "No URLs provided",
+    try:
+        if not urls:
+            return {
+                "pages_processed": 0,
+                "pages_failed": 0,
+                "unified_graph": {"entities": [], "relationships": []},
+                "entities_count": 0,
+                "relationships_count": 0,
+                "page_results": [],
+                "total_cost_usd": 0.0,
+                "error": "No URLs provided",
+            }
+
+        # Validate all URLs
+        for url in urls:
+            validate_url(url)
+
+        logger.info("Starting multi-page graph scraping for %d URLs", len(urls))
+
+        # Scrape all pages in parallel
+        tasks = [research_graph_scrape(url, query) for url in urls]
+        page_results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # Process results
+        unified_entities: dict[str, dict[str, Any]] = {}
+        unified_relationships: list[dict[str, Any]] = []
+        pages_processed = 0
+        total_cost = 0.0
+
+        for i, result in enumerate(page_results):
+            if isinstance(result, Exception):
+                logger.error("Error scraping page %s: %s", urls[i], result)
+                continue
+
+            pages_processed += 1
+            total_cost += result.get("cost_usd", 0.0)
+
+            # Merge entities (deduplicate by name)
+            for entity in result.get("graph_nodes", []):
+                entity_name = entity.get("name", "")
+                if entity_name and entity_name not in unified_entities:
+                    unified_entities[entity_name] = entity
+
+            # Collect relationships
+            unified_relationships.extend(result.get("graph_edges", []))
+
+        # Deduplicate relationships
+        unique_relationships = _deduplicate_relationships(unified_relationships)
+
+        result = {
+            "pages_processed": pages_processed,
+            "pages_failed": len(urls) - pages_processed,
+            "unified_graph": {
+                "entities": list(unified_entities.values()),
+                "relationships": unique_relationships,
+            },
+            "entities_count": len(unified_entities),
+            "relationships_count": len(unique_relationships),
+            "page_results": [r for r in page_results if not isinstance(r, Exception)],
+            "total_cost_usd": total_cost,
         }
 
-    # Validate all URLs
-    for url in urls:
-        validate_url(url)
-
-    logger.info("Starting multi-page graph scraping for %d URLs", len(urls))
-
-    # Scrape all pages in parallel
-    tasks = [research_graph_scrape(url, query) for url in urls]
-    page_results = await asyncio.gather(*tasks, return_exceptions=True)
-
-    # Process results
-    unified_entities: dict[str, dict[str, Any]] = {}
-    unified_relationships: list[dict[str, Any]] = []
-    pages_processed = 0
-    total_cost = 0.0
-
-    for i, result in enumerate(page_results):
-        if isinstance(result, Exception):
-            logger.error("Error scraping page %s: %s", urls[i], result)
-            continue
-
-        pages_processed += 1
-        total_cost += result.get("cost_usd", 0.0)
-
-        # Merge entities (deduplicate by name)
-        for entity in result.get("graph_nodes", []):
-            entity_name = entity.get("name", "")
-            if entity_name and entity_name not in unified_entities:
-                unified_entities[entity_name] = entity
-
-        # Collect relationships
-        unified_relationships.extend(result.get("graph_edges", []))
-
-    # Deduplicate relationships
-    unique_relationships = _deduplicate_relationships(unified_relationships)
-
-    result = {
-        "pages_processed": pages_processed,
-        "pages_failed": len(urls) - pages_processed,
-        "unified_graph": {
-            "entities": list(unified_entities.values()),
-            "relationships": unique_relationships,
-        },
-        "entities_count": len(unified_entities),
-        "relationships_count": len(unique_relationships),
-        "page_results": [r for r in page_results if not isinstance(r, Exception)],
-        "total_cost_usd": total_cost,
-    }
-
-    return result
+        return result
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_multi_page_graph"}
 
 
 def _extract_nodes(data: dict[str, Any]) -> list[dict[str, Any]]:

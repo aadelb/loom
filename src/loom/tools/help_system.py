@@ -186,54 +186,57 @@ def research_help(tool_name: str = "") -> dict[str, Any]:
     Returns:
         Dict with tool list or detailed documentation.
     """
-    all_tools = _get_all_tools()
+    try:
+        all_tools = _get_all_tools()
 
-    if not tool_name:
-        # Return list of all tools grouped by category
-        categorized = {}
+        if not tool_name:
+            # Return list of all tools grouped by category
+            categorized = {}
 
-        for tool_name, tool_info in sorted(all_tools.items()):
-            category = _categorize_tool(tool_name)
-            if category not in categorized:
-                categorized[category] = []
+            for tool_name, tool_info in sorted(all_tools.items()):
+                category = _categorize_tool(tool_name)
+                if category not in categorized:
+                    categorized[category] = []
 
-            # Extract first line of docstring as summary
-            summary = tool_info["docstring"].split("\n")[0]
-            categorized[category].append(
-                {
-                    "name": tool_name,
-                    "summary": summary,
-                    "module": tool_info["module"],
-                }
-            )
+                # Extract first line of docstring as summary
+                summary = tool_info["docstring"].split("\n")[0]
+                categorized[category].append(
+                    {
+                        "name": tool_name,
+                        "summary": summary,
+                        "module": tool_info["module"],
+                    }
+                )
+
+            return {
+                "status": "success",
+                "total_tools": len(all_tools),
+                "categories": categorized,
+                "instruction": "Call research_help with tool_name='research_fetch' for full documentation",
+            }
+
+        # Return full documentation for specific tool
+        if tool_name not in all_tools:
+            return {
+                "status": "error",
+                "message": f"Tool '{tool_name}' not found",
+                "suggestion": "Call research_help() with no arguments to list all available tools",
+            }
+
+        tool_info = all_tools[tool_name]
+        params = _get_tool_params(tool_name)
 
         return {
             "status": "success",
-            "total_tools": len(all_tools),
-            "categories": categorized,
-            "instruction": "Call research_help with tool_name='research_fetch' for full documentation",
+            "tool_name": tool_name,
+            "module": tool_info["module"],
+            "category": _categorize_tool(tool_name),
+            "signature": tool_info["signature"],
+            "documentation": tool_info["docstring"],
+            "parameters": params,
         }
-
-    # Return full documentation for specific tool
-    if tool_name not in all_tools:
-        return {
-            "status": "error",
-            "message": f"Tool '{tool_name}' not found",
-            "suggestion": "Call research_help() with no arguments to list all available tools",
-        }
-
-    tool_info = all_tools[tool_name]
-    params = _get_tool_params(tool_name)
-
-    return {
-        "status": "success",
-        "tool_name": tool_name,
-        "module": tool_info["module"],
-        "category": _categorize_tool(tool_name),
-        "signature": tool_info["signature"],
-        "documentation": tool_info["docstring"],
-        "parameters": params,
-    }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_help"}
 
 
 def research_tools_list(category: str = "") -> dict[str, Any]:
@@ -248,40 +251,43 @@ def research_tools_list(category: str = "") -> dict[str, Any]:
     Returns:
         Dict with filtered tool list.
     """
-    all_tools = _get_all_tools()
+    try:
+        all_tools = _get_all_tools()
 
-    if not category:
-        # Return all categories
-        categorized = {}
+        if not category:
+            # Return all categories
+            categorized = {}
+
+            for tool_name, tool_info in sorted(all_tools.items()):
+                cat = _categorize_tool(tool_name)
+                if cat not in categorized:
+                    categorized[cat] = []
+                categorized[cat].append(tool_name)
+
+            return {
+                "status": "success",
+                "total_tools": len(all_tools),
+                "categories": {k: len(v) for k, v in categorized.items()},
+                "tools_by_category": categorized,
+            }
+
+        # Filter by specific category
+        category_lower = category.lower()
+        filtered = {}
 
         for tool_name, tool_info in sorted(all_tools.items()):
-            cat = _categorize_tool(tool_name)
-            if cat not in categorized:
-                categorized[cat] = []
-            categorized[cat].append(tool_name)
+            if _categorize_tool(tool_name).lower() == category_lower:
+                summary = tool_info["docstring"].split("\n")[0]
+                filtered[tool_name] = summary
 
         return {
             "status": "success",
-            "total_tools": len(all_tools),
-            "categories": {k: len(v) for k, v in categorized.items()},
-            "tools_by_category": categorized,
+            "category": category,
+            "count": len(filtered),
+            "tools": filtered,
         }
-
-    # Filter by specific category
-    category_lower = category.lower()
-    filtered = {}
-
-    for tool_name, tool_info in sorted(all_tools.items()):
-        if _categorize_tool(tool_name).lower() == category_lower:
-            summary = tool_info["docstring"].split("\n")[0]
-            filtered[tool_name] = summary
-
-    return {
-        "status": "success",
-        "category": category,
-        "count": len(filtered),
-        "tools": filtered,
-    }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_tools_list"}
 
 
 def tool_help(tool_name: str = "") -> list[TextContent]:

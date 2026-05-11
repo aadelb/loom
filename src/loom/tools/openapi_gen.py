@@ -18,34 +18,37 @@ async def research_openapi_schema() -> dict[str, Any]:
 
     Returns: OpenAPI 3.0 dict with paths, components, and metadata.
     """
-    tools = _discover_tools(Path(__file__).parent)
-    paths = {}
-    components = {"schemas": {}}
+    try:
+        tools = _discover_tools(Path(__file__).parent)
+        paths = {}
+        components = {"schemas": {}}
 
-    for name, info in tools.items():
-        path = f"/api/v1/{name.replace('_', '-')}"
-        paths[path] = {
-            "post": {
-                "summary": info["summary"],
-                "description": info["docstring"],
-                "operationId": name,
-                "requestBody": {
-                    "required": True,
-                    "content": {"application/json": {"schema": {"$ref": f"#/components/schemas/{name}Params"}}},
-                },
-                "responses": {"200": {"description": "Success", "content": {"application/json": {"schema": {"type": "object", "properties": {"result": {"type": "object"}, "tool": {"type": "string"}}}}}}},
+        for name, info in tools.items():
+            path = f"/api/v1/{name.replace('_', '-')}"
+            paths[path] = {
+                "post": {
+                    "summary": info["summary"],
+                    "description": info["docstring"],
+                    "operationId": name,
+                    "requestBody": {
+                        "required": True,
+                        "content": {"application/json": {"schema": {"$ref": f"#/components/schemas/{name}Params"}}},
+                    },
+                    "responses": {"200": {"description": "Success", "content": {"application/json": {"schema": {"type": "object", "properties": {"result": {"type": "object"}, "tool": {"type": "string"}}}}}}},
+                }
             }
-        }
-        if info["params"]:
-            components["schemas"][f"{name}Params"] = {"type": "object", "properties": info["params"], "required": list(info["required"])}
+            if info["params"]:
+                components["schemas"][f"{name}Params"] = {"type": "object", "properties": info["params"], "required": list(info["required"])}
 
-    return {
-        "openapi": "3.0.0",
-        "info": {"title": "Loom Research API", "description": "220+ research and attack tools", "version": "4.0.0"},
-        "servers": [{"url": "http://127.0.0.1:8787"}],
-        "paths": paths,
-        "components": components,
-    }
+        return {
+            "openapi": "3.0.0",
+            "info": {"title": "Loom Research API", "description": "220+ research and attack tools", "version": "4.0.0"},
+            "servers": [{"url": "http://127.0.0.1:8787"}],
+            "paths": paths,
+            "components": components,
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_openapi_schema"}
 
 
 async def research_tool_search(query: str, limit: int = 10) -> dict[str, Any]:
@@ -55,23 +58,26 @@ async def research_tool_search(query: str, limit: int = 10) -> dict[str, Any]:
     Args: query (search string), limit (1-100 results)
     Returns: Dict with query, results list, total_matches.
     """
-    limit = max(1, min(limit, 100))
-    tools = _discover_tools(Path(__file__).parent)
-    query_lower, query_words = query.lower(), set(query.lower().split())
-    results = []
+    try:
+        limit = max(1, min(limit, 100))
+        tools = _discover_tools(Path(__file__).parent)
+        query_lower, query_words = query.lower(), set(query.lower().split())
+        results = []
 
-    for name, info in tools.items():
-        text_words = set(f"{name} {info['docstring']}".lower().split())
-        score = len(query_words & text_words)
-        if name.lower().startswith(query_lower):
-            score += 10
-        elif query_lower in name.lower():
-            score += 5
+        for name, info in tools.items():
+            text_words = set(f"{name} {info['docstring']}".lower().split())
+            score = len(query_words & text_words)
+            if name.lower().startswith(query_lower):
+                score += 10
+            elif query_lower in name.lower():
+                score += 5
 
-        if score > 0:
-            results.append({"tool_name": name, "description": info["summary"], "relevance_score": score, "file": info["file"]})
+            if score > 0:
+                results.append({"tool_name": name, "description": info["summary"], "relevance_score": score, "file": info["file"]})
 
-    return {"query": query, "results": sorted(results, key=lambda x: x["relevance_score"], reverse=True)[:limit], "total_matches": len(results)}
+        return {"query": query, "results": sorted(results, key=lambda x: x["relevance_score"], reverse=True)[:limit], "total_matches": len(results)}
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_tool_search"}
 
 
 def _discover_tools(tools_dir: Path) -> dict[str, dict[str, Any]]:

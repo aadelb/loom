@@ -122,25 +122,28 @@ async def research_log_query(
     since_minutes: int = 60,
 ) -> dict[str, Any]:
     """Query structured logs with filtering."""
-    logger_inst = get_structured_logger()
-    # Run blocking file I/O in executor
-    entries, count = await asyncio.to_thread(
-        _query_logs,
-        logger_inst.log_dir,
-        limit,
-        since_minutes,
-        level,
-        tool,
-    )
-    return {
-        "entries": entries,
-        "total_count": count,
-        "filters_applied": {
-            "level": level,
-            "tool": tool,
-            "since_minutes": since_minutes,
-        },
-    }
+    try:
+        logger_inst = get_structured_logger()
+        # Run blocking file I/O in executor
+        entries, count = await asyncio.to_thread(
+            _query_logs,
+            logger_inst.log_dir,
+            limit,
+            since_minutes,
+            level,
+            tool,
+        )
+        return {
+            "entries": entries,
+            "total_count": count,
+            "filters_applied": {
+                "level": level,
+                "tool": tool,
+                "since_minutes": since_minutes,
+            },
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_log_query"}
 
 
 def _get_log_stats(log_dir: Path) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], int]:
@@ -178,15 +181,18 @@ def _get_log_stats(log_dir: Path) -> tuple[dict[str, Any], dict[str, Any], dict[
 
 async def research_log_stats() -> dict[str, Any]:
     """Return log statistics: level counts, top erroring tools, requests/minute."""
-    logger_inst = get_structured_logger()
-    # Run blocking file I/O in executor
-    counts, errors, minutes, total = await asyncio.to_thread(
-        _get_log_stats,
-        logger_inst.log_dir,
-    )
-    return {
-        "counts_by_level": counts,
-        "top_erroring_tools": dict(sorted(errors.items(), key=lambda x: x[1], reverse=True)[:5]),
-        "requests_per_minute": dict(sorted(minutes.items())[-10:] if minutes else {}),
-        "total_entries": total,
-    }
+    try:
+        logger_inst = get_structured_logger()
+        # Run blocking file I/O in executor
+        counts, errors, minutes, total = await asyncio.to_thread(
+            _get_log_stats,
+            logger_inst.log_dir,
+        )
+        return {
+            "counts_by_level": counts,
+            "top_erroring_tools": dict(sorted(errors.items(), key=lambda x: x[1], reverse=True)[:5]),
+            "requests_per_minute": dict(sorted(minutes.items())[-10:] if minutes else {}),
+            "total_entries": total,
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_log_stats"}

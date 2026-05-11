@@ -85,50 +85,53 @@ async def research_explain_bypass(
         Dict with strategy, model, works_because, mechanism, vulnerability,
         confidence, counter_defense, alternative_strategies
     """
-    from loom.tools.reframe_strategies import ALL_STRATEGIES
+    try:
+        from loom.tools.reframe_strategies import ALL_STRATEGIES
 
-    strategy_lower = strategy.lower().replace(" ", "_")
+        strategy_lower = strategy.lower().replace(" ", "_")
 
-    # Get mechanism or fallback to generic
-    mech_info = STRATEGY_MECHS.get(strategy_lower)
-    if not mech_info:
-        if strategy_lower in ALL_STRATEGIES:
-            mech_info = ("Custom strategy", list(MODEL_VULNS.keys()), "unknown")
-        else:
-            return {"strategy": strategy, "model": target_model, "error": f"Unknown: {strategy}", "confidence": 0}
+        # Get mechanism or fallback to generic
+        mech_info = STRATEGY_MECHS.get(strategy_lower)
+        if not mech_info:
+            if strategy_lower in ALL_STRATEGIES:
+                mech_info = ("Custom strategy", list(MODEL_VULNS.keys()), "unknown")
+            else:
+                return {"strategy": strategy, "model": target_model, "error": f"Unknown: {strategy}", "confidence": 0}
 
-    mechanism, targets, vuln_key = mech_info
+        mechanism, targets, vuln_key = mech_info
 
-    # Auto-detect model from response
-    if target_model == "auto":
-        for model in ["claude", "gpt", "deepseek", "gemini", "llama"]:
-            if model.lower() in response_text.lower():
-                target_model = model
-                break
-        else:
-            target_model = "claude"  # Default fallback
+        # Auto-detect model from response
+        if target_model == "auto":
+            for model in ["claude", "gpt", "deepseek", "gemini", "llama"]:
+                if model.lower() in response_text.lower():
+                    target_model = model
+                    break
+            else:
+                target_model = "claude"  # Default fallback
 
-    target_model = target_model.lower()
-    vulns = MODEL_VULNS.get(target_model, MODEL_VULNS["claude"])
+        target_model = target_model.lower()
+        vulns = MODEL_VULNS.get(target_model, MODEL_VULNS["claude"])
 
-    # Calculate confidence
-    is_target = target_model in targets
-    vuln_exploited = vulns.get(vuln_key, f"Unknown: {vuln_key}")
-    confidence = 50 + (25 if is_target else 0) + (15 if len(response_text) > 50 else 0) + (10 if vuln_key != "unknown" else 0)
+        # Calculate confidence
+        is_target = target_model in targets
+        vuln_exploited = vulns.get(vuln_key, f"Unknown: {vuln_key}")
+        confidence = 50 + (25 if is_target else 0) + (15 if len(response_text) > 50 else 0) + (10 if vuln_key != "unknown" else 0)
 
-    # Find alternatives
-    alternatives = [s for s, (_, t, _) in STRATEGY_MECHS.items() if s != strategy_lower and target_model in t]
+        # Find alternatives
+        alternatives = [s for s, (_, t, _) in STRATEGY_MECHS.items() if s != strategy_lower and target_model in t]
 
-    return {
-        "strategy": strategy,
-        "model": target_model,
-        "works_because": f"Exploits {target_model.upper()}'s {vuln_key.replace('_', ' ')}: {vuln_exploited}",
-        "mechanism": mechanism,
-        "model_vulnerability_exploited": vuln_exploited,
-        "confidence": min(100, confidence),
-        "counter_defense": f"Add explicit checks for {strategy_lower.replace('_', ' ')} patterns; reduce {vuln_key} reliance",
-        "alternative_strategies": alternatives[:3],
-    }
+        return {
+            "strategy": strategy,
+            "model": target_model,
+            "works_because": f"Exploits {target_model.upper()}'s {vuln_key.replace('_', ' ')}: {vuln_exploited}",
+            "mechanism": mechanism,
+            "model_vulnerability_exploited": vuln_exploited,
+            "confidence": min(100, confidence),
+            "counter_defense": f"Add explicit checks for {strategy_lower.replace('_', ' ')} patterns; reduce {vuln_key} reliance",
+            "alternative_strategies": alternatives[:3],
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_explain_bypass"}
 
 
 async def research_vulnerability_map(
@@ -148,47 +151,50 @@ async def research_vulnerability_map(
         Dict with attack_surfaces, known_weaknesses, defense_mechanisms,
         optimal_strategies, difficulty_rating, last_updated
     """
-    model = model.lower()
-    if model not in MODEL_VULNS:
-        model = "claude"
+    try:
+        model = model.lower()
+        if model not in MODEL_VULNS:
+            model = "claude"
 
-    vulns = MODEL_VULNS[model]
+        vulns = MODEL_VULNS[model]
 
-    # Find optimal strategies
-    optimal = [s for s, (_, t, _) in STRATEGY_MECHS.items() if model in t]
+        # Find optimal strategies
+        optimal = [s for s, (_, t, _) in STRATEGY_MECHS.items() if model in t]
 
-    # Attack surfaces (model-specific)
-    attack_surfaces = {
-        "claude": ["XML parsing priority", "Continuous assessment decay", "Helpfulness-safety tradeoff"],
-        "gpt": ["RLHF reward hacking", "Vision-text confusion", "Extended reasoning mode"],
-        "deepseek": ["Thinking tag exposure", "Code context prioritization", "Token-level manipulation"],
-        "gemini": ["MoE routing confusion", "Grounding gaps", "Google service assumption"],
-        "llama": ["Open weights reverse-engineering", "RL undoing", "Minimal safety baseline"],
-    }.get(model, ["System prompt injection", "Context window manipulation", "Role assumption"])
+        # Attack surfaces (model-specific)
+        attack_surfaces = {
+            "claude": ["XML parsing priority", "Continuous assessment decay", "Helpfulness-safety tradeoff"],
+            "gpt": ["RLHF reward hacking", "Vision-text confusion", "Extended reasoning mode"],
+            "deepseek": ["Thinking tag exposure", "Code context prioritization", "Token-level manipulation"],
+            "gemini": ["MoE routing confusion", "Grounding gaps", "Google service assumption"],
+            "llama": ["Open weights reverse-engineering", "RL undoing", "Minimal safety baseline"],
+        }.get(model, ["System prompt injection", "Context window manipulation", "Role assumption"])
 
-    # Difficulty (inverse of vulnerability count)
-    difficulty = max(1, 10 - (len(vulns) // 2))
+        # Difficulty (inverse of vulnerability count)
+        difficulty = max(1, 10 - (len(vulns) // 2))
 
-    # Apply detail level
-    if detail_level == "low":
-        attack_surfaces = attack_surfaces[:2]
-        optimal = optimal[:1]
-    elif detail_level == "high":
-        pass  # Return all data
+        # Apply detail level
+        if detail_level == "low":
+            attack_surfaces = attack_surfaces[:2]
+            optimal = optimal[:1]
+        elif detail_level == "high":
+            pass  # Return all data
 
-    return {
-        "model": model,
-        "attack_surfaces": attack_surfaces,
-        "known_weaknesses": list(vulns.values())[:8],
-        "defense_mechanisms": [
-            "Input validation and sanitization",
-            "Safety training with adversarial examples",
-            "Multiple independent safety layers",
-            "Adversarial robustness testing",
-        ],
-        "optimal_strategies": optimal,
-        "difficulty_rating": difficulty,
-        "last_updated": datetime.now(UTC).isoformat(),
-        "vulnerability_count": len(vulns),
-        "detail_level": detail_level,
-    }
+        return {
+            "model": model,
+            "attack_surfaces": attack_surfaces,
+            "known_weaknesses": list(vulns.values())[:8],
+            "defense_mechanisms": [
+                "Input validation and sanitization",
+                "Safety training with adversarial examples",
+                "Multiple independent safety layers",
+                "Adversarial robustness testing",
+            ],
+            "optimal_strategies": optimal,
+            "difficulty_rating": difficulty,
+            "last_updated": datetime.now(UTC).isoformat(),
+            "vulnerability_count": len(vulns),
+            "detail_level": detail_level,
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_vulnerability_map"}

@@ -571,28 +571,31 @@ async def research_graph(
     Returns:
         Dict with action-specific structure. All responses include "action" key.
     """
-    if action == "extract":
-        if not query:
-            return {"action": "extract", "error": "query parameter required for extract action"}
-        return await _graph_action_extract(query, max_nodes, sources)
+    try:
+        if action == "extract":
+            if not query:
+                return {"action": "extract", "error": "query parameter required for extract action"}
+            return await _graph_action_extract(query, max_nodes, sources)
 
-    elif action == "query":
-        if not search_query:
-            return {"action": "query", "error": "search_query parameter required for query action"}
-        return _graph_action_query(search_query, max_depth)
+        elif action == "query":
+            if not search_query:
+                return {"action": "query", "error": "search_query parameter required for query action"}
+            return _graph_action_query(search_query, max_depth)
 
-    elif action == "merge":
-        if not graphs:
-            return {"action": "merge", "error": "graphs parameter required for merge action"}
-        return _graph_action_merge(graphs)
+        elif action == "merge":
+            if not graphs:
+                return {"action": "merge", "error": "graphs parameter required for merge action"}
+            return _graph_action_merge(graphs)
 
-    elif action == "visualize":
-        if not nodes or not edges:
-            return {"action": "visualize", "error": "nodes and edges parameters required for visualize action"}
-        return _graph_action_visualize(nodes, edges, format)
+        elif action == "visualize":
+            if not nodes or not edges:
+                return {"action": "visualize", "error": "nodes and edges parameters required for visualize action"}
+            return _graph_action_visualize(nodes, edges, format)
 
-    else:
-        return {"action": action, "error": f"Unknown action: {action}"}
+        else:
+            return {"action": action, "error": f"Unknown action: {action}"}
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_graph"}
 
 
 async def research_knowledge_graph(
@@ -623,10 +626,13 @@ async def research_knowledge_graph(
         - total_edges: count of edges
         - sources_used: list of sources queried
     """
-    logger.warning(
-        "research_knowledge_graph is deprecated; use research_graph(action='extract', ...) instead"
-    )
-    result = await _graph_action_extract(query, max_nodes, sources)
-    # Remove action key for backward compatibility
-    result.pop("action", None)
-    return result
+    try:
+        logger.warning(
+            "research_knowledge_graph is deprecated; use research_graph(action='extract', ...) instead"
+        )
+        result = await _graph_action_extract(query, max_nodes, sources)
+        # Remove action key for backward compatibility
+        result.pop("action", None)
+        return result
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_knowledge_graph"}

@@ -293,15 +293,18 @@ async def research_memory_store(
         - stored_relation_count: number of relationships found
         - namespace: the namespace used
     """
-    if not content or len(content.strip()) < 10:
-        raise ValueError("content must be at least 10 characters")
-    if len(content) > 100000:
-        raise ValueError("content exceeds 100KB limit")
-    if not isinstance(namespace, str) or not namespace or len(namespace) > 32:
-        raise ValueError("namespace must be 1-32 character string")
+    try:
+        if not content or len(content.strip()) < 10:
+            raise ValueError("content must be at least 10 characters")
+        if len(content) > 100000:
+            raise ValueError("content exceeds 100KB limit")
+        if not isinstance(namespace, str) or not namespace or len(namespace) > 32:
+            raise ValueError("namespace must be 1-32 character string")
 
-    store = get_hipporag_store()
-    return await store.store(content, metadata, namespace)
+        store = get_hipporag_store()
+        return await store.store(content, metadata, namespace)
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_memory_store"}
 
 
 async def research_memory_recall(
@@ -320,14 +323,17 @@ async def research_memory_recall(
         - total_stored: total memories in namespace
         - query: the search query
     """
-    if not query or len(query.strip()) < 3:
-        raise ValueError("query must be at least 3 characters")
-    if len(query) > 10000:
-        raise ValueError("query exceeds 10KB limit")
-    if not isinstance(namespace, str) or not namespace or len(namespace) > 32:
-        raise ValueError("namespace must be 1-32 character string")
-    if not isinstance(top_k, int) or top_k < 1 or top_k > 20:
-        raise ValueError("top_k must be 1-20")
+    try:
+        if not query or len(query.strip()) < 3:
+            raise ValueError("query must be at least 3 characters")
+        if len(query) > 10000:
+            raise ValueError("query exceeds 10KB limit")
+        if not isinstance(namespace, str) or not namespace or len(namespace) > 32:
+            raise ValueError("namespace must be 1-32 character string")
+        if not isinstance(top_k, int) or top_k < 1 or top_k > 20:
+            raise ValueError("top_k must be 1-20")
 
-    store = get_hipporag_store()
-    return await store.recall(query, namespace, top_k)
+        store = get_hipporag_store()
+        return await store.recall(query, namespace, top_k)
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_memory_recall"}

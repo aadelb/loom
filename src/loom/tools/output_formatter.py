@@ -23,66 +23,69 @@ def research_format_report(
         Dict with keys: formatted (formatted text/object), format, sections_extracted (list),
         word_count (int)
     """
-    sections = {}
-    sections_extracted = []
+    try:
+        sections = {}
+        sections_extracted = []
 
-    # Extract common sections using regex patterns
-    patterns = {
-        "executive_summary": r"(?:executive\s+summary|overview|summary)[\s:]*(.+?)(?=\n(?:methodology|methodology steps|approach|tools|timeline|cost|risk|$))",
-        "methodology": r"(?:methodology|approach|method)(?:\s+steps)?[\s:]*(.+?)(?=\n(?:tools|timeline|cost|risk|sources|$))",
-        "tools_required": r"(?:tools|tools\s+required)[\s:]*(.+?)(?=\n(?:timeline|cost|risk|sources|$))",
-        "timeline": r"(?:timeline|timeframe|schedule)[\s:]*(.+?)(?=\n(?:cost|risk|sources|$))",
-        "cost_breakdown": r"(?:cost|costs|budget|pricing)[\s:]*(.+?)(?=\n(?:risk|sources|$))",
-        "risk_assessment": r"(?:risk|risks|limitations|challenges)[\s:]*(.+?)(?=\n(?:sources|$))",
-        "sources": r"(?:sources|references|citations)[\s:]*(.+?)$",
-    }
-
-    for key, pattern in patterns.items():
-        match = re.search(pattern, raw_text, re.IGNORECASE | re.DOTALL)
-        if match:
-            content = match.group(1).strip()
-            if content:
-                sections[key] = content
-                sections_extracted.append(key)
-
-    # If no structured sections found, treat entire text as content
-    if not sections_extracted:
-        sections["content"] = raw_text
-        sections_extracted.append("content")
-
-    # Format output based on requested format
-    word_count = len(raw_text.split())
-
-    if format == "json":
-        # Extract numbered steps if present
-        steps = _extract_numbered_items(sections.get("methodology", ""))
-        tools = _extract_list_items(sections.get("tools_required", ""))
-        costs = _extract_monetary_values(sections.get("cost_breakdown", ""))
-        risks = _extract_list_items(sections.get("risk_assessment", ""))
-        sources = _extract_list_items(sections.get("sources", ""))
-
-        formatted = {
-            "executive_summary": sections.get("executive_summary", ""),
-            "methodology_steps": steps,
-            "tools_required": tools,
-            "timeline": sections.get("timeline", ""),
-            "cost_breakdown": costs,
-            "risk_assessment": risks,
-            "sources": sources,
+        # Extract common sections using regex patterns
+        patterns = {
+            "executive_summary": r"(?:executive\s+summary|overview|summary)[\s:]*(.+?)(?=\n(?:methodology|methodology steps|approach|tools|timeline|cost|risk|$))",
+            "methodology": r"(?:methodology|approach|method)(?:\s+steps)?[\s:]*(.+?)(?=\n(?:tools|timeline|cost|risk|sources|$))",
+            "tools_required": r"(?:tools|tools\s+required)[\s:]*(.+?)(?=\n(?:timeline|cost|risk|sources|$))",
+            "timeline": r"(?:timeline|timeframe|schedule)[\s:]*(.+?)(?=\n(?:cost|risk|sources|$))",
+            "cost_breakdown": r"(?:cost|costs|budget|pricing)[\s:]*(.+?)(?=\n(?:risk|sources|$))",
+            "risk_assessment": r"(?:risk|risks|limitations|challenges)[\s:]*(.+?)(?=\n(?:sources|$))",
+            "sources": r"(?:sources|references|citations)[\s:]*(.+?)$",
         }
-    elif format == "markdown":
-        formatted = _to_markdown(sections)
-    elif format == "executive_brief":
-        formatted = _to_executive_brief(sections)
-    else:  # technical_spec
-        formatted = _to_technical_spec(sections)
 
-    return {
-        "formatted": formatted,
-        "format": format,
-        "sections_extracted": sections_extracted,
-        "word_count": word_count,
-    }
+        for key, pattern in patterns.items():
+            match = re.search(pattern, raw_text, re.IGNORECASE | re.DOTALL)
+            if match:
+                content = match.group(1).strip()
+                if content:
+                    sections[key] = content
+                    sections_extracted.append(key)
+
+        # If no structured sections found, treat entire text as content
+        if not sections_extracted:
+            sections["content"] = raw_text
+            sections_extracted.append("content")
+
+        # Format output based on requested format
+        word_count = len(raw_text.split())
+
+        if format == "json":
+            # Extract numbered steps if present
+            steps = _extract_numbered_items(sections.get("methodology", ""))
+            tools = _extract_list_items(sections.get("tools_required", ""))
+            costs = _extract_monetary_values(sections.get("cost_breakdown", ""))
+            risks = _extract_list_items(sections.get("risk_assessment", ""))
+            sources = _extract_list_items(sections.get("sources", ""))
+
+            formatted = {
+                "executive_summary": sections.get("executive_summary", ""),
+                "methodology_steps": steps,
+                "tools_required": tools,
+                "timeline": sections.get("timeline", ""),
+                "cost_breakdown": costs,
+                "risk_assessment": risks,
+                "sources": sources,
+            }
+        elif format == "markdown":
+            formatted = _to_markdown(sections)
+        elif format == "executive_brief":
+            formatted = _to_executive_brief(sections)
+        else:  # technical_spec
+            formatted = _to_technical_spec(sections)
+
+        return {
+            "formatted": formatted,
+            "format": format,
+            "sections_extracted": sections_extracted,
+            "word_count": word_count,
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_format_report"}
 
 
 def research_extract_actionables(text: str) -> dict[str, Any]:
@@ -94,15 +97,18 @@ def research_extract_actionables(text: str) -> dict[str, Any]:
     Returns:
         Dict with keys: actions[], tools_needed[], timeline_items[], costs[], risks[]
     """
-    result = {
-        "actions": _extract_action_items(text),
-        "tools_needed": _extract_tools(text),
-        "timeline_items": _extract_timeline_items(text),
-        "costs": _extract_monetary_values(text),
-        "risks": _extract_risk_items(text),
-    }
+    try:
+        result = {
+            "actions": _extract_action_items(text),
+            "tools_needed": _extract_tools(text),
+            "timeline_items": _extract_timeline_items(text),
+            "costs": _extract_monetary_values(text),
+            "risks": _extract_risk_items(text),
+        }
 
-    return result
+        return result
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_extract_actionables"}
 
 
 # Helper functions

@@ -6,17 +6,23 @@ from typing import Any
 
 async def research_lb_status() -> dict[str, Any]:
     """Check load balancer status."""
-    return {
-        "status": "operational",
-        "tool": "research_lb_status",
-        "connections": 0
-    }
+    try:
+        return {
+            "status": "operational",
+            "tool": "research_lb_status",
+            "connections": 0
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_lb_status"}
 
 
 async def research_lb_balance() -> dict[str, Any]:
     """Balance load across workers."""
-    return {
-        "status": "balanced",
-        "tool": "research_lb_balance",
-        "message": "load balancing operational"
-    }
+    try:
+        return {
+            "status": "balanced",
+            "tool": "research_lb_balance",
+            "message": "load balancing operational"
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_lb_balance"}

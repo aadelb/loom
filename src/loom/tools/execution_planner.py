@@ -83,53 +83,56 @@ async def research_plan_execution(
         - total_estimated_cost: combined cost in USD
         - constraints_met: bool indicating if plan respects constraints
     """
-    constraints = constraints or {}
-    max_time_minutes = constraints.get("max_time_minutes", 30)
-    max_cost_usd = constraints.get("max_cost_usd", 0.10)
-    max_tools = constraints.get("max_tools", 5)
+    try:
+        constraints = constraints or {}
+        max_time_minutes = constraints.get("max_time_minutes", 30)
+        max_cost_usd = constraints.get("max_cost_usd", 0.10)
+        max_tools = constraints.get("max_tools", 5)
 
-    categories = _categorize_goal(goal)
-    tools = _select_tools(categories, max_tools)
+        categories = _categorize_goal(goal)
+        tools = _select_tools(categories, max_tools)
 
-    plan = []
-    total_time = 0
-    total_cost = 0.0
+        plan = []
+        total_time = 0
+        total_cost = 0.0
 
-    for step_num, (tool_name, info) in enumerate(tools, 1):
-        step_time = info["time_ms"]
-        step_cost = info["cost_usd"]
-        total_time += step_time
-        total_cost += step_cost
+        for step_num, (tool_name, info) in enumerate(tools, 1):
+            step_time = info["time_ms"]
+            step_cost = info["cost_usd"]
+            total_time += step_time
+            total_cost += step_cost
 
-        plan.append(
-            {
-                "step": step_num,
-                "tool": tool_name,
-                "estimated_time_ms": step_time,
-                "estimated_cost": step_cost,
-                "reason": f"Matched category '{info['category']}' from goal keywords",
-            }
+            plan.append(
+                {
+                    "step": step_num,
+                    "tool": tool_name,
+                    "estimated_time_ms": step_time,
+                    "estimated_cost": step_cost,
+                    "reason": f"Matched category '{info['category']}' from goal keywords",
+                }
+            )
+
+        max_time_ms = max_time_minutes * 60 * 1000
+        constraints_met = total_time <= max_time_ms and total_cost <= max_cost_usd
+
+        logger.info(
+            "plan_execution goal=%s tools=%d time=%dms cost=$%.4f constraints_met=%s",
+            goal[:50],
+            len(plan),
+            total_time,
+            total_cost,
+            constraints_met,
         )
 
-    max_time_ms = max_time_minutes * 60 * 1000
-    constraints_met = total_time <= max_time_ms and total_cost <= max_cost_usd
-
-    logger.info(
-        "plan_execution goal=%s tools=%d time=%dms cost=$%.4f constraints_met=%s",
-        goal[:50],
-        len(plan),
-        total_time,
-        total_cost,
-        constraints_met,
-    )
-
-    return {
-        "goal": goal,
-        "plan": plan,
-        "total_estimated_time_ms": total_time,
-        "total_estimated_cost_usd": total_cost,
-        "constraints_met": constraints_met,
-    }
+        return {
+            "goal": goal,
+            "plan": plan,
+            "total_estimated_time_ms": total_time,
+            "total_estimated_cost_usd": total_cost,
+            "constraints_met": constraints_met,
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_plan_execution"}
 
 
 async def research_plan_validate(
@@ -147,51 +150,54 @@ async def research_plan_validate(
         - warnings: list of warning strings
         - optimizations: list of suggested improvements
     """
-    issues = []
-    warnings = []
-    optimizations = []
+    try:
+        issues = []
+        warnings = []
+        optimizations = []
 
-    if not steps:
-        issues.append({"step": 0, "issue": "Plan is empty"})
-        return {"valid": False, "issues": issues, "warnings": warnings, "optimizations": optimizations}
+        if not steps:
+            issues.append({"step": 0, "issue": "Plan is empty"})
+            return {"valid": False, "issues": issues, "warnings": warnings, "optimizations": optimizations}
 
-    seen_tools = set()
-    for idx, step in enumerate(steps, 1):
-        if "tool" not in step:
-            issues.append({"step": idx, "issue": "Missing 'tool' key"})
-            continue
+        seen_tools = set()
+        for idx, step in enumerate(steps, 1):
+            if "tool" not in step:
+                issues.append({"step": idx, "issue": "Missing 'tool' key"})
+                continue
 
-        tool = step["tool"]
+            tool = step["tool"]
 
-        if tool not in TOOL_REGISTRY:
-            warnings.append(f"Step {idx}: Tool '{tool}' not in registry (may be custom)")
+            if tool not in TOOL_REGISTRY:
+                warnings.append(f"Step {idx}: Tool '{tool}' not in registry (may be custom)")
 
-        if tool in seen_tools:
-            optimizations.append(f"Step {idx}: Tool '{tool}' already used; consider deduplication")
+            if tool in seen_tools:
+                optimizations.append(f"Step {idx}: Tool '{tool}' already used; consider deduplication")
 
-        seen_tools.add(tool)
+            seen_tools.add(tool)
 
-        if "depends_on" in step:
-            dep = step["depends_on"]
-            if isinstance(dep, list):
-                for d in dep:
-                    if d > idx:
-                        issues.append(
-                            {"step": idx, "issue": f"Circular/forward dependency on step {d}"}
-                        )
+            if "depends_on" in step:
+                dep = step["depends_on"]
+                if isinstance(dep, list):
+                    for d in dep:
+                        if d > idx:
+                            issues.append(
+                                {"step": idx, "issue": f"Circular/forward dependency on step {d}"}
+                            )
 
-    valid = len(issues) == 0
-    logger.info(
-        "plan_validate steps=%d valid=%s issues=%d warnings=%d",
-        len(steps),
-        valid,
-        len(issues),
-        len(warnings),
-    )
+        valid = len(issues) == 0
+        logger.info(
+            "plan_validate steps=%d valid=%s issues=%d warnings=%d",
+            len(steps),
+            valid,
+            len(issues),
+            len(warnings),
+        )
 
-    return {
-        "valid": valid,
-        "issues": issues,
-        "warnings": warnings,
-        "optimizations": optimizations,
-    }
+        return {
+            "valid": valid,
+            "issues": issues,
+            "warnings": warnings,
+            "optimizations": optimizations,
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_plan_validate"}

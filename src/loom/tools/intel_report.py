@@ -72,52 +72,55 @@ async def research_intel_report(
     Returns:
         {report, classification, findings_count, generated_at, word_count}
     """
-    classification = classification if classification in ("UNCLASSIFIED", "CONFIDENTIAL", "SECRET", "TOP_SECRET") else "CONFIDENTIAL"
-    format = format if format in ("markdown", "html", "text") else "markdown"
-    now = datetime.now(UTC).isoformat()
-    sources = set(f.get("source", "") for f in findings)
-    high_conf = sum(1 for f in findings if f.get("confidence", "").upper() == "HIGH")
+    try:
+        classification = classification if classification in ("UNCLASSIFIED", "CONFIDENTIAL", "SECRET", "TOP_SECRET") else "CONFIDENTIAL"
+        format = format if format in ("markdown", "html", "text") else "markdown"
+        now = datetime.now(UTC).isoformat()
+        sources = set(f.get("source", "") for f in findings)
+        high_conf = sum(1 for f in findings if f.get("confidence", "").upper() == "HIGH")
 
-    sections = [_build_banner(title, classification, now, format)]
+        sections = [_build_banner(title, classification, now, format)]
 
-    # Executive Summary
-    if format == "markdown":
-        sections.append(f"## Executive Summary\n\nTotal findings: **{len(findings)}**\nHigh confidence: **{high_conf}**\n\n")
-    elif format == "html":
-        sections.append(f"<h2>Executive Summary</h2><p>Total findings: <strong>{len(findings)}</strong></p>")
-    else:
-        sections.append(f"\nEXECUTIVE SUMMARY\n{'-'*40}\nTotal findings: {len(findings)}\n")
+        # Executive Summary
+        if format == "markdown":
+            sections.append(f"## Executive Summary\n\nTotal findings: **{len(findings)}**\nHigh confidence: **{high_conf}**\n\n")
+        elif format == "html":
+            sections.append(f"<h2>Executive Summary</h2><p>Total findings: <strong>{len(findings)}</strong></p>")
+        else:
+            sections.append(f"\nEXECUTIVE SUMMARY\n{'-'*40}\nTotal findings: {len(findings)}\n")
 
-    sections.append(_build_findings(findings, format))
+        sections.append(_build_findings(findings, format))
 
-    # Source Assessment
-    if format == "markdown":
-        sections.append(f"## Source Assessment\n\nSources: {len(sources)}\n- {', '.join(sources)}\n\n")
-    elif format == "html":
-        sections.append(f"<h2>Source Assessment</h2><p>Sources: {len(sources)}\n{', '.join(sources)}</p>")
-    else:
-        sections.append(f"\nSOURCE ASSESSMENT\n{'-'*40}\nTotal sources: {len(sources)}\n")
+        # Source Assessment
+        if format == "markdown":
+            sections.append(f"## Source Assessment\n\nSources: {len(sources)}\n- {', '.join(sources)}\n\n")
+        elif format == "html":
+            sections.append(f"<h2>Source Assessment</h2><p>Sources: {len(sources)}\n{', '.join(sources)}</p>")
+        else:
+            sections.append(f"\nSOURCE ASSESSMENT\n{'-'*40}\nTotal sources: {len(sources)}\n")
 
-    # Methodology & Recommendations
-    if format == "markdown":
-        sections.append("## Methodology\n\n- Systematic research\n- Confidence assessment\n- Timestamp validation\n")
-        sections.append("## Recommendations\n\n1. Prioritize high-confidence findings\n2. Validate against secondary sources\n3. Monitor for updates\n")
-    elif format == "html":
-        sections.append("<h2>Methodology</h2><ul><li>Systematic research</li><li>Confidence assessment</li></ul>")
-        sections.append("<h2>Recommendations</h2><ol><li>Prioritize findings</li><li>Validate sources</li><li>Monitor updates</li></ol>")
-    else:
-        sections.append(f"\nMETHODOLOGY\n{'-'*40}\n- Systematic research\n- Confidence assessment\n")
-        sections.append(f"\nRECOMMENDATIONS\n{'-'*40}\n1. Prioritize high-confidence\n2. Validate against sources\n3. Monitor for updates\n")
+        # Methodology & Recommendations
+        if format == "markdown":
+            sections.append("## Methodology\n\n- Systematic research\n- Confidence assessment\n- Timestamp validation\n")
+            sections.append("## Recommendations\n\n1. Prioritize high-confidence findings\n2. Validate against secondary sources\n3. Monitor for updates\n")
+        elif format == "html":
+            sections.append("<h2>Methodology</h2><ul><li>Systematic research</li><li>Confidence assessment</li></ul>")
+            sections.append("<h2>Recommendations</h2><ol><li>Prioritize findings</li><li>Validate sources</li><li>Monitor updates</li></ol>")
+        else:
+            sections.append(f"\nMETHODOLOGY\n{'-'*40}\n- Systematic research\n- Confidence assessment\n")
+            sections.append(f"\nRECOMMENDATIONS\n{'-'*40}\n1. Prioritize high-confidence\n2. Validate against sources\n3. Monitor for updates\n")
 
-    report = f"<html><head><title>{_escape_html(title)}</title></head><body>{''.join(sections)}</body></html>" if format == "html" else "\n".join(sections)
+        report = f"<html><head><title>{_escape_html(title)}</title></head><body>{''.join(sections)}</body></html>" if format == "html" else "\n".join(sections)
 
-    return {
-        "report": report,
-        "classification": classification,
-        "findings_count": len(findings),
-        "generated_at": now,
-        "word_count": _count_words(report),
-    }
+        return {
+            "report": report,
+            "classification": classification,
+            "findings_count": len(findings),
+            "generated_at": now,
+            "word_count": _count_words(report),
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_intel_report"}
 
 
 async def research_brief_generate(
@@ -135,27 +138,30 @@ async def research_brief_generate(
     Returns:
         {brief, topic, audience, points_covered, word_count}
     """
-    audience = audience if audience in ("executive", "technical", "policy") else "executive"
-    max_points = 3 if audience == "executive" else (5 if audience == "technical" else 4)
-    points = points[:max_points]
-    now = datetime.now(UTC).isoformat()
+    try:
+        audience = audience if audience in ("executive", "technical", "policy") else "executive"
+        max_points = 3 if audience == "executive" else (5 if audience == "technical" else 4)
+        points = points[:max_points]
+        now = datetime.now(UTC).isoformat()
 
-    brief = f"INTELLIGENCE BRIEF\n{topic}\nGenerated: {now}\nAudience: {audience.upper()}\n\n{'='*60}\n\n"
+        brief = f"INTELLIGENCE BRIEF\n{topic}\nGenerated: {now}\nAudience: {audience.upper()}\n\n{'='*60}\n\n"
 
-    if audience == "executive":
-        brief += "KEY POINTS:\n\n" + "\n".join(f"{i}. {p}" for i, p in enumerate(points, 1))
-        brief += f"\n\n{'='*60}\nRECOMMENDED ACTION: Review and escalate as needed.\n"
-    elif audience == "technical":
-        brief += "TECHNICAL ANALYSIS:\n\n" + "\n".join(f"{i}. {p}" for i, p in enumerate(points, 1))
-        brief += f"\n\n{'='*60}\nIMPLEMENTATION NOTES: Detailed assessment provided above.\n"
-    else:  # policy
-        brief += "POLICY IMPLICATIONS:\n\n" + "\n".join(f"{i}. {p}" for i, p in enumerate(points, 1))
-        brief += f"\n\n{'='*60}\nPOLICY RESPONSE: Review implications and update policies.\n"
+        if audience == "executive":
+            brief += "KEY POINTS:\n\n" + "\n".join(f"{i}. {p}" for i, p in enumerate(points, 1))
+            brief += f"\n\n{'='*60}\nRECOMMENDED ACTION: Review and escalate as needed.\n"
+        elif audience == "technical":
+            brief += "TECHNICAL ANALYSIS:\n\n" + "\n".join(f"{i}. {p}" for i, p in enumerate(points, 1))
+            brief += f"\n\n{'='*60}\nIMPLEMENTATION NOTES: Detailed assessment provided above.\n"
+        else:  # policy
+            brief += "POLICY IMPLICATIONS:\n\n" + "\n".join(f"{i}. {p}" for i, p in enumerate(points, 1))
+            brief += f"\n\n{'='*60}\nPOLICY RESPONSE: Review implications and update policies.\n"
 
-    return {
-        "brief": brief,
-        "topic": topic,
-        "audience": audience,
-        "points_covered": len(points),
-        "word_count": _count_words(brief),
-    }
+        return {
+            "brief": brief,
+            "topic": topic,
+            "audience": audience,
+            "points_covered": len(points),
+            "word_count": _count_words(brief),
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_brief_generate"}
