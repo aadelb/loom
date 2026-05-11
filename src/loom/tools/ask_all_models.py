@@ -388,7 +388,7 @@ async def research_ask_all_models(
     async def _run() -> dict[str, Any]:
         responses: list[dict[str, Any]] = []
 
-        async with httpx.AsyncClient(timeout=30.0) as client:
+        async with httpx.AsyncClient(timeout=float(timeout)) as client:
             tasks: list[tuple[str, str, str, Any]] = []
 
             for provider, model_list in _API_MODELS.items():
@@ -531,7 +531,7 @@ async def research_ask_all_models(
                 )
 
         successful = [r for r in responses if r["text"] and not r["error"]]
-        refused_count = sum(1 for r in responses if r["refused"])
+        refused_count = sum(1 for r in responses if r["refused"] and not r["reframed"])
         reframed_count = sum(1 for r in responses if r["reframed"])
         fastest = min(successful, key=lambda x: x["elapsed_ms"]) if successful else None
         longest = max(successful, key=lambda x: len(x["text"])) if successful else None
