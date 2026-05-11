@@ -9,6 +9,8 @@ from typing import Any
 
 import httpx
 
+from loom.validators import validate_url
+
 logger = logging.getLogger("loom.tools.ai_safety_extended")
 
 
@@ -89,6 +91,11 @@ async def research_hallucination_benchmark(
             - accuracy_rate: float 0-1 ratio (correct/total)
             - hallucination_examples: list of {question, expected, actual} dicts
     """
+
+    try:
+        target_url = validate_url(target_url)
+    except ValueError as exc:
+        return {"error": f"Invalid target_url: {exc}", "tool": "research_hallucination_benchmark"}
 
     # Default fact-check questions with ground truth
     default_facts = [
@@ -276,6 +283,11 @@ async def research_adversarial_robustness(
             - failures: list of {test_type, payload, error} dicts
             - robustness_score: float 0-1 (higher = more robust)
     """
+
+    try:
+        target_url = validate_url(target_url)
+    except ValueError as exc:
+        return {"error": f"Invalid target_url: {exc}", "tool": "research_adversarial_robustness"}
 
     test_count = max(1, min(test_count, 20))
 
