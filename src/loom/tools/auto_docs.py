@@ -18,12 +18,12 @@ def _extract_tool_metadata(file_path: Path) -> list[dict[str, Any]]:
     try:
         tree = ast.parse(file_path.read_text())
     except Exception as e:
-        logger.warning(f"Failed to parse {file_path}: {e}")
+        logger.warning("Failed to parse %s: %s", file_path, e)
         return []
 
     tools = []
     for node in ast.walk(tree):
-        if not isinstance(node, ast.AsyncFunctionDef) or not node.name.startswith("research_"):
+        if not isinstance(node, (ast.AsyncFunctionDef, ast.FunctionDef)) or not node.name.startswith("research_"):
             continue
 
         docstring = ast.get_docstring(node)
@@ -45,7 +45,7 @@ def _extract_tool_metadata(file_path: Path) -> list[dict[str, Any]]:
 async def research_generate_docs(
     output_format: str = "markdown",
     include_params: bool = True,
-) -> dict:
+) -> dict[str, Any]:
     """Generate auto-documentation for all registered tools.
 
     Scans src/loom/tools/*.py and generates markdown or JSON documentation
@@ -106,7 +106,7 @@ async def research_generate_docs(
         return {"error": str(exc), "tool": "research_generate_docs"}
 
 
-async def research_docs_coverage() -> dict:
+async def research_docs_coverage() -> dict[str, Any]:
     """Report documentation coverage for all tools.
 
     Returns:
