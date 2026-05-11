@@ -11,14 +11,22 @@ import logging
 import os
 from typing import Any
 
-from mcp.types import TextContent
+try:
+    from mcp.types import TextContent
+except ImportError:
+    TextContent = None  # type: ignore[assignment,misc]
 
-from loom.consistency_pressure import ConsistencyPressure
-from loom.params import (
-    ConsistencyPressureHistoryParams,
-    ConsistencyPressureParams,
-    ConsistencyPressureRecordParams,
-)
+try:
+    from loom.consistency_pressure import ConsistencyPressure
+    from loom.params import (
+        ConsistencyPressureHistoryParams,
+        ConsistencyPressureParams,
+        ConsistencyPressureRecordParams,
+    )
+    _DEPS_AVAILABLE = True
+except ImportError:
+    _DEPS_AVAILABLE = False
+    ConsistencyPressure = None  # type: ignore[assignment,misc]
 
 logger = logging.getLogger("loom.tools.consistency_pressure")
 

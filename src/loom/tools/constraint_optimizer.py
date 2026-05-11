@@ -16,10 +16,15 @@ import json
 import logging
 from typing import Any
 
-from loom.constraint_optimizer import ConstraintOptimizer
-from loom.tools.hcs_scorer import research_hcs_score
-from loom.tools.stealth_score import research_stealth_score
-from loom.tools.attack_scorer import research_attack_score
+try:
+    from loom.constraint_optimizer import ConstraintOptimizer
+    from loom.tools.hcs_scorer import research_hcs_score
+    from loom.tools.stealth_score import research_stealth_score
+    from loom.tools.attack_scorer import research_attack_score
+    _DEPS_AVAILABLE = True
+except ImportError:
+    _DEPS_AVAILABLE = False
+    ConstraintOptimizer = None  # type: ignore[assignment,misc]
 
 logger = logging.getLogger("loom.tools.constraint_optimizer")
 
