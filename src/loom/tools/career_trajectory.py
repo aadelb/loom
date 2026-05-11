@@ -323,89 +323,91 @@ async def research_career_trajectory(person_name: str, domain: str = "") -> dict
         - experience_level: "Junior", "Mid-Level", "Senior", or "Unknown"
         - combined_impact_score: float 0-100 synthesizing all sources
     """
+    try:
+        async def _run() -> dict[str, Any]:
+            if not person_name or len(person_name) > 200:
+                return {
+                    "person_name": person_name,
+                    "error": "person_name must be 1-200 characters",
+                }
 
-    async def _run() -> dict[str, Any]:
-        if not person_name or len(person_name) > 200:
-            return {
-                "person_name": person_name,
-                "error": "person_name must be 1-200 characters",
-            }
+            person_name_clean = person_name.strip()
+            logger.info("career_trajectory query=%s domain=%s", person_name_clean, domain)
 
-        person_name_clean = person_name.strip()
-        logger.info("career_trajectory query=%s domain=%s", person_name_clean, domain)
+            async with httpx.AsyncClient(
+                follow_redirects=True,
+                headers={"User-Agent": "Loom-Research/1.0"},
+                timeout=20.0,
+            ) as client:
+                # Fetch from all sources in parallel
+                scholar_task = _search_semantic_scholar(client, person_name_clean)
+                github_task = _search_github_user(client, person_name_clean)
+                orcid_task = _search_orcid(client, person_name_clean)
 
-        async with httpx.AsyncClient(
-            follow_redirects=True,
-            headers={"User-Agent": "Loom-Research/1.0"},
-            timeout=20.0,
-        ) as client:
-            # Fetch from all sources in parallel
-            scholar_task = _search_semantic_scholar(client, person_name_clean)
-            github_task = _search_github_user(client, person_name_clean)
-            orcid_task = _search_orcid(client, person_name_clean)
+                scholar, github, orcid = await asyncio.gather(
+                    scholar_task, github_task, orcid_task, return_exceptions=True
+                )
 
-            scholar, github, orcid = await asyncio.gather(
-                scholar_task, github_task, orcid_task, return_exceptions=True
-            )
+                # Handle exceptions
+                scholar = scholar if isinstance(scholar, dict) else {}
+                github = github if isinstance(github, dict) else {}
+                orcid = orcid if isinstance(orcid, dict) else {}
 
-            # Handle exceptions
-            scholar = scholar if isinstance(scholar, dict) else {}
-            github = github if isinstance(github, dict) else {}
-            orcid = orcid if isinstance(orcid, dict) else {}
+                # Analyze stages and trajectory
+                career_analysis = _analyze_career_stages(scholar, github, orcid)
+                trajectory = _determine_trajectory(scholar, github)
 
-            # Analyze stages and trajectory
-            career_analysis = _analyze_career_stages(scholar, github, orcid)
-            trajectory = _determine_trajectory(scholar, github)
+                # Calculate impact score
+                impact_score = 0.0
+                if scholar:
+                    h_index = scholar.get("h_index", 0)
+                    paper_count = scholar.get("paper_count", 0)
+                    impact_score += min(h_index * 2, 30)  # Max 30 for h-index
+                    impact_score += min(paper_count * 0.5, 20)  # Max 20 for papers
 
-            # Calculate impact score
-            impact_score = 0.0
-            if scholar:
-                h_index = scholar.get("h_index", 0)
-                paper_count = scholar.get("paper_count", 0)
-                impact_score += min(h_index * 2, 30)  # Max 30 for h-index
-                impact_score += min(paper_count * 0.5, 20)  # Max 20 for papers
+                if github:
+                    repo_count = github.get("repo_count", 0)
+                    stars = github.get("total_stars", 0)
+                    impact_score += min(repo_count, 15)  # Max 15 for repos
+                    impact_score += min(stars / 100, 35)  # Max 35 for stars
 
-            if github:
-                repo_count = github.get("repo_count", 0)
-                stars = github.get("total_stars", 0)
-                impact_score += min(repo_count, 15)  # Max 15 for repos
-                impact_score += min(stars / 100, 35)  # Max 35 for stars
+                impact_score = min(impact_score, 100)  # Cap at 100
 
-            impact_score = min(impact_score, 100)  # Cap at 100
+                return {
+                    "person_name": person_name_clean,
+                    "domain_filter": domain,
+                    "academic_publications": {
+                        "count": scholar.get("paper_count", 0),
+                        "h_index": scholar.get("h_index", 0),
+                        "topics": [t[0] for t in scholar.get("topics", [])],
+                        "semantic_scholar_id": scholar.get("author_id"),
+                    },
+                    "github_activity": {
+                        "username": github.get("username"),
+                        "profile_url": github.get("profile_url"),
+                        "repo_count": github.get("repo_count", 0),
+                        "total_stars": github.get("total_stars", 0),
+                        "primary_languages": [
+                            l[0] for l in github.get("languages", [])
+                        ],
+                        "company": github.get("company"),
+                        "location": github.get("location"),
+                    },
+                    "orcid_profile": {
+                        "orcid_id": orcid.get("orcid_id"),
+                        "profile_url": orcid.get("profile_url"),
+                        "work_count": orcid.get("work_count", 0),
+                        "biography": orcid.get("biography"),
+                    },
+                    "career_stages": career_analysis["stages"],
+                    "growth_trajectory": trajectory,
+                    "experience_level": career_analysis["estimated_experience_level"],
+                    "combined_impact_score": round(impact_score, 1),
+                }
 
-            return {
-                "person_name": person_name_clean,
-                "domain_filter": domain,
-                "academic_publications": {
-                    "count": scholar.get("paper_count", 0),
-                    "h_index": scholar.get("h_index", 0),
-                    "topics": [t[0] for t in scholar.get("topics", [])],
-                    "semantic_scholar_id": scholar.get("author_id"),
-                },
-                "github_activity": {
-                    "username": github.get("username"),
-                    "profile_url": github.get("profile_url"),
-                    "repo_count": github.get("repo_count", 0),
-                    "total_stars": github.get("total_stars", 0),
-                    "primary_languages": [
-                        l[0] for l in github.get("languages", [])
-                    ],
-                    "company": github.get("company"),
-                    "location": github.get("location"),
-                },
-                "orcid_profile": {
-                    "orcid_id": orcid.get("orcid_id"),
-                    "profile_url": orcid.get("profile_url"),
-                    "work_count": orcid.get("work_count", 0),
-                    "biography": orcid.get("biography"),
-                },
-                "career_stages": career_analysis["stages"],
-                "growth_trajectory": trajectory,
-                "experience_level": career_analysis["estimated_experience_level"],
-                "combined_impact_score": round(impact_score, 1),
-            }
-
-    return await _run()
+        return await _run()
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_career_trajectory"}
 
 
 async def _search_github_trending(
@@ -521,137 +523,139 @@ async def research_market_velocity(skill: str, location: str = "remote") -> dict
         - demand_trend: "rapidly_growing", "growing", "stable", or "declining"
         - confidence_score: float 0-100 based on data availability
     """
+    try:
+        async def _run() -> dict[str, Any]:
+            if not skill or len(skill) > 100:
+                return {
+                    "skill": skill,
+                    "error": "skill must be 1-100 characters",
+                }
 
-    async def _run() -> dict[str, Any]:
-        if not skill or len(skill) > 100:
-            return {
-                "skill": skill,
-                "error": "skill must be 1-100 characters",
-            }
+            skill_clean = skill.strip().lower()
+            logger.info("market_velocity query=%s location=%s", skill_clean, location)
 
-        skill_clean = skill.strip().lower()
-        logger.info("market_velocity query=%s location=%s", skill_clean, location)
+            async with httpx.AsyncClient(
+                follow_redirects=True,
+                headers={"User-Agent": "Loom-Research/1.0"},
+                timeout=20.0,
+            ) as client:
+                # Fetch from all sources in parallel
+                github_task = _search_github_trending(client, skill_clean)
+                hn_task = _search_hacker_news(client, skill_clean)
+                arxiv_task = _search_arxiv_papers(client, skill_clean)
 
-        async with httpx.AsyncClient(
-            follow_redirects=True,
-            headers={"User-Agent": "Loom-Research/1.0"},
-            timeout=20.0,
-        ) as client:
-            # Fetch from all sources in parallel
-            github_task = _search_github_trending(client, skill_clean)
-            hn_task = _search_hacker_news(client, skill_clean)
-            arxiv_task = _search_arxiv_papers(client, skill_clean)
-
-            github, hn, arxiv = await asyncio.gather(
-                github_task, hn_task, arxiv_task, return_exceptions=True
-            )
-
-            github = github if isinstance(github, dict) else {}
-            hn = hn if isinstance(hn, dict) else {}
-            arxiv = arxiv if isinstance(arxiv, dict) else {}
-
-            # Calculate momentum metrics
-            github_stars = github.get("total_stars", 0)
-            github_repos = github.get("top_repos", 0)
-            avg_stars = github.get("avg_stars", 0)
-
-            hn_discussions = hn.get("recent_discussions", 0)
-            hn_stories = hn.get("top_stories", [])
-            avg_hn_points = (
-                sum(s.get("points", 0) for s in hn_stories) / len(hn_stories)
-                if hn_stories
-                else 0
-            )
-
-            arxiv_papers = arxiv.get("total_papers", 0)
-            papers_by_month = arxiv.get("papers_by_month", {})
-            avg_papers_per_month = (
-                arxiv_papers / len(papers_by_month) if papers_by_month else 0
-            )
-
-            # Determine velocity
-            signals = []
-
-            # GitHub signal
-            if github_stars > 5000:
-                signals.append(("hot", 3))
-            elif github_stars > 1000:
-                signals.append(("warm", 2))
-            elif github_stars > 100:
-                signals.append(("stable", 1))
-            else:
-                signals.append(("cooling", 0))
-
-            # HN signal
-            if hn_discussions > 30:
-                signals.append(("hot", 3))
-            elif hn_discussions > 10:
-                signals.append(("warm", 2))
-            elif hn_discussions > 0:
-                signals.append(("stable", 1))
-            else:
-                signals.append(("cooling", 0))
-
-            # Academic signal
-            if avg_papers_per_month > 2:
-                signals.append(("hot", 3))
-            elif avg_papers_per_month > 0.5:
-                signals.append(("warm", 2))
-            elif arxiv_papers > 0:
-                signals.append(("stable", 1))
-            else:
-                signals.append(("cooling", 0))
-
-            # Determine overall velocity
-            if not signals:
-                overall_velocity = "unknown"
-                demand_trend = "unknown"
-                confidence = 0.0
-            else:
-                avg_signal = sum(s[1] for s in signals) / len(signals)
-                if avg_signal >= 2.5:
-                    overall_velocity = "hot"
-                    demand_trend = "rapidly_growing"
-                elif avg_signal >= 1.5:
-                    overall_velocity = "warm"
-                    demand_trend = "growing"
-                elif avg_signal >= 0.5:
-                    overall_velocity = "stable"
-                    demand_trend = "stable"
-                else:
-                    overall_velocity = "cooling"
-                    demand_trend = "declining"
-
-                # Calculate confidence (0-100)
-                data_points = (
-                    (1 if github else 0)
-                    + (1 if hn else 0)
-                    + (1 if arxiv else 0)
+                github, hn, arxiv = await asyncio.gather(
+                    github_task, hn_task, arxiv_task, return_exceptions=True
                 )
-                confidence = (data_points / 3) * 100
 
-            return {
-                "skill": skill_clean,
-                "location": location,
-                "github_momentum": {
-                    "total_stars": github_stars,
-                    "avg_stars_per_repo": round(avg_stars, 0),
-                    "top_repos_analyzed": github_repos,
-                    "repo_count": github.get("total_count", 0),
-                },
-                "discussion_velocity": {
-                    "recent_discussions": hn_discussions,
-                    "avg_points_per_story": round(avg_hn_points, 1),
-                    "top_stories": hn_stories,
-                },
-                "academic_momentum": {
-                    "total_papers": arxiv_papers,
-                    "avg_papers_per_month": round(avg_papers_per_month, 2),
-                    "months_with_papers": len(papers_by_month),
-                },
-                "overall_velocity": overall_velocity,
-                "demand_trend": demand_trend,
-                "confidence_score": round(confidence, 1),
-            }
+                github = github if isinstance(github, dict) else {}
+                hn = hn if isinstance(hn, dict) else {}
+                arxiv = arxiv if isinstance(arxiv, dict) else {}
 
-    return await _run()
+                # Calculate momentum metrics
+                github_stars = github.get("total_stars", 0)
+                github_repos = github.get("top_repos", 0)
+                avg_stars = github.get("avg_stars", 0)
+
+                hn_discussions = hn.get("recent_discussions", 0)
+                hn_stories = hn.get("top_stories", [])
+                avg_hn_points = (
+                    sum(s.get("points", 0) for s in hn_stories) / len(hn_stories)
+                    if hn_stories
+                    else 0
+                )
+
+                arxiv_papers = arxiv.get("total_papers", 0)
+                papers_by_month = arxiv.get("papers_by_month", {})
+                avg_papers_per_month = (
+                    arxiv_papers / len(papers_by_month) if papers_by_month else 0
+                )
+
+                # Determine velocity
+                signals = []
+
+                # GitHub signal
+                if github_stars > 5000:
+                    signals.append(("hot", 3))
+                elif github_stars > 1000:
+                    signals.append(("warm", 2))
+                elif github_stars > 100:
+                    signals.append(("stable", 1))
+                else:
+                    signals.append(("cooling", 0))
+
+                # HN signal
+                if hn_discussions > 30:
+                    signals.append(("hot", 3))
+                elif hn_discussions > 10:
+                    signals.append(("warm", 2))
+                elif hn_discussions > 0:
+                    signals.append(("stable", 1))
+                else:
+                    signals.append(("cooling", 0))
+
+                # Academic signal
+                if avg_papers_per_month > 2:
+                    signals.append(("hot", 3))
+                elif avg_papers_per_month > 0.5:
+                    signals.append(("warm", 2))
+                elif arxiv_papers > 0:
+                    signals.append(("stable", 1))
+                else:
+                    signals.append(("cooling", 0))
+
+                # Determine overall velocity
+                if not signals:
+                    overall_velocity = "unknown"
+                    demand_trend = "unknown"
+                    confidence = 0.0
+                else:
+                    avg_signal = sum(s[1] for s in signals) / len(signals)
+                    if avg_signal >= 2.5:
+                        overall_velocity = "hot"
+                        demand_trend = "rapidly_growing"
+                    elif avg_signal >= 1.5:
+                        overall_velocity = "warm"
+                        demand_trend = "growing"
+                    elif avg_signal >= 0.5:
+                        overall_velocity = "stable"
+                        demand_trend = "stable"
+                    else:
+                        overall_velocity = "cooling"
+                        demand_trend = "declining"
+
+                    # Calculate confidence (0-100)
+                    data_points = (
+                        (1 if github else 0)
+                        + (1 if hn else 0)
+                        + (1 if arxiv else 0)
+                    )
+                    confidence = (data_points / 3) * 100
+
+                return {
+                    "skill": skill_clean,
+                    "location": location,
+                    "github_momentum": {
+                        "total_stars": github_stars,
+                        "avg_stars_per_repo": round(avg_stars, 0),
+                        "top_repos_analyzed": github_repos,
+                        "repo_count": github.get("total_count", 0),
+                    },
+                    "discussion_velocity": {
+                        "recent_discussions": hn_discussions,
+                        "avg_points_per_story": round(avg_hn_points, 1),
+                        "top_stories": hn_stories,
+                    },
+                    "academic_momentum": {
+                        "total_papers": arxiv_papers,
+                        "avg_papers_per_month": round(avg_papers_per_month, 2),
+                        "months_with_papers": len(papers_by_month),
+                    },
+                    "overall_velocity": overall_velocity,
+                    "demand_trend": demand_trend,
+                    "confidence_score": round(confidence, 1),
+                }
+
+        return await _run()
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_market_velocity"}

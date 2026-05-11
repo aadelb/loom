@@ -48,36 +48,40 @@ async def research_webhook_register(
     Raises:
         ValueError: If URL or events are invalid
     """
-    # Coerce string to list before validation
-    if isinstance(events, str):
-        events = [events]
+    try:
+        # Coerce string to list before validation
+        if isinstance(events, str):
+            events = [events]
 
-    params = WebhookRegisterParams(url=url, events=events, secret=secret)
+        params = WebhookRegisterParams(url=url, events=events, secret=secret)
 
-    manager = get_webhook_manager()
-    webhook_id = await manager.register(
-        url=params.url,
-        events=params.events,
-        secret=params.secret,
-    )
+        manager = get_webhook_manager()
+        webhook_id = await manager.register(
+            url=params.url,
+            events=params.events,
+            secret=params.secret,
+        )
 
-    webhook = await manager.get_webhook(webhook_id)
-    if webhook is None:
-        return {
-            "error": "failed to retrieve registered webhook",
-            "webhook_id": webhook_id,
-        }
+        webhook = await manager.get_webhook(webhook_id)
+        if webhook is None:
+            return {
+                "error": "failed to retrieve registered webhook",
+                "webhook_id": webhook_id,
+            }
 
-    result = webhook.to_dict()
-    # Include the generated secret only on first registration
-    logger.info(
-        "webhook_registered webhook_id=%s url=%s events=%s",
-        webhook_id,
-        params.url,
-        params.events,
-    )
+        result = webhook.to_dict()
+        # Include the generated secret only on first registration
+        logger.info(
+            "webhook_registered webhook_id=%s url=%s events=%s",
+            webhook_id,
+            params.url,
+            params.events,
+        )
 
-    return result
+        return result
+    except Exception as exc:
+        logger.exception("research_webhook_register failed")
+        return {"error": str(exc), "tool": "research_webhook_register"}
 
 
 async def research_webhook_list() -> dict[str, Any]:
@@ -101,16 +105,20 @@ async def research_webhook_list() -> dict[str, Any]:
           "total": int
         }
     """
-    manager = get_webhook_manager()
-    webhooks = await manager.list_webhooks()
+    try:
+        manager = get_webhook_manager()
+        webhooks = await manager.list_webhooks()
 
-    logger.info("webhook_list_requested count=%d", len(webhooks))
+        logger.info("webhook_list_requested count=%d", len(webhooks))
 
-    return {
-        "webhooks": webhooks,
-        "total": len(webhooks),
-        "supported_events": sorted(SUPPORTED_EVENTS),
-    }
+        return {
+            "webhooks": webhooks,
+            "total": len(webhooks),
+            "supported_events": sorted(SUPPORTED_EVENTS),
+        }
+    except Exception as exc:
+        logger.exception("research_webhook_list failed")
+        return {"error": str(exc), "tool": "research_webhook_list"}
 
 
 async def research_webhook_unregister(webhook_id: str) -> dict[str, Any]:
@@ -126,25 +134,29 @@ async def research_webhook_unregister(webhook_id: str) -> dict[str, Any]:
           "message": str
         }
     """
-    params = WebhookUnregisterParams(webhook_id=webhook_id)
+    try:
+        params = WebhookUnregisterParams(webhook_id=webhook_id)
 
-    manager = get_webhook_manager()
-    success = await manager.unregister(params.webhook_id)
+        manager = get_webhook_manager()
+        success = await manager.unregister(params.webhook_id)
 
-    if success:
-        logger.info("webhook_unregistered webhook_id=%s", params.webhook_id)
-        return {
-            "success": True,
-            "webhook_id": params.webhook_id,
-            "message": f"Webhook {params.webhook_id} unregistered successfully",
-        }
-    else:
-        logger.warning("webhook_unregister_not_found webhook_id=%s", params.webhook_id)
-        return {
-            "success": False,
-            "webhook_id": params.webhook_id,
-            "message": f"Webhook {params.webhook_id} not found",
-        }
+        if success:
+            logger.info("webhook_unregistered webhook_id=%s", params.webhook_id)
+            return {
+                "success": True,
+                "webhook_id": params.webhook_id,
+                "message": f"Webhook {params.webhook_id} unregistered successfully",
+            }
+        else:
+            logger.warning("webhook_unregister_not_found webhook_id=%s", params.webhook_id)
+            return {
+                "success": False,
+                "webhook_id": params.webhook_id,
+                "message": f"Webhook {params.webhook_id} not found",
+            }
+    except Exception as exc:
+        logger.exception("research_webhook_unregister failed")
+        return {"error": str(exc), "tool": "research_webhook_unregister"}
 
 
 async def research_webhook_test(webhook_id: str) -> dict[str, Any]:
@@ -169,25 +181,29 @@ async def research_webhook_test(webhook_id: str) -> dict[str, Any]:
     Raises:
         ValueError: If webhook not found
     """
-    params = WebhookTestParams(webhook_id=webhook_id)
+    try:
+        params = WebhookTestParams(webhook_id=webhook_id)
 
-    manager = get_webhook_manager()
-    webhook = await manager.get_webhook(params.webhook_id)
+        manager = get_webhook_manager()
+        webhook = await manager.get_webhook(params.webhook_id)
 
-    if webhook is None:
-        raise ValueError(f"webhook not found: {params.webhook_id}")
+        if webhook is None:
+            raise ValueError(f"webhook not found: {params.webhook_id}")
 
-    result = await manager.send_test_notification(params.webhook_id)
+        result = await manager.send_test_notification(params.webhook_id)
 
-    logger.info(
-        "webhook_test webhook_id=%s status=%s",
-        params.webhook_id,
-        result["status"],
-    )
+        logger.info(
+            "webhook_test webhook_id=%s status=%s",
+            params.webhook_id,
+            result["status"],
+        )
 
-    result["message"] = (
-        f"Test notification sent to {webhook.url}. "
-        f"Status: {result['status']}"
-    )
+        result["message"] = (
+            f"Test notification sent to {webhook.url}. "
+            f"Status: {result['status']}"
+        )
 
-    return result
+        return result
+    except Exception as exc:
+        logger.exception("research_webhook_test failed")
+        return {"error": str(exc), "tool": "research_webhook_test"}
