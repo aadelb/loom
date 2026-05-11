@@ -96,7 +96,7 @@ async def research_table_extract(
             return {"pdf_url": pdf_url, "error": str(exc)}
 
         try:
-            async def _download_pdf() -> bytes:
+            def _download_pdf() -> bytes:
                 with httpx.stream("GET", pdf_url, timeout=30.0) as response:
                     response.raise_for_status()
 

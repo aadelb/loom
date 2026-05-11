@@ -110,7 +110,7 @@ def _parse_tool_functions(tool_dir: pathlib.Path) -> list[dict[str, Any]]:
                 content = f.read()
             tree = ast.parse(content)
         except Exception as e:
-            logger.warning(f"Failed to parse {py_file.name}: {e}")
+            logger.warning("Failed to parse %s: %s", py_file.name, e)
             continue
 
         module_name = py_file.stem
@@ -119,7 +119,7 @@ def _parse_tool_functions(tool_dir: pathlib.Path) -> list[dict[str, Any]]:
         has_llm = _has_llm_imports(tree)
 
         for node in ast.walk(tree):
-            if isinstance(node, ast.FunctionDef) and node.name.startswith("research_"):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("research_"):
                 docstring = ast.get_docstring(node) or ""
                 params = [arg.arg for arg in node.args.args if arg.arg not in ("self", "cls")]
                 params = [p for p in params if not p.startswith("_")]
@@ -163,7 +163,7 @@ def _build_matrix() -> dict[str, Any]:
         "total_tools": len(tools),
         "categories": category_counts,
         "matrix": tools,
-        "generated_at": str(pathlib.Path.now()) if hasattr(pathlib, "now") else "unknown",
+        "generated_at": __import__("datetime").datetime.now(__import__("datetime").UTC).isoformat(),
     }
 
 
