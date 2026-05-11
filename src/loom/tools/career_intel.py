@@ -139,7 +139,7 @@ async def _search_companies_for_areas(areas: list[str], n: int = 10) -> dict[str
     for area in areas[:5]:  # Limit to top 5 areas to avoid excessive searches
         try:
             search_query = f'"{area}" companies products hiring'
-            search_result = research_search(
+            search_result = await research_search(
                 query=search_query,
                 provider="ddgs",  # Use DuckDuckGo for cost-effectiveness
                 n=n,

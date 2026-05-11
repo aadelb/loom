@@ -426,7 +426,7 @@ async def research_patent_landscape(query: str, max_results: int = 20) -> dict[s
                 logger.debug("falling_back_to_google_patents query=%s", query)
                 from loom.tools.search import research_search
 
-                search_result = research_search(
+                search_result = await research_search(
                     query=f'{query} site:patents.google.com OR site:uspto.gov',
                     provider="ddgs",
                     n=max_results,

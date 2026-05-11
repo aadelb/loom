@@ -168,7 +168,7 @@ async def _fetch_sources_for_question(
         # Stage 2: Search
         from loom.tools.search import research_search
 
-        search_result = research_search(
+        search_result = await research_search(
             question, provider="exa", n=min(max_sources, 10)
         )
         if not search_result.get("results"):
