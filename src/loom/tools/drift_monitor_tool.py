@@ -7,10 +7,19 @@ import json
 import logging
 from typing import Any
 
-from mcp.types import TextContent
+try:
+    from mcp.types import TextContent
+except ImportError:
+    TextContent = None  # type: ignore[assignment,misc]
 
-from loom.drift_monitor import DriftMonitor
-from loom.params import DriftMonitorParams
+try:
+    from loom.drift_monitor import DriftMonitor
+    from loom.params import DriftMonitorParams
+    _DEPS_AVAILABLE = True
+except ImportError:
+    _DEPS_AVAILABLE = False
+    DriftMonitor = None  # type: ignore[assignment,misc]
+    DriftMonitorParams = None  # type: ignore[assignment,misc]
 
 logger = logging.getLogger("loom.tools.drift_monitor")
 
@@ -40,6 +49,8 @@ async def research_drift_monitor(
                          hcs_avg_current, hcs_drift, alert_level, per_prompt_changes,
                          recommendations}
     """
+    if not _DEPS_AVAILABLE:
+        return {"error": "Dependencies not available (loom.drift_monitor)", "tool": "research_drift_monitor"}
     try:
         # Coerce string to list before validation
         if isinstance(prompts, str):
