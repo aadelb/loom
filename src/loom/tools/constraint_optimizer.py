@@ -178,62 +178,65 @@ async def research_constraint_optimize(
         - improvement: float, average score improvement
         - strategy_details: list[dict], info about each strategy applied
     """
-    if not prompt or not isinstance(prompt, str):
-        raise ValueError("prompt must be non-empty string")
+    try:
+        if not prompt or not isinstance(prompt, str):
+            raise ValueError("prompt must be non-empty string")
 
-    # Apply default constraints if none provided
-    if not constraints or not isinstance(constraints, dict):
-        constraints = {
-            "hcs": {"min": 7.0},
-            "stealth": {"min": 6.0},
-            "danger": {"max": 6.0}
-        }
-        logger.info(
-            "constraint_optimize_using_defaults prompt_len=%d",
-            len(prompt),
-        )
-
-    logger.info(
-        "constraint_optimize_start prompt_len=%d constraints=%s max_iter=%d",
-        len(prompt),
-        list(constraints.keys()),
-        max_iterations,
-    )
-
-    # Initialize optimizer
-    optimizer = ConstraintOptimizer(_STRATEGY_CATALOG)
-
-    # Run optimization
-    result = await optimizer._optimize_async(
-        prompt, constraints, _score_prompt, max_iterations
-    )
-
-    # Enhance result with strategy details
-    strategy_details = []
-    for strategy_name in result["strategy_chain"]:
-        strategy_info = _STRATEGY_CATALOG.get(strategy_name, {})
-        strategy_details.append(
-            {
-                "name": strategy_name,
-                "display_name": strategy_info.get("name", strategy_name),
-                "multiplier": strategy_info.get("multiplier", 1.0),
-                "best_for": strategy_info.get("best_for", []),
+        # Apply default constraints if none provided
+        if not constraints or not isinstance(constraints, dict):
+            constraints = {
+                "hcs": {"min": 7.0},
+                "stealth": {"min": 6.0},
+                "danger": {"max": 6.0}
             }
+            logger.info(
+                "constraint_optimize_using_defaults prompt_len=%d",
+                len(prompt),
+            )
+
+        logger.info(
+            "constraint_optimize_start prompt_len=%d constraints=%s max_iter=%d",
+            len(prompt),
+            list(constraints.keys()),
+            max_iterations,
         )
 
-    result["strategy_details"] = strategy_details
-    result["model_target"] = (
-        _detect_model(target_model) if target_model != "auto" else "auto"
-    )
+        # Initialize optimizer
+        optimizer = ConstraintOptimizer(_STRATEGY_CATALOG)
 
-    logger.info(
-        "constraint_optimize_complete success=%s iterations=%d strategy_count=%d",
-        result["success"],
-        result["iterations"],
-        len(result["strategy_chain"]),
-    )
+        # Run optimization
+        result = await optimizer._optimize_async(
+            prompt, constraints, _score_prompt, max_iterations
+        )
 
-    return result
+        # Enhance result with strategy details
+        strategy_details = []
+        for strategy_name in result["strategy_chain"]:
+            strategy_info = _STRATEGY_CATALOG.get(strategy_name, {})
+            strategy_details.append(
+                {
+                    "name": strategy_name,
+                    "display_name": strategy_info.get("name", strategy_name),
+                    "multiplier": strategy_info.get("multiplier", 1.0),
+                    "best_for": strategy_info.get("best_for", []),
+                }
+            )
+
+        result["strategy_details"] = strategy_details
+        result["model_target"] = (
+            _detect_model(target_model) if target_model != "auto" else "auto"
+        )
+
+        logger.info(
+            "constraint_optimize_complete success=%s iterations=%d strategy_count=%d",
+            result["success"],
+            result["iterations"],
+            len(result["strategy_chain"]),
+        )
+
+        return result
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_constraint_optimize"}
 
 
 async def tool_constraint_optimize(

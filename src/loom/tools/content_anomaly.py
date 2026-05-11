@@ -182,28 +182,31 @@ def research_content_anomaly(
         - injection_found: bool
         - url: str (echoed back for context)
     """
-    logger.info(
-        "content_anomaly_check url=%s snippet_len=%d content_len=%d",
-        url,
-        len(expected_snippet),
-        len(actual_content),
-    )
-
-    result = detect_anomaly(expected_snippet, actual_content)
-    result["url"] = url
-
-    if result["anomaly_detected"]:
-        logger.warning(
-            "content_anomaly_detected url=%s type=%s similarity=%.2f",
+    try:
+        logger.info(
+            "content_anomaly_check url=%s snippet_len=%d content_len=%d",
             url,
-            result["type"],
-            result["similarity_score"],
-        )
-    else:
-        logger.debug(
-            "content_anomaly_none url=%s similarity=%.2f",
-            url,
-            result["similarity_score"],
+            len(expected_snippet),
+            len(actual_content),
         )
 
-    return result
+        result = detect_anomaly(expected_snippet, actual_content)
+        result["url"] = url
+
+        if result["anomaly_detected"]:
+            logger.warning(
+                "content_anomaly_detected url=%s type=%s similarity=%.2f",
+                url,
+                result["type"],
+                result["similarity_score"],
+            )
+        else:
+            logger.debug(
+                "content_anomaly_none url=%s similarity=%.2f",
+                url,
+                result["similarity_score"],
+            )
+
+        return result
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_content_anomaly"}

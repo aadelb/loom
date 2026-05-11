@@ -16,57 +16,71 @@ PATTERNS = [(r"base64\.b64decode\(", "base64"), (r"exec\(", "exec"), (r"eval\(",
 
 async def research_package_audit(package_name: str, ecosystem: str = "pypi", depth: int = 2) -> dict[str, Any]:
     """Audit package for supply chain attack indicators."""
-    logger.info("package_audit package=%s", package_name)
-    indicators, risk_score, pkg_norm = [], 0, package_name.lower().replace("_", "-")
-    typosquatting = [p for p in POPULAR if _levenshtein_distance(pkg_norm, p.lower()) < 3]
+    try:
+        logger.info("package_audit package=%s", package_name)
+        indicators, risk_score, pkg_norm = [], 0, package_name.lower().replace("_", "-")
+        typosquatting = [p for p in POPULAR if _levenshtein_distance(pkg_norm, p.lower()) < 3]
 
-    for p in typosquatting:
-        indicators.append({"type": "typosquatting", "description": f"Similar to '{p}'", "severity": 9})
-        risk_score += 25
+        for p in typosquatting:
+            indicators.append({"type": "typosquatting", "description": f"Similar to '{p}'", "severity": 9})
+            risk_score += 25
 
-    if ecosystem == "pypi":
-        info = await _fetch_pypi_info(package_name)
-        if info:
-            if info.get("changed"):
-                indicators.append({"type": "ownership_transfer", "description": "Author changed", "severity": 7})
-                risk_score += 15
-            if info.get("obfuscation"):
-                indicators.append({"type": "obfuscation", "description": "Suspicious patterns", "severity": 8})
-                risk_score += 10
-            if info.get("maintainers", 0) < 2:
-                indicators.append({"type": "low_maintainers", "description": f"{info['maintainers']} maintainer", "severity": 5})
-                risk_score += 8
-            if info.get("script"):
-                indicators.append({"type": "install_script", "description": "Network operations", "severity": 7})
-                risk_score += 12
-            for dep in info.get("malicious", []):
-                indicators.append({"type": "malicious_dependency", "description": f"Depends on: {dep}", "severity": 10})
-                risk_score += 20
+        if ecosystem == "pypi":
+            info = await _fetch_pypi_info(package_name)
+            if info:
+                if info.get("changed"):
+                    indicators.append({"type": "ownership_transfer", "description": "Author changed", "severity": 7})
+                    risk_score += 15
+                if info.get("obfuscation"):
+                    indicators.append({"type": "obfuscation", "description": "Suspicious patterns", "severity": 8})
+                    risk_score += 10
+                if info.get("maintainers", 0) < 2:
+                    indicators.append({"type": "low_maintainers", "description": f"{info['maintainers']} maintainer", "severity": 5})
+                    risk_score += 8
+                if info.get("script"):
+                    indicators.append({"type": "install_script", "description": "Network operations", "severity": 7})
+                    risk_score += 12
+                for dep in info.get("malicious", []):
+                    indicators.append({"type": "malicious_dependency", "description": f"Depends on: {dep}", "severity": 10})
+                    risk_score += 20
 
-    return {
-        "package": package_name,
-        "ecosystem": ecosystem,
-        "risk_score": min(100, max(0, risk_score)),
-        "indicators": indicators,
-        "typosquatting_candidates": typosquatting,
-        "recommendations": _get_recs(risk_score, indicators),
-    }
+        return {
+            "package": package_name,
+            "ecosystem": ecosystem,
+            "risk_score": min(100, max(0, risk_score)),
+            "indicators": indicators,
+            "typosquatting_candidates": typosquatting,
+            "recommendations": _get_recs(risk_score, indicators),
+        }
+    except Exception as exc:
+        logger.error("package_audit_error: %s", exc, exc_info=True)
+        return {
+            "error": str(exc),
+            "tool": "research_package_audit",
+        }
 
 
 async def research_model_integrity(model_name: str, source: str = "huggingface", checks: list[str] | None = None) -> dict[str, Any]:
     """Check model file integrity for tampering indicators."""
-    logger.info("model_integrity model=%s", model_name)
-    checks = checks or ["hash_verify", "size_anomaly", "metadata_tampering", "backdoor_indicators", "provenance"]
-    results = [{"check": c, "status": "pass", "details": "verified"} for c in checks]
+    try:
+        logger.info("model_integrity model=%s", model_name)
+        checks = checks or ["hash_verify", "size_anomaly", "metadata_tampering", "backdoor_indicators", "provenance"]
+        results = [{"check": c, "status": "pass", "details": "verified"} for c in checks]
 
-    return {
-        "model_name": model_name,
-        "source": source,
-        "checks_performed": checks,
-        "results": results,
-        "integrity_score": 100,
-        "warnings": [],
-    }
+        return {
+            "model_name": model_name,
+            "source": source,
+            "checks_performed": checks,
+            "results": results,
+            "integrity_score": 100,
+            "warnings": [],
+        }
+    except Exception as exc:
+        logger.error("model_integrity_error: %s", exc, exc_info=True)
+        return {
+            "error": str(exc),
+            "tool": "research_model_integrity",
+        }
 
 
 def _levenshtein_distance(s1: str, s2: str) -> int:

@@ -64,52 +64,56 @@ async def research_engine_fetch(params: ScraperEngineFetchParams) -> dict[str, A
 		- error: str or None
 		- elapsed_ms: int
 	"""
-	# Extract URL from params (handle both Pydantic objects and dicts)
-	url = params.url if hasattr(params, "url") else params.get("url", str(params))
-	engine_mode = params.mode if hasattr(params, "mode") else params.get("mode", "auto")
-	max_escalation = (
-		params.max_escalation
-		if hasattr(params, "max_escalation")
-		else params.get("max_escalation", 7)
-	)
+	try:
+		# Extract URL from params (handle both Pydantic objects and dicts)
+		url = params.url if hasattr(params, "url") else params.get("url", str(params))
+		engine_mode = params.mode if hasattr(params, "mode") else params.get("mode", "auto")
+		max_escalation = (
+			params.max_escalation
+			if hasattr(params, "max_escalation")
+			else params.get("max_escalation", 7)
+		)
 
-	validate_url(url)
+		validate_url(url)
 
-	# Map engine mode to fetch mode
-	fetch_mode = _map_engine_mode_to_fetch_mode(engine_mode)
+		# Map engine mode to fetch mode
+		fetch_mode = _map_engine_mode_to_fetch_mode(engine_mode)
 
-	logger.info(
-		"engine_fetch_start url=%s engine_mode=%s fetch_mode=%s max_escalation=%s",
-		url,
-		engine_mode,
-		fetch_mode,
-		max_escalation,
-	)
+		logger.info(
+			"engine_fetch_start url=%s engine_mode=%s fetch_mode=%s max_escalation=%s",
+			url,
+			engine_mode,
+			fetch_mode,
+			max_escalation,
+		)
 
-	# Delegate to research_fetch which handles the actual escalation
-	result = await research_fetch(
-		url=url,
-		mode=fetch_mode,
-	)
+		# Delegate to research_fetch which handles the actual escalation
+		result = await research_fetch(
+			url=url,
+			mode=fetch_mode,
+		)
 
-	logger.info(
-		"engine_fetch_complete url=%s success=%s elapsed=%s",
-		url,
-		result.get("success"),
-		result.get("elapsed_ms", 0),
-	)
+		logger.info(
+			"engine_fetch_complete url=%s success=%s elapsed=%s",
+			url,
+			result.get("success"),
+			result.get("elapsed_ms", 0),
+		)
 
-	# Map fetch result to engine format
-	return {
-		"success": result.get("success", False),
-		"url": url,
-		"content": result.get("content", ""),
-		"backend_used": result.get("backend_used", "unknown"),
-		"escalation_level": result.get("escalation_level", 0),
-		"escalation_history": result.get("escalation_history", []),
-		"error": result.get("error"),
-		"elapsed_ms": result.get("elapsed_ms", 0),
-	}
+		# Map fetch result to engine format
+		return {
+			"success": result.get("success", False),
+			"url": url,
+			"content": result.get("content", ""),
+			"backend_used": result.get("backend_used", "unknown"),
+			"escalation_level": result.get("escalation_level", 0),
+			"escalation_history": result.get("escalation_history", []),
+			"error": result.get("error"),
+			"elapsed_ms": result.get("elapsed_ms", 0),
+		}
+	except Exception as exc:
+		logger.error("engine_fetch_error: %s", exc)
+		return {"error": str(exc), "tool": "research_engine_fetch"}
 
 
 async def research_engine_extract(params: ScraperEngineExtractParams) -> dict[str, Any]:
@@ -131,96 +135,100 @@ async def research_engine_extract(params: ScraperEngineExtractParams) -> dict[st
 		- backend_used: str
 		- error: str or None
 	"""
-	# Extract parameters
-	url = params.url if hasattr(params, "url") else params.get("url", str(params))
-	selector = (
-		params.selector if hasattr(params, "selector") else params.get("selector", "")
-	)
-	llm_extract = (
-		params.llm_extract
-		if hasattr(params, "llm_extract")
-		else params.get("llm_extract", False)
-	)
-	mode = params.mode if hasattr(params, "mode") else params.get("mode", "auto")
+	try:
+		# Extract parameters
+		url = params.url if hasattr(params, "url") else params.get("url", str(params))
+		selector = (
+			params.selector if hasattr(params, "selector") else params.get("selector", "")
+		)
+		llm_extract = (
+			params.llm_extract
+			if hasattr(params, "llm_extract")
+			else params.get("llm_extract", False)
+		)
+		mode = params.mode if hasattr(params, "mode") else params.get("mode", "auto")
 
-	validate_url(url)
+		validate_url(url)
 
-	logger.info(
-		"engine_extract_start url=%s selector=%s llm_extract=%s",
-		url,
-		selector[:50] if selector else "none",
-		llm_extract,
-	)
+		logger.info(
+			"engine_extract_start url=%s selector=%s llm_extract=%s",
+			url,
+			selector[:50] if selector else "none",
+			llm_extract,
+		)
 
-	# Fetch content first
-	fetch_mode = _map_engine_mode_to_fetch_mode(mode)
-	fetch_result = await research_fetch(url=url, mode=fetch_mode)
+		# Fetch content first
+		fetch_mode = _map_engine_mode_to_fetch_mode(mode)
+		fetch_result = await research_fetch(url=url, mode=fetch_mode)
 
-	if not fetch_result.get("success"):
+		if not fetch_result.get("success"):
+			return {
+				"success": False,
+				"url": url,
+				"extracted_data": None,
+				"extraction_method": "none",
+				"backend_used": fetch_result.get("backend_used", "unknown"),
+				"error": fetch_result.get("error", "fetch failed"),
+			}
+
+		content = fetch_result.get("content", "")
+
+		# Extract using CSS selector if provided
+		extracted_data: dict[str, Any] | list[Any] | None = None
+		extraction_method = "none"
+
+		if selector and content:
+			try:
+				from lxml import html
+
+				doc = html.fromstring(content)
+				elements = doc.cssselect(selector)
+
+				if elements:
+					extraction_method = "css_selector"
+					extracted_data = [
+						{
+							"text": elem.text_content()[:500],
+							"html": html.tostring(elem, encoding="unicode")[:500],
+						}
+						for elem in elements[:20]
+					]
+			except Exception as e:
+				logger.warning("css_extraction_failed: %s", e)
+
+		# Extract using LLM if requested and content available
+		if llm_extract and content:
+			try:
+				from loom.tools.llm import research_llm_extract
+
+				extract_result = await research_llm_extract(
+					text=content[:5000],
+					extraction_schema="key-value pairs",
+				)
+
+				if extract_result.get("success"):
+					llm_data = extract_result.get("extracted_data", {})
+					if extracted_data:
+						extraction_method = "both"
+						if isinstance(extracted_data, list):
+							extracted_data.append({"llm_extracted": llm_data})
+					else:
+						extraction_method = "llm"
+						extracted_data = {"llm_extracted": llm_data}
+			except Exception as e:
+				logger.warning("llm_extraction_failed: %s", e)
+
 		return {
-			"success": False,
+			"success": bool(extracted_data),
 			"url": url,
-			"extracted_data": None,
-			"extraction_method": "none",
+			"extracted_data": extracted_data,
+			"extraction_method": extraction_method,
 			"backend_used": fetch_result.get("backend_used", "unknown"),
-			"error": fetch_result.get("error", "fetch failed"),
+			"error": None if extracted_data else "no data extracted",
 		}
-
-	content = fetch_result.get("content", "")
-
-	# Extract using CSS selector if provided
-	extracted_data: dict[str, Any] | list[Any] | None = None
-	extraction_method = "none"
-
-	if selector and content:
-		try:
-			from lxml import html
-
-			doc = html.fromstring(content)
-			elements = doc.cssselect(selector)
-
-			if elements:
-				extraction_method = "css_selector"
-				extracted_data = [
-					{
-						"text": elem.text_content()[:500],
-						"html": html.tostring(elem, encoding="unicode")[:500],
-					}
-					for elem in elements[:20]
-				]
-		except Exception as e:
-			logger.warning("css_extraction_failed: %s", e)
-
-	# Extract using LLM if requested and content available
-	if llm_extract and content:
-		try:
-			from loom.tools.llm import research_llm_extract
-
-			extract_result = await research_llm_extract(
-				text=content[:5000],
-				extraction_schema="key-value pairs",
-			)
-
-			if extract_result.get("success"):
-				llm_data = extract_result.get("extracted_data", {})
-				if extracted_data:
-					extraction_method = "both"
-					if isinstance(extracted_data, list):
-						extracted_data.append({"llm_extracted": llm_data})
-				else:
-					extraction_method = "llm"
-					extracted_data = {"llm_extracted": llm_data}
-		except Exception as e:
-			logger.warning("llm_extraction_failed: %s", e)
-
-	return {
-		"success": bool(extracted_data),
-		"url": url,
-		"extracted_data": extracted_data,
-		"extraction_method": extraction_method,
-		"backend_used": fetch_result.get("backend_used", "unknown"),
-		"error": None if extracted_data else "no data extracted",
-	}
+	except Exception as exc:
+		logger.error("engine_extract_error: %s", exc)
+		return {"error": str(exc), "tool": "research_engine_extract"}
 
 
 async def research_engine_batch(params: ScraperEngineBatchParams) -> dict[str, Any]:
@@ -241,62 +249,66 @@ async def research_engine_batch(params: ScraperEngineBatchParams) -> dict[str, A
 		- results: list of fetch results for each URL
 		- error: str or None
 	"""
-	# Extract parameters
-	urls = params.urls if hasattr(params, "urls") else params.get("urls", [])
-	mode = params.mode if hasattr(params, "mode") else params.get("mode", "auto")
-	max_concurrent = (
-		params.max_concurrent
-		if hasattr(params, "max_concurrent")
-		else params.get("max_concurrent", 5)
-	)
+	try:
+		# Extract parameters
+		urls = params.urls if hasattr(params, "urls") else params.get("urls", [])
+		mode = params.mode if hasattr(params, "mode") else params.get("mode", "auto")
+		max_concurrent = (
+			params.max_concurrent
+			if hasattr(params, "max_concurrent")
+			else params.get("max_concurrent", 5)
+		)
 
-	if not urls:
+		if not urls:
+			return {
+				"success": False,
+				"total_urls": 0,
+				"successful": 0,
+				"failed": 0,
+				"results": [],
+				"error": "no URLs provided",
+			}
+
+		# Validate all URLs
+		for url in urls:
+			validate_url(url)
+
+		logger.info(
+			"engine_batch_start total_urls=%d max_concurrent=%s",
+			len(urls),
+			max_concurrent,
+		)
+
+		fetch_mode = _map_engine_mode_to_fetch_mode(mode)
+
+		# Fetch URLs with concurrency limit
+		async def _fetch_with_limit(semaphore: asyncio.Semaphore, url: str) -> dict[str, Any]:
+			async with semaphore:
+				result = await research_fetch(url=url, mode=fetch_mode)
+				return {"url": url, **result}
+
+		semaphore = asyncio.Semaphore(max_concurrent)
+		tasks = [_fetch_with_limit(semaphore, url) for url in urls]
+		results = await asyncio.gather(*tasks, return_exceptions=False)
+
+		successful = sum(1 for r in results if r.get("success"))
+		failed = len(results) - successful
+
+		logger.info(
+			"engine_batch_complete total=%d successful=%d failed=%d",
+			len(results),
+			successful,
+			failed,
+		)
+
 		return {
-			"success": False,
-			"total_urls": 0,
-			"successful": 0,
-			"failed": 0,
-			"results": [],
-			"error": "no URLs provided",
+			"success": failed == 0,
+			"total_urls": len(results),
+			"successful": successful,
+			"failed": failed,
+			"results": results,
+			"error": None if failed == 0 else f"{failed} URLs failed",
 		}
-
-	# Validate all URLs
-	for url in urls:
-		validate_url(url)
-
-	logger.info(
-		"engine_batch_start total_urls=%d max_concurrent=%s",
-		len(urls),
-		max_concurrent,
-	)
-
-	fetch_mode = _map_engine_mode_to_fetch_mode(mode)
-
-	# Fetch URLs with concurrency limit
-	async def _fetch_with_limit(semaphore: asyncio.Semaphore, url: str) -> dict[str, Any]:
-		async with semaphore:
-			result = await research_fetch(url=url, mode=fetch_mode)
-			return {"url": url, **result}
-
-	semaphore = asyncio.Semaphore(max_concurrent)
-	tasks = [_fetch_with_limit(semaphore, url) for url in urls]
-	results = await asyncio.gather(*tasks, return_exceptions=False)
-
-	successful = sum(1 for r in results if r.get("success"))
-	failed = len(results) - successful
-
-	logger.info(
-		"engine_batch_complete total=%d successful=%d failed=%d",
-		len(results),
-		successful,
-		failed,
-	)
-
-	return {
-		"success": failed == 0,
-		"total_urls": len(results),
-		"successful": successful,
-		"failed": failed,
-		"results": results,
-		"error": None if failed == 0 else f"{failed} URLs failed",
-	}
+	except Exception as exc:
+		logger.error("engine_batch_error: %s", exc)
+		return {"error": str(exc), "tool": "research_engine_batch"}

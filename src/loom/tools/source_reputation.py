@@ -120,16 +120,19 @@ async def research_source_reputation(url: str) -> dict[str, Any]:
     Returns:
         Dict with url, domain, reputation_score, blocked, high_quality flags
     """
-    validate_url(url)
-    score = score_source(url)
-    netloc = urlparse(url).netloc.lower()
-    if netloc.startswith("www."):
-        netloc = netloc[4:]
-    domain = netloc
-    return {
-        "url": url,
-        "domain": domain,
-        "reputation_score": score,
-        "blocked": domain in BLOCKLIST,
-        "high_quality": domain in HIGH_QUALITY or score >= 80,
-    }
+    try:
+        validate_url(url)
+        score = score_source(url)
+        netloc = urlparse(url).netloc.lower()
+        if netloc.startswith("www."):
+            netloc = netloc[4:]
+        domain = netloc
+        return {
+            "url": url,
+            "domain": domain,
+            "reputation_score": score,
+            "blocked": domain in BLOCKLIST,
+            "high_quality": domain in HIGH_QUALITY or score >= 80,
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_source_reputation"}

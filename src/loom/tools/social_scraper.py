@@ -88,23 +88,23 @@ async def research_instagram(username: str, max_posts: int = 10) -> dict[str, An
     Raises:
         ValueError: If instaloader is not installed or username is invalid
     """
-    if not username or not isinstance(username, str):
-        return {"error": "invalid username", "username": username}
-
-    if not _HAS_INSTALOADER:
-        return {"error": "instaloader not installed", "username": username}
-
-    # Clamp max_posts
-    max_posts = min(max(max_posts, 1), 100)
-
     try:
+        if not username or not isinstance(username, str):
+            return {"error": "invalid username", "username": username}
+
+        if not _HAS_INSTALOADER:
+            return {"error": "instaloader not installed", "username": username}
+
+        # Clamp max_posts
+        max_posts = min(max(max_posts, 1), 100)
+
         # Run synchronous operation in executor to avoid blocking
         loop = asyncio.get_event_loop()
         result = await loop.run_in_executor(None, _fetch_instagram_profile, username, max_posts)
         return result
     except Exception as e:
         logger.error("instagram_fetch_error username=%s error=%s", username, str(e))
-        return {"error": str(e), "username": username}
+        return {"error": str(e), "tool": "research_instagram"}
 
 
 def _fetch_instagram_profile(username: str, max_posts: int) -> dict[str, Any]:
@@ -175,17 +175,21 @@ async def research_article_extract(url: str) -> dict[str, Any]:
     Raises:
         ValueError: If newspaper3k is not installed
     """
-    validate_url(url)
-    if not url or not isinstance(url, str):
-        return {"error": "invalid url", "url": url}
+    try:
+        validate_url(url)
+        if not url or not isinstance(url, str):
+            return {"error": "invalid url", "url": url}
 
-    if not _HAS_NEWSPAPER:
-        return {"error": "newspaper3k not installed", "url": url}
+        if not _HAS_NEWSPAPER:
+            return {"error": "newspaper3k not installed", "url": url}
 
-    # Run synchronous extraction in executor
-    loop = asyncio.get_event_loop()
-    result = await loop.run_in_executor(None, _extract_article_sync, url)
-    return result
+        # Run synchronous extraction in executor
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(None, _extract_article_sync, url)
+        return result
+    except Exception as e:
+        logger.error("article_extract_error url=%s error=%s", url, str(e))
+        return {"error": str(e), "tool": "research_article_extract"}
 
 
 def _extract_article_sync(url: str) -> dict[str, Any]:
@@ -239,60 +243,63 @@ async def research_article_batch(
         dict with keys: urls_processed, articles (list), failed (list with
         {url, error} dicts)
     """
-    if not urls or not isinstance(urls, list):
+    try:
+        if not urls or not isinstance(urls, list):
+            return {
+                "error": "invalid urls",
+                "urls_processed": 0,
+                "articles": [],
+                "failed": [],
+            }
+
+        if not _HAS_NEWSPAPER:
+            return {
+                "error": "newspaper3k not installed",
+                "urls_processed": 0,
+                "articles": [],
+                "failed": [{"url": url, "error": "newspaper3k not installed"} for url in urls],
+            }
+
+        # Clamp max_concurrent
+        max_concurrent = min(max(max_concurrent, 1), 20)
+
+        # Limit total URLs
+        urls = urls[:200]
+
+        articles: list[ArticleData] = []
+        failed: list[dict[str, str]] = []
+
+        # Create semaphore for concurrency control
+        semaphore = asyncio.Semaphore(max_concurrent)
+
+        async def extract_with_semaphore(url: str) -> None:
+            """Extract article with semaphore to control concurrency."""
+            async with semaphore:
+                result = await research_article_extract(url)
+
+                # Check if result is an error dict
+                if "error" in result and "title" not in result:
+                    failed.append({"url": url, "error": result["error"]})
+                else:
+                    articles.append(result)  # type: ignore
+
+        # Create tasks for all URLs
+        tasks = [extract_with_semaphore(url) for url in urls]
+
+        # Run all tasks concurrently
+        await asyncio.gather(*tasks)
+
+        logger.info(
+            "article_batch_complete urls_requested=%d articles_extracted=%d failed_count=%d",
+            len(urls),
+            len(articles),
+            len(failed),
+        )
+
         return {
-            "error": "invalid urls",
-            "urls_processed": 0,
-            "articles": [],
-            "failed": [],
+            "urls_processed": len(urls),
+            "articles": articles,
+            "failed": failed,
         }
-
-    if not _HAS_NEWSPAPER:
-        return {
-            "error": "newspaper3k not installed",
-            "urls_processed": 0,
-            "articles": [],
-            "failed": [{"url": url, "error": "newspaper3k not installed"} for url in urls],
-        }
-
-    # Clamp max_concurrent
-    max_concurrent = min(max(max_concurrent, 1), 20)
-
-    # Limit total URLs
-    urls = urls[:200]
-
-    articles: list[ArticleData] = []
-    failed: list[dict[str, str]] = []
-
-    # Create semaphore for concurrency control
-    semaphore = asyncio.Semaphore(max_concurrent)
-
-    async def extract_with_semaphore(url: str) -> None:
-        """Extract article with semaphore to control concurrency."""
-        async with semaphore:
-            result = await research_article_extract(url)
-
-            # Check if result is an error dict
-            if "error" in result and "title" not in result:
-                failed.append({"url": url, "error": result["error"]})
-            else:
-                articles.append(result)  # type: ignore
-
-    # Create tasks for all URLs
-    tasks = [extract_with_semaphore(url) for url in urls]
-
-    # Run all tasks concurrently
-    await asyncio.gather(*tasks)
-
-    logger.info(
-        "article_batch_complete urls_requested=%d articles_extracted=%d failed_count=%d",
-        len(urls),
-        len(articles),
-        len(failed),
-    )
-
-    return {
-        "urls_processed": len(urls),
-        "articles": articles,
-        "failed": failed,
-    }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_article_batch"}

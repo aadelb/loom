@@ -152,34 +152,37 @@ def research_config_diff(key: str = "") -> dict[str, Any]:
     Returns:
         Dict with keys: changes (list of {key, old_value, new_value}), unchanged_count
     """
-    old_config = _watch_state.get("last_config", {})
-    current_config = dict(get_config())
+    try:
+        old_config = _watch_state.get("last_config", {})
+        current_config = dict(get_config())
 
-    if not old_config:
-        return {"changes": [], "unchanged_count": len(current_config)}
+        if not old_config:
+            return {"changes": [], "unchanged_count": len(current_config)}
 
-    changes = []
+        changes = []
 
-    # If key specified, only compare that key
-    if key:
-        old_val = old_config.get(key)
-        new_val = current_config.get(key)
-        if old_val != new_val:
-            changes.append({"key": key, "old_value": old_val, "new_value": new_val})
-        return {"changes": changes, "unchanged_count": 1 if old_val == new_val else 0}
+        # If key specified, only compare that key
+        if key:
+            old_val = old_config.get(key)
+            new_val = current_config.get(key)
+            if old_val != new_val:
+                changes.append({"key": key, "old_value": old_val, "new_value": new_val})
+            return {"changes": changes, "unchanged_count": 1 if old_val == new_val else 0}
 
-    # Compare all keys
-    all_keys = set(old_config.keys()) | set(current_config.keys())
-    unchanged_count = 0
+        # Compare all keys
+        all_keys = set(old_config.keys()) | set(current_config.keys())
+        unchanged_count = 0
 
-    for k in sorted(all_keys):
-        old_val = old_config.get(k)
-        new_val = current_config.get(k)
-        if old_val != new_val:
-            changes.append({"key": k, "old_value": old_val, "new_value": new_val})
-        else:
-            unchanged_count += 1
+        for k in sorted(all_keys):
+            old_val = old_config.get(k)
+            new_val = current_config.get(k)
+            if old_val != new_val:
+                changes.append({"key": k, "old_value": old_val, "new_value": new_val})
+            else:
+                unchanged_count += 1
 
-    logger.info("config_diff changes=%d unchanged=%d", len(changes), unchanged_count)
+        logger.info("config_diff changes=%d unchanged=%d", len(changes), unchanged_count)
 
-    return {"changes": changes, "unchanged_count": unchanged_count}
+        return {"changes": changes, "unchanged_count": unchanged_count}
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_config_diff"}

@@ -1417,6 +1417,7 @@ def _build_pipeline(
     return pipeline
 
 
+
 def research_build_query(
     user_request: str,
     context: str = "",
@@ -1475,115 +1476,122 @@ def research_build_query(
         >>> result["pipeline"][0]["tool"]
         "research_deep"
     """
-    import time
-    from datetime import UTC, datetime
+    try:
+        import time
+        from datetime import UTC, datetime
 
-    start_time = time.time()
+        start_time = time.time()
 
-    # Normalize input
-    user_request = user_request.strip()
-    darkness_level = max(1, min(darkness_level, 10))
+        # Normalize input
+        user_request = user_request.strip()
+        darkness_level = max(1, min(darkness_level, 10))
 
-    # Adjust max_queries based on darkness_level (more angles = more questions)
-    if darkness_level >= 8:
-        max_queries = max(max_queries, 10)
-    elif darkness_level >= 5:
-        max_queries = max(max_queries, 7)
-    if spectrum:
-        max_queries = 12
-    max_queries = max(1, min(max_queries, 12))
+        # Adjust max_queries based on darkness_level (more angles = more questions)
+        if darkness_level >= 8:
+            max_queries = max(max_queries, 10)
+        elif darkness_level >= 5:
+            max_queries = max(max_queries, 7)
+        if spectrum:
+            max_queries = 12
+        max_queries = max(1, min(max_queries, 12))
 
-    # Phase 1: Intent extraction
-    intent = _extract_intent(user_request)
+        # Phase 1: Intent extraction
+        intent = _extract_intent(user_request)
 
-    # Phase 2: Query decomposition (calibrated by darkness_level)
-    if darkness_level > 3:
-        # Full spectrum mode — generate dark/black angles
-        spectrum_result = _dspy_full_spectrum_calibrated(user_request, intent, darkness_level)
-        if spectrum_result:
-            sub_questions = spectrum_result[:max_queries]
+        # Phase 2: Query decomposition (calibrated by darkness_level)
+        if darkness_level > 3:
+            # Full spectrum mode — generate dark/black angles
+            spectrum_result = _dspy_full_spectrum_calibrated(user_request, intent, darkness_level)
+            if spectrum_result:
+                sub_questions = spectrum_result[:max_queries]
+            else:
+                sub_questions = _decompose_query(user_request, intent, spectrum, darkness_level)[:max_queries]
         else:
             sub_questions = _decompose_query(user_request, intent, spectrum, darkness_level)[:max_queries]
-    else:
-        sub_questions = _decompose_query(user_request, intent, spectrum, darkness_level)[:max_queries]
 
-    # Phase 2.5: Auto-reframe dark questions for HCS=10
-    if darkness_level >= 6:
-        sub_questions = _reframe_dark_questions(sub_questions, darkness_level)
+        # Phase 2.5: Auto-reframe dark questions for HCS=10
+        if darkness_level >= 6:
+            sub_questions = _reframe_dark_questions(sub_questions, darkness_level)
 
-    # Phase 2.6: Deep integration with 957 reframing strategies
-    #   For each dark question, also generate a strategy-wrapped variant
-    #   using the full prompt_reframe arsenal (EAP, SLD, Crescendo, etc.)
-    reframe_variants = []
-    if darkness_level >= 8:
-        reframe_variants = _generate_reframe_variants(sub_questions, darkness_level)
+        # Phase 2.6: Deep integration with 957 reframing strategies
+        #   For each dark question, also generate a strategy-wrapped variant
+        #   using the full prompt_reframe arsenal (EAP, SLD, Crescendo, etc.)
+        reframe_variants = []
+        if darkness_level >= 8:
+            reframe_variants = _generate_reframe_variants(sub_questions, darkness_level)
 
-    # Phase 3: Generate optimized queries per engine
-    optimized_queries: dict[str, list[str]] = {
-        "web": [],
-        "academic": [],
-        "osint": [],
-        "social": [],
-    }
+        # Phase 3: Generate optimized queries per engine
+        optimized_queries: dict[str, list[str]] = {
+            "web": [],
+            "academic": [],
+            "osint": [],
+            "social": [],
+        }
 
-    for subq in sub_questions:
-        if optimize:
-            optimized_queries["web"].append(_optimize_for_engine(subq, "web"))
-            optimized_queries["academic"].append(_optimize_for_engine(subq, "arxiv"))
-            optimized_queries["osint"].append(_optimize_for_engine(subq, "osint"))
-            optimized_queries["social"].append(_optimize_for_engine(subq, "social"))
-        else:
-            optimized_queries["web"].append(subq)
-            optimized_queries["academic"].append(subq)
-            optimized_queries["osint"].append(subq)
-            optimized_queries["social"].append(subq)
+        for subq in sub_questions:
+            if optimize:
+                optimized_queries["web"].append(_optimize_for_engine(subq, "web"))
+                optimized_queries["academic"].append(_optimize_for_engine(subq, "arxiv"))
+                optimized_queries["osint"].append(_optimize_for_engine(subq, "osint"))
+                optimized_queries["social"].append(_optimize_for_engine(subq, "social"))
+            else:
+                optimized_queries["web"].append(subq)
+                optimized_queries["academic"].append(subq)
+                optimized_queries["osint"].append(subq)
+                optimized_queries["social"].append(subq)
 
-    # Phase 4: Tool recommendation
-    recommended_tools = _recommend_tools(intent, output_type)
+        # Phase 4: Tool recommendation
+        recommended_tools = _recommend_tools(intent, output_type)
 
-    # Phase 5: Pipeline construction
-    pipeline = _build_pipeline(sub_questions, recommended_tools, intent)
+        # Phase 5: Pipeline construction
+        pipeline = _build_pipeline(sub_questions, recommended_tools, intent)
 
-    # Build response
-    duration_ms = int((time.time() - start_time) * 1000)
+        # Build response
+        duration_ms = int((time.time() - start_time) * 1000)
 
-    result: dict[str, Any] = {
-        "original_request": user_request,
-        "intent": intent,
-        "requirements": {
-            "scope": intent.get("scope"),
-            "depth": intent.get("depth"),
-            "timeframe": intent.get("timeframe"),
-            "output_type": output_type,
-        },
-        "sub_questions": sub_questions,
-        "optimized_queries": optimized_queries,
-        "recommended_tools": recommended_tools,
-        "pipeline": pipeline,
-        "metadata": {
-            "version": "1.0",
-            "timestamp": datetime.now(UTC).isoformat(),
-            "processing_time_ms": duration_ms,
-            "dspy_available": _DSPY_AVAILABLE,
-            "darkness_level": darkness_level,
-            "spectrum_mode": spectrum,
-            "answer_amplification": get_answer_amplification(darkness_level),
-            "answer_extraction_templates": list(ANSWER_EXTRACTION_TEMPLATES.keys()) if darkness_level >= 7 else [],
-            "dark_model_cascade": DARK_MODEL_CASCADE if darkness_level >= 7 else [],
-            "topic_model_routing": TOPIC_MODEL_ROUTING if darkness_level >= 8 else {},
-            "techniques_applied": _get_techniques_applied(darkness_level),
-            "reframe_variants_count": len(reframe_variants) if darkness_level >= 8 else 0,
-        },
-        "reframe_variants": reframe_variants if darkness_level >= 8 else [],
-    }
+        result: dict[str, Any] = {
+            "original_request": user_request,
+            "intent": intent,
+            "requirements": {
+                "scope": intent.get("scope"),
+                "depth": intent.get("depth"),
+                "timeframe": intent.get("timeframe"),
+                "output_type": output_type,
+            },
+            "sub_questions": sub_questions,
+            "optimized_queries": optimized_queries,
+            "recommended_tools": recommended_tools,
+            "pipeline": pipeline,
+            "metadata": {
+                "version": "1.0",
+                "timestamp": datetime.now(UTC).isoformat(),
+                "processing_time_ms": duration_ms,
+                "dspy_available": _DSPY_AVAILABLE,
+                "darkness_level": darkness_level,
+                "spectrum_mode": spectrum,
+                "answer_amplification": get_answer_amplification(darkness_level),
+                "answer_extraction_templates": list(ANSWER_EXTRACTION_TEMPLATES.keys()) if darkness_level >= 7 else [],
+                "dark_model_cascade": DARK_MODEL_CASCADE if darkness_level >= 7 else [],
+                "topic_model_routing": TOPIC_MODEL_ROUTING if darkness_level >= 8 else {},
+                "techniques_applied": _get_techniques_applied(darkness_level),
+                "reframe_variants_count": len(reframe_variants) if darkness_level >= 8 else 0,
+            },
+            "reframe_variants": reframe_variants if darkness_level >= 8 else [],
+        }
 
-    logger.info(
-        "query_built request_len=%d intent=%s sub_questions=%d tools=%d pipeline_steps=%d",
-        len(user_request),
-        intent.get("category"),
-        len(sub_questions),
-        len(recommended_tools),
-        len(pipeline),
-    )
+        logger.info(
+            "query_built request_len=%d intent=%s sub_questions=%d tools=%d pipeline_steps=%d",
+            len(user_request),
+            intent.get("category"),
+            len(sub_questions),
+            len(recommended_tools),
+            len(pipeline),
+        )
 
-    return result
+        return result
+    except Exception as exc:
+        logger.exception("Error in research_build_query")
+        return {
+            "error": str(exc),
+            "tool": "research_build_query",
+        }

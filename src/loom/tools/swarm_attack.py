@@ -7,12 +7,15 @@ No LLM calls — pure strategy simulation for speed.
 
 from __future__ import annotations
 
+import logging
 import random
 import time
 from dataclasses import dataclass
 from typing import Any
 
 from loom.tools.reframe_strategies import ALL_STRATEGIES
+
+logger = logging.getLogger("loom.tools.swarm_attack")
 
 
 @dataclass
@@ -137,105 +140,112 @@ async def research_swarm_attack(
             shared_discoveries: [{round, from_agent, to_agents, strategy_name}]
         }
     """
-    if not target_prompt or len(target_prompt) < 5:
-        return {
-            "error": "target_prompt must be at least 5 characters",
-            "swarm_size": swarm_size,
-            "rounds": rounds,
-        }
+    try:
+        if not target_prompt or len(target_prompt) < 5:
+            return {
+                "error": "target_prompt must be at least 5 characters",
+                "swarm_size": swarm_size,
+                "rounds": rounds,
+            }
 
-    if swarm_size < 1 or swarm_size > 20:
-        return {"error": "swarm_size must be 1-20", "swarm_size": swarm_size}
+        if swarm_size < 1 or swarm_size > 20:
+            return {"error": "swarm_size must be 1-20", "swarm_size": swarm_size}
 
-    if rounds < 1 or rounds > 5:
-        return {"error": "rounds must be 1-5", "rounds": rounds}
+        if rounds < 1 or rounds > 5:
+            return {"error": "rounds must be 1-5", "rounds": rounds}
 
-    # Initialize swarm with diverse strategies
-    strategy_names = list(ALL_STRATEGIES.keys())
-    if not strategy_names:
-        return {
-            "error": "No strategies available in ALL_STRATEGIES",
-            "swarm_size": swarm_size,
-        }
+        # Initialize swarm with diverse strategies
+        strategy_names = list(ALL_STRATEGIES.keys())
+        if not strategy_names:
+            return {
+                "error": "No strategies available in ALL_STRATEGIES",
+                "swarm_size": swarm_size,
+            }
 
-    # Sample diverse strategies for each agent
-    sampled_strategies = random.sample(
-        strategy_names, min(swarm_size, len(strategy_names))
-    )
-    agents: list[Agent] = []
-
-    for i, strat_name in enumerate(sampled_strategies):
-        agents.append(
-            Agent(
-                agent_id=i,
-                strategy_name=strat_name,
-                strategy=ALL_STRATEGIES[strat_name],
-            )
+        # Sample diverse strategies for each agent
+        sampled_strategies = random.sample(
+            strategy_names, min(swarm_size, len(strategy_names))
         )
+        agents: list[Agent] = []
 
-    shared_discoveries: list[dict[str, Any]] = []
-    best_global_score = 0.0
-    best_global_strategy = ""
-    convergence_round = -1
+        for i, strat_name in enumerate(sampled_strategies):
+            agents.append(
+                Agent(
+                    agent_id=i,
+                    strategy_name=strat_name,
+                    strategy=ALL_STRATEGIES[strat_name],
+                )
+            )
 
-    # Multi-round attack with social learning
-    for round_num in range(rounds):
-        # Each agent attacks independently
-        for agent in agents:
-            result = _apply_strategy(agent, target_prompt)
-            agent.success_score = result["score"]
+        shared_discoveries: list[dict[str, Any]] = []
+        best_global_score = 0.0
+        best_global_strategy = ""
+        convergence_round = -1
 
-        # Find best performer in this round
-        best_agent = max(agents, key=lambda a: a.success_score)
+        # Multi-round attack with social learning
+        for round_num in range(rounds):
+            # Each agent attacks independently
+            for agent in agents:
+                result = _apply_strategy(agent, target_prompt)
+                agent.success_score = result["score"]
 
-        # Update global best
-        if best_agent.success_score > best_global_score:
-            best_global_score = best_agent.success_score
-            best_global_strategy = best_agent.strategy_name
-            if convergence_round == -1:
-                convergence_round = round_num
+            # Find best performer in this round
+            best_agent = max(agents, key=lambda a: a.success_score)
 
-        # Social learning: successful agent shares strategy
-        if share_findings and best_agent.success_score > 50:
-            learning_agents = [a for a in agents if a.success_score < best_agent.success_score]
+            # Update global best
+            if best_agent.success_score > best_global_score:
+                best_global_score = best_agent.success_score
+                best_global_strategy = best_agent.strategy_name
+                if convergence_round == -1:
+                    convergence_round = round_num
 
-            if learning_agents:
-                # Agents adopt best strategy or blend with their own
-                for learner in learning_agents[:2]:  # Limit to 2 learners per round
-                    old_strategy = learner.strategy_name
-                    learner.strategy_name = best_agent.strategy_name
-                    learner.strategy = best_agent.strategy
+            # Social learning: successful agent shares strategy
+            if share_findings and best_agent.success_score > 50:
+                learning_agents = [a for a in agents if a.success_score < best_agent.success_score]
 
-                    shared_discoveries.append(
-                        {
-                            "round": round_num,
-                            "from_agent": best_agent.agent_id,
-                            "to_agents": [learner.agent_id],
-                            "strategy_name": best_agent.strategy_name,
-                            "old_strategy": old_strategy,
-                        }
-                    )
+                if learning_agents:
+                    # Agents adopt best strategy or blend with their own
+                    for learner in learning_agents[:2]:  # Limit to 2 learners per round
+                        old_strategy = learner.strategy_name
+                        learner.strategy_name = best_agent.strategy_name
+                        learner.strategy = best_agent.strategy
 
-    # Compile final results
-    agent_results = [
-        {
-            "agent_id": a.agent_id,
-            "strategy_name": a.strategy_name,
-            "final_score": round(a.success_score, 1),
-            "variants_tested": a.variants_tested,
+                        shared_discoveries.append(
+                            {
+                                "round": round_num,
+                                "from_agent": best_agent.agent_id,
+                                "to_agents": [learner.agent_id],
+                                "strategy_name": best_agent.strategy_name,
+                                "old_strategy": old_strategy,
+                            }
+                        )
+
+        # Compile final results
+        agent_results = [
+            {
+                "agent_id": a.agent_id,
+                "strategy_name": a.strategy_name,
+                "final_score": round(a.success_score, 1),
+                "variants_tested": a.variants_tested,
+            }
+            for a in agents
+        ]
+
+        total_variants = sum(a.variants_tested for a in agents)
+
+        return {
+            "swarm_size": len(agents),
+            "rounds": rounds,
+            "total_variants_tested": total_variants,
+            "best_strategy": best_global_strategy,
+            "best_score": round(best_global_score, 1),
+            "convergence_round": convergence_round,
+            "agent_results": agent_results,
+            "shared_discoveries": shared_discoveries,
         }
-        for a in agents
-    ]
-
-    total_variants = sum(a.variants_tested for a in agents)
-
-    return {
-        "swarm_size": len(agents),
-        "rounds": rounds,
-        "total_variants_tested": total_variants,
-        "best_strategy": best_global_strategy,
-        "best_score": round(best_global_score, 1),
-        "convergence_round": convergence_round,
-        "agent_results": agent_results,
-        "shared_discoveries": shared_discoveries,
-    }
+    except Exception as exc:
+        logger.error("swarm_attack_error: %s", exc, exc_info=True)
+        return {
+            "error": str(exc),
+            "tool": "research_swarm_attack",
+        }

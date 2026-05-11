@@ -98,85 +98,88 @@ async def research_social_search(
         Dict with ``username``, ``platforms_checked``, ``found`` (list), ``not_found`` (list),
         ``unknown`` (list), ``total_found``.
     """
-    # Validate username
-    if not _validate_username(username):
+    try:
+        # Validate username
+        if not _validate_username(username):
+            return {
+                "username": username,
+                "platforms_checked": 0,
+                "found": [],
+                "not_found": [],
+                "unknown": [],
+                "total_found": 0,
+                "error": "invalid username: must be alphanumeric, underscore, or hyphen (1-255 chars)",
+            }
+
+        # Determine which platforms to check
+        platforms_to_check = platforms or list(PLATFORM_PATTERNS.keys())
+
+        # Filter to known platforms
+        unknown_platforms = [p for p in platforms_to_check if p not in PLATFORM_PATTERNS]
+        if unknown_platforms:
+            logger.warning("unknown_platforms username=%s platforms=%s", username, unknown_platforms)
+
+        platforms_to_check = [p for p in platforms_to_check if p in PLATFORM_PATTERNS]
+
+        if not platforms_to_check:
+            return {
+                "username": username,
+                "platforms_checked": 0,
+                "found": [],
+                "not_found": [],
+                "unknown": [],
+                "total_found": 0,
+                "error": "no valid platforms specified",
+            }
+
+        # Build URLs for each platform
+        check_tasks: list[tuple[str, str, str]] = []
+        for platform in platforms_to_check:
+            url_template = PLATFORM_PATTERNS[platform]
+            url = url_template.format(username=username)
+            check_tasks.append((username, platform, url))
+
+        # Run checks concurrently
+        found: list[dict[str, str]] = []
+        not_found: list[str] = []
+        unknown: list[str] = []
+
+        # Execute checks directly without asyncio.run (we're already in async context)
+        tasks = [_check_profile_exists(u, p, url) for u, p, url in check_tasks]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        for result in results:
+            if isinstance(result, Exception):
+                logger.error("social_search_exception: %s", result)
+                continue
+
+            platform, status, url = result
+            if status == "exists":
+                found.append({"platform": platform, "url": url, "status": "exists"})
+            elif status == "not_found":
+                not_found.append(platform)
+            else:
+                unknown.append(platform)
+
+        logger.info(
+            "social_search completed username=%s platforms_checked=%d found=%d not_found=%d unknown=%d",
+            username,
+            len(platforms_to_check),
+            len(found),
+            len(not_found),
+            len(unknown),
+        )
+
         return {
             "username": username,
-            "platforms_checked": 0,
-            "found": [],
-            "not_found": [],
-            "unknown": [],
-            "total_found": 0,
-            "error": "invalid username: must be alphanumeric, underscore, or hyphen (1-255 chars)",
+            "platforms_checked": len(platforms_to_check),
+            "found": found,
+            "not_found": not_found,
+            "unknown": unknown,
+            "total_found": len(found),
         }
-
-    # Determine which platforms to check
-    platforms_to_check = platforms or list(PLATFORM_PATTERNS.keys())
-
-    # Filter to known platforms
-    unknown_platforms = [p for p in platforms_to_check if p not in PLATFORM_PATTERNS]
-    if unknown_platforms:
-        logger.warning("unknown_platforms username=%s platforms=%s", username, unknown_platforms)
-
-    platforms_to_check = [p for p in platforms_to_check if p in PLATFORM_PATTERNS]
-
-    if not platforms_to_check:
-        return {
-            "username": username,
-            "platforms_checked": 0,
-            "found": [],
-            "not_found": [],
-            "unknown": [],
-            "total_found": 0,
-            "error": "no valid platforms specified",
-        }
-
-    # Build URLs for each platform
-    check_tasks: list[tuple[str, str, str]] = []
-    for platform in platforms_to_check:
-        url_template = PLATFORM_PATTERNS[platform]
-        url = url_template.format(username=username)
-        check_tasks.append((username, platform, url))
-
-    # Run checks concurrently
-    found: list[dict[str, str]] = []
-    not_found: list[str] = []
-    unknown: list[str] = []
-
-    # Execute checks directly without asyncio.run (we're already in async context)
-    tasks = [_check_profile_exists(u, p, url) for u, p, url in check_tasks]
-    results = await asyncio.gather(*tasks, return_exceptions=True)
-
-    for result in results:
-        if isinstance(result, Exception):
-            logger.error("social_search_exception: %s", result)
-            continue
-
-        platform, status, url = result
-        if status == "exists":
-            found.append({"platform": platform, "url": url, "status": "exists"})
-        elif status == "not_found":
-            not_found.append(platform)
-        else:
-            unknown.append(platform)
-
-    logger.info(
-        "social_search completed username=%s platforms_checked=%d found=%d not_found=%d unknown=%d",
-        username,
-        len(platforms_to_check),
-        len(found),
-        len(not_found),
-        len(unknown),
-    )
-
-    return {
-        "username": username,
-        "platforms_checked": len(platforms_to_check),
-        "found": found,
-        "not_found": not_found,
-        "unknown": unknown,
-        "total_found": len(found),
-    }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_social_search"}
 
 
 async def research_social_profile(url: str) -> dict[str, Any]:
@@ -191,64 +194,67 @@ async def research_social_profile(url: str) -> dict[str, Any]:
     Returns:
         Dict with ``url``, ``platform`` (detected), ``name``, ``bio``, ``avatar_url``, ``metadata``.
     """
-    # Validate URL
     try:
-        url = validate_url(url)
-    except ValueError as e:
-        logger.warning("invalid_profile_url url=%s error=%s", url, e)
-        return {
-            "url": url,
-            "platform": "unknown",
-            "name": None,
-            "bio": None,
-            "avatar_url": None,
-            "metadata": {},
-            "error": str(e),
-        }
+        # Validate URL
+        try:
+            url = validate_url(url)
+        except ValueError as e:
+            logger.warning("invalid_profile_url url=%s error=%s", url, e)
+            return {
+                "url": url,
+                "platform": "unknown",
+                "name": None,
+                "bio": None,
+                "avatar_url": None,
+                "metadata": {},
+                "error": str(e),
+            }
 
-    # Detect platform from URL
-    platform = _detect_platform(url)
+        # Detect platform from URL
+        platform = _detect_platform(url)
 
-    # Fetch page
-    try:
-        async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT) as client:
-            resp = await client.get(url, headers={"User-Agent": "Mozilla/5.0"})
-            resp.raise_for_status()
-            html = resp.text
-    except Exception as e:
-        logger.warning("profile_fetch_failed url=%s error=%s", url, e)
+        # Fetch page
+        try:
+            async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT) as client:
+                resp = await client.get(url, headers={"User-Agent": "Mozilla/5.0"})
+                resp.raise_for_status()
+                html = resp.text
+        except Exception as e:
+            logger.warning("profile_fetch_failed url=%s error=%s", url, e)
+            return {
+                "url": url,
+                "platform": platform,
+                "name": None,
+                "bio": None,
+                "avatar_url": None,
+                "metadata": {},
+                "error": str(e),
+            }
+
+        # Extract Open Graph metadata
+        metadata = _extract_og_metadata(html)
+
+        name = metadata.get("og:title")
+        bio = metadata.get("og:description")
+        avatar_url = metadata.get("og:image")
+
+        logger.info(
+            "profile_extracted url=%s platform=%s name=%s",
+            url,
+            platform,
+            name or "unknown",
+        )
+
         return {
             "url": url,
             "platform": platform,
-            "name": None,
-            "bio": None,
-            "avatar_url": None,
-            "metadata": {},
-            "error": str(e),
+            "name": name,
+            "bio": bio,
+            "avatar_url": avatar_url,
+            "metadata": metadata,
         }
-
-    # Extract Open Graph metadata
-    metadata = _extract_og_metadata(html)
-
-    name = metadata.get("og:title")
-    bio = metadata.get("og:description")
-    avatar_url = metadata.get("og:image")
-
-    logger.info(
-        "profile_extracted url=%s platform=%s name=%s",
-        url,
-        platform,
-        name or "unknown",
-    )
-
-    return {
-        "url": url,
-        "platform": platform,
-        "name": name,
-        "bio": bio,
-        "avatar_url": avatar_url,
-        "metadata": metadata,
-    }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_social_profile"}
 
 
 def _detect_platform(url: str) -> str:
