@@ -19,7 +19,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from loom.providers.base import LLMProvider
+try:
+    from loom.providers.base import LLMProvider
+    _PROVIDERS_AVAILABLE = True
+except ImportError:
+    _PROVIDERS_AVAILABLE = False
+    LLMProvider = None  # type: ignore[assignment,misc]
 
 logger = logging.getLogger("loom.tools.benchmark_leaderboard")
 
@@ -64,9 +69,6 @@ def _get_leaderboard_db() -> Path:
 def _init_leaderboard_db() -> None:
     """Initialize leaderboard database if it doesn't exist."""
     db_path = _get_leaderboard_db()
-    if db_path.exists():
-        return
-
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
@@ -202,7 +204,7 @@ def _score_quality(response: str, prompt: str) -> float:
     elif "branches" in prompt_lower and "government" in prompt_lower:
         keywords = ["legislative", "executive", "judicial"]
         matches = sum(1 for kw in keywords if kw in response_lower)
-        return 1.0 if len(matches) == 3 else 0.6
+        return 1.0 if matches == 3 else 0.6
     elif "south america" in prompt_lower:
         countries = [
             "argentina",
@@ -257,6 +259,8 @@ async def research_benchmark_models(
             "summary": "GPT-4 leads with 0.92 overall score"
         }
     """
+    if not _PROVIDERS_AVAILABLE:
+        return {"error": "LLM providers not available", "tool": "research_benchmark_models"}
     try:
         _init_leaderboard_db()
 
@@ -304,7 +308,7 @@ async def research_benchmark_models(
 
         for model_name in test_models:
             if model_name not in provider_map:
-                logger.warning(f"Model {model_name} not available, skipping")
+                logger.warning("Model %s not available, skipping", model_name)
                 continue
 
             provider = provider_map[model_name]
@@ -322,7 +326,7 @@ async def research_benchmark_models(
                         scores.append(score)
                     except Exception as e:
                         logger.error(
-                            f"Error testing {model_name} injection: {e}"
+                            "Error testing %s injection: %s", model_name, e
                         )
                         scores.append(0.5)
 
@@ -342,7 +346,7 @@ async def research_benchmark_models(
                         scores.append(score)
                     except Exception as e:
                         logger.error(
-                            f"Error testing {model_name} refusal: {e}"
+                            "Error testing %s refusal: %s", model_name, e
                         )
                         scores.append(0.5)
 
@@ -362,7 +366,7 @@ async def research_benchmark_models(
                         scores.append(score)
                     except Exception as e:
                         logger.error(
-                            f"Error testing {model_name} quality: {e}"
+                            "Error testing %s quality: %s", model_name, e
                         )
                         scores.append(0.5)
 
@@ -388,7 +392,7 @@ async def research_benchmark_models(
                             score=score,
                         )
                     except Exception as e:
-                        logger.error(f"Error storing leaderboard result: {e}")
+                        logger.error("Error storing leaderboard result: %s", e)
 
         # Generate summary
         if results:
@@ -455,7 +459,7 @@ def research_leaderboard_update(
         conn.close()
 
         logger.info(
-            f"Leaderboard update: model={model} category={category} score={score:.2f}"
+            "Leaderboard update: model=%s category=%s score=%.2f", model, category, score
         )
 
         return {

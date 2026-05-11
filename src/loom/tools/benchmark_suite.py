@@ -47,7 +47,7 @@ async def research_benchmark_run(tools: list[str] | None = None, iterations: int
                 "p95_ms": times_ms[int(len(times_ms) * 0.95)],
             })
         except Exception as e:
-            logger.error(f"Benchmark {tool_name} failed: {e}")
+            logger.error("Benchmark %s failed: %s", tool_name, e)
 
     return {"tools_benchmarked": [r["tool"] for r in results], "results": results, "total_time_ms": (time.perf_counter_ns() - total_start) / 1e6}
 
@@ -85,7 +85,7 @@ async def research_benchmark_compare(tool_a: str, tool_b: str, iterations: int =
         tool_a: {"mean_ms": mean_a, "p95_ms": p95_a},
         tool_b: {"mean_ms": mean_b, "p95_ms": p95_b},
         "winner": tool_a if mean_a < mean_b else tool_b,
-        "speedup_factor": max(mean_a, mean_b) / min(mean_a, mean_b),
+        "speedup_factor": max(mean_a, mean_b) / max(min(mean_a, mean_b), 0.001),
     }
 
 

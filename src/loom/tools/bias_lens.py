@@ -6,6 +6,7 @@ import asyncio
 import json
 import logging
 import re
+import time
 from typing import Any
 
 import httpx
@@ -160,7 +161,8 @@ def _analyze_citation_network(
     self_citation_count = 0
     for citation in citing_papers:
         if isinstance(citation, dict):
-            citing_authors = citation.get("authors", [])
+            paper = citation.get("citingPaper", citation)
+            citing_authors = paper.get("authors", []) if isinstance(paper, dict) else []
             for citing_author in citing_authors:
                 if isinstance(citing_author, dict):
                     citing_name = citing_author.get("name", "").lower()
@@ -337,7 +339,7 @@ async def research_bias_lens(paper_id: str = "", text: str = "") -> dict[str, An
                     "hedging_language_count": hedging_count,
                     "funding_bias_risk": funding_bias_risk,
                     "paper_id": paper_id,
-                    "analysis_timestamp": asyncio.get_event_loop().time(),
+                    "analysis_timestamp": time.time(),
                 }
 
         return await _run()
