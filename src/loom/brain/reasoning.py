@@ -191,22 +191,33 @@ def select_tools(
 
     scored: list[tuple[str, float, str]] = []
 
+    # Adaptive weights: boost category when domain is specific (not "general")
+    has_specific_domain = domains and domains != ["general"]
+    w_keyword = 0.30
+    w_semantic = 0.20
+    w_signature = 0.15  # Boosted: entity-param alignment is very informative
+    w_category = 0.20 if has_specific_domain else 0.08
+    w_usage = 0.05
+    w_name_match = 0.10  # New: direct tool name match bonus
+
     for tool_name, meta in server_tools.items():
         keyword_score = _keyword_score(tool_name, meta, keywords, domains)
         semantic_score = _semantic_score(tool_name, meta, query)
         signature_score = _signature_score(meta, entities)
         category_score = _category_score(meta, domains)
         usage_score = _usage_score(tool_name)
+        name_match_score = _name_match_score(tool_name, keywords)
 
         composite = (
-            keyword_score * 0.35
-            + semantic_score * 0.25
-            + signature_score * 0.10
-            + category_score * 0.10
-            + usage_score * 0.05
+            keyword_score * w_keyword
+            + semantic_score * w_semantic
+            + signature_score * w_signature
+            + category_score * w_category
+            + usage_score * w_usage
+            + name_match_score * w_name_match
         )
 
-        if composite > 0.1:
+        if composite > 0.08:
             scored.append((tool_name, composite, "composite"))
 
     scored.sort(key=lambda x: x[1], reverse=True)
@@ -253,32 +264,82 @@ def _keyword_score(
     return min(score, 1.0)
 
 
+def _name_match_score(tool_name: str, keywords: list[str]) -> float:
+    """Bonus score when keywords appear directly in tool name (strongest signal).
+
+    'nuclei' in query + 'nuclei' in 'research_nuclei_scan' = high confidence.
+    """
+    if not keywords:
+        return 0.0
+    name_parts = set(tool_name.replace("research_", "").split("_"))
+    hits = sum(1 for kw in keywords if kw in name_parts)
+    return min(hits / max(len(keywords), 2), 1.0)
+
+
 def _semantic_score(tool_name: str, meta: ToolMeta, query: str) -> float:
-    """Lightweight semantic score using word overlap ratio."""
+    """Lightweight semantic score using word overlap ratio.
+
+    Weights longer matching words higher (IDF-like effect).
+    """
     query_words = set(query.lower().split())
     tool_words = set(tool_name.split("_")) | set(meta.description.lower().split()[:30])
     if not query_words or not tool_words:
         return 0.0
-    overlap = len(query_words & tool_words)
-    return min(overlap / max(len(query_words), 5), 1.0)
+
+    weighted_overlap = 0.0
+    for word in query_words & tool_words:
+        # Longer/rarer words score higher (crude IDF proxy)
+        weighted_overlap += min(len(word) / 5, 1.5)
+
+    return min(weighted_overlap / max(len(query_words), 4), 1.0)
 
 
 def _signature_score(meta: ToolMeta, entities: dict[str, list[str]]) -> float:
-    """Score based on parameter name alignment with extracted entities."""
+    """Score based on parameter-entity alignment.
+
+    If query contains a URL and tool accepts 'url' param → strong match.
+    If query contains domain and tool accepts 'domain'/'target' → strong match.
+    """
     if not entities or not meta.parameters:
         return 0.0
     param_names = set(meta.parameters.keys()) if isinstance(meta.parameters, dict) else set()
-    entity_types = set(entities.keys())
-    overlap = len(param_names & {"url", "query", "target", "domain", "email", "ip"} & entity_types)
-    return min(overlap / 3, 1.0)
+
+    score = 0.0
+    # URL entity → url/target param alignment (strongest signal)
+    if "urls" in entities:
+        if "url" in param_names or "target_url" in param_names:
+            score += 0.5
+        if "target" in param_names:
+            score += 0.3
+
+    # Domain entity → domain/target param alignment
+    if "domains" in entities:
+        if "domain" in param_names or "target" in param_names:
+            score += 0.4
+
+    # IP entity → ip/target param alignment
+    if "ips" in entities:
+        if "ip" in param_names or "target" in param_names or "host" in param_names:
+            score += 0.4
+
+    # Email entity → email param alignment
+    if "emails" in entities:
+        if "email" in param_names or "target" in param_names:
+            score += 0.4
+
+    return min(score, 1.0)
 
 
 def _category_score(meta: ToolMeta, domains: list[str]) -> float:
-    """Score based on category overlap with detected domains."""
+    """Score based on category overlap with detected domains.
+
+    Returns graduated score: more category matches = higher score.
+    """
     if not meta.categories or not domains:
         return 0.0
     cat_set = set(c.lower() for c in meta.categories)
-    return 1.0 if any(d in cat_set for d in domains) else 0.0
+    matches = sum(1 for d in domains if d in cat_set)
+    return min(matches / max(len(domains), 1), 1.0)
 
 
 def _usage_score(tool_name: str) -> float:
