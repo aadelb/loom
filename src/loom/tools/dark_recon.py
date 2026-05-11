@@ -9,7 +9,14 @@ import shutil
 import subprocess
 from typing import Any
 
-from loom.billing import requires_tier
+try:
+    from loom.billing import requires_tier
+except ImportError:
+    def requires_tier(tier: str):  # type: ignore[misc]
+        def decorator(func):  # type: ignore[no-untyped-def]
+            return func
+        return decorator
+
 from loom.validators import validate_url, UrlSafetyError
 
 logger = logging.getLogger("loom.tools.dark_recon")
@@ -111,7 +118,7 @@ def research_torbot(url: str, depth: int = 2) -> dict[str, Any]:
         # Limit stdout read to prevent OOM from huge output
         stdout = result.stdout[:MAX_OUTPUT_SIZE] if result.stdout else ""
         if result.stdout and len(result.stdout) > MAX_OUTPUT_SIZE:
-            logger.warning(f"torbot output truncated (exceeded {MAX_OUTPUT_SIZE} bytes)")
+            logger.warning("torbot output truncated (exceeded %d bytes)", MAX_OUTPUT_SIZE)
 
         output: dict[str, Any] = {"url": url, "depth_crawled": depth}
 
@@ -149,7 +156,7 @@ def research_torbot(url: str, depth: int = 2) -> dict[str, Any]:
             "depth_crawled": 0,
         }
     except Exception as exc:
-        logger.error("torbot error", url=url, error=str(exc))
+        logger.error("torbot error url=%s error=%s", url, exc)
         return {
             "url": url,
             "error": f"torbot error: {type(exc).__name__}: {str(exc)}",
@@ -223,7 +230,7 @@ def research_amass_enum(domain: str, passive: bool = True, timeout: int = 120) -
         # Limit stdout read to prevent OOM
         stdout = result.stdout[:MAX_OUTPUT_SIZE] if result.stdout else ""
         if result.stdout and len(result.stdout) > MAX_OUTPUT_SIZE:
-            logger.warning(f"amass output truncated (exceeded {MAX_OUTPUT_SIZE} bytes)")
+            logger.warning("amass output truncated (exceeded %d bytes)", MAX_OUTPUT_SIZE)
 
         output: dict[str, Any] = {"domain": domain}
 
@@ -285,7 +292,7 @@ def research_amass_enum(domain: str, passive: bool = True, timeout: int = 120) -
             "sources": [],
         }
     except Exception as exc:
-        logger.error("amass enum error", domain=domain, error=str(exc))
+        logger.error("amass enum error domain=%s error=%s", domain, exc)
         return {
             "domain": domain,
             "error": f"amass enum error: {type(exc).__name__}: {str(exc)}",
@@ -346,7 +353,7 @@ def research_amass_intel(domain: str) -> dict[str, Any]:
         # Limit stdout read to prevent OOM
         stdout = result.stdout[:MAX_OUTPUT_SIZE] if result.stdout else ""
         if result.stdout and len(result.stdout) > MAX_OUTPUT_SIZE:
-            logger.warning(f"amass intel output truncated (exceeded {MAX_OUTPUT_SIZE} bytes)")
+            logger.warning("amass intel output truncated (exceeded %d bytes)", MAX_OUTPUT_SIZE)
 
         output: dict[str, Any] = {"domain": domain}
 
@@ -398,7 +405,7 @@ def research_amass_intel(domain: str) -> dict[str, Any]:
             "related_domains": [],
         }
     except Exception as exc:
-        logger.error("amass intel error", domain=domain, error=str(exc))
+        logger.error("amass intel error domain=%s error=%s", domain, exc)
         return {
             "domain": domain,
             "error": f"amass intel error: {type(exc).__name__}: {str(exc)}",
