@@ -17,7 +17,7 @@ async def research_export_config() -> dict[str, Any]:
 
         return {
             "config": dict(CONFIG),
-            "exported_at": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "exported_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "keys_present": sum(1 for v in CONFIG.values() if v),
         }
     except Exception as exc:
@@ -50,16 +50,14 @@ async def research_export_cache(limit: int = 50) -> dict[str, Any]:
         cache = get_cache()
         cache_dir = Path(cache.base_dir)
         entries = []
-        for f in sorted(
-            cache_dir.glob("**/*.json"),  # noqa: ASYNC240
-            key=lambda x: x.stat().st_mtime,
-            reverse=True,
-        )[:limit]:
+        file_stats = [(f, f.stat()) for f in cache_dir.glob("**/*.json")]  # noqa: ASYNC240
+        file_stats.sort(key=lambda x: x[1].st_mtime, reverse=True)
+        for f, st in file_stats[:limit]:
             entries.append(
                 {
                     "path": str(f.relative_to(cache_dir)),
-                    "size_kb": f.stat().st_size / 1024,
-                    "modified": time.ctime(f.stat().st_mtime),
+                    "size_kb": st.st_size / 1024,
+                    "modified": time.ctime(st.st_mtime),
                 }
             )
         return {"entries": entries, "total_found": len(entries), "cache_dir": str(cache_dir)}
