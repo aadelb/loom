@@ -7,7 +7,10 @@ import logging
 import re
 from typing import Any
 
-from mcp.types import TextContent
+try:
+    from mcp.types import TextContent
+except ImportError:
+    TextContent = None  # type: ignore[assignment,misc]
 
 logger = logging.getLogger("loom.tools.deception_detect")
 
@@ -219,9 +222,10 @@ def _calculate_deception_score(indicators: dict[str, Any], red_flags: list[str])
     score += superlative_contrib
 
     # First person avoidance (0.0-0.25)
-    first_person_contrib = (1.0 - indicators["first_person_ratio"] * 100) * 0.0025
     if indicators["first_person_ratio"] < 0.01:
         first_person_contrib = 0.25
+    else:
+        first_person_contrib = max(0.0, (1.0 - indicators["first_person_ratio"] * 100) * 0.0025)
     score += min(first_person_contrib, 0.25)
 
     # Distancing language (0.0-0.15)
@@ -235,18 +239,17 @@ def _calculate_deception_score(indicators: dict[str, Any], red_flags: list[str])
     return min(score, 1.0)
 
 
-def _try_llm_assessment(text: str) -> str | None:
+async def _try_llm_assessment(text: str) -> str | None:
     """Attempt to get LLM-based deception assessment if available."""
     try:
-        from loom.tools.llm import research_classify
+        from loom.tools.llm import research_llm_classify
 
-        result = research_classify(
+        result = await research_llm_classify(
             text=text,
             categories=["truthful", "deceptive", "uncertain"],
-            explanation=True,
         )
 
-        if result and "classification" in result:
+        if isinstance(result, dict) and "classification" in result:
             classification = result["classification"]
             explanation = result.get("explanation", "")
             return f"LLM classification: {classification}. {explanation}"
@@ -301,7 +304,7 @@ async def research_deception_detect(text: str) -> dict[str, Any]:
             verdict = "likely_deceptive"
 
         # Try to get LLM assessment
-        llm_assessment = _try_llm_assessment(text)
+        llm_assessment = await _try_llm_assessment(text)
 
         result: dict[str, Any] = {
             "deception_score": round(deception_score, 3),
