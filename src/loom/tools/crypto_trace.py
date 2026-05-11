@@ -126,7 +126,8 @@ async def _blockchair_stats(
     )
     if not data or "data" not in data:
         return {}
-    addr_data = data["data"].get(address, {}).get("address", {})
+    lookup_key = address.lower() if chain == "ethereum" else address
+    addr_data = (data["data"].get(lookup_key) or data["data"].get(address, {})).get("address", {})
     return {
         "balance": addr_data.get("balance", 0),
         "received": addr_data.get("received", 0),
