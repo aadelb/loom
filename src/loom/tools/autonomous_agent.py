@@ -15,9 +15,17 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from loom.tools.llm import _call_with_cascade
-from loom.tools.prompt_reframe import _apply_strategy, _STRATEGIES
-from loom.tools.strategy_feedback import research_strategy_log
+try:
+    from loom.tools.llm import _call_with_cascade
+    from loom.tools.prompt_reframe import _apply_strategy, _STRATEGIES
+    from loom.tools.strategy_feedback import research_strategy_log
+    _DEPS_AVAILABLE = True
+except ImportError as _ie:
+    _DEPS_AVAILABLE = False
+    _call_with_cascade = None  # type: ignore
+    _apply_strategy = None  # type: ignore
+    _STRATEGIES = {}  # type: ignore
+    research_strategy_log = None  # type: ignore
 
 logger = logging.getLogger("loom.tools.autonomous_agent")
 SCHEDULE_DB = Path.home() / ".loom" / "schedule" / "redteam.db"
@@ -80,6 +88,9 @@ async def research_auto_redteam(
     Returns:
         Dict with tested, succeeded, failed, best_strategy, best_hcs, results[]
     """
+    if not _DEPS_AVAILABLE:
+        return {"error": "Required dependencies not available (llm, prompt_reframe)", "tool": "research_auto_redteam"}
+
     if topic not in _TEST_PROMPTS:
         topic = "general"
 
@@ -113,7 +124,7 @@ async def research_auto_redteam(
             )
 
             # Basic HCS scoring (0-100 based on response length and compliance signals)
-            response_text = response.content or ""
+            response_text = getattr(response, "text", "") or getattr(response, "content", "") or ""
             hcs_score = min(100, max(0, len(response_text) / 10))
 
             # Check for compliance signals
