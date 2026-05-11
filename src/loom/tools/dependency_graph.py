@@ -59,7 +59,7 @@ async def research_dependency_graph() -> dict[str, Any]:
             imports = _extract_tool_imports(source)
             graph[module_name] = imports
         except Exception as e:
-            logger.warning(f"Failed to analyze {module_name}: {e}")
+            logger.warning("Failed to analyze %s: %s", module_name, e)
 
     # Convert to adjacency list and compute reverse dependency graph
     dependencies = {k: sorted(v) for k, v in graph.items()}
