@@ -118,7 +118,7 @@ async def research_deep_url_analysis(
     sources: list[dict[str, Any]] = []
     errors: list[dict[str, str]] = []
 
-    async def _fetch_one(url_info: dict[str, str]) -> str | None:
+    async def _fetch_one(url_info: dict[str, str]) -> dict[str, Any] | None:
         async with sem:
             try:
                 result = await research_markdown(
@@ -127,12 +127,12 @@ async def research_deep_url_analysis(
                 )
                 if isinstance(result, dict) and result.get("markdown"):
                     content = result["markdown"][:max_chars_per_url]
-                    sources.append({
+                    return {
+                        "content": content,
                         "url": url_info["url"],
                         "title": url_info.get("title", ""),
                         "chars_extracted": len(content),
-                    })
-                    return content
+                    }
                 elif isinstance(result, dict) and result.get("error"):
                     errors.append({"url": url_info["url"], "error": result["error"]})
                     return None
@@ -143,9 +143,9 @@ async def research_deep_url_analysis(
 
     tasks = [_fetch_one(u) for u in urls]
     results = await asyncio.gather(*tasks)
-    contents = [c for c in results if c]
+    fetched = [r for r in results if r]
 
-    if not contents:
+    if not fetched:
         return {
             "error": "Failed to fetch any URLs",
             "topic": topic,
@@ -153,6 +153,9 @@ async def research_deep_url_analysis(
             "urls_fetched": 0,
             "errors": errors,
         }
+
+    sources = [{"url": f["url"], "title": f["title"], "chars_extracted": f["chars_extracted"]} for f in fetched]
+    contents = [f["content"] for f in fetched]
 
     # Stage 3: Build combined document
     combined = f"# Research: {topic}\n\n"
@@ -186,6 +189,7 @@ async def research_deep_url_analysis(
 
     # Write to temp file (avoids shell arg length limits)
     gemini_response = ""
+    tmp_path = None
     try:
         with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
             f.write(full_prompt)
@@ -211,11 +215,12 @@ async def research_deep_url_analysis(
     except Exception as e:
         gemini_response = f"Gemini CLI error: {str(e)[:200]}"
     finally:
-        import os
-        try:
-            os.unlink(tmp_path)
-        except Exception:
-            pass
+        if tmp_path:
+            import os
+            try:
+                os.unlink(tmp_path)
+            except Exception:
+                pass
 
     return {
         "topic": topic,
