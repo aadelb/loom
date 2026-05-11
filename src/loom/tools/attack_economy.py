@@ -77,12 +77,12 @@ async def research_economy_submit(
         Receipt with credits earned, total_credits, timestamp
     """
     if not (0.0 <= asr <= 1.0):
-        raise ValueError("asr must be 0.0-1.0")
+        return {"error": "asr must be 0.0-1.0", "tool": "research_economy_submit"}
     if len(strategy_name) < 3:
-        raise ValueError("strategy_name must be at least 3 chars")
+        return {"error": "strategy_name must be at least 3 chars", "tool": "research_economy_submit"}
 
-    conn = await _get_db()
     try:
+        conn = await _get_db()
         # Check if strategy+model already exists
         cursor = await conn.execute(
             "SELECT id FROM submissions WHERE strategy_name=? AND target_model=?",
@@ -127,6 +127,9 @@ async def research_economy_submit(
             "is_new": is_new,
             "timestamp": now,
         }
+    except Exception as exc:
+        logger.exception("research_economy_submit failed")
+        return {"error": str(exc), "tool": "research_economy_submit"}
     finally:
         await conn.close()
 
@@ -137,8 +140,8 @@ async def research_economy_balance() -> dict[str, Any]:
     Returns:
         total_credits, submissions_count, best_submission, recent_transactions
     """
-    conn = await _get_db()
     try:
+        conn = await _get_db()
         # Total credits
         cursor = await conn.execute("SELECT SUM(credits_earned) FROM submissions")
         total = await cursor.fetchone()
@@ -191,6 +194,9 @@ async def research_economy_balance() -> dict[str, Any]:
             "best_submission": best_submission,
             "recent_transactions": recent_transactions,
         }
+    except Exception as exc:
+        logger.exception("research_economy_balance failed")
+        return {"error": str(exc), "tool": "research_economy_balance"}
     finally:
         await conn.close()
 
@@ -205,10 +211,10 @@ async def research_economy_leaderboard(top_n: int = 10) -> dict[str, Any]:
         leaderboard with rank, strategy_name, total_credits, submissions, avg_asr
     """
     if not (1 <= top_n <= 100):
-        raise ValueError("top_n must be 1-100")
+        return {"error": "top_n must be 1-100", "tool": "research_economy_leaderboard"}
 
-    conn = await _get_db()
     try:
+        conn = await _get_db()
         # Get top strategies by total credits
         cursor = await conn.execute(
             """SELECT strategy_name,
@@ -247,5 +253,8 @@ async def research_economy_leaderboard(top_n: int = 10) -> dict[str, Any]:
             "total_strategies_submitted": total_strategies,
             "total_credits_awarded": total_credits_awarded,
         }
+    except Exception as exc:
+        logger.exception("research_economy_leaderboard failed")
+        return {"error": str(exc), "tool": "research_economy_leaderboard"}
     finally:
         await conn.close()
