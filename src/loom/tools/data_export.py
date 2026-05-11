@@ -12,13 +12,16 @@ logger = logging.getLogger("loom.tools.data_export")
 
 async def research_export_config() -> dict[str, Any]:
     """Export current server configuration as JSON."""
-    from loom.config import CONFIG
+    try:
+        from loom.config import CONFIG
 
-    return {
-        "config": dict(CONFIG),
-        "exported_at": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "keys_present": sum(1 for v in CONFIG.values() if v),
-    }
+        return {
+            "config": dict(CONFIG),
+            "exported_at": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "keys_present": sum(1 for v in CONFIG.values() if v),
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_export_config"}
 
 
 async def research_export_strategies(format: str = "json") -> dict[str, Any]:
@@ -35,25 +38,30 @@ async def research_export_strategies(format: str = "json") -> dict[str, Any]:
         }
     except ImportError:
         return {"error": "strategies module not available", "total": 0}
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_export_strategies"}
 
 
 async def research_export_cache(limit: int = 50) -> dict[str, Any]:
     """Export recent cache entries metadata (not content)."""
-    from loom.cache import get_cache
+    try:
+        from loom.cache import get_cache
 
-    cache = get_cache()
-    cache_dir = Path(cache.base_dir)
-    entries = []
-    for f in sorted(
-        cache_dir.glob("**/*.json"),  # noqa: ASYNC240
-        key=lambda x: x.stat().st_mtime,
-        reverse=True,
-    )[:limit]:
-        entries.append(
-            {
-                "path": str(f.relative_to(cache_dir)),
-                "size_kb": f.stat().st_size / 1024,
-                "modified": time.ctime(f.stat().st_mtime),
-            }
-        )
-    return {"entries": entries, "total_found": len(entries), "cache_dir": str(cache_dir)}
+        cache = get_cache()
+        cache_dir = Path(cache.base_dir)
+        entries = []
+        for f in sorted(
+            cache_dir.glob("**/*.json"),  # noqa: ASYNC240
+            key=lambda x: x.stat().st_mtime,
+            reverse=True,
+        )[:limit]:
+            entries.append(
+                {
+                    "path": str(f.relative_to(cache_dir)),
+                    "size_kb": f.stat().st_size / 1024,
+                    "modified": time.ctime(f.stat().st_mtime),
+                }
+            )
+        return {"entries": entries, "total_found": len(entries), "cache_dir": str(cache_dir)}
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_export_cache"}

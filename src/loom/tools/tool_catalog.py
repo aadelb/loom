@@ -9,7 +9,10 @@ Enables:
 
 from __future__ import annotations
 
+import logging
 from typing import Any
+
+logger = logging.getLogger("loom.tools.tool_catalog")
 
 
 # ============================================================================
@@ -731,37 +734,41 @@ async def research_tool_catalog(
     Returns:
         Dict with: tools (list), categories, capabilities, total_count
     """
-    tools = []
+    try:
+        tools = []
 
-    for tool_name, metadata in TOOL_REGISTRY.items():
-        # Apply filters
-        if category and metadata["category"] != category:
-            continue
-        if capability and capability not in metadata["capabilities"]:
-            continue
+        for tool_name, metadata in TOOL_REGISTRY.items():
+            # Apply filters
+            if category and metadata["category"] != category:
+                continue
+            if capability and capability not in metadata["capabilities"]:
+                continue
 
-        tools.append({
-            "name": tool_name,
-            "category": metadata["category"],
-            "subcategory": metadata["subcategory"],
-            "description": metadata["description"],
-            "capabilities": metadata["capabilities"],
-            "input_types": metadata["input_types"],
-            "output_types": metadata["output_types"],
-            "dependencies": metadata["dependencies"],
-            "connects_to": metadata["connects_to"],
-        })
+            tools.append({
+                "name": tool_name,
+                "category": metadata["category"],
+                "subcategory": metadata["subcategory"],
+                "description": metadata["description"],
+                "capabilities": metadata["capabilities"],
+                "input_types": metadata["input_types"],
+                "output_types": metadata["output_types"],
+                "dependencies": metadata["dependencies"],
+                "connects_to": metadata["connects_to"],
+            })
 
-    return {
-        "tools": tools,
-        "total_count": len(tools),
-        "categories": TOOL_CATEGORIES,
-        "capabilities": CAPABILITIES,
-        "filter_applied": {
-            "category": category,
-            "capability": capability,
-        },
-    }
+        return {
+            "tools": tools,
+            "total_count": len(tools),
+            "categories": TOOL_CATEGORIES,
+            "capabilities": CAPABILITIES,
+            "filter_applied": {
+                "category": category,
+                "capability": capability,
+            },
+        }
+    except Exception as exc:
+        logger.exception("research_tool_catalog failed")
+        return {"error": str(exc), "tool": "research_tool_catalog"}
 
 
 async def research_tool_graph() -> dict[str, Any]:
@@ -772,52 +779,56 @@ async def research_tool_graph() -> dict[str, Any]:
     Returns:
         Dict with: nodes, edges, clusters (groups of connected tools)
     """
-    # Build nodes
-    nodes = []
-    for tool_name, metadata in TOOL_REGISTRY.items():
-        nodes.append({
-            "id": tool_name,
-            "label": tool_name.replace("research_", "").replace("_", " ").title(),
-            "category": metadata["category"],
-            "subcategory": metadata["subcategory"],
-            "capabilities": metadata["capabilities"],
-            "input_types": metadata["input_types"],
-            "output_types": metadata["output_types"],
-        })
+    try:
+        # Build nodes
+        nodes = []
+        for tool_name, metadata in TOOL_REGISTRY.items():
+            nodes.append({
+                "id": tool_name,
+                "label": tool_name.replace("research_", "").replace("_", " ").title(),
+                "category": metadata["category"],
+                "subcategory": metadata["subcategory"],
+                "capabilities": metadata["capabilities"],
+                "input_types": metadata["input_types"],
+                "output_types": metadata["output_types"],
+            })
 
-    # Build edges from connects_to relationships
-    edges = []
-    edge_set = set()
+        # Build edges from connects_to relationships
+        edges = []
+        edge_set = set()
 
-    for tool_name, metadata in TOOL_REGISTRY.items():
-        for target in metadata["connects_to"]:
-            if target in TOOL_REGISTRY:
-                edge_id = (tool_name, target)
-                if edge_id not in edge_set:
-                    edges.append({
-                        "source": tool_name,
-                        "target": target,
-                        "type": "feeds_into",
-                        "reason": f"{metadata['output_types']} → {TOOL_REGISTRY[target]['input_types']}",
-                    })
-                    edge_set.add(edge_id)
+        for tool_name, metadata in TOOL_REGISTRY.items():
+            for target in metadata["connects_to"]:
+                if target in TOOL_REGISTRY:
+                    edge_id = (tool_name, target)
+                    if edge_id not in edge_set:
+                        edges.append({
+                            "source": tool_name,
+                            "target": target,
+                            "type": "feeds_into",
+                            "reason": f"{metadata['output_types']} → {TOOL_REGISTRY[target]['input_types']}",
+                        })
+                        edge_set.add(edge_id)
 
-    # Identify clusters (category-based grouping)
-    clusters = {}
-    for node in nodes:
-        category = node["category"]
-        if category not in clusters:
-            clusters[category] = []
-        clusters[category].append(node["id"])
+        # Identify clusters (category-based grouping)
+        clusters = {}
+        for node in nodes:
+            category = node["category"]
+            if category not in clusters:
+                clusters[category] = []
+            clusters[category].append(node["id"])
 
-    return {
-        "nodes": nodes,
-        "edges": edges,
-        "clusters": clusters,
-        "node_count": len(nodes),
-        "edge_count": len(edges),
-        "cluster_count": len(clusters),
-    }
+        return {
+            "nodes": nodes,
+            "edges": edges,
+            "clusters": clusters,
+            "node_count": len(nodes),
+            "edge_count": len(edges),
+            "cluster_count": len(clusters),
+        }
+    except Exception as exc:
+        logger.exception("research_tool_graph failed")
+        return {"error": str(exc), "tool": "research_tool_graph"}
 
 
 async def research_tool_pipeline(
@@ -836,46 +847,50 @@ async def research_tool_pipeline(
     Returns:
         Dict with: goal, pipeline (steps), estimated_time_ms, success
     """
-    # Simple goal→category mapping
-    goal_lower = goal.lower()
-    if "domain" in goal_lower or "whois" in goal_lower:
-        target_category = "osint"
-    elif "vulnerability" in goal_lower or "security" in goal_lower:
-        target_category = "security"
-    elif "search" in goal_lower or "find" in goal_lower:
-        target_category = "search"
-    elif "extract" in goal_lower or "parse" in goal_lower:
-        target_category = "document"
-    elif "summarize" in goal_lower or "analyze" in goal_lower:
-        target_category = "llm"
-    else:
-        target_category = None
+    try:
+        # Simple goal→category mapping
+        goal_lower = goal.lower()
+        if "domain" in goal_lower or "whois" in goal_lower:
+            target_category = "osint"
+        elif "vulnerability" in goal_lower or "security" in goal_lower:
+            target_category = "security"
+        elif "search" in goal_lower or "find" in goal_lower:
+            target_category = "search"
+        elif "extract" in goal_lower or "parse" in goal_lower:
+            target_category = "document"
+        elif "summarize" in goal_lower or "analyze" in goal_lower:
+            target_category = "llm"
+        else:
+            target_category = None
 
-    # Find tools in target category
-    pipeline = []
-    if target_category:
-        for tool_name, metadata in TOOL_REGISTRY.items():
-            if metadata["category"] == target_category:
-                pipeline.append({
-                    "step": len(pipeline) + 1,
-                    "tool": tool_name,
-                    "category": metadata["category"],
-                    "description": metadata["description"],
-                    "rationale": f"Category match: {target_category}",
-                    "input_from": "user" if len(pipeline) == 0 else pipeline[-1]["tool"],
-                    "output_to": "next_step",
-                })
-                if len(pipeline) >= max_steps:
-                    break
+        # Find tools in target category
+        pipeline = []
+        if target_category:
+            for tool_name, metadata in TOOL_REGISTRY.items():
+                if metadata["category"] == target_category:
+                    pipeline.append({
+                        "step": len(pipeline) + 1,
+                        "tool": tool_name,
+                        "category": metadata["category"],
+                        "description": metadata["description"],
+                        "rationale": f"Category match: {target_category}",
+                        "input_from": "user" if len(pipeline) == 0 else pipeline[-1]["tool"],
+                        "output_to": "next_step",
+                    })
+                    if len(pipeline) >= max_steps:
+                        break
 
-    return {
-        "goal": goal,
-        "target_category": target_category,
-        "pipeline": pipeline,
-        "pipeline_length": len(pipeline),
-        "estimated_time_ms": len(pipeline) * 1000,
-        "success": len(pipeline) > 0,
-    }
+        return {
+            "goal": goal,
+            "target_category": target_category,
+            "pipeline": pipeline,
+            "pipeline_length": len(pipeline),
+            "estimated_time_ms": len(pipeline) * 1000,
+            "success": len(pipeline) > 0,
+        }
+    except Exception as exc:
+        logger.exception("research_tool_pipeline failed")
+        return {"error": str(exc), "tool": "research_tool_pipeline"}
 
 
 async def research_tool_standalone(tool_name: str) -> dict[str, Any]:
@@ -887,39 +902,43 @@ async def research_tool_standalone(tool_name: str) -> dict[str, Any]:
     Returns:
         Dict with: description, parameters, examples, related_tools, pipelines
     """
-    if tool_name not in TOOL_REGISTRY:
-        return {
-            "error": f"Tool '{tool_name}' not found",
-            "available_tools": list(TOOL_REGISTRY.keys())[:10],
+    try:
+        if tool_name not in TOOL_REGISTRY:
+            return {
+                "error": f"Tool '{tool_name}' not found",
+                "available_tools": list(TOOL_REGISTRY.keys())[:10],
+            }
+
+        metadata = TOOL_REGISTRY[tool_name]
+
+        # Find related tools
+        related = {
+            "dependencies": metadata["dependencies"],
+            "connects_to": metadata["connects_to"],
+            "same_category": [
+                name for name, m in TOOL_REGISTRY.items()
+                if m["category"] == metadata["category"] and name != tool_name
+            ][:5],
         }
 
-    metadata = TOOL_REGISTRY[tool_name]
-
-    # Find related tools
-    related = {
-        "dependencies": metadata["dependencies"],
-        "connects_to": metadata["connects_to"],
-        "same_category": [
-            name for name, m in TOOL_REGISTRY.items()
-            if m["category"] == metadata["category"] and name != tool_name
-        ][:5],
-    }
-
-    return {
-        "name": tool_name,
-        "description": metadata["description"],
-        "category": metadata["category"],
-        "subcategory": metadata["subcategory"],
-        "capabilities": metadata["capabilities"],
-        "input_types": metadata["input_types"],
-        "output_types": metadata["output_types"],
-        "related_tools": related,
-        "typical_pipelines": [
-            f"{dep} → {tool_name}" for dep in metadata["dependencies"]
-        ] + [
-            f"{tool_name} → {target}" for target in metadata["connects_to"]
-        ],
-    }
+        return {
+            "name": tool_name,
+            "description": metadata["description"],
+            "category": metadata["category"],
+            "subcategory": metadata["subcategory"],
+            "capabilities": metadata["capabilities"],
+            "input_types": metadata["input_types"],
+            "output_types": metadata["output_types"],
+            "related_tools": related,
+            "typical_pipelines": [
+                f"{dep} → {tool_name}" for dep in metadata["dependencies"]
+            ] + [
+                f"{tool_name} → {target}" for target in metadata["connects_to"]
+            ],
+        }
+    except Exception as exc:
+        logger.exception("research_tool_standalone failed")
+        return {"error": str(exc), "tool": "research_tool_standalone"}
 
 
 # ============================================================================

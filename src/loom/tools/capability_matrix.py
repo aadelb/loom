@@ -182,28 +182,31 @@ async def research_capability_matrix(category: str = "all") -> dict[str, Any]:
     Returns:
         Dict with total_tools, categories count, and full matrix
     """
-    global _MATRIX_CACHE
+    try:
+        global _MATRIX_CACHE
 
-    if _MATRIX_CACHE is None:
-        async with _MATRIX_LOCK:
-            if _MATRIX_CACHE is None:
-                _MATRIX_CACHE = _build_matrix()
+        if _MATRIX_CACHE is None:
+            async with _MATRIX_LOCK:
+                if _MATRIX_CACHE is None:
+                    _MATRIX_CACHE = _build_matrix()
 
-    result = {
-        "total_tools": _MATRIX_CACHE["total_tools"],
-        "categories": _MATRIX_CACHE["categories"],
-    }
+        result = {
+            "total_tools": _MATRIX_CACHE["total_tools"],
+            "categories": _MATRIX_CACHE["categories"],
+        }
 
-    if category == "all":
-        result["matrix"] = _MATRIX_CACHE["matrix"]
-    else:
-        result["matrix"] = [
-            t for t in _MATRIX_CACHE["matrix"]
-            if t["category"] == category
-        ]
-        result["total_matching"] = len(result["matrix"])
+        if category == "all":
+            result["matrix"] = _MATRIX_CACHE["matrix"]
+        else:
+            result["matrix"] = [
+                t for t in _MATRIX_CACHE["matrix"]
+                if t["category"] == category
+            ]
+            result["total_matching"] = len(result["matrix"])
 
-    return result
+        return result
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_capability_matrix"}
 
 
 async def research_find_tools_by_capability(
@@ -223,42 +226,45 @@ async def research_find_tools_by_capability(
     Returns:
         Dict with filters_applied, matching_tools, and total_matches
     """
-    global _MATRIX_CACHE
+    try:
+        global _MATRIX_CACHE
 
-    if _MATRIX_CACHE is None:
-        async with _MATRIX_LOCK:
-            if _MATRIX_CACHE is None:
-                _MATRIX_CACHE = _build_matrix()
+        if _MATRIX_CACHE is None:
+            async with _MATRIX_LOCK:
+                if _MATRIX_CACHE is None:
+                    _MATRIX_CACHE = _build_matrix()
 
-    matching = _MATRIX_CACHE["matrix"]
-    filters = {}
+        matching = _MATRIX_CACHE["matrix"]
+        filters = {}
 
-    if input_type:
-        matching = [t for t in matching if input_type in t["input_types"]]
-        filters["input_type"] = input_type
+        if input_type:
+            matching = [t for t in matching if input_type in t["input_types"]]
+            filters["input_type"] = input_type
 
-    if category:
-        matching = [t for t in matching if t["category"] == category]
-        filters["category"] = category
+        if category:
+            matching = [t for t in matching if t["category"] == category]
+            filters["category"] = category
 
-    if requires_network is not None:
-        matching = [t for t in matching if t["requires_network"] == requires_network]
-        filters["requires_network"] = requires_network
+        if requires_network is not None:
+            matching = [t for t in matching if t["requires_network"] == requires_network]
+            filters["requires_network"] = requires_network
 
-    if speed:
-        matching = [t for t in matching if t["speed"] == speed]
-        filters["speed"] = speed
+        if speed:
+            matching = [t for t in matching if t["speed"] == speed]
+            filters["speed"] = speed
 
-    return {
-        "filters_applied": filters,
-        "total_matches": len(matching),
-        "matching_tools": [
-            {
-                "tool": t["tool"],
-                "module": t["module"],
-                "input_types": t["input_types"],
-                "category": t["category"],
-            }
-            for t in matching
-        ],
-    }
+        return {
+            "filters_applied": filters,
+            "total_matches": len(matching),
+            "matching_tools": [
+                {
+                    "tool": t["tool"],
+                    "module": t["module"],
+                    "input_types": t["input_types"],
+                    "category": t["category"],
+                }
+                for t in matching
+            ],
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_find_tools_by_capability"}

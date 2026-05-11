@@ -76,33 +76,36 @@ async def research_vault_store(
     Returns:
         Dict with keys: stored (bool), name, category, value_prefix (first 4 chars)
     """
-    if not name or not value:
-        return {"stored": False, "error": "name and value required"}
+    try:
+        if not name or not value:
+            return {"stored": False, "error": "name and value required"}
 
-    vault = _load_vault()
-    key = _derive_key()
+        vault = _load_vault()
+        key = _derive_key()
 
-    # Encrypt the value
-    encrypted = _xor_cipher(value.encode(), key)
-    encoded = base64.b64encode(encrypted).decode("ascii")
+        # Encrypt the value
+        encrypted = _xor_cipher(value.encode(), key)
+        encoded = base64.b64encode(encrypted).decode("ascii")
 
-    # Store entry with metadata
-    vault[name] = {
-        "encrypted": encoded,
-        "category": category,
-        "stored_at": datetime.now(UTC).isoformat(),
-        "accessed_at": datetime.now(UTC).isoformat(),
-    }
+        # Store entry with metadata
+        vault[name] = {
+            "encrypted": encoded,
+            "category": category,
+            "stored_at": datetime.now(UTC).isoformat(),
+            "accessed_at": datetime.now(UTC).isoformat(),
+        }
 
-    _save_vault(vault)
-    logger.info("credential_stored name=%s category=%s", name, category)
+        _save_vault(vault)
+        logger.info("credential_stored name=%s category=%s", name, category)
 
-    return {
-        "stored": True,
-        "name": name,
-        "category": category,
-        "value_prefix": value[:4] if len(value) >= 4 else "****",
-    }
+        return {
+            "stored": True,
+            "name": name,
+            "category": category,
+            "value_prefix": value[:4] if len(value) >= 4 else "****",
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_vault_store"}
 
 
 async def research_vault_retrieve(name: str) -> dict[str, Any]:
@@ -114,15 +117,15 @@ async def research_vault_retrieve(name: str) -> dict[str, Any]:
     Returns:
         Dict with keys: name, value, category, last_accessed
     """
-    vault = _load_vault()
-
-    if name not in vault:
-        return {"error": f"credential not found: {name}"}
-
-    entry = vault[name]
-    key = _derive_key()
-
     try:
+        vault = _load_vault()
+
+        if name not in vault:
+            return {"error": f"credential not found: {name}"}
+
+        entry = vault[name]
+        key = _derive_key()
+
         # Decrypt the value
         encrypted = base64.b64decode(entry["encrypted"])
         decrypted = _xor_cipher(encrypted, key).decode("utf-8", errors="replace")
@@ -139,9 +142,8 @@ async def research_vault_retrieve(name: str) -> dict[str, Any]:
             "category": entry.get("category", "unknown"),
             "last_accessed": entry.get("accessed_at"),
         }
-    except Exception as e:
-        logger.error("credential_retrieve_error name=%s: %s", name, e)
-        return {"error": f"decryption failed: {e}"}
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_vault_retrieve"}
 
 
 async def research_vault_list() -> dict[str, Any]:
@@ -150,20 +152,23 @@ async def research_vault_list() -> dict[str, Any]:
     Returns:
         Dict with keys: credentials (list of dicts), total
     """
-    vault = _load_vault()
-    credentials = []
+    try:
+        vault = _load_vault()
+        credentials = []
 
-    for name, entry in vault.items():
-        credentials.append({
-            "name": name,
-            "category": entry.get("category", "unknown"),
-            "stored_at": entry.get("stored_at"),
-            "value_prefix": "****",  # Never expose prefix on list
-        })
+        for name, entry in vault.items():
+            credentials.append({
+                "name": name,
+                "category": entry.get("category", "unknown"),
+                "stored_at": entry.get("stored_at"),
+                "value_prefix": "****",  # Never expose prefix on list
+            })
 
-    logger.info("vault_listed count=%d", len(credentials))
+        logger.info("vault_listed count=%d", len(credentials))
 
-    return {
-        "credentials": credentials,
-        "total": len(credentials),
-    }
+        return {
+            "credentials": credentials,
+            "total": len(credentials),
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_vault_list"}

@@ -278,27 +278,30 @@ async def research_audit_query(
     Raises:
         ValueError: If parameters are out of range
     """
-    # Validate input parameters
-    if not isinstance(hours, int) or hours < 1 or hours > 720:
-        raise ValueError("hours must be between 1 and 720")
-    if not isinstance(limit, int) or limit < 1 or limit > 1000:
-        raise ValueError("limit must be between 1 and 1000")
+    try:
+        # Validate input parameters
+        if not isinstance(hours, int) or hours < 1 or hours > 720:
+            raise ValueError("hours must be between 1 and 720")
+        if not isinstance(limit, int) or limit < 1 or limit > 1000:
+            raise ValueError("limit must be between 1 and 1000")
 
-    start_time = datetime.now(UTC) - timedelta(hours=hours)
-    query_start = datetime.now(UTC)
+        start_time = datetime.now(UTC) - timedelta(hours=hours)
+        query_start = datetime.now(UTC)
 
-    # Load entries from daily JSONL files
-    entries = _load_daily_jsonl_entries(tool_name, hours, limit)
+        # Load entries from daily JSONL files
+        entries = _load_daily_jsonl_entries(tool_name, hours, limit)
 
-    query_duration = (datetime.now(UTC) - query_start).total_seconds() * 1000
+        query_duration = (datetime.now(UTC) - query_start).total_seconds() * 1000
 
-    return {
-        "entries": entries,
-        "count": len(entries),
-        "total_count": len(entries),  # Approximation; actual total would require scan
-        "timestamp": datetime.now(UTC).isoformat(),
-        "query_duration_ms": query_duration,
-    }
+        return {
+            "entries": entries,
+            "count": len(entries),
+            "total_count": len(entries),  # Approximation; actual total would require scan
+            "timestamp": datetime.now(UTC).isoformat(),
+            "query_duration_ms": query_duration,
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_audit_query"}
 
 
 async def research_audit_stats(
@@ -331,95 +334,98 @@ async def research_audit_stats(
     Raises:
         ValueError: If hours out of range
     """
-    # Validate input parameters
-    if not isinstance(hours, int) or hours < 1 or hours > 720:
-        raise ValueError("hours must be between 1 and 720")
+    try:
+        # Validate input parameters
+        if not isinstance(hours, int) or hours < 1 or hours > 720:
+            raise ValueError("hours must be between 1 and 720")
 
-    # Load all entries for the time period
-    entries = _load_daily_jsonl_entries("", hours, 10000)
+        # Load all entries for the time period
+        entries = _load_daily_jsonl_entries("", hours, 10000)
 
-    if not entries:
+        if not entries:
+            return {
+                "total_calls": 0,
+                "successful_calls": 0,
+                "failed_calls": 0,
+                "timeout_calls": 0,
+                "other_error_calls": 0,
+                "top_tools": {},
+                "top_errors": {},
+                "avg_duration_ms": 0.0,
+                "min_duration_ms": 0.0,
+                "max_duration_ms": 0.0,
+                "total_duration_ms": 0.0,
+                "total_cost_credits": 0.0,
+                "timestamp": datetime.now(UTC).isoformat(),
+            }
+
+        # Calculate statistics
+        tool_counts: dict[str, int] = {}
+        error_counts: dict[str, int] = {}
+        durations: list[int] = []
+        successful_count = 0
+        failed_count = 0
+        timeout_count = 0
+        other_error_count = 0
+
+        for entry in entries:
+            # Count by tool
+            tool_name = entry.get("tool_name", "unknown")
+            tool_counts[tool_name] = tool_counts.get(tool_name, 0) + 1
+
+            # Count by status
+            status = entry.get("status", "unknown")
+            if status == "success":
+                successful_count += 1
+            elif status == "error":
+                failed_count += 1
+            elif status == "timeout":
+                timeout_count += 1
+            else:
+                other_error_count += 1
+
+            # Collect durations
+            duration_ms = entry.get("duration_ms", 0)
+            if duration_ms > 0:
+                durations.append(duration_ms)
+
+        # Calculate top tools (sort by count, descending)
+        top_tools = dict(
+            sorted(tool_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+        )
+
+        # Calculate duration statistics
+        avg_duration = sum(durations) / len(durations) if durations else 0.0
+        min_duration = min(durations) if durations else 0.0
+        max_duration = max(durations) if durations else 0.0
+        total_duration = sum(durations)
+
+        # Estimate costs (1 credit per second, minimum 1 credit per call)
+        total_cost = sum(max(1, int(d / 1000)) for d in durations)
+
+        # Top errors (errors are in the status field or inferred)
+        # For now, track "error" and "timeout" as error types
+        if failed_count > 0:
+            error_counts["error"] = failed_count
+        if timeout_count > 0:
+            error_counts["timeout"] = timeout_count
+        if other_error_count > 0:
+            error_counts["other"] = other_error_count
+
         return {
-            "total_calls": 0,
-            "successful_calls": 0,
-            "failed_calls": 0,
-            "timeout_calls": 0,
-            "other_error_calls": 0,
-            "top_tools": {},
-            "top_errors": {},
-            "avg_duration_ms": 0.0,
-            "min_duration_ms": 0.0,
-            "max_duration_ms": 0.0,
-            "total_duration_ms": 0.0,
-            "total_cost_credits": 0.0,
+            "total_calls": len(entries),
+            "successful_calls": successful_count,
+            "failed_calls": failed_count,
+            "timeout_calls": timeout_count,
+            "other_error_calls": other_error_count,
+            "top_tools": top_tools,
+            "top_errors": error_counts,
+            "avg_duration_ms": round(avg_duration, 2),
+            "min_duration_ms": min_duration,
+            "max_duration_ms": max_duration,
+            "total_duration_ms": total_duration,
+            "total_cost_credits": total_cost,
             "timestamp": datetime.now(UTC).isoformat(),
         }
-
-    # Calculate statistics
-    tool_counts: dict[str, int] = {}
-    error_counts: dict[str, int] = {}
-    durations: list[int] = []
-    successful_count = 0
-    failed_count = 0
-    timeout_count = 0
-    other_error_count = 0
-
-    for entry in entries:
-        # Count by tool
-        tool_name = entry.get("tool_name", "unknown")
-        tool_counts[tool_name] = tool_counts.get(tool_name, 0) + 1
-
-        # Count by status
-        status = entry.get("status", "unknown")
-        if status == "success":
-            successful_count += 1
-        elif status == "error":
-            failed_count += 1
-        elif status == "timeout":
-            timeout_count += 1
-        else:
-            other_error_count += 1
-
-        # Collect durations
-        duration_ms = entry.get("duration_ms", 0)
-        if duration_ms > 0:
-            durations.append(duration_ms)
-
-    # Calculate top tools (sort by count, descending)
-    top_tools = dict(
-        sorted(tool_counts.items(), key=lambda x: x[1], reverse=True)[:10]
-    )
-
-    # Calculate duration statistics
-    avg_duration = sum(durations) / len(durations) if durations else 0.0
-    min_duration = min(durations) if durations else 0.0
-    max_duration = max(durations) if durations else 0.0
-    total_duration = sum(durations)
-
-    # Estimate costs (1 credit per second, minimum 1 credit per call)
-    total_cost = sum(max(1, int(d / 1000)) for d in durations)
-
-    # Top errors (errors are in the status field or inferred)
-    # For now, track "error" and "timeout" as error types
-    if failed_count > 0:
-        error_counts["error"] = failed_count
-    if timeout_count > 0:
-        error_counts["timeout"] = timeout_count
-    if other_error_count > 0:
-        error_counts["other"] = other_error_count
-
-    return {
-        "total_calls": len(entries),
-        "successful_calls": successful_count,
-        "failed_calls": failed_count,
-        "timeout_calls": timeout_count,
-        "other_error_calls": other_error_count,
-        "top_tools": top_tools,
-        "top_errors": error_counts,
-        "avg_duration_ms": round(avg_duration, 2),
-        "min_duration_ms": min_duration,
-        "max_duration_ms": max_duration,
-        "total_duration_ms": total_duration,
-        "total_cost_credits": total_cost,
-        "timestamp": datetime.now(UTC).isoformat(),
-    }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_audit_stats"}

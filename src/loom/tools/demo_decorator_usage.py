@@ -40,21 +40,25 @@ def research_social_graph_demo(query: str, depth: int = 2) -> dict[str, Any]:
     Returns:
         Dictionary containing social graph analysis results
     """
-    # Validation
-    if not query or len(query) > 500:
-        raise ValueError("Query must be non-empty and under 500 chars")
+    try:
+        # Validation
+        if not query or len(query) > 500:
+            raise ValueError("Query must be non-empty and under 500 chars")
 
-    if not 1 <= depth <= 3:
-        raise ValueError("Depth must be between 1 and 3")
+        if not 1 <= depth <= 3:
+            raise ValueError("Depth must be between 1 and 3")
 
-    # Actual implementation would do real work here
-    return {
-        "query": query,
-        "depth": depth,
-        "connections": [],
-        "relationships": {},
-        "platform_presence": {},
-    }
+        # Actual implementation would do real work here
+        return {
+            "query": query,
+            "depth": depth,
+            "connections": [],
+            "relationships": {},
+            "platform_presence": {},
+        }
+    except Exception as exc:
+        logger.exception("research_social_graph_demo failed")
+        return {"error": str(exc), "tool": "research_social_graph_demo"}
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -85,26 +89,30 @@ async def research_threat_profile_demo(
     Returns:
         Threat profile with infra, campaigns, and indicators
     """
-    # Validation
-    if not target or len(target) > 255:
-        raise ValueError("Target must be 1-255 characters")
+    try:
+        # Validation
+        if not target or len(target) > 255:
+            raise ValueError("Target must be 1-255 characters")
 
-    if max_results < 1 or max_results > 1000:
-        raise ValueError("max_results must be 1-1000")
+        if max_results < 1 or max_results > 1000:
+            raise ValueError("max_results must be 1-1000")
 
-    # Simulate async work
-    import asyncio
+        # Simulate async work
+        import asyncio
 
-    await asyncio.sleep(0)
+        await asyncio.sleep(0)
 
-    return {
-        "target": target,
-        "infrastructure": [] if include_infrastructure else None,
-        "campaigns": [] if include_campaigns else None,
-        "indicators": [] if include_indicators else None,
-        "confidence": 0.0,
-        "last_seen": None,
-    }
+        return {
+            "target": target,
+            "infrastructure": [] if include_infrastructure else None,
+            "campaigns": [] if include_campaigns else None,
+            "indicators": [] if include_indicators else None,
+            "confidence": 0.0,
+            "last_seen": None,
+        }
+    except Exception as exc:
+        logger.exception("research_threat_profile_demo failed")
+        return {"error": str(exc), "tool": "research_threat_profile_demo"}
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -131,30 +139,34 @@ async def research_code_analysis_demo(
     Returns:
         Analysis results with vulnerabilities and recommendations
     """
-    # Validation
-    if not code_snippet or len(code_snippet) > 50000:
-        raise ValueError("Code snippet must be 1-50000 characters")
+    try:
+        # Validation
+        if not code_snippet or len(code_snippet) > 50000:
+            raise ValueError("Code snippet must be 1-50000 characters")
 
-    if language not in ("python", "javascript", "go", "rust", "java"):
-        raise ValueError(f"Unsupported language: {language}")
+        if language not in ("python", "javascript", "go", "rust", "java"):
+            raise ValueError(f"Unsupported language: {language}")
 
-    if severity_filter not in ("all", "high", "critical"):
-        raise ValueError(f"Invalid severity filter: {severity_filter}")
+        if severity_filter not in ("all", "high", "critical"):
+            raise ValueError(f"Invalid severity filter: {severity_filter}")
 
-    import asyncio
+        import asyncio
 
-    await asyncio.sleep(0)
+        await asyncio.sleep(0)
 
-    return {
-        "language": language,
-        "vulnerabilities": [],
-        "summary": {
-            "total": 0,
-            "critical": 0,
-            "high": 0,
-        },
-        "recommendations": [],
-    }
+        return {
+            "language": language,
+            "vulnerabilities": [],
+            "summary": {
+                "total": 0,
+                "critical": 0,
+                "high": 0,
+            },
+            "recommendations": [],
+        }
+    except Exception as exc:
+        logger.exception("research_code_analysis_demo failed")
+        return {"error": str(exc), "tool": "research_code_analysis_demo"}
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -183,33 +195,37 @@ async def research_data_transform_demo(
     Returns:
         Transformation results with statistics
     """
-    # Handle string input for input_data
-    if isinstance(input_format, str) and input_format.lower() not in {"json", "csv", "xml", "parquet"}:
-        return {"transformed": input_format, "format": "text"}
+    try:
+        # Handle string input for input_data
+        if isinstance(input_format, str) and input_format.lower() not in {"json", "csv", "xml", "parquet"}:
+            return {"transformed": input_format, "format": "text"}
 
-    # Validation
-    supported_formats = {"json", "csv", "xml", "parquet"}
-    if input_format not in supported_formats:
-        raise ValueError(f"Unsupported input format: {input_format}")
+        # Validation
+        supported_formats = {"json", "csv", "xml", "parquet"}
+        if input_format not in supported_formats:
+            raise ValueError(f"Unsupported input format: {input_format}")
 
-    if output_format not in supported_formats:
-        raise ValueError(f"Unsupported output format: {output_format}")
+        if output_format not in supported_formats:
+            raise ValueError(f"Unsupported output format: {output_format}")
 
-    if batch_size < 1 or batch_size > 10000:
-        raise ValueError("batch_size must be 1-10000")
+        if batch_size < 1 or batch_size > 10000:
+            raise ValueError("batch_size must be 1-10000")
 
-    import asyncio
+        import asyncio
 
-    await asyncio.sleep(0)
+        await asyncio.sleep(0)
 
-    return {
-        "input_format": input_format,
-        "output_format": output_format,
-        "records_processed": 0,
-        "batches_processed": 0,
-        "errors": 0,
-        "transformation": transformation,
-    }
+        return {
+            "input_format": input_format,
+            "output_format": output_format,
+            "records_processed": 0,
+            "batches_processed": 0,
+            "errors": 0,
+            "transformation": transformation,
+        }
+    except Exception as exc:
+        logger.exception("research_data_transform_demo failed")
+        return {"error": str(exc), "tool": "research_data_transform_demo"}
 
 
 # ──────────────────────────────────────────────────────────────────────

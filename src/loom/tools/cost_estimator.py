@@ -184,42 +184,45 @@ async def research_estimate_cost(
             - free_alternatives: list of free/cheap options
             - cost_per_1m: cost per 1M tokens for reference
     """
-    if params is None:
-        params = {}
+    try:
+        if params is None:
+            params = {}
 
-    selected_provider = _select_provider(provider)
-    estimated_tokens = _estimate_tokens(tool_name, params)
+        selected_provider = _select_provider(provider)
+        estimated_tokens = _estimate_tokens(tool_name, params)
 
-    # Assume 70% input, 30% output for LLM calls
-    input_tokens = int(estimated_tokens * 0.7)
-    output_tokens = int(estimated_tokens * 0.3)
+        # Assume 70% input, 30% output for LLM calls
+        input_tokens = int(estimated_tokens * 0.7)
+        output_tokens = int(estimated_tokens * 0.3)
 
-    estimated_cost = _calculate_cost(selected_provider, input_tokens, output_tokens)
-    free_alts = _find_free_alternatives(tool_name)
+        estimated_cost = _calculate_cost(selected_provider, input_tokens, output_tokens)
+        free_alts = _find_free_alternatives(tool_name)
 
-    # Track in history
-    _cost_history.append({
-        "timestamp": datetime.now(UTC).isoformat(),
-        "tool": tool_name,
-        "provider": selected_provider,
-        "estimated_cost_usd": estimated_cost,
-    })
+        # Track in history
+        _cost_history.append({
+            "timestamp": datetime.now(UTC).isoformat(),
+            "tool": tool_name,
+            "provider": selected_provider,
+            "estimated_cost_usd": estimated_cost,
+        })
 
-    return {
-        "tool": tool_name,
-        "provider": selected_provider,
-        "estimated_tokens": {
-            "input": input_tokens,
-            "output": output_tokens,
-            "total": estimated_tokens,
-        },
-        "estimated_cost_usd": round(estimated_cost, 6),
-        "free_alternatives": free_alts,
-        "cost_per_1m_tokens": {
-            "input": COST_MAP[selected_provider]["input"],
-            "output": COST_MAP[selected_provider]["output"],
-        },
-    }
+        return {
+            "tool": tool_name,
+            "provider": selected_provider,
+            "estimated_tokens": {
+                "input": input_tokens,
+                "output": output_tokens,
+                "total": estimated_tokens,
+            },
+            "estimated_cost_usd": round(estimated_cost, 6),
+            "free_alternatives": free_alts,
+            "cost_per_1m_tokens": {
+                "input": COST_MAP[selected_provider]["input"],
+                "output": COST_MAP[selected_provider]["output"],
+            },
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_estimate_cost"}
 
 
 async def research_cost_summary(period: str = "today") -> dict[str, Any]:
@@ -241,50 +244,53 @@ async def research_cost_summary(period: str = "today") -> dict[str, Any]:
             - cheapest_provider: provider with lowest avg cost
             - most_expensive_tool: tool with highest total cost
     """
-    if not _cost_history:
+    try:
+        if not _cost_history:
+            return {
+                "period": period,
+                "total_estimated_usd": 0.0,
+                "by_provider": {},
+                "total_calls": 0,
+                "avg_cost_per_call": 0.0,
+                "cheapest_provider": None,
+                "most_expensive_tool": None,
+            }
+
+        # Filter by period
+        now = datetime.now(UTC)
+        filtered = _cost_history
+
+        if period == "today":
+            filtered = [
+                item for item in _cost_history
+                if datetime.fromisoformat(item["timestamp"]).date() == now.date()
+            ]
+
+        # Aggregate stats
+        total_cost = sum(item["estimated_cost_usd"] for item in filtered)
+        provider_costs: dict[str, float] = {}
+        tool_costs: dict[str, float] = {}
+
+        for item in filtered:
+            prov = item["provider"]
+            tool = item["tool"]
+            cost = item["estimated_cost_usd"]
+
+            provider_costs[prov] = provider_costs.get(prov, 0.0) + cost
+            tool_costs[tool] = tool_costs.get(tool, 0.0) + cost
+
+        cheapest_prov = min(provider_costs, key=provider_costs.get) if provider_costs else None
+        expensive_tool = max(tool_costs, key=tool_costs.get) if tool_costs else None
+
         return {
             "period": period,
-            "total_estimated_usd": 0.0,
-            "by_provider": {},
-            "total_calls": 0,
-            "avg_cost_per_call": 0.0,
-            "cheapest_provider": None,
-            "most_expensive_tool": None,
+            "total_estimated_usd": round(total_cost, 6),
+            "by_provider": {k: round(v, 6) for k, v in provider_costs.items()},
+            "total_calls": len(filtered),
+            "avg_cost_per_call": round(total_cost / len(filtered), 6) if filtered else 0.0,
+            "cheapest_provider": cheapest_prov,
+            "most_expensive_tool": expensive_tool,
+            "tool_breakdown": {k: round(v, 6) for k, v in tool_costs.items()},
         }
-
-    # Filter by period
-    now = datetime.now(UTC)
-    filtered = _cost_history
-
-    if period == "today":
-        filtered = [
-            item for item in _cost_history
-            if datetime.fromisoformat(item["timestamp"]).date() == now.date()
-        ]
-
-    # Aggregate stats
-    total_cost = sum(item["estimated_cost_usd"] for item in filtered)
-    provider_costs: dict[str, float] = {}
-    tool_costs: dict[str, float] = {}
-
-    for item in filtered:
-        prov = item["provider"]
-        tool = item["tool"]
-        cost = item["estimated_cost_usd"]
-
-        provider_costs[prov] = provider_costs.get(prov, 0.0) + cost
-        tool_costs[tool] = tool_costs.get(tool, 0.0) + cost
-
-    cheapest_prov = min(provider_costs, key=provider_costs.get) if provider_costs else None
-    expensive_tool = max(tool_costs, key=tool_costs.get) if tool_costs else None
-
-    return {
-        "period": period,
-        "total_estimated_usd": round(total_cost, 6),
-        "by_provider": {k: round(v, 6) for k, v in provider_costs.items()},
-        "total_calls": len(filtered),
-        "avg_cost_per_call": round(total_cost / len(filtered), 6) if filtered else 0.0,
-        "cheapest_provider": cheapest_prov,
-        "most_expensive_tool": expensive_tool,
-        "tool_breakdown": {k: round(v, 6) for k, v in tool_costs.items()},
-    }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_cost_summary"}

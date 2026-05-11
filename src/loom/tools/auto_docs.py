@@ -63,44 +63,47 @@ async def research_generate_docs(
             "grouped_by_file": dict[filename -> list|int],
         }
     """
-    tools_dir = Path(__file__).parent
-    all_tools = {}
-    file_groups = {}
+    try:
+        tools_dir = Path(__file__).parent
+        all_tools = {}
+        file_groups = {}
 
-    for py_file in sorted(tools_dir.glob("*.py")):
-        if py_file.name.startswith("_"):
-            continue
-        metadata = _extract_tool_metadata(py_file)
-        for tool in metadata:
-            all_tools[tool["name"]] = tool
-            file_groups.setdefault(tool["file"], []).append(tool)
+        for py_file in sorted(tools_dir.glob("*.py")):
+            if py_file.name.startswith("_"):
+                continue
+            metadata = _extract_tool_metadata(py_file)
+            for tool in metadata:
+                all_tools[tool["name"]] = tool
+                file_groups.setdefault(tool["file"], []).append(tool)
 
-    if output_format == "json":
+        if output_format == "json":
+            return {
+                "format": "json",
+                "total_tools": len(all_tools),
+                "tools": all_tools,
+                "grouped_by_file": file_groups,
+            }
+
+        # Generate markdown
+        lines = ["# Loom Tools Reference\n", f"Auto-generated for {len(all_tools)} tools.\n"]
+        for filename in sorted(file_groups.keys()):
+            lines.append(f"## {filename}\n")
+            lines.append("| Tool | Description | Parameters |\n")
+            lines.append("|------|-------------|------------|\n")
+            for tool in file_groups[filename]:
+                desc = tool["docstring"][:75]
+                params = ", ".join(tool["parameters"][:3]) if include_params else "—"
+                lines.append(f"| `{tool['name']}` | {desc} | {params} |\n")
+            lines.append("")
+
         return {
-            "format": "json",
+            "format": "markdown",
             "total_tools": len(all_tools),
-            "tools": all_tools,
-            "grouped_by_file": file_groups,
+            "documentation": "".join(lines),
+            "grouped_by_file": {k: len(v) for k, v in file_groups.items()},
         }
-
-    # Generate markdown
-    lines = ["# Loom Tools Reference\n", f"Auto-generated for {len(all_tools)} tools.\n"]
-    for filename in sorted(file_groups.keys()):
-        lines.append(f"## {filename}\n")
-        lines.append("| Tool | Description | Parameters |\n")
-        lines.append("|------|-------------|------------|\n")
-        for tool in file_groups[filename]:
-            desc = tool["docstring"][:75]
-            params = ", ".join(tool["parameters"][:3]) if include_params else "—"
-            lines.append(f"| `{tool['name']}` | {desc} | {params} |\n")
-        lines.append("")
-
-    return {
-        "format": "markdown",
-        "total_tools": len(all_tools),
-        "documentation": "".join(lines),
-        "grouped_by_file": {k: len(v) for k, v in file_groups.items()},
-    }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_generate_docs"}
 
 
 async def research_docs_coverage() -> dict:
@@ -115,37 +118,40 @@ async def research_docs_coverage() -> dict:
             "files_with_no_docs": list[str],
         }
     """
-    tools_dir = Path(__file__).parent
-    all_tools = []
-    undocumented = []
-    file_doc_counts = {}
+    try:
+        tools_dir = Path(__file__).parent
+        all_tools = []
+        undocumented = []
+        file_doc_counts = {}
 
-    for py_file in sorted(tools_dir.glob("*.py")):
-        if py_file.name.startswith("_"):
-            continue
-        metadata = _extract_tool_metadata(py_file)
-        file_doc_counts[py_file.name] = {"total": len(metadata), "documented": 0}
+        for py_file in sorted(tools_dir.glob("*.py")):
+            if py_file.name.startswith("_"):
+                continue
+            metadata = _extract_tool_metadata(py_file)
+            file_doc_counts[py_file.name] = {"total": len(metadata), "documented": 0}
 
-        for tool in metadata:
-            all_tools.append(tool["name"])
-            is_documented = (
-                tool["docstring"]
-                and tool["docstring"] != "No description"
-                and len(tool["docstring"]) > 10
-            )
-            if is_documented:
-                file_doc_counts[py_file.name]["documented"] += 1
-            else:
-                undocumented.append(tool["name"])
+            for tool in metadata:
+                all_tools.append(tool["name"])
+                is_documented = (
+                    tool["docstring"]
+                    and tool["docstring"] != "No description"
+                    and len(tool["docstring"]) > 10
+                )
+                if is_documented:
+                    file_doc_counts[py_file.name]["documented"] += 1
+                else:
+                    undocumented.append(tool["name"])
 
-    documented = len(all_tools) - len(undocumented)
-    coverage_pct = (documented / len(all_tools) * 100) if all_tools else 0.0
-    files_no_docs = [f for f, c in file_doc_counts.items() if c["documented"] == 0 and c["total"] > 0]
+        documented = len(all_tools) - len(undocumented)
+        coverage_pct = (documented / len(all_tools) * 100) if all_tools else 0.0
+        files_no_docs = [f for f, c in file_doc_counts.items() if c["documented"] == 0 and c["total"] > 0]
 
-    return {
-        "total_tools": len(all_tools),
-        "documented": documented,
-        "undocumented": undocumented,
-        "coverage_pct": round(coverage_pct, 1),
-        "files_with_no_docs": files_no_docs,
-    }
+        return {
+            "total_tools": len(all_tools),
+            "documented": documented,
+            "undocumented": undocumented,
+            "coverage_pct": round(coverage_pct, 1),
+            "files_with_no_docs": files_no_docs,
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_docs_coverage"}

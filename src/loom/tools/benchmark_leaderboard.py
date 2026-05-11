@@ -257,155 +257,158 @@ async def research_benchmark_models(
             "summary": "GPT-4 leads with 0.92 overall score"
         }
     """
-    _init_leaderboard_db()
+    try:
+        _init_leaderboard_db()
 
-    # Default to all categories
-    if not categories:
-        categories = [
-            "injection_resistance",
-            "refusal_rate",
-            "response_quality",
+        # Default to all categories
+        if not categories:
+            categories = [
+                "injection_resistance",
+                "refusal_rate",
+                "response_quality",
+            ]
+        elif categories == ["all"]:
+            categories = [
+                "injection_resistance",
+                "refusal_rate",
+                "response_quality",
+            ]
+
+        # Import here to avoid circular imports
+        from loom.providers.groq_provider import GroqProvider
+        from loom.providers.nvidia_nim import NvidiaNimProvider
+        from loom.providers.deepseek_provider import DeepSeekProvider
+        from loom.providers.gemini_provider import GeminiProvider
+        from loom.providers.anthropic_provider import AnthropicProvider
+
+        # Build provider map
+        provider_map: dict[str, LLMProvider] = {}
+        providers = [
+            GroqProvider(),
+            NvidiaNimProvider(),
+            DeepSeekProvider(),
+            GeminiProvider(),
+            AnthropicProvider(),
         ]
-    elif categories == ["all"]:
-        categories = [
-            "injection_resistance",
-            "refusal_rate",
-            "response_quality",
-        ]
 
-    # Import here to avoid circular imports
-    from loom.providers.groq_provider import GroqProvider
-    from loom.providers.nvidia_nim import NvidiaNimProvider
-    from loom.providers.deepseek_provider import DeepSeekProvider
-    from loom.providers.gemini_provider import GeminiProvider
-    from loom.providers.anthropic_provider import AnthropicProvider
+        for provider in providers:
+            if provider.available():
+                # Use getattr with fallback chain for model name
+                model_name = getattr(provider, 'model', getattr(provider, 'default_model', 'unknown'))
+                provider_map[model_name] = provider
 
-    # Build provider map
-    provider_map: dict[str, LLMProvider] = {}
-    providers = [
-        GroqProvider(),
-        NvidiaNimProvider(),
-        DeepSeekProvider(),
-        GeminiProvider(),
-        AnthropicProvider(),
-    ]
+        # Override with specific models if provided
+        test_models = models if models else list(provider_map.keys())
 
-    for provider in providers:
-        if provider.available():
-            # Use getattr with fallback chain for model name
-            model_name = getattr(provider, 'model', getattr(provider, 'default_model', 'unknown'))
-            provider_map[model_name] = provider
+        results: dict[str, dict[str, float]] = {}
 
-    # Override with specific models if provided
-    test_models = models if models else list(provider_map.keys())
+        for model_name in test_models:
+            if model_name not in provider_map:
+                logger.warning(f"Model {model_name} not available, skipping")
+                continue
 
-    results: dict[str, dict[str, float]] = {}
+            provider = provider_map[model_name]
+            model_results: dict[str, float] = {}
 
-    for model_name in test_models:
-        if model_name not in provider_map:
-            logger.warning(f"Model {model_name} not available, skipping")
-            continue
+            # Test injection resistance
+            if "injection_resistance" in categories:
+                scores = []
+                for prompt in _INJECTION_TEST_PROMPTS[:10]:  # 10 injection tests
+                    try:
+                        response = await provider.chat(
+                            messages=[{"role": "user", "content": prompt}]
+                        )
+                        score = _score_injection_resistance(response.text)
+                        scores.append(score)
+                    except Exception as e:
+                        logger.error(
+                            f"Error testing {model_name} injection: {e}"
+                        )
+                        scores.append(0.5)
 
-        provider = provider_map[model_name]
-        model_results: dict[str, float] = {}
+                model_results["injection_resistance"] = (
+                    sum(scores) / len(scores) if scores else 0.0
+                )
 
-        # Test injection resistance
-        if "injection_resistance" in categories:
-            scores = []
-            for prompt in _INJECTION_TEST_PROMPTS[:10]:  # 10 injection tests
-                try:
-                    response = await provider.chat(
-                        messages=[{"role": "user", "content": prompt}]
-                    )
-                    score = _score_injection_resistance(response.text)
-                    scores.append(score)
-                except Exception as e:
-                    logger.error(
-                        f"Error testing {model_name} injection: {e}"
-                    )
-                    scores.append(0.5)
+            # Test refusal rate
+            if "refusal_rate" in categories:
+                scores = []
+                for prompt in _REFUSAL_TEST_PROMPTS[:5]:  # 5 refusal tests
+                    try:
+                        response = await provider.chat(
+                            messages=[{"role": "user", "content": prompt}]
+                        )
+                        score = _score_refusal(response.text)
+                        scores.append(score)
+                    except Exception as e:
+                        logger.error(
+                            f"Error testing {model_name} refusal: {e}"
+                        )
+                        scores.append(0.5)
 
-            model_results["injection_resistance"] = (
-                sum(scores) / len(scores) if scores else 0.0
+                model_results["refusal_rate"] = (
+                    sum(scores) / len(scores) if scores else 0.0
+                )
+
+            # Test response quality
+            if "response_quality" in categories:
+                scores = []
+                for prompt in _QUALITY_TEST_PROMPTS[:5]:  # 5 quality tests
+                    try:
+                        response = await provider.chat(
+                            messages=[{"role": "user", "content": prompt}]
+                        )
+                        score = _score_quality(response.text, prompt)
+                        scores.append(score)
+                    except Exception as e:
+                        logger.error(
+                            f"Error testing {model_name} quality: {e}"
+                        )
+                        scores.append(0.5)
+
+                model_results["response_quality"] = (
+                    sum(scores) / len(scores) if scores else 0.0
+                )
+
+            # Calculate overall score (average of all category scores)
+            if model_results:
+                model_results["overall"] = sum(model_results.values()) / len(
+                    model_results
+                )
+
+            results[model_name] = model_results
+
+            # Store results in leaderboard
+            for category, score in model_results.items():
+                if category != "overall":  # Don't store overall separately
+                    try:
+                        research_leaderboard_update(
+                            model=model_name,
+                            category=category,
+                            score=score,
+                        )
+                    except Exception as e:
+                        logger.error(f"Error storing leaderboard result: {e}")
+
+        # Generate summary
+        if results:
+            best_model = max(
+                results.items(),
+                key=lambda x: x[1].get("overall", 0),
             )
+            summary = f"{best_model[0]} leads with {best_model[1].get('overall', 0):.2f} overall score"
+        else:
+            summary = "No models available for benchmarking"
 
-        # Test refusal rate
-        if "refusal_rate" in categories:
-            scores = []
-            for prompt in _REFUSAL_TEST_PROMPTS[:5]:  # 5 refusal tests
-                try:
-                    response = await provider.chat(
-                        messages=[{"role": "user", "content": prompt}]
-                    )
-                    score = _score_refusal(response.text)
-                    scores.append(score)
-                except Exception as e:
-                    logger.error(
-                        f"Error testing {model_name} refusal: {e}"
-                    )
-                    scores.append(0.5)
-
-            model_results["refusal_rate"] = (
-                sum(scores) / len(scores) if scores else 0.0
-            )
-
-        # Test response quality
-        if "response_quality" in categories:
-            scores = []
-            for prompt in _QUALITY_TEST_PROMPTS[:5]:  # 5 quality tests
-                try:
-                    response = await provider.chat(
-                        messages=[{"role": "user", "content": prompt}]
-                    )
-                    score = _score_quality(response.text, prompt)
-                    scores.append(score)
-                except Exception as e:
-                    logger.error(
-                        f"Error testing {model_name} quality: {e}"
-                    )
-                    scores.append(0.5)
-
-            model_results["response_quality"] = (
-                sum(scores) / len(scores) if scores else 0.0
-            )
-
-        # Calculate overall score (average of all category scores)
-        if model_results:
-            model_results["overall"] = sum(model_results.values()) / len(
-                model_results
-            )
-
-        results[model_name] = model_results
-
-        # Store results in leaderboard
-        for category, score in model_results.items():
-            if category != "overall":  # Don't store overall separately
-                try:
-                    research_leaderboard_update(
-                        model=model_name,
-                        category=category,
-                        score=score,
-                    )
-                except Exception as e:
-                    logger.error(f"Error storing leaderboard result: {e}")
-
-    # Generate summary
-    if results:
-        best_model = max(
-            results.items(),
-            key=lambda x: x[1].get("overall", 0),
-        )
-        summary = f"{best_model[0]} leads with {best_model[1].get('overall', 0):.2f} overall score"
-    else:
-        summary = "No models available for benchmarking"
-
-    return {
-        "models_tested": test_models,
-        "categories": categories,
-        "results": results,
-        "timestamp": datetime.now(UTC).isoformat(),
-        "summary": summary,
-    }
+        return {
+            "models_tested": test_models,
+            "categories": categories,
+            "results": results,
+            "timestamp": datetime.now(UTC).isoformat(),
+            "summary": summary,
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_benchmark_models"}
 
 
 def research_leaderboard_update(
@@ -426,42 +429,45 @@ def research_leaderboard_update(
     Returns:
         Update confirmation with stored record
     """
-    _init_leaderboard_db()
+    try:
+        _init_leaderboard_db()
 
-    # Clamp score to 0-1
-    score = max(0.0, min(1.0, score))
+        # Clamp score to 0-1
+        score = max(0.0, min(1.0, score))
 
-    db_path = _get_leaderboard_db()
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
+        db_path = _get_leaderboard_db()
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
 
-    # Store details as JSON
-    details_json = json.dumps(details) if details else None
+        # Store details as JSON
+        details_json = json.dumps(details) if details else None
 
-    cursor.execute(
-        """
-        INSERT INTO leaderboard (model_name, category, score, details)
-        VALUES (?, ?, ?, ?)
-        """,
-        (model, category, score, details_json),
-    )
+        cursor.execute(
+            """
+            INSERT INTO leaderboard (model_name, category, score, details)
+            VALUES (?, ?, ?, ?)
+            """,
+            (model, category, score, details_json),
+        )
 
-    record_id = cursor.lastrowid
-    conn.commit()
-    conn.close()
+        record_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
 
-    logger.info(
-        f"Leaderboard update: model={model} category={category} score={score:.2f}"
-    )
+        logger.info(
+            f"Leaderboard update: model={model} category={category} score={score:.2f}"
+        )
 
-    return {
-        "status": "success",
-        "record_id": record_id,
-        "model": model,
-        "category": category,
-        "score": score,
-        "timestamp": datetime.now(UTC).isoformat(),
-    }
+        return {
+            "status": "success",
+            "record_id": record_id,
+            "model": model,
+            "category": category,
+            "score": score,
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_leaderboard_update"}
 
 
 def research_leaderboard_view(
@@ -493,63 +499,66 @@ def research_leaderboard_view(
             "timestamp": "2026-05-03T..."
         }
     """
-    _init_leaderboard_db()
+    try:
+        _init_leaderboard_db()
 
-    db_path = _get_leaderboard_db()
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
+        db_path = _get_leaderboard_db()
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
 
-    if category:
-        # Filter by specific category
-        cursor.execute(
-            """
-            SELECT
-                model_name,
-                AVG(score) as avg_score,
-                MAX(tested_at) as last_tested,
-                COUNT(*) as attempts
-            FROM leaderboard
-            WHERE category = ?
-            GROUP BY model_name
-            ORDER BY avg_score DESC
-            LIMIT ?
-            """,
-            (category, limit),
-        )
-    else:
-        # Overall rankings (average across all categories)
-        cursor.execute(
-            """
-            SELECT
-                model_name,
-                AVG(score) as avg_score,
-                MAX(tested_at) as last_tested,
-                COUNT(*) as attempts
-            FROM leaderboard
-            GROUP BY model_name
-            ORDER BY avg_score DESC
-            LIMIT ?
-            """,
-            (limit,),
-        )
+        if category:
+            # Filter by specific category
+            cursor.execute(
+                """
+                SELECT
+                    model_name,
+                    AVG(score) as avg_score,
+                    MAX(tested_at) as last_tested,
+                    COUNT(*) as attempts
+                FROM leaderboard
+                WHERE category = ?
+                GROUP BY model_name
+                ORDER BY avg_score DESC
+                LIMIT ?
+                """,
+                (category, limit),
+            )
+        else:
+            # Overall rankings (average across all categories)
+            cursor.execute(
+                """
+                SELECT
+                    model_name,
+                    AVG(score) as avg_score,
+                    MAX(tested_at) as last_tested,
+                    COUNT(*) as attempts
+                FROM leaderboard
+                GROUP BY model_name
+                ORDER BY avg_score DESC
+                LIMIT ?
+                """,
+                (limit,),
+            )
 
-    rows = cursor.fetchall()
-    conn.close()
+        rows = cursor.fetchall()
+        conn.close()
 
-    rankings = [
-        {
-            "rank": i + 1,
-            "model": row[0],
-            "score": round(row[1], 4),
-            "last_tested": row[2],
-            "attempts": row[3],
+        rankings = [
+            {
+                "rank": i + 1,
+                "model": row[0],
+                "score": round(row[1], 4),
+                "last_tested": row[2],
+                "attempts": row[3],
+            }
+            for i, row in enumerate(rows)
+        ]
+
+        return {
+            "category": category or "overall",
+            "rankings": rankings,
+            "total_models": len(rankings),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
-        for i, row in enumerate(rows)
-    ]
-
-    return {
-        "category": category or "overall",
-        "rankings": rankings,
-        "total_models": len(rankings),
-        "timestamp": datetime.now(UTC).isoformat(),
-    }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_leaderboard_view"}

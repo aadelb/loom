@@ -196,65 +196,72 @@ async def research_narrative_tracker(topic: str, hours_back: int = 72) -> dict[s
     """
 
     async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(
-            follow_redirects=True,
-            headers={"User-Agent": "Loom-Research/1.0 (academic research)"},
-            timeout=30.0,
-        ) as client:
-            tasks = [
-                _hn_search(client, topic, hours_back),
-                _reddit_search(client, topic, hours_back),
-                _arxiv_search(client, topic, hours_back),
-            ]
-            results = await asyncio.gather(*tasks, return_exceptions=True)
+        try:
+            async with httpx.AsyncClient(
+                follow_redirects=True,
+                headers={"User-Agent": "Loom-Research/1.0 (academic research)"},
+                timeout=30.0,
+            ) as client:
+                tasks = [
+                    _hn_search(client, topic, hours_back),
+                    _reddit_search(client, topic, hours_back),
+                    _arxiv_search(client, topic, hours_back),
+                ]
+                results = await asyncio.gather(*tasks, return_exceptions=True)
 
-            hn_posts = results[0] if isinstance(results[0], list) else []
-            reddit_posts = results[1] if isinstance(results[1], list) else []
-            arxiv_posts = results[2] if isinstance(results[2], list) else []
+                hn_posts = results[0] if isinstance(results[0], list) else []
+                reddit_posts = results[1] if isinstance(results[1], list) else []
+                arxiv_posts = results[2] if isinstance(results[2], list) else []
 
-            all_posts = hn_posts + reddit_posts + arxiv_posts
+                all_posts = hn_posts + reddit_posts + arxiv_posts
 
-            # Build timeline - normalize all timestamps to ISO strings
-            timeline_map: dict[str, dict[str, int]] = {}
-            for post in all_posts:
-                ts = post.get("timestamp", "")
-                if ts:
-                    # Normalize Unix epoch timestamps (integers/floats) to ISO strings
-                    if isinstance(ts, (int, float)):
-                        ts = datetime.fromtimestamp(ts, tz=timezone.utc).isoformat()
-                    # Round to hour (extract first 13 characters of ISO string)
-                    hour = ts[:13] if len(ts) >= 13 else ts[:10]
-                    platform = post.get("platform", "unknown")
-                    if hour not in timeline_map:
-                        timeline_map[hour] = {}
-                    if platform not in timeline_map[hour]:
-                        timeline_map[hour][platform] = 0
-                    timeline_map[hour][platform] += 1
+                # Build timeline - normalize all timestamps to ISO strings
+                timeline_map: dict[str, dict[str, int]] = {}
+                for post in all_posts:
+                    ts = post.get("timestamp", "")
+                    if ts:
+                        # Normalize Unix epoch timestamps (integers/floats) to ISO strings
+                        if isinstance(ts, (int, float)):
+                            ts = datetime.fromtimestamp(ts, tz=timezone.utc).isoformat()
+                        # Round to hour (extract first 13 characters of ISO string)
+                        hour = ts[:13] if len(ts) >= 13 else ts[:10]
+                        platform = post.get("platform", "unknown")
+                        if hour not in timeline_map:
+                            timeline_map[hour] = {}
+                        if platform not in timeline_map[hour]:
+                            timeline_map[hour][platform] = 0
+                        timeline_map[hour][platform] += 1
 
-            timeline = [
-                {"timestamp": ts, "counts": counts}
-                for ts, counts in sorted(timeline_map.items())
-            ]
+                timeline = [
+                    {"timestamp": ts, "counts": counts}
+                    for ts, counts in sorted(timeline_map.items())
+                ]
 
-            # Calculate velocity
-            velocity = len(all_posts) / max(hours_back, 1)
+                # Calculate velocity
+                velocity = len(all_posts) / max(hours_back, 1)
 
-            # Reach
-            reach = len(set(p.get("platform", "") for p in all_posts))
+                # Reach
+                reach = len(set(p.get("platform", "") for p in all_posts))
 
+                return {
+                    "topic": topic,
+                    "hours_back": hours_back,
+                    "total_posts": len(all_posts),
+                    "velocity_posts_per_hour": round(velocity, 2),
+                    "reach_platforms": reach,
+                    "timeline": timeline[:100],
+                    "platforms": {
+                        "hn": len(hn_posts),
+                        "reddit": len(reddit_posts),
+                        "arxiv": len(arxiv_posts),
+                    },
+                    "top_posts": sorted(all_posts, key=lambda p: p.get("score", 0), reverse=True)[:10],
+                }
+        except Exception as exc:
+            logger.exception("research_narrative_tracker failed")
             return {
-                "topic": topic,
-                "hours_back": hours_back,
-                "total_posts": len(all_posts),
-                "velocity_posts_per_hour": round(velocity, 2),
-                "reach_platforms": reach,
-                "timeline": timeline[:100],
-                "platforms": {
-                    "hn": len(hn_posts),
-                    "reddit": len(reddit_posts),
-                    "arxiv": len(arxiv_posts),
-                },
-                "top_posts": sorted(all_posts, key=lambda p: p.get("score", 0), reverse=True)[:10],
+                "error": str(exc),
+                "tool": "research_narrative_tracker",
             }
 
     return await _run()
@@ -351,44 +358,51 @@ async def research_bot_detector(subreddit: str = "", hn_query: str = "") -> dict
     """
 
     async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(
-            follow_redirects=True,
-            headers={"User-Agent": "Loom-Research/1.0"},
-            timeout=30.0,
-        ) as client:
-            posts: list[dict[str, Any]] = []
-            accounts_analyzed = 0
+        try:
+            async with httpx.AsyncClient(
+                follow_redirects=True,
+                headers={"User-Agent": "Loom-Research/1.0"},
+                timeout=30.0,
+            ) as client:
+                posts: list[dict[str, Any]] = []
+                accounts_analyzed = 0
 
-            if subreddit:
-                reddit_posts = await _reddit_search(client, subreddit, 24)
-                posts.extend(reddit_posts)
-                accounts_analyzed += len(set(p.get("author", "") for p in reddit_posts))
+                if subreddit:
+                    reddit_posts = await _reddit_search(client, subreddit, 24)
+                    posts.extend(reddit_posts)
+                    accounts_analyzed += len(set(p.get("author", "") for p in reddit_posts))
 
-            if hn_query:
-                hn_posts = await _hn_search(client, hn_query, 24)
-                posts.extend(hn_posts)
-                accounts_analyzed += len(set(p.get("author", "") for p in hn_posts))
+                if hn_query:
+                    hn_posts = await _hn_search(client, hn_query, 24)
+                    posts.extend(hn_posts)
+                    accounts_analyzed += len(set(p.get("author", "") for p in hn_posts))
 
-            if not posts:
+                if not posts:
+                    return {
+                        "accounts_analyzed": 0,
+                        "posts_analyzed": 0,
+                        "suspicious_clusters": 0,
+                        "coordination_score": 0,
+                        "cluster_details": [],
+                    }
+
+                analysis = await _analyze_posting_times(posts)
+
                 return {
-                    "accounts_analyzed": 0,
-                    "posts_analyzed": 0,
-                    "suspicious_clusters": 0,
-                    "coordination_score": 0,
-                    "cluster_details": [],
+                    "accounts_analyzed": accounts_analyzed,
+                    "posts_analyzed": len(posts),
+                    "subreddit": subreddit,
+                    "hn_query": hn_query,
+                    "suspicious_clusters": analysis["suspicious_clusters"],
+                    "coordination_score": analysis["coordination_score"],
+                    "content_similarity_words": analysis["content_similarity_common_words"],
+                    "cluster_details": analysis["cluster_details"],
                 }
-
-            analysis = await _analyze_posting_times(posts)
-
+        except Exception as exc:
+            logger.exception("research_bot_detector failed")
             return {
-                "accounts_analyzed": accounts_analyzed,
-                "posts_analyzed": len(posts),
-                "subreddit": subreddit,
-                "hn_query": hn_query,
-                "suspicious_clusters": analysis["suspicious_clusters"],
-                "coordination_score": analysis["coordination_score"],
-                "content_similarity_words": analysis["content_similarity_common_words"],
-                "cluster_details": analysis["cluster_details"],
+                "error": str(exc),
+                "tool": "research_bot_detector",
             }
 
     return await _run()
@@ -481,55 +495,62 @@ async def research_censorship_detector(url: str) -> dict[str, Any]:
     validate_url(url)
 
     async def _run() -> dict[str, Any]:
-        parsed = urlparse(url)
-        domain = parsed.netloc or parsed.path.split("/")[0]
+        try:
+            parsed = urlparse(url)
+            domain = parsed.netloc or parsed.path.split("/")[0]
 
-        async with httpx.AsyncClient(
-            follow_redirects=True,
-            headers={"User-Agent": "Loom-Research/1.0"},
-            timeout=30.0,
-        ) as client:
-            # DNS lookups in parallel
-            dns_tasks = [
-                _dns_lookup_doh(client, domain, _GOOGLE_DOH),
-                _dns_lookup_doh(client, domain, _CLOUDFLARE_DOH),
-                _dns_lookup_doh(client, domain, _QUAD9_DOH),
-            ]
-            dns_results = await asyncio.gather(*dns_tasks, return_exceptions=True)
+            async with httpx.AsyncClient(
+                follow_redirects=True,
+                headers={"User-Agent": "Loom-Research/1.0"},
+                timeout=30.0,
+            ) as client:
+                # DNS lookups in parallel
+                dns_tasks = [
+                    _dns_lookup_doh(client, domain, _GOOGLE_DOH),
+                    _dns_lookup_doh(client, domain, _CLOUDFLARE_DOH),
+                    _dns_lookup_doh(client, domain, _QUAD9_DOH),
+                ]
+                dns_results = await asyncio.gather(*dns_tasks, return_exceptions=True)
 
-            # Lumen Database check
-            notices = await _lumen_database_check(client, domain)
+                # Lumen Database check
+                notices = await _lumen_database_check(client, domain)
 
-            # Analyze DNS consistency
-            resolved_ips: dict[str, set[str]] = {}
-            for result in dns_results:
-                if isinstance(result, dict) and result.get("status") == "resolved":
-                    provider = result.get("provider", "unknown")
-                    answers = result.get("answers", [])
-                    resolved_ips[provider] = set(answers)
+                # Analyze DNS consistency
+                resolved_ips: dict[str, set[str]] = {}
+                for result in dns_results:
+                    if isinstance(result, dict) and result.get("status") == "resolved":
+                        provider = result.get("provider", "unknown")
+                        answers = result.get("answers", [])
+                        resolved_ips[provider] = set(answers)
 
-            # Check consistency
-            dns_consistent = True
-            blocked_providers = []
-            if resolved_ips:
-                first_ips = next(iter(resolved_ips.values()))
-                for provider, ips in resolved_ips.items():
-                    if ips != first_ips:
-                        dns_consistent = False
-                        if not ips or "NXDOMAIN" in str(ips):
-                            blocked_providers.append(provider)
+                # Check consistency
+                dns_consistent = True
+                blocked_providers = []
+                if resolved_ips:
+                    first_ips = next(iter(resolved_ips.values()))
+                    for provider, ips in resolved_ips.items():
+                        if ips != first_ips:
+                            dns_consistent = False
+                            if not ips or "NXDOMAIN" in str(ips):
+                                blocked_providers.append(provider)
 
+                return {
+                    "url": url,
+                    "domain": domain,
+                    "dns_consistent": dns_consistent,
+                    "dns_providers_checked": 3,
+                    "blocked_providers": blocked_providers,
+                    "dns_results": {
+                        provider: list(ips) for provider, ips in resolved_ips.items()
+                    },
+                    "takedown_notices_found": len(notices),
+                    "notices": notices,
+                }
+        except Exception as exc:
+            logger.exception("research_censorship_detector failed")
             return {
-                "url": url,
-                "domain": domain,
-                "dns_consistent": dns_consistent,
-                "dns_providers_checked": 3,
-                "blocked_providers": blocked_providers,
-                "dns_results": {
-                    provider: list(ips) for provider, ips in resolved_ips.items()
-                },
-                "takedown_notices_found": len(notices),
-                "notices": notices,
+                "error": str(exc),
+                "tool": "research_censorship_detector",
             }
 
     return await _run()
@@ -587,51 +608,58 @@ async def research_deleted_social(url: str) -> dict[str, Any]:
     validate_url(url)
 
     async def _run() -> dict[str, Any]:
-        parsed = urlparse(url)
-        domain = parsed.netloc.lower()
+        try:
+            parsed = urlparse(url)
+            domain = parsed.netloc.lower()
 
-        # Detect platform
-        platform = "unknown"
-        if "twitter.com" in domain or "x.com" in domain:
-            platform = "twitter"
-        elif "reddit.com" in domain:
-            platform = "reddit"
-        elif "youtube.com" in domain or "youtu.be" in domain:
-            platform = "youtube"
-        elif "tiktok.com" in domain:
-            platform = "tiktok"
-        elif "instagram.com" in domain:
-            platform = "instagram"
-        elif "facebook.com" in domain:
-            platform = "facebook"
+            # Detect platform
+            platform = "unknown"
+            if "twitter.com" in domain or "x.com" in domain:
+                platform = "twitter"
+            elif "reddit.com" in domain:
+                platform = "reddit"
+            elif "youtube.com" in domain or "youtu.be" in domain:
+                platform = "youtube"
+            elif "tiktok.com" in domain:
+                platform = "tiktok"
+            elif "instagram.com" in domain:
+                platform = "instagram"
+            elif "facebook.com" in domain:
+                platform = "facebook"
 
-        async with httpx.AsyncClient(
-            follow_redirects=True,
-            headers={"User-Agent": "Loom-Research/1.0"},
-            timeout=30.0,
-        ) as client:
-            wayback_snapshots = await _wayback_search_social(client, url, platform)
+            async with httpx.AsyncClient(
+                follow_redirects=True,
+                headers={"User-Agent": "Loom-Research/1.0"},
+                timeout=30.0,
+            ) as client:
+                wayback_snapshots = await _wayback_search_social(client, url, platform)
 
-            # Try Google Cache as fallback
-            google_cache_url = f"{_GOOGLE_CACHE}?q=cache:{quote(url, safe='')}"
-            google_status = 0
-            try:
-                resp = await client.head(google_cache_url, timeout=15.0)
-                google_status = resp.status_code
-            except Exception as e:
-                logger.debug("google_cache_check_error: %s", e)
+                # Try Google Cache as fallback
+                google_cache_url = f"{_GOOGLE_CACHE}?q=cache:{quote(url, safe='')}"
+                google_status = 0
+                try:
+                    resp = await client.head(google_cache_url, timeout=15.0)
+                    google_status = resp.status_code
+                except Exception as e:
+                    logger.debug("google_cache_check_error: %s", e)
 
-            snapshots_found = len(wayback_snapshots)
-            if google_status == 200:
-                snapshots_found += 1
+                snapshots_found = len(wayback_snapshots)
+                if google_status == 200:
+                    snapshots_found += 1
 
+                return {
+                    "url": url,
+                    "platform": platform,
+                    "snapshots_found": snapshots_found,
+                    "wayback_snapshots": len(wayback_snapshots),
+                    "google_cache_available": google_status == 200,
+                    "recovered_content_preview": wayback_snapshots[:20],
+                }
+        except Exception as exc:
+            logger.exception("research_deleted_social failed")
             return {
-                "url": url,
-                "platform": platform,
-                "snapshots_found": snapshots_found,
-                "wayback_snapshots": len(wayback_snapshots),
-                "google_cache_available": google_status == 200,
-                "recovered_content_preview": wayback_snapshots[:20],
+                "error": str(exc),
+                "tool": "research_deleted_social",
             }
 
     return await _run()
@@ -714,87 +742,94 @@ async def research_robots_archaeology(domain: str, snapshots: int = 10) -> dict[
     """
 
     async def _run() -> dict[str, Any]:
-        if not domain.startswith("http"):
-            domain_url = f"https://{domain}"
-        else:
-            domain_url = domain
+        try:
+            if not domain.startswith("http"):
+                domain_url = f"https://{domain}"
+            else:
+                domain_url = domain
 
-        async with httpx.AsyncClient(
-            follow_redirects=True,
-            headers={"User-Agent": "Loom-Research/1.0"},
-            timeout=30.0,
-        ) as client:
-            versions = await _robots_txt_cdx(client, domain_url, snapshots)
+            async with httpx.AsyncClient(
+                follow_redirects=True,
+                headers={"User-Agent": "Loom-Research/1.0"},
+                timeout=30.0,
+            ) as client:
+                versions = await _robots_txt_cdx(client, domain_url, snapshots)
 
-            if not versions:
+                if not versions:
+                    return {
+                        "domain": domain,
+                        "versions_found": 0,
+                        "changes": [],
+                        "hidden_paths_timeline": [],
+                    }
+
+                # Fetch content for each version
+                content_tasks = [
+                    _robots_txt_content(client, v["archive_url"]) for v in versions
+                ]
+                contents = await asyncio.gather(*content_tasks, return_exceptions=True)
+
+                # Build timeline of changes
+                changes = []
+                hidden_paths_timeline: dict[str, list[str]] = {}
+
+                prev_content = ""
+                for i, version in enumerate(versions):
+                    current_content = (
+                        contents[i] if i < len(contents) and isinstance(contents[i], str) else ""
+                    )
+                    if current_content:
+                        if prev_content:
+                            added, removed = _diff_robots_rules(prev_content, current_content)
+                        else:
+                            added = current_content.split("\n")
+                            removed = []
+
+                        # Track hidden paths (Disallow rules that appear)
+                        disallow_rules = [
+                            line.split(":")[-1].strip()
+                            for line in current_content.split("\n")
+                            if line.lower().startswith("disallow:")
+                        ]
+
+                        ts = version.get("timestamp", "")
+                        changes.append(
+                            {
+                                "date": ts,
+                                "archive_url": version.get("archive_url", ""),
+                                "added_rules": added,
+                                "removed_rules": removed,
+                                "disallow_count": len(disallow_rules),
+                            }
+                        )
+                        if ts:
+                            hidden_paths_timeline[ts] = disallow_rules
+
+                        prev_content = current_content
+
+                # Identify paths that appeared then disappeared
+                all_hidden_paths: dict[str, list[str]] = {}
+                for ts, paths in hidden_paths_timeline.items():
+                    for path in paths:
+                        if path:
+                            if path not in all_hidden_paths:
+                                all_hidden_paths[path] = []
+                            all_hidden_paths[path].append(ts)
+
                 return {
                     "domain": domain,
-                    "versions_found": 0,
-                    "changes": [],
-                    "hidden_paths_timeline": [],
+                    "versions_found": len(versions),
+                    "snapshots_analyzed": len(
+                        [c for c in contents if isinstance(c, str) and c]
+                    ),
+                    "changes": changes[:50],
+                    "hidden_paths_timeline": all_hidden_paths,
                 }
-
-            # Fetch content for each version
-            content_tasks = [
-                _robots_txt_content(client, v["archive_url"]) for v in versions
-            ]
-            contents = await asyncio.gather(*content_tasks, return_exceptions=True)
-
-            # Build timeline of changes
-            changes = []
-            hidden_paths_timeline: dict[str, list[str]] = {}
-
-            prev_content = ""
-            for i, version in enumerate(versions):
-                current_content = (
-                    contents[i] if i < len(contents) and isinstance(contents[i], str) else ""
-                )
-                if current_content:
-                    if prev_content:
-                        added, removed = _diff_robots_rules(prev_content, current_content)
-                    else:
-                        added = current_content.split("\n")
-                        removed = []
-
-                    # Track hidden paths (Disallow rules that appear)
-                    disallow_rules = [
-                        line.split(":")[-1].strip()
-                        for line in current_content.split("\n")
-                        if line.lower().startswith("disallow:")
-                    ]
-
-                    ts = version.get("timestamp", "")
-                    changes.append(
-                        {
-                            "date": ts,
-                            "archive_url": version.get("archive_url", ""),
-                            "added_rules": added,
-                            "removed_rules": removed,
-                            "disallow_count": len(disallow_rules),
-                        }
-                    )
-                    if ts:
-                        hidden_paths_timeline[ts] = disallow_rules
-
-                    prev_content = current_content
-
-            # Identify paths that appeared then disappeared
-            all_hidden_paths: dict[str, list[str]] = {}
-            for ts, paths in hidden_paths_timeline.items():
-                for path in paths:
-                    if path:
-                        if path not in all_hidden_paths:
-                            all_hidden_paths[path] = []
-                        all_hidden_paths[path].append(ts)
-
+        except Exception as exc:
+            logger.exception("research_robots_archaeology failed")
             return {
-                "domain": domain,
-                "versions_found": len(versions),
-                "snapshots_analyzed": len(
-                    [c for c in contents if isinstance(c, str) and c]
-                ),
-                "changes": changes[:50],
-                "hidden_paths_timeline": all_hidden_paths,
+                "error": str(exc),
+                "tool": "research_robots_archaeology",
             }
 
     return await _run()
