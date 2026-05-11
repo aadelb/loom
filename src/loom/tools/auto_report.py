@@ -64,9 +64,9 @@ async def research_auto_report(
 
     # Validate and normalize input
     if not topic or len(topic.strip()) == 0:
-        raise ValueError("topic cannot be empty")
+        return _error_response("topic cannot be empty")
     if len(topic) > 2000:
-        raise ValueError("topic must be <= 2000 characters")
+        return _error_response("topic must be <= 2000 characters")
 
     topic = topic.strip()
 
@@ -150,7 +150,7 @@ async def research_auto_report(
                 logger.debug("fetch_error url=%s error=%s", url[:50], result.get("error", "")[:100])
                 continue
 
-            content = result if isinstance(result, str) else result.get("content", "")
+            content = result.get("text", "") if isinstance(result, dict) else str(result)
             if not content or len(content.strip()) < 100:
                 logger.debug("fetch_insufficient_content url=%s", url[:50])
                 continue
