@@ -11,7 +11,12 @@ import json
 import logging
 from typing import Any
 
-from loom.deadletter import get_dlq
+try:
+    from loom.deadletter import get_dlq
+    _DLQ_AVAILABLE = True
+except ImportError:
+    _DLQ_AVAILABLE = False
+    get_dlq = None  # type: ignore[assignment]
 
 log = logging.getLogger("loom.tools.dlq_management")
 
@@ -65,12 +70,8 @@ async def research_dlq_retry_now(dlq_id: int) -> dict[str, Any]:
     """
     try:
         dlq = get_dlq()
-
-        # Get item details
-        items = dlq.dequeue(limit=1000)  # Get all ready items
         target_item = None
 
-        # Search for the specific item
         with dlq._lock:
             with dlq._get_connection() as conn:
                 row = conn.execute(
