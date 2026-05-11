@@ -72,67 +72,76 @@ def _check_provider(provider: str) -> tuple[bool, bool]:
 
 async def research_provider_ping(provider: str = "all") -> dict[str, Any]:
     """Quick availability check for providers. Returns config status + API key format validity."""
-    providers_list = list(_KEYS.keys()) if provider == "all" else ([provider] if provider in _KEYS else [])
-    result = []
-    healthy = 0
-    for p in providers_list:
-        configured, valid = _check_provider(p)
-        status = "available" if configured and valid else "not_configured" if not configured else "invalid_key"
-        if status == "available":
-            healthy += 1
-        result.append({"name": p, "configured": configured, "key_valid_format": valid, "status": status})
-    return {"providers": result, "healthy_count": healthy, "total": len(providers_list)}
+    try:
+        providers_list = list(_KEYS.keys()) if provider == "all" else ([provider] if provider in _KEYS else [])
+        result = []
+        healthy = 0
+        for p in providers_list:
+            configured, valid = _check_provider(p)
+            status = "available" if configured and valid else "not_configured" if not configured else "invalid_key"
+            if status == "available":
+                healthy += 1
+            result.append({"name": p, "configured": configured, "key_valid_format": valid, "status": status})
+        return {"providers": result, "healthy_count": healthy, "total": len(providers_list)}
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_provider_ping"}
 
 
 async def research_provider_history(provider: str = "", hours: int = 24) -> dict[str, Any]:
     """Show provider health history with uptime percentage and avg response time."""
-    if not provider or provider not in _KEYS:
-        return {"error": "invalid provider", "events": [], "uptime_pct": 0.0, "avg_response_ms": 0.0}
-    history = _get_history(provider)
-    if not history:
-        return {"provider": provider, "events": [], "uptime_pct": 0.0, "avg_response_ms": 0.0}
-    cutoff = datetime.now(UTC).timestamp() - (hours * 3600)
-    recent = [e for e in history if e.get("timestamp", 0) > cutoff]
-    available = sum(1 for e in recent if e.get("status") == "available")
-    uptime_pct = (available / len(recent) * 100) if recent else 0.0
-    response_times = [e.get("response_time_ms", 0) for e in recent if e.get("response_time_ms")]
-    avg_ms = sum(response_times) / len(response_times) if response_times else 0.0
-    return {
-        "provider": provider,
-        "events": [{"timestamp": datetime.fromtimestamp(e.get("timestamp", 0), UTC).isoformat(), "status": e.get("status"), "response_time_ms": e.get("response_time_ms", 0)} for e in recent[-100:]],
-        "uptime_pct": round(uptime_pct, 2),
-        "avg_response_ms": round(avg_ms, 1),
-    }
+    try:
+        if not provider or provider not in _KEYS:
+            return {"error": "invalid provider", "events": [], "uptime_pct": 0.0, "avg_response_ms": 0.0}
+        history = _get_history(provider)
+        if not history:
+            return {"provider": provider, "events": [], "uptime_pct": 0.0, "avg_response_ms": 0.0}
+        cutoff = datetime.now(UTC).timestamp() - (hours * 3600)
+        recent = [e for e in history if e.get("timestamp", 0) > cutoff]
+        available = sum(1 for e in recent if e.get("status") == "available")
+        uptime_pct = (available / len(recent) * 100) if recent else 0.0
+        response_times = [e.get("response_time_ms", 0) for e in recent if e.get("response_time_ms")]
+        avg_ms = sum(response_times) / len(response_times) if response_times else 0.0
+        return {
+            "provider": provider,
+            "events": [{"timestamp": datetime.fromtimestamp(e.get("timestamp", 0), UTC).isoformat(), "status": e.get("status"), "response_time_ms": e.get("response_time_ms", 0)} for e in recent[-100:]],
+            "uptime_pct": round(uptime_pct, 2),
+            "avg_response_ms": round(avg_ms, 1),
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_provider_history"}
 
 
 async def research_provider_recommend(task_type: str = "general") -> dict[str, Any]:
     """Recommend best provider for task type based on availability and capability."""
-    if task_type not in _TASKS:
-        return {"error": f"unknown task_type: {task_type}", "valid_types": list(_TASKS.keys())}
-    candidates = _TASKS[task_type]
-    scored = []
-    for p in candidates:
-        configured, valid = _check_provider(p)
-        if not (configured and valid):
-            continue
-        scores = _SCORES.get(p, {})
-        if task_type == "reasoning":
-            score = scores.get("reasoning", 0) * 1.5 + scores.get("accuracy", 0)
-        elif task_type == "code":
-            score = scores.get("accuracy", 0) + scores.get("reasoning", 0) * 0.5
-        elif task_type == "fast":
-            score = scores.get("speed", 0) * 1.5
-        elif task_type == "cheap":
-            score = scores.get("accuracy", 0) * 0.5  # Lower cost providers tend to be less accurate
-        elif task_type == "accurate":
-            score = scores.get("accuracy", 0) + scores.get("reasoning", 0)
-        else:  # general, creative
-            score = (scores.get("accuracy", 0) + scores.get("speed", 0)) / 2
-        scored.append((p, score))
-    scored.sort(key=lambda x: x[1], reverse=True)
-    if not scored:
-        return {"error": "no providers configured", "task_type": task_type}
-    return {"task_type": task_type, "recommended": scored[0][0], "alternatives": [p for p, _ in scored[1:3]], "reasoning": f"Best provider for {task_type} tasks"}
+    try:
+        if task_type not in _TASKS:
+            return {"error": f"unknown task_type: {task_type}", "valid_types": list(_TASKS.keys())}
+        candidates = _TASKS[task_type]
+        scored = []
+        for p in candidates:
+            configured, valid = _check_provider(p)
+            if not (configured and valid):
+                continue
+            scores = _SCORES.get(p, {})
+            if task_type == "reasoning":
+                score = scores.get("reasoning", 0) * 1.5 + scores.get("accuracy", 0)
+            elif task_type == "code":
+                score = scores.get("accuracy", 0) + scores.get("reasoning", 0) * 0.5
+            elif task_type == "fast":
+                score = scores.get("speed", 0) * 1.5
+            elif task_type == "cheap":
+                score = scores.get("accuracy", 0) * 0.5  # Lower cost providers tend to be less accurate
+            elif task_type == "accurate":
+                score = scores.get("accuracy", 0) + scores.get("reasoning", 0)
+            else:  # general, creative
+                score = (scores.get("accuracy", 0) + scores.get("speed", 0)) / 2
+            scored.append((p, score))
+        scored.sort(key=lambda x: x[1], reverse=True)
+        if not scored:
+            return {"error": "no providers configured", "task_type": task_type}
+        return {"task_type": task_type, "recommended": scored[0][0], "alternatives": [p for p, _ in scored[1:3]], "reasoning": f"Best provider for {task_type} tasks"}
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_provider_recommend"}
 
 
 def record_health_event(provider: str, status: str, response_time_ms: int = 0) -> None:

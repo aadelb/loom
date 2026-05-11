@@ -58,31 +58,34 @@ def research_cache_store(
         - expires_at: ISO 8601 timestamp when entry expires
         - cache_size: Current cache entry count
     """
-    cache_key = _normalize_query(query)
-    expires_at = time.time() + (ttl_hours * 3600)
+    try:
+        cache_key = _normalize_query(query)
+        expires_at = time.time() + (ttl_hours * 3600)
 
-    _response_cache[cache_key] = {
-        "response": response,
-        "expires_at": expires_at,
-        "tool_name": tool_name,
-        "created_at": time.time(),
-    }
+        _response_cache[cache_key] = {
+            "response": response,
+            "expires_at": expires_at,
+            "tool_name": tool_name,
+            "created_at": time.time(),
+        }
 
-    expires_dt = datetime.fromtimestamp(expires_at, UTC).isoformat()
+        expires_dt = datetime.fromtimestamp(expires_at, UTC).isoformat()
 
-    logger.info(
-        "cache_stored",
-        cache_key=cache_key[:16],
-        ttl_hours=ttl_hours,
-        tool_name=tool_name,
-    )
+        logger.info(
+            "cache_stored",
+            cache_key=cache_key[:16],
+            ttl_hours=ttl_hours,
+            tool_name=tool_name,
+        )
 
-    return {
-        "cached": True,
-        "cache_key": cache_key[:64],
-        "expires_at": expires_dt,
-        "cache_size": len(_response_cache),
-    }
+        return {
+            "cached": True,
+            "cache_key": cache_key[:64],
+            "expires_at": expires_dt,
+            "cache_size": len(_response_cache),
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_cache_store"}
 
 
 def research_cache_lookup(query: str) -> dict[str, Any]:
@@ -98,44 +101,47 @@ def research_cache_lookup(query: str) -> dict[str, Any]:
         - cache_key: Normalized query key
         - age_seconds: Age of cache entry (None if miss)
     """
-    cache_key = _normalize_query(query)
-    now = time.time()
+    try:
+        cache_key = _normalize_query(query)
+        now = time.time()
 
-    if cache_key not in _response_cache:
-        _cache_stats["misses"] += 1
-        logger.debug("cache_miss", cache_key=cache_key[:16])
+        if cache_key not in _response_cache:
+            _cache_stats["misses"] += 1
+            logger.debug("cache_miss", cache_key=cache_key[:16])
+            return {
+                "hit": False,
+                "response": None,
+                "cache_key": cache_key[:64],
+                "age_seconds": None,
+            }
+
+        entry = _response_cache[cache_key]
+
+        # Check TTL
+        if now > entry["expires_at"]:
+            del _response_cache[cache_key]
+            _cache_stats["misses"] += 1
+            logger.debug("cache_expired", cache_key=cache_key[:16])
+            return {
+                "hit": False,
+                "response": None,
+                "cache_key": cache_key[:64],
+                "age_seconds": None,
+            }
+
+        # Cache hit
+        _cache_stats["hits"] += 1
+        age_seconds = int(now - entry["created_at"])
+        logger.debug("cache_hit", cache_key=cache_key[:16], age_seconds=age_seconds)
+
         return {
-            "hit": False,
-            "response": None,
+            "hit": True,
+            "response": entry["response"],
             "cache_key": cache_key[:64],
-            "age_seconds": None,
+            "age_seconds": age_seconds,
         }
-
-    entry = _response_cache[cache_key]
-
-    # Check TTL
-    if now > entry["expires_at"]:
-        del _response_cache[cache_key]
-        _cache_stats["misses"] += 1
-        logger.debug("cache_expired", cache_key=cache_key[:16])
-        return {
-            "hit": False,
-            "response": None,
-            "cache_key": cache_key[:64],
-            "age_seconds": None,
-        }
-
-    # Cache hit
-    _cache_stats["hits"] += 1
-    age_seconds = int(now - entry["created_at"])
-    logger.debug("cache_hit", cache_key=cache_key[:16], age_seconds=age_seconds)
-
-    return {
-        "hit": True,
-        "response": entry["response"],
-        "cache_key": cache_key[:64],
-        "age_seconds": age_seconds,
-    }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_cache_lookup"}
 
 
 def research_response_cache_stats() -> dict[str, Any]:
@@ -151,44 +157,47 @@ def research_response_cache_stats() -> dict[str, Any]:
         - newest_entry: ISO timestamp of newest entry
         - memory_estimate_kb: Rough memory estimate in KB
     """
-    now = time.time()
+    try:
+        now = time.time()
 
-    # Clean expired entries
-    expired = [k for k, v in _response_cache.items() if now > v["expires_at"]]
-    for k in expired:
-        del _response_cache[k]
+        # Clean expired entries
+        expired = [k for k, v in _response_cache.items() if now > v["expires_at"]]
+        for k in expired:
+            del _response_cache[k]
 
-    total_entries = len(_response_cache)
-    total_requests = _cache_stats["hits"] + _cache_stats["misses"]
-    hit_rate = (
-        round(100 * _cache_stats["hits"] / total_requests, 2)
-        if total_requests > 0
-        else 0.0
-    )
+        total_entries = len(_response_cache)
+        total_requests = _cache_stats["hits"] + _cache_stats["misses"]
+        hit_rate = (
+            round(100 * _cache_stats["hits"] / total_requests, 2)
+            if total_requests > 0
+            else 0.0
+        )
 
-    # Calculate timestamps
-    timestamps = [v["created_at"] for v in _response_cache.values()]
-    oldest = (
-        datetime.fromtimestamp(min(timestamps), UTC).isoformat()
-        if timestamps
-        else None
-    )
-    newest = (
-        datetime.fromtimestamp(max(timestamps), UTC).isoformat()
-        if timestamps
-        else None
-    )
+        # Calculate timestamps
+        timestamps = [v["created_at"] for v in _response_cache.values()]
+        oldest = (
+            datetime.fromtimestamp(min(timestamps), UTC).isoformat()
+            if timestamps
+            else None
+        )
+        newest = (
+            datetime.fromtimestamp(max(timestamps), UTC).isoformat()
+            if timestamps
+            else None
+        )
 
-    # Rough memory estimate (response + metadata per entry)
-    memory_kb = sum(len(v["response"]) for v in _response_cache.values()) // 1024
-    memory_kb += total_entries * 0.5  # ~500 bytes overhead per entry
+        # Rough memory estimate (response + metadata per entry)
+        memory_kb = sum(len(v["response"]) for v in _response_cache.values()) // 1024
+        memory_kb += total_entries * 0.5  # ~500 bytes overhead per entry
 
-    return {
-        "entries": total_entries,
-        "hits": _cache_stats["hits"],
-        "misses": _cache_stats["misses"],
-        "hit_rate_pct": hit_rate,
-        "oldest_entry": oldest,
-        "newest_entry": newest,
-        "memory_estimate_kb": round(memory_kb, 2),
-    }
+        return {
+            "entries": total_entries,
+            "hits": _cache_stats["hits"],
+            "misses": _cache_stats["misses"],
+            "hit_rate_pct": hit_rate,
+            "oldest_entry": oldest,
+            "newest_entry": newest,
+            "memory_estimate_kb": round(memory_kb, 2),
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_response_cache_stats"}

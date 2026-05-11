@@ -170,87 +170,91 @@ def research_grant_forensics(grant_id: str = "", text: str = "") -> dict[str, An
         Dict with zipf_exponent, benford_chi_square, anomaly_score (0-1),
         and detailed findings.
     """
-    if not text:
+    try:
+        if not text:
+            return {
+                "grant_id": grant_id,
+                "error": "No text provided",
+            }
+
+        # Tokenize and count word frequencies
+        words = re.findall(r"\b[a-z]+\b", text.lower())
+        word_freq = Counter(words)
+
+        # Remove common stop words to improve Zipf analysis
+        stop_words = {
+            "the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for",
+            "of", "with", "by", "from", "as", "is", "was", "be", "been", "have",
+            "has", "do", "does", "did", "will", "would", "should", "could", "may",
+            "might", "can", "that", "this", "these", "those", "which", "who",
+            "what", "when", "where", "why", "how", "all", "each", "every", "both",
+            "few", "more", "most", "other", "some", "such", "no", "nor", "not",
+            "only", "own", "same", "so", "than", "too", "very", "just"
+        }
+        word_freq = {w: f for w, f in word_freq.items() if w not in stop_words}
+
+        zipf_exponent = _compute_zipf_exponent(word_freq)
+
+        # Extract all numbers from text
+        numbers_str = re.findall(r"\b\d+(?:\.\d+)?\b", text)
+        numbers = []
+        for num_str in numbers_str:
+            try:
+                if "." in num_str:
+                    numbers.append(float(num_str))
+                else:
+                    numbers.append(float(int(num_str)))
+            except ValueError:
+                pass
+
+        benford_chi_sq, benford_pval = _check_benford_distribution(numbers)
+
+        # Compute anomaly score: normalized combination of deviations
+        zipf_anomaly = 0.0
+        if zipf_exponent < 0.5 or zipf_exponent > 2.0:
+            zipf_anomaly = min(1.0, abs(zipf_exponent - 1.0) / 1.5)
+
+        benford_anomaly = 0.0
+        if benford_chi_sq > 15.5:
+            benford_anomaly = min(1.0, benford_chi_sq / 30.0)
+
+        anomaly_score = (zipf_anomaly + benford_anomaly) / 2.0
+
+        # Compute fraud_probability combining both signals
+        fraud_probability = anomaly_score
+        # Boost if Zipf is clearly anomalous
+        if zipf_exponent < 0.5 or zipf_exponent > 2.0:
+            fraud_probability = min(1.0, fraud_probability + 0.3)
+        # Boost if superlative words are overrepresented
+        superlatives = sum(1 for w in word_freq if w in (
+            "revolutionary", "unprecedented", "groundbreaking", "novel", "innovative",
+            "transformative", "paradigm", "breakthrough", "conclusively", "proves",
+        ))
+        if superlatives >= 3:
+            fraud_probability = min(1.0, fraud_probability + 0.2)
+
         return {
             "grant_id": grant_id,
-            "error": "No text provided",
+            "text_length": len(text),
+            "unique_words": len(word_freq),
+            "total_words": sum(word_freq.values()),
+            "zipf_exponent": round(zipf_exponent, 3),
+            "zipf_anomaly": "FLAGGED" if zipf_exponent < 0.5 or zipf_exponent > 2.0 else "normal",
+            "numbers_found": len(numbers),
+            "benford_chi_square": round(benford_chi_sq, 3),
+            "benford_pvalue": round(benford_pval, 3),
+            "benford_anomaly": "FLAGGED" if benford_chi_sq > 15.5 else "normal",
+            "fraud_probability": round(fraud_probability, 3),
+            "anomaly_score": round(anomaly_score, 3),
+            "linguistic_markers": [w for w in word_freq if w in (
+                "revolutionary", "unprecedented", "groundbreaking", "novel", "innovative",
+                "transformative", "paradigm", "breakthrough", "conclusively",
+            )][:10],
+            "risk_level": "HIGH" if fraud_probability > 0.5 else "MEDIUM" if fraud_probability > 0.3 else "LOW",
         }
-
-    # Tokenize and count word frequencies
-    words = re.findall(r"\b[a-z]+\b", text.lower())
-    word_freq = Counter(words)
-
-    # Remove common stop words to improve Zipf analysis
-    stop_words = {
-        "the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for",
-        "of", "with", "by", "from", "as", "is", "was", "be", "been", "have",
-        "has", "do", "does", "did", "will", "would", "should", "could", "may",
-        "might", "can", "that", "this", "these", "those", "which", "who",
-        "what", "when", "where", "why", "how", "all", "each", "every", "both",
-        "few", "more", "most", "other", "some", "such", "no", "nor", "not",
-        "only", "own", "same", "so", "than", "too", "very", "just"
-    }
-    word_freq = {w: f for w, f in word_freq.items() if w not in stop_words}
-
-    zipf_exponent = _compute_zipf_exponent(word_freq)
-
-    # Extract all numbers from text
-    numbers_str = re.findall(r"\b\d+(?:\.\d+)?\b", text)
-    numbers = []
-    for num_str in numbers_str:
-        try:
-            if "." in num_str:
-                numbers.append(float(num_str))
-            else:
-                numbers.append(float(int(num_str)))
-        except ValueError:
-            pass
-
-    benford_chi_sq, benford_pval = _check_benford_distribution(numbers)
-
-    # Compute anomaly score: normalized combination of deviations
-    zipf_anomaly = 0.0
-    if zipf_exponent < 0.5 or zipf_exponent > 2.0:
-        zipf_anomaly = min(1.0, abs(zipf_exponent - 1.0) / 1.5)
-
-    benford_anomaly = 0.0
-    if benford_chi_sq > 15.5:
-        benford_anomaly = min(1.0, benford_chi_sq / 30.0)
-
-    anomaly_score = (zipf_anomaly + benford_anomaly) / 2.0
-
-    # Compute fraud_probability combining both signals
-    fraud_probability = anomaly_score
-    # Boost if Zipf is clearly anomalous
-    if zipf_exponent < 0.5 or zipf_exponent > 2.0:
-        fraud_probability = min(1.0, fraud_probability + 0.3)
-    # Boost if superlative words are overrepresented
-    superlatives = sum(1 for w in word_freq if w in (
-        "revolutionary", "unprecedented", "groundbreaking", "novel", "innovative",
-        "transformative", "paradigm", "breakthrough", "conclusively", "proves",
-    ))
-    if superlatives >= 3:
-        fraud_probability = min(1.0, fraud_probability + 0.2)
-
-    return {
-        "grant_id": grant_id,
-        "text_length": len(text),
-        "unique_words": len(word_freq),
-        "total_words": sum(word_freq.values()),
-        "zipf_exponent": round(zipf_exponent, 3),
-        "zipf_anomaly": "FLAGGED" if zipf_exponent < 0.5 or zipf_exponent > 2.0 else "normal",
-        "numbers_found": len(numbers),
-        "benford_chi_square": round(benford_chi_sq, 3),
-        "benford_pvalue": round(benford_pval, 3),
-        "benford_anomaly": "FLAGGED" if benford_chi_sq > 15.5 else "normal",
-        "fraud_probability": round(fraud_probability, 3),
-        "anomaly_score": round(anomaly_score, 3),
-        "linguistic_markers": [w for w in word_freq if w in (
-            "revolutionary", "unprecedented", "groundbreaking", "novel", "innovative",
-            "transformative", "paradigm", "breakthrough", "conclusively",
-        )][:10],
-        "risk_level": "HIGH" if fraud_probability > 0.5 else "MEDIUM" if fraud_probability > 0.3 else "LOW",
-    }
+    except Exception as exc:
+        logger.exception("research_grant_forensics failed")
+        return {"error": str(exc), "tool": "research_grant_forensics"}
 
 
 async def research_monoculture_detect(field: str, max_papers: int = 50) -> dict[str, Any]:
@@ -268,89 +272,92 @@ async def research_monoculture_detect(field: str, max_papers: int = 50) -> dict[
         Dict with field, methods_found, diversity_index, dominant_method,
         and monoculture_risk level.
     """
+    try:
+        async def _run() -> dict[str, Any]:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                # Search Semantic Scholar for recent papers in field
+                search_url = (
+                    f"{_SEMANTIC_SCHOLAR_API}/paper/search"
+                    f"?query={quote(field)}&limit={max_papers}&fields=title,abstract,year"
+                )
+                search_data = await _get_json(client, search_url)
 
-    async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            # Search Semantic Scholar for recent papers in field
-            search_url = (
-                f"{_SEMANTIC_SCHOLAR_API}/paper/search"
-                f"?query={quote(field)}&limit={max_papers}&fields=title,abstract,year"
-            )
-            search_data = await _get_json(client, search_url)
+                if not search_data or "data" not in search_data:
+                    return {
+                        "field": field,
+                        "error": "No papers found",
+                    }
 
-            if not search_data or "data" not in search_data:
-                return {
-                    "field": field,
-                    "error": "No papers found",
+                # Extract abstracts and look for method keywords
+                abstracts = []
+                for paper in search_data.get("data", [])[:max_papers]:
+                    abstract = paper.get("abstract", "")
+                    if abstract:
+                        abstracts.append(abstract.lower())
+
+                if not abstracts:
+                    return {
+                        "field": field,
+                        "papers_found": 0,
+                        "error": "No abstracts found",
+                    }
+
+                # Method keyword extraction (simplified)
+                method_keywords = {
+                    "neural network": 0, "deep learning": 0, "transformer": 0,
+                    "attention": 0, "cnn": 0, "lstm": 0, "rnn": 0, "ensemble": 0,
+                    "regression": 0, "classification": 0, "clustering": 0,
+                    "bayesian": 0, "markov": 0, "monte carlo": 0,
+                    "reinforcement learning": 0, "supervised": 0, "unsupervised": 0,
+                    "semi-supervised": 0, "transfer learning": 0, "few-shot": 0,
+                    "zero-shot": 0, "meta-learning": 0, "graph neural": 0,
+                    "natural language": 0, "computer vision": 0, "time series": 0,
                 }
 
-            # Extract abstracts and look for method keywords
-            abstracts = []
-            for paper in search_data.get("data", [])[:max_papers]:
-                abstract = paper.get("abstract", "")
-                if abstract:
-                    abstracts.append(abstract.lower())
+                for abstract in abstracts:
+                    for method in method_keywords.keys():
+                        if method in abstract:
+                            method_keywords[method] += 1
 
-            if not abstracts:
+                # Filter methods with at least 1 mention
+                methods_found = {m: c for m, c in method_keywords.items() if c > 0}
+                if not methods_found:
+                    return {
+                        "field": field,
+                        "papers_found": len(abstracts),
+                        "methods_found": 0,
+                        "error": "No methods detected",
+                    }
+
+                diversity_index = _shannon_diversity_index(methods_found)
+                dominant_method = max(methods_found.items(), key=lambda x: x[1])[0]
+                dominant_ratio = methods_found[dominant_method] / sum(methods_found.values())
+
+                # Monoculture risk: low diversity or high dominance ratio
+                monoculture_risk = 0.0
+                if diversity_index < 0.4:
+                    monoculture_risk = 0.7
+                elif diversity_index < 0.6:
+                    monoculture_risk = 0.4
+                if dominant_ratio > 0.5:
+                    monoculture_risk = max(monoculture_risk, dominant_ratio)
+
                 return {
                     "field": field,
-                    "papers_found": 0,
-                    "error": "No abstracts found",
+                    "papers_analyzed": len(abstracts),
+                    "methods_found": len(methods_found),
+                    "method_distribution": methods_found,
+                    "diversity_index": round(diversity_index, 3),
+                    "dominant_method": dominant_method,
+                    "dominant_ratio": round(dominant_ratio, 3),
+                    "monoculture_risk": round(monoculture_risk, 3),
+                    "risk_level": "HIGH" if monoculture_risk > 0.7 else "MEDIUM" if monoculture_risk > 0.4 else "LOW",
                 }
 
-            # Method keyword extraction (simplified)
-            method_keywords = {
-                "neural network": 0, "deep learning": 0, "transformer": 0,
-                "attention": 0, "cnn": 0, "lstm": 0, "rnn": 0, "ensemble": 0,
-                "regression": 0, "classification": 0, "clustering": 0,
-                "bayesian": 0, "markov": 0, "monte carlo": 0,
-                "reinforcement learning": 0, "supervised": 0, "unsupervised": 0,
-                "semi-supervised": 0, "transfer learning": 0, "few-shot": 0,
-                "zero-shot": 0, "meta-learning": 0, "graph neural": 0,
-                "natural language": 0, "computer vision": 0, "time series": 0,
-            }
-
-            for abstract in abstracts:
-                for method in method_keywords.keys():
-                    if method in abstract:
-                        method_keywords[method] += 1
-
-            # Filter methods with at least 1 mention
-            methods_found = {m: c for m, c in method_keywords.items() if c > 0}
-            if not methods_found:
-                return {
-                    "field": field,
-                    "papers_found": len(abstracts),
-                    "methods_found": 0,
-                    "error": "No methods detected",
-                }
-
-            diversity_index = _shannon_diversity_index(methods_found)
-            dominant_method = max(methods_found.items(), key=lambda x: x[1])[0]
-            dominant_ratio = methods_found[dominant_method] / sum(methods_found.values())
-
-            # Monoculture risk: low diversity or high dominance ratio
-            monoculture_risk = 0.0
-            if diversity_index < 0.4:
-                monoculture_risk = 0.7
-            elif diversity_index < 0.6:
-                monoculture_risk = 0.4
-            if dominant_ratio > 0.5:
-                monoculture_risk = max(monoculture_risk, dominant_ratio)
-
-            return {
-                "field": field,
-                "papers_analyzed": len(abstracts),
-                "methods_found": len(methods_found),
-                "method_distribution": methods_found,
-                "diversity_index": round(diversity_index, 3),
-                "dominant_method": dominant_method,
-                "dominant_ratio": round(dominant_ratio, 3),
-                "monoculture_risk": round(monoculture_risk, 3),
-                "risk_level": "HIGH" if monoculture_risk > 0.7 else "MEDIUM" if monoculture_risk > 0.4 else "LOW",
-            }
-
-    return await _run()
+        return await _run()
+    except Exception as exc:
+        logger.exception("research_monoculture_detect failed")
+        return {"error": str(exc), "tool": "research_monoculture_detect"}
 
 
 async def research_review_cartel(author_id: str) -> dict[str, Any]:
@@ -366,82 +373,85 @@ async def research_review_cartel(author_id: str) -> dict[str, Any]:
         Dict with author_id, papers_analyzed, mutual_citations count,
         and cartel_score (0-1).
     """
+    try:
+        async def _run() -> dict[str, Any]:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                # Get author papers
+                author_url = f"{_SEMANTIC_SCHOLAR_API}/author/{author_id}"
+                author_data = await _get_json(client, author_url)
 
-    async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            # Get author papers
-            author_url = f"{_SEMANTIC_SCHOLAR_API}/author/{author_id}"
-            author_data = await _get_json(client, author_url)
+                if not author_data:
+                    return {
+                        "author_id": author_id,
+                        "error": "Author not found",
+                    }
 
-            if not author_data:
+                papers = author_data.get("papers", [])
+                if not papers:
+                    return {
+                        "author_id": author_id,
+                        "papers_analyzed": 0,
+                        "error": "No papers found",
+                    }
+
+                paper_ids = set()
+                paper_references: dict[str, set[str]] = {}
+
+                # Fetch each paper's references and citations
+                mutual_pairs = []
+                for paper in papers[:20]:  # Limit to 20 papers to avoid timeouts
+                    paper_id = paper.get("paperId")
+                    if not paper_id:
+                        continue
+
+                    paper_ids.add(paper_id)
+
+                    # Fetch paper details
+                    paper_url = (
+                        f"{_SEMANTIC_SCHOLAR_API}/paper/{paper_id}"
+                        f"?fields=references,citations"
+                    )
+                    paper_detail = await _get_json(client, paper_url)
+
+                    if not paper_detail:
+                        continue
+
+                    refs = paper_detail.get("references", [])
+                    ref_ids = {r.get("paperId") for r in refs if r.get("paperId")}
+                    paper_references[paper_id] = ref_ids
+
+                    # Check for mutual citations
+                    cites = paper_detail.get("citations", [])
+                    citing_ids = {c.get("citingPaper", {}).get("paperId") for c in cites}
+
+                    for citing_id in citing_ids:
+                        if citing_id in paper_ids and citing_id != paper_id:
+                            # Check if this citing_id also references paper_id
+                            if paper_id in paper_references.get(citing_id, set()):
+                                mutual_pairs.append((paper_id, citing_id))
+
+                # Compute cartel score based on mutual citation density
+                cartel_score = 0.0
+                if len(papers) > 1:
+                    max_possible_pairs = len(papers) * (len(papers) - 1) / 2
+                    if max_possible_pairs > 0:
+                        cartel_score = min(1.0, len(mutual_pairs) / max_possible_pairs)
+
                 return {
                     "author_id": author_id,
-                    "error": "Author not found",
+                    "papers_analyzed": len(papers[:20]),
+                    "mutual_citations": len(mutual_pairs),
+                    "mutual_citation_pairs": [
+                        {"paper1": p[0], "paper2": p[1]} for p in mutual_pairs[:10]
+                    ],
+                    "cartel_score": round(cartel_score, 3),
+                    "risk_level": "HIGH" if cartel_score > 0.3 else "MEDIUM" if cartel_score > 0.1 else "LOW",
                 }
 
-            papers = author_data.get("papers", [])
-            if not papers:
-                return {
-                    "author_id": author_id,
-                    "papers_analyzed": 0,
-                    "error": "No papers found",
-                }
-
-            paper_ids = set()
-            paper_references: dict[str, set[str]] = {}
-
-            # Fetch each paper's references and citations
-            mutual_pairs = []
-            for paper in papers[:20]:  # Limit to 20 papers to avoid timeouts
-                paper_id = paper.get("paperId")
-                if not paper_id:
-                    continue
-
-                paper_ids.add(paper_id)
-
-                # Fetch paper details
-                paper_url = (
-                    f"{_SEMANTIC_SCHOLAR_API}/paper/{paper_id}"
-                    f"?fields=references,citations"
-                )
-                paper_detail = await _get_json(client, paper_url)
-
-                if not paper_detail:
-                    continue
-
-                refs = paper_detail.get("references", [])
-                ref_ids = {r.get("paperId") for r in refs if r.get("paperId")}
-                paper_references[paper_id] = ref_ids
-
-                # Check for mutual citations
-                cites = paper_detail.get("citations", [])
-                citing_ids = {c.get("citingPaper", {}).get("paperId") for c in cites}
-
-                for citing_id in citing_ids:
-                    if citing_id in paper_ids and citing_id != paper_id:
-                        # Check if this citing_id also references paper_id
-                        if paper_id in paper_references.get(citing_id, set()):
-                            mutual_pairs.append((paper_id, citing_id))
-
-            # Compute cartel score based on mutual citation density
-            cartel_score = 0.0
-            if len(papers) > 1:
-                max_possible_pairs = len(papers) * (len(papers) - 1) / 2
-                if max_possible_pairs > 0:
-                    cartel_score = min(1.0, len(mutual_pairs) / max_possible_pairs)
-
-            return {
-                "author_id": author_id,
-                "papers_analyzed": len(papers[:20]),
-                "mutual_citations": len(mutual_pairs),
-                "mutual_citation_pairs": [
-                    {"paper1": p[0], "paper2": p[1]} for p in mutual_pairs[:10]
-                ],
-                "cartel_score": round(cartel_score, 3),
-                "risk_level": "HIGH" if cartel_score > 0.3 else "MEDIUM" if cartel_score > 0.1 else "LOW",
-            }
-
-    return await _run()
+        return await _run()
+    except Exception as exc:
+        logger.exception("research_review_cartel failed")
+        return {"error": str(exc), "tool": "research_review_cartel"}
 
 
 def research_data_fabrication(numbers: list[float]) -> dict[str, Any]:
@@ -457,49 +467,53 @@ def research_data_fabrication(numbers: list[float]) -> dict[str, Any]:
         Dict with grim_failures count, benford_deviation, and
         fabrication_risk (0-1).
     """
-    if not numbers:
-        return {"error": "No numbers provided"}
+    try:
+        if not numbers:
+            return {"error": "No numbers provided"}
 
-    # GRIM test: check if means are achievable given typical sample sizes
-    # Simplified: if mean has more decimal places than 1/n allows, flag it
-    grim_failures = 0
-    decimal_inconsistencies = []
+        # GRIM test: check if means are achievable given typical sample sizes
+        # Simplified: if mean has more decimal places than 1/n allows, flag it
+        grim_failures = 0
+        decimal_inconsistencies = []
 
-    # Assume sample size ~30 (typical for psychological studies)
-    # For n=30, possible means are multiples of 1/30 ≈ 0.0333
-    typical_sample_size = 30
-    min_granularity = 1.0 / typical_sample_size
+        # Assume sample size ~30 (typical for psychological studies)
+        # For n=30, possible means are multiples of 1/30 ≈ 0.0333
+        typical_sample_size = 30
+        min_granularity = 1.0 / typical_sample_size
 
-    for num in numbers:
-        # Check decimal precision
-        str_num = f"{num:.4f}"
-        if "." in str_num:
-            decimal_places = len(str_num.split(".")[1].rstrip("0"))
-            # If too many decimal places relative to sample size, flag
-            if decimal_places > 4:
-                grim_failures += 1
-                decimal_inconsistencies.append(num)
+        for num in numbers:
+            # Check decimal precision
+            str_num = f"{num:.4f}"
+            if "." in str_num:
+                decimal_places = len(str_num.split(".")[1].rstrip("0"))
+                # If too many decimal places relative to sample size, flag
+                if decimal_places > 4:
+                    grim_failures += 1
+                    decimal_inconsistencies.append(num)
 
-    # Benford test
-    benford_chi_sq, benford_pval = _check_benford_distribution(numbers)
+        # Benford test
+        benford_chi_sq, benford_pval = _check_benford_distribution(numbers)
 
-    # Fabrication risk: combination of GRIM failures and Benford anomaly
-    grim_ratio = grim_failures / len(numbers) if numbers else 0.0
-    benford_ratio = min(1.0, benford_chi_sq / 20.0)
+        # Fabrication risk: combination of GRIM failures and Benford anomaly
+        grim_ratio = grim_failures / len(numbers) if numbers else 0.0
+        benford_ratio = min(1.0, benford_chi_sq / 20.0)
 
-    fabrication_risk = (grim_ratio + benford_ratio) / 2.0
+        fabrication_risk = (grim_ratio + benford_ratio) / 2.0
 
-    return {
-        "numbers_analyzed": len(numbers),
-        "grim_failures": grim_failures,
-        "grim_failure_rate": round(grim_ratio, 3),
-        "decimal_anomalies": decimal_inconsistencies[:10],
-        "benford_chi_square": round(benford_chi_sq, 3),
-        "benford_pvalue": round(benford_pval, 3),
-        "benford_deviation": "FLAGGED" if benford_chi_sq > 15.5 else "normal",
-        "fabrication_risk": round(fabrication_risk, 3),
-        "risk_level": "HIGH" if fabrication_risk > 0.7 else "MEDIUM" if fabrication_risk > 0.4 else "LOW",
-    }
+        return {
+            "numbers_analyzed": len(numbers),
+            "grim_failures": grim_failures,
+            "grim_failure_rate": round(grim_ratio, 3),
+            "decimal_anomalies": decimal_inconsistencies[:10],
+            "benford_chi_square": round(benford_chi_sq, 3),
+            "benford_pvalue": round(benford_pval, 3),
+            "benford_deviation": "FLAGGED" if benford_chi_sq > 15.5 else "normal",
+            "fabrication_risk": round(fabrication_risk, 3),
+            "risk_level": "HIGH" if fabrication_risk > 0.7 else "MEDIUM" if fabrication_risk > 0.4 else "LOW",
+        }
+    except Exception as exc:
+        logger.exception("research_data_fabrication failed")
+        return {"error": str(exc), "tool": "research_data_fabrication"}
 
 
 async def research_institutional_decay(institution: str) -> dict[str, Any]:
@@ -515,105 +529,108 @@ async def research_institutional_decay(institution: str) -> dict[str, Any]:
         Dict with institution, retraction_rate, publication_trend (slope),
         author_turnover, and decay_score (0-1).
     """
+    try:
+        async def _run() -> dict[str, Any]:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                # Search for institution papers on Semantic Scholar
+                search_url = (
+                    f"{_SEMANTIC_SCHOLAR_API}/paper/search"
+                    f"?query=from:{quote(institution)}&limit=50&fields=year,authors,citationCount"
+                )
+                search_data = await _get_json(client, search_url)
 
-    async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            # Search for institution papers on Semantic Scholar
-            search_url = (
-                f"{_SEMANTIC_SCHOLAR_API}/paper/search"
-                f"?query=from:{quote(institution)}&limit=50&fields=year,authors,citationCount"
-            )
-            search_data = await _get_json(client, search_url)
+                if not search_data or "data" not in search_data:
+                    return {
+                        "institution": institution,
+                        "error": "No papers found",
+                    }
 
-            if not search_data or "data" not in search_data:
+                papers = search_data.get("data", [])
+                if not papers:
+                    return {
+                        "institution": institution,
+                        "papers_found": 0,
+                        "error": "No papers found",
+                    }
+
+                # Estimate retraction rate (simplified: query Crossref)
+                retraction_url = (
+                    f"https://api.crossref.org/works"
+                    f"?query={quote(institution)}&filter=has-retracted-article:true&rows=1"
+                )
+                retraction_data = await _get_json(client, retraction_url)
+                total_with_retraction = 0
+                if retraction_data and "message" in retraction_data:
+                    total_with_retraction = retraction_data["message"].get("total-results", 0)
+
+                # Publication trend over last 5 years
+                pub_by_year: dict[int, int] = {}
+                all_authors: set[str] = set()
+
+                for paper in papers:
+                    year = paper.get("year", 0)
+                    if 2019 <= year <= 2024:
+                        pub_by_year[year] = pub_by_year.get(year, 0) + 1
+
+                    # Track authors for turnover estimate
+                    authors = paper.get("authors", [])
+                    for auth in authors:
+                        if isinstance(auth, dict):
+                            all_authors.add(auth.get("name", ""))
+
+                # Estimate publication trend (linear regression on year)
+                years_list = sorted(pub_by_year.keys())
+                if len(years_list) >= 2:
+                    counts = [pub_by_year[y] for y in years_list]
+                    n = len(years_list)
+                    sum_y = sum(counts)
+                    sum_x = sum(years_list)
+                    sum_xy = sum(y * c for y, c in zip(years_list, counts))
+                    sum_x2 = sum(y * y for y in years_list)
+                    trend_slope = (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x * sum_x)
+                else:
+                    trend_slope = 0.0
+
+                # Retraction rate estimate
+                total_papers = sum(pub_by_year.values())
+                retraction_rate = (
+                    (total_with_retraction / total_papers) if total_papers > 0 else 0.0
+                )
+
+                # Author turnover: rough estimate from new/established authors
+                # (Simplified: number of unique authors)
+                author_turnover = len(all_authors) / max(1, total_papers) if total_papers > 0 else 0.0
+
+                # Decay score: combination of retraction rate and declining publications
+                decay_score = 0.0
+                if retraction_rate > 0.02:  # >2% retractions is concerning
+                    decay_score += min(0.5, retraction_rate * 10)
+                if trend_slope < -1:  # Declining trend
+                    decay_score += 0.3
+                if author_turnover > 1.0:  # High turnover
+                    decay_score += 0.2
+
+                decay_score = min(1.0, decay_score)
+
                 return {
                     "institution": institution,
-                    "error": "No papers found",
+                    "papers_analyzed": len(papers),
+                    "total_years": len(years_list),
+                    "retraction_rate": round(retraction_rate, 4),
+                    "retracted_papers_found": total_with_retraction,
+                    "publication_by_year": pub_by_year,
+                    "publication_trend_slope": round(trend_slope, 2),
+                    "trend_direction": "declining" if trend_slope < -0.5 else "stable" if abs(trend_slope) < 0.5 else "growing",
+                    "unique_authors": len(all_authors),
+                    "author_turnover": round(author_turnover, 3),
+                    "decay_score": round(decay_score, 3),
+                    "risk_level": "HIGH" if decay_score > 0.6 else "MEDIUM" if decay_score > 0.3 else "LOW",
                 }
 
-            papers = search_data.get("data", [])
-            if not papers:
-                return {
-                    "institution": institution,
-                    "papers_found": 0,
-                    "error": "No papers found",
-                }
-
-            # Estimate retraction rate (simplified: query Crossref)
-            retraction_url = (
-                f"https://api.crossref.org/works"
-                f"?query={quote(institution)}&filter=has-retracted-article:true&rows=1"
-            )
-            retraction_data = await _get_json(client, retraction_url)
-            total_with_retraction = 0
-            if retraction_data and "message" in retraction_data:
-                total_with_retraction = retraction_data["message"].get("total-results", 0)
-
-            # Publication trend over last 5 years
-            pub_by_year: dict[int, int] = {}
-            all_authors: set[str] = set()
-
-            for paper in papers:
-                year = paper.get("year", 0)
-                if 2019 <= year <= 2024:
-                    pub_by_year[year] = pub_by_year.get(year, 0) + 1
-
-                # Track authors for turnover estimate
-                authors = paper.get("authors", [])
-                for auth in authors:
-                    if isinstance(auth, dict):
-                        all_authors.add(auth.get("name", ""))
-
-            # Estimate publication trend (linear regression on year)
-            years_list = sorted(pub_by_year.keys())
-            if len(years_list) >= 2:
-                counts = [pub_by_year[y] for y in years_list]
-                n = len(years_list)
-                sum_y = sum(counts)
-                sum_x = sum(years_list)
-                sum_xy = sum(y * c for y, c in zip(years_list, counts))
-                sum_x2 = sum(y * y for y in years_list)
-                trend_slope = (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x * sum_x)
-            else:
-                trend_slope = 0.0
-
-            # Retraction rate estimate
-            total_papers = sum(pub_by_year.values())
-            retraction_rate = (
-                (total_with_retraction / total_papers) if total_papers > 0 else 0.0
-            )
-
-            # Author turnover: rough estimate from new/established authors
-            # (Simplified: number of unique authors)
-            author_turnover = len(all_authors) / max(1, total_papers) if total_papers > 0 else 0.0
-
-            # Decay score: combination of retraction rate and declining publications
-            decay_score = 0.0
-            if retraction_rate > 0.02:  # >2% retractions is concerning
-                decay_score += min(0.5, retraction_rate * 10)
-            if trend_slope < -1:  # Declining trend
-                decay_score += 0.3
-            if author_turnover > 1.0:  # High turnover
-                decay_score += 0.2
-
-            decay_score = min(1.0, decay_score)
-
-            return {
-                "institution": institution,
-                "papers_analyzed": len(papers),
-                "total_years": len(years_list),
-                "retraction_rate": round(retraction_rate, 4),
-                "retracted_papers_found": total_with_retraction,
-                "publication_by_year": pub_by_year,
-                "publication_trend_slope": round(trend_slope, 2),
-                "trend_direction": "declining" if trend_slope < -0.5 else "stable" if abs(trend_slope) < 0.5 else "growing",
-                "unique_authors": len(all_authors),
-                "author_turnover": round(author_turnover, 3),
-                "decay_score": round(decay_score, 3),
-                "risk_level": "HIGH" if decay_score > 0.6 else "MEDIUM" if decay_score > 0.3 else "LOW",
-            }
-
-    return await _run()
+        return await _run()
+    except Exception as exc:
+        logger.exception("research_institutional_decay failed")
+        return {"error": str(exc), "tool": "research_institutional_decay"}
 
 
 async def research_shell_funding(company: str) -> dict[str, Any]:
@@ -629,86 +646,89 @@ async def research_shell_funding(company: str) -> dict[str, Any]:
         Dict with company, corporate_links (connected entities), funding_chains,
         and opacity_score (0-1).
     """
+    try:
+        async def _run() -> dict[str, Any]:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                # Query OpenCorporates
+                oc_url = f"{_OPENCORPORATES_API}?q={quote(company)}"
+                oc_data = await _get_json(client, oc_url)
 
-    async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            # Query OpenCorporates
-            oc_url = f"{_OPENCORPORATES_API}?q={quote(company)}"
-            oc_data = await _get_json(client, oc_url)
+                if not oc_data or "companies" not in oc_data.get("results", {}):
+                    return {
+                        "company": company,
+                        "error": "Company not found in OpenCorporates",
+                    }
 
-            if not oc_data or "companies" not in oc_data.get("results", {}):
+                companies = oc_data.get("results", {}).get("companies", [])
+                if not companies:
+                    return {
+                        "company": company,
+                        "companies_found": 0,
+                        "error": "No companies found",
+                    }
+
+                # Extract corporate details
+                corporate_links = []
+                opacity_indicators = []
+
+                for corp in companies[:10]:
+                    corp_name = corp.get("name", "")
+                    corp_jurisdiction = corp.get("jurisdiction_code", "")
+                    corp_type = corp.get("company_type", "")
+                    corp_status = corp.get("status", "")
+                    inactive_since = corp.get("inactive_since", "")
+
+                    # Flag opacity indicators
+                    if corp_status in ("inactive", "dissolved", "removed"):
+                        opacity_indicators.append(f"Inactive status: {corp_status}")
+
+                    if inactive_since:
+                        opacity_indicators.append(f"Inactive since: {inactive_since}")
+
+                    # Flag jurisdictions known for opacity
+                    if corp_jurisdiction in ("ky", "de", "nv", "bvi", "cayman", "panama"):
+                        opacity_indicators.append(f"Opaque jurisdiction: {corp_jurisdiction}")
+
+                    # Flag shell company patterns
+                    if corp_type in ("shell", "holding", "nominee"):
+                        opacity_indicators.append(f"Shell pattern: {corp_type}")
+
+                    corporate_links.append({
+                        "name": corp_name,
+                        "jurisdiction": corp_jurisdiction,
+                        "type": corp_type,
+                        "status": corp_status,
+                        "inactive_since": inactive_since,
+                    })
+
+                # Opacity score based on indicators
+                opacity_score = 0.0
+                if len(opacity_indicators) > 0:
+                    opacity_score = min(1.0, len(opacity_indicators) / 5.0)
+
+                # Simplified funding chain analysis (would need SEC EDGAR integration)
+                funding_chains = [
+                    {
+                        "stage": "incorporation",
+                        "jurisdiction": companies[0].get("jurisdiction_code", ""),
+                        "opacity": "high" if len(opacity_indicators) > 2 else "medium",
+                    }
+                ]
+
                 return {
                     "company": company,
-                    "error": "Company not found in OpenCorporates",
+                    "companies_found": len(companies),
+                    "corporate_links": corporate_links[:5],
+                    "opacity_indicators": opacity_indicators[:10],
+                    "funding_chains": funding_chains,
+                    "opacity_score": round(opacity_score, 3),
+                    "risk_level": "HIGH" if opacity_score > 0.6 else "MEDIUM" if opacity_score > 0.3 else "LOW",
                 }
 
-            companies = oc_data.get("results", {}).get("companies", [])
-            if not companies:
-                return {
-                    "company": company,
-                    "companies_found": 0,
-                    "error": "No companies found",
-                }
-
-            # Extract corporate details
-            corporate_links = []
-            opacity_indicators = []
-
-            for corp in companies[:10]:
-                corp_name = corp.get("name", "")
-                corp_jurisdiction = corp.get("jurisdiction_code", "")
-                corp_type = corp.get("company_type", "")
-                corp_status = corp.get("status", "")
-                inactive_since = corp.get("inactive_since", "")
-
-                # Flag opacity indicators
-                if corp_status in ("inactive", "dissolved", "removed"):
-                    opacity_indicators.append(f"Inactive status: {corp_status}")
-
-                if inactive_since:
-                    opacity_indicators.append(f"Inactive since: {inactive_since}")
-
-                # Flag jurisdictions known for opacity
-                if corp_jurisdiction in ("ky", "de", "nv", "bvi", "cayman", "panama"):
-                    opacity_indicators.append(f"Opaque jurisdiction: {corp_jurisdiction}")
-
-                # Flag shell company patterns
-                if corp_type in ("shell", "holding", "nominee"):
-                    opacity_indicators.append(f"Shell pattern: {corp_type}")
-
-                corporate_links.append({
-                    "name": corp_name,
-                    "jurisdiction": corp_jurisdiction,
-                    "type": corp_type,
-                    "status": corp_status,
-                    "inactive_since": inactive_since,
-                })
-
-            # Opacity score based on indicators
-            opacity_score = 0.0
-            if len(opacity_indicators) > 0:
-                opacity_score = min(1.0, len(opacity_indicators) / 5.0)
-
-            # Simplified funding chain analysis (would need SEC EDGAR integration)
-            funding_chains = [
-                {
-                    "stage": "incorporation",
-                    "jurisdiction": companies[0].get("jurisdiction_code", ""),
-                    "opacity": "high" if len(opacity_indicators) > 2 else "medium",
-                }
-            ]
-
-            return {
-                "company": company,
-                "companies_found": len(companies),
-                "corporate_links": corporate_links[:5],
-                "opacity_indicators": opacity_indicators[:10],
-                "funding_chains": funding_chains,
-                "opacity_score": round(opacity_score, 3),
-                "risk_level": "HIGH" if opacity_score > 0.6 else "MEDIUM" if opacity_score > 0.3 else "LOW",
-            }
-
-    return await _run()
+        return await _run()
+    except Exception as exc:
+        logger.exception("research_shell_funding failed")
+        return {"error": str(exc), "tool": "research_shell_funding"}
 
 
 async def research_conference_arbitrage(conference: str) -> dict[str, Any]:
@@ -724,85 +744,88 @@ async def research_conference_arbitrage(conference: str) -> dict[str, Any]:
         Dict with conference, acceptance_trend, submission_timing_pattern,
         and arbitrage_opportunities list.
     """
+    try:
+        async def _run() -> dict[str, Any]:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                # Query DBLP for conference papers
+                dblp_url = f"{_DBLP_API}?q={quote(conference)}&format=json"
+                dblp_data = await _get_json(client, dblp_url)
 
-    async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            # Query DBLP for conference papers
-            dblp_url = f"{_DBLP_API}?q={quote(conference)}&format=json"
-            dblp_data = await _get_json(client, dblp_url)
+                if not dblp_data or "result" not in dblp_data:
+                    return {
+                        "conference": conference,
+                        "error": "Conference not found in DBLP",
+                    }
 
-            if not dblp_data or "result" not in dblp_data:
-                return {
-                    "conference": conference,
-                    "error": "Conference not found in DBLP",
+                results = dblp_data.get("result", {})
+                hits = results.get("hits", [])
+
+                if not hits or "@total" not in results:
+                    return {
+                        "conference": conference,
+                        "papers_found": 0,
+                        "error": "No papers found",
+                    }
+
+                total_papers = int(results.get("@total", 0))
+
+                # Extract publication years to analyze trend
+                pub_by_year: dict[int, int] = {}
+                for hit in hits[:100]:
+                    info = hit.get("info", {})
+                    year_str = info.get("year", "")
+                    if year_str and year_str.isdigit():
+                        year = int(year_str)
+                        pub_by_year[year] = pub_by_year.get(year, 0) + 1
+
+                # Analyze acceptance trend (would need submission data from conference websites)
+                acceptance_trend = []
+                if len(pub_by_year) > 1:
+                    years = sorted(pub_by_year.keys())
+                    for i, year in enumerate(years):
+                        acceptance_trend.append({
+                            "year": year,
+                            "papers": pub_by_year[year],
+                        })
+
+                # Detect submission timing patterns (papers submitted just before deadline)
+                # Simplified: would need submission metadata
+                submission_timing_pattern = {
+                    "peak_submission_period": "unknown",
+                    "concentration_ratio": 0.0,
                 }
 
-            results = dblp_data.get("result", {})
-            hits = results.get("hits", [])
+                # Identify arbitrage opportunities
+                arbitrage_opportunities = []
 
-            if not hits or "@total" not in results:
+                # Flag: rapid growth in acceptance (possible gaming)
+                if len(acceptance_trend) >= 2:
+                    recent_growth = (
+                        acceptance_trend[-1]["papers"] / acceptance_trend[-2]["papers"]
+                        if acceptance_trend[-2]["papers"] > 0 else 0
+                    )
+                    if recent_growth > 1.5:
+                        arbitrage_opportunities.append({
+                            "type": "rapid_acceptance_growth",
+                            "indicator": f"Growth ratio: {recent_growth:.2f}",
+                            "risk": "possible_gaming",
+                        })
+
                 return {
                     "conference": conference,
-                    "papers_found": 0,
-                    "error": "No papers found",
+                    "total_papers_in_dblp": total_papers,
+                    "papers_analyzed": len(hits),
+                    "years_covered": len(pub_by_year),
+                    "acceptance_trend": acceptance_trend,
+                    "submission_timing_pattern": submission_timing_pattern,
+                    "arbitrage_opportunities": arbitrage_opportunities,
+                    "arbitrage_risk": "HIGH" if len(arbitrage_opportunities) > 2 else "MEDIUM" if len(arbitrage_opportunities) > 0 else "LOW",
                 }
 
-            total_papers = int(results.get("@total", 0))
-
-            # Extract publication years to analyze trend
-            pub_by_year: dict[int, int] = {}
-            for hit in hits[:100]:
-                info = hit.get("info", {})
-                year_str = info.get("year", "")
-                if year_str and year_str.isdigit():
-                    year = int(year_str)
-                    pub_by_year[year] = pub_by_year.get(year, 0) + 1
-
-            # Analyze acceptance trend (would need submission data from conference websites)
-            acceptance_trend = []
-            if len(pub_by_year) > 1:
-                years = sorted(pub_by_year.keys())
-                for i, year in enumerate(years):
-                    acceptance_trend.append({
-                        "year": year,
-                        "papers": pub_by_year[year],
-                    })
-
-            # Detect submission timing patterns (papers submitted just before deadline)
-            # Simplified: would need submission metadata
-            submission_timing_pattern = {
-                "peak_submission_period": "unknown",
-                "concentration_ratio": 0.0,
-            }
-
-            # Identify arbitrage opportunities
-            arbitrage_opportunities = []
-
-            # Flag: rapid growth in acceptance (possible gaming)
-            if len(acceptance_trend) >= 2:
-                recent_growth = (
-                    acceptance_trend[-1]["papers"] / acceptance_trend[-2]["papers"]
-                    if acceptance_trend[-2]["papers"] > 0 else 0
-                )
-                if recent_growth > 1.5:
-                    arbitrage_opportunities.append({
-                        "type": "rapid_acceptance_growth",
-                        "indicator": f"Growth ratio: {recent_growth:.2f}",
-                        "risk": "possible_gaming",
-                    })
-
-            return {
-                "conference": conference,
-                "total_papers_in_dblp": total_papers,
-                "papers_analyzed": len(hits),
-                "years_covered": len(pub_by_year),
-                "acceptance_trend": acceptance_trend,
-                "submission_timing_pattern": submission_timing_pattern,
-                "arbitrage_opportunities": arbitrage_opportunities,
-                "arbitrage_risk": "HIGH" if len(arbitrage_opportunities) > 2 else "MEDIUM" if len(arbitrage_opportunities) > 0 else "LOW",
-            }
-
-    return await _run()
+        return await _run()
+    except Exception as exc:
+        logger.exception("research_conference_arbitrage failed")
+        return {"error": str(exc), "tool": "research_conference_arbitrage"}
 
 
 async def research_preprint_manipulation(arxiv_id: str = "", topic: str = "") -> dict[str, Any]:
@@ -819,122 +842,125 @@ async def research_preprint_manipulation(arxiv_id: str = "", topic: str = "") ->
         Dict with paper info, timing_analysis, social_amplification_score,
         and manipulation_risk (0-1).
     """
+    try:
+        async def _run() -> dict[str, Any]:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                local_arxiv_id = arxiv_id
+                # If topic provided, search for recent preprints
+                if topic and not local_arxiv_id:
+                    search_url = (
+                        f"{_ARXIV_API}?search_query=cat:cs.AI+AND+submittedDate:"
+                        f"[202401010000+TO+202412312359]&start=0&max_results=20"
+                    )
+                    arxiv_data = await _get_text(client, search_url)
+                    if not arxiv_data:
+                        return {
+                            "topic": topic,
+                            "error": "arXiv search failed",
+                        }
 
-    async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            local_arxiv_id = arxiv_id
-            # If topic provided, search for recent preprints
-            if topic and not local_arxiv_id:
-                search_url = (
-                    f"{_ARXIV_API}?search_query=cat:cs.AI+AND+submittedDate:"
-                    f"[202401010000+TO+202412312359]&start=0&max_results=20"
-                )
-                arxiv_data = await _get_text(client, search_url)
-                if not arxiv_data:
+                    # Parse first paper from results (simplified)
+                    import xml.etree.ElementTree as ET
+                    try:
+                        root = ET.fromstring(arxiv_data)
+                        entries = root.findall("{http://www.w3.org/2005/Atom}entry")
+                        if entries:
+                            entry = entries[0]
+                            local_arxiv_id = entry.find("{http://www.w3.org/2005/Atom}id").text.split("/abs/")[1]
+                    except Exception as exc:
+                        logger.debug("XML parse failed: %s", exc)
+                        return {
+                            "topic": topic,
+                            "error": "Could not parse arXiv results",
+                        }
+
+                if not local_arxiv_id:
                     return {
-                        "topic": topic,
-                        "error": "arXiv search failed",
+                        "error": "No arxiv_id or topic provided",
                     }
 
-                # Parse first paper from results (simplified)
-                import xml.etree.ElementTree as ET
-                try:
-                    root = ET.fromstring(arxiv_data)
-                    entries = root.findall("{http://www.w3.org/2005/Atom}entry")
-                    if entries:
-                        entry = entries[0]
-                        local_arxiv_id = entry.find("{http://www.w3.org/2005/Atom}id").text.split("/abs/")[1]
-                except Exception as exc:
-                    logger.debug("XML parse failed: %s", exc)
-                    return {
-                        "topic": topic,
-                        "error": "Could not parse arXiv results",
-                    }
+                # Fetch paper metadata from arXiv
+                arxiv_url = f"{_ARXIV_API}?id_list={local_arxiv_id}&start=0&max_results=1"
+                arxiv_text = await _get_text(client, arxiv_url)
 
-            if not local_arxiv_id:
-                return {
-                    "error": "No arxiv_id or topic provided",
-                }
-
-            # Fetch paper metadata from arXiv
-            arxiv_url = f"{_ARXIV_API}?id_list={local_arxiv_id}&start=0&max_results=1"
-            arxiv_text = await _get_text(client, arxiv_url)
-
-            if not arxiv_text:
-                return {
-                    "arxiv_id": local_arxiv_id,
-                    "error": "Paper not found on arXiv",
-                }
-
-            # Parse submission date and title
-            import xml.etree.ElementTree as ET
-            try:
-                root = ET.fromstring(arxiv_text)
-                entry = root.find("{http://www.w3.org/2005/Atom}entry")
-                if not entry:
+                if not arxiv_text:
                     return {
                         "arxiv_id": local_arxiv_id,
-                        "error": "Could not parse arXiv metadata",
+                        "error": "Paper not found on arXiv",
                     }
 
-                published = entry.find("{http://www.w3.org/2005/Atom}published").text
-                title = entry.find("{http://www.w3.org/2005/Atom}title").text
-            except Exception as exc:
-                logger.debug("arXiv parse failed: %s", exc)
+                # Parse submission date and title
+                import xml.etree.ElementTree as ET
+                try:
+                    root = ET.fromstring(arxiv_text)
+                    entry = root.find("{http://www.w3.org/2005/Atom}entry")
+                    if not entry:
+                        return {
+                            "arxiv_id": local_arxiv_id,
+                            "error": "Could not parse arXiv metadata",
+                        }
+
+                    published = entry.find("{http://www.w3.org/2005/Atom}published").text
+                    title = entry.find("{http://www.w3.org/2005/Atom}title").text
+                except Exception as exc:
+                    logger.debug("arXiv parse failed: %s", exc)
+                    return {
+                        "arxiv_id": local_arxiv_id,
+                        "error": "Could not parse arXiv entry",
+                    }
+
+                # Simplified social amplification score
+                # (Would need HN/Reddit API access for real implementation)
+                social_amplification_score = 0.3  # Baseline
+
+                # Flag manipulation patterns
+                manipulation_indicators = []
+
+                # Pattern 1: Simultaneous arXiv + press release
+                # (Would need press release database)
+                manipulation_indicators.append({
+                    "type": "timing_coordination",
+                    "detected": False,
+                    "reason": "No press release data available",
+                })
+
+                # Pattern 2: Unusually high altmetric score relative to citations
+                # (Would need altmetric API)
+                altmetric_data = await _get_json(
+                    client,
+                    f"https://api.altmetric.com/v1/arxiv/{arxiv_id}",
+                    timeout=10.0
+                )
+
+                altmetric_score = 0.0
+                if altmetric_data:
+                    altmetric_score = altmetric_data.get("score", 0.0)
+                    if altmetric_score > 50:
+                        social_amplification_score += 0.3
+
+                # Compute manipulation risk
+                manipulation_risk = min(
+                    1.0,
+                    social_amplification_score + len([i for i in manipulation_indicators if i.get("detected", False)]) * 0.2
+                )
+
                 return {
                     "arxiv_id": local_arxiv_id,
-                    "error": "Could not parse arXiv entry",
+                    "title": title if arxiv_text else "",
+                    "submission_date": published if arxiv_text else "",
+                    "topic_search": topic,
+                    "timing_analysis": {
+                        "submission_date": published if arxiv_text else "",
+                        "coordination_indicators": 0,
+                    },
+                    "social_amplification_score": round(social_amplification_score, 3),
+                    "altmetric_score": altmetric_score,
+                    "manipulation_indicators": manipulation_indicators,
+                    "manipulation_risk": round(manipulation_risk, 3),
+                    "risk_level": "HIGH" if manipulation_risk > 0.7 else "MEDIUM" if manipulation_risk > 0.4 else "LOW",
                 }
 
-            # Simplified social amplification score
-            # (Would need HN/Reddit API access for real implementation)
-            social_amplification_score = 0.3  # Baseline
-
-            # Flag manipulation patterns
-            manipulation_indicators = []
-
-            # Pattern 1: Simultaneous arXiv + press release
-            # (Would need press release database)
-            manipulation_indicators.append({
-                "type": "timing_coordination",
-                "detected": False,
-                "reason": "No press release data available",
-            })
-
-            # Pattern 2: Unusually high altmetric score relative to citations
-            # (Would need altmetric API)
-            altmetric_data = await _get_json(
-                client,
-                f"https://api.altmetric.com/v1/arxiv/{arxiv_id}",
-                timeout=10.0
-            )
-
-            altmetric_score = 0.0
-            if altmetric_data:
-                altmetric_score = altmetric_data.get("score", 0.0)
-                if altmetric_score > 50:
-                    social_amplification_score += 0.3
-
-            # Compute manipulation risk
-            manipulation_risk = min(
-                1.0,
-                social_amplification_score + len([i for i in manipulation_indicators if i.get("detected", False)]) * 0.2
-            )
-
-            return {
-                "arxiv_id": local_arxiv_id,
-                "title": title if arxiv_text else "",
-                "submission_date": published if arxiv_text else "",
-                "topic_search": topic,
-                "timing_analysis": {
-                    "submission_date": published if arxiv_text else "",
-                    "coordination_indicators": 0,
-                },
-                "social_amplification_score": round(social_amplification_score, 3),
-                "altmetric_score": altmetric_score,
-                "manipulation_indicators": manipulation_indicators,
-                "manipulation_risk": round(manipulation_risk, 3),
-                "risk_level": "HIGH" if manipulation_risk > 0.7 else "MEDIUM" if manipulation_risk > 0.4 else "LOW",
-            }
-
-    return await _run()
+        return await _run()
+    except Exception as exc:
+        logger.exception("research_preprint_manipulation failed")
+        return {"error": str(exc), "tool": "research_preprint_manipulation"}

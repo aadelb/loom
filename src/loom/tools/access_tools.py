@@ -139,48 +139,51 @@ async def research_legal_takedown(domain: str) -> dict[str, Any]:
         Dict with domain, takedown_notices (list of {title, date, status}),
         total_found, sources.
     """
+    try:
+        async def _run() -> dict[str, Any]:
+            async with httpx.AsyncClient(follow_redirects=True, timeout=30.0) as client:
+                takedowns: list[dict[str, Any]] = []
+                sources_checked: list[str] = []
 
-    async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(follow_redirects=True, timeout=30.0) as client:
-            takedowns: list[dict[str, Any]] = []
-            sources_checked: list[str] = []
+                # Query Lumen Database
+                lumen_url = f"{_LUMEN_API}?term={domain}&per_page=10"
+                lumen_data = await _get_json(client, lumen_url, timeout=20.0)
+                if lumen_data and isinstance(lumen_data, dict):
+                    sources_checked.append("Lumen Database")
+                    results = lumen_data.get("results", [])
+                    for notice in results[:10]:
+                        takedowns.append({
+                            "title": notice.get("title", "")[:200],
+                            "date": notice.get("date_sent", ""),
+                            "status": notice.get("status", "unknown"),
+                            "source": "Lumen Database",
+                        })
 
-            # Query Lumen Database
-            lumen_url = f"{_LUMEN_API}?term={domain}&per_page=10"
-            lumen_data = await _get_json(client, lumen_url, timeout=20.0)
-            if lumen_data and isinstance(lumen_data, dict):
-                sources_checked.append("Lumen Database")
-                results = lumen_data.get("results", [])
-                for notice in results[:10]:
-                    takedowns.append({
-                        "title": notice.get("title", "")[:200],
-                        "date": notice.get("date_sent", ""),
-                        "status": notice.get("status", "unknown"),
-                        "source": "Lumen Database",
-                    })
+                # Search GitHub DMCA via API (public code search)
+                github_url = f"{_GITHUB_DMCA_SEARCH}?q=repo:github/dmca+{domain}"
+                github_data = await _get_json(client, github_url, timeout=20.0)
+                if github_data and isinstance(github_data, dict):
+                    sources_checked.append("GitHub DMCA")
+                    items = github_data.get("items", [])
+                    for item in items[:5]:
+                        takedowns.append({
+                            "title": item.get("name", "")[:200],
+                            "date": item.get("created_at", ""),
+                            "status": "filed",
+                            "source": "GitHub DMCA",
+                        })
 
-            # Search GitHub DMCA via API (public code search)
-            github_url = f"{_GITHUB_DMCA_SEARCH}?q=repo:github/dmca+{domain}"
-            github_data = await _get_json(client, github_url, timeout=20.0)
-            if github_data and isinstance(github_data, dict):
-                sources_checked.append("GitHub DMCA")
-                items = github_data.get("items", [])
-                for item in items[:5]:
-                    takedowns.append({
-                        "title": item.get("name", "")[:200],
-                        "date": item.get("created_at", ""),
-                        "status": "filed",
-                        "source": "GitHub DMCA",
-                    })
+                return {
+                    "domain": domain,
+                    "takedown_notices": takedowns,
+                    "total_found": len(takedowns),
+                    "sources": sources_checked,
+                }
 
-            return {
-                "domain": domain,
-                "takedown_notices": takedowns,
-                "total_found": len(takedowns),
-                "sources": sources_checked,
-            }
-
-    return await _run()
+        return await _run()
+    except Exception as exc:
+        logger.exception("research_legal_takedown failed")
+        return {"error": str(exc), "tool": "research_legal_takedown"}
 
 
 async def research_open_access(doi: str = "", title: str = "") -> dict[str, Any]:
@@ -196,81 +199,84 @@ async def research_open_access(doi: str = "", title: str = "") -> dict[str, Any]
     Returns:
         Dict with query, open_access_url, sources_checked, alternatives (list).
     """
+    try:
+        async def _run() -> dict[str, Any]:
+            if not doi and not title:
+                return {
+                    "query": "",
+                    "open_access_url": "",
+                    "sources_checked": [],
+                    "alternatives": [],
+                    "error": "Provide either DOI or title",
+                }
 
-    async def _run() -> dict[str, Any]:
-        if not doi and not title:
-            return {
-                "query": "",
-                "open_access_url": "",
-                "sources_checked": [],
-                "alternatives": [],
-                "error": "Provide either DOI or title",
-            }
+            async with httpx.AsyncClient(follow_redirects=True, timeout=30.0) as client:
+                sources: list[str] = []
+                alternatives: list[dict[str, Any]] = []
+                primary_oa_url = ""
 
-        async with httpx.AsyncClient(follow_redirects=True, timeout=30.0) as client:
-            sources: list[str] = []
-            alternatives: list[dict[str, Any]] = []
-            primary_oa_url = ""
-
-            # Try Unpaywall with DOI
-            if doi:
-                unpaywall_url = f"{_UNPAYWALL_API}/{doi}?email=loom@research.org"
-                unpaywall_data = await _get_json(client, unpaywall_url, timeout=20.0)
-                if unpaywall_data and isinstance(unpaywall_data, dict):
-                    sources.append("Unpaywall")
-                    if unpaywall_data.get("is_oa"):
-                        oa_location = unpaywall_data.get("oa_locations", [{}])[0]
-                        primary_oa_url = oa_location.get("url_for_pdf", "") or oa_location.get("url", "")
-                        alternatives.append({
-                            "url": primary_oa_url,
-                            "source": "Unpaywall",
-                            "version": unpaywall_data.get("oa_status", ""),
-                        })
-
-            # Try CORE API with title
-            if title and not primary_oa_url:
-                core_url = f"{_CORE_API}?q={title}&limit=5"
-                core_data = await _get_json(client, core_url, timeout=20.0)
-                if core_data and isinstance(core_data, dict):
-                    sources.append("CORE")
-                    results = core_data.get("results", [])
-                    for result in results[:3]:
-                        if result.get("downloadUrl"):
+                # Try Unpaywall with DOI
+                if doi:
+                    unpaywall_url = f"{_UNPAYWALL_API}/{doi}?email=loom@research.org"
+                    unpaywall_data = await _get_json(client, unpaywall_url, timeout=20.0)
+                    if unpaywall_data and isinstance(unpaywall_data, dict):
+                        sources.append("Unpaywall")
+                        if unpaywall_data.get("is_oa"):
+                            oa_location = unpaywall_data.get("oa_locations", [{}])[0]
+                            primary_oa_url = oa_location.get("url_for_pdf", "") or oa_location.get("url", "")
                             alternatives.append({
-                                "url": result.get("downloadUrl", ""),
-                                "source": "CORE",
-                                "version": result.get("type", ""),
+                                "url": primary_oa_url,
+                                "source": "Unpaywall",
+                                "version": unpaywall_data.get("oa_status", ""),
                             })
-                            if not primary_oa_url:
-                                primary_oa_url = result.get("downloadUrl", "")
 
-            # Try Semantic Scholar with title
-            if title:
-                ss_url = f"{_SEMANTIC_SCHOLAR_OA}/search?query={title}"
-                ss_data = await _get_json(client, ss_url, timeout=20.0)
-                if ss_data and isinstance(ss_data, dict):
-                    sources.append("Semantic Scholar")
-                    papers = ss_data.get("data", [])
-                    for paper in papers[:2]:
-                        if paper.get("openAccessPdf"):
-                            oa_url = paper.get("openAccessPdf", {}).get("url", "")
-                            alternatives.append({
-                                "url": oa_url,
-                                "source": "Semantic Scholar",
-                                "version": "open-access",
-                            })
-                            if not primary_oa_url:
-                                primary_oa_url = oa_url
+                # Try CORE API with title
+                if title and not primary_oa_url:
+                    core_url = f"{_CORE_API}?q={title}&limit=5"
+                    core_data = await _get_json(client, core_url, timeout=20.0)
+                    if core_data and isinstance(core_data, dict):
+                        sources.append("CORE")
+                        results = core_data.get("results", [])
+                        for result in results[:3]:
+                            if result.get("downloadUrl"):
+                                alternatives.append({
+                                    "url": result.get("downloadUrl", ""),
+                                    "source": "CORE",
+                                    "version": result.get("type", ""),
+                                })
+                                if not primary_oa_url:
+                                    primary_oa_url = result.get("downloadUrl", "")
 
-            query = doi or title
-            return {
-                "query": query,
-                "open_access_url": primary_oa_url,
-                "sources_checked": sources,
-                "alternatives": alternatives,
-            }
+                # Try Semantic Scholar with title
+                if title:
+                    ss_url = f"{_SEMANTIC_SCHOLAR_OA}/search?query={title}"
+                    ss_data = await _get_json(client, ss_url, timeout=20.0)
+                    if ss_data and isinstance(ss_data, dict):
+                        sources.append("Semantic Scholar")
+                        papers = ss_data.get("data", [])
+                        for paper in papers[:2]:
+                            if paper.get("openAccessPdf"):
+                                oa_url = paper.get("openAccessPdf", {}).get("url", "")
+                                alternatives.append({
+                                    "url": oa_url,
+                                    "source": "Semantic Scholar",
+                                    "version": "open-access",
+                                })
+                                if not primary_oa_url:
+                                    primary_oa_url = oa_url
 
-    return await _run()
+                query = doi or title
+                return {
+                    "query": query,
+                    "open_access_url": primary_oa_url,
+                    "sources_checked": sources,
+                    "alternatives": alternatives,
+                }
+
+        return await _run()
+    except Exception as exc:
+        logger.exception("research_open_access failed")
+        return {"error": str(exc), "tool": "research_open_access"}
 
 
 async def research_content_authenticity(url: str) -> dict[str, Any]:
@@ -286,57 +292,61 @@ async def research_content_authenticity(url: str) -> dict[str, Any]:
         Dict with url, earliest_snapshot, current_hash, original_hash,
         modified (bool), diff_summary.
     """
-    url = validate_url(url)
+    try:
+        url = validate_url(url)
 
-    async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(follow_redirects=True, timeout=60.0) as client:
-            current_hash = ""
-            original_hash = ""
-            earliest_snapshot = ""
-            modified = False
-            diff_summary = ""
+        async def _run() -> dict[str, Any]:
+            async with httpx.AsyncClient(follow_redirects=True, timeout=60.0) as client:
+                current_hash = ""
+                original_hash = ""
+                earliest_snapshot = ""
+                modified = False
+                diff_summary = ""
 
-            # Fetch current content
-            current_text = await _get_text(client, url, timeout=20.0)
-            if current_text:
-                current_hash = hashlib.sha256(current_text.encode()).hexdigest()
+                # Fetch current content
+                current_text = await _get_text(client, url, timeout=20.0)
+                if current_text:
+                    current_hash = hashlib.sha256(current_text.encode()).hexdigest()
 
-            # Query CDX API for earliest snapshot
-            parsed_url = urlparse(url)
-            domain = parsed_url.netloc
-            cdx_url = f"{_CDX_API}?url={url}&output=json&filter=statuscode:200&collapse=urlkey&sort=timestamp:asc&limit=1"
-            cdx_data = await _get_json(client, cdx_url, timeout=20.0)
+                # Query CDX API for earliest snapshot
+                parsed_url = urlparse(url)
+                domain = parsed_url.netloc
+                cdx_url = f"{_CDX_API}?url={url}&output=json&filter=statuscode:200&collapse=urlkey&sort=timestamp:asc&limit=1"
+                cdx_data = await _get_json(client, cdx_url, timeout=20.0)
 
-            if cdx_data and isinstance(cdx_data, list) and len(cdx_data) > 1:
-                # cdx_data[0] is header, cdx_data[1:] are results
-                if len(cdx_data) > 1:
-                    first_result = cdx_data[1]
-                    timestamp = first_result[1] if len(first_result) > 1 else ""
-                    if timestamp:
-                        earliest_snapshot = f"{_WAYBACK_SNAPSHOT}/{timestamp}/{url}"
+                if cdx_data and isinstance(cdx_data, list) and len(cdx_data) > 1:
+                    # cdx_data[0] is header, cdx_data[1:] are results
+                    if len(cdx_data) > 1:
+                        first_result = cdx_data[1]
+                        timestamp = first_result[1] if len(first_result) > 1 else ""
+                        if timestamp:
+                            earliest_snapshot = f"{_WAYBACK_SNAPSHOT}/{timestamp}/{url}"
 
-                        # Fetch earliest snapshot
-                        original_text = await _get_text(client, earliest_snapshot, timeout=20.0)
-                        if original_text:
-                            original_hash = hashlib.sha256(original_text.encode()).hexdigest()
-                            modified = current_hash != original_hash
+                            # Fetch earliest snapshot
+                            original_text = await _get_text(client, earliest_snapshot, timeout=20.0)
+                            if original_text:
+                                original_hash = hashlib.sha256(original_text.encode()).hexdigest()
+                                modified = current_hash != original_hash
 
-                            # Create diff summary
-                            if modified:
-                                current_len = len(current_text)
-                                original_len = len(original_text)
-                                diff_summary = f"Content length changed: {original_len} → {current_len} chars"
+                                # Create diff summary
+                                if modified:
+                                    current_len = len(current_text)
+                                    original_len = len(original_text)
+                                    diff_summary = f"Content length changed: {original_len} → {current_len} chars"
 
-            return {
-                "url": url,
-                "earliest_snapshot": earliest_snapshot,
-                "current_hash": current_hash,
-                "original_hash": original_hash,
-                "modified": modified,
-                "diff_summary": diff_summary,
-            }
+                return {
+                    "url": url,
+                    "earliest_snapshot": earliest_snapshot,
+                    "current_hash": current_hash,
+                    "original_hash": original_hash,
+                    "modified": modified,
+                    "diff_summary": diff_summary,
+                }
 
-    return await _run()
+        return await _run()
+    except Exception as exc:
+        logger.exception("research_content_authenticity failed")
+        return {"error": str(exc), "tool": "research_content_authenticity"}
 
 
 async def research_credential_monitor(target: str, target_type: str = "email") -> dict[str, Any]:
@@ -353,36 +363,39 @@ async def research_credential_monitor(target: str, target_type: str = "email") -
         Dict with target, breaches_found (list of {name, date, data_types}),
         total_exposed.
     """
+    try:
+        async def _run() -> dict[str, Any]:
+            async with httpx.AsyncClient(follow_redirects=True, timeout=30.0) as client:
+                breaches: list[dict[str, Any]] = []
 
-    async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(follow_redirects=True, timeout=30.0) as client:
-            breaches: list[dict[str, Any]] = []
+                # Query HIBP API (requires User-Agent, no API key for basic lookup)
+                hibp_url = f"{_HIBP_API}/breachedaccount/{target}"
+                hibp_headers = {
+                    "User-Agent": "Loom-Research/1.0",
+                    "Accept": "application/vnd.api+json",
+                }
 
-            # Query HIBP API (requires User-Agent, no API key for basic lookup)
-            hibp_url = f"{_HIBP_API}/breachedaccount/{target}"
-            hibp_headers = {
-                "User-Agent": "Loom-Research/1.0",
-                "Accept": "application/vnd.api+json",
-            }
+                hibp_data = await _get_json(client, hibp_url, timeout=20.0, headers=hibp_headers)
+                if hibp_data and isinstance(hibp_data, list):
+                    for breach in hibp_data[:20]:
+                        breaches.append({
+                            "name": breach.get("Name", ""),
+                            "date": breach.get("BreachDate", ""),
+                            "data_types": breach.get("DataClasses", []),
+                            "is_sensitive": breach.get("IsSensitive", False),
+                        })
 
-            hibp_data = await _get_json(client, hibp_url, timeout=20.0, headers=hibp_headers)
-            if hibp_data and isinstance(hibp_data, list):
-                for breach in hibp_data[:20]:
-                    breaches.append({
-                        "name": breach.get("Name", ""),
-                        "date": breach.get("BreachDate", ""),
-                        "data_types": breach.get("DataClasses", []),
-                        "is_sensitive": breach.get("IsSensitive", False),
-                    })
+                return {
+                    "target": target,
+                    "target_type": target_type,
+                    "breaches_found": breaches,
+                    "total_exposed": len(breaches),
+                }
 
-            return {
-                "target": target,
-                "target_type": target_type,
-                "breaches_found": breaches,
-                "total_exposed": len(breaches),
-            }
-
-    return await _run()
+        return await _run()
+    except Exception as exc:
+        logger.exception("research_credential_monitor failed")
+        return {"error": str(exc), "tool": "research_credential_monitor"}
 
 
 async def research_deepfake_checker(image_url: str) -> dict[str, Any]:
@@ -398,58 +411,62 @@ async def research_deepfake_checker(image_url: str) -> dict[str, Any]:
         Dict with image_url, exif_analysis (dict), editing_software_detected (bool),
         ela_suspicious_regions, authenticity_score (0-100).
     """
-    image_url = validate_url(image_url)
+    try:
+        image_url = validate_url(image_url)
 
-    async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(follow_redirects=True, timeout=30.0) as client:
-            exif_data: dict[str, Any] = {}
-            editing_software_detected = False
-            ela_result: dict[str, Any] = {"suspicious_regions_count": 0, "error_level_score": 0.0}
-            authenticity_score = 100.0
+        async def _run() -> dict[str, Any]:
+            async with httpx.AsyncClient(follow_redirects=True, timeout=30.0) as client:
+                exif_data: dict[str, Any] = {}
+                editing_software_detected = False
+                ela_result: dict[str, Any] = {"suspicious_regions_count": 0, "error_level_score": 0.0}
+                authenticity_score = 100.0
 
-            # Download image
-            image_bytes = await _get_bytes(client, image_url, timeout=20.0)
-            if not image_bytes:
+                # Download image
+                image_bytes = await _get_bytes(client, image_url, timeout=20.0)
+                if not image_bytes:
+                    return {
+                        "image_url": image_url,
+                        "exif_analysis": {},
+                        "editing_software_detected": False,
+                        "ela_suspicious_regions": 0,
+                        "authenticity_score": 0.0,
+                        "error": "Failed to download image",
+                    }
+
+                # Extract EXIF
+                exif_data = _extract_exif(image_bytes)
+
+                # Check for editing software in EXIF
+                editing_indicators = [
+                    "photoshop", "lightroom", "gimp", "capture one", "affinity",
+                    "corel", "paint.net", "pixlr", "photopea", "canva",
+                ]
+                exif_str = json.dumps(exif_data).lower()
+                editing_software_detected = any(sw in exif_str for sw in editing_indicators)
+
+                # Compute ELA
+                ela_result = _compute_ela(image_bytes, quality=95)
+
+                # Calculate authenticity score
+                authenticity_score = 100.0
+                if editing_software_detected:
+                    authenticity_score -= 20.0
+                if ela_result.get("suspicious_regions_count", 0) > 0:
+                    authenticity_score -= 30.0
+                if ela_result.get("error_level_score", 0.0) > 5.0:
+                    authenticity_score -= 20.0
+                authenticity_score = max(0.0, authenticity_score)
+
                 return {
                     "image_url": image_url,
-                    "exif_analysis": {},
-                    "editing_software_detected": False,
-                    "ela_suspicious_regions": 0,
-                    "authenticity_score": 0.0,
-                    "error": "Failed to download image",
+                    "exif_analysis": exif_data,
+                    "editing_software_detected": editing_software_detected,
+                    "ela_suspicious_regions": ela_result.get("suspicious_regions_count", 0),
+                    "ela_error_level_score": ela_result.get("error_level_score", 0.0),
+                    "authenticity_score": authenticity_score,
                 }
 
-            # Extract EXIF
-            exif_data = _extract_exif(image_bytes)
-
-            # Check for editing software in EXIF
-            editing_indicators = [
-                "photoshop", "lightroom", "gimp", "capture one", "affinity",
-                "corel", "paint.net", "pixlr", "photopea", "canva",
-            ]
-            exif_str = json.dumps(exif_data).lower()
-            editing_software_detected = any(sw in exif_str for sw in editing_indicators)
-
-            # Compute ELA
-            ela_result = _compute_ela(image_bytes, quality=95)
-
-            # Calculate authenticity score
-            authenticity_score = 100.0
-            if editing_software_detected:
-                authenticity_score -= 20.0
-            if ela_result.get("suspicious_regions_count", 0) > 0:
-                authenticity_score -= 30.0
-            if ela_result.get("error_level_score", 0.0) > 5.0:
-                authenticity_score -= 20.0
-            authenticity_score = max(0.0, authenticity_score)
-
-            return {
-                "image_url": image_url,
-                "exif_analysis": exif_data,
-                "editing_software_detected": editing_software_detected,
-                "ela_suspicious_regions": ela_result.get("suspicious_regions_count", 0),
-                "ela_error_level_score": ela_result.get("error_level_score", 0.0),
-                "authenticity_score": authenticity_score,
-            }
-
-    return await _run()
+        return await _run()
+    except Exception as exc:
+        logger.exception("research_deepfake_checker failed")
+        return {"error": str(exc), "tool": "research_deepfake_checker"}

@@ -222,36 +222,39 @@ async def research_tool_dependencies(
         - is_leaf_tool: bool (True if no dependencies)
         - can_run_standalone: bool (always True for this module)
     """
-    if tool_name not in DEPENDENCY_GRAPH:
+    try:
+        if tool_name not in DEPENDENCY_GRAPH:
+            return {
+                "tool": tool_name,
+                "error": f"Unknown tool: {tool_name}",
+                "direct_deps": [],
+                "transitive_deps": [],
+                "execution_order": [],
+                "total_prerequisite_count": 0,
+                "is_leaf_tool": True,
+                "can_run_standalone": True,
+            }
+
+        direct_deps = DEPENDENCY_GRAPH[tool_name]
+        transitive_deps = resolve_dependencies([tool_name])
+        transitive_deps.discard(tool_name)  # Don't include self
+
+        execution_order = get_execution_plan([tool_name])
+        # Remove the last group which is the tool itself
+        if execution_order and execution_order[-1] == [tool_name]:
+            execution_order = execution_order[:-1]
+
         return {
             "tool": tool_name,
-            "error": f"Unknown tool: {tool_name}",
-            "direct_deps": [],
-            "transitive_deps": [],
-            "execution_order": [],
-            "total_prerequisite_count": 0,
-            "is_leaf_tool": True,
+            "direct_deps": direct_deps,
+            "transitive_deps": sorted(transitive_deps),
+            "execution_order": execution_order,
+            "total_prerequisite_count": len(transitive_deps),
+            "is_leaf_tool": len(direct_deps) == 0,
             "can_run_standalone": True,
         }
-
-    direct_deps = DEPENDENCY_GRAPH[tool_name]
-    transitive_deps = resolve_dependencies([tool_name])
-    transitive_deps.discard(tool_name)  # Don't include self
-
-    execution_order = get_execution_plan([tool_name])
-    # Remove the last group which is the tool itself
-    if execution_order and execution_order[-1] == [tool_name]:
-        execution_order = execution_order[:-1]
-
-    return {
-        "tool": tool_name,
-        "direct_deps": direct_deps,
-        "transitive_deps": sorted(transitive_deps),
-        "execution_order": execution_order,
-        "total_prerequisite_count": len(transitive_deps),
-        "is_leaf_tool": len(direct_deps) == 0,
-        "can_run_standalone": True,
-    }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_tool_dependencies"}
 
 
 async def research_get_execution_plan(
@@ -274,20 +277,23 @@ async def research_get_execution_plan(
         - sequential_critical_path: list[str] (longest dependency chain)
         - parallelizable_count: int (tools that can run in parallel)
     """
-    all_deps = resolve_dependencies(tools)
-    execution_groups = get_execution_plan(tools)
-    critical_path = _find_critical_path(tools)
-    parallelizable = sum(len(group) for group in execution_groups if len(group) > 1)
+    try:
+        all_deps = resolve_dependencies(tools)
+        execution_groups = get_execution_plan(tools)
+        critical_path = _find_critical_path(tools)
+        parallelizable = sum(len(group) for group in execution_groups if len(group) > 1)
 
-    return {
-        "requested_tools": tools,
-        "execution_plan": execution_groups,
-        "all_tools_needed": sorted(all_deps),
-        "total_groups": len(execution_groups),
-        "sequential_critical_path": critical_path,
-        "parallelizable_count": parallelizable,
-        "estimated_speedup": (len(all_deps) / len(critical_path)) if critical_path else 1.0,
-    }
+        return {
+            "requested_tools": tools,
+            "execution_plan": execution_groups,
+            "all_tools_needed": sorted(all_deps),
+            "total_groups": len(execution_groups),
+            "sequential_critical_path": critical_path,
+            "parallelizable_count": parallelizable,
+            "estimated_speedup": (len(all_deps) / len(critical_path)) if critical_path else 1.0,
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_get_execution_plan"}
 
 
 def get_execution_plan(tools: list[str]) -> list[list[str]]:
@@ -483,32 +489,35 @@ async def prepare_tool_execution(
         - remaining_groups: Groups to execute after first group completes
         - dependency_warnings: Any issues found
     """
-    # Validate inputs
-    invalid = [t for t in requested_tools if t not in DEPENDENCY_GRAPH]
-    if invalid:
-        logger.warning(f"Unknown tools requested: {invalid}")
+    try:
+        # Validate inputs
+        invalid = [t for t in requested_tools if t not in DEPENDENCY_GRAPH]
+        if invalid:
+            logger.warning(f"Unknown tools requested: {invalid}")
 
-    # Resolve dependencies
-    all_tools = resolve_dependencies(requested_tools)
-    execution_plan = get_execution_plan(requested_tools)
+        # Resolve dependencies
+        all_tools = resolve_dependencies(requested_tools)
+        execution_plan = get_execution_plan(requested_tools)
 
-    # Extract groups
-    first_group = execution_plan[0] if execution_plan else []
-    remaining_groups = execution_plan[1:] if len(execution_plan) > 1 else []
+        # Extract groups
+        first_group = execution_plan[0] if execution_plan else []
+        remaining_groups = execution_plan[1:] if len(execution_plan) > 1 else []
 
-    # Validate the plan
-    validation = validate_execution_order(execution_plan)
-    warnings = validation.get("violations", []) + validation.get("issues", [])
+        # Validate the plan
+        validation = validate_execution_order(execution_plan)
+        warnings = validation.get("violations", []) + validation.get("issues", [])
 
-    return {
-        "requested_tools": requested_tools,
-        "execution_plan": execution_plan,
-        "all_tools": sorted(all_tools),
-        "first_group": first_group,
-        "remaining_groups": remaining_groups,
-        "dependency_warnings": warnings,
-        "valid": validation["valid"],
-    }
+        return {
+            "requested_tools": requested_tools,
+            "execution_plan": execution_plan,
+            "all_tools": sorted(all_tools),
+            "first_group": first_group,
+            "remaining_groups": remaining_groups,
+            "dependency_warnings": warnings,
+            "valid": validation["valid"],
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "prepare_tool_execution"}
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -522,54 +531,57 @@ async def research_dependency_graph_stats() -> dict[str, Any]:
     Returns:
         Dict with graph metrics
     """
-    all_tools = set(DEPENDENCY_GRAPH.keys())
-    all_edges = sum(len(deps) for deps in DEPENDENCY_GRAPH.values())
+    try:
+        all_tools = set(DEPENDENCY_GRAPH.keys())
+        all_edges = sum(len(deps) for deps in DEPENDENCY_GRAPH.values())
 
-    # Find leaf tools (no dependencies)
-    leaf_tools = [t for t in all_tools if not DEPENDENCY_GRAPH[t]]
+        # Find leaf tools (no dependencies)
+        leaf_tools = [t for t in all_tools if not DEPENDENCY_GRAPH[t]]
 
-    # Find root tools (nothing depends on them)
-    depends_on_me: dict[str, set[str]] = defaultdict(set)
-    for tool, deps in DEPENDENCY_GRAPH.items():
-        for dep in deps:
-            depends_on_me[dep].add(tool)
+        # Find root tools (nothing depends on them)
+        depends_on_me: dict[str, set[str]] = defaultdict(set)
+        for tool, deps in DEPENDENCY_GRAPH.items():
+            for dep in deps:
+                depends_on_me[dep].add(tool)
 
-    root_tools = [t for t in all_tools if not depends_on_me[t]]
+        root_tools = [t for t in all_tools if not depends_on_me[t]]
 
-    # Compute dependency depth (critical path length)
-    depths: dict[str, int] = {}
-    visited_global = set()
+        # Compute dependency depth (critical path length)
+        depths: dict[str, int] = {}
+        visited_global = set()
 
-    def compute_max_depth(tool: str) -> int:
-        if tool in depths:
+        def compute_max_depth(tool: str) -> int:
+            if tool in depths:
+                return depths[tool]
+            if tool in visited_global:
+                return 0
+            visited_global.add(tool)
+
+            deps = DEPENDENCY_GRAPH.get(tool, [])
+            if not deps:
+                depths[tool] = 0
+                return 0
+
+            max_dep_depth = max((compute_max_depth(d) for d in deps), default=0)
+            depths[tool] = max_dep_depth + 1
             return depths[tool]
-        if tool in visited_global:
-            return 0
-        visited_global.add(tool)
 
-        deps = DEPENDENCY_GRAPH.get(tool, [])
-        if not deps:
-            depths[tool] = 0
-            return 0
+        for tool in all_tools:
+            compute_max_depth(tool)
 
-        max_dep_depth = max((compute_max_depth(d) for d in deps), default=0)
-        depths[tool] = max_dep_depth + 1
-        return depths[tool]
+        max_depth = max(depths.values()) if depths else 0
+        avg_depth = sum(depths.values()) / len(depths) if depths else 0
 
-    for tool in all_tools:
-        compute_max_depth(tool)
-
-    max_depth = max(depths.values()) if depths else 0
-    avg_depth = sum(depths.values()) / len(depths) if depths else 0
-
-    return {
-        "total_tools": len(all_tools),
-        "total_dependencies": all_edges,
-        "leaf_tools_count": len(leaf_tools),
-        "leaf_tools": sorted(leaf_tools),
-        "root_tools_count": len(root_tools),
-        "root_tools": sorted(root_tools),
-        "max_dependency_depth": max_depth,
-        "avg_dependency_depth": round(avg_depth, 2),
-        "graph_density": round(all_edges / (len(all_tools) * (len(all_tools) - 1) / 2) if all_tools else 0, 4),
-    }
+        return {
+            "total_tools": len(all_tools),
+            "total_dependencies": all_edges,
+            "leaf_tools_count": len(leaf_tools),
+            "leaf_tools": sorted(leaf_tools),
+            "root_tools_count": len(root_tools),
+            "root_tools": sorted(root_tools),
+            "max_dependency_depth": max_depth,
+            "avg_dependency_depth": round(avg_depth, 2),
+            "graph_density": round(all_edges / (len(all_tools) * (len(all_tools) - 1) / 2) if all_tools else 0, 4),
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_dependency_graph_stats"}

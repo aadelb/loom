@@ -181,56 +181,59 @@ async def research_capability_mapper(
     Returns:
         Dict with target, category_scores, overall_score, strengths, weaknesses.
     """
-    if categories is None:
-        categories = list(_DEFAULT_CAPABILITY_CATEGORIES.keys())
+    try:
+        if categories is None:
+            categories = list(_DEFAULT_CAPABILITY_CATEGORIES.keys())
 
-    async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(
-            follow_redirects=True,
-            timeout=30.0,
-            headers={"User-Agent": "Loom-Research/1.0"},
-        ) as client:
-            category_scores: dict[str, float] = {}
+        async def _run() -> dict[str, Any]:
+            async with httpx.AsyncClient(
+                follow_redirects=True,
+                timeout=30.0,
+                headers={"User-Agent": "Loom-Research/1.0"},
+            ) as client:
+                category_scores: dict[str, float] = {}
 
-            for category in categories:
-                if category not in _DEFAULT_CAPABILITY_CATEGORIES:
-                    continue
+                for category in categories:
+                    if category not in _DEFAULT_CAPABILITY_CATEGORIES:
+                        continue
 
-                prompts = _DEFAULT_CAPABILITY_CATEGORIES[category]
-                scores = []
+                    prompts = _DEFAULT_CAPABILITY_CATEGORIES[category]
+                    scores = []
 
-                for prompt in prompts:
-                    response = await _query_llm_endpoint(client, target_url, prompt)
-                    score = _score_capability_response(response or "", category)
-                    scores.append(score)
+                    for prompt in prompts:
+                        response = await _query_llm_endpoint(client, target_url, prompt)
+                        score = _score_capability_response(response or "", category)
+                        scores.append(score)
 
-                # Average score for this category
-                avg_score = sum(scores) / len(scores) if scores else 0.0
-                category_scores[category] = round(avg_score, 1)
+                    # Average score for this category
+                    avg_score = sum(scores) / len(scores) if scores else 0.0
+                    category_scores[category] = round(avg_score, 1)
 
-            # Calculate overall score
-            overall_score = (
-                sum(category_scores.values()) / len(category_scores)
-                if category_scores
-                else 0.0
-            )
+                # Calculate overall score
+                overall_score = (
+                    sum(category_scores.values()) / len(category_scores)
+                    if category_scores
+                    else 0.0
+                )
 
-            # Identify strengths and weaknesses
-            sorted_cats = sorted(category_scores.items(), key=lambda x: x[1], reverse=True)
-            strengths = [cat for cat, score in sorted_cats[:2] if score >= 6.0]
-            weaknesses = [cat for cat, score in sorted_cats[-2:] if score < 6.0]
+                # Identify strengths and weaknesses
+                sorted_cats = sorted(category_scores.items(), key=lambda x: x[1], reverse=True)
+                strengths = [cat for cat, score in sorted_cats[:2] if score >= 6.0]
+                weaknesses = [cat for cat, score in sorted_cats[-2:] if score < 6.0]
 
-            return {
-                "target": target_url,
-                "categories_tested": categories,
-                "category_scores": category_scores,
-                "overall_score": round(overall_score, 1),
-                "strengths": strengths,
-                "weaknesses": weaknesses,
-                "tests_run": len(categories) * 3,
-            }
+                return {
+                    "target": target_url,
+                    "categories_tested": categories,
+                    "category_scores": category_scores,
+                    "overall_score": round(overall_score, 1),
+                    "strengths": strengths,
+                    "weaknesses": weaknesses,
+                    "tests_run": len(categories) * 3,
+                }
 
-    return await _run()
+        return await _run()
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_capability_mapper"}
 
 
 async def research_memorization_scanner(
@@ -249,60 +252,62 @@ async def research_memorization_scanner(
     Returns:
         Dict with target, tests_run, memorized count, memorization_rate, examples.
     """
+    try:
+        async def _run() -> dict[str, Any]:
+            async with httpx.AsyncClient(
+                follow_redirects=True,
+                timeout=30.0,
+                headers={"User-Agent": "Loom-Research/1.0"},
+            ) as client:
+                memorized_count = 0
+                examples: list[dict[str, str]] = []
 
-    async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(
-            follow_redirects=True,
-            timeout=30.0,
-            headers={"User-Agent": "Loom-Research/1.0"},
-        ) as client:
-            memorized_count = 0
-            examples: list[dict[str, str]] = []
+                # Use up to test_count tests
+                tests_to_run = _MEMORIZATION_TEST_TEXTS[:test_count]
 
-            # Use up to test_count tests
-            tests_to_run = _MEMORIZATION_TEST_TEXTS[:test_count]
+                for source_name, text_prefix in tests_to_run:
+                    response = await _query_llm_endpoint(client, target_url, text_prefix)
 
-            for source_name, text_prefix in tests_to_run:
-                response = await _query_llm_endpoint(client, target_url, text_prefix)
+                    if not response:
+                        continue
 
-                if not response:
-                    continue
+                    # Check for verbatim completion (first 30 chars match)
+                    if response and text_prefix in response:
+                        memorized_count += 1
+                        examples.append({
+                            "source": source_name,
+                            "prefix": text_prefix[:50],
+                            "completion_detected": True,
+                        })
+                    elif response and text_prefix[:20].lower() in response.lower():
+                        # Partial match detected
+                        examples.append({
+                            "source": source_name,
+                            "prefix": text_prefix[:50],
+                            "completion_detected": True,
+                        })
 
-                # Check for verbatim completion (first 30 chars match)
-                if response and text_prefix in response:
-                    memorized_count += 1
-                    examples.append({
-                        "source": source_name,
-                        "prefix": text_prefix[:50],
-                        "completion_detected": True,
-                    })
-                elif response and text_prefix[:20].lower() in response.lower():
-                    # Partial match detected
-                    examples.append({
-                        "source": source_name,
-                        "prefix": text_prefix[:50],
-                        "completion_detected": True,
-                    })
+                memorization_rate = (
+                    (memorized_count / len(tests_to_run) * 100)
+                    if tests_to_run
+                    else 0.0
+                )
 
-            memorization_rate = (
-                (memorized_count / len(tests_to_run) * 100)
-                if tests_to_run
-                else 0.0
-            )
+                return {
+                    "target": target_url,
+                    "tests_run": len(tests_to_run),
+                    "memorized": memorized_count,
+                    "memorization_rate": round(memorization_rate, 1),
+                    "risk_level": (
+                        "high" if memorization_rate > 50
+                        else ("medium" if memorization_rate > 25 else "low")
+                    ),
+                    "examples": examples,
+                }
 
-            return {
-                "target": target_url,
-                "tests_run": len(tests_to_run),
-                "memorized": memorized_count,
-                "memorization_rate": round(memorization_rate, 1),
-                "risk_level": (
-                    "high" if memorization_rate > 50
-                    else ("medium" if memorization_rate > 25 else "low")
-                ),
-                "examples": examples,
-            }
-
-    return await _run()
+        return await _run()
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_memorization_scanner"}
 
 
 async def research_training_contamination(
@@ -321,61 +326,63 @@ async def research_training_contamination(
     Returns:
         Dict with target, dataset_tested, contamination_detected, rate, evidence.
     """
+    try:
+        async def _run() -> dict[str, Any]:
+            async with httpx.AsyncClient(
+                follow_redirects=True,
+                timeout=30.0,
+                headers={"User-Agent": "Loom-Research/1.0"},
+            ) as client:
+                if dataset_name not in _DATASET_TEST_PASSAGES:
+                    return {
+                        "target": target_url,
+                        "dataset_tested": dataset_name,
+                        "error": f"Dataset '{dataset_name}' not recognized",
+                        "contamination_detected": False,
+                        "contamination_rate": 0.0,
+                        "evidence": [],
+                    }
 
-    async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(
-            follow_redirects=True,
-            timeout=30.0,
-            headers={"User-Agent": "Loom-Research/1.0"},
-        ) as client:
-            if dataset_name not in _DATASET_TEST_PASSAGES:
+                passages = _DATASET_TEST_PASSAGES[dataset_name]
+                contamination_count = 0
+                evidence: list[dict[str, Any]] = []
+
+                for source_name, passage in passages:
+                    response = await _query_llm_endpoint(client, target_url, passage[:80])
+
+                    if not response:
+                        continue
+
+                    # Check for contamination
+                    if passage[:40].lower() in response.lower():
+                        contamination_count += 1
+                        evidence.append({
+                            "source": source_name,
+                            "passage_prefix": passage[:60],
+                            "detected": True,
+                            "confidence": "high",
+                        })
+
+                contamination_rate = (
+                    (contamination_count / len(passages) * 100)
+                    if passages
+                    else 0.0
+                )
+
                 return {
                     "target": target_url,
                     "dataset_tested": dataset_name,
-                    "error": f"Dataset '{dataset_name}' not recognized",
-                    "contamination_detected": False,
-                    "contamination_rate": 0.0,
-                    "evidence": [],
+                    "passages_tested": len(passages),
+                    "contamination_detected": contamination_count > 0,
+                    "contamination_rate": round(contamination_rate, 1),
+                    "contaminated_passages": contamination_count,
+                    "risk_level": (
+                        "high" if contamination_rate > 50
+                        else ("medium" if contamination_rate > 25 else "low")
+                    ),
+                    "evidence": evidence,
                 }
 
-            passages = _DATASET_TEST_PASSAGES[dataset_name]
-            contamination_count = 0
-            evidence: list[dict[str, Any]] = []
-
-            for source_name, passage in passages:
-                response = await _query_llm_endpoint(client, target_url, passage[:80])
-
-                if not response:
-                    continue
-
-                # Check for contamination
-                if passage[:40].lower() in response.lower():
-                    contamination_count += 1
-                    evidence.append({
-                        "source": source_name,
-                        "passage_prefix": passage[:60],
-                        "detected": True,
-                        "confidence": "high",
-                    })
-
-            contamination_rate = (
-                (contamination_count / len(passages) * 100)
-                if passages
-                else 0.0
-            )
-
-            return {
-                "target": target_url,
-                "dataset_tested": dataset_name,
-                "passages_tested": len(passages),
-                "contamination_detected": contamination_count > 0,
-                "contamination_rate": round(contamination_rate, 1),
-                "contaminated_passages": contamination_count,
-                "risk_level": (
-                    "high" if contamination_rate > 50
-                    else ("medium" if contamination_rate > 25 else "low")
-                ),
-                "evidence": evidence,
-            }
-
-    return await _run()
+        return await _run()
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_training_contamination"}

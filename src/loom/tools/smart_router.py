@@ -63,78 +63,87 @@ async def research_route_query(query: str, intent: str = "auto") -> dict[str, An
     Tokenizes query, matches against tool index, scores by match count.
     Returns top tool with confidence and alternatives.
     """
-    if not query or not isinstance(query, str):
-        return {"query": query, "error": "Query must be a non-empty string",
-                "recommended_tools": [], "confidence": 0.0}
+    try:
+        if not query or not isinstance(query, str):
+            return {"query": query, "error": "Query must be a non-empty string",
+                    "recommended_tools": [], "confidence": 0.0}
 
-    query_clean = query.strip().lower()
-    tool_index = _get_tool_index()
+        query_clean = query.strip().lower()
+        tool_index = _get_tool_index()
 
-    # Tokenize query
-    query_tokens = {t for t in query_clean.replace("_", " ").replace("-", " ").split()
-                   if len(t) > 2 and t.isalnum()}
+        # Tokenize query
+        query_tokens = {t for t in query_clean.replace("_", " ").replace("-", " ").split()
+                       if len(t) > 2 and t.isalnum()}
 
-    if not query_tokens:
-        return {"query": query_clean, "error": "Query too short/no keywords",
-                "recommended_tools": [], "confidence": 0.0}
+        if not query_tokens:
+            return {"query": query_clean, "error": "Query too short/no keywords",
+                    "recommended_tools": [], "confidence": 0.0}
 
-    # Score tools by keyword match count
-    tool_scores: dict[str, int] = defaultdict(int)
-    for token in query_tokens:
-        for tool in tool_index.get(token, set()):
-            tool_scores[tool] += 1
+        # Score tools by keyword match count
+        tool_scores: dict[str, int] = defaultdict(int)
+        for token in query_tokens:
+            for tool in tool_index.get(token, set()):
+                tool_scores[tool] += 1
 
-    if not tool_scores:
-        return {"query": query_clean, "detected_intent": "no_match",
-                "recommended_tools": [], "confidence": 0.0,
-                "routing_reason": "No tools matched query keywords"}
+        if not tool_scores:
+            return {"query": query_clean, "detected_intent": "no_match",
+                    "recommended_tools": [], "confidence": 0.0,
+                    "routing_reason": "No tools matched query keywords"}
 
-    sorted_tools = sorted(tool_scores.items(), key=lambda x: x[1], reverse=True)
-    top_tool, top_score = sorted_tools[0]
-    confidence = round(min(top_score / len(query_tokens), 1.0), 2)
+        sorted_tools = sorted(tool_scores.items(), key=lambda x: x[1], reverse=True)
+        top_tool, top_score = sorted_tools[0]
+        confidence = round(min(top_score / len(query_tokens), 1.0), 2)
 
-    return {
-        "query": query_clean,
-        "detected_intent": "auto",
-        "recommended_tools": [top_tool],
-        "alternative_tools": [t for t, _ in sorted_tools[1:4]],
-        "confidence": confidence,
-        "routing_reason": f"Matched {top_score}/{len(query_tokens)} keywords",
-        "match_breakdown": {t: s for t, s in sorted_tools[:5]},
-    }
+        return {
+            "query": query_clean,
+            "detected_intent": "auto",
+            "recommended_tools": [top_tool],
+            "alternative_tools": [t for t, _ in sorted_tools[1:4]],
+            "confidence": confidence,
+            "routing_reason": f"Matched {top_score}/{len(query_tokens)} keywords",
+            "match_breakdown": {t: s for t, s in sorted_tools[:5]},
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_route_query"}
 
 
 async def research_route_batch(queries: list[str]) -> dict[str, Any]:
     """Route multiple queries with aggregated statistics."""
-    if not queries or not isinstance(queries, list):
-        return {"error": "Queries must be non-empty list", "routes": [], "total_queries": 0}
+    try:
+        if not queries or not isinstance(queries, list):
+            return {"error": "Queries must be non-empty list", "routes": [], "total_queries": 0}
 
-    routes, tool_counts = [], {}
-    for query in queries:
-        if isinstance(query, str) and query.strip():
-            route = await research_route_query(query)
-            routes.append(route)
-            for tool in route.get("recommended_tools", []):
-                tool_counts[tool] = tool_counts.get(tool, 0) + 1
+        routes, tool_counts = [], {}
+        for query in queries:
+            if isinstance(query, str) and query.strip():
+                route = await research_route_query(query)
+                routes.append(route)
+                for tool in route.get("recommended_tools", []):
+                    tool_counts[tool] = tool_counts.get(tool, 0) + 1
 
-    top_tool = max(tool_counts, key=tool_counts.get) if tool_counts else "mixed"
-    return {
-        "routes": routes,
-        "tool_distribution": dict(sorted(tool_counts.items(), key=lambda x: x[1], reverse=True)),
-        "total_queries": len(routes),
-        "recommendation_summary": f"Routed {len(routes)} queries to {len(tool_counts)} tools. Most: {top_tool}",
-    }
+        top_tool = max(tool_counts, key=tool_counts.get) if tool_counts else "mixed"
+        return {
+            "routes": routes,
+            "tool_distribution": dict(sorted(tool_counts.items(), key=lambda x: x[1], reverse=True)),
+            "total_queries": len(routes),
+            "recommendation_summary": f"Routed {len(routes)} queries to {len(tool_counts)} tools. Most: {top_tool}",
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_route_batch"}
 
 
 async def research_router_rebuild() -> dict[str, Any]:
     """Force rebuild tool index (call when new tools added)."""
-    global _TOOL_INDEX
-    async with _INDEX_LOCK:
-        _TOOL_INDEX = {}
-    idx = _get_tool_index()
-    return {
-        "status": "rebuilt",
-        "keywords": len(idx),
-        "tool_references": sum(len(v) for v in idx.values()),
-        "message": f"Index rebuilt with {len(idx)} keywords",
-    }
+    try:
+        global _TOOL_INDEX
+        async with _INDEX_LOCK:
+            _TOOL_INDEX = {}
+        idx = _get_tool_index()
+        return {
+            "status": "rebuilt",
+            "keywords": len(idx),
+            "tool_references": sum(len(v) for v in idx.values()),
+            "message": f"Index rebuilt with {len(idx)} keywords",
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_router_rebuild"}

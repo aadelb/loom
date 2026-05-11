@@ -62,26 +62,29 @@ async def research_hitl_submit(
     Returns:
         {eval_id, status, strategy, model, submitted}
     """
-    await _init_db()
-    eval_id = str(uuid.uuid4())
-    now = datetime.now(UTC).isoformat()
+    try:
+        await _init_db()
+        eval_id = str(uuid.uuid4())
+        now = datetime.now(UTC).isoformat()
 
-    conn = await aiosqlite.connect(str(_DB_PATH))
-    await conn.execute(
-        "INSERT INTO evaluations (id,strategy,prompt,response,model,submitted,evaluated) VALUES (?,?,?,?,?,?,0)",
-        (eval_id, strategy, prompt, response, model, now),
-    )
-    await conn.commit()
-    await conn.close()
-    logger.info("hitl_submit eval_id=%s strategy=%s model=%s", eval_id, strategy, model)
+        conn = await aiosqlite.connect(str(_DB_PATH))
+        await conn.execute(
+            "INSERT INTO evaluations (id,strategy,prompt,response,model,submitted,evaluated) VALUES (?,?,?,?,?,?,0)",
+            (eval_id, strategy, prompt, response, model, now),
+        )
+        await conn.commit()
+        await conn.close()
+        logger.info("hitl_submit eval_id=%s strategy=%s model=%s", eval_id, strategy, model)
 
-    return {
-        "eval_id": eval_id,
-        "status": "pending",
-        "strategy": strategy,
-        "model": model,
-        "submitted": now,
-    }
+        return {
+            "eval_id": eval_id,
+            "status": "pending",
+            "strategy": strategy,
+            "model": model,
+            "submitted": now,
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_hitl_submit"}
 
 
 async def research_hitl_evaluate(
@@ -101,26 +104,29 @@ async def research_hitl_evaluate(
     Returns:
         {eval_id, score, notes, tags, evaluated}
     """
-    await _init_db()
-    now = datetime.now(UTC).isoformat()
-    tags_str = ",".join(tags or [])
+    try:
+        await _init_db()
+        now = datetime.now(UTC).isoformat()
+        tags_str = ",".join(tags or [])
 
-    conn = await aiosqlite.connect(str(_DB_PATH))
-    await conn.execute(
-        "UPDATE evaluations SET human_score=?, human_notes=?, tags=?, evaluated=1 WHERE id=?",
-        (score, notes, tags_str, eval_id),
-    )
-    await conn.commit()
-    await conn.close()
-    logger.info("hitl_evaluate eval_id=%s score=%s tags=%s", eval_id, score, tags_str)
+        conn = await aiosqlite.connect(str(_DB_PATH))
+        await conn.execute(
+            "UPDATE evaluations SET human_score=?, human_notes=?, tags=?, evaluated=1 WHERE id=?",
+            (score, notes, tags_str, eval_id),
+        )
+        await conn.commit()
+        await conn.close()
+        logger.info("hitl_evaluate eval_id=%s score=%s tags=%s", eval_id, score, tags_str)
 
-    return {
-        "eval_id": eval_id,
-        "score": score,
-        "notes": notes,
-        "tags": tags or [],
-        "evaluated": now,
-    }
+        return {
+            "eval_id": eval_id,
+            "score": score,
+            "notes": notes,
+            "tags": tags or [],
+            "evaluated": now,
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_hitl_evaluate"}
 
 
 async def research_hitl_queue(
@@ -137,43 +143,46 @@ async def research_hitl_queue(
         {queue: [{eval_id, strategy, prompt_preview, model, submitted}],
          total_pending, total_evaluated, avg_score}
     """
-    await _init_db()
+    try:
+        await _init_db()
 
-    conn = await aiosqlite.connect(str(_DB_PATH))
-    where = "WHERE evaluated=0" if status == "pending" else "WHERE evaluated=1" if status == "evaluated" else ""
+        conn = await aiosqlite.connect(str(_DB_PATH))
+        where = "WHERE evaluated=0" if status == "pending" else "WHERE evaluated=1" if status == "evaluated" else ""
 
-    cursor = await conn.execute(
-        f"SELECT id, strategy, prompt, model, submitted FROM evaluations {where} ORDER BY submitted DESC LIMIT ?",
-        (limit,),
-    )
-    rows = await cursor.fetchall()
+        cursor = await conn.execute(
+            f"SELECT id, strategy, prompt, model, submitted FROM evaluations {where} ORDER BY submitted DESC LIMIT ?",
+            (limit,),
+        )
+        rows = await cursor.fetchall()
 
-    queue = [
-        {
-            "eval_id": row[0],
-            "strategy": row[1],
-            "prompt_preview": (row[2][:100] + "...") if len(row[2]) > 100 else row[2],
-            "model": row[3],
-            "submitted": row[4],
+        queue = [
+            {
+                "eval_id": row[0],
+                "strategy": row[1],
+                "prompt_preview": (row[2][:100] + "...") if len(row[2]) > 100 else row[2],
+                "model": row[3],
+                "submitted": row[4],
+            }
+            for row in rows
+        ]
+
+        pending = await conn.execute("SELECT COUNT(*) FROM evaluations WHERE evaluated=0")
+        pending_count = (await pending.fetchone())[0]
+
+        evaluated = await conn.execute("SELECT COUNT(*) FROM evaluations WHERE evaluated=1")
+        evaluated_count = (await evaluated.fetchone())[0]
+
+        avg = await conn.execute("SELECT AVG(human_score) FROM evaluations WHERE evaluated=1")
+        avg_score = (await avg.fetchone())[0]
+
+        await conn.close()
+        logger.info("hitl_queue status=%s pending=%d evaluated=%d avg_score=%s", status, pending_count, evaluated_count, avg_score)
+
+        return {
+            "queue": queue,
+            "total_pending": pending_count,
+            "total_evaluated": evaluated_count,
+            "avg_score": avg_score,
         }
-        for row in rows
-    ]
-
-    pending = await conn.execute("SELECT COUNT(*) FROM evaluations WHERE evaluated=0")
-    pending_count = (await pending.fetchone())[0]
-
-    evaluated = await conn.execute("SELECT COUNT(*) FROM evaluations WHERE evaluated=1")
-    evaluated_count = (await evaluated.fetchone())[0]
-
-    avg = await conn.execute("SELECT AVG(human_score) FROM evaluations WHERE evaluated=1")
-    avg_score = (await avg.fetchone())[0]
-
-    await conn.close()
-    logger.info("hitl_queue status=%s pending=%d evaluated=%d avg_score=%s", status, pending_count, evaluated_count, avg_score)
-
-    return {
-        "queue": queue,
-        "total_pending": pending_count,
-        "total_evaluated": evaluated_count,
-        "avg_score": avg_score,
-    }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_hitl_queue"}

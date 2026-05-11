@@ -31,54 +31,63 @@ def _refill_tokens(limiter: dict[str, Any]) -> None:
 
 async def research_ratelimit_check(tool_name: str) -> dict[str, Any]:
     """Check if tool call allowed. Token bucket: N tokens/min, 1 token per call."""
-    limiter = _get_limiter(tool_name)
-    _refill_tokens(limiter)
-    allowed = limiter["tokens"] >= 1.0
-    if allowed:
-        limiter["tokens"] -= 1.0
-    else:
-        limiter["throttle_count"] += 1
-    reset_in = max(0, 60.0 - (time.time() - limiter["last_refill"]))
-    return {
-        "allowed": allowed,
-        "tool": tool_name,
-        "remaining_tokens": round(limiter["tokens"], 2),
-        "reset_in_seconds": round(reset_in, 2),
-        "limit": limiter["limit"],
-    }
+    try:
+        limiter = _get_limiter(tool_name)
+        _refill_tokens(limiter)
+        allowed = limiter["tokens"] >= 1.0
+        if allowed:
+            limiter["tokens"] -= 1.0
+        else:
+            limiter["throttle_count"] += 1
+        reset_in = max(0, 60.0 - (time.time() - limiter["last_refill"]))
+        return {
+            "allowed": allowed,
+            "tool": tool_name,
+            "remaining_tokens": round(limiter["tokens"], 2),
+            "reset_in_seconds": round(reset_in, 2),
+            "limit": limiter["limit"],
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_ratelimit_check"}
 
 
 async def research_ratelimit_configure(
     tool_name: str, calls_per_minute: int = 60
 ) -> dict[str, Any]:
     """Set custom rate limit for tool."""
-    limiter = _get_limiter(tool_name)
-    previous_limit = limiter["limit"]
-    limiter["limit"] = calls_per_minute
-    limiter["tokens"] = min(limiter["tokens"], calls_per_minute)
-    return {
-        "tool": tool_name,
-        "new_limit": calls_per_minute,
-        "previous_limit": previous_limit,
-    }
+    try:
+        limiter = _get_limiter(tool_name)
+        previous_limit = limiter["limit"]
+        limiter["limit"] = calls_per_minute
+        limiter["tokens"] = min(limiter["tokens"], calls_per_minute)
+        return {
+            "tool": tool_name,
+            "new_limit": calls_per_minute,
+            "previous_limit": previous_limit,
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_ratelimit_configure"}
 
 
 async def research_ratelimit_status() -> dict[str, Any]:
     """Show rate limit status for all configured tools."""
-    limiters_info = []
-    total_throttled = 0
-    for tool_name, limiter in sorted(_rate_limiters.items()):
-        _refill_tokens(limiter)
-        limiters_info.append({
-            "tool": tool_name,
-            "limit": limiter["limit"],
-            "current_tokens": round(limiter["tokens"], 2),
-            "last_refill": time.ctime(limiter["last_refill"]),
-            "throttle_count": limiter["throttle_count"],
-        })
-        total_throttled += limiter["throttle_count"]
-    return {
-        "limiters": limiters_info,
-        "total_configured": len(_rate_limiters),
-        "total_throttled_today": total_throttled,
-    }
+    try:
+        limiters_info = []
+        total_throttled = 0
+        for tool_name, limiter in sorted(_rate_limiters.items()):
+            _refill_tokens(limiter)
+            limiters_info.append({
+                "tool": tool_name,
+                "limit": limiter["limit"],
+                "current_tokens": round(limiter["tokens"], 2),
+                "last_refill": time.ctime(limiter["last_refill"]),
+                "throttle_count": limiter["throttle_count"],
+            })
+            total_throttled += limiter["throttle_count"]
+        return {
+            "limiters": limiters_info,
+            "total_configured": len(_rate_limiters),
+            "total_throttled_today": total_throttled,
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_ratelimit_status"}

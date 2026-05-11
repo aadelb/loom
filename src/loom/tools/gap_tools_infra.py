@@ -60,76 +60,79 @@ async def research_cloud_enum(domain: str) -> dict[str, Any]:
         Dict with domain and cloud_resources list containing provider, url,
         status, is_public, is_private for each checked service.
     """
-    if not domain or len(domain) > 255:
-        return {
-            "domain": domain,
-            "error": "domain must be 1-255 characters",
-            "cloud_resources": [],
-        }
-
-    # Validate domain format (basic check)
-    if not re.match(r"^[a-z0-9.-]+$", domain.lower()):
-        return {
-            "domain": domain,
-            "error": "domain contains invalid characters",
-            "cloud_resources": [],
-        }
-
-    # Extract base domain for S3 bucket name (remove subdomains)
-    base_domain = domain.split(".")[0]
-
-    cloud_endpoints = [
-        # S3 buckets (two common patterns)
-        ("S3", f"https://{base_domain}.s3.amazonaws.com"),
-        ("S3", f"https://s3.amazonaws.com/{base_domain}"),
-        # Azure Blob Storage
-        ("Azure Blob", f"https://{base_domain}.blob.core.windows.net"),
-        # Google Cloud Storage
-        ("GCS", f"https://storage.googleapis.com/{base_domain}"),
-        # Firebase Realtime Database
-        ("Firebase", f"https://{base_domain}.firebaseio.com/.json"),
-        # Heroku app
-        ("Heroku", f"https://{base_domain}.herokuapp.com"),
-        # Netlify site
-        ("Netlify", f"https://{base_domain}.netlify.app"),
-        # Vercel project
-        ("Vercel", f"https://{base_domain}.vercel.app"),
-        # Cloudflare Pages
-        ("Cloudflare Pages", f"https://{base_domain}.pages.dev"),
-    ]
-
-    async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(
-            follow_redirects=False,
-            headers={"User-Agent": "Loom-Research/1.0"},
-            timeout=30.0,
-        ) as client:
-            tasks = [
-                _check_cloud_resource(client, url) for _, url in cloud_endpoints
-            ]
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-
-            cloud_resources = []
-            for idx, result in enumerate(results):
-                if isinstance(result, dict) and "url" in result:
-                    provider = cloud_endpoints[idx][0]
-                    resource = {
-                        "provider": provider,
-                        "url": result["url"],
-                        "status": result.get("status"),
-                        "is_public": result.get("is_public", False),
-                        "is_private": result.get("is_private", False),
-                    }
-                    # Only include if status was checked (not errored)
-                    if result.get("status") is not None:
-                        cloud_resources.append(resource)
-
+    try:
+        if not domain or len(domain) > 255:
             return {
                 "domain": domain,
-                "cloud_resources": cloud_resources,
+                "error": "domain must be 1-255 characters",
+                "cloud_resources": [],
             }
 
-    return await _run()
+        # Validate domain format (basic check)
+        if not re.match(r"^[a-z0-9.-]+$", domain.lower()):
+            return {
+                "domain": domain,
+                "error": "domain contains invalid characters",
+                "cloud_resources": [],
+            }
+
+        # Extract base domain for S3 bucket name (remove subdomains)
+        base_domain = domain.split(".")[0]
+
+        cloud_endpoints = [
+            # S3 buckets (two common patterns)
+            ("S3", f"https://{base_domain}.s3.amazonaws.com"),
+            ("S3", f"https://s3.amazonaws.com/{base_domain}"),
+            # Azure Blob Storage
+            ("Azure Blob", f"https://{base_domain}.blob.core.windows.net"),
+            # Google Cloud Storage
+            ("GCS", f"https://storage.googleapis.com/{base_domain}"),
+            # Firebase Realtime Database
+            ("Firebase", f"https://{base_domain}.firebaseio.com/.json"),
+            # Heroku app
+            ("Heroku", f"https://{base_domain}.herokuapp.com"),
+            # Netlify site
+            ("Netlify", f"https://{base_domain}.netlify.app"),
+            # Vercel project
+            ("Vercel", f"https://{base_domain}.vercel.app"),
+            # Cloudflare Pages
+            ("Cloudflare Pages", f"https://{base_domain}.pages.dev"),
+        ]
+
+        async def _run() -> dict[str, Any]:
+            async with httpx.AsyncClient(
+                follow_redirects=False,
+                headers={"User-Agent": "Loom-Research/1.0"},
+                timeout=30.0,
+            ) as client:
+                tasks = [
+                    _check_cloud_resource(client, url) for _, url in cloud_endpoints
+                ]
+                results = await asyncio.gather(*tasks, return_exceptions=True)
+
+                cloud_resources = []
+                for idx, result in enumerate(results):
+                    if isinstance(result, dict) and "url" in result:
+                        provider = cloud_endpoints[idx][0]
+                        resource = {
+                            "provider": provider,
+                            "url": result["url"],
+                            "status": result.get("status"),
+                            "is_public": result.get("is_public", False),
+                            "is_private": result.get("is_private", False),
+                        }
+                        # Only include if status was checked (not errored)
+                        if result.get("status") is not None:
+                            cloud_resources.append(resource)
+
+                return {
+                    "domain": domain,
+                    "cloud_resources": cloud_resources,
+                }
+
+        return await _run()
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_cloud_enum"}
 
 
 async def _github_code_search(
@@ -189,62 +192,65 @@ async def research_github_secrets(query: str, max_results: int = 20) -> dict[str
         Dict with query, secrets_found list containing repo, file_path,
         match_preview, secret_type for each match.
     """
-    if not query or len(query) > 100:
-        return {
-            "query": query,
-            "error": "query must be 1-100 characters",
-            "secrets_found": [],
-        }
-
-    # Validate query doesn't contain special chars
-    if not re.match(r"^[a-z0-9\-_.]+$", query.lower()):
-        return {
-            "query": query,
-            "error": "query contains invalid characters",
-            "secrets_found": [],
-        }
-
-    max_results = min(max_results, 100)  # Cap at 100
-
-    search_queries = [
-        (f"{query}+filename:.env", "env_file"),
-        (f"{query}+filename:config.json", "config_json"),
-        (f"AKIA+filename:.py+{query}", "aws_key"),
-        (f"password+filename:.yml+{query}", "yaml_password"),
-    ]
-
-    async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(
-            headers={"User-Agent": "Loom-Research/1.0"},
-            timeout=30.0,
-        ) as client:
-            tasks = [_github_code_search(client, q) for q, _ in search_queries]
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-
-            secrets_found = []
-            secret_type_map = {idx: stype for idx, (_, stype) in enumerate(search_queries)}
-
-            for idx, result in enumerate(results):
-                if isinstance(result, list):
-                    for item in result:
-                        item["secret_type"] = secret_type_map.get(idx, "unknown")
-                        secrets_found.append(item)
-
-            # Deduplicate by repo + file_path
-            seen = set()
-            deduped = []
-            for item in secrets_found:
-                key = (item["repo"], item["file_path"])
-                if key not in seen:
-                    seen.add(key)
-                    deduped.append(item)
-
+    try:
+        if not query or len(query) > 100:
             return {
                 "query": query,
-                "secrets_found": deduped[:max_results],
+                "error": "query must be 1-100 characters",
+                "secrets_found": [],
             }
 
-    return await _run()
+        # Validate query doesn't contain special chars
+        if not re.match(r"^[a-z0-9\-_.]+$", query.lower()):
+            return {
+                "query": query,
+                "error": "query contains invalid characters",
+                "secrets_found": [],
+            }
+
+        max_results = min(max_results, 100)  # Cap at 100
+
+        search_queries = [
+            (f"{query}+filename:.env", "env_file"),
+            (f"{query}+filename:config.json", "config_json"),
+            (f"AKIA+filename:.py+{query}", "aws_key"),
+            (f"password+filename:.yml+{query}", "yaml_password"),
+        ]
+
+        async def _run() -> dict[str, Any]:
+            async with httpx.AsyncClient(
+                headers={"User-Agent": "Loom-Research/1.0"},
+                timeout=30.0,
+            ) as client:
+                tasks = [_github_code_search(client, q) for q, _ in search_queries]
+                results = await asyncio.gather(*tasks, return_exceptions=True)
+
+                secrets_found = []
+                secret_type_map = {idx: stype for idx, (_, stype) in enumerate(search_queries)}
+
+                for idx, result in enumerate(results):
+                    if isinstance(result, list):
+                        for item in result:
+                            item["secret_type"] = secret_type_map.get(idx, "unknown")
+                            secrets_found.append(item)
+
+                # Deduplicate by repo + file_path
+                seen = set()
+                deduped = []
+                for item in secrets_found:
+                    key = (item["repo"], item["file_path"])
+                    if key not in seen:
+                        seen.add(key)
+                        deduped.append(item)
+
+                return {
+                    "query": query,
+                    "secrets_found": deduped[:max_results],
+                }
+
+        return await _run()
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_github_secrets"}
 
 
 async def _get_rdap_data(
@@ -339,56 +345,59 @@ async def research_whois_correlator(domain: str) -> dict[str, Any]:
         Dict with domain, registrant_email, registrant_org, related_domains list,
         and ownership_graph showing domain relationships.
     """
-    if not domain or len(domain) > 255:
-        return {
-            "domain": domain,
-            "error": "domain must be 1-255 characters",
-            "registrant_email": "",
-            "registrant_org": "",
-            "related_domains": [],
-            "ownership_graph": {},
-        }
-
-    # Basic domain validation
-    if not re.match(r"^[a-z0-9.-]+$", domain.lower()):
-        return {
-            "domain": domain,
-            "error": "domain contains invalid characters",
-            "registrant_email": "",
-            "registrant_org": "",
-            "related_domains": [],
-            "ownership_graph": {},
-        }
-
-    async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(
-            headers={"User-Agent": "Loom-Research/1.0"},
-            timeout=30.0,
-        ) as client:
-            rdap_data = await _get_rdap_data(client, domain)
-            registrant_email = rdap_data.get("registrant_email", "")
-            registrant_org = rdap_data.get("registrant_org", "")
-
-            # Search for related domains via crt.sh
-            related_domains = []
-            if registrant_email:
-                related_domains = await _search_crt_sh(client, registrant_email)
-
+    try:
+        if not domain or len(domain) > 255:
             return {
                 "domain": domain,
-                "registrant_email": registrant_email,
-                "registrant_org": registrant_org,
-                "related_domains": related_domains[:50],  # Cap at 50
-                "ownership_graph": {
-                    domain: {
-                        "email": registrant_email,
-                        "org": registrant_org,
-                        "related": related_domains[:10],
-                    }
-                },
+                "error": "domain must be 1-255 characters",
+                "registrant_email": "",
+                "registrant_org": "",
+                "related_domains": [],
+                "ownership_graph": {},
             }
 
-    return await _run()
+        # Basic domain validation
+        if not re.match(r"^[a-z0-9.-]+$", domain.lower()):
+            return {
+                "domain": domain,
+                "error": "domain contains invalid characters",
+                "registrant_email": "",
+                "registrant_org": "",
+                "related_domains": [],
+                "ownership_graph": {},
+            }
+
+        async def _run() -> dict[str, Any]:
+            async with httpx.AsyncClient(
+                headers={"User-Agent": "Loom-Research/1.0"},
+                timeout=30.0,
+            ) as client:
+                rdap_data = await _get_rdap_data(client, domain)
+                registrant_email = rdap_data.get("registrant_email", "")
+                registrant_org = rdap_data.get("registrant_org", "")
+
+                # Search for related domains via crt.sh
+                related_domains = []
+                if registrant_email:
+                    related_domains = await _search_crt_sh(client, registrant_email)
+
+                return {
+                    "domain": domain,
+                    "registrant_email": registrant_email,
+                    "registrant_org": registrant_org,
+                    "related_domains": related_domains[:50],  # Cap at 50
+                    "ownership_graph": {
+                        domain: {
+                            "email": registrant_email,
+                            "org": registrant_org,
+                            "related": related_domains[:10],
+                        }
+                    },
+                }
+
+        return await _run()
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_whois_correlator"}
 
 
 def _jaccard_similarity(set1: set[str], set2: set[str]) -> float:
@@ -466,92 +475,95 @@ async def research_output_consistency(
         Dict with target, prompt (truncated), runs, responses (list of previews),
         mean_similarity, variance, consistency_score (0-1).
     """
-    if not target_url or len(target_url) > 500:
-        return {
-            "target": target_url,
-            "error": "target URL must be 1-500 characters",
-            "mean_similarity": 0.0,
-            "variance": 0.0,
-            "consistency_score": 0.0,
-        }
-
-    if not prompt or len(prompt) > 5000:
-        return {
-            "target": target_url,
-            "error": "prompt must be 1-5000 characters",
-            "mean_similarity": 0.0,
-            "variance": 0.0,
-            "consistency_score": 0.0,
-        }
-
-    # Validate runs parameter
     try:
-        runs = max(1, min(int(runs), 20))
-    except (ValueError, TypeError):
-        runs = 5
+        if not target_url or len(target_url) > 500:
+            return {
+                "target": target_url,
+                "error": "target URL must be 1-500 characters",
+                "mean_similarity": 0.0,
+                "variance": 0.0,
+                "consistency_score": 0.0,
+            }
 
-    async def _run() -> dict[str, Any]:
-        async with httpx.AsyncClient(
-            timeout=httpx.Timeout(30.0),
-            headers={"User-Agent": "Loom-Research/1.0"},
-        ) as client:
-            # Send prompt N times
-            tasks = [
-                _query_llm_endpoint(client, target_url, prompt) for _ in range(runs)
-            ]
-            responses = await asyncio.gather(*tasks, return_exceptions=True)
+        if not prompt or len(prompt) > 5000:
+            return {
+                "target": target_url,
+                "error": "prompt must be 1-5000 characters",
+                "mean_similarity": 0.0,
+                "variance": 0.0,
+                "consistency_score": 0.0,
+            }
 
-            # Filter out errors and empty responses
-            valid_responses = [
-                r for r in responses if isinstance(r, str) and r.strip()
-            ]
+        # Validate runs parameter
+        try:
+            runs = max(1, min(int(runs), 20))
+        except (ValueError, TypeError):
+            runs = 5
 
-            if len(valid_responses) < 2:
+        async def _run() -> dict[str, Any]:
+            async with httpx.AsyncClient(
+                timeout=httpx.Timeout(30.0),
+                headers={"User-Agent": "Loom-Research/1.0"},
+            ) as client:
+                # Send prompt N times
+                tasks = [
+                    _query_llm_endpoint(client, target_url, prompt) for _ in range(runs)
+                ]
+                responses = await asyncio.gather(*tasks, return_exceptions=True)
+
+                # Filter out errors and empty responses
+                valid_responses = [
+                    r for r in responses if isinstance(r, str) and r.strip()
+                ]
+
+                if len(valid_responses) < 2:
+                    return {
+                        "target": target_url,
+                        "prompt": prompt[:500],
+                        "runs": runs,
+                        "responses": [r[:200] for r in valid_responses],
+                        "mean_similarity": 0.0,
+                        "variance": 0.0,
+                        "consistency_score": 0.0,
+                    }
+
+                # Convert responses to word sets for similarity comparison
+                word_sets = [set(r.lower().split()) for r in valid_responses]
+
+                # Calculate pairwise similarities
+                similarities = []
+                for i in range(len(word_sets)):
+                    for j in range(i + 1, len(word_sets)):
+                        sim = _jaccard_similarity(word_sets[i], word_sets[j])
+                        similarities.append(sim)
+
+                # Calculate statistics
+                mean_similarity = (
+                    sum(similarities) / len(similarities) if similarities else 0.0
+                )
+
+                # Variance calculation
+                if similarities:
+                    variance = (
+                        sum((s - mean_similarity) ** 2 for s in similarities)
+                        / len(similarities)
+                    )
+                else:
+                    variance = 0.0
+
+                # Consistency score: 1 - variance
+                consistency_score = max(0.0, 1.0 - variance)
+
                 return {
                     "target": target_url,
                     "prompt": prompt[:500],
-                    "runs": runs,
+                    "runs": len(valid_responses),
                     "responses": [r[:200] for r in valid_responses],
-                    "mean_similarity": 0.0,
-                    "variance": 0.0,
-                    "consistency_score": 0.0,
+                    "mean_similarity": round(mean_similarity, 3),
+                    "variance": round(variance, 3),
+                    "consistency_score": round(consistency_score, 3),
                 }
 
-            # Convert responses to word sets for similarity comparison
-            word_sets = [set(r.lower().split()) for r in valid_responses]
-
-            # Calculate pairwise similarities
-            similarities = []
-            for i in range(len(word_sets)):
-                for j in range(i + 1, len(word_sets)):
-                    sim = _jaccard_similarity(word_sets[i], word_sets[j])
-                    similarities.append(sim)
-
-            # Calculate statistics
-            mean_similarity = (
-                sum(similarities) / len(similarities) if similarities else 0.0
-            )
-
-            # Variance calculation
-            if similarities:
-                variance = (
-                    sum((s - mean_similarity) ** 2 for s in similarities)
-                    / len(similarities)
-                )
-            else:
-                variance = 0.0
-
-            # Consistency score: 1 - variance
-            consistency_score = max(0.0, 1.0 - variance)
-
-            return {
-                "target": target_url,
-                "prompt": prompt[:500],
-                "runs": len(valid_responses),
-                "responses": [r[:200] for r in valid_responses],
-                "mean_similarity": round(mean_similarity, 3),
-                "variance": round(variance, 3),
-                "consistency_score": round(consistency_score, 3),
-            }
-
-    return await _run()
+        return await _run()
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_output_consistency"}

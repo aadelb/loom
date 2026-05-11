@@ -46,100 +46,106 @@ async def research_sandbox_analyze(
 
     Returns: {syntax_valid, dangerous_patterns, exfiltration_vectors, risk_score, classification, safe_to_execute}
     """
-    if language != "python":
-        return {"error": f"Language '{language}' unsupported"}
-
     try:
-        ast.parse(code)
-        syntax_err = None
-    except SyntaxError as e:
-        syntax_err = f"Line {e.lineno}: {e.msg}"
+        if language != "python":
+            return {"error": f"Language '{language}' unsupported"}
 
-    lines = code.split("\n")
-    findings = []
+        try:
+            ast.parse(code)
+            syntax_err = None
+        except SyntaxError as e:
+            syntax_err = f"Line {e.lineno}: {e.msg}"
 
-    for patterns, severity in [(_CRITICAL, 9), (_HIGH, 7), (_MEDIUM, 4), (_EXFIL, 8)]:
-        for pattern, desc in patterns:
-            for ln, line in enumerate(lines, 1):
-                if re.search(pattern, line):
-                    findings.append(
-                        {
-                            "line": ln,
-                            "code": line.strip()[:60],
-                            "description": desc,
-                            "severity": severity,
-                            "pattern": pattern[:40],
-                        }
-                    )
+        lines = code.split("\n")
+        findings = []
 
-    risk = (
-        min(10, (sum(f["severity"] for f in findings) / max(1, len(findings))))
-        if findings
-        else 0
-    )
-    classify = ["safe", "suspicious", "dangerous", "critical"][
-        min(3, int(risk / 3.5))
-    ]
+        for patterns, severity in [(_CRITICAL, 9), (_HIGH, 7), (_MEDIUM, 4), (_EXFIL, 8)]:
+            for pattern, desc in patterns:
+                for ln, line in enumerate(lines, 1):
+                    if re.search(pattern, line):
+                        findings.append(
+                            {
+                                "line": ln,
+                                "code": line.strip()[:60],
+                                "description": desc,
+                                "severity": severity,
+                                "pattern": pattern[:40],
+                            }
+                        )
 
-    return {
-        "language": language,
-        "syntax_valid": syntax_err is None,
-        "syntax_error": syntax_err,
-        "dangerous_patterns": findings,
-        "exfiltration_vectors": [f for f in findings if f["severity"] >= 8],
-        "risk_score": round(risk, 1),
-        "classification": classify,
-        "safe_to_execute": classify == "safe",
-        "analysis_notes": f"Static analysis: {len(findings)} threats found",
-    }
+        risk = (
+            min(10, (sum(f["severity"] for f in findings) / max(1, len(findings))))
+            if findings
+            else 0
+        )
+        classify = ["safe", "suspicious", "dangerous", "critical"][
+            min(3, int(risk / 3.5))
+        ]
+
+        return {
+            "language": language,
+            "syntax_valid": syntax_err is None,
+            "syntax_error": syntax_err,
+            "dangerous_patterns": findings,
+            "exfiltration_vectors": [f for f in findings if f["severity"] >= 8],
+            "risk_score": round(risk, 1),
+            "classification": classify,
+            "safe_to_execute": classify == "safe",
+            "analysis_notes": f"Static analysis: {len(findings)} threats found",
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_sandbox_analyze"}
 
 
 async def research_sandbox_report(code: str, context: str = "") -> dict[str, Any]:
     """Generate security assessment report."""
-    result = await research_sandbox_analyze(code)
-    if "error" in result:
-        return {**result, "context": context}
+    try:
+        result = await research_sandbox_analyze(code)
+        if "error" in result:
+            return {**result, "context": context}
 
-    patterns = result["dangerous_patterns"]
-    injection = [
-        p["description"]
-        for p in patterns
-        if any(x in p["pattern"] for x in ["eval", "exec", "__import__"])
-    ]
-    exfil = [p["description"] for p in patterns if p["severity"] >= 8]
-    priv_esc = [p["description"] for p in exfil if "Priv" in p]
-    persistence = [p["description"] for p in exfil if "Persistence" in p]
+        patterns = result["dangerous_patterns"]
+        injection = [
+            p["description"]
+            for p in patterns
+            if any(x in p["pattern"] for x in ["eval", "exec", "__import__"])
+        ]
+        exfil = [p["description"] for p in patterns if p["severity"] >= 8]
+        priv_esc = [p["description"] for p in exfil if "Priv" in p]
+        persistence = [p["description"] for p in exfil if "Persistence" in p]
 
-    recs = []
-    if result["risk_score"] >= 8:
-        recs.append("CRITICAL: Do not execute.")
-    if injection:
-        recs.append("Remove eval/exec patterns.")
-    if exfil:
-        recs.append("Audit network operations.")
-    if priv_esc:
-        recs.append("Remove privilege escalation.")
-    if persistence:
-        recs.append("Remove persistence unless intended.")
-    if not result["syntax_valid"]:
-        recs.append(f"Fix: {result['syntax_error']}")
-    if not recs:
-        recs.append("Code appears safe.")
+        recs = []
+        if result["risk_score"] >= 8:
+            recs.append("CRITICAL: Do not execute.")
+        if injection:
+            recs.append("Remove eval/exec patterns.")
+        if exfil:
+            recs.append("Audit network operations.")
+        if priv_esc:
+            recs.append("Remove privilege escalation.")
+        if persistence:
+            recs.append("Remove persistence unless intended.")
+        if not result["syntax_valid"]:
+            recs.append(f"Fix: {result['syntax_error']}")
+        if not recs:
+            recs.append("Code appears safe.")
 
-    return {
-        "risk_score": result["risk_score"],
-        "classification": result["classification"],
-        "safe_to_execute": result["safe_to_execute"],
-        "syntax_valid": result["syntax_valid"],
-        "dangerous_patterns": patterns,
-        "injection_vectors": injection,
-        "exfiltration_risks": exfil,
-        "privilege_escalation_risks": priv_esc,
-        "persistence_mechanisms": persistence,
-        "recommendations": recs,
-        "context": context,
-        "summary": f"Risk {result['risk_score']}/10 ({result['classification']}). {len(patterns)} threats. Safe: {result['safe_to_execute']}",
-    }
+        return {
+            "risk_score": result["risk_score"],
+            "classification": result["classification"],
+            "safe_to_execute": result["safe_to_execute"],
+            "syntax_valid": result["syntax_valid"],
+            "dangerous_patterns": patterns,
+            "injection_vectors": injection,
+            "exfiltration_risks": exfil,
+            "privilege_escalation_risks": priv_esc,
+            "persistence_mechanisms": persistence,
+            "recommendations": recs,
+            "context": context,
+            "summary": f"Risk {result['risk_score']}/10 ({result['classification']}). {len(patterns)} threats. Safe: {result['safe_to_execute']}",
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_sandbox_report"}
 
 
 @requires_tier("enterprise")
@@ -167,20 +173,23 @@ async def research_sandbox_execute(
         - sandbox_type: the sandbox that was used
         - error: error message if execution failed
     """
-    if not isinstance(timeout_seconds, int) or timeout_seconds < 1 or timeout_seconds > 300:
-        return {"error": "timeout_seconds must be between 1 and 300"}
+    try:
+        if not isinstance(timeout_seconds, int) or timeout_seconds < 1 or timeout_seconds > 300:
+            return {"error": "timeout_seconds must be between 1 and 300"}
 
-    if sandbox_type not in ["nix", "docker"]:
-        return {"error": "sandbox_type must be 'nix' or 'docker'"}
+        if sandbox_type not in ["nix", "docker"]:
+            return {"error": "sandbox_type must be 'nix' or 'docker'"}
 
-    # Placeholder: would integrate with nix/docker execution here
-    return {
-        "stdout": "Sandbox execution not yet implemented",
-        "stderr": "",
-        "return_code": 0,
-        "duration_ms": 0,
-        "sandbox_type": sandbox_type,
-    }
+        # Placeholder: would integrate with nix/docker execution here
+        return {
+            "stdout": "Sandbox execution not yet implemented",
+            "stderr": "",
+            "return_code": 0,
+            "duration_ms": 0,
+            "sandbox_type": sandbox_type,
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_sandbox_execute"}
 
 
 @requires_tier("enterprise")
@@ -198,16 +207,19 @@ async def research_sandbox_monitor(
     Returns:
         Dict with system call trace and side effects
     """
-    if event_types is None:
-        event_types = ["syscalls", "file_io", "network"]
+    try:
+        if event_types is None:
+            event_types = ["syscalls", "file_io", "network"]
 
-    # Placeholder: would integrate with strace/ebpf monitoring here
-    return {
-        "code_hash": "sha256_hash_here",
-        "event_types": event_types,
-        "syscalls_logged": [],
-        "file_io_logged": [],
-        "network_logged": [],
-        "total_events": 0,
-        "message": "Monitoring not yet implemented",
-    }
+        # Placeholder: would integrate with strace/ebpf monitoring here
+        return {
+            "code_hash": "sha256_hash_here",
+            "event_types": event_types,
+            "syscalls_logged": [],
+            "file_io_logged": [],
+            "network_logged": [],
+            "total_events": 0,
+            "message": "Monitoring not yet implemented",
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_sandbox_monitor"}

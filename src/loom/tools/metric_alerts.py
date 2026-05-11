@@ -80,32 +80,35 @@ async def research_alert_create(
     Returns:
         Dict with rule_id, name, metric, condition, threshold, action, created
     """
-    if metric not in METRICS:
-        return {"error": f"Invalid metric. Must be one of: {METRICS}"}
-    if condition not in CONDITIONS:
-        return {"error": f"Invalid condition. Must be one of: {CONDITIONS}"}
-    if action not in ACTIONS:
-        return {"error": f"Invalid action. Must be one of: {ACTIONS}"}
+    try:
+        if metric not in METRICS:
+            return {"error": f"Invalid metric. Must be one of: {METRICS}"}
+        if condition not in CONDITIONS:
+            return {"error": f"Invalid condition. Must be one of: {CONDITIONS}"}
+        if action not in ACTIONS:
+            return {"error": f"Invalid action. Must be one of: {ACTIONS}"}
 
-    data = _load_rules()
-    rule_id = str(uuid4())[:8]
+        data = _load_rules()
+        rule_id = str(uuid4())[:8]
 
-    rule = {
-        "id": rule_id,
-        "name": name,
-        "metric": metric,
-        "condition": condition,
-        "threshold": threshold,
-        "action": action,
-        "created": datetime.now(UTC).isoformat(),
-        "triggers_count": 0,
-    }
+        rule = {
+            "id": rule_id,
+            "name": name,
+            "metric": metric,
+            "condition": condition,
+            "threshold": threshold,
+            "action": action,
+            "created": datetime.now(UTC).isoformat(),
+            "triggers_count": 0,
+        }
 
-    data["rules"][rule_id] = rule
-    _save_rules(data)
+        data["rules"][rule_id] = rule
+        _save_rules(data)
 
-    logger.info("alert_rule_created rule_id=%s name=%s", rule_id, name)
-    return rule
+        logger.info("alert_rule_created rule_id=%s name=%s", rule_id, name)
+        return rule
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_alert_create"}
 
 
 async def research_alert_check(metric_values: dict[str, float] | None = None) -> dict[str, Any]:
@@ -118,36 +121,39 @@ async def research_alert_check(metric_values: dict[str, float] | None = None) ->
     Returns:
         Dict with rules_checked, alerts_triggered, all_clear
     """
-    if metric_values is None:
-        metric_values = {m: 0.0 for m in METRICS}
+    try:
+        if metric_values is None:
+            metric_values = {m: 0.0 for m in METRICS}
 
-    data = _load_rules()
-    rules = data.get("rules", {})
-    alerts_triggered = []
+        data = _load_rules()
+        rules = data.get("rules", {})
+        alerts_triggered = []
 
-    for rule_id, rule in rules.items():
-        metric = rule.get("metric")
-        value = metric_values.get(metric, 0.0)
-        condition = rule.get("condition")
-        threshold = rule.get("threshold", 0)
+        for rule_id, rule in rules.items():
+            metric = rule.get("metric")
+            value = metric_values.get(metric, 0.0)
+            condition = rule.get("condition")
+            threshold = rule.get("threshold", 0)
 
-        if _check_condition(value, condition, threshold):
-            alerts_triggered.append({
-                "rule_name": rule.get("name"),
-                "metric": metric,
-                "value": value,
-                "threshold": threshold,
-                "action": rule.get("action"),
-            })
-            rule["triggers_count"] = rule.get("triggers_count", 0) + 1
+            if _check_condition(value, condition, threshold):
+                alerts_triggered.append({
+                    "rule_name": rule.get("name"),
+                    "metric": metric,
+                    "value": value,
+                    "threshold": threshold,
+                    "action": rule.get("action"),
+                })
+                rule["triggers_count"] = rule.get("triggers_count", 0) + 1
 
-    _save_rules(data)
+        _save_rules(data)
 
-    return {
-        "rules_checked": len(rules),
-        "alerts_triggered": alerts_triggered,
-        "all_clear": len(alerts_triggered) == 0,
-    }
+        return {
+            "rules_checked": len(rules),
+            "alerts_triggered": alerts_triggered,
+            "all_clear": len(alerts_triggered) == 0,
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_alert_check"}
 
 
 async def research_alert_list() -> dict[str, Any]:
@@ -156,9 +162,12 @@ async def research_alert_list() -> dict[str, Any]:
     Returns:
         Dict with rules list and total count
     """
-    data = _load_rules()
-    rules = list(data.get("rules", {}).values())
-    return {
-        "rules": rules,
-        "total": len(rules),
-    }
+    try:
+        data = _load_rules()
+        rules = list(data.get("rules", {}).values())
+        return {
+            "rules": rules,
+            "total": len(rules),
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_alert_list"}

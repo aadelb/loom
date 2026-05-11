@@ -70,66 +70,75 @@ class TemplateSuggestParams(BaseModel):
 
 async def research_template_list(category: str = "all") -> dict[str, Any]:
     """List available prompt templates by category."""
-    templates = list(_ALL_TEMPLATES.values()) if category == "all" else TEMPLATES.get(category, [])
-    return {"templates": templates, "total": len(templates), "category": category}
+    try:
+        templates = list(_ALL_TEMPLATES.values()) if category == "all" else TEMPLATES.get(category, [])
+        return {"templates": templates, "total": len(templates), "category": category}
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_template_list"}
 
 
 async def research_template_render(template_name: str, variables: dict[str, str]) -> dict[str, Any]:
     """Render a template with provided variables."""
-    template = _ALL_TEMPLATES.get(template_name)
-    if not template:
-        return {"error": f"Template '{template_name}' not found", "available_templates": list(_ALL_TEMPLATES.keys())}
+    try:
+        template = _ALL_TEMPLATES.get(template_name)
+        if not template:
+            return {"error": f"Template '{template_name}' not found", "available_templates": list(_ALL_TEMPLATES.keys())}
 
-    required = set(template.get("variables", []))
-    provided = set(variables.keys())
-    missing = required - provided
-    extra = provided - required
+        required = set(template.get("variables", []))
+        provided = set(variables.keys())
+        missing = required - provided
+        extra = provided - required
 
-    rendered: str = template.get("template", "")
-    for var_name, var_value in variables.items():
-        rendered = rendered.replace(f"{{{var_name}}}", str(var_value))
+        rendered: str = template.get("template", "")
+        for var_name, var_value in variables.items():
+            rendered = rendered.replace(f"{{{var_name}}}", str(var_value))
 
-    return {
-        "rendered_prompt": rendered,
-        "template_name": template_name,
-        "template_description": template.get("description", ""),
-        "variables_used": variables,
-        "missing_variables": sorted(missing),
-        "extra_variables": sorted(extra),
-        "complete": len(missing) == 0,
-    }
+        return {
+            "rendered_prompt": rendered,
+            "template_name": template_name,
+            "template_description": template.get("description", ""),
+            "variables_used": variables,
+            "missing_variables": sorted(missing),
+            "extra_variables": sorted(extra),
+            "complete": len(missing) == 0,
+        }
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_template_render"}
 
 
 async def research_template_suggest(task_description: str) -> dict[str, Any]:
     """Suggest templates matching the task description."""
-    keywords = task_description.lower().split()
-    category_keywords = {
-        "osint": ["person", "profile", "individual", "user", "employee"],
-        "threat_intel": ["threat", "domain", "ip", "malware", "security"],
-        "academic": ["paper", "research", "study", "literature", "survey"],
-        "dark_web": ["dark", "forum", "marketplace", "onion", "tor"],
-        "competitive": ["competitor", "company", "market", "business"],
-        "financial": ["finance", "asset", "price", "crypto", "money"],
-        "social": ["social", "influencer", "sentiment", "twitter", "reddit"],
-        "technical": ["vulnerability", "cve", "exploit", "security", "api"],
-    }
+    try:
+        keywords = task_description.lower().split()
+        category_keywords = {
+            "osint": ["person", "profile", "individual", "user", "employee"],
+            "threat_intel": ["threat", "domain", "ip", "malware", "security"],
+            "academic": ["paper", "research", "study", "literature", "survey"],
+            "dark_web": ["dark", "forum", "marketplace", "onion", "tor"],
+            "competitive": ["competitor", "company", "market", "business"],
+            "financial": ["finance", "asset", "price", "crypto", "money"],
+            "social": ["social", "influencer", "sentiment", "twitter", "reddit"],
+            "technical": ["vulnerability", "cve", "exploit", "security", "api"],
+        }
 
-    suggestions: list[dict[str, Any]] = []
-    for template in _ALL_TEMPLATES.values():
-        text = f"{template['name']} {template.get('description', '')} {template.get('template', '')}".lower()
-        match_count = sum(1 for kw in keywords if kw in text and len(kw) > 2)
-        cat = template.get("category", "")
-        cat_score = sum(1 for kw in keywords if kw in category_keywords.get(cat, []))
-        relevance = match_count + (cat_score * 2)
+        suggestions: list[dict[str, Any]] = []
+        for template in _ALL_TEMPLATES.values():
+            text = f"{template['name']} {template.get('description', '')} {template.get('template', '')}".lower()
+            match_count = sum(1 for kw in keywords if kw in text and len(kw) > 2)
+            cat = template.get("category", "")
+            cat_score = sum(1 for kw in keywords if kw in category_keywords.get(cat, []))
+            relevance = match_count + (cat_score * 2)
 
-        if relevance > 0:
-            suggestions.append({
-                "template": template["name"],
-                "description": template.get("description", ""),
-                "category": cat,
-                "relevance": relevance,
-                "reason": f"Matched {match_count} keywords",
-            })
+            if relevance > 0:
+                suggestions.append({
+                    "template": template["name"],
+                    "description": template.get("description", ""),
+                    "category": cat,
+                    "relevance": relevance,
+                    "reason": f"Matched {match_count} keywords",
+                })
 
-    suggestions.sort(key=lambda x: x["relevance"], reverse=True)
-    return {"suggestions": suggestions[:10], "task_description": task_description, "total_matches": len(suggestions)}
+        suggestions.sort(key=lambda x: x["relevance"], reverse=True)
+        return {"suggestions": suggestions[:10], "task_description": task_description, "total_matches": len(suggestions)}
+    except Exception as exc:
+        return {"error": str(exc), "tool": "research_template_suggest"}
