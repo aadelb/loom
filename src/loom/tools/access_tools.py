@@ -7,7 +7,7 @@ import hashlib
 import json
 import logging
 from typing import Any
-from urllib.parse import urlparse, urljoin
+from urllib.parse import quote, urlparse, urljoin
 
 import httpx
 
@@ -171,7 +171,7 @@ async def research_legal_takedown(domain: str) -> dict[str, Any]:
                         })
 
                 # Search GitHub DMCA via API (public code search)
-                github_url = f"{_GITHUB_DMCA_SEARCH}?q=repo:github/dmca+{domain}"
+                github_url = f"{_GITHUB_DMCA_SEARCH}?q=repo:github/dmca+{quote(domain)}"
                 github_data = await _get_json(client, github_url, timeout=20.0)
                 if github_data and isinstance(github_data, dict):
                     sources_checked.append("GitHub DMCA")
@@ -233,7 +233,8 @@ async def research_open_access(doi: str = "", title: str = "") -> dict[str, Any]
                     if unpaywall_data and isinstance(unpaywall_data, dict):
                         sources.append("Unpaywall")
                         if unpaywall_data.get("is_oa"):
-                            oa_location = unpaywall_data.get("oa_locations", [{}])[0]
+                            oa_locations = unpaywall_data.get("oa_locations") or [{}]
+                            oa_location = oa_locations[0] if oa_locations else {}
                             primary_oa_url = oa_location.get("url_for_pdf", "") or oa_location.get("url", "")
                             alternatives.append({
                                 "url": primary_oa_url,
@@ -377,7 +378,7 @@ async def research_credential_monitor(target: str, target_type: str = "email") -
                 breaches: list[dict[str, Any]] = []
 
                 # Query HIBP API (requires User-Agent, no API key for basic lookup)
-                hibp_url = f"{_HIBP_API}/breachedaccount/{target}"
+                hibp_url = f"{_HIBP_API}/breachedaccount/{quote(target)}"
                 hibp_headers = {
                     "User-Agent": "Loom-Research/1.0",
                     "Accept": "application/vnd.api+json",
