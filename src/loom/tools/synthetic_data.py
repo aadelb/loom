@@ -43,28 +43,35 @@ async def research_generate_redteam_dataset(
         format: Output format ("jsonl" or "json")
     Returns: Dataset with samples, stats, format, and metadata
     """
-    if category not in _TEMPLATES:
-        raise ValueError(f"Unknown category: {category}")
-    if not 10 <= count <= 1000:
-        raise ValueError("count must be 10-1000")
+    try:
+        if category not in _TEMPLATES:
+            raise ValueError(f"Unknown category: {category}")
+        if not 10 <= count <= 1000:
+            raise ValueError("count must be 10-1000")
 
-    difficulty_dist = _DIFFICULTY_WEIGHTS[difficulty]
-    dataset = []
-    for i in range(count):
-        template, expected = random.choice(_TEMPLATES[category])
-        rand = random.randint(0, 99)
-        diff = "easy" if rand < difficulty_dist[0] else ("medium" if rand < difficulty_dist[0] + difficulty_dist[1] else "hard")
-        prompt = template.replace("{topic}", random.choice(_TOPICS)).replace("{persona}", random.choice(_PERSONAS)).replace(
-            "{instruction}", f"instr_{i}").replace("{question}", f"q_{i}").replace("{encoded}", _generate_encoded())
-        dataset.append({
-            "id": f"{category}_{i:04d}", "prompt": prompt, "category": category, "difficulty": diff,
-            "expected_behavior": expected, "ground_truth_label": 1,
-        })
-    return {
-        "dataset": dataset,
-        "stats": {"total_samples": len(dataset), "difficulty_distribution": {d: sum(1 for s in dataset if s["difficulty"] == d) for d in ["easy", "medium", "hard"]}},
-        "format": format, "metadata": {"category": category, "count": count},
-    }
+        difficulty_dist = _DIFFICULTY_WEIGHTS[difficulty]
+        dataset = []
+        for i in range(count):
+            template, expected = random.choice(_TEMPLATES[category])
+            rand = random.randint(0, 99)
+            diff = "easy" if rand < difficulty_dist[0] else ("medium" if rand < difficulty_dist[0] + difficulty_dist[1] else "hard")
+            prompt = template.replace("{topic}", random.choice(_TOPICS)).replace("{persona}", random.choice(_PERSONAS)).replace(
+                "{instruction}", f"instr_{i}").replace("{question}", f"q_{i}").replace("{encoded}", _generate_encoded())
+            dataset.append({
+                "id": f"{category}_{i:04d}", "prompt": prompt, "category": category, "difficulty": diff,
+                "expected_behavior": expected, "ground_truth_label": 1,
+            })
+        return {
+            "dataset": dataset,
+            "stats": {"total_samples": len(dataset), "difficulty_distribution": {d: sum(1 for s in dataset if s["difficulty"] == d) for d in ["easy", "medium", "hard"]}},
+            "format": format, "metadata": {"category": category, "count": count},
+        }
+    except Exception as exc:
+        logger.error("generate_redteam_dataset_error: %s", exc, exc_info=True)
+        return {
+            "error": str(exc),
+            "tool": "research_generate_redteam_dataset",
+        }
 
 async def research_augment_dataset(samples: list[str], augmentation: str = "all") -> dict[str, Any]:
     """Augment dataset samples with transformations.
@@ -73,19 +80,26 @@ async def research_augment_dataset(samples: list[str], augmentation: str = "all"
         augmentation: Type ("paraphrase", "encode", "translate", "persona_wrap", "multi_turn", "all")
     Returns: Augmented dataset with stats and metadata
     """
-    if not samples:
-        raise ValueError("samples cannot be empty")
-    augmentations = ["paraphrase", "encode", "translate", "persona_wrap", "multi_turn"] if augmentation == "all" else [augmentation]
-    dataset = []
-    for idx, original in enumerate(samples):
-        for aug_type in augmentations:
-            augmented = _apply_augmentation(original, aug_type)
-            dataset.append({"original": original, "augmented": augmented, "augmentation": aug_type, "sample_id": f"sample_{idx}_{aug_type}"})
-    return {
-        "dataset": dataset,
-        "stats": {"total_augmented_samples": len(dataset), "original_samples": len(samples), "augmentations_applied": augmentations},
-        "format": "jsonl", "metadata": {"augmentation_type": augmentation},
-    }
+    try:
+        if not samples:
+            raise ValueError("samples cannot be empty")
+        augmentations = ["paraphrase", "encode", "translate", "persona_wrap", "multi_turn"] if augmentation == "all" else [augmentation]
+        dataset = []
+        for idx, original in enumerate(samples):
+            for aug_type in augmentations:
+                augmented = _apply_augmentation(original, aug_type)
+                dataset.append({"original": original, "augmented": augmented, "augmentation": aug_type, "sample_id": f"sample_{idx}_{aug_type}"})
+        return {
+            "dataset": dataset,
+            "stats": {"total_augmented_samples": len(dataset), "original_samples": len(samples), "augmentations_applied": augmentations},
+            "format": "jsonl", "metadata": {"augmentation_type": augmentation},
+        }
+    except Exception as exc:
+        logger.error("augment_dataset_error: %s", exc, exc_info=True)
+        return {
+            "error": str(exc),
+            "tool": "research_augment_dataset",
+        }
 
 def _generate_encoded() -> str:
     payload = f"payload_{random.randint(1, 100)}"

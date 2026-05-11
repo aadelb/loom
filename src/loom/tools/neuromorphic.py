@@ -162,68 +162,75 @@ async def research_neuromorphic_schedule(
     Returns:
         NeuromorphicSchedule with execution plan, parallelism score, and risk assessment.
     """
-    # Coerce string to list before validation
-    if isinstance(tools, str):
-        tools = [tools]
+    try:
+        # Coerce string to list before validation
+        if isinstance(tools, str):
+            tools = [tools]
 
-    # Validate
-    params = NeuromorphicScheduleParams(
-        tools=tools, timing_pattern=timing_pattern, interval_ms=interval_ms
-    )
-
-    # Route to pattern calculator
-    if params.timing_pattern == "burst":
-        schedule, waves, duration, parallelism, risk = _calculate_burst_schedule(
-            params.tools, params.interval_ms
-        )
-    elif params.timing_pattern == "gamma":
-        schedule, waves, duration, parallelism, risk = _calculate_gamma_schedule(
-            params.tools, params.interval_ms
-        )
-    elif params.timing_pattern == "theta":
-        schedule, waves, duration, parallelism, risk = _calculate_theta_schedule(
-            params.tools, params.interval_ms
-        )
-    elif params.timing_pattern == "spike_train":
-        schedule, waves, duration, parallelism, risk = _calculate_spike_train_schedule(
-            params.tools, params.interval_ms
-        )
-    else:  # resonance
-        schedule, waves, duration, parallelism, risk = _calculate_resonance_schedule(
-            params.tools, params.interval_ms
+        # Validate
+        params = NeuromorphicScheduleParams(
+            tools=tools, timing_pattern=timing_pattern, interval_ms=interval_ms
         )
 
-    # Score parallelism (0-1 scale, 1 = perfect)
-    parallelism_score = min(parallelism, 1.0)
+        # Route to pattern calculator
+        if params.timing_pattern == "burst":
+            schedule, waves, duration, parallelism, risk = _calculate_burst_schedule(
+                params.tools, params.interval_ms
+            )
+        elif params.timing_pattern == "gamma":
+            schedule, waves, duration, parallelism, risk = _calculate_gamma_schedule(
+                params.tools, params.interval_ms
+            )
+        elif params.timing_pattern == "theta":
+            schedule, waves, duration, parallelism, risk = _calculate_theta_schedule(
+                params.tools, params.interval_ms
+            )
+        elif params.timing_pattern == "spike_train":
+            schedule, waves, duration, parallelism, risk = _calculate_spike_train_schedule(
+                params.tools, params.interval_ms
+            )
+        else:  # resonance
+            schedule, waves, duration, parallelism, risk = _calculate_resonance_schedule(
+                params.tools, params.interval_ms
+            )
 
-    # Generate recommendation based on pattern characteristics
-    if risk == "high":
-        recommendation = f"Burst pattern: max parallelism, high rate-limit risk. Suitable for non-critical batch tasks."
-    elif risk == "low":
-        recommendation = f"Theta pattern: minimal contention, safe for rate-limited APIs. Slower overall (~{duration}ms)."
-    else:
-        recommendation = f"{params.timing_pattern.title()} pattern: balanced parallelism and safety. Total duration {duration}ms."
+        # Score parallelism (0-1 scale, 1 = perfect)
+        parallelism_score = min(parallelism, 1.0)
 
-    result = NeuromorphicSchedule(
-        tools_count=len(params.tools),
-        pattern=params.timing_pattern,
-        schedule=schedule,
-        waves=waves,
-        total_duration_ms=duration,
-        parallelism_score=parallelism_score,
-        interference_risk=risk,
-        recommendation=recommendation,
-    )
+        # Generate recommendation based on pattern characteristics
+        if risk == "high":
+            recommendation = f"Burst pattern: max parallelism, high rate-limit risk. Suitable for non-critical batch tasks."
+        elif risk == "low":
+            recommendation = f"Theta pattern: minimal contention, safe for rate-limited APIs. Slower overall (~{duration}ms)."
+        else:
+            recommendation = f"{params.timing_pattern.title()} pattern: balanced parallelism and safety. Total duration {duration}ms."
 
-    logger.info(
-        "neuromorphic_schedule_generated",
-        extra={
-            "pattern": params.timing_pattern,
-            "tools_count": len(params.tools),
-            "waves": waves,
-            "duration_ms": duration,
-            "parallelism_score": parallelism_score,
-        },
-    )
+        result = NeuromorphicSchedule(
+            tools_count=len(params.tools),
+            pattern=params.timing_pattern,
+            schedule=schedule,
+            waves=waves,
+            total_duration_ms=duration,
+            parallelism_score=parallelism_score,
+            interference_risk=risk,
+            recommendation=recommendation,
+        )
 
-    return result
+        logger.info(
+            "neuromorphic_schedule_generated",
+            extra={
+                "pattern": params.timing_pattern,
+                "tools_count": len(params.tools),
+                "waves": waves,
+                "duration_ms": duration,
+                "parallelism_score": parallelism_score,
+            },
+        )
+
+        return result
+    except Exception as exc:
+        logger.error("research_neuromorphic_schedule failed: %s", exc)
+        return {
+            "error": str(exc),
+            "tool": "research_neuromorphic_schedule",
+        }
