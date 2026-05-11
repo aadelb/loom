@@ -163,7 +163,7 @@ async def research_compose(
     try:
         # Expand aliases
         expanded = _expand_aliases(pipeline)
-        logger.info(f"Expanded pipeline: {expanded}")
+        logger.info("Expanded pipeline: %s", expanded)
 
         # Validate first
         validation = research_compose_validate(expanded)
@@ -185,7 +185,7 @@ async def research_compose(
         # Execute step groups
         current_value = initial_input
         for group_idx, group in enumerate(step_groups):
-            logger.info(f"Executing group {group_idx} with {len(group)} steps")
+            logger.info("Executing group %d with %d steps", group_idx, len(group))
 
             if len(group) == 1:
                 # Single step, execute sequentially
@@ -279,7 +279,7 @@ async def research_compose(
         result.output = current_value
 
     except Exception as e:
-        logger.error(f"Pipeline execution failed: {str(e)}", exc_info=True)
+        logger.error("Pipeline execution failed: %s", e, exc_info=True)
         result.errors.append(f"Pipeline execution error: {str(e)}")
 
     result.execution_time_ms = (time.time() - start_time) * 1000
@@ -528,7 +528,7 @@ async def _execute_step(step: PipelineStep, input_value: Any) -> Any:
     # Resolve arguments with field references
     resolved_args = _resolve_arguments(step.args, input_value)
 
-    logger.info(f"Executing {step.tool_name} with args: {resolved_args}")
+    logger.info("Executing %s with args: %s", step.tool_name, resolved_args)
 
     # Get tool function
     tool_func = _get_tool_function(step.tool_name)
@@ -577,7 +577,7 @@ def _resolve_arguments(args: list[str], input_value: Any) -> list[Any]:
                 value = _get_nested_field(input_value, field_path)
                 resolved.append(value)
             except (KeyError, IndexError, TypeError) as e:
-                logger.warning(f"Field access failed for '{arg}': {str(e)}")
+                logger.warning("Field access failed for '%s': %s", arg, e)
                 resolved.append(None)
         else:
             # Literal argument

@@ -13,7 +13,11 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from loom.config import _resolve_path, load_config, get_config
+try:
+    from loom.config import _resolve_path, load_config, get_config
+    _CONFIG_AVAILABLE = True
+except ImportError:
+    _CONFIG_AVAILABLE = False
 
 logger = logging.getLogger("loom.tools.config_reload")
 
