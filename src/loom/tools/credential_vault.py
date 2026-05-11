@@ -22,7 +22,10 @@ logger = logging.getLogger("loom.tools.credential_vault")
 def _derive_key(length: int = 32) -> bytes:
     """Derive encryption key from hostname + username."""
     hostname = socket.gethostname()
-    username = os.getlogin() if hasattr(os, "getlogin") else os.environ.get("USER", "unknown")
+    try:
+        username = os.getlogin()
+    except OSError:
+        username = os.environ.get("USER", "unknown")
     seed = f"{hostname}:{username}".encode()
     return hashlib.sha256(seed).digest()[:length]
 
