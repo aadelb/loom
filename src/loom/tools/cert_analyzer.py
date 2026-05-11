@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
-import asyncio
 import socket
-import asyncio
 import ssl
-import asyncio
 from datetime import UTC, datetime
 from typing import Any
 
@@ -68,25 +66,23 @@ async def research_cert_analyze(
     logger.info("cert_analyze hostname=%s port=%d", target_hostname, port)
 
     try:
-        # Create SSL context
-        ctx = ssl.create_default_context()
+        def _fetch_cert() -> tuple[bytes | None, dict[str, Any] | None]:
+            ctx = ssl.create_default_context()
+            with ctx.wrap_socket(socket.socket(socket.AF_INET), server_hostname=target_hostname) as s:
+                s.settimeout(10)
+                s.connect((target_hostname, port))
+                der_cert = s.getpeercert(binary_form=True)
+                cert_dict = s.getpeercert()
+                return der_cert, cert_dict
 
-        # Connect to the server
-        with ctx.wrap_socket(socket.socket(socket.AF_INET), server_hostname=target_hostname) as s:
-            s.settimeout(10)
-            s.connect((target_hostname, port))
+        der_cert, cert_dict = await asyncio.to_thread(_fetch_cert)
 
-            # Get peer certificate in DER format
-            der_cert = s.getpeercert(binary_form=True)
-            if not der_cert:
-                return {
-                    "hostname": target_hostname,
-                    "port": port,
-                    "error": "No certificate returned",
-                }
-
-            # Get certificate in text dict form
-            cert_dict = s.getpeercert()
+        if not der_cert:
+            return {
+                "hostname": target_hostname,
+                "port": port,
+                "error": "No certificate returned",
+            }
 
         if not cert_dict:
             return {
@@ -120,16 +116,7 @@ async def research_cert_analyze(
         # Get version (1=v1, 2=v2, 3=v3 in pyOpenSSL convention)
         version = cert_dict.get("version", 3)
 
-        # Compute serial number from DER if available
-        serial_hex = ""
-        if der_cert:
-            try:
-                import hashlib
-
-                # Simple hash-based serial (for demo; production uses x509 parsing)
-                serial_hex = hashlib.sha256(der_cert).hexdigest()[:16].upper()
-            except Exception as e:
-                logger.warning("Failed to extract serial: %s", e)
+        serial_hex = format(cert_dict.get("serialNumber", 0), "X") if cert_dict.get("serialNumber") else ""
 
         return {
             "hostname": target_hostname,

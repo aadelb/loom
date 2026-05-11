@@ -472,7 +472,7 @@ async def _search_arxiv_papers(
     """Search arXiv for papers mentioning skill."""
     # arXiv API query
     search_query = quote(f"all:{skill}")
-    url = f"http://export.arxiv.org/api/query?search_query={search_query}&start=0&max_results=100&sortBy=submittedDate&sortOrder=descending"
+    url = f"https://export.arxiv.org/api/query?search_query={search_query}&start=0&max_results=100&sortBy=submittedDate&sortOrder=descending"
 
     text = await _fetch_text(client, url)
 
