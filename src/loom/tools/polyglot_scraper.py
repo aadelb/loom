@@ -7,7 +7,10 @@ import logging
 from typing import Any
 
 import httpx
-from mcp.types import TextContent
+try:
+    from mcp.types import TextContent
+except ImportError:
+    TextContent = None  # type: ignore[assignment,misc]
 
 logger = logging.getLogger("loom.tools.polyglot_scraper")
 
