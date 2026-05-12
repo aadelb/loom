@@ -68,11 +68,14 @@ async def research_latency_report(tool_name: str = "") -> dict[str, Any]:
 
             # Guard: ensure we have at least two data points for meaningful stats
             if len(sorted_tools) < 2:
+                slow_tools = []  # empty list when insufficient data
                 return {
                     "error": "insufficient_data",
                     "message": "At least 2 tools with data needed for comparison",
                     "total_tools_tracked": len(all_stats),
                     "total_tools_with_data": len(sorted_tools),
+                    "slow_tools": slow_tools,
+                    "slow_count": 0,
                 }
 
             # Find slow tools (p95 > 1000ms)
@@ -87,4 +90,5 @@ async def research_latency_report(tool_name: str = "") -> dict[str, Any]:
                 "slow_threshold_ms": 1000,
             }
     except Exception as exc:
+        log.exception(f"Error in research_latency_report: {exc}")
         return {"error": str(exc), "tool": "research_latency_report"}

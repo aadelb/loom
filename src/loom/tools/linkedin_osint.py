@@ -260,12 +260,10 @@ async def research_linkedin_intel(
                     )
 
         except httpx.TimeoutException:
-            result["status"] = "error"
-            result["error"] = "Request timeout"
+            result["errors"] = result.get("errors", []) + [f"company lookup timeout: {company}"]
             logger.warning("linkedin_intel timeout company=%s", company)
         except Exception as e:
-            result["status"] = "error"
-            result["error"] = str(e)
+            result["errors"] = result.get("errors", []) + [f"company lookup failed: {e}"]
             logger.error("linkedin_intel error company=%s error=%s", company, e)
 
     # Investigate person
@@ -292,11 +290,16 @@ async def research_linkedin_intel(
                     )
 
         except httpx.TimeoutException:
-            result["status"] = "error"
-            result["error"] = "Request timeout"
+            result["errors"] = result.get("errors", []) + [f"person lookup timeout: {person}"]
         except Exception as e:
-            result["status"] = "error"
-            result["error"] = str(e)
+            result["errors"] = result.get("errors", []) + [f"person lookup failed: {e}"]
             logger.error("linkedin_intel error person=%s error=%s", person, e)
+
+    has_data = bool(result.get("company_info")) or bool(result.get("profiles_found"))
+    has_errors = bool(result.get("errors"))
+    if has_errors and not has_data:
+        result["status"] = "error"
+    elif has_errors and has_data:
+        result["status"] = "partial"
 
     return result

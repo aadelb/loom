@@ -76,7 +76,7 @@ async def _check_hibp_breaches(
             "type": "email_breach",
             "description": f"Email found in {breach.get('Name', 'Unknown')} breach ({breach.get('BreachDate', 'Unknown date')})",
             "severity": "high",
-            "url": f"https://haveibeenpwned.com/api/v3/breachedaccount/{quote(email)}",
+            "url": "https://haveibeenpwned.com/",
         })
 
     return len(exposures), exposures
@@ -195,7 +195,7 @@ async def _check_certificate_transparency(
             "type": "email_disclosure",
             "description": f"Email {email} disclosed in certificate for {domain}",
             "severity": "medium",
-            "url": f"https://crt.sh/?q=%25.{domain}",
+            "url": "https://crt.sh/",
         })
 
     return len(exposures), exposures
@@ -334,13 +334,9 @@ async def research_leak_scan(
     Trello (public boards).
 
     Args:
-        target: Target to scan (domain or email)
-        target_type: Type of target ('domain' or 'email')
-        query: Alias for target (for convenience)
-
-    Args:
         target: The target to scan (domain, email, IP, or keyword)
         target_type: Type of target - "domain", "email", "ip", or "keyword" (default: "domain")
+        query: Alias for target (for convenience)
 
     Returns:
         Dict with keys:
@@ -423,6 +419,16 @@ async def research_leak_scan(
                     tasks["Pastebin"] = _check_pastebin_dork(client, target)
                     tasks["Trello"] = _check_trello_dork(client, target)
 
+                else:
+                    return {
+                        "target": target,
+                        "target_type": target_type,
+                        "error": f"Unsupported target_type: {target_type}. Must be 'domain', 'email', 'ip', or 'keyword'.",
+                        "sources_checked": [],
+                        "total_exposures": 0,
+                        "exposures": [],
+                    }
+
                 # Execute all tasks concurrently
                 if tasks:
                     results = await asyncio.gather(
@@ -461,4 +467,11 @@ async def research_leak_scan(
 
         return await _run()
     except Exception as exc:
-        return {"error": str(exc), "tool": "research_leak_scan"}
+        return {
+            "target": target,
+            "target_type": target_type,
+            "error": str(exc),
+            "sources_checked": [],
+            "total_exposures": 0,
+            "exposures": [],
+        }

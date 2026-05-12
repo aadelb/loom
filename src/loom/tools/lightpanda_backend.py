@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import subprocess
 import tempfile
 from typing import Any
@@ -82,6 +83,7 @@ async def research_lightpanda_fetch(
             "error": msg,
         }
 
+    output_file = None
     try:
         # Validate URL format (basic check)
         if not url.startswith(("http://", "https://")):
@@ -146,10 +148,8 @@ async def research_lightpanda_fetch(
                 output["metadata"] = lightpanda_output["metadata"]
 
             logger.info(
-                "lightpanda_fetch_success",
-                url=url,
-                javascript=javascript,
-                content_length=len(output["content"]),
+                f"lightpanda_fetch_success: {url} (js={javascript}, "
+                f"content_length={len(output['content'])})"
             )
 
         except (json.JSONDecodeError, IOError) as exc:
@@ -166,13 +166,20 @@ async def research_lightpanda_fetch(
             "error": "Lightpanda fetch timed out after 60 seconds",
         }
     except Exception as exc:
-        logger.exception("lightpanda_fetch_error", url=url, error=str(exc))
+        logger.exception(f"lightpanda_fetch_error: {url}, {exc}")
         return {
             "url": url,
             "status": "error",
             "lightpanda_available": True,
             "error": f"Lightpanda fetch error: {str(exc)}",
         }
+    finally:
+        # Clean up temp file
+        if output_file and os.path.exists(output_file):
+            try:
+                os.unlink(output_file)
+            except OSError:
+                logger.warning(f"Failed to clean up temp file: {output_file}")
 
 
 async def research_lightpanda_batch(
@@ -213,12 +220,15 @@ async def research_lightpanda_batch(
             "error": msg,
         }
 
+    validated = []
     try:
         # Validate and deduplicate URLs
-        validated = []
         seen = set()
         for url in urls:
-            url_clean = url.strip() if isinstance(url, str) else ""
+            if isinstance(url, str):
+                url_clean = url.strip()
+            else:
+                url_clean = ""
             if url_clean and url_clean.startswith(("http://", "https://")):
                 if url_clean not in seen:
                     validated.append(url_clean)
@@ -258,9 +268,9 @@ async def research_lightpanda_batch(
         }
 
     except Exception as exc:
-        logger.exception("lightpanda_batch_error", error=str(exc))
+        logger.exception(f"lightpanda_batch_error: {exc}")
         return {
-            "urls_checked": len(urls),
+            "urls_checked": len(validated),
             "results": {},
             "success_count": 0,
             "lightpanda_available": True,

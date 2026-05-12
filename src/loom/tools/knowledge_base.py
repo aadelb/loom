@@ -44,11 +44,16 @@ async def research_kb_store(
                 logger.info("kb_stored kb_id=%s key=%s category=%s", kb_id, key, category)
                 return {"stored": True, "kb_id": kb_id, "key": key, "category": category}
             except aiosqlite.IntegrityError:
+                cursor = await db.execute(
+                    "SELECT id FROM knowledge WHERE key=?",
+                    (key,),
+                )
+                existing_id = (await cursor.fetchone())[0]
                 await db.execute("UPDATE knowledge SET content=?, category=?, tags=?, updated=? WHERE key=?",
                     (content, category, json.dumps(tags or []), now, key),)
                 await db.commit()
                 logger.info("kb_updated key=%s category=%s", key, category)
-                return {"stored": True, "kb_id": key, "key": key, "category": category}
+                return {"stored": True, "kb_id": existing_id, "key": key, "category": category}
     except Exception as exc:
         return {"error": str(exc), "tool": "research_kb_store"}
 

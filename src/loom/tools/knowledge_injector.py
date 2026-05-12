@@ -160,7 +160,6 @@ def _simplify_text(text: str, target_level: int) -> tuple[str, list[str]]:
             if len(parts) > 1:
                 simplified = ". ".join(p.strip() for p in parts if p.strip())
                 adapted = adapted.replace(long_sent, simplified)
-                adaptations.append(f"broke_long_sentences ({len(long_sent)} → {len(simplified)} chars)")
         if len(adapted) != original_len:
             adaptations.append("sentence_structure_simplified")
 
@@ -357,7 +356,7 @@ async def research_adapt_complexity(
             adapted_content, adaptations = _simplify_text(content, target_reading_level)
         else:
             adapted_content = content
-            adaptations = ["no_simplification_needed" if original_level <= target_reading_level else "content_already_complex"]
+            adaptations = ["no_simplification_needed"]
 
         # Recalculate stats for adapted content
         adapted_words = adapted_content.split()
