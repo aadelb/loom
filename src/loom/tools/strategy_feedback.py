@@ -26,6 +26,7 @@ def _get_db_conn() -> sqlite3.Connection:
 
 def research_strategy_log(topic: str, strategy: str, model: str, hcs_score: float, success: bool) -> dict[str, Any]:
     """Log a strategy attempt result."""
+    conn = None
     try:
         conn = _get_db_conn()
         conn.execute(
@@ -34,15 +35,18 @@ def research_strategy_log(topic: str, strategy: str, model: str, hcs_score: floa
         )
         conn.commit()
         total = conn.execute("SELECT COUNT(*) FROM strategy_log").fetchone()[0]
-        conn.close()
         return {"logged": True, "total_entries": total, "db_path": str(FEEDBACK_DB)}
     except Exception as e:
         logger.error("strategy_log error: %s", e)
         return {"logged": False, "error": str(e)}
+    finally:
+        if conn:
+            conn.close()
 
 
 def research_strategy_recommend(topic: str, model: str = "auto") -> dict[str, Any]:
     """Find best strategy for a topic+model combination."""
+    conn = None
     try:
         conn = _get_db_conn()
         query = """SELECT strategy, AVG(hcs_score), SUM(success), COUNT(*)
@@ -54,7 +58,6 @@ def research_strategy_recommend(topic: str, model: str = "auto") -> dict[str, An
         query += " GROUP BY strategy ORDER BY (SUM(success)*1.0/COUNT(*)) DESC, AVG(hcs_score) DESC LIMIT 1"
 
         row = conn.execute(query, params).fetchone()
-        conn.close()
 
         if not row:
             return {"recommended_strategy": None, "avg_hcs": 0, "success_rate": 0, "total_attempts": 0}
@@ -71,18 +74,19 @@ def research_strategy_recommend(topic: str, model: str = "auto") -> dict[str, An
     except Exception as e:
         logger.error("strategy_recommend error: %s", e)
         return {"error": str(e)}
+    finally:
+        if conn:
+            conn.close()
 
 
 def research_strategy_stats() -> dict[str, Any]:
     """Get overall statistics: top strategies, worst strategies, model performance."""
+    conn = None
     try:
         conn = _get_db_conn()
 
         total_logs = conn.execute("SELECT COUNT(*) FROM strategy_log").fetchone()[0]
         topic_count = conn.execute("SELECT COUNT(DISTINCT topic) FROM strategy_log").fetchone()[0]
-
-        def to_dict(rows, keys):
-            return [dict(zip(keys, (r[0], round(r[1], 2) if isinstance(r[1], float) else r[1], r[2], r[3], round(r[4], 3)))) for r in rows]
 
         top_rows = conn.execute("""SELECT strategy, AVG(hcs_score), SUM(success), COUNT(*), SUM(success)*1.0/COUNT(*)
             FROM strategy_log GROUP BY strategy ORDER BY SUM(success)*1.0/COUNT(*) DESC, AVG(hcs_score) DESC LIMIT 5""").fetchall()
@@ -96,8 +100,10 @@ def research_strategy_stats() -> dict[str, Any]:
             FROM strategy_log GROUP BY model ORDER BY SUM(success)*1.0/COUNT(*) DESC""").fetchall()
         model_performance = [{"model": r[0], "attempts": r[1], "successes": r[2], "avg_hcs": round(r[3], 2), "success_rate": round(r[4], 3)} for r in model_rows]
 
-        conn.close()
         return {"total_logs": total_logs, "topic_count": topic_count, "top_strategies": top_strategies, "worst_strategies": worst_strategies, "model_performance": model_performance, "db_path": str(FEEDBACK_DB)}
     except Exception as e:
         logger.error("strategy_stats error: %s", e)
         return {"error": str(e)}
+    finally:
+        if conn:
+            conn.close()

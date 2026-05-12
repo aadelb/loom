@@ -34,17 +34,16 @@ def _get_top_seeds(count: int = 10) -> list[str]:
     return [s for s, _ in sorted(scores.items(), key=lambda x: x[1], reverse=True)[:count] if s in _STRATEGIES]
 
 
-def _crossover(parent1: str, parent2: str) -> str:
+def _crossover(template1: str, template2: str) -> str:
     """Combine two templates by selecting sentence fragments."""
-    t1 = _STRATEGIES.get(parent1, {}).get("template", "")
-    t2 = _STRATEGIES.get(parent2, {}).get("template", "")
-    if not t1 or not t2:
-        return t1 or t2
+    f1 = [s.strip() for s in template1.split(".") if s.strip()]
+    f2 = [s.strip() for s in template2.split(".") if s.strip()]
+    if not f1 or not f2:
+        return template1 or template2
 
-    f1 = [s.strip() for s in t1.split(".") if s.strip()]
-    f2 = [s.strip() for s in t2.split(".") if s.strip()]
-    selected = [random.choice(f1 if random.random() < 0.5 and f1 else f2) for _ in range(max(len(f1), len(f2)))]
-    return ". ".join(selected) if selected else t1
+    # Use min() to avoid oversampling from exhausted fragment list
+    selected = [random.choice(f1 if random.random() < 0.5 and f1 else f2) for _ in range(min(len(f1), len(f2)))]
+    return ". ".join(selected) if selected else template1
 
 
 def _mutate(template: str, rate: float = 0.4) -> str:
@@ -115,6 +114,8 @@ async def research_evolve_strategies(
         if not seeds:
             return {"error": "No seed strategies", "generations_run": 0, "best_evolved": [], "improvement_pct": 0.0, "lineage": {}}
 
+        init_fit: float | None = None  # Track initial fitness before evolution
+
         pop: dict[str, dict[str, Any]] = {}
         existing = {s.get("template", "") for s in _STRATEGIES.values()}
 
@@ -148,6 +149,11 @@ async def research_evolve_strategies(
 
             fitness_scores = [ind["fitness"] for ind in pop.values()]
             avg_fit = sum(fitness_scores) / len(fitness_scores) if fitness_scores else 0.0
+
+            # Capture initial fitness after first evaluation
+            if init_fit is None:
+                init_fit = avg_fit
+
             logger.info(f"evolution gen={gen} pop_size={len(pop)} avg_fitness={avg_fit:.3f}")
 
             # Selection: top 50%
@@ -160,6 +166,7 @@ async def research_evolve_strategies(
                 p1_id, p1 = random.choice(list(survivors.items()))
                 p2_id, p2 = random.choice(list(survivors.items()))
 
+                # Crossover operates on templates (strings), not strategy names
                 child_tmpl = _crossover(p1["template"], p2["template"])
                 child_tmpl = _mutate(child_tmpl, mutation_rate)
 
@@ -183,9 +190,8 @@ async def research_evolve_strategies(
 
         best_evolved.sort(key=lambda x: x["fitness"], reverse=True)
 
-        init_fit = sum(ind["fitness"] for ind in pop.values()) / max(len(pop), 1)
         final_fit = sum(ind["fitness"] for ind in pop.values()) / max(len(pop), 1)
-        improvement = ((final_fit - init_fit) / max(init_fit, 0.1) * 100) if init_fit > 0 else 0.0
+        improvement = ((final_fit - init_fit) / max(init_fit, 0.1) * 100) if init_fit and init_fit > 0 else 0.0
 
         return {
             "generations_run": generations,

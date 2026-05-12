@@ -252,7 +252,7 @@ class StrategyOracle:
             stats = get_strategy_stats(strategy=strategy_name, model=model_name)
 
             # Calculate predicted success rate
-            empirical_asr = stats.get("asr", 0.0)
+            empirical_asr = max(0.0, min(1.0, stats.get("asr", 0.0)))
             sample_count = stats.get("total_attempts", 0)
 
             if sample_count >= 10:

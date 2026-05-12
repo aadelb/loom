@@ -80,8 +80,8 @@ def _extract_features(text: str) -> dict[str, Any]:
             "yules_k": 0.0,
             "punctuation_profile": {},
             "function_word_profile": {},
-            "word_count": 0,
-            "sentence_count": 0,
+            "word_count": len(_tokenize_words(text)) if text else 0,
+            "sentence_count": len(_tokenize_sentences(text)) if text else 0,
         }
 
     sentences = _tokenize_sentences(text)
@@ -161,6 +161,8 @@ def _extract_features(text: str) -> dict[str, Any]:
         "yules_k": round(yules_k, 3),
         "punctuation_profile": {k: round(v, 4) for k, v in punctuation_profile.items()},
         "function_word_profile": {k: round(v, 4) for k, v in function_word_profile.items()},
+        "word_count": word_count,
+        "sentence_count": sentence_count,
     }
 
 

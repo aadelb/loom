@@ -101,7 +101,7 @@ class StrategyAdapter:
     """Singleton adapter for real-time strategy ranking based on empirical feedback."""
 
     _instance: StrategyAdapter | None = None
-    _lock: asyncio.Lock = asyncio.Lock()
+    _lock: asyncio.Lock | None = None
 
     def __init__(self) -> None:
         """Initialize in-memory stats registry."""
@@ -117,6 +117,8 @@ class StrategyAdapter:
     async def instance(cls) -> StrategyAdapter:
         """Get or create singleton instance (thread-safe)."""
         if cls._instance is None:
+            if cls._lock is None:
+                cls._lock = asyncio.Lock()
             async with cls._lock:
                 if cls._instance is None:
                     cls._instance = cls()

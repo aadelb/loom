@@ -62,7 +62,7 @@ def research_stego_analyze(text: str) -> dict[str, Any]:
             raise ValueError("text must be 1-5000 characters")
         zw_map = {"​": "ZWSP", "‌": "ZWNJ", "‍": "ZWJ", "﻿": "BOM"}
         zw_chars = [zw_map[c] for c in text if c in zw_map]
-        unusual_spaces = text.count(" ") + text.count(" ") + text.count(" ")
+        unusual_spaces = text.count(" ")
         valid_b64, b64_cand = set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="), []
         for w in text.split():
             if 8 <= len(w) and all(c in valid_b64 for c in w):

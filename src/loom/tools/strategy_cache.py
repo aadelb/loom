@@ -59,15 +59,22 @@ def research_cached_strategy(
         conn = _get_db_conn()
 
         # Query for best strategy by success rate
-        query = """SELECT strategy, SUM(success), COUNT(*)
-                   FROM strategy_log WHERE topic = ?"""
-        params = [topic]
-
         if model != "auto":
-            query += " AND model = ?"
-            params.append(model)
-
-        query += " GROUP BY strategy ORDER BY (SUM(success)*1.0/COUNT(*)) DESC LIMIT 1"
+            query = """SELECT strategy, SUM(success), COUNT(*)
+                       FROM strategy_log
+                       WHERE topic = ? AND model = ?
+                       GROUP BY strategy
+                       ORDER BY (SUM(success)*1.0/COUNT(*)) DESC
+                       LIMIT 1"""
+            params = [topic, model]
+        else:
+            query = """SELECT strategy, SUM(success), COUNT(*)
+                       FROM strategy_log
+                       WHERE topic = ?
+                       GROUP BY strategy
+                       ORDER BY (SUM(success)*1.0/COUNT(*)) DESC
+                       LIMIT 1"""
+            params = [topic]
 
         row = conn.execute(query, params).fetchone()
         conn.close()
