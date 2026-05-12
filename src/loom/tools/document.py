@@ -128,8 +128,8 @@ async def _download_document(url: str) -> str | None:
         Path to temp file, or None on failure.
     """
     try:
-        with httpx.Client(timeout=60.0, follow_redirects=True) as client:
-            response = client.get(url)
+        async with httpx.AsyncClient(timeout=60.0, follow_redirects=True) as client:
+            response = await client.get(url)
             response.raise_for_status()
 
             # Check file size
@@ -187,20 +187,21 @@ def _detect_source_type(url: str, file_path: str) -> str:
     # Try magic bytes
     try:
         with open(file_path, "rb") as f:
-            magic = f.read(8)
+            magic = f.read(512)  # Read more for proper detection
 
         # PDF magic bytes
         if magic.startswith(b"%PDF"):
             return "pdf"
-        # DOCX magic bytes (zip format)
+        # EPUB magic bytes (ZIP with "mimetype" as first entry)
+        # Check before generic ZIP/DOCX since EPUB is a special ZIP variant
+        if magic.startswith(b"PK\x03\x04") and b"mimetype" in magic[:100]:
+            return "epub"
+        # DOCX magic bytes (zip format, but not EPUB)
         if magic.startswith(b"PK\x03\x04"):
             return "docx"
         # RTF magic bytes
         if magic.startswith(b"{\\rtf"):
             return "rtf"
-        # EPUB magic bytes
-        if magic.startswith(b"PK\x03\x04") and b"mimetype" in magic:
-            return "epub"
     except Exception:
         pass
 
