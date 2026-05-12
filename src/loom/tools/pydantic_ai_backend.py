@@ -149,7 +149,7 @@ async def research_pydantic_agent(
 
         return {
             "success": True,
-            "response": response.content,
+            "response": response.text,
             "model_used": response.model,
             "tokens_used": response.input_tokens + response.output_tokens,
         }
@@ -241,11 +241,11 @@ async def research_structured_llm(
 
         # Parse and validate response
         try:
-            response_data = json.loads(response.content)
+            response_data = json.loads(response.text)
         except json.JSONDecodeError:
             # Try to extract JSON from markdown code blocks
             import re
-            json_match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", response.content, re.DOTALL)
+            json_match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", response.text, re.DOTALL)
             if json_match:
                 response_data = json.loads(json_match.group(1))
             else:

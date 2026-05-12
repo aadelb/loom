@@ -39,7 +39,7 @@ async def research_ratelimit_check(tool_name: str) -> dict[str, Any]:
             limiter["tokens"] -= 1.0
         else:
             limiter["throttle_count"] += 1
-        reset_in = max(0, 60.0 - (time.time() - limiter["last_refill"]))
+        reset_in = max(0, limiter["last_refill"] + 60.0 - time.time())
         return {
             "allowed": allowed,
             "tool": tool_name,

@@ -146,17 +146,28 @@ def _calculate_urgency_score(text: str) -> float:
 
 
 def _classify_threat_level(
-    emotional_negative: int,
+    emotional_negative: float,
     anger_score: float,
     urgency_score: float,
     deception_count: int,
 ) -> str:
-    """Classify threat level based on indicators."""
+    """Classify threat level based on indicators.
+
+    Args:
+        emotional_negative: Normalized negative emotion ratio (0-1)
+        anger_score: Normalized anger score (0-1)
+        urgency_score: Normalized urgency score (0-1)
+        deception_count: Raw count of deception indicators
+
+    Returns:
+        Threat level: 'high', 'medium', or 'low'
+    """
+    deception_normalized = min(deception_count / 5.0, 1.0)
     threat_score = (
-        (emotional_negative * 0.2)
+        (emotional_negative * 0.25)
         + (anger_score * 0.3)
-        + (urgency_score * 0.2)
-        + (min(deception_count, 5) * 0.1)
+        + (urgency_score * 0.25)
+        + (deception_normalized * 0.2)
     )
 
     if threat_score > 0.7:
@@ -228,8 +239,9 @@ def research_psycholinguistic(
         urgency_score = _calculate_urgency_score(text_clean)
 
         # Threat classification
+        negative_emotion_normalized = min(negative_emotion_count / max(word_count, 1), 1.0)
         threat_level = _classify_threat_level(
-            negative_emotion_count,
+            negative_emotion_normalized,
             anger_score,
             urgency_score,
             len(deception_indicators),
