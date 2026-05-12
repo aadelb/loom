@@ -9,31 +9,9 @@ from urllib.parse import quote
 
 import httpx
 
+from loom.input_validators import validate_domain, ValidationError
+
 logger = logging.getLogger("loom.tools.passive_recon")
-
-
-def _validate_domain(domain: str) -> str:
-    """Validate domain name to prevent command injection.
-
-    Allows alphanumeric, dots, and hyphens. Returns the validated domain.
-
-    Args:
-        domain: domain name to validate
-
-    Returns:
-        The validated domain string
-
-    Raises:
-        ValueError: if domain contains disallowed characters
-    """
-    if not domain or len(domain) > 255:
-        raise ValueError("domain must be 1-255 characters")
-
-    # Allow alphanumeric, dots, hyphens
-    if not re.match(r"^[a-z0-9.-]+$", domain, re.IGNORECASE):
-        raise ValueError("domain contains disallowed characters")
-
-    return domain
 
 
 def _extract_ct_subdomains(json_data: list[dict[str, Any]]) -> list[str]:
@@ -211,8 +189,8 @@ async def research_passive_recon(
         email_security, and total_findings
     """
     try:
-        domain = _validate_domain(domain)
-    except ValueError as exc:
+        domain = validate_domain(domain)
+    except ValidationError as exc:
         return {"domain": domain, "error": str(exc)}
 
     output: dict[str, Any] = {
