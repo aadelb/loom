@@ -332,7 +332,7 @@ class ModelSentimentAnalyzer:
         }
 
 
-def research_model_sentiment(response: str, context: str = "") -> dict[str, Any]:
+async def research_model_sentiment(response: str, context: str = "") -> dict[str, Any]:
     """Detect the emotional state of an LLM from its response text.
 
     This tool analyzes patterns in model responses to identify emotional states,

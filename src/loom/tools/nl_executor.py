@@ -138,7 +138,11 @@ async def _get_tool_function(tool_name: str) -> Any:
     """Dynamically import and return tool function."""
     try:
         parts = tool_name.split("_")
-        module_name = f"loom.tools.{parts[1]}"
+        # Join all parts except 'research' prefix to get module name
+        # research_search → loom.tools.search
+        # research_hcs_scorer → loom.tools.hcs_scorer
+        # research_cve_lookup → loom.tools.cve_lookup
+        module_name = f"loom.tools.{'_'.join(parts[1:])}"
 
         module = importlib.import_module(module_name)
         return getattr(module, tool_name, None)
@@ -196,10 +200,10 @@ async def research_do(instruction: str) -> dict:
             params["url"] = url
         if query:
             params["query"] = query
-        if "n" in str(tool_func.__code__.co_varnames):
+        if "n" in tool_func.__code__.co_varnames:
             params["n"] = min(limit, 50)
         if model_name:
-            if "model" in str(tool_func.__code__.co_varnames):
+            if "model" in tool_func.__code__.co_varnames:
                 params["model"] = model_name
 
         logger.info(

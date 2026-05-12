@@ -13,6 +13,8 @@ from typing import Any
 import httpx
 from pydantic import BaseModel
 
+from loom.validators import validate_url
+
 logger = logging.getLogger("loom.tools.nightcrawler")
 _STATE_DIR = Path.home() / ".loom" / "nightcrawler"
 _STATE_DB = _STATE_DIR / "state.db"
@@ -58,6 +60,12 @@ def _parse_arxiv_entry(entry: ET.Element) -> ArxivPaper | None:
         published = (entry.find("atom:published", ns).text or "")
         pdf_url = next((l.get("href") for l in entry.findall("atom:link", ns)
                        if l.get("title") == "pdf"), None)
+        if pdf_url:
+            try:
+                pdf_url = validate_url(pdf_url)
+            except Exception as e:
+                logger.warning("Invalid PDF URL from arXiv: %s, error: %s", pdf_url, str(e))
+                pdf_url = None
         return ArxivPaper(arxiv_id=arxiv_id, title=title, authors=authors, abstract=abstract,
                          published_date=published, pdf_url=pdf_url)
     except Exception as e:
@@ -66,15 +74,18 @@ def _parse_arxiv_entry(entry: ET.Element) -> ArxivPaper | None:
 
 
 def _store_paper(paper: ArxivPaper) -> None:
+    conn = None
     try:
         conn = sqlite3.connect(_STATE_DB)
         conn.execute("INSERT OR IGNORE INTO papers VALUES (?, ?, ?, ?, ?, ?, ?)",
                     (paper.arxiv_id, paper.title, json.dumps(paper.authors), paper.abstract,
                      paper.published_date, paper.pdf_url, datetime.now(UTC).isoformat()))
         conn.commit()
-        conn.close()
     except sqlite3.Error as e:
         logger.error("DB error: %s", str(e))
+    finally:
+        if conn is not None:
+            conn.close()
 
 
 async def research_arxiv_scan(
@@ -120,17 +131,25 @@ async def research_arxiv_scan(
 def research_nightcrawler_status() -> dict[str, Any]:
     """Return status of the NIGHTCRAWLER monitoring system."""
     _ensure_state_db()
+    conn = None
     try:
         conn = sqlite3.connect(_STATE_DB)
         last_scan = conn.execute("SELECT timestamp FROM scans ORDER BY id DESC LIMIT 1").fetchone()
         paper_count = conn.execute("SELECT COUNT(*) FROM papers").fetchone()[0]
-        conn.close()
         last_scan_str = last_scan[0] if last_scan else None
-        next_scan = (datetime.fromisoformat(last_scan_str.replace("Z", "+00:00"))
-                    + timedelta(hours=24)).isoformat() if last_scan_str else None
+        next_scan = None
+        if last_scan_str:
+            try:
+                scan_dt = datetime.fromisoformat(last_scan_str.replace("Z", "+00:00"))
+                next_scan = (scan_dt + timedelta(hours=24)).isoformat()
+            except ValueError as e:
+                logger.warning("Failed to parse last_scan timestamp '%s': %s", last_scan_str, str(e))
         return {"active": True, "last_scan": last_scan_str, "total_papers": paper_count,
                 "total_strategies_extracted": 0, "next_scheduled_scan": next_scan}
     except Exception as e:
         logger.error("Status error: %s", str(e))
         return {"active": False, "last_scan": None, "total_papers": 0,
                 "total_strategies_extracted": 0, "error": str(e)}
+    finally:
+        if conn is not None:
+            conn.close()

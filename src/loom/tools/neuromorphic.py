@@ -74,7 +74,7 @@ def _calculate_gamma_schedule(
 
     waves = (len(tools) + group_size - 1) // group_size
     duration = waves * gamma_interval + interval_ms
-    parallelism = group_size / len(tools)
+    parallelism = min(group_size / len(tools), 1.0)
     risk = "medium"
     return schedule, waves, duration, parallelism, risk
 
@@ -116,7 +116,7 @@ def _calculate_spike_train_schedule(
 
     waves = (len(tools) + 3) // 4
     duration = current_time + interval_ms
-    parallelism = 4.0 / len(tools)
+    parallelism = min(4.0 / len(tools), 1.0)
     risk = "medium"
     return schedule, waves, duration, parallelism, risk
 
@@ -140,7 +140,7 @@ def _calculate_resonance_schedule(
 
     waves = (len(tools) + 4) // 5
     duration = current_time + interval_ms
-    parallelism = (5.0 / len(tools)) + 0.3  # Increases as acceleration kicks in
+    parallelism = min((5.0 / len(tools)) * 0.2, 1.0)  # Scaled down to 0-1 range
     risk = "medium-low"
     return schedule, waves, duration, parallelism, risk
 
@@ -230,7 +230,4 @@ async def research_neuromorphic_schedule(
         return result
     except Exception as exc:
         logger.error("research_neuromorphic_schedule failed: %s", exc)
-        return {
-            "error": str(exc),
-            "tool": "research_neuromorphic_schedule",
-        }
+        raise

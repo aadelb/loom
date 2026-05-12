@@ -25,7 +25,7 @@ def _compute_in_degree(edges: list[tuple[str, str]]) -> dict[str, int]:
     """Compute in-degree (# of times author was replied to)."""
     in_degree: dict[str, int] = defaultdict(int)
     for from_author, to_author in edges:
-        if to_author:
+        if from_author and to_author:
             in_degree[to_author] += 1
     return dict(in_degree)
 
@@ -309,7 +309,7 @@ async def research_network_persona(
                 "authors": filtered_authors,
                 "network": {
                     "total_authors": total_authors,
-                    "total_edges": total_edges_count,
+                    "total_edges": len(edge_weights),
                     "density": round(density, 3),
                     "communities": len(communities),
                     "top_authorities": top_authorities,

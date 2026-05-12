@@ -6,7 +6,7 @@ import asyncio
 import logging
 import re
 from typing import Any
-from urllib.parse import quote, urlparse
+from urllib.parse import quote, unquote, urlparse
 
 import httpx
 
@@ -138,8 +138,6 @@ async def _search_ddgs(client: httpx.AsyncClient, query: str) -> list[dict[str, 
     ):
         url = match.group(1)
         if url.startswith("//duckduckgo.com/l/?uddg="):
-            from urllib.parse import unquote
-
             url = unquote(url.split("uddg=")[1].split("&")[0])
         results.append(
             {
@@ -280,8 +278,11 @@ async def research_multi_search(
                 all_results_raw = await asyncio.gather(*tasks, return_exceptions=True)
 
                 all_results: list[dict[str, Any]] = []
-                for result in all_results_raw:
-                    if isinstance(result, list):
+                for i, result in enumerate(all_results_raw):
+                    if isinstance(result, Exception):
+                        engine_name = engines_used[i] if i < len(engines_used) else "unknown"
+                        logger.warning("Search engine %s failed: %s", engine_name, result)
+                    elif isinstance(result, list):
                         all_results.extend(result)
 
                 total_raw = len(all_results)

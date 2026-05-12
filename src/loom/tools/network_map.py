@@ -67,7 +67,7 @@ async def research_network_map(
 
         while queue:
             target, current_depth = queue.pop(0)
-            if target in visited or current_depth >= depth:
+            if target in visited or current_depth > depth:
                 continue
             visited.add(target)
 
@@ -167,7 +167,7 @@ async def research_network_visualize(
                 src, tgt = edge.get("source", ""), edge.get("target", "")
                 if src in node_lookup and tgt in node_lookup:
                     rel = edge.get("relationship", "").replace("_", " ")[:15]
-                    lines.append(f'  {src}["{node_lookup[src].get("label", src)[:30]}"] -->|{rel}| {tgt}["{node_lookup[tgt].get("label", tgt)[:30]}"]')
+                    lines.append(f'  "{src}"["{node_lookup[src].get("label", src)[:30]}"] -->|{rel}| "{tgt}"["{node_lookup[tgt].get("label", tgt)[:30]}"]')
             diagram = "\n".join(lines)
 
         elif format == "dot":

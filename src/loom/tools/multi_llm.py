@@ -92,7 +92,7 @@ async def research_ask_all_llms(
                 "provider": name,
                 "model": response.model if hasattr(response, "model") else name,
                 "text": text[:1000],
-                "tokens": response.usage.get("total_tokens", 0) if hasattr(response, "usage") and response.usage else 0,
+                "tokens": (response.input_tokens + response.output_tokens) if hasattr(response, "input_tokens") else 0,
                 "elapsed_ms": int(elapsed * 1000),
                 "refused": False,
                 "error": None,
@@ -120,8 +120,8 @@ async def research_ask_all_llms(
     refused = []
     if include_reframe:
         from loom.tools.prompt_reframe import _detect_refusal, research_prompt_reframe
-        for r in successful:
-            if _detect_refusal(r["text"]):
+        for r in responses:
+            if r["text"] and _detect_refusal(r["text"]):
                 r["refused"] = True
                 refused.append(r)
 
@@ -140,7 +140,7 @@ async def research_ask_all_llms(
     if include_reframe and refused:
         reframe_results = []
         for r in refused:
-            reframed = research_prompt_reframe(prompt, model=r["provider"])
+            reframed = await research_prompt_reframe(prompt, model=r["provider"])
             reframe_results.append({
                 "provider": r["provider"],
                 "original_refused": True,
