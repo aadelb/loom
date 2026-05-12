@@ -13,7 +13,10 @@ import time
 from dataclasses import dataclass
 from typing import Any
 
-from loom.tools.reframe_strategies import ALL_STRATEGIES
+try:
+    from loom.tools.reframe_strategies import ALL_STRATEGIES
+except ImportError:
+    ALL_STRATEGIES = {}  # type: ignore[assignment]
 
 logger = logging.getLogger("loom.tools.swarm_attack")
 

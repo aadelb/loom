@@ -12,8 +12,13 @@ import logging
 import random
 from typing import Any
 
-from loom.tools.prompt_reframe import _STRATEGIES
-from loom.tools.quality_escalation import _score_all_dimensions
+try:
+    from loom.tools.prompt_reframe import _STRATEGIES
+    from loom.tools.quality_escalation import _score_all_dimensions
+    _EVOLUTION_DEPS = True
+except ImportError:
+    _EVOLUTION_DEPS = False
+    _STRATEGIES = {}  # type: ignore[assignment]
 
 logger = logging.getLogger("loom.tools.strategy_evolution")
 

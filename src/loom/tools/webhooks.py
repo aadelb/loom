@@ -8,8 +8,12 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from loom.params import WebhookRegisterParams, WebhookUnregisterParams, WebhookTestParams
-from loom.webhooks import get_webhook_manager, SUPPORTED_EVENTS
+try:
+    from loom.params import WebhookRegisterParams, WebhookUnregisterParams, WebhookTestParams
+    from loom.webhooks import get_webhook_manager, SUPPORTED_EVENTS
+    _WEBHOOK_AVAILABLE = True
+except ImportError:
+    _WEBHOOK_AVAILABLE = False
 
 logger = logging.getLogger("loom.tools.webhooks")
 

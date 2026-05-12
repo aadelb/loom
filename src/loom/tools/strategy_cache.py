@@ -13,7 +13,11 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from loom.tools.strategy_feedback import _get_db_conn
+try:
+    from loom.tools.strategy_feedback import _get_db_conn
+    _FEEDBACK_AVAILABLE = True
+except ImportError:
+    _FEEDBACK_AVAILABLE = False
 
 logger = logging.getLogger("loom.tools.strategy_cache")
 

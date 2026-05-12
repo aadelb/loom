@@ -9,8 +9,12 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from loom.params import ToxicityCheckParams
-from loom.toxicity_checker import ToxicityChecker
+try:
+    from loom.params import ToxicityCheckParams
+    from loom.toxicity_checker import ToxicityChecker
+    _TOXICITY_AVAILABLE = True
+except ImportError:
+    _TOXICITY_AVAILABLE = False
 
 logger = logging.getLogger("loom.tools.toxicity_checker_tool")
 

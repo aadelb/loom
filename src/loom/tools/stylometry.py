@@ -10,7 +10,10 @@ import re
 from collections import Counter
 from typing import Any
 
-from mcp.types import TextContent
+try:
+    from mcp.types import TextContent
+except ImportError:
+    TextContent = None  # type: ignore[assignment,misc]
 
 logger = logging.getLogger("loom.tools.stylometry")
 

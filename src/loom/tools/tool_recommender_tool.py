@@ -5,8 +5,12 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from loom.params import ToolRecommendParams
-from loom.tool_recommender import ToolRecommender
+try:
+    from loom.params import ToolRecommendParams
+    from loom.tool_recommender import ToolRecommender
+    _RECOMMENDER_AVAILABLE = True
+except ImportError:
+    _RECOMMENDER_AVAILABLE = False
 
 log = logging.getLogger("loom.tools.tool_recommender_tool")
 
