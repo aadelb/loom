@@ -78,7 +78,7 @@ async def _search_with_library(
             kwargs["platforms"] = platforms
 
         # Run analysis
-        response = analyze(**kwargs)
+        response = await analyze(**kwargs)
 
         # Parse response
         if isinstance(response, dict):

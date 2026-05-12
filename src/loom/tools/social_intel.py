@@ -296,7 +296,6 @@ def _extract_og_metadata(html: str) -> dict[str, str]:
         Dict of og:* metadata (og:title, og:description, og:image, etc.).
     """
     metadata = {}
-    import re
 
     # Match both property and name attributes
     # <meta property="og:title" content="..."> or <meta name="og:title" content="...">

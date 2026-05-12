@@ -105,9 +105,10 @@ def filter_by_reputation(
     for result in results:
         url = result.get("url", result.get("link", ""))
         score = score_source(url)
-        result["reputation_score"] = score
+        result_copy = result.copy()
+        result_copy["reputation_score"] = score
         if score >= min_score:
-            filtered.append(result)
+            filtered.append(result_copy)
     return filtered
 
 
@@ -132,7 +133,7 @@ async def research_source_reputation(url: str) -> dict[str, Any]:
             "domain": domain,
             "reputation_score": score,
             "blocked": domain in BLOCKLIST,
-            "high_quality": domain in HIGH_QUALITY or score >= 80,
+            "high_quality": domain in HIGH_QUALITY or any(domain.endswith(f".{hq}") for hq in HIGH_QUALITY) or score >= 80,
         }
     except Exception as exc:
         return {"error": str(exc), "tool": "research_source_reputation"}

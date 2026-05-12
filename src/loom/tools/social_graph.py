@@ -601,14 +601,25 @@ async def research_social_graph(
                 seen_ids.add(node["id"])
                 unique_nodes.append(node)
 
-        # Deduplicate edges by (source, target, relationship)
-        seen_edges: set[tuple[str, str, str]] = set()
-        unique_edges: list[dict[str, Any]] = []
+        # Deduplicate edges by (source, target, relationship), aggregating weights
+        edge_weights: dict[tuple[str, str, str], tuple[dict[str, Any], int]] = {}
         for edge in all_edges:
             key = (edge["source"], edge["target"], edge["relationship"])
-            if key not in seen_edges:
-                seen_edges.add(key)
-                unique_edges.append(edge)
+            if key not in edge_weights:
+                edge_weights[key] = (edge, edge.get("weight", 1))
+            else:
+                # Aggregate weight for duplicate relationships
+                existing_edge, existing_weight = edge_weights[key]
+                edge_weights[key] = (existing_edge, existing_weight + edge.get("weight", 1))
+
+        unique_edges: list[dict[str, Any]] = []
+        for (source, target, rel), (edge_template, total_weight) in edge_weights.items():
+            unique_edges.append({
+                "source": source,
+                "target": target,
+                "relationship": rel,
+                "weight": total_weight,
+            })
 
         logger.info(
             "social_graph_completed username=%s platforms=%s nodes=%d edges=%d",

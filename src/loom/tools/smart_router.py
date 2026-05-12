@@ -48,12 +48,15 @@ def _build_tool_index() -> dict[str, set[str]]:
     return dict(index)
 
 
-def _get_tool_index() -> dict[str, set[str]]:
-    """Get cached index, build if empty."""
+async def _get_tool_index() -> dict[str, set[str]]:
+    """Get cached index, build if empty (thread-safe)."""
     global _TOOL_INDEX
     if not _TOOL_INDEX:
-        _TOOL_INDEX = _build_tool_index()
-        logger.info(f"Tool index: {len(_TOOL_INDEX)} keywords, {sum(len(v) for v in _TOOL_INDEX.values())} refs")
+        async with _INDEX_LOCK:
+            # Double-check after acquiring lock
+            if not _TOOL_INDEX:
+                _TOOL_INDEX = _build_tool_index()
+                logger.info(f"Tool index: {len(_TOOL_INDEX)} keywords, {sum(len(v) for v in _TOOL_INDEX.values())} refs")
     return _TOOL_INDEX
 
 
@@ -69,7 +72,7 @@ async def research_route_query(query: str, intent: str = "auto") -> dict[str, An
                     "recommended_tools": [], "confidence": 0.0}
 
         query_clean = query.strip().lower()
-        tool_index = _get_tool_index()
+        tool_index = await _get_tool_index()
 
         # Tokenize query
         query_tokens = {t for t in query_clean.replace("_", " ").replace("-", " ").split()
@@ -138,7 +141,7 @@ async def research_router_rebuild() -> dict[str, Any]:
         global _TOOL_INDEX
         async with _INDEX_LOCK:
             _TOOL_INDEX = {}
-        idx = _get_tool_index()
+        idx = await _get_tool_index()
         return {
             "status": "rebuilt",
             "keywords": len(idx),

@@ -151,10 +151,10 @@ def _fetch_instagram_profile(username: str, max_posts: int) -> dict[str, Any]:
 
         return result
 
-    except instaloader.exceptions.UserNotFound:
-        logger.warning("instagram_user_not_found username=%s", username)
-        return {"error": f"User {username} not found", "username": username}
     except Exception as e:
+        if _HAS_INSTALOADER and isinstance(e, instaloader.exceptions.UserNotFound):
+            logger.warning("instagram_user_not_found username=%s", username)
+            return {"error": f"User {username} not found", "username": username}
         logger.error("instagram_fetch_error username=%s error=%s", username, str(e))
         return {"error": str(e), "username": username}
 
@@ -278,7 +278,7 @@ async def research_article_batch(
                 result = await research_article_extract(url)
 
                 # Check if result is an error dict
-                if "error" in result and "title" not in result:
+                if "error" in result and result.get("error"):
                     failed.append({"url": url, "error": result["error"]})
                 else:
                     articles.append(result)  # type: ignore
@@ -302,4 +302,10 @@ async def research_article_batch(
             "failed": failed,
         }
     except Exception as exc:
-        return {"error": str(exc), "tool": "research_article_batch"}
+        return {
+            "error": str(exc),
+            "tool": "research_article_batch",
+            "urls_processed": 0,
+            "articles": [],
+            "failed": [],
+        }

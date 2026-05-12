@@ -69,9 +69,17 @@ def research_sla_status() -> dict[str, Any]:
         is_breaching = monitor.is_breaching()
         if not is_breaching:
             overall_status = "healthy"
-        elif len(breaches) == 1 and breaches[0].actual >= breaches[0].target * 0.95:
-            # Minor breach (within 5%)
-            overall_status = "degraded"
+        elif len(breaches) == 1:
+            # Check if single breach is minor (within 5% of target)
+            breach = breaches[0]
+            is_minor = False
+            if breach.metric in ("uptime_percent", "tool_availability_percent"):
+                # Higher is better: actual within 5% of target from below
+                is_minor = breach.actual >= breach.target * 0.95
+            else:
+                # Lower is better (error_rate, p95_latency): actual within 5% of target from above
+                is_minor = breach.actual <= breach.target * 1.05
+            overall_status = "degraded" if is_minor else "critical"
         else:
             overall_status = "critical"
 
