@@ -264,16 +264,12 @@ async def _gather_evidence_for_angle(
         angle_query = angle_queries.get(angle, query)
 
         # Run deep research for this angle
-        loop = asyncio.get_running_loop()
-        deep_result = await loop.run_in_executor(
-            None,
-            lambda: research_deep(
-                angle_query,
-                depth=2,
-                include_github=domain == "technology",
-                include_community=True,
-                max_cost_usd=0.30,
-            ),
+        deep_result = await research_deep(
+            angle_query,
+            depth=2,
+            include_github=domain == "technology",
+            include_community=True,
+            max_cost_usd=0.30,
         )
 
         if "error" not in deep_result:
@@ -428,7 +424,7 @@ biases (list), contradictory_evidence (list), gaps (list), severity (low|medium|
             )
 
             # Try to parse as JSON if present
-            json_match = re.search(r"\{.*\}", critique_text, re.DOTALL)
+            json_match = re.search(r"\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}", critique_text, re.DOTALL)
             if json_match:
                 try:
                     critique_data = json.loads(json_match.group())
@@ -711,7 +707,7 @@ async def research_expert(
             len(key_findings) * 0.5  # More findings = higher score
             + triangulation_score * 3  # Triangulation quality
             + (1.0 - len(gaps) * 0.1)  # Fewer gaps = higher score
-            + (6 - len(angles_to_research)) * 0.3  # All angles explored
+            + (len(angles_to_research) - 1) * 0.3  # All angles explored
         ),
     )
 
@@ -775,7 +771,7 @@ async def research_expert(
         expert_response = output.get("executive_summary", "")
         if expert_response:
             hcs_score = await research_hcs_score_full(query, expert_response)
-            if hcs_score.get("status") == "success":
+            if hcs_score and hcs_score.get("status") == "success":
                 output["hcs_scores"] = hcs_score.get("scores", {})
                 logger.info("expert_hcs_score computed hcs_10=%.2f", hcs_score.get("scores", {}).get("hcs_10", 0))
     except ImportError:

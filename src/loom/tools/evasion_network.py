@@ -59,7 +59,7 @@ async def research_tor_rotate() -> dict[str, Any]:
         loop = asyncio.get_running_loop()
         success, _, circuit_info = await loop.run_in_executor(None, _send_tor_rotate)
         if success:
-            _last_rotate_time = now
+            _last_rotate_time = time.time()
             try:
                 from loom.config import CONFIG
                 proxy = CONFIG.get("TOR_SOCKS5_PROXY", "socks5h://127.0.0.1:9050")
@@ -79,19 +79,30 @@ async def research_proxy_check(proxy_url: str = "") -> dict[str, Any]:
     Returns: {proxy, working, ip_visible, anonymity_level, latency_ms}
     """
     start_time = time.time()
-    if proxy_url:
-        validate_url("https://check.torproject.org/api/ip")
     if not proxy_url:
         from loom.config import CONFIG
         proxy_url = CONFIG.get("TOR_SOCKS5_PROXY", "socks5h://127.0.0.1:9050")
+    else:
+        validate_url(proxy_url)
     try:
         client = await _get_test_client()
         resp = await client.get("https://check.torproject.org/api/ip", proxy=proxy_url, timeout=10.0)
-        proxy_ip = resp.json().get("IP", "") if resp.is_success else ""
+        proxy_ip = ""
+        if resp.is_success:
+            try:
+                proxy_ip = resp.json().get("IP", "")
+            except ValueError:
+                logger.warning("proxy_check_invalid_json: %s", resp.text[:100])
         try:
             direct_resp = await client.get("https://check.torproject.org/api/ip", timeout=5.0)
-            direct_ip = direct_resp.json().get("IP", "") if direct_resp.is_success else ""
-        except Exception:
+            direct_ip = ""
+            if direct_resp.is_success:
+                try:
+                    direct_ip = direct_resp.json().get("IP", "")
+                except ValueError:
+                    logger.warning("direct_check_invalid_json: %s", direct_resp.text[:100])
+        except Exception as exc:
+            logger.warning("direct_check_failed: %s", type(exc).__name__)
             direct_ip = ""
         anonymity = "anonymous" if (proxy_ip and proxy_ip != direct_ip) else (
             "transparent" if proxy_ip == direct_ip else "unknown")
