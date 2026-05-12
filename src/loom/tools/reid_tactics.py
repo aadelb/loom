@@ -22,6 +22,14 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+# Check if structlog is available
+try:
+    import structlog
+
+    _HAS_STRUCTLOG = True
+except ImportError:
+    _HAS_STRUCTLOG = False
+
 logger = logging.getLogger("loom.tools.reid_tactics")
 
 
@@ -201,10 +209,10 @@ async def research_reid_tactics(
         # Get as list format
         >>> await research_reid_tactics(output_format="list")
     """
-    if not _HAS_STRUCTLOG:
-        logger = logging.getLogger(__name__)
+    if _HAS_STRUCTLOG:
+        func_logger = structlog.get_logger("loom.tools.reid_tactics")
     else:
-        logger = structlog.get_logger("loom.tools.reid_tactics")
+        func_logger = logging.getLogger(__name__)
 
     try:
         # Validate tactic name if provided
@@ -246,7 +254,7 @@ async def research_reid_tactics(
                 tactics_list.append({"tactic_name": name, **data})
             result["tactics"] = tactics_list
 
-        logger.info(
+        func_logger.info(
             "reid_tactics_retrieved",
             tactic_requested=tactic or "all",
             include_counters=include_counters,
@@ -257,14 +265,5 @@ async def research_reid_tactics(
         return result
 
     except Exception as e:
-        logger.error("reid_tactics_error", error=str(e), tactic=tactic)
+        func_logger.error("reid_tactics_error", error=str(e), tactic=tactic)
         return {"error": f"Failed to retrieve Reid tactics: {str(e)}"}
-
-
-# Check if structlog is available
-try:
-    import structlog
-
-    _HAS_STRUCTLOG = True
-except ImportError:
-    _HAS_STRUCTLOG = False

@@ -42,9 +42,11 @@ async def research_report_template(
             sec_type = data.get(f"{section_name}_type", "text")
             heading = section_name.replace("_", " ").title()
             if sec_type == "code":
-                report_parts.append(f"## {heading}\n\n```\n{content}\n```\n\n")
+                code_content = content if isinstance(content, str) else str(content)
+                report_parts.append(f"## {heading}\n\n```\n{code_content}\n```\n\n")
             elif sec_type == "list":
-                report_parts.append(f"## {heading}\n\n" + "".join(f"- {l.strip()}\n" for l in (content.split("\n") if isinstance(content, str) else content) if l.strip()) + "\n")
+                lines = content.split("\n") if isinstance(content, str) else (content if isinstance(content, list) else [])
+                report_parts.append(f"## {heading}\n\n" + "".join(f"- {l.strip()}\n" for l in lines if isinstance(l, str) and l.strip()) + "\n")
             else:
                 report_parts.append(f"## {heading}\n\n{content}\n\n")
             sections_rendered += 1
@@ -77,15 +79,19 @@ async def research_report_custom(
                 sec_type = "text"
             valid.append({"heading": sec["heading"], "content": sec["content"], "type": sec_type})
 
-        if not valid or len(valid) > 50:
-            return {"error": "Invalid: need 1-50 sections"}
+        if not valid:
+            return {"error": "Invalid: all sections must have 'heading' and 'content' keys"}
+        if len(valid) > 50:
+            return {"error": "Invalid: maximum 50 sections allowed"}
 
         report_parts = [f"# {title}\n\n**Style:** {style}\n**Generated:** {datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S UTC')}\n\n"]
         for sec in valid:
             if sec["type"] == "code":
-                report_parts.append(f"## {sec['heading']}\n\n```\n{sec['content']}\n```\n\n")
+                code_content = sec["content"] if isinstance(sec["content"], str) else str(sec["content"])
+                report_parts.append(f"## {sec['heading']}\n\n```\n{code_content}\n```\n\n")
             elif sec["type"] == "list":
-                report_parts.append(f"## {sec['heading']}\n\n" + "".join(f"- {l.strip()}\n" for l in (sec["content"].split("\n") if isinstance(sec["content"], str) else sec["content"]) if l.strip()) + "\n")
+                lines = sec["content"].split("\n") if isinstance(sec["content"], str) else (sec["content"] if isinstance(sec["content"], list) else [])
+                report_parts.append(f"## {sec['heading']}\n\n" + "".join(f"- {l.strip()}\n" for l in lines if isinstance(l, str) and l.strip()) + "\n")
             else:
                 report_parts.append(f"## {sec['heading']}\n\n{sec['content']}\n\n")
 

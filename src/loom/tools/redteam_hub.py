@@ -125,7 +125,10 @@ async def research_hub_vote(
             row = await cursor.fetchone()
             if not row:
                 return {"success": False, "error": f"Finding {finding_id} not found"}
-            new_votes = row[0] + vote
+            current_votes = row[0]
+            if current_votes is None:
+                current_votes = 0
+            new_votes = current_votes + vote
             await conn.execute("UPDATE findings SET votes = ? WHERE id = ?", (new_votes, finding_id))
             await conn.commit()
         logger.info("hub_vote finding_id=%s vote=%d new_count=%d", finding_id, vote, new_votes)

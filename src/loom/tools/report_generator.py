@@ -428,7 +428,7 @@ async def research_generate_report(
         }
 
 
-async def research_generate_executive_report(
+def research_generate_executive_report(
     scores: list[dict] | None = None,
     tracker_data: list[dict] | None = None,
     audit_entries: list[dict] | None = None,

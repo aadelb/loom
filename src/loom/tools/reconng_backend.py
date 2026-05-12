@@ -45,6 +45,11 @@ class ReconnGScanParams(BaseModel):
         # Allow domains, IPs, and emails
         if not any(c in v for c in [".", "@"]):
             raise ValueError("target must be a domain, IP address, or email")
+        # CRITICAL: Block shell metacharacters that could cause injection
+        dangerous_chars = [";", "|", "&", "$", "`", "(", ")", "<", ">", "\n", "\r"]
+        for char in dangerous_chars:
+            if char in v:
+                raise ValueError(f"target contains invalid character: {char}")
         return v
 
     @field_validator("modules")
@@ -124,7 +129,7 @@ async def research_reconng_scan(
 
             # Initialize workspace
             try:
-                await asyncio.to_thread(
+                init_result = await asyncio.to_thread(
                     subprocess.run,
                     ["recon-ng", "-w", workspace_name, "--path", tmpdir, "-m", "create"],
                     timeout=10,
@@ -132,6 +137,10 @@ async def research_reconng_scan(
                     text=True,
                     check=False,
                 )
+                if init_result.returncode != 0:
+                    result.error = f"Workspace initialization failed: {init_result.stderr[:200]}"
+                    logger.warning(f"recon-ng workspace init failed: {init_result.stderr}")
+                    return result.model_dump()
             except subprocess.TimeoutExpired:
                 result.error = "Workspace initialization timed out"
                 return result.model_dump()
@@ -199,7 +208,15 @@ def _get_default_modules(target: str) -> list[str]:
     """Return default recon-ng modules based on target type."""
     # Detect target type
     is_email = "@" in target
-    is_ip = target.replace(".", "").replace(":", "").isdigit() or ":" in target
+    # IPv6 check: presence of ':' AND hex/colon chars only
+    # IPv4 check: all parts are numeric after removing dots
+    is_ipv4 = all(
+        part.isdigit() for part in target.split(".") if part
+    ) and target.count(".") > 0
+    is_ipv6 = ":" in target and all(
+        c in "0123456789abcdefABCDEF:." for c in target
+    )
+    is_ip = is_ipv4 or is_ipv6
 
     if is_email:
         return ["whois_email", "email_extract"]
