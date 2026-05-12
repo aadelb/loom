@@ -80,8 +80,8 @@ async def _get_browser():
     try:
         from playwright.async_api import async_playwright
         pw = async_playwright()
-        ctx = await pw.__aenter__()
-        _browser = await ctx.chromium.launch(headless=True)
+        _pw_ctx = await pw.__aenter__()
+        _browser = await _pw_ctx.chromium.launch(headless=True)
         return _browser
     except ImportError:
         raise ImportError("playwright not installed: pip install playwright")

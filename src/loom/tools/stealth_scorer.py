@@ -309,7 +309,7 @@ def _score_structure(prompt: str) -> float:
     marker_count = 0
 
     for pattern in STRUCTURAL_MARKERS:
-        marker_count += len(re.findall(pattern, prompt))
+        marker_count += len(re.findall(pattern, prompt, re.MULTILINE))
 
     if marker_count == 0:
         return 10.0

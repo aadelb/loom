@@ -84,9 +84,8 @@ async def research_validate_startup() -> dict[str, Any]:
         results["db_status"]["databases"] = [f.name for f in db_files]
         try:
             for db_file in db_files[:3]:  # Check first 3
-                conn = sqlite3.connect(str(db_file), timeout=2.0)
-                conn.execute("PRAGMA integrity_check")
-                conn.close()
+                with sqlite3.connect(str(db_file), timeout=2.0) as conn:
+                    conn.execute("PRAGMA integrity_check")
             results["db_status"]["accessible"] = True
             test_file = db_dir / ".write_test"
             test_file.touch()
@@ -97,7 +96,7 @@ async def research_validate_startup() -> dict[str, Any]:
             results["db_status"]["writable"] = False
             results["overall_health"] = "degraded"
 
-    if results["import_errors"] and len(results["import_errors"]) > 5:
+    if results["import_errors"] and len(results["import_errors"]) >= 5:
         results["overall_health"] = "critical"
 
     logger.info("startup_validation health=%s loaded=%d total=%d", results["overall_health"], results["loaded_ok"], results["total_modules"])
