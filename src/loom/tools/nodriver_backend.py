@@ -38,7 +38,15 @@ logger = logging.getLogger("loom.nodriver_backend")
 
 # Global session registry: name -> Browser instance
 _nodriver_sessions: dict[str, Browser] = {}
-_session_lock = asyncio.Lock()
+_session_lock: asyncio.Lock | None = None
+
+
+def _get_session_lock() -> asyncio.Lock:
+    """Lazily initialize session lock to avoid event loop creation at import time."""
+    global _session_lock
+    if _session_lock is None:
+        _session_lock = asyncio.Lock()
+    return _session_lock
 
 
 class NodriverFetchResult(BaseModel):
@@ -187,7 +195,8 @@ async def research_nodriver_fetch(
             # Wait for optional selector
             if wait_for:
                 try:
-                    await asyncio.wait_for(page.select(wait_for), timeout=timeout - 5)
+                    selector_timeout = max(timeout - 5, 1)
+                    await asyncio.wait_for(page.select(wait_for), timeout=selector_timeout)
                     logger.info("nodriver_wait_selector_success url=%s selector=%s", url, wait_for)
                     bypass_method = "javascript_wait"
                 except asyncio.TimeoutError:
@@ -422,7 +431,7 @@ async def research_nodriver_session(
             "error": "nodriver not installed. Install with: pip install nodriver",
         }
 
-    async with _session_lock:
+    async with _get_session_lock():
         try:
             if action == "open":
                 if session_name in _nodriver_sessions:
@@ -474,7 +483,8 @@ async def research_nodriver_session(
                     browser = _nodriver_sessions[session_name]
                     logger.info("nodriver_session_navigate session=%s url=%s", session_name, url)
                     page = await asyncio.wait_for(browser.get(url), timeout=EXTERNAL_TIMEOUT_SECS)
-                    # Store current page reference (simplified)
+                    # Do not close page — keep it open in the session for subsequent extract calls
+                    # The page will be closed when the session is closed or another navigate is called
                     return {
                         "session_name": session_name,
                         "action": action,

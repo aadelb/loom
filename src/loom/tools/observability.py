@@ -67,7 +67,8 @@ def research_trace_start(
         logger.info("trace_started trace_id=%s operation=%s", trace_id, operation)
         return {"trace_id": trace_id, "operation": operation, "started_at": started_at}
     except Exception as exc:
-        return {"error": str(exc), "tool": "research_trace_start"}
+        logger.error("trace_start failed for operation=%s: %s", operation, exc)
+        return {"trace_id": "", "operation": operation, "started_at": "", "error": str(exc)}
 
 
 def research_trace_end(
@@ -89,7 +90,11 @@ def research_trace_end(
 
             if row:
                 started_at = datetime.fromisoformat(row[0])
+                if started_at.tzinfo is None:
+                    started_at = started_at.replace(tzinfo=UTC)
                 ended_at_dt = datetime.fromisoformat(ended_at)
+                if ended_at_dt.tzinfo is None:
+                    ended_at_dt = ended_at_dt.replace(tzinfo=UTC)
                 duration_ms = int((ended_at_dt - started_at).total_seconds() * 1000)
 
             conn.execute(
@@ -101,7 +106,8 @@ def research_trace_end(
         logger.info("trace_ended trace_id=%s status=%s duration_ms=%d", trace_id, status, duration_ms)
         return {"trace_id": trace_id, "duration_ms": duration_ms, "status": status}
     except Exception as exc:
-        return {"error": str(exc), "tool": "research_trace_end"}
+        logger.error("trace_end failed for trace_id=%s: %s", trace_id, exc)
+        return {"trace_id": trace_id, "duration_ms": 0, "status": "error", "error": str(exc)}
 
 
 def research_traces_list(
@@ -119,8 +125,6 @@ def research_traces_list(
         avg_duration_ms = 0.0
 
         with sqlite3.connect(db_path) as conn:
-            conn.row_factory = sqlite3.Row
-
             if operation:
                 count_query = "SELECT COUNT(*) FROM traces WHERE operation = ?"
                 list_query = (
@@ -142,22 +146,24 @@ def research_traces_list(
             total_count = cursor.fetchone()[0]
 
             avg_query = "SELECT AVG(duration_ms) FROM traces WHERE duration_ms IS NOT NULL"
+            avg_params = ()
             if operation:
                 avg_query += " AND operation = ?"
-            cursor = conn.execute(avg_query, count_params)
+                avg_params = (operation,)
+            cursor = conn.execute(avg_query, avg_params)
             result = cursor.fetchone()
             avg_duration_ms = float(result[0]) if result[0] else 0.0
 
             cursor = conn.execute(list_query, params)
             for row in cursor.fetchall():
                 traces.append({
-                    "trace_id": row["trace_id"],
-                    "operation": row["operation"],
-                    "status": row["status"],
-                    "started_at": row["started_at"],
-                    "ended_at": row["ended_at"],
-                    "duration_ms": row["duration_ms"],
-                    "result_summary": row["result_summary"],
+                    "trace_id": row[0],
+                    "operation": row[1],
+                    "status": row[2],
+                    "started_at": row[3],
+                    "ended_at": row[4],
+                    "duration_ms": row[5],
+                    "result_summary": row[6],
                 })
 
         logger.info("traces_listed count=%d total=%d op=%s", len(traces), total_count, operation)
@@ -167,7 +173,8 @@ def research_traces_list(
             "avg_duration_ms": round(avg_duration_ms, 2),
         }
     except Exception as exc:
-        return {"error": str(exc), "tool": "research_traces_list"}
+        logger.error("traces_list failed for operation=%s: %s", operation, exc)
+        return {"traces": [], "total_count": 0, "avg_duration_ms": 0.0, "error": str(exc)}
 
 
 def tool_trace_start(operation: str, metadata: dict[str, Any] | None = None) -> list[TextContent]:

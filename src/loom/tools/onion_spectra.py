@@ -201,7 +201,18 @@ async def research_onion_spectra(
 		- summary: brief description
 		- error: error message if any
 	"""
-	validate_url(url)
+	try:
+		validate_url(url)
+	except UrlSafetyError as exc:
+		logger.warning("onion_spectra_invalid_url url=%s error=%s", url, exc)
+		return {
+			"url": url,
+			"error": f"Invalid URL: {str(exc)[:100]}",
+			"language": {},
+			"category": "suspicious",
+			"confidence": 0.0,
+			"summary": "",
+		}
 
 	# Validate URL is a .onion address
 	if not _is_onion_url(url):
@@ -223,7 +234,7 @@ async def research_onion_spectra(
 	if fetch_content and research_fetch is not None:
 		try:
 			# Use asyncio to run blocking fetch in executor
-			loop = asyncio.get_event_loop()
+			loop = asyncio.get_running_loop()
 			fetch_result = await loop.run_in_executor(
 				None,
 				partial(

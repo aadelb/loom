@@ -146,7 +146,8 @@ def research_opencti_query(
             return result
 
         # Parse response
-        indicators = data.get("data", {}).get("indicators", {})
+        data_obj = data.get("data") or {}
+        indicators = data_obj.get("indicators", {})
         edges = indicators.get("edges", [])
 
         if not edges:
@@ -175,15 +176,16 @@ def research_opencti_query(
 
         # Extract object markings (TLP, etc.) and labels
         markings = [
-            m.get("definition") for m in node.get("objectMarking", [])
+            m.get("definition") for m in (node.get("objectMarking") or [])
         ]
         labels = [
-            label.get("value") for label in node.get("objectLabel", [])
+            label.get("value") for label in (node.get("objectLabel") or [])
         ]
 
         # Extract relationships (related threats)
         relationships = []
-        for rel_edge in node.get("relationships", {}).get("edges", []):
+        relationships_obj = node.get("relationships") or {}
+        for rel_edge in relationships_obj.get("edges", []):
             rel_node = rel_edge.get("node", {})
             rel_to = rel_node.get("to", {})
             rel_name = rel_to.get("name", "Unknown")
@@ -206,8 +208,9 @@ def research_opencti_query(
         )
 
     except httpx.HTTPStatusError as exc:
+        response_text = exc.response.text[:200]  # Truncate to prevent data leakage
         result["error"] = (
-            f"OpenCTI API error ({exc.response.status_code}): {exc.response.text}"
+            f"OpenCTI API error ({exc.response.status_code}): {response_text}"
         )
         logger.error(
             "opencti_http_error indicator=%s status=%d",

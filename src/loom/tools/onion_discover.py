@@ -10,6 +10,8 @@ from urllib.parse import quote
 
 import httpx
 
+from loom.validators import validate_url
+
 logger = logging.getLogger("loom.tools.onion_discover")
 
 
@@ -193,6 +195,20 @@ async def research_onion_discover(
             - onion_urls_found: list of dicts with url, source, title, snippet
             - total_unique: count of unique .onion URLs found
     """
+    # Validate inputs
+    if not query or not isinstance(query, str):
+        return {
+            "query": query,
+            "sources_checked": [],
+            "onion_urls_found": [],
+            "total_unique": 0,
+        }
+
+    if len(query) > 2048:
+        query = query[:2048]
+
+    if max_results < 1 or max_results > 100:
+        max_results = max(1, min(max_results, 100))
 
     async def _run() -> dict[str, Any]:
         try:
@@ -263,8 +279,15 @@ async def research_onion_discover(
                 for item in combined:
                     url = item.get("url", "").lower()
                     if url and ".onion" in url:
-                        if url not in seen_urls:
-                            seen_urls[url] = item
+                        # Validate URL for safety before including in results
+                        try:
+                            validate_url(url)
+                            if url not in seen_urls:
+                                seen_urls[url] = item
+                        except Exception:
+                            # Skip URLs that fail validation
+                            logger.debug("Skipping invalid URL: %s", url)
+                            continue
 
                 # Sort by source diversity and title presence
                 sorted_urls = sorted(

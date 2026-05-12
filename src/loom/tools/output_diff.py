@@ -18,7 +18,7 @@ async def research_diff_compare(text_a: str, text_b: str, context_lines: int = 3
         diff_lines = list(difflib.unified_diff(lines_a, lines_b, lineterm="", n=context_lines))
         added = sum(1 for line in diff_lines if line.startswith("+") and not line.startswith("+++"))
         removed = sum(1 for line in diff_lines if line.startswith("-") and not line.startswith("---"))
-        unchanged = len(lines_a) - removed
+        unchanged = sum(1 for line in diff_lines if line.startswith(" "))
         matcher = difflib.SequenceMatcher(None, text_a, text_b)
         similarity_pct = round(matcher.ratio() * 100, 2)
         summary = f"Lines added: {added}, removed: {removed}, unchanged: {unchanged}"

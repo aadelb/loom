@@ -17,9 +17,9 @@ RULES_FILE = NOTIFICATIONS_DIR / "notification_rules.json"
 
 
 async def research_notify_send(
-    channel: str = "log",
-    title: str = "",
-    message: str = "",
+    channel: str,
+    title: str,
+    message: str,
     severity: str = "info",
 ) -> dict[str, Any]:
     """Send notification to log/email/slack channel.
@@ -27,23 +27,30 @@ async def research_notify_send(
     Args: channel: "log"|"email"|"slack", title, message, severity: "info"|"warning"|"error"|"critical"
     Returns: {sent: bool, channel, notification_id, timestamp}
     """
-    notification_id, timestamp = str(uuid.uuid4())[:8], datetime.now(UTC).isoformat()
+    notification_id = str(uuid.uuid4())[:8]
+    timestamp = datetime.now(UTC).isoformat()
     notification = {"id": notification_id, "channel": channel, "title": title, "message": message, "severity": severity, "timestamp": timestamp}
 
-    if channel == "log":
-        try:
+    try:
+        if channel == "log":
             with open(NOTIFICATIONS_FILE, "a") as f:
                 f.write(json.dumps(notification) + "\n")
-        except Exception as e:
-            return {"sent": False, "error": str(e)}
-    elif channel == "email":
-        notification["payload"] = {"subject": f"[{severity.upper()}] {title}", "body": message}
-    elif channel == "slack":
-        notification["payload"] = {
-            "text": title,
-            "blocks": [{"type": "section", "text": {"type": "mrkdwn", "text": f"*{title}*\n{message}"}}],
-            "color": {"info": "#36a64f", "warning": "#ff9900", "error": "#dd0000", "critical": "#990000"}.get(severity, "#808080"),
-        }
+        elif channel == "email":
+            notification["payload"] = {"subject": f"[{severity.upper()}] {title}", "body": message}
+            with open(NOTIFICATIONS_FILE, "a") as f:
+                f.write(json.dumps(notification) + "\n")
+        elif channel == "slack":
+            notification["payload"] = {
+                "text": title,
+                "blocks": [{"type": "section", "text": {"type": "mrkdwn", "text": f"*{title}*\n{message}"}}],
+                "color": {"info": "#36a64f", "warning": "#ff9900", "error": "#dd0000", "critical": "#990000"}.get(severity, "#808080"),
+            }
+            with open(NOTIFICATIONS_FILE, "a") as f:
+                f.write(json.dumps(notification) + "\n")
+        else:
+            return {"sent": False, "error": f"Unknown channel: {channel}"}
+    except Exception as e:
+        return {"sent": False, "error": str(e)}
     return {"sent": True, "channel": channel, "notification_id": notification_id, "timestamp": timestamp}
 
 
@@ -96,12 +103,15 @@ async def research_notify_rules(
 
     if action == "list":
         return {"rules": rules, "total": len(rules)}
-    elif action == "add" and rule and all(k in rule for k in ["event", "channel", "severity"]):
+    elif action == "add":
+        if not rule or not all(k in rule for k in ["event", "channel", "severity"]):
+            return {"error": "rule must contain 'event', 'channel', and 'severity' keys"}
         rule_id = str(uuid.uuid4())[:8]
         rules.append({**rule, "id": rule_id})
         try:
             with open(RULES_FILE, "w") as f:
                 json.dump(rules, f, indent=2)
         except Exception as e:
-            return {"error": str(e)}
-    return {"rules": rules, "total": len(rules)}
+            return {"error": str(e), "rules": rules, "total": len(rules)}
+        return {"rules": rules, "total": len(rules)}
+    return {"error": f"Unknown action: {action}", "rules": rules, "total": len(rules)}

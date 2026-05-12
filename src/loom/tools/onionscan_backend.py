@@ -53,9 +53,11 @@ def _validate_onion_url(url: str) -> str:
 		if not url.endswith(".onion"):
 			raise ValueError("URL must be a .onion domain or include .onion suffix")
 
-	# Prevent obvious injection
-	if any(char in url for char in [";", "|", "&", "`", "$", "\n", "\r"]):
-		raise ValueError("URL contains disallowed characters")
+	# Strict allowlist validation for command-line safety
+	# Allow only alphanumeric, dots, hyphens, colons (for port), slashes, and @ (for userinfo)
+	import re
+	if not re.match(r"^https?://[a-z0-9:/@\-\.]+\.onion(:\d+)?(/[a-z0-9\-._~:/?#\[\]@!$&'()*+,;=]*)?$", url):
+		raise ValueError("URL contains disallowed characters or invalid format")
 
 	return url
 
@@ -99,15 +101,17 @@ def _check_tor_available() -> tuple[bool, str]:
 		import socket
 
 		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		sock.settimeout(5)
-		host, port_str = DEFAULT_SOCKS5_PROXY.split(":")
-		result = sock.connect_ex((host, int(port_str)))
-		sock.close()
+		try:
+			sock.settimeout(5)
+			host, port_str = DEFAULT_SOCKS5_PROXY.split(":")
+			result = sock.connect_ex((host, int(port_str)))
 
-		if result == 0:
-			return True, "Tor SOCKS5 proxy available"
-		else:
-			return False, f"Tor SOCKS5 proxy not responding at {DEFAULT_SOCKS5_PROXY}"
+			if result == 0:
+				return True, "Tor SOCKS5 proxy available"
+			else:
+				return False, f"Tor SOCKS5 proxy not responding at {DEFAULT_SOCKS5_PROXY}"
+		finally:
+			sock.close()
 
 	except Exception as e:
 		return False, f"Tor check failed: {type(e).__name__}: {e}"

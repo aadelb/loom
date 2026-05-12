@@ -96,6 +96,24 @@ def _discover_tools(tools_dir: Path) -> dict[str, dict[str, Any]]:
             if isinstance(node, ast.AsyncFunctionDef) and node.name.startswith("research_"):
                 doc = ast.get_docstring(node) or ""
                 summary = doc.split("\n")[0] if doc else node.name
-                params = {arg.arg: {"type": "string"} for arg in node.args.args if arg.arg != "self"}
-                tools[node.name] = {"summary": summary, "docstring": doc, "params": params, "required": list(params.keys()), "file": py_file.name}
+
+                # Extract params with inferred types from annotations
+                params = {}
+                for arg in node.args.args:
+                    if arg.arg == "self":
+                        continue
+                    param_type = "string"  # default
+                    if arg.annotation:
+                        if isinstance(arg.annotation, ast.Name):
+                            type_name = arg.annotation.id.lower()
+                            param_type = "integer" if type_name == "int" else "number" if type_name == "float" else "boolean" if type_name == "bool" else "string"
+                    params[arg.arg] = {"type": param_type}
+
+                # Determine required params (exclude those with defaults)
+                num_defaults = len(node.args.defaults)
+                num_args = len([arg for arg in node.args.args if arg.arg != "self"])
+                required_count = num_args - num_defaults
+                required = list(params.keys())[:required_count]
+
+                tools[node.name] = {"summary": summary, "docstring": doc, "params": params, "required": required, "file": py_file.name}
     return tools
