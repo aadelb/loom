@@ -47,19 +47,32 @@ def _select_tools(
     categories: list[str],
     max_tools: int,
 ) -> list[tuple[str, dict[str, Any]]]:
-    """Select tools by category, ordered by efficiency."""
-    selected = []
+    """Select tools by category, ordered by efficiency (lowest time/cost ratio first)."""
+    candidates = []
 
+    # Collect all matching tools from all categories
     for category in categories:
         for tool_name, info in TOOL_REGISTRY.items():
-            if info["category"] == category and len(selected) < max_tools:
-                selected.append((tool_name, info))
+            if info["category"] == category:
+                candidates.append((tool_name, info))
 
-    if not selected and max_tools > 0:
-        selected.append(("research_search", TOOL_REGISTRY["research_search"]))
+    if not candidates and max_tools > 0:
+        candidates.append(("research_search", TOOL_REGISTRY["research_search"]))
 
-    selected.sort(key=lambda x: x[1]["time_ms"] / (x[1]["cost_usd"] + 0.001))
-    return selected[:max_tools]
+    # Sort by efficiency: lowest time_ms per USD cost.
+    # For zero-cost tools, treat as infinite efficiency (sort first).
+    def efficiency_key(item: tuple[str, dict[str, Any]]) -> tuple[int, float]:
+        _, info = item
+        cost = info["cost_usd"]
+        time = info["time_ms"]
+        # Sort free tools first (cost=0 → sort_key=(0, time))
+        # Paid tools by ratio (cost>0 → sort_key=(1, time/cost))
+        if cost == 0:
+            return (0, time)
+        return (1, time / cost)
+
+    candidates.sort(key=efficiency_key)
+    return candidates[:max_tools]
 
 
 async def research_plan_execution(
@@ -69,7 +82,7 @@ async def research_plan_execution(
     """Generate an execution plan for a research goal.
 
     Args:
-        goal: research goal or query
+        goal: research goal or query (must be non-empty string)
         constraints: dict with optional keys:
             - max_time_minutes: max execution time (default: 30)
             - max_cost_usd: max cost budget (default: 0.10)
@@ -79,15 +92,33 @@ async def research_plan_execution(
         Dict with:
         - goal: original goal
         - plan: list of execution steps with tool, time, cost, reason
-        - total_estimated_time: combined time in ms
-        - total_estimated_cost: combined cost in USD
+        - total_estimated_time_ms: combined time in ms (sequential estimate)
+        - total_estimated_cost_usd: combined cost in USD
         - constraints_met: bool indicating if plan respects constraints
     """
     try:
+        # Validate goal
+        if not goal or not isinstance(goal, str):
+            return {
+                "error": f"goal must be non-empty string, got {type(goal).__name__ if goal is not None else 'None'}",
+                "tool": "research_plan_execution",
+            }
+
         constraints = constraints or {}
-        max_time_minutes = constraints.get("max_time_minutes", 30)
-        max_cost_usd = constraints.get("max_cost_usd", 0.10)
-        max_tools = constraints.get("max_tools", 5)
+
+        # Validate and extract constraints
+        try:
+            max_time_minutes = float(constraints.get("max_time_minutes", 30))
+            max_cost_usd = float(constraints.get("max_cost_usd", 0.10))
+            max_tools = int(constraints.get("max_tools", 5))
+
+            if max_time_minutes <= 0 or max_cost_usd < 0 or max_tools <= 0:
+                return {
+                    "error": "Constraints must be positive (max_time_minutes > 0, max_cost_usd >= 0, max_tools > 0)",
+                    "tool": "research_plan_execution",
+                }
+        except (TypeError, ValueError) as e:
+            return {"error": f"Invalid constraint type: {str(e)}", "tool": "research_plan_execution"}
 
         categories = _categorize_goal(goal)
         tools = _select_tools(categories, max_tools)
@@ -117,7 +148,7 @@ async def research_plan_execution(
 
         logger.info(
             "plan_execution goal=%s tools=%d time=%dms cost=$%.4f constraints_met=%s",
-            goal[:50],
+            goal[:50] if len(goal) > 50 else goal,
             len(plan),
             total_time,
             total_cost,
@@ -132,11 +163,12 @@ async def research_plan_execution(
             "constraints_met": constraints_met,
         }
     except Exception as exc:
+        logger.exception("Error in plan_execution")
         return {"error": str(exc), "tool": "research_plan_execution"}
 
 
 async def research_plan_validate(
-    steps: list[dict[str, Any]],
+    steps: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Validate an execution plan for issues.
 
@@ -155,17 +187,33 @@ async def research_plan_validate(
         warnings = []
         optimizations = []
 
+        # Validate input type
+        if steps is None or not isinstance(steps, list):
+            issues.append({"step": 0, "issue": "steps must be a list"})
+            return {"valid": False, "issues": issues, "warnings": warnings, "optimizations": optimizations}
+
         if not steps:
             issues.append({"step": 0, "issue": "Plan is empty"})
             return {"valid": False, "issues": issues, "warnings": warnings, "optimizations": optimizations}
 
         seen_tools = set()
+        dependency_graph: dict[int, list[int]] = {}  # step -> list of dependencies
+
+        # First pass: validate structure and collect dependencies
         for idx, step in enumerate(steps, 1):
+            if not isinstance(step, dict):
+                issues.append({"step": idx, "issue": f"Step must be a dict, got {type(step).__name__}"})
+                continue
+
             if "tool" not in step:
                 issues.append({"step": idx, "issue": "Missing 'tool' key"})
                 continue
 
             tool = step["tool"]
+
+            if not isinstance(tool, str):
+                issues.append({"step": idx, "issue": f"tool must be string, got {type(tool).__name__}"})
+                continue
 
             if tool not in TOOL_REGISTRY:
                 warnings.append(f"Step {idx}: Tool '{tool}' not in registry (may be custom)")
@@ -175,14 +223,64 @@ async def research_plan_validate(
 
             seen_tools.add(tool)
 
+            # Validate and normalize depends_on
             if "depends_on" in step:
                 dep = step["depends_on"]
-                if isinstance(dep, list):
+                normalized_deps = []
+
+                if isinstance(dep, int):
+                    normalized_deps = [dep]
+                elif isinstance(dep, list):
                     for d in dep:
-                        if d > idx:
+                        if not isinstance(d, int):
                             issues.append(
-                                {"step": idx, "issue": f"Circular/forward dependency on step {d}"}
+                                {"step": idx, "issue": f"Dependency step must be int, got {type(d).__name__}"}
                             )
+                        else:
+                            normalized_deps.append(d)
+                else:
+                    issues.append(
+                        {"step": idx, "issue": f"depends_on must be int or list, got {type(dep).__name__}"}
+                    )
+
+                # Validate dependency references are in range
+                for d in normalized_deps:
+                    if d < 1 or d > len(steps):
+                        issues.append(
+                            {"step": idx, "issue": f"Dependency step {d} out of range [1, {len(steps)}]"}
+                        )
+                    elif d >= idx:
+                        issues.append(
+                            {"step": idx, "issue": f"Forward dependency on step {d} (must be <=  {idx - 1})"}
+                        )
+
+                dependency_graph[idx] = normalized_deps
+
+        # Second pass: detect cycles using DFS
+        visited: set[int] = set()
+        rec_stack: set[int] = set()
+
+        def has_cycle(node: int) -> bool:
+            visited.add(node)
+            rec_stack.add(node)
+
+            for dep in dependency_graph.get(node, []):
+                if dep not in visited:
+                    if has_cycle(dep):
+                        return True
+                elif dep in rec_stack:
+                    return True
+
+            rec_stack.remove(node)
+            return False
+
+        for step_num in range(1, len(steps) + 1):
+            visited.clear()
+            rec_stack.clear()
+            if has_cycle(step_num):
+                issues.append(
+                    {"step": step_num, "issue": f"Circular dependency detected starting at step {step_num}"}
+                )
 
         valid = len(issues) == 0
         logger.info(
@@ -200,4 +298,5 @@ async def research_plan_validate(
             "optimizations": optimizations,
         }
     except Exception as exc:
+        logger.exception("Error in plan_validate")
         return {"error": str(exc), "tool": "research_plan_validate"}
