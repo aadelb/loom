@@ -294,7 +294,9 @@ async def research_engine_batch(params: ScraperEngineBatchParams) -> dict[str, A
 
 		semaphore = asyncio.Semaphore(max_concurrent)
 		tasks = [_fetch_with_limit(semaphore, url) for url in urls]
-		results = await asyncio.gather(*tasks, return_exceptions=False)
+		results = await asyncio.gather(*tasks, return_exceptions=True)
+		# Filter out exceptions from results
+		results = [r for r in results if not isinstance(r, Exception)]
 
 		successful = sum(1 for r in results if r.get("success"))
 		failed = len(results) - successful

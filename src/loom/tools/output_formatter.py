@@ -277,8 +277,15 @@ def _to_executive_brief(sections: dict[str, str]) -> str:
     if "cost_breakdown" in sections:
         costs = _extract_monetary_values(sections["cost_breakdown"])
         if costs:
-            total = sum(c["amount"] for c in costs)
-            brief_parts.append(f"**Total Cost:** {costs[0]['currency']}{total:,.2f}\n")
+            # Group by currency — only sum if all same currency
+            currencies = {c["currency"] for c in costs}
+            if len(currencies) == 1:
+                total = sum(c["amount"] for c in costs)
+                brief_parts.append(f"**Total Cost:** {costs[0]['currency']}{total:,.2f}\n")
+            else:
+                # Mixed currencies — list individually
+                cost_str = ", ".join([f"{c['currency']}{c['amount']:,.2f}" for c in costs])
+                brief_parts.append(f"**Costs:** {cost_str}\n")
 
     if "risk_assessment" in sections:
         risks = _extract_list_items(sections["risk_assessment"])

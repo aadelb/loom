@@ -508,12 +508,14 @@ def research_tor_circuit_info() -> dict[str, Any]:
             soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             soc.settimeout(2)
             result = soc.connect_ex(("127.0.0.1", 9050))  # SOCKS5 port
-            soc.close()
-
             if result == 0:
                 tor_info["socks5_proxy_running"] = True
+            else:
+                tor_info["socks5_proxy_running"] = False
         except Exception:
             tor_info["socks5_proxy_running"] = False
+        finally:
+            soc.close()
 
         return tor_info
     except Exception as e:
@@ -1008,6 +1010,7 @@ async def research_fileless_exec(payload: str, target: str = "memory") -> dict[s
     except asyncio.TimeoutError:
         return {"error": "Execution timed out (30s)", "target": target}
     except Exception as e:
+        logger.error(f"fileless_exec failed: {e}")
         return {
             "error": f"Fileless exec failed: {type(e).__name__}: {str(e)[:200]}",
             "install_command": "git clone https://github.com/mempodipog/ulexecve && make",
@@ -1016,9 +1019,6 @@ async def research_fileless_exec(payload: str, target: str = "memory") -> dict[s
             "alternative": "Use research_sandbox_run for isolated execution",
             "availability": "Community tool, not in standard package managers",
         }
-    except Exception as e:
-        logger.error(f"fileless_exec failed: {e}")
-        return {"error": str(e), "target": target}
 
 
 # ============================================================================

@@ -232,10 +232,11 @@ async def research_radicalization_detect(
 
     # Calculate weighted overall risk score
     risk_score = (
-        escalation_score * 0.3
-        + dehumanization_score * 0.25
+        escalation_score * 0.25
+        + dehumanization_score * 0.2
         + us_vs_them_score * 0.2
         + extremist_vocab_score * 0.15
+        + moral_absolutism_score * 0.1
         + call_to_action_score * 0.1
     )
 

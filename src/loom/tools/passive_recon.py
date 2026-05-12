@@ -101,7 +101,8 @@ def _parse_email_security(txt_records: list[str]) -> dict[str, Any]:
         dmarc_found = True
         # Extract DMARC policy value
         for record in txt_records:
-            if "v=DMARC1" in record or "v=dmarc1" in record:
+            record_lower = record.lower()
+            if "v=dmarc1" in record_lower:
                 dmarc_policy = record
                 break
 
@@ -186,7 +187,7 @@ def _detect_tech_stack(
     return tech
 
 
-def research_passive_recon(
+async def research_passive_recon(
     domain: str,
     check_ct_logs: bool = True,
     check_dns: bool = True,
@@ -237,12 +238,12 @@ def research_passive_recon(
     finding_count = 0
 
     try:
-        with httpx.Client(timeout=15.0, follow_redirects=True) as client:
+        async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
             # CT Logs
             if check_ct_logs:
                 try:
-                    ct_url = f"https://crt.sh/?q=%25.{domain}&output=json"
-                    resp = client.get(ct_url, timeout=15.0)
+                    ct_url = f"https://crt.sh/?q=%25.{quote(domain)}&output=json"
+                    resp = await client.get(ct_url, timeout=15.0)
                     if resp.status_code == 200:
                         ct_data = resp.json()
                         if isinstance(ct_data, list):
@@ -261,7 +262,7 @@ def research_passive_recon(
                             f"https://dns.google/resolve?"
                             f"name={quote(domain)}&type={rtype}"
                         )
-                        resp = client.get(dns_url, timeout=10.0)
+                        resp = await client.get(dns_url, timeout=10.0)
                         if resp.status_code == 200:
                             dns_json = resp.json()
                             records = _extract_dns_records(dns_json)
@@ -292,7 +293,7 @@ def research_passive_recon(
                         rev_url = (
                             f"https://api.hackertarget.com/reverseiplookup/?q={ip}"
                         )
-                        resp = client.get(rev_url, timeout=10.0)
+                        resp = await client.get(rev_url, timeout=10.0)
                         if resp.status_code == 200:
                             text = resp.text
                             if text and "error" not in text.lower():
@@ -316,7 +317,7 @@ def research_passive_recon(
                     for scheme in ("https", "http"):
                         try:
                             homepage_url = f"{scheme}://{domain}"
-                            resp = client.get(
+                            resp = await client.get(
                                 homepage_url, timeout=10.0, follow_redirects=True
                             )
                             if resp.status_code == 200:

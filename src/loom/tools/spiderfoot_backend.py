@@ -390,7 +390,7 @@ def research_spiderfoot_scan(
         return {"target": target, "error": "timeout must be 10-3600 seconds"}
 
     # Try API mode first if not explicitly disabled
-    if not api or _is_api_available():
+    if api or _is_api_available():
         result = _run_spiderfoot_api(target, modules, timeout)
         if "error" not in result or "api not available" not in result.get("error", ""):
             return result

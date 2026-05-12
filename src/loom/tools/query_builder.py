@@ -20,7 +20,7 @@ from __future__ import annotations
 import json
 import logging
 import re
-from typing import Any, Literal
+from typing import Any, Callable, Literal
 
 logger = logging.getLogger("loom.tools.query_builder")
 
@@ -1478,7 +1478,7 @@ def research_build_query(
     """
     try:
         import time
-        from datetime import UTC, datetime
+        from datetime import datetime, timezone
 
         start_time = time.time()
 
@@ -1564,7 +1564,7 @@ def research_build_query(
             "pipeline": pipeline,
             "metadata": {
                 "version": "1.0",
-                "timestamp": datetime.now(UTC).isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "processing_time_ms": duration_ms,
                 "dspy_available": _DSPY_AVAILABLE,
                 "darkness_level": darkness_level,

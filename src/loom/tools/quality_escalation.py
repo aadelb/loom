@@ -17,6 +17,7 @@ Author: Ahmed Adel Bakr Alderai
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any
 
 from loom.providers.base import LLMResponse
@@ -216,7 +217,7 @@ async def research_quality_escalate(
         "scores_initial": initial_scores,
         "scores_final": scores,
         "all_targets_met": all_met,
-        "weakest_dimension": min(dimensions, key=lambda d: scores.get(d, 0)),
+        "weakest_dimension": min(dimensions, key=lambda d: scores.get(d, 0)) if dimensions else None,
         "attempts_used": len(escalation_log),
         "escalation_log": escalation_log,
         "final_response": best_response,
@@ -279,7 +280,6 @@ async def _score_all_dimensions(text: str, dimensions: list[str]) -> dict[str, f
             scores["completeness"] = 3.0
 
     # Specificity: numbers, dollar amounts, tool names, URLs
-    import re
     numbers = len(re.findall(r'\$[\d,]+|\d+%|\d+ (?:days|hours|minutes|USD|AED)', text))
     urls = len(re.findall(r'https?://', text))
     if "specificity" in dimensions:
