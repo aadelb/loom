@@ -227,16 +227,27 @@ Respond as JSON only: {{"culture_score": float, "recommendation": string}}"""
                 temperature=0.3,
             )
 
-            if llm_result.success and llm_result.text:
+            if llm_result and llm_result.get("success") and llm_result.get("text"):
                 # Parse JSON from response
-                json_match = re.search(r"\{.*\}", llm_result.text, re.DOTALL)
+                json_match = re.search(r"\{.*\}", llm_result.get("text", ""), re.DOTALL)
                 if json_match:
-                    synthesis = json.loads(json_match.group(0))
-                    result["culture_score"] = float(synthesis.get("culture_score", 2.5))
-                    result["recommendation"] = synthesis.get(
-                        "recommendation",
-                        "Further research recommended.",
-                    )
+                    try:
+                        synthesis = json.loads(json_match.group(0))
+                        result["culture_score"] = float(synthesis.get("culture_score", 2.5))
+                        result["recommendation"] = synthesis.get(
+                            "recommendation",
+                            "Further research recommended.",
+                        )
+                    except (json.JSONDecodeError, ValueError, TypeError):
+                        # Fallback scoring based on Glassdoor rating
+                        if result["glassdoor_rating"]:
+                            result["culture_score"] = result["glassdoor_rating"]
+                        else:
+                            result["culture_score"] = 2.5
+                        result["recommendation"] = (
+                            f"Company has {len(result['pros'])} positive aspects and "
+                            f"{len(result['cons'])} concerns identified."
+                        )
                 else:
                     # Fallback scoring based on Glassdoor rating
                     if result["glassdoor_rating"]:

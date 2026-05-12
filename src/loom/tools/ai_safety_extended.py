@@ -96,7 +96,7 @@ async def research_hallucination_benchmark(
 
     try:
         target_url = validate_url(target_url)
-    except ValueError as exc:
+    except (ValueError, Exception) as exc:
         return {"error": f"Invalid target_url: {exc}", "tool": "research_hallucination_benchmark"}
 
     # Default fact-check questions with ground truth
@@ -288,7 +288,7 @@ async def research_adversarial_robustness(
 
     try:
         target_url = validate_url(target_url)
-    except ValueError as exc:
+    except (ValueError, Exception) as exc:
         return {"error": f"Invalid target_url: {exc}", "tool": "research_adversarial_robustness"}
 
     test_count = max(1, min(test_count, 20))

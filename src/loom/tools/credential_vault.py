@@ -49,7 +49,7 @@ def _load_vault() -> dict[str, Any]:
     if not vault_path.exists():
         return {}
     try:
-        with open(vault_path, "r") as f:
+        with open(vault_path, "r", encoding="utf-8") as f:
             return json.load(f)
     except (json.JSONDecodeError, OSError) as e:
         logger.warning("vault_load_error: %s", e)
@@ -59,7 +59,7 @@ def _load_vault() -> dict[str, Any]:
 def _save_vault(vault: dict[str, Any]) -> None:
     """Save vault to disk with restricted permissions."""
     vault_path = _get_vault_path()
-    with open(vault_path, "w") as f:
+    with open(vault_path, "w", encoding="utf-8") as f:
         json.dump(vault, f, indent=2)
     vault_path.chmod(0o600)
 

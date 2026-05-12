@@ -162,11 +162,21 @@ async def research_censys_host(ip: str) -> dict[str, Any]:
 
         # Create Censys client and run lookup in thread
         def _lookup() -> dict[str, Any]:
-            client = CensysHosts(api_id=api_id, api_secret=api_secret)
-            host_data = client.view(ip)
-            return host_data
+            try:
+                client = CensysHosts(api_id=api_id, api_secret=api_secret)
+                host_data = client.view(ip)
+                return host_data if isinstance(host_data, dict) else {}
+            except Exception as e:
+                logger.debug("censys_lookup_error ip=%s: %s", ip, e)
+                return {}
 
         host_data = await asyncio.to_thread(_lookup)
+        if not host_data:
+            return {
+                "ip": ip,
+                "error": "Censys lookup returned empty response",
+                "censys_available": True,
+            }
 
         # Extract and structure relevant data
         result: dict[str, Any] = {
@@ -284,25 +294,36 @@ async def research_censys_search(
 
         # Create Censys client and run search in thread
         def _search() -> dict[str, Any]:
-            client = CensysHosts(api_id=api_id, api_secret=api_secret)
-            results = []
-            total = 0
+            try:
+                client = CensysHosts(api_id=api_id, api_secret=api_secret)
+                results = []
+                total = 0
 
-            # Iterate through pages, respecting max_results limit
-            for page, host in enumerate(client.search(query)):
-                if len(results) >= max_results:
-                    break
+                # Iterate through pages, respecting max_results limit
+                for page, host in enumerate(client.search(query)):
+                    if len(results) >= max_results:
+                        break
 
-                results.append(host)
+                    if isinstance(host, dict):
+                        results.append(host)
 
-            # Get total estimate from query metadata
-            # Note: Censys API may not expose total directly via iterator
-            # This is a fallback; actual total may differ
-            total = len(results)
+                # Get total estimate from query metadata
+                # Note: Censys API may not expose total directly via iterator
+                # This is a fallback; actual total may differ
+                total = len(results)
 
-            return {"results": results, "total": total}
+                return {"results": results, "total": total}
+            except Exception as e:
+                logger.debug("censys_search_error query=%s: %s", query, e)
+                return {"results": [], "total": 0}
 
         search_data = await asyncio.to_thread(_search)
+        if not isinstance(search_data, dict):
+            return {
+                "query": query,
+                "error": "Censys search returned invalid response",
+                "censys_available": True,
+            }
 
         result: dict[str, Any] = {
             "query": query,

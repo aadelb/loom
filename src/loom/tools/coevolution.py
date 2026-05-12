@@ -74,15 +74,25 @@ async def research_coevolve(
     Args:
         seed_attack: Initial attack template
         seed_defense: Initial defense keywords
-        generations: Evolution rounds
-        population_size: Population size
+        generations: Evolution rounds (1-100)
+        population_size: Population size (5-100)
 
     Returns:
         Dict: arms_race_curve, best_attack, best_defense, breakthroughs, novel_patterns
     """
     try:
+        # Validate inputs
         if not seed_attack or len(seed_attack) < 10:
-            return {"error": "seed_attack too short", "generations_run": 0, "best_attack": {},
+            return {"error": "seed_attack too short (min 10 chars)", "generations_run": 0, "best_attack": {},
+                    "best_defense": {}, "arms_race_curve": []}
+        if len(seed_attack) > 5000:
+            return {"error": "seed_attack too long (max 5000 chars)", "generations_run": 0, "best_attack": {},
+                    "best_defense": {}, "arms_race_curve": []}
+        if not (1 <= generations <= 100):
+            return {"error": "generations must be 1-100", "generations_run": 0, "best_attack": {},
+                    "best_defense": {}, "arms_race_curve": []}
+        if not (5 <= population_size <= 100):
+            return {"error": "population_size must be 5-100", "generations_run": 0, "best_attack": {},
                     "best_defense": {}, "arms_race_curve": []}
 
         atks = {f"a{i}": {"t": _mutate(seed_attack), "f": 0.0, "g": 0} for i in range(population_size)}

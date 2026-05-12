@@ -346,7 +346,7 @@ def research_prompt_injection_test(
     """
     try:
         target_url = validate_url(target_url)
-    except ValueError as e:
+    except (ValueError, Exception) as e:
         return {
             "target": target_url,
             "error": f"Invalid URL: {e}",
@@ -452,7 +452,7 @@ def research_model_fingerprint(target_url: str, probes: int = 5) -> dict[str, An
     """
     try:
         target_url = validate_url(target_url)
-    except ValueError as e:
+    except (ValueError, Exception) as e:
         return {
             "target": target_url,
             "error": f"Invalid URL: {e}",

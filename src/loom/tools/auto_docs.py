@@ -39,7 +39,7 @@ def _extract_tool_metadata(file_path: Path) -> list[dict[str, Any]]:
             "file": file_path.name,
         })
 
-    return tools
+    return tools  # Return outside the loop, not inside
 
 
 async def research_generate_docs(

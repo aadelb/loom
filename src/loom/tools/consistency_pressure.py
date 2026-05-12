@@ -70,6 +70,14 @@ async def research_consistency_pressure(
     if not _DEPS_AVAILABLE:
         return {"error": "Dependencies not available (loom.consistency_pressure)", "tool": "research_consistency_pressure"}
     try:
+        # Validate input parameters
+        if not model or len(model) > 256:
+            return {"error": "model must be 1-256 characters", "tool": "research_consistency_pressure"}
+        if not target_prompt or len(target_prompt) > 10000:
+            return {"error": "target_prompt must be 1-10000 characters", "tool": "research_consistency_pressure"}
+        if not (1 <= max_references <= 20):
+            return {"error": "max_references must be 1-20", "tool": "research_consistency_pressure"}
+
         engine = _get_pressure_engine()
         result = await engine.build_pressure_prompt(
             model=model,
@@ -108,6 +116,16 @@ async def research_consistency_pressure_record(
     if not _DEPS_AVAILABLE:
         return {"error": "Dependencies not available", "tool": "research_consistency_pressure_record"}
     try:
+        # Validate input parameters
+        if not model or len(model) > 256:
+            return {"error": "model must be 1-256 characters", "tool": "research_consistency_pressure_record"}
+        if not prompt or len(prompt) > 10000:
+            return {"error": "prompt must be 1-10000 characters", "tool": "research_consistency_pressure_record"}
+        if not response or len(response) > 50000:
+            return {"error": "response must be 1-50000 characters", "tool": "research_consistency_pressure_record"}
+        if not isinstance(complied, bool):
+            return {"error": "complied must be boolean", "tool": "research_consistency_pressure_record"}
+
         engine = _get_pressure_engine()
         result = await engine.record(
             model=model,
@@ -147,6 +165,10 @@ async def research_consistency_pressure_history(
     if not _DEPS_AVAILABLE:
         return {"error": "Dependencies not available", "tool": "research_consistency_pressure_history"}
     try:
+        # Validate input parameter
+        if not model or len(model) > 256:
+            return {"error": "model must be 1-256 characters", "tool": "research_consistency_pressure_history"}
+
         engine = _get_pressure_engine()
         result = await engine.get_compliance_history(model=model)
         return result

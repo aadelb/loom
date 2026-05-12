@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import difflib
 import hashlib
 import logging
@@ -235,7 +236,7 @@ def _get_metadata(url: str) -> tuple[int, str | None, str | None]:
     return 0, None, None
 
 
-def research_change_monitor(url: str, store_result: bool = True) -> dict[str, Any]:
+async def research_change_monitor(url: str, store_result: bool = True) -> dict[str, Any]:
     """Monitor a web page for meaningful content changes.
 
     Fetches the current content, computes a SHA-256 hash, and compares
@@ -269,7 +270,8 @@ def research_change_monitor(url: str, store_result: bool = True) -> dict[str, An
 
     # Fetch current content
     try:
-        current_content = _fetch_content(url)
+        loop = asyncio.get_running_loop()
+        current_content = await loop.run_in_executor(None, _fetch_content, url)
     except Exception as e:
         logger.error("change_monitor failed url=%s: %s", url[:80], e)
         return {

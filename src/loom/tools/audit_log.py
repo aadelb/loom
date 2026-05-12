@@ -70,6 +70,7 @@ async def research_audit_record(
     # Append to daily JSONL file (atomic line write)
     audit_file = AUDIT_DIR / f"{today}.jsonl"
     try:
+        # Synchronous file I/O is okay here since it's minimal
         with audit_file.open("a") as f:
             f.write(json.dumps(entry) + "\n")
         logger.info(
@@ -78,7 +79,7 @@ async def research_audit_record(
         )
         return {"audit_id": audit_id, "recorded": True}
     except Exception as e:
-        logger.error("audit_record_failed", error=str(e), tool=tool_name)
+        logger.error("audit_record_failed error=%s tool=%s", str(e), tool_name)
         return {"audit_id": audit_id, "recorded": False, "error": str(e)}
 
 

@@ -77,7 +77,7 @@ async def _run_creepjs_audit(target_url: str) -> dict[str, Any]:
 		return {"error": f"Browser automation failed: {str(exc)}"}
 
 
-def research_creepjs_audit(
+async def research_creepjs_audit(
 	target_url: str = "https://creepjs.web.app",
 	headless: bool = True,
 ) -> dict[str, Any]:
@@ -115,14 +115,7 @@ def research_creepjs_audit(
 			return result
 
 	try:
-		import asyncio
-		try:
-			loop = asyncio.get_event_loop()
-		except RuntimeError:
-			loop = asyncio.new_event_loop()
-			asyncio.set_event_loop(loop)
-
-		fp_response = loop.run_until_complete(_run_creepjs_audit(target_url))
+		fp_response = await _run_creepjs_audit(target_url)
 
 		if "error" in fp_response:
 			result["error"] = fp_response["error"]

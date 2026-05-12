@@ -28,10 +28,17 @@ def _pval(cp: int, cn: int, tp: int, tn: int) -> float:
         return 1.0
     cf, tf = cn - cp, tn - tp
     total = cn + tn
-    ep = (cp + tp) / total if total > 0 else 0
-    chi_sq = sum(((o - total * ep) ** 2 / (total * ep) if total * ep > 0 else 0)
-                 for o in [cp, cf, tp, tf])
-    return min(1.0 / (1.0 + chi_sq * 0.3), 1.0)
+    if total == 0:
+        return 1.0
+    ep = (cp + tp) / total
+    chi_sq = 0.0
+    # Calculate chi-square statistic with protection against division by zero
+    for obs in [cp, cf, tp, tf]:
+        expected = total * ep if obs in [cp, tp] else total * (1 - ep)
+        if expected > 0:
+            chi_sq += ((obs - expected) ** 2) / expected
+    # Convert chi-square to p-value approximation
+    return max(0.0, min(1.0, 1.0 / (1.0 + chi_sq * 0.3)))
 
 
 async def research_run_experiment(

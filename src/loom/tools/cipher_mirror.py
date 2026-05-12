@@ -183,14 +183,10 @@ async def research_cipher_mirror(
     async def _search_paste_site(search_q: str) -> list[dict[str, Any]]:
         """Search a paste site pattern via DuckDuckGo."""
         try:
-            result = await loop.run_in_executor(
-                None,
-                partial(
-                    research_search,
-                    search_q,
-                    provider="ddgs",
-                    n=max(1, n // len(search_queries)),
-                ),
+            result = await research_search(
+                search_q,
+                provider="ddgs",
+                n=max(1, n // len(search_queries)),
             )
             return result.get("results", [])  # type: ignore[return-value]
         except Exception as exc:

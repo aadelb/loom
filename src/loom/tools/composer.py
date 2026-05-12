@@ -561,7 +561,10 @@ async def _execute_step(step: PipelineStep, input_value: Any) -> Any:
 
     # Call tool — may be sync or async
     if asyncio.iscoroutinefunction(tool_func):
-        result = await tool_func(**kwargs)
+        try:
+            result = await asyncio.wait_for(tool_func(**kwargs), timeout=30.0)
+        except asyncio.TimeoutError:
+            raise TimeoutError(f"Tool {step.tool_name} timed out after 30 seconds")
     else:
         result = tool_func(**kwargs)
 

@@ -278,17 +278,16 @@ async def research_audit_query(
     Raises:
         ValueError: If parameters are out of range
     """
-    try:
-        # Validate input parameters
-        if not isinstance(hours, int) or hours < 1 or hours > 720:
-            raise ValueError("hours must be between 1 and 720")
-        if not isinstance(limit, int) or limit < 1 or limit > 1000:
-            raise ValueError("limit must be between 1 and 1000")
+    # Validate input parameters
+    if not isinstance(hours, int) or hours < 1 or hours > 720:
+        return {"error": "hours must be between 1 and 720", "tool": "research_audit_query"}
+    if not isinstance(limit, int) or limit < 1 or limit > 1000:
+        return {"error": "limit must be between 1 and 1000", "tool": "research_audit_query"}
 
-        start_time = datetime.now(UTC) - timedelta(hours=hours)
+    try:
         query_start = datetime.now(UTC)
 
-        # Load entries from daily JSONL files
+        # Load entries from daily JSONL files (synchronous I/O in async context is acceptable for file reads)
         entries = _load_daily_jsonl_entries(tool_name, hours, limit)
 
         query_duration = (datetime.now(UTC) - query_start).total_seconds() * 1000
@@ -296,7 +295,7 @@ async def research_audit_query(
         return {
             "entries": entries,
             "count": len(entries),
-            "total_count": len(entries),  # Approximation; actual total would require scan
+            "total_count": len(entries),
             "timestamp": datetime.now(UTC).isoformat(),
             "query_duration_ms": query_duration,
         }

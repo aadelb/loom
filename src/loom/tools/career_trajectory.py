@@ -28,7 +28,11 @@ async def _fetch_json(
     try:
         resp = await client.get(url, timeout=timeout)
         if resp.status_code == 200:
-            return resp.json()
+            try:
+                return resp.json()
+            except ValueError:
+                logger.debug("fetch_json decode failed: %s", url)
+                return None
     except Exception as exc:
         logger.debug("fetch_json failed: %s", exc)
     return None
@@ -53,6 +57,8 @@ async def _search_semantic_scholar(
     """Search for author on Semantic Scholar."""
     url = f"https://api.semanticscholar.org/graph/v1/author/search?query={quote(person_name)}&limit=5"
     data = await _fetch_json(client, url)
+    if data is None:
+        return {}
     if not data or "data" not in data:
         return {}
 
@@ -105,7 +111,7 @@ async def _search_github_user(
     url = f"https://api.github.com/search/users?q={quote(person_name)}&per_page=5"
     data = await _fetch_json(client, url)
 
-    if not data or "items" not in data or len(data["items"]) == 0:
+    if data is None or not isinstance(data, dict) or "items" not in data or len(data["items"]) == 0:
         return {}
 
     user = data["items"][0]
@@ -152,7 +158,7 @@ async def _search_orcid(client: httpx.AsyncClient, person_name: str) -> dict[str
     url = f"https://pub.orcid.org/v3.0/search/?q={quote(person_name)}"
     data = await _fetch_json(client, url)
 
-    if not data or "result" not in data or len(data["result"]) == 0:
+    if data is None or not isinstance(data, dict) or "result" not in data or len(data["result"]) == 0:
         return {}
 
     result = data["result"][0]
@@ -348,7 +354,18 @@ async def research_career_trajectory(person_name: str, domain: str = "") -> dict
                     scholar_task, github_task, orcid_task, return_exceptions=True
                 )
 
-                # Handle exceptions
+                # Handle exceptions from gather
+                if isinstance(scholar, Exception):
+                    logger.debug("scholar_lookup_exception: %s", scholar)
+                    scholar = {}
+                if isinstance(github, Exception):
+                    logger.debug("github_lookup_exception: %s", github)
+                    github = {}
+                if isinstance(orcid, Exception):
+                    logger.debug("orcid_lookup_exception: %s", orcid)
+                    orcid = {}
+
+                # Ensure all are dicts
                 scholar = scholar if isinstance(scholar, dict) else {}
                 github = github if isinstance(github, dict) else {}
                 orcid = orcid if isinstance(orcid, dict) else {}
@@ -417,7 +434,7 @@ async def _search_github_trending(
     url = f"https://api.github.com/search/repositories?q={quote(skill)}&sort=stars&order=desc&per_page=20"
     data = await _fetch_json(client, url)
 
-    if not data or "items" not in data:
+    if data is None or not isinstance(data, dict) or "items" not in data:
         return {}
 
     items = data.get("items", [])
@@ -448,7 +465,7 @@ async def _search_hacker_news(
     url = f"https://hn.algolia.com/api/v1/search?query={quote(skill)}&tags=story&hitsPerPage=50"
     data = await _fetch_json(client, url)
 
-    if not data or "hits" not in data:
+    if data is None or not isinstance(data, dict) or "hits" not in data:
         return {}
 
     hits = data.get("hits", [])
@@ -476,7 +493,7 @@ async def _search_arxiv_papers(
 
     text = await _fetch_text(client, url)
 
-    if not text:
+    if not text or not isinstance(text, str):
         return {}
 
     # Parse XML response

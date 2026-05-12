@@ -25,7 +25,7 @@ def research_compliance_check(
     try:
         if not text or len(text) > 50000:
             return {
-                "error": "Invalid text",
+                "error": "Invalid text (1-50000 characters required)",
                 "frameworks_checked": [],
                 "violations": [],
                 "compliant": True,
@@ -170,7 +170,7 @@ def research_pii_scan(text: str) -> dict[str, Any]:
     try:
         if not text or len(text) > 50000:
             return {
-                "error": "Invalid text",
+                "error": "Invalid text (1-50000 characters required)",
                 "pii_found": [],
                 "total_pii": 0,
                 "risk_level": "low",

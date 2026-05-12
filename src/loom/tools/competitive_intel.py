@@ -257,18 +257,6 @@ async def _fetch_certificate_transparency(
                     and line not in recent_subs
                 ):
                     recent_subs.append(line)
-                if (
-                    line
-                    and (line.endswith(f".{domain}") or line == domain)
-                    and line not in recent_subs
-                ):
-                    recent_subs.append(line)
-                if (
-                    line
-                    and (line.endswith(f".{domain}") or line == domain)
-                    and line not in recent_subs
-                ):
-                    recent_subs.append(line)
 
         return {
             "total_found": len(subdomains),

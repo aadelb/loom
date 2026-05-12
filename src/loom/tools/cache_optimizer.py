@@ -17,12 +17,12 @@ except ImportError:
 async def research_cache_optimize() -> dict[str, Any]:
     """Optimize cache usage and return statistics."""
     if _DELEGATE_AVAILABLE:
-        return _real_optimize()
+        return await asyncio.to_thread(_real_optimize)
     return {"error": "cache_analytics module not available", "tool": "research_cache_optimize"}
 
 
 async def research_cache_analyze() -> dict[str, Any]:
     """Analyze cache performance metrics."""
     if _DELEGATE_AVAILABLE:
-        return _real_analyze()
+        return await asyncio.to_thread(_real_analyze)
     return {"error": "cache_analytics module not available", "tool": "research_cache_analyze"}

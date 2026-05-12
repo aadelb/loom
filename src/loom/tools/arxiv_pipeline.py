@@ -268,14 +268,14 @@ async def research_arxiv_extract_techniques(
         - techniques: list of technique dicts with name, type, description, reported_asr, target_models, strategy_template
         - actionability_score: 0-10 score indicating practical applicability
     """
-    try:
-        if not paper_abstract or not paper_abstract.strip():
-            return {
-                "title": paper_title,
-                "techniques": [],
-                "actionability_score": 0.0,
-            }
+    if not paper_abstract or not paper_abstract.strip():
+        return {
+            "title": paper_title,
+            "techniques": [],
+            "actionability_score": 0.0,
+        }
 
+    try:
         logger.info("arxiv_extract abstract_len=%d", len(paper_abstract))
 
         techniques: list[dict[str, Any]] = []

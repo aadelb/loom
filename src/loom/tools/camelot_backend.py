@@ -96,8 +96,9 @@ async def research_table_extract(
             return {"pdf_url": pdf_url, "error": str(exc)}
 
         try:
-            def _download_pdf() -> bytes:
-                with httpx.stream("GET", pdf_url, timeout=30.0) as response:
+            async def _download_pdf() -> bytes:
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    response = await client.get(pdf_url, follow_redirects=True)
                     response.raise_for_status()
 
                     # Validate content type
@@ -111,7 +112,7 @@ async def research_table_extract(
 
                     # Stream to bytes with size check
                     data = io.BytesIO()
-                    for chunk in response.iter_bytes(chunk_size=65536):
+                    for chunk in response.aiter_bytes(chunk_size=65536):
                         data.write(chunk)
                         if data.tell() > MAX_PDF_SIZE_BYTES:
                             raise ValueError(
@@ -120,7 +121,7 @@ async def research_table_extract(
 
                     return data.getvalue()
 
-            pdf_bytes = await asyncio.to_thread(_download_pdf)
+            pdf_bytes = await _download_pdf()
             pdf_source = "url"
             output["pdf_url"] = pdf_url
 

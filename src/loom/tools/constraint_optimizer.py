@@ -135,7 +135,7 @@ async def _score_prompt(prompt: str) -> dict[str, Any]:
         scores["stealth"] = stealth_result.get("stealth_score", 0)
 
         # Score danger (baseline attack score)
-        attack_result = research_attack_score(prompt, "", strategy="unknown", model="auto")
+        attack_result = await research_attack_score(prompt, "", strategy="unknown", model="auto")
         # Extract attack effectiveness as danger inverse
         attack_score = attack_result.get("total_score", 0)
         scores["danger"] = attack_score

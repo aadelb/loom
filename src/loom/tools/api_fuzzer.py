@@ -124,7 +124,7 @@ async def research_fuzz_api(
     # Validate URL
     try:
         validate_url(base_url)
-    except ValueError as e:
+    except (ValueError, Exception) as e:
         return {
             "endpoint": endpoint,
             "method": method,

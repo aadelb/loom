@@ -37,8 +37,9 @@ def _extract_urls(text: str) -> list[str]:
         try:
             validated_url = validate_url(url)
             validated_urls.append(validated_url)
-        except UrlSafetyError as e:
-            logger.warning("url_rejected_ssrf url=%s error=%s", url, e)
+        except (UrlSafetyError, Exception) as e:
+            logger.warning("url_rejected_ssrf url=%s error=%s", url, str(e))
+            continue
 
     return validated_urls
 

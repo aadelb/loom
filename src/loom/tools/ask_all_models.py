@@ -429,7 +429,7 @@ async def research_ask_all_models(
                 reframed = False
                 reframe_strategy = None
 
-                if result["text"] and auto_reframe:
+                if result.get("text") and auto_reframe:
                     from loom.tools.prompt_reframe import _detect_refusal
 
                     if _detect_refusal(result["text"]):
@@ -441,8 +441,8 @@ async def research_ask_all_models(
                         )
 
                         model_family = _detect_model(model_id)
-                        config = _MODEL_CONFIGS.get(model_family, _MODEL_CONFIGS["gpt"])
-                        best_strat = config["best_strategy"]
+                        config = _MODEL_CONFIGS.get(model_family, _MODEL_CONFIGS.get("gpt", {}))
+                        best_strat = config.get("best_strategy", "standard")
                         from loom.tools.prompt_reframe import _apply_strategy
 
                         reframed_prompt = _apply_strategy(prompt, best_strat, model_family)
