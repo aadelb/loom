@@ -312,27 +312,34 @@ async def research_telegram_intel(
                 resp = await client.get(url, headers={"User-Agent": _USER_AGENT})
 
                 if resp.status_code == 404:
-                    result["status"] = "not_found"
-                    result["error"] = f"Username '{username}' not found"
+                    if not channel:
+                        result["status"] = "not_found"
+                        result["error"] = f"Username '{username}' not found"
+                        return result
+                    else:
+                        result["user_not_found"] = f"Username '{username}' not found"
+
+                if resp.status_code != 200:
+                    result["status"] = "error"
+                    result["error"] = f"HTTP {resp.status_code}"
                     return result
 
-                if resp.status_code == 200:
-                    html = resp.text
+                html = resp.text
 
-                    # Extract user/bot information
-                    title = _extract_title(html)
-                    description = _extract_description(html)
-                    avatar_url = _extract_image_url(html)
+                # Extract user/bot information
+                title = _extract_title(html)
+                description = _extract_description(html)
+                avatar_url = _extract_image_url(html)
 
-                    result["user_info"] = {
-                        "username": username,
-                        "title": title,
-                        "bio": description,
-                        "url": url,
-                        "avatar_url": avatar_url,
-                    }
+                result["user_info"] = {
+                    "username": username,
+                    "title": title,
+                    "bio": description,
+                    "url": url,
+                    "avatar_url": avatar_url,
+                }
 
-                    logger.info("telegram_intel username=%s title=%s", username, title)
+                logger.info("telegram_intel username=%s title=%s", username, title)
 
         except httpx.TimeoutException:
             result["status"] = "error"

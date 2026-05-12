@@ -258,10 +258,10 @@ async def research_supply_chain_risk(
                     ]
 
                     # Dependencies
-                    latest_version_data = data.get("dist-tags", {}).get("latest")
-                    if latest_version_data:
+                    latest_version = data.get("dist-tags", {}).get("latest")
+                    if latest_version:
                         versions = data.get("versions", {})
-                        latest_data = versions.get(latest_version_data, {})
+                        latest_data = versions.get(latest_version, {})
                         deps = latest_data.get("dependencies", {})
                         result["dependency_depth"] = len(deps)
 
@@ -631,7 +631,7 @@ async def research_dependency_audit(repo_url: str) -> dict[str, Any]:
                     result["risk_summary"] = "high"
                 else:
                     result["risk_summary"] = "medium"
-            elif len(outdated) > len(dependencies) * 0.5:
+            elif len(dependencies) > 0 and len(outdated) > len(dependencies) * 0.5:
                 result["risk_summary"] = "medium"
             else:
                 result["risk_summary"] = "low"
