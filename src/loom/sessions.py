@@ -460,7 +460,7 @@ async def cleanup_all_sessions() -> dict[str, Any]:
     return {"closed": closed, "errors": errors}
 
 
-def tool_session_open(
+async def tool_session_open(
     name: str,
     browser: str = "camoufox",
     ttl_seconds: int = SESSION_TTL_SECONDS,
@@ -468,21 +468,19 @@ def tool_session_open(
     login_script: str | None = None,
 ) -> list[TextContent]:
     """MCP wrapper for open_session."""
-    result = asyncio.run(
-        open_session(
-            name=name,
-            browser=cast(Literal["camoufox", "chromium", "firefox"], browser),
-            ttl_seconds=ttl_seconds,
-            login_url=login_url,
-            login_script=login_script,
-        )
+    result = await open_session(
+        name=name,
+        browser=cast(Literal["camoufox", "chromium", "firefox"], browser),
+        ttl_seconds=ttl_seconds,
+        login_url=login_url,
+        login_script=login_script,
     )
     return [TextContent(type="text", text=json.dumps(result, indent=2))]
 
 
-def tool_session_close(name: str) -> list[TextContent]:
+async def tool_session_close(name: str) -> list[TextContent]:
     """MCP wrapper for close_session."""
-    result = asyncio.run(close_session(name))
+    result = await close_session(name)
     return [TextContent(type="text", text=json.dumps(result, indent=2))]
 
 
