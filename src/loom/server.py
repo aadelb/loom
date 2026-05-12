@@ -601,12 +601,6 @@ with suppress(ImportError):
     record_optional_module_loaded("semantic_cache_mgmt")
 
 with suppress(ImportError):
-    from loom.tools import param_sweep as param_sweep_tools
-
-    _optional_tools["param_sweep"] = param_sweep_tools
-    record_optional_module_loaded("param_sweep")
-
-with suppress(ImportError):
     from loom import nodriver_backend
 
     _optional_tools["nodriver"] = nodriver_backend
@@ -624,13 +618,6 @@ with suppress(ImportError):
 
     _optional_tools["model_consensus"] = model_consensus_tools
     record_optional_module_loaded("model_consensus")
-
-
-with suppress(ImportError):
-    from loom import doc_parser as doc_parser_tools
-
-    _optional_tools["doc_parser"] = doc_parser_tools
-    record_optional_module_loaded("doc_parser")
 
 with suppress(ImportError):
     from loom.tools import mcp_auth as mcp_auth_tools
@@ -967,15 +954,15 @@ def create_app() -> FastMCP:
         app = mcp.streamable_http_app()
         app.add_middleware(RequestIdMiddleware)
         app.add_middleware(ApiKeyAuthMiddleware)
-        if os.environ.get("LOOM_CORS_ENABLED", "true").lower() == "true":
+        cors_enabled = os.environ.get("LOOM_CORS_ENABLED", "true").lower() == "true"
+        if cors_enabled:
             origins = os.environ.get("LOOM_CORS_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",")
             app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
-        log.info("middleware_registered request_id=true auth=true cors=%s", os.environ.get("LOOM_CORS_ENABLED", "true"))
+            log.info("middleware_registered request_id=true auth=true cors=true origins=%s", origins)
+        else:
+            log.info("middleware_registered request_id=true auth=true cors=false")
     except (AttributeError, TypeError) as e:
         log.warning("middleware_registration_skipped reason=%s (FastMCP version may not support .app)", str(e)[:100])
-        log.info("cors_middleware_registered origins=%s", origins)
-    else:
-        log.info("cors_middleware_disabled")
 
 
     # Register and start background task scheduler

@@ -240,12 +240,16 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
 
             # Token Economy: check credits before execution (if enabled)
             user_id = os.getenv("LOOM_USER_ID", "anonymous")
-            current_balance = int(os.getenv("LOOM_USER_BALANCE", "0"))
+            try:
+                current_balance = int(os.getenv("LOOM_USER_BALANCE", "0"))
+            except ValueError:
+                log.warning(f"Invalid LOOM_USER_BALANCE value, defaulting to 0")
+                current_balance = 0
             token_economy_result = {}
-            
+
             if token_economy_enabled:
                 balance_check = check_balance(user_id, current_balance, tool_name)
-                
+
                 if not balance_check["sufficient"]:
                     log.warning(
                         "insufficient_credits",
@@ -263,12 +267,12 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                         "available_credits": balance_check["balance"],
                         "shortfall": balance_check["shortfall"],
                     }
-                
+
                 token_economy_result = {
                     "cost": balance_check["required"],
                     "balance_before": current_balance,
                 }
-            
+
             # Billing: check credits before execution (if enabled)
             customer_id = os.getenv("LOOM_CUSTOMER_ID", "default")
             if billing_enabled:
@@ -294,7 +298,7 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                     cost = get_tool_cost(tool_name)
                     new_balance = max(0, current_balance - cost)
                     token_economy_result["balance_after"] = new_balance
-                    
+
                     log.info(
                         "token_economy_deduction",
                         user_id=user_id,
@@ -303,18 +307,18 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                         balance_before=current_balance,
                         balance_after=new_balance,
                     )
-                    
+
                     if isinstance(result, dict):
                         result["_token_economy"] = token_economy_result
 
                 # Prometheus: record success
                 _loom_tool_calls_total.labels(tool_name=tool_name, status="success").inc()
                 duration = time.time() - start_time
+                duration_ms = duration * 1000
                 _loom_tool_duration_seconds.labels(tool_name=tool_name).observe(duration)
 
                 # Latency Tracker: record per-tool latency
                 try:
-                    duration_ms = duration * 1000
                     latency_tracker = get_latency_tracker()
                     latency_tracker.record(tool_name, duration_ms)
                     # Add p95 to response if duration slow (>1000ms)
@@ -338,7 +342,6 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
 
                 # Billing: record usage after successful execution
                 if billing_enabled:
-                    duration_ms = duration * 1000
                     # Estimate credits: 1 credit per second of execution
                     credits_used = max(1, int(duration_ms / 1000))
                     try:
@@ -483,12 +486,16 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
 
             # Token Economy: check credits before execution (if enabled)
             user_id = os.getenv("LOOM_USER_ID", "anonymous")
-            current_balance = int(os.getenv("LOOM_USER_BALANCE", "0"))
+            try:
+                current_balance = int(os.getenv("LOOM_USER_BALANCE", "0"))
+            except ValueError:
+                log.warning(f"Invalid LOOM_USER_BALANCE value, defaulting to 0")
+                current_balance = 0
             token_economy_result = {}
-            
+
             if token_economy_enabled:
                 balance_check = check_balance(user_id, current_balance, tool_name)
-                
+
                 if not balance_check["sufficient"]:
                     log.warning(
                         "insufficient_credits",
@@ -506,12 +513,12 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                         "available_credits": balance_check["balance"],
                         "shortfall": balance_check["shortfall"],
                     }
-                
+
                 token_economy_result = {
                     "cost": balance_check["required"],
                     "balance_before": current_balance,
                 }
-            
+
             # Billing: check credits before execution (if enabled)
             customer_id = os.getenv("LOOM_CUSTOMER_ID", "default")
             if billing_enabled:
@@ -545,11 +552,11 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                 # Prometheus: record success
                 _loom_tool_calls_total.labels(tool_name=tool_name, status="success").inc()
                 duration = time.time() - start_time
+                duration_ms = duration * 1000
                 _loom_tool_duration_seconds.labels(tool_name=tool_name).observe(duration)
 
                 # Latency Tracker: record per-tool latency (sync wrapper)
                 try:
-                    duration_ms = duration * 1000
                     latency_tracker = get_latency_tracker()
                     latency_tracker.record(tool_name, duration_ms)
                     # Add p95 to response if duration slow (>1000ms)
@@ -573,7 +580,6 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
 
                 # Billing: record usage after successful execution
                 if billing_enabled:
-                    duration_ms = duration * 1000
                     # Estimate credits: 1 credit per second of execution
                     credits_used = max(1, int(duration_ms / 1000))
                     try:
