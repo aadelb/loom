@@ -11,8 +11,14 @@ import logging
 import re
 from typing import Any
 
-from loom.tools.llm import _call_with_cascade
 from loom.config import CONFIG, load_config
+
+try:
+    from loom.tools.llm import _call_with_cascade
+    _LLM_AVAILABLE = True
+except ImportError:
+    _LLM_AVAILABLE = False
+    _call_with_cascade = None  # type: ignore[assignment]
 
 logger = logging.getLogger("loom.tools.model_fingerprinter")
 
