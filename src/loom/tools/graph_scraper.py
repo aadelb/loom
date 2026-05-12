@@ -18,6 +18,7 @@ Tools:
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import logging
 import os
@@ -86,9 +87,12 @@ async def _fetch_url_content(url: str, max_chars: int = 20000) -> str:
             auto_escalate=True,
             max_chars=max_chars,
         )
-        if isinstance(result, dict) and "text" in result:
-            return result.get("text", "")
-        if isinstance(result, str):
+        # FIX: Properly handle dict result before checking for string
+        if isinstance(result, dict):
+            if "text" in result:
+                return result.get("text", "")
+            # If dict doesn't have text key, fall through to HTTP fallback
+        elif isinstance(result, str):
             return result
     except Exception as e:
         logger.debug("research_fetch failed, trying raw HTTP: %s", e)
@@ -169,8 +173,17 @@ async def _extract_with_llm(
             },
         )
 
-        # Parse JSON response
-        result = json.loads(response.text)
+        # Parse JSON response with size limit (SECURITY: prevent unbounded responses)
+        response_text = response.text
+        if len(response_text) > 100_000:
+            logger.error("LLM response too large: %d bytes", len(response_text))
+            return {
+                "entities": [],
+                "relationships": [],
+                "summary": "Extraction failed: response too large",
+            }
+
+        result = json.loads(response_text)
         return {
             "entities": result.get("entities", []),
             "relationships": result.get("relationships", []),
@@ -181,7 +194,7 @@ async def _extract_with_llm(
         return {
             "entities": [],
             "relationships": [],
-            "summary": f"Extraction failed: invalid response format",
+            "summary": "Extraction failed: invalid response format",
         }
     except Exception as e:
         logger.error("LLM extraction failed: %s", e)
@@ -196,11 +209,18 @@ def _build_extraction_prompt(
     text: str, query: str, entity_types: list[str] | None = None
 ) -> str:
     """Build an extraction prompt for the LLM."""
+    if not text:
+        raise ValueError("text cannot be empty")
+    if not query:
+        raise ValueError("query cannot be empty")
+
     text_preview = text[:2000] if len(text) > 2000 else text
 
     entity_spec = ""
     if entity_types:
-        entity_spec = f"Focus on these entity types: {', '.join(entity_types)}. "
+        # SECURITY: sanitize entity types to prevent prompt injection
+        sanitized_types = [str(t).replace("\n", " ").replace("\r", "")[:100] for t in entity_types]
+        entity_spec = f"Focus on these entity types: {', '.join(sanitized_types)}. "
 
     return f"""Extract a knowledge graph from the following text:
 
@@ -303,7 +323,8 @@ async def research_graph_scrape(
                 logger.debug("Attempting ScrapeGraphAI extraction")
                 config = _parse_scrapegraphai_config()
                 graph = SmartScraperGraph(prompt=query, source=url, config=config)
-                sga_result = graph.run()
+                # FIX: Wrap sync call in asyncio.to_thread to avoid blocking event loop
+                sga_result = await asyncio.to_thread(graph.run)
 
                 extraction_method = "scrapegraphai"
                 model_used = config.get("llm", {}).get("model", "unknown")
@@ -365,7 +386,8 @@ async def research_graph_scrape(
                 "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
             }
 
-        model_used = provider.default_model
+        # FIX: Safely access provider.default_model with fallback
+        model_used = getattr(provider, "default_model", "unknown")
         extraction_result = await _extract_with_llm(
             content, query, provider=provider, entity_types=None
         )
@@ -409,9 +431,23 @@ async def research_knowledge_extract(
             - model_used: LLM model identifier
     """
     try:
+        if not text:
+            return {
+                "entities": [],
+                "relationships": [],
+                "graph_summary": "No text provided",
+                "entity_count": 0,
+                "relationship_count": 0,
+                "model_used": "none",
+                "error": "text cannot be empty",
+            }
+
         cache = get_cache()
         entity_types_key = sorted(entity_types or [])
-        cache_key = f"knowledge_extract_{hash(text)}_{hash(tuple(entity_types_key))}"
+        # FIX: Use SHA-256 instead of hash() to avoid collisions
+        text_hash = hashlib.sha256(text.encode()).hexdigest()[:16]
+        types_hash = hashlib.sha256(",".join(entity_types_key).encode()).hexdigest()[:16]
+        cache_key = f"knowledge_extract_{text_hash}_{types_hash}"
 
         # Check cache
         cached = cache.get(cache_key)
@@ -440,13 +476,16 @@ async def research_knowledge_extract(
         entities = extraction.get("entities", [])
         relationships = extraction.get("relationships", [])
 
+        # FIX: Safely access provider.default_model with fallback
+        model_used = getattr(provider, "default_model", "unknown")
+
         result = {
             "entities": entities,
             "relationships": relationships,
             "graph_summary": extraction.get("summary", ""),
             "entity_count": len(entities),
             "relationship_count": len(relationships),
-            "model_used": provider.default_model,
+            "model_used": model_used,
         }
 
         cache.put(cache_key, result)
@@ -504,11 +543,15 @@ async def research_multi_page_graph(
         unified_entities: dict[str, dict[str, Any]] = {}
         unified_relationships: list[dict[str, Any]] = []
         pages_processed = 0
+        pages_failed = 0
+        failed_urls: list[str] = []
         total_cost = 0.0
 
         for i, result in enumerate(page_results):
             if isinstance(result, Exception):
                 logger.error("Error scraping page %s: %s", urls[i], result)
+                pages_failed += 1
+                failed_urls.append(urls[i])
                 continue
 
             pages_processed += 1
@@ -528,7 +571,8 @@ async def research_multi_page_graph(
 
         result = {
             "pages_processed": pages_processed,
-            "pages_failed": len(urls) - pages_processed,
+            "pages_failed": pages_failed,
+            "failed_urls": failed_urls,  # FIX: Include list of failed URLs for transparency
             "unified_graph": {
                 "entities": list(unified_entities.values()),
                 "relationships": unique_relationships,
