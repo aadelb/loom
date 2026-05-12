@@ -20,24 +20,23 @@ _MEMORY_DB = Path.home() / ".loom" / "memory" / "persistent.db"
 def _init_memory_db() -> None:
     """Initialize persistent memory SQLite schema."""
     _MEMORY_DB.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(str(_MEMORY_DB))
-    c = conn.cursor()
-    c.execute(
-        "CREATE TABLE IF NOT EXISTS memories ("
-        "id INTEGER PRIMARY KEY, "
-        "content TEXT NOT NULL, "
-        "topic TEXT, "
-        "session_id TEXT, "
-        "importance REAL DEFAULT 0.5, "
-        "entities_json TEXT, "
-        "tags TEXT, "
-        "created_at TEXT)"
-    )
-    c.execute("CREATE INDEX IF NOT EXISTS idx_topic ON memories(topic)")
-    c.execute("CREATE INDEX IF NOT EXISTS idx_session ON memories(session_id)")
-    c.execute("CREATE INDEX IF NOT EXISTS idx_importance ON memories(importance)")
-    conn.commit()
-    conn.close()
+    with sqlite3.connect(str(_MEMORY_DB)) as conn:
+        c = conn.cursor()
+        c.execute(
+            "CREATE TABLE IF NOT EXISTS memories ("
+            "id INTEGER PRIMARY KEY, "
+            "content TEXT NOT NULL, "
+            "topic TEXT, "
+            "session_id TEXT, "
+            "importance REAL DEFAULT 0.5, "
+            "entities_json TEXT, "
+            "tags TEXT, "
+            "created_at TEXT)"
+        )
+        c.execute("CREATE INDEX IF NOT EXISTS idx_topic ON memories(topic)")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_session ON memories(session_id)")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_importance ON memories(importance)")
+        conn.commit()
 
 
 def _extract_entities(content: str) -> list[str]:
@@ -75,17 +74,16 @@ def research_remember(
     tags = ",".join(entities[:10]) if entities else ""
 
     try:
-        conn = sqlite3.connect(str(_MEMORY_DB))
-        c = conn.cursor()
-        now = datetime.now(UTC).isoformat()
-        c.execute(
-            "INSERT INTO memories (content, topic, session_id, importance, entities_json, tags, created_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (content, topic or "", session_id or "", importance, json.dumps(entities), tags, now),
-        )
-        conn.commit()
-        memory_id = c.lastrowid
-        conn.close()
+        with sqlite3.connect(str(_MEMORY_DB)) as conn:
+            c = conn.cursor()
+            now = datetime.now(UTC).isoformat()
+            c.execute(
+                "INSERT INTO memories (content, topic, session_id, importance, entities_json, tags, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (content, topic or "", session_id or "", importance, json.dumps(entities), tags, now),
+            )
+            conn.commit()
+            memory_id = c.lastrowid
         logger.info("Memory stored: id=%d topic=%s entities=%d", memory_id, topic, len(entities))
         return {
             "stored": True,
@@ -118,36 +116,36 @@ def research_recall(
     top_k = max(1, min(top_k, 100))
 
     try:
-        conn = sqlite3.connect(str(_MEMORY_DB))
-        c = conn.cursor()
+        with sqlite3.connect(str(_MEMORY_DB)) as conn:
+            c = conn.cursor()
 
-        # Build query with optional topic filter
-        where_clause = "WHERE (content LIKE ? OR tags LIKE ?)"
-        params = [f"%{query}%", f"%{query}%"]
-        if topic:
-            where_clause += " AND topic = ?"
-            params.append(topic)
+            # Build query with optional topic filter
+            where_clause = "WHERE (content LIKE ? OR tags LIKE ?)"
+            params = [f"%{query}%", f"%{query}%"]
+            if topic:
+                where_clause += " AND topic = ?"
+                params.append(topic)
 
-        c.execute(
-            f"SELECT id, content, topic, importance, tags, created_at FROM memories "
-            f"{where_clause} ORDER BY importance DESC, created_at DESC LIMIT ?",
-            params + [top_k],
-        )
-        results = [
-            {
-                "id": row[0],
-                "content": row[1][:500],  # Truncate to 500 chars
-                "topic": row[2],
-                "importance": row[3],
-                "tags": row[4].split(",") if row[4] else [],
-                "created_at": row[5],
-            }
-            for row in c.fetchall()
-        ]
+            c.execute(
+                "SELECT id, content, topic, importance, tags, created_at FROM memories "
+                f"{where_clause} ORDER BY importance DESC, created_at DESC LIMIT ?",
+                params + [top_k],
+            )
+            results = [
+                {
+                    "id": row[0],
+                    "content": row[1][:500],  # Truncate to 500 chars
+                    "topic": row[2],
+                    "importance": row[3],
+                    "tags": row[4].split(",") if row[4] else [],
+                    "created_at": row[5],
+                }
+                for row in c.fetchall()
+            ]
 
-        c.execute("SELECT COUNT(*) FROM memories")
-        total = c.fetchone()[0]
-        conn.close()
+            c.execute("SELECT COUNT(*) FROM memories")
+            count_row = c.fetchone()
+            total = count_row[0] if count_row else 0
 
         logger.info("Memory recall: query=%s results=%d", query, len(results))
         return {"results": results, "total_memories": total, "query": query}
@@ -165,19 +163,19 @@ def research_memory_stats() -> dict[str, object]:
     _init_memory_db()
 
     try:
-        conn = sqlite3.connect(str(_MEMORY_DB))
-        c = conn.cursor()
+        with sqlite3.connect(str(_MEMORY_DB)) as conn:
+            c = conn.cursor()
 
-        c.execute("SELECT COUNT(*) FROM memories")
-        total = c.fetchone()[0]
+            c.execute("SELECT COUNT(*) FROM memories")
+            count_row = c.fetchone()
+            total = count_row[0] if count_row else 0
 
-        c.execute("SELECT DISTINCT topic FROM memories WHERE topic IS NOT NULL AND topic != '' ORDER BY topic")
-        topics = [row[0] for row in c.fetchall()]
+            c.execute("SELECT DISTINCT topic FROM memories WHERE topic IS NOT NULL AND topic != '' ORDER BY topic")
+            topics = [row[0] for row in c.fetchall()]
 
-        c.execute("SELECT MIN(created_at), MAX(created_at) FROM memories")
-        oldest, newest = c.fetchone()
-
-        conn.close()
+            c.execute("SELECT MIN(created_at), MAX(created_at) FROM memories")
+            dates_row = c.fetchone()
+            oldest, newest = (dates_row if dates_row else (None, None))
 
         # Get file size
         size_mb = _MEMORY_DB.stat().st_size / (1024 * 1024) if _MEMORY_DB.exists() else 0

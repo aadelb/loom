@@ -412,7 +412,7 @@ async def research_persona_profile(
             max_tokens=200,
             temperature=0.3,
         )
-        llm_assessment = llm_result.get("text")
+        llm_assessment = llm_result.text
     except (ImportError, Exception):
         # LLM tools not available or failed
         pass

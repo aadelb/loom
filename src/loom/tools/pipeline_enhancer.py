@@ -75,41 +75,42 @@ async def research_enhance(
 
         # Step 3: Post-execution enrichment (parallel tasks)
         enrichment_tasks = []
+        task_order = []  # Track which tasks were added and in what order
 
         if auto_hcs:
             enrichment_tasks.append(_score_with_hcs(tool_result, tool_name))
+            task_order.append("hcs")
 
         if auto_learn and _has_reframe_data(params):
             enrichment_tasks.append(_feed_to_meta_learner(tool_result, params))
+            task_order.append("learn")
 
         if auto_fact_check:
             enrichment_tasks.append(_verify_factual_claims(tool_result))
+            task_order.append("fact_check")
 
         if auto_suggest:
             enrichment_tasks.append(_suggest_follow_up_tools(tool_name, params, tool_result))
+            task_order.append("suggest")
 
         # Execute all enrichment tasks in parallel
         if enrichment_tasks:
             enrichment_results = await asyncio.gather(*enrichment_tasks, return_exceptions=True)
 
-            # Collect results, handling exceptions gracefully
-            if auto_hcs and enrichment_results[0] is not None:
-                if not isinstance(enrichment_results[0], Exception):
-                    result["_hcs_scores"] = enrichment_results[0]
+            # Collect results using tracked order, handling exceptions gracefully
+            for idx, task_type in enumerate(task_order):
+                if idx >= len(enrichment_results):
+                    break
+                if isinstance(enrichment_results[idx], Exception):
+                    continue
 
-            idx = 1
-            if auto_learn and _has_reframe_data(params) and idx < len(enrichment_results):
-                if not isinstance(enrichment_results[idx], Exception):
+                if task_type == "hcs":
+                    result["_hcs_scores"] = enrichment_results[idx]
+                elif task_type == "learn":
                     result["_learning_recorded"] = enrichment_results[idx]
-                idx += 1
-
-            if auto_fact_check and idx < len(enrichment_results):
-                if not isinstance(enrichment_results[idx], Exception):
+                elif task_type == "fact_check":
                     result["_fact_check"] = enrichment_results[idx]
-                idx += 1
-
-            if auto_suggest and idx < len(enrichment_results):
-                if not isinstance(enrichment_results[idx], Exception):
+                elif task_type == "suggest":
                     result["_suggested_tools"] = enrichment_results[idx]
 
     except Exception as e:

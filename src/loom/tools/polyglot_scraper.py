@@ -12,6 +12,8 @@ try:
 except ImportError:
     TextContent = None  # type: ignore[assignment,misc]
 
+from loom.validators import validate_url
+
 logger = logging.getLogger("loom.tools.polyglot_scraper")
 
 # Language-to-regional-search-engine mapping
@@ -145,6 +147,7 @@ async def _fetch_lang_results(
 ) -> list[dict[str, str]]:
     """Fetch search results for a single language."""
     try:
+        validate_url(url)
         resp = await client.get(url, params=params)
         return [
             {"title": f"Result {i}", "snippet": f"Content for {lang}"}
@@ -158,6 +161,7 @@ async def _fetch_lang_results(
 async def _fetch_platform_data(client: httpx.AsyncClient, platform: str, url: str) -> dict[str, Any]:
     """Fetch platform-specific data."""
     try:
+        validate_url(url)
         resp = await client.get(url, headers={"User-Agent": "Mozilla/5.0"})
         return {
             "platform": platform,

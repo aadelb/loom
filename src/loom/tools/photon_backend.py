@@ -81,7 +81,7 @@ class PhotonResult(BaseModel):
     crawled_urls: list[str] = Field(default_factory=list)
     emails: list[str] = Field(default_factory=list)
     social_media: dict[str, list[str]] = Field(default_factory=dict)
-    subdomains: list[str] = Field(default_factory=dict)
+    subdomains: list[str] = Field(default_factory=list)
     js_files: list[str] = Field(default_factory=list)
     forms: list[dict[str, Any]] = Field(default_factory=list)
     total_urls: int = 0
@@ -226,6 +226,7 @@ async def _crawl_fallback(
 
     visited: set[str] = set()
     to_visit: list[tuple[str, int]] = [(url, 0)]
+    to_visit_urls: set[str] = {url}
     parsed_target = urlparse(url)
     target_domain = parsed_target.netloc
 
@@ -284,8 +285,7 @@ async def _crawl_fallback(
                     for match in pattern.findall(html):
                         if platform not in data["social_media"]:
                             data["social_media"][platform] = []
-                        profile_url = pattern.search(html)
-                        if profile_url and match not in data["social_media"][platform]:
+                        if match not in data["social_media"][platform]:
                             data["social_media"][platform].append(match)
 
                 # Extract URLs from href and src attributes
@@ -302,8 +302,9 @@ async def _crawl_fallback(
                                 parsed.netloc == target_domain
                                 or parsed.netloc.endswith(f".{target_domain}")
                             ):
-                                if new_url not in visited and new_url not in to_visit:
+                                if new_url not in visited and new_url not in to_visit_urls:
                                     to_visit.append((new_url, current_depth + 1))
+                                    to_visit_urls.add(new_url)
 
                             # Collect all URLs
                             if new_url not in data["urls"]:
@@ -322,8 +323,9 @@ async def _crawl_fallback(
                             parsed.netloc == target_domain
                             or parsed.netloc.endswith(f".{target_domain}")
                         ):
-                            if new_url not in visited and new_url not in to_visit:
+                            if new_url not in visited and new_url not in to_visit_urls:
                                 to_visit.append((new_url, current_depth + 1))
+                                to_visit_urls.add(new_url)
 
                         if new_url not in data["urls"]:
                             data["urls"].append(new_url)

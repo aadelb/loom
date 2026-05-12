@@ -228,21 +228,22 @@ def research_predict_success(
     # Find alternative strategy if recommendation is skip/try_alternative
     alternative_strategy = None
     if recommendation in ("skip", "try_alternative"):
-        alt_rate, _, alt_data = _get_historical_success_rate(strategy, target_model)
-        if alt_data < 5:  # Insufficient data for this combo
-            # Find best-performing strategy overall
-            try:
-                conn = _get_db_conn()
-                best = conn.execute(
-                    """SELECT strategy FROM strategy_log
-                       GROUP BY strategy
-                       ORDER BY SUM(success)*1.0/COUNT(*) DESC, AVG(hcs_score) DESC
-                       LIMIT 1"""
-                ).fetchone()
-                conn.close()
-                alternative_strategy = best[0] if best else None
-            except Exception:
-                alternative_strategy = None
+        # Find best-performing strategy overall (excluding current one)
+        try:
+            conn = _get_db_conn()
+            best = conn.execute(
+                """SELECT strategy FROM strategy_log
+                   WHERE strategy != ?
+                   GROUP BY strategy
+                   HAVING COUNT(*) >= 5
+                   ORDER BY SUM(success)*1.0/COUNT(*) DESC, AVG(hcs_score) DESC
+                   LIMIT 1""",
+                (strategy,)
+            ).fetchone()
+            conn.close()
+            alternative_strategy = best[0] if best else None
+        except Exception:
+            alternative_strategy = None
 
     return {
         "predicted_success": round(predicted_success, 3),
