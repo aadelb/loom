@@ -21,7 +21,10 @@ import time
 from dataclasses import asdict
 from typing import Any, Literal, cast
 
-from mcp.types import TextContent
+try:
+    from mcp.types import TextContent
+except ImportError:
+    TextContent = None  # type: ignore[assignment,misc]
 from pydantic import BaseModel, Field
 
 from loom.cache import get_cache

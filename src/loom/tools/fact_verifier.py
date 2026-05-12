@@ -15,7 +15,13 @@ import asyncio
 import logging
 from typing import Any
 
-from loom.retry import with_retry
+try:
+    from loom.retry import with_retry
+except ImportError:
+    def with_retry(*args, **kwargs):  # type: ignore[misc]
+        def decorator(func):  # type: ignore[no-untyped-def]
+            return func
+        return decorator
 
 logger = logging.getLogger("loom.tools.fact_verifier")
 
