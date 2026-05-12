@@ -11,6 +11,8 @@ from typing import Any
 
 import httpx
 
+from loom.http_helpers import fetch_json
+
 logger = logging.getLogger("loom.tools.bias_lens")
 
 # Hedging language patterns
@@ -45,25 +47,12 @@ SELF_CITATION_PATTERNS = [
 ]
 
 
-async def _get_json(
-    client: httpx.AsyncClient, url: str, timeout: float = 15.0
-) -> Any:
-    """Fetch JSON from URL with error handling."""
-    try:
-        resp = await client.get(url, timeout=timeout)
-        if resp.status_code == 200:
-            return resp.json()
-    except Exception as exc:
-        logger.debug("bias_lens fetch failed: %s", exc)
-    return None
-
-
 async def _fetch_semantic_scholar_paper(
     client: httpx.AsyncClient, paper_id: str
 ) -> dict[str, Any] | None:
     """Fetch paper details from Semantic Scholar API."""
     url = f"https://api.semanticscholar.org/graph/v1/paper/{paper_id}?fields=title,abstract,authors,year,citationCount,references,citations,externalIds,publicationVenue"
-    data = await _get_json(client, url, timeout=20.0)
+    data = await fetch_json(client, url, timeout=20.0)
     return data
 
 
@@ -72,7 +61,7 @@ async def _fetch_semantic_scholar_citations(
 ) -> list[dict[str, Any]]:
     """Fetch citing papers from Semantic Scholar API."""
     url = f"https://api.semanticscholar.org/graph/v1/paper/{paper_id}/citations?fields=title,authors,year&limit={limit}"
-    data = await _get_json(client, url, timeout=20.0)
+    data = await fetch_json(client, url, timeout=20.0)
     if data and "data" in data:
         return data["data"]
     return []
