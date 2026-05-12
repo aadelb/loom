@@ -11,6 +11,8 @@ import logging
 import re
 from typing import Any
 
+from loom.text_utils import jaccard_similarity
+
 logger = logging.getLogger("loom.tools.content_anomaly")
 
 # Injection pattern signatures for common attack vectors
@@ -59,24 +61,6 @@ def _extract_words(text: str) -> set[str]:
     return {w for w in words if len(w) > 2 and w not in stopwords}
 
 
-def _jaccard_similarity(set1: set[str], set2: set[str]) -> float:
-    """Calculate Jaccard similarity between two sets.
-
-    Jaccard similarity = |intersection| / |union|
-    Returns 0.0-1.0 where 1.0 is perfect match.
-    """
-    if not set1 or not set2:
-        return 0.0
-
-    intersection = len(set1 & set2)
-    union = len(set1 | set2)
-
-    if union == 0:
-        return 0.0
-
-    return intersection / union
-
-
 def _detect_injection_patterns(content: str) -> bool:
     """Detect injection attack patterns in content.
 
@@ -122,7 +106,7 @@ def detect_anomaly(snippet: str, fetched_content: str) -> dict[str, Any]:
     content_words = _extract_words(fetched_content)
 
     # Calculate Jaccard similarity
-    similarity = _jaccard_similarity(snippet_words, content_words)
+    similarity = jaccard_similarity(snippet_words, content_words)
 
     # Detect injection patterns
     injection_detected = _detect_injection_patterns(fetched_content)
