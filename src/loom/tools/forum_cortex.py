@@ -152,28 +152,20 @@ async def research_forum_cortex(
         try:
             # Use DarkSearch or Ahmia if available
             provider = "darksearch" if "dark" in source else "ahmia"
-            result = await loop.run_in_executor(
-                None,
-                partial(
-                    research_search,
-                    search_query,
-                    provider=provider,
-                    n=n,
-                ),
+            result = await research_search(
+                search_query,
+                provider=provider,
+                n=n,
             )
             return result.get("results", [])  # type: ignore[return-value]
         except Exception as provider_exc:
             logger.debug("forum_cortex_search_failed source=%s provider=%s: %s", source, provider, provider_exc)
             # Fallback to generic search if provider not available
             try:
-                result = await loop.run_in_executor(
-                    None,
-                    partial(
-                        research_search,
-                        f'{safe_topic} site:{source}',
-                        provider="ddgs",
-                        n=n,
-                    ),
+                result = await research_search(
+                    f'{safe_topic} site:{source}',
+                    provider="ddgs",
+                    n=n,
                 )
                 return result.get("results", [])  # type: ignore[return-value]
             except Exception as fallback_exc:

@@ -203,7 +203,7 @@ async def _search_github_repos(areas: list[str], n: int = 10) -> dict[str, list[
 
     for area in areas[:3]:  # Limit to top 3 areas
         try:
-            github_result = research_github(
+            github_result = await research_github(
                 kind="repo",
                 query=area,
                 sort="stars",

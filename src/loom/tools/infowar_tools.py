@@ -492,7 +492,10 @@ async def research_censorship_detector(url: str) -> dict[str, Any]:
         Dict with ``url``, ``dns_consistent`` (bool), ``blocked_providers`` list,
         ``takedown_notices`` count, and ``notices`` list.
     """
-    validate_url(url)
+    try:
+        validate_url(url)
+    except UrlSafetyError as e:
+        return {"error": f"URL validation failed: {e}", "url": url}
 
     async def _run() -> dict[str, Any]:
         try:
@@ -605,7 +608,10 @@ async def research_deleted_social(url: str) -> dict[str, Any]:
         Dict with ``url``, ``platform`` (detected), ``snapshots_found``,
         and ``recovered_content_preview`` (list of snapshots).
     """
-    validate_url(url)
+    try:
+        validate_url(url)
+    except UrlSafetyError as e:
+        return {"error": f"URL validation failed: {e}", "url": url}
 
     async def _run() -> dict[str, Any]:
         try:

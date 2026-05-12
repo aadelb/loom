@@ -111,10 +111,7 @@ async def research_red_team(
         if not isinstance(counter, str):
             continue
         try:
-            evidence = await loop.run_in_executor(
-                None,
-                partial(research_search, counter, provider="ddgs", n=3),
-            )
+            evidence = await research_search(counter, provider="ddgs", n=3)
             counter_arguments.append(
                 {
                     "counter_claim": counter,
@@ -180,14 +177,11 @@ async def research_multilingual(
     async def _search_lang(lang: str) -> None:
         region = region_map.get(lang, "wt-wt")
         try:
-            result = await loop.run_in_executor(
-                None,
-                lambda: research_search(
-                    query,
-                    provider="ddgs",
-                    n=n_per_lang,
-                    provider_config={"region": region},
-                ),
+            result = await research_search(
+                query,
+                provider="ddgs",
+                n=n_per_lang,
+                provider_config={"region": region},
             )
             per_lang_results[lang] = result.get("results", [])
         except Exception as exc:
@@ -258,10 +252,7 @@ async def research_consensus(
 
     async def _search_provider(provider: str) -> None:
         try:
-            result = await loop.run_in_executor(
-                None,
-                partial(research_search, query, provider=provider, n=n),
-            )
+            result = await research_search(query, provider=provider, n=n)
             if "error" not in result:
                 # Safe in asyncio: single event loop + GIL prevents races on list.append
                 providers_used.append(provider)
@@ -710,10 +701,7 @@ async def research_curriculum(
     async def _search_level(level: str, provider: str, query_suffix: str) -> None:
         q = f"{topic} {query_suffix}"
         try:
-            result = await loop.run_in_executor(
-                None,
-                lambda: research_search(q, provider=provider, n=5),
-            )
+            result = await research_search(q, provider=provider, n=5)
             for r in result.get("results", []):
                 levels[level].append(
                     {

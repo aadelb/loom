@@ -27,6 +27,7 @@ async def research_integration_test(
                 errors.append({"module": module_name, "error": "No async research_* functions"})
                 failed += 1
                 continue
+            module_had_error = False
             for func_name, func in funcs:
                 try:
                     kwargs = {pn: ("" if (a := p.annotation) in (str, Path) else
@@ -40,11 +41,12 @@ async def research_integration_test(
                 except TypeError as e:
                     if "missing required argument" not in str(e):
                         errors.append({"module": module_name, "error": f"{func_name}: {str(e)[:60]}"})
-                        failed += 1
+                        module_had_error = True
                         break
                 except Exception:
                     pass
-            if failed == len(errors):
+            if module_had_error:
+                failed += 1
                 continue
             passed += 1
         except Exception as e:
