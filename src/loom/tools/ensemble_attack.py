@@ -2,7 +2,10 @@
 from __future__ import annotations
 import base64, hashlib, logging, random
 from typing import Any
-from loom.tools.reframe_strategies import ALL_STRATEGIES
+try:
+    from loom.tools.reframe_strategies import ALL_STRATEGIES
+except ImportError:
+    ALL_STRATEGIES = {}  # type: ignore[assignment]
 
 logger = logging.getLogger("loom.tools.ensemble_attack")
 DEFAULT_STRATEGIES = ["ethical_anchor", "deep_inception", "compliance_audit_fork", "reasoning_chain_hijack", "persona"]
