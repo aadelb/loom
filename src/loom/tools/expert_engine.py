@@ -765,7 +765,7 @@ async def research_expert(
 
     # ── AUTO-SCORE EXPERT OUTPUT WITH HCS (NON-BLOCKING) ─────────────────
     try:
-        from loom.tools.hcs_multi_scorer import research_hcs_score_full
+        from loom.tools.hcs_scorer import research_hcs_score_full
         
         # Score using executive summary as the response
         expert_response = output.get("executive_summary", "")

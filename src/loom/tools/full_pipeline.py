@@ -26,7 +26,7 @@ from loom.providers.base import LLMResponse
 
 try:
     from loom.tools.hcs_scorer import research_hcs_score
-    from loom.tools.hcs_multi_scorer import research_hcs_score_full
+    from loom.tools.hcs_scorer import research_hcs_score_full
     from loom.tools.llm import _call_with_cascade
     from loom.tools.query_builder import research_build_query
     from loom.tools.prompt_reframe import research_auto_reframe, _apply_strategy, _STRATEGIES

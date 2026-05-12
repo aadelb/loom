@@ -917,7 +917,7 @@ async def research_deep(
     }
 
     try:
-        from loom.tools.hcs_multi_scorer import research_hcs_score_full
+        from loom.tools.hcs_scorer import research_hcs_score_full
 
         hcs_score = await research_hcs_score_full(query, final_answer)
         if hcs_score.get("status") == "success":

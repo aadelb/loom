@@ -363,9 +363,9 @@ def register_infrastructure_tools(mcp: "FastMCP", wrap_tool) -> None:
 
     # ── Security Audit Tools ──
     try:
-        from loom.tools.security_auditor import research_security_audit
-        mcp.tool()(wrap_tool(research_security_audit))
-        record_success("infrastructure", "research_security_audit")
+        from loom.tools.security_checklist import research_security_checklist
+        mcp.tool()(wrap_tool(research_security_checklist))
+        record_success("infrastructure", "research_security_checklist")
     except (ImportError, AttributeError) as e:
         log.debug("skip security_auditor: %s", e)
         record_failure("infrastructure", "security_auditor", str(e))

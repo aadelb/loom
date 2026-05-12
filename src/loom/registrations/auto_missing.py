@@ -727,13 +727,13 @@ def register_missing_tools(mcp, wrap_tool):
     except Exception:
         pass
     try:
-        from loom.tools.hcs_multi_scorer import research_hcs_batch
+        from loom.tools.hcs_scorer import research_hcs_batch
         mcp.tool()(wrap_tool(research_hcs_batch))
         count += 1
     except Exception:
         pass
     try:
-        from loom.tools.hcs_multi_scorer import research_hcs_compare
+        from loom.tools.hcs_scorer import research_hcs_compare
         mcp.tool()(wrap_tool(research_hcs_compare))
         count += 1
     except Exception:
@@ -751,25 +751,25 @@ def register_missing_tools(mcp, wrap_tool):
     except Exception:
         pass
     try:
-        from loom.tools.hcs_rubric_tool import research_hcs_rubric
+        from loom.tools.hcs_scorer import research_hcs_rubric
         mcp.tool()(wrap_tool(research_hcs_rubric))
         count += 1
     except Exception:
         pass
     try:
-        from loom.tools.hcs_multi_scorer import research_hcs_score_full
+        from loom.tools.hcs_scorer import research_hcs_score_full
         mcp.tool()(wrap_tool(research_hcs_score_full))
         count += 1
     except Exception:
         pass
     try:
-        from loom.tools.hcs_multi_scorer import research_hcs_score_prompt
+        from loom.tools.hcs_scorer import research_hcs_score_prompt
         mcp.tool()(wrap_tool(research_hcs_score_prompt))
         count += 1
     except Exception:
         pass
     try:
-        from loom.tools.hcs_multi_scorer import research_hcs_score_response
+        from loom.tools.hcs_scorer import research_hcs_score_response
         mcp.tool()(wrap_tool(research_hcs_score_response))
         count += 1
     except Exception:
