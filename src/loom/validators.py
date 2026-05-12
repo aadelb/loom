@@ -258,15 +258,15 @@ def _get_redis_store_sync() -> Any | None:
 
         # Try to get or create the store in a sync context
         try:
-            # If we're already in an async context, this will fail
-            loop = asyncio.get_running_loop()
-            # We're in an async context but this is a sync function
-            # Fall back to local cache
+            asyncio.get_running_loop()
             return None
         except RuntimeError:
-            # Not in an async context, safe to use asyncio.run()
+            pass
+        try:
             store = asyncio.run(get_redis_store())
             return store
+        except RuntimeError:
+            return None
     except (ImportError, Exception) as e:
         logger.debug("redis_store_unavailable error=%s", str(e))
         return None
@@ -287,18 +287,21 @@ def _get_cached_dns(host: str) -> list[str] | None:
     redis_store = _get_redis_store_sync()
     if redis_store:
         try:
-            import asyncio
             key = f"dns:{host}"
-            # Create and run coroutine synchronously
             coro = redis_store.cache_get(key)
-            value = asyncio.run(coro)
-            if value is not None:
-                logger.debug("dns_cache_hit host=%s source=redis", host)
-                return value
+            try:
+                asyncio.get_running_loop()
+            except RuntimeError:
+                try:
+                    value = asyncio.run(coro)
+                    if value is not None:
+                        logger.debug("dns_cache_hit host=%s source=redis", host)
+                        return value
+                except RuntimeError:
+                    pass
         except Exception as e:
             logger.debug("redis_dns_cache_get_failed host=%s error=%s", host, str(e))
 
-    # Fall back to local dict
     with _dns_cache_lock:
         if host in _dns_cache:
             ips, timestamp = _dns_cache[host]
@@ -323,13 +326,17 @@ def _set_cached_dns(host: str, ips: list[str]) -> None:
     redis_store = _get_redis_store_sync()
     if redis_store:
         try:
-            import asyncio
             key = f"dns:{host}"
-            # Create and run coroutine synchronously
             coro = redis_store.cache_set(key, ips, ttl_seconds=_DNS_CACHE_TTL)
-            asyncio.run(coro)
-            logger.debug("dns_cache_set host=%s source=redis ips=%s", host, ips)
-            return
+            try:
+                asyncio.get_running_loop()
+            except RuntimeError:
+                try:
+                    asyncio.run(coro)
+                    logger.debug("dns_cache_set host=%s source=redis ips=%s", host, ips)
+                    return
+                except RuntimeError:
+                    pass
         except Exception as e:
             logger.debug("redis_dns_cache_set_failed host=%s error=%s", host, str(e))
 
