@@ -244,13 +244,19 @@ async def research_discord_intel(
 
                     # Extract information from API response
                     guild = data.get("guild", {})
+                    guild_id = guild.get("id", "")
+                    icon_hash = guild.get("icon")
+                    icon_url = (
+                        f"https://cdn.discordapp.com/icons/{guild_id}/{icon_hash}.png"
+                        if icon_hash and guild_id else None
+                    )
                     server_info = {
                         "server_name": guild.get("name"),
-                        "server_id": guild.get("id"),
+                        "server_id": guild_id,
                         "description": guild.get("description"),
                         "member_count": data.get("approximate_member_count"),
                         "online_count": data.get("approximate_presence_count"),
-                        "icon_url": guild.get("icon"),
+                        "icon_url": icon_url,
                         "verification_level": guild.get("verification_level"),
                         "invite_code": target,
                     }
