@@ -109,8 +109,9 @@ def research_graph_query(query: str, max_depth: int = 2) -> dict[str, Any]:
     try:
         conn = sqlite3.connect(str(_GRAPH_DB))
         c = conn.cursor()
-        escaped_query = query.replace('"', '""').replace("'", "''")
-        c.execute("SELECT DISTINCT n.id, n.name, n.type, n.properties FROM nodes n WHERE n.id IN (SELECT rowid FROM nodes_fts WHERE nodes_fts MATCH ?) OR n.name LIKE ? OR n.type LIKE ? LIMIT 100", (escaped_query + "*", f"%{escaped_query}%", f"%{escaped_query}%"))
+        safe_query = query.replace('"', '').replace("'", "").replace("*", "").replace("(", "").replace(")", "")
+        fts_query = '"' + safe_query + '"'
+        c.execute("SELECT DISTINCT n.id, n.name, n.type, n.properties FROM nodes n WHERE n.id IN (SELECT rowid FROM nodes_fts WHERE nodes_fts MATCH ?) OR n.name LIKE ? OR n.type LIKE ? LIMIT 100", (fts_query, f"%{safe_query}%", f"%{safe_query}%"))
         matches = []
         for row in c.fetchall():
             try:

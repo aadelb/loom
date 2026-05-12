@@ -189,7 +189,7 @@ class EncryptedDB:
                 raise RuntimeError("SQLCipher mode requested but sqlcipher3 not available")
             # Guard ensures sqlcipher3 is available in this branch
             conn = sqlcipher3.connect(str(self.db_path), **kwargs)  # pylint: disable=undefined-variable
-            conn.execute(f"PRAGMA key = '{self.key.decode()}'")
+            conn.execute("PRAGMA key = ?", (self.key.decode(),))
         else:
             # Fernet mode: temp decrypted file
             conn = sqlite3.connect(str(self.db_path), **kwargs)

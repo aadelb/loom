@@ -696,8 +696,7 @@ def research_usb_monitor(dry_run: bool = True) -> dict[str, Any]:
         elif system == "Windows":
             try:
                 result = subprocess.run(
-                    ["Get-PnpDevice", "-Class", "USB"],
-                    shell=True,
+                    ["powershell", "-NoProfile", "-Command", "Get-PnpDevice -Class USB"],
                     capture_output=True,
                     text=True,
                     timeout=10,
