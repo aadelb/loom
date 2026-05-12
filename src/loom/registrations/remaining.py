@@ -12,56 +12,9 @@ log = logging.getLogger("loom.registrations.remaining")
 
 
 def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
-    """Register 315 remaining research tools."""
+    """Register 150 remaining research tools."""
     from loom.registrations.tracking import record_success, record_failure
 
-    try:
-        from loom.tools.adversarial_craft import research_adversarial_batch, research_craft_adversarial
-        mcp.tool()(wrap_tool(research_adversarial_batch))
-        record_success("remaining", "research_adversarial_batch")
-        mcp.tool()(wrap_tool(research_craft_adversarial))
-        record_success("remaining", "research_craft_adversarial")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip adversarial_craft: %s", e)
-        record_failure("remaining", "adversarial_craft", str(e))
-    try:
-        from loom.tools.adversarial_debate_tool import research_adversarial_debate
-        mcp.tool()(wrap_tool(research_adversarial_debate))
-        record_success("remaining", "research_adversarial_debate")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip adversarial_debate_tool: %s", e)
-        record_failure("remaining", "adversarial_debate_tool", str(e))
-    try:
-        from loom.tools.ai_safety import research_bias_probe, research_model_fingerprint, research_prompt_injection_test, research_safety_filter_map
-        mcp.tool()(wrap_tool(research_bias_probe))
-        record_success("remaining", "research_bias_probe")
-        mcp.tool()(wrap_tool(research_model_fingerprint))
-        record_success("remaining", "research_model_fingerprint")
-        mcp.tool()(wrap_tool(research_prompt_injection_test))
-        record_success("remaining", "research_prompt_injection_test")
-        mcp.tool()(wrap_tool(research_safety_filter_map))
-        record_success("remaining", "research_safety_filter_map")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip ai_safety: %s", e)
-        record_failure("remaining", "ai_safety", str(e))
-    try:
-        from loom.tools.ai_safety_extended import research_adversarial_robustness, research_hallucination_benchmark
-        mcp.tool()(wrap_tool(research_adversarial_robustness))
-        record_success("remaining", "research_adversarial_robustness")
-        mcp.tool()(wrap_tool(research_hallucination_benchmark))
-        record_success("remaining", "research_hallucination_benchmark")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip ai_safety_extended: %s", e)
-        record_failure("remaining", "ai_safety_extended", str(e))
-    try:
-        from loom.tools.anomaly_detector import research_detect_anomalies, research_detect_text_anomalies
-        mcp.tool()(wrap_tool(research_detect_anomalies))
-        record_success("remaining", "research_detect_anomalies")
-        mcp.tool()(wrap_tool(research_detect_text_anomalies))
-        record_success("remaining", "research_detect_text_anomalies")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip anomaly_detector: %s", e)
-        record_failure("remaining", "anomaly_detector", str(e))
     try:
         from loom.tools.api_fuzzer import research_fuzz_api, research_fuzz_report
         mcp.tool()(wrap_tool(research_fuzz_api))
@@ -83,37 +36,6 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip attack_economy: %s", e)
         record_failure("remaining", "attack_economy", str(e))
     try:
-        from loom.tools.audit_log import research_audit_export, research_audit_query, research_audit_record
-        mcp.tool()(wrap_tool(research_audit_export))
-        record_success("remaining", "research_audit_export")
-        mcp.tool()(wrap_tool(research_audit_query))
-        record_success("remaining", "research_audit_query")
-        mcp.tool()(wrap_tool(research_audit_record))
-        record_success("remaining", "research_audit_record")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip audit_log: %s", e)
-        record_failure("remaining", "audit_log", str(e))
-    try:
-        from loom.tools.auto_params import research_auto_params, research_inspect_tool
-        mcp.tool()(wrap_tool(research_auto_params))
-        record_success("remaining", "research_auto_params")
-        mcp.tool()(wrap_tool(research_inspect_tool))
-        record_success("remaining", "research_inspect_tool")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip auto_params: %s", e)
-        record_failure("remaining", "auto_params", str(e))
-    try:
-        from loom.tools.backup_system import research_backup_create, research_backup_list, research_backup_restore
-        mcp.tool()(wrap_tool(research_backup_create))
-        record_success("remaining", "research_backup_create")
-        mcp.tool()(wrap_tool(research_backup_list))
-        record_success("remaining", "research_backup_list")
-        mcp.tool()(wrap_tool(research_backup_restore))
-        record_success("remaining", "research_backup_restore")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip backup_system: %s", e)
-        record_failure("remaining", "backup_system", str(e))
-    try:
         from loom.tools.benchmark_datasets import research_load_benchmark, research_run_benchmark
         mcp.tool()(wrap_tool(research_load_benchmark))
         record_success("remaining", "research_load_benchmark")
@@ -122,22 +44,6 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip benchmark_datasets: %s", e)
         record_failure("remaining", "benchmark_datasets", str(e))
-    try:
-        from loom.tools.billing import research_stripe_balance
-        mcp.tool()(wrap_tool(research_stripe_balance))
-        record_success("remaining", "research_stripe_balance")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip billing: %s", e)
-        record_failure("remaining", "billing", str(e))
-    try:
-        from loom.tools.breach_check import research_breach_check, research_password_check
-        mcp.tool()(wrap_tool(research_breach_check))
-        record_success("remaining", "research_breach_check")
-        mcp.tool()(wrap_tool(research_password_check))
-        record_success("remaining", "research_password_check")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip breach_check: %s", e)
-        record_failure("remaining", "breach_check", str(e))
     try:
         from loom.tools.cache_analytics import research_cache_analyze, research_cache_optimize
         mcp.tool()(wrap_tool(research_cache_analyze))
@@ -148,28 +54,12 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip cache_analytics: %s", e)
         record_failure("remaining", "cache_analytics", str(e))
     try:
-        from loom.tools.cache_mgmt import research_cache_clear
-        mcp.tool()(wrap_tool(research_cache_clear))
-        record_success("remaining", "research_cache_clear")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip cache_mgmt: %s", e)
-        record_failure("remaining", "cache_mgmt", str(e))
-    try:
         from loom.tools.camelot_backend import research_table_extract
         mcp.tool()(wrap_tool(research_table_extract))
         record_success("remaining", "research_table_extract")
     except (ImportError, AttributeError) as e:
         log.debug("skip camelot_backend: %s", e)
         record_failure("remaining", "camelot_backend", str(e))
-    try:
-        from loom.tools.capability_matrix import research_capability_matrix, research_find_tools_by_capability
-        mcp.tool()(wrap_tool(research_capability_matrix))
-        record_success("remaining", "research_capability_matrix")
-        mcp.tool()(wrap_tool(research_find_tools_by_capability))
-        record_success("remaining", "research_find_tools_by_capability")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip capability_matrix: %s", e)
-        record_failure("remaining", "capability_matrix", str(e))
     try:
         from loom.tools.censys_backend import research_censys_host, research_censys_search
         mcp.tool()(wrap_tool(research_censys_host))
@@ -180,27 +70,6 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip censys_backend: %s", e)
         record_failure("remaining", "censys_backend", str(e))
     try:
-        from loom.tools.cert_analyzer import research_cert_analyze
-        mcp.tool()(wrap_tool(research_cert_analyze))
-        record_success("remaining", "research_cert_analyze")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip cert_analyzer: %s", e)
-        record_failure("remaining", "cert_analyzer", str(e))
-    try:
-        from loom.tools.change_monitor import research_change_monitor
-        mcp.tool()(wrap_tool(research_change_monitor))
-        record_success("remaining", "research_change_monitor")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip change_monitor: %s", e)
-        record_failure("remaining", "change_monitor", str(e))
-    try:
-        from loom.tools.cipher_mirror import research_cipher_mirror
-        mcp.tool()(wrap_tool(research_cipher_mirror))
-        record_success("remaining", "research_cipher_mirror")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip cipher_mirror: %s", e)
-        record_failure("remaining", "cipher_mirror", str(e))
-    try:
         from loom.tools.cli_autocomplete import research_generate_completions, research_tool_help
         mcp.tool()(wrap_tool(research_generate_completions))
         record_success("remaining", "research_generate_completions")
@@ -209,29 +78,6 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip cli_autocomplete: %s", e)
         record_failure("remaining", "cli_autocomplete", str(e))
-    try:
-        from loom.tools.coevolution import research_coevolve
-        mcp.tool()(wrap_tool(research_coevolve))
-        record_success("remaining", "research_coevolve")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip coevolution: %s", e)
-        record_failure("remaining", "coevolution", str(e))
-    try:
-        from loom.tools.company_intel import research_company_diligence, research_salary_intelligence
-        mcp.tool()(wrap_tool(research_company_diligence))
-        record_success("remaining", "research_company_diligence")
-        mcp.tool()(wrap_tool(research_salary_intelligence))
-        record_success("remaining", "research_salary_intelligence")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip company_intel: %s", e)
-        record_failure("remaining", "company_intel", str(e))
-    try:
-        from loom.tools.competitive_intel import research_competitive_intel
-        mcp.tool()(wrap_tool(research_competitive_intel))
-        record_success("remaining", "research_competitive_intel")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip competitive_intel: %s", e)
-        record_failure("remaining", "competitive_intel", str(e))
     try:
         from loom.tools.competitive_monitor import research_competitive_advantage, research_monitor_competitors
         mcp.tool()(wrap_tool(research_competitive_advantage))
@@ -250,28 +96,6 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip compliance_report: %s", e)
         record_failure("remaining", "compliance_report", str(e))
-    try:
-        from loom.tools.composition_optimizer import research_optimize_workflow, research_optimizer_rebuild, research_parallel_plan
-        mcp.tool()(wrap_tool(research_optimize_workflow))
-        record_success("remaining", "research_optimize_workflow")
-        mcp.tool()(wrap_tool(research_optimizer_rebuild))
-        record_success("remaining", "research_optimizer_rebuild")
-        mcp.tool()(wrap_tool(research_parallel_plan))
-        record_success("remaining", "research_parallel_plan")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip composition_optimizer: %s", e)
-        record_failure("remaining", "composition_optimizer", str(e))
-    try:
-        from loom.tools.config_reload import research_config_check, research_config_diff, research_config_watch
-        mcp.tool()(wrap_tool(research_config_check))
-        record_success("remaining", "research_config_check")
-        mcp.tool()(wrap_tool(research_config_diff))
-        record_success("remaining", "research_config_diff")
-        mcp.tool()(wrap_tool(research_config_watch))
-        record_success("remaining", "research_config_watch")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip config_reload: %s", e)
-        record_failure("remaining", "config_reload", str(e))
     try:
         from loom.tools.cost_estimator import research_cost_summary, research_estimate_cost
         mcp.tool()(wrap_tool(research_cost_summary))
@@ -303,67 +127,12 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip cross_domain: %s", e)
         record_failure("remaining", "cross_domain", str(e))
     try:
-        from loom.tools.crypto_trace import research_crypto_trace
-        mcp.tool()(wrap_tool(research_crypto_trace))
-        record_success("remaining", "research_crypto_trace")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip crypto_trace: %s", e)
-        record_failure("remaining", "crypto_trace", str(e))
-    try:
-        from loom.tools.cve_lookup import research_cve_detail, research_cve_lookup
-        mcp.tool()(wrap_tool(research_cve_detail))
-        record_success("remaining", "research_cve_detail")
-        mcp.tool()(wrap_tool(research_cve_lookup))
-        record_success("remaining", "research_cve_lookup")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip cve_lookup: %s", e)
-        record_failure("remaining", "cve_lookup", str(e))
-    try:
-        from loom.tools.dark_forum import research_dark_forum
-        mcp.tool()(wrap_tool(research_dark_forum))
-        record_success("remaining", "research_dark_forum")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip dark_forum: %s", e)
-        record_failure("remaining", "dark_forum", str(e))
-    try:
-        from loom.tools.dark_recon import research_amass_enum, research_amass_intel, research_torbot
-        mcp.tool()(wrap_tool(research_amass_enum))
-        record_success("remaining", "research_amass_enum")
-        mcp.tool()(wrap_tool(research_amass_intel))
-        record_success("remaining", "research_amass_intel")
-        mcp.tool()(wrap_tool(research_torbot))
-        record_success("remaining", "research_torbot")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip dark_recon: %s", e)
-        record_failure("remaining", "dark_recon", str(e))
-    try:
-        from loom.tools.darkweb_early_warning import research_darkweb_early_warning
-        mcp.tool()(wrap_tool(research_darkweb_early_warning))
-        record_success("remaining", "research_darkweb_early_warning")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip darkweb_early_warning: %s", e)
-        record_failure("remaining", "darkweb_early_warning", str(e))
-    try:
         from loom.tools.dead_content import research_dead_content
         mcp.tool()(wrap_tool(research_dead_content))
         record_success("remaining", "research_dead_content")
     except (ImportError, AttributeError) as e:
         log.debug("skip dead_content: %s", e)
         record_failure("remaining", "dead_content", str(e))
-    try:
-        from loom.tools.deep import research_deep
-        mcp.tool()(wrap_tool(research_deep))
-        record_success("remaining", "research_deep")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip deep: %s", e)
-        record_failure("remaining", "deep", str(e))
-    try:
-        from loom.tools.deep_url_analysis import research_deep_url_analysis
-        mcp.tool()(wrap_tool(research_deep_url_analysis))
-        record_success("remaining", "research_deep_url_analysis")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip deep_url_analysis: %s", e)
-        record_failure("remaining", "deep_url_analysis", str(e))
     try:
         from loom.tools.deepdarkcti_backend import research_dark_cti
         mcp.tool()(wrap_tool(research_dark_cti))
@@ -378,26 +147,6 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip deerflow_backend: %s", e)
         record_failure("remaining", "deerflow_backend", str(e))
-    try:
-        from loom.tools.defender_mode import research_defend_test, research_harden_prompt
-        mcp.tool()(wrap_tool(research_defend_test))
-        record_success("remaining", "research_defend_test")
-        mcp.tool()(wrap_tool(research_harden_prompt))
-        record_success("remaining", "research_harden_prompt")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip defender_mode: %s", e)
-        record_failure("remaining", "defender_mode", str(e))
-    try:
-        from loom.tools.deployment import research_deploy_history, research_deploy_record, research_deploy_status
-        mcp.tool()(wrap_tool(research_deploy_history))
-        record_success("remaining", "research_deploy_history")
-        mcp.tool()(wrap_tool(research_deploy_record))
-        record_success("remaining", "research_deploy_record")
-        mcp.tool()(wrap_tool(research_deploy_status))
-        record_success("remaining", "research_deploy_status")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip deployment: %s", e)
-        record_failure("remaining", "deployment", str(e))
     try:
         from loom.tools.discord_osint import research_discord_intel
         mcp.tool()(wrap_tool(research_discord_intel))
@@ -417,30 +166,12 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip dist_tracing: %s", e)
         record_failure("remaining", "dist_tracing", str(e))
     try:
-        from loom.tools.do_expert import research_do_expert
-        mcp.tool()(wrap_tool(research_do_expert))
-        record_success("remaining", "research_do_expert")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip do_expert: %s", e)
-        record_failure("remaining", "do_expert", str(e))
-    try:
         from loom.tools.docsgpt_backend import research_docs_ai
         mcp.tool()(wrap_tool(research_docs_ai))
         record_success("remaining", "research_docs_ai")
     except (ImportError, AttributeError) as e:
         log.debug("skip docsgpt_backend: %s", e)
         record_failure("remaining", "docsgpt_backend", str(e))
-    try:
-        from loom.tools.domain_intel import research_dns_lookup, research_nmap_scan, research_whois
-        mcp.tool()(wrap_tool(research_dns_lookup))
-        record_success("remaining", "research_dns_lookup")
-        mcp.tool()(wrap_tool(research_nmap_scan))
-        record_success("remaining", "research_nmap_scan")
-        mcp.tool()(wrap_tool(research_whois))
-        record_success("remaining", "research_whois")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip domain_intel: %s", e)
-        record_failure("remaining", "domain_intel", str(e))
     try:
         from loom.tools.dspy_bridge import research_dspy_configure, research_dspy_cost_report
         mcp.tool()(wrap_tool(research_dspy_configure))
@@ -458,13 +189,6 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip eagleeye_backend: %s", e)
         record_failure("remaining", "eagleeye_backend", str(e))
     try:
-        from loom.tools.email_report import research_email_report
-        mcp.tool()(wrap_tool(research_email_report))
-        record_success("remaining", "research_email_report")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip email_report: %s", e)
-        record_failure("remaining", "email_report", str(e))
-    try:
         from loom.tools.env_inspector import research_env_inspect, research_env_requirements
         mcp.tool()(wrap_tool(research_env_inspect))
         record_success("remaining", "research_env_inspect")
@@ -473,15 +197,6 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip env_inspector: %s", e)
         record_failure("remaining", "env_inspector", str(e))
-    try:
-        from loom.tools.error_wrapper import research_error_clear, research_error_stats
-        mcp.tool()(wrap_tool(research_error_clear))
-        record_success("remaining", "research_error_clear")
-        mcp.tool()(wrap_tool(research_error_stats))
-        record_success("remaining", "research_error_stats")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip error_wrapper: %s", e)
-        record_failure("remaining", "error_wrapper", str(e))
     try:
         from loom.tools.evasion_network import research_proxy_check, research_tor_rotate
         mcp.tool()(wrap_tool(research_proxy_check))
@@ -503,49 +218,6 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip event_bus: %s", e)
         record_failure("remaining", "event_bus", str(e))
     try:
-        from loom.tools.evidence_fusion import research_authority_stack, research_fuse_evidence
-        mcp.tool()(wrap_tool(research_authority_stack))
-        record_success("remaining", "research_authority_stack")
-        mcp.tool()(wrap_tool(research_fuse_evidence))
-        record_success("remaining", "research_fuse_evidence")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip evidence_fusion: %s", e)
-        record_failure("remaining", "evidence_fusion", str(e))
-    try:
-        from loom.tools.execution_planner import research_plan_execution, research_plan_validate
-        mcp.tool()(wrap_tool(research_plan_execution))
-        record_success("remaining", "research_plan_execution")
-        mcp.tool()(wrap_tool(research_plan_validate))
-        record_success("remaining", "research_plan_validate")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip execution_planner: %s", e)
-        record_failure("remaining", "execution_planner", str(e))
-    try:
-        from loom.tools.expert_engine import research_expert
-        mcp.tool()(wrap_tool(research_expert))
-        record_success("remaining", "research_expert")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip expert_engine: %s", e)
-        record_failure("remaining", "expert_engine", str(e))
-    try:
-        from loom.tools.exploit_db import research_exploit_register, research_exploit_search, research_exploit_stats
-        mcp.tool()(wrap_tool(research_exploit_register))
-        record_success("remaining", "research_exploit_register")
-        mcp.tool()(wrap_tool(research_exploit_search))
-        record_success("remaining", "research_exploit_search")
-        mcp.tool()(wrap_tool(research_exploit_stats))
-        record_success("remaining", "research_exploit_stats")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip exploit_db: %s", e)
-        record_failure("remaining", "exploit_db", str(e))
-    try:
-        from loom.tools.fetch import research_fetch
-        mcp.tool()(wrap_tool(research_fetch))
-        record_success("remaining", "research_fetch")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip fetch: %s", e)
-        record_failure("remaining", "fetch", str(e))
-    try:
         from loom.tools.fingerprint_backend import research_browser_fingerprint
         mcp.tool()(wrap_tool(research_browser_fingerprint))
         record_success("remaining", "research_browser_fingerprint")
@@ -560,30 +232,12 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip forum_cortex: %s", e)
         record_failure("remaining", "forum_cortex", str(e))
     try:
-        from loom.tools.full_pipeline import research_full_pipeline
-        mcp.tool()(wrap_tool(research_full_pipeline))
-        record_success("remaining", "research_full_pipeline")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip full_pipeline: %s", e)
-        record_failure("remaining", "full_pipeline", str(e))
-    try:
         from loom.tools.functor_map import research_functor_translate
         mcp.tool()(wrap_tool(research_functor_translate))
         record_success("remaining", "research_functor_translate")
     except (ImportError, AttributeError) as e:
         log.debug("skip functor_map: %s", e)
         record_failure("remaining", "functor_map", str(e))
-    try:
-        from loom.tools.gcp import research_image_analyze, research_text_to_speech, research_tts_voices
-        mcp.tool()(wrap_tool(research_image_analyze))
-        record_success("remaining", "research_image_analyze")
-        mcp.tool()(wrap_tool(research_text_to_speech))
-        record_success("remaining", "research_text_to_speech")
-        mcp.tool()(wrap_tool(research_tts_voices))
-        record_success("remaining", "research_tts_voices")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip gcp: %s", e)
-        record_failure("remaining", "gcp", str(e))
     try:
         from loom.tools.genetic_fuzzer import research_genetic_fuzz
         mcp.tool()(wrap_tool(research_genetic_fuzz))
@@ -598,17 +252,6 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip ghost_weave: %s", e)
         record_failure("remaining", "ghost_weave", str(e))
-    try:
-        from loom.tools.github import research_github, research_github_readme, research_github_releases
-        mcp.tool()(wrap_tool(research_github))
-        record_success("remaining", "research_github")
-        mcp.tool()(wrap_tool(research_github_readme))
-        record_success("remaining", "research_github_readme")
-        mcp.tool()(wrap_tool(research_github_releases))
-        record_success("remaining", "research_github_releases")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip github: %s", e)
-        record_failure("remaining", "github", str(e))
     try:
         from loom.tools.gpt_researcher_backend import research_gpt_researcher
         mcp.tool()(wrap_tool(research_gpt_researcher))
@@ -631,15 +274,6 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip harvester_backend: %s", e)
         record_failure("remaining", "harvester_backend", str(e))
     try:
-        from loom.tools.help_system import research_help, research_tools_list
-        mcp.tool()(wrap_tool(research_help))
-        record_success("remaining", "research_help")
-        mcp.tool()(wrap_tool(research_tools_list))
-        record_success("remaining", "research_tools_list")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip help_system: %s", e)
-        record_failure("remaining", "help_system", str(e))
-    try:
         from loom.tools.hipporag_backend import research_memory_recall, research_memory_store
         mcp.tool()(wrap_tool(research_memory_recall))
         record_success("remaining", "research_memory_recall")
@@ -655,13 +289,6 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip identity_resolve: %s", e)
         record_failure("remaining", "identity_resolve", str(e))
-    try:
-        from loom.tools.infra_correlator import research_infra_correlator
-        mcp.tool()(wrap_tool(research_infra_correlator))
-        record_success("remaining", "research_infra_correlator")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip infra_correlator: %s", e)
-        record_failure("remaining", "infra_correlator", str(e))
     try:
         from loom.tools.instructor_backend import research_structured_extract
         mcp.tool()(wrap_tool(research_structured_extract))
@@ -693,15 +320,6 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip invisible_web: %s", e)
         record_failure("remaining", "invisible_web", str(e))
     try:
-        from loom.tools.ip_intel import research_ip_geolocation, research_ip_reputation
-        mcp.tool()(wrap_tool(research_ip_geolocation))
-        record_success("remaining", "research_ip_geolocation")
-        mcp.tool()(wrap_tool(research_ip_reputation))
-        record_success("remaining", "research_ip_reputation")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip ip_intel: %s", e)
-        record_failure("remaining", "ip_intel", str(e))
-    try:
         from loom.tools.jailbreak_evolution import research_jailbreak_evolution_adapt, research_jailbreak_evolution_get, research_jailbreak_evolution_patches, research_jailbreak_evolution_record, research_jailbreak_evolution_stats, research_jailbreak_evolution_timeline
         mcp.tool()(wrap_tool(research_jailbreak_evolution_adapt))
         record_success("remaining", "research_jailbreak_evolution_adapt")
@@ -719,26 +337,6 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip jailbreak_evolution: %s", e)
         record_failure("remaining", "jailbreak_evolution", str(e))
     try:
-        from loom.tools.joplin import research_list_notebooks, research_save_note
-        mcp.tool()(wrap_tool(research_list_notebooks))
-        record_success("remaining", "research_list_notebooks")
-        mcp.tool()(wrap_tool(research_save_note))
-        record_success("remaining", "research_save_note")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip joplin: %s", e)
-        record_failure("remaining", "joplin", str(e))
-    try:
-        from loom.tools.key_rotation import research_key_rotate, research_key_status, research_key_test
-        mcp.tool()(wrap_tool(research_key_rotate))
-        record_success("remaining", "research_key_rotate")
-        mcp.tool()(wrap_tool(research_key_status))
-        record_success("remaining", "research_key_status")
-        mcp.tool()(wrap_tool(research_key_test))
-        record_success("remaining", "research_key_test")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip key_rotation: %s", e)
-        record_failure("remaining", "key_rotation", str(e))
-    try:
         from loom.tools.knowledge_injector import research_adapt_complexity, research_personalize_output
         mcp.tool()(wrap_tool(research_adapt_complexity))
         record_success("remaining", "research_adapt_complexity")
@@ -747,13 +345,6 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip knowledge_injector: %s", e)
         record_failure("remaining", "knowledge_injector", str(e))
-    try:
-        from loom.tools.leak_scan import research_leak_scan
-        mcp.tool()(wrap_tool(research_leak_scan))
-        record_success("remaining", "research_leak_scan")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip leak_scan: %s", e)
-        record_failure("remaining", "leak_scan", str(e))
     try:
         from loom.tools.lightpanda_backend import research_lightpanda_batch, research_lightpanda_fetch
         mcp.tool()(wrap_tool(research_lightpanda_batch))
@@ -770,20 +361,6 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip linkedin_osint: %s", e)
         record_failure("remaining", "linkedin_osint", str(e))
-    try:
-        from loom.tools.maigret_backend import research_maigret
-        mcp.tool()(wrap_tool(research_maigret))
-        record_success("remaining", "research_maigret")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip maigret_backend: %s", e)
-        record_failure("remaining", "maigret_backend", str(e))
-    try:
-        from loom.tools.markdown import research_markdown
-        mcp.tool()(wrap_tool(research_markdown))
-        record_success("remaining", "research_markdown")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip markdown: %s", e)
-        record_failure("remaining", "markdown", str(e))
     try:
         from loom.tools.masscan_backend import research_masscan
         mcp.tool()(wrap_tool(research_masscan))
@@ -806,31 +383,6 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip memetic_simulator: %s", e)
         record_failure("remaining", "memetic_simulator", str(e))
     try:
-        from loom.tools.memory_mgmt import research_memory_gc, research_memory_profile, research_memory_status
-        mcp.tool()(wrap_tool(research_memory_gc))
-        record_success("remaining", "research_memory_gc")
-        mcp.tool()(wrap_tool(research_memory_profile))
-        record_success("remaining", "research_memory_profile")
-        mcp.tool()(wrap_tool(research_memory_status))
-        record_success("remaining", "research_memory_status")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip memory_mgmt: %s", e)
-        record_failure("remaining", "memory_mgmt", str(e))
-    try:
-        from loom.tools.metrics import research_metrics
-        mcp.tool()(wrap_tool(research_metrics))
-        record_success("remaining", "research_metrics")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip metrics: %s", e)
-        record_failure("remaining", "metrics", str(e))
-    try:
-        from loom.tools.misp_backend import research_misp_lookup
-        mcp.tool()(wrap_tool(research_misp_lookup))
-        record_success("remaining", "research_misp_lookup")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip misp_backend: %s", e)
-        record_failure("remaining", "misp_backend", str(e))
-    try:
         from loom.tools.model_compare import research_compare_responses, research_model_consensus
         mcp.tool()(wrap_tool(research_compare_responses))
         record_success("remaining", "research_compare_responses")
@@ -839,13 +391,6 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip model_compare: %s", e)
         record_failure("remaining", "model_compare", str(e))
-    try:
-        from loom.tools.multi_search import research_multi_search
-        mcp.tool()(wrap_tool(research_multi_search))
-        record_success("remaining", "research_multi_search")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip multi_search: %s", e)
-        record_failure("remaining", "multi_search", str(e))
     try:
         from loom.tools.neuromorphic import research_neuromorphic_schedule
         mcp.tool()(wrap_tool(research_neuromorphic_schedule))
@@ -860,24 +405,6 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip nl_executor: %s", e)
         record_failure("remaining", "nl_executor", str(e))
-    try:
-        from loom.tools.observability import research_trace_end, research_trace_start, research_traces_list
-        mcp.tool()(wrap_tool(research_trace_end))
-        record_success("remaining", "research_trace_end")
-        mcp.tool()(wrap_tool(research_trace_start))
-        record_success("remaining", "research_trace_start")
-        mcp.tool()(wrap_tool(research_traces_list))
-        record_success("remaining", "research_traces_list")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip observability: %s", e)
-        record_failure("remaining", "observability", str(e))
-    try:
-        from loom.tools.onion_discover import research_onion_discover
-        mcp.tool()(wrap_tool(research_onion_discover))
-        record_success("remaining", "research_onion_discover")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip onion_discover: %s", e)
-        record_failure("remaining", "onion_discover", str(e))
     try:
         from loom.tools.onion_spectra import research_onion_spectra
         mcp.tool()(wrap_tool(research_onion_spectra))
@@ -934,13 +461,6 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip parallel_executor: %s", e)
         record_failure("remaining", "parallel_executor", str(e))
     try:
-        from loom.tools.passive_recon import research_passive_recon
-        mcp.tool()(wrap_tool(research_passive_recon))
-        record_success("remaining", "research_passive_recon")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip passive_recon: %s", e)
-        record_failure("remaining", "passive_recon", str(e))
-    try:
         from loom.tools.pathogen_sim import research_pathogen_evolve
         mcp.tool()(wrap_tool(research_pathogen_evolve))
         record_success("remaining", "research_pathogen_evolve")
@@ -990,36 +510,6 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip progress_tracker: %s", e)
         record_failure("remaining", "progress_tracker", str(e))
     try:
-        from loom.tools.prompt_analyzer import research_prompt_analyze
-        mcp.tool()(wrap_tool(research_prompt_analyze))
-        record_success("remaining", "research_prompt_analyze")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip prompt_analyzer: %s", e)
-        record_failure("remaining", "prompt_analyzer", str(e))
-    try:
-        from loom.tools.prompt_reframe import research_adaptive_reframe, research_auto_reframe, research_crescendo_chain, research_fingerprint_model, research_format_smuggle, research_model_vulnerability_profile, research_prompt_reframe, research_refusal_detector, research_stack_reframe
-        mcp.tool()(wrap_tool(research_adaptive_reframe))
-        record_success("remaining", "research_adaptive_reframe")
-        mcp.tool()(wrap_tool(research_auto_reframe))
-        record_success("remaining", "research_auto_reframe")
-        mcp.tool()(wrap_tool(research_crescendo_chain))
-        record_success("remaining", "research_crescendo_chain")
-        mcp.tool()(wrap_tool(research_fingerprint_model))
-        record_success("remaining", "research_fingerprint_model")
-        mcp.tool()(wrap_tool(research_format_smuggle))
-        record_success("remaining", "research_format_smuggle")
-        mcp.tool()(wrap_tool(research_model_vulnerability_profile))
-        record_success("remaining", "research_model_vulnerability_profile")
-        mcp.tool()(wrap_tool(research_prompt_reframe))
-        record_success("remaining", "research_prompt_reframe")
-        mcp.tool()(wrap_tool(research_refusal_detector))
-        record_success("remaining", "research_refusal_detector")
-        mcp.tool()(wrap_tool(research_stack_reframe))
-        record_success("remaining", "research_stack_reframe")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip prompt_reframe: %s", e)
-        record_failure("remaining", "prompt_reframe", str(e))
-    try:
         from loom.tools.prompt_templates import research_template_list, research_template_render, research_template_suggest
         mcp.tool()(wrap_tool(research_template_list))
         record_success("remaining", "research_template_list")
@@ -1030,13 +520,6 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip prompt_templates: %s", e)
         record_failure("remaining", "prompt_templates", str(e))
-    try:
-        from loom.tools.psycholinguistic import research_psycholinguistic
-        mcp.tool()(wrap_tool(research_psycholinguistic))
-        record_success("remaining", "research_psycholinguistic")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip psycholinguistic: %s", e)
-        record_failure("remaining", "psycholinguistic", str(e))
     try:
         from loom.tools.pydantic_ai_backend import research_pydantic_agent, research_structured_llm
         mcp.tool()(wrap_tool(research_pydantic_agent))
@@ -1164,39 +647,12 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip scapy_backend: %s", e)
         record_failure("remaining", "scapy_backend", str(e))
     try:
-        from loom.tools.search import research_search
-        mcp.tool()(wrap_tool(research_search))
-        record_success("remaining", "research_search")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip search: %s", e)
-        record_failure("remaining", "search", str(e))
-    try:
         from loom.tools.security_headers import research_security_headers
         mcp.tool()(wrap_tool(research_security_headers))
         record_success("remaining", "research_security_headers")
     except (ImportError, AttributeError) as e:
         log.debug("skip security_headers: %s", e)
         record_failure("remaining", "security_headers", str(e))
-    try:
-        from loom.tools.semantic_index import research_semantic_rebuild, research_semantic_search
-        mcp.tool()(wrap_tool(research_semantic_rebuild))
-        record_success("remaining", "research_semantic_rebuild")
-        mcp.tool()(wrap_tool(research_semantic_search))
-        record_success("remaining", "research_semantic_search")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip semantic_index: %s", e)
-        record_failure("remaining", "semantic_index", str(e))
-    try:
-        from loom.tools.session_replay import research_session_list, research_session_record, research_session_replay
-        mcp.tool()(wrap_tool(research_session_list))
-        record_success("remaining", "research_session_list")
-        mcp.tool()(wrap_tool(research_session_record))
-        record_success("remaining", "research_session_record")
-        mcp.tool()(wrap_tool(research_session_replay))
-        record_success("remaining", "research_session_replay")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip session_replay: %s", e)
-        record_failure("remaining", "session_replay", str(e))
     try:
         from loom.tools.shodan_backend import research_shodan_host, research_shodan_search
         mcp.tool()(wrap_tool(research_shodan_host))
@@ -1224,77 +680,6 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip simplifier: %s", e)
         record_failure("remaining", "simplifier", str(e))
-    try:
-        from loom.tools.singlefile_backend import research_archive_page
-        mcp.tool()(wrap_tool(research_archive_page))
-        record_success("remaining", "research_archive_page")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip singlefile_backend: %s", e)
-        record_failure("remaining", "singlefile_backend", str(e))
-    try:
-        from loom.tools.slack import research_slack_notify
-        mcp.tool()(wrap_tool(research_slack_notify))
-        record_success("remaining", "research_slack_notify")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip slack: %s", e)
-        record_failure("remaining", "slack", str(e))
-    try:
-        from loom.tools.smart_router import research_route_batch, research_route_query, research_router_rebuild
-        mcp.tool()(wrap_tool(research_route_batch))
-        record_success("remaining", "research_route_batch")
-        mcp.tool()(wrap_tool(research_route_query))
-        record_success("remaining", "research_route_query")
-        mcp.tool()(wrap_tool(research_router_rebuild))
-        record_success("remaining", "research_router_rebuild")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip smart_router: %s", e)
-        record_failure("remaining", "smart_router", str(e))
-    try:
-        from loom.tools.social_analyzer_backend import research_social_analyze
-        mcp.tool()(wrap_tool(research_social_analyze))
-        record_success("remaining", "research_social_analyze")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip social_analyzer_backend: %s", e)
-        record_failure("remaining", "social_analyzer_backend", str(e))
-    try:
-        from loom.tools.social_graph import research_social_graph
-        mcp.tool()(wrap_tool(research_social_graph))
-        record_success("remaining", "research_social_graph")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip social_graph: %s", e)
-        record_failure("remaining", "social_graph", str(e))
-    try:
-        from loom.tools.spider import research_spider
-        mcp.tool()(wrap_tool(research_spider))
-        record_success("remaining", "research_spider")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip spider: %s", e)
-        record_failure("remaining", "spider", str(e))
-    try:
-        from loom.tools.spiderfoot_backend import research_spiderfoot_scan
-        mcp.tool()(wrap_tool(research_spiderfoot_scan))
-        record_success("remaining", "research_spiderfoot_scan")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip spiderfoot_backend: %s", e)
-        record_failure("remaining", "spiderfoot_backend", str(e))
-    try:
-        from loom.tools.startup_validator import research_health_deep, research_validate_startup
-        mcp.tool()(wrap_tool(research_health_deep))
-        record_success("remaining", "research_health_deep")
-        mcp.tool()(wrap_tool(research_validate_startup))
-        record_success("remaining", "research_validate_startup")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip startup_validator: %s", e)
-        record_failure("remaining", "startup_validator", str(e))
-    try:
-        from loom.tools.stealth import research_botasaurus, research_camoufox
-        mcp.tool()(wrap_tool(research_botasaurus))
-        record_success("remaining", "research_botasaurus")
-        mcp.tool()(wrap_tool(research_camoufox))
-        record_success("remaining", "research_camoufox")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip stealth: %s", e)
-        record_failure("remaining", "stealth", str(e))
     try:
         from loom.tools.strange_attractors import research_attractor_trap
         mcp.tool()(wrap_tool(research_attractor_trap))
@@ -1330,13 +715,6 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip supply_chain_intel: %s", e)
         record_failure("remaining", "supply_chain_intel", str(e))
     try:
-        from loom.tools.swarm_attack import research_swarm_attack
-        mcp.tool()(wrap_tool(research_swarm_attack))
-        record_success("remaining", "research_swarm_attack")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip swarm_attack: %s", e)
-        record_failure("remaining", "swarm_attack", str(e))
-    try:
         from loom.tools.talent_tracker import research_talent_flow, research_track_researcher
         mcp.tool()(wrap_tool(research_talent_flow))
         record_success("remaining", "research_talent_flow")
@@ -1353,65 +731,12 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip telegram_osint: %s", e)
         record_failure("remaining", "telegram_osint", str(e))
     try:
-        from loom.tools.telemetry import research_telemetry_record, research_telemetry_reset, research_telemetry_stats
-        mcp.tool()(wrap_tool(research_telemetry_record))
-        record_success("remaining", "research_telemetry_record")
-        mcp.tool()(wrap_tool(research_telemetry_reset))
-        record_success("remaining", "research_telemetry_reset")
-        mcp.tool()(wrap_tool(research_telemetry_stats))
-        record_success("remaining", "research_telemetry_stats")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip telemetry: %s", e)
-        record_failure("remaining", "telemetry", str(e))
-    try:
         from loom.tools.testssl_backend import research_testssl
         mcp.tool()(wrap_tool(research_testssl))
         record_success("remaining", "research_testssl")
     except (ImportError, AttributeError) as e:
         log.debug("skip testssl_backend: %s", e)
         record_failure("remaining", "testssl_backend", str(e))
-    try:
-        from loom.tools.thinking_injection import research_reasoning_exploit, research_thinking_inject
-        mcp.tool()(wrap_tool(research_reasoning_exploit))
-        record_success("remaining", "research_reasoning_exploit")
-        mcp.tool()(wrap_tool(research_thinking_inject))
-        record_success("remaining", "research_thinking_inject")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip thinking_injection: %s", e)
-        record_failure("remaining", "thinking_injection", str(e))
-    try:
-        from loom.tools.threat_intel import research_botnet_tracker, research_dark_market_monitor, research_domain_reputation, research_ioc_enrich, research_malware_intel, research_phishing_mapper, research_ransomware_tracker
-        mcp.tool()(wrap_tool(research_botnet_tracker))
-        record_success("remaining", "research_botnet_tracker")
-        mcp.tool()(wrap_tool(research_dark_market_monitor))
-        record_success("remaining", "research_dark_market_monitor")
-        mcp.tool()(wrap_tool(research_domain_reputation))
-        record_success("remaining", "research_domain_reputation")
-        mcp.tool()(wrap_tool(research_ioc_enrich))
-        record_success("remaining", "research_ioc_enrich")
-        mcp.tool()(wrap_tool(research_malware_intel))
-        record_success("remaining", "research_malware_intel")
-        mcp.tool()(wrap_tool(research_phishing_mapper))
-        record_success("remaining", "research_phishing_mapper")
-        mcp.tool()(wrap_tool(research_ransomware_tracker))
-        record_success("remaining", "research_ransomware_tracker")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip threat_intel: %s", e)
-        record_failure("remaining", "threat_intel", str(e))
-    try:
-        from loom.tools.threat_profile import research_threat_profile
-        mcp.tool()(wrap_tool(research_threat_profile))
-        record_success("remaining", "research_threat_profile")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip threat_profile: %s", e)
-        record_failure("remaining", "threat_profile", str(e))
-    try:
-        from loom.tools.tool_discovery import research_discover
-        mcp.tool()(wrap_tool(research_discover))
-        record_success("remaining", "research_discover")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip tool_discovery: %s", e)
-        record_failure("remaining", "tool_discovery", str(e))
     try:
         from loom.tools.tool_health import research_health_alert, research_health_check_all, research_health_history
         mcp.tool()(wrap_tool(research_health_alert))
@@ -1424,15 +749,6 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip tool_health: %s", e)
         record_failure("remaining", "tool_health", str(e))
     try:
-        from loom.tools.tool_recommender_v2 import research_recommend_next, research_suggest_workflow
-        mcp.tool()(wrap_tool(research_recommend_next))
-        record_success("remaining", "research_recommend_next")
-        mcp.tool()(wrap_tool(research_suggest_workflow))
-        record_success("remaining", "research_suggest_workflow")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip tool_recommender_v2: %s", e)
-        record_failure("remaining", "tool_recommender_v2", str(e))
-    try:
         from loom.tools.topology_manifold import research_topology_discover
         mcp.tool()(wrap_tool(research_topology_discover))
         record_success("remaining", "research_topology_discover")
@@ -1440,28 +756,12 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip topology_manifold: %s", e)
         record_failure("remaining", "topology_manifold", str(e))
     try:
-        from loom.tools.tor import research_tor_new_identity, research_tor_status
-        mcp.tool()(wrap_tool(research_tor_new_identity))
-        record_success("remaining", "research_tor_new_identity")
-        mcp.tool()(wrap_tool(research_tor_status))
-        record_success("remaining", "research_tor_status")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip tor: %s", e)
-        record_failure("remaining", "tor", str(e))
-    try:
         from loom.tools.transferability import research_transfer_test
         mcp.tool()(wrap_tool(research_transfer_test))
         record_success("remaining", "research_transfer_test")
     except (ImportError, AttributeError) as e:
         log.debug("skip transferability: %s", e)
         record_failure("remaining", "transferability", str(e))
-    try:
-        from loom.tools.trend_predictor import research_trend_predict
-        mcp.tool()(wrap_tool(research_trend_predict))
-        record_success("remaining", "research_trend_predict")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip trend_predictor: %s", e)
-        record_failure("remaining", "trend_predictor", str(e))
     try:
         from loom.tools.uncertainty_harvest import research_active_select, research_uncertainty_estimate
         mcp.tool()(wrap_tool(research_active_select))
@@ -1472,13 +772,6 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip uncertainty_harvest: %s", e)
         record_failure("remaining", "uncertainty_harvest", str(e))
     try:
-        from loom.tools.universal_orchestrator import research_orchestrate_smart
-        mcp.tool()(wrap_tool(research_orchestrate_smart))
-        record_success("remaining", "research_orchestrate_smart")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip universal_orchestrator: %s", e)
-        record_failure("remaining", "universal_orchestrator", str(e))
-    try:
         from loom.tools.unstructured_backend import research_document_extract
         mcp.tool()(wrap_tool(research_document_extract))
         record_success("remaining", "research_document_extract")
@@ -1486,78 +779,10 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip unstructured_backend: %s", e)
         record_failure("remaining", "unstructured_backend", str(e))
     try:
-        from loom.tools.urlhaus_lookup import research_urlhaus_check, research_urlhaus_search
-        mcp.tool()(wrap_tool(research_urlhaus_check))
-        record_success("remaining", "research_urlhaus_check")
-        mcp.tool()(wrap_tool(research_urlhaus_search))
-        record_success("remaining", "research_urlhaus_search")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip urlhaus_lookup: %s", e)
-        record_failure("remaining", "urlhaus_lookup", str(e))
-    try:
-        from loom.tools.vastai import research_vastai_search, research_vastai_status
-        mcp.tool()(wrap_tool(research_vastai_search))
-        record_success("remaining", "research_vastai_search")
-        mcp.tool()(wrap_tool(research_vastai_status))
-        record_success("remaining", "research_vastai_status")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip vastai: %s", e)
-        record_failure("remaining", "vastai", str(e))
-    try:
-        from loom.tools.vercel import research_vercel_status
-        mcp.tool()(wrap_tool(research_vercel_status))
-        record_success("remaining", "research_vercel_status")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip vercel: %s", e)
-        record_failure("remaining", "vercel", str(e))
-    try:
-        from loom.tools.vuln_intel import research_vuln_intel
-        mcp.tool()(wrap_tool(research_vuln_intel))
-        record_success("remaining", "research_vuln_intel")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip vuln_intel: %s", e)
-        record_failure("remaining", "vuln_intel", str(e))
-    try:
         from loom.tools.webcheck_backend import research_web_check
         mcp.tool()(wrap_tool(research_web_check))
         record_success("remaining", "research_web_check")
     except (ImportError, AttributeError) as e:
         log.debug("skip webcheck_backend: %s", e)
         record_failure("remaining", "webcheck_backend", str(e))
-    try:
-        from loom.tools.workflow_engine import research_workflow_create, research_workflow_run, research_workflow_status
-        mcp.tool()(wrap_tool(research_workflow_create))
-        record_success("remaining", "research_workflow_create")
-        mcp.tool()(wrap_tool(research_workflow_run))
-        record_success("remaining", "research_workflow_run")
-        mcp.tool()(wrap_tool(research_workflow_status))
-        record_success("remaining", "research_workflow_status")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip workflow_engine: %s", e)
-        record_failure("remaining", "workflow_engine", str(e))
-    try:
-        from loom.tools.workflow_expander import research_workflow_coverage, research_workflow_generate
-        mcp.tool()(wrap_tool(research_workflow_coverage))
-        record_success("remaining", "research_workflow_coverage")
-        mcp.tool()(wrap_tool(research_workflow_generate))
-        record_success("remaining", "research_workflow_generate")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip workflow_expander: %s", e)
-        record_failure("remaining", "workflow_expander", str(e))
-    try:
-        from loom.tools.workflow_templates import research_workflow_get, research_workflow_list
-        mcp.tool()(wrap_tool(research_workflow_get))
-        record_success("remaining", "research_workflow_get")
-        mcp.tool()(wrap_tool(research_workflow_list))
-        record_success("remaining", "research_workflow_list")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip workflow_templates: %s", e)
-        record_failure("remaining", "workflow_templates", str(e))
-    try:
-        from loom.tools.yara_backend import research_yara_scan
-        mcp.tool()(wrap_tool(research_yara_scan))
-        record_success("remaining", "research_yara_scan")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip yara_backend: %s", e)
-        record_failure("remaining", "yara_backend", str(e))
-    log.info("registered remaining tools count=315")
+    log.info("registered remaining tools count=150")
