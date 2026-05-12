@@ -9,6 +9,8 @@ from urllib.parse import quote
 
 import httpx
 
+from loom.http_helpers import fetch_json, fetch_text
+
 logger = logging.getLogger("loom.tools.academic_integrity")
 
 _SEMANTIC_SCHOLAR_API = "https://api.semanticscholar.org/graph/v1/paper"
@@ -16,32 +18,6 @@ _CROSSREF_API = "https://api.crossref.org/works"
 _CROSSREF_JOURNALS = "https://api.crossref.org/journals"
 _PUBPEER_API = "https://pubpeer.com/v3/publications"
 _DOAJ_API = "https://doaj.org/api/search/journals"
-
-
-async def _get_json(
-    client: httpx.AsyncClient, url: str, timeout: float = 20.0
-) -> Any:
-    """Fetch JSON from URL with error handling."""
-    try:
-        resp = await client.get(url, timeout=timeout)
-        if resp.status_code == 200:
-            return resp.json()
-    except Exception as exc:
-        logger.debug("academic_integrity fetch failed: %s", exc)
-    return None
-
-
-async def _get_text(
-    client: httpx.AsyncClient, url: str, timeout: float = 15.0
-) -> str:
-    """Fetch text from URL with error handling."""
-    try:
-        resp = await client.get(url, timeout=timeout)
-        if resp.status_code == 200:
-            return resp.text
-    except Exception as exc:
-        logger.debug("academic_integrity text fetch failed: %s", exc)
-    return ""
 
 
 async def _analyze_citation_network(
@@ -55,7 +31,7 @@ async def _analyze_citation_network(
 
     # Fetch main paper
     url = f"{_SEMANTIC_SCHOLAR_API}/{paper_id}?fields=title,authors,references,citations,citationCount,year"
-    data = await _get_json(client, url, timeout=30.0)
+    data = await fetch_json(client, url, timeout=30.0)
 
     if not data:
         return {
@@ -163,7 +139,7 @@ async def _check_for_retractions(
 
     # Search Crossref for papers
     url = f"{_CROSSREF_API}?query={quote(query)}&rows={min(max_results, 50)}"
-    crossref_data = await _get_json(client, url, timeout=20.0)
+    crossref_data = await fetch_json(client, url, timeout=20.0)
 
     if not crossref_data or "message" not in crossref_data:
         return {
@@ -192,7 +168,7 @@ async def _check_for_retractions(
         doi = item.get("DOI", "")
         if doi:
             pubpeer_url = f"{_PUBPEER_API}?doi={quote(doi)}"
-            pubpeer_data = await _get_json(client, pubpeer_url, timeout=15.0)
+            pubpeer_data = await fetch_json(client, pubpeer_url, timeout=15.0)
 
             if pubpeer_data and isinstance(pubpeer_data, dict):
                 if "results" in pubpeer_data and isinstance(pubpeer_data["results"], list):
@@ -227,7 +203,7 @@ async def _check_journal_predatory(
 
     # Check DOAJ (Directory of Open Access Journals)
     doaj_url = f"{_DOAJ_API}/{quote(journal_name)}"
-    doaj_data = await _get_json(client, doaj_url, timeout=15.0)
+    doaj_data = await fetch_json(client, doaj_url, timeout=15.0)
 
     if doaj_data and isinstance(doaj_data, dict):
         if doaj_data.get("results"):
@@ -235,7 +211,7 @@ async def _check_journal_predatory(
 
     # Check Crossref for journal registration and metadata
     crossref_url = f"{_CROSSREF_JOURNALS}?query={quote(journal_name)}&rows=5"
-    crossref_data = await _get_json(client, crossref_url, timeout=15.0)
+    crossref_data = await fetch_json(client, crossref_url, timeout=15.0)
 
     if crossref_data and "message" in crossref_data:
         items = crossref_data.get("message", {}).get("items", [])
