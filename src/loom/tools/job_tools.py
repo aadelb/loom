@@ -48,6 +48,8 @@ async def research_job_submit(
         >>> # Later, poll status:
         >>> status = await research_job_status(job_id)
     """
+    if not _JOB_QUEUE_AVAILABLE:
+        return {"error": "Job queue not available", "tool": "research_job_submit"}
     try:
         queue = get_job_queue()
         job_id = await queue.submit(
@@ -82,6 +84,8 @@ async def research_job_status(job_id: str) -> dict[str, Any]:
         >>> status = await research_job_status("abc123")
         >>> print(status["status"])  # "running"
     """
+    if not _JOB_QUEUE_AVAILABLE:
+        return {"error": "Job queue not available", "tool": "research_job_status"}
     try:
         queue = get_job_queue()
         status = await queue.get_status(job_id)
@@ -109,6 +113,8 @@ async def research_job_result(job_id: str) -> dict[str, Any]:
         >>> if result["status"] == "completed":
         ...     data = result["result"]
     """
+    if not _JOB_QUEUE_AVAILABLE:
+        return {"error": "Job queue not available", "tool": "research_job_result"}
     try:
         queue = get_job_queue()
         result = await queue.get_result(job_id)
@@ -141,6 +147,8 @@ async def research_job_list(
         >>> for job in jobs["jobs"]:
         ...     print(job["job_id"], job["status"])
     """
+    if not _JOB_QUEUE_AVAILABLE:
+        return {"error": "Job queue not available", "tool": "research_job_list"}
     try:
         queue = get_job_queue()
         jobs = await queue.list_jobs(status=status, limit=limit)
@@ -170,6 +178,8 @@ async def research_job_cancel(job_id: str) -> dict[str, Any]:
         >>> result = await research_job_cancel("abc123")
         >>> print(result["success"])  # True
     """
+    if not _JOB_QUEUE_AVAILABLE:
+        return {"error": "Job queue not available", "tool": "research_job_cancel"}
     try:
         queue = get_job_queue()
         success = await queue.cancel(job_id)

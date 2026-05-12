@@ -2,20 +2,17 @@
 
 from __future__ import annotations
 
+import asyncio
 import ipaddress
-import asyncio
 import logging
-import asyncio
 import os
-import asyncio
 from typing import Any
 
 import httpx
-import asyncio
 
 logger = logging.getLogger("loom.tools.ip_intel")
 
-_IP_API_URL = "http://ip-api.com/json"
+_IP_API_URL = "https://ip-api.com/json"
 _IPINFO_URL = "https://ipinfo.io"
 _ABUSEIPDB_URL = "https://api.abuseipdb.com/api/v2/check"
 
@@ -44,7 +41,6 @@ async def research_ip_reputation(ip: str) -> dict[str, Any]:
     Returns:
         Dict with keys: ip, geolocation, abuse_score, is_tor_exit, reverse_dns
     """
-    await asyncio.sleep(0)
     # Validate IP
     if not _is_valid_ip(ip):
         return {
@@ -77,8 +73,8 @@ async def research_ip_reputation(ip: str) -> dict[str, Any]:
     abuseipdb_key = os.environ.get("ABUSEIPDB_API_KEY")
     if abuseipdb_key:
         try:
-            with httpx.Client(timeout=10.0) as client:
-                resp = client.get(
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                resp = await client.get(
                     _ABUSEIPDB_URL,
                     params={"ipAddress": ip, "maxAgeInDays": 90},
                     headers={"Key": abuseipdb_key, "Accept": "application/json"},
@@ -93,8 +89,8 @@ async def research_ip_reputation(ip: str) -> dict[str, Any]:
 
     # Query ip-api.com (free, no key, 45 req/min)
     try:
-        with httpx.Client(timeout=10.0) as client:
-            resp = client.get(f"{_IP_API_URL}/{ip}")
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(f"{_IP_API_URL}/{ip}")
             resp.raise_for_status()
             data = resp.json()
             if data.get("status") == "success":
@@ -123,7 +119,6 @@ async def research_ip_geolocation(ip: str) -> dict[str, Any]:
     Returns:
         Dict with keys: ip, country, region, city, lat, lon, timezone, isp, org
     """
-    await asyncio.sleep(0)
     # Validate IP
     if not _is_valid_ip(ip):
         return {
@@ -140,8 +135,8 @@ async def research_ip_geolocation(ip: str) -> dict[str, Any]:
         }
 
     try:
-        with httpx.Client(timeout=10.0) as client:
-            resp = client.get(f"{_IP_API_URL}/{ip}")
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(f"{_IP_API_URL}/{ip}")
             resp.raise_for_status()
             data = resp.json()
 

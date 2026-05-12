@@ -122,6 +122,7 @@ def research_invisible_web(
     """
     base_url = f"https://{domain}"
     max_paths = min(max(max_paths, 1), 100)
+    robots_sitemaps = []
 
     result: dict[str, Any] = {
         "domain": domain,
@@ -145,7 +146,7 @@ def research_invisible_web(
                         if resp.status_code == 200:
                             result["robots_disallowed"] = _parse_robots_disallowed(resp.text)
                             # Also extract sitemaps from robots.txt
-                            sitemaps = _extract_sitemaps_from_robots(resp.text)
+                            robots_sitemaps = _extract_sitemaps_from_robots(resp.text)
                 except (httpx.RequestError, httpx.TimeoutException):
                     pass
 
@@ -156,7 +157,7 @@ def research_invisible_web(
                     f"{base_url}/sitemap.xml",
                     f"{base_url}/sitemap_index.xml",
                     f"{base_url}/sitemap-news.xml",
-                ]
+                ] + robots_sitemaps
 
                 for sm_url in sitemaps_to_check:
                     try:

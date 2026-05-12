@@ -515,7 +515,7 @@ async def research_job_market(
         all_skills: list[str] = []
         for job in jobs:
             title = job.get("title", "")
-            description = job.get("title", "")  # Use title as proxy for description
+            description = job.get("description", "")
             skills = _extract_skills(f"{title} {description}")
             all_skills.extend(skills)
 

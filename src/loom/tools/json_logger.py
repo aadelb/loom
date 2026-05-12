@@ -18,7 +18,7 @@ class StructuredLogger:
     def __init__(self, log_dir: str | None = None):
         self.log_dir = Path(log_dir or Path.home() / ".loom" / "logs")
         self.log_dir.mkdir(parents=True, exist_ok=True)
-        self._lock = asyncio.Lock()
+        self._lock: asyncio.Lock | None = None
 
     async def write(
         self,
@@ -29,6 +29,8 @@ class StructuredLogger:
         error: str | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> None:
+        if self._lock is None:
+            self._lock = asyncio.Lock()
         async with self._lock:
             log_file = self.log_dir / datetime.now(UTC).strftime("%Y-%m-%d.jsonl")
             entry = {
@@ -170,7 +172,7 @@ def _get_log_stats(log_dir: Path) -> tuple[dict[str, Any], dict[str, Any], dict[
                             errors[t] = errors.get(t, 0) + 1
                         ts = entry.get("timestamp", "").split("T")[:2]
                         if len(ts) == 2:
-                            key = "".join(ts)
+                            key = "T".join(ts)
                             minutes[key] = minutes.get(key, 0) + 1
                     except (json.JSONDecodeError, ValueError):
                         pass

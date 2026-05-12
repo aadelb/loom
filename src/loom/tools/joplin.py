@@ -25,7 +25,7 @@ MAX_BODY_CHARS = 100000
 JOPLIN_REQUEST_TIMEOUT = 30
 
 # Notebook ID validation regex (UUID-like)
-_NOTEBOOK_ID_REGEX = re.compile(r"^[a-f0-9]{32}$", re.IGNORECASE)
+_NOTEBOOK_ID_REGEX = re.compile(r"^[a-fA-F0-9]{32}$")
 
 
 def _get_joplin_url() -> str:
@@ -86,7 +86,7 @@ async def research_save_note(
 
     # Build request
     api_url = f"{joplin_url}/api/notes"
-    params = {"token": joplin_token}
+    headers = {"X-API-Token": joplin_token}
 
     request_body = {
         "title": title,
@@ -98,10 +98,16 @@ async def research_save_note(
 
     try:
         async with httpx.AsyncClient(timeout=JOPLIN_REQUEST_TIMEOUT) as client:
-            response = await client.post(api_url, json=request_body, params=params)
+            response = await client.post(api_url, json=request_body, headers=headers)
             response.raise_for_status()
 
-            result = response.json()
+            try:
+                result = response.json()
+            except ValueError:
+                return {
+                    "error": "Joplin API returned invalid JSON response",
+                    "status": "failed",
+                }
             note_id = result.get("id", "")
 
             if not note_id:
@@ -176,14 +182,20 @@ async def research_list_notebooks() -> dict[str, Any]:
 
     # Build request
     api_url = f"{joplin_url}/api/folders"
-    params = {"token": joplin_token}
+    headers = {"X-API-Token": joplin_token}
 
     try:
         async with httpx.AsyncClient(timeout=JOPLIN_REQUEST_TIMEOUT) as client:
-            response = await client.get(api_url, params=params)
+            response = await client.get(api_url, headers=headers)
             response.raise_for_status()
 
-            result = response.json()
+            try:
+                result = response.json()
+            except ValueError:
+                return {
+                    "error": "Joplin API returned invalid JSON response",
+                    "notebooks": [],
+                }
             notebooks = []
 
             for folder in result.get("items", []):

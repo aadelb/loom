@@ -66,7 +66,16 @@ async def research_jailbreak_evolution_record(
         return result
     except (ValueError, TypeError) as e:
         logger.error("record_error error=%s", str(e))
-        return {"status": "error", "error": str(e)}
+        return {
+            "status": "error",
+            "strategy": strategy,
+            "model": model,
+            "version": model_version,
+            "success": success,
+            "hcs": hcs,
+            "timestamp": timestamp,
+            "error": str(e),
+        }
 
 
 async def research_jailbreak_evolution_get(
