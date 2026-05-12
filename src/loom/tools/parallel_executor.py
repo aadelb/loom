@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import importlib
+import inspect
 import logging
 import time
 from typing import Any
@@ -84,7 +85,14 @@ async def research_parallel_execute(
                 async def call_tool(fn, p, tn):
                     tool_start = time.perf_counter()
                     try:
-                        result = await asyncio.wait_for(fn(**p), timeout=timeout_seconds)
+                        # Check if function is async; if sync, run in executor
+                        if inspect.iscoroutinefunction(fn):
+                            result = await asyncio.wait_for(fn(**p), timeout=timeout_seconds)
+                        else:
+                            loop = asyncio.get_event_loop()
+                            result = await asyncio.wait_for(
+                                loop.run_in_executor(None, lambda: fn(**p)), timeout=timeout_seconds
+                            )
                         duration = (time.perf_counter() - tool_start) * 1000
                         return {
                             "tool": tn,
@@ -208,8 +216,19 @@ async def research_parallel_plan_and_execute(
         # Limit to max_parallel
         selected_tools = selected_tools[:max_parallel]
 
-        # Build tool specs with goal as input
-        tool_specs = [{"tool": tool, "params": {"goal": goal}} for tool in selected_tools]
+        # Build tool specs with goal as input (mapped to tool-specific param names)
+        param_mapping = {
+            "research_fetch": "url",
+            "research_spider": "urls",
+            "research_search": "query",
+            "research_github": "query",
+            "research_deep": "query",
+            "research_llm_summarize": "text",
+        }
+        tool_specs = []
+        for tool in selected_tools:
+            param_name = param_mapping.get(tool, "query")
+            tool_specs.append({"tool": tool, "params": {param_name: goal}})
 
         # Execute in parallel
         result = await research_parallel_execute(tool_specs, timeout_seconds=30)

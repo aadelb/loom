@@ -86,7 +86,7 @@ def _extract_pdf_text_pdftotext(pdf_bytes: bytes, start_page: int | None, end_pa
         cmd = ["pdftotext"]
 
         # Add page range if specified
-        if start_page is not None:
+        if start_page is not None and end_page is not None:
             cmd.extend(["-f", str(start_page), "-l", str(end_page)])
 
         cmd.extend([tmp_path, "-"])
@@ -161,30 +161,31 @@ async def research_pdf_extract(
 
     try:
         # Download PDF
-        with httpx.stream("GET", url, timeout=30.0) as response:
-            response.raise_for_status()
+        with httpx.Client() as client:
+            with client.stream("GET", url, timeout=30.0) as response:
+                response.raise_for_status()
 
-            # Check content-type
-            content_type = response.headers.get("content-type", "").lower()
-            if "pdf" not in content_type:
-                logger.warning(
-                    "pdf_download_wrong_type url=%s content_type=%s",
-                    url, content_type
-                )
-                # Continue anyway, might still be a PDF
+                # Check content-type
+                content_type = response.headers.get("content-type", "").lower()
+                if "pdf" not in content_type:
+                    logger.warning(
+                        "pdf_download_wrong_type url=%s content_type=%s",
+                        url, content_type
+                    )
+                    # Continue anyway, might still be a PDF
 
-            # Stream to temp file with size check
-            pdf_data = io.BytesIO()
-            for chunk in response.iter_bytes(chunk_size=65536):
-                pdf_data.write(chunk)
-                if pdf_data.tell() > MAX_PDF_SIZE_BYTES:
-                    return {
-                        **output,
-                        "error": f"PDF exceeds max size ({MAX_PDF_SIZE_BYTES} bytes)",
-                    }
+                # Stream to temp file with size check
+                pdf_data = io.BytesIO()
+                for chunk in response.iter_bytes(chunk_size=65536):
+                    pdf_data.write(chunk)
+                    if pdf_data.tell() > MAX_PDF_SIZE_BYTES:
+                        return {
+                            **output,
+                            "error": f"PDF exceeds max size ({MAX_PDF_SIZE_BYTES} bytes)",
+                        }
 
-            pdf_bytes = pdf_data.getvalue()
-            output["file_size_bytes"] = len(pdf_bytes)
+                pdf_bytes = pdf_data.getvalue()
+                output["file_size_bytes"] = len(pdf_bytes)
 
         logger.info("pdf_downloaded url=%s size=%d", url, len(pdf_bytes))
 
@@ -236,7 +237,10 @@ async def research_pdf_extract(
 
         # Set pages_extracted field
         if start_page is not None:
-            output["pages_extracted"] = f"{start_page}-{end_page}"
+            if start_page == end_page:
+                output["pages_extracted"] = str(start_page)
+            else:
+                output["pages_extracted"] = f"{start_page}-{end_page}"
         else:
             output["pages_extracted"] = "all"
 
@@ -311,7 +315,6 @@ async def research_pdf_search(url: str, query: str) -> dict[str, Any]:
 
         # Split text into lines for context
         lines = text.split("\n")
-        line_num = 0
 
         # Simple context window: 200 chars before and after match
         context_window = 200

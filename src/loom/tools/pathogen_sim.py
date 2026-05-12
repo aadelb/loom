@@ -108,6 +108,10 @@ async def research_pathogen_evolve(
         # Initialize population
         population = [{"text": _mutate(attack_payload, mutation_rate), "fitness": 0.0, "gen": 0} for _ in range(population_size)]
 
+        # Evaluate initial population
+        for ind in population:
+            ind["fitness"] = 1.0 if _test_defense(ind["text"], defense_type, defense) else 0.0
+
         curve = []
         best_variant = {"text": attack_payload, "fitness": 0.0, "gen": -1}
         successful_muts = set()
@@ -133,7 +137,7 @@ async def research_pathogen_evolve(
             # Selection & reproduction
             survivors = sorted(population, key=lambda x: x["fitness"], reverse=True)[: max(1, len(population) // 2)]
             offspring = []
-            while len(survivors) + len(offspring) < population_size:
+            while len(survivors) + len(offspring) <= population_size:
                 parent = random.choice(survivors)
                 offspring.append({"text": _mutate(parent["text"], mutation_rate), "fitness": 0.0, "gen": gen + 1})
 
@@ -152,7 +156,7 @@ async def research_pathogen_evolve(
                 defense_learned.extend(new_pats[:1])
 
         final_evasion = sum(ind["fitness"] for ind in population) / len(population)
-        winner = "attack" if curve[-1]["evasion_rate"] > 0.7 else ("defense" if curve[-1]["evasion_rate"] < 0.1 else "stalemate")
+        winner = "attack" if (curve and curve[-1]["evasion_rate"] > 0.7) else ("defense" if (curve and curve[-1]["evasion_rate"] < 0.1) else "stalemate")
 
         return {
             "original_payload": attack_payload[:100],

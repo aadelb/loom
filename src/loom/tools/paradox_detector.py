@@ -195,9 +195,9 @@ async def research_detect_paradox(prompt: str) -> dict:
                     }
                 )
 
-        # Risk score: average of detected paradoxes (0 if none)
+        # Risk score: maximum confusion potential of detected paradoxes (0 if none)
         total_risk = (
-            int(sum(f["confusion_potential"] for f in findings) / len(findings))
+            max(f["confusion_potential"] for f in findings)
             if findings
             else 0
         )
@@ -243,7 +243,7 @@ async def research_paradox_immunize(system_prompt: str) -> dict:
 
         # Build immunized prompt
         base_prompt = system_prompt
-        if not base_prompt.rstrip().endswith((".!", ".")):
+        if not base_prompt.rstrip().endswith((".", "!")):
             base_prompt += "."
 
         # Add defense clauses

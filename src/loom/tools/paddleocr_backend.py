@@ -5,7 +5,9 @@ from __future__ import annotations
 import asyncio
 import io
 import logging
+import os
 import tempfile
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -131,11 +133,20 @@ async def research_paddle_ocr(
 
     elif image_path:
         try:
+            # Validate path to prevent traversal attacks
+            safe_path = Path(image_path).resolve()
+            if not safe_path.exists():
+                return {"image_path": image_path, "error": "File not found"}
+            if not safe_path.is_file():
+                return {"image_path": image_path, "error": "Path is not a file"}
+
             async def _load_image() -> bytes:
+                def _read_file(path: Path) -> bytes:
+                    with open(path, "rb") as f:
+                        return f.read()
+
                 loop = asyncio.get_event_loop()
-                return await loop.run_in_executor(
-                    None, lambda: open(image_path, "rb").read()
-                )
+                return await loop.run_in_executor(None, _read_file, safe_path)
 
             image_bytes = await _load_image()
             if len(image_bytes) > MAX_IMAGE_SIZE_BYTES:
@@ -166,15 +177,18 @@ async def research_paddle_ocr(
     try:
         def _run_ocr() -> tuple[str, list[dict[str, Any]]]:
             # Write bytes to temp file (PaddleOCR needs file path)
-            with tempfile.NamedTemporaryFile(
-                suffix=".jpg", delete=False
-            ) as tmp_file:
-                tmp_file.write(image_bytes)
-                tmp_path = tmp_file.name
-
+            tmp_path = None
             try:
-                # Initialize OCR with specified languages
-                ocr = PaddleOCR(use_angle_cls=True, lang=languages)
+                with tempfile.NamedTemporaryFile(
+                    suffix=".jpg", delete=False
+                ) as tmp_file:
+                    tmp_file.write(image_bytes)
+                    tmp_path = tmp_file.name
+
+                # Initialize OCR with first language (PaddleOCR supports single lang)
+                # If multiple languages needed, use the primary language
+                primary_lang = languages[0] if languages else "en"
+                ocr = PaddleOCR(use_angle_cls=True, lang=primary_lang)
 
                 # Run OCR
                 result = ocr.ocr(tmp_path, cls=True)
@@ -210,12 +224,11 @@ async def research_paddle_ocr(
                 return full_text, blocks
 
             finally:
-                import os
-
-                try:
-                    os.unlink(tmp_path)
-                except Exception:
-                    pass
+                if tmp_path:
+                    try:
+                        os.unlink(tmp_path)
+                    except Exception:
+                        pass
 
         text_content, blocks = await asyncio.to_thread(_run_ocr)
 

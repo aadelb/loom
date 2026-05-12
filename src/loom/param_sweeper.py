@@ -130,6 +130,7 @@ class ParameterSweeper:
         values: list[float | int] | None = None,
         model_callback: Callable[[str, dict[str, Any]], Any] | None = None,
         model_name: str = "unknown",
+        max_concurrent: int | None = None,
     ) -> dict[str, Any]:
         """Sweep a single parameter dimension while holding others at defaults.
 
@@ -140,6 +141,7 @@ class ParameterSweeper:
             values: Specific values to test (uses defaults if None)
             model_callback: Async callable for model calls
             model_name: Name of the model
+            max_concurrent: Max concurrent requests (default 1 for single dimension)
 
         Returns:
             Same format as sweep() but for single dimension
@@ -157,6 +159,9 @@ class ParameterSweeper:
                 values = self.TOP_P_RANGE
             else:  # max_tokens
                 values = self.MAX_TOKENS_RANGE
+
+        if max_concurrent is None:
+            max_concurrent = 1
 
         # Build combinations with single dimension varying
         combinations = []
@@ -179,7 +184,7 @@ class ParameterSweeper:
                 )
 
         # Run tests
-        results = await self._run_tests_with_limit(prompt, combinations, model_callback, 1)
+        results = await self._run_tests_with_limit(prompt, combinations, model_callback, max_concurrent)
 
         # Analyze results
         analysis = self.analyze_results(results)

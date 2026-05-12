@@ -139,9 +139,10 @@ async def research_parameter_sweep(
             result = await sweeper.sweep_single_dim(
                 prompt=prompt,
                 strategy=strategy,
-                dimension=dimension or "temperature",
+                dimension=dimension,
                 model_callback=real_model_callback,
                 model_name=model_name,
+                max_concurrent=max_concurrent,
             )
 
         logger.info(

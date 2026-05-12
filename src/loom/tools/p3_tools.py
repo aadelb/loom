@@ -130,11 +130,16 @@ async def research_model_comparator(
                 fastest = min(response_times.items(), key=lambda x: x[1])[0] if response_times else ""
                 most_verbose = max(word_counts.items(), key=lambda x: x[1])[0] if word_counts else ""
 
-                # Calculate word overlap
-                all_words = set()
-                for words in response_words.values():
-                    all_words.update(words)
-                overlap_score = len(all_words) / len(set().union(*response_words.values())) if response_words else 0.0
+                # Calculate word overlap (Jaccard similarity: common words / union of all words)
+                if response_words and len(response_words) > 1:
+                    word_sets = list(response_words.values())
+                    intersection = set.intersection(*word_sets) if word_sets else set()
+                    union = set()
+                    for words in word_sets:
+                        union.update(words)
+                    overlap_score = len(intersection) / len(union) if len(union) > 0 else 0.0
+                else:
+                    overlap_score = 0.0
 
                 return {
                     "prompt": prompt,
@@ -348,7 +353,7 @@ async def research_wiki_event_correlator(
             ) as client:
                 wiki_data = await _get_json(
                     client,
-                    f"{_WIKIPEDIA_API}?{__build_query_string(wiki_params)}",
+                    f"{_WIKIPEDIA_API}?{_build_query_string(wiki_params)}",
                 )
 
                 if wiki_data and "query" in wiki_data:
@@ -426,7 +431,7 @@ async def research_wiki_event_correlator(
         }
 
 
-def __build_query_string(params: dict[str, Any]) -> str:
+def _build_query_string(params: dict[str, Any]) -> str:
     """Build URL query string from dict."""
     return "&".join(f"{k}={v}" for k, v in params.items())
 
