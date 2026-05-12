@@ -64,6 +64,11 @@ def _score_agreement(
     Analyzes search results from multiple providers and determines
     if sources agree, disagree, or provide mixed/ambiguous evidence.
 
+    WARNING: This uses simple keyword matching, which has limitations:
+    - Cannot handle negations ("X does NOT cause Y" contains "cause")
+    - May misclassify conflicting statements in same snippet
+    - Relies on English keywords
+
     Args:
         results_list: list of search result lists (one per provider attempt)
 
@@ -100,6 +105,7 @@ def _score_agreement(
 
     # Classify evidence as supporting, contradicting, or neutral
     # This is a simplified heuristic based on keywords
+    # NOTE: This is naive and produces false positives on negations
     supporting_keywords = [
         "confirm", "support", "verify", "prove", "evidence", "true", "yes",
         "agree", "right", "correct", "valid", "authentic", "real"
@@ -124,6 +130,7 @@ def _score_agreement(
         elif has_contradicting and not has_supporting:
             contradicting.append(snippet_info)
         elif has_supporting and has_contradicting:
+            # Both keywords found — likely conflicting statement or negation
             mixed.append(snippet_info)
 
     # Determine verdict based on source agreement
@@ -300,6 +307,8 @@ async def research_fact_verify(
         # Filter by minimum confidence threshold
         if confidence < min_confidence:
             verdict = "unverified"
+            # Note: confidence is NOT changed here. Low confidence + "unverified" verdict
+            # creates an intentional contract: "unverified" means we don't trust the result
 
         # Generate evidence summary
         summary_parts = []
@@ -311,6 +320,8 @@ async def research_fact_verify(
             summary_parts.append(
                 f"{len(contradicting)} contradicting source(s) found"
             )
+        # Note: mixed evidence is counted but not separately reported in summary
+        # It contributes to the verdict but is not distinguished in the text
         if not summary_parts:
             summary_parts.append("Insufficient evidence to verify claim")
 
