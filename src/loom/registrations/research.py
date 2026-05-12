@@ -98,7 +98,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
 
     # ── Stealth Detection Tools ──
     try:
-        from loom.tools.stealth_detector import research_stealth_score, research_stealth_score_heuristic, research_stealth_detect_comparison
+        from loom.tools.stealth_score import research_stealth_score, research_stealth_score_heuristic, research_stealth_detect_comparison
         mcp.tool()(wrap_tool(research_stealth_score))
         record_success("research", "research_stealth_score")
         mcp.tool()(wrap_tool(research_stealth_score_heuristic))

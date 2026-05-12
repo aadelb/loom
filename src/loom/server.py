@@ -302,10 +302,6 @@ with suppress(ImportError):
     _optional_tools["potency_meter"] = potency_meter_tools
     record_optional_module_loaded("potency_meter")
 
-with suppress(ImportError):
-    from loom.tools import stealth_scorer as stealth_scorer_tools
-    _optional_tools["stealth_scorer"] = stealth_scorer_tools
-    record_optional_module_loaded("stealth_scorer")
 
 with suppress(ImportError):
     from loom.tools import model_sentiment as model_sentiment_tools
@@ -362,10 +358,6 @@ with suppress(ImportError):
     _optional_tools["strategy_oracle"] = strategy_oracle_tools
     record_optional_module_loaded("strategy_oracle")
 
-with suppress(ImportError):
-    from loom.tools import stealth_detect as stealth_detect_tools
-    _optional_tools["stealth_detect"] = stealth_detect_tools
-    record_optional_module_loaded("stealth_detect")
 
 with suppress(ImportError):
     from loom.tools import tool_recommender_tool as recommender_tools
@@ -438,10 +430,6 @@ with suppress(ImportError):
     _optional_tools["cicd"] = research_cicd_run
     record_optional_module_loaded("cicd")
 
-with suppress(ImportError):
-    from loom.stealth_detector import research_stealth_detect as stealth_det_fn
-    _optional_tools["stealth_detector"] = stealth_det_fn
-    record_optional_module_loaded("stealth_detector")
 
 with suppress(ImportError):
     from loom.doc_parser import research_ocr_advanced, research_pdf_advanced, research_document_analyze

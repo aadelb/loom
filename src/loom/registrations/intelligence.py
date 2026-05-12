@@ -360,11 +360,13 @@ def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
 
     # ── Privacy & Fingerprinting Tools ──
     try:
-        from loom.tools.privacy_advanced import research_browser_privacy_score, research_network_anomaly
+        from loom.tools.privacy_advanced import research_browser_privacy_score, research_network_anomaly, research_metadata_strip
         mcp.tool()(wrap_tool(research_browser_privacy_score))
         record_success("intelligence", "research_browser_privacy_score")
         mcp.tool()(wrap_tool(research_network_anomaly))
         record_success("intelligence", "research_network_anomaly")
+        mcp.tool()(wrap_tool(research_metadata_strip))
+        record_success("intelligence", "research_metadata_strip")
     except (ImportError, AttributeError) as e:
         log.debug("skip privacy_advanced: %s", e)
         record_failure("intelligence", "privacy_advanced", str(e))
@@ -377,15 +379,6 @@ def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip privacy_tools: %s", e)
         record_failure("intelligence", "privacy_tools", str(e))
-
-    # ── Metadata & Data Sanitization Tools ──
-    try:
-        from loom.tools.metadata_tools import research_metadata_strip
-        mcp.tool()(wrap_tool(research_metadata_strip))
-        record_success("intelligence", "research_metadata_strip")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip metadata_tools: %s", e)
-        record_failure("intelligence", "metadata_tools", str(e))
 
     # ── USB & Hardware Monitoring Tools ──
     try:
