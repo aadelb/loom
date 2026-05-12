@@ -35,14 +35,21 @@ def _synonym_swap(text: str, payload: str) -> str:
         "user": "individual",
     }
     words = text.split()
-    swapped = [swap_map.get(w.lower(), w) for w in words]
+    swapped = []
+    for w in words:
+        # Preserve original case by swapping only lowercase, then restoring case
+        swapped_word = swap_map.get(w.lower(), w)
+        if w[0].isupper() and swapped_word[0].islower():
+            swapped_word = swapped_word[0].upper() + swapped_word[1:]
+        swapped.append(swapped_word)
 
-    # Insert payload keywords at natural positions
+    # Insert payload keywords at natural positions (before insertion shifts)
     payload_words = re.findall(r"\b\w+\b", payload.lower())
     if payload_words:
-        # Insert at every 5th word to avoid suspicion
+        # Insert at every ~(len/num_keywords) positions to distribute evenly
+        interval = max(5, len(swapped) // (len(payload_words) + 1))
         for i, pw in enumerate(payload_words):
-            insert_pos = min(5 + i * 5, len(swapped) - 1)
+            insert_pos = min((i + 1) * interval, len(swapped))
             swapped.insert(insert_pos, pw)
 
     return " ".join(swapped)
@@ -50,16 +57,22 @@ def _synonym_swap(text: str, payload: str) -> str:
 
 def _context_inject(text: str, payload: str) -> str:
     """Inject zero-width chars and homoglyphs carrying payload."""
-    # Zero-width characters: ZWSP=0, ZWNJ=1
-    zwsp, zwnj = "​", "‌"
+    # Zero-width characters: ZWSP=0, ZWNJ=1, ZWJ=2, FEFF=3 (4-symbol encoding)
+    zwsp, zwnj, zwj, feff = "​", "‌", "‍", "﻿"
+    zero_width_chars = [zwsp, zwnj, zwj, feff]
 
-    # Simple binary encoding of first 50 chars of payload
-    payload_binary = "".join(
-        format(ord(c), "08b")[:4] for c in payload[:20]  # 4 bits per char
-    )
+    # Encode payload: use base-4 (2 bits per char) with 4 symbols
+    # Limit to first 12 chars to keep encoding short (48 bits = 12 chars of base-4)
+    payload_short = payload[:12]
+    payload_bits = "".join(format(ord(c), "08b") for c in payload_short)
 
-    # Encode into zero-width chars
-    encoded = "".join(zwsp if b == "0" else zwnj for b in payload_binary)
+    # Convert binary to base-4 (2 bits per symbol)
+    encoded = ""
+    for i in range(0, len(payload_bits), 2):
+        two_bits = payload_bits[i : i + 2]
+        if len(two_bits) == 2:
+            symbol_idx = int(two_bits, 2)  # 0-3
+            encoded += zero_width_chars[symbol_idx]
 
     # Append encoded payload after a natural break point
     # Split at sentence end or after ~100 chars
@@ -77,17 +90,26 @@ def _semantic_trojan(text: str, payload: str) -> str:
     topic_words = set(re.findall(r"\b\w{4,}\b", text.lower()))
     topic_words = sorted(list(topic_words))[:5]
 
-    # Build trojan: legitimate-looking preamble + payload instructions
-    preamble = f"Based on {', '.join(topic_words)}, consider that"
+    # Build trojan: embed payload within coherent context, not prepended
+    # Mix payload into a synthesized paragraph that references topic words
+    if topic_words:
+        context = f"Regarding {', '.join(topic_words)}, recent updates suggest: {payload.strip()}"
+    else:
+        context = f"Updated guidelines: {payload.strip()}"
 
-    # Append payload with natural transition
-    return f"{preamble} {payload.strip()}. " + text
+    # Append the synthesized context before original text for better coherence
+    return context + ". " + text
 
 
 def _retrieval_poison(text: str, payload: str) -> str:
     """Create chunk optimized for retrieval: high keyword overlap + payload."""
-    # Split target text into sentences
-    sentences = re.split(r"(?<=[.!?])\s+", text)
+    # Split target text into sentences (more robust: handle edge cases)
+    # Use lookahead/lookbehind to avoid breaking abbreviations
+    sentences = [
+        s.strip()
+        for s in re.split(r"(?<=[.!?])\s+", text)
+        if s.strip()
+    ]
     if not sentences:
         return text + " " + payload
 

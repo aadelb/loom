@@ -34,6 +34,14 @@ def _validate_email(email: str) -> bool:
     return bool(_EMAIL_REGEX.match(email))
 
 
+def _sanitize_header(value: str) -> str:
+    """Remove newline/carriage return characters from email headers.
+
+    Prevents email header injection via CRLF.
+    """
+    return value.replace("\r", "").replace("\n", "").replace("\x00", "")
+
+
 async def research_email_report(
     to: str,
     subject: str,
@@ -65,7 +73,8 @@ async def research_email_report(
             "status": "failed",
         }
 
-    # Validate subject length
+    # Validate and sanitize subject
+    subject = _sanitize_header(subject)
     if len(subject) > MAX_SUBJECT_CHARS:
         return {
             "error": f"subject exceeds {MAX_SUBJECT_CHARS} chars",
@@ -73,7 +82,7 @@ async def research_email_report(
             "status": "failed",
         }
 
-    # Validate body length
+    # Validate body length (no sanitization needed for body content)
     if len(body) > MAX_BODY_CHARS:
         return {
             "error": f"body exceeds {MAX_BODY_CHARS} chars",
@@ -128,12 +137,12 @@ async def research_email_report(
 
         except smtplib.SMTPAuthenticationError:
             return False, "SMTP authentication failed (invalid credentials)"
-        except smtplib.SMTPException as exc:
-            return False, f"SMTP error: {exc!s}"
+        except smtplib.SMTPException:
+            return False, "SMTP server error (check credentials and network)"
         except TimeoutError:
             return False, "SMTP connection timeout"
-        except Exception as exc:
-            return False, f"unexpected error: {exc!s}"
+        except Exception:
+            return False, "unexpected error during email send"
 
     success, message = await loop.run_in_executor(None, _send_email)
 
