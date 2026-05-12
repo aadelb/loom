@@ -195,9 +195,14 @@ def _calculate_statistics(salaries: list[int]) -> dict[str, int]:
         return {"min": 0, "median": 0, "max": 0}
 
     sorted_salaries = sorted(salaries)
+    n = len(sorted_salaries)
+    if n % 2 == 1:
+        median = sorted_salaries[n // 2]
+    else:
+        median = (sorted_salaries[n // 2 - 1] + sorted_salaries[n // 2]) // 2
     return {
         "min": sorted_salaries[0],
-        "median": sorted_salaries[len(sorted_salaries) // 2],
+        "median": median,
         "max": sorted_salaries[-1],
     }
 

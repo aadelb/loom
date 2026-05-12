@@ -119,9 +119,13 @@ def _parse_feed(xml_content: str, url: str) -> dict[str, Any]:
             if not published:
                 published = (item_elem.findtext("published") or "").strip()
 
-            author = (item_elem.findtext("atom:author/atom:name", namespaces) or "").strip()
+            author_elem = item_elem.find("atom:author", namespaces)
+            if author_elem is not None:
+                author = (author_elem.findtext("atom:name", namespaces) or "").strip()
+            else:
+                author = (item_elem.findtext("author") or "").strip()
             if not author:
-                author = (item_elem.findtext("author") or "").strip() or None
+                author = None
 
             categories = []
             for cat_elem in item_elem.findall("atom:category", namespaces):
@@ -270,13 +274,12 @@ def research_rss_search(
                 summary = item.get("summary", "").lower()
 
                 if query_lower in title or query_lower in summary:
-                    # Simple relevance: count query term occurrences
+                    # Simple relevance: count query term occurrences (title matches weighted 2x)
                     title_matches = title.count(query_lower)
                     summary_matches = summary.count(query_lower)
-                    relevance = (title_matches * 2 + summary_matches) / max(
-                        len(query_lower.split()),
-                        1,
-                    )
+                    total_matches = title_matches * 2 + summary_matches
+                    # Normalize to 0-10 scale for meaningful ranking
+                    relevance = min(total_matches, 10)
 
                     all_results.append(
                         {

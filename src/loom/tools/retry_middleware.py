@@ -67,11 +67,15 @@ async def research_retry_execute(
     for attempt in range(max_retries + 1):
         try:
             # Dynamically import the tool module
-            module_name = "loom.tools." + tool_name.rsplit("_", 1)[0]
-            module = importlib.import_module(module_name)
-
-            # Get the function
-            func = getattr(module, tool_name)
+            # Try full tool name first, then fall back to prefix extraction
+            try:
+                module = importlib.import_module(f"loom.tools.{tool_name}")
+                func = getattr(module, tool_name)
+            except (ImportError, AttributeError):
+                # Fallback: extract module name from tool name (last underscore)
+                module_name = "loom.tools." + tool_name.rsplit("_", 1)[0]
+                module = importlib.import_module(module_name)
+                func = getattr(module, tool_name)
 
             # Call the tool with params
             if inspect.iscoroutinefunction(func):
@@ -103,7 +107,7 @@ async def research_retry_execute(
 
             if not should_retry:
                 # Last attempt or non-retryable error
-                _stats["total_retries"] += sum(1 for _ in range(max_retries))
+                _stats["total_retries"] += attempt
                 _stats["final_failures"] += 1
                 _stats["tools_retry_count"][tool_name] = (
                     _stats["tools_retry_count"].get(tool_name, 0) + 1
@@ -119,7 +123,7 @@ async def research_retry_execute(
                 }
 
             # Wait before retry with exponential backoff
-            wait_time = backoff_base * (2 ** attempt)
+            wait_time = backoff_base * (2 ** (attempt - 1))
             _stats["total_retries"] += 1
             logger.info(
                 f"Retry attempt {attempt + 1} for {tool_name} after {error_type}, "

@@ -90,8 +90,8 @@ async def research_circuit_bypass_plan(model: str, target_circuit: str = "auto")
             if not target:
                 raise ValueError(f"Circuit '{target_circuit}' not found")
 
-        success = max(10.0, (1.0 - target["difficulty"]) * 100 - target["threshold"] * 15)
-        detection = min(100.0, target["threshold"] * 100 + 20)
+        success = min(100.0, max(10.0, (1.0 - target["difficulty"]) * 100 - target["threshold"] * 15))
+        detection = max(20.0, min(100.0, (1.0 - target["threshold"]) * 100))
 
         return {
             "model": model,
@@ -102,7 +102,7 @@ async def research_circuit_bypass_plan(model: str, target_circuit: str = "auto")
             "detection_risk": detection,
             "phase_sequence": [
                 {"phase": 1, "description": "Probe circuit activation", "technique": "contrastive_analysis"},
-                {"phase": 2, "description": f"Deploy: {target['attacks'][0]}", "technique": target["attacks"][0]},
+                {"phase": 2, "description": f"Deploy: {target['attacks'][0] if target['attacks'] else 'fallback'}", "technique": target["attacks"][0] if target["attacks"] else "unknown"},
                 {"phase": 3, "description": "Monitor refusal patterns", "technique": "response_analysis"},
                 {"phase": 4, "description": "Iterate or fallback", "technique": "adaptive_refinement"},
             ],

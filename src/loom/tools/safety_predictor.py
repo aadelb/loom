@@ -237,24 +237,19 @@ def _estimate_deployment_probability(model: str, defense: str, months: int) -> f
     # Base probability increases with model maturity
     base_prob = 0.65 + (0.05 * len(MODEL_UPDATE_HISTORY[model]))
 
-    # Adjust for research signals
+    # Adjust for research signals (accumulate if multiple match)
     signal_boost = 0.0
     for signal in RESEARCH_SIGNALS:
         if defense in signal["defenses_predicted"]:
-            signal_boost = 0.15
+            signal_boost += 0.15
 
     return min(base_prob + signal_boost, 0.95)
 
 
 def _estimate_days_to_deployment(model: str, months: int) -> int:
     """Estimate days until deployment based on model's typical update frequency."""
-    # Average update frequency per model
-    history = MODEL_UPDATE_HISTORY[model]
-    if len(history) < 2:
-        default_months = months
-    else:
-        # Calculate average months between updates
-        default_months = months
+    # Use provided months estimate (already computed from stage info)
+    default_months = months
 
     # Add randomness within ±2 weeks
     import random
@@ -284,7 +279,6 @@ def _map_attacks_at_risk(
     for cat in categories:
         for defense in predicted_defenses:
             if defense["defense"] in attack_mapping.get(cat, []):
-                days_until = int(defense["estimated_deploy_date"].replace("-", ""))
                 at_risk.append(
                     {
                         "attack": cat,

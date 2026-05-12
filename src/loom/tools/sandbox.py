@@ -50,6 +50,12 @@ async def research_sandbox_analyze(
 ) -> dict[str, Any]:
     """Static analysis of code for dangerous patterns (no execution).
 
+    Args:
+        code: Source code to analyze
+        language: Programming language (currently only "python" supported)
+        timeout_seconds: Reserved for future execution timeout enforcement (not used in static analysis)
+        allow_network: Reserved for future dynamic analysis mode (not used in static analysis)
+
     Returns: {syntax_valid, dangerous_patterns, exfiltration_vectors, risk_score, classification, safe_to_execute}
     """
     try:
@@ -79,14 +85,21 @@ async def research_sandbox_analyze(
                             }
                         )
 
-        risk = (
-            min(10, (sum(f["severity"] for f in findings) / max(1, len(findings))))
-            if findings
-            else 0
-        )
-        classify = ["safe", "suspicious", "dangerous", "critical"][
-            min(3, int(risk / 3.5))
-        ]
+        # Accumulate severity scores (not average, which penalizes multiple threats).
+        # Multiple threats compound risk linearly.
+        risk_score = sum(f["severity"] for f in findings)
+        # Normalize to 0-10 scale: divide by 1.5 for good threshold spread
+        risk = min(10, risk_score / 1.5) if findings else 0
+
+        # Classify by explicit thresholds
+        if risk <= 2:
+            classify = "safe"
+        elif risk <= 5:
+            classify = "suspicious"
+        elif risk <= 8:
+            classify = "dangerous"
+        else:
+            classify = "critical"
 
         return {
             "language": language,

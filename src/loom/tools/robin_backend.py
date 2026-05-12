@@ -150,7 +150,7 @@ async def _run_robin_subprocess(
             "output": output,
         }
 
-    except TimeoutError:
+    except subprocess.TimeoutExpired:
         return {
             "success": False,
             "error": "robin subprocess timeout",
@@ -212,7 +212,7 @@ async def _search_ahmia(query: str, timeout_secs: int) -> dict[str, Any]:
                 ],
             }
 
-    except TimeoutError:
+    except httpx.TimeoutException:
         return {"success": False, "error": "Ahmia search timeout"}
     except Exception as e:
         logger.warning("ahmia_search_error: %s", e)
@@ -263,7 +263,7 @@ async def _search_darksearch(query: str, timeout_secs: int) -> dict[str, Any]:
                 ],
             }
 
-    except TimeoutError:
+    except httpx.TimeoutException:
         return {"success": False, "error": "DarkSearch timeout"}
     except Exception as e:
         logger.warning("darksearch_error: %s", e)
@@ -302,15 +302,17 @@ async def research_robin_scan(
         - sources_checked: list of data sources queried
         - error: error message if scan failed (optional)
     """
-    # Validate inputs
+    # Validate inputs (store originals for error response)
+    original_query = query
+    original_scan_type = scan_type
     try:
         query = _validate_query(query)
         scan_type = _validate_scan_type(scan_type)
         timeout = _validate_timeout(timeout)
     except ValueError as e:
         return {
-            "query": query,
-            "scan_type": scan_type,
+            "query": original_query,
+            "scan_type": original_scan_type,
             "success": False,
             "error": str(e),
             "sources_checked": [],
@@ -343,7 +345,9 @@ async def research_robin_scan(
     ahmia_task = _search_ahmia(query, timeout)
     darksearch_task = _search_darksearch(query, timeout)
 
-    ahmia_result, darksearch_result = await asyncio.gather(ahmia_task, darksearch_task)
+    results = await asyncio.gather(ahmia_task, darksearch_task, return_exceptions=True)
+    ahmia_result = results[0] if isinstance(results[0], dict) else {"success": False, "error": str(results[0])}
+    darksearch_result = results[1] if isinstance(results[1], dict) else {"success": False, "error": str(results[1])}
 
     # Aggregate results
     findings = []
