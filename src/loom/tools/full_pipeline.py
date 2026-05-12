@@ -23,12 +23,17 @@ import logging
 from typing import Any
 
 from loom.providers.base import LLMResponse
-from loom.tools.hcs_scorer import research_hcs_score
-from loom.tools.hcs_multi_scorer import research_hcs_score_full
-from loom.tools.llm import _call_with_cascade
-from loom.tools.query_builder import research_build_query
-from loom.tools.prompt_reframe import research_auto_reframe, _apply_strategy, _STRATEGIES
-from loom.tools.strategy_cache import research_cached_strategy
+
+try:
+    from loom.tools.hcs_scorer import research_hcs_score
+    from loom.tools.hcs_multi_scorer import research_hcs_score_full
+    from loom.tools.llm import _call_with_cascade
+    from loom.tools.query_builder import research_build_query
+    from loom.tools.prompt_reframe import research_auto_reframe, _apply_strategy, _STRATEGIES
+    from loom.tools.strategy_cache import research_cached_strategy
+    _PIPELINE_DEPS = True
+except ImportError:
+    _PIPELINE_DEPS = False
 
 logger = logging.getLogger("loom.tools.full_pipeline")
 
