@@ -102,6 +102,10 @@ def score_to_grade(value: float, *, scale: int = 100) -> str:
     Returns:
         letter grade (A, B, C, D, or F)
     """
+    # Guard against invalid scale values
+    if scale <= 0:
+        return "F"
+
     # Normalize to 0-100 if needed
     normalized = (value / scale) * 100.0 if scale != 100 else value
     normalized = clamp(normalized, 0.0, 100.0)

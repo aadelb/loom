@@ -33,7 +33,7 @@ async def fetch_json(
 
     Returns:
         Parsed JSON object on success (dict, list, str, int, float, bool, or None).
-        Returns empty dict {} on failure (timeout, HTTP error, parse error).
+        Returns None on failure (timeout, HTTP error, parse error).
     """
     try:
         resp = await client.get(
@@ -44,14 +44,15 @@ async def fetch_json(
                 return resp.json()
             except (ValueError, httpx.ResponseNotRead):
                 logger.debug("fetch_json decode error: %s", url)
-                return {}
+                return None
+        else:
+            logger.debug("fetch_json non_200 url=%s status=%d", url, resp.status_code)
+            return None
     except httpx.TimeoutException:
         logger.debug("fetch_json timeout: %s", url)
-    except httpx.HTTPStatusError as e:
-        logger.debug("fetch_json HTTP %d: %s", e.response.status_code, url)
     except Exception as exc:
         logger.debug("fetch_json failed: %s: %s", type(exc).__name__, exc)
-    return {}
+    return None
 
 
 async def fetch_text(

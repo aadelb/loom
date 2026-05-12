@@ -11,6 +11,7 @@ and generic queries with length bounds.
 from __future__ import annotations
 
 import ipaddress
+import math
 import re
 from typing import Any
 
@@ -153,12 +154,15 @@ def validate_timeout(
         Clamped timeout value as float
 
     Raises:
-        ValidationError: if timeout cannot be converted to float
+        ValidationError: if timeout cannot be converted to float or is NaN/Inf
     """
     try:
         t = float(timeout)
     except (TypeError, ValueError) as exc:
         raise ValidationError(f"timeout must be numeric: {exc}") from None
+
+    if math.isnan(t) or math.isinf(t):
+        return min_val
 
     if t < min_val:
         return min_val
@@ -177,9 +181,9 @@ def validate_port(port: int) -> int:
         The validated port number
 
     Raises:
-        ValidationError: if port is out of range
+        ValidationError: if port is not an integer or is out of range
     """
-    if not isinstance(port, int):
+    if isinstance(port, bool) or not isinstance(port, int):
         raise ValidationError("port must be an integer")
 
     if port < 1 or port > 65535:

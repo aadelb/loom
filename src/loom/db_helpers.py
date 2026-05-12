@@ -67,6 +67,10 @@ def init_db(path: Path, schema: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
 
     with sqlite3.connect(str(path)) as conn:
+        # Enable WAL mode for concurrent access and foreign keys
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA foreign_keys=ON")
+
         # Create a lock table to detect first-time init
         conn.execute(
             """
@@ -87,16 +91,15 @@ def init_db(path: Path, schema: str) -> None:
             try:
                 conn.executescript(schema)
                 conn.commit()
-                log.info("Initialized database at %s", path)
-            except sqlite3.DatabaseError as e:
-                log.error("Failed to initialize schema at %s: %s", path, e)
-                raise
-            finally:
-                # Mark initialization complete
+                # Mark initialization complete AFTER successful schema execution
                 conn.execute(
                     "INSERT INTO _loom_init_lock (initialized_at) VALUES (CURRENT_TIMESTAMP)"
                 )
                 conn.commit()
+                log.info("Initialized database at %s", path)
+            except sqlite3.DatabaseError as e:
+                log.error("Failed to initialize schema at %s: %s", path, e)
+                raise
 
 
 @contextmanager
