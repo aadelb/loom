@@ -72,7 +72,7 @@ async def _get_db() -> aiosqlite.Connection:
 
 
 @asynccontextmanager
-async def _db_context():
+async def _db_context() -> Any:
     """Context manager for database operations with automatic cleanup."""
     conn = await _get_db()
     try:
