@@ -339,6 +339,54 @@ src/loom/                        61 core modules:
 | `JOPLIN_TOKEN` | - | Joplin API token |
 | **Specialized** | | |
 | `TOR_CONTROL_PASSWORD` | - | Tor control port password |
+| **Authentication & CORS** | | |
+| `LOOM_API_KEY` | - | Single shared API key for bearer auth |
+| `LOOM_API_KEYS` | - | Comma-separated valid API keys |
+| `LOOM_ALLOW_ANONYMOUS` | `false` | Allow unauthenticated access |
+| `LOOM_AUTH_REQUIRED` | `false` | Enforce authentication |
+| `LOOM_JWT_SECRET` | - | JWT token signing secret |
+| `LOOM_CORS_ENABLED` | `true` | Enable CORS headers |
+| `LOOM_CORS_ORIGINS` | `localhost:5173,localhost:3000` | Allowed CORS origins |
+| **Logging & Debugging** | | |
+| `LOOM_LOG_LEVEL` | `INFO` | Logging level |
+| `LOG_FORMAT` | `text` | Log format (text/json) |
+| `LOOM_DEBUG` | `false` | Debug mode |
+| **Database & Storage** | | |
+| `DATABASE_URL` | `postgresql://...localhost/loom_db` | PostgreSQL connection |
+| `REDIS_URL` | `redis://localhost:6379` | Redis connection URL |
+| `LOOM_DB_ENCRYPTION_KEY` | - | Fernet key for DB encryption |
+| `LOOM_DB_ENCRYPTION_PASSWORD` | - | Password for key derivation |
+| **Billing & Economy** | | |
+| `LOOM_BILLING_ENABLED` | `false` | Enable billing system |
+| `LOOM_TOKEN_ECONOMY` | `false` | Enable token metering |
+| `LOOM_USER_ID` | `anonymous` | User ID for billing |
+| `LOOM_CUSTOMER_ID` | `default` | Customer/tenant ID |
+| **Performance** | | |
+| `LOOM_CACHE_THRESHOLD` | `0.95` | Semantic cache similarity threshold |
+| `LOOM_MAX_RETRIES` | `3` | Max retry attempts |
+| `LOOM_CPU_WORKERS` | `4` | CPU worker thread count |
+| **Audit** | | |
+| `LOOM_AUDIT_SECRET` | - | HMAC secret for audit logs |
+| `LOOM_AUDIT_DIR` | - | Audit log directory |
+| **LLM Provider Endpoints** | | |
+| `GROQ_ENDPOINT` | `api.groq.com/openai/v1` | Groq API endpoint |
+| `NVIDIA_NIM_ENDPOINT` | `integrate.api.nvidia.com/v1` | NVIDIA NIM endpoint |
+| `DEEPSEEK_ENDPOINT` | `api.deepseek.com/v1` | DeepSeek endpoint |
+| `OPENAI_BASE_URL` | `api.openai.com/v1` | OpenAI endpoint |
+| `VLLM_LOCAL_URL` | `localhost:9001/v1` | Local vLLM endpoint |
+| **Third-Party APIs** | | |
+| `ABUSEIPDB_API_KEY` | - | AbuseIPDB API key |
+| `HIBP_API_KEY` | - | Have I Been Pwned key |
+| `SHODAN_API_KEY` | - | Shodan search key |
+| `GITHUB_TOKEN` | - | GitHub API token |
+| `SLACK_BOT_TOKEN` | - | Slack bot token |
+| `CENSYS_API_ID` / `CENSYS_API_SECRET` | - | Censys API credentials |
+| `MISP_URL` / `MISP_API_KEY` | - | MISP threat intel |
+| `INTELOWL_URL` / `INTELOWL_API_KEY` | - | IntelOwl server |
+| `OPENCTI_URL` / `OPENCTI_API_KEY` | - | OpenCTI threat intel |
+| **Observability** | | |
+| `OTEL_ENABLED` | `false` | Enable OpenTelemetry |
+| `OTEL_ENDPOINT` | `localhost:4317` | OTEL collector endpoint |
 
 ## Testing
 
