@@ -70,10 +70,15 @@ async def research_deploy_status() -> dict[str, Any]:
             if lines:
                 result["last_deploy"] = json.loads(lines[-1]).get("timestamp")
                 today = datetime.now(UTC).date()
-                result["restarts_today"] = sum(
-                    1 for line in lines
-                    if datetime.fromisoformat(json.loads(line).get("timestamp", "")).date() == today
-                )
+                count = 0
+                for line in lines:
+                    try:
+                        ts = json.loads(line).get("timestamp", "")
+                        if ts and datetime.fromisoformat(ts).date() == today:
+                            count += 1
+                    except (json.JSONDecodeError, ValueError):
+                        continue
+                result["restarts_today"] = count
         except (OSError, json.JSONDecodeError, ValueError):
             pass
 
