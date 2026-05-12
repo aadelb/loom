@@ -30,9 +30,17 @@ from datetime import datetime, timezone
 from typing import Any
 
 from loom.config import get_config
-from loom.tools.llm import _call_with_cascade
-from loom.tools.prompt_reframe import research_auto_reframe, research_refusal_detector
 from loom.validators import EXTERNAL_TIMEOUT_SECS
+
+try:
+    from loom.tools.llm import _call_with_cascade
+    from loom.tools.prompt_reframe import research_auto_reframe, research_refusal_detector
+    _DEPS_AVAILABLE = True
+except ImportError:
+    _DEPS_AVAILABLE = False
+    _call_with_cascade = None  # type: ignore[assignment]
+    research_auto_reframe = None  # type: ignore[assignment]
+    research_refusal_detector = None  # type: ignore[assignment]
 
 logger = logging.getLogger("loom.expert_engine")
 
@@ -511,9 +519,8 @@ async def _iterative_refinement(
         # Build refined query focusing on top gaps
         gap_query = f"{query} {' '.join(gaps[:3])}"
 
-        # research_deep is a sync function, so call it directly
         try:
-            refinement_result = research_deep(gap_query, depth=1, max_cost_usd=0.15)
+            refinement_result = await research_deep(gap_query, depth=1, max_cost_usd=0.15)
         except Exception as exc:
             logger.warning("research_deep_in_refinement failed: %s", exc)
             refinement_result = {"error": str(exc)}
