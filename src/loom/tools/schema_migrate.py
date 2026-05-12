@@ -39,8 +39,11 @@ async def research_migrate_status() -> dict[str, Any]:
                 async with aiosqlite.connect(str(db_path)) as db:
                     cursor = await db.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
                     tables = [row[0] for row in await cursor.fetchall()]
-                    cursor = await db.execute("SELECT version FROM schema_version ORDER BY applied_at DESC LIMIT 1")
-                    current_v = (await cursor.fetchone() or (0,))[0]
+                    try:
+                        cursor = await db.execute("SELECT version FROM schema_version ORDER BY applied_at DESC LIMIT 1")
+                        current_v = (await cursor.fetchone() or (0,))[0]
+                    except Exception:
+                        current_v = 0
                     target_v = _TARGET_VERSIONS.get(db_path.stem, 1)
                     databases.append({"name": db_path.stem, "path": str(db_path), "tables": tables, "current_version": current_v, "target_version": target_v, "needs_migration": current_v < target_v})
             except Exception as e:

@@ -5,7 +5,7 @@ from typing import Any
 
 logger = logging.getLogger("loom.tools.security_checklist")
 
-async def research_security_audit() -> dict[str, Any]:
+async def research_security_checklist() -> dict[str, Any]:
     """Run 15 security checks and return pass/fail report."""
     try:
         checks = []
@@ -32,4 +32,4 @@ async def research_security_audit() -> dict[str, Any]:
         passed = sum(1 for c in checks if c["status"] == "pass")
         return {"score": int(passed / len(checks) * 100), "passed": passed, "failed": len(checks) - passed, "checks": checks}
     except Exception as exc:
-        return {"error": str(exc), "tool": "research_security_audit"}
+        return {"error": str(exc), "tool": "research_security_checklist"}

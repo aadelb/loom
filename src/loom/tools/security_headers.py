@@ -66,8 +66,8 @@ async def research_security_headers(url: str = "", domain: str = "") -> dict[str
 
     try:
         # Fetch the URL
-        with httpx.Client(timeout=EXTERNAL_TIMEOUT_SECS, follow_redirects=True) as client:
-            response = client.head(target_url)
+        async with httpx.AsyncClient(timeout=EXTERNAL_TIMEOUT_SECS, follow_redirects=True) as client:
+            response = await client.head(target_url)
 
         headers = response.headers
 

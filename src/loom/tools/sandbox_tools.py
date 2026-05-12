@@ -51,6 +51,8 @@ async def research_sandbox_run(
     env: dict[str, str] | None = None,
     working_dir: str | None = None,
 ) -> TextContent:
+    if TextContent is None:
+        raise ImportError("MCP TextContent unavailable; mcp.types import failed")
     """Run command in isolated Docker container.
 
     Executes a command in an ephemeral Docker container with:
@@ -197,6 +199,8 @@ async def research_sandbox_status() -> TextContent:
     Example:
         status = await research_sandbox_status()
     """
+    if TextContent is None:
+        raise ImportError("MCP TextContent unavailable; mcp.types import failed")
     try:
         sandbox = await get_sandbox()
         docker_available = is_docker_available()
@@ -211,13 +215,7 @@ async def research_sandbox_status() -> TextContent:
 
         # Try to get Docker version
         if docker_available:
-            try:
-                client = await sandbox._get_docker_client()
-                version_info = await client.version()
-                response["docker_version"] = version_info.get("Version", "unknown")
-            except Exception as e:
-                logger.warning("sandbox_version_check_failed error=%s", e)
-                response["docker_version"] = "unknown"
+            response["docker_version"] = await sandbox.get_docker_version()
         else:
             response["docker_version"] = None
 
@@ -233,6 +231,7 @@ async def research_sandbox_status() -> TextContent:
                 {
                     "error_code": "INTERNAL_ERROR",
                     "message": str(e),
+                    "success": False,
                 }
             ),
         )

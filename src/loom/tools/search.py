@@ -35,7 +35,7 @@ _FREE_PROVIDERS = frozenset({
 
 def _apply_reputation_filter(result: dict[str, Any]) -> dict[str, Any]:
     """Apply reputation filtering to search results."""
-    if "results" in result and isinstance(result["results"], list):
+    if filter_by_reputation and "results" in result and isinstance(result["results"], list):
         result["results"] = filter_by_reputation(result["results"])
     return result
 

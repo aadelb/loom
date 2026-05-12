@@ -107,7 +107,6 @@ async def research_screenshot(
                 "selector": selector,
             }
 
-    browser = None
     try:
         # Launch Playwright browser
         async with async_playwright() as p:
@@ -211,10 +210,3 @@ async def research_screenshot(
             "full_page": full_page,
             "selector": selector,
         }
-
-    finally:
-        if browser:
-            try:
-                await browser.close()
-            except Exception as close_error:
-                logger.warning("screenshot_browser_close_error: %s", close_error)

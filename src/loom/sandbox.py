@@ -137,6 +137,23 @@ class DockerSandbox:
             finally:
                 self._docker = None
 
+    async def get_docker_version(self) -> str:
+        """Get Docker version string.
+
+        Returns:
+            Docker version string, or "unknown" if unavailable
+
+        Raises:
+            Exception: If Docker client fails to connect
+        """
+        try:
+            client = await self._get_docker_client()
+            version_info = await client.version()
+            return version_info.get("Version", "unknown")
+        except Exception as e:
+            logger.warning("docker_version_fetch_failed error=%s", e)
+            return "unknown"
+
     async def run(
         self,
         command: list[str],
