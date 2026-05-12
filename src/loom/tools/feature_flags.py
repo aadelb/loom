@@ -4,11 +4,41 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 
 logger = logging.getLogger("loom.tools.feature_flags")
+
+
+class FlagCheckResponse(TypedDict, total=False):
+    """Typed response for flag check operations."""
+    flag: str
+    enabled: bool
+    description: str
+    last_toggled: str | None
+    error: str
+    available: list[str]
+
+
+class FlagToggleResponse(TypedDict, total=False):
+    """Typed response for flag toggle operations."""
+    flag: str
+    enabled: bool
+    toggled_at: str
+    description: str
+    error: str
+    available: list[str]
+
+
+class FlagListResponse(TypedDict, total=False):
+    """Typed response for flag list operations."""
+    flags: list[dict[str, Any]]
+    total: int
+    enabled_count: int
+    disabled_count: int
+    error: str
 
 # Default feature flags
 DEFAULT_FLAGS = {
@@ -27,24 +57,55 @@ def _ensure_flags_file() -> None:
     if not FLAGS_FILE.exists():
         flags = {name: {"enabled": enabled, "description": "", "last_toggled": None}
                  for name, enabled in DEFAULT_FLAGS.items()}
-        FLAGS_FILE.write_text(json.dumps(flags, indent=2))
+        try:
+            _write_flags_atomic(flags)
+        except (OSError, json.JSONDecodeError) as e:
+            logger.error(f"Failed to initialize flags file: {e}", exc_info=True)
+            raise
 
 
 def _load_flags() -> dict[str, Any]:
-    """Load flags from file."""
+    """Load flags from file with validation."""
     _ensure_flags_file()
-    return json.loads(FLAGS_FILE.read_text())
+    try:
+        content = FLAGS_FILE.read_text()
+        flags = json.loads(content)
+        if not isinstance(flags, dict):
+            raise ValueError("Flags file must contain a JSON object")
+        return flags
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON in flags file: {e}", exc_info=True)
+        raise
+
+
+def _write_flags_atomic(flags: dict[str, Any]) -> None:
+    """Write flags to file atomically with fsync.
+
+    Uses atomic rename pattern: write temp file, fsync, then rename.
+    """
+    FLAGS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    tmp = FLAGS_FILE.with_stem(FLAGS_FILE.stem + f".tmp.{os.getpid()}")
+    try:
+        # Write to temp file
+        tmp.write_text(json.dumps(flags, indent=2))
+        # Fsync to ensure data is written to disk
+        with tmp.open("r") as f:
+            os.fsync(f.fileno())
+        # Atomic rename
+        os.replace(str(tmp), str(FLAGS_FILE))
+    except (OSError, ValueError) as e:
+        logger.error(f"Failed to write flags atomically: {e}", exc_info=True)
+        if tmp.exists():
+            tmp.unlink()
+        raise
 
 
 def _save_flags(flags: dict[str, Any]) -> None:
     """Save flags to file atomically."""
-    _ensure_flags_file()
-    tmp = FLAGS_FILE.with_stem(FLAGS_FILE.stem + ".tmp")
-    tmp.write_text(json.dumps(flags, indent=2))
-    tmp.replace(FLAGS_FILE)
+    _write_flags_atomic(flags)
 
 
-async def research_flag_check(flag_name: str) -> dict[str, Any]:
+def research_flag_check(flag_name: str) -> FlagCheckResponse:
     """Check if a feature flag is enabled.
 
     Args:
@@ -66,10 +127,11 @@ async def research_flag_check(flag_name: str) -> dict[str, Any]:
             "last_toggled": flag_data.get("last_toggled"),
         }
     except Exception as exc:
-        return {"error": str(exc), "tool": "research_flag_check"}
+        logger.error(f"Error checking flag '{flag_name}': {exc}", exc_info=True)
+        return {"error": str(exc)}
 
 
-async def research_flag_toggle(flag_name: str, enabled: bool, description: str = "") -> dict[str, Any]:
+def research_flag_toggle(flag_name: str, enabled: bool, description: str = "") -> FlagToggleResponse:
     """Enable or disable a feature flag.
 
     Args:
@@ -92,7 +154,7 @@ async def research_flag_toggle(flag_name: str, enabled: bool, description: str =
         flags[flag_name]["last_toggled"] = now
 
         _save_flags(flags)
-        logger.info("flag_toggled", flag=flag_name, enabled=enabled, timestamp=now)
+        logger.info(f"flag_toggled: {flag_name}={enabled} at {now}")
 
         return {
             "flag": flag_name,
@@ -101,10 +163,11 @@ async def research_flag_toggle(flag_name: str, enabled: bool, description: str =
             "description": flags[flag_name].get("description", ""),
         }
     except Exception as exc:
-        return {"error": str(exc), "tool": "research_flag_toggle"}
+        logger.error(f"Error toggling flag '{flag_name}': {exc}", exc_info=True)
+        return {"error": str(exc)}
 
 
-async def research_flag_list() -> dict[str, Any]:
+def research_flag_list() -> FlagListResponse:
     """List all feature flags and their status.
 
     Returns:
@@ -132,4 +195,5 @@ async def research_flag_list() -> dict[str, Any]:
             "disabled_count": disabled_count,
         }
     except Exception as exc:
-        return {"error": str(exc), "tool": "research_flag_list"}
+        logger.error(f"Error listing flags: {exc}", exc_info=True)
+        return {"error": str(exc)}

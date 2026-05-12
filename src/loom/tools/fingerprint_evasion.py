@@ -28,7 +28,7 @@ async def research_fingerprint_evasion_test(
 
     Args:
         anonymizer_config: Type of anonymizer config to test
-            - "default": Standard fingerprint collection (uses real attributes)
+            - "default": Standard fingerprint collection (randomizes 20% of attributes)
             - "strict": Aggressive randomization (randomizes 50% of attributes)
             - "custom": Custom configuration (randomizes 30% of attributes)
         test_iterations: Number of fingerprint generations (2-50, default 5)
@@ -132,7 +132,7 @@ def _generate_synthetic_fingerprints(
     all_attributes = set()
 
     # Randomization rates by config
-    randomization_rate = {"default": 0.0, "strict": 0.5, "custom": 0.3}[config]
+    randomization_rate = {"default": 0.2, "strict": 0.5, "custom": 0.3}[config]
 
     for i in range(iterations):
         fp = _generate_single_fingerprint(
@@ -182,7 +182,7 @@ def _generate_single_fingerprint(
         "hardwareConcurrency": str(random.choice(hardware_concurrency)),
         "deviceMemory": str(random.choice(device_memory)),
         "vendor": random.choice(vendors),
-        "doNotTrack": random.choice(["1", "0", None]),
+        "doNotTrack": random.choice(["1", "0"]),  # Skip None to match real browser behavior
         "colorDepth": str(random.choice(color_depths)),
         "screenResolution": random.choice(resolutions),
     }
@@ -240,40 +240,51 @@ def _compute_evasion_metrics(
         # Count unique values (higher = better randomization)
         unique_count = len(set(values))
         uniqueness_ratio = unique_count / len(values)
-        randomization_rates[attr] = round(uniqueness_ratio * 100, 2)
+        randomization_pct = round(uniqueness_ratio * 100, 2)
+        randomization_rates[attr] = randomization_pct
 
-        # Calculate Shannon entropy for this attribute
+        # Calculate Shannon entropy for this attribute (correct formula: skip p=0 terms)
         counter = Counter(values)
         entropy = 0.0
         total_values = len(values)
         for count in counter.values():
             prob = count / total_values
-            entropy -= prob * math.log2(prob + 1e-10)
+            if prob > 0:  # Skip zero-probability terms (limit as p→0 is 0)
+                entropy -= prob * math.log2(prob)
 
         consistency_by_type[attr] = {
             "entropy": round(entropy, 4),
             "unique_values": unique_count,
             "total_samples": total_values,
-            "randomization_rate": round(uniqueness_ratio * 100, 2),
+            "randomization_rate": randomization_pct,
         }
 
         total_entropy += entropy
 
     # Compute overall effectiveness score (0-100)
-    # Based on average randomization rate
-    avg_randomization = (
-        sum(randomization_rates.values()) / len(randomization_rates)
-        if randomization_rates
-        else 0.0
+    # Weighted by entropy + uniqueness: purely uniform distribution = 100%
+    import math as math_module
+    attr_effectiveness = []
+    for attr in attributes:
+        if attr in consistency_by_type:
+            entropy = consistency_by_type[attr]["entropy"]
+            # Max entropy for this attribute = log2(num_fingerprints) for perfect uniform
+            max_entropy = math_module.log2(len(fingerprints)) if len(fingerprints) > 1 else 0
+            # Normalize entropy to 0-1 scale
+            normalized_entropy = entropy / max_entropy if max_entropy > 0 else 0.0
+            attr_effectiveness.append(normalized_entropy)
+
+    # Effectiveness: average normalized entropy across all attributes
+    effectiveness_score = round(
+        (sum(attr_effectiveness) / len(attr_effectiveness) * 100) if attr_effectiveness else 0.0,
+        2
     )
 
-    # Effectiveness: combination of uniqueness and entropy
-    # Perfect randomization = 100%, no randomization = 0%
-    effectiveness_score = round(min(avg_randomization, 100.0), 2)
-
-    # Average entropy across all attributes
+    # Average entropy across all attributes (normalized to max possible)
+    # Max entropy = log2(num_fingerprints) for perfect uniform distribution
+    max_entropy_per_attr = math.log2(len(fingerprints)) if len(fingerprints) > 1 else 1.0
     avg_entropy = (
-        round(total_entropy / len(attributes), 4)
+        round(total_entropy / (len(attributes) * max_entropy_per_attr), 4)
         if attributes
         else 0.0
     )

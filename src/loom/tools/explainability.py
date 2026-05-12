@@ -57,12 +57,12 @@ STRATEGY_MECHS = {
     "role_assumption": ("Request alternate persona", ["claude", "llama"], "role_assumption"),
     "instruction_hierarchy": ("Complex chains override earlier steps", ["gpt", "gemini"], "instruction_hierarchy"),
     "xml_encoding": ("Wrap in XML tags for parsing priority", ["claude"], "xml_parsing_priority"),
-    "reasoning_exposure": ("Leverage extended reasoning mode", ["gpt", "deepseek"], "reasoning_before_safety"),
+    "reasoning_exposure": ("Leverage extended reasoning mode", ["gpt"], "reasoning_bypass"),
     "multi_turn_escalation": ("Gradually escalate over conversation", ["claude", "gemini"], "continuous_assessment_decay"),
-    "code_context_confusion": ("Frame as code documentation", ["deepseek", "gpt"], "code_first_bias"),
-    "token_smuggling": ("Hide in token-level encoding", ["deepseek", "gpt"], "token_exposure"),
+    "code_context_confusion": ("Frame as code documentation", ["deepseek", "gpt"], "instruction_hierarchy"),
+    "token_smuggling": ("Hide in token-level encoding", ["deepseek"], "token_exposure"),
     "context_poisoning": ("Inject malicious context", ["gemini"], "grounding_confusion"),
-    "language_switching": ("Use low-resource language", ["llama"], "language_switching"),
+    "language_switching": ("Use low-resource language", ["llama"], "instruction_following_default"),
 }
 
 
@@ -96,29 +96,46 @@ async def research_explain_bypass(
             if strategy_lower in ALL_STRATEGIES:
                 mech_info = ("Custom strategy", list(MODEL_VULNS.keys()), "unknown")
             else:
-                return {"strategy": strategy, "model": target_model, "error": f"Unknown: {strategy}", "confidence": 0}
+                return {
+                    "strategy": strategy,
+                    "model": target_model,
+                    "error": f"Unknown strategy: {strategy}",
+                    "confidence": 0,
+                }
 
         mechanism, targets, vuln_key = mech_info
 
-        # Auto-detect model from response
+        # Auto-detect model from response (word boundary matching)
         if target_model == "auto":
+            import re
+
             for model in ["claude", "gpt", "deepseek", "gemini", "llama"]:
-                if model.lower() in response_text.lower():
+                if re.search(rf"\b{model}\b", response_text, re.IGNORECASE):
                     target_model = model
                     break
             else:
                 target_model = "claude"  # Default fallback
+                logger.debug("Auto-detection failed, defaulting to claude")
 
         target_model = target_model.lower()
-        vulns = MODEL_VULNS.get(target_model, MODEL_VULNS["claude"])
+        if target_model not in MODEL_VULNS:
+            logger.warning(f"Unknown model {target_model}, defaulting to claude")
+            target_model = "claude"
 
-        # Calculate confidence
+        vulns = MODEL_VULNS[target_model]
+
+        # Calculate confidence: check if vulnerability actually exists
         is_target = target_model in targets
+        vuln_exists = vuln_key in vulns
         vuln_exploited = vulns.get(vuln_key, f"Unknown: {vuln_key}")
-        confidence = 50 + (25 if is_target else 0) + (15 if len(response_text) > 50 else 0) + (10 if vuln_key != "unknown" else 0)
+        response_substantial = len(response_text) > 50
+        confidence = 50 + (25 if is_target else 0) + (15 if response_substantial else 0) + (10 if vuln_exists else 0)
 
-        # Find alternatives
-        alternatives = [s for s, (_, t, _) in STRATEGY_MECHS.items() if s != strategy_lower and target_model in t]
+        # Find alternatives: only look in STRATEGY_MECHS for safety
+        alternatives = [
+            s for s, (_, t, _) in STRATEGY_MECHS.items()
+            if s != strategy_lower and target_model in t
+        ]
 
         return {
             "strategy": strategy,
@@ -131,7 +148,43 @@ async def research_explain_bypass(
             "alternative_strategies": alternatives[:3],
         }
     except Exception as exc:
-        return {"error": str(exc), "tool": "research_explain_bypass"}
+        logger.error(f"Error in research_explain_bypass: {exc}", exc_info=True)
+        return {
+            "error": str(exc),
+            "tool": "research_explain_bypass",
+            "strategy": strategy,
+            "model": target_model,
+        }
+
+
+# Constants for difficulty calculation
+_DIFFICULTY_BASE = 10
+_DIFFICULTY_DIVISOR = 2
+_MAX_DETAIL_LOW = 2
+_MAX_DETAIL_HIGH = 1
+
+# Model-specific attack surface descriptions
+_ATTACK_SURFACES = {
+    "claude": ["XML parsing priority", "Continuous assessment decay", "Helpfulness-safety tradeoff"],
+    "gpt": ["RLHF reward hacking", "Vision-text confusion", "Extended reasoning mode"],
+    "deepseek": ["Thinking tag exposure", "Code context prioritization", "Token-level manipulation"],
+    "gemini": ["MoE routing confusion", "Grounding gaps", "Google service assumption"],
+    "llama": ["Open weights reverse-engineering", "RL undoing", "Minimal safety baseline"],
+}
+
+# Default attack surface for unknown models
+_DEFAULT_ATTACK_SURFACES = ["System prompt injection", "Context window manipulation", "Role assumption"]
+
+# Valid detail levels
+_VALID_DETAIL_LEVELS = {"low", "medium", "high"}
+
+# Universal defense mechanisms
+_DEFENSE_MECHANISMS = [
+    "Input validation and sanitization",
+    "Safety training with adversarial examples",
+    "Multiple independent safety layers",
+    "Adversarial robustness testing",
+]
 
 
 async def research_vulnerability_map(
@@ -153,43 +206,40 @@ async def research_vulnerability_map(
     """
     try:
         model = model.lower()
+
+        # Validate model
         if model not in MODEL_VULNS:
+            logger.warning(f"Unknown model {model}, defaulting to claude")
             model = "claude"
+
+        # Validate detail level
+        detail_level = detail_level.lower()
+        if detail_level not in _VALID_DETAIL_LEVELS:
+            logger.warning(f"Invalid detail_level {detail_level}, defaulting to medium")
+            detail_level = "medium"
 
         vulns = MODEL_VULNS[model]
 
-        # Find optimal strategies
+        # Find optimal strategies for this model
         optimal = [s for s, (_, t, _) in STRATEGY_MECHS.items() if model in t]
 
-        # Attack surfaces (model-specific)
-        attack_surfaces = {
-            "claude": ["XML parsing priority", "Continuous assessment decay", "Helpfulness-safety tradeoff"],
-            "gpt": ["RLHF reward hacking", "Vision-text confusion", "Extended reasoning mode"],
-            "deepseek": ["Thinking tag exposure", "Code context prioritization", "Token-level manipulation"],
-            "gemini": ["MoE routing confusion", "Grounding gaps", "Google service assumption"],
-            "llama": ["Open weights reverse-engineering", "RL undoing", "Minimal safety baseline"],
-        }.get(model, ["System prompt injection", "Context window manipulation", "Role assumption"])
+        # Get attack surfaces for this model
+        attack_surfaces = _ATTACK_SURFACES.get(model, _DEFAULT_ATTACK_SURFACES).copy()
 
-        # Difficulty (inverse of vulnerability count)
-        difficulty = max(1, 10 - (len(vulns) // 2))
+        # Calculate difficulty (inverse of vulnerability count)
+        difficulty = max(1, _DIFFICULTY_BASE - (len(vulns) // _DIFFICULTY_DIVISOR))
 
-        # Apply detail level
+        # Apply detail level filtering
         if detail_level == "low":
-            attack_surfaces = attack_surfaces[:2]
-            optimal = optimal[:1]
-        elif detail_level == "high":
-            pass  # Return all data
+            attack_surfaces = attack_surfaces[:_MAX_DETAIL_LOW]
+            optimal = optimal[:_MAX_DETAIL_HIGH]
+        # "medium" and "high" return full data
 
         return {
             "model": model,
             "attack_surfaces": attack_surfaces,
             "known_weaknesses": list(vulns.values())[:8],
-            "defense_mechanisms": [
-                "Input validation and sanitization",
-                "Safety training with adversarial examples",
-                "Multiple independent safety layers",
-                "Adversarial robustness testing",
-            ],
+            "defense_mechanisms": _DEFENSE_MECHANISMS.copy(),
             "optimal_strategies": optimal,
             "difficulty_rating": difficulty,
             "last_updated": datetime.now(UTC).isoformat(),
@@ -197,4 +247,9 @@ async def research_vulnerability_map(
             "detail_level": detail_level,
         }
     except Exception as exc:
-        return {"error": str(exc), "tool": "research_vulnerability_map"}
+        logger.error(f"Error in research_vulnerability_map: {exc}", exc_info=True)
+        return {
+            "error": str(exc),
+            "tool": "research_vulnerability_map",
+            "model": model,
+        }

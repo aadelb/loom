@@ -51,7 +51,9 @@ async def _search_google_fact_check(
         # Try to get from config
         try:
             from loom.config import get_config
-            api_key = get_config().get("GOOGLE_AI_KEY")
+            config = get_config()
+            # ConfigModel is a Pydantic object, use model_dump() for dict access
+            api_key = config.model_dump().get("GOOGLE_AI_KEY")
         except Exception:
             logger.debug("get_config failed")
 
@@ -84,7 +86,11 @@ async def _search_google_fact_check(
 async def _search_snopes_politifact_factcheck(
     client: httpx.AsyncClient, claim: str
 ) -> list[dict[str, Any]]:
-    """Search Snopes, PolitiFact, and FactCheck.org via DuckDuckGo."""
+    """Search Snopes, PolitiFact, and FactCheck.org via DuckDuckGo.
+
+    Note: DuckDuckGo is used as a fallback. For production use, consider using
+    the research_search tool with site-specific searches or dedicated APIs.
+    """
     url = (
         f"https://duckduckgo.com/html/?q={quote(claim)} "
         f"(site:snopes.com OR site:politifact.com OR site:factcheck.org)"
@@ -95,13 +101,20 @@ async def _search_snopes_politifact_factcheck(
 
     sources = []
 
-    # Extract URLs from HTML (very basic parsing)
+    # Extract URLs from HTML with improved pattern matching
+    # Handles both href="..." and href='...' formats
     url_pattern = re.compile(
-        r'href=["\']?(https?://(?:snopes|politifact|factcheck)\.org[^\s"\'<>]+)',
+        r'href\s*=\s*["\']?(https?://[^"\'<>\s]+(?:snopes|politifact|factcheck)[^"\'<>\s]*)',
         re.IGNORECASE,
     )
+    seen_urls = set()
     for match in url_pattern.finditer(html):
         found_url = match.group(1)
+        # Avoid duplicates
+        if found_url in seen_urls:
+            continue
+        seen_urls.add(found_url)
+
         source_name = "Snopes"
         if "politifact" in found_url.lower():
             source_name = "PolitiFact"
@@ -141,9 +154,12 @@ async def _search_wikipedia_for_claim(
         snippet = re.sub(r"<[^>]+>", "", snippet)  # Remove HTML tags
 
         if title:
+            # Wikipedia URLs use underscores for spaces, not percent-encoding
+            # Use quote() with safe='/' to preserve URL structure
+            wiki_title = quote(title.replace(" ", "_"), safe="_")
             sources.append({
                 "source": f"Wikipedia: {title}",
-                "url": f"https://en.wikipedia.org/wiki/{quote(title)}",
+                "url": f"https://en.wikipedia.org/wiki/{wiki_title}",
                 "assessment": "Reference source",
                 "snippet": snippet[:200],
             })
@@ -194,7 +210,7 @@ def _aggregate_assessments(sources: list[dict[str, Any]]) -> tuple[str, float]:
     if not sources:
         return "unverified", 0.0
 
-    # Count assessment types (case-insensitive, partial matching)
+    # Count assessment types with word-boundary matching to avoid substring false positives
     supported_count = 0
     refuted_count = 0
     mixed_count = 0
@@ -202,29 +218,45 @@ def _aggregate_assessments(sources: list[dict[str, Any]]) -> tuple[str, float]:
     for source in sources:
         assessment = (source.get("assessment") or "").lower()
 
-        # Match positive assessments
-        if any(x in assessment for x in ["true", "correct", "yes", "support"]):
+        # Use word-boundary patterns to avoid substring false positives
+        # e.g., "partially false" should not match "false"
+        if any(
+            re.search(rf"\b({x})\b", assessment)
+            for x in ["true", "correct", "yes", "supported"]
+        ):
             supported_count += 1
-        # Match negative assessments
-        elif any(x in assessment for x in ["false", "incorrect", "no", "refut"]):
+        elif any(
+            re.search(rf"\b({x})\b", assessment)
+            for x in ["false", "incorrect", "no", "refuted", "misleading"]
+        ):
             refuted_count += 1
-        # Match mixed/partial
-        elif any(x in assessment for x in ["mixed", "partial", "mostly"]):
+        elif any(
+            re.search(rf"\b({x})\b", assessment)
+            for x in ["mixed", "partial", "mostly", "conflicting"]
+        ):
             mixed_count += 1
 
     total = supported_count + refuted_count + mixed_count
     if total == 0:
         return "unverified", 0.0
 
-    # Calculate confidence (0-1 based on assessment clarity)
+    # Calculate confidence: ratio of assessed sources to total sources
+    # Higher confidence only if strong consensus
     if supported_count > 0 and refuted_count == 0 and mixed_count == 0:
-        return "supported", min(1.0, supported_count / max(1, len(sources)))
+        # All clear assessments are supportive
+        confidence = min(1.0, supported_count / len(sources))
+        return "supported", round(confidence, 2)
     elif refuted_count > 0 and supported_count == 0 and mixed_count == 0:
-        return "refuted", min(1.0, refuted_count / max(1, len(sources)))
+        # All clear assessments are refutative
+        confidence = min(1.0, refuted_count / len(sources))
+        return "refuted", round(confidence, 2)
     elif mixed_count > 0 or (supported_count > 0 and refuted_count > 0):
-        return "mixed", min(1.0, (supported_count + refuted_count) / max(1, len(sources)))
+        # Conflicting assessments
+        confidence = min(1.0, (supported_count + refuted_count) / len(sources))
+        return "mixed", round(confidence, 2)
     else:
-        return "unverified", 0.5
+        # Insufficient clear assessments
+        return "unverified", 0.0
 
 
 async def research_fact_check(
@@ -259,17 +291,21 @@ async def research_fact_check(
                 headers={"User-Agent": "Loom-Research/1.0"},
                 timeout=30.0,
             ) as client:
-                # Run all searches in parallel
-                google_task = _search_google_fact_check(client, claim)
-                snopes_task = _search_snopes_politifact_factcheck(client, claim)
-                wiki_task = _search_wikipedia_for_claim(client, claim)
-                scholar_task = _search_semantic_scholar_for_claim(client, claim)
-
-                google_sources, snopes_sources, wiki_sources, scholar_sources = (
-                    await asyncio.gather(
-                        google_task, snopes_task, wiki_task, scholar_task
-                    )
+                # Run all searches in parallel with exception handling
+                # If one source times out, continue with others
+                results = await asyncio.gather(
+                    _search_google_fact_check(client, claim),
+                    _search_snopes_politifact_factcheck(client, claim),
+                    _search_wikipedia_for_claim(client, claim),
+                    _search_semantic_scholar_for_claim(client, claim),
+                    return_exceptions=True,
                 )
+
+                # Handle exceptions: replace with empty list if a source failed
+                google_sources = results[0] if isinstance(results[0], list) else []
+                snopes_sources = results[1] if isinstance(results[1], list) else []
+                wiki_sources = results[2] if isinstance(results[2], list) else []
+                scholar_sources = results[3] if isinstance(results[3], list) else []
 
                 # Combine all sources and deduplicate by URL
                 all_sources = (
@@ -277,12 +313,19 @@ async def research_fact_check(
                 )
 
                 # Deduplicate by URL (keep first occurrence)
+                # Use compound key (url + source name) to avoid collapsing sources with empty URLs
                 seen_urls = set()
                 dedup_sources: list[dict[str, Any]] = []
                 for source in all_sources:
                     url = source.get("url", "")
-                    if url not in seen_urls:
-                        seen_urls.add(url)
+                    source_name = source.get("source", "")
+                    # Only use URL if present; otherwise use source name as fallback
+                    if url:
+                        dedup_key = url
+                    else:
+                        dedup_key = f"NO_URL:{source_name}"
+                    if dedup_key not in seen_urls:
+                        seen_urls.add(dedup_key)
                         dedup_sources.append(source)
 
                 # Limit to max_sources

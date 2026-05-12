@@ -59,13 +59,16 @@ async def _classify_post(
         f"{categories_str}.\n\n"
         f"Title: {title}\n"
         f"Content: {content[:500]}\n\n"
-        f"Return ONLY: category, confidence (0.0-1.0), and sentiment."
+        f"Return ONLY: category from the list above, confidence (0.0-1.0)."
     )
 
     try:
-        result = await research_llm_classify(
-            text=prompt,
-            labels=_POST_CATEGORIES,
+        result = await asyncio.wait_for(
+            research_llm_classify(
+                text=prompt,
+                labels=_POST_CATEGORIES,
+            ),
+            timeout=5.0,
         )
 
         # Parse result
@@ -73,16 +76,23 @@ async def _classify_post(
             category = result.get("classification", {}).get("label", "other")
             confidence = result.get("classification", {}).get("confidence", 0.5)
 
-            # Extract sentiment from result if available, else default to neutral
-            sentiment = result.get("classification", {}).get("sentiment", "neutral")
-            if not sentiment:
-                sentiment = "neutral"
+            # Validate category is in allowed list
+            if category not in _POST_CATEGORIES:
+                category = "other"
+
+            # Ensure confidence is a float in valid range
+            if not isinstance(confidence, (int, float)):
+                confidence = 0.5
+            else:
+                confidence = max(0.0, min(1.0, float(confidence)))
 
             return {
                 "category": category,
                 "confidence": confidence,
-                "sentiment": sentiment,
+                "sentiment": "neutral",
             }
+    except asyncio.TimeoutError:
+        logger.debug("forum_post_classification_timeout title=%s", title[:50])
     except Exception as exc:
         logger.debug("forum_post_classification_failed: %s", exc)
 
@@ -107,8 +117,8 @@ async def research_forum_cortex(
 
     Args:
         topic: subject to search forums for
-        n: max posts to analyze per forum source
-        max_cost_usd: LLM cost budget
+        n: max posts to analyze (across all sources combined)
+        max_cost_usd: LLM cost budget (informational; not enforced)
 
     Returns:
         Dict with:
@@ -136,7 +146,9 @@ async def research_forum_cortex(
     # Search each dark web source
     async def _search_forum_source(source: str) -> list[dict[str, Any]]:
         """Search a dark web forum source."""
-        search_query = f'site:{source} "{topic}"'
+        # Sanitize topic to prevent query injection (escape quotes)
+        safe_topic = topic.replace('"', '\\"')
+        search_query = f'site:{source} "{safe_topic}"'
         try:
             # Use DarkSearch or Ahmia if available
             provider = "darksearch" if "dark" in source else "ahmia"
@@ -150,21 +162,22 @@ async def research_forum_cortex(
                 ),
             )
             return result.get("results", [])  # type: ignore[return-value]
-        except Exception as exc:
+        except Exception as provider_exc:
+            logger.debug("forum_cortex_search_failed source=%s provider=%s: %s", source, provider, provider_exc)
             # Fallback to generic search if provider not available
             try:
                 result = await loop.run_in_executor(
                     None,
                     partial(
                         research_search,
-                        f'{topic} site:{source}',
+                        f'{safe_topic} site:{source}',
                         provider="ddgs",
                         n=n,
                     ),
                 )
                 return result.get("results", [])  # type: ignore[return-value]
-            except Exception:
-                logger.warning("forum_cortex_search_failed source=%s: %s", source, exc)
+            except Exception as fallback_exc:
+                logger.warning("forum_cortex_search_fallback_failed source=%s: %s", source, fallback_exc)
                 return []
 
     # Gather search results from all sources in parallel
@@ -197,7 +210,13 @@ async def research_forum_cortex(
         classification = await _classify_post(title, snippet)
 
         category = classification.get("category", "other")
-        category_counts[category] = category_counts.get(category, 0) + 1
+        # Ensure category is valid before incrementing counter
+        if category in category_counts:
+            category_counts[category] += 1
+        else:
+            # Fallback to "other" if category is invalid
+            category = "other"
+            category_counts["other"] += 1
 
         posts.append({
             "url": url,
