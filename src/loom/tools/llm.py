@@ -7,6 +7,7 @@ Implements cascade routing across NVIDIA NIM, OpenAI, Anthropic, and vLLM.
 
 from __future__ import annotations
 
+import asyncio
 import contextlib
 import json
 import logging
@@ -237,7 +238,6 @@ async def _call_provider_with_retry(
                 delay,
                 type(exc).__name__,
             )
-            import asyncio
             await asyncio.sleep(delay)
 
 
@@ -547,7 +547,10 @@ def _build_provider_chain(
     if override:
         return [_get_provider(override)]
 
-    cascade_order = CONFIG.get("LLM_CASCADE_ORDER", ["nvidia", "openai", "anthropic", "vllm"])
+    cascade_order = CONFIG.get(
+        "LLM_CASCADE_ORDER",
+        ["groq", "nvidia", "deepseek", "gemini", "moonshot", "openai", "anthropic", "vllm"],
+    )
     providers = []
     for name in cascade_order:
         try:
@@ -858,7 +861,6 @@ async def _call_with_refusal_handling(
     if not user_prompt:
         return response, refusal_meta
 
-    provider_name = provider_override or response.provider or "auto"
     strategies_tried: list[str] = []
 
     for attempt in range(1, max_reframe_attempts + 1):
@@ -867,7 +869,7 @@ async def _call_with_refusal_handling(
         reframe_result = await research_prompt_reframe(
             user_prompt,
             strategy="auto",
-            model=provider_name,
+            model=model,
         )
         strategy_used = reframe_result.get("strategy_used", "unknown")
 
@@ -878,7 +880,7 @@ async def _call_with_refusal_handling(
                     reframe_result = await research_prompt_reframe(
                         user_prompt,
                         strategy=alt_name,
-                        model=provider_name,
+                        model=model,
                     )
                     strategy_used = alt_name
                     break
@@ -904,10 +906,10 @@ async def _call_with_refusal_handling(
                 refusal_meta["reframed"] = True
                 refusal_meta["reframe_strategy"] = strategy_used
                 logger.info(
-                    "refusal_bypassed strategy=%s attempt=%d provider=%s",
+                    "refusal_bypassed strategy=%s attempt=%d model=%s",
                     strategy_used,
                     attempt,
-                    provider_name,
+                    model,
                 )
                 return retry_response, refusal_meta
 
@@ -1444,12 +1446,16 @@ async def research_llm_embed(
     if not texts:
         return {"embeddings": [], "model": "", "provider": "", "cost_usd": 0.0}
 
+    # Ensure config is loaded
+    if not CONFIG:
+        load_config()
+
     # Resolve default embedding model
     if model == "auto":
         model = CONFIG.get("LLM_DEFAULT_EMBED_MODEL", "nvidia/nv-embedqa-e5-v5")
 
     # Sanitize and truncate texts to prevent explosion
-    texts = [sanitize_for_llm(str(t))[:5000] if isinstance(t, str) else sanitize_for_llm(str(t))[:5000] for t in texts]
+    texts = [sanitize_for_llm(str(t))[:5000] for t in texts]
 
     try:
         provider_obj: Any = None
@@ -1550,7 +1556,7 @@ async def research_llm_chat(
     try:
         # Step 1: Attempt cache hit if enabled
         if use_cache:
-            conv_hash = hash_conversation(system_prompt, messages, model="" if not provider_override else model)
+            conv_hash = hash_conversation(system_prompt, messages, model=model)
             cached_meta = get_cached_conversation_with_metadata(conv_hash)
 
             if cached_meta and not cached_meta["is_expired"]:
@@ -1579,7 +1585,7 @@ async def research_llm_chat(
 
         # Step 3: Cache the response (even if use_cache=False, store for future use)
         if use_cache:
-            conv_hash = hash_conversation(system_prompt, messages, model="" if not provider_override else model)
+            conv_hash = hash_conversation(system_prompt, messages, model=model)
             try:
                 cache_conversation(conv_hash, response.text, ttl=cache_ttl)
                 logger.debug("conversation_cached conv_hash=%s ttl=%d", conv_hash, cache_ttl)
