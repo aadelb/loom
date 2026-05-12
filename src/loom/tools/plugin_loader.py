@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import importlib.util
 import inspect
 import uuid
@@ -10,6 +11,17 @@ from pathlib import Path
 from typing import Any
 
 _plugins: dict[str, dict[str, Any]] = {}
+
+# Lazy lock for thread-safe plugin registry access
+_plugin_lock: asyncio.Lock | None = None
+
+
+def _get_plugin_lock() -> asyncio.Lock:
+    """Get or create the plugin lock (lazy initialization)."""
+    global _plugin_lock
+    if _plugin_lock is None:
+        _plugin_lock = asyncio.Lock()
+    return _plugin_lock
 
 
 async def research_plugin_load(path: str) -> dict[str, Any]:
@@ -76,14 +88,15 @@ async def research_plugin_load(path: str) -> dict[str, Any]:
 
         # Store plugin metadata
         plugin_id = f"plugin_{uuid.uuid4().hex[:12]}"
-        _plugins[plugin_id] = {
-            "id": plugin_id,
-            "path": str(plugin_path.resolve()),
-            "module_name": module.__name__,
-            "module": module,
-            "tools": tools,
-            "loaded_at": datetime.utcnow().isoformat(),
-        }
+        async with _get_plugin_lock():
+            _plugins[plugin_id] = {
+                "id": plugin_id,
+                "path": str(plugin_path.resolve()),
+                "module_name": module.__name__,
+                "module": module,
+                "tools": tools,
+                "loaded_at": datetime.utcnow().isoformat(),
+            }
 
         return {
             "loaded": True,
@@ -107,15 +120,16 @@ async def research_plugin_list() -> dict[str, Any]:
     Returns:
         {plugins: list[{id, path, tools, loaded_at}], total: int}
     """
-    plugins = [
-        {
-            "id": meta["id"],
-            "path": meta["path"],
-            "tools": meta["tools"],
-            "loaded_at": meta["loaded_at"],
-        }
-        for meta in _plugins.values()
-    ]
+    async with _get_plugin_lock():
+        plugins = [
+            {
+                "id": meta["id"],
+                "path": meta["path"],
+                "tools": meta["tools"],
+                "loaded_at": meta["loaded_at"],
+            }
+            for meta in _plugins.values()
+        ]
 
     return {
         "plugins": plugins,
@@ -132,22 +146,23 @@ async def research_plugin_unload(plugin_id: str) -> dict[str, Any]:
     Returns:
         {unloaded: bool, plugin_id: str, error?: str}
     """
-    if plugin_id not in _plugins:
-        return {
-            "unloaded": False,
-            "plugin_id": plugin_id,
-            "error": f"Plugin {plugin_id} not found",
-        }
+    async with _get_plugin_lock():
+        if plugin_id not in _plugins:
+            return {
+                "unloaded": False,
+                "plugin_id": plugin_id,
+                "error": f"Plugin {plugin_id} not found",
+            }
 
-    try:
-        del _plugins[plugin_id]
-        return {
-            "unloaded": True,
-            "plugin_id": plugin_id,
-        }
-    except Exception as e:
-        return {
-            "unloaded": False,
-            "plugin_id": plugin_id,
-            "error": str(e),
-        }
+        try:
+            del _plugins[plugin_id]
+            return {
+                "unloaded": True,
+                "plugin_id": plugin_id,
+            }
+        except Exception as e:
+            return {
+                "unloaded": False,
+                "plugin_id": plugin_id,
+                "error": str(e),
+            }

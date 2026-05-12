@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any, Literal
 
@@ -9,9 +10,21 @@ logger = logging.getLogger("loom.tools.realtime_adapt")
 
 _REFUSAL_WINDOW: dict[str, list[bool]] = {}
 _WINDOW_SIZE = 100
+_MAX_MODELS = 50
+
+# Lazy lock for thread-safe refusal window access
+_refusal_lock: asyncio.Lock | None = None
 
 
-def research_track_refusal(model: str, refused: bool, strategy: str = "") -> dict[str, Any]:
+def _get_refusal_lock() -> asyncio.Lock:
+    """Get or create the refusal window lock (lazy initialization)."""
+    global _refusal_lock
+    if _refusal_lock is None:
+        _refusal_lock = asyncio.Lock()
+    return _refusal_lock
+
+
+async def research_track_refusal(model: str, refused: bool, strategy: str = "") -> dict[str, Any]:
     """Track refusal rate per model in rolling 100-request window.
 
     Args:
@@ -23,27 +36,34 @@ def research_track_refusal(model: str, refused: bool, strategy: str = "") -> dic
         Dict with: model, refusal_rate, window_size, trend, strategy
     """
     try:
-        if model not in _REFUSAL_WINDOW:
-            _REFUSAL_WINDOW[model] = []
+        async with _get_refusal_lock():
+            if model not in _REFUSAL_WINDOW:
+                _REFUSAL_WINDOW[model] = []
 
-        window = _REFUSAL_WINDOW[model]
-        window.append(refused)
+            window = _REFUSAL_WINDOW[model]
+            window.append(refused)
 
-        if len(window) > _WINDOW_SIZE:
-            window.pop(0)
+            if len(window) > _WINDOW_SIZE:
+                window.pop(0)
 
-        refusal_count = sum(1 for r in window if r)
-        refusal_rate = refusal_count / len(window) if window else 0.0
+            # Evict least-recently-used model key if over capacity
+            if len(_REFUSAL_WINDOW) > _MAX_MODELS:
+                lru_model = min(_REFUSAL_WINDOW.keys(), key=lambda m: _REFUSAL_WINDOW[m][-1] if _REFUSAL_WINDOW[m] else 0)
+                del _REFUSAL_WINDOW[lru_model]
+                logger.info("model_evicted_lru", lru_model=lru_model, total_models=len(_REFUSAL_WINDOW))
 
-        trend: Literal["increasing", "stable", "decreasing"] = "stable"
-        if len(window) >= 20:
-            mid = len(window) // 2
-            first_rate = sum(1 for r in window[:mid] if r) / mid
-            second_rate = sum(1 for r in window[mid:] if r) / (len(window) - mid)
-            if second_rate > first_rate + 0.05:
-                trend = "increasing"
-            elif second_rate < first_rate - 0.05:
-                trend = "decreasing"
+            refusal_count = sum(1 for r in window if r)
+            refusal_rate = refusal_count / len(window) if window else 0.0
+
+            trend: Literal["increasing", "stable", "decreasing"] = "stable"
+            if len(window) >= 20:
+                mid = len(window) // 2
+                first_rate = sum(1 for r in window[:mid] if r) / mid
+                second_rate = sum(1 for r in window[mid:] if r) / (len(window) - mid)
+                if second_rate > first_rate + 0.05:
+                    trend = "increasing"
+                elif second_rate < first_rate - 0.05:
+                    trend = "decreasing"
 
         logger.info(
             "refusal_tracked model=%s refused=%s refusal_rate=%s window_size=%d trend=%s",
@@ -69,7 +89,7 @@ def research_track_refusal(model: str, refused: bool, strategy: str = "") -> dic
         }
 
 
-def research_get_best_model(topic: str = "") -> dict[str, Any]:
+async def research_get_best_model(topic: str = "") -> dict[str, Any]:
     """Get model with LOWEST refusal rate.
 
     Models with refusal_rate > 50% are deprioritized.
@@ -81,33 +101,34 @@ def research_get_best_model(topic: str = "") -> dict[str, Any]:
         Dict with: recommended_model, refusal_rate, all_models_ranked, topic
     """
     try:
-        if not _REFUSAL_WINDOW:
-            logger.warning("no_models_tracked topic=%s", topic)
-            return {
-                "recommended_model": None,
-                "refusal_rate": None,
-                "all_models_ranked": [],
-                "topic": topic or None,
-            }
+        async with _get_refusal_lock():
+            if not _REFUSAL_WINDOW:
+                logger.warning("no_models_tracked topic=%s", topic)
+                return {
+                    "recommended_model": None,
+                    "refusal_rate": None,
+                    "all_models_ranked": [],
+                    "topic": topic or None,
+                }
 
-        model_stats = []
-        for model, window in _REFUSAL_WINDOW.items():
-            if window:
-                refusal_rate = sum(1 for r in window if r) / len(window)
-                model_stats.append({
-                    "model": model,
-                    "refusal_rate": round(refusal_rate, 3),
-                    "viable": refusal_rate <= 0.5,
-                    "window_size": len(window),
-                })
+            model_stats = []
+            for model, window in _REFUSAL_WINDOW.items():
+                if window:
+                    refusal_rate = sum(1 for r in window if r) / len(window)
+                    model_stats.append({
+                        "model": model,
+                        "refusal_rate": round(refusal_rate, 3),
+                        "viable": refusal_rate <= 0.5,
+                        "window_size": len(window),
+                    })
 
-        viable = sorted([m for m in model_stats if m["viable"]], key=lambda x: x["refusal_rate"])
-        unviable = sorted([m for m in model_stats if not m["viable"]], key=lambda x: x["refusal_rate"])
-        ranked = viable + unviable
+            viable = sorted([m for m in model_stats if m["viable"]], key=lambda x: x["refusal_rate"])
+            unviable = sorted([m for m in model_stats if not m["viable"]], key=lambda x: x["refusal_rate"])
+            ranked = viable + unviable
 
-        recommended = ranked[0] if ranked else None
-        recommended_model = recommended["model"] if recommended else None
-        recommended_rate = recommended["refusal_rate"] if recommended else None
+            recommended = ranked[0] if ranked else None
+            recommended_model = recommended["model"] if recommended else None
+            recommended_rate = recommended["refusal_rate"] if recommended else None
 
         logger.info("best_model_selected recommended_model=%s refusal_rate=%s topic=%s", recommended_model, recommended_rate, topic)
 

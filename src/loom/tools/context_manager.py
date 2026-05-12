@@ -7,6 +7,7 @@ Maintains state across tool calls with dual scopes:
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from datetime import UTC, datetime
@@ -18,6 +19,17 @@ logger = logging.getLogger("loom.tools.context_manager")
 # ─── Module state ────────────────────────────────────────────────────────────
 _session_context: dict[str, dict[str, Any]] = {}
 _context_file = Path.home() / ".loom" / "context.json"
+
+# Lazy lock for thread-safe session context access
+_context_lock: asyncio.Lock | None = None
+
+
+def _get_context_lock() -> asyncio.Lock:
+    """Get or create the context lock (lazy initialization)."""
+    global _context_lock
+    if _context_lock is None:
+        _context_lock = asyncio.Lock()
+    return _context_lock
 
 
 def _load_persistent_context() -> dict[str, Any]:
@@ -69,7 +81,8 @@ async def research_context_set(
         now = datetime.now(UTC).isoformat()
 
         if scope == "session":
-            _session_context[key] = {"value": value, "set_at": now}
+            async with _get_context_lock():
+                _session_context[key] = {"value": value, "set_at": now}
             logger.info("context_set_session key=%s", key)
             return {"key": key, "scope": "session", "set": True, "set_at": now}
 
@@ -96,10 +109,11 @@ async def research_context_get(key: str = "") -> dict[str, Any]:
     """
     try:
         # Merge session + persistent for retrieval
-        merged = {}
-        persistent = _load_persistent_context()
-        merged.update(persistent)
-        merged.update(_session_context)
+        async with _get_context_lock():
+            merged = {}
+            persistent = _load_persistent_context()
+            merged.update(persistent)
+            merged.update(_session_context)
 
         if not key:
             # Return all context (stripped of metadata)
@@ -135,11 +149,10 @@ async def research_context_clear(
         {cleared: int, scope}
     """
     try:
-        global _session_context
-
         if scope in ("session", "all"):
-            cleared_session = len(_session_context)
-            _session_context.clear()
+            async with _get_context_lock():
+                cleared_session = len(_session_context)
+                _session_context.clear()
             logger.info("context_clear_session cleared=%d", cleared_session)
         else:
             cleared_session = 0

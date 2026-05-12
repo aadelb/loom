@@ -2,12 +2,24 @@
 
 from __future__ import annotations
 
+import asyncio
 import difflib
 import logging
 from typing import Any
 
 logger = logging.getLogger("loom.tools.output_diff")
 _output_history: dict[str, tuple[str, str]] = {}
+
+# Lazy lock for thread-safe output history access
+_diff_lock: asyncio.Lock | None = None
+
+
+def _get_diff_lock() -> asyncio.Lock:
+    """Get or create the diff lock (lazy initialization)."""
+    global _diff_lock
+    if _diff_lock is None:
+        _diff_lock = asyncio.Lock()
+    return _diff_lock
 
 
 async def research_diff_compare(text_a: str, text_b: str, context_lines: int = 3) -> dict[str, Any]:
@@ -45,37 +57,38 @@ async def research_diff_compare(text_a: str, text_b: str, context_lines: int = 3
 async def research_diff_track(tool_name: str, output: str, run_id: str = "") -> dict[str, Any]:
     """Track a tool's output over time to detect drift."""
     try:
-        previous = _output_history.get(tool_name)
-        _output_history[tool_name] = (output, run_id)
-        if previous is None:
+        async with _get_diff_lock():
+            previous = _output_history.get(tool_name)
+            _output_history[tool_name] = (output, run_id)
+            if previous is None:
+                return {
+                    "tool": tool_name,
+                    "changed": False,
+                    "previous_run_id": None,
+                    "similarity_pct": 100.0,
+                    "changes_summary": "Initial baseline recorded",
+                    "drift_detected": False,
+                }
+            previous_output, previous_run_id = previous
+            matcher = difflib.SequenceMatcher(None, previous_output, output)
+            similarity_pct = round(matcher.ratio() * 100, 2)
+            changed = similarity_pct < 100
+            drift_detected = similarity_pct < 80 if changed else False
+            if not changed:
+                changes_summary = "No changes detected"
+            elif similarity_pct >= 95:
+                changes_summary = "Minor changes detected"
+            elif similarity_pct >= 80:
+                changes_summary = "Moderate changes detected"
+            else:
+                changes_summary = "Significant changes detected (drift warning)"
             return {
                 "tool": tool_name,
-                "changed": False,
-                "previous_run_id": None,
-                "similarity_pct": 100.0,
-                "changes_summary": "Initial baseline recorded",
-                "drift_detected": False,
+                "changed": changed,
+                "previous_run_id": previous_run_id,
+                "similarity_pct": similarity_pct,
+                "changes_summary": changes_summary,
+                "drift_detected": drift_detected,
             }
-        previous_output, previous_run_id = previous
-        matcher = difflib.SequenceMatcher(None, previous_output, output)
-        similarity_pct = round(matcher.ratio() * 100, 2)
-        changed = similarity_pct < 100
-        drift_detected = similarity_pct < 80 if changed else False
-        if not changed:
-            changes_summary = "No changes detected"
-        elif similarity_pct >= 95:
-            changes_summary = "Minor changes detected"
-        elif similarity_pct >= 80:
-            changes_summary = "Moderate changes detected"
-        else:
-            changes_summary = "Significant changes detected (drift warning)"
-        return {
-            "tool": tool_name,
-            "changed": changed,
-            "previous_run_id": previous_run_id,
-            "similarity_pct": similarity_pct,
-            "changes_summary": changes_summary,
-            "drift_detected": drift_detected,
-        }
     except Exception as exc:
         return {"error": str(exc), "tool": "research_diff_track"}
