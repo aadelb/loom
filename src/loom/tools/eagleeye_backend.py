@@ -157,7 +157,7 @@ async def research_reverse_image(
                     response.raise_for_status()
                     image_data = response.content
             except Exception as e:
-                logger.warning(f"Failed to download image from URL: {e}")
+                logger.warning("Failed to download image from URL: %s", e)
 
         # Search each engine
         for engine in engines_to_use:
@@ -184,7 +184,7 @@ async def research_reverse_image(
 
     except Exception as e:
         result.error = f"Reverse image search failed: {str(e)[:200]}"
-        logger.error(f"research_reverse_image error: {e}")
+        logger.error("research_reverse_image error: %s", e)
         # Still generate fallback URLs
         _generate_search_urls(params.image_url, engines_to_use, result)
 
@@ -212,7 +212,7 @@ async def _search_google_images(
             logger.info("Google Images requires OAuth; using search URL instead")
 
     except Exception as e:
-        logger.debug(f"Google Images search error: {e}")
+        logger.debug("Google Images search error: %s", e)
 
 
 async def _search_tineye(
@@ -243,7 +243,7 @@ async def _search_tineye(
             logger.info("TinEye API integration pending")
 
     except Exception as e:
-        logger.debug(f"TinEye search error: {e}")
+        logger.debug("TinEye search error: %s", e)
 
 
 async def _search_yandex(
@@ -276,10 +276,10 @@ async def _search_yandex(
             if response.status_code == 200:
                 logger.debug("Yandex Images search initiated")
             else:
-                logger.debug(f"Yandex Images returned status {response.status_code}")
+                logger.debug("Yandex Images returned status %d", response.status_code)
 
     except Exception as e:
-        logger.debug(f"Yandex Images search error: {e}")
+        logger.debug("Yandex Images search error: %s", e)
 
 
 async def _search_bing(
@@ -306,7 +306,7 @@ async def _search_bing(
                 logger.debug("Bing Visual Search URL generated successfully")
 
     except Exception as e:
-        logger.debug(f"Bing Visual Search error: {e}")
+        logger.debug("Bing Visual Search error: %s", e)
 
 
 async def _search_baidu(
@@ -335,7 +335,7 @@ async def _search_baidu(
                 logger.debug("Baidu Images search URL generated successfully")
 
     except Exception as e:
-        logger.debug(f"Baidu Images search error: {e}")
+        logger.debug("Baidu Images search error: %s", e)
 
 
 def _generate_search_urls(
@@ -360,5 +360,5 @@ def _generate_search_urls(
             result.search_urls[engine] = search_urls[engine]
 
     logger.info(
-        f"Generated {len(result.search_urls)} manual search URLs (API access unavailable)"
+        "Generated %d manual search URLs (API access unavailable)", len(result.search_urls)
     )
