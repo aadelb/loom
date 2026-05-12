@@ -11,7 +11,15 @@ from typing import Any
 
 logger = logging.getLogger("loom.tools.smart_router")
 _TOOL_INDEX: dict[str, set[str]] = {}
-_INDEX_LOCK = asyncio.Lock()
+_INDEX_LOCK: asyncio.Lock | None = None
+
+
+def _get_index_lock() -> asyncio.Lock:
+    """Get or create the index lock."""
+    global _INDEX_LOCK
+    if _INDEX_LOCK is None:
+        _INDEX_LOCK = asyncio.Lock()
+    return _INDEX_LOCK
 
 
 def _build_tool_index() -> dict[str, set[str]]:
@@ -52,7 +60,7 @@ async def _get_tool_index() -> dict[str, set[str]]:
     """Get cached index, build if empty (thread-safe)."""
     global _TOOL_INDEX
     if not _TOOL_INDEX:
-        async with _INDEX_LOCK:
+        async with _get_index_lock():
             # Double-check after acquiring lock
             if not _TOOL_INDEX:
                 _TOOL_INDEX = _build_tool_index()
@@ -139,7 +147,7 @@ async def research_router_rebuild() -> dict[str, Any]:
     """Force rebuild tool index (call when new tools added)."""
     try:
         global _TOOL_INDEX
-        async with _INDEX_LOCK:
+        async with _get_index_lock():
             _TOOL_INDEX = {}
         idx = await _get_tool_index()
         return {

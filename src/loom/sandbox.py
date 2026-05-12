@@ -29,7 +29,15 @@ logger = logging.getLogger("loom.sandbox")
 
 # Module-level singleton
 _sandbox_instance: DockerSandbox | None = None
-_sandbox_lock = asyncio.Lock()
+_sandbox_lock: asyncio.Lock | None = None
+
+
+def _get_sandbox_lock() -> asyncio.Lock:
+    """Get or create the sandbox lock."""
+    global _sandbox_lock
+    if _sandbox_lock is None:
+        _sandbox_lock = asyncio.Lock()
+    return _sandbox_lock
 
 
 def is_docker_available() -> bool:
@@ -635,7 +643,7 @@ async def get_sandbox() -> DockerSandbox:
     if _sandbox_instance is not None:
         return _sandbox_instance
 
-    async with _sandbox_lock:
+    async with _get_sandbox_lock():
         # Double-check pattern
         if _sandbox_instance is not None:
             return _sandbox_instance

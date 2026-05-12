@@ -20,9 +20,25 @@ KEY_MAP = {"groq": "GROQ_API_KEY", "nvidia": "NVIDIA_NIM_API_KEY", "deepseek": "
 HEALTH = {"groq": ("https://api.groq.com/openai/v1/models", "GET"), "deepseek": ("https://api.deepseek.com/models", "GET"), "gemini": ("https://generativelanguage.googleapis.com/v1beta/models?key={key}", "GET"), "moonshot": ("https://api.moonshot.cn/v1/models", "GET"), "openai": ("https://api.openai.com/v1/models", "GET"), "anthropic": ("https://api.anthropic.com/v1/models", "GET")}
 PATTERNS = {"groq": r"^gsk_[a-zA-Z0-9]{40,}$", "deepseek": r"^sk_[a-zA-Z0-9]{40,}$", "gemini": r"^[a-zA-Z0-9_-]{39,}$", "moonshot": r"^sk_[a-zA-Z0-9]{40,}$", "openai": r"^sk_[a-zA-Z0-9]{40,}$", "anthropic": r"^sk_ant_[a-zA-Z0-9]{40,}$"}
 _md = {}
-_md_lock = asyncio.Lock()
+_md_lock: asyncio.Lock | None = None
 _last_rotation: dict[str, float] = {}
-_rotation_lock = asyncio.Lock()
+_rotation_lock: asyncio.Lock | None = None
+
+
+def _get_md_lock() -> asyncio.Lock:
+    """Get or create the metadata lock."""
+    global _md_lock
+    if _md_lock is None:
+        _md_lock = asyncio.Lock()
+    return _md_lock
+
+
+def _get_rotation_lock() -> asyncio.Lock:
+    """Get or create the rotation lock."""
+    global _rotation_lock
+    if _rotation_lock is None:
+        _rotation_lock = asyncio.Lock()
+    return _rotation_lock
 
 
 async def research_key_status() -> dict[str, Any]:
@@ -33,7 +49,7 @@ async def research_key_status() -> dict[str, Any]:
             v = os.environ.get(e, "").strip()
             c = bool(v)
             vf = c and (n not in PATTERNS or bool(re.match(PATTERNS[n], v)))
-            async with _md_lock:
+            async with _get_md_lock():
                 m = _md.get(n, {})
             s = "unconfigured" if not c else ("invalid_format" if not vf else ("degraded" if m.get("error_count", 0) > 0 else "healthy"))
             p.append({"name": n, "configured": c, "valid_format": vf, "last_used": m.get("last_used"), "last_error": m.get("last_error"), "error_count": m.get("error_count", 0), "status": s})
@@ -54,7 +70,7 @@ async def research_key_rotate(provider: str, new_key: str) -> dict[str, Any]:
             raise ValueError(f"Invalid key length: must be 8-256 characters, got {len(new_key)}")
 
         # Fix 2: Rate limiting on key rotation
-        async with _rotation_lock:
+        async with _get_rotation_lock():
             last_rotation_time = _last_rotation.get(provider, 0)
             current_time = time.time()
             if current_time - last_rotation_time < 60:
@@ -71,7 +87,7 @@ async def research_key_rotate(provider: str, new_key: str) -> dict[str, Any]:
         _clear_cache(provider)
 
         # Fix 4: Protect _md mutations with lock
-        async with _md_lock:
+        async with _get_md_lock():
             if provider not in _md:
                 _md[provider] = {}
             _md[provider]["last_rotated"] = datetime.now(UTC).isoformat()
@@ -140,7 +156,7 @@ def _clear_cache(p: str) -> None:
 
 async def _use(p: str) -> None:
     """Record key usage."""
-    async with _md_lock:
+    async with _get_md_lock():
         if p not in _md:
             _md[p] = {}
         _md[p]["last_used"] = datetime.now(UTC).isoformat()
@@ -149,7 +165,7 @@ async def _use(p: str) -> None:
 
 async def _err(p: str, e: str) -> None:
     """Record key error."""
-    async with _md_lock:
+    async with _get_md_lock():
         if p not in _md:
             _md[p] = {}
         _md[p]["last_error"] = datetime.now(UTC).isoformat()

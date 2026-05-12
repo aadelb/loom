@@ -22,7 +22,15 @@ log = logging.getLogger("loom.pg_store")
 
 # Global connection pool
 _pool: asyncpg.Pool | None = None
-_pool_lock = asyncio.Lock()
+_pool_lock: asyncio.Lock | None = None
+
+
+def _get_pool_lock() -> asyncio.Lock:
+    """Get or create the pool lock."""
+    global _pool_lock
+    if _pool_lock is None:
+        _pool_lock = asyncio.Lock()
+    return _pool_lock
 
 
 async def get_pool() -> asyncpg.Pool:
@@ -32,7 +40,7 @@ async def get_pool() -> asyncpg.Pool:
     if _pool is not None:
         return _pool
 
-    async with _pool_lock:
+    async with _get_pool_lock():
         if _pool is not None:
             return _pool
 

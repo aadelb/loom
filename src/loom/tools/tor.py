@@ -17,10 +17,18 @@ logger = logging.getLogger("loom.tools.tor")
 
 # Rate limiting for NEWNYM requests (1 per 10 seconds)
 _last_newnym_time: float = 0.0
-_newnym_lock = asyncio.Lock()
+_newnym_lock: asyncio.Lock | None = None
 
 # Module-level client for Tor proxy connectivity checks
 _tor_client: httpx.AsyncClient | None = None
+
+
+def _get_newnym_lock() -> asyncio.Lock:
+    """Get or create the newnym lock."""
+    global _newnym_lock
+    if _newnym_lock is None:
+        _newnym_lock = asyncio.Lock()
+    return _newnym_lock
 
 
 async def _get_tor_client() -> httpx.AsyncClient:
@@ -161,7 +169,7 @@ async def research_tor_new_identity() -> dict[str, Any]:
 
     logger.info("tor_newnym_request_start")
 
-    async with _newnym_lock:
+    async with _get_newnym_lock():
         now = time.time()
         time_since_last = now - _last_newnym_time
 

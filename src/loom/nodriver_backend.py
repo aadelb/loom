@@ -38,7 +38,15 @@ logger = logging.getLogger("loom.nodriver_backend")
 
 # Global session registry: name -> Browser instance
 _nodriver_sessions: dict[str, Browser] = {}
-_session_lock = asyncio.Lock()
+_session_lock: asyncio.Lock | None = None
+
+
+def _get_session_lock() -> asyncio.Lock:
+    """Get or create the session lock."""
+    global _session_lock
+    if _session_lock is None:
+        _session_lock = asyncio.Lock()
+    return _session_lock
 
 
 class NodriverFetchResult(BaseModel):
@@ -422,7 +430,7 @@ async def research_nodriver_session(
             "error": "nodriver not installed. Install with: pip install nodriver",
         }
 
-    async with _session_lock:
+    async with _get_session_lock():
         try:
             if action == "open":
                 if session_name in _nodriver_sessions:

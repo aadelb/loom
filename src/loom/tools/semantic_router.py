@@ -26,7 +26,7 @@ _TFIDF_VECTORIZER = None
 _TOOL_EMBEDDINGS: np.ndarray | None = None
 _TOOL_NAMES: list[str] | None = None
 _TOOL_DESCRIPTIONS: dict[str, str] = {}
-_ROUTER_LOCK = asyncio.Lock()
+_ROUTER_LOCK: asyncio.Lock | None = None
 _CACHE_PATH = Path.home() / ".cache" / "loom" / "tool_embeddings.npy"
 _TOOL_CACHE_PATH = Path.home() / ".cache" / "loom" / "tool_names.npy"
 
@@ -44,6 +44,14 @@ try:
     _SKLEARN_AVAILABLE = True
 except ImportError:
     pass
+
+
+def _get_router_lock() -> asyncio.Lock:
+    """Get or create the router lock."""
+    global _ROUTER_LOCK
+    if _ROUTER_LOCK is None:
+        _ROUTER_LOCK = asyncio.Lock()
+    return _ROUTER_LOCK
 
 
 def _extract_tool_descriptions() -> dict[str, str]:
@@ -120,7 +128,7 @@ async def _build_tool_embeddings() -> tuple[np.ndarray, list[str]]:
     """Build and cache embeddings for all tools."""
     global _TOOL_EMBEDDINGS, _TOOL_NAMES, _TOOL_DESCRIPTIONS
 
-    async with _ROUTER_LOCK:
+    async with _get_router_lock():
         if _TOOL_EMBEDDINGS is not None and _TOOL_NAMES is not None:
             return _TOOL_EMBEDDINGS, _TOOL_NAMES
 
@@ -387,7 +395,7 @@ async def research_semantic_router_rebuild() -> dict[str, Any]:
     try:
         global _TOOL_EMBEDDINGS, _TOOL_NAMES, _TOOL_DESCRIPTIONS
 
-        async with _ROUTER_LOCK:
+        async with _get_router_lock():
             _TOOL_EMBEDDINGS = None
             _TOOL_NAMES = None
             _TOOL_DESCRIPTIONS = {}

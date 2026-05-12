@@ -5,12 +5,16 @@ from __future__ import annotations
 import asyncio
 import importlib.util
 import inspect
+import logging
 import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+logger = logging.getLogger("loom.tools.plugin_loader")
+
 _plugins: dict[str, dict[str, Any]] = {}
+_MAX_PLUGINS = 100
 
 # Lazy lock for thread-safe plugin registry access
 _plugin_lock: asyncio.Lock | None = None
@@ -97,6 +101,12 @@ async def research_plugin_load(path: str) -> dict[str, Any]:
                 "tools": tools,
                 "loaded_at": datetime.utcnow().isoformat(),
             }
+
+            # Evict oldest entry if over capacity
+            if len(_plugins) > _MAX_PLUGINS:
+                oldest_plugin_id = list(_plugins.keys())[0]
+                del _plugins[oldest_plugin_id]
+                logger.info("plugin_evicted_oldest", oldest_plugin_id=oldest_plugin_id, total_plugins=len(_plugins))
 
         return {
             "loaded": True,

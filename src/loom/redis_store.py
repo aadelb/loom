@@ -66,7 +66,13 @@ class RedisStore:
         self._local_rate_limits: dict[str, list[float]] = defaultdict(list)
         self._local_costs: dict[str, float] = defaultdict(float)
         self._local_locks: dict[str, bool] = {}
-        self._lock = asyncio.Lock()
+        self._lock: asyncio.Lock | None = None
+
+    def _get_lock(self) -> asyncio.Lock:
+        """Get or create the instance lock."""
+        if self._lock is None:
+            self._lock = asyncio.Lock()
+        return self._lock
 
     async def connect(self) -> bool:
         """Connect to Redis. Returns True if successful, False otherwise.
@@ -170,7 +176,7 @@ class RedisStore:
                 self._redis_available = False
 
         # Local in-memory fallback
-        async with self._lock:
+        async with self._get_lock():
             timestamps = self._local_rate_limits[key]
             # Clean old timestamps
             timestamps = [t for t in timestamps if t > cutoff]
@@ -203,7 +209,7 @@ class RedisStore:
                 self._redis_available = False
 
         # Local fallback
-        async with self._lock:
+        async with self._get_lock():
             if key in self._local_cache:
                 value, expiry = self._local_cache[key]
                 if time.time() <= expiry:
@@ -231,7 +237,7 @@ class RedisStore:
                 self._redis_available = False
 
         # Local fallback
-        async with self._lock:
+        async with self._get_lock():
             expiry = time.time() + ttl_seconds
             self._local_cache[key] = (value, expiry)
 
@@ -250,7 +256,7 @@ class RedisStore:
                 self._redis_available = False
 
         # Local fallback
-        async with self._lock:
+        async with self._get_lock():
             self._local_cache.pop(key, None)
 
     async def session_get(self, name: str) -> dict[str, Any] | None:
@@ -275,7 +281,7 @@ class RedisStore:
                 self._redis_available = False
 
         # Local fallback
-        async with self._lock:
+        async with self._get_lock():
             if key in self._local_sessions:
                 data, expiry = self._local_sessions[key]
                 if time.time() <= expiry:
@@ -304,7 +310,7 @@ class RedisStore:
                 self._redis_available = False
 
         # Local fallback
-        async with self._lock:
+        async with self._get_lock():
             expiry = time.time() + ttl_seconds
             self._local_sessions[key] = (data, expiry)
 
@@ -325,7 +331,7 @@ class RedisStore:
                 self._redis_available = False
 
         # Local fallback
-        async with self._lock:
+        async with self._get_lock():
             self._local_sessions.pop(key, None)
 
     async def cost_track(self, customer_id: str, amount: float) -> None:
@@ -348,7 +354,7 @@ class RedisStore:
                 self._redis_available = False
 
         # Local fallback
-        async with self._lock:
+        async with self._get_lock():
             self._local_costs[key] += amount
 
     async def cost_get(self, customer_id: str) -> float:
@@ -371,7 +377,7 @@ class RedisStore:
                 self._redis_available = False
 
         # Local fallback
-        async with self._lock:
+        async with self._get_lock():
             return self._local_costs.get(key, 0.0)
 
     async def cost_reset(self, customer_id: str) -> None:
@@ -391,7 +397,7 @@ class RedisStore:
                 self._redis_available = False
 
         # Local fallback
-        async with self._lock:
+        async with self._get_lock():
             self._local_costs.pop(key, None)
 
     async def lock_acquire(
@@ -424,7 +430,7 @@ class RedisStore:
                 self._redis_available = False
 
         # Local fallback
-        async with self._lock:
+        async with self._get_lock():
             if name not in self._local_locks:
                 self._local_locks[name] = True
                 return True
@@ -447,7 +453,7 @@ class RedisStore:
                 self._redis_available = False
 
         # Local fallback
-        async with self._lock:
+        async with self._get_lock():
             self._local_locks.pop(name, None)
 
     async def health_check(self) -> dict[str, Any]:
@@ -516,7 +522,7 @@ class RedisStore:
                 self._redis_available = False
 
         # Local fallback
-        async with self._lock:
+        async with self._get_lock():
             # Simple prefix matching (not glob-style)
             keys_to_delete = [k for k in self._local_cache if k.startswith(prefix)]
             for k in keys_to_delete:
@@ -526,7 +532,15 @@ class RedisStore:
 
 # Global singleton instance
 _redis_store: RedisStore | None = None
-_store_lock = asyncio.Lock()
+_store_lock: asyncio.Lock | None = None
+
+
+def _get_store_lock() -> asyncio.Lock:
+    """Get or create the store lock."""
+    global _store_lock
+    if _store_lock is None:
+        _store_lock = asyncio.Lock()
+    return _store_lock
 
 
 async def get_redis_store(
@@ -544,7 +558,7 @@ async def get_redis_store(
     global _redis_store
 
     if _redis_store is None:
-        async with _store_lock:
+        async with _get_store_lock():
             if _redis_store is None:
                 _redis_store = RedisStore(redis_url, max_connections)
                 await _redis_store.connect()

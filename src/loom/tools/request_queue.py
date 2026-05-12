@@ -13,7 +13,15 @@ logger = logging.getLogger("loom.tools.request_queue")
 _queue: asyncio.PriorityQueue[tuple[int, float, dict[str, Any]]] = asyncio.PriorityQueue()
 _completed_count = 0
 _processing_count = 0
-_lock = asyncio.Lock()
+_lock: asyncio.Lock | None = None
+
+
+def _get_lock() -> asyncio.Lock:
+    """Get or create the lock."""
+    global _lock
+    if _lock is None:
+        _lock = asyncio.Lock()
+    return _lock
 
 
 async def research_queue_add(tool_name: str, params: dict[str, Any], priority: int = 5) -> dict[str, Any]:
@@ -31,7 +39,7 @@ async def research_queue_add(tool_name: str, params: dict[str, Any], priority: i
             "queued_at": datetime.now(UTC).isoformat(),
         }
         await _queue.put((priority, timestamp, item))
-        async with _lock:
+        async with _get_lock():
             position = _queue.qsize()
         return {"queued": True, "queue_id": queue_id, "position": position, "priority": priority}
     except Exception as exc:
@@ -42,7 +50,7 @@ async def research_queue_add(tool_name: str, params: dict[str, Any], priority: i
 async def research_queue_status() -> dict[str, Any]:
     """Get queue status: pending, processing, completed, priority breakdown, oldest age."""
     try:
-        async with _lock:
+        async with _get_lock():
             pending, processing, completed = _queue.qsize(), _processing_count, _completed_count
 
         oldest_waiting_seconds = None
@@ -87,13 +95,13 @@ async def research_queue_drain(max_items: int = 10) -> dict[str, Any]:
                 break
             try:
                 _, _, item = _queue.get_nowait()
-                async with _lock:
+                async with _get_lock():
                     _processing_count += 1
                 drained_items.append({k: item[k] for k in ["queue_id", "tool_name", "params", "priority", "queued_at"]})
             except asyncio.QueueEmpty:
                 break
 
-        async with _lock:
+        async with _get_lock():
             remaining_queue = _queue.qsize()
 
         return {"drained": len(drained_items), "items": drained_items, "remaining": remaining_queue}

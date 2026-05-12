@@ -195,12 +195,16 @@ async def research_deep_url_analysis(
             f.write(full_prompt)
             tmp_path = f.name
 
-        result = subprocess.run(
-            ["gemini", "-m", model, "--approval-mode", "yolo", "-f", tmp_path],
-            capture_output=True,
-            text=True,
-            errors="replace",
-            timeout=300,
+        loop = asyncio.get_running_loop()
+        result = await loop.run_in_executor(
+            None,
+            lambda: subprocess.run(
+                ["gemini", "-m", model, "--approval-mode", "yolo", "-f", tmp_path],
+                capture_output=True,
+                text=True,
+                errors="replace",
+                timeout=300,
+            ),
         )
 
         if result.returncode == 0:

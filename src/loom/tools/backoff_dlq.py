@@ -18,7 +18,15 @@ DLQ_DB_PATH = Path.home() / ".loom" / "dlq.db"
 BASE_DELAY_SECONDS = 60
 MAX_DELAY_SECONDS = 3600
 MAX_RETRY_COUNT = 5
-_dlq_lock = asyncio.Lock()
+_dlq_lock: asyncio.Lock | None = None
+
+
+def _get_dlq_lock() -> asyncio.Lock:
+    """Get or create the DLQ lock."""
+    global _dlq_lock
+    if _dlq_lock is None:
+        _dlq_lock = asyncio.Lock()
+    return _dlq_lock
 
 
 async def _ensure_dlq_table() -> None:
@@ -51,7 +59,7 @@ async def research_dlq_push(
         next_retry = _calculate_next_retry(retry_count)
         status = "exhausted" if retry_count >= MAX_RETRY_COUNT else "pending"
 
-        async with _dlq_lock:
+        async with _get_dlq_lock():
             async with aiosqlite.connect(str(DLQ_DB_PATH)) as db:
                 await db.execute(
                     "INSERT INTO dead_letters VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -75,7 +83,7 @@ async def research_backoff_dlq_list(status: str = "pending") -> dict[str, Any]:
             params_list.append(status)
         query += " ORDER BY created DESC"
 
-        async with _dlq_lock:
+        async with _get_dlq_lock():
             async with aiosqlite.connect(str(DLQ_DB_PATH)) as db:
                 db.row_factory = aiosqlite.Row
                 rows = await (await db.execute(query, params_list)).fetchall()
@@ -91,7 +99,7 @@ async def research_dlq_retry(item_id: str = "") -> dict[str, Any]:
         await _ensure_dlq_table()
         retried_count = exhausted_count = 0
 
-        async with _dlq_lock:
+        async with _get_dlq_lock():
             async with aiosqlite.connect(str(DLQ_DB_PATH)) as db:
                 if item_id:
                     row = await (await db.execute(
@@ -125,7 +133,7 @@ async def research_dlq_retry(item_id: str = "") -> dict[str, Any]:
                         )
                         exhausted_count += (new_status == "exhausted")
                         retried_count += (new_status == "retrying")
-                await db.commit()
+                    await db.commit()
                 remaining = (await (await db.execute(
                     "SELECT COUNT(*) FROM dead_letters WHERE status IN ('pending', 'retrying')"
                 )).fetchone())[0]

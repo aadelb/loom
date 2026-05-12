@@ -22,14 +22,23 @@ class CircuitState(str, Enum):
     OPEN = "open"
     HALF_OPEN = "half_open"
 
-_lock = asyncio.Lock()
+_lock: asyncio.Lock | None = None
 CIRCUITS = {p: {"state": CircuitState.CLOSED, "failures": 0, "last_failure": None, "opened_at": None} for p in PROVIDERS}
 FAILURE_THRESHOLD, COOLDOWN_SECONDS = 5, 60
+
+
+def _get_lock() -> asyncio.Lock:
+    """Get or create the circuit breaker lock."""
+    global _lock
+    if _lock is None:
+        _lock = asyncio.Lock()
+    return _lock
+
 
 async def research_breaker_status() -> dict[str, Any]:
     """Show circuit breaker state: {circuits: [{provider, state, failures, last_failure, cooldown_remaining_s}]}"""
     try:
-        async with _lock:
+        async with _get_lock():
             now, circuits = time.time(), []
             for provider, circuit in sorted(CIRCUITS.items()):
                 cooldown = 0
@@ -51,7 +60,7 @@ async def research_breaker_trip(provider: str, error: str = "") -> dict[str, Any
     try:
         if provider not in CIRCUITS:
             return {"provider": provider, "state": "unknown", "error": f"Unknown provider: {provider}"}
-        async with _lock:
+        async with _get_lock():
             circuit = CIRCUITS[provider]
             circuit["failures"] += 1
             circuit["last_failure"] = datetime.now(UTC).isoformat()
@@ -72,7 +81,7 @@ async def research_breaker_reset(provider: str = "all") -> dict[str, Any]:
     """Manually reset circuit(s) to CLOSED.
     Returns: {reset: list[str], new_state: "closed", count: int}"""
     try:
-        async with _lock:
+        async with _get_lock():
             reset_list = []
             providers = list(CIRCUITS.keys()) if provider == "all" else ([provider] if provider in CIRCUITS else [])
             for prov in providers:

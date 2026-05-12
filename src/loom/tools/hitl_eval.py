@@ -20,7 +20,7 @@ import aiosqlite
 logger = logging.getLogger("loom.tools.hitl_eval")
 
 _DB_PATH = Path.home() / ".loom" / "hitl_eval.db"
-_LOCK = asyncio.Lock()
+_LOCK: asyncio.Lock | None = None
 
 # Valid evaluation tags
 _VALID_TAGS = {"effective", "partial", "refused", "hallucinated", "dangerous", "safe"}
@@ -30,9 +30,17 @@ _MAX_RESPONSE_LENGTH = 50_000
 _MAX_NOTES_LENGTH = 2_000
 
 
+def _get_lock() -> asyncio.Lock:
+    """Get or create the lock."""
+    global _LOCK
+    if _LOCK is None:
+        _LOCK = asyncio.Lock()
+    return _LOCK
+
+
 async def _init_db() -> None:
     """Initialize database schema if not exists."""
-    async with _LOCK:
+    async with _get_lock():
         _DB_PATH.parent.mkdir(parents=True, exist_ok=True)
         conn = await aiosqlite.connect(str(_DB_PATH))
         await conn.execute(
@@ -125,7 +133,7 @@ async def research_hitl_submit(
         eval_id = str(uuid.uuid4())
         now = datetime.now(UTC).isoformat()
 
-        async with _LOCK:
+        async with _get_lock():
             conn = await aiosqlite.connect(str(_DB_PATH))
             try:
                 await conn.execute(
@@ -186,7 +194,7 @@ async def research_hitl_evaluate(
         now = datetime.now(UTC).isoformat()
         tags_str = ",".join(sorted(tags or []))
 
-        async with _LOCK:
+        async with _get_lock():
             conn = await aiosqlite.connect(str(_DB_PATH))
             try:
                 cursor = await conn.execute(
@@ -239,7 +247,7 @@ async def research_hitl_queue(
 
         await _init_db()
 
-        async with _LOCK:
+        async with _get_lock():
             conn = await aiosqlite.connect(str(_DB_PATH))
             try:
                 # Build WHERE clause safely (parameterized queries only)

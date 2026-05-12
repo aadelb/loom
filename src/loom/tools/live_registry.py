@@ -26,13 +26,21 @@ _registry_cache: dict[str, Any] = {
 }
 
 # Lock for thread-safe cache access
-_registry_lock = asyncio.Lock()
+_registry_lock: asyncio.Lock | None = None
 
 # Cache validity in seconds (5 minutes)
 _CACHE_TTL_SECONDS = 300
 
 # Tools directory path
 _TOOLS_DIR = Path(__file__).parent
+
+
+def _get_registry_lock() -> asyncio.Lock:
+    """Get or create the registry lock."""
+    global _registry_lock
+    if _registry_lock is None:
+        _registry_lock = asyncio.Lock()
+    return _registry_lock
 
 
 async def research_registry_status() -> dict[str, Any]:
@@ -47,7 +55,7 @@ async def research_registry_status() -> dict[str, Any]:
     """
     try:
         await _scan_modules()
-        async with _registry_lock:
+        async with _get_registry_lock():
             # Take snapshot to prevent concurrent modification during iteration
             cache_snapshot = dict(_registry_cache["modules"])
             last_refresh = _registry_cache["last_refresh"]
@@ -97,7 +105,7 @@ async def research_registry_search(
     """
     try:
         await _scan_modules()
-        async with _registry_lock:
+        async with _get_registry_lock():
             # Take snapshot to prevent concurrent modification during iteration
             cache_snapshot = dict(_registry_cache["modules"])
 
@@ -150,7 +158,7 @@ async def research_registry_refresh() -> dict[str, Any]:
         Dict with keys: scanned, healthy, errors (list of error dicts), refresh_time_ms
     """
     try:
-        async with _registry_lock:
+        async with _get_registry_lock():
             start_time = time.time()
             # Clear cache safely within lock
             _registry_cache["modules"].clear()

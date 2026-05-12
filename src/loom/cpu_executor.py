@@ -19,10 +19,18 @@ logger = logging.getLogger("loom.cpu_executor")
 
 # Module-level ProcessPoolExecutor instance (singleton)
 _executor: ProcessPoolExecutor | None = None
-_executor_lock = asyncio.Lock()
+_executor_lock: asyncio.Lock | None = None
 
 # Track active tasks for shutdown
 _active_tasks: set[asyncio.Task[Any]] = set()
+
+
+def _get_executor_lock() -> asyncio.Lock:
+    """Get or create the executor lock."""
+    global _executor_lock
+    if _executor_lock is None:
+        _executor_lock = asyncio.Lock()
+    return _executor_lock
 
 
 def _get_max_workers() -> int:
@@ -57,7 +65,7 @@ async def _get_executor() -> ProcessPoolExecutor:
     if _executor is not None:
         return _executor
 
-    async with _executor_lock:
+    async with _get_executor_lock():
         # Double-check after acquiring lock
         if _executor is not None:
             return _executor

@@ -12,7 +12,16 @@ logger = logging.getLogger("loom.tools.capability_matrix")
 
 # Module-level cache: populated on first query
 _MATRIX_CACHE: dict[str, Any] | None = None
-_MATRIX_LOCK = asyncio.Lock()
+_MATRIX_LOCK: asyncio.Lock | None = None
+
+
+def _get_matrix_lock() -> asyncio.Lock:
+    """Get or create the matrix lock."""
+    global _MATRIX_LOCK
+    if _MATRIX_LOCK is None:
+        _MATRIX_LOCK = asyncio.Lock()
+    return _MATRIX_LOCK
+
 
 _CATEGORIES_MAP = {
     "fetch": ["fetch", "spider", "scrape", "stealth", "camoufox", "botasaurus"],
@@ -186,7 +195,7 @@ async def research_capability_matrix(category: str = "all") -> dict[str, Any]:
         global _MATRIX_CACHE
 
         if _MATRIX_CACHE is None:
-            async with _MATRIX_LOCK:
+            async with _get_matrix_lock():
                 if _MATRIX_CACHE is None:
                     _MATRIX_CACHE = _build_matrix()
 
@@ -230,7 +239,7 @@ async def research_find_tools_by_capability(
         global _MATRIX_CACHE
 
         if _MATRIX_CACHE is None:
-            async with _MATRIX_LOCK:
+            async with _get_matrix_lock():
                 if _MATRIX_CACHE is None:
                     _MATRIX_CACHE = _build_matrix()
 

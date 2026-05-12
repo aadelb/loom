@@ -9,6 +9,7 @@ Uses Lightpanda as a subprocess since it's not easily pip-installable as a libra
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
@@ -115,12 +116,16 @@ async def research_lightpanda_fetch(
         if extract_links:
             cmd.append("--extract-links")
 
-        # Run lightpanda
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=60,
+        # Run lightpanda in executor to avoid blocking the event loop
+        loop = asyncio.get_running_loop()
+        result = await loop.run_in_executor(
+            None,
+            lambda: subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=60,
+            ),
         )
 
         output: dict[str, Any] = {

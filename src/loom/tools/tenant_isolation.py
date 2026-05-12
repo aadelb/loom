@@ -7,7 +7,15 @@ from typing import Any
 
 logger = logging.getLogger("loom.tools.tenant_isolation")
 _TENANT_FILE = Path.home() / ".loom" / "tenants.json"
-_lock = asyncio.Lock()
+_lock: asyncio.Lock | None = None
+
+
+def _get_lock() -> asyncio.Lock:
+    """Get or create the lock."""
+    global _lock
+    if _lock is None:
+        _lock = asyncio.Lock()
+    return _lock
 
 
 def _load_tenants() -> dict[str, Any]:
@@ -33,7 +41,7 @@ async def research_tenant_create(tenant_id: str, name: str = "", quota_calls_per
             raise ValueError("tenant_id alphanumeric + underscore")
         if len(tenant_id) > 64 or not (1 <= quota_calls_per_hour <= 100000):
             raise ValueError("tenant_id max 64, quota 1-100000")
-        async with _lock:
+        async with _get_lock():
             tenants = _load_tenants()
             if tenant_id in tenants:
                 raise ValueError(f"tenant {tenant_id} exists")
@@ -51,7 +59,7 @@ async def research_tenant_list() -> dict[str, Any]:
     """List all tenants.
     Returns: {tenants: [{id, name, quota, created, calls_today}], total}"""
     try:
-        async with _lock:
+        async with _get_lock():
             tenants = _load_tenants()
             return {"tenants": [{"id": t["tenant_id"], "name": t.get("name", t["tenant_id"]), "quota": t["quota_calls_per_hour"],
                                 "created": t["created_at"], "calls_today": t.get("calls_today", 0)} for t in tenants.values()],
@@ -64,7 +72,7 @@ async def research_tenant_usage(tenant_id: str) -> dict[str, Any]:
     """Get tenant usage metrics.
     Returns: {tenant_id, calls_today, calls_this_hour, quota_remaining, quota_total, top_tools_used, created_at}"""
     try:
-        async with _lock:
+        async with _get_lock():
             tenants = _load_tenants()
             if tenant_id not in tenants:
                 raise ValueError(f"tenant {tenant_id} not found")

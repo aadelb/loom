@@ -242,7 +242,7 @@ async def _crawl_fallback(
     }
 
     async with httpx.AsyncClient(
-        timeout=timeout, follow_redirects=True, verify=False
+        timeout=timeout, follow_redirects=True
     ) as client:
         while to_visit and len(visited) < max_urls:
             current_url, current_depth = to_visit.pop(0)

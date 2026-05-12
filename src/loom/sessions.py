@@ -35,7 +35,15 @@ logger = logging.getLogger("loom.sessions")
 # Global session registry
 _sessions: dict[str, BrowserContext] = {}
 _metadata: dict[str, dict[str, Any]] = defaultdict(dict)
-_lock = asyncio.Lock()
+_lock: asyncio.Lock | None = None
+
+
+def _get_lock() -> asyncio.Lock:
+    """Get or create the session lock."""
+    global _lock
+    if _lock is None:
+        _lock = asyncio.Lock()
+    return _lock
 
 
 class SessionMetadata(BaseModel):
@@ -157,7 +165,7 @@ async def open_session(
         login_script=login_script,
     )
 
-    async with _lock:
+    async with _get_lock():
         # Cleanup expired sessions first
         await _cleanup_expired()
 
@@ -277,7 +285,7 @@ async def close_session(name: str) -> dict[str, Any]:
     Returns:
         Dict with closure status.
     """
-    async with _lock:
+    async with _get_lock():
         return await _close_session_inner(name)
 
 
@@ -290,7 +298,7 @@ async def get_session(name: str) -> BrowserContext | None:
     Returns:
         BrowserContext if found and valid, else None.
     """
-    async with _lock:
+    async with _get_lock():
         # Cleanup expired sessions first (Issue #182)
         await _cleanup_expired()
 
@@ -409,7 +417,7 @@ async def cleanup_sessions(max_sessions: int = 10) -> dict[str, Any]:
     Returns:
         Dict with cleanup results.
     """
-    async with _lock:
+    async with _get_lock():
         current = len(_sessions)
         if current <= max_sessions:
             return {
@@ -442,7 +450,7 @@ async def cleanup_sessions(max_sessions: int = 10) -> dict[str, Any]:
 
 async def cleanup_all_sessions() -> dict[str, Any]:
     """Close ALL active sessions. Called during server shutdown."""
-    async with _lock:
+    async with _get_lock():
         names = list(_sessions.keys())
     closed: list[str] = []
     errors: list[str] = []

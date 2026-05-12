@@ -95,7 +95,13 @@ class ToolRateLimiter:
         self._calls: dict[str, dict[str, list[float]]] = defaultdict(
             lambda: defaultdict(list)
         )
-        self._lock = asyncio.Lock()
+        self._lock: asyncio.Lock | None = None
+
+    def _get_lock(self) -> asyncio.Lock:
+        """Get or create the rate limiter lock."""
+        if self._lock is None:
+            self._lock = asyncio.Lock()
+        return self._lock
 
     async def check(
         self, tool_name: str, user_id: str = "default"
@@ -146,7 +152,7 @@ class ToolRateLimiter:
             pass  # Fall back to in-memory
 
         # In-memory sliding window (fallback or primary if Redis unavailable)
-        async with self._lock:
+        async with self._get_lock():
             now = time.time()
             cutoff = now - self.window_seconds
 
@@ -189,7 +195,7 @@ class ToolRateLimiter:
         """
         limit = TOOL_RATE_LIMITS.get(tool_name, DEFAULT_RATE_LIMIT)
 
-        async with self._lock:
+        async with self._get_lock():
             now = time.time()
             cutoff = now - self.window_seconds
 
@@ -205,14 +211,22 @@ class ToolRateLimiter:
 
 # Global instance
 _instance: ToolRateLimiter | None = None
-_instance_lock = asyncio.Lock()
+_instance_lock: asyncio.Lock | None = None
+
+
+def _get_instance_lock() -> asyncio.Lock:
+    """Get or create the instance lock."""
+    global _instance_lock
+    if _instance_lock is None:
+        _instance_lock = asyncio.Lock()
+    return _instance_lock
 
 
 async def get_tool_rate_limiter() -> ToolRateLimiter:
     """Get or create the global ToolRateLimiter instance."""
     global _instance
     if _instance is None:
-        async with _instance_lock:
+        async with _get_instance_lock():
             if _instance is None:
                 _instance = ToolRateLimiter(window_seconds=60)
     return _instance

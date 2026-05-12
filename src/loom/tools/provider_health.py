@@ -10,6 +10,7 @@ from typing import Any, Literal
 # Health tracking: bounded deque per provider
 _HISTORY: dict[str, deque[dict[str, Any]]] = {}
 _MAX_EVENTS = 1000
+_MAX_PROVIDERS = 50
 
 # Provider config keys
 _KEYS = {
@@ -55,6 +56,12 @@ def _get_history(provider: str) -> deque[dict[str, Any]]:
     """Get or create history deque for provider."""
     if provider not in _HISTORY:
         _HISTORY[provider] = deque(maxlen=_MAX_EVENTS)
+
+        # Evict oldest provider key if over capacity
+        if len(_HISTORY) > _MAX_PROVIDERS:
+            oldest_provider = list(_HISTORY.keys())[0]
+            del _HISTORY[oldest_provider]
+
     return _HISTORY[provider]
 
 

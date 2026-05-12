@@ -9,8 +9,15 @@ _INDEX: dict[str, list[float]] = {}
 _IDF: dict[str, float] = {}
 _VOCAB: list[str] = []
 _VOCAB_IDX: dict[str, int] = {}
-_INDEX_LOCK = asyncio.Lock()
+_INDEX_LOCK: asyncio.Lock | None = None
 _STOPWORDS = {"the", "a", "is", "to", "for", "and", "of", "in", "with", "on", "by", "from", "or", "an", "as", "be", "at", "this", "that", "it", "which", "was", "are", "been", "have", "has", "do", "does", "did"}
+
+def _get_index_lock() -> asyncio.Lock:
+    """Get or create the index lock."""
+    global _INDEX_LOCK
+    if _INDEX_LOCK is None:
+        _INDEX_LOCK = asyncio.Lock()
+    return _INDEX_LOCK
 
 def _extract_tools() -> dict[str, str]:
     tools = {}
@@ -74,7 +81,7 @@ async def research_semantic_search(query: str, top_k: int = 10) -> dict[str, Any
     try:
         global _INDEX, _IDF, _VOCAB, _VOCAB_IDX
         if not _INDEX:
-            async with _INDEX_LOCK:
+            async with _get_index_lock():
                 if not _INDEX:
                     _INDEX, _IDF, _VOCAB = _build_index()
                     _VOCAB_IDX = {w: i for i, w in enumerate(_VOCAB)}
@@ -110,7 +117,7 @@ async def research_semantic_rebuild() -> dict[str, Any]:
     """
     try:
         global _INDEX, _IDF, _VOCAB, _VOCAB_IDX
-        async with _INDEX_LOCK:
+        async with _get_index_lock():
             _INDEX.clear()
             _IDF.clear()
             _VOCAB.clear()

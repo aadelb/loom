@@ -16,7 +16,16 @@ logger = logging.getLogger("loom.tools.composition_optimizer")
 
 # Cached tool metadata (built on first access)
 _TOOL_METADATA: dict[str, dict[str, Any]] | None = None
-_METADATA_LOCK = asyncio.Lock()
+_METADATA_LOCK: asyncio.Lock | None = None
+
+
+def _get_metadata_lock() -> asyncio.Lock:
+    """Get or create the metadata lock."""
+    global _METADATA_LOCK
+    if _METADATA_LOCK is None:
+        _METADATA_LOCK = asyncio.Lock()
+    return _METADATA_LOCK
+
 
 # Goal-to-tool mapping for common research scenarios
 GOAL_PATTERNS: dict[str, list[str]] = {
@@ -380,7 +389,7 @@ async def research_optimizer_rebuild() -> dict[str, Any]:
     """
     try:
         global _TOOL_METADATA
-        async with _METADATA_LOCK:
+        async with _get_metadata_lock():
             _TOOL_METADATA = None
         metadata = _get_tool_metadata()
 

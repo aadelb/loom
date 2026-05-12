@@ -15,8 +15,16 @@ from loom.validators import validate_url, UrlSafetyError
 logger = logging.getLogger("loom.tools.evasion_network")
 
 _last_rotate_time: float = 0.0
-_rotate_lock = asyncio.Lock()
+_rotate_lock: asyncio.Lock | None = None
 _test_client: httpx.AsyncClient | None = None
+
+
+def _get_rotate_lock() -> asyncio.Lock:
+    """Get or create the rotate lock."""
+    global _rotate_lock
+    if _rotate_lock is None:
+        _rotate_lock = asyncio.Lock()
+    return _rotate_lock
 
 
 async def _get_test_client() -> httpx.AsyncClient:
@@ -51,7 +59,7 @@ async def research_tor_rotate() -> dict[str, Any]:
     """
     global _last_rotate_time
     start_time = time.time()
-    async with _rotate_lock:
+    async with _get_rotate_lock():
         now = time.time()
         if now - _last_rotate_time < 10.0:
             return {"rotated": False, "new_ip": "", "circuit_id": "rate_limited",
