@@ -65,7 +65,7 @@ async def research_compare_responses(
         unique = {}
         for i, (r, ws) in enumerate(zip(responses, word_sets)):
             others = set.union(*(word_sets[j] for j in range(len(word_sets)) if j != i), set())
-            unique[r.get("model", f"m{i}")] = list(ws - others)[:10]
+            unique[r.get("model", f"m{i}")] = sorted(ws - others)[:10]
 
         return {
             "comparison_type": comparison_type,
@@ -111,7 +111,7 @@ async def research_model_consensus(
                 s = sent.strip()
                 if len(s) > 20 and any(kw in s.lower() for kw in
                                        ["is", "are", "was", "show", "indicate", "found", "demonstrate"]):
-                    key = s[:50].lower()
+                    key = s.lower()
                     if key not in claims_map:
                         claims_map[key] = []
                     if idx not in claims_map[key]:
@@ -120,7 +120,7 @@ async def research_model_consensus(
         consensus, disputed = [], []
         for key, models in claims_map.items():
             conf = (len(models) / n) * 100
-            entry = {"claim": key.rstrip(".:").capitalize(), "models_agreeing": len(models), "confidence": round(conf, 1)}
+            entry = {"claim": key[:80].rstrip(".:").capitalize(), "models_agreeing": len(models), "confidence": round(conf, 1)}
             (consensus if len(models) >= min_agree else disputed).append(entry)
 
         consensus.sort(key=lambda x: x["confidence"], reverse=True)

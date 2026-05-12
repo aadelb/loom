@@ -22,9 +22,13 @@ async def _fetch_bytes(
 		resp = await client.get(url, timeout=30.0, follow_redirects=True)
 		if resp.status_code == 200:
 			return resp.content[:max_bytes]
-	except Exception as exc:
+		return b""
+	except httpx.HTTPError as exc:
 		logger.debug("metadata_forensics fetch failed: %s", exc)
-	return b""
+		return b""
+	except Exception as exc:
+		logger.error("metadata_forensics unexpected fetch error: %s", exc)
+		return b""
 
 
 async def _fetch_text(client: httpx.AsyncClient, url: str) -> str:
@@ -32,9 +36,13 @@ async def _fetch_text(client: httpx.AsyncClient, url: str) -> str:
 		resp = await client.get(url, timeout=20.0, follow_redirects=True)
 		if resp.status_code == 200:
 			return resp.text
-	except Exception as exc:
+		return ""
+	except httpx.HTTPError as exc:
 		logger.debug("metadata_forensics text fetch failed: %s", exc)
-	return ""
+		return ""
+	except Exception as exc:
+		logger.error("metadata_forensics unexpected text fetch error: %s", exc)
+		return ""
 
 
 def _extract_json_ld(html: str) -> list[dict[str, Any]]:
@@ -123,7 +131,12 @@ def _extract_feeds(html: str, base_url: str) -> list[dict[str, str]]:
 def _extract_image_urls(html: str, base_url: str) -> list[str]:
 	urls: list[str] = []
 	for match in re.finditer(r'<img[^>]+src\s*=\s*["\']([^"\']+)["\']', html):
-		urls.append(urljoin(base_url, match.group(1)))
+		img_url = urljoin(base_url, match.group(1))
+		try:
+			validate_url(img_url)
+			urls.append(img_url)
+		except UrlSafetyError as exc:
+			logger.debug("image URL failed validation: %s: %s", img_url, exc)
 	return urls[:10]
 
 
@@ -145,7 +158,9 @@ def _extract_exif(image_bytes: bytes) -> dict[str, Any]:
 			try:
 				if isinstance(value, bytes):
 					value = value.decode("utf-8", errors="replace")[:100]
-				result[tag] = str(value)[:200]
+				else:
+					value = str(value)[:200]
+				result[tag] = value
 			except Exception as e:
 				logger.debug("exif_value_parse_error: %s", e)
 		return result
@@ -228,9 +243,15 @@ async def research_metadata_forensics(
 				}
 
 		return await _run()
+	except UrlSafetyError as exc:
+		logger.warning("research_metadata_forensics URL validation failed: %s", exc)
+		return {
+			"error": f"invalid url: {exc}",
+			"tool": "research_metadata_forensics",
+		}
 	except Exception as exc:
 		logger.error("research_metadata_forensics failed: %s", exc)
 		return {
-			"error": str(exc),
+			"error": "failed to extract metadata",
 			"tool": "research_metadata_forensics",
 		}

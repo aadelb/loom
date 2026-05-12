@@ -73,7 +73,14 @@ def _read_cost_logs() -> dict[str, dict[str, Any]]:
                 provider_stats[provider]["count"] += 1
                 provider_stats[provider]["total_cost"] += cost
 
-                model = "default"
+                # Extract model name from operation (e.g., "llm_gpt4_chat" -> "gpt4")
+                model = "unknown"
+                parts = op_lower.split("_")
+                if len(parts) > 1:
+                    # Heuristic: second part is often the model (llm_gpt4_chat, search_exa_etc)
+                    potential_model = parts[1]
+                    if potential_model and potential_model not in ("call", "query", "chat"):
+                        model = potential_model
                 if model not in provider_stats[provider]["models"]:
                     provider_stats[provider]["models"][model] = 0.0
                 provider_stats[provider]["models"][model] += cost
@@ -112,7 +119,7 @@ def _read_tool_metrics() -> dict[str, dict[str, Any]]:
                     }
 
                 tool_metrics[tool_name]["calls"] += 1
-                if duration_ms:
+                if duration_ms is not None:
                     tool_metrics[tool_name]["latencies"].append(float(duration_ms))
 
                 if status and status != "success":
@@ -140,8 +147,12 @@ def _percentile(values: list[float], p: int) -> float:
     if not values:
         return 0.0
     sorted_vals = sorted(values)
-    idx = int((p / 100.0) * (len(sorted_vals) - 1))
-    return sorted_vals[idx]
+    # Linear interpolation percentile (numpy-style)
+    rank = (p / 100.0) * (len(sorted_vals) - 1)
+    idx_lower = int(rank)
+    idx_upper = min(idx_lower + 1, len(sorted_vals) - 1)
+    weight = rank - idx_lower
+    return sorted_vals[idx_lower] * (1 - weight) + sorted_vals[idx_upper] * weight
 
 
 def research_metrics() -> dict[str, Any]:

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
@@ -53,11 +54,11 @@ def _check_condition(value: float, condition: str, threshold: float) -> bool:
     if condition == "lt":
         return value < threshold
     if condition == "eq":
-        return value == threshold
+        return math.isclose(value, threshold, rel_tol=1e-9, abs_tol=1e-9)
     if condition == "gte":
-        return value >= threshold
+        return value >= threshold or math.isclose(value, threshold, rel_tol=1e-9, abs_tol=1e-9)
     if condition == "lte":
-        return value <= threshold
+        return value <= threshold or math.isclose(value, threshold, rel_tol=1e-9, abs_tol=1e-9)
     return False
 
 
@@ -133,7 +134,7 @@ async def research_alert_check(metric_values: dict[str, float] | None = None) ->
             metric = rule.get("metric")
             value = metric_values.get(metric, 0.0)
             condition = rule.get("condition")
-            threshold = rule.get("threshold", 0)
+            threshold = rule.get("threshold", 0.0)
 
             if _check_condition(value, condition, threshold):
                 alerts_triggered.append({

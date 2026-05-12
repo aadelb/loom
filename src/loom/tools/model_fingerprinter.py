@@ -73,7 +73,6 @@ async def research_fingerprint_behavior(
         tasks.append(_call_with_cascade(messages, model=model, max_tokens=500, temperature=0.7, timeout=30))
 
     probe_results = []
-    probe_results = []
     gathered_responses = await asyncio.gather(*tasks, return_exceptions=True)
     for probe, response_data in zip(selected_probes, gathered_responses):
         text = None
