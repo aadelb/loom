@@ -27,7 +27,17 @@ async def research_vision_browse(url: str, task: str) -> dict[str, Any]:
     from loom.tools.fetch import research_fetch
     from loom.tools.llm import _get_provider
 
-    url = validate_url(url)
+    try:
+        url = validate_url(url)
+    except Exception as e:
+        logger.error("url_validation_failed url=%s error=%s", url, e)
+        return {
+            "url": url,
+            "task": task,
+            "screenshot_taken": False,
+            "analysis": f"Invalid URL: {str(e)}",
+            "suggested_actions": [],
+        }
     screenshot_taken = False
     screenshot_data = None
 
@@ -124,8 +134,15 @@ async def research_vision_compare(url1: str, url2: str) -> dict[str, Any]:
     if not url2 or not url2.strip():
         raise ValueError("url2 is required and cannot be empty")
 
-    url1 = validate_url(url1)
-    url2 = validate_url(url2)
+    try:
+        url1 = validate_url(url1)
+        url2 = validate_url(url2)
+    except Exception as e:
+        logger.error("url_validation_failed error=%s", e)
+        return {
+            "url1": url1, "url2": url2, "similarities": [], "differences": [],
+            "layout_match_score": 0, "error": f"Invalid URL: {str(e)}",
+        }
 
     try:
         result1 = await research_fetch(url1, mode="http", max_chars=3000)

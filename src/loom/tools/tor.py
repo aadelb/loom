@@ -99,14 +99,6 @@ async def research_tor_status() -> dict[str, Any]:
             "error": "Timeout connecting to check.torproject.org",
         }
 
-    except ImportError:
-        return {
-            "tor_running": False,
-            "exit_ip": "",
-            "socks5_proxy": proxy,
-            "error": "socksio not installed (pip install socksio) — required for SOCKS5 proxy",
-        }
-
     except Exception as exc:
         logger.error("tor_status_unexpected: %s", type(exc).__name__)
         return {

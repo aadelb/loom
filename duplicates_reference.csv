@@ -1,0 +1,36 @@
+Function Name,Occurrences,Primary Owner,Re-import Locations,Type,Status
+research_attack_score,2,attack_scorer.py,constraint_optimizer.py,Scoring,✅ Safe
+research_auto_reframe,3,prompt_reframe.py,"expert_engine.py, full_pipeline.py",Prompt Reframing,✅ Safe
+research_batch_verify,2,fact_verifier.py,fact_verification.py,Batch Verification,✅ Safe
+research_build_query,2,query_builder.py,full_pipeline.py,Query Construction,✅ Safe
+research_cache_analyze,2,cache_optimizer.py,cache_analytics.py,Cache Analysis,✅ Safe
+research_cache_optimize,2,cache_optimizer.py,cache_analytics.py,Cache Optimization,✅ Safe
+research_cached_strategy,2,strategy_cache.py,full_pipeline.py,Strategy Caching,✅ Safe
+research_estimate_cost,3,cost_estimator.py,"deep.py, full_pipeline.py",Cost Estimation,✅ Safe
+research_explain_bypass,2,explainability.py,full_pipeline.py,Bypass Explanation,✅ Safe
+research_fact_verify,2,fact_verifier.py,fact_verification.py,Fact Verification,✅ Safe
+research_fetch,7,fetch.py,"dead_drop_scanner.py, ghost_weave.py, graph_scraper.py, onion_spectra.py, scraper_engine_tools.py, spider.py",URL Fetching,✅ Critical Safe
+research_hcs_score,4,hcs_scorer.py,"constraint_optimizer.py, full_pipeline.py, hcs_escalation.py",Harm/Credibility/Stealth Scoring,✅ Critical Safe
+research_hcs_score_full,2,hcs_multi_scorer.py,full_pipeline.py,Full HCS Scoring,✅ Safe
+research_health_deep,2,health_deep.py,health.py,Health Check,✅ Safe
+research_llm_classify,2,llm.py,onion_spectra.py,LLM Classification,✅ Safe
+research_markdown,2,markdown.py,graph_scraper.py,HTML to Markdown,✅ Safe
+research_meta_learn,2,meta_learner.py,full_pipeline.py,Meta-Learning,✅ Safe
+research_metadata_strip,2,privacy_advanced.py,metadata_tools.py,Metadata Removal,✅ Safe
+research_queue_status,2,request_queue.py,queue_monitor.py,Queue Monitoring,✅ Safe
+research_recommend_tools,2,tool_recommender_tool.py,router.py,Tool Recommendation,✅ Safe
+research_refusal_detector,2,prompt_reframe.py,expert_engine.py,Refusal Detection,✅ Safe
+research_route_to_model,2,router.py,model_router.py,Model Routing,✅ Safe
+research_sandbox_execute,2,sandbox_executor.py,sandbox.py,Sandboxed Execution,✅ Safe
+research_sandbox_monitor,2,sandbox_executor.py,sandbox.py,Sandbox Monitoring,✅ Safe
+research_security_audit,2,security_checklist.py,security_auditor.py,Security Auditing,✅ Safe
+research_social_graph_demo,2,social_graph_demo.py,demo_decorator_usage.py,Demonstration,✅ Safe
+research_source_reputation,2,source_reputation.py,reputation_scorer.py,Source Trust Scoring,✅ Safe
+research_stealth_detect_comparison,2,stealth_detector.py,stealth_detect.py,Stealth Detection,✅ Safe
+research_stealth_score,3,stealth_score.py,"constraint_optimizer.py, stealth_detector.py",Stealth Scoring,✅ Safe
+research_stealth_score_heuristic,2,stealth_scorer.py,stealth_detector.py,Heuristic Stealth Scoring,✅ Safe
+research_stego_decode,2,stego_decoder.py,privacy_tools.py,Steganography Decoding,✅ Safe
+research_strategy_log,2,strategy_feedback.py,autonomous_agent.py,Strategy Logging,✅ Safe
+research_threat_profile_demo,2,threat_profile_demo.py,demo_decorator_usage.py,Demonstration,✅ Safe
+research_usage_report,2,usage_report.py,billing.py,Usage Reporting,✅ Safe
+research_usb_monitor,2,usb_monitor_tool.py,privacy_advanced.py,USB Monitoring,✅ Safe

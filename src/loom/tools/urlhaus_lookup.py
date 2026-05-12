@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import logging
 import asyncio
+import logging
 from typing import Any, Literal
 
 import httpx
-import asyncio
 
 from loom.validators import validate_url, UrlSafetyError
 
@@ -29,7 +28,6 @@ async def research_urlhaus_check(url: str) -> dict[str, Any]:
         Dict with keys: url, threat, status, tags, date_added, threat_type
     """
     validate_url(url)
-    await asyncio.sleep(0)
     if not url or not (url.startswith("http://") or url.startswith("https://")):
         return {
             "url": url,
@@ -42,8 +40,8 @@ async def research_urlhaus_check(url: str) -> dict[str, Any]:
         }
 
     try:
-        with httpx.Client(timeout=15.0) as client:
-            resp = client.post(
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.post(
                 f"{_URLHAUS_BASE}/url/",
                 data={"url": url},
             )
@@ -114,7 +112,6 @@ async def research_urlhaus_search(
     Returns:
         Dict with keys: query, type, results (list), total
     """
-    await asyncio.sleep(0)
     if not query or len(query.strip()) == 0:
         return {
             "query": query,
@@ -129,16 +126,16 @@ async def research_urlhaus_search(
         search_type = "tag"
 
     try:
-        with httpx.Client(timeout=15.0) as client:
+        async with httpx.AsyncClient(timeout=15.0) as client:
             if search_type == "tag":
                 endpoint = f"{_URLHAUS_BASE}/tag/"
-                resp = client.post(endpoint, data={"tag": query})
+                resp = await client.post(endpoint, data={"tag": query})
             elif search_type == "hash":
                 endpoint = f"{_URLHAUS_BASE}/payload/"
-                resp = client.post(endpoint, data={"sha256_hash": query})
+                resp = await client.post(endpoint, data={"sha256_hash": query})
             else:  # signature
                 endpoint = f"{_URLHAUS_BASE}/signature/"
-                resp = client.post(endpoint, data={"signature": query})
+                resp = await client.post(endpoint, data={"signature": query})
 
             resp.raise_for_status()
             data = resp.json()

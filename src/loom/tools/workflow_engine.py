@@ -161,6 +161,7 @@ def research_workflow_run(workflow_id: str, dry_run: bool = False) -> dict[str, 
         for i, step in enumerate(steps):
             sname = step.get("name", f"step_{i}")
             tool = step["tool"]
+            params = step.get("params", {})
             missing = [d for d in step.get("depends_on", []) if d not in executed]
 
             if missing:
@@ -168,9 +169,15 @@ def research_workflow_run(workflow_id: str, dry_run: bool = False) -> dict[str, 
                 results[sname] = {"status": "failed", "error": f"Missing: {missing}"}
             else:
                 try:
+                    # NOTE: Tool execution requires MCP client integration.
+                    # Current implementation marks as success for validation purposes.
+                    # To enable actual execution:
+                    # 1. Import MCP client (e.g., from loom.mcp_client import Client)
+                    # 2. Call: step_result = await client.call_tool(tool, params)
+                    # 3. Store: results[sname] = {"status": "success", "result": step_result, "tool": tool}
                     executed[sname] = True
                     completed += 1
-                    results[sname] = {"status": "success", "tool": tool}
+                    results[sname] = {"status": "success", "tool": tool, "note": "execution not yet implemented"}
                 except Exception as e:
                     failed += 1
                     results[sname] = {"status": "failed", "error": str(e)}

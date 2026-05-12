@@ -1,0 +1,36 @@
+{
+  "generated": "2026-05-06",
+  "total_tools": 835,
+  "files": {
+    "tool_guidelines.json": {
+      "path": "/opt/research-toolbox/tool_guidelines.json",
+      "size_kb": 520.1,
+      "description": "Master reference: all 835 tools with quality metadata"
+    },
+    "TOOL_TESTING_FRAMEWORK.md": {
+      "path": "/opt/research-toolbox/TOOL_TESTING_FRAMEWORK.md",
+      "description": "Testing strategy, expectations per category"
+    },
+    "scripts/validate_guidelines.py": {
+      "path": "/opt/research-toolbox/scripts/validate_guidelines.py",
+      "description": "CLI tool to validate tools"
+    }
+  },
+  "metrics": {
+    "total_tools": 835,
+    "tools_with_docstrings": 835,
+    "async_tools": 678,
+    "sync_tools": 157,
+    "dict_return_type": 677,
+    "list_return_type": 12,
+    "any_return_type": 146
+  },
+  "categories": {
+    "research": 810,
+    "other": 15,
+    "infrastructure": 5,
+    "darkweb": 3,
+    "scoring": 1,
+    "analysis": 1
+  }
+}

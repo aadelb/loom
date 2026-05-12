@@ -118,24 +118,22 @@ def _find_topological_holes(
     min_coords = [min(v[i] for v in all_vecs) for i in range(5)]
     max_coords = [max(v[i] for v in all_vecs) for i in range(5)]
 
-    # Search for holes: empty cells with occupied neighbors
-    search_radius = 2
-    for dim_vals in [[round(c) for c in range(int(min_coords[0]), int(max_coords[0]) + 1)]]:
-        for cell in occupied_cells:
-            # Check neighbors in 5D space
-            for i in range(5):
-                for delta in [-1, 1]:
-                    neighbor = list(cell)
-                    neighbor[i] += delta
-                    neighbor_tuple = tuple(neighbor)
+    # Search for holes: empty cells with occupied neighbors in 5D space
+    for cell in occupied_cells:
+        # Check all 10 neighbors (±1 in each of 5 dimensions)
+        for i in range(5):
+            for delta in [-1, 1]:
+                neighbor = list(cell)
+                neighbor[i] += delta
+                neighbor_tuple = tuple(neighbor)
 
-                    if neighbor_tuple not in occupied_cells:
-                        # Found a hole: empty cell next to occupied cell
-                        holes.append({
-                            "coordinates": list(neighbor),
-                            "dimension": i,
-                            "delta": delta,
-                        })
+                if neighbor_tuple not in occupied_cells:
+                    # Found a hole: empty cell next to occupied cell
+                    holes.append({
+                        "coordinates": list(neighbor),
+                        "dimension": i,
+                        "delta": delta,
+                    })
 
     # Deduplicate and limit holes
     unique_holes = {str(h["coordinates"]): h for h in holes}

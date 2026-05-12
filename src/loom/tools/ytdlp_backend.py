@@ -87,6 +87,13 @@ async def research_video_download(
     # Normalize audio_only
     audio_only = bool(audio_only)
 
+    # Validate format parameter
+    if format not in ("best", "worst") and not re.match(r"^[a-zA-Z0-9+\[\]/\-_.]+$", format):
+        return {
+            "error": f"Invalid format: {format}. Use 'best', 'worst', or yt-dlp format spec (e.g., '22+251')",
+            "url": url,
+        }
+
     logger.info(
         "video_download_start url=%s format=%s audio_only=%s max_duration=%d",
         url[:80],

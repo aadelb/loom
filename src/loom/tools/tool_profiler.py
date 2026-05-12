@@ -46,19 +46,20 @@ async def research_profile_tool(tool_name: str, iterations: int = 5) -> dict[str
                 start = time.perf_counter_ns()
                 await tool_func()
                 timings_ms.append((time.perf_counter_ns() - start) / 1_000_000)
-            except Exception as e:  # FIX: Changed from bare except: to except Exception
+            except TypeError as e:
+                logger.debug("Tool requires parameters, skipping execution: %s", type(e).__name__)
+                timings_ms.append(None)
+            except Exception as e:
                 logger.debug("Tool execution failed: %s", type(e).__name__)
-                try:
-                    await tool_func()
-                except Exception as e2:  # FIX: Changed from bare except: to except Exception
-                    logger.debug("Retry failed: %s", type(e2).__name__)
-                timings_ms.append(0.0)
+                timings_ms.append(None)
         gc.collect()
         mem_after = psutil.Process().memory_info().rss / 1024
-        timings_ms = timings_ms or [0.0]
-        avg_call_ms = sum(timings_ms) / len(timings_ms)
-        bottleneck = "import" if import_ms > avg_call_ms * 2 else "execution" if max(timings_ms) > avg_call_ms * 3 else "none"
-        return {"tool": tool_name, "module": tool_module, "iterations": iterations, "import_ms": round(import_ms, 3), "avg_call_ms": round(avg_call_ms, 3), "min_call_ms": round(min(timings_ms), 3), "max_call_ms": round(max(timings_ms), 3), "memory_delta_kb": round(mem_after - mem_before, 2), "bottleneck": bottleneck}
+        valid_timings = [t for t in timings_ms if t is not None]
+        if not valid_timings:
+            return {"error": f"tool {tool_name} requires parameters and cannot be profiled", "tool": tool_name}
+        avg_call_ms = sum(valid_timings) / len(valid_timings)
+        bottleneck = "import" if import_ms > avg_call_ms * 2 else "execution" if max(valid_timings) > avg_call_ms * 3 else "none"
+        return {"tool": tool_name, "module": tool_module, "iterations": iterations, "import_ms": round(import_ms, 3), "avg_call_ms": round(avg_call_ms, 3), "min_call_ms": round(min(valid_timings), 3), "max_call_ms": round(max(valid_timings), 3), "memory_delta_kb": round(mem_after - mem_before, 2), "bottleneck": bottleneck}
     except Exception as e:
         return {"error": str(e)}
 

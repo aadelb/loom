@@ -1,0 +1,135 @@
+[
+  {
+    "scenario": 1,
+    "tool": "research_help",
+    "aspect": "returns_metadata",
+    "passed": true,
+    "evidence": "total_tools present: True"
+  },
+  {
+    "scenario": 1,
+    "tool": "research_help",
+    "aspect": "comprehensive_coverage",
+    "passed": true,
+    "evidence": "831 tools indexed"
+  },
+  {
+    "scenario": 2,
+    "tool": "research_search",
+    "aspect": "url_extraction",
+    "passed": true,
+    "evidence": "URLs present in 5 results"
+  },
+  {
+    "scenario": 2,
+    "tool": "research_search",
+    "aspect": "metadata_completeness",
+    "passed": true,
+    "evidence": "titles/descriptions in results"
+  },
+  {
+    "scenario": 3,
+    "tool": "research_fetch",
+    "aspect": "content_extraction",
+    "passed": true,
+    "evidence": "extracted 289003 chars of useful content"
+  },
+  {
+    "scenario": 3,
+    "tool": "research_fetch",
+    "aspect": "html_cleanup",
+    "passed": true,
+    "evidence": "no raw HTML artifacts in output"
+  },
+  {
+    "scenario": 4,
+    "tool": "research_llm_summarize",
+    "aspect": "compression",
+    "passed": true,
+    "evidence": "compressed 3500c to 263c"
+  },
+  {
+    "scenario": 4,
+    "tool": "research_llm_summarize",
+    "aspect": "key_concept_retention",
+    "passed": true,
+    "evidence": "key terms preserved in summary"
+  },
+  {
+    "scenario": 5,
+    "tool": "research_prompt_reframe",
+    "aspect": "produces_variation",
+    "passed": true,
+    "evidence": "reframed output differs from input"
+  },
+  {
+    "scenario": 5,
+    "tool": "research_prompt_reframe",
+    "aspect": "adds_context",
+    "passed": true,
+    "evidence": "adds 332257 chars of context"
+  },
+  {
+    "scenario": 5,
+    "tool": "research_prompt_reframe",
+    "aspect": "strategy_applied",
+    "passed": true,
+    "evidence": "strategy markers visible in output"
+  },
+  {
+    "scenario": 6,
+    "tool": "research_ask_all_llms",
+    "aspect": "multi_provider_fallback",
+    "passed": true,
+    "evidence": "2 providers responded (>= 2 required)"
+  },
+  {
+    "scenario": 6,
+    "tool": "research_ask_all_llms",
+    "aspect": "error_free",
+    "passed": false,
+    "evidence": "'list' object has no attribute 'values'"
+  },
+  {
+    "scenario": 7,
+    "tool": "research_github",
+    "aspect": "finds_repositories",
+    "passed": true,
+    "evidence": "GitHub results returned"
+  },
+  {
+    "scenario": 7,
+    "tool": "research_github",
+    "aspect": "includes_metadata",
+    "passed": true,
+    "evidence": "repo metadata included"
+  },
+  {
+    "scenario": 8,
+    "tool": "research_crypto_trace",
+    "aspect": "address_enumeration",
+    "passed": true,
+    "evidence": "returned 238 chars of address data"
+  },
+  {
+    "scenario": 9,
+    "tool": "research_generate_report",
+    "aspect": "structured_output",
+    "passed": true,
+    "evidence": "contains report structure"
+  },
+  {
+    "scenario": 9,
+    "tool": "research_generate_report",
+    "aspect": "substantial_content",
+    "passed": true,
+    "evidence": "3829 chars generated"
+  },
+  {
+    "scenario": 10,
+    "tool": "error_handling",
+    "aspect": "returns_gracefully",
+    "passed": true,
+    "evidence": "error returned as data, not exception"
+  }
+]

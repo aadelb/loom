@@ -1,0 +1,121 @@
+{
+  "total_steps": 19,
+  "passed": 19,
+  "failed": 0,
+  "results": [
+    {
+      "scenario": 1,
+      "step": "list_tools",
+      "status": "OK",
+      "detail": "831 tools"
+    },
+    {
+      "scenario": 1,
+      "step": "get_tool_help",
+      "status": "OK",
+      "detail": "params=True"
+    },
+    {
+      "scenario": 2,
+      "step": "search_dubai",
+      "status": "OK",
+      "detail": "5 results"
+    },
+    {
+      "scenario": 2,
+      "step": "build_dark_queries",
+      "status": "OK",
+      "detail": "12 queries"
+    },
+    {
+      "scenario": 3,
+      "step": "search",
+      "status": "OK",
+      "detail": "found URL: https://invest.snowfire.ai/"
+    },
+    {
+      "scenario": 3,
+      "step": "fetch",
+      "status": "OK",
+      "detail": "332 chars"
+    },
+    {
+      "scenario": 3,
+      "step": "summarize",
+      "status": "OK",
+      "detail": "299 chars: The provided text appears to be a dictionary containing metadata about a failed "
+    },
+    {
+      "scenario": 4,
+      "step": "crypto_trace",
+      "status": "OK",
+      "detail": "1750 chars"
+    },
+    {
+      "scenario": 4,
+      "step": "passive_recon",
+      "status": "OK",
+      "detail": "2139 chars"
+    },
+    {
+      "scenario": 5,
+      "step": "dark_forum",
+      "status": "OK",
+      "detail": "4 sources, 340 chars"
+    },
+    {
+      "scenario": 5,
+      "step": "onion_discover",
+      "status": "OK",
+      "detail": "337 chars"
+    },
+    {
+      "scenario": 6,
+      "step": "ethical_anchor",
+      "status": "OK",
+      "detail": "338857 chars"
+    },
+    {
+      "scenario": 6,
+      "step": "auto_reframe",
+      "status": "OK",
+      "detail": "2544 chars"
+    },
+    {
+      "scenario": 6,
+      "step": "stack_reframe",
+      "status": "OK",
+      "detail": "1046 chars"
+    },
+    {
+      "scenario": 7,
+      "step": "multi_llm",
+      "status": "OK",
+      "detail": "2 providers responded"
+    },
+    {
+      "scenario": 8,
+      "step": "generate_report",
+      "status": "OK",
+      "detail": "1 sections, 2221 chars"
+    },
+    {
+      "scenario": 9,
+      "step": "fact_verify",
+      "status": "OK",
+      "detail": "943 chars"
+    },
+    {
+      "scenario": 9,
+      "step": "trend_forecast",
+      "status": "OK",
+      "detail": "213 chars"
+    },
+    {
+      "scenario": 10,
+      "step": "github",
+      "status": "OK",
+      "detail": "1288 chars"
+    }
+  ]
+}

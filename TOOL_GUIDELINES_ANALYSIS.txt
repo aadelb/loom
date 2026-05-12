@@ -1,0 +1,181 @@
+================================================================================
+LOOM TOOL GUIDELINES - DETAILED ANALYSIS
+================================================================================
+
+Generated: 2026-05-06
+Total Tools: 835
+
+
+RESEARCH (810 tools)
+--------------------------------------------------------------------------------
+
+  Tool: research_ab_test_analyze
+    Module: strategy_ab_test
+    Required: ['results_a', 'results_b']
+    Optional: ['metric']
+    Async: True
+    Return Type: any
+    Min Chars: 200
+    Doc: Analyze A/B test results with statistical significance and Cohen's d effect size
+
+  Tool: research_ab_test_design
+    Module: strategy_ab_test
+    Required: ['strategy_a', 'strategy_b']
+    Optional: ['sample_size', 'metric']
+    Async: True
+    Return Type: any
+    Min Chars: 200
+    Doc: Design A/B test with power and minimum detectable effect.
+
+  Tool: research_active_select
+    Module: uncertainty_harvest
+    Required: ['candidate_strategies']
+    Optional: ['budget', 'objective']
+    Async: True
+    Return Type: any
+    Min Chars: 200
+    Doc: Select strategies to test with limited API budget. Objectives: maximize_success 
+
+  ... and 807 more tools
+
+OTHER (15 tools)
+--------------------------------------------------------------------------------
+
+  Tool: tool_audit_trail
+    Module: compliance_report
+    Required: []
+    Optional: ['tool_name', 'limit']
+    Async: False
+    Return Type: any
+    Min Chars: 50
+    Doc: MCP wrapper for research_audit_trail.
+
+  Tool: tool_camoufox
+    Module: stealth
+    Required: ['url']
+    Optional: ['session', 'screenshot', 'timeout']
+    Async: True
+    Return Type: any
+    Min Chars: 50
+    Doc: MCP wrapper for research_camoufox.
+
+  Tool: tool_consistency_pressure
+    Module: consistency_pressure
+    Required: ['model', 'target_prompt']
+    Optional: ['max_references']
+    Async: True
+    Return Type: any
+    Min Chars: 50
+    Doc: MCP wrapper for research_consistency_pressure.
+
+  ... and 12 more tools
+
+INFRASTRUCTURE (5 tools)
+--------------------------------------------------------------------------------
+
+  Tool: tool_cache_clear
+    Module: cache_mgmt
+    Required: []
+    Optional: ['older_than_days']
+    Async: False
+    Return Type: any
+    Min Chars: 50
+    Doc: MCP wrapper for research_cache_clear.
+
+  Tool: tool_cache_stats
+    Module: cache_mgmt
+    Required: []
+    Optional: []
+    Async: False
+    Return Type: any
+    Min Chars: 50
+    Doc: MCP wrapper for research_cache_stats.
+
+  Tool: tool_help
+    Module: help_system
+    Required: []
+    Optional: ['tool_name']
+    Async: False
+    Return Type: any
+    Min Chars: 50
+    Doc: MCP wrapper for research_help.
+
+  ... and 2 more tools
+
+DARKWEB (3 tools)
+--------------------------------------------------------------------------------
+
+  Tool: tool_consistency_pressure_history
+    Module: consistency_pressure
+    Required: ['model']
+    Optional: []
+    Async: True
+    Return Type: any
+    Min Chars: 50
+    Doc: MCP wrapper for research_consistency_pressure_history.
+
+  Tool: tool_drift_monitor
+    Module: drift_monitor_tool
+    Required: ['prompts', 'model_name']
+    Optional: ['mode', 'storage_path']
+    Async: True
+    Return Type: any
+    Min Chars: 50
+    Doc: MCP wrapper for research_drift_monitor.
+
+  Tool: tool_drift_monitor_list
+    Module: drift_monitor_tool
+    Required: []
+    Optional: ['storage_path']
+    Async: True
+    Return Type: list
+    Min Chars: 50
+    Doc: MCP wrapper for research_drift_monitor_list.
+
+SCORING (1 tools)
+--------------------------------------------------------------------------------
+
+  Tool: tool_attack_score
+    Module: attack_scorer
+    Required: ['prompt', 'response']
+    Optional: ['strategy', 'model', 'baseline_refusal']
+    Async: False
+    Return Type: any
+    Min Chars: 50
+    Doc: MCP wrapper for research_attack_score.
+
+ANALYSIS (1 tools)
+--------------------------------------------------------------------------------
+
+  Tool: tool_compliance_report
+    Module: compliance_report
+    Required: []
+    Optional: ['period_days', 'framework']
+    Async: False
+    Return Type: any
+    Min Chars: 100
+    Doc: MCP wrapper for research_compliance_report.
+
+
+================================================================================
+SUMMARY STATISTICS
+================================================================================
+
+Execution Model:
+  Async:  678 (81.2%)
+  Sync:   157 (18.8%)
+
+Return Types:
+  dict                : 677 (81.1%)
+  any                 : 146 (17.5%)
+  list                :  12 (1.4%)
+
+Docstrings: 835/835 (100.0%)
+
+Minimum Output Chars by Category:
+  research            : 200 chars
+  other               :  50 chars
+  infrastructure      :  50 chars
+  darkweb             :  50 chars
+  scoring             :  50 chars
+  analysis            : 100 chars
