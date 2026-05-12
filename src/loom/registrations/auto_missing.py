@@ -135,13 +135,6 @@ def register_missing_tools(mcp, wrap_tool):
         count += 1
     except Exception:
         pass
-    try:
-        from loom.tools.audit_log import research_audit_record
-        mcp.tool()(wrap_tool(research_audit_record))
-        count += 1
-    except Exception:
-        pass
-    try:
         from loom.tools.synthetic_data import research_augment_dataset
         mcp.tool()(wrap_tool(research_augment_dataset))
         count += 1
@@ -591,13 +584,6 @@ def register_missing_tools(mcp, wrap_tool):
         count += 1
     except Exception:
         pass
-    try:
-        from loom.tools.fact_verifier import research_fact_verify
-        mcp.tool()(wrap_tool(research_fact_verify))
-        count += 1
-    except Exception:
-        pass
-    try:
         from loom.tools.privacy_advanced import research_fileless_exec
         mcp.tool()(wrap_tool(research_fileless_exec))
         count += 1
@@ -729,13 +715,6 @@ def register_missing_tools(mcp, wrap_tool):
         count += 1
     except Exception:
         pass
-    try:
-        from loom.tools.graph_scraper import research_graph_scrape
-        mcp.tool()(wrap_tool(research_graph_scrape))
-        count += 1
-    except Exception:
-        pass
-    try:
         from loom.tools.neo4j_backend import research_graph_store
         mcp.tool()(wrap_tool(research_graph_store))
         count += 1
@@ -1060,18 +1039,6 @@ def register_missing_tools(mcp, wrap_tool):
     except Exception:
         pass
     try:
-        from loom.tools.metadata_forensics import research_metadata_forensics
-        mcp.tool()(wrap_tool(research_metadata_forensics))
-        count += 1
-    except Exception:
-        pass
-    try:
-        from loom.tools.privacy_advanced import research_metadata_strip
-        mcp.tool()(wrap_tool(research_metadata_strip))
-        count += 1
-    except Exception:
-        pass
-    try:
         from loom.tools.schema_migrate import research_migrate_backup
         mcp.tool()(wrap_tool(research_migrate_backup))
         count += 1
@@ -1329,13 +1296,6 @@ def register_missing_tools(mcp, wrap_tool):
         count += 1
     except Exception:
         pass
-    try:
-        from loom.tools.request_queue import research_queue_status
-        mcp.tool()(wrap_tool(research_queue_status))
-        count += 1
-    except Exception:
-        pass
-    try:
         from loom.tools.embedding_collision import research_rag_attack
         mcp.tool()(wrap_tool(research_rag_attack))
         count += 1
@@ -1425,13 +1385,6 @@ def register_missing_tools(mcp, wrap_tool):
         count += 1
     except Exception:
         pass
-    try:
-        from loom.tools.retry_middleware import research_retry_execute
-        mcp.tool()(wrap_tool(research_retry_execute))
-        count += 1
-    except Exception:
-        pass
-    try:
         from loom.tools.retry_middleware import research_retry_middleware_stats
         mcp.tool()(wrap_tool(research_retry_middleware_stats))
         count += 1
@@ -1449,13 +1402,6 @@ def register_missing_tools(mcp, wrap_tool):
         count += 1
     except Exception:
         pass
-    try:
-        from loom.tools.model_router import research_route_to_model
-        mcp.tool()(wrap_tool(research_route_to_model))
-        count += 1
-    except Exception:
-        pass
-    try:
         from loom.tools.auto_experiment import research_run_experiment
         mcp.tool()(wrap_tool(research_run_experiment))
         count += 1
@@ -1473,13 +1419,6 @@ def register_missing_tools(mcp, wrap_tool):
         count += 1
     except Exception:
         pass
-    try:
-        from loom.tools.sandbox import research_sandbox_execute
-        mcp.tool()(wrap_tool(research_sandbox_execute))
-        count += 1
-    except Exception:
-        pass
-    try:
         from loom.tools.sandbox import research_sandbox_monitor
         mcp.tool()(wrap_tool(research_sandbox_monitor))
         count += 1
@@ -1533,13 +1472,6 @@ def register_missing_tools(mcp, wrap_tool):
         count += 1
     except Exception:
         pass
-    try:
-        from loom.tools.security_checklist import research_security_audit
-        mcp.tool()(wrap_tool(research_security_audit))
-        count += 1
-    except Exception:
-        pass
-    try:
         from loom.tools.hcs10_academic import research_shell_funding
         mcp.tool()(wrap_tool(research_shell_funding))
         count += 1
@@ -1581,13 +1513,6 @@ def register_missing_tools(mcp, wrap_tool):
         count += 1
     except Exception:
         pass
-    try:
-        from loom.tools.social_graph_demo import research_social_graph_demo
-        mcp.tool()(wrap_tool(research_social_graph_demo))
-        count += 1
-    except Exception:
-        pass
-    try:
         from loom.tools.social_intel import research_social_profile
         mcp.tool()(wrap_tool(research_social_profile))
         count += 1
@@ -1605,13 +1530,6 @@ def register_missing_tools(mcp, wrap_tool):
         count += 1
     except Exception:
         pass
-    try:
-        from loom.tools.source_reputation import research_source_reputation
-        mcp.tool()(wrap_tool(research_source_reputation))
-        count += 1
-    except Exception:
-        pass
-    try:
         from loom.tools.enterprise_sso import research_sso_configure
         mcp.tool()(wrap_tool(research_sso_configure))
         count += 1
@@ -1659,13 +1577,6 @@ def register_missing_tools(mcp, wrap_tool):
         count += 1
     except Exception:
         pass
-    try:
-        from loom.tools.privacy_tools import research_stego_decode
-        mcp.tool()(wrap_tool(research_stego_decode))
-        count += 1
-    except Exception:
-        pass
-    try:
         from loom.tools.stego_encoder import research_stego_encode
         mcp.tool()(wrap_tool(research_stego_encode))
         count += 1
@@ -1767,13 +1678,6 @@ def register_missing_tools(mcp, wrap_tool):
         count += 1
     except Exception:
         pass
-    try:
-        from loom.tools.threat_profile_demo import research_threat_profile_demo
-        mcp.tool()(wrap_tool(research_threat_profile_demo))
-        count += 1
-    except Exception:
-        pass
-    try:
         from loom.tools.multilang_attack import research_token_split_attack
         mcp.tool()(wrap_tool(research_token_split_attack))
         count += 1
@@ -1869,13 +1773,6 @@ def register_missing_tools(mcp, wrap_tool):
         count += 1
     except Exception:
         pass
-    try:
-        from loom.tools.privacy_advanced import research_usb_monitor
-        mcp.tool()(wrap_tool(research_usb_monitor))
-        count += 1
-    except Exception:
-        pass
-    try:
         from loom.tools.input_sanitizer import research_validate_params
         mcp.tool()(wrap_tool(research_validate_params))
         count += 1
