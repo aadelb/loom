@@ -264,15 +264,6 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
 
     # ── Demo Tools ──
     try:
-        from loom.tools.demo_decorator_usage import research_code_analysis_demo, research_data_transform_demo
-        mcp.tool()(wrap_tool(research_code_analysis_demo))
-        record_success("research", "research_code_analysis_demo")
-        mcp.tool()(wrap_tool(research_data_transform_demo))
-        record_success("research", "research_data_transform_demo")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip demo_decorator_usage: %s", e)
-        record_failure("research", "demo_decorator_usage", str(e))
-    try:
         from loom.tools.threat_profile_demo import research_threat_profile_demo
         mcp.tool()(wrap_tool(research_threat_profile_demo))
         record_success("research", "research_threat_profile_demo")

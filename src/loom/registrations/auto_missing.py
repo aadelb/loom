@@ -1582,7 +1582,7 @@ def register_missing_tools(mcp, wrap_tool):
     except Exception:
         pass
     try:
-        from loom.tools.demo_decorator_usage import research_social_graph_demo
+        from loom.tools.social_graph_demo import research_social_graph_demo
         mcp.tool()(wrap_tool(research_social_graph_demo))
         count += 1
     except Exception:
@@ -1768,7 +1768,7 @@ def register_missing_tools(mcp, wrap_tool):
     except Exception:
         pass
     try:
-        from loom.tools.demo_decorator_usage import research_threat_profile_demo
+        from loom.tools.threat_profile_demo import research_threat_profile_demo
         mcp.tool()(wrap_tool(research_threat_profile_demo))
         count += 1
     except Exception:
