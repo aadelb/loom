@@ -32,13 +32,19 @@ def _load_sso_config() -> dict[str, Any]:
 
 
 def _save_sso_config(config: dict[str, Any]) -> None:
-    """Save SSO config atomically."""
+    """Save SSO config atomically with restricted file permissions."""
     SSO_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
     SSO_CONFIG_PATH.write_text(json.dumps(config, indent=2))
+    # SECURITY: Ensure config file is not world-readable (may contain secrets)
+    SSO_CONFIG_PATH.chmod(0o600)
 
 
 def _decode_jwt_parts(token: str) -> tuple[dict, dict] | None:
     """Decode JWT header + payload (no signature verification).
+
+    SECURITY: This function does NOT verify the JWT signature.
+    It is unsafe to use for authentication without additional verification.
+    Only use for structural validation or when signature verification is done elsewhere.
 
     Returns:
         Tuple of (header_dict, payload_dict) or None if invalid
@@ -52,6 +58,11 @@ def _decode_jwt_parts(token: str) -> tuple[dict, dict] | None:
         header_b64 = parts[0]
         header_pad = header_b64 + "=" * (4 - len(header_b64) % 4)
         header = json.loads(base64.urlsafe_b64decode(header_pad))
+
+        # SECURITY: Reject "none" algorithm (algorithm confusion attack)
+        if header.get("alg") == "none":
+            logger.warning("jwt_algo_none_rejected")
+            return None
 
         # Decode payload
         payload_b64 = parts[1]
@@ -132,6 +143,18 @@ async def research_sso_validate_token(
     For JWT: decode header+payload (no signature verification without secret).
     Check: exp claim not expired, iss claim matches configured provider.
 
+    SECURITY WARNING: This function does NOT verify JWT signatures. It only validates:
+    1. Token structure (valid base64, 3 parts)
+    2. Token not expired (exp claim < now)
+    3. Issuer matches configured provider (exact match)
+    4. Algorithm is not "none" (rejects algorithm confusion attacks)
+
+    Do NOT use this for authentication without proper signature verification.
+    A complete SSO implementation must:
+    - Verify JWT signature using the provider's public key
+    - Validate cryptographic signature to prevent token forgery
+    - Check token audience (aud claim) matches expected client
+
     Args:
         token: SSO token (JWT or opaque)
         provider: Provider type or 'auto' to detect
@@ -181,12 +204,13 @@ async def research_sso_validate_token(
                     "metadata_url"
                 )
                 token_iss = payload.get("iss")
-                if configured_iss and token_iss and configured_iss not in token_iss:
+                # SECURITY: Use exact equality match, not substring match (prevent issuer spoofing)
+                if configured_iss and token_iss and configured_iss != token_iss:
                     return {
                         "valid": False,
                         "provider": provider,
                         "claims": payload,
-                        "reason": f"Issuer mismatch: {token_iss} not from {configured_iss}",
+                        "reason": "Issuer mismatch",
                     }
 
         logger.info("sso_token_valid provider=%s sub=%s", provider, payload.get("sub", "unknown"))
@@ -241,6 +265,7 @@ async def research_sso_user_info(token: str) -> dict[str, Any]:
         )
 
         # Extract groups and roles (different providers use different claim names)
+        # SECURITY: Validate that groups/roles are lists of strings (prevent RBAC bypass)
         groups = (
             payload.get("groups")
             or payload.get("group")
@@ -249,6 +274,10 @@ async def research_sso_user_info(token: str) -> dict[str, Any]:
         )
         if isinstance(groups, str):
             groups = [groups]
+        elif not isinstance(groups, list):
+            groups = []
+        # Ensure all group values are strings
+        groups = [g for g in groups if isinstance(g, str)]
 
         roles = (
             payload.get("roles")
@@ -258,6 +287,10 @@ async def research_sso_user_info(token: str) -> dict[str, Any]:
         )
         if isinstance(roles, str):
             roles = [roles]
+        elif not isinstance(roles, list):
+            roles = []
+        # Ensure all role values are strings
+        roles = [r for r in roles if isinstance(r, str)]
 
         provider = payload.get("iss", "unknown")
 

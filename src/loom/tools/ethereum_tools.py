@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import logging
 import os
+import re
+from decimal import Decimal
 from typing import Any
 
 import httpx
@@ -12,6 +14,52 @@ logger = logging.getLogger("loom.tools.ethereum_tools")
 
 _ETHERSCAN_API = "https://api.etherscan.io/api"
 _API_KEY = os.environ.get("ETHERSCAN_API_KEY", "")
+
+
+def _validate_eth_address(address: str) -> bool:
+    """Validate Ethereum address format and checksum (ERC-55).
+
+    Args:
+        address: Ethereum address (0x-prefixed hex string)
+
+    Returns:
+        True if address format is valid and checksum passes (if present).
+    """
+    if not address or not isinstance(address, str):
+        return False
+    if not address.startswith("0x") or len(address) != 42:
+        return False
+
+    addr_hex = address[2:]
+    if not re.match(r"^[0-9a-fA-F]{40}$", addr_hex):
+        return False
+
+    if not any(c.isupper() for c in addr_hex):
+        return True
+
+    try:
+        from eth_keys.datatypes import Address
+        Address(bytes.fromhex(addr_hex))
+        return True
+    except Exception:
+        return False
+
+
+def _validate_tx_hash(tx_hash: str) -> bool:
+    """Validate transaction hash format.
+
+    Args:
+        tx_hash: Transaction hash (0x-prefixed hex string)
+
+    Returns:
+        True if hash format is valid.
+    """
+    if not tx_hash or not isinstance(tx_hash, str):
+        return False
+    if not tx_hash.startswith("0x") or len(tx_hash) != 66:
+        return False
+
+    return bool(re.match(r"^0x[0-9a-fA-F]{64}$", tx_hash))
 
 
 async def research_ethereum_tx_decode(tx_hash: str) -> dict[str, Any]:
@@ -25,8 +73,8 @@ async def research_ethereum_tx_decode(tx_hash: str) -> dict[str, Any]:
     Returns:
         Dict with decoded details, pattern, value_eth, and status.
     """
-    if not tx_hash.startswith("0x") or len(tx_hash) != 66:
-        return {"tx_hash": tx_hash, "error": "Invalid tx hash", "decoded": None, "pattern": None, "value_eth": 0.0, "status": None}
+    if not _validate_tx_hash(tx_hash):
+        return {"tx_hash": tx_hash, "error": "Invalid tx hash format", "decoded": None, "pattern": None, "value_eth": 0.0, "status": None}
 
     params = {"module": "proxy", "action": "eth_getTransactionByHash", "txhash": tx_hash}
     if _API_KEY:
@@ -43,7 +91,8 @@ async def research_ethereum_tx_decode(tx_hash: str) -> dict[str, Any]:
             if not tx:
                 return {"tx_hash": tx_hash, "error": data.get("message", "tx not found"), "decoded": None, "pattern": None, "value_eth": 0.0, "status": None}
 
-            value_eth = int(tx.get("value", "0"), 16) / 1e18
+            value_wei = int(tx.get("value", "0"), 16)
+            value_eth = float(Decimal(value_wei) / Decimal(10 ** 18))
             input_data = tx.get("input", "0x")
             pattern = _identify_pattern(input_data, tx.get("to", ""))
 
@@ -87,8 +136,8 @@ async def research_defi_security_audit(contract_address: str) -> dict[str, Any]:
     Returns:
         Dict with verified flag, vulnerabilities, risk_score, recommendations.
     """
-    if not contract_address.startswith("0x") or len(contract_address) != 42:
-        return {"contract_address": contract_address, "error": "Invalid address", "verified": False, "vulnerabilities": [], "risk_score": 0, "recommendations": []}
+    if not _validate_eth_address(contract_address):
+        return {"contract_address": contract_address, "error": "Invalid Ethereum address format or checksum", "verified": False, "vulnerabilities": [], "risk_score": 0, "recommendations": []}
 
     params = {"module": "contract", "action": "getsourcecode", "address": contract_address}
     if _API_KEY:
@@ -164,9 +213,13 @@ def _scan_vulns(source_code: str) -> list[dict[str, str]]:
         vulns.append({"type": "unchecked_external_call", "severity": "medium", "description": "Unchecked external calls"})
 
     if "pragma solidity ^0." in source_code:
-        version = source_code.split("pragma solidity ^0.")[1][:2]
-        if version < "80":
-            vulns.append({"type": "no_overflow_protection", "severity": "medium", "description": "Pre-0.8.0: no overflow protection"})
+        try:
+            version_str = source_code.split("pragma solidity ^0.")[1][:2]
+            version_major = int(version_str[0]) if version_str else 0
+            if version_major < 8:
+                vulns.append({"type": "no_overflow_protection", "severity": "medium", "description": "Pre-0.8.0: no overflow protection"})
+        except (ValueError, IndexError):
+            pass
 
     return vulns
 
