@@ -351,13 +351,6 @@ def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
         record_failure("intelligence", "maigret_backend", str(e))
     # ── Trend & Content Analysis Tools ──
     try:
-        from loom.tools.trend_forecaster import research_trend_forecast
-        mcp.tool()(wrap_tool(research_trend_forecast))
-        record_success("intelligence", "research_trend_forecast")
-    except (ImportError, AttributeError) as e:
-        log.debug("skip trend_forecaster: %s", e)
-        record_failure("intelligence", "trend_forecaster", str(e))
-    try:
         from loom.tools.content_anomaly import research_content_anomaly
         mcp.tool()(wrap_tool(research_content_anomaly))
         record_success("intelligence", "research_content_anomaly")
