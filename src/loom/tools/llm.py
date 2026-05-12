@@ -30,15 +30,40 @@ from loom.conversation_cache import (
     hash_conversation,
 )
 from loom.retry import with_retry
-from loom.providers.anthropic_provider import AnthropicProvider
 from loom.providers.base import LLMResponse
-from loom.providers.deepseek_provider import DeepSeekProvider
-from loom.providers.gemini_provider import GeminiProvider
-from loom.providers.groq_provider import GroqProvider
-from loom.providers.moonshot_provider import MoonshotProvider
-from loom.providers.nvidia_nim import NvidiaNimProvider
-from loom.providers.openai_provider import OpenAIProvider
-from loom.providers.vllm_local import VllmLocalProvider
+
+try:
+    from loom.providers.groq_provider import GroqProvider
+except ImportError:
+    GroqProvider = None  # type: ignore[assignment,misc]
+try:
+    from loom.providers.nvidia_nim import NvidiaNimProvider
+except ImportError:
+    NvidiaNimProvider = None  # type: ignore[assignment,misc]
+try:
+    from loom.providers.deepseek_provider import DeepSeekProvider
+except ImportError:
+    DeepSeekProvider = None  # type: ignore[assignment,misc]
+try:
+    from loom.providers.gemini_provider import GeminiProvider
+except ImportError:
+    GeminiProvider = None  # type: ignore[assignment,misc]
+try:
+    from loom.providers.moonshot_provider import MoonshotProvider
+except ImportError:
+    MoonshotProvider = None  # type: ignore[assignment,misc]
+try:
+    from loom.providers.openai_provider import OpenAIProvider
+except ImportError:
+    OpenAIProvider = None  # type: ignore[assignment,misc]
+try:
+    from loom.providers.anthropic_provider import AnthropicProvider
+except ImportError:
+    AnthropicProvider = None  # type: ignore[assignment,misc]
+try:
+    from loom.providers.vllm_local import VllmLocalProvider
+except ImportError:
+    VllmLocalProvider = None  # type: ignore[assignment,misc]
 from loom.quota_tracker import get_quota_tracker, record_usage
 
 logger = logging.getLogger("loom.llm")
