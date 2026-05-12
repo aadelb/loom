@@ -13,8 +13,13 @@ import logging
 import random
 from typing import Any
 
-from loom.tools.prompt_reframe import _apply_strategy, _STRATEGIES
-from loom.tools.quality_escalation import _score_all_dimensions
+try:
+    from loom.tools.prompt_reframe import _apply_strategy, _STRATEGIES
+    from loom.tools.quality_escalation import _score_all_dimensions
+    _FUZZER_DEPS = True
+except ImportError:
+    _FUZZER_DEPS = False
+    _STRATEGIES = {}  # type: ignore[assignment]
 
 logger = logging.getLogger("loom.tools.genetic_fuzzer")
 

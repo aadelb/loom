@@ -12,8 +12,12 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from loom.hcs_rubric import HCSRubric
-from loom.params import HCSRubricParams
+try:
+    from loom.hcs_rubric import HCSRubric
+    from loom.params import HCSRubricParams
+    _RUBRIC_AVAILABLE = True
+except ImportError:
+    _RUBRIC_AVAILABLE = False
 
 logger = logging.getLogger("loom.tools.hcs_rubric_tool")
 

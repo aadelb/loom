@@ -11,9 +11,13 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from loom.tools.hcs_scorer import research_hcs_score
-from loom.tools.llm import _call_with_cascade
-from loom.tools.prompt_reframe import _apply_strategy
+try:
+    from loom.tools.hcs_scorer import research_hcs_score
+    from loom.tools.llm import _call_with_cascade
+    from loom.tools.prompt_reframe import _apply_strategy
+    _HCS_DEPS = True
+except ImportError:
+    _HCS_DEPS = False
 
 logger = logging.getLogger("loom.tools.hcs_escalation")
 

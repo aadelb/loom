@@ -27,17 +27,22 @@ from typing import Any
 
 import httpx
 
-from loom.cache import get_cache
-from loom.config import CONFIG
-from loom.params import (
-    GraphScraperParams,
-    KnowledgeExtractParams,
-    MultiPageGraphParams,
-)
-from loom.providers.base import LLMProvider
-from loom.tools.fetch import research_fetch
-from loom.tools.markdown import research_markdown
 from loom.validators import validate_url
+
+try:
+    from loom.cache import get_cache
+    from loom.config import CONFIG
+    from loom.params import (
+        GraphScraperParams,
+        KnowledgeExtractParams,
+        MultiPageGraphParams,
+    )
+    from loom.providers.base import LLMProvider
+    from loom.tools.fetch import research_fetch
+    from loom.tools.markdown import research_markdown
+    _GRAPH_DEPS = True
+except ImportError:
+    _GRAPH_DEPS = False
 
 logger = logging.getLogger("loom.tools.graph_scraper")
 

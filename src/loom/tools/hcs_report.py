@@ -9,7 +9,11 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from loom.hcs_report import HCSReportGenerator
+try:
+    from loom.hcs_report import HCSReportGenerator
+    _REPORT_AVAILABLE = True
+except ImportError:
+    _REPORT_AVAILABLE = False
 
 logger = logging.getLogger("loom.tools.hcs_report")
 
