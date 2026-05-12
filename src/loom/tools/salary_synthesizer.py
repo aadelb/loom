@@ -11,33 +11,9 @@ from urllib.parse import quote
 
 import httpx
 
+from loom.http_helpers import fetch_json, fetch_text
+
 logger = logging.getLogger("loom.tools.salary_synthesizer")
-
-
-async def _get_json(
-    client: httpx.AsyncClient, url: str, timeout: float = 15.0
-) -> Any:
-    """Fetch JSON from URL with error handling."""
-    try:
-        resp = await client.get(url, timeout=timeout)
-        if resp.status_code == 200:
-            return resp.json()
-    except Exception as exc:
-        logger.debug("salary_synthesizer fetch failed: %s", exc)
-    return None
-
-
-async def _get_text(
-    client: httpx.AsyncClient, url: str, timeout: float = 15.0
-) -> str:
-    """Fetch text from URL with error handling."""
-    try:
-        resp = await client.get(url, timeout=timeout)
-        if resp.status_code == 200:
-            return resp.text
-    except Exception as exc:
-        logger.debug("salary_synthesizer text fetch failed: %s", exc)
-    return ""
 
 
 async def _search_reddit_salary(
@@ -50,7 +26,7 @@ async def _search_reddit_salary(
         f"salary&sort=new&limit=25"
     )
     try:
-        data = await _get_json(
+        data = await fetch_json(
             client,
             url,
             timeout=15.0,
@@ -90,14 +66,14 @@ async def _search_hackernews_whos_hiring(
         f"{quote(job_title)}&tags=story&hitsPerPage=30"
     )
     try:
-        data = await _get_json(client, url, timeout=15.0)
+        data = await fetch_json(client, url, timeout=15.0)
         if data and "hits" in data:
             for hit in data["hits"][:10]:
                 # Get full story text
                 story_id = hit.get("objectID", "")
                 if story_id:
                     story_url = f"https://hn.algolia.com/api/v1/items/{story_id}"
-                    story_data = await _get_json(client, story_url, timeout=10.0)
+                    story_data = await fetch_json(client, story_url, timeout=10.0)
                     if story_data:
                         text = (
                             story_data.get("title", "")
@@ -139,7 +115,7 @@ async def _search_github_salary_mentions(
                 # Try to fetch the file content
                 download_url = item.get("download_url")
                 if download_url:
-                    content = await _get_text(client, download_url, timeout=10.0)
+                    content = await fetch_text(client, download_url, timeout=10.0)
                     if content:
                         salary_pattern = r"\$?(\d{2,3},?\d{3}|[5-9]\d{4})"
                         matches = re.findall(salary_pattern, content)
@@ -179,7 +155,7 @@ async def _fetch_stackoverflow_survey_data() -> dict[str, Any]:
         async with httpx.AsyncClient(timeout=30.0) as client:
             # Attempt to fetch 2024 Stack Overflow survey
             url = "https://survey.stackoverflow.co/2024/"
-            text = await _get_text(client, url, timeout=10.0)
+            text = await fetch_text(client, url, timeout=10.0)
             if text and "salary" in text.lower():
                 # Parse would go here - for now return template
                 return salary_by_role

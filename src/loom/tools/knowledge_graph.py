@@ -23,22 +23,11 @@ from urllib.parse import quote
 
 import httpx
 
+from loom.http_helpers import fetch_json
+
 logger = logging.getLogger("loom.tools.knowledge_graph")
 
 _GRAPH_DB = Path.home() / ".loom" / "graph" / "knowledge.db"
-
-
-async def _fetch_json(
-    client: httpx.AsyncClient, url: str, timeout: float = 15.0
-) -> Any:
-    """Fetch and parse JSON from URL, returns None on error."""
-    try:
-        resp = await client.get(url, timeout=timeout)
-        if resp.status_code == 200:
-            return resp.json()
-    except Exception as exc:
-        logger.debug("knowledge_graph fetch failed: %s", exc)
-    return None
 
 
 async def _search_semantic_scholar(
@@ -54,7 +43,7 @@ async def _search_semantic_scholar(
         f"query={quote(query)}&limit=10&"
         f"fields=title,abstract,authors,references,citations,year"
     )
-    data = await _fetch_json(client, url, timeout=20.0)
+    data = await fetch_json(client, url, timeout=20.0)
     if not data or "papers" not in data:
         return [], []
 
@@ -114,7 +103,7 @@ async def _search_wikipedia(
         f"prop=links|categories&pllimit=50&cllimit=50&"
         f"format=json"
     )
-    data = await _fetch_json(client, url)
+    data = await fetch_json(client, url)
     if not data or "query" not in data:
         return [], []
 
@@ -174,7 +163,7 @@ async def _search_wikidata(
         f"action=wbsearchentities&search={quote(query)}&"
         f"language=en&format=json&limit=10"
     )
-    data = await _fetch_json(client, url)
+    data = await fetch_json(client, url)
     if not data or "search" not in data:
         return [], []
 

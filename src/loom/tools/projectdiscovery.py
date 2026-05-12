@@ -18,36 +18,10 @@ import subprocess
 import tempfile
 from typing import Any
 
+from loom.input_validators import validate_domain, validate_port, ValidationError
 from loom.validators import validate_url
 
 logger = logging.getLogger("loom.tools.projectdiscovery")
-
-
-def _validate_domain(domain: str) -> str:
-    """Validate domain name to prevent command injection.
-
-    Allows alphanumeric, dots, hyphens, and underscores.
-    Returns the validated domain.
-
-    Args:
-        domain: domain name to validate
-
-    Returns:
-        The validated domain string
-
-    Raises:
-        ValueError: if domain contains disallowed characters
-    """
-    if not domain or len(domain) > 255:
-        raise ValueError("domain must be 1-255 characters")
-
-    # Allow alphanumeric, dots, hyphens, underscores
-    if not re.match(r"^[a-z0-9._-]+$", domain, re.IGNORECASE):
-        raise ValueError("domain contains disallowed characters")
-
-    return domain
-
-
 
 
 def _validate_domain_with_port(target: str) -> str:
@@ -63,34 +37,33 @@ def _validate_domain_with_port(target: str) -> str:
         The validated domain:port string
 
     Raises:
-        ValueError: if target contains disallowed characters or invalid port
+        ValidationError: if target contains disallowed characters or invalid port
     """
     if not target or len(target) > 261:  # 255 for domain + 5 for port + colon
-        raise ValueError("domain:port must be 1-261 characters")
+        raise ValidationError("domain:port must be 1-261 characters")
 
     # Check if it has a port
     if ':' in target:
         parts = target.rsplit(':', 1)
         if len(parts) != 2:
-            raise ValueError("invalid domain:port format")
+            raise ValidationError("invalid domain:port format")
         domain_part, port_part = parts
 
         # Validate domain part
         if not re.match(r"^[a-z0-9._-]+$", domain_part, re.IGNORECASE):
-            raise ValueError("domain contains disallowed characters")
+            raise ValidationError("domain contains disallowed characters")
 
         # Validate port part
         try:
             port = int(port_part)
-            if port < 1 or port > 65535:
-                raise ValueError(f"port {port} out of range 1-65535")
-        except ValueError as exc:
-            raise ValueError(f"invalid port: {str(exc)}") from exc
+            validate_port(port)
+        except (ValueError, ValidationError) as exc:
+            raise ValidationError(f"invalid port: {str(exc)}") from exc
 
         return target
     else:
         # No port, just validate as domain
-        return _validate_domain(target)
+        return validate_domain(target)
 
 
 def _check_binary_exists(binary_name: str) -> tuple[bool, str | None]:
@@ -129,8 +102,8 @@ def research_subfinder(
         - warning: warning message if binary not found
     """
     try:
-        domain = _validate_domain(domain)
-    except ValueError as exc:
+        domain = validate_domain(domain)
+    except ValidationError as exc:
         return {"domain": domain, "error": str(exc), "count": 0, "subdomains": []}
 
     # Check binary exists
@@ -362,9 +335,8 @@ def research_httpx_probe(
         for port_str in ports_list:
             try:
                 port = int(port_str)
-                if port < 1 or port > 65535:
-                    raise ValueError(f"port {port} out of range 1-65535")
-            except ValueError as exc:
+                validate_port(port)
+            except (ValueError, ValidationError) as exc:
                 raise ValueError(f"invalid port: {str(exc)}") from exc
 
         validated_targets = []
@@ -380,7 +352,7 @@ def research_httpx_probe(
                         validated_targets.append(f"http://{target}")
                     else:
                         validated_targets.append(target)
-                except ValueError as exc:
+                except ValidationError as exc:
                     logger.warning("Invalid target: %s - %s", target, exc)
 
         if not validated_targets:

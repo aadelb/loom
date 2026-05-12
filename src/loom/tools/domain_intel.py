@@ -10,32 +10,9 @@ import socket
 import subprocess
 from typing import Any
 
+from loom.input_validators import validate_domain, validate_ip, ValidationError
+
 logger = logging.getLogger("loom.tools.domain_intel")
-
-
-def _validate_domain(domain: str) -> str:
-    """Validate domain name to prevent command injection.
-
-    Allows alphanumeric, dots, hyphens, and underscores.
-    Returns the validated domain.
-
-    Args:
-        domain: domain name to validate
-
-    Returns:
-        The validated domain string
-
-    Raises:
-        ValueError: if domain contains disallowed characters
-    """
-    if not domain or len(domain) > 255:
-        raise ValueError("domain must be 1-255 characters")
-
-    # Allow alphanumeric, dots, hyphens, underscores
-    if not re.match(r"^[a-z0-9._-]+$", domain, re.IGNORECASE):
-        raise ValueError("domain contains disallowed characters")
-
-    return domain
 
 
 def _validate_ip_or_domain(target: str) -> str:
@@ -48,23 +25,22 @@ def _validate_ip_or_domain(target: str) -> str:
         The validated target string
 
     Raises:
-        ValueError: if target is invalid
+        ValidationError: if target is invalid
     """
     target = target.strip()
 
     # Fix C3: Reject targets starting with "-" to prevent nmap flag injection
     if target.startswith("-"):
-        raise ValueError("target cannot start with '-'")
+        raise ValidationError("target cannot start with '-'")
 
     # Try to parse as IP address first
     try:
-        ipaddress.ip_address(target)
-        return target
-    except ValueError:
+        return validate_ip(target)
+    except ValidationError:
         pass
 
     # Fall back to domain validation
-    return _validate_domain(target)
+    return validate_domain(target)
 
 
 def _run_whois(domain: str) -> tuple[str, int, str]:
@@ -128,8 +104,8 @@ async def research_whois(domain: str) -> dict[str, Any]:
         - error: error message if lookup failed
     """
     try:
-        domain = _validate_domain(domain)
-    except ValueError as exc:
+        domain = validate_domain(domain)
+    except ValidationError as exc:
         return {"domain": domain, "error": str(exc)}
 
     try:
@@ -255,8 +231,8 @@ async def research_dns_lookup(
         - error: error message if lookup failed
     """
     try:
-        domain = _validate_domain(domain)
-    except ValueError as exc:
+        domain = validate_domain(domain)
+    except ValidationError as exc:
         return {"domain": domain, "error": str(exc)}
 
     if record_types is None:
@@ -366,7 +342,7 @@ async def research_nmap_scan(
     """
     try:
         target = _validate_ip_or_domain(target)
-    except ValueError as exc:
+    except ValidationError as exc:
         return {"target": target, "error": str(exc)}
 
     if scan_type not in ("basic", "service"):

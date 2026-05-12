@@ -9,6 +9,7 @@ from typing import Any
 from urllib.parse import quote
 
 import httpx
+from loom.http_helpers import fetch_json, fetch_text
 
 logger = logging.getLogger("loom.tools.trend_predictor")
 
@@ -18,30 +19,6 @@ _GITHUB_API = "https://api.github.com/search/repositories"
 _HN_API = "https://hn.algolia.com/api/v1/search"
 
 
-async def _fetch_json(
-    client: httpx.AsyncClient, url: str, timeout: float = 20.0
-) -> Any:
-    """Fetch JSON with error handling."""
-    try:
-        resp = await client.get(url, timeout=timeout)
-        if resp.status_code == 200:
-            return resp.json()
-    except Exception as exc:
-        logger.debug("trend_predictor fetch failed url=%s: %s", url[:80], exc)
-    return None
-
-
-async def _fetch_text(
-    client: httpx.AsyncClient, url: str, timeout: float = 20.0
-) -> str:
-    """Fetch text with error handling."""
-    try:
-        resp = await client.get(url, timeout=timeout)
-        if resp.status_code == 200:
-            return resp.text
-    except Exception as exc:
-        logger.debug("trend_predictor text fetch failed url=%s: %s", url[:80], exc)
-    return ""
 
 
 async def _arxiv_publication_rate(
@@ -51,7 +28,7 @@ async def _arxiv_publication_rate(
     try:
         query = f"all:{quote(topic)}"
         url = f"{_ARXIV_API}?search_query={query}&sortBy=submittedDate&sortOrder=descending&max_results=100"
-        text = await _fetch_text(client, url, timeout=25.0)
+        text = await fetch_text(client, url, timeout=25.0)
 
         if not text:
             return {"papers_per_month": {}, "total_papers": 0}
@@ -88,7 +65,7 @@ async def _semantic_scholar_citations(
     """Analyze citation velocity from Semantic Scholar."""
     try:
         url = f"{_SEMANTIC_SCHOLAR_API}?query={quote(topic)}&limit=50&fields=year,citationCount"
-        data = await _fetch_json(client, url, timeout=20.0)
+        data = await fetch_json(client, url, timeout=20.0)
 
         if not data or "data" not in data:
             return {"citations_per_year": {}, "avg_citations": 0, "max_citations": 0}
@@ -134,7 +111,7 @@ async def _github_repo_momentum(
     """Analyze GitHub repository growth momentum."""
     try:
         url = f"{_GITHUB_API}?q={quote(topic)}&sort=stars&order=desc&per_page=20"
-        data = await _fetch_json(client, url, timeout=20.0)
+        data = await fetch_json(client, url, timeout=20.0)
 
         if not data or "items" not in data:
             return {"repos": 0, "avg_stars": 0, "avg_forks": 0, "total_stars": 0}
@@ -167,7 +144,7 @@ async def _hackernews_discussion(
     """Analyze HackerNews discussion frequency and engagement."""
     try:
         url = f"{_HN_API}?query={quote(topic)}&tags=story&hitsPerPage=50"
-        data = await _fetch_json(client, url, timeout=20.0)
+        data = await fetch_json(client, url, timeout=20.0)
 
         if not data or "hits" not in data:
             return {"stories": 0, "avg_points": 0, "avg_comments": 0}

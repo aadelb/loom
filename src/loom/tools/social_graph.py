@@ -8,6 +8,7 @@ import re
 from typing import Any
 
 import httpx
+from loom.http_helpers import fetch_json, fetch_text
 
 logger = logging.getLogger("loom.tools.social_graph")
 
@@ -15,30 +16,6 @@ _HTTP_TIMEOUT = 15.0
 _GITHUB_RATE_LIMIT_DELAY = 1.0  # 1 req/sec for GitHub
 
 
-async def _get_json(
-    client: httpx.AsyncClient, url: str, headers: dict[str, str] | None = None
-) -> Any:
-    """Fetch JSON from URL safely."""
-    try:
-        resp = await client.get(url, timeout=_HTTP_TIMEOUT, headers=headers or {})
-        if resp.status_code == 200:
-            return resp.json()
-    except Exception as exc:
-        logger.debug("json_fetch_failed url=%s error=%s", url, exc)
-    return None
-
-
-async def _get_text(
-    client: httpx.AsyncClient, url: str, headers: dict[str, str] | None = None
-) -> str:
-    """Fetch text from URL safely."""
-    try:
-        resp = await client.get(url, timeout=_HTTP_TIMEOUT, headers=headers or {})
-        if resp.status_code == 200:
-            return resp.text
-    except Exception as exc:
-        logger.debug("text_fetch_failed url=%s error=%s", url, exc)
-    return ""
 
 
 async def _fetch_github_data(
@@ -60,7 +37,7 @@ async def _fetch_github_data(
     try:
         # Fetch repos with rate limiting
         repos_url = f"https://api.github.com/users/{username}/repos"
-        repos = await _get_json(client, repos_url, {"Accept": "application/vnd.github.v3+json"})
+        repos = await fetch_json(client, repos_url, {"Accept": "application/vnd.github.v3+json"})
 
         if not repos or not isinstance(repos, list):
             return nodes, edges
@@ -80,7 +57,7 @@ async def _fetch_github_data(
             contributors_url = (
                 f"https://api.github.com/repos/{username}/{repo_name}/contributors"
             )
-            contributors = await _get_json(
+            contributors = await fetch_json(
                 client, contributors_url, {"Accept": "application/vnd.github.v3+json"}
             )
 
@@ -156,7 +133,7 @@ async def _fetch_reddit_data(
     try:
         # Fetch user comments
         comments_url = f"https://www.reddit.com/user/{username}/comments.json"
-        data = await _get_json(client, comments_url, {"User-Agent": "Loom-Research/1.0"})
+        data = await fetch_json(client, comments_url, {"User-Agent": "Loom-Research/1.0"})
 
         if not data or "data" not in data:
             return nodes, edges
@@ -241,7 +218,7 @@ async def _fetch_hackernews_data(
     try:
         # Fetch user profile
         user_url = f"https://hacker-news.firebaseio.com/v0/user/{username}.json"
-        user_data = await _get_json(client, user_url)
+        user_data = await fetch_json(client, user_url)
 
         if not user_data:
             return nodes, edges
@@ -259,7 +236,7 @@ async def _fetch_hackernews_data(
 
         for submission_id in submission_ids[:50]:  # Limit to 50 submissions
             story_url = f"https://hacker-news.firebaseio.com/v0/item/{submission_id}.json"
-            story_data = await _get_json(client, story_url)
+            story_data = await fetch_json(client, story_url)
 
             if not story_data:
                 continue
@@ -319,7 +296,7 @@ async def _fetch_semanticscholar_data(
         async with httpx.AsyncClient(timeout=30.0) as client:
             # Search for author
             search_url = f"https://api.semanticscholar.org/graph/v1/author/search?query={author_name}&limit=1"
-            search_data = await _get_json(client, search_url)
+            search_data = await fetch_json(client, search_url)
 
             if not search_data or "data" not in search_data:
                 return nodes, edges
@@ -342,7 +319,7 @@ async def _fetch_semanticscholar_data(
 
             # Fetch author papers
             papers_url = f"https://api.semanticscholar.org/graph/v1/author/{author_id}/papers?fields=authors"
-            papers_data = await _get_json(client, papers_url)
+            papers_data = await fetch_json(client, papers_url)
 
             if not papers_data or "data" not in papers_data:
                 return nodes, edges

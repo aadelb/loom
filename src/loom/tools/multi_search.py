@@ -10,6 +10,8 @@ from urllib.parse import quote, unquote, urlparse
 
 import httpx
 
+from loom.http_helpers import fetch_json, fetch_text
+
 logger = logging.getLogger("loom.tools.multi_search")
 
 _MARGINALIA = "https://search.marginalia.nu/search?query={q}&count=10&format=json"
@@ -25,30 +27,8 @@ _WIKIPEDIA = "https://en.wikipedia.org/w/api.php?action=query&list=search&srsear
 _ARXIV = "http://export.arxiv.org/api/query?search_query=all:{q}&max_results=5"
 
 
-async def _get_json(
-    client: httpx.AsyncClient, url: str, headers: dict[str, str] | None = None
-) -> Any:
-    try:
-        resp = await client.get(url, timeout=15.0, headers=headers or {})
-        if resp.status_code == 200:
-            return resp.json()
-    except Exception as exc:
-        logger.debug("multi_search json failed: %s", exc)
-    return None
-
-
-async def _get_text(client: httpx.AsyncClient, url: str) -> str:
-    try:
-        resp = await client.get(url, timeout=15.0)
-        if resp.status_code == 200:
-            return resp.text
-    except Exception as exc:
-        logger.debug("multi_search text failed: %s", exc)
-    return ""
-
-
 async def _search_hackernews(client: httpx.AsyncClient, query: str) -> list[dict[str, Any]]:
-    data = await _get_json(client, _HACKERNEWS.format(q=quote(query)))
+    data = await fetch_json(client, _HACKERNEWS.format(q=quote(query)))
     if not data:
         return []
     return [
@@ -65,7 +45,7 @@ async def _search_hackernews(client: httpx.AsyncClient, query: str) -> list[dict
 
 
 async def _search_reddit(client: httpx.AsyncClient, query: str) -> list[dict[str, Any]]:
-    data = await _get_json(
+    data = await fetch_json(
         client,
         _REDDIT.format(q=quote(query)),
         headers={"User-Agent": "Loom-Research/1.0"},
@@ -87,7 +67,7 @@ async def _search_reddit(client: httpx.AsyncClient, query: str) -> list[dict[str
 
 
 async def _search_wikipedia(client: httpx.AsyncClient, query: str) -> list[dict[str, Any]]:
-    data = await _get_json(client, _WIKIPEDIA.format(q=quote(query)))
+    data = await fetch_json(client, _WIKIPEDIA.format(q=quote(query)))
     if not data:
         return []
     results = data.get("query", {}).get("search", [])
@@ -104,7 +84,7 @@ async def _search_wikipedia(client: httpx.AsyncClient, query: str) -> list[dict[
 
 
 async def _search_arxiv(client: httpx.AsyncClient, query: str) -> list[dict[str, Any]]:
-    text = await _get_text(client, _ARXIV.format(q=quote(query)))
+    text = await fetch_text(client, _ARXIV.format(q=quote(query)))
     if not text:
         return []
     results: list[dict[str, Any]] = []
@@ -127,7 +107,7 @@ async def _search_arxiv(client: httpx.AsyncClient, query: str) -> list[dict[str,
 
 
 async def _search_ddgs(client: httpx.AsyncClient, query: str) -> list[dict[str, Any]]:
-    text = await _get_text(client, _DDGS.format(q=quote(query)))
+    text = await fetch_text(client, _DDGS.format(q=quote(query)))
     if not text:
         return []
     results: list[dict[str, Any]] = []
@@ -152,7 +132,7 @@ async def _search_ddgs(client: httpx.AsyncClient, query: str) -> list[dict[str, 
 
 
 async def _search_marginalia(client: httpx.AsyncClient, query: str) -> list[dict[str, Any]]:
-    data = await _get_json(client, _MARGINALIA.format(q=quote(query)))
+    data = await fetch_json(client, _MARGINALIA.format(q=quote(query)))
     if not data:
         return []
     results = data.get("results", [])
@@ -169,7 +149,7 @@ async def _search_marginalia(client: httpx.AsyncClient, query: str) -> list[dict
 
 
 async def _search_crt_sh(client: httpx.AsyncClient, query: str) -> list[dict[str, Any]]:
-    data = await _get_json(client, _CRT_SH.format(q=quote(query)), None)
+    data = await fetch_json(client, _CRT_SH.format(q=quote(query)), None)
     if not data:
         return []
     domains: set[str] = set()

@@ -10,6 +10,8 @@ from urllib.parse import urlparse
 
 import httpx
 
+from loom.text_utils import jaccard_similarity
+
 logger = logging.getLogger("loom.tools.gap_tools_infra")
 
 
@@ -443,24 +445,6 @@ async def research_whois_correlator(domain: str) -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_whois_correlator"}
 
 
-def _jaccard_similarity(set1: set[str], set2: set[str]) -> float:
-    """Calculate Jaccard similarity between two word sets.
-
-    Args:
-        set1: first word set
-        set2: second word set
-
-    Returns:
-        Similarity score between 0 and 1.
-    """
-    if not set1 or not set2:
-        # If either set is empty, no similarity can be measured
-        return 0.0
-    intersection = len(set1 & set2)
-    union = len(set1 | set2)
-    return intersection / union if union > 0 else 0.0
-
-
 async def _query_llm_endpoint(
     client: httpx.AsyncClient,
     target_url: str,
@@ -584,7 +568,7 @@ async def research_output_consistency(
                 similarities = []
                 for i in range(len(word_sets)):
                     for j in range(i + 1, len(word_sets)):
-                        sim = _jaccard_similarity(word_sets[i], word_sets[j])
+                        sim = jaccard_similarity(word_sets[i], word_sets[j])
                         similarities.append(sim)
 
                 # Calculate statistics

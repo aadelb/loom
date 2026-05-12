@@ -15,6 +15,7 @@ from typing import Any
 
 import httpx
 
+from loom.input_validators import validate_domain, ValidationError
 from loom.validators import EXTERNAL_TIMEOUT_SECS, validate_url
 
 logger = logging.getLogger("loom.tools.webcheck_backend")
@@ -94,8 +95,9 @@ def research_web_check(domain: str, checks: list[str] | None = None) -> dict[str
           - error: str (if critical operation failed)
     """
     # Validate domain
-    domain = _validate_domain(domain)
-    if not domain:
+    try:
+        domain = validate_domain(domain)
+    except ValidationError:
         return {"domain": domain, "error": "Invalid domain format"}
 
     # Default to all checks if not specified
@@ -151,43 +153,6 @@ def research_web_check(domain: str, checks: list[str] | None = None) -> dict[str
         result["robots"] = _check_robots(url)
 
     return result
-
-
-def _validate_domain(domain: str) -> str:
-    """Validate and normalize domain name.
-
-    Args:
-        domain: domain name
-
-    Returns:
-        Validated domain (lowercased, stripped)
-    """
-    if not domain or not isinstance(domain, str):
-        return ""
-
-    domain = domain.strip().lower()
-
-    # Remove trailing www. or https:// prefix if present
-    if domain.startswith("www."):
-        domain = domain[4:]
-    if domain.startswith("https://"):
-        domain = domain[8:]
-    if domain.startswith("http://"):
-        domain = domain[7:]
-
-    # Basic validation: alphanumeric, dots, hyphens
-    if not re.match(r"^[a-z0-9.-]+$", domain):
-        return ""
-
-    # Must have at least one dot
-    if "." not in domain:
-        return ""
-
-    # Max 255 chars
-    if len(domain) > 255:
-        return ""
-
-    return domain
 
 
 def _fetch_url(url: str) -> dict[str, Any] | None:

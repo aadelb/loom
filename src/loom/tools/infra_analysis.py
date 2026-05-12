@@ -13,6 +13,8 @@ from urllib.parse import quote
 
 import httpx
 
+from loom.http_helpers import fetch_json, fetch_text
+
 logger = logging.getLogger("loom.tools.infra_analysis")
 
 _PYPI_JSON = "https://pypi.org/pypi/{package}/json"
@@ -22,17 +24,6 @@ _CRT_SH = "https://crt.sh/?q=%25.{domain}&output=json"
 _GITHUB_COMMITS = "https://api.github.com/repos/{repo}/commits"
 
 
-async def _get_json(
-    client: httpx.AsyncClient, url: str, timeout: float = 20.0
-) -> Any:
-    """Fetch JSON from URL with error handling."""
-    try:
-        resp = await client.get(url, timeout=timeout)
-        if resp.status_code == 200:
-            return resp.json()
-    except Exception as exc:
-        logger.debug("infra_analysis fetch failed: %s", exc)
-    return None
 
 
 def _calculate_entropy(text: str) -> float:
@@ -163,7 +154,7 @@ async def research_registry_graveyard(package_name: str, ecosystem: str = "pypi"
         ) -> dict[str, Any]:
             """Analyze package on PyPI."""
             url = _PYPI_JSON.format(package=safe_name)
-            data = await _get_json(client, url)
+            data = await fetch_json(client, url)
 
             if not data or "releases" not in data:
                 return {
@@ -214,7 +205,7 @@ async def research_registry_graveyard(package_name: str, ecosystem: str = "pypi"
         ) -> dict[str, Any]:
             """Analyze package on NPM."""
             url = _NPM_REGISTRY.format(package=safe_name)
-            data = await _get_json(client, url)
+            data = await fetch_json(client, url)
 
             if not data or "versions" not in data:
                 return {
@@ -260,7 +251,7 @@ async def research_registry_graveyard(package_name: str, ecosystem: str = "pypi"
         ) -> dict[str, Any]:
             """Analyze package on RubyGems."""
             url = _RUBYGEMS_API.format(package=safe_name)
-            data = await _get_json(client, url)
+            data = await fetch_json(client, url)
 
             if not data or not isinstance(data, list):
                 return {
@@ -401,7 +392,7 @@ async def research_subdomain_temporal(domain: str, days_back: int = 90) -> dict[
 
                 # Fetch CT logs
                 url = _CRT_SH.format(domain=quote(domain, safe=""))
-                data = await _get_json(client, url)
+                data = await fetch_json(client, url)
 
                 if not data:
                     return {

@@ -4,16 +4,7 @@ from __future__ import annotations
 import re
 from typing import Any, Literal
 
-
-def _jaccard_similarity(text1: str, text2: str) -> float:
-    """Calculate Jaccard similarity between two texts (word-level)."""
-    words1 = set(re.findall(r"\b\w+\b", text1.lower()))
-    words2 = set(re.findall(r"\b\w+\b", text2.lower()))
-    if not words1 or not words2:
-        return 0.0
-    intersection = len(words1 & words2)
-    union = len(words1 | words2)
-    return intersection / union if union > 0 else 0.0
+from loom.text_utils import jaccard_similarity
 
 
 def _synonym_swap(text: str, payload: str) -> str:
@@ -166,7 +157,7 @@ async def research_embedding_collide(
             raise ValueError(f"method must be in {['synonym_swap', 'context_inject', 'semantic_trojan', 'retrieval_poison']}")
 
         # Score similarity (Jaccard as proxy for embedding similarity)
-        similarity = _jaccard_similarity(target_text, collision_text)
+        similarity = jaccard_similarity(target_text, collision_text)
 
         mechanisms = {
             "synonym_swap": "Word substitution with payload keyword insertion preserves semantic meaning while injecting adversarial content",
@@ -297,7 +288,7 @@ async def research_rag_attack(
             else:  # semantic_trojan
                 poisoned = _semantic_trojan(chunk_text, varied_payload)
 
-            similarity = _jaccard_similarity(query, poisoned)
+            similarity = jaccard_similarity(query, poisoned)
 
             attack_chunks.append({
                 "chunk_id": i + 1,

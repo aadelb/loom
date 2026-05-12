@@ -18,37 +18,9 @@ from urllib.parse import quote
 
 import httpx
 
+from loom.http_helpers import fetch_json, fetch_text
+
 logger = logging.getLogger("loom.tools.career_trajectory")
-
-
-async def _fetch_json(
-    client: httpx.AsyncClient, url: str, timeout: float = 15.0
-) -> Any:
-    """Fetch and parse JSON from URL."""
-    try:
-        resp = await client.get(url, timeout=timeout)
-        if resp.status_code == 200:
-            try:
-                return resp.json()
-            except ValueError:
-                logger.debug("fetch_json decode failed: %s", url)
-                return None
-    except Exception as exc:
-        logger.debug("fetch_json failed: %s", exc)
-    return None
-
-
-async def _fetch_text(
-    client: httpx.AsyncClient, url: str, timeout: float = 15.0
-) -> str:
-    """Fetch text from URL."""
-    try:
-        resp = await client.get(url, timeout=timeout)
-        if resp.status_code == 200:
-            return resp.text
-    except Exception as exc:
-        logger.debug("fetch_text failed: %s", exc)
-    return ""
 
 
 async def _search_semantic_scholar(
@@ -56,7 +28,7 @@ async def _search_semantic_scholar(
 ) -> dict[str, Any]:
     """Search for author on Semantic Scholar."""
     url = f"https://api.semanticscholar.org/graph/v1/author/search?query={quote(person_name)}&limit=5"
-    data = await _fetch_json(client, url)
+    data = await fetch_json(client, url)
     if data is None:
         return {}
     if not data or "data" not in data:
@@ -79,7 +51,7 @@ async def _search_semantic_scholar(
 
     # Fetch author details including papers
     detail_url = f"https://api.semanticscholar.org/graph/v1/author/{author_id}?fields=papers,hIndex"
-    detail = await _fetch_json(client, detail_url)
+    detail = await fetch_json(client, detail_url)
 
     if not detail:
         return {}
@@ -109,7 +81,7 @@ async def _search_github_user(
 ) -> dict[str, Any]:
     """Search for GitHub user."""
     url = f"https://api.github.com/search/users?q={quote(person_name)}&per_page=5"
-    data = await _fetch_json(client, url)
+    data = await fetch_json(client, url)
 
     if data is None or not isinstance(data, dict) or "items" not in data or len(data["items"]) == 0:
         return {}
@@ -122,7 +94,7 @@ async def _search_github_user(
 
     # Fetch user repos
     repos_url = f"https://api.github.com/users/{username}/repos?per_page=100&type=owner"
-    repos = await _fetch_json(client, repos_url)
+    repos = await fetch_json(client, repos_url)
 
     if not isinstance(repos, list):
         repos = []
@@ -156,7 +128,7 @@ async def _search_github_user(
 async def _search_orcid(client: httpx.AsyncClient, person_name: str) -> dict[str, Any]:
     """Search for ORCID profile."""
     url = f"https://pub.orcid.org/v3.0/search/?q={quote(person_name)}"
-    data = await _fetch_json(client, url)
+    data = await fetch_json(client, url)
 
     if data is None or not isinstance(data, dict) or "result" not in data or len(data["result"]) == 0:
         return {}
@@ -169,7 +141,7 @@ async def _search_orcid(client: httpx.AsyncClient, person_name: str) -> dict[str
 
     # Fetch detailed profile
     detail_url = f"https://pub.orcid.org/v3.0/{orcid_id}"
-    detail = await _fetch_json(client, detail_url)
+    detail = await fetch_json(client, detail_url)
 
     if not detail:
         return {}
@@ -432,7 +404,7 @@ async def _search_github_trending(
 ) -> dict[str, Any]:
     """Search for trending repositories related to skill."""
     url = f"https://api.github.com/search/repositories?q={quote(skill)}&sort=stars&order=desc&per_page=20"
-    data = await _fetch_json(client, url)
+    data = await fetch_json(client, url)
 
     if data is None or not isinstance(data, dict) or "items" not in data:
         return {}
@@ -463,7 +435,7 @@ async def _search_hacker_news(
 ) -> dict[str, Any]:
     """Search HackerNews for discussions about skill."""
     url = f"https://hn.algolia.com/api/v1/search?query={quote(skill)}&tags=story&hitsPerPage=50"
-    data = await _fetch_json(client, url)
+    data = await fetch_json(client, url)
 
     if data is None or not isinstance(data, dict) or "hits" not in data:
         return {}
@@ -491,7 +463,7 @@ async def _search_arxiv_papers(
     search_query = quote(f"all:{skill}")
     url = f"https://export.arxiv.org/api/query?search_query={search_query}&start=0&max_results=100&sortBy=submittedDate&sortOrder=descending"
 
-    text = await _fetch_text(client, url)
+    text = await fetch_text(client, url)
 
     if not text or not isinstance(text, str):
         return {}

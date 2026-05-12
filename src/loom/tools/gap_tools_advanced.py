@@ -19,6 +19,8 @@ from urllib.parse import quote
 
 import httpx
 
+from loom.http_helpers import fetch_json, fetch_text
+
 logger = logging.getLogger("loom.tools.gap_tools_advanced")
 
 # Jailbreak pattern library (26 patterns across 5 categories)
@@ -62,36 +64,8 @@ _JAILBREAK_PATTERNS = {
 }
 
 
-async def _get_json(
-    client: httpx.AsyncClient,
-    url: str,
-    timeout: float = 20.0,
-    headers: dict[str, str] | None = None,
-) -> Any:
-    """Fetch JSON from URL with error handling."""
-    try:
-        resp = await client.get(url, timeout=timeout, headers=headers or {})
-        if resp.status_code == 200:
-            return resp.json()
-    except Exception as exc:
-        logger.debug("gap_tools fetch failed: %s", exc)
-    return None
 
 
-async def _get_text(
-    client: httpx.AsyncClient,
-    url: str,
-    timeout: float = 15.0,
-    headers: dict[str, str] | None = None,
-) -> str:
-    """Fetch text from URL with error handling."""
-    try:
-        resp = await client.get(url, timeout=timeout, headers=headers or {})
-        if resp.status_code == 200:
-            return resp.text
-    except Exception as exc:
-        logger.debug("gap_tools text fetch failed: %s", exc)
-    return ""
 
 
 def _parse_dblp_affiliations(data: dict[str, Any]) -> list[dict[str, Any]]:
@@ -271,14 +245,14 @@ async def research_talent_migration(
         ) as client:
             # Query DBLP for affiliation history
             dblp_url = f"https://dblp.org/search/author/api?q={quote(person_name)}&format=json"
-            dblp_data = await _get_json(client, dblp_url, timeout=15.0)
+            dblp_data = await fetch_json(client, dblp_url, timeout=15.0)
 
             affiliations = _parse_dblp_affiliations(dblp_data or {})
             current_affiliation = affiliations[0].get("affiliation", "unknown") if affiliations and len(affiliations) > 0 else "unknown"
 
             # Try Semantic Scholar for more detailed history
             ss_url = f"https://api.semanticscholar.org/graph/v1/author/search?query={quote(person_name)}&limit=3"
-            ss_data = await _get_json(client, ss_url, timeout=15.0)
+            ss_data = await fetch_json(client, ss_url, timeout=15.0)
 
             timezone_estimate = "unknown"
             predicted_move = False
@@ -381,7 +355,7 @@ async def research_funding_pipeline(company_or_field: str) -> dict[str, Any]:
                 f"https://api.github.com/search/repositories?q={quote(company_or_field)}+"
                 f"language:markdown&sort=stars&per_page=5"
             )
-            gh_data = await _get_json(client, github_search, timeout=15.0)
+            gh_data = await fetch_json(client, github_search, timeout=15.0)
             if gh_data and "items" in gh_data:
                 for item in gh_data["items"][:3]:
                     desc = item.get("description") or ""

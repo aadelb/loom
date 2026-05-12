@@ -10,22 +10,11 @@ from urllib.parse import quote
 
 import httpx
 
+from loom.http_helpers import fetch_json
+
 logger = logging.getLogger("loom.tools.gap_tools_academic")
 
 _SEMANTIC_SCHOLAR_API = "https://api.semanticscholar.org/graph/v1"
-
-
-async def _get_json(
-    client: httpx.AsyncClient, url: str, timeout: float = 20.0
-) -> Any:
-    """Fetch JSON from URL with error handling."""
-    try:
-        resp = await client.get(url, timeout=timeout)
-        if resp.status_code == 200:
-            return resp.json()
-    except Exception as exc:
-        logger.debug("gap_tools_academic json fetch failed: %s", exc)
-    return None
 
 
 def _extract_keywords(abstracts: list[str], top_n: int = 20) -> list[str]:
@@ -125,7 +114,7 @@ async def research_ideological_drift(field: str, years: int = 10) -> dict[str, A
                         f"fields=title,abstract,citationCount"
                     )
 
-                    data = await _get_json(client, url, timeout=20.0)
+                    data = await fetch_json(client, url, timeout=20.0)
 
                     abstracts = []
                     if data and "data" in data:
@@ -195,7 +184,7 @@ async def research_author_clustering(field: str, max_authors: int = 50) -> dict[
                     f"fields=authors,year,title"
                 )
 
-                data = await _get_json(client, url, timeout=20.0)
+                data = await fetch_json(client, url, timeout=20.0)
 
                 # Build author co-author adjacency
                 author_pairs: dict[str, set[str]] = {}
@@ -303,7 +292,7 @@ async def research_citation_cartography(paper_id: str, depth: int = 2) -> dict[s
                     f"fields=title,authors,references,citations,citationCount"
                 )
 
-                paper_data = await _get_json(client, url, timeout=20.0)
+                paper_data = await fetch_json(client, url, timeout=20.0)
 
                 if not paper_data:
                     return {

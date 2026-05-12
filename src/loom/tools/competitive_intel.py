@@ -16,38 +16,28 @@ from urllib.parse import quote
 
 import httpx
 
+from loom.http_helpers import fetch_json, fetch_text
+
 logger = logging.getLogger("loom.tools.competitive_intel")
 
 # Semaphore to limit concurrent DNS/HTTP requests
 _request_semaphore = asyncio.Semaphore(5)
 
 
-async def _get_json(
+async def _get_json_semaphore(
     client: httpx.AsyncClient, url: str, timeout: float = 20.0
 ) -> Any:
-    """Safely fetch JSON from URL."""
-    try:
-        async with _request_semaphore:
-            resp = await client.get(url, timeout=timeout)
-            if resp.status_code == 200:
-                return resp.json()
-    except Exception as exc:
-        logger.debug("json fetch failed: %s", exc)
-    return None
+    """Safely fetch JSON from URL with semaphore."""
+    async with _request_semaphore:
+        return await fetch_json(client, url, timeout=timeout)
 
 
-async def _get_text(
+async def _get_text_semaphore(
     client: httpx.AsyncClient, url: str, timeout: float = 15.0
 ) -> str:
-    """Safely fetch text from URL."""
-    try:
-        async with _request_semaphore:
-            resp = await client.get(url, timeout=timeout)
-            if resp.status_code == 200:
-                return resp.text
-    except Exception as exc:
-        logger.debug("text fetch failed: %s", exc)
-    return ""
+    """Safely fetch text from URL with semaphore."""
+    async with _request_semaphore:
+        return await fetch_text(client, url, timeout=timeout)
 
 
 async def _fetch_sec_filings(
@@ -76,7 +66,7 @@ async def _fetch_sec_filings(
             f"&forms=10-K,10-Q"
         )
 
-        text = await _get_text(client, url, timeout=30.0)
+        text = await _get_text_semaphore(client, url, timeout=30.0)
         if not text:
             return {"count": 0, "recent": []}
 
@@ -128,7 +118,7 @@ async def _fetch_patents(
             f"&rows=20"
         )
 
-        data = await _get_json(client, url, timeout=25.0)
+        data = await _get_json_semaphore(client, url, timeout=25.0)
         if not data or "response" not in data:
             return {"count": 0, "recent_titles": []}
 
@@ -166,7 +156,7 @@ async def _fetch_github_activity(
     try:
         url = f"https://api.github.com/orgs/{quote(github_org)}/repos?sort=updated&per_page=50"
 
-        data = await _get_json(client, url, timeout=20.0)
+        data = await _get_json_semaphore(client, url, timeout=20.0)
         if not data or not isinstance(data, list):
             return {
                 "repo_count": 0,
@@ -232,7 +222,7 @@ async def _fetch_certificate_transparency(
     try:
         url = f"https://crt.sh/?q=%25.{quote(domain)}&output=json"
 
-        data = await _get_json(client, url, timeout=25.0)
+        data = await _get_json_semaphore(client, url, timeout=25.0)
         if not data or not isinstance(data, list):
             return {"total_found": 0, "recent_subdomains": []}
 
@@ -287,7 +277,7 @@ async def _fetch_dns_records(
 
         for rtype in record_types:
             url = f"https://dns.google/resolve?name={quote(domain)}&type={rtype}"
-            data = await _get_json(client, url, timeout=10.0)
+            data = await _get_json_semaphore(client, url, timeout=10.0)
 
             if data and "Answer" in data:
                 records[rtype] = [

@@ -12,6 +12,8 @@ from urllib.parse import quote, urlparse
 
 import httpx
 
+from loom.http_helpers import fetch_json, fetch_text
+
 from loom.validators import validate_url, UrlSafetyError
 
 logger = logging.getLogger("loom.tools.infowar_tools")
@@ -29,30 +31,8 @@ _CLOUDFLARE_DOH = "https://cloudflare-dns.com/dns-query"
 _QUAD9_DOH = "https://dns.quad9.net/dns-query"
 
 
-async def _fetch_json(
-    client: httpx.AsyncClient, url: str, timeout: float = 20.0, **kwargs: Any
-) -> Any:
-    """Fetch JSON with error handling."""
-    try:
-        resp = await client.get(url, timeout=timeout, **kwargs)
-        if resp.status_code == 200:
-            return resp.json()
-    except Exception as exc:
-        logger.debug("infowar_tools fetch failed url=%s: %s", url[:80], exc)
-    return None
 
 
-async def _fetch_text(
-    client: httpx.AsyncClient, url: str, timeout: float = 15.0, **kwargs: Any
-) -> str:
-    """Fetch text with error handling."""
-    try:
-        resp = await client.get(url, timeout=timeout, **kwargs)
-        if resp.status_code == 200:
-            return resp.text
-    except Exception as exc:
-        logger.debug("infowar_tools text fetch failed url=%s: %s", url[:80], exc)
-    return ""
 
 
 async def _hn_search(
@@ -67,7 +47,7 @@ async def _hn_search(
             "tags": "story",
             "numericFilters": f"created_at>{int(time.time() - hours_back * 3600)}",
         }
-        data = await _fetch_json(client, _HN_ALGOLIA_SEARCH, timeout=15.0, params=params)
+        data = await fetch_json(client, _HN_ALGOLIA_SEARCH, timeout=15.0, params=params)
         if data and "hits" in data:
             return [
                 {
@@ -99,7 +79,7 @@ async def _reddit_search(
             "sort": "desc",
             "size": 20,
         }
-        data = await _fetch_json(client, url, timeout=15.0, params=params)
+        data = await fetch_json(client, url, timeout=15.0, params=params)
         if data and "data" in data:
             return [
                 {
@@ -131,7 +111,7 @@ async def _arxiv_search(
             "sortBy": "submittedDate",
             "sortOrder": "descending",
         }
-        text = await _fetch_text(client, _ARXIV_API, timeout=15.0, params=params)
+        text = await fetch_text(client, _ARXIV_API, timeout=15.0, params=params)
         if not text:
             return []
 
@@ -416,7 +396,7 @@ async def _dns_lookup_doh(
         if "google" in doh_endpoint:
             url = doh_endpoint
             params = {"name": domain, "type": "A"}
-            data = await _fetch_json(client, url, timeout=10.0, params=params)
+            data = await fetch_json(client, url, timeout=10.0, params=params)
             if data and "Answer" in data:
                 return {
                     "provider": "google",
@@ -427,7 +407,7 @@ async def _dns_lookup_doh(
             url = doh_endpoint
             params = {"name": domain, "type": "A"}
             headers = {"accept": "application/dns-json"}
-            data = await _fetch_json(
+            data = await fetch_json(
                 client, url, timeout=10.0, params=params, headers=headers
             )
             if data and "Answer" in data:
@@ -440,7 +420,7 @@ async def _dns_lookup_doh(
             url = doh_endpoint
             params = {"name": domain, "type": "A"}
             headers = {"accept": "application/dns-json"}
-            data = await _fetch_json(
+            data = await fetch_json(
                 client, url, timeout=10.0, params=params, headers=headers
             )
             if data and "Answer" in data:
@@ -461,7 +441,7 @@ async def _lumen_database_check(
     """Check Lumen Database for takedown notices."""
     try:
         params = {"term": domain}
-        data = await _fetch_json(client, _LUMEN_DATABASE, timeout=15.0, params=params)
+        data = await fetch_json(client, _LUMEN_DATABASE, timeout=15.0, params=params)
         if data and "notices" in data:
             return [
                 {
@@ -572,7 +552,7 @@ async def _wayback_search_social(
             "filter": "statuscode:200",
             "limit": 50,
         }
-        data = await _fetch_json(client, cdx_url, timeout=30.0, params=params)
+        data = await fetch_json(client, cdx_url, timeout=30.0, params=params)
         if data and len(data) > 1:
             snapshots = []
             for row in data[1:]:
@@ -685,7 +665,7 @@ async def _robots_txt_cdx(
             "filter": "statuscode:200",
             "limit": snapshots,
         }
-        data = await _fetch_json(client, cdx_url, timeout=30.0, params=params)
+        data = await fetch_json(client, cdx_url, timeout=30.0, params=params)
         if data and len(data) > 1:
             versions = []
             for row in data[1:]:
@@ -712,7 +692,7 @@ async def _robots_txt_content(
 ) -> str:
     """Fetch actual robots.txt content from archive."""
     try:
-        return await _fetch_text(client, archive_url, timeout=15.0)
+        return await fetch_text(client, archive_url, timeout=15.0)
     except Exception as e:
         logger.debug("robots_txt_fetch_error: %s", e)
         return ""

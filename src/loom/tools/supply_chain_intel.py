@@ -18,6 +18,7 @@ from urllib.parse import quote
 import httpx
 
 from loom.validators import validate_url, UrlSafetyError
+from loom.http_helpers import fetch_json, fetch_text
 
 logger = logging.getLogger("loom.tools.supply_chain_intel")
 
@@ -27,36 +28,6 @@ _USPTO_API = "https://developer.uspto.gov/ibd-api/v1/application/publications"
 _LIBRARIES_IO_API = "https://libraries.io/api/{ecosystem}/{package}"
 
 
-async def _get_json(
-    client: httpx.AsyncClient,
-    url: str,
-    timeout: float = 20.0,
-    headers: dict[str, str] | None = None,
-) -> Any:
-    """Fetch JSON from URL with error handling."""
-    try:
-        resp = await client.get(url, timeout=timeout, headers=headers)
-        if resp.status_code == 200:
-            return resp.json()
-    except Exception as exc:
-        logger.debug("supply_chain fetch failed: %s", exc)
-    return None
-
-
-async def _get_text(
-    client: httpx.AsyncClient,
-    url: str,
-    timeout: float = 15.0,
-    headers: dict[str, str] | None = None,
-) -> str:
-    """Fetch text from URL with error handling."""
-    try:
-        resp = await client.get(url, timeout=timeout, headers=headers)
-        if resp.status_code == 200:
-            return resp.text
-    except Exception as exc:
-        logger.debug("supply_chain text fetch failed: %s", exc)
-    return ""
 
 
 def _calculate_staleness_days(last_update_str: str) -> int:
@@ -194,7 +165,7 @@ async def research_supply_chain_risk(
             if ecosystem == "pypi":
                 # PyPI JSON API
                 url = _PYPI_API.format(package=quote(package_name))
-                data = await _get_json(client, url)
+                data = await fetch_json(client, url)
 
                 if data:
                     releases = data.get("releases", {})
@@ -239,7 +210,7 @@ async def research_supply_chain_risk(
             elif ecosystem == "npm":
                 # npm registry API
                 url = f"https://registry.npmjs.org/{quote(package_name)}"
-                data = await _get_json(client, url)
+                data = await fetch_json(client, url)
 
                 if data:
                     # Last update
@@ -268,7 +239,7 @@ async def research_supply_chain_risk(
             elif ecosystem == "cargo":
                 # Crates.io API
                 url = f"https://crates.io/api/v1/crates/{quote(package_name)}"
-                data = await _get_json(client, url)
+                data = await fetch_json(client, url)
 
                 if data:
                     crate_data = data.get("crate", {})
@@ -279,14 +250,14 @@ async def research_supply_chain_risk(
                     if versions:
                         latest = versions[0]
                         url_deps = f"https://crates.io/api/v1/crates/{quote(package_name)}/{latest.get('num')}/dependencies"
-                        deps_data = await _get_json(client, url_deps)
+                        deps_data = await fetch_json(client, url_deps)
                         if deps_data:
                             result["dependency_depth"] = len(deps_data.get("dependencies", []))
 
             # Check for known vulnerabilities (GitHub Advisory API)
             logger.debug("checking_advisories package=%s", package_name)
             advisories_url = _GITHUB_ADVISORIES.format(dep=quote(package_name))
-            advisories = await _get_json(
+            advisories = await fetch_json(
                 client, advisories_url, headers={"Accept": "application/vnd.github.v3+json"}
             )
             if advisories:
@@ -364,7 +335,7 @@ async def research_patent_landscape(query: str, max_results: int = 20) -> dict[s
                     "rows": max_results,
                 }
                 url = f"{_USPTO_API}?{'&'.join(f'{k}={quote(str(v))}' for k, v in params.items())}"
-                data = await _get_json(client, url, timeout=30.0)
+                data = await fetch_json(client, url, timeout=30.0)
 
                 if data:
                     patents = data.get("patents", [])
@@ -531,7 +502,7 @@ async def research_dependency_audit(repo_url: str) -> dict[str, Any]:
 
             for filename, pkg_type in dep_files:
                 url = f"{raw_base}/{filename}"
-                content = await _get_text(client, url)
+                content = await fetch_text(client, url)
 
                 if content:
                     logger.debug("found_dep_file file=%s type=%s", filename, pkg_type)
@@ -579,7 +550,7 @@ async def research_dependency_audit(repo_url: str) -> dict[str, Any]:
 
                 # Check for vulnerabilities via GitHub Advisories
                 advisories_url = _GITHUB_ADVISORIES.format(dep=quote(dep_name))
-                advisories = await _get_json(
+                advisories = await fetch_json(
                     client,
                     advisories_url,
                     headers={"Accept": "application/vnd.github.v3+json"},
@@ -599,7 +570,7 @@ async def research_dependency_audit(repo_url: str) -> dict[str, Any]:
                 # Check last update
                 if pkg_type == "pip":
                     pypi_url = _PYPI_API.format(package=quote(dep_name))
-                    pypi_data = await _get_json(client, pypi_url)
+                    pypi_data = await fetch_json(client, pypi_url)
                     if pypi_data:
                         releases = pypi_data.get("releases", {})
                         if releases:

@@ -9,6 +9,7 @@ from typing import Any, Literal
 from urllib.parse import quote
 
 import httpx
+from loom.http_helpers import fetch_json, fetch_text
 
 logger = logging.getLogger("loom.tools.threat_intel")
 
@@ -23,30 +24,6 @@ _SHODAN_INTERNETDB = "https://internetdb.shodan.io/{ip}"
 _ABUSEIPDB_BASE = "https://api.abuseipdb.com/api/v2"
 
 
-async def _get_json(
-    client: httpx.AsyncClient, url: str, timeout: float = 20.0, headers: dict[str, str] | None = None
-) -> Any:
-    """Fetch JSON from URL with error handling."""
-    try:
-        resp = await client.get(url, timeout=timeout, headers=headers or {})
-        if resp.status_code == 200:
-            return resp.json()
-    except Exception as exc:
-        logger.debug("threat_intel json fetch failed: %s", exc)
-    return None
-
-
-async def _get_text(
-    client: httpx.AsyncClient, url: str, timeout: float = 15.0
-) -> str:
-    """Fetch text from URL with error handling."""
-    try:
-        resp = await client.get(url, timeout=timeout)
-        if resp.status_code == 200:
-            return resp.text
-    except Exception as exc:
-        logger.debug("threat_intel text fetch failed: %s", exc)
-    return ""
 
 
 async def _search_otx(
@@ -55,7 +32,7 @@ async def _search_otx(
     """Search AlienVault OTX for pulses by keyword."""
     try:
         url = f"{_OTX_BASE}/search/pulses?q={quote(keyword)}"
-        data = await _get_json(client, url, timeout=15.0)
+        data = await fetch_json(client, url, timeout=15.0)
         if data and "results" in data:
             return data.get("results", [])
     except Exception as exc:
@@ -69,7 +46,7 @@ async def _search_ahmia(
     """Search Ahmia darknet search engine."""
     try:
         url = f"https://ahmia.fi/search/?q={quote(keyword)}&format=json"
-        data = await _get_json(client, url, timeout=15.0)
+        data = await fetch_json(client, url, timeout=15.0)
         if data and "results" in data:
             return data.get("results", [])
     except Exception as exc:
@@ -83,7 +60,7 @@ async def _crt_sh_lookalikes(
     """Find lookalike domains via Certificate Transparency logs."""
     try:
         url = _CRT_SH.format(domain=domain)
-        data = await _get_json(client, url, timeout=30.0)
+        data = await fetch_json(client, url, timeout=30.0)
         if not data:
             return []
 
@@ -130,7 +107,7 @@ async def _shodan_internetdb_lookup(
     """Query Shodan InternetDB for IP information."""
     try:
         url = _SHODAN_INTERNETDB.format(ip=ip)
-        data = await _get_json(client, url, timeout=10.0)
+        data = await fetch_json(client, url, timeout=10.0)
         return data or {}
     except Exception as exc:
         logger.debug("shodan internetdb lookup failed: %s", exc)
@@ -142,7 +119,7 @@ async def _feodo_tracker_check(
 ) -> dict[str, Any]:
     """Check Feodo Tracker for C2 infrastructure."""
     try:
-        text = await _get_text(client, _FEODO_TRACKER, timeout=20.0)
+        text = await fetch_text(client, _FEODO_TRACKER, timeout=20.0)
         if not text:
             return {}
 
@@ -187,7 +164,7 @@ async def _circl_hashlookup(
     """Query CIRCL hashlookup service."""
     try:
         url = f"{_CIRCL_HASHLOOKUP}/sha256/{hash_value}"
-        data = await _get_json(client, url, timeout=10.0)
+        data = await fetch_json(client, url, timeout=10.0)
         return data or {}
     except Exception as exc:
         logger.debug("circl hashlookup failed: %s", exc)

@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import logging
 import re
-import shutil
 import subprocess
 from typing import Any
 
@@ -17,49 +16,14 @@ except ImportError:
             return func
         return decorator
 
+from loom.cli_checker import is_available
+from loom.input_validators import validate_domain, ValidationError
 from loom.validators import validate_url, UrlSafetyError
 
 logger = logging.getLogger("loom.tools.dark_recon")
 
 # Maximum stdout read size: 10 MB
 MAX_OUTPUT_SIZE = 10 * 1024 * 1024
-
-
-def _validate_domain(domain: str) -> str:
-    """Validate domain name to prevent command injection.
-
-    Allows alphanumeric, dots, hyphens, and underscores.
-    Returns the validated domain.
-
-    Args:
-        domain: domain name to validate
-
-    Returns:
-        The validated domain string
-
-    Raises:
-        ValueError: if domain contains disallowed characters
-    """
-    if not domain or len(domain) > 255:
-        raise ValueError("domain must be 1-255 characters")
-
-    # Allow alphanumeric, dots, hyphens, underscores
-    if not re.match(r"^[a-z0-9._-]+$", domain, re.IGNORECASE):
-        raise ValueError("domain contains disallowed characters")
-
-    return domain
-
-
-def _is_tool_available(tool_name: str) -> bool:
-    """Check if a tool is available in the system PATH.
-
-    Args:
-        tool_name: name of the tool to check (e.g., 'torbot', 'amass')
-
-    Returns:
-        True if tool is available, False otherwise
-    """
-    return shutil.which(tool_name) is not None
 
 
 @requires_tier("pro")
@@ -95,7 +59,7 @@ def research_torbot(url: str, depth: int = 2) -> dict[str, Any]:
         return {"url": url, "error": "depth must be an integer between 1 and 5"}
 
     # Check if TorBot is available
-    if not _is_tool_available("torbot"):
+    if not is_available("torbot"):
         return {
             "url": url,
             "warning": "TorBot is not installed. Install with: pip install torbot",
@@ -193,8 +157,8 @@ def research_amass_enum(domain: str, passive: bool = True, timeout: int = 120) -
         - warning: warning message if Amass is not installed
     """
     try:
-        domain = _validate_domain(domain)
-    except ValueError as exc:
+        domain = validate_domain(domain)
+    except ValidationError as exc:
         return {"domain": domain, "error": str(exc)}
 
     # Validate timeout
@@ -202,7 +166,7 @@ def research_amass_enum(domain: str, passive: bool = True, timeout: int = 120) -
         return {"domain": domain, "error": "timeout must be an integer between 1 and 600"}
 
     # Check if Amass is available
-    if not _is_tool_available("amass"):
+    if not is_available("amass"):
         return {
             "domain": domain,
             "warning": "Amass is not installed. Install from: https://github.com/OWASP/Amass",
@@ -326,12 +290,12 @@ def research_amass_intel(domain: str) -> dict[str, Any]:
         - warning: warning message if Amass is not installed
     """
     try:
-        domain = _validate_domain(domain)
-    except ValueError as exc:
+        domain = validate_domain(domain)
+    except ValidationError as exc:
         return {"domain": domain, "error": str(exc)}
 
     # Check if Amass is available
-    if not _is_tool_available("amass"):
+    if not is_available("amass"):
         return {
             "domain": domain,
             "warning": "Amass is not installed. Install from: https://github.com/OWASP/Amass",

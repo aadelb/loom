@@ -15,32 +15,11 @@ from typing import Any
 from urllib.parse import quote
 
 import httpx
+from loom.http_helpers import fetch_json, fetch_text
 
 logger = logging.getLogger("loom.tools.job_signals")
 
 
-async def _get_json(
-    client: httpx.AsyncClient, url: str, timeout: float = 15.0
-) -> Any:
-    try:
-        resp = await client.get(url, timeout=timeout)
-        if resp.status_code == 200:
-            return resp.json()
-    except Exception as exc:
-        logger.debug("job_signals json fetch failed: %s", exc)
-    return None
-
-
-async def _get_text(
-    client: httpx.AsyncClient, url: str, timeout: float = 15.0
-) -> str:
-    try:
-        resp = await client.get(url, timeout=timeout)
-        if resp.status_code == 200:
-            return resp.text
-    except Exception as exc:
-        logger.debug("job_signals text fetch failed: %s", exc)
-    return ""
 
 
 async def _fetch_sec_filings(
@@ -53,7 +32,7 @@ async def _fetch_sec_filings(
             f"https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&company={quote(company)}"
             "&type=&dateb=&owner=exclude&count=100&output=json"
         )
-        data = await _get_json(client, search_url, timeout=20.0)
+        data = await fetch_json(client, search_url, timeout=20.0)
 
         if not data or "filings" not in data:
             return {"cik": None, "filings": []}
@@ -98,7 +77,7 @@ async def _fetch_github_activity(
         company_slug = company.lower().replace(" ", "-").replace(".", "")
         repos_url = f"https://api.github.com/orgs/{quote(company_slug)}/repos?sort=created&per_page=30"
 
-        data = await _get_json(client, repos_url, timeout=15.0)
+        data = await fetch_json(client, repos_url, timeout=15.0)
         if not data or (isinstance(data, dict) and "message" in data):
             return {"repos": [], "activity_level": "unknown"}
 
@@ -140,7 +119,7 @@ async def _fetch_crt_sh_subdomains(
     """Fetch new subdomains from Certificate Transparency logs."""
     try:
         url = f"https://crt.sh/?q=%25.{quote(domain)}&output=json"
-        data = await _get_json(client, url, timeout=30.0)
+        data = await fetch_json(client, url, timeout=30.0)
 
         if not data or not isinstance(data, list):
             return []
@@ -175,7 +154,7 @@ async def _fetch_github_jobs_keywords(
             f"q={safe_keywords}+hiring+in:readme&per_page=10"
         )
 
-        data = await _get_json(client, search_url, timeout=15.0)
+        data = await fetch_json(client, search_url, timeout=15.0)
         if not data or "items" not in data:
             return []
 
@@ -208,7 +187,7 @@ async def _fetch_hackernews_hiring(
             f"tags=comment,ask_hn&hitsPerPage=15"
         )
 
-        data = await _get_json(client, search_url, timeout=15.0)
+        data = await fetch_json(client, search_url, timeout=15.0)
         if not data or "hits" not in data:
             return []
 
@@ -240,7 +219,7 @@ async def _fetch_reddit_hiring(
             f"https://www.reddit.com/r/forhire/search.json?q={safe_keywords}&limit=15"
         )
 
-        data = await _get_json(client, search_url, timeout=15.0)
+        data = await fetch_json(client, search_url, timeout=15.0)
         if not data or "data" not in data or "children" not in data["data"]:
             return []
 
@@ -275,8 +254,8 @@ async def _fetch_github_profile(
             f"sort=stars&per_page=10"
         )
 
-        profile_data = await _get_json(client, profile_url, timeout=10.0)
-        repos_data = await _get_json(client, repos_url, timeout=10.0)
+        profile_data = await fetch_json(client, profile_url, timeout=10.0)
+        repos_data = await fetch_json(client, repos_url, timeout=10.0)
 
         if not profile_data or "message" in profile_data:
             return {"found": False}
@@ -318,7 +297,7 @@ async def _fetch_semantic_scholar(
         safe_name = quote(person_name)
         search_url = f"https://api.semanticscholar.org/graph/v1/author/search?query={safe_name}&limit=5"
 
-        data = await _get_json(client, search_url, timeout=15.0)
+        data = await fetch_json(client, search_url, timeout=15.0)
         if not data or "data" not in data:
             return {"publications": []}
 
@@ -334,7 +313,7 @@ async def _fetch_semantic_scholar(
                 f"https://api.semanticscholar.org/graph/v1/author/{author_id}/papers?"
                 f"limit=10&fields=title,year,citationCount,publicationVenue"
             )
-            papers = await _get_json(client, papers_url, timeout=15.0)
+            papers = await fetch_json(client, papers_url, timeout=15.0)
 
             if papers and "data" in papers:
                 for paper in papers.get("data", [])[:5]:
@@ -364,7 +343,7 @@ async def _fetch_hackernews_activity(
             f"tags=author&hitsPerPage=20"
         )
 
-        data = await _get_json(client, search_url, timeout=15.0)
+        data = await fetch_json(client, search_url, timeout=15.0)
         if not data or "hits" not in data:
             return {"comments": [], "submissions": [], "karma_indicators": []}
 

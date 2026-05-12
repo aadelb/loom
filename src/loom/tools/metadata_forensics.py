@@ -10,6 +10,7 @@ from urllib.parse import urljoin
 
 import httpx
 
+from loom.http_helpers import fetch_text
 from loom.validators import validate_url, UrlSafetyError
 
 logger = logging.getLogger("loom.tools.metadata_forensics")
@@ -29,20 +30,6 @@ async def _fetch_bytes(
 	except Exception as exc:
 		logger.error("metadata_forensics unexpected fetch error: %s", exc)
 		return b""
-
-
-async def _fetch_text(client: httpx.AsyncClient, url: str) -> str:
-	try:
-		resp = await client.get(url, timeout=20.0, follow_redirects=True)
-		if resp.status_code == 200:
-			return resp.text
-		return ""
-	except httpx.HTTPError as exc:
-		logger.debug("metadata_forensics text fetch failed: %s", exc)
-		return ""
-	except Exception as exc:
-		logger.error("metadata_forensics unexpected text fetch error: %s", exc)
-		return ""
 
 
 def _extract_json_ld(html: str) -> list[dict[str, Any]]:
@@ -200,7 +187,7 @@ async def research_metadata_forensics(
 				headers={"User-Agent": "Loom-Research/1.0"},
 				timeout=30.0,
 			) as client:
-				html = await _fetch_text(client, url)
+				html = await fetch_text(client, url, timeout=20.0)
 				if not html:
 					return {"url": url, "error": "failed to fetch page"}
 

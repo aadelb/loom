@@ -17,6 +17,8 @@ from urllib.parse import quote
 
 import httpx
 
+from loom.http_helpers import fetch_json, fetch_text
+
 try:
     from scipy.stats import chi2
 except ImportError:
@@ -30,30 +32,8 @@ _OPENCORPORATES_API = "https://api.opencorporates.com/v0.4/companies/search"
 _ARXIV_API = "https://export.arxiv.org/api/query"
 
 
-async def _get_json(
-    client: httpx.AsyncClient, url: str, timeout: float = 20.0
-) -> Any:
-    """Fetch JSON from URL with error handling."""
-    try:
-        resp = await client.get(url, timeout=timeout)
-        if resp.status_code == 200:
-            return resp.json()
-    except Exception as exc:
-        logger.debug("hcs10_academic fetch failed: %s", exc)
-    return None
 
 
-async def _get_text(
-    client: httpx.AsyncClient, url: str, timeout: float = 15.0
-) -> str:
-    """Fetch text from URL with error handling."""
-    try:
-        resp = await client.get(url, timeout=timeout)
-        if resp.status_code == 200:
-            return resp.text
-    except Exception as exc:
-        logger.debug("hcs10_academic text fetch failed: %s", exc)
-    return ""
 
 
 def _compute_zipf_exponent(word_freq: dict[str, int]) -> float:
@@ -303,7 +283,7 @@ async def research_monoculture_detect(field: str, max_papers: int = 50) -> dict[
                     f"{_SEMANTIC_SCHOLAR_API}/paper/search"
                     f"?query={quote(field)}&limit={max_papers}&fields=title,abstract,year"
                 )
-                search_data = await _get_json(client, search_url)
+                search_data = await fetch_json(client, search_url)
 
                 if not search_data or "data" not in search_data:
                     return {
@@ -401,7 +381,7 @@ async def research_review_cartel(author_id: str) -> dict[str, Any]:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 # Get author papers
                 author_url = f"{_SEMANTIC_SCHOLAR_API}/author/{author_id}"
-                author_data = await _get_json(client, author_url)
+                author_data = await fetch_json(client, author_url)
 
                 if not author_data:
                     return {
@@ -434,7 +414,7 @@ async def research_review_cartel(author_id: str) -> dict[str, Any]:
                         f"{_SEMANTIC_SCHOLAR_API}/paper/{paper_id}"
                         f"?fields=references,citations"
                     )
-                    paper_detail = await _get_json(client, paper_url)
+                    paper_detail = await fetch_json(client, paper_url)
 
                     if not paper_detail:
                         continue
@@ -565,7 +545,7 @@ async def research_institutional_decay(institution: str) -> dict[str, Any]:
                     f"{_SEMANTIC_SCHOLAR_API}/paper/search"
                     f"?query=from:{quote(institution)}&limit=50&fields=year,authors,citationCount"
                 )
-                search_data = await _get_json(client, search_url)
+                search_data = await fetch_json(client, search_url)
 
                 if not search_data or "data" not in search_data:
                     return {
@@ -586,7 +566,7 @@ async def research_institutional_decay(institution: str) -> dict[str, Any]:
                     f"https://api.crossref.org/works"
                     f"?query={quote(institution)}&filter=has-retracted-article:true&rows=1"
                 )
-                retraction_data = await _get_json(client, retraction_url)
+                retraction_data = await fetch_json(client, retraction_url)
                 total_with_retraction = 0
                 if retraction_data and "message" in retraction_data:
                     total_with_retraction = retraction_data["message"].get("total-results", 0)
@@ -680,7 +660,7 @@ async def research_shell_funding(company: str) -> dict[str, Any]:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 # Query OpenCorporates
                 oc_url = f"{_OPENCORPORATES_API}?q={quote(company)}"
-                oc_data = await _get_json(client, oc_url)
+                oc_data = await fetch_json(client, oc_url)
 
                 if not oc_data or "companies" not in oc_data.get("results", {}):
                     return {
@@ -778,7 +758,7 @@ async def research_conference_arbitrage(conference: str) -> dict[str, Any]:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 # Query DBLP for conference papers
                 dblp_url = f"{_DBLP_API}?q={quote(conference)}&format=json"
-                dblp_data = await _get_json(client, dblp_url)
+                dblp_data = await fetch_json(client, dblp_url)
 
                 if not dblp_data or "result" not in dblp_data:
                     return {
@@ -881,7 +861,7 @@ async def research_preprint_manipulation(arxiv_id: str = "", topic: str = "") ->
                         f"{_ARXIV_API}?search_query=cat:cs.AI+AND+submittedDate:"
                         f"[202401010000+TO+202412312359]&start=0&max_results=20"
                     )
-                    arxiv_data = await _get_text(client, search_url)
+                    arxiv_data = await fetch_text(client, search_url)
                     if not arxiv_data:
                         return {
                             "topic": topic,
@@ -909,7 +889,7 @@ async def research_preprint_manipulation(arxiv_id: str = "", topic: str = "") ->
 
                 # Fetch paper metadata from arXiv
                 arxiv_url = f"{_ARXIV_API}?id_list={local_arxiv_id}&start=0&max_results=1"
-                arxiv_text = await _get_text(client, arxiv_url)
+                arxiv_text = await fetch_text(client, arxiv_url)
 
                 if not arxiv_text:
                     return {
@@ -955,7 +935,7 @@ async def research_preprint_manipulation(arxiv_id: str = "", topic: str = "") ->
 
                 # Pattern 2: Unusually high altmetric score relative to citations
                 # (Would need altmetric API)
-                altmetric_data = await _get_json(
+                altmetric_data = await fetch_json(
                     client,
                     f"https://api.altmetric.com/v1/arxiv/{local_arxiv_id}",
                     timeout=10.0

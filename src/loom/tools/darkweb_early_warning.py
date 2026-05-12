@@ -14,19 +14,6 @@ import httpx
 logger = logging.getLogger("loom.tools.darkweb_early_warning")
 
 
-async def _get_json(
-    client: httpx.AsyncClient, url: str, timeout: float = 15.0
-) -> Any:
-    """Fetch JSON from URL with error handling."""
-    try:
-        resp = await client.get(url, timeout=timeout)
-        if resp.status_code == 200:
-            return resp.json()
-    except Exception as exc:
-        logger.debug("darkweb_early_warning fetch failed: %s", exc)
-    return None
-
-
 async def _ahmia_search(
     client: httpx.AsyncClient, keyword: str
 ) -> list[dict[str, Any]]:

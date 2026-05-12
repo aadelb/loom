@@ -11,20 +11,14 @@ from urllib.parse import quote
 
 import httpx
 
+from loom.http_helpers import fetch_json, fetch_text
+
 logger = logging.getLogger("loom.tools.infra_correlator")
 
 _CRT_SH = "https://crt.sh/?q={query}&output=json"
 _SHODAN_INTERNETDB = "https://internetdb.shodan.io/{ip}"
 
 
-async def _get_json(client: httpx.AsyncClient, url: str) -> Any:
-    try:
-        resp = await client.get(url, timeout=20.0)
-        if resp.status_code == 200:
-            return resp.json()
-    except Exception as exc:
-        logger.debug("infra_correlator fetch failed: %s", exc)
-    return None
 
 
 async def _get_bytes(client: httpx.AsyncClient, url: str) -> bytes:
@@ -113,7 +107,7 @@ async def _extract_analytics_ids(client: httpx.AsyncClient, domain: str) -> list
 
 
 async def _get_cert_sans(client: httpx.AsyncClient, domain: str) -> list[str]:
-    data = await _get_json(client, _CRT_SH.format(query=quote(f"%.{domain}")))
+    data = await fetch_json(client, _CRT_SH.format(query=quote(f"%.{domain}")))
     if not data:
         return []
     sans: set[str] = set()

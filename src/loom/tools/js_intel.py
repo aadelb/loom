@@ -10,6 +10,7 @@ from urllib.parse import urljoin
 
 import httpx
 
+from loom.http_helpers import fetch_text
 from loom.validators import validate_url, UrlSafetyError
 
 logger = logging.getLogger("loom.tools.js_intel")
@@ -50,18 +51,6 @@ _ENV_VAR_PATTERNS: list[str] = [
 	r"""process\.env\.([A-Z_][A-Z0-9_]+)""",
 	r"""import\.meta\.env\.([A-Z_][A-Z0-9_]+)""",
 ]
-
-
-async def _fetch_text(
-	client: httpx.AsyncClient, url: str, timeout: float = 20.0
-) -> str:
-	try:
-		resp = await client.get(url, timeout=timeout, follow_redirects=True)
-		if resp.status_code == 200:
-			return resp.text
-	except Exception as exc:
-		logger.debug("js_intel fetch failed: %s", exc)
-	return ""
 
 
 def _extract_js_urls(html: str, base_url: str) -> list[str]:
@@ -141,7 +130,7 @@ async def research_js_intel(
 				headers={"User-Agent": "Loom-Research/1.0"},
 				timeout=30.0,
 			) as client:
-				html = await _fetch_text(client, url)
+				html = await fetch_text(client, url, timeout=20.0)
 				if not html:
 					return {"url": url, "error": "failed to fetch page", "js_files_found": 0}
 
@@ -159,7 +148,7 @@ async def research_js_intel(
 				all_endpoints.extend(html_endpoints)
 
 				js_contents = await asyncio.gather(
-					*[_fetch_text(client, js_url) for js_url in js_urls],
+					*[fetch_text(client, js_url, timeout=20.0) for js_url in js_urls],
 					return_exceptions=True,
 				)
 
@@ -173,7 +162,7 @@ async def research_js_intel(
 				if check_source_maps:
 					map_urls = [f"{js_url}.map" for js_url in js_urls]
 					map_checks = await asyncio.gather(
-						*[_fetch_text(client, m) for m in map_urls],
+						*[fetch_text(client, m, timeout=20.0) for m in map_urls],
 						return_exceptions=True,
 					)
 					for _map_url, content in zip(map_urls, map_checks, strict=False):

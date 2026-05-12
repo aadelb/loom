@@ -11,6 +11,7 @@ from typing import Any
 from urllib.parse import quote
 
 import httpx
+from loom.http_helpers import fetch_json, fetch_text
 
 logger = logging.getLogger("loom.tools.signal_detection")
 
@@ -23,38 +24,6 @@ _CRT_SH = "https://crt.sh/?q=%25.{domain}&output=json"
 _SEC_EDGAR = "https://www.sec.gov/cgi-bin/browse-edgar"
 
 
-async def _get_json(
-    client: httpx.AsyncClient, url: str, timeout: float = 20.0
-) -> Any:
-    """Fetch JSON from a URL."""
-    try:
-        resp = await client.get(
-            url,
-            timeout=timeout,
-            headers={"User-Agent": "Loom-Research/1.0"},
-        )
-        if resp.status_code == 200:
-            return resp.json()
-    except Exception as exc:
-        logger.debug("signal_detection json fetch failed: %s", exc)
-    return None
-
-
-async def _get_text(
-    client: httpx.AsyncClient, url: str, timeout: float = 15.0
-) -> str:
-    """Fetch text from a URL."""
-    try:
-        resp = await client.get(
-            url,
-            timeout=timeout,
-            headers={"User-Agent": "Loom-Research/1.0"},
-        )
-        if resp.status_code == 200:
-            return resp.text
-    except Exception as exc:
-        logger.debug("signal_detection text fetch failed: %s", exc)
-    return ""
 
 
 async def _search_github(
@@ -62,7 +31,7 @@ async def _search_github(
 ) -> list[dict[str, Any]]:
     """Search GitHub events for keyword matches."""
     try:
-        data = await _get_json(client, _GITHUB_EVENTS, timeout=15.0)
+        data = await fetch_json(client, _GITHUB_EVENTS, timeout=15.0)
         if not isinstance(data, list):
             return []
 
@@ -100,7 +69,7 @@ async def _search_hackernews(
 ) -> list[dict[str, Any]]:
     """Search HackerNews for keyword matches."""
     url = f"{_HN_ALGOLIA}?query={quote(keyword)}&tags=story"
-    data = await _get_json(client, url, timeout=15.0)
+    data = await fetch_json(client, url, timeout=15.0)
     if not isinstance(data, dict) or "hits" not in data:
         return []
 
@@ -131,7 +100,7 @@ async def _search_reddit(
 ) -> list[dict[str, Any]]:
     """Search Reddit for keyword matches."""
     url = f"{_REDDIT_SEARCH}?q={quote(keyword)}&sort=new&limit=20"
-    data = await _get_json(client, url, timeout=15.0)
+    data = await fetch_json(client, url, timeout=15.0)
 
     if not isinstance(data, dict) or "data" not in data:
         return []
@@ -340,7 +309,7 @@ async def _get_dns_changes(
     records: dict[str, list[str]] = {}
     for rtype in ("A", "AAAA", "MX", "NS"):
         url = f"{_GOOGLE_DOH}?name={quote(domain)}&type={rtype}"
-        data = await _get_json(client, url, timeout=10.0)
+        data = await fetch_json(client, url, timeout=10.0)
         if data and "Answer" in data:
             records[rtype] = [a.get("data", "") for a in data["Answer"]]
     return records
@@ -351,7 +320,7 @@ async def _get_cert_timing(
 ) -> list[dict[str, Any]]:
     """Get SSL certificate issuance times from crt.sh."""
     url = _CRT_SH.format(domain=domain)
-    data = await _get_json(client, url, timeout=30.0)
+    data = await fetch_json(client, url, timeout=30.0)
 
     if not isinstance(data, list):
         return []

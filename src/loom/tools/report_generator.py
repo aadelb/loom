@@ -10,6 +10,8 @@ from urllib.parse import quote
 
 import httpx
 
+from loom.http_helpers import fetch_json, fetch_text
+
 logger = logging.getLogger("loom.tools.report_generator")
 
 _WIKIPEDIA_API = "https://en.wikipedia.org/w/api.php"
@@ -18,39 +20,13 @@ _ARXIV_API = "http://export.arxiv.org/api/query"
 _HN_API = "https://hn.algolia.com/api/v1/search"
 
 
-async def _fetch_json(
-    client: httpx.AsyncClient, url: str, timeout: float = 20.0
-) -> Any:
-    """Fetch JSON with error handling."""
-    try:
-        resp = await client.get(url, timeout=timeout)
-        if resp.status_code == 200:
-            return resp.json()
-    except Exception as exc:
-        logger.debug("report_generator fetch failed url=%s: %s", url[:80], exc)
-    return None
-
-
-async def _fetch_text(
-    client: httpx.AsyncClient, url: str, timeout: float = 20.0
-) -> str:
-    """Fetch text with error handling."""
-    try:
-        resp = await client.get(url, timeout=timeout)
-        if resp.status_code == 200:
-            return resp.text
-    except Exception as exc:
-        logger.debug("report_generator text fetch failed url=%s: %s", url[:80], exc)
-    return ""
-
-
 async def _wikipedia_overview(
     client: httpx.AsyncClient, topic: str
 ) -> dict[str, Any]:
     """Extract overview from Wikipedia."""
     try:
         url = f"{_WIKIPEDIA_API}?action=query&titles={quote(topic)}&prop=extracts&explaintext=true&format=json"
-        data = await _fetch_json(client, url, timeout=20.0)
+        data = await fetch_json(client, url, timeout=20.0)
 
         if not data or "query" not in data:
             return {"title": topic, "overview": "", "source": "wikipedia"}
@@ -78,7 +54,7 @@ async def _semantic_scholar_papers(
     """Extract recent key papers from Semantic Scholar."""
     try:
         url = f"{_SEMANTIC_SCHOLAR_API}?query={quote(topic)}&limit=10&fields=title,year,citationCount,authors,abstract"
-        data = await _fetch_json(client, url, timeout=20.0)
+        data = await fetch_json(client, url, timeout=20.0)
 
         if not data or "data" not in data:
             return {"papers": [], "source": "semantic_scholar"}
@@ -107,7 +83,7 @@ async def _arxiv_recent(
     try:
         query = f"all:{quote(topic)}"
         url = f"{_ARXIV_API}?search_query={query}&sortBy=submittedDate&sortOrder=descending&max_results=5"
-        text = await _fetch_text(client, url, timeout=25.0)
+        text = await fetch_text(client, url, timeout=25.0)
 
         if not text:
             return {"papers": [], "source": "arxiv"}
@@ -157,7 +133,7 @@ async def _hackernews_discussion(
     """Extract community discussion from HackerNews."""
     try:
         url = f"{_HN_API}?query={quote(topic)}&tags=story&hitsPerPage=10"
-        data = await _fetch_json(client, url, timeout=20.0)
+        data = await fetch_json(client, url, timeout=20.0)
 
         if not data or "hits" not in data:
             return {"discussions": [], "source": "hackernews"}

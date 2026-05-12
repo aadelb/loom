@@ -14,33 +14,9 @@ from urllib.parse import quote
 
 import httpx
 
+from loom.http_helpers import fetch_json, fetch_text
+
 logger = logging.getLogger("loom.tools.fact_checker")
-
-
-async def _fetch_json(
-    client: httpx.AsyncClient, url: str, timeout: float = 15.0
-) -> Any:
-    """Fetch and parse JSON from URL, returns None on error."""
-    try:
-        resp = await client.get(url, timeout=timeout)
-        if resp.status_code == 200:
-            return resp.json()
-    except Exception as exc:
-        logger.debug("fact_checker fetch failed: %s", exc)
-    return None
-
-
-async def _fetch_text(
-    client: httpx.AsyncClient, url: str, timeout: float = 15.0
-) -> str:
-    """Fetch text from URL, returns empty string on error."""
-    try:
-        resp = await client.get(url, timeout=timeout)
-        if resp.status_code == 200:
-            return resp.text
-    except Exception as exc:
-        logger.debug("fact_checker text fetch failed: %s", exc)
-    return ""
 
 
 async def _search_google_fact_check(
@@ -65,7 +41,7 @@ async def _search_google_fact_check(
         f"https://factchecktools.googleapis.com/v1alpha1/claims:search?"
         f"query={quote(claim)}&key={api_key}"
     )
-    data = await _fetch_json(client, url)
+    data = await fetch_json(client, url)
     if not data or "claims" not in data:
         return []
 
@@ -95,7 +71,7 @@ async def _search_snopes_politifact_factcheck(
         f"https://duckduckgo.com/html/?q={quote(claim)} "
         f"(site:snopes.com OR site:politifact.com OR site:factcheck.org)"
     )
-    html = await _fetch_text(client, url, timeout=20.0)
+    html = await fetch_text(client, url, timeout=20.0)
     if not html:
         return []
 
@@ -140,7 +116,7 @@ async def _search_wikipedia_for_claim(
         f"action=query&srsearch={quote(claim)}&"
         f"srnamespace=0&srlimit=3&format=json"
     )
-    data = await _fetch_json(client, url)
+    data = await fetch_json(client, url)
     if not data or "query" not in data:
         return []
 
@@ -176,7 +152,7 @@ async def _search_semantic_scholar_for_claim(
         f"query={quote(claim)}&limit=3&"
         f"fields=title,abstract,year,url"
     )
-    data = await _fetch_json(client, url, timeout=20.0)
+    data = await fetch_json(client, url, timeout=20.0)
     if not data or "papers" not in data:
         return []
 

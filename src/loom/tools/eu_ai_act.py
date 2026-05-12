@@ -14,6 +14,8 @@ import logging
 import re
 from typing import Any, Literal
 
+from loom.text_utils import jaccard_similarity
+
 logger = logging.getLogger("loom.tools.eu_ai_act")
 
 
@@ -416,24 +418,13 @@ def research_ai_robustness_test(
                 "recommendation": "Invalid input",
             }
 
-        # Calculate semantic similarity between prompts
-        def _jaccard_similarity(text1: str, text2: str) -> float:
-            """Compute Jaccard similarity between two texts."""
-            words1 = set(text1.lower().split())
-            words2 = set(text2.lower().split())
-            if not words1 or not words2:
-                return 0.0
-            intersection = len(words1 & words2)
-            union = len(words1 | words2)
-            return intersection / union if union > 0 else 0.0
-
         inconsistencies = []
         similarity_scores = []
 
         # Compare each pair of prompts
         for i in range(len(test_prompts) - 1):
             for j in range(i + 1, len(test_prompts)):
-                similarity = _jaccard_similarity(test_prompts[i], test_prompts[j])
+                similarity = jaccard_similarity(test_prompts[i], test_prompts[j])
                 similarity_scores.append(similarity)
 
                 # If prompts are semantically similar but structurally different

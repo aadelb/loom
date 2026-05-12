@@ -14,6 +14,8 @@ from urllib.parse import quote
 
 import httpx
 
+from loom.http_helpers import fetch_text
+
 logger = logging.getLogger("loom.tools.culture_dna")
 
 # Culture keyword dictionaries for scoring
@@ -66,19 +68,6 @@ _CULTURE_KEYWORDS = {
     ],
     "compensation": ["competitive", "generous", "bonus", "equity", "salary", "benefits"],
 }
-
-
-async def _fetch_text(
-    client: httpx.AsyncClient, url: str, timeout: float = 15.0
-) -> str:
-    """Fetch URL content as text."""
-    try:
-        resp = await client.get(url, timeout=timeout, follow_redirects=True)
-        if resp.status_code == 200:
-            return resp.text
-    except Exception as exc:
-        logger.debug("culture_dna fetch failed: %s", exc)
-    return ""
 
 
 def _extract_culture_signals(text: str, source: str) -> list[dict[str, Any]]:
@@ -192,14 +181,14 @@ async def research_culture_dna(
                 # Fetch Glassdoor reviews (via search engine)
                 glassdoor_query = f'site:glassdoor.com "{company}" reviews'
                 glassdoor_url = f"https://duckduckgo.com/?q={quote(glassdoor_query)}&t=h"
-                glassdoor_text = await _fetch_text(client, glassdoor_url)
+                glassdoor_text = await fetch_text(client, glassdoor_url)
                 glassdoor_signals = _extract_culture_signals(glassdoor_text, "glassdoor")
                 all_signals.extend(glassdoor_signals)
 
                 # Fetch LinkedIn company page
                 linkedin_query = f'site:linkedin.com/company "{company}"'
                 linkedin_url = f"https://duckduckgo.com/?q={quote(linkedin_query)}&t=h"
-                linkedin_text = await _fetch_text(client, linkedin_url)
+                linkedin_text = await fetch_text(client, linkedin_url)
                 linkedin_signals = _extract_culture_signals(linkedin_text, "linkedin")
                 all_signals.extend(linkedin_signals)
 

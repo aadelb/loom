@@ -18,55 +18,9 @@ import subprocess
 import time
 from typing import Any
 
+from loom.input_validators import validate_domain, validate_email, validate_ip, ValidationError
+
 logger = logging.getLogger("loom.tools.harvester_backend")
-
-
-def _validate_domain(domain: str) -> str:
-    """Validate domain for theHarvester lookup.
-
-    theHarvester accepts domains that are valid DNS names.
-    We validate using stricter DNS rules to prevent injection and malformed names.
-
-    Args:
-        domain: domain to validate
-
-    Returns:
-        The validated domain string
-
-    Raises:
-        ValueError: if domain is invalid
-    """
-    domain = domain.strip() if isinstance(domain, str) else ""
-
-    if not domain or len(domain) > 253:
-        raise ValueError("domain must be 1-253 characters")
-
-    # DNS name validation:
-    # - Must contain at least one dot (require at least one subdomain separator)
-    # - Each label (part between dots) must:
-    #   - Start with alphanumeric
-    #   - End with alphanumeric or hyphen
-    #   - Contain only alphanumeric and hyphens
-    #   - Be 1-63 characters long
-    # - Disallow leading/trailing dots
-    if domain.startswith(".") or domain.endswith("."):
-        raise ValueError("domain must not start or end with a dot")
-
-    if ".." in domain:
-        raise ValueError("domain must not contain consecutive dots")
-
-    if "." not in domain:
-        raise ValueError("domain must contain at least one dot")
-
-    # Validate each label
-    labels = domain.split(".")
-    for label in labels:
-        if not label or len(label) > 63:
-            raise ValueError(f"domain label '{label}' must be 1-63 characters")
-        if not re.match(r"^[a-z0-9]([a-z0-9\-]{0,61}[a-z0-9])?$", label, re.IGNORECASE):
-            raise ValueError(f"domain label '{label}' contains invalid characters")
-
-    return domain
 
 
 def _validate_sources(sources: str) -> str:
@@ -82,12 +36,12 @@ def _validate_sources(sources: str) -> str:
         The validated sources string
 
     Raises:
-        ValueError: if sources is invalid
+        ValidationError: if sources is invalid
     """
     sources = sources.strip() if isinstance(sources, str) else ""
 
     if not sources or len(sources) > 255:
-        raise ValueError("sources must be 1-255 characters")
+        raise ValidationError("sources must be 1-255 characters")
 
     # Allowlist of valid theHarvester sources
     VALID_SOURCES = {
@@ -104,7 +58,7 @@ def _validate_sources(sources: str) -> str:
     source_list = [s.strip().lower() for s in sources.split(",")]
     for source in source_list:
         if not source or source not in VALID_SOURCES:
-            raise ValueError(
+            raise ValidationError(
                 f"invalid source '{source}'. valid sources: {', '.join(sorted(VALID_SOURCES))}"
             )
 
@@ -138,45 +92,6 @@ def _check_harvester_available() -> tuple[bool, str]:
         return False, f"theHarvester availability check error: {str(exc)}"
 
 
-def _is_valid_email(email: str) -> bool:
-    """Validate email address format.
-
-    Args:
-        email: email string to validate
-
-    Returns:
-        True if email matches basic RFC 5321 rules
-    """
-    # Basic RFC 5321 validation
-    # Local part: alphanumeric, dots, plus, underscore, hyphen
-    # Domain part: valid DNS name
-    if "@" not in email or len(email) > 254:
-        return False
-
-    local, domain = email.rsplit("@", 1)
-
-    # Local part validation
-    if not local or len(local) > 64:
-        return False
-    if local.startswith(".") or local.endswith(".") or ".." in local:
-        return False
-    if not re.match(r"^[a-zA-Z0-9._%+-]+$", local):
-        return False
-
-    # Domain part validation (must be valid DNS name)
-    if not domain or len(domain) > 255 or domain.startswith(".") or domain.endswith("."):
-        return False
-    if ".." in domain or "." not in domain:
-        return False
-    for label in domain.split("."):
-        if not label or len(label) > 63:
-            return False
-        if not re.match(r"^[a-z0-9]([a-z0-9\-]{0,61}[a-z0-9])?$", label, re.IGNORECASE):
-            return False
-
-    return True
-
-
 def _is_valid_subdomain(subdomain: str) -> bool:
     """Validate subdomain format.
 
@@ -200,22 +115,6 @@ def _is_valid_subdomain(subdomain: str) -> bool:
             return False
 
     return True
-
-
-def _is_valid_ip(ip_str: str) -> bool:
-    """Validate IPv4 or IPv6 address.
-
-    Args:
-        ip_str: IP address string to validate
-
-    Returns:
-        True if valid IPv4 or IPv6 address
-    """
-    try:
-        ipaddress.ip_address(ip_str)
-        return True
-    except ValueError:
-        return False
 
 
 def _parse_harvester_output(stdout: str, stderr: str) -> tuple[list[str], list[str], list[str]]:
@@ -271,12 +170,20 @@ def _parse_harvester_output(stdout: str, stderr: str) -> tuple[list[str], list[s
             continue
 
         # Parse based on current section
-        if current_section == "emails" and _is_valid_email(line):
-            emails_set.add(line)
+        if current_section == "emails":
+            try:
+                validate_email(line)
+                emails_set.add(line)
+            except ValidationError:
+                pass
         elif current_section == "hosts" and _is_valid_subdomain(line):
             subdomains_set.add(line)
-        elif current_section == "ips" and _is_valid_ip(line):
-            ips_set.add(line)
+        elif current_section == "ips":
+            try:
+                validate_ip(line)
+                ips_set.add(line)
+            except ValidationError:
+                pass
 
     # Return sorted lists for deterministic output
     return sorted(list(emails_set)), sorted(list(subdomains_set)), sorted(list(ips_set))
@@ -310,14 +217,14 @@ def research_harvest(
     """
     # Validate domain
     try:
-        domain = _validate_domain(domain)
-    except ValueError as exc:
+        domain = validate_domain(domain)
+    except ValidationError as exc:
         return {"domain": domain, "error": str(exc), "harvester_available": False}
 
     # Validate sources
     try:
         sources = _validate_sources(sources)
-    except ValueError as exc:
+    except ValidationError as exc:
         return {"domain": domain, "error": str(exc), "harvester_available": False}
 
     # Validate limit (must be 1-10000)

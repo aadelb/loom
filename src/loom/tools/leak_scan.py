@@ -11,6 +11,7 @@ from urllib.parse import quote
 import httpx
 
 from loom.config import CONFIG
+from loom.http_helpers import fetch_json, fetch_text
 
 logger = logging.getLogger("loom.tools.leak_scan")
 
@@ -19,32 +20,6 @@ HIBP_BREACH_URL = "https://haveibeenpwned.com/api/v3/breachedaccount"
 SHODAN_INTERNETDB = "https://internetdb.shodan.io/{ip}"
 CRT_SH = "https://crt.sh/?q=%25{domain}&output=json"
 GITHUB_CODE_SEARCH = "https://api.github.com/search/code"
-
-
-async def _get_json(
-    client: httpx.AsyncClient, url: str, headers: dict[str, str] | None = None, timeout: float = 20.0
-) -> Any:
-    """Fetch JSON from URL with optional headers."""
-    try:
-        resp = await client.get(url, headers=headers, timeout=timeout)
-        if resp.status_code == 200:
-            return resp.json()
-    except Exception as exc:
-        logger.debug("leak_scan json fetch failed: %s", exc)
-    return None
-
-
-async def _get_text(
-    client: httpx.AsyncClient, url: str, headers: dict[str, str] | None = None, timeout: float = 15.0
-) -> str:
-    """Fetch text from URL with optional headers."""
-    try:
-        resp = await client.get(url, headers=headers, timeout=timeout)
-        if resp.status_code == 200:
-            return resp.text
-    except Exception as exc:
-        logger.debug("leak_scan text fetch failed: %s", exc)
-    return ""
 
 
 async def _check_hibp_breaches(
@@ -65,7 +40,7 @@ async def _check_hibp_breaches(
         "hibp-api-key": api_key,
     }
 
-    data = await _get_json(client, f"{HIBP_BREACH_URL}/{quote(email)}", headers=headers)
+    data = await fetch_json(client, f"{HIBP_BREACH_URL}/{quote(email)}", headers=headers)
     if not data:
         return 0, []
 
@@ -134,7 +109,7 @@ async def _check_shodan_internetdb(
     Returns:
         Tuple of (count, exposures list)
     """
-    data = await _get_json(client, SHODAN_INTERNETDB.format(ip=ip), timeout=15.0)
+    data = await fetch_json(client, SHODAN_INTERNETDB.format(ip=ip), timeout=15.0)
     if not data:
         return 0, []
 
@@ -174,7 +149,7 @@ async def _check_certificate_transparency(
     Returns:
         Tuple of (count, exposures list)
     """
-    data = await _get_json(client, CRT_SH.format(domain=quote(domain)), timeout=30.0)
+    data = await fetch_json(client, CRT_SH.format(domain=quote(domain)), timeout=30.0)
     if not data:
         return 0, []
 

@@ -24,6 +24,7 @@ from urllib.parse import urlparse
 import httpx
 
 from loom.validators import validate_url, UrlSafetyError
+from loom.http_helpers import fetch_json, fetch_text
 
 logger = logging.getLogger("loom.tools.unique_tools")
 
@@ -31,30 +32,6 @@ logger = logging.getLogger("loom.tools.unique_tools")
 _DEFAULT_TIMEOUT = 15.0
 
 
-async def _get_json(
-    client: httpx.AsyncClient, url: str, timeout: float = _DEFAULT_TIMEOUT
-) -> Any:
-    """Safely fetch and parse JSON from URL."""
-    try:
-        resp = await client.get(url, timeout=timeout)
-        if resp.status_code == 200:
-            return resp.json()
-    except Exception as exc:
-        logger.debug("JSON fetch failed for %s: %s", url, exc)
-    return None
-
-
-async def _get_text(
-    client: httpx.AsyncClient, url: str, timeout: float = _DEFAULT_TIMEOUT
-) -> str:
-    """Safely fetch text from URL."""
-    try:
-        resp = await client.get(url, timeout=timeout)
-        if resp.status_code == 200:
-            return resp.text
-    except Exception as exc:
-        logger.debug("Text fetch failed for %s: %s", url, exc)
-    return ""
 
 
 async def _check_http_status(
@@ -254,7 +231,7 @@ async def research_source_credibility(url: str) -> dict[str, Any]:
             try:
                 # RDAP query to find domain registration date
                 rdap_url = f"https://rdap.org/domain/{domain}"
-                whois_data = await _get_json(client, rdap_url, timeout=10.0)
+                whois_data = await fetch_json(client, rdap_url, timeout=10.0)
                 if whois_data and "events" in whois_data:
                     for event in whois_data.get("events", []):
                         if event.get("eventAction") == "registration":
@@ -274,7 +251,7 @@ async def research_source_credibility(url: str) -> dict[str, Any]:
             # Check Wikipedia references via Wikipedia API
             try:
                 wiki_search_url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={domain}&format=json"
-                wiki_results = await _get_json(client, wiki_search_url, timeout=10.0)
+                wiki_results = await fetch_json(client, wiki_search_url, timeout=10.0)
                 if wiki_results and wiki_results.get("query", {}).get("search"):
                     wikipedia_referenced = True
                     # Also check article content for domain mentions
@@ -282,7 +259,7 @@ async def research_source_credibility(url: str) -> dict[str, Any]:
                         try:
                             page_id = result.get("pageid")
                             page_url = f"https://en.wikipedia.org/w/api.php?action=query&pageids={page_id}&prop=extracts&format=json"
-                            page_data = await _get_json(client, page_url, timeout=10.0)
+                            page_data = await fetch_json(client, page_url, timeout=10.0)
                             if page_data:
                                 extract = (
                                     page_data.get("query", {})
@@ -300,7 +277,7 @@ async def research_source_credibility(url: str) -> dict[str, Any]:
             # Check academic citations via Semantic Scholar
             try:
                 scholar_url = f"https://api.semanticscholar.org/graph/v1/paper/search?query={domain}&limit=5"
-                scholar_data = await _get_json(client, scholar_url, timeout=10.0)
+                scholar_data = await fetch_json(client, scholar_url, timeout=10.0)
                 if scholar_data and scholar_data.get("data"):
                     academic_citations = len(scholar_data.get("data", []))
             except Exception as e:
@@ -388,7 +365,7 @@ async def research_information_cascade(
             # HackerNews search
             try:
                 hn_search_url = f"https://hn.algolia.com/api/v1/search?query={topic}&hitsPerPage=10"
-                hn_results = await _get_json(client, hn_search_url, timeout=15.0)
+                hn_results = await fetch_json(client, hn_search_url, timeout=15.0)
                 if hn_results and "hits" in hn_results:
                     for hit in hn_results.get("hits", [])[:5]:
                         created_at = hit.get("created_at", "")
@@ -414,7 +391,7 @@ async def research_information_cascade(
             # Reddit search
             try:
                 reddit_search_url = f"https://www.reddit.com/search.json?q={topic}&limit=10&sort=new"
-                reddit_results = await _get_json(client, reddit_search_url, timeout=15.0)
+                reddit_results = await fetch_json(client, reddit_search_url, timeout=15.0)
                 if reddit_results and "data" in reddit_results:
                     for post in reddit_results.get("data", {}).get("children", [])[:5]:
                         created_ts = post.get("data", {}).get("created_utc")
@@ -435,7 +412,7 @@ async def research_information_cascade(
             # arXiv search
             try:
                 arxiv_search_url = f"http://export.arxiv.org/api/query?search_query=all:{topic}&start=0&max_results=5&sortBy=submittedDate&sortOrder=descending"
-                arxiv_xml = await _get_text(client, arxiv_search_url, timeout=15.0)
+                arxiv_xml = await fetch_text(client, arxiv_search_url, timeout=15.0)
                 if arxiv_xml:
                     import xml.etree.ElementTree as ET
 
@@ -463,7 +440,7 @@ async def research_information_cascade(
             # Wikipedia search
             try:
                 wiki_search_url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={topic}&format=json&srlimit=5"
-                wiki_results = await _get_json(client, wiki_search_url, timeout=15.0)
+                wiki_results = await fetch_json(client, wiki_search_url, timeout=15.0)
                 if wiki_results and wiki_results.get("query", {}).get("search"):
                     for result in wiki_results.get("query", {}).get("search", [])[:5]:
                         timeline.append(
@@ -537,7 +514,7 @@ async def research_web_time_machine(url: str, snapshots: int = 10) -> dict[str, 
             evolution: list[dict[str, Any]] = []
 
             try:
-                cdx_data = await _get_json(client, cdx_url, timeout=20.0)
+                cdx_data = await fetch_json(client, cdx_url, timeout=20.0)
                 if cdx_data and isinstance(cdx_data, list) and len(cdx_data) > 1:
                     # First row is headers, skip it
                     for row in cdx_data[1:]:
@@ -549,7 +526,7 @@ async def research_web_time_machine(url: str, snapshots: int = 10) -> dict[str, 
                                 snapshot_url = f"https://web.archive.org/web/{timestamp_str}/{url}"
 
                                 # Fetch snapshot and detect technologies
-                                snapshot_text = await _get_text(
+                                snapshot_text = await fetch_text(
                                     client, snapshot_url, timeout=15.0
                                 )
                                 if snapshot_text:
@@ -660,7 +637,7 @@ async def research_influence_operation(topic: str) -> dict[str, Any]:
             # Fetch HN posts
             try:
                 hn_url = f"https://hn.algolia.com/api/v1/search?query={topic}&hitsPerPage=30"
-                hn_data = await _get_json(client, hn_url, timeout=15.0)
+                hn_data = await fetch_json(client, hn_url, timeout=15.0)
                 if hn_data and "hits" in hn_data:
                     for hit in hn_data.get("hits", []):
                         created_at = hit.get("created_at", "")
@@ -687,7 +664,7 @@ async def research_influence_operation(topic: str) -> dict[str, Any]:
             # Fetch Reddit posts
             try:
                 reddit_url = f"https://www.reddit.com/search.json?q={topic}&limit=30"
-                reddit_data = await _get_json(client, reddit_url, timeout=15.0)
+                reddit_data = await fetch_json(client, reddit_url, timeout=15.0)
                 if reddit_data and "data" in reddit_data:
                     for post in reddit_data.get("data", {}).get("children", []):
                         created_ts = post.get("data", {}).get("created_utc")
@@ -800,7 +777,7 @@ async def research_dark_web_bridge(query: str) -> dict[str, Any]:
             # Search for .onion mentions in Reddit
             try:
                 reddit_url = f"https://www.reddit.com/r/onions/search.json?q={query}&limit=20&sort=new"
-                reddit_data = await _get_json(client, reddit_url, timeout=15.0)
+                reddit_data = await fetch_json(client, reddit_url, timeout=15.0)
                 if reddit_data and "data" in reddit_data:
                     for post in reddit_data.get("data", {}).get("children", [])[:10]:
                         title = post.get("data", {}).get("title", "")
@@ -822,7 +799,7 @@ async def research_dark_web_bridge(query: str) -> dict[str, Any]:
             # Search Ahmia for indexed content
             try:
                 ahmia_url = f"https://ahmia.fi/search/?q={query}&p=0"
-                ahmia_html = await _get_text(client, ahmia_url, timeout=15.0)
+                ahmia_html = await fetch_text(client, ahmia_url, timeout=15.0)
                 if ahmia_html and ".onion" in ahmia_html:
                     # Extract .onion URLs from Ahmia results
                     onion_urls = re.findall(r"([\w\-]+\.onion)", ahmia_html)
@@ -841,7 +818,7 @@ async def research_dark_web_bridge(query: str) -> dict[str, Any]:
             academic_refs: list[dict[str, str]] = []
             try:
                 wiki_url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={query} dark web&format=json&srlimit=10"
-                wiki_results = await _get_json(client, wiki_url, timeout=15.0)
+                wiki_results = await fetch_json(client, wiki_url, timeout=15.0)
                 if wiki_results and wiki_results.get("query", {}).get("search"):
                     for result in wiki_results.get("query", {}).get("search", [])[:5]:
                         academic_refs.append(
@@ -857,7 +834,7 @@ async def research_dark_web_bridge(query: str) -> dict[str, Any]:
             # Try Semantic Scholar for academic papers
             try:
                 scholar_url = f"https://api.semanticscholar.org/graph/v1/paper/search?query={query} dark web&limit=10"
-                scholar_data = await _get_json(client, scholar_url, timeout=15.0)
+                scholar_data = await fetch_json(client, scholar_url, timeout=15.0)
                 if scholar_data and scholar_data.get("data"):
                     for paper in scholar_data.get("data", [])[:5]:
                         academic_refs.append(
@@ -954,7 +931,7 @@ async def research_info_half_life(urls: list[str]) -> dict[str, Any]:
         # Check Wayback availability
         try:
             wayback_url = f"https://archive.org/wayback/available?url={url}"
-            wayback_data = await _get_json(client, wayback_url, timeout=10.0)
+            wayback_data = await fetch_json(client, wayback_url, timeout=10.0)
             if wayback_data and wayback_data.get("archived_snapshots"):
                 wayback_available = True
                 closest = wayback_data.get("archived_snapshots", {}).get("closest", {})
@@ -1016,7 +993,7 @@ async def research_search_discrepancy(query: str) -> dict[str, Any]:
             # DuckDuckGo search
             try:
                 ddg_url = f"https://duckduckgo.com/api?q={query}&format=json"
-                ddg_data = await _get_json(client, ddg_url, timeout=15.0)
+                ddg_data = await fetch_json(client, ddg_url, timeout=15.0)
                 if ddg_data and "Results" in ddg_data:
                     results_per_engine["ddg"] = [
                         r.get("FirstURL", "") for r in ddg_data.get("Results", [])[:10]
@@ -1028,7 +1005,7 @@ async def research_search_discrepancy(query: str) -> dict[str, Any]:
             try:
                 brave_url = f"https://api.search.brave.com/res/v1/web/search?q={query}&count=10"
                 brave_headers = {"User-Agent": "Loom-Research/1.0"}
-                brave_data = await _get_json(client, brave_url, timeout=15.0)
+                brave_data = await fetch_json(client, brave_url, timeout=15.0)
                 if brave_data and "web" in brave_data:
                     results_per_engine["brave"] = [
                         r.get("url", "") for r in brave_data.get("web", [])[:10]
@@ -1039,7 +1016,7 @@ async def research_search_discrepancy(query: str) -> dict[str, Any]:
             # Marginalia search
             try:
                 marginalia_url = f"https://api.marginalia.nu/search?query={query}&limit=10"
-                marginalia_data = await _get_json(client, marginalia_url, timeout=15.0)
+                marginalia_data = await fetch_json(client, marginalia_url, timeout=15.0)
                 if marginalia_data and isinstance(marginalia_data, dict):
                     if "results" in marginalia_data:
                         results_per_engine["marginalia"] = [
@@ -1051,7 +1028,7 @@ async def research_search_discrepancy(query: str) -> dict[str, Any]:
             # Wikipedia search
             try:
                 wiki_url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={query}&format=json&srlimit=10"
-                wiki_data = await _get_json(client, wiki_url, timeout=15.0)
+                wiki_data = await fetch_json(client, wiki_url, timeout=15.0)
                 if wiki_data and "query" in wiki_data:
                     results_per_engine["wikipedia"] = [
                         f"https://en.wikipedia.org/wiki/{r.get('title', '').replace(' ', '_')}"

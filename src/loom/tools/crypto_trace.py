@@ -9,6 +9,8 @@ from urllib.parse import quote
 
 import httpx
 
+from loom.http_helpers import fetch_json
+
 logger = logging.getLogger("loom.tools.crypto_trace")
 
 _BLOCKCHAIN_INFO = "https://blockchain.info"
@@ -16,20 +18,10 @@ _ETHERSCAN = "https://api.etherscan.io/api"
 _BLOCKCHAIR = "https://api.blockchair.com"
 
 
-async def _get_json(client: httpx.AsyncClient, url: str) -> Any:
-    try:
-        resp = await client.get(url, timeout=20.0)
-        if resp.status_code == 200:
-            return resp.json()
-    except Exception as exc:
-        logger.debug("crypto_trace fetch failed: %s", exc)
-    return None
-
-
 async def _bitcoin_address_info(
     client: httpx.AsyncClient, address: str
 ) -> dict[str, Any]:
-    data = await _get_json(
+    data = await fetch_json(
         client, f"{_BLOCKCHAIN_INFO}/rawaddr/{quote(address)}?limit=20"
     )
     if not data:
@@ -56,7 +48,7 @@ async def _bitcoin_address_info(
 async def _bitcoin_tx_info(
     client: httpx.AsyncClient, tx_hash: str
 ) -> dict[str, Any]:
-    data = await _get_json(client, f"{_BLOCKCHAIN_INFO}/rawtx/{quote(tx_hash)}")
+    data = await fetch_json(client, f"{_BLOCKCHAIN_INFO}/rawtx/{quote(tx_hash)}")
     if not data:
         return {"tx_hash": tx_hash, "error": "lookup failed"}
     inputs = [
@@ -94,7 +86,7 @@ async def _etherscan_address(
     }
     if api_key:
         params["apikey"] = api_key
-    data = await _get_json(
+    data = await fetch_json(
         client, f"{_ETHERSCAN}?{'&'.join(f'{k}={v}' for k, v in params.items())}"
     )
     if not data or data.get("status") != "1":
@@ -121,7 +113,7 @@ async def _etherscan_address(
 async def _blockchair_stats(
     client: httpx.AsyncClient, address: str, chain: str = "bitcoin"
 ) -> dict[str, Any]:
-    data = await _get_json(
+    data = await fetch_json(
         client, f"{_BLOCKCHAIR}/{chain}/dashboards/address/{quote(address)}"
     )
     if not data or "data" not in data:

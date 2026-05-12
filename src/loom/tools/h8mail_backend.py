@@ -7,7 +7,6 @@ import hashlib
 import json
 import logging
 import os
-import re
 import subprocess
 import tempfile
 import uuid
@@ -15,10 +14,9 @@ from typing import Any
 
 import httpx
 
-logger = logging.getLogger("loom.tools.h8mail_backend")
+from loom.input_validators import validate_email, ValidationError
 
-# Email validation regex (RFC 5322 simplified)
-EMAIL_PATTERN = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
+logger = logging.getLogger("loom.tools.h8mail_backend")
 
 # HaveIBeenPwned API endpoint (fallback if h8mail unavailable)
 HIBP_BREACH_URL = "https://haveibeenpwned.com/api/v3/breachedaccount"
@@ -52,17 +50,19 @@ async def research_email_breach(
     """
     try:
         # Validate email format
-        if not _is_valid_email(email):
-            return {
-                "email": email,
-                "error": "Invalid email format",
-            }
+        validate_email(email)
+    except ValidationError:
+        return {
+            "email": email,
+            "error": "Invalid email format",
+        }
 
-        email_hash = hashlib.sha256(email.encode()).hexdigest()[:8]
-        logger.info(
-            "email_breach_start email_hash=%s search_timeout=%d", email_hash, search_timeout
-        )
+    email_hash = hashlib.sha256(email.encode()).hexdigest()[:8]
+    logger.info(
+        "email_breach_start email_hash=%s search_timeout=%d", email_hash, search_timeout
+    )
 
+    try:
         # Try h8mail first if available
         h8mail_path = _find_h8mail()
         if h8mail_path:
@@ -383,26 +383,6 @@ def _find_h8mail() -> str | None:
 
     logger.debug("h8mail_not_found in PATH")
     return None
-
-
-def _is_valid_email(email: str) -> bool:
-    """Validate email format using regex.
-
-    Args:
-        email: Email address to validate
-
-    Returns:
-        True if email format is valid, False otherwise
-    """
-    if not email or not isinstance(email, str):
-        return False
-
-    email = email.strip()
-    if not email or len(email) > MAX_EMAIL_LENGTH:
-        return False
-
-    # Simple regex: local@domain pattern
-    return bool(re.match(EMAIL_PATTERN, email))
 
 
 def _is_valid_header_value(value: str) -> bool:

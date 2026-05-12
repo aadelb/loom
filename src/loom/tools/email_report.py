@@ -9,29 +9,20 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
-import re
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Any
 
-logger = logging.getLogger("loom.tools.email_report")
+from loom.input_validators import validate_email, ValidationError
 
-# Email validation regex (basic RFC 5322 pattern)
-_EMAIL_REGEX = re.compile(
-    r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
-)
+logger = logging.getLogger("loom.tools.email_report")
 
 # Constraints
 MAX_SUBJECT_CHARS = 200
 MAX_BODY_CHARS = 50000
 GMAIL_SMTP_HOST = "smtp.gmail.com"
 GMAIL_SMTP_PORT = 587
-
-
-def _validate_email(email: str) -> bool:
-    """Validate email format."""
-    return bool(_EMAIL_REGEX.match(email))
 
 
 def _sanitize_header(value: str) -> str:
@@ -66,7 +57,9 @@ async def research_email_report(
         or ``error`` on failure.
     """
     # Validate email address
-    if not _validate_email(to):
+    try:
+        validate_email(to)
+    except ValidationError:
         return {
             "error": "invalid recipient email format",
             "to": to,
@@ -98,65 +91,59 @@ async def research_email_report(
 
     if not smtp_user or not smtp_password:
         return {
-            "error": "missing SMTP credentials (SMTP_USER/SMTP_APP_PASSWORD or GMAIL_USER/GMAIL_APP_PASSWORD)",
+            "error": "SMTP credentials not configured (set SMTP_USER and SMTP_APP_PASSWORD)",
             "to": to,
             "status": "failed",
         }
 
-    # Validate sender email
-    if not _validate_email(smtp_user):
-        return {
-            "error": "invalid sender email in credentials",
-            "to": to,
-            "status": "failed",
-        }
-
-    loop = asyncio.get_running_loop()
-
-    def _send_email() -> tuple[bool, str]:
-        """Synchronous SMTP send operation."""
-        try:
-            # Create message
+    try:
+        # Run SMTP operation in executor to avoid blocking
+        def _send_email():
             msg = MIMEMultipart("alternative")
-            msg["Subject"] = subject
             msg["From"] = smtp_user
             msg["To"] = to
+            msg["Subject"] = subject
 
-            # Attach body
-            msg.attach(
-                MIMEText(body, "html" if html else "plain", _charset="utf-8")
-            )
+            # Attach body (plain text or HTML)
+            if html:
+                msg.attach(MIMEText(body, "html"))
+            else:
+                msg.attach(MIMEText(body, "plain"))
 
-            # Connect and send
-            with smtplib.SMTP(GMAIL_SMTP_HOST, GMAIL_SMTP_PORT, timeout=30) as server:
-                server.starttls()
-                server.login(smtp_user, smtp_password)
-                server.sendmail(smtp_user, to, msg.as_string())
+            # Connect to Gmail SMTP server
+            server = smtplib.SMTP(GMAIL_SMTP_HOST, GMAIL_SMTP_PORT)
+            server.starttls()
+            server.login(smtp_user, smtp_password)
+            server.send_message(msg)
+            server.quit()
 
-            return True, "email sent successfully"
+        await asyncio.to_thread(_send_email)
 
-        except smtplib.SMTPAuthenticationError:
-            return False, "SMTP authentication failed (invalid credentials)"
-        except smtplib.SMTPException:
-            return False, "SMTP server error (check credentials and network)"
-        except TimeoutError:
-            return False, "SMTP connection timeout"
-        except Exception:
-            return False, "unexpected error during email send"
-
-    success, message = await loop.run_in_executor(None, _send_email)
-
-    if success:
-        logger.info("email_sent to=%s subject=%s", to, subject[:50])
+        logger.info("email_report_sent to=%s", to)
         return {
             "status": "sent",
             "to": to,
             "subject": subject,
         }
-    else:
-        logger.warning("email_failed to=%s error=%s", to, message)
+
+    except smtplib.SMTPAuthenticationError:
+        logger.error("SMTP authentication failed")
         return {
-            "status": "failed",
+            "error": "SMTP authentication failed (check credentials)",
             "to": to,
-            "error": message,
+            "status": "failed",
+        }
+    except smtplib.SMTPException as exc:
+        logger.error("SMTP error: %s", exc)
+        return {
+            "error": f"SMTP error: {str(exc)}",
+            "to": to,
+            "status": "failed",
+        }
+    except Exception as exc:
+        logger.exception("email_report_failed")
+        return {
+            "error": f"email report failed: {str(exc)}",
+            "to": to,
+            "status": "failed",
         }

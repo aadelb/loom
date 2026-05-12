@@ -14,6 +14,7 @@ from typing import Any
 
 try:
     from loom.config import get_config
+    from loom.text_utils import jaccard_similarity
     from loom.tools.fetch import research_fetch
     from loom.validators import validate_url
     _DEPS_AVAILABLE = True
@@ -43,26 +44,6 @@ def _shingle_text(text: str, k: int = 10) -> set[str]:
         shingles.add(shingle)
 
     return shingles
-
-
-def _jaccard_similarity(set1: set[str], set2: set[str]) -> float:
-    """Calculate Jaccard similarity between two sets.
-
-    Args:
-        set1: first set of shingles
-        set2: second set of shingles
-
-    Returns:
-        Jaccard similarity score (0.0 to 1.0).
-    """
-    if not set1 and not set2:
-        return 1.0
-    if not set1 or not set2:
-        return 0.0
-
-    intersection = len(set1 & set2)
-    union = len(set1 | set2)
-    return intersection / union if union > 0 else 0.0
 
 
 async def research_dead_drop_scanner(
@@ -229,7 +210,7 @@ async def research_dead_drop_scanner(
             shingles1 = content_by_url[url1]["shingles"]
             shingles2 = content_by_url[url2]["shingles"]
 
-            similarity = _jaccard_similarity(shingles1, shingles2)
+            similarity = jaccard_similarity(shingles1, shingles2)
 
             if similarity >= similarity_threshold:
                 reuse_pairs.append(

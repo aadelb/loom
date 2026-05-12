@@ -10,6 +10,8 @@ from urllib.parse import quote
 
 import httpx
 
+from loom.http_helpers import fetch_json, fetch_text
+
 logger = logging.getLogger("loom.tools.dark_forum")
 
 _AHMIA_SEARCH = "https://ahmia.fi/search/?q={query}"
@@ -18,30 +20,8 @@ _REDDIT_DARKNET = "https://www.reddit.com/r/darknet/search.json?q={query}&limit=
 _REDDIT_ONIONS = "https://www.reddit.com/r/onions/search.json?q={query}&limit=10&sort=relevance"
 
 
-async def _get_json(
-    client: httpx.AsyncClient, url: str, headers: dict[str, str] | None = None
-) -> Any:
-    try:
-        resp = await client.get(url, timeout=15.0, headers=headers or {})
-        if resp.status_code == 200:
-            return resp.json()
-    except Exception as exc:
-        logger.debug("dark_forum fetch failed: %s", exc)
-    return None
-
-
-async def _get_text(client: httpx.AsyncClient, url: str) -> str:
-    try:
-        resp = await client.get(url, timeout=15.0)
-        if resp.status_code == 200:
-            return resp.text
-    except Exception as exc:
-        logger.debug("dark_forum text fetch failed: %s", exc)
-    return ""
-
-
 async def _search_ahmia(client: httpx.AsyncClient, query: str) -> list[dict[str, str]]:
-    html = await _get_text(client, _AHMIA_SEARCH.format(query=quote(query)))
+    html = await fetch_text(client, _AHMIA_SEARCH.format(query=quote(query)))
     if not html:
         return []
     results: list[dict[str, str]] = []
@@ -57,7 +37,7 @@ async def _search_ahmia(client: httpx.AsyncClient, query: str) -> list[dict[str,
 
 
 async def _search_otx(client: httpx.AsyncClient, query: str) -> list[dict[str, str]]:
-    data = await _get_json(client, _OTX_SEARCH.format(query=quote(query)))
+    data = await fetch_json(client, _OTX_SEARCH.format(query=quote(query)))
     if not data:
         return []
     pulses = data.get("results", [])
@@ -79,7 +59,7 @@ async def _search_reddit_sub(
     client: httpx.AsyncClient, query: str, subreddit: str
 ) -> list[dict[str, str]]:
     url = f"https://www.reddit.com/r/{subreddit}/search.json?q={quote(query)}&limit=10&sort=relevance&restrict_sr=on"
-    data = await _get_json(
+    data = await fetch_json(
         client, url, headers={"User-Agent": "Loom-Research/1.0"}
     )
     if not data:

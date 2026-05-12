@@ -14,34 +14,11 @@ from typing import Any
 from urllib.parse import quote
 
 import httpx
+from loom.http_helpers import fetch_json, fetch_text
 
 logger = logging.getLogger("loom.tools.vuln_intel")
 
 
-async def _get_json(
-    client: httpx.AsyncClient, url: str, timeout: float = 20.0, headers: dict[str, str] | None = None
-) -> Any:
-    """Safely fetch and parse JSON from URL."""
-    try:
-        resp = await client.get(url, timeout=timeout, headers=headers or {})
-        if resp.status_code == 200:
-            return resp.json()
-    except Exception as exc:
-        logger.debug("vuln_intel fetch failed: %s", exc)
-    return None
-
-
-async def _get_text(
-    client: httpx.AsyncClient, url: str, timeout: float = 15.0, headers: dict[str, str] | None = None
-) -> str:
-    """Safely fetch text content from URL."""
-    try:
-        resp = await client.get(url, timeout=timeout, headers=headers or {})
-        if resp.status_code == 200:
-            return resp.text
-    except Exception as exc:
-        logger.debug("vuln_intel text fetch failed: %s", exc)
-    return ""
 
 
 async def _nvd_search(
@@ -51,7 +28,7 @@ async def _nvd_search(
     vulnerabilities: list[dict[str, Any]] = []
     try:
         url = "https://services.nvd.nist.gov/rest/json/cves/2.0"
-        data = await _get_json(
+        data = await fetch_json(
             client,
             url,
             timeout=30.0,
@@ -113,7 +90,7 @@ async def _github_advisories(
     try:
         url = f"https://api.github.com/advisories?keyword={quote(query)}&per_page={min(limit, 10)}"
         headers = {"Accept": "application/vnd.github.v3+json"}
-        data = await _get_json(client, url, timeout=20.0, headers=headers)
+        data = await fetch_json(client, url, timeout=20.0, headers=headers)
 
         if isinstance(data, list):
             for advisory in data[:limit]:
@@ -152,7 +129,7 @@ async def _cisa_kev(
     vulnerabilities: list[dict[str, Any]] = []
     try:
         url = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
-        data = await _get_json(client, url, timeout=20.0)
+        data = await fetch_json(client, url, timeout=20.0)
 
         if data and "vulnerabilities" in data:
             query_lower = query.lower()
@@ -198,7 +175,7 @@ async def _vulners_search(
     try:
         # Vulners free tier doesn't require auth, but has rate limits
         url = f"https://vulners.com/api/v3/search/lucene/?query={quote(query)}&size={min(limit, 10)}"
-        data = await _get_json(client, url, timeout=20.0)
+        data = await fetch_json(client, url, timeout=20.0)
 
         if data and data.get("data", {}).get("documents"):
             for doc in data["data"]["documents"].values()[:limit]:
@@ -238,7 +215,7 @@ async def _github_poc_search(
         search_query = f"{query}+poc+exploit"
         url = f"https://api.github.com/search/repositories?q={quote(search_query)}&sort=updated&per_page={min(limit, 10)}"
         headers = {"Accept": "application/vnd.github.v3+json"}
-        data = await _get_json(client, url, timeout=20.0, headers=headers)
+        data = await fetch_json(client, url, timeout=20.0, headers=headers)
 
         if data and "items" in data:
             for repo in data["items"][:limit]:

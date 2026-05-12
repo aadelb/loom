@@ -11,6 +11,8 @@ import logging
 import re
 from typing import Any
 
+from loom.text_utils import extract_keywords
+
 logger = logging.getLogger("loom.tools.white_rabbit")
 
 # Anomaly indicators: pattern -> weight
@@ -27,18 +29,6 @@ DOMAIN_PAIRS = [
 ]
 
 
-def _extract_keywords(text: str) -> list[str]:
-    """Extract significant keywords, filtering stop words."""
-    stop_words = {
-        "the", "a", "an", "is", "are", "was", "been", "and", "or", "but",
-        "in", "on", "at", "to", "for", "of", "with", "as", "by", "from",
-    }
-    return [
-        w for w in re.findall(r"\b[a-z]{3,}\b", text.lower())
-        if w not in stop_words
-    ]
-
-
 def _score_anomaly(text: str) -> float:
     """Score anomaly potential (0.0-1.0)."""
     score = 0.0
@@ -50,7 +40,7 @@ def _score_anomaly(text: str) -> float:
             score += weight
 
     # Cross-domain pairs
-    keywords = set(_extract_keywords(text))
+    keywords = set(extract_keywords(text, max_keywords=100))
     for d1, d2, weight in DOMAIN_PAIRS:
         if d1 in keywords and d2 in keywords:
             score += weight
@@ -85,7 +75,7 @@ async def research_white_rabbit(
         dead_ends = []
         tree = []
         context = starting_point
-        keywords = _extract_keywords(starting_point)
+        keywords = extract_keywords(starting_point, max_keywords=100)
 
         for level in range(depth):
             # Generate tangential curiosity probes
@@ -98,7 +88,7 @@ async def research_white_rabbit(
             level_results = []
             for probe in probes[:branch_factor]:
                 score = _score_anomaly(probe)
-                entities = _extract_keywords(probe)
+                entities = extract_keywords(probe, max_keywords=100)
                 node = {"depth": level, "probe": probe, "anomaly_score": round(score, 3), "entities": entities}
                 level_results.append(node)
                 path.append(node)
