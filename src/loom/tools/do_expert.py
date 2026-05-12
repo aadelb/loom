@@ -15,9 +15,6 @@ import logging
 import time
 from typing import Any
 
-from loom.config import get_config
-from loom.validators import EXTERNAL_TIMEOUT_SECS
-
 log = logging.getLogger("loom.do_expert")
 
 
@@ -80,7 +77,6 @@ async def research_do_expert(
         ...     print(f"- {finding['claim']} ({finding['confidence']:.2%})")
     """
     start_time = time.time()
-    config = get_config()
 
     log.info(
         "do_expert_started instruction=%s quality=%s darkness=%d",
@@ -96,6 +92,8 @@ async def research_do_expert(
         "expert": "expert",
         "publication": "publication",
     }
+    if quality not in quality_to_target:
+        log.warning("do_expert_invalid_quality quality=%s, using expert", quality)
     quality_target = quality_to_target.get(quality, "expert")
 
     # Map darkness_level to multi_perspective flag
@@ -135,13 +133,20 @@ async def research_do_expert(
         if not isinstance(confidence, (int, float)):
             confidence = 0.0
 
-        # Prepare key findings with confidence
+        # Prepare key findings with confidence (immutable: don't mutate result)
         key_findings = result.get("key_findings", [])
         if isinstance(key_findings, list) and key_findings:
-            # Ensure each finding has confidence
+            # Ensure each finding has confidence (create new list to avoid mutation)
+            enriched_findings: list[dict[str, Any]] = []
             for finding in key_findings:
-                if isinstance(finding, dict) and "confidence" not in finding:
-                    finding["confidence"] = confidence
+                if isinstance(finding, dict):
+                    # Create a copy with confidence added if missing
+                    enriched = {**finding, "confidence": finding.get("confidence", confidence)}
+                    enriched_findings.append(enriched)
+                else:
+                    # Convert non-dict findings to dict format
+                    enriched_findings.append({"claim": str(finding), "confidence": confidence})
+            key_findings = enriched_findings
 
         # Build the synthesized answer from findings
         answer_parts: list[str] = []
@@ -155,19 +160,19 @@ async def research_do_expert(
         if key_findings:
             answer_parts.append("\nKey Findings:")
             for i, finding in enumerate(key_findings[:5], 1):
-                if isinstance(finding, dict):
-                    claim = finding.get("claim", str(finding))[:200]
-                    conf = finding.get("confidence", confidence)
-                    answer_parts.append(f"  {i}. {claim} (confidence: {conf:.0%})")
-                else:
-                    answer_parts.append(f"  {i}. {str(finding)[:200]}")
+                # All findings are now guaranteed to be dicts due to enrichment above
+                claim = finding.get("claim", "")[:200]
+                conf = finding.get("confidence", confidence)
+                answer_parts.append(f"  {i}. {claim} (confidence: {conf:.0%})")
 
         # Add gaps/limitations if severity is high
         gaps = result.get("gaps_identified", {})
-        if isinstance(gaps, dict) and gaps.get("gaps"):
-            answer_parts.append("\nRemaining Gaps:")
-            for gap in gaps["gaps"][:3]:
-                answer_parts.append(f"  - {gap}")
+        if isinstance(gaps, dict):
+            gap_list = gaps.get("gaps", [])
+            if isinstance(gap_list, list) and gap_list:
+                answer_parts.append("\nRemaining Gaps:")
+                for gap in gap_list[:3]:
+                    answer_parts.append(f"  - {gap}")
 
         answer = "\n".join(answer_parts) or result.get("executive_summary", "Research complete.")
 

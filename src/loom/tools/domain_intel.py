@@ -435,7 +435,7 @@ async def research_nmap_scan(
         return output
 
     except FileNotFoundError:
-        logger.error("nmap_not_found")
+        logger.error("nmap_not_found; ensure nmap is installed in PATH")
         return {
             **output,
             "error": "nmap command not found (install nmap)",

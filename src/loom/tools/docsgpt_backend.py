@@ -48,7 +48,7 @@ async def research_docs_ai(
     # Input validation
     if not query or not isinstance(query, str):
         return {
-            "query": query,
+            "query": "" if not isinstance(query, str) else query,
             "error": "query must be a non-empty string",
             "answer": "",
             "sources": [],
@@ -83,6 +83,9 @@ async def research_docs_ai(
     if not isinstance(language, str):
         language = "en"
     language = language.strip().lower()[:10]  # Max 10 chars
+    # Ensure language code is alphanumeric + hyphen (ISO 639 format)
+    if not all(c.isalnum() or c == "-" for c in language):
+        language = "en"
 
     try:
         # Construct endpoint URL
@@ -101,7 +104,18 @@ async def research_docs_ai(
             response = await client.post(endpoint, json=payload)
             response.raise_for_status()
 
-        result_data = response.json()
+        try:
+            result_data = response.json()
+        except ValueError as e:
+            logger.warning("docsgpt_json_parse_error endpoint=%s: %s", endpoint, e)
+            return {
+                "query": query,
+                "error": "DocsGPT returned invalid JSON response",
+                "answer": "",
+                "sources": [],
+                "confidence": 0.0,
+                "docs_url": docs_url,
+            }
 
         # Parse response
         answer = ""
