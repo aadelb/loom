@@ -10,11 +10,17 @@ import asyncio
 import logging
 import math
 import re
+import xml.etree.ElementTree as ET
 from collections import Counter
 from typing import Any
 from urllib.parse import quote
 
 import httpx
+
+try:
+    from scipy.stats import chi2
+except ImportError:
+    chi2 = None  # Fallback to manual p-value estimation
 
 logger = logging.getLogger("loom.tools.hcs10_academic")
 
@@ -68,6 +74,7 @@ def _compute_zipf_exponent(word_freq: dict[str, int]) -> float:
     sum_log_freq = 0.0
     sum_log_rank_freq = 0.0
     sum_log_rank_sq = 0.0
+    count = 0
 
     for rank, freq in enumerate(sorted_freqs, start=1):
         if freq <= 0:
@@ -78,13 +85,16 @@ def _compute_zipf_exponent(word_freq: dict[str, int]) -> float:
         sum_log_freq += log_freq
         sum_log_rank_freq += log_rank * log_freq
         sum_log_rank_sq += log_rank * log_rank
+        count += 1
 
-    n = len(sorted_freqs)
-    denom = n * sum_log_rank_sq - sum_log_rank * sum_log_rank
+    if count < 2:
+        return 0.0
+
+    denom = count * sum_log_rank_sq - sum_log_rank * sum_log_rank
     if denom == 0:
         return 0.0
 
-    exponent = (n * sum_log_rank_freq - sum_log_rank * sum_log_freq) / denom
+    exponent = (count * sum_log_rank_freq - sum_log_rank * sum_log_freq) / denom
     return abs(exponent)
 
 
@@ -125,8 +135,14 @@ def _check_benford_distribution(numbers: list[float]) -> tuple[float, float]:
         if exp_count > 0:
             chi_square += ((observed - exp_count) ** 2) / exp_count
 
-    # Rough p-value: chi_square > 15.5 is significant at p<0.01
-    return chi_square, max(0.0, 1.0 - chi_square / 30.0)
+    # Compute p-value using chi-square CDF with 8 degrees of freedom
+    if chi2 is not None:
+        p_value = 1.0 - chi2.cdf(chi_square, df=8)
+    else:
+        # Fallback: rough approximation if scipy not available
+        # chi_square > 15.5 is significant at p<0.01 (8 DOF)
+        p_value = max(0.0, 1.0 - chi_square / 30.0)
+    return chi_square, p_value
 
 
 def _shannon_diversity_index(method_counts: dict[str, int]) -> float:
@@ -177,6 +193,13 @@ def research_grant_forensics(grant_id: str = "", text: str = "") -> dict[str, An
                 "error": "No text provided",
             }
 
+        # Limit text size to prevent memory issues
+        if len(text) > 100000:
+            return {
+                "grant_id": grant_id,
+                "error": "Text too large (max 100,000 characters)",
+            }
+
         # Tokenize and count word frequencies
         words = re.findall(r"\b[a-z]+\b", text.lower())
         word_freq = Counter(words)
@@ -200,14 +223,20 @@ def research_grant_forensics(grant_id: str = "", text: str = "") -> dict[str, An
         numbers = []
         for num_str in numbers_str:
             try:
-                if "." in num_str:
-                    numbers.append(float(num_str))
-                else:
-                    numbers.append(float(int(num_str)))
+                num_val = float(num_str)
+                # Skip NaN/inf values
+                if math.isfinite(num_val):
+                    numbers.append(num_val)
             except ValueError:
                 pass
 
         benford_chi_sq, benford_pval = _check_benford_distribution(numbers)
+
+        # Define superlative words once to avoid inconsistency
+        superlative_words = {
+            "revolutionary", "unprecedented", "groundbreaking", "novel", "innovative",
+            "transformative", "paradigm", "breakthrough", "conclusively", "proves",
+        }
 
         # Compute anomaly score: normalized combination of deviations
         zipf_anomaly = 0.0
@@ -226,10 +255,7 @@ def research_grant_forensics(grant_id: str = "", text: str = "") -> dict[str, An
         if zipf_exponent < 0.5 or zipf_exponent > 2.0:
             fraud_probability = min(1.0, fraud_probability + 0.3)
         # Boost if superlative words are overrepresented
-        superlatives = sum(1 for w in word_freq if w in (
-            "revolutionary", "unprecedented", "groundbreaking", "novel", "innovative",
-            "transformative", "paradigm", "breakthrough", "conclusively", "proves",
-        ))
+        superlatives = sum(1 for w in word_freq if w in superlative_words)
         if superlatives >= 3:
             fraud_probability = min(1.0, fraud_probability + 0.2)
 
@@ -246,10 +272,7 @@ def research_grant_forensics(grant_id: str = "", text: str = "") -> dict[str, An
             "benford_anomaly": "FLAGGED" if benford_chi_sq > 15.5 else "normal",
             "fraud_probability": round(fraud_probability, 3),
             "anomaly_score": round(anomaly_score, 3),
-            "linguistic_markers": [w for w in word_freq if w in (
-                "revolutionary", "unprecedented", "groundbreaking", "novel", "innovative",
-                "transformative", "paradigm", "breakthrough", "conclusively",
-            )][:10],
+            "linguistic_markers": [w for w in word_freq if w in superlative_words][:10],
             "risk_level": "HIGH" if fraud_probability > 0.5 else "MEDIUM" if fraud_probability > 0.3 else "LOW",
         }
     except Exception as exc:
@@ -471,6 +494,11 @@ def research_data_fabrication(numbers: list[float]) -> dict[str, Any]:
         if not numbers:
             return {"error": "No numbers provided"}
 
+        # Filter out NaN/inf values
+        valid_numbers = [n for n in numbers if isinstance(n, (int, float)) and math.isfinite(n)]
+        if not valid_numbers:
+            return {"error": "No valid numeric values provided"}
+
         # GRIM test: check if means are achievable given typical sample sizes
         # Simplified: if mean has more decimal places than 1/n allows, flag it
         grim_failures = 0
@@ -481,7 +509,7 @@ def research_data_fabrication(numbers: list[float]) -> dict[str, Any]:
         typical_sample_size = 30
         min_granularity = 1.0 / typical_sample_size
 
-        for num in numbers:
+        for num in valid_numbers:
             # Check decimal precision
             str_num = f"{num:.4f}"
             if "." in str_num:
@@ -492,16 +520,16 @@ def research_data_fabrication(numbers: list[float]) -> dict[str, Any]:
                     decimal_inconsistencies.append(num)
 
         # Benford test
-        benford_chi_sq, benford_pval = _check_benford_distribution(numbers)
+        benford_chi_sq, benford_pval = _check_benford_distribution(valid_numbers)
 
         # Fabrication risk: combination of GRIM failures and Benford anomaly
-        grim_ratio = grim_failures / len(numbers) if numbers else 0.0
+        grim_ratio = grim_failures / len(valid_numbers) if valid_numbers else 0.0
         benford_ratio = min(1.0, benford_chi_sq / 20.0)
 
         fabrication_risk = (grim_ratio + benford_ratio) / 2.0
 
         return {
-            "numbers_analyzed": len(numbers),
+            "numbers_analyzed": len(valid_numbers),
             "grim_failures": grim_failures,
             "grim_failure_rate": round(grim_ratio, 3),
             "decimal_anomalies": decimal_inconsistencies[:10],
@@ -587,7 +615,8 @@ async def research_institutional_decay(institution: str) -> dict[str, Any]:
                     sum_x = sum(years_list)
                     sum_xy = sum(y * c for y, c in zip(years_list, counts))
                     sum_x2 = sum(y * y for y in years_list)
-                    trend_slope = (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x * sum_x)
+                    denom = n * sum_x2 - sum_x * sum_x
+                    trend_slope = (n * sum_xy - sum_x * sum_y) / denom if denom != 0 else 0.0
                 else:
                     trend_slope = 0.0
 
@@ -599,7 +628,7 @@ async def research_institutional_decay(institution: str) -> dict[str, Any]:
 
                 # Author turnover: rough estimate from new/established authors
                 # (Simplified: number of unique authors)
-                author_turnover = len(all_authors) / max(1, total_papers) if total_papers > 0 else 0.0
+                author_turnover = len(all_authors) / max(1, total_papers)
 
                 # Decay score: combination of retraction rate and declining publications
                 decay_score = 0.0
@@ -860,7 +889,6 @@ async def research_preprint_manipulation(arxiv_id: str = "", topic: str = "") ->
                         }
 
                     # Parse first paper from results (simplified)
-                    import xml.etree.ElementTree as ET
                     try:
                         root = ET.fromstring(arxiv_data)
                         entries = root.findall("{http://www.w3.org/2005/Atom}entry")
@@ -890,7 +918,6 @@ async def research_preprint_manipulation(arxiv_id: str = "", topic: str = "") ->
                     }
 
                 # Parse submission date and title
-                import xml.etree.ElementTree as ET
                 try:
                     root = ET.fromstring(arxiv_text)
                     entry = root.find("{http://www.w3.org/2005/Atom}entry")
@@ -900,8 +927,10 @@ async def research_preprint_manipulation(arxiv_id: str = "", topic: str = "") ->
                             "error": "Could not parse arXiv metadata",
                         }
 
-                    published = entry.find("{http://www.w3.org/2005/Atom}published").text
-                    title = entry.find("{http://www.w3.org/2005/Atom}title").text
+                    published_elem = entry.find("{http://www.w3.org/2005/Atom}published")
+                    title_elem = entry.find("{http://www.w3.org/2005/Atom}title")
+                    published = published_elem.text if published_elem is not None else ""
+                    title = title_elem.text if title_elem is not None else ""
                 except Exception as exc:
                     logger.debug("arXiv parse failed: %s", exc)
                     return {
@@ -928,7 +957,7 @@ async def research_preprint_manipulation(arxiv_id: str = "", topic: str = "") ->
                 # (Would need altmetric API)
                 altmetric_data = await _get_json(
                     client,
-                    f"https://api.altmetric.com/v1/arxiv/{arxiv_id}",
+                    f"https://api.altmetric.com/v1/arxiv/{local_arxiv_id}",
                     timeout=10.0
                 )
 

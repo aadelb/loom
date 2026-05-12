@@ -7,11 +7,13 @@ directed graph, and tracks timestamps for temporal analysis of structural change
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import re
+import time
 from datetime import UTC, datetime
 from typing import Any
-from urllib.parse import urljoin, urlparse
+from urllib.parse import parse_qs, urljoin, urlparse, urlencode
 
 from loom.config import get_config
 from loom.tools.fetch import research_fetch
@@ -31,20 +33,22 @@ def _extract_hyperlinks(html: str, base_url: str) -> list[str]:
         List of normalized absolute URLs found in href attributes.
     """
     links = []
-    # Match href attributes in anchor tags
-    href_pattern = re.compile(r'href\s*=\s*["\']([^"\']+)["\']', re.IGNORECASE)
+    # Match href attributes in anchor tags (quoted and unquoted)
+    href_pattern = re.compile(r'href\s*=\s*["\']?([^\s"\'<>]+)["\']?', re.IGNORECASE)
 
     for match in href_pattern.finditer(html):
         try:
-            href = match.group(1)
+            href = match.group(1).strip()
+            if not href:
+                continue
             # Resolve relative URLs
             absolute_url = urljoin(base_url, href)
-            # Filter only http/https/onion
+            # Filter only http/https/.onion (all valid Tor targets)
             parsed = urlparse(absolute_url)
-            if parsed.scheme in ("http", "https") or (parsed.hostname and parsed.hostname.endswith(
-                ".onion"
-            )):
-                links.append(absolute_url)
+            if parsed.scheme in ("http", "https"):
+                hostname = parsed.hostname or ""
+                if hostname.endswith(".onion") or parsed.netloc:
+                    links.append(absolute_url)
         except Exception:
             # Skip malformed URLs
             continue
@@ -63,8 +67,15 @@ def _normalize_url(url: str) -> str:
     """
     try:
         parsed = urlparse(url)
+        # Sort query parameters for consistent normalization
+        if parsed.query:
+            qs = parse_qs(parsed.query, keep_blank_values=True)
+            # Flatten multi-value params and sort
+            sorted_qs = urlencode(sorted((k, v[0] if v else '') for k, v in qs.items()))
+        else:
+            sorted_qs = ''
         # Remove fragment, keep scheme, netloc, path, query
-        return f"{parsed.scheme}://{parsed.netloc}{parsed.path}{'?' + parsed.query if parsed.query else ''}"
+        return f"{parsed.scheme}://{parsed.netloc}{parsed.path}{'?' + sorted_qs if sorted_qs else ''}"
     except Exception:
         return url
 
@@ -130,21 +141,25 @@ async def research_ghost_weave(
     dead_links: dict[str, dict[str, Any]] = {}  # url -> {error, attempts}
     queue: list[tuple[str, int]] = [(seed_url, 0)]  # (url, current_depth)
     seen_urls = {_normalize_url(seed_url)}
-    import time as _time
-    _crawl_deadline = _time.time() + 120  # 2-minute overall timeout
+    seen_urls_lock = asyncio.Lock()  # Protect concurrent access to seen_urls
+    _crawl_deadline = time.time() + 120  # 2-minute overall timeout
 
-    # Crawl up to max_pages
-    while queue and len(visited) < max_pages and _time.time() < _crawl_deadline:
-        current_url, current_depth = queue.pop(0)
+    async def _process_url(current_url: str, current_depth: int) -> None:
+        """Process a single URL asynchronously with timeout and depth checks."""
+        nonlocal queue, visited, edges, dead_links
 
-        # Stop if we've exceeded depth
         if current_depth > depth:
-            continue
+            return
 
-        # Fetch page
         normalized = _normalize_url(current_url)
         if normalized in visited:
-            continue
+            return
+
+        # Calculate adaptive timeout (remaining time divided by estimated pages)
+        remaining_time = _crawl_deadline - time.time()
+        if remaining_time < 5:
+            return
+        adaptive_timeout = min(30, int(remaining_time / max(1, max_pages - len(visited))))
 
         try:
             logger.info("ghost_weave_fetch url=%s depth=%d", current_url, current_depth)
@@ -153,7 +168,7 @@ async def research_ghost_weave(
                 mode="dynamic",
                 max_chars=50000,
                 proxy=tor_proxy,
-                timeout=30,
+                timeout=adaptive_timeout,
             )
 
             if result.get("error"):
@@ -163,7 +178,7 @@ async def research_ghost_weave(
                     "timestamp": datetime.now(UTC).isoformat(),
                 }
                 logger.warning("ghost_weave_fetch_error url=%s error=%s", current_url, result["error"])
-                continue
+                return
 
             # Extract page data
             html = result.get("html", "")
@@ -191,10 +206,10 @@ async def research_ghost_weave(
 
             # Add edges and queue new URLs
             for link in links:
-                # Fix H12: Cap edges to prevent unbounded memory growth
+                # Cap edges to prevent unbounded memory growth
                 if len(edges) > max_pages * 20:
                     break
-                    
+
                 link_normalized = _normalize_url(link)
                 edges.append(
                     {
@@ -204,10 +219,13 @@ async def research_ghost_weave(
                     }
                 )
 
-                # Queue unvisited URLs at next depth
+                # Queue unvisited URLs at next depth with lock protection
                 if link_normalized not in seen_urls and len(visited) < max_pages:
-                    seen_urls.add(link_normalized)
-                    queue.append((link, current_depth + 1))
+                    async with seen_urls_lock:
+                        # Double-check after acquiring lock
+                        if link_normalized not in seen_urls:
+                            seen_urls.add(link_normalized)
+                            queue.append((link, current_depth + 1))
 
         except Exception as e:
             logger.error("ghost_weave_exception url=%s error=%s", current_url, e)
@@ -217,6 +235,25 @@ async def research_ghost_weave(
                 "timestamp": datetime.now(UTC).isoformat(),
             }
 
+    # Crawl up to max_pages with concurrent tasks
+    tasks: list[asyncio.Task[None]] = []
+    while queue and len(visited) < max_pages and time.time() < _crawl_deadline:
+        current_url, current_depth = queue.pop(0)
+
+        # Create a task for concurrent processing
+        task = asyncio.create_task(_process_url(current_url, current_depth))
+        tasks.append(task)
+
+        # Limit concurrent tasks to avoid overwhelming Tor network
+        if len(tasks) >= 3:
+            # Wait for at least one task to complete
+            _, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+            tasks = list(pending)
+
+    # Wait for all remaining tasks
+    if tasks:
+        await asyncio.gather(*tasks, return_exceptions=True)
+
     # Build response
     nodes = list(visited.values())
 
@@ -224,7 +261,9 @@ async def research_ghost_weave(
     total_nodes = len(nodes)
     total_edges = len(edges)
     if total_nodes > 0:
-        # Simple average degree calculation
+        # Calculate average degree for visited nodes only
+        # (edges to unvisited nodes are counted but ignored in degree)
+        visited_urls = {node["url"] for node in nodes}
         in_degree: dict[str, int] = {}
         out_degree: dict[str, int] = {}
         for node in nodes:
@@ -234,13 +273,15 @@ async def research_ghost_weave(
         for edge in edges:
             src = edge["from"]
             dst = edge["to"]
-            if src in out_degree:
+            # Only count edges between visited nodes
+            if src in visited_urls and src in out_degree:
                 out_degree[src] += 1
-            if dst in in_degree:
+            if dst in visited_urls and dst in in_degree:
                 in_degree[dst] += 1
 
-        degrees = list(in_degree.values()) + list(out_degree.values())
-        avg_degree = sum(degrees) / len(degrees) if degrees else 0
+        # Average degree for nodes (both in and out)
+        all_degrees = list(in_degree.values()) + list(out_degree.values())
+        avg_degree = sum(all_degrees) / len(all_degrees) if all_degrees else 0
     else:
         avg_degree = 0
 

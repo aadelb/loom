@@ -11,6 +11,7 @@ Uses theHarvester as a subprocess since it's not easily pip-installable as a lib
 
 from __future__ import annotations
 
+import ipaddress
 import logging
 import re
 import subprocess
@@ -24,7 +25,7 @@ def _validate_domain(domain: str) -> str:
     """Validate domain for theHarvester lookup.
 
     theHarvester accepts domains that are valid DNS names.
-    We validate but keep restrictions permissive to allow international domains.
+    We validate using stricter DNS rules to prevent injection and malformed names.
 
     Args:
         domain: domain to validate
@@ -37,13 +38,33 @@ def _validate_domain(domain: str) -> str:
     """
     domain = domain.strip() if isinstance(domain, str) else ""
 
-    if not domain or len(domain) > 255:
-        raise ValueError("domain must be 1-255 characters")
+    if not domain or len(domain) > 253:
+        raise ValueError("domain must be 1-253 characters")
 
-    # Allow alphanumeric, hyphen, period
-    # Disallow only command-injection chars and spaces
-    if not re.match(r"^[a-z0-9.\-]+$", domain, re.IGNORECASE):
-        raise ValueError("domain contains disallowed characters")
+    # DNS name validation:
+    # - Must contain at least one dot (require at least one subdomain separator)
+    # - Each label (part between dots) must:
+    #   - Start with alphanumeric
+    #   - End with alphanumeric or hyphen
+    #   - Contain only alphanumeric and hyphens
+    #   - Be 1-63 characters long
+    # - Disallow leading/trailing dots
+    if domain.startswith(".") or domain.endswith("."):
+        raise ValueError("domain must not start or end with a dot")
+
+    if ".." in domain:
+        raise ValueError("domain must not contain consecutive dots")
+
+    if "." not in domain:
+        raise ValueError("domain must contain at least one dot")
+
+    # Validate each label
+    labels = domain.split(".")
+    for label in labels:
+        if not label or len(label) > 63:
+            raise ValueError(f"domain label '{label}' must be 1-63 characters")
+        if not re.match(r"^[a-z0-9]([a-z0-9\-]{0,61}[a-z0-9])?$", label, re.IGNORECASE):
+            raise ValueError(f"domain label '{label}' contains invalid characters")
 
     return domain
 
@@ -51,10 +72,11 @@ def _validate_domain(domain: str) -> str:
 def _validate_sources(sources: str) -> str:
     """Validate sources parameter for theHarvester.
 
-    Sources can be 'all' or comma-separated list like 'google,bing,linkedin'.
+    Sources can be 'all' or comma-separated list of valid source names.
+    Uses allowlist to prevent injection.
 
     Args:
-        sources: sources to validate
+        sources: sources to validate (e.g., "all" or "google,bing,linkedin")
 
     Returns:
         The validated sources string
@@ -67,9 +89,24 @@ def _validate_sources(sources: str) -> str:
     if not sources or len(sources) > 255:
         raise ValueError("sources must be 1-255 characters")
 
-    # Allow alphanumeric, comma, and hyphen
-    if not re.match(r"^[a-z0-9,\-]+$", sources, re.IGNORECASE):
-        raise ValueError("sources contains disallowed characters")
+    # Allowlist of valid theHarvester sources
+    VALID_SOURCES = {
+        "all", "google", "bing", "linkedin", "twitter", "asana",
+        "github", "yahoo", "baidu", "shodan", "censys", "dnsdumpster",
+        "duckduckgo", "dogpile", "zoomeye", "qwant", "otx", "grep",
+        "fullhunt", "security", "hunter", "intelx", "binaryedge"
+    }
+
+    if sources.lower() == "all":
+        return sources
+
+    # Validate comma-separated sources
+    source_list = [s.strip().lower() for s in sources.split(",")]
+    for source in source_list:
+        if not source or source not in VALID_SOURCES:
+            raise ValueError(
+                f"invalid source '{source}'. valid sources: {', '.join(sorted(VALID_SOURCES))}"
+            )
 
     return sources
 
@@ -101,6 +138,86 @@ def _check_harvester_available() -> tuple[bool, str]:
         return False, f"theHarvester availability check error: {str(exc)}"
 
 
+def _is_valid_email(email: str) -> bool:
+    """Validate email address format.
+
+    Args:
+        email: email string to validate
+
+    Returns:
+        True if email matches basic RFC 5321 rules
+    """
+    # Basic RFC 5321 validation
+    # Local part: alphanumeric, dots, plus, underscore, hyphen
+    # Domain part: valid DNS name
+    if "@" not in email or len(email) > 254:
+        return False
+
+    local, domain = email.rsplit("@", 1)
+
+    # Local part validation
+    if not local or len(local) > 64:
+        return False
+    if local.startswith(".") or local.endswith(".") or ".." in local:
+        return False
+    if not re.match(r"^[a-zA-Z0-9._%+-]+$", local):
+        return False
+
+    # Domain part validation (must be valid DNS name)
+    if not domain or len(domain) > 255 or domain.startswith(".") or domain.endswith("."):
+        return False
+    if ".." in domain or "." not in domain:
+        return False
+    for label in domain.split("."):
+        if not label or len(label) > 63:
+            return False
+        if not re.match(r"^[a-z0-9]([a-z0-9\-]{0,61}[a-z0-9])?$", label, re.IGNORECASE):
+            return False
+
+    return True
+
+
+def _is_valid_subdomain(subdomain: str) -> bool:
+    """Validate subdomain format.
+
+    Args:
+        subdomain: subdomain string to validate
+
+    Returns:
+        True if subdomain is valid DNS name
+    """
+    if not subdomain or len(subdomain) > 253:
+        return False
+    if subdomain.startswith(".") or subdomain.endswith("."):
+        return False
+    if ".." in subdomain or "." not in subdomain:
+        return False
+
+    for label in subdomain.split("."):
+        if not label or len(label) > 63:
+            return False
+        if not re.match(r"^[a-z0-9]([a-z0-9\-]{0,61}[a-z0-9])?$", label, re.IGNORECASE):
+            return False
+
+    return True
+
+
+def _is_valid_ip(ip_str: str) -> bool:
+    """Validate IPv4 or IPv6 address.
+
+    Args:
+        ip_str: IP address string to validate
+
+    Returns:
+        True if valid IPv4 or IPv6 address
+    """
+    try:
+        ipaddress.ip_address(ip_str)
+        return True
+    except ValueError:
+        return False
+
+
 def _parse_harvester_output(stdout: str, stderr: str) -> tuple[list[str], list[str], list[str]]:
     """Parse theHarvester stdout/stderr for emails, subdomains, and IPs.
 
@@ -123,61 +240,46 @@ def _parse_harvester_output(stdout: str, stderr: str) -> tuple[list[str], list[s
         stderr: stderr from theHarvester subprocess
 
     Returns:
-        Tuple of (emails, subdomains, ips)
+        Tuple of (emails, subdomains, ips) — each as sorted deduplicated lists
     """
-    emails: list[str] = []
-    subdomains: list[str] = []
-    ips: list[str] = []
+    emails_set: set[str] = set()
+    subdomains_set: set[str] = set()
+    ips_set: set[str] = set()
 
-    # Combined output to parse
-    output = stdout + "\n" + stderr
+    # Combined output to parse (prefer stdout, fall back to stderr)
+    output = stdout if stdout else stderr
 
     lines = output.split("\n")
     current_section = None
 
-    for i, line in enumerate(lines):
+    for line in lines:
         line = line.strip()
 
-        # Detect section headers
-        if "Emails found" in line or "Emails found:" in line:
+        # Detect section headers (case-insensitive)
+        if re.search(r"emails?\s*found", line, re.IGNORECASE):
             current_section = "emails"
             continue
-        elif "Hosts found" in line or "Hosts found:" in line:
+        elif re.search(r"hosts?\s*found", line, re.IGNORECASE):
             current_section = "hosts"
             continue
-        elif "IPs found" in line or "IPs found:" in line:
+        elif re.search(r"ip", line, re.IGNORECASE) and "found" in line.lower():
             current_section = "ips"
             continue
-        elif line.startswith("===") or line.startswith("---"):
-            # Skip separator lines
-            continue
-        elif not line or line.startswith("["):
-            # Skip empty lines and log lines
-            current_section = None
+
+        # Skip separator lines, empty lines, and log lines
+        if line.startswith("===") or line.startswith("---") or not line or line.startswith("["):
             continue
 
         # Parse based on current section
-        if current_section == "emails":
-            # Match email pattern: user@domain.ext
-            if re.match(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", line):
-                if line not in emails:
-                    emails.append(line)
+        if current_section == "emails" and _is_valid_email(line):
+            emails_set.add(line)
+        elif current_section == "hosts" and _is_valid_subdomain(line):
+            subdomains_set.add(line)
+        elif current_section == "ips" and _is_valid_ip(line):
+            ips_set.add(line)
 
-        elif current_section == "hosts":
-            # Match domain/subdomain pattern
-            if re.match(r"^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", line):
-                if line not in subdomains:
-                    subdomains.append(line)
-
-        elif current_section == "ips":
-            # Match IP pattern (IPv4 or IPv6)
-            if re.match(
-                r"^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|[a-fA-F0-9:]+)$", line
-            ):
-                if line not in ips:
-                    ips.append(line)
-
-    return emails, subdomains, ips
+    # Return sorted lists for deterministic output
+    return sorted(list(emails_set)), sorted(list(subdomains_set)), sorted(list(ips_set))
 
 
 def research_harvest(
@@ -193,7 +295,7 @@ def research_harvest(
         domain: target domain to harvest (e.g., "example.com")
         sources: comma-separated list of sources or "all" for all sources
                  (e.g., "google,bing,linkedin" or "all")
-        limit: maximum number of results per source to return (default 100)
+        limit: maximum number of results per source to return (default 100, range 1-10000)
 
     Returns:
         Dict with:
@@ -206,15 +308,25 @@ def research_harvest(
         - harvester_available: bool indicating if theHarvester CLI is available
         - error: error message if lookup failed (optional)
     """
+    # Validate domain
     try:
         domain = _validate_domain(domain)
     except ValueError as exc:
         return {"domain": domain, "error": str(exc), "harvester_available": False}
 
+    # Validate sources
     try:
         sources = _validate_sources(sources)
     except ValueError as exc:
         return {"domain": domain, "error": str(exc), "harvester_available": False}
+
+    # Validate limit (must be 1-10000)
+    if not isinstance(limit, int) or limit < 1 or limit > 10000:
+        return {
+            "domain": domain,
+            "error": "limit must be an integer between 1 and 10000",
+            "harvester_available": False,
+        }
 
     # Check if harvester is available
     available, msg = _check_harvester_available()
@@ -229,15 +341,15 @@ def research_harvest(
         # Record start time
         start_time = time.time()
 
-        # Build theHarvester command
+        # Build theHarvester command with validated parameters
         cmd = ["theHarvester", "-d", domain, "-b", sources, "-l", str(limit)]
 
-        # Run theHarvester
+        # Run theHarvester with 120-second timeout
         result = subprocess.run(
             cmd,
             capture_output=True,
             text=True,
-            timeout=300,  # 5 minute timeout for large harvests
+            timeout=120,  # 2 minute timeout (reduced from 5 for responsiveness)
         )
 
         # Parse output
@@ -259,14 +371,31 @@ def research_harvest(
         return output
 
     except subprocess.TimeoutExpired:
+        duration_ms = int((time.time() - start_time) * 1000)
         return {
             "domain": domain,
-            "error": "theHarvester lookup timed out after 300 seconds",
+            "error": f"theHarvester lookup timed out after 120 seconds (duration: {duration_ms}ms)",
+            "duration_ms": duration_ms,
             "harvester_available": True,
         }
-    except Exception as exc:
+    except subprocess.CalledProcessError as exc:
+        logger.error(f"theHarvester returned error: {exc.stderr}")
         return {
             "domain": domain,
-            "error": f"theHarvester lookup error: {str(exc)}",
+            "error": f"theHarvester process error: {exc.stderr[:200]}",
             "harvester_available": True,
+        }
+    except OSError as exc:
+        logger.error(f"OS error executing theHarvester: {exc}")
+        return {
+            "domain": domain,
+            "error": f"OS error: {str(exc)}",
+            "harvester_available": False,
+        }
+    except Exception as exc:
+        logger.exception("Unexpected error in research_harvest")
+        return {
+            "domain": domain,
+            "error": f"Unexpected error: {type(exc).__name__}",
+            "harvester_available": False,
         }

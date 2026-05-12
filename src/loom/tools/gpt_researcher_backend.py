@@ -7,9 +7,10 @@ with automatic source gathering and synthesis.
 from __future__ import annotations
 
 import asyncio
+import inspect
 import logging
 import os
-from typing import Any
+from typing import Any, TypedDict
 
 try:
     from gpt_researcher import GPTResearcher
@@ -27,12 +28,38 @@ MAX_SOURCES = 50
 MAX_REPORT_CHARS = 100000
 
 
+class ResearchResult(TypedDict, total=False):
+    """Typed result dict for research_gpt_researcher."""
+
+    query: str
+    report: str
+    sources: list[dict[str, str]]
+    total_sources: int
+    report_type: str
+    error: str
+    library_installed: bool
+
+
+def _create_error_response(
+    query: str, error_msg: str, report_type: str = "research_report"
+) -> ResearchResult:
+    """Create a consistent error response dict."""
+    return {
+        "query": query,
+        "error": error_msg,
+        "report": "",
+        "sources": [],
+        "total_sources": 0,
+        "report_type": report_type,
+    }
+
+
 async def research_gpt_researcher(
     query: str,
     report_type: str = "research_report",
     max_sources: int = 10,
     include_tavily: bool = False,
-) -> dict[str, Any]:
+) -> ResearchResult:
     """Run autonomous research and generate a report.
 
     Uses gpt-researcher library to conduct multi-source research with
@@ -53,28 +80,19 @@ async def research_gpt_researcher(
         - total_sources: Total number of sources used
         - report_type: Report format used
         - error: Error message if operation failed (optional)
+        - library_installed: Whether gpt-researcher is available (optional)
     """
     # Input validation
     if not query or not isinstance(query, str):
-        return {
-            "query": query,
-            "error": "query must be a non-empty string",
-            "report": "",
-            "sources": [],
-            "total_sources": 0,
-            "report_type": report_type,
-        }
+        return _create_error_response(query, "query must be a non-empty string", report_type)
 
     query = query.strip()
     if len(query) < MIN_QUERY_LEN or len(query) > MAX_QUERY_LEN:
-        return {
-            "query": query,
-            "error": f"query length must be {MIN_QUERY_LEN}-{MAX_QUERY_LEN} chars",
-            "report": "",
-            "sources": [],
-            "total_sources": 0,
-            "report_type": report_type,
-        }
+        return _create_error_response(
+            query,
+            f"query length must be {MIN_QUERY_LEN}-{MAX_QUERY_LEN} chars",
+            report_type,
+        )
 
     # Validate report type
     valid_types = ["research_report", "summary", "outline", "resources"]
@@ -87,18 +105,21 @@ async def research_gpt_researcher(
 
     # Check if library is installed
     if not _HAS_GPT_RESEARCHER:
-        return {
-            "query": query,
-            "error": "gpt-researcher library not installed. Install with: pip install gpt-researcher",
-            "report": "",
-            "sources": [],
-            "total_sources": 0,
-            "report_type": report_type,
-            "library_installed": False,
-        }
+        result = _create_error_response(
+            query,
+            "gpt-researcher library not installed. Install with: pip install gpt-researcher",
+            report_type,
+        )
+        result["library_installed"] = False
+        return result
 
     try:
-        logger.info("gpt_researcher_start query=%s report_type=%s max_sources=%d", query, report_type, max_sources)
+        logger.info(
+            "gpt_researcher_start query=%s report_type=%s max_sources=%d",
+            query,
+            report_type,
+            max_sources,
+        )
 
         # Initialize researcher
         # Note: GPT Researcher requires LLM API keys (OpenAI, etc.)
@@ -110,30 +131,30 @@ async def research_gpt_researcher(
                 config_path=None,  # Use default config or env-based config
                 verbose=False,
             )
-        except TypeError:
+        except TypeError as e:
             # Older versions might not support all parameters
+            logger.debug("GPTResearcher init with full params failed, trying minimal: %s", e)
             researcher = GPTResearcher(query=query)
 
-        # Run research (this is async in newer versions)
+        # Run research (check if methods are async)
         try:
-            # Try async/await pattern
-            await researcher.conduct_research()
-            report = await researcher.write_report()
-        except (AttributeError, TypeError):
-            # Fallback for synchronous or different API
-            try:
+            if inspect.iscoroutinefunction(researcher.conduct_research):
+                await researcher.conduct_research()
+                report = await researcher.write_report()
+            else:
                 researcher.conduct_research()
                 report = researcher.write_report()
-            except Exception as e:
-                logger.warning("gpt_researcher_execution_failed: %s", e)
-                return {
-                    "query": query,
-                    "error": f"gpt-researcher execution error: {str(e)}",
-                    "report": "",
-                    "sources": [],
-                    "total_sources": 0,
-                    "report_type": report_type,
-                }
+        except Exception as e:
+            logger.warning("gpt_researcher_execution_failed: %s", e, exc_info=True)
+            return _create_error_response(
+                query,
+                f"gpt-researcher execution error: {str(e)}",
+                report_type,
+            )
+
+        # Validate report is a string
+        if not isinstance(report, str):
+            report = str(report) if report else ""
 
         # Extract sources
         sources = []
@@ -142,21 +163,23 @@ async def research_gpt_researcher(
             if hasattr(researcher, "sources"):
                 raw_sources = researcher.sources
                 if isinstance(raw_sources, list):
-                    for src in raw_sources[:max_sources]:
+                    # Limit to max_sources
+                    raw_sources_limited = raw_sources[:max_sources]
+                    for src in raw_sources_limited:
                         if isinstance(src, dict):
                             sources.append({
                                 "url": src.get("url", ""),
                                 "title": src.get("title", ""),
-                                "content": src.get("content", "")[:1000],  # First 1K chars
+                                "content": str(src.get("content", ""))[:1000],  # First 1K chars
                             })
                         elif hasattr(src, "url"):
                             sources.append({
-                                "url": getattr(src, "url", ""),
-                                "title": getattr(src, "title", ""),
-                                "content": getattr(src, "content", "")[:1000],
+                                "url": str(getattr(src, "url", "")),
+                                "title": str(getattr(src, "title", "")),
+                                "content": str(getattr(src, "content", ""))[:1000],
                             })
         except Exception as e:
-            logger.warning("gpt_researcher_sources_extraction_failed: %s", e)
+            logger.warning("gpt_researcher_sources_extraction_failed: %s", e, exc_info=True)
 
         # Limit report size
         if isinstance(report, str) and len(report) > MAX_REPORT_CHARS:
@@ -169,7 +192,7 @@ async def research_gpt_researcher(
             len(sources),
         )
 
-        return {
+        result: ResearchResult = {
             "query": query,
             "report": report or "",
             "sources": sources,
@@ -177,14 +200,8 @@ async def research_gpt_researcher(
             "report_type": report_type,
             "library_installed": True,
         }
+        return result
 
     except Exception as e:
-        logger.error("gpt_researcher_failed query=%s: %s", query, e)
-        return {
-            "query": query,
-            "error": f"gpt-researcher error: {str(e)}",
-            "report": "",
-            "sources": [],
-            "total_sources": 0,
-            "report_type": report_type,
-        }
+        logger.error("gpt_researcher_failed query=%s: %s", query, e, exc_info=True)
+        return _create_error_response(query, f"gpt-researcher error: {str(e)}", report_type)

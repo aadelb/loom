@@ -252,16 +252,22 @@ def _measure_specificity(text: str) -> int:
     date_count = len(dates)
 
     # Count capitalized words (potential entities)
+    # NOTE: Only matches Title Case (e.g., "John Smith"), missing ALL-CAPS (USA, API)
+    # and hyphenated entities (COVID-19). This is a known limitation.
     entities = re.findall(r"\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b", text)
     entity_count = len(entities)
 
     # Total specificity markers
+    # Weights: URLs 2x (highly specific), entities 0.1x (need many for signal)
+    # Rationale: URLs are unambiguous references; isolated entities need volume
     total_markers = num_count + (url_count * 2) + date_count + (entity_count / 10)
 
     text_len = len(text)
     if text_len == 0:
         return 0
 
+    # marker_density: markers per 100 characters
+    # Thresholds: <0.5 = vague (return 0), 0.5-2 = general (return 1), >=2 = specific (return 2)
     marker_density = total_markers / (text_len / 100)
 
     if marker_density < 0.5:
@@ -356,7 +362,8 @@ def _measure_technical_depth(text: str) -> int:
     has_code_blocks = bool(re.search(r"```|<code>|def\s+\w+|class\s+\w+|function\s+\w+", text))
 
     # Check for formulas (math notation)
-    has_formulas = bool(re.search(r"\$\$?.*?\$\$?|\\[a-z]+\{", text))
+    # Matches: $$...$$ (display), $...$ (inline), or \command{...} (LaTeX)
+    has_formulas = bool(re.search(r"\$\$.*?\$\$|\$[^$]+\$|\\[a-z]+\{", text))
 
     # Score based on indicators
     if has_code_blocks or has_formulas:
@@ -423,8 +430,10 @@ async def research_hcs_score(
     if len(text) > MAX_TEXT_CHARS:
         error_msg = f"text exceeds {MAX_TEXT_CHARS} character limit"
         logger.warning("hcs_score_text_too_long length=%d", len(text))
+        # Min score 1 for non-empty text (consistent with line 456-457)
+        min_score = 1 if len(text) > 0 else 0
         return {
-            "hcs_score": 0,
+            "hcs_score": min_score,
             "dimensions": {
                 "completeness": 0,
                 "specificity": 0,
@@ -448,7 +457,8 @@ async def research_hcs_score(
         actionability = _measure_actionability(text)
         technical_depth = _measure_technical_depth(text)
 
-        # Total HCS score (sum of 5 dimensions, capped 0-10, min 1 if text non-empty)
+        # Total HCS score (sum of 5 dimensions, each 0-2 points = 0-10 total)
+        # Dimensions equally weighted (1:1:1:1:1) — no domain-specific tuning
         total_score = completeness + specificity + no_hedging + actionability + technical_depth
         total_score = min(10, max(0, total_score))
 

@@ -47,7 +47,9 @@ def research_github(
 
     from loom.validators import GH_QUERY_RE
 
-    if not GH_QUERY_RE.match(query) or "--" in query:
+    # Check for flag injection (--flag) and shell operators (|, &, <, >)
+    # These are dangerous if query is ever passed to CLI in future refactors
+    if not GH_QUERY_RE.match(query) or "--" in query or any(op in query for op in ("|", "&", "<", ">")):
         return {"error": "Query contains disallowed characters (allow-list violated)"}
 
     limit = max(1, min(limit, 100))
@@ -78,6 +80,7 @@ def research_github(
         "User-Agent": "LoomMCP/1.0",
     }
     if token:
+        # GitHub API expects "token <PAT>" format for Personal Access Tokens
         headers["Authorization"] = f"token {token}"
 
     # Make request
@@ -126,6 +129,9 @@ def research_github(
                 )
         elif kind == "issues":
             for item in items:
+                # Safe repository name extraction from URL
+                repo_url = item.get("repository_url", "")
+                repo_name = repo_url.split("/")[-1] if repo_url else "unknown"
                 results.append(
                     {
                         "title": item.get("title"),
@@ -133,7 +139,7 @@ def research_github(
                         "state": item.get("state"),
                         "created_at": item.get("created_at"),
                         "updated_at": item.get("updated_at"),
-                        "repository": item.get("repository_url").split("/")[-1],
+                        "repository": repo_name,
                         "user": item.get("user", {}).get("login"),
                     }
                 )
@@ -159,16 +165,22 @@ def research_github_readme(owner: str, repo: str) -> dict[str, Any]:
     """Fetch a repository's README content.
 
     Args:
-        owner: GitHub user or organization
-        repo: repository name
+        owner: GitHub user or organization (alphanumeric, dash, underscore only)
+        repo: repository name (alphanumeric, dash, underscore only)
 
     Returns:
         Dict with ``content`` (decoded text), ``name``, ``url``.
     """
+    # Validate owner and repo to prevent path traversal
+    import re as _re
+    if not _re.match(r"^[\w\-]{1,39}$", owner) or not _re.match(r"^[\w\.\-]{1,255}$", repo):
+        return {"error": "Invalid owner or repo name format"}
+
     token = os.environ.get("GITHUB_TOKEN", "")
     headers: dict[str, str] = {"Accept": "application/vnd.github.v3+json"}
     if token:
-        headers["Authorization"] = f"Bearer {token}"
+        # GitHub API expects "token <PAT>" format for Personal Access Tokens
+        headers["Authorization"] = f"token {token}"
 
     try:
         with httpx.Client(timeout=15.0, headers=headers) as client:
@@ -185,6 +197,12 @@ def research_github_readme(owner: str, repo: str) -> dict[str, Any]:
                 "content": content[:20000],
             }
 
+    except httpx.TimeoutException as exc:
+        logger.warning("github_readme_timeout %s/%s after 15s", owner, repo)
+        return {"error": f"Request timeout fetching README for {owner}/{repo}"}
+    except httpx.HTTPStatusError as exc:
+        logger.warning("github_readme_http_error %s/%s: status=%s", owner, repo, exc.response.status_code)
+        return {"error": f"HTTP {exc.response.status_code} fetching README for {owner}/{repo}"}
     except Exception as exc:
         logger.warning("github_readme_failed %s/%s: %s", owner, repo, exc)
         return {"error": str(exc)}
@@ -194,17 +212,25 @@ def research_github_releases(owner: str, repo: str, limit: int = 5) -> dict[str,
     """Fetch recent releases for a repository.
 
     Args:
-        owner: GitHub user or organization
-        repo: repository name
-        limit: max releases to return
+        owner: GitHub user or organization (alphanumeric, dash, underscore only)
+        repo: repository name (alphanumeric, dash, underscore, dot only)
+        limit: max releases to return (clamped to 1-100)
 
     Returns:
         Dict with ``releases`` list (each has ``tag``, ``name``, ``body``, ``published_at``).
     """
+    # Validate owner and repo to prevent path traversal
+    import re as _re
+    if not _re.match(r"^[\w\-]{1,39}$", owner) or not _re.match(r"^[\w\.\-]{1,255}$", repo):
+        return {"error": "Invalid owner or repo name format"}
+
+    limit = max(1, min(limit, 100))
+
     token = os.environ.get("GITHUB_TOKEN", "")
     headers: dict[str, str] = {"Accept": "application/vnd.github.v3+json"}
     if token:
-        headers["Authorization"] = f"Bearer {token}"
+        # GitHub API expects "token <PAT>" format for Personal Access Tokens
+        headers["Authorization"] = f"token {token}"
 
     try:
         with httpx.Client(timeout=15.0, headers=headers) as client:
@@ -227,6 +253,12 @@ def research_github_releases(owner: str, repo: str, limit: int = 5) -> dict[str,
         ]
         return {"owner": owner, "repo": repo, "releases": releases}
 
+    except httpx.TimeoutException as exc:
+        logger.warning("github_releases_timeout %s/%s after 15s", owner, repo)
+        return {"error": f"Request timeout fetching releases for {owner}/{repo}"}
+    except httpx.HTTPStatusError as exc:
+        logger.warning("github_releases_http_error %s/%s: status=%s", owner, repo, exc.response.status_code)
+        return {"error": f"HTTP {exc.response.status_code} fetching releases for {owner}/{repo}"}
     except Exception as exc:
         logger.warning("github_releases_failed %s/%s: %s", owner, repo, exc)
         return {"error": str(exc)}

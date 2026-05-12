@@ -19,12 +19,16 @@ logger = logging.getLogger("loom.tools.graph_analysis")
 
 
 def _pagerank(nodes: dict[str, dict[str, Any]], edges: dict[str, list[str]], iterations: int = 20, damping: float = 0.85) -> dict[str, float]:
-    """Compute PageRank scores for nodes."""
+    """Compute PageRank scores for nodes.
+
+    Handles dangling nodes (zero out-degree) by redistributing their mass.
+    """
     n = len(nodes)
     if n == 0:
         return {}
     rank = {node_id: 1.0 / n for node_id in nodes}
-    out_degree = {node_id: len(edges.get(node_id, [])) for node_id in nodes}
+    # Only count outgoing edges to valid nodes
+    out_degree = {node_id: len([t for t in edges.get(node_id, []) if t in nodes]) for node_id in nodes}
     incoming: dict[str, list[str]] = defaultdict(list)
     for src, targets in edges.items():
         for tgt in targets:
@@ -32,28 +36,40 @@ def _pagerank(nodes: dict[str, dict[str, Any]], edges: dict[str, list[str]], ite
                 incoming[tgt].append(src)
     for _ in range(iterations):
         new_rank = {}
+        dangling_mass = sum(rank[n_id] for n_id in nodes if out_degree[n_id] == 0)
         for node_id in nodes:
             rank_sum = sum(rank[src] / out_degree[src] for src in incoming.get(node_id, []) if out_degree[src] > 0)
-            new_rank[node_id] = (1.0 - damping) / n + damping * rank_sum
+            new_rank[node_id] = (1.0 - damping) / n + damping * (rank_sum + dangling_mass / n)
         rank = new_rank
     return rank
 
 
 def _centrality(nodes: dict[str, dict[str, Any]], edges: dict[str, list[str]]) -> dict[str, float]:
-    """Compute degree centrality for nodes."""
+    """Compute in-degree and out-degree centrality for directed graphs.
+
+    Returns average of normalized in-degree and out-degree (range [0, 1]).
+    """
     if not nodes:
         return {}
     n = len(nodes)
     centrality = {}
     for node_id in nodes:
-        out_deg = len(edges.get(node_id, []))
+        # Count only edges to/from valid nodes
+        out_deg = len([t for t in edges.get(node_id, []) if t in nodes])
         in_deg = sum(1 for targets in edges.values() if node_id in targets)
-        centrality[node_id] = (out_deg + in_deg) / (2 * (n - 1)) if n > 1 else 0.0
+        # Normalize each separately (range [0, 1]) for directed graphs
+        norm_out = out_deg / (n - 1) if n > 1 else 0.0
+        norm_in = in_deg / (n - 1) if n > 1 else 0.0
+        # Return average to get overall centrality
+        centrality[node_id] = (norm_out + norm_in) / 2.0
     return centrality
 
 
 def _shortest_path(nodes: dict[str, dict[str, Any]], edges: dict[str, list[str]], source: str, target: str) -> dict[str, Any]:
-    """Compute shortest path using BFS."""
+    """Compute shortest path using BFS.
+
+    Distance is the number of edges (hops), not nodes.
+    """
     if source not in nodes or target not in nodes:
         return {"path": None, "distance": -1}
     if source == target:
@@ -64,7 +80,8 @@ def _shortest_path(nodes: dict[str, dict[str, Any]], edges: dict[str, list[str]]
         node, path = queue.popleft()
         for neighbor in edges.get(node, []):
             if neighbor == target:
-                return {"path": path + [neighbor], "distance": len(path)}
+                full_path = path + [neighbor]
+                return {"path": full_path, "distance": len(full_path) - 1}
             if neighbor not in visited and neighbor in nodes:
                 visited.add(neighbor)
                 queue.append((neighbor, path + [neighbor]))
@@ -72,15 +89,28 @@ def _shortest_path(nodes: dict[str, dict[str, Any]], edges: dict[str, list[str]]
 
 
 def _community_detect(node_list: list[str], adj: dict[int, set[int]]) -> dict[int, int]:
-    """Label propagation for community detection."""
+    """Label propagation for community detection.
+
+    Stops early if converged. Uses Counter for deterministic label selection.
+    """
+    from collections import Counter
+
     labels = {i: i for i in range(len(node_list))}
-    for _ in range(5):
+    max_iterations = 20
+    for iteration in range(max_iterations):
         new_labels = labels.copy()
         for idx in range(len(node_list)):
             neighbors = list(adj.get(idx, set()))
             if neighbors:
                 neighbor_labels = [labels[n] for n in neighbors]
-                new_labels[idx] = max(set(neighbor_labels), key=neighbor_labels.count)
+                # Use Counter.most_common() for deterministic label selection
+                label_counts = Counter(neighbor_labels)
+                # If neighbor exists, take most common; tie-break by smallest label
+                most_common = label_counts.most_common(1)[0][0]
+                new_labels[idx] = most_common
+        # Early convergence check
+        if new_labels == labels:
+            break
         labels = new_labels
     return labels
 
@@ -197,28 +227,35 @@ async def research_transaction_graph(addresses: list[str], chain: str = "bitcoin
             except Exception as e:
                 logger.debug("blockchain.info fetch failed for %s: %s", addr, e)
 
-    adj: dict[str, set[str]] = defaultdict(set)
+    # Build adjacency list for DIRECTED edges (transactions flow one way)
+    adj_out: dict[str, set[str]] = defaultdict(set)
+    adj_in: dict[str, set[str]] = defaultdict(set)
     for edge in edges:
         src, tgt = edge.get("source"), edge.get("target")
         if src and tgt:
-            adj[src].add(tgt)
-            adj[tgt].add(src)
+            adj_out[src].add(tgt)
+            adj_in[tgt].add(src)
 
     clusters = []
-    visited_cluster = set()
+    visited_cluster: set[str] = set()
     for node in nodes:
         node_id = node["id"]
         if node_id in visited_cluster:
             continue
-        cluster, queue, cluster_visited = [], deque([node_id]), {node_id}
+        # Mark as visited before BFS to avoid revisiting
+        cluster: list[str] = []
+        queue: deque[str] = deque([node_id])
+        cluster_visited: set[str] = {node_id}
+        visited_cluster.add(node_id)
         while queue:
             current = queue.popleft()
             cluster.append(current)
-            for neighbor in adj.get(current, set()):
+            # Follow both outgoing and incoming edges for clustering
+            for neighbor in adj_out.get(current, set()) | adj_in.get(current, set()):
                 if neighbor not in cluster_visited:
                     cluster_visited.add(neighbor)
+                    visited_cluster.add(neighbor)
                     queue.append(neighbor)
-        visited_cluster.update(cluster)
         if len(cluster) > 1:
             clusters.append({"size": len(cluster), "members": cluster})
 
