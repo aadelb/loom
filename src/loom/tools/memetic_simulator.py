@@ -7,6 +7,7 @@ import random
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.memetic_simulator")
 
@@ -294,6 +295,7 @@ class MemeticSimulator:
             )
 
 
+@handle_tool_errors("research_memetic_simulate")
 async def research_memetic_simulate(
     idea: str,
     population_size: int = 1000,

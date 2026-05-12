@@ -7,8 +7,10 @@ import json
 import logging
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.vision_agent")
 
+@handle_tool_errors("research_vision_browse")
 
 async def research_vision_browse(url: str, task: str) -> dict[str, Any]:
     """Screenshot a URL and analyze with LLM.
@@ -112,6 +114,7 @@ async def research_vision_browse(url: str, task: str) -> dict[str, Any]:
             "suggested_actions": [],
         }
 
+@handle_tool_errors("research_vision_compare")
 
 async def research_vision_compare(url1: str, url2: str) -> dict[str, Any]:
     """Compare visual layouts of two URLs.

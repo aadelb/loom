@@ -17,6 +17,8 @@ from typing import Any
 
 import httpx
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.billing")
 
 _STRIPE_API_BASE = "https://api.stripe.com/v1"
@@ -86,6 +88,7 @@ def _read_billing_logs(cache_dir: Path, cutoff_date: datetime) -> tuple[float, d
     return total_cost, calls_by_provider, calls_by_day, model_costs, call_count
 
 
+@handle_tool_errors("research_usage_report")
 async def research_usage_report(days: int = 7) -> dict[str, Any]:
     """Aggregate LLM usage and costs from local cost tracker logs.
 
@@ -149,6 +152,7 @@ async def research_usage_report(days: int = 7) -> dict[str, Any]:
         }
 
 
+@handle_tool_errors("research_stripe_balance")
 async def research_stripe_balance() -> dict[str, Any]:
     """Get Stripe account balance.
 

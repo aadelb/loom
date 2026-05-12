@@ -28,6 +28,7 @@ except ImportError:  # pragma: no cover — optional dependency
 
 from loom.validators import validate_url, EXTERNAL_TIMEOUT_SECS
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.zendriver_backend")
 
 # Module-level browser instance and event loop management
@@ -195,6 +196,7 @@ async def _fetch_with_zendriver(
     result["elapsed_ms"] = int((time.time() - start_time) * 1000)
     return result
 
+@handle_tool_errors("research_zen_fetch")
 
 def research_zen_fetch(
     url: str,
@@ -299,6 +301,7 @@ async def _batch_fetch_concurrent(
         "elapsed_ms": int((time.time() - start_time) * 1000),
     }
 
+@handle_tool_errors("research_zen_batch")
 
 def research_zen_batch(
     urls: list[str],
@@ -490,6 +493,7 @@ async def _interact_with_page(
     result["elapsed_ms"] = int((time.time() - start_time) * 1000)
     return result
 
+@handle_tool_errors("research_zen_interact")
 
 def research_zen_interact(
     url: str,

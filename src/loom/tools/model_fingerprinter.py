@@ -12,6 +12,7 @@ import re
 from typing import Any
 
 from loom.config import CONFIG, load_config
+from loom.error_responses import handle_tool_errors
 
 try:
     from loom.tools.llm import _call_with_cascade
@@ -37,6 +38,7 @@ _BEHAVIORAL_PROBES: list[dict[str, str]] = [
 ]
 
 
+@handle_tool_errors("research_fingerprint_behavior")
 async def research_fingerprint_behavior(
     model: str = "nvidia",
     probe_count: int = 10,

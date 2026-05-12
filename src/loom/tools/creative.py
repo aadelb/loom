@@ -24,6 +24,7 @@ from functools import partial
 from typing import Any
 
 import httpx
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.creative")
 
@@ -59,6 +60,7 @@ def _parse_llm_json(text: str, fallback: Any = None) -> Any:
 # ── Red Team Mode (#23) ─────────────────────────────────────────────
 
 
+@handle_tool_errors("research_red_team")
 async def research_red_team(
     claim: str,
     n_counter: int = 3,
@@ -135,6 +137,7 @@ async def research_red_team(
 # ── Multi-Lingual Search (#24) ──────────────────────────────────────────
 
 
+@handle_tool_errors("research_multilingual")
 async def research_multilingual(
     query: str,
     languages: list[str] | None = None,
@@ -220,6 +223,7 @@ async def research_multilingual(
 # ── Consensus Scoring (#27) ─────────────────────────────────────────────
 
 
+@handle_tool_errors("research_consensus")
 async def research_consensus(
     query: str,
     providers: list[str] | None = None,
@@ -302,6 +306,7 @@ async def research_consensus(
 # ── Misinformation Stress Test (#28) ────────────────────────────────────
 
 
+@handle_tool_errors("research_misinfo_check")
 async def research_misinfo_check(
     claim: str,
     n_sources: int = 5,
@@ -391,6 +396,7 @@ async def research_misinfo_check(
 # ── Temporal Diffing (#30) ──────────────────────────────────────────────
 
 
+@handle_tool_errors("research_temporal_diff")
 async def research_temporal_diff(
     url: str,
     max_cost_usd: float = 0.05,
@@ -478,6 +484,7 @@ async def research_temporal_diff(
 # ── Citation Graph (#31) ────────────────────────────────────────────────
 
 
+@handle_tool_errors("research_citation_graph")
 async def research_citation_graph(
     paper_query: str,
     depth: int = 1,
@@ -619,6 +626,7 @@ async def research_citation_graph(
 # ── AI Content Detector (#32) ───────────────────────────────────────────
 
 
+@handle_tool_errors("research_ai_detect")
 async def research_ai_detect(
     text: str,
     max_cost_usd: float = 0.02,
@@ -674,6 +682,7 @@ async def research_ai_detect(
 # ── Curriculum Generator (#33) ──────────────────────────────────────────
 
 
+@handle_tool_errors("research_curriculum")
 async def research_curriculum(
     topic: str,
     max_cost_usd: float = 0.10,
@@ -753,6 +762,7 @@ async def research_curriculum(
 # ── Community Sentiment (#34) ───────────────────────────────────────────
 
 
+@handle_tool_errors("research_community_sentiment")
 async def research_community_sentiment(
     query: str,
     n: int = 5,
@@ -807,6 +817,7 @@ async def research_community_sentiment(
 # ── Wikipedia Ghost (#35) ───────────────────────────────────────────────
 
 
+@handle_tool_errors("research_wiki_ghost")
 async def research_wiki_ghost(
     topic: str,
     language: str = "en",
@@ -922,6 +933,7 @@ async def research_wiki_ghost(
 # ── Semantic Sitemap Crawler (#36) ──────────────────────────────────────
 
 
+@handle_tool_errors("research_semantic_sitemap")
 async def research_semantic_sitemap(
     domain: str,
     max_pages: int = 50,

@@ -29,6 +29,7 @@ from typing import Any
 import httpx
 
 from loom.validators import validate_url
+from loom.error_responses import handle_tool_errors
 
 try:
     from loom.cache import get_cache
@@ -272,6 +273,7 @@ def _parse_scrapegraphai_config() -> dict[str, Any]:
     return config
 
 
+@handle_tool_errors("research_graph_scrape")
 async def research_graph_scrape(
     url: str,
     query: str,
@@ -410,6 +412,7 @@ async def research_graph_scrape(
         return {"error": str(exc), "tool": "research_graph_scrape"}
 
 
+@handle_tool_errors("research_knowledge_extract")
 async def research_knowledge_extract(
     text: str,
     entity_types: list[str] | None = None,
@@ -494,6 +497,7 @@ async def research_knowledge_extract(
         return {"error": str(exc), "tool": "research_knowledge_extract"}
 
 
+@handle_tool_errors("research_multi_page_graph")
 async def research_multi_page_graph(
     urls: list[str],
     query: str,

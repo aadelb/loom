@@ -13,6 +13,8 @@ import time
 from dataclasses import dataclass
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 try:
     from loom.tools.reframe_strategies import ALL_STRATEGIES
 except ImportError:
@@ -113,6 +115,7 @@ def _apply_strategy(agent: Agent, target_prompt: str) -> dict[str, Any]:
     return best_var
 
 
+@handle_tool_errors("research_swarm_attack")
 async def research_swarm_attack(
     target_prompt: str,
     swarm_size: int = 5,

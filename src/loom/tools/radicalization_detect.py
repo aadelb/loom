@@ -11,6 +11,7 @@ from __future__ import annotations
 import logging
 import re
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.radicalization_detect")
 
@@ -166,6 +167,7 @@ def _extract_call_to_action(text: str) -> tuple[float, list[str]]:
     return score, examples
 
 
+@handle_tool_errors("research_radicalization_detect")
 async def research_radicalization_detect(
     text: str,
     context: str | None = None,

@@ -15,6 +15,7 @@ import logging
 import re
 from dataclasses import dataclass
 from typing import Any, Literal
+from loom.error_responses import handle_tool_errors
 
 try:
     from loom.tools.reframe_strategies import ALL_STRATEGIES
@@ -461,6 +462,7 @@ def _get_router() -> ReframeRouter:
     return _router
 
 
+@handle_tool_errors("research_reframe_or_integrate")
 async def research_reframe_or_integrate(
     query: str, context: str = ""
 ) -> dict[str, Any]:

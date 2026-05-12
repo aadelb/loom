@@ -11,6 +11,7 @@ import logging
 import re
 from collections import Counter
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.persona_profile")
 
@@ -315,6 +316,7 @@ def _parse_timestamps(timestamps: list[Any]) -> dict[str, Any]:
     }
 
 
+@handle_tool_errors("research_persona_profile")
 async def research_persona_profile(
     texts: list[str],
     metadata: dict[str, Any] | None = None,

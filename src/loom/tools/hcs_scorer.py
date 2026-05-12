@@ -16,6 +16,7 @@ import re
 import warnings
 from dataclasses import dataclass, field
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.hcs_scorer")
 
@@ -799,6 +800,7 @@ def _hcs_recommendation(hcs_10: float) -> str:
 # PUBLIC MCP TOOL FUNCTIONS
 # ============================================================================
 
+@handle_tool_errors("research_hcs_score")
 async def research_hcs_score(
     text: str,
     query: str | None = None,
@@ -957,6 +959,7 @@ async def research_hcs_score(
         }
 
 
+@handle_tool_errors("research_hcs_score_prompt")
 async def research_hcs_score_prompt(
     prompt: str,
     use_llm: bool = False,
@@ -997,6 +1000,7 @@ async def research_hcs_score_prompt(
         return {"status": "error", "error": str(exc)}
 
 
+@handle_tool_errors("research_hcs_score_response")
 async def research_hcs_score_response(
     prompt: str,
     response: str,
@@ -1038,6 +1042,7 @@ async def research_hcs_score_response(
         return {"status": "error", "error": str(exc)}
 
 
+@handle_tool_errors("research_hcs_score_full")
 async def research_hcs_score_full(
     prompt: str,
     response: str,
@@ -1105,6 +1110,7 @@ async def research_hcs_score_full(
         return {"status": "error", "error": str(exc)}
 
 
+@handle_tool_errors("research_hcs_compare")
 async def research_hcs_compare(
     prompt: str,
     responses: list[str],
@@ -1152,6 +1158,7 @@ async def research_hcs_compare(
         return {"status": "error", "error": str(exc)}
 
 
+@handle_tool_errors("research_hcs_batch")
 async def research_hcs_batch(
     pairs: list[dict[str, str]],
     use_llm: bool = False,
@@ -1211,6 +1218,7 @@ async def research_hcs_batch(
         return {"status": "error", "error": str(exc)}
 
 
+@handle_tool_errors("research_hcs_rubric")
 async def research_hcs_rubric(
     action: str = "get_rubric",
     score: int | None = None,

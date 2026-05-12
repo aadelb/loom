@@ -15,6 +15,7 @@ from urllib.parse import quote
 import httpx
 
 from loom.http_helpers import fetch_text
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.culture_dna")
 
@@ -152,6 +153,7 @@ def _classify_culture_type(signals: list[dict[str, Any]]) -> str:
         return "hybrid"
 
 
+@handle_tool_errors("research_culture_dna")
 async def research_culture_dna(
     company: str,
     domain: str = "",

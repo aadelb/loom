@@ -5,10 +5,12 @@ import logging
 from typing import Any
 
 from loom.validators import validate_url, UrlSafetyError
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.reputation_scorer")
 
 
+@handle_tool_errors("research_source_reputation")
 async def research_source_reputation(url: str) -> dict[str, Any]:
     """Score reputation of a source URL."""
     try:

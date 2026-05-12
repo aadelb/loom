@@ -5,10 +5,12 @@ from __future__ import annotations
 import logging
 import re
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.model_compare")
 
 
+@handle_tool_errors("research_compare_responses")
 async def research_compare_responses(
     responses: list[dict],
     comparison_type: str = "quality",
@@ -78,6 +80,7 @@ async def research_compare_responses(
         return {"error": str(exc), "tool": "research_compare_responses"}
 
 
+@handle_tool_errors("research_model_consensus")
 async def research_model_consensus(
     responses: list[dict],
     threshold: float = 0.7,

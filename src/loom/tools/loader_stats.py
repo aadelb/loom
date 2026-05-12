@@ -5,12 +5,14 @@ monitor lazy-loading performance, and troubleshoot tool import issues.
 """
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 from typing import Any
 
 from loom.tool_loader import get_loader
 
 
+@handle_tool_errors("research_loader_stats")
 async def research_loader_stats() -> dict[str, Any]:
     """Get lazy tool loader statistics and loading performance metrics.
 

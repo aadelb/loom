@@ -6,9 +6,9 @@ import asyncio
 import logging
 import re
 from typing import Any
-
 import httpx
 
+from loom.error_responses import handle_tool_errors
 from loom.validators import validate_url
 
 logger = logging.getLogger("loom.tools.social_intel")
@@ -81,6 +81,7 @@ async def _check_profile_exists(username: str, platform: str, url: str) -> tuple
         return (platform, "unknown", url)
 
 
+@handle_tool_errors("research_social_search")
 async def research_social_search(
     username: str,
     platforms: list[str] | None = None,
@@ -182,6 +183,7 @@ async def research_social_search(
         return {"error": str(exc), "tool": "research_social_search"}
 
 
+@handle_tool_errors("research_social_profile")
 async def research_social_profile(url: str) -> dict[str, Any]:
     """Extract public profile metadata from a social media URL.
 

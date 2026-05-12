@@ -5,6 +5,7 @@ research_adapt_complexity: Adjust text complexity to target reading level (1-20)
 """
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import logging
 import re
@@ -189,6 +190,7 @@ def _get_target_vocabulary(level: int) -> dict:
     return VOCAB_LEVELS[20]
 
 
+@handle_tool_errors("research_personalize_output")
 async def research_personalize_output(
     content: str,
     audience: str = "executive",
@@ -313,6 +315,7 @@ async def research_personalize_output(
         return {"error": str(exc), "tool": "research_personalize_output"}
 
 
+@handle_tool_errors("research_adapt_complexity")
 async def research_adapt_complexity(
     content: str,
     target_reading_level: int = 12,

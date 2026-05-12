@@ -1,9 +1,12 @@
 """Social graph demonstration and visualization tools."""
+
 from __future__ import annotations
 
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
 
+@handle_tool_errors("research_social_graph_demo")
 async def research_social_graph_demo(username: str) -> dict[str, Any]:
     """Generate social graph demo for a username."""
     try:

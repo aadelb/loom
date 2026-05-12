@@ -5,11 +5,13 @@ from __future__ import annotations
 import ast
 import logging
 from pathlib import Path
+from loom.error_responses import handle_tool_errors
 from typing import Any
 
 logger = logging.getLogger("loom.tools.openapi_gen")
 
 
+@handle_tool_errors("research_openapi_schema")
 async def research_openapi_schema() -> dict[str, Any]:
     """Generate OpenAPI 3.0 schema for all Loom research_* tools.
 
@@ -51,6 +53,7 @@ async def research_openapi_schema() -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_openapi_schema"}
 
 
+@handle_tool_errors("research_tool_search")
 async def research_tool_search(query: str, limit: int = 10) -> dict[str, Any]:
     """Search tools by keyword/name using natural language matching.
 

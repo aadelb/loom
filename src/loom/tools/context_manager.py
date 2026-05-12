@@ -13,6 +13,7 @@ import logging
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.context_manager")
 
@@ -57,6 +58,7 @@ def _save_persistent_context(context: dict[str, Any]) -> None:
         logger.error("context_save_failed error=%s", e)
 
 
+@handle_tool_errors("research_context_set")
 async def research_context_set(
     key: str,
     value: str,
@@ -98,6 +100,7 @@ async def research_context_set(
         return {"error": str(exc), "tool": "research_context_set"}
 
 
+@handle_tool_errors("research_context_get")
 async def research_context_get(key: str = "") -> dict[str, Any]:
     """Get context variable(s).
 
@@ -137,6 +140,7 @@ async def research_context_get(key: str = "") -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_context_get"}
 
 
+@handle_tool_errors("research_context_clear")
 async def research_context_clear(
     scope: Literal["session", "persistent", "all"] = "session",
 ) -> dict[str, Any]:

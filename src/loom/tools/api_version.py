@@ -6,9 +6,12 @@ import sys
 import time
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 _start_time = time.time()
 
 
+@handle_tool_errors("research_api_version")
 async def research_api_version() -> dict[str, Any]:
     """Return current API version info with system metadata."""
     try:
@@ -28,6 +31,7 @@ async def research_api_version() -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_api_version"}
 
 
+@handle_tool_errors("research_api_changelog")
 async def research_api_changelog(since_version: str = "3.0.0") -> dict[str, Any]:
     """Return changelog of features added/changed between versions.
 
@@ -63,6 +67,7 @@ async def research_api_changelog(since_version: str = "3.0.0") -> dict[str, Any]
         return {"error": str(exc), "tool": "research_api_changelog"}
 
 
+@handle_tool_errors("research_api_deprecations")
 async def research_api_deprecations() -> dict[str, Any]:
     """List deprecated tools/features scheduled for removal."""
     try:

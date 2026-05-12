@@ -9,6 +9,7 @@ Provides MCP tools for submitting, monitoring, and managing long-running jobs:
 """
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import json
 import logging
@@ -24,6 +25,7 @@ except ImportError:
 logger = logging.getLogger("loom.tools.job_tools")
 
 
+@handle_tool_errors("research_job_submit")
 async def research_job_submit(
     tool_name: str,
     params: dict[str, Any],
@@ -68,6 +70,7 @@ async def research_job_submit(
         return {"error": str(exc), "tool": "research_job_submit"}
 
 
+@handle_tool_errors("research_job_status")
 async def research_job_status(job_id: str) -> dict[str, Any]:
     """Get the current status of a job.
 
@@ -96,6 +99,7 @@ async def research_job_status(job_id: str) -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_job_status"}
 
 
+@handle_tool_errors("research_job_result")
 async def research_job_result(job_id: str) -> dict[str, Any]:
     """Get the result of a completed job.
 
@@ -126,6 +130,7 @@ async def research_job_result(job_id: str) -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_job_result"}
 
 
+@handle_tool_errors("research_job_list")
 async def research_job_list(
     status: str | None = None,
     limit: int = 20,
@@ -163,6 +168,7 @@ async def research_job_list(
         return {"error": str(exc), "tool": "research_job_list"}
 
 
+@handle_tool_errors("research_job_cancel")
 async def research_job_cancel(job_id: str) -> dict[str, Any]:
     """Cancel a pending or running job.
 

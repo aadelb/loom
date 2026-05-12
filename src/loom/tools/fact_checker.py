@@ -15,6 +15,7 @@ from urllib.parse import quote
 import httpx
 
 from loom.http_helpers import fetch_json, fetch_text
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.fact_checker")
 
@@ -235,6 +236,7 @@ def _aggregate_assessments(sources: list[dict[str, Any]]) -> tuple[str, float]:
         return "unverified", 0.0
 
 
+@handle_tool_errors("research_fact_check")
 async def research_fact_check(
     claim: str,
     max_sources: int = 10,

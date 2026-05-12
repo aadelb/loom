@@ -15,6 +15,8 @@ from urllib.parse import quote
 
 import httpx
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.arxiv_pipeline")
 
 # Default keywords for arXiv search
@@ -117,6 +119,7 @@ def _generate_strategy_template(description: str, technique_type: str) -> str:
     return f"Technique: {desc_clean}..."
 
 
+@handle_tool_errors("research_arxiv_ingest")
 async def research_arxiv_ingest(
     keywords: list[str] | None = None,
     days_back: int = 7,
@@ -250,6 +253,7 @@ async def research_arxiv_ingest(
         }
 
 
+@handle_tool_errors("research_arxiv_extract_techniques")
 async def research_arxiv_extract_techniques(
     paper_abstract: str,
     paper_title: str = "",

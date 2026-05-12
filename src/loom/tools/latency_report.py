@@ -5,6 +5,7 @@ and analyze performance characteristics of the Loom MCP service.
 """
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import logging
 from typing import Any
@@ -14,6 +15,7 @@ from loom.tool_latency import get_latency_tracker
 log = logging.getLogger("loom.tools.latency_report")
 
 
+@handle_tool_errors("research_latency_report")
 async def research_latency_report(tool_name: str = "") -> dict[str, Any]:
     """Get latency statistics for one tool or all tools.
 

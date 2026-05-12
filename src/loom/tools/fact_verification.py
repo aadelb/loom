@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 
+@handle_tool_errors("research_fact_verify")
 async def research_fact_verify(claim: str) -> dict[str, Any]:
     """Verify a claim against known sources."""
     try:
@@ -18,6 +20,7 @@ async def research_fact_verify(claim: str) -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_fact_verify"}
 
 
+@handle_tool_errors("research_batch_verify")
 async def research_batch_verify(claims: list[str]) -> dict[str, Any]:
     """Verify multiple claims in batch."""
     try:

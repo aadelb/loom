@@ -1,6 +1,7 @@
 """research_massdns_resolve — High-performance DNS resolver for bulk domain resolution."""
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import asyncio
 import logging
@@ -107,6 +108,7 @@ class MassDNSResult(BaseModel):
     elapsed_ms: int = 0
 
 
+@handle_tool_errors("research_massdns_resolve")
 async def research_massdns_resolve(
     domains: list[str] | str,
     resolver_file: str = "/tmp/resolvers.txt",

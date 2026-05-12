@@ -6,6 +6,8 @@ import asyncio
 import logging
 from typing import Any, Literal, cast
 
+from loom.error_responses import handle_tool_errors
+
 try:
     from loom.params import SpiderParams
     from loom.tools.fetch import research_fetch
@@ -29,6 +31,7 @@ def _get_config_values() -> tuple[int, int, int]:
         return 30, 100, 10
 
 
+@handle_tool_errors("research_spider")
 async def research_spider(
     urls: list[str],
     mode: str = "stealthy",

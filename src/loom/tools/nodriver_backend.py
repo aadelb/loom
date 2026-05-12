@@ -32,6 +32,7 @@ except ImportError:  # pragma: no cover
 from pydantic import BaseModel, ConfigDict, Field
 
 from loom.cache import get_cache
+from loom.error_responses import handle_tool_errors
 from loom.validators import EXTERNAL_TIMEOUT_SECS, validate_url
 
 logger = logging.getLogger("loom.nodriver_backend")
@@ -90,6 +91,7 @@ class NodriverSessionResult(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
 
+@handle_tool_errors("research_nodriver_fetch")
 async def research_nodriver_fetch(
     url: str,
     wait_for: str | None = None,
@@ -260,6 +262,7 @@ async def research_nodriver_fetch(
     return result_dict
 
 
+@handle_tool_errors("research_nodriver_extract")
 async def research_nodriver_extract(
     url: str,
     css_selector: str | None = None,
@@ -388,6 +391,7 @@ async def research_nodriver_extract(
     return result.model_dump()
 
 
+@handle_tool_errors("research_nodriver_session")
 async def research_nodriver_session(
     action: Literal["open", "navigate", "extract", "close"],
     session_name: str = "default",

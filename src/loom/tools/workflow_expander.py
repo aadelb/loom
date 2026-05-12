@@ -7,6 +7,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.workflow_expander")
 
 # Category keywords for tool classification
@@ -84,6 +85,7 @@ def _build_workflow(
         for i, (module_name, func_name) in enumerate(all_tools[:max_steps])
     ]
 
+@handle_tool_errors("research_workflow_generate")
 
 async def research_workflow_generate(
     category: str = "auto",
@@ -145,6 +147,7 @@ async def research_workflow_generate(
     except Exception as exc:
         return {"error": str(exc), "tool": "research_workflow_generate"}
 
+@handle_tool_errors("research_workflow_coverage")
 
 async def research_workflow_coverage() -> dict[str, Any]:
     """Report workflow coverage across all tools and categories.

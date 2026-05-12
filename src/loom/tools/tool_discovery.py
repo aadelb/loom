@@ -15,6 +15,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.tool_discovery")
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -714,6 +715,7 @@ class DiscoverResponse(BaseModel):
 # Rebuild pydantic model after defining Any
 DiscoverResponse.model_rebuild()
 
+@handle_tool_errors("research_discover")
 
 async def research_discover(
     category: str = "",

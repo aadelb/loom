@@ -20,6 +20,7 @@ import logging
 import time
 from dataclasses import asdict
 from typing import Any, Literal, cast
+from loom.error_responses import handle_tool_errors
 
 try:
     from mcp.types import TextContent
@@ -147,6 +148,7 @@ def _is_cloudflare_block(result: FetchResult) -> bool:
     )
 
 
+@handle_tool_errors("research_fetch")
 async def research_fetch(
     url: str,
     mode: str = "stealthy",

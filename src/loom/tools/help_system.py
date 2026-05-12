@@ -9,6 +9,7 @@ import logging
 import re
 from functools import lru_cache
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 try:
     from mcp.types import TextContent
@@ -311,6 +312,7 @@ def _categorize_tool(tool_name: str) -> str:
     return "other"
 
 
+@handle_tool_errors("research_help")
 def research_help(tool_name: str = "") -> dict[str, Any]:
     """Get help documentation for Loom tools.
 
@@ -378,6 +380,7 @@ def research_help(tool_name: str = "") -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_help"}
 
 
+@handle_tool_errors("research_tools_list")
 def research_tools_list(category: str = "") -> dict[str, Any]:
     """List Loom tools filtered by category.
 

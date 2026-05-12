@@ -5,6 +5,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.result_aggregator")
 
 MAX_RESULTS, MAX_TEXTS, MAX_TEXT_LENGTH = 100, 50, 50000
@@ -34,6 +36,7 @@ def _deduplicate_texts(texts: list[str]) -> list[str]:
     return deduped
 
 
+@handle_tool_errors("research_aggregate_results")
 async def research_aggregate_results(
     results: list[dict],
     strategy: str = "merge",
@@ -107,6 +110,7 @@ async def research_aggregate_results(
         return {"error": str(e), "strategy": strategy, "input_count": len(results)}
 
 
+@handle_tool_errors("research_aggregate_texts")
 async def research_aggregate_texts(
     texts: list[str],
     method: str = "concatenate",

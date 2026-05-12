@@ -20,6 +20,8 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.audit_query")
 
 
@@ -252,6 +254,7 @@ def _load_daily_jsonl_entries(
     return entries
 
 
+@handle_tool_errors("research_audit_query")
 async def research_audit_query(
     tool_name: str = "",
     hours: int = 24,
@@ -303,6 +306,7 @@ async def research_audit_query(
         return {"error": str(exc), "tool": "research_audit_query"}
 
 
+@handle_tool_errors("research_audit_stats")
 async def research_audit_stats(
     hours: int = 24,
 ) -> dict[str, Any]:

@@ -13,6 +13,7 @@ import logging
 import sqlite3
 from pathlib import Path
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 try:
     from loom.tools.reframe_strategies import ALL_STRATEGIES
@@ -129,6 +130,7 @@ def _get_historical_success_rate(
         return 0.5, 0.0, 0
 
 
+@handle_tool_errors("research_predict_success")
 def research_predict_success(
     prompt: str,
     strategy: str,

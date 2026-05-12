@@ -1,9 +1,11 @@
 """Load balancer status and distribution tools."""
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 from typing import Any
 
 
+@handle_tool_errors("research_lb_status")
 async def research_lb_status() -> dict[str, Any]:
     """Check load balancer status."""
     try:
@@ -16,6 +18,7 @@ async def research_lb_status() -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_lb_status"}
 
 
+@handle_tool_errors("research_lb_balance")
 async def research_lb_balance() -> dict[str, Any]:
     """Balance load across workers."""
     try:

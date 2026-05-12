@@ -11,6 +11,7 @@ from urllib.parse import quote
 import httpx
 
 from loom.validators import validate_url
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.onion_discover")
 
@@ -176,6 +177,7 @@ async def _fetch_reddit_onions(
     return urls
 
 
+@handle_tool_errors("research_onion_discover")
 async def research_onion_discover(
     query: str, max_results: int = 50
 ) -> dict[str, Any]:

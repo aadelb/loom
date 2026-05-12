@@ -1,6 +1,7 @@
 """JavaScript intelligence extraction — find API keys, endpoints, secrets in JS bundles."""
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import asyncio
 import logging
@@ -99,6 +100,7 @@ def _scan_for_env_vars(content: str) -> list[str]:
 	return list(env_vars)
 
 
+@handle_tool_errors("research_js_intel")
 async def research_js_intel(
 	url: str,
 	max_js_files: int = 20,

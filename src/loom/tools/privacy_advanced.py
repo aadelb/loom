@@ -14,6 +14,7 @@ from typing import Any
 
 from loom.validators import validate_url, UrlSafetyError
 from loom.cli_checker import is_available
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.privacy_advanced")
 
@@ -22,6 +23,7 @@ logger = logging.getLogger("loom.tools.privacy_advanced")
 # 1. Browser Fingerprint Audit
 # ============================================================================
 
+@handle_tool_errors("research_browser_fingerprint_audit")
 def research_browser_fingerprint_audit(url: str = "https://example.com") -> dict[str, Any]:
     """Analyze a URL's fingerprinting scripts (detect canvas/WebGL/audio fingerprinting code).
 
@@ -131,6 +133,7 @@ def research_browser_fingerprint_audit(url: str = "https://example.com") -> dict
 # 2. Metadata Stripping
 # ============================================================================
 
+@handle_tool_errors("research_metadata_strip")
 def research_metadata_strip(
     file_path: str,
     strip_type: str = "all",
@@ -210,6 +213,7 @@ def research_metadata_strip(
 # 3. Secure File Deletion
 # ============================================================================
 
+@handle_tool_errors("research_secure_delete")
 def research_secure_delete(
     target_path: str,
     passes: int = 3,
@@ -277,6 +281,7 @@ def research_secure_delete(
 # 4. MAC Address Randomization
 # ============================================================================
 
+@handle_tool_errors("research_mac_randomize")
 def research_mac_randomize(
     interface: str = "eth0",
     dry_run: bool = True,
@@ -366,6 +371,7 @@ def research_mac_randomize(
 # 5. DNS Leak Check
 # ============================================================================
 
+@handle_tool_errors("research_dns_leak_check")
 def research_dns_leak_check(dns_server: str = "1.1.1.1") -> dict[str, Any]:
     """Check if DNS queries leak real IP (simulated check).
 
@@ -456,6 +462,7 @@ def research_dns_leak_check(dns_server: str = "1.1.1.1") -> dict[str, Any]:
 # 6. Tor Circuit Info
 # ============================================================================
 
+@handle_tool_errors("research_tor_circuit_info")
 def research_tor_circuit_info() -> dict[str, Any]:
     """Get current Tor circuit information (if Tor is running).
 
@@ -528,6 +535,7 @@ def research_tor_circuit_info() -> dict[str, Any]:
 # 7. Privacy Score
 # ============================================================================
 
+@handle_tool_errors("research_privacy_score")
 def research_privacy_score(url: str = "") -> dict[str, Any]:
     """Calculate overall privacy score for a given URL or the current system.
 
@@ -615,6 +623,7 @@ def research_privacy_score(url: str = "") -> dict[str, Any]:
 # 8. USB Device Monitor
 # ============================================================================
 
+@handle_tool_errors("research_usb_monitor")
 def research_usb_monitor(dry_run: bool = True) -> dict[str, Any]:
     """Monitor USB device connections (dry-run by default).
 
@@ -726,6 +735,7 @@ def research_usb_monitor(dry_run: bool = True) -> dict[str, Any]:
 # 9. Network Anomaly Detection
 # ============================================================================
 
+@handle_tool_errors("research_network_anomaly")
 def research_network_anomaly(
     interface: str = "eth0",
     duration_sec: int = 5,
@@ -833,6 +843,7 @@ def research_network_anomaly(
 # 10. Browser Privacy Score
 # ============================================================================
 
+@handle_tool_errors("research_browser_privacy_score")
 def research_browser_privacy_score(browser: str = "chromium") -> dict[str, Any]:
     """Assess browser privacy configuration.
 
@@ -944,6 +955,7 @@ def research_browser_privacy_score(browser: str = "chromium") -> dict[str, Any]:
 # 11. Fileless Execution (INTEGRATE-040: ulexecve)
 # ============================================================================
 
+@handle_tool_errors("research_fileless_exec")
 async def research_fileless_exec(payload: str, target: str = "memory") -> dict[str, Any]:
     """Execute payload in memory without touching disk (INTEGRATE-040: ulexecve).
 
@@ -1023,6 +1035,7 @@ async def research_fileless_exec(payload: str, target: str = "memory") -> dict[s
 # 12. ELF Binary Obfuscation (INTEGRATE-041: saruman)
 # ============================================================================
 
+@handle_tool_errors("research_elf_obfuscate")
 async def research_elf_obfuscate(binary_path: str, technique: str = "packing") -> dict[str, Any]:
     """Obfuscate ELF binary to evade static analysis (INTEGRATE-041: saruman).
 
@@ -1063,6 +1076,7 @@ async def research_elf_obfuscate(binary_path: str, technique: str = "packing") -
 # 13. Wireless Surveillance Detection (INTEGRATE-042: flock-detection)
 # ============================================================================
 
+@handle_tool_errors("research_wireless_surveillance")
 async def research_wireless_surveillance(interface: str = "wlan0", duration: int = 10) -> dict[str, Any]:
     """Detect wireless surveillance devices (INTEGRATE-042: flock-detection).
 
@@ -1110,6 +1124,7 @@ async def research_wireless_surveillance(interface: str = "wlan0", duration: int
 # 14. Fingerprint Randomization (INTEGRATE-044: chameleon)
 # ============================================================================
 
+@handle_tool_errors("research_fingerprint_randomize")
 async def research_fingerprint_randomize(browser: str = "chromium") -> dict[str, Any]:
     """Randomize browser fingerprint for anti-tracking (INTEGRATE-044: chameleon).
 
@@ -1151,6 +1166,7 @@ async def research_fingerprint_randomize(browser: str = "chromium") -> dict[str,
 # 15. Multi-Format Steganography (INTEGRATE-045: stegma)
 # ============================================================================
 
+@handle_tool_errors("research_multi_stego")
 async def research_multi_stego(input_file: str, secret: str, media_type: str = "image") -> dict[str, Any]:
     """Multi-format steganography across image/audio/video (INTEGRATE-045: stegma).
 

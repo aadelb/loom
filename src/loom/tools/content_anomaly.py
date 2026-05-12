@@ -12,6 +12,7 @@ import re
 from typing import Any
 
 from loom.text_utils import jaccard_similarity
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.content_anomaly")
 
@@ -142,6 +143,7 @@ def detect_anomaly(snippet: str, fetched_content: str) -> dict[str, Any]:
     }
 
 
+@handle_tool_errors("research_content_anomaly")
 def research_content_anomaly(
     url: str,
     expected_snippet: str,

@@ -10,6 +10,8 @@ import re
 from collections import Counter
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 try:
     from mcp.types import TextContent
 except ImportError:
@@ -202,6 +204,7 @@ def _flatten_features(features: dict[str, Any]) -> dict[str, float]:
     return flat
 
 
+@handle_tool_errors("research_stylometry")
 async def research_stylometry(
     text: str, compare_texts: list[str] | None = None
 ) -> dict[str, Any]:

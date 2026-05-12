@@ -15,6 +15,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.backup")
 
 
@@ -67,6 +69,7 @@ def _calculate_size_mb(path: Path) -> float:
     return 0.0
 
 
+@handle_tool_errors("research_backup_create")
 async def research_backup_create(
     target: str = "all",
 ) -> dict[str, Any]:
@@ -165,6 +168,7 @@ async def research_backup_create(
         raise
 
 
+@handle_tool_errors("research_backup_list")
 async def research_backup_list() -> dict[str, Any]:
     """List available backups with metadata.
 
@@ -222,6 +226,7 @@ async def research_backup_list() -> dict[str, Any]:
     }
 
 
+@handle_tool_errors("research_backup_restore")
 async def research_backup_restore(
     backup_id: str,
     target: str = "all",

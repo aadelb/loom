@@ -23,6 +23,7 @@ import time
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 try:
     import psutil
@@ -41,6 +42,7 @@ def set_server_start_time(start_time: float) -> None:
     _start_time = start_time
 
 
+@handle_tool_errors("research_health_deep")
 async def research_health_deep() -> dict[str, Any]:
     """Perform deep health diagnostics on all Loom subsystems.
 

@@ -9,6 +9,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 try:
     from mcp.types import TextContent
 except ImportError:
@@ -24,6 +26,7 @@ except ImportError:
 logger = logging.getLogger("loom.tools.cache")
 
 
+@handle_tool_errors("research_cache_stats")
 def research_cache_stats() -> dict[str, Any]:
     """Return cache statistics.
 
@@ -72,6 +75,7 @@ def research_cache_stats() -> dict[str, Any]:
     }
 
 
+@handle_tool_errors("research_cache_clear")
 def research_cache_clear(older_than_days: int | None = None) -> dict[str, Any]:
     """Remove cache entries older than N days.
 
@@ -99,35 +103,23 @@ def research_cache_clear(older_than_days: int | None = None) -> dict[str, Any]:
 
     for f in cache_dir.rglob("*.json"):
         try:
-            if not f.is_file():
-                continue
-            st = f.stat()
-            if st.st_mtime < cutoff:
-                freed_bytes += st.st_size
-                f.unlink()
-                deleted_count += 1
-        except FileNotFoundError:
-            # File deleted by another process between is_file()/stat() and unlink()
+            if f.is_file():
+                st = f.stat()
+                if st.st_mtime < cutoff:
+                    freed_bytes += st.st_size
+                    f.unlink()
+                    deleted_count += 1
+        except (FileNotFoundError, OSError):
+            # File deleted by another process or permission issue
             continue
-        except OSError as e:
-            logger.warning("cache_clear_failed path=%s: %s", f, e)
 
-    freed_mb = freed_bytes / (1024 * 1024)
+    logger.info(
+        "cache_clear deleted_count=%d freed_mb=%.2f",
+        deleted_count,
+        freed_bytes / (1024 * 1024),
+    )
 
     return {
         "deleted_count": deleted_count,
-        "freed_mb": round(freed_mb, 2),
-        "older_than_days": older_than_days,
+        "freed_mb": round(freed_bytes / (1024 * 1024), 2),
     }
-
-
-def tool_cache_stats() -> list[TextContent]:
-    """MCP wrapper for research_cache_stats."""
-    result = research_cache_stats()
-    return [TextContent(type="text", text=json.dumps(result, indent=2))]
-
-
-def tool_cache_clear(older_than_days: int = 30) -> list[TextContent]:
-    """MCP wrapper for research_cache_clear."""
-    result = research_cache_clear(older_than_days)
-    return [TextContent(type="text", text=json.dumps(result, indent=2))]

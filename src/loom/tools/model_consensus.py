@@ -15,6 +15,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from loom.error_responses import handle_tool_errors
 from typing import Any
 
 try:
@@ -30,6 +31,7 @@ logger = logging.getLogger("loom.consensus")
 DEFAULT_MODELS = ["nvidia", "groq", "deepseek"]
 
 
+@handle_tool_errors("research_multi_consensus")
 async def research_multi_consensus(
     question: str,
     models: list[str] | None = None,

@@ -11,10 +11,12 @@ import logging
 from typing import Any
 
 from loom.retry import get_retry_stats, reset_retry_stats
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.retry_stats")
 
 
+@handle_tool_errors("research_retry_stats")
 def research_retry_stats(
     reset: bool = False,
 ) -> dict[str, Any]:

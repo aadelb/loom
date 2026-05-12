@@ -22,6 +22,7 @@ import logging
 import re
 from dataclasses import dataclass
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.composer")
 
@@ -57,6 +58,7 @@ class ComposerResult:
     step_results: list[Any] | None = None
 
 
+@handle_tool_errors("research_compose_validate")
 def research_compose_validate(pipeline: str) -> dict[str, Any]:
     """Validate pipeline syntax without executing.
 
@@ -119,6 +121,7 @@ def research_compose_validate(pipeline: str) -> dict[str, Any]:
         }
 
 
+@handle_tool_errors("research_compose")
 async def research_compose(
     pipeline: str,
     initial_input: str = "",
@@ -728,6 +731,7 @@ def _get_tool_function(tool_name: str) -> Any:
 # ── Built-in Tools ──
 
 
+@handle_tool_errors("research_merge")
 async def research_merge(arg0: dict[str, Any] | None = None, **kwargs: Any) -> dict[str, Any]:
     """Merge multiple parallel results into a single structure.
 

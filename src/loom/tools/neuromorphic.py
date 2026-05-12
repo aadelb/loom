@@ -11,6 +11,7 @@ import math
 from typing import Literal
 
 from pydantic import BaseModel, Field
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.neuromorphic")
 
@@ -145,6 +146,7 @@ def _calculate_resonance_schedule(
     return schedule, waves, duration, parallelism, risk
 
 
+@handle_tool_errors("research_neuromorphic_schedule")
 async def research_neuromorphic_schedule(
     tools: list[str] | str,
     timing_pattern: Literal["burst", "gamma", "theta", "spike_train", "resonance"] = "burst",

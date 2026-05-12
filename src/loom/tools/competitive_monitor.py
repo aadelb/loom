@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import httpx
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.competitive_monitor")
 
@@ -112,6 +113,7 @@ async def _fetch_repo_stats(
         return {"owner": owner, "repo": repo, "error": str(exc)}
 
 
+@handle_tool_errors("research_monitor_competitors")
 async def research_monitor_competitors(
     competitors: list[str] | None = None,
 ) -> dict[str, Any]:
@@ -176,6 +178,7 @@ async def research_monitor_competitors(
         }
 
 
+@handle_tool_errors("research_competitive_advantage")
 def research_competitive_advantage() -> dict[str, Any]:
     """Compare Loom capabilities vs known competitors.
 

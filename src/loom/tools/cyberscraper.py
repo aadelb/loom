@@ -46,6 +46,7 @@ except ImportError:
     _PROVIDERS_AVAILABLE = False
 
 from loom.validators import validate_url
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.cyberscraper")
 
@@ -423,6 +424,7 @@ class _JSONExtractor:
 # === Main Tool Functions ===
 
 
+@handle_tool_errors("research_smart_extract")
 async def research_smart_extract(
     url: str,
     query: str,
@@ -570,6 +572,7 @@ Return ONLY valid JSON (array or object) with no additional text. If no data mat
         )
 
 
+@handle_tool_errors("research_paginate_scrape")
 async def research_paginate_scrape(
     url: str,
     query: str,
@@ -686,6 +689,7 @@ async def research_paginate_scrape(
         )
 
 
+@handle_tool_errors("research_stealth_browser")
 async def research_stealth_browser(
     url: str,
     wait_for: Literal["domcontentloaded", "load", "networkidle"] | None = "load",

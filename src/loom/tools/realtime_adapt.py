@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from typing import Any, Literal
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.realtime_adapt")
 
@@ -24,6 +25,7 @@ def _get_refusal_lock() -> asyncio.Lock:
     return _refusal_lock
 
 
+@handle_tool_errors("research_track_refusal")
 async def research_track_refusal(model: str, refused: bool, strategy: str = "") -> dict[str, Any]:
     """Track refusal rate per model in rolling 100-request window.
 
@@ -89,6 +91,7 @@ async def research_track_refusal(model: str, refused: bool, strategy: str = "") 
         }
 
 
+@handle_tool_errors("research_get_best_model")
 async def research_get_best_model(topic: str = "") -> dict[str, Any]:
     """Get model with LOWEST refusal rate.
 

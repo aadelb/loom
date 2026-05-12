@@ -13,6 +13,7 @@ from typing import Any
 import httpx
 
 from loom.validators import UrlSafetyError, validate_url
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.paddleocr_backend")
 
@@ -26,6 +27,7 @@ MAX_EXTRACTED_TEXT = 100000
 DEFAULT_LANGUAGES = ["en"]
 
 
+@handle_tool_errors("research_paddle_ocr")
 async def research_paddle_ocr(
     image_url: str = "",
     image_path: str = "",

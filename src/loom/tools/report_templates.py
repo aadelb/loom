@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from datetime import UTC, datetime
 from typing import Any, Literal
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.report_templates")
 
@@ -17,6 +18,7 @@ _TEMPLATES = {
 }
 
 
+@handle_tool_errors("research_report_template")
 async def research_report_template(
     template: str = "executive",
     data: dict[str, Any] | None = None,
@@ -58,6 +60,7 @@ async def research_report_template(
         return {"error": str(exc), "tool": "research_report_template"}
 
 
+@handle_tool_errors("research_report_custom")
 async def research_report_custom(
     title: str,
     sections: list[dict[str, str]],

@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 
+@handle_tool_errors("research_firewall_list")
 async def research_firewall_list() -> dict[str, Any]:
     """List active firewall rules."""
     try:
@@ -16,6 +18,7 @@ async def research_firewall_list() -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_firewall_list"}
 
 
+@handle_tool_errors("research_firewall_apply")
 async def research_firewall_apply() -> dict[str, Any]:
     """Apply firewall rule changes."""
     try:

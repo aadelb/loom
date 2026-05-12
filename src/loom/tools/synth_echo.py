@@ -12,6 +12,8 @@ import logging
 import time
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.synth_echo")
 
 
@@ -70,6 +72,7 @@ def _is_refusal(text: str) -> bool:
     return any(pattern in text_lower for pattern in refusal_patterns)
 
 
+@handle_tool_errors("research_synth_echo")
 async def research_synth_echo(
     model_name: str,
     test_prompts: list[str] | None = None,

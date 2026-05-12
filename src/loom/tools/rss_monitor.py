@@ -11,6 +11,7 @@ from urllib.parse import urljoin
 import httpx
 
 from loom.validators import validate_url
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.rss_monitor")
 
@@ -191,6 +192,7 @@ def _strip_html(text: str) -> str:
     return text
 
 
+@handle_tool_errors("research_rss_fetch")
 def research_rss_fetch(
     url: str,
     max_items: int = 20,
@@ -231,6 +233,7 @@ def research_rss_fetch(
     return result
 
 
+@handle_tool_errors("research_rss_search")
 def research_rss_search(
     urls: list[str],
     query: str,

@@ -6,6 +6,7 @@ Tools:
 """
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import asyncio
 import json
@@ -305,6 +306,7 @@ async def _search_github_jobs(
     return results
 
 
+@handle_tool_errors("research_job_search")
 async def research_job_search(
     query: str,
     location: str | None = None,
@@ -438,6 +440,7 @@ def _extract_skills(text: str, limit: int = 50) -> list[str]:
     return matches[:limit] if matches else []
 
 
+@handle_tool_errors("research_job_market")
 async def research_job_market(
     role: str,
     location: str | None = None,

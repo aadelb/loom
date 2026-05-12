@@ -18,6 +18,8 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.singlefile_backend")
 
 
@@ -129,6 +131,7 @@ def _check_singlefile_available() -> tuple[bool, str]:
     )
 
 
+@handle_tool_errors("research_archive_page")
 async def research_archive_page(
     url: str, output_dir: str | None = None
 ) -> dict[str, Any]:

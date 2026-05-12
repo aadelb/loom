@@ -7,6 +7,7 @@ import logging
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 try:
     from mcp.types import TextContent
@@ -23,6 +24,7 @@ FRAMEWORKS = {
 }
 
 
+@handle_tool_errors("research_compliance_report")
 def research_compliance_report(period_days: int = 30, framework: str = "eu_ai_act") -> dict[str, Any]:
     """Generate compliance report for specified framework."""
     try:
@@ -50,6 +52,7 @@ def research_compliance_report(period_days: int = 30, framework: str = "eu_ai_ac
         return {"error": str(exc), "tool": "research_compliance_report"}
 
 
+@handle_tool_errors("research_audit_trail")
 def research_audit_trail(tool_name: str = "", limit: int = 100) -> dict[str, Any]:
     """Retrieve audit trail entries, filtered by tool name."""
     try:

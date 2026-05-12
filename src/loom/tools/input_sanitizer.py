@@ -1,5 +1,6 @@
 """Input sanitization and validation tools for Loom."""
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 import logging
 import re
 import unicodedata
@@ -8,6 +9,7 @@ from typing import Any
 logger = logging.getLogger("loom.tools.input_sanitizer")
 
 
+@handle_tool_errors("research_sanitize_input")
 async def research_sanitize_input(text: str, rules: list[str] | None = None) -> dict[str, Any]:
     """Sanitize text input. Rules: strip_nulls, normalize_unicode, limit_length, remove_control_chars, strip_html, escape_special."""
     try:
@@ -46,6 +48,7 @@ async def research_sanitize_input(text: str, rules: list[str] | None = None) -> 
         return {"error": str(exc), "tool": "research_sanitize_input"}
 
 
+@handle_tool_errors("research_validate_params")
 async def research_validate_params(params: dict[str, Any], schema: dict[str, Any] | None = None) -> dict[str, Any]:
     """Validate params against schema. Schema: {"field": {"type": str, "required": True, "min": 1, "max": 100}}."""
     try:

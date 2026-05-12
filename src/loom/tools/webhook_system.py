@@ -16,6 +16,7 @@ import aiosqlite
 import httpx
 from pydantic import BaseModel, Field
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.webhook_system")
 DEFAULT_EVENTS = [
     "task_complete",
@@ -64,6 +65,7 @@ def _sign(payload: str, secret: str) -> str:
         secret.encode(), payload.encode(), hashlib.sha256
     ).hexdigest()
 
+@handle_tool_errors("research_webhook_system_register")
 
 async def research_webhook_system_register(
     url: str, events: list[str] | None = None, secret: str = ""
@@ -95,6 +97,7 @@ async def research_webhook_system_register(
     except Exception as exc:
         return {"error": str(exc), "tool": "research_webhook_system_register"}
 
+@handle_tool_errors("research_webhook_system_fire")
 
 async def research_webhook_system_fire(
     event: str, payload: dict[str, Any]
@@ -158,6 +161,7 @@ async def _send_webhook(
         )
         return False
 
+@handle_tool_errors("research_webhook_system_list")
 
 async def research_webhook_system_list() -> dict[str, Any]:
     """List all registered webhooks."""

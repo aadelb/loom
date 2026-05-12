@@ -14,6 +14,7 @@ from typing import Any
 import httpx
 
 from loom.validators import validate_url, UrlSafetyError
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.change_monitor")
 
@@ -236,6 +237,7 @@ def _get_metadata(url: str) -> tuple[int, str | None, str | None]:
     return 0, None, None
 
 
+@handle_tool_errors("research_change_monitor")
 async def research_change_monitor(url: str, store_result: bool = True) -> dict[str, Any]:
     """Monitor a web page for meaningful content changes.
 

@@ -11,6 +11,7 @@ import inspect
 import logging
 import os
 from typing import Any, TypedDict
+from loom.error_responses import handle_tool_errors
 
 try:
     from gpt_researcher import GPTResearcher
@@ -54,6 +55,7 @@ def _create_error_response(
     }
 
 
+@handle_tool_errors("research_gpt_researcher")
 async def research_gpt_researcher(
     query: str,
     report_type: str = "research_report",

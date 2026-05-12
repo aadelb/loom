@@ -12,6 +12,7 @@ import time
 from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.circuit_breaker")
 PROVIDERS = {"groq", "nvidia_nim", "deepseek", "gemini", "moonshot", "openai", "anthropic", "vllm",
@@ -35,6 +36,7 @@ def _get_lock() -> asyncio.Lock:
     return _lock
 
 
+@handle_tool_errors("research_breaker_status")
 async def research_breaker_status() -> dict[str, Any]:
     """Show circuit breaker state: {circuits: [{provider, state, failures, last_failure, cooldown_remaining_s}]}"""
     try:
@@ -54,6 +56,7 @@ async def research_breaker_status() -> dict[str, Any]:
     except Exception as exc:
         return {"error": str(exc), "tool": "research_breaker_status"}
 
+@handle_tool_errors("research_breaker_trip")
 async def research_breaker_trip(provider: str, error: str = "") -> dict[str, Any]:
     """Record failure for provider. Open circuit if failures >= threshold (5).
     Returns: {provider, state, failures, threshold, tripped: bool}"""
@@ -77,6 +80,7 @@ async def research_breaker_trip(provider: str, error: str = "") -> dict[str, Any
     except Exception as exc:
         return {"error": str(exc), "tool": "research_breaker_trip"}
 
+@handle_tool_errors("research_breaker_reset")
 async def research_breaker_reset(provider: str = "all") -> dict[str, Any]:
     """Manually reset circuit(s) to CLOSED.
     Returns: {reset: list[str], new_state: "closed", count: int}"""

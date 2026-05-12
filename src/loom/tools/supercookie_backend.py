@@ -6,9 +6,9 @@ import hashlib
 import logging
 from typing import Any
 from urllib.parse import urljoin
-
 import httpx
 
+from loom.error_responses import handle_tool_errors
 from loom.validators import validate_url, UrlSafetyError
 
 logger = logging.getLogger("loom.tools.supercookie_backend")
@@ -272,6 +272,7 @@ def _check_favicon_supercookie(domain: str, timeout: int = 10) -> dict[str, Any]
 	return result
 
 
+@handle_tool_errors("research_supercookie_check")
 def research_supercookie_check(
 	domain: str,
 	timeout: int = 30,

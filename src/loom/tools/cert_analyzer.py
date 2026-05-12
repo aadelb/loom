@@ -8,10 +8,12 @@ import socket
 import ssl
 from datetime import UTC, datetime
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.cert_analyzer")
 
 
+@handle_tool_errors("research_cert_analyze")
 async def research_cert_analyze(
     hostname: str = "",
     domain: str = "",

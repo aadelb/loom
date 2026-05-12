@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import re
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.compliance_checker")
 
@@ -18,6 +19,7 @@ _PII = {
 }
 
 
+@handle_tool_errors("research_compliance_check")
 def research_compliance_check(
     text: str, frameworks: list[str] | None = None
 ) -> dict[str, Any]:
@@ -165,6 +167,7 @@ def research_compliance_check(
         return {"error": str(exc), "tool": "research_compliance_check"}
 
 
+@handle_tool_errors("research_pii_scan")
 def research_pii_scan(text: str) -> dict[str, Any]:
     """Scan for PII: email, phone, SSN, credit card, IP address."""
     try:

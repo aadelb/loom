@@ -5,6 +5,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.talent_tracker")
 
 # Talent flow patterns: (from_org, to_org) -> flow metadata
@@ -16,6 +18,7 @@ _FLOWS = {
 }
 
 
+@handle_tool_errors("research_track_researcher")
 async def research_track_researcher(
     name: str,
     field: str = "ai_safety",
@@ -81,6 +84,7 @@ async def research_track_researcher(
         }
 
 
+@handle_tool_errors("research_talent_flow")
 async def research_talent_flow(
     from_org: str = "openai",
     to_org: str = "anthropic",

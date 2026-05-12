@@ -9,6 +9,7 @@ import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 try:
     from mcp.types import TextContent
@@ -44,6 +45,7 @@ def _init_db() -> None:
         conn.commit()
 
 
+@handle_tool_errors("research_trace_start")
 def research_trace_start(
     operation: str, metadata: dict[str, Any] | None = None
 ) -> dict[str, Any]:
@@ -71,6 +73,7 @@ def research_trace_start(
         return {"trace_id": "", "operation": operation, "started_at": "", "error": str(exc)}
 
 
+@handle_tool_errors("research_trace_end")
 def research_trace_end(
     trace_id: str, status: str = "success", result_summary: str = ""
 ) -> dict[str, Any]:
@@ -110,6 +113,7 @@ def research_trace_end(
         return {"trace_id": trace_id, "duration_ms": 0, "status": "error", "error": str(exc)}
 
 
+@handle_tool_errors("research_traces_list")
 def research_traces_list(
     limit: int = 20, operation: str | None = None
 ) -> dict[str, Any]:

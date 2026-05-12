@@ -9,6 +9,7 @@ from urllib.parse import quote
 
 import httpx
 
+from loom.error_responses import handle_tool_errors
 from loom.http_helpers import fetch_json, fetch_text
 
 logger = logging.getLogger("loom.tools.academic_integrity")
@@ -271,6 +272,7 @@ async def _check_journal_predatory(
     }
 
 
+@handle_tool_errors("research_citation_analysis")
 async def research_citation_analysis(paper_id: str, depth: int = 2) -> dict[str, Any]:
     """Analyze citation networks for anomalies using Semantic Scholar API.
 
@@ -293,20 +295,17 @@ async def research_citation_analysis(paper_id: str, depth: int = 2) -> dict[str,
     depth = max(1, min(depth, 3))
 
     async def _run() -> dict[str, Any]:
-        try:
-            async with httpx.AsyncClient(
-                follow_redirects=True,
-                headers={"User-Agent": "Loom-Research/1.0"},
-                timeout=30.0,
-            ) as client:
-                return await _analyze_citation_network(client, paper_id.strip(), depth)
-        except Exception as exc:
-            logger.exception("research_citation_analysis failed")
-            return {"error": str(exc), "tool": "research_citation_analysis"}
+        async with httpx.AsyncClient(
+            follow_redirects=True,
+            headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
+        ) as client:
+            return await _analyze_citation_network(client, paper_id.strip(), depth)
 
     return await _run()
 
 
+@handle_tool_errors("research_retraction_check")
 async def research_retraction_check(query: str, max_results: int = 20) -> dict[str, Any]:
     """Check if papers/authors have retractions using Crossref and PubPeer.
 
@@ -329,20 +328,17 @@ async def research_retraction_check(query: str, max_results: int = 20) -> dict[s
     max_results = max(1, min(max_results, 100))
 
     async def _run() -> dict[str, Any]:
-        try:
-            async with httpx.AsyncClient(
-                follow_redirects=True,
-                headers={"User-Agent": "Loom-Research/1.0"},
-                timeout=30.0,
-            ) as client:
-                return await _check_for_retractions(client, query.strip(), max_results)
-        except Exception as exc:
-            logger.exception("research_retraction_check failed")
-            return {"error": str(exc), "tool": "research_retraction_check"}
+        async with httpx.AsyncClient(
+            follow_redirects=True,
+            headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
+        ) as client:
+            return await _check_for_retractions(client, query.strip(), max_results)
 
     return await _run()
 
 
+@handle_tool_errors("research_predatory_journal_check")
 async def research_predatory_journal_check(journal_name: str) -> dict[str, Any]:
     """Check if a journal shows signs of being predatory.
 
@@ -363,15 +359,11 @@ async def research_predatory_journal_check(journal_name: str) -> dict[str, Any]:
         return {"error": "journal_name is required", "tool": "research_predatory_journal_check"}
 
     async def _run() -> dict[str, Any]:
-        try:
-            async with httpx.AsyncClient(
-                follow_redirects=True,
-                headers={"User-Agent": "Loom-Research/1.0"},
-                timeout=30.0,
-            ) as client:
-                return await _check_journal_predatory(client, journal_name.strip())
-        except Exception as exc:
-            logger.exception("research_predatory_journal_check failed")
-            return {"error": str(exc), "tool": "research_predatory_journal_check"}
+        async with httpx.AsyncClient(
+            follow_redirects=True,
+            headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
+        ) as client:
+            return await _check_journal_predatory(client, journal_name.strip())
 
     return await _run()

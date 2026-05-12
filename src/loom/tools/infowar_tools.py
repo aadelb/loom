@@ -1,6 +1,7 @@
 """Information warfare research tools — narrative tracking, bot detection, censorship analysis, social recovery, and robots.txt archaeology."""
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import asyncio
 import json
@@ -159,6 +160,7 @@ async def _arxiv_search(
     return []
 
 
+@handle_tool_errors("research_narrative_tracker")
 async def research_narrative_tracker(topic: str, hours_back: int = 72) -> dict[str, Any]:
     """Track narrative propagation across platforms.
 
@@ -322,6 +324,7 @@ async def _analyze_posting_times(
     }
 
 
+@handle_tool_errors("research_bot_detector")
 async def research_bot_detector(subreddit: str = "", hn_query: str = "") -> dict[str, Any]:
     """Detect coordinated bot/spam behavior on social platforms.
 
@@ -458,6 +461,7 @@ async def _lumen_database_check(
     return []
 
 
+@handle_tool_errors("research_censorship_detector")
 async def research_censorship_detector(url: str) -> dict[str, Any]:
     """Detect DNS censorship and takedown notices.
 
@@ -575,6 +579,7 @@ async def _wayback_search_social(
     return []
 
 
+@handle_tool_errors("research_deleted_social")
 async def research_deleted_social(url: str) -> dict[str, Any]:
     """Recover deleted social media content from archives.
 
@@ -711,6 +716,7 @@ def _diff_robots_rules(
     return added, removed
 
 
+@handle_tool_errors("research_robots_archaeology")
 async def research_robots_archaeology(domain: str, snapshots: int = 10) -> dict[str, Any]:
     """Analyze historical robots.txt changes to find hidden paths.
 

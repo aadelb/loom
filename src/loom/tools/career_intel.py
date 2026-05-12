@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+from loom.error_responses import handle_tool_errors
 from typing import Any
 
 logger = logging.getLogger("loom.tools.career_intel")
@@ -231,6 +232,7 @@ async def _search_github_repos(areas: list[str], n: int = 10) -> dict[str, list[
     return result
 
 
+@handle_tool_errors("research_map_research_to_product")
 async def research_map_research_to_product(
     research_description: str,
     n: int = 10,
@@ -497,6 +499,7 @@ def _match_skills(academic_skills: list[str], required_skills: list[str]) -> lis
     return matched
 
 
+@handle_tool_errors("research_translate_academic_skills")
 async def research_translate_academic_skills(
     cv_text: str,
     job_description: str,

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 # Target vectors for each style
 _VECTORS = {
@@ -82,6 +83,7 @@ def _describe_transformation(dim: str, from_score: float, to_score: float) -> st
     return f"{magnitude_str.capitalize()}: {base_desc}"
 
 
+@handle_tool_errors("research_geodesic_path")
 async def research_geodesic_path(
     start_prompt: str,
     target_style: str = "academic",

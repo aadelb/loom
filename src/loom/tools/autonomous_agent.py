@@ -15,6 +15,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 try:
     from loom.tools.llm import _call_with_cascade
     from loom.tools.prompt_reframe import _apply_strategy, _STRATEGIES
@@ -70,6 +72,7 @@ def _get_schedule_db() -> sqlite3.Connection:
     return conn
 
 
+@handle_tool_errors("research_auto_redteam")
 async def research_auto_redteam(
     target_model: str = "nvidia",
     strategies_to_test: int = 10,
@@ -201,6 +204,7 @@ async def research_auto_redteam(
     }
 
 
+@handle_tool_errors("research_schedule_redteam")
 def research_schedule_redteam(
     interval_hours: int = 24, target_model: str = "all"
 ) -> dict[str, Any]:

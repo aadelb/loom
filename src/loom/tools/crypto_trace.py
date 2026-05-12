@@ -10,6 +10,7 @@ from urllib.parse import quote
 import httpx
 
 from loom.http_helpers import fetch_json
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.crypto_trace")
 
@@ -131,6 +132,7 @@ async def _blockchair_stats(
     }
 
 
+@handle_tool_errors("research_crypto_trace")
 async def research_crypto_trace(
     address: str,
     chain: str = "auto",

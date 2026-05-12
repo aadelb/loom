@@ -10,6 +10,7 @@ from urllib.parse import quote
 
 import httpx
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.threat_profile")
 
 _PLATFORMS = [
@@ -127,6 +128,7 @@ def _infer_timezone(created_timestamps: list[int]) -> str:
         return "likely_UTC_or_Americas"
     return "likely_Asia_or_Europe"
 
+@handle_tool_errors("research_threat_profile")
 
 async def research_threat_profile(
     username: str,

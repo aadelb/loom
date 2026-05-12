@@ -12,6 +12,7 @@ from __future__ import annotations
 import logging
 import random
 import re
+from loom.error_responses import handle_tool_errors
 from typing import Any
 
 logger = logging.getLogger("loom.tools.pathogen_sim")
@@ -61,6 +62,7 @@ def _test_defense(text: str, defense_type: str, defense: dict) -> bool:
     return False
 
 
+@handle_tool_errors("research_pathogen_evolve")
 async def research_pathogen_evolve(
     attack_payload: str,
     defense_type: str = "keyword_filter",

@@ -1,6 +1,7 @@
 """IP intelligence tools — reputation checking, geolocation, and metadata."""
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import asyncio
 import logging
@@ -18,6 +19,7 @@ _IPINFO_URL = "https://ipinfo.io"
 _ABUSEIPDB_URL = "https://api.abuseipdb.com/api/v2/check"
 
 
+@handle_tool_errors("research_ip_reputation")
 async def research_ip_reputation(ip: str) -> dict[str, Any]:
     """Check IP reputation using free APIs (no API key needed).
 
@@ -101,6 +103,7 @@ async def research_ip_reputation(ip: str) -> dict[str, Any]:
     return result
 
 
+@handle_tool_errors("research_ip_geolocation")
 async def research_ip_geolocation(ip: str) -> dict[str, Any]:
     """Get geolocation for an IP address (lightweight, free).
 

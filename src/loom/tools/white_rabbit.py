@@ -13,6 +13,7 @@ from typing import Any
 
 from loom.text_utils import extract_keywords
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.white_rabbit")
 
 # Anomaly indicators: pattern -> weight
@@ -47,6 +48,7 @@ def _score_anomaly(text: str) -> float:
 
     return min(score / 5.0, 1.0)
 
+@handle_tool_errors("research_white_rabbit")
 
 async def research_white_rabbit(
     starting_point: str,

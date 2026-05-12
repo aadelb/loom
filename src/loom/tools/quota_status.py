@@ -10,10 +10,12 @@ import logging
 from typing import Any
 
 from loom.quota_tracker import QUOTA_LIMITS, get_quota_tracker
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.quota_status")
 
 
+@handle_tool_errors("research_quota_status")
 def research_quota_status(provider: str | None = None) -> dict[str, Any]:
     """Get API quota usage and remaining limits for free-tier LLM providers.
 

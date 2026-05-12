@@ -4,6 +4,8 @@ from __future__ import annotations
 import asyncio
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 try:
     from loom.tools.cache_analytics import (
         research_cache_analyze as _real_analyze,
@@ -14,6 +16,7 @@ except ImportError:
     _DELEGATE_AVAILABLE = False
 
 
+@handle_tool_errors("research_cache_optimize")
 async def research_cache_optimize() -> dict[str, Any]:
     """Optimize cache usage and return statistics."""
     if _DELEGATE_AVAILABLE:
@@ -21,6 +24,7 @@ async def research_cache_optimize() -> dict[str, Any]:
     return {"error": "cache_analytics module not available", "tool": "research_cache_optimize"}
 
 
+@handle_tool_errors("research_cache_analyze")
 async def research_cache_analyze() -> dict[str, Any]:
     """Analyze cache performance metrics."""
     if _DELEGATE_AVAILABLE:

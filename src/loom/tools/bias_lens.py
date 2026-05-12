@@ -12,6 +12,7 @@ from typing import Any
 import httpx
 
 from loom.http_helpers import fetch_json
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.bias_lens")
 
@@ -176,6 +177,7 @@ def _analyze_citation_network(
     }
 
 
+@handle_tool_errors("research_bias_lens")
 async def research_bias_lens(paper_id: str = "", text: str = "") -> dict[str, Any]:
     """Detect methodological bias in academic papers.
 
@@ -191,146 +193,143 @@ async def research_bias_lens(paper_id: str = "", text: str = "") -> dict[str, An
         Dict with bias_score (0-100), bias_types list, self_citation_rate,
         p_value_distribution, and funding_bias_risk
     """
-    try:
-        if not paper_id and not text:
-            return {
-                "error": "Either paper_id or text is required",
-                "bias_score": 0,
-                "bias_types": [],
+    if not paper_id and not text:
+        return {
+            "error": "Either paper_id or text is required",
+            "bias_score": 0,
+            "bias_types": [],
+            "self_citation_rate": 0.0,
+            "p_value_distribution": [],
+            "funding_bias_risk": "unknown",
+        }
+
+    async def _run() -> dict[str, Any]:
+        async with httpx.AsyncClient(
+            headers={"User-Agent": "Loom-Research/1.0"},
+            timeout=30.0,
+        ) as client:
+            paper_data: dict[str, Any] | None = None
+            full_text = text or ""
+
+            if paper_id:
+                paper_data = await _fetch_semantic_scholar_paper(client, paper_id)
+                if paper_data:
+                    full_text = (
+                        paper_data.get("title", "")
+                        + " "
+                        + (paper_data.get("abstract", "") or "")
+                    )
+
+            if not full_text:
+                return {
+                    "error": "Could not fetch or analyze paper",
+                    "bias_score": 0,
+                    "bias_types": [],
+                    "self_citation_rate": 0.0,
+                    "p_value_distribution": [],
+                    "funding_bias_risk": "unknown",
+                }
+
+            # Extract p-values
+            p_values = _extract_p_values(full_text)
+            p_near_threshold = len([p for p in p_values if 0.045 <= p <= 0.055])
+
+            # Count hedging language
+            hedging_count = _count_hedging_language(full_text)
+
+            # Detect p-hacking indicators
+            p_hack_indicators = _detect_p_hacking_indicators(full_text)
+
+            # Count self-citations
+            self_cite_count = _count_self_citations(full_text)
+
+            # Analyze citation network if we have paper data
+            citation_analysis: dict[str, Any] = {
+                "self_citation_count": 0,
                 "self_citation_rate": 0.0,
-                "p_value_distribution": [],
-                "funding_bias_risk": "unknown",
+                "suspicious_patterns": [],
+            }
+            if paper_data and "citations" in paper_data:
+                citing_papers = await _fetch_semantic_scholar_citations(
+                    client, paper_id
+                )
+                citation_analysis = _analyze_citation_network(
+                    paper_data.get("authors", []), citing_papers
+                )
+
+            # Detect funding bias indicators
+            funding_keywords = ["funded by", "grant", "supported by", "acknowledgments"]
+            funding_mentioned = any(
+                kw in full_text.lower() for kw in funding_keywords
+            )
+            funding_bias_risk = (
+                "potential" if funding_mentioned else "undisclosed"
+            )
+
+            # Calculate bias score (0-100)
+            bias_score = 0
+
+            # Hedging language (0-20 points)
+            if hedging_count > 20:
+                bias_score += 20
+            elif hedging_count > 10:
+                bias_score += 15
+            elif hedging_count > 5:
+                bias_score += 10
+
+            # P-hacking indicators (0-25 points)
+            if p_hack_indicators:
+                bias_score += min(25, len(p_hack_indicators) * 10)
+            if p_near_threshold > 0:
+                bias_score += min(15, p_near_threshold * 5)
+
+            # Self-citation signals (0-20 points)
+            if self_cite_count > 5:
+                bias_score += 20
+            elif self_cite_count > 2:
+                bias_score += 10
+            elif self_cite_count > 0:
+                bias_score += 5
+
+            # Citation network analysis (0-15 points)
+            if citation_analysis["self_citation_rate"] > 0.3:
+                bias_score += 15
+            elif citation_analysis["self_citation_rate"] > 0.2:
+                bias_score += 10
+            elif citation_analysis["self_citation_rate"] > 0.1:
+                bias_score += 5
+
+            # Funding disclosure (0-10 points)
+            if not funding_mentioned and "acknowledgments" not in full_text.lower():
+                bias_score += 10
+
+            bias_score = min(100, bias_score)
+
+            # Identify bias types
+            bias_types: list[str] = []
+            if hedging_count > 15:
+                bias_types.append("excessive_hedging")
+            if p_hack_indicators:
+                bias_types.append("p_hacking_indicators")
+            if p_near_threshold > 0:
+                bias_types.append("p_values_near_threshold")
+            if self_cite_count > 3:
+                bias_types.append("high_self_citation_rate")
+            if citation_analysis["self_citation_rate"] > 0.2:
+                bias_types.append("biased_citation_network")
+            if not funding_mentioned:
+                bias_types.append("no_funding_disclosure")
+
+            return {
+                "bias_score": bias_score,
+                "bias_types": bias_types,
+                "self_citation_rate": round(citation_analysis["self_citation_rate"], 3),
+                "p_value_distribution": sorted(p_values)[:10],
+                "p_values_near_threshold": p_near_threshold,
+                "hedging_language_count": hedging_count,
+                "funding_bias_risk": funding_bias_risk,
+                "paper_id": paper_id,
+                "analysis_timestamp": time.time(),
             }
 
-        async def _run() -> dict[str, Any]:
-            async with httpx.AsyncClient(
-                headers={"User-Agent": "Loom-Research/1.0"},
-                timeout=30.0,
-            ) as client:
-                paper_data: dict[str, Any] | None = None
-                full_text = text or ""
-
-                if paper_id:
-                    paper_data = await _fetch_semantic_scholar_paper(client, paper_id)
-                    if paper_data:
-                        full_text = (
-                            paper_data.get("title", "")
-                            + " "
-                            + (paper_data.get("abstract", "") or "")
-                        )
-
-                if not full_text:
-                    return {
-                        "error": "Could not fetch or analyze paper",
-                        "bias_score": 0,
-                        "bias_types": [],
-                        "self_citation_rate": 0.0,
-                        "p_value_distribution": [],
-                        "funding_bias_risk": "unknown",
-                    }
-
-                # Extract p-values
-                p_values = _extract_p_values(full_text)
-                p_near_threshold = len([p for p in p_values if 0.045 <= p <= 0.055])
-
-                # Count hedging language
-                hedging_count = _count_hedging_language(full_text)
-
-                # Detect p-hacking indicators
-                p_hack_indicators = _detect_p_hacking_indicators(full_text)
-
-                # Count self-citations
-                self_cite_count = _count_self_citations(full_text)
-
-                # Analyze citation network if we have paper data
-                citation_analysis: dict[str, Any] = {
-                    "self_citation_count": 0,
-                    "self_citation_rate": 0.0,
-                    "suspicious_patterns": [],
-                }
-                if paper_data and "citations" in paper_data:
-                    citing_papers = await _fetch_semantic_scholar_citations(
-                        client, paper_id
-                    )
-                    citation_analysis = _analyze_citation_network(
-                        paper_data.get("authors", []), citing_papers
-                    )
-
-                # Detect funding bias indicators
-                funding_keywords = ["funded by", "grant", "supported by", "acknowledgments"]
-                funding_mentioned = any(
-                    kw in full_text.lower() for kw in funding_keywords
-                )
-                funding_bias_risk = (
-                    "potential" if funding_mentioned else "undisclosed"
-                )
-
-                # Calculate bias score (0-100)
-                bias_score = 0
-
-                # Hedging language (0-20 points)
-                if hedging_count > 20:
-                    bias_score += 20
-                elif hedging_count > 10:
-                    bias_score += 15
-                elif hedging_count > 5:
-                    bias_score += 10
-
-                # P-hacking indicators (0-25 points)
-                if p_hack_indicators:
-                    bias_score += min(25, len(p_hack_indicators) * 10)
-                if p_near_threshold > 0:
-                    bias_score += min(15, p_near_threshold * 5)
-
-                # Self-citation signals (0-20 points)
-                if self_cite_count > 5:
-                    bias_score += 20
-                elif self_cite_count > 2:
-                    bias_score += 10
-                elif self_cite_count > 0:
-                    bias_score += 5
-
-                # Citation network analysis (0-15 points)
-                if citation_analysis["self_citation_rate"] > 0.3:
-                    bias_score += 15
-                elif citation_analysis["self_citation_rate"] > 0.2:
-                    bias_score += 10
-                elif citation_analysis["self_citation_rate"] > 0.1:
-                    bias_score += 5
-
-                # Funding disclosure (0-10 points)
-                if not funding_mentioned and "acknowledgments" not in full_text.lower():
-                    bias_score += 10
-
-                bias_score = min(100, bias_score)
-
-                # Identify bias types
-                bias_types: list[str] = []
-                if hedging_count > 15:
-                    bias_types.append("excessive_hedging")
-                if p_hack_indicators:
-                    bias_types.append("p_hacking_indicators")
-                if p_near_threshold > 0:
-                    bias_types.append("p_values_near_threshold")
-                if self_cite_count > 3:
-                    bias_types.append("high_self_citation_rate")
-                if citation_analysis["self_citation_rate"] > 0.2:
-                    bias_types.append("biased_citation_network")
-                if not funding_mentioned:
-                    bias_types.append("no_funding_disclosure")
-
-                return {
-                    "bias_score": bias_score,
-                    "bias_types": bias_types,
-                    "self_citation_rate": round(citation_analysis["self_citation_rate"], 3),
-                    "p_value_distribution": sorted(p_values)[:10],
-                    "p_values_near_threshold": p_near_threshold,
-                    "hedging_language_count": hedging_count,
-                    "funding_bias_risk": funding_bias_risk,
-                    "paper_id": paper_id,
-                    "analysis_timestamp": time.time(),
-                }
-
-        return await _run()
-    except Exception as exc:
-        return {"error": str(exc), "tool": "research_bias_lens"}
+    return await _run()

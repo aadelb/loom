@@ -7,6 +7,7 @@ import logging
 from datetime import datetime
 from typing import Any, TypedDict
 
+from loom.error_responses import handle_tool_errors
 from loom.validators import validate_url, UrlSafetyError
 
 try:
@@ -74,6 +75,7 @@ class ArticleBatchResult(TypedDict):
     failed: list[dict[str, str]]
 
 
+@handle_tool_errors("research_instagram")
 async def research_instagram(username: str, max_posts: int = 10) -> dict[str, Any]:
     """Download Instagram profile info and recent posts.
 
@@ -159,6 +161,7 @@ def _fetch_instagram_profile(username: str, max_posts: int) -> dict[str, Any]:
         return {"error": str(e), "username": username}
 
 
+@handle_tool_errors("research_article_extract")
 async def research_article_extract(url: str) -> dict[str, Any]:
     """Extract article content, metadata, and NLP features from URL.
 
@@ -230,6 +233,7 @@ def _extract_article_sync(url: str) -> dict[str, Any]:
         return {"error": str(e), "url": url}
 
 
+@handle_tool_errors("research_article_batch")
 async def research_article_batch(
     urls: list[str], max_concurrent: int = 5
 ) -> dict[str, Any]:

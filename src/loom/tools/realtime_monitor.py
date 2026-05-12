@@ -14,6 +14,7 @@ from typing import Any
 from urllib.parse import quote
 
 import httpx
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.realtime_monitor")
 
@@ -221,6 +222,7 @@ async def _fetch_wikipedia_changes(client: httpx.AsyncClient, topic: str) -> lis
         return []
 
 
+@handle_tool_errors("research_realtime_monitor")
 async def research_realtime_monitor(
     topics: list[str],
     sources: list[str] | None = None,

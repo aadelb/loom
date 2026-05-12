@@ -7,12 +7,15 @@ from collections import deque
 from datetime import UTC, datetime
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.telemetry")
 
 _telemetry_buffer: deque[dict[str, Any]] = deque(maxlen=10000)
 _buffer_start_time: float | None = None
 
 
+@handle_tool_errors("research_telemetry_record")
 async def research_telemetry_record(
     tool_name: str,
     duration_ms: float,
@@ -44,6 +47,7 @@ async def research_telemetry_record(
         return {"error": str(exc), "tool": "research_telemetry_record"}
 
 
+@handle_tool_errors("research_telemetry_stats")
 async def research_telemetry_stats(window_minutes: int = 60) -> dict[str, Any]:
     """Calculate p50/p95/p99 latency percentiles, grouped by tool."""
     try:
@@ -98,6 +102,7 @@ async def research_telemetry_stats(window_minutes: int = 60) -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_telemetry_stats"}
 
 
+@handle_tool_errors("research_telemetry_reset")
 async def research_telemetry_reset() -> dict[str, Any]:
     """Clear telemetry buffer."""
     try:

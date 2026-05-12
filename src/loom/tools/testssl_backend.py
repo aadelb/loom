@@ -18,6 +18,8 @@ import subprocess
 import uuid
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.testssl_backend")
 from loom.cli_checker import is_available
 
@@ -162,6 +164,7 @@ def _parse_testssl_json(json_str: str) -> dict[str, Any]:
         return {"raw_output": json_str}
 
 
+@handle_tool_errors("research_testssl")
 async def research_testssl(
     host: str,
     port: int = 443,

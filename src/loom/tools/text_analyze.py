@@ -20,6 +20,7 @@ try:
 except ImportError:
     _HAS_NLTK = False
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.text_analyze")
 
 # Constraints
@@ -342,6 +343,7 @@ def _compute_language_stats(text: str) -> dict[str, Any]:
             "most_common_words": [],
         }
 
+@handle_tool_errors("research_text_analyze")
 
 def research_text_analyze(
     text: str,

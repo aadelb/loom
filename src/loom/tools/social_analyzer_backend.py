@@ -11,9 +11,12 @@ import json
 import logging
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.social_analyzer_backend")
 
 
+@handle_tool_errors("research_social_analyze")
 async def research_social_analyze(
     username: str,
     platforms: list[str] | None = None,

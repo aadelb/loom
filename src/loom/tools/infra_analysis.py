@@ -1,6 +1,7 @@
 """Infrastructure analysis tools — package registries, subdomain evolution, commit patterns."""
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import asyncio
 import logging
@@ -91,6 +92,7 @@ def _detect_typosquatting_candidates(package_name: str, similar_names: list[str]
     return suspicious[:10]  # Cap results
 
 
+@handle_tool_errors("research_registry_graveyard")
 async def research_registry_graveyard(package_name: str, ecosystem: str = "pypi") -> dict[str, Any]:
     """Scan package registries for deleted/yanked packages and typosquatting risks.
 
@@ -351,6 +353,7 @@ def _levenshtein_distance(s1: str, s2: str) -> int:
     return previous_row[-1]
 
 
+@handle_tool_errors("research_subdomain_temporal")
 async def research_subdomain_temporal(domain: str, days_back: int = 90) -> dict[str, Any]:
     """Track subdomain births/deaths over time via Certificate Transparency logs.
 
@@ -510,6 +513,7 @@ async def research_subdomain_temporal(domain: str, days_back: int = 90) -> dict[
         return {"error": str(exc), "tool": "research_subdomain_temporal"}
 
 
+@handle_tool_errors("research_commit_analyzer")
 async def research_commit_analyzer(repo: str, days_back: int = 30) -> dict[str, Any]:
     """Analyze GitHub commit patterns for intelligence signals.
 

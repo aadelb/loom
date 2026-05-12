@@ -15,8 +15,10 @@ try:
 except ImportError:
     _WEBHOOK_AVAILABLE = False
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.webhooks")
 
+@handle_tool_errors("research_webhook_register")
 
 async def research_webhook_register(
     url: str,
@@ -87,6 +89,7 @@ async def research_webhook_register(
         logger.exception("research_webhook_register failed")
         return {"error": str(exc), "tool": "research_webhook_register"}
 
+@handle_tool_errors("research_webhook_list")
 
 async def research_webhook_list() -> dict[str, Any]:
     """List all registered webhooks (without revealing secrets).
@@ -124,6 +127,7 @@ async def research_webhook_list() -> dict[str, Any]:
         logger.exception("research_webhook_list failed")
         return {"error": str(exc), "tool": "research_webhook_list"}
 
+@handle_tool_errors("research_webhook_unregister")
 
 async def research_webhook_unregister(webhook_id: str) -> dict[str, Any]:
     """Unregister a webhook.
@@ -162,6 +166,7 @@ async def research_webhook_unregister(webhook_id: str) -> dict[str, Any]:
         logger.exception("research_webhook_unregister failed")
         return {"error": str(exc), "tool": "research_webhook_unregister"}
 
+@handle_tool_errors("research_webhook_test")
 
 async def research_webhook_test(webhook_id: str) -> dict[str, Any]:
     """Send a test notification to a webhook.

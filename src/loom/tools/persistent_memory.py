@@ -12,6 +12,7 @@ import re
 import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.persistent_memory")
 _MEMORY_DB = Path.home() / ".loom" / "memory" / "persistent.db"
@@ -51,6 +52,7 @@ def _extract_entities(content: str) -> list[str]:
     return list(set(entities))[:20]  # Deduplicate, limit to 20
 
 
+@handle_tool_errors("research_remember")
 def research_remember(
     content: str, topic: str = "", session_id: str = "", importance: float = 0.5
 ) -> dict[str, object]:
@@ -96,6 +98,7 @@ def research_remember(
         return {"stored": False, "error": str(e)}
 
 
+@handle_tool_errors("research_recall")
 def research_recall(
     query: str, top_k: int = 10, topic: str = ""
 ) -> dict[str, object]:
@@ -154,6 +157,7 @@ def research_recall(
         return {"results": [], "error": str(e)}
 
 
+@handle_tool_errors("research_memory_stats")
 def research_memory_stats() -> dict[str, object]:
     """Return persistent memory statistics.
 

@@ -8,9 +8,9 @@ import re
 import subprocess
 import time
 from typing import Any
-
 import httpx
 
+from loom.error_responses import handle_tool_errors
 from loom.validators import validate_url, UrlSafetyError
 from loom.cli_checker import is_available
 
@@ -349,6 +349,7 @@ def _run_spiderfoot_api(
         }
 
 
+@handle_tool_errors("research_spiderfoot_scan")
 def research_spiderfoot_scan(
     target: str, modules: str = "all", timeout: int = 120, api: bool = False
 ) -> dict[str, Any]:

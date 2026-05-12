@@ -9,6 +9,7 @@ from __future__ import annotations
 import json, logging, sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
+from loom.error_responses import handle_tool_errors
 from typing import Any
 
 logger = logging.getLogger("loom.tools.neo4j_backend")
@@ -27,6 +28,7 @@ def _init_graph_db() -> None:
     conn.commit()
     conn.close()
 
+@handle_tool_errors("research_graph_store")
 def research_graph_store(entities: list[dict[str, Any]] | dict | str, relationships: list[dict[str, Any]] | dict | str) -> dict[str, Any]:
     """Store entities and relationships in graph database.
 
@@ -93,6 +95,7 @@ def research_graph_store(entities: list[dict[str, Any]] | dict | str, relationsh
         if conn:
             conn.close()
 
+@handle_tool_errors("research_graph_query")
 def research_graph_query(query: str, max_depth: int = 2) -> dict[str, Any]:
     """Search and traverse the graph database.
 
@@ -160,6 +163,7 @@ def _traverse(c: sqlite3.Cursor, node_id: int, max_depth: int, current_depth: in
     if not found_any or current_depth >= max_depth:
         paths.append(current_path[:])
 
+@handle_tool_errors("research_graph_visualize")
 def research_graph_visualize(entity: str) -> dict[str, Any]:
     """Return ego-graph (1-hop neighbors) around an entity.
 

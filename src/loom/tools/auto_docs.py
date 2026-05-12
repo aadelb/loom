@@ -10,6 +10,8 @@ import logging
 from pathlib import Path
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.auto_docs")
 
 
@@ -42,6 +44,7 @@ def _extract_tool_metadata(file_path: Path) -> list[dict[str, Any]]:
     return tools  # Return outside the loop, not inside
 
 
+@handle_tool_errors("research_generate_docs")
 async def research_generate_docs(
     output_format: str = "markdown",
     include_params: bool = True,
@@ -106,6 +109,7 @@ async def research_generate_docs(
         return {"error": str(exc), "tool": "research_generate_docs"}
 
 
+@handle_tool_errors("research_docs_coverage")
 async def research_docs_coverage() -> dict[str, Any]:
     """Report documentation coverage for all tools.
 

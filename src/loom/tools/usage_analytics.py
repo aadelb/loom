@@ -10,12 +10,14 @@ from collections import Counter, deque
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.usage_analytics")
 
 # Module-level storage: Counter for totals, deque for time-series (max 50k events)
 _usage_counter: Counter[str] = Counter()
 _usage_history: deque[dict[str, Any]] = deque(maxlen=50000)
 
+@handle_tool_errors("research_usage_record")
 
 async def research_usage_record(tool_name: str, caller: str = "mcp") -> dict[str, Any]:
     """Record a tool usage event.
@@ -46,6 +48,7 @@ async def research_usage_record(tool_name: str, caller: str = "mcp") -> dict[str
     except Exception as exc:
         return {"error": str(exc), "tool": "research_usage_record"}
 
+@handle_tool_errors("research_tool_usage_report")
 
 async def research_tool_usage_report(period: str = "today") -> dict[str, Any]:
     """Generate usage report for a specified period.
@@ -128,6 +131,7 @@ async def research_tool_usage_report(period: str = "today") -> dict[str, Any]:
     except Exception as exc:
         return {"error": str(exc), "tool": "research_tool_usage_report"}
 
+@handle_tool_errors("research_usage_trends")
 
 async def research_usage_trends(
     tool_name: str = "", window_hours: int = 24

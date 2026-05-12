@@ -13,6 +13,8 @@ import httpx
 
 from loom.validators import validate_url
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.api_fuzzer")
 
 # Fuzz payload categories for vulnerability discovery
@@ -79,6 +81,7 @@ def _is_authorized_target(base_url: str, authorized: bool = False) -> bool:
     return False
 
 
+@handle_tool_errors("research_fuzz_api")
 async def research_fuzz_api(
     base_url: str,
     endpoint: str = "/",
@@ -253,6 +256,7 @@ async def research_fuzz_api(
     }
 
 
+@handle_tool_errors("research_fuzz_report")
 async def research_fuzz_report(
     results: dict[str, Any] | None = None,
 ) -> dict[str, Any]:

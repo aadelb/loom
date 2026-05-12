@@ -15,6 +15,7 @@ import threading
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.hipporag")
 
@@ -360,6 +361,7 @@ def get_hipporag_store() -> HippoRAGStore:
     return _store
 
 
+@handle_tool_errors("research_memory_store")
 async def research_memory_store(
     content: str, metadata: dict[str, Any] | None = None, namespace: str = "default"
 ) -> dict[str, Any]:
@@ -409,6 +411,7 @@ async def research_memory_store(
         return {"error": f"Database error: {str(exc)}", "tool": "research_memory_store"}
 
 
+@handle_tool_errors("research_memory_recall")
 async def research_memory_recall(
     query: str, namespace: str = "default", top_k: int = 5
 ) -> dict[str, Any]:

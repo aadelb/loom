@@ -1,6 +1,7 @@
 """Invisible web discovery — find unindexed content behind robots.txt, sitemaps, hidden paths, and JS endpoints."""
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import logging
 import re
@@ -88,6 +89,7 @@ def _extract_js_endpoints(html_content: str) -> list[str]:
     return sorted(list(endpoints))
 
 
+@handle_tool_errors("research_invisible_web")
 def research_invisible_web(
     domain: str,
     check_robots: bool = True,

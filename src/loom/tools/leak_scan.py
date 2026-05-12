@@ -1,6 +1,7 @@
 """research_leak_scan — Scan for data exposure across public sources."""
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import asyncio
 import logging
@@ -274,6 +275,7 @@ def _is_valid_domain(domain: str) -> bool:
     return bool(re.match(pattern, domain))
 
 
+@handle_tool_errors("research_leak_scan")
 async def research_leak_scan(
     target: str = "",
     target_type: str = "domain",

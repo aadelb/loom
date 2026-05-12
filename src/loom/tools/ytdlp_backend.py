@@ -13,6 +13,7 @@ import os
 import tempfile
 from typing import Any, Literal
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.ytdlp_backend")
 
 # Max duration in seconds (10 minutes)
@@ -24,6 +25,7 @@ MAX_FILE_SIZE = 500 * 1024 * 1024
 # Supported audio formats for extraction
 AUDIO_FORMATS = ("mp3", "wav", "m4a", "opus", "vorbis", "flac", "alac")
 
+@handle_tool_errors("research_video_download")
 
 async def research_video_download(
     url: str,
@@ -139,6 +141,7 @@ async def research_video_download(
             "url": url,
         }
 
+@handle_tool_errors("research_video_info")
 
 async def research_video_info(url: str) -> dict[str, Any]:
     """Extract metadata from video URL without downloading.
@@ -211,6 +214,7 @@ async def research_video_info(url: str) -> dict[str, Any]:
             "url": url,
         }
 
+@handle_tool_errors("research_audio_extract")
 
 async def research_audio_extract(
     url: str,

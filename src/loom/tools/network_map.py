@@ -5,6 +5,7 @@ from __future__ import annotations
 import ipaddress
 import logging
 import socket
+from loom.error_responses import handle_tool_errors
 from typing import Any
 
 logger = logging.getLogger("loom.tools.network_map")
@@ -37,6 +38,7 @@ def _get_reverse_dns(ip: str) -> str | None:
         return None
 
 
+@handle_tool_errors("research_network_map")
 async def research_network_map(
     targets: list[str],
     depth: int = 2,
@@ -134,6 +136,7 @@ async def research_network_map(
         }
 
 
+@handle_tool_errors("research_network_visualize")
 async def research_network_visualize(
     nodes: list[dict[str, Any]],
     edges: list[dict[str, Any]],

@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections import defaultdict
+from loom.error_responses import handle_tool_errors
 from typing import Any
 
 logger = logging.getLogger("loom.tools.network_persona")
@@ -107,6 +108,7 @@ def _classify_role(
     return "regular"
 
 
+@handle_tool_errors("research_network_persona")
 async def research_network_persona(
     posts: list[dict[str, Any]],
     min_interactions: int = 2,

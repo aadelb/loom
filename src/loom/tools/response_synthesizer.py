@@ -10,6 +10,8 @@ import json
 import logging
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 try:
     from loom.tools.llm import _call_with_cascade
     _LLM_AVAILABLE = True
@@ -20,6 +22,7 @@ except ImportError:
 logger = logging.getLogger("loom.tools.response_synthesizer")
 
 
+@handle_tool_errors("research_synthesize_report")
 async def research_synthesize_report(
     question: str,
     answers: list[str],

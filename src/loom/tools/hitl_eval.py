@@ -7,6 +7,7 @@ Provides three tools for collecting human feedback on strategy+response pairs:
 """
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import asyncio
 import logging
@@ -99,6 +100,7 @@ def _truncate_text(text: str, max_len: int) -> str:
     return text
 
 
+@handle_tool_errors("research_hitl_submit")
 async def research_hitl_submit(
     strategy: str,
     prompt: str,
@@ -158,6 +160,7 @@ async def research_hitl_submit(
         return {"error": str(exc), "tool": "research_hitl_submit"}
 
 
+@handle_tool_errors("research_hitl_evaluate")
 async def research_hitl_evaluate(
     eval_id: str,
     score: float,
@@ -224,6 +227,7 @@ async def research_hitl_evaluate(
         return {"error": str(exc), "tool": "research_hitl_evaluate"}
 
 
+@handle_tool_errors("research_hitl_queue")
 async def research_hitl_queue(
     status: str = "pending",
     limit: int = 20,

@@ -10,6 +10,8 @@ from typing import Any
 
 import aiosqlite
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.resumption")
 _DB_PATH = Path.home() / ".loom" / "checkpoints.db"
 
@@ -28,6 +30,7 @@ async def _get_db() -> aiosqlite.Connection:
     return conn
 
 
+@handle_tool_errors("research_checkpoint_save")
 async def research_checkpoint_save(
     task_id: str, state: dict[str, Any], progress_pct: float = 0.0
 ) -> dict[str, Any]:
@@ -67,6 +70,7 @@ async def research_checkpoint_save(
         await conn.close()
 
 
+@handle_tool_errors("research_checkpoint_resume")
 async def research_checkpoint_resume(task_id: str) -> dict[str, Any]:
     """Retrieve checkpoint."""
     if not task_id or not isinstance(task_id, str):
@@ -103,6 +107,7 @@ async def research_checkpoint_resume(task_id: str) -> dict[str, Any]:
         await conn.close()
 
 
+@handle_tool_errors("research_checkpoint_list")
 async def research_checkpoint_list(status: str = "all") -> dict[str, Any]:
     """List checkpoints with filtering. Removes entries >7 days old."""
     if status not in ("all", "incomplete", "stale"):

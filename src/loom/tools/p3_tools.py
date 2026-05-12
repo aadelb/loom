@@ -12,6 +12,7 @@ from urllib.parse import quote
 import httpx
 
 from loom.http_helpers import fetch_json, fetch_text
+from loom.error_responses import handle_tool_errors
 from loom.validators import validate_url
 
 logger = logging.getLogger("loom.tools.p3_tools")
@@ -40,6 +41,7 @@ def _extract_word_set(text: str) -> set[str]:
 	return {w for w in words if len(w) > 2 and w not in stop_words}
 
 
+@handle_tool_errors("research_model_comparator")
 async def research_model_comparator(
 	prompt: str,
 	endpoints: list[str],
@@ -175,6 +177,7 @@ async def _send_prompt(
 		logger.debug("endpoint request failed %s: %s", endpoint, exc)
 
 
+@handle_tool_errors("research_data_poisoning")
 async def research_data_poisoning(
 	target_url: str,
 	canary_phrases: list[str] | None = None,
@@ -285,6 +288,7 @@ async def research_data_poisoning(
 		}
 
 
+@handle_tool_errors("research_wiki_event_correlator")
 async def research_wiki_event_correlator(
 	page_title: str,
 	days_back: int = 30,
@@ -411,6 +415,7 @@ def _build_query_string(params: dict[str, Any]) -> str:
 	return "&".join(f"{k}={v}" for k, v in params.items())
 
 
+@handle_tool_errors("research_foia_tracker")
 async def research_foia_tracker(
 	query: str,
 ) -> dict[str, Any]:

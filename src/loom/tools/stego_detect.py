@@ -5,8 +5,9 @@ from __future__ import annotations
 import asyncio
 import logging
 from typing import Any
-
 import httpx
+
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.stego_detect")
 
@@ -131,6 +132,7 @@ def _check_exif_hidden(image_bytes: bytes) -> dict[str, Any]:
         return {"method": "exif_hidden_data", "error": str(exc)}
 
 
+@handle_tool_errors("research_stego_detect")
 async def research_stego_detect(
     content: str = "",
     image_url: str = "",

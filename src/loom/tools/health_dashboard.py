@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import html
 import logging
+from loom.error_responses import handle_tool_errors
 
 try:
     import psutil
@@ -20,6 +21,7 @@ DEFAULT_LLM_PROVIDER_COUNT = 8
 DEFAULT_SEARCH_PROVIDER_COUNT = 21
 
 
+@handle_tool_errors("research_dashboard_html")
 async def research_dashboard_html() -> dict[str, Any]:
     """Generate self-contained HTML health dashboard for Loom server.
 

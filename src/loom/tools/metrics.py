@@ -11,6 +11,7 @@ import sqlite3
 import time
 from datetime import UTC, datetime
 from pathlib import Path
+from loom.error_responses import handle_tool_errors
 from typing import Any
 
 logger = logging.getLogger("loom.tools.metrics")
@@ -155,6 +156,7 @@ def _percentile(values: list[float], p: int) -> float:
     return sorted_vals[idx_lower] * (1 - weight) + sorted_vals[idx_upper] * weight
 
 
+@handle_tool_errors("research_metrics")
 def research_metrics() -> dict[str, Any]:
     """Return Prometheus-compatible metrics for Grafana dashboard.
 

@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import logging
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 try:
     from loom.tools.llm import (
@@ -81,6 +82,7 @@ def _build_pydantic_model(output_schema: dict[str, str]) -> type[BaseModel]:
     return DynamicModel
 
 
+@handle_tool_errors("research_pydantic_agent")
 async def research_pydantic_agent(
     prompt: str,
     model: str = "nvidia_nim",
@@ -160,6 +162,7 @@ async def research_pydantic_agent(
         return {"success": False, "error": error_msg}
 
 
+@handle_tool_errors("research_structured_llm")
 async def research_structured_llm(
     prompt: str,
     output_schema: dict[str, str],

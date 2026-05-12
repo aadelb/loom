@@ -15,6 +15,7 @@ import socket
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.credential_vault")
 
@@ -64,6 +65,7 @@ def _save_vault(vault: dict[str, Any]) -> None:
     vault_path.chmod(0o600)
 
 
+@handle_tool_errors("research_vault_store")
 async def research_vault_store(
     name: str,
     value: str,
@@ -111,6 +113,7 @@ async def research_vault_store(
         return {"error": str(exc), "tool": "research_vault_store"}
 
 
+@handle_tool_errors("research_vault_retrieve")
 async def research_vault_retrieve(name: str) -> dict[str, Any]:
     """Retrieve and decrypt a credential from the vault.
 
@@ -149,6 +152,7 @@ async def research_vault_retrieve(name: str) -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_vault_retrieve"}
 
 
+@handle_tool_errors("research_vault_list")
 async def research_vault_list() -> dict[str, Any]:
     """List all stored credentials (names only, never values).
 

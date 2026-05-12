@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 import aiosqlite
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +83,7 @@ async def _db_context() -> Any:
         raise
 
 
+@handle_tool_errors("research_leaderboard")
 async def research_leaderboard(
     metric: str = "total_bypasses",
     period: str = "all_time",
@@ -183,6 +185,7 @@ async def research_leaderboard(
             return {"error": f"Leaderboard generation failed: {e!s}"}
 
 
+@handle_tool_errors("research_challenge_create")
 async def research_challenge_create(
     name: str,
     target_model: str,
@@ -230,6 +233,7 @@ async def research_challenge_create(
             return {"error": f"Challenge creation failed: {e!s}"}
 
 
+@handle_tool_errors("research_challenge_list")
 async def research_challenge_list(status: str = "active") -> dict[str, Any]:
     """List challenges filtered by status (active, completed, all)."""
     valid_statuses = {"active", "completed", "all"}

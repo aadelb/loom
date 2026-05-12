@@ -11,6 +11,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
 from loom.params import AttackerTargetDebateParams
 from loom.tools.reframe_strategies import ALL_STRATEGIES
 
@@ -43,6 +44,7 @@ def _detect_compliance(response: str) -> str:
     return "compliant"
 
 
+@handle_tool_errors("research_adversarial_debate")
 async def research_adversarial_debate(
     topic: str,
     attacker_strategy: str = "auto",

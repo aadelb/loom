@@ -10,6 +10,7 @@ from typing import Any
 from urllib.parse import quote
 
 import httpx
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.darkweb_early_warning")
 
@@ -158,6 +159,7 @@ def _estimate_severity(keyword: str, mentions: int) -> str:
     return "low"
 
 
+@handle_tool_errors("research_darkweb_early_warning")
 async def research_darkweb_early_warning(
     keywords: list[str], hours_back: int = 72
 ) -> dict[str, Any]:

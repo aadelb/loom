@@ -5,8 +5,10 @@ import logging
 import re
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.transferability")
 
+@handle_tool_errors("research_transfer_test")
 
 async def research_transfer_test(
     prompt: str,

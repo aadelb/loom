@@ -15,10 +15,12 @@ import importlib
 import logging
 import time
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.pipeline_enhancer")
 
 
+@handle_tool_errors("research_enhance")
 async def research_enhance(
     tool_name: str,
     params: dict[str, Any],
@@ -125,6 +127,7 @@ async def research_enhance(
     return result
 
 
+@handle_tool_errors("research_enhance_batch")
 async def research_enhance_batch(
     tasks: list[dict[str, Any]],
 ) -> dict[str, Any]:
@@ -453,6 +456,7 @@ def _default_hcs_scores() -> dict[str, float]:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+@handle_tool_errors("research_enhance_with_dependencies")
 async def research_enhance_with_dependencies(
     tool_names: list[str],
     params_map: dict[str, dict[str, Any]] | None = None,
@@ -582,6 +586,7 @@ async def research_enhance_with_dependencies(
         }
 
 
+@handle_tool_errors("research_compose_pipeline")
 async def research_compose_pipeline(
     primary_tools: list[str],
     config: dict[str, Any] | None = None,

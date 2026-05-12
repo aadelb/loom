@@ -9,8 +9,10 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.tool_health")
 
+@handle_tool_errors("research_health_check_all")
 
 async def research_health_check_all(timeout_ms: int = 5000) -> dict[str, Any]:
     """Quick health check of all tool categories.
@@ -92,6 +94,7 @@ async def research_health_check_all(timeout_ms: int = 5000) -> dict[str, Any]:
         "timestamp": datetime.now(UTC).isoformat(),
     }
 
+@handle_tool_errors("research_health_history")
 
 async def research_health_history(hours: int = 24) -> dict[str, Any]:
     """Show health check history from ~/.loom/health_history.jsonl.
@@ -153,6 +156,7 @@ async def research_health_history(hours: int = 24) -> dict[str, Any]:
         "incidents": incidents,
     }
 
+@handle_tool_errors("research_health_alert")
 
 async def research_health_alert(threshold: str = "degraded") -> dict[str, Any]:
     """Check if health has fallen below threshold.

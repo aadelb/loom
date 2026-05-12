@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.xover_attack")
 
 MODEL_FAMILIES = {
@@ -46,6 +47,7 @@ def _family(model: str) -> str:
 def _prob(src: str, tgt: str) -> float:
     return 1.0 if src == tgt else TRANSFER_MATRIX.get(tuple(sorted([src, tgt])), 0.50)
 
+@handle_tool_errors("research_xover_transfer")
 
 async def research_xover_transfer(attack: str, source_model: str, target_models: list[str] | None = None) -> dict[str, Any]:
     """Adapt attack from source to target models using transfer matrix & adaptation rules.
@@ -87,6 +89,7 @@ async def research_xover_transfer(attack: str, source_model: str, target_models:
     except Exception as exc:
         return {"error": str(exc), "tool": "research_xover_transfer"}
 
+@handle_tool_errors("research_xover_matrix")
 
 async def research_xover_matrix(attacks: list[str] | None = None) -> dict[str, Any]:
     """Generate cross-model transfer probability matrix showing vulnerability transfer between families."""

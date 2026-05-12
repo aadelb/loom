@@ -13,6 +13,7 @@ except ImportError:
     TextContent = None  # type: ignore[assignment,misc]
 
 from loom.validators import validate_url
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.polyglot_scraper")
 
@@ -48,6 +49,7 @@ _PLATFORM_PATTERNS = {
 }
 
 
+@handle_tool_errors("research_polyglot_search")
 async def research_polyglot_search(
     query: str,
     languages: list[str] | None = None,
@@ -91,6 +93,7 @@ async def research_polyglot_search(
     }
 
 
+@handle_tool_errors("research_subculture_intel")
 async def research_subculture_intel(
     topic: str,
     platforms: list[str] | None = None,

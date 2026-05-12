@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import time
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 _rate_limiters: dict[str, dict[str, Any]] = {}
 
@@ -29,6 +30,7 @@ def _refill_tokens(limiter: dict[str, Any]) -> None:
     limiter["last_refill"] = now
 
 
+@handle_tool_errors("research_ratelimit_check")
 async def research_ratelimit_check(tool_name: str) -> dict[str, Any]:
     """Check if tool call allowed. Token bucket: N tokens/min, 1 token per call."""
     try:
@@ -51,6 +53,7 @@ async def research_ratelimit_check(tool_name: str) -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_ratelimit_check"}
 
 
+@handle_tool_errors("research_ratelimit_configure")
 async def research_ratelimit_configure(
     tool_name: str, calls_per_minute: int = 60
 ) -> dict[str, Any]:
@@ -69,6 +72,7 @@ async def research_ratelimit_configure(
         return {"error": str(exc), "tool": "research_ratelimit_configure"}
 
 
+@handle_tool_errors("research_ratelimit_status")
 async def research_ratelimit_status() -> dict[str, Any]:
     """Show rate limit status for all configured tools."""
     try:

@@ -14,6 +14,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
 from loom.attack_tracker import get_strategy_stats
 
 logger = logging.getLogger("loom.tools.strategy_oracle")
@@ -430,6 +431,7 @@ class StrategyOracle:
         return min(1.0, max(0.0, blended))
 
 
+@handle_tool_errors("research_strategy_oracle")
 def research_strategy_oracle(
     query: str, model_name: str, top_k: int = 5
 ) -> dict[str, Any]:

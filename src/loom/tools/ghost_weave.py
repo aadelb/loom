@@ -18,6 +18,7 @@ from urllib.parse import parse_qs, urljoin, urlparse, urlencode
 from loom.config import get_config
 from loom.tools.fetch import research_fetch
 from loom.validators import validate_url
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.ghost_weave")
 
@@ -80,6 +81,7 @@ def _normalize_url(url: str) -> str:
         return url
 
 
+@handle_tool_errors("research_ghost_weave")
 async def research_ghost_weave(
     seed_url: str,
     depth: int = 1,

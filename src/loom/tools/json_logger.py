@@ -1,6 +1,7 @@
 """Structured JSON logging tools for Loom — query and analyze logs."""
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import asyncio
 import json
@@ -117,6 +118,7 @@ def _query_logs(log_dir: Path, limit: int, since_minutes: int, level: str, tool:
     return entries, count
 
 
+@handle_tool_errors("research_log_query")
 async def research_log_query(
     level: str = "all",
     tool: str = "",
@@ -181,6 +183,7 @@ def _get_log_stats(log_dir: Path) -> tuple[dict[str, Any], dict[str, Any], dict[
     return counts, errors, minutes, total
 
 
+@handle_tool_errors("research_log_stats")
 async def research_log_stats() -> dict[str, Any]:
     """Return log statistics: level counts, top erroring tools, requests/minute."""
     try:

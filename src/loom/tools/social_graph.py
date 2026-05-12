@@ -6,8 +6,9 @@ import asyncio
 import logging
 import re
 from typing import Any
-
 import httpx
+
+from loom.error_responses import handle_tool_errors
 from loom.http_helpers import fetch_json, fetch_text
 
 logger = logging.getLogger("loom.tools.social_graph")
@@ -427,6 +428,7 @@ def _extract_hn_topics(title: str, url: str) -> list[str]:
     return list(topics) if topics else ["general"]
 
 
+@handle_tool_errors("research_social_graph")
 async def research_social_graph(
     username: str, platforms: list[str] | None = None
 ) -> dict[str, Any]:

@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.cultural_attacks")
 
@@ -138,6 +139,7 @@ HOMOGLYPH_MAP = {
 }
 
 
+@handle_tool_errors("research_cultural_reframe")
 async def research_cultural_reframe(
     prompt: str,
     culture: str = "auto",
@@ -227,6 +229,7 @@ async def research_cultural_reframe(
         return {"error": str(exc), "tool": "research_cultural_reframe"}
 
 
+@handle_tool_errors("research_multilingual_attack")
 async def research_multilingual_attack(
     prompt: str,
     technique: str = "code_switch",

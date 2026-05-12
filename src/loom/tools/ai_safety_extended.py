@@ -11,6 +11,8 @@ import httpx
 
 from loom.validators import validate_url
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.ai_safety_extended")
 
 
@@ -72,6 +74,7 @@ async def _call_loom_llm_locally(query: str) -> str:
         return ""
 
 
+@handle_tool_errors("research_hallucination_benchmark")
 async def research_hallucination_benchmark(
     target_url: str, facts: list[str] | None = None
 ) -> dict[str, Any]:
@@ -263,6 +266,7 @@ async def research_hallucination_benchmark(
             loop.close()
 
 
+@handle_tool_errors("research_adversarial_robustness")
 async def research_adversarial_robustness(
     target_url: str, test_count: int = 5
 ) -> dict[str, Any]:

@@ -14,6 +14,8 @@ import re
 from pathlib import Path
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.auto_pipeline")
 
 # Keyword-to-stage mapping
@@ -196,6 +198,7 @@ def _estimate_time(tools: list[dict[str, Any]], optimize_for: str) -> dict[str, 
     }
 
 
+@handle_tool_errors("research_auto_pipeline")
 async def research_auto_pipeline(
     goal: str,
     max_steps: int = 7,
@@ -211,67 +214,64 @@ async def research_auto_pipeline(
     Returns:
         Dict with goal, pipeline (list of steps), timing, parallelization info, metadata.
     """
-    try:
-        if not goal or len(goal) > 500:
-            return {
-                "error": "goal must be 1-500 characters",
-                "goal": goal,
-                "pipeline": [],
-                "total_steps": 0,
-                "parallel_groups": 0,
-            }
-
-        logger.info("auto_pipeline_start goal=%s optimize_for=%s", goal, optimize_for)
-
-        # Phase 1-3: Decompose, select, order
-        registry = _get_tool_registry()
-        tasks = _decompose(goal)
-        tools = _select_tools(tasks, registry)
-        tools = _order_and_parallelize(tools)
-
-        if len(tools) > max_steps:
-            tools = tools[:max_steps]
-
-        # Phase 4-5: Extract params and estimate
-        pipeline = []
-        for tool in tools:
-            params = _extract_params(goal, tool["tool"])
-            pipeline.append({
-                "step": tool["step"],
-                "tool": tool["tool"],
-                "module": tool["module"],
-                "task": f"{tool['stage']} operation",
-                "params": params,
-                "stage": tool["stage"],
-                "parallel_group": tool["parallel_group"],
-                "keywords_matched": list({tool["stage"]}),
-                "estimated_ms": _STAGE_TIMES.get(tool["stage"], 1000),
-                "reason": f"Best match for {tool['stage']} task",
-            })
-
-        timing = _estimate_time(tools, optimize_for)
-        parallel_groups = max([t["parallel_group"] for t in tools], default=0) if tools else 0
-
-        result = {
+    if not goal or len(goal) > 500:
+        return {
+            "error": "goal must be 1-500 characters",
             "goal": goal,
-            "pipeline": pipeline,
-            "total_steps": len(pipeline),
-            "parallel_groups": parallel_groups,
-            "estimated_total_ms": timing["total_ms"],
-            "estimated_sequential_ms": timing["sequential_ms"],
-            "estimated_speedup_vs_sequential": timing["speedup"],
-            "optimize_for": optimize_for,
-            "registry_size": len(registry),
-            "tasks_identified": len(tasks),
+            "pipeline": [],
+            "total_steps": 0,
+            "parallel_groups": 0,
         }
 
-        logger.info(
-            "auto_pipeline_generated steps=%d groups=%d speedup=%.2fx",
-            result["total_steps"],
-            parallel_groups,
-            timing["speedup"],
-        )
+    logger.info("auto_pipeline_start goal=%s optimize_for=%s", goal, optimize_for)
 
-        return result
-    except Exception as exc:
-        return {"error": str(exc), "tool": "research_auto_pipeline"}
+    # Phase 1-3: Decompose, select, order
+    registry = _get_tool_registry()
+    tasks = _decompose(goal)
+    tools = _select_tools(tasks, registry)
+    tools = _order_and_parallelize(tools)
+
+    if len(tools) > max_steps:
+        tools = tools[:max_steps]
+
+    # Phase 4-5: Extract params and estimate
+    pipeline = []
+    for tool in tools:
+        params = _extract_params(goal, tool["tool"])
+        pipeline.append({
+            "step": tool["step"],
+            "tool": tool["tool"],
+            "module": tool["module"],
+            "task": f"{tool['stage']} operation",
+            "params": params,
+            "stage": tool["stage"],
+            "parallel_group": tool["parallel_group"],
+            "keywords_matched": list({tool["stage"]}),
+            "estimated_ms": _STAGE_TIMES.get(tool["stage"], 1000),
+            "reason": f"Best match for {tool['stage']} task",
+        })
+
+    timing = _estimate_time(tools, optimize_for)
+    parallel_groups = max([t["parallel_group"] for t in tools], default=0) if tools else 0
+
+    result = {
+        "goal": goal,
+        "pipeline": pipeline,
+        "total_steps": len(pipeline),
+        "parallel_groups": parallel_groups,
+        "estimated_total_ms": timing["total_ms"],
+        "estimated_sequential_ms": timing["sequential_ms"],
+        "estimated_speedup_vs_sequential": timing["speedup"],
+        "optimize_for": optimize_for,
+        "registry_size": len(registry),
+        "tasks_identified": len(tasks),
+    }
+
+    logger.info(
+        "auto_pipeline_generated steps=%d groups=%d speedup=%.2fx",
+        result["total_steps"],
+        parallel_groups,
+        timing["speedup"],
+    )
+
+    return result

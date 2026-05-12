@@ -18,8 +18,9 @@ from __future__ import annotations
 import logging
 import math
 from typing import Any, Literal
-
 from pydantic import BaseModel, Field, field_validator
+
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.strange_attractors")
 
@@ -46,6 +47,7 @@ class AttractorResult(BaseModel):
     recommendation: str
 
 
+@handle_tool_errors("research_attractor_trap")
 async def research_attractor_trap(
     prompt: str,
     attractor_type: str = "lorenz",

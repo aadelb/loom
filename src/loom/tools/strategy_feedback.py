@@ -8,6 +8,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.strategy_feedback")
 FEEDBACK_DB = Path.home() / ".loom" / "feedback" / "strategy_log.db"
 
@@ -24,6 +26,7 @@ def _get_db_conn() -> sqlite3.Connection:
     return conn
 
 
+@handle_tool_errors("research_strategy_log")
 def research_strategy_log(topic: str, strategy: str, model: str, hcs_score: float, success: bool) -> dict[str, Any]:
     """Log a strategy attempt result."""
     conn = None
@@ -44,6 +47,7 @@ def research_strategy_log(topic: str, strategy: str, model: str, hcs_score: floa
             conn.close()
 
 
+@handle_tool_errors("research_strategy_recommend")
 def research_strategy_recommend(topic: str, model: str = "auto") -> dict[str, Any]:
     """Find best strategy for a topic+model combination."""
     conn = None
@@ -79,6 +83,7 @@ def research_strategy_recommend(topic: str, model: str = "auto") -> dict[str, An
             conn.close()
 
 
+@handle_tool_errors("research_strategy_stats")
 def research_strategy_stats() -> dict[str, Any]:
     """Get overall statistics: top strategies, worst strategies, model performance."""
     conn = None

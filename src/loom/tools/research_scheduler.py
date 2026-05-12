@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from loom.config import get_config
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.scheduler")
 
@@ -48,6 +49,7 @@ def _save_schedules(data: dict[str, Any]) -> None:
             tmp_path.unlink()
 
 
+@handle_tool_errors("research_schedule_create")
 def research_schedule_create(
     name: str,
     tool_name: str,
@@ -101,6 +103,7 @@ def research_schedule_create(
         return {"error": str(exc), "tool": "research_schedule_create"}
 
 
+@handle_tool_errors("research_schedule_list")
 def research_schedule_list() -> dict[str, Any]:
     """List all scheduled tasks with metadata.
 
@@ -135,6 +138,7 @@ def research_schedule_list() -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_schedule_list"}
 
 
+@handle_tool_errors("research_schedule_check")
 def research_schedule_check() -> dict[str, Any]:
     """Check which scheduled tasks are due for execution.
 

@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 
+@handle_tool_errors("research_pg_status")
 async def research_pg_status() -> dict[str, Any]:
     """Check PostgreSQL connection status."""
     try:
@@ -21,6 +23,7 @@ async def research_pg_status() -> dict[str, Any]:
         }
 
 
+@handle_tool_errors("research_pg_migrate")
 async def research_pg_migrate() -> dict[str, Any]:
     """Run PostgreSQL migrations (stub)."""
     return {

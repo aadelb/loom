@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
 from uuid import uuid4
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.metric_alerts")
 
@@ -62,6 +63,7 @@ def _check_condition(value: float, condition: str, threshold: float) -> bool:
     return False
 
 
+@handle_tool_errors("research_alert_create")
 async def research_alert_create(
     name: str,
     metric: str,
@@ -112,6 +114,7 @@ async def research_alert_create(
         return {"error": str(exc), "tool": "research_alert_create"}
 
 
+@handle_tool_errors("research_alert_check")
 async def research_alert_check(metric_values: dict[str, float] | None = None) -> dict[str, Any]:
     """Evaluate all rules against current metric values.
 
@@ -157,6 +160,7 @@ async def research_alert_check(metric_values: dict[str, float] | None = None) ->
         return {"error": str(exc), "tool": "research_alert_check"}
 
 
+@handle_tool_errors("research_alert_list")
 async def research_alert_list() -> dict[str, Any]:
     """List all alert rules.
 

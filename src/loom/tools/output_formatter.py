@@ -5,10 +5,12 @@ from __future__ import annotations
 import json
 import re
 from typing import Any, Literal
+from loom.error_responses import handle_tool_errors
 
 logger_name = "loom.tools.output_formatter"
 
 
+@handle_tool_errors("research_format_report")
 def research_format_report(
     raw_text: str,
     format: Literal["json", "markdown", "executive_brief", "technical_spec"] = "json",
@@ -88,6 +90,7 @@ def research_format_report(
         return {"error": str(exc), "tool": "research_format_report"}
 
 
+@handle_tool_errors("research_extract_actionables")
 def research_extract_actionables(text: str) -> dict[str, Any]:
     """Extract actionable items from any text.
 

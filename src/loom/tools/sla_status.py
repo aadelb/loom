@@ -10,11 +10,13 @@ import logging
 from datetime import datetime
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
 from loom.sla_monitor import get_sla_monitor
 
 log = logging.getLogger("loom.tools.sla_status")
 
 
+@handle_tool_errors("research_sla_status")
 def research_sla_status() -> dict[str, Any]:
     """Get current SLA metrics and breach status.
 

@@ -1,6 +1,7 @@
 """research_jailbreak_evolution_* — track jailbreak strategy evolution across model versions."""
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import logging
 from typing import Any
@@ -26,6 +27,7 @@ def _get_tracker() -> JailbreakEvolutionTracker:
     return _tracker
 
 
+@handle_tool_errors("research_jailbreak_evolution_record")
 async def research_jailbreak_evolution_record(
     strategy: str,
     model: str,
@@ -78,6 +80,7 @@ async def research_jailbreak_evolution_record(
         }
 
 
+@handle_tool_errors("research_jailbreak_evolution_get")
 async def research_jailbreak_evolution_get(
     strategy: str,
     model: str,
@@ -117,6 +120,7 @@ async def research_jailbreak_evolution_get(
         }
 
 
+@handle_tool_errors("research_jailbreak_evolution_timeline")
 async def research_jailbreak_evolution_timeline(
     model: str,
 ) -> dict[str, Any]:
@@ -152,6 +156,7 @@ async def research_jailbreak_evolution_timeline(
         }
 
 
+@handle_tool_errors("research_jailbreak_evolution_patches")
 async def research_jailbreak_evolution_patches(
     model: str,
 ) -> dict[str, Any]:
@@ -189,6 +194,7 @@ async def research_jailbreak_evolution_patches(
         }
 
 
+@handle_tool_errors("research_jailbreak_evolution_adapt")
 async def research_jailbreak_evolution_adapt(
     strategy: str,
     model: str,
@@ -239,6 +245,7 @@ async def research_jailbreak_evolution_adapt(
         }
 
 
+@handle_tool_errors("research_jailbreak_evolution_stats")
 async def research_jailbreak_evolution_stats(
     model: str | None = None,
 ) -> dict[str, Any]:

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 try:
     from loom.hcs_report import HCSReportGenerator
@@ -18,6 +19,7 @@ except ImportError:
 logger = logging.getLogger("loom.tools.hcs_report")
 
 
+@handle_tool_errors("research_hcs_report")
 async def research_hcs_report(
     report_type: str = "combined",
     regression_threshold: float = 1.0,

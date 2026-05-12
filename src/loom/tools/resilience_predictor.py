@@ -6,6 +6,8 @@ import logging
 from datetime import UTC, datetime
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.resilience_predictor")
 
 # Strategy classification & metadata
@@ -35,6 +37,7 @@ _MODEL_UPDATE_FREQ = {
 }
 
 
+@handle_tool_errors("research_predict_resilience")
 async def research_predict_resilience(
     strategy: str,
     target_model: str = "auto",

@@ -11,6 +11,7 @@ from urllib.parse import quote
 import httpx
 from loom.http_helpers import fetch_json, fetch_text
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.trend_predictor")
 
 _ARXIV_API = "http://export.arxiv.org/api/query"
@@ -282,6 +283,7 @@ def _predict_next_3_months(
 
     return {"predicted_papers": predicted, "growth_rate": round(growth_rate, 3)}
 
+@handle_tool_errors("research_trend_predict")
 
 async def research_trend_predict(topic: str, time_range_days: int = 90) -> dict[str, Any]:
     """Predict research trends by analyzing publication patterns.

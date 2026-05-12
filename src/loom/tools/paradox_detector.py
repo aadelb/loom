@@ -15,6 +15,7 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.paradox_detector")
 
@@ -152,6 +153,7 @@ class ParadoxFinding:
     defense_recommendation: str
 
 
+@handle_tool_errors("research_detect_paradox")
 async def research_detect_paradox(prompt: str) -> dict:
     """Scan prompt for self-referential paradoxes that confuse safety evaluators.
 
@@ -218,6 +220,7 @@ async def research_detect_paradox(prompt: str) -> dict:
         }
 
 
+@handle_tool_errors("research_paradox_immunize")
 async def research_paradox_immunize(system_prompt: str) -> dict:
     """Harden a system prompt against logical trick attacks.
 

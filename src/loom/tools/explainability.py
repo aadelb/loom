@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 from datetime import UTC, datetime
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.explainability")
 
@@ -66,6 +67,7 @@ STRATEGY_MECHS = {
 }
 
 
+@handle_tool_errors("research_explain_bypass")
 async def research_explain_bypass(
     strategy: str,
     target_model: str = "auto",
@@ -187,6 +189,7 @@ _DEFENSE_MECHANISMS = [
 ]
 
 
+@handle_tool_errors("research_vulnerability_map")
 async def research_vulnerability_map(
     model: str,
     detail_level: str = "medium",

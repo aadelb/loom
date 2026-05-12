@@ -8,6 +8,7 @@ Uses Maigret as a subprocess since it's not easily pip-installable as a library.
 """
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import json
 import logging
@@ -72,6 +73,7 @@ def _check_maigret_available() -> tuple[bool, str]:
         return False, f"Maigret availability check error: {str(exc)}"
 
 
+@handle_tool_errors("research_maigret")
 def research_maigret(username: str, timeout: int = 60) -> dict[str, Any]:
     """Search for a username across 2000+ sites using Maigret.
 

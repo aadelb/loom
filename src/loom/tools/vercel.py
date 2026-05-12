@@ -11,8 +11,10 @@ from typing import Any
 
 import httpx
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.vercel")
 
+@handle_tool_errors("research_vercel_status")
 
 async def research_vercel_status() -> dict[str, Any]:
     """Get real Vercel platform status from official status page.

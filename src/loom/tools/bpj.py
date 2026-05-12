@@ -10,6 +10,8 @@ import logging
 from datetime import UTC, datetime
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 try:
     from loom.bpj_generator import BPJGenerator
     from loom.params import BPJParams
@@ -34,6 +36,7 @@ def _get_bpj_generator() -> BPJGenerator:
     return _bpj_generator
 
 
+@handle_tool_errors("research_bpj_generate")
 async def research_bpj_generate(
     safe_prompt: str,
     unsafe_prompt: str,

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 try:
     from loom.tools.hcs_scorer import research_hcs_score
@@ -33,6 +34,7 @@ _ESCALATION_CHAIN = [
 ]
 
 
+@handle_tool_errors("research_hcs_escalate")
 async def research_hcs_escalate(
     prompt: str,
     response: str,

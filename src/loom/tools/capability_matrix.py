@@ -6,6 +6,7 @@ import ast
 import asyncio
 import logging
 import pathlib
+from loom.error_responses import handle_tool_errors
 from typing import Any
 
 logger = logging.getLogger("loom.tools.capability_matrix")
@@ -176,6 +177,7 @@ def _build_matrix() -> dict[str, Any]:
     }
 
 
+@handle_tool_errors("research_capability_matrix")
 async def research_capability_matrix(category: str = "all") -> dict[str, Any]:
     """Analyze all tool functions by input/output type.
 
@@ -218,6 +220,7 @@ async def research_capability_matrix(category: str = "all") -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_capability_matrix"}
 
 
+@handle_tool_errors("research_find_tools_by_capability")
 async def research_find_tools_by_capability(
     input_type: str = "",
     category: str = "",

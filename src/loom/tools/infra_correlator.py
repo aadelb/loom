@@ -1,6 +1,7 @@
 """Infrastructure fingerprint correlator — link hidden services via shared signals."""
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import asyncio
 import hashlib
@@ -126,6 +127,7 @@ async def _get_http_fingerprint(client: httpx.AsyncClient, domain: str) -> dict[
 _DOMAIN_RE = re.compile(r"^[a-z0-9]([a-z0-9\-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9\-]*[a-z0-9])?)*\.[a-z]{2,}$")
 
 
+@handle_tool_errors("research_infra_correlator")
 async def research_infra_correlator(
     domain: str,
     check_favicon: bool = True,

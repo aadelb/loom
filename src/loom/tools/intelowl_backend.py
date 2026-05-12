@@ -1,6 +1,7 @@
 """IntelOwl threat intelligence orchestration backend — 100+ analyzer integration."""
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import json
 import logging
@@ -59,6 +60,7 @@ def _detect_observable_type(observable: str) -> str:
     return "unknown"
 
 
+@handle_tool_errors("research_intelowl_analyze")
 def research_intelowl_analyze(
     observable: str,
     observable_type: str = "auto",

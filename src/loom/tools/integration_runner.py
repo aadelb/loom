@@ -1,10 +1,12 @@
 """Integration test runner for validating all 311 tool modules."""
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 import asyncio, importlib, inspect, time
 from pathlib import Path
 from typing import Any
 
 
+@handle_tool_errors("research_integration_test")
 async def research_integration_test(
     modules: list[str] | None = None, timeout_ms: int = 5000
 ) -> dict[str, Any]:
@@ -62,6 +64,7 @@ async def research_integration_test(
     }
 
 
+@handle_tool_errors("research_smoke_test")
 async def research_smoke_test(tool_name: str) -> dict[str, Any]:
     """Smoke test a single tool by importing and verifying it's callable."""
     result = {

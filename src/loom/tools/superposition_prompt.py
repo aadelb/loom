@@ -6,6 +6,8 @@ import logging
 import random
 from typing import Any, Literal
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.superposition_prompt")
 
 VARIATION_AXES = {
@@ -72,6 +74,7 @@ def _score_variant(combo: dict[str, str]) -> tuple[float, float, float]:
     return compliance, stealth, balanced
 
 
+@handle_tool_errors("research_superposition_attack")
 async def research_superposition_attack(
     prompt: str,
     num_superpositions: int = 10,

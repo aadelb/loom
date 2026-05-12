@@ -13,6 +13,7 @@ from typing import Any
 
 import httpx
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.tor")
 
 # Rate limiting for NEWNYM requests (1 per 10 seconds)
@@ -45,6 +46,7 @@ async def _get_tor_client() -> httpx.AsyncClient:
         )
     return _tor_client
 
+@handle_tool_errors("research_tor_status")
 
 async def research_tor_status() -> dict[str, Any]:
     """Check Tor daemon status and get current exit node IP.
@@ -147,6 +149,7 @@ def _send_tor_newnym() -> bool:
         logger.error("tor_newnym_failed: %s", type(exc).__name__)
         return False
 
+@handle_tool_errors("research_tor_new_identity")
 
 async def research_tor_new_identity() -> dict[str, Any]:
     """Request a new Tor circuit (exit node rotation).

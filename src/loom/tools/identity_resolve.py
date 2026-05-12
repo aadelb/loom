@@ -1,6 +1,7 @@
 """research_identity_resolve — Link online identities using only public data."""
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import hashlib
 import logging
@@ -15,6 +16,7 @@ from loom.input_validators import validate_domain, validate_username, Validation
 logger = logging.getLogger("loom.tools.identity_resolve")
 
 
+@handle_tool_errors("research_identity_resolve")
 async def research_identity_resolve(
     query: str = "",
     query_type: str = "email",

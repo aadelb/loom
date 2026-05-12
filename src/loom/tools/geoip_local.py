@@ -7,6 +7,7 @@ import ipaddress
 import logging
 import os
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.geoip_local")
 
@@ -146,6 +147,7 @@ def _extract_gps_info(exif_dict: dict[int, Any]) -> dict[str, float] | None:
         return None
 
 
+@handle_tool_errors("research_geoip_local")
 async def research_geoip_local(ip: str) -> dict[str, Any]:
     """Look up geographic information for an IP address using local MaxMind database.
 

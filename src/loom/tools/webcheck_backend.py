@@ -18,6 +18,7 @@ import httpx
 from loom.input_validators import validate_domain, ValidationError
 from loom.validators import EXTERNAL_TIMEOUT_SECS, validate_url
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.webcheck_backend")
 
 # Common tracking scripts and patterns
@@ -68,6 +69,7 @@ TECH_PATTERNS = {
     },
 }
 
+@handle_tool_errors("research_web_check")
 
 def research_web_check(domain: str, checks: list[str] | None = None) -> dict[str, Any]:
     """Comprehensive website OSINT analysis.

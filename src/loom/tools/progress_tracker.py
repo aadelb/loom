@@ -13,6 +13,7 @@ import uuid
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 log = logging.getLogger("loom.progress_tracker")
 
@@ -51,6 +52,7 @@ def _save_investigations(data: dict[str, Any]) -> None:
             tmp_path.unlink()
 
 
+@handle_tool_errors("research_progress_create")
 async def research_progress_create(
     investigation: str,
     total_steps: int = 10,
@@ -105,6 +107,7 @@ async def research_progress_create(
         }
 
 
+@handle_tool_errors("research_progress_update")
 async def research_progress_update(
     investigation_id: str,
     step: int,
@@ -176,6 +179,7 @@ async def research_progress_update(
         }
 
 
+@handle_tool_errors("research_progress_dashboard")
 async def research_progress_dashboard() -> dict[str, Any]:
     """Show all active and completed investigations.
 

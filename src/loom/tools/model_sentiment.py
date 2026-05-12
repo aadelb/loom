@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import re
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.model_sentiment")
 
@@ -332,6 +333,7 @@ class ModelSentimentAnalyzer:
         }
 
 
+@handle_tool_errors("research_model_sentiment")
 async def research_model_sentiment(response: str, context: str = "") -> dict[str, Any]:
     """Detect the emotional state of an LLM from its response text.
 

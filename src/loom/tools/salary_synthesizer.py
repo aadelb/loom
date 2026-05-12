@@ -12,6 +12,7 @@ from urllib.parse import quote
 import httpx
 
 from loom.http_helpers import fetch_json, fetch_text
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.salary_synthesizer")
 
@@ -220,6 +221,7 @@ def _infer_location_adjustment(
     }
 
 
+@handle_tool_errors("research_salary_synthesize")
 async def research_salary_synthesize(
     job_title: str, location: str = "remote", skills: list[str] | None = None
 ) -> dict[str, Any]:

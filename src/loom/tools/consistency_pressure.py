@@ -10,6 +10,7 @@ import json
 import logging
 import os
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 try:
     from mcp.types import TextContent
@@ -40,6 +41,7 @@ def _get_pressure_engine() -> "ConsistencyPressure":
     return ConsistencyPressure(storage_path=storage_path)
 
 
+@handle_tool_errors("research_consistency_pressure")
 async def research_consistency_pressure(
     model: str,
     target_prompt: str,
@@ -89,6 +91,7 @@ async def research_consistency_pressure(
         return {"error": str(exc), "tool": "research_consistency_pressure"}
 
 
+@handle_tool_errors("research_consistency_pressure_record")
 async def research_consistency_pressure_record(
     model: str,
     prompt: str,
@@ -138,6 +141,7 @@ async def research_consistency_pressure_record(
         return {"error": str(exc), "tool": "research_consistency_pressure_record"}
 
 
+@handle_tool_errors("research_consistency_pressure_history")
 async def research_consistency_pressure_history(
     model: str,
 ) -> dict[str, Any]:

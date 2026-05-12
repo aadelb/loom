@@ -20,6 +20,7 @@ from typing import Any
 from loom.input_validators import validate_domain, validate_port, ValidationError
 from loom.validators import validate_url
 from loom.cli_checker import is_available, get_path
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.projectdiscovery")
 
@@ -79,6 +80,7 @@ def _check_binary_exists(binary_name: str) -> tuple[bool, str | None]:
     return (path is not None, path)
 
 
+@handle_tool_errors("research_subfinder")
 def research_subfinder(
     domain: str,
     timeout: int = 60,
@@ -174,6 +176,7 @@ def research_subfinder(
         }
 
 
+@handle_tool_errors("research_katana_crawl")
 def research_katana_crawl(
     url: str,
     depth: int = 3,
@@ -295,6 +298,7 @@ def research_katana_crawl(
         }
 
 
+@handle_tool_errors("research_httpx_probe")
 def research_httpx_probe(
     targets: list[str],
     ports: str = "80,443,8080,8443",
@@ -462,6 +466,7 @@ def research_httpx_probe(
         }
 
 
+@handle_tool_errors("research_nuclei_scan")
 def research_nuclei_scan(
     target: str,
     templates: str = "cves,exposures",

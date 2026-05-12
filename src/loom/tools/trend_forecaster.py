@@ -20,6 +20,7 @@ from urllib.parse import quote
 
 import httpx
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.trend_forecaster")
 
 # Min term length (filter noise)
@@ -261,6 +262,7 @@ def _calculate_confidence(
 
     return min(1.0, confidence)
 
+@handle_tool_errors("research_trend_forecast")
 
 async def research_trend_forecast(
     topic: str,

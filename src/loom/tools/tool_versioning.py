@@ -16,6 +16,7 @@ TOOLS_DIR = Path(__file__).parent
 SNAPSHOTS_DIR = Path.home() / ".loom" / "version_snapshots"
 
 
+from loom.error_responses import handle_tool_errors
 def _hash_file(path: Path) -> str:
     """Calculate SHA-256 hash of a file."""
     sha256 = hashlib.sha256()
@@ -44,6 +45,7 @@ def _tool_info(path: Path) -> dict[str, Any]:
         "lines_of_code": _count_lines(path),
     }
 
+@handle_tool_errors("research_tool_version")
 
 async def research_tool_version(tool_name: str = "") -> dict[str, Any]:
     """Get version info for a tool or all tools.
@@ -77,6 +79,7 @@ async def research_tool_version(tool_name: str = "") -> dict[str, Any]:
 
     return {"tools_count": len(tools), "total_size_bytes": total_size, "tools": tools}
 
+@handle_tool_errors("research_version_diff")
 
 async def research_version_diff(tool_name: str, previous_hash: str = "") -> dict[str, Any]:
     """Compare current version with a previous hash.
@@ -105,6 +108,7 @@ async def research_version_diff(tool_name: str, previous_hash: str = "") -> dict
     except (OSError, ValueError) as e:
         return {"error": f"Failed to diff '{tool_name}': {e}"}
 
+@handle_tool_errors("research_version_snapshot")
 
 async def research_version_snapshot() -> dict[str, Any]:
     """Take a snapshot of all tool versions for deployment tracking.

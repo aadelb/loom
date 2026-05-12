@@ -5,6 +5,7 @@ Requires masscan binary installed and (typically) root privileges.
 """
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import json
 import logging
@@ -53,6 +54,7 @@ def _validate_port_range(ports: str) -> bool:
     return all(c in allowed_chars for c in ports)
 
 
+@handle_tool_errors("research_masscan")
 def research_masscan(
     target: str,
     ports: str = "1-1000",

@@ -14,6 +14,7 @@ from collections import defaultdict, deque
 from typing import Any
 
 import httpx
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.graph_analysis")
 
@@ -115,6 +116,7 @@ def _community_detect(node_list: list[str], adj: dict[int, set[int]]) -> dict[in
     return labels
 
 
+@handle_tool_errors("research_graph_analyze")
 async def research_graph_analyze(nodes: list[dict[str, Any]], edges: list[dict[str, Any]], algorithm: str = "pagerank") -> dict[str, Any]:
     """Analyze graph using PageRank, community detection, centrality, or shortest_path.
 
@@ -178,6 +180,7 @@ async def research_graph_analyze(nodes: list[dict[str, Any]], edges: list[dict[s
         return {"algorithm": algorithm, "results": None, "metrics": {}, "error": str(e)}
 
 
+@handle_tool_errors("research_transaction_graph")
 async def research_transaction_graph(addresses: list[str], chain: str = "bitcoin") -> dict[str, Any]:
     """Build transaction graph from blockchain addresses via blockchain.info.
 

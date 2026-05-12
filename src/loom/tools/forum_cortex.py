@@ -10,6 +10,7 @@ import asyncio
 import logging
 from functools import partial
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.forum_cortex")
 
@@ -103,6 +104,7 @@ async def _classify_post(
     }
 
 
+@handle_tool_errors("research_forum_cortex")
 async def research_forum_cortex(
     topic: str,
     n: int = 5,

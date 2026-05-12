@@ -8,6 +8,7 @@ import os
 from typing import Any
 
 import httpx
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.opencti_backend")
 
@@ -64,6 +65,7 @@ query GetIndicator($value: String!) {
 """
 
 
+@handle_tool_errors("research_opencti_query")
 def research_opencti_query(
     indicator: str,
     indicator_type: str = "auto",

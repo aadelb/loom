@@ -7,6 +7,7 @@ Provides:
 """
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import asyncio
 import logging
@@ -397,6 +398,7 @@ async def _fetch_hackernews_activity(
         return {"comments": [], "submissions": [], "tech_interests": []}
 
 
+@handle_tool_errors("research_funding_signal")
 async def research_funding_signal(company: str, domain: str = "") -> dict[str, Any]:
     """Detect hiring signals from funding/growth indicators.
 
@@ -528,6 +530,7 @@ async def research_funding_signal(company: str, domain: str = "") -> dict[str, A
         return {"error": str(exc), "tool": "research_funding_signal"}
 
 
+@handle_tool_errors("research_stealth_hire_scanner")
 async def research_stealth_hire_scanner(
     keywords: str, location: str = ""
 ) -> dict[str, Any]:
@@ -616,6 +619,7 @@ async def research_stealth_hire_scanner(
         return {"error": str(exc), "tool": "research_stealth_hire_scanner"}
 
 
+@handle_tool_errors("research_interviewer_profiler")
 async def research_interviewer_profiler(
     person_name: str, company: str = ""
 ) -> dict[str, Any]:

@@ -12,6 +12,8 @@ import logging
 import warnings
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 try:
     from mcp.types import TextContent
 except ImportError:
@@ -76,6 +78,7 @@ def _fetch_camoufox(
         return CamoufoxResult(url=url, error=str(e))
 
 
+@handle_tool_errors("research_camoufox")
 async def research_camoufox(
     url: str,
     session: str | None = None,
@@ -131,6 +134,7 @@ async def research_camoufox(
         return {"error": str(exc), "tool": "research_camoufox"}
 
 
+@handle_tool_errors("research_botasaurus")
 async def research_botasaurus(
     url: str,
     session: str | None = None,

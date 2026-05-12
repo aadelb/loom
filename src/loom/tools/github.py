@@ -10,10 +10,12 @@ from typing import Any
 
 import httpx
 from mcp.types import TextContent
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.github")
 
 
+@handle_tool_errors("research_github")
 def research_github(
     kind: str,
     query: str,
@@ -161,6 +163,7 @@ def research_github(
         }
 
 
+@handle_tool_errors("research_github_readme")
 def research_github_readme(owner: str, repo: str) -> dict[str, Any]:
     """Fetch a repository's README content.
 
@@ -208,6 +211,7 @@ def research_github_readme(owner: str, repo: str) -> dict[str, Any]:
         return {"error": str(exc)}
 
 
+@handle_tool_errors("research_github_releases")
 def research_github_releases(owner: str, repo: str, limit: int = 5) -> dict[str, Any]:
     """Fetch recent releases for a repository.
 

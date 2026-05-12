@@ -6,6 +6,7 @@ import os
 from collections import deque
 from datetime import UTC, datetime
 from typing import Any, Literal
+from loom.error_responses import handle_tool_errors
 
 # Health tracking: bounded deque per provider
 _HISTORY: dict[str, deque[dict[str, Any]]] = {}
@@ -77,6 +78,7 @@ def _check_provider(provider: str) -> tuple[bool, bool]:
     return True, valid
 
 
+@handle_tool_errors("research_provider_ping")
 async def research_provider_ping(provider: str = "all") -> dict[str, Any]:
     """Quick availability check for providers. Returns config status + API key format validity."""
     try:
@@ -96,6 +98,7 @@ async def research_provider_ping(provider: str = "all") -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_provider_ping"}
 
 
+@handle_tool_errors("research_provider_history")
 async def research_provider_history(provider: str = "", hours: int = 24) -> dict[str, Any]:
     """Show provider health history with uptime percentage and avg response time."""
     try:
@@ -120,6 +123,7 @@ async def research_provider_history(provider: str = "", hours: int = 24) -> dict
         return {"error": str(exc), "tool": "research_provider_history"}
 
 
+@handle_tool_errors("research_provider_recommend")
 async def research_provider_recommend(task_type: str = "general") -> dict[str, Any]:
     """Recommend best provider for task type based on availability and capability."""
     try:

@@ -6,6 +6,7 @@ Tools:
 """
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import logging
 import os
@@ -38,6 +39,7 @@ def _get_joplin_token() -> str | None:
     return os.environ.get("JOPLIN_TOKEN")
 
 
+@handle_tool_errors("research_save_note")
 async def research_save_note(
     title: str,
     body: str,
@@ -163,6 +165,7 @@ async def research_save_note(
         }
 
 
+@handle_tool_errors("research_list_notebooks")
 async def research_list_notebooks() -> dict[str, Any]:
     """List all Joplin notebooks.
 

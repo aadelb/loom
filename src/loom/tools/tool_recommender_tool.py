@@ -18,6 +18,7 @@ log = logging.getLogger("loom.tools.tool_recommender_tool")
 _recommender: ToolRecommender | None = None
 
 
+from loom.error_responses import handle_tool_errors
 def _get_recommender() -> ToolRecommender:
     """Get or create the tool recommender instance."""
     global _recommender
@@ -25,6 +26,7 @@ def _get_recommender() -> ToolRecommender:
         _recommender = ToolRecommender()
     return _recommender
 
+@handle_tool_errors("research_recommend_tools")
 
 async def research_recommend_tools(
     query: str,

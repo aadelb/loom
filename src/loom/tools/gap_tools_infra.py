@@ -11,6 +11,7 @@ from urllib.parse import urlparse
 import httpx
 
 from loom.text_utils import jaccard_similarity
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.gap_tools_infra")
 
@@ -48,6 +49,7 @@ async def _check_cloud_resource(
         }
 
 
+@handle_tool_errors("research_cloud_enum")
 async def research_cloud_enum(domain: str) -> dict[str, Any]:
     """Check cloud resource existence for a domain by probing common patterns.
 
@@ -187,6 +189,7 @@ async def _github_code_search(
         return []
 
 
+@handle_tool_errors("research_github_secrets")
 async def research_github_secrets(query: str, max_results: int = 20) -> dict[str, Any]:
     """Search GitHub for accidentally committed secrets using code search API.
 
@@ -372,6 +375,7 @@ async def _search_crt_sh(
         return []
 
 
+@handle_tool_errors("research_whois_correlator")
 async def research_whois_correlator(domain: str) -> dict[str, Any]:
     """Correlate WHOIS registrant across domains.
 
@@ -491,6 +495,7 @@ async def _query_llm_endpoint(
         return ""
 
 
+@handle_tool_errors("research_output_consistency")
 async def research_output_consistency(
     target_url: str, prompt: str, runs: int = 5
 ) -> dict[str, Any]:

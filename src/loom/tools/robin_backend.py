@@ -16,6 +16,7 @@ from typing import Any
 
 import httpx
 from loom.cli_checker import is_available
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.robin_backend")
 
@@ -273,6 +274,7 @@ async def _search_darksearch(query: str, timeout_secs: int) -> dict[str, Any]:
         }
 
 
+@handle_tool_errors("research_robin_scan")
 async def research_robin_scan(
     query: str,
     scan_type: str = "search",

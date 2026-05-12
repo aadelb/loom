@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import difflib
 import logging
+from loom.error_responses import handle_tool_errors
 from typing import Any
 
 logger = logging.getLogger("loom.tools.output_diff")
@@ -22,6 +23,7 @@ def _get_diff_lock() -> asyncio.Lock:
     return _diff_lock
 
 
+@handle_tool_errors("research_diff_compare")
 async def research_diff_compare(text_a: str, text_b: str, context_lines: int = 3) -> dict[str, Any]:
     """Compare two text outputs and show unified diff."""
     try:
@@ -54,6 +56,7 @@ async def research_diff_compare(text_a: str, text_b: str, context_lines: int = 3
         return {"error": str(exc), "tool": "research_diff_compare"}
 
 
+@handle_tool_errors("research_diff_track")
 async def research_diff_track(tool_name: str, output: str, run_id: str = "") -> dict[str, Any]:
     """Track a tool's output over time to detect drift."""
     try:

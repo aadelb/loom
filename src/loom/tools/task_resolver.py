@@ -11,9 +11,12 @@ import logging
 from collections import defaultdict, deque
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.task_resolver")
 
 
+@handle_tool_errors("research_resolve_order")
 async def research_resolve_order(
     tasks: list[dict],
 ) -> dict[str, Any]:
@@ -126,6 +129,7 @@ def _compute_parallel_groups(
     return [groups_dict[i] for i in sorted(groups_dict.keys())]
 
 
+@handle_tool_errors("research_critical_path")
 async def research_critical_path(
     tasks: list[dict],
 ) -> dict[str, Any]:

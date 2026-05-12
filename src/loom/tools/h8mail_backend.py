@@ -15,6 +15,7 @@ from typing import Any
 import httpx
 
 from loom.input_validators import validate_email, ValidationError
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.h8mail_backend")
 
@@ -25,6 +26,7 @@ HIBP_BREACH_URL = "https://haveibeenpwned.com/api/v3/breachedaccount"
 MAX_EMAIL_LENGTH = 254
 
 
+@handle_tool_errors("research_email_breach")
 async def research_email_breach(
     email: str,
     search_timeout: int = 60,

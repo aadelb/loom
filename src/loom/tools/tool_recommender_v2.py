@@ -6,6 +6,8 @@ import logging
 from dataclasses import dataclass
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 log = logging.getLogger("loom.tools.tool_recommender_v2")
 
 # Co-occurrence pairs: tools commonly used together
@@ -116,6 +118,7 @@ class RecommendedTool:
     source: str  # "co_occurrence", "category", or "semantic"
 
 
+@handle_tool_errors("research_recommend_next")
 async def research_recommend_next(
     last_tool: str,
     context: str = "",
@@ -217,7 +220,7 @@ async def research_recommend_next(
         "total_candidates": len(candidates),
     }
 
-
+@handle_tool_errors("research_suggest_workflow")
 async def research_suggest_workflow(
     tools_used: list[str],
 ) -> dict[str, Any]:

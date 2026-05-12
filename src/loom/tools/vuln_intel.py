@@ -16,6 +16,7 @@ from urllib.parse import quote
 import httpx
 from loom.http_helpers import fetch_json, fetch_text
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.vuln_intel")
 
 
@@ -278,6 +279,7 @@ def _deduplicate_vulns(vulns: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
     return list(seen.values())
 
+@handle_tool_errors("research_vuln_intel")
 
 async def research_vuln_intel(query: str, max_results: int = 30) -> dict[str, Any]:
     """Aggregate vulnerability intelligence from 6+ free sources.

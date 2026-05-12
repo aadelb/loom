@@ -16,6 +16,7 @@ from typing import Any
 import httpx
 
 from loom.validators import PathSafetyError, validate_local_file_path
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.gcp")
 
@@ -74,6 +75,7 @@ def _load_gcp_credentials() -> str | None:
     return api_key
 
 
+@handle_tool_errors("research_image_analyze")
 async def research_image_analyze(
     image_url: str,
     features: list[str] | None = None,
@@ -341,6 +343,7 @@ async def research_image_analyze(
         }
 
 
+@handle_tool_errors("research_text_to_speech")
 async def research_text_to_speech(
     text: str,
     language: str = "en",
@@ -497,6 +500,7 @@ async def research_text_to_speech(
         }
 
 
+@handle_tool_errors("research_tts_voices")
 async def research_tts_voices() -> dict[str, Any]:
     """List supported Text-to-Speech voices.
 

@@ -10,11 +10,13 @@ from typing import Any
 
 import httpx
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.transcribe")
 
 # Max audio duration in seconds (30 minutes)
 MAX_AUDIO_DURATION_SECS = 1800
 
+@handle_tool_errors("research_transcribe")
 
 async def research_transcribe(
     url: str,

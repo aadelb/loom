@@ -1,6 +1,7 @@
 """Loom Marketplace tools for buying/selling custom modules, strategies, templates."""
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import json
 import logging
@@ -55,6 +56,7 @@ async def _init_db(conn: aiosqlite.Connection) -> None:
     )
 
 
+@handle_tool_errors("research_marketplace_list")
 async def research_marketplace_list(
     category: str = "all",
     sort_by: str = "popular",
@@ -132,6 +134,7 @@ async def research_marketplace_list(
         await db_conn.close()
 
 
+@handle_tool_errors("research_marketplace_publish")
 async def research_marketplace_publish(
     name: str,
     category: str,
@@ -190,6 +193,7 @@ async def research_marketplace_publish(
         await db_conn.close()
 
 
+@handle_tool_errors("research_marketplace_download")
 async def research_marketplace_download(
     listing_id: str,
 ) -> dict[str, Any]:

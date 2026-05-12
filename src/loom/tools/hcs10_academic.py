@@ -18,6 +18,7 @@ from urllib.parse import quote
 import httpx
 
 from loom.http_helpers import fetch_json, fetch_text
+from loom.error_responses import handle_tool_errors
 
 try:
     from scipy.stats import chi2
@@ -152,6 +153,7 @@ def _shannon_diversity_index(method_counts: dict[str, int]) -> float:
     return min(1.0, h / max_h)
 
 
+@handle_tool_errors("research_grant_forensics")
 def research_grant_forensics(grant_id: str = "", text: str = "") -> dict[str, Any]:
     """Apply Zipf's Law and Benford's Law to grant abstract text.
 
@@ -260,6 +262,7 @@ def research_grant_forensics(grant_id: str = "", text: str = "") -> dict[str, An
         return {"error": str(exc), "tool": "research_grant_forensics"}
 
 
+@handle_tool_errors("research_monoculture_detect")
 async def research_monoculture_detect(field: str, max_papers: int = 50) -> dict[str, Any]:
     """Detect research field monoculture via method diversity analysis.
 
@@ -363,6 +366,7 @@ async def research_monoculture_detect(field: str, max_papers: int = 50) -> dict[
         return {"error": str(exc), "tool": "research_monoculture_detect"}
 
 
+@handle_tool_errors("research_review_cartel")
 async def research_review_cartel(author_id: str) -> dict[str, Any]:
     """Detect peer review cartels via mutual citation patterns.
 
@@ -457,6 +461,7 @@ async def research_review_cartel(author_id: str) -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_review_cartel"}
 
 
+@handle_tool_errors("research_data_fabrication")
 def research_data_fabrication(numbers: list[float]) -> dict[str, Any]:
     """Apply GRIM test and Benford analysis to detect data fabrication.
 
@@ -524,6 +529,7 @@ def research_data_fabrication(numbers: list[float]) -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_data_fabrication"}
 
 
+@handle_tool_errors("research_institutional_decay")
 async def research_institutional_decay(institution: str) -> dict[str, Any]:
     """Assess institutional health from retraction rate, publication trend, and author turnover.
 
@@ -642,6 +648,7 @@ async def research_institutional_decay(institution: str) -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_institutional_decay"}
 
 
+@handle_tool_errors("research_shell_funding")
 async def research_shell_funding(company: str) -> dict[str, Any]:
     """Trace research funding through shell companies using OpenCorporates + SEC EDGAR.
 
@@ -740,6 +747,7 @@ async def research_shell_funding(company: str) -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_shell_funding"}
 
 
+@handle_tool_errors("research_conference_arbitrage")
 async def research_conference_arbitrage(conference: str) -> dict[str, Any]:
     """Analyze conference acceptance patterns using DBLP and Semantic Scholar.
 
@@ -837,6 +845,7 @@ async def research_conference_arbitrage(conference: str) -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_conference_arbitrage"}
 
 
+@handle_tool_errors("research_preprint_manipulation")
 async def research_preprint_manipulation(arxiv_id: str = "", topic: str = "") -> dict[str, Any]:
     """Detect preprint manipulation via timing analysis and social amplification.
 

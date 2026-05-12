@@ -24,6 +24,7 @@ import logging
 from collections import defaultdict, deque
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.tool_dependencies")
 
 
@@ -203,6 +204,7 @@ DEPENDENCY_GRAPH: dict[str, list[str]] = {
 # Public API Functions
 # ─────────────────────────────────────────────────────────────────────────────
 
+@handle_tool_errors("research_tool_dependencies")
 
 async def research_tool_dependencies(
     tool_name: str,
@@ -260,6 +262,7 @@ async def research_tool_dependencies(
     except Exception as exc:
         return {"error": str(exc), "tool": "research_tool_dependencies"}
 
+@handle_tool_errors("research_get_execution_plan")
 
 async def research_get_execution_plan(
     tools: list[str],
@@ -528,6 +531,7 @@ async def prepare_tool_execution(
 # Diagnostics & Reporting
 # ─────────────────────────────────────────────────────────────────────────────
 
+@handle_tool_errors("research_dependency_graph_stats")
 
 async def research_dependency_graph_stats() -> dict[str, Any]:
     """Return statistics about the dependency graph.

@@ -16,6 +16,7 @@ try:
 except ImportError:
     _TOXICITY_AVAILABLE = False
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.toxicity_checker_tool")
 
 # Initialize checker singleton
@@ -29,6 +30,7 @@ def _get_checker() -> ToxicityChecker:
         _checker = ToxicityChecker()
     return _checker
 
+@handle_tool_errors("research_toxicity_check")
 
 async def research_toxicity_check(
     text: str,

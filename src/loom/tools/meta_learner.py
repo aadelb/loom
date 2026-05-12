@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import logging
 from collections import Counter
+from loom.error_responses import handle_tool_errors
 from typing import Any
 
 try:
@@ -19,6 +20,7 @@ except ImportError:
 logger = logging.getLogger("loom.tools.meta_learner")
 
 
+@handle_tool_errors("research_meta_learn")
 async def research_meta_learn(
     successful_strategies: list[str] | None = None,
     failed_strategies: list[str] | None = None,

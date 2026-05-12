@@ -10,6 +10,7 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.plugin_loader")
 
@@ -28,6 +29,7 @@ def _get_plugin_lock() -> asyncio.Lock:
     return _plugin_lock
 
 
+@handle_tool_errors("research_plugin_load")
 async def research_plugin_load(path: str) -> dict[str, Any]:
     """Load a Python file as a Loom plugin.
 
@@ -124,6 +126,7 @@ async def research_plugin_load(path: str) -> dict[str, Any]:
         }
 
 
+@handle_tool_errors("research_plugin_list")
 async def research_plugin_list() -> dict[str, Any]:
     """List all loaded plugins with their metadata.
 
@@ -147,6 +150,7 @@ async def research_plugin_list() -> dict[str, Any]:
     }
 
 
+@handle_tool_errors("research_plugin_unload")
 async def research_plugin_unload(plugin_id: str) -> dict[str, Any]:
     """Remove plugin from registry.
 

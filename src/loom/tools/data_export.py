@@ -7,10 +7,12 @@ import logging
 import time
 from pathlib import Path
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.data_export")
 
 
+@handle_tool_errors("research_export_config")
 async def research_export_config() -> dict[str, Any]:
     """Export current server configuration as JSON."""
     try:
@@ -25,6 +27,7 @@ async def research_export_config() -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_export_config"}
 
 
+@handle_tool_errors("research_export_strategies")
 async def research_export_strategies(format: str = "json") -> dict[str, Any]:
     """Export all reframing strategies."""
     try:
@@ -43,6 +46,7 @@ async def research_export_strategies(format: str = "json") -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_export_strategies"}
 
 
+@handle_tool_errors("research_export_cache")
 async def research_export_cache(limit: int = 50) -> dict[str, Any]:
     """Export recent cache entries metadata (not content)."""
     try:

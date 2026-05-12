@@ -15,6 +15,8 @@ from typing import Any
 
 import aiosqlite
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.attack_economy")
 
 # Database path
@@ -59,6 +61,7 @@ def _calculate_credits(
     return base + novelty_bonus + model_bonus
 
 
+@handle_tool_errors("research_economy_submit")
 async def research_economy_submit(
     strategy_name: str,
     target_model: str,
@@ -134,6 +137,7 @@ async def research_economy_submit(
         await conn.close()
 
 
+@handle_tool_errors("research_economy_balance")
 async def research_economy_balance() -> dict[str, Any]:
     """Check credit balance and transaction history.
 
@@ -201,6 +205,7 @@ async def research_economy_balance() -> dict[str, Any]:
         await conn.close()
 
 
+@handle_tool_errors("research_economy_leaderboard")
 async def research_economy_leaderboard(top_n: int = 10) -> dict[str, Any]:
     """Show top strategies by credits earned.
 

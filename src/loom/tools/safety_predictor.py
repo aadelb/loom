@@ -15,6 +15,7 @@ from __future__ import annotations
 import logging
 from datetime import UTC, datetime, timedelta
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.safety_predictor")
 
@@ -110,6 +111,7 @@ RESEARCH_SIGNALS: list[dict[str, Any]] = [
 ]
 
 
+@handle_tool_errors("research_predict_safety_update")
 def research_predict_safety_update(
     model: str = "auto",
     attack_category: str = "all",

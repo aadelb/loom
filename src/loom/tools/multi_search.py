@@ -11,6 +11,7 @@ from urllib.parse import quote, unquote, urlparse
 import httpx
 
 from loom.http_helpers import fetch_json, fetch_text
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.multi_search")
 
@@ -203,6 +204,7 @@ def _rank_results(results: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return sorted(results, key=lambda x: x.get("rank_score", 0), reverse=True)
 
 
+@handle_tool_errors("research_multi_search")
 async def research_multi_search(
     query: str,
     engines: list[str] | None = None,

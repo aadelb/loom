@@ -14,9 +14,9 @@ import re
 from datetime import datetime
 from typing import Any
 from urllib.parse import quote
-
 import httpx
 
+from loom.error_responses import handle_tool_errors
 from loom.validators import validate_url, UrlSafetyError
 from loom.http_helpers import fetch_json, fetch_text
 
@@ -108,6 +108,7 @@ def _calculate_risk_level(
     return "low"
 
 
+@handle_tool_errors("research_supply_chain_risk")
 async def research_supply_chain_risk(
     package_name: str, ecosystem: str = "pypi"
 ) -> dict[str, Any]:
@@ -285,6 +286,7 @@ async def research_supply_chain_risk(
         return result
 
 
+@handle_tool_errors("research_patent_landscape")
 async def research_patent_landscape(query: str, max_results: int = 20) -> dict[str, Any]:
     """Map the patent landscape for a technology.
 
@@ -433,6 +435,7 @@ async def research_patent_landscape(query: str, max_results: int = 20) -> dict[s
         return result
 
 
+@handle_tool_errors("research_dependency_audit")
 async def research_dependency_audit(repo_url: str) -> dict[str, Any]:
     """Audit a GitHub repository's dependencies for risks.
 

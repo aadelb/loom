@@ -11,6 +11,7 @@ from urllib.parse import quote
 import httpx
 
 from loom.http_helpers import fetch_json, fetch_text
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.report_generator")
 
@@ -266,6 +267,7 @@ def _generate_markdown_report(
     return "\n".join(lines)
 
 
+@handle_tool_errors("research_generate_report")
 async def research_generate_report(
     topic: str,
     depth: str = "standard",
@@ -404,6 +406,7 @@ async def research_generate_report(
         }
 
 
+@handle_tool_errors("research_generate_executive_report")
 def research_generate_executive_report(
     scores: list[dict] | None = None,
     tracker_data: list[dict] | None = None,

@@ -20,6 +20,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from loom.cli_checker import is_available
 from loom.validators import validate_url
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.photon_backend")
 
@@ -356,6 +357,7 @@ async def _crawl_fallback(
     return data
 
 
+@handle_tool_errors("research_photon_crawl")
 async def research_photon_crawl(
     url: str,
     depth: int = 2,

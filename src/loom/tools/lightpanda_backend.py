@@ -8,6 +8,7 @@ Uses Lightpanda as a subprocess since it's not easily pip-installable as a libra
 """
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import asyncio
 import json
@@ -47,6 +48,7 @@ def _check_lightpanda_available() -> tuple[bool, str]:
         return False, f"Lightpanda availability check error: {str(exc)}"
 
 
+@handle_tool_errors("research_lightpanda_fetch")
 async def research_lightpanda_fetch(
     url: str,
     javascript: bool = True,
@@ -187,6 +189,7 @@ async def research_lightpanda_fetch(
                 logger.warning(f"Failed to clean up temp file: {output_file}")
 
 
+@handle_tool_errors("research_lightpanda_batch")
 async def research_lightpanda_batch(
     urls: list[str],
     javascript: bool = True,

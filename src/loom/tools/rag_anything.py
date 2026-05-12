@@ -10,6 +10,7 @@ import sqlite3
 import uuid
 from pathlib import Path
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.rag_anything")
 _RAG_DIR = Path.home() / ".loom" / "rag"
@@ -49,6 +50,7 @@ def _hash_embedding(text: str) -> str:
     return hashlib.sha256(text.encode()).hexdigest()[:16]
 
 
+@handle_tool_errors("research_rag_ingest")
 def research_rag_ingest(
     content: str, content_type: str = "text", metadata: dict[str, Any] | None = None
 ) -> dict[str, Any]:
@@ -84,6 +86,7 @@ def research_rag_ingest(
         conn.close()
 
 
+@handle_tool_errors("research_rag_query")
 def research_rag_query(
     query: str, top_k: int = 5, content_type: str | None = None
 ) -> dict[str, Any]:
@@ -136,6 +139,7 @@ def research_rag_query(
         conn.close()
 
 
+@handle_tool_errors("research_rag_clear")
 def research_rag_clear() -> dict[str, Any]:
     """Clear RAG store. Returns: cleared, store_location."""
     try:

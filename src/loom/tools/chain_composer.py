@@ -4,6 +4,7 @@ import json, logging
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.chain_composer")
 
@@ -14,6 +15,7 @@ def _get_chains_dir() -> Path:
     return chains_dir
 
 
+@handle_tool_errors("research_chain_define")
 async def research_chain_define(name: str, steps: list[dict]) -> dict[str, Any]:
     """Define a reusable tool chain (pipeline).
 
@@ -47,6 +49,7 @@ async def research_chain_define(name: str, steps: list[dict]) -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_chain_define"}
 
 
+@handle_tool_errors("research_chain_list")
 async def research_chain_list() -> dict[str, Any]:
     """List all defined chains with metadata.
 
@@ -74,6 +77,7 @@ async def research_chain_list() -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_chain_list"}
 
 
+@handle_tool_errors("research_chain_describe")
 async def research_chain_describe(name: str) -> dict[str, Any]:
     """Show details of a specific chain.
 

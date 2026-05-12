@@ -8,6 +8,8 @@ import string
 from datetime import UTC, datetime
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.auto_experiment")
 
 
@@ -41,6 +43,7 @@ def _pval(cp: int, cn: int, tp: int, tn: int) -> float:
     return max(0.0, min(1.0, 1.0 / (1.0 + chi_sq * 0.3)))
 
 
+@handle_tool_errors("research_run_experiment")
 async def research_run_experiment(
     hypothesis: str,
     variables: list[str] | None = None,
@@ -106,6 +109,7 @@ async def research_run_experiment(
         return {"error": str(exc), "tool": "research_run_experiment"}
 
 
+@handle_tool_errors("research_experiment_design")
 async def research_experiment_design(
     research_question: str,
     budget: int = 50,

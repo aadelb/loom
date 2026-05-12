@@ -21,9 +21,12 @@ from mcp.types import TextContent
 
 from loom.attack_scorer import AttackEffectivenessScorer
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.attack_scorer")
 
 
+@handle_tool_errors("research_attack_score")
 def research_attack_score(
     prompt: str,
     response: str,

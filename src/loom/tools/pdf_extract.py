@@ -13,6 +13,7 @@ from typing import Any
 import httpx
 
 from loom.validators import UrlSafetyError, validate_url
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.pdf_extract")
 
@@ -123,6 +124,7 @@ def _extract_pdf_text_pdftotext(pdf_bytes: bytes, start_page: int | None, end_pa
                 pass
 
 
+@handle_tool_errors("research_pdf_extract")
 async def research_pdf_extract(
     url: str, pages: str | None = None
 ) -> dict[str, Any]:
@@ -259,6 +261,7 @@ async def research_pdf_extract(
         return {**output, "error": str(exc)}
 
 
+@handle_tool_errors("research_pdf_search")
 async def research_pdf_search(url: str, query: str) -> dict[str, Any]:
     """Search for text within a PDF.
 

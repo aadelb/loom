@@ -15,11 +15,13 @@ from typing import Any
 import httpx
 
 from loom.agent_benchmark import AgentScenarioBenchmark, BenchmarkSummary
+from loom.error_responses import handle_tool_errors
 from loom.validators import validate_url, UrlSafetyError
 
 logger = logging.getLogger("loom.tools.agent_benchmark")
 
 
+@handle_tool_errors("research_agent_benchmark")
 async def research_agent_benchmark(
     model_api_url: str,
     model_name: str = "",
@@ -69,111 +71,103 @@ async def research_agent_benchmark(
         #   ...
         # }
     """
-    try:
-        # Validate inputs
-        if not model_api_url or not model_api_url.strip():
-            return {
-                "error": "model_api_url must be non-empty",
-                "scenarios_run": 0,
-            }
-
-        if len(model_api_url) > 512:
-            return {
-                "error": "model_api_url exceeds max length (512 chars)",
-                "scenarios_run": 0,
-            }
-
-        validate_url(model_api_url)
-
-        if timeout < 5.0 or timeout > 300.0:
-            return {
-                "error": f"timeout must be 5.0-300.0 seconds (got {timeout})",
-                "scenarios_run": 0,
-            }
-
-        if output_format not in ("summary", "json"):
-            return {
-                "error": f"output_format must be 'summary' or 'json' (got {output_format})",
-                "scenarios_run": 0,
-            }
-
-        logger.info(
-            "agent_benchmark starting url=%s model=%s timeout=%.1f",
-            model_api_url,
-            model_name or "unnamed",
-            timeout,
-        )
-
-        # Create benchmark instance
-        benchmark = AgentScenarioBenchmark()
-
-        # Create shared client for all scenario calls (avoids 20 separate connections)
-        async with httpx.AsyncClient(timeout=timeout) as shared_client:
-            async def model_fn(prompt: str) -> str:
-                """Call model API with prompt."""
-                response = await shared_client.post(
-                    model_api_url,
-                    json={"prompt": prompt},
-                    headers={"Content-Type": "application/json"},
-                )
-                response.raise_for_status()
-
-                data = response.json()
-                if isinstance(data, dict):
-                    for key in ["response", "text", "completion", "message", "output", "content"]:
-                        if key in data:
-                            return str(data[key])
-                    return json.dumps(data)
-                return str(data)
-
-            # Run benchmark
-            summary: BenchmarkSummary = await benchmark.run_all(
-                model_fn=model_fn,
-                model_name=model_name,
-                timeout=timeout,
-            )
-
-        logger.info(
-            "agent_benchmark completed: %d/%d scenarios passed (%.1f%% resistance)",
-            summary.scenarios_passed,
-            summary.scenarios_run,
-            summary.injection_resistance_rate * 100,
-        )
-
-        # Format output
-        result = {
-            "scenarios_run": summary.scenarios_run,
-            "scenarios_passed": summary.scenarios_passed,
-            "scenarios_failed": summary.scenarios_failed,
-            "injection_resistance_rate": summary.injection_resistance_rate,
-            "false_positive_rate": summary.false_positive_rate,
-            "false_negative_rate": summary.false_negative_rate,
-            "per_category_scores": summary.per_category_scores,
-            "execution_time": summary.execution_time,
-            "failed_scenarios": summary.failed_scenarios,
-            "recommendations": summary.recommendations,
-        }
-
-        if output_format == "json":
-            result["results"] = [
-                {
-                    "scenario_id": r.scenario_id,
-                    "scenario_name": r.scenario_name,
-                    "category": r.category,
-                    "injection_point": r.injection_point,
-                    "injected": r.injected,
-                    "confidence": round(r.confidence, 3),
-                    "execution_time": round(r.execution_time, 2),
-                    "error": r.error,
-                }
-                for r in summary.results
-            ]
-
-        return result
-
-    except Exception as e:
-        logger.exception("Unexpected error in agent_benchmark")
+    # Validate inputs
+    if not model_api_url or not model_api_url.strip():
         return {
-            "error": f"Execution failed: {type(e).__name__}: {str(e)[:200]}",
+            "error": "model_api_url must be non-empty",
             "scenarios_run": 0,
         }
+
+    if len(model_api_url) > 512:
+        return {
+            "error": "model_api_url exceeds max length (512 chars)",
+            "scenarios_run": 0,
+        }
+
+    validate_url(model_api_url)
+
+    if timeout < 5.0 or timeout > 300.0:
+        return {
+            "error": f"timeout must be 5.0-300.0 seconds (got {timeout})",
+            "scenarios_run": 0,
+        }
+
+    if output_format not in ("summary", "json"):
+        return {
+            "error": f"output_format must be 'summary' or 'json' (got {output_format})",
+            "scenarios_run": 0,
+        }
+
+    logger.info(
+        "agent_benchmark starting url=%s model=%s timeout=%.1f",
+        model_api_url,
+        model_name or "unnamed",
+        timeout,
+    )
+
+    # Create benchmark instance
+    benchmark = AgentScenarioBenchmark()
+
+    # Create shared client for all scenario calls (avoids 20 separate connections)
+    async with httpx.AsyncClient(timeout=timeout) as shared_client:
+        async def model_fn(prompt: str) -> str:
+            """Call model API with prompt."""
+            response = await shared_client.post(
+                model_api_url,
+                json={"prompt": prompt},
+                headers={"Content-Type": "application/json"},
+            )
+            response.raise_for_status()
+
+            data = response.json()
+            if isinstance(data, dict):
+                for key in ["response", "text", "completion", "message", "output", "content"]:
+                    if key in data:
+                        return str(data[key])
+                return json.dumps(data)
+            return str(data)
+
+        # Run benchmark
+        summary: BenchmarkSummary = await benchmark.run_all(
+            model_fn=model_fn,
+            model_name=model_name,
+            timeout=timeout,
+        )
+
+    logger.info(
+        "agent_benchmark completed: %d/%d scenarios passed (%.1f%% resistance)",
+        summary.scenarios_passed,
+        summary.scenarios_run,
+        summary.injection_resistance_rate * 100,
+    )
+
+    # Format output
+    result = {
+        "scenarios_run": summary.scenarios_run,
+        "scenarios_passed": summary.scenarios_passed,
+        "scenarios_failed": summary.scenarios_failed,
+        "injection_resistance_rate": summary.injection_resistance_rate,
+        "false_positive_rate": summary.false_positive_rate,
+        "false_negative_rate": summary.false_negative_rate,
+        "per_category_scores": summary.per_category_scores,
+        "execution_time": summary.execution_time,
+        "failed_scenarios": summary.failed_scenarios,
+        "recommendations": summary.recommendations,
+    }
+
+    if output_format == "json":
+        result["results"] = [
+            {
+                "scenario_id": r.scenario_id,
+                "scenario_name": r.scenario_name,
+                "category": r.category,
+                "injection_point": r.injection_point,
+                "injected": r.injected,
+                "confidence": round(r.confidence, 3),
+                "execution_time": round(r.execution_time, 2),
+                "error": r.error,
+            }
+            for r in summary.results
+        ]
+
+    return result

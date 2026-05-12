@@ -13,6 +13,7 @@ from functools import partial
 from typing import Any
 
 import math
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.cipher_mirror")
 
 # Common API key patterns (prefix-based detection)
@@ -131,6 +132,7 @@ def _detect_model_weights(text: str, snippet: str = "") -> list[dict[str, Any]]:
     return findings
 
 
+@handle_tool_errors("research_cipher_mirror")
 async def research_cipher_mirror(
     query: str,
     n: int = 10,

@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 # Check if structlog is available
 try:
@@ -171,6 +172,7 @@ REID_TACTICS: dict[str, dict[str, Any]] = {
 }
 
 
+@handle_tool_errors("research_reid_tactics")
 async def research_reid_tactics(
     tactic: str = "",
     include_counters: bool = True,

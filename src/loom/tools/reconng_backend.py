@@ -7,6 +7,7 @@ import json
 import logging
 import os
 from loom.cli_checker import is_available
+from loom.error_responses import handle_tool_errors
 import subprocess
 import tempfile
 from typing import Any
@@ -82,6 +83,7 @@ class ReconnGResult(BaseModel):
     elapsed_ms: int = 0
 
 
+@handle_tool_errors("research_reconng_scan")
 async def research_reconng_scan(
     target: str,
     modules: list[str] | None = None,

@@ -13,6 +13,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 try:
     from loom.tools.strategy_feedback import _get_db_conn
     _FEEDBACK_AVAILABLE = True
@@ -25,6 +27,7 @@ logger = logging.getLogger("loom.tools.strategy_cache")
 MIN_CACHE_CONFIDENCE = 0.70
 
 
+@handle_tool_errors("research_cached_strategy")
 def research_cached_strategy(
     topic: str,
     model: str = "auto",

@@ -14,6 +14,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.yara_backend")
 
 try:
@@ -236,6 +237,7 @@ def _scan_directory(
         "total_matches": total_matches,
     }
 
+@handle_tool_errors("research_yara_scan")
 
 async def research_yara_scan(
     rules_path: str, target_path: str, timeout: int = 60

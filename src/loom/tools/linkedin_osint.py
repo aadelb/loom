@@ -1,6 +1,7 @@
 """LinkedIn OSINT intelligence — public profile discovery and company research."""
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import logging
 import re
@@ -185,6 +186,7 @@ def _extract_company_info(html: str) -> dict[str, Any]:
     return info
 
 
+@handle_tool_errors("research_linkedin_intel")
 async def research_linkedin_intel(
     company: str = "",
     person: str = "",

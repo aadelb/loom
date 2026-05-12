@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 from copy import deepcopy
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.safety_neurons")
 
@@ -22,6 +23,7 @@ _CIRCUITS = [
 ]
 
 
+@handle_tool_errors("research_safety_circuit_map")
 async def research_safety_circuit_map(model: str = "auto", probe_type: str = "contrastive") -> dict[str, Any]:
     """Map safety circuits in an LLM via behavioral probing.
 
@@ -71,6 +73,7 @@ async def research_safety_circuit_map(model: str = "auto", probe_type: str = "co
         return {"error": str(exc), "tool": "research_safety_circuit_map"}
 
 
+@handle_tool_errors("research_circuit_bypass_plan")
 async def research_circuit_bypass_plan(model: str, target_circuit: str = "auto") -> dict[str, Any]:
     """Generate bypass strategy for a safety circuit.
 

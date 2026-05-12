@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from datetime import UTC, datetime
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.cost_estimator")
 
@@ -159,6 +160,7 @@ def _find_free_alternatives(tool_name: str) -> list[str]:
     return alternatives
 
 
+@handle_tool_errors("research_estimate_cost")
 async def research_estimate_cost(
     tool_name: str,
     params: dict[str, Any] | None = None,
@@ -225,6 +227,7 @@ async def research_estimate_cost(
         return {"error": str(exc), "tool": "research_estimate_cost"}
 
 
+@handle_tool_errors("research_cost_summary")
 async def research_cost_summary(period: str = "today") -> dict[str, Any]:
     """Summarize estimated costs accumulated across tool calls.
 

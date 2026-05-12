@@ -13,6 +13,8 @@ import time
 from datetime import UTC, datetime
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.response_cache")
 
 # Module-level cache: {normalized_key: {response, expires_at, tool_name, created_at}}
@@ -50,6 +52,7 @@ def _normalize_query(query: str) -> str:
     return normalized
 
 
+@handle_tool_errors("research_cache_store")
 async def research_cache_store(
     query: str,
     response: str,
@@ -108,6 +111,7 @@ async def research_cache_store(
         return {"error": str(exc), "tool": "research_cache_store"}
 
 
+@handle_tool_errors("research_cache_lookup")
 async def research_cache_lookup(query: str) -> dict[str, Any]:
     """Look up cached response for similar query.
 
@@ -165,6 +169,7 @@ async def research_cache_lookup(query: str) -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_cache_lookup"}
 
 
+@handle_tool_errors("research_response_cache_stats")
 async def research_response_cache_stats() -> dict[str, Any]:
     """Return response cache statistics.
 

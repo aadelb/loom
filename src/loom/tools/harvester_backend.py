@@ -19,6 +19,7 @@ import time
 from typing import Any
 
 from loom.input_validators import validate_domain, validate_email, validate_ip, ValidationError
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.harvester_backend")
 
@@ -189,6 +190,7 @@ def _parse_harvester_output(stdout: str, stderr: str) -> tuple[list[str], list[s
     return sorted(list(emails_set)), sorted(list(subdomains_set)), sorted(list(ips_set))
 
 
+@handle_tool_errors("research_harvest")
 def research_harvest(
     domain: str, sources: str = "all", limit: int = 100
 ) -> dict[str, Any]:

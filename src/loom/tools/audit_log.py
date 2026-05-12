@@ -16,11 +16,14 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.audit_log")
 
 AUDIT_DIR = Path.home() / ".loom" / "audit"
 
 
+@handle_tool_errors("research_audit_record")
 async def research_audit_record(
     tool_name: str,
     params: dict | None = None,
@@ -83,6 +86,7 @@ async def research_audit_record(
         return {"audit_id": audit_id, "recorded": False, "error": str(e)}
 
 
+@handle_tool_errors("research_audit_log_query")
 async def research_audit_log_query(
     tool: str = "",
     caller: str = "",
@@ -163,6 +167,7 @@ async def research_audit_log_query(
     }
 
 
+@handle_tool_errors("research_audit_export")
 async def research_audit_export(
     format: str = "jsonl",
     days: int = 7,

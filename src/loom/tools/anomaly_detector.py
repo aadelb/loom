@@ -4,9 +4,12 @@ from __future__ import annotations
 import logging, math, random
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.anomaly_detector")
 
 
+@handle_tool_errors("research_detect_anomalies")
 async def research_detect_anomalies(data: list[float], method: str = "zscore", threshold: float = 2.0) -> dict[str, Any]:
     """Detect numerical anomalies using zscore, iqr, or isolation methods."""
     try:
@@ -62,6 +65,7 @@ async def research_detect_anomalies(data: list[float], method: str = "zscore", t
         return {"error": f"{type(e).__name__}: {str(e)[:100]}", "method": method}
 
 
+@handle_tool_errors("research_detect_text_anomalies")
 async def research_detect_text_anomalies(texts: list[str], baseline: str = "") -> dict[str, Any]:
     """Detect unusual text patterns (length, vocabulary, structure, encoding)."""
     try:

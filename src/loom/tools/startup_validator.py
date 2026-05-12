@@ -10,6 +10,8 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.startup_validator")
 
 TOOL_MODULES = [
@@ -25,6 +27,7 @@ TOOL_MODULES = [
 ]
 
 
+@handle_tool_errors("research_validate_startup")
 async def research_validate_startup() -> dict[str, Any]:
     """Comprehensive health check on all registered tools.
 

@@ -31,6 +31,7 @@ from typing import Any
 
 from loom.config import get_config
 from loom.validators import EXTERNAL_TIMEOUT_SECS
+from loom.error_responses import handle_tool_errors
 
 try:
     from loom.tools.llm import _call_with_cascade
@@ -542,6 +543,7 @@ async def _iterative_refinement(
         return initial_findings
 
 
+@handle_tool_errors("research_expert")
 async def research_expert(
     query: str,
     domain: str = "auto",

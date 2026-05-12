@@ -9,6 +9,7 @@ import time
 from typing import Any
 
 import structlog
+from loom.error_responses import handle_tool_errors
 
 logger = structlog.get_logger("loom.tools.nl_executor")
 
@@ -151,6 +152,7 @@ async def _get_tool_function(tool_name: str) -> Any:
         return None
 
 
+@handle_tool_errors("research_do")
 async def research_do(instruction: str) -> dict:
     """Execute a plain English instruction as a research tool call.
 

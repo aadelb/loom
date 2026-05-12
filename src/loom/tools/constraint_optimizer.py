@@ -15,6 +15,7 @@ import asyncio
 import json
 import logging
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 try:
     from loom.constraint_optimizer import ConstraintOptimizer
@@ -148,6 +149,7 @@ async def _score_prompt(prompt: str) -> dict[str, Any]:
     return scores
 
 
+@handle_tool_errors("research_constraint_optimize")
 async def research_constraint_optimize(
     prompt: str,
     constraints: dict[str, dict[str, float]] | None = None,

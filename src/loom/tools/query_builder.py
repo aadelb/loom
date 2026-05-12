@@ -21,6 +21,7 @@ import json
 import logging
 import re
 from typing import Any, Callable, Literal
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.query_builder")
 
@@ -1418,6 +1419,7 @@ def _build_pipeline(
 
 
 
+@handle_tool_errors("research_build_query")
 def research_build_query(
     user_request: str,
     context: str = "",

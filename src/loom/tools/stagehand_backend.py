@@ -6,9 +6,9 @@ import json
 import logging
 import tempfile
 from typing import Any
-
 from pydantic import BaseModel, field_validator
 
+from loom.error_responses import handle_tool_errors
 from loom.validators import validate_url
 
 logger = logging.getLogger("loom.tools.stagehand_backend")
@@ -107,6 +107,7 @@ async def _call_llm_vision(page: str, ss: str | None, instr: str) -> str:
         return f"Error: {exc}"
 
 
+@handle_tool_errors("research_stagehand_act")
 async def research_stagehand_act(url: str, instruction: str, screenshot: bool = False) -> dict[str, Any]:
     """Execute browser instruction with vision-guided automation.
 
@@ -153,6 +154,7 @@ async def research_stagehand_act(url: str, instruction: str, screenshot: bool = 
         return result
 
 
+@handle_tool_errors("research_stagehand_extract")
 async def research_stagehand_extract(url: str, schema: dict[str, Any] | str) -> dict[str, Any]:
     """Extract structured data from page matching schema using LLM vision.
 

@@ -12,6 +12,7 @@ import logging
 import random
 import re
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.coevolution")
 
@@ -63,6 +64,7 @@ def _learn_defense(attack: str) -> list[str]:
     return patterns[:5]
 
 
+@handle_tool_errors("research_coevolve")
 async def research_coevolve(
     seed_attack: str,
     seed_defense: str = "",

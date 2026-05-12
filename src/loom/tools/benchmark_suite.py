@@ -5,10 +5,13 @@ from __future__ import annotations
 import asyncio, importlib, logging, time
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.benchmark_suite")
 DEFAULT_BENCHMARK_TOOLS = ["research_epistemic_score", "research_stealth_score", "research_predict_success"]
 
 
+@handle_tool_errors("research_benchmark_run")
 async def research_benchmark_run(tools: list[str] | None = None, iterations: int = 10, warmup: int = 2) -> dict[str, Any]:
     """Benchmark tool execution speed. Returns {tools_benchmarked, results: [{tool, iterations, min_ms, max_ms, mean_ms, p50_ms, p95_ms}], total_time_ms}."""
     tools_to_benchmark = tools or DEFAULT_BENCHMARK_TOOLS
@@ -52,6 +55,7 @@ async def research_benchmark_run(tools: list[str] | None = None, iterations: int
     return {"tools_benchmarked": [r["tool"] for r in results], "results": results, "total_time_ms": (time.perf_counter_ns() - total_start) / 1e6}
 
 
+@handle_tool_errors("research_benchmark_compare")
 async def research_benchmark_compare(tool_a: str, tool_b: str, iterations: int = 20) -> dict[str, Any]:
     """Compare two tools head-to-head. Returns {tool_a: {mean_ms, p95_ms}, tool_b: {mean_ms, p95_ms}, winner, speedup_factor}."""
     func_a, func_b = _get_tool_function(tool_a), _get_tool_function(tool_b)

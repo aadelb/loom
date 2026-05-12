@@ -17,6 +17,8 @@ import httpx
 
 logger = logging.getLogger("loom.tools.resume_intel")
 
+from loom.error_responses import handle_tool_errors
+
 
 def _extract_keywords(text: str) -> set[str]:
     """Extract and normalize keywords from text.
@@ -78,6 +80,7 @@ async def _get_llm_provider() -> Any:
         return None
 
 
+@handle_tool_errors("research_optimize_resume")
 async def research_optimize_resume(
     resume_text: str,
     job_description: str,
@@ -230,6 +233,7 @@ Only return valid JSON, no markdown."""
     return result
 
 
+@handle_tool_errors("research_interview_prep")
 async def research_interview_prep(
     job_description: str,
     company: str | None = None,

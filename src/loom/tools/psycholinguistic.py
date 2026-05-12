@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 import re
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.psycholinguistic")
 
@@ -178,6 +179,7 @@ def _classify_threat_level(
         return "low"
 
 
+@handle_tool_errors("research_psycholinguistic")
 def research_psycholinguistic(
     text: str,
     author_name: str = "",

@@ -1,6 +1,7 @@
 """API key rotation and validation system."""
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import asyncio
 import hashlib
@@ -41,6 +42,7 @@ def _get_rotation_lock() -> asyncio.Lock:
     return _rotation_lock
 
 
+@handle_tool_errors("research_key_status")
 async def research_key_status() -> dict[str, Any]:
     """Check status of all configured API keys."""
     try:
@@ -58,6 +60,7 @@ async def research_key_status() -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_key_status"}
 
 
+@handle_tool_errors("research_key_rotate")
 async def research_key_rotate(provider: str, new_key: str) -> dict[str, Any]:
     """Hot-swap an API key without restart."""
     try:
@@ -108,6 +111,7 @@ async def research_key_rotate(provider: str, new_key: str) -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_key_rotate"}
 
 
+@handle_tool_errors("research_key_test")
 async def research_key_test(provider: str) -> dict[str, Any]:
     """Test if an API key is valid via health check."""
     if provider not in KEY_MAP:

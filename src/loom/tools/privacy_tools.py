@@ -6,6 +6,7 @@ import hashlib
 import logging
 import pathlib
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.privacy_tools")
 
@@ -18,6 +19,7 @@ _ZERO_WIDTH_CHARS = {
 }
 
 
+@handle_tool_errors("research_fingerprint_audit")
 def research_fingerprint_audit(
     target_url: str = "https://browserleaks.com/javascript",
 ) -> dict[str, Any]:
@@ -213,6 +215,7 @@ def research_fingerprint_audit(
         }
 
 
+@handle_tool_errors("research_privacy_exposure")
 def research_privacy_exposure(target_url: str) -> dict[str, Any]:
     """Analyze what data a URL can collect about visitors.
 
@@ -335,6 +338,7 @@ def research_privacy_exposure(target_url: str) -> dict[str, Any]:
     }
 
 
+@handle_tool_errors("research_artifact_cleanup")
 def research_artifact_cleanup(
     target_paths: list[str],
     dry_run: bool = True,
@@ -449,6 +453,7 @@ def research_artifact_cleanup(
     }
 
 
+@handle_tool_errors("research_stego_encode_zw")
 def research_stego_encode_zw(
     input_text: str,
     cover_message: str,
@@ -532,6 +537,7 @@ def research_stego_encode_zw(
         }
 
 
+@handle_tool_errors("research_stego_decode")
 def research_stego_decode(encoded_message: str) -> dict[str, Any]:
     """Extract hidden text from a message with zero-width character steganography.
 
@@ -599,6 +605,7 @@ def research_stego_decode(encoded_message: str) -> dict[str, Any]:
         }
 
 
+@handle_tool_errors("research_interactive_privacy_audit")
 def research_interactive_privacy_audit(target_url: str = "") -> dict[str, Any]:
     """Interactive browser privacy baseline assessment.
 
@@ -659,6 +666,7 @@ def research_interactive_privacy_audit(target_url: str = "") -> dict[str, Any]:
     return results
 
 
+@handle_tool_errors("research_pii_recon")
 def research_pii_recon(
     target: str,
     scan_type: str = "passive",
@@ -701,6 +709,7 @@ def research_pii_recon(
     }
 
 
+@handle_tool_errors("research_macos_hardening")
 def research_macos_hardening(check_only: bool = True) -> dict[str, Any]:
     """macOS anti-forensics and security hardening.
 
@@ -743,6 +752,7 @@ def research_macos_hardening(check_only: bool = True) -> dict[str, Any]:
     }
 
 
+@handle_tool_errors("research_image_stego")
 def research_image_stego(
     image_path: str,
     secret: str = "",

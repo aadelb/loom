@@ -1,6 +1,7 @@
 """research_exif_extract, research_ocr_extract — Image intelligence tools."""
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import asyncio
 import logging
@@ -308,6 +309,7 @@ def _parse_gps_info(gps_data: dict[int, Any]) -> dict[str, float] | None:
         return None
 
 
+@handle_tool_errors("research_exif_extract")
 async def research_exif_extract(url_or_path: str) -> dict[str, Any]:
     """Extract EXIF metadata from image URLs or file paths.
 
@@ -377,6 +379,7 @@ async def research_exif_extract(url_or_path: str) -> dict[str, Any]:
     return result
 
 
+@handle_tool_errors("research_ocr_extract")
 async def research_ocr_extract(
     url_or_path: str,
     language: str = "eng",

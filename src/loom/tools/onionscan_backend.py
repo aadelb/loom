@@ -15,6 +15,7 @@ import subprocess
 from typing import Any
 
 from loom.cli_checker import is_available
+from loom.error_responses import handle_tool_errors
 from loom.validators import validate_url, UrlSafetyError
 
 logger = logging.getLogger("loom.tools.onionscan_backend")
@@ -117,6 +118,7 @@ def _check_tor_available() -> tuple[bool, str]:
 		return False, f"Tor check failed: {type(e).__name__}: {e}"
 
 
+@handle_tool_errors("research_onionscan")
 async def research_onionscan(
 	onion_url: str,
 	timeout: int = 60,

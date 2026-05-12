@@ -8,6 +8,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import logging
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.changelog_gen")
 
@@ -39,6 +40,7 @@ def _since_to_arg(since: str) -> str:
     return since if re.match(r"^\d{4}-\d{2}-\d{2}", since) else (datetime.now(UTC) - timedelta(days=7)).isoformat()
 
 
+@handle_tool_errors("research_changelog_generate")
 async def research_changelog_generate(
     since: str = "7d",
     format: str = "markdown",
@@ -92,6 +94,7 @@ async def research_changelog_generate(
         return {"error": str(exc), "tool": "research_changelog_generate"}
 
 
+@handle_tool_errors("research_changelog_stats")
 async def research_changelog_stats(days: int = 30) -> dict[str, Any]:
     """Get git statistics for the project.
 

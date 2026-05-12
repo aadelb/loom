@@ -1,6 +1,7 @@
 """Jailbreak Lifetime Oracle — predict exploit longevity before publishing."""
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import logging
 import re
@@ -51,6 +52,7 @@ def _detect_novelty(text: str) -> tuple[bool, float]:
     return (True, 0.5) if matches == 0 else ((True, 0.3) if matches <= 1 and len(text) > 600 else (False, 0.0))
 
 
+@handle_tool_errors("research_lifetime_predict")
 async def research_lifetime_predict(
     strategy_name: str,
     strategy_text: str = "",

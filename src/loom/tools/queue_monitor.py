@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 
+@handle_tool_errors("research_queue_status")
 async def research_queue_status() -> dict[str, Any]:
     """Get batch queue status."""
     try:
@@ -20,6 +22,7 @@ async def research_queue_status() -> dict[str, Any]:
         }
 
 
+@handle_tool_errors("research_queue_stats")
 async def research_queue_stats() -> dict[str, Any]:
     """Get detailed queue statistics."""
     try:

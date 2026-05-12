@@ -12,6 +12,8 @@ import logging
 import random
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 try:
     from loom.tools.prompt_reframe import _STRATEGIES
     from loom.tools.quality_escalation import _score_all_dimensions
@@ -86,6 +88,7 @@ async def _eval_fitness(template: str, test_prompt: str) -> float:
     return sum(scores.values()) / len(scores) if scores else 0.0
 
 
+@handle_tool_errors("research_evolve_strategies")
 async def research_evolve_strategies(
     seed_strategies: list[str] | None = None,
     population_size: int = 20,

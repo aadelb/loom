@@ -13,10 +13,12 @@ from typing import Any
 
 import httpx
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.vastai")
 
 _VASTAI_API_BASE = "https://console.vast.ai/api/v0"
 
+@handle_tool_errors("research_vastai_search")
 
 async def research_vastai_search(
     gpu_type: str = "RTX 4090",
@@ -93,6 +95,7 @@ async def research_vastai_search(
         logger.warning("vastai_search_failed: %s", e)
         return {"error": str(e), "results": []}
 
+@handle_tool_errors("research_vastai_status")
 
 async def research_vastai_status() -> dict[str, Any]:
     """Get Vast.ai account status (balance and running instances).

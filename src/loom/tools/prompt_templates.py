@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
+from loom.error_responses import handle_tool_errors
 
 TemplateDict = dict[str, Any]
 
@@ -68,6 +69,7 @@ class TemplateSuggestParams(BaseModel):
     model_config = {"extra": "forbid", "strict": True}
 
 
+@handle_tool_errors("research_template_list")
 async def research_template_list(category: str = "all") -> dict[str, Any]:
     """List available prompt templates by category."""
     try:
@@ -77,6 +79,7 @@ async def research_template_list(category: str = "all") -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_template_list"}
 
 
+@handle_tool_errors("research_template_render")
 async def research_template_render(template_name: str, variables: dict[str, str]) -> dict[str, Any]:
     """Render a template with provided variables."""
     try:
@@ -106,6 +109,7 @@ async def research_template_render(template_name: str, variables: dict[str, str]
         return {"error": str(exc), "tool": "research_template_render"}
 
 
+@handle_tool_errors("research_template_suggest")
 async def research_template_suggest(task_description: str) -> dict[str, Any]:
     """Suggest templates matching the task description."""
     try:

@@ -3,7 +3,10 @@ from __future__ import annotations
 
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
 
+
+@handle_tool_errors("research_usage_report")
 async def research_usage_report() -> dict[str, Any]:
     """Aggregate tool usage statistics across all invocations."""
     return {

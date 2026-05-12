@@ -11,6 +11,7 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.composition_optimizer")
 
@@ -261,6 +262,7 @@ def _find_parallel_groups(tools: list[str]) -> list[list[str]]:
     return merged
 
 
+@handle_tool_errors("research_optimize_workflow")
 async def research_optimize_workflow(
     goal: str,
     available_tools: list[str] | None = None,
@@ -325,6 +327,7 @@ async def research_optimize_workflow(
         return {"error": str(exc), "tool": "research_optimize_workflow"}
 
 
+@handle_tool_errors("research_parallel_plan")
 async def research_parallel_plan(tools: list[str]) -> dict[str, Any]:
     """Determine parallel vs sequential execution plan.
 
@@ -381,6 +384,7 @@ async def research_parallel_plan(tools: list[str]) -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_parallel_plan"}
 
 
+@handle_tool_errors("research_optimizer_rebuild")
 async def research_optimizer_rebuild() -> dict[str, Any]:
     """Force rebuild of auto-generated tool metadata cache.
 

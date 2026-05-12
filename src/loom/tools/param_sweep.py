@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import logging
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 try:
     from loom.param_sweeper import ParameterSweeper
@@ -21,6 +22,7 @@ except ImportError:
 logger = logging.getLogger("loom.tools.param_sweep")
 
 
+@handle_tool_errors("research_parameter_sweep")
 async def research_parameter_sweep(
     prompt: str,
     strategy: str,

@@ -11,6 +11,7 @@ import time
 from pathlib import Path
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.universal_orchestrator")
 _TOOL_INDEX: dict[str, dict[str, Any]] | None = None
 _INDEX_BUILD_TIME: float = 0.0
@@ -239,6 +240,7 @@ _ORCHESTRATOR_BLACKLIST = frozenset(
     }
 )
 
+@handle_tool_errors("research_orchestrate_smart")
 
 async def research_orchestrate_smart(
     query: str, max_tools: int = 3, strategy: str = "auto"

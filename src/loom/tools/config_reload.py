@@ -12,6 +12,7 @@ import json
 import logging
 from pathlib import Path
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 try:
     from loom.config import _resolve_path, load_config, get_config
@@ -30,6 +31,7 @@ _watch_state: dict[str, Any] = {
 }
 
 
+@handle_tool_errors("research_config_watch")
 def research_config_watch(config_path: str | None = None) -> dict[str, Any]:
     """Start watching config.json for modifications.
 
@@ -82,6 +84,7 @@ def research_config_watch(config_path: str | None = None) -> dict[str, Any]:
         return {"watching": False, "error": str(e), "config_path": str(cfg_path)}
 
 
+@handle_tool_errors("research_config_check")
 def research_config_check(config_path: str | None = None) -> dict[str, Any]:
     """Check if config has changed since watch started and reload if needed.
 
@@ -150,6 +153,7 @@ def research_config_check(config_path: str | None = None) -> dict[str, Any]:
         return {"changed": False, "reloaded": False, "error": str(e)}
 
 
+@handle_tool_errors("research_config_diff")
 def research_config_diff(key: str = "") -> dict[str, Any]:
     """Show what changed between old and new config.
 

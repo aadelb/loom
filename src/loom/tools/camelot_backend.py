@@ -11,6 +11,7 @@ from typing import Any
 import httpx
 
 from loom.validators import UrlSafetyError, validate_url
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.camelot_backend")
 
@@ -21,6 +22,7 @@ MAX_PDF_SIZE_BYTES = 50 * 1024 * 1024
 MAX_TABLES_PER_PDF = 100
 
 
+@handle_tool_errors("research_table_extract")
 async def research_table_extract(
     pdf_url: str = "",
     pdf_path: str = "",

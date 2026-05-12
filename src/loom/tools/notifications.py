@@ -7,6 +7,7 @@ import logging
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
+from loom.error_responses import handle_tool_errors
 from typing import Any, Literal
 
 logger = logging.getLogger("loom.tools.notifications")
@@ -16,6 +17,7 @@ NOTIFICATIONS_FILE = NOTIFICATIONS_DIR / "notifications.jsonl"
 RULES_FILE = NOTIFICATIONS_DIR / "notification_rules.json"
 
 
+@handle_tool_errors("research_notify_send")
 async def research_notify_send(
     channel: str,
     title: str,
@@ -54,6 +56,7 @@ async def research_notify_send(
     return {"sent": True, "channel": channel, "notification_id": notification_id, "timestamp": timestamp}
 
 
+@handle_tool_errors("research_notify_history")
 async def research_notify_history(
     limit: int = 50,
     severity: str = "all",
@@ -84,6 +87,7 @@ async def research_notify_history(
     return {"notifications": notifications[-limit:], "total": len(notifications)}
 
 
+@handle_tool_errors("research_notify_rules")
 async def research_notify_rules(
     action: str = "list",
     rule: dict[str, str] | None = None,

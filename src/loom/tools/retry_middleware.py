@@ -9,6 +9,8 @@ import logging
 import time
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.retry_middleware")
 
 # Module-level counters for retry statistics
@@ -24,6 +26,7 @@ _stats = {
 DEFAULT_RETRY_ERRORS = ["TimeoutError", "ConnectionError", "RateLimitError"]
 
 
+@handle_tool_errors("research_retry_execute")
 async def research_retry_execute(
     tool_name: str,
     params: dict[str, Any],
@@ -143,6 +146,7 @@ async def research_retry_execute(
     }
 
 
+@handle_tool_errors("research_retry_middleware_stats")
 async def research_retry_middleware_stats() -> dict[str, Any]:
     """Return retry statistics across all tool invocations.
 

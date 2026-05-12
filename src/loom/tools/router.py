@@ -4,9 +4,12 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.router")
 
 
+@handle_tool_errors("research_route_to_model")
 async def research_route_to_model(query: str) -> dict[str, Any]:
     """Route query to appropriate model or service."""
     try:
@@ -22,6 +25,7 @@ async def research_route_to_model(query: str) -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_route_to_model"}
 
 
+@handle_tool_errors("research_recommend_tools")
 async def research_recommend_tools(query: str) -> dict[str, Any]:
     """Recommend tools for a given query."""
     try:

@@ -5,6 +5,7 @@ to test whether RAG systems detect policy-violating content reassembly.
 EU AI Act Article 15 compliance testing infrastructure.
 """
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 import logging
 import re
 from typing import Any
@@ -16,6 +17,7 @@ _KEYWORDS = ["bomb", "poison", "exploit", "hack", "malware",
              "kill", "harm", "abuse", "illegal", "bypass"]
 
 
+@handle_tool_errors("research_holographic_encode")
 def research_holographic_encode(
     text: str,
     fragments: int = 5,

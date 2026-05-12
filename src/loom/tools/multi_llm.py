@@ -7,10 +7,12 @@ import contextlib
 import logging
 import time
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.multi_llm")
 
 
+@handle_tool_errors("research_ask_all_llms")
 async def research_ask_all_llms(
     prompt: str,
     max_tokens: int = 500,

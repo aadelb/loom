@@ -1,9 +1,13 @@
 """Steganography encoder/analyzer — text-based hiding methods."""
+
 from __future__ import annotations
+
 import base64
 from typing import Any, Literal
 
+from loom.error_responses import handle_tool_errors
 
+@handle_tool_errors("research_stego_encode")
 def research_stego_encode(
     message: str,
     method: Literal["lsb", "whitespace", "unicode_zero_width", "metadata_exif"] = "lsb",
@@ -55,6 +59,7 @@ def research_stego_encode(
         }
 
 
+@handle_tool_errors("research_stego_analyze")
 def research_stego_analyze(text: str) -> dict[str, Any]:
     """Analyze text for hidden steganographic content."""
     try:

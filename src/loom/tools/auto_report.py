@@ -13,11 +13,13 @@ from datetime import UTC, datetime
 from typing import Any, Literal
 
 from loom.retry import with_retry
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.auto_report")
 
 
 @with_retry(max_attempts=2, backoff_base=1.0)
+@handle_tool_errors("research_auto_report")
 async def research_auto_report(
     topic: str,
     depth: Literal["brief", "standard", "comprehensive"] = "standard",
@@ -206,6 +208,7 @@ async def research_auto_report(
         return _error_response(f"Report generation failed: {str(e)[:100]}")
 
 
+@handle_tool_errors("research_report_from_results")
 async def research_report_from_results(
     results: list[dict[str, Any]],
     title: str,

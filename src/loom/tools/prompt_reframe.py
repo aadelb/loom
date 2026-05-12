@@ -22,6 +22,7 @@ logger = logging.getLogger("loom.tools.prompt_reframe")
 # ============================================================
 
 from loom.tools.reframe_strategies import ALL_STRATEGIES
+from loom.error_responses import handle_tool_errors
 
 _STRATEGIES: dict[str, dict[str, Any]] = ALL_STRATEGIES
 
@@ -287,6 +288,7 @@ def _apply_strategy(
         return template.replace("{prompt}", prompt)
 
 
+@handle_tool_errors("research_prompt_reframe")
 async def research_prompt_reframe(
     prompt: str,
     strategy: str = "auto",
@@ -351,6 +353,7 @@ async def research_prompt_reframe(
         return {"error": str(exc), "tool": "research_prompt_reframe"}
 
 
+@handle_tool_errors("research_auto_reframe")
 async def research_auto_reframe(
     prompt: str,
     target_url: str = "",
@@ -538,6 +541,7 @@ async def research_auto_reframe(
         return {"error": str(exc), "tool": "research_auto_reframe"}
 
 
+@handle_tool_errors("research_refusal_detector")
 async def research_refusal_detector(
     text: str,
 ) -> dict[str, Any]:
@@ -749,6 +753,7 @@ def _stack_strategies(prompt: str, strategies: list[str], model_family: str = ""
     return "\n\n".join(parts)
 
 
+@handle_tool_errors("research_stack_reframe")
 async def research_stack_reframe(
     prompt: str,
     strategies: str = "deep_inception,recursive_authority",
@@ -823,6 +828,7 @@ async def research_stack_reframe(
         return {"error": str(exc), "tool": "research_stack_reframe"}
 
 
+@handle_tool_errors("research_crescendo_chain")
 async def research_crescendo_chain(
     prompt: str,
     turns: int = 5,
@@ -929,6 +935,7 @@ async def research_crescendo_chain(
         return {"error": str(exc), "tool": "research_crescendo_chain"}
 
 
+@handle_tool_errors("research_model_vulnerability_profile")
 async def research_model_vulnerability_profile(
     model: str = "auto",
 ) -> dict[str, Any]:
@@ -1256,6 +1263,7 @@ _MODEL_FINGERPRINTS: dict[str, dict[str, Any]] = {
 }
 
 
+@handle_tool_errors("research_format_smuggle")
 async def research_format_smuggle(
     prompt: str,
     format_type: str = "auto",
@@ -1300,6 +1308,7 @@ async def research_format_smuggle(
         return {"error": str(exc), "tool": "research_format_smuggle"}
 
 
+@handle_tool_errors("research_fingerprint_model")
 async def research_fingerprint_model(
     response_text: str,
 ) -> dict[str, Any]:
@@ -1358,6 +1367,7 @@ async def research_fingerprint_model(
         return {"error": str(exc), "tool": "research_fingerprint_model"}
 
 
+@handle_tool_errors("research_adaptive_reframe")
 async def research_adaptive_reframe(
     prompt: str,
     refusal_text: str = "",

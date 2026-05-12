@@ -11,6 +11,7 @@ import json
 import logging
 import re
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.company_intel")
 
@@ -21,6 +22,7 @@ def _sanitize_company_name(name: str) -> str:
     return sanitized[:200].strip()
 
 
+@handle_tool_errors("research_company_diligence")
 async def research_company_diligence(company_name: str) -> dict[str, Any]:
     """Deep company analysis for job seekers.
 
@@ -287,6 +289,7 @@ Respond as JSON only: {{"culture_score": float, "recommendation": string}}"""
         return result
 
 
+@handle_tool_errors("research_salary_intelligence")
 async def research_salary_intelligence(
     role: str,
     location: str | None = None,

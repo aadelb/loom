@@ -6,6 +6,7 @@ Implements cascade routing across NVIDIA NIM, OpenAI, Anthropic, and vLLM.
 """
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import asyncio
 import contextlib
@@ -933,6 +934,7 @@ async def _call_with_refusal_handling(
 # ============================================================================
 
 
+@handle_tool_errors("research_circuit_status")
 async def research_circuit_status() -> dict[str, Any]:
     """Show circuit breaker status for all LLM providers.
 
@@ -953,6 +955,7 @@ async def research_circuit_status() -> dict[str, Any]:
     return result
 
 
+@handle_tool_errors("research_llm_summarize")
 async def research_llm_summarize(
     text: str,
     max_tokens: int = 400,
@@ -1022,6 +1025,7 @@ async def research_llm_summarize(
         return {"error": _sanitize_error(_safe_error_str(e))}
 
 
+@handle_tool_errors("research_llm_extract")
 async def research_llm_extract(
     text: str,
     schema: dict[str, Any],
@@ -1112,6 +1116,7 @@ async def research_llm_extract(
         return {"error": _sanitize_error(_safe_error_str(e))}
 
 
+@handle_tool_errors("research_llm_classify")
 async def research_llm_classify(
     text: str,
     labels: list[str],
@@ -1197,6 +1202,7 @@ async def research_llm_classify(
         return {"error": _sanitize_error(_safe_error_str(e))}
 
 
+@handle_tool_errors("research_llm_translate")
 async def research_llm_translate(
     text: str,
     target_lang: str = "en",
@@ -1269,6 +1275,7 @@ async def research_llm_translate(
         return {"error": _sanitize_error(_safe_error_str(e))}
 
 
+@handle_tool_errors("research_llm_query_expand")
 async def research_llm_query_expand(
     query: str,
     n: int = 5,
@@ -1339,6 +1346,7 @@ async def research_llm_query_expand(
         return {"error": _sanitize_error(_safe_error_str(e))}
 
 
+@handle_tool_errors("research_llm_answer")
 async def research_llm_answer(
     question: str,
     sources: list[dict[str, str]],
@@ -1424,6 +1432,7 @@ async def research_llm_answer(
         return {"error": _sanitize_error(_safe_error_str(e))}
 
 
+@handle_tool_errors("research_llm_embed")
 async def research_llm_embed(
     texts: list[str],
     model: str = "auto",
@@ -1508,6 +1517,7 @@ async def research_llm_embed(
         return {"error": _sanitize_error(_safe_error_str(e))}
 
 
+@handle_tool_errors("research_llm_chat")
 async def research_llm_chat(
     messages: list[dict[str, str]],
     model: str = "auto",

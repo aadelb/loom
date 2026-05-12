@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.health")
 
@@ -18,6 +19,7 @@ except ImportError as e:
     logger.warning("Could not import research_health_deep from health_deep: %s", e)
 
     # Fallback: define a stub that warns the user
+    @handle_tool_errors("research_health_deep")
     async def research_health_deep() -> dict[str, Any]:
         """Stub: health_deep module not available."""
         logger.error("research_health_deep stub called — health_deep not found")

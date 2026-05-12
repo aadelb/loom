@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 
+@handle_tool_errors("research_cluster_health")
 async def research_cluster_health() -> dict[str, Any]:
     """Aggregate health status across all cluster nodes."""
     try:
@@ -16,6 +18,7 @@ async def research_cluster_health() -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_cluster_health"}
 
 
+@handle_tool_errors("research_node_status")
 async def research_node_status() -> dict[str, Any]:
     """Get individual node status."""
     try:

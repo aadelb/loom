@@ -12,9 +12,12 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.antiforensics")
 
 
+@handle_tool_errors("research_usb_kill_monitor")
 def research_usb_kill_monitor(
     trigger_action: str = "alert",
     target_path: str = "/tmp",
@@ -89,6 +92,7 @@ def research_usb_kill_monitor(
     }
 
 
+@handle_tool_errors("research_forensics_cleanup")
 def research_forensics_cleanup(
     target_paths: list[str] | None = None,
     os_type: str | None = None,

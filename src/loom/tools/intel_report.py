@@ -1,6 +1,7 @@
 """Intelligence Report Formatter — generate professional reports from raw research data."""
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import logging
 from datetime import UTC, datetime
@@ -55,6 +56,7 @@ def _build_findings(findings: list[dict], fmt: str) -> str:
     return s
 
 
+@handle_tool_errors("research_intel_report")
 async def research_intel_report(
     title: str,
     findings: list[dict],
@@ -123,6 +125,7 @@ async def research_intel_report(
         return {"error": str(exc), "tool": "research_intel_report"}
 
 
+@handle_tool_errors("research_brief_generate")
 async def research_brief_generate(
     topic: str,
     points: list[str],

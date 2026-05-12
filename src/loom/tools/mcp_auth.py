@@ -1,6 +1,7 @@
 """MCP authentication enforcement — token generation, validation, revocation."""
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import hashlib
 import hmac
@@ -35,6 +36,7 @@ def _hash_token(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
 
+@handle_tool_errors("research_auth_create_token")
 async def research_auth_create_token(
     name: str = "default", expires_hours: int = 24
 ) -> dict[str, Any]:
@@ -66,6 +68,7 @@ async def research_auth_create_token(
         await conn.close()
 
 
+@handle_tool_errors("research_auth_validate")
 async def research_auth_validate(token: str) -> dict[str, Any]:
     """Validate a token.
 
@@ -102,6 +105,7 @@ async def research_auth_validate(token: str) -> dict[str, Any]:
         await conn.close()
 
 
+@handle_tool_errors("research_auth_revoke")
 async def research_auth_revoke(name: str = "") -> dict[str, Any]:
     """Revoke token(s) by name.
 

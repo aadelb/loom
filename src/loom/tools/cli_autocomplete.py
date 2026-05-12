@@ -4,6 +4,7 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 try:
     import logging
@@ -12,6 +13,7 @@ except Exception:
     logger = None
 
 
+@handle_tool_errors("research_generate_completions")
 async def research_generate_completions(shell: str = "zsh") -> dict[str, Any]:
     """Generate shell completion script for all Loom tools.
 
@@ -32,6 +34,7 @@ async def research_generate_completions(shell: str = "zsh") -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_generate_completions"}
 
 
+@handle_tool_errors("research_tool_help")
 async def research_tool_help(tool_name: str) -> dict[str, Any]:
     """Get detailed help for a specific tool.
 

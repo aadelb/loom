@@ -15,6 +15,7 @@ try:
 except ImportError:
     ALL_STRATEGIES = {}  # type: ignore[assignment]
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.topology_manifold")
 
 
@@ -158,6 +159,7 @@ def _describe_hole(coordinates: list[float]) -> str:
 
     return " | ".join(descriptions)
 
+@handle_tool_errors("research_topology_discover")
 
 async def research_topology_discover(
     strategies: list[str] | None = None,

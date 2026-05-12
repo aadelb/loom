@@ -5,8 +5,9 @@ from __future__ import annotations
 import logging
 import re
 from typing import Any
-
 import httpx
+
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.telegram_osint")
 
@@ -188,6 +189,7 @@ def _extract_recent_messages(html: str, limit: int = 10) -> list[dict[str, Any]]
     return messages
 
 
+@handle_tool_errors("research_telegram_intel")
 async def research_telegram_intel(
     query: str = "",
     channel: str = "",

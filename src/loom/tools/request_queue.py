@@ -8,6 +8,8 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.request_queue")
 
 _queue: asyncio.PriorityQueue[tuple[int, float, dict[str, Any]]] = asyncio.PriorityQueue()
@@ -24,6 +26,7 @@ def _get_lock() -> asyncio.Lock:
     return _lock
 
 
+@handle_tool_errors("research_queue_add")
 async def research_queue_add(tool_name: str, params: dict[str, Any], priority: int = 5) -> dict[str, Any]:
     """Add a tool call to the execution queue with priority 1-10 (1=highest)."""
     try:
@@ -47,6 +50,7 @@ async def research_queue_add(tool_name: str, params: dict[str, Any], priority: i
         return {"error": str(exc), "tool": "research_queue_add"}
 
 
+@handle_tool_errors("research_queue_status")
 async def research_queue_status() -> dict[str, Any]:
     """Get queue status: pending, processing, completed, priority breakdown, oldest age."""
     try:
@@ -82,6 +86,7 @@ async def research_queue_status() -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_queue_status"}
 
 
+@handle_tool_errors("research_queue_drain")
 async def research_queue_drain(max_items: int = 10) -> dict[str, Any]:
     """Dequeue up to max_items in FIFO order within priority. Execution is caller's responsibility."""
     global _processing_count

@@ -9,6 +9,7 @@ import hashlib
 import logging
 import re
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.proactive_defense")
 
@@ -131,6 +132,7 @@ def _analyze_vulnerabilities(prompt: str) -> list[dict[str, Any]]:
     return vulns
 
 
+@handle_tool_errors("research_predict_attacks")
 async def research_predict_attacks(
     system_prompt: str,
     model: str = "auto",
@@ -198,6 +200,7 @@ async def research_predict_attacks(
         }
 
 
+@handle_tool_errors("research_preemptive_patch")
 async def research_preemptive_patch(
     system_prompt: str,
     predicted_attacks: list[str] | None = None,

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.functor_map")
 
@@ -62,6 +63,7 @@ FUNCTORS: dict[tuple[str, str], dict[str, str]] = {
 }
 
 
+@handle_tool_errors("research_functor_translate")
 async def research_functor_translate(
     exploit: str,
     source_domain: str = "cybersecurity",

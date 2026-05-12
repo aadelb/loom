@@ -9,6 +9,7 @@ Tools:
 from __future__ import annotations
 
 import logging
+from loom.error_responses import handle_tool_errors
 from typing import Any
 
 logger = logging.getLogger("loom.tools.multilang_attack")
@@ -21,6 +22,7 @@ _SCRIPTS = {
 _ZW = "​"  # U+200B
 
 
+@handle_tool_errors("research_code_switch_attack")
 async def research_code_switch_attack(prompt: str, languages: list[str] | None = None, technique: str = "interleave") -> dict[str, Any]:
     """Code-switching attack: mix languages to confuse tokenizers.
 
@@ -67,6 +69,7 @@ async def research_code_switch_attack(prompt: str, languages: list[str] | None =
         return {"error": str(exc), "tool": "research_code_switch_attack"}
 
 
+@handle_tool_errors("research_script_confusion")
 async def research_script_confusion(prompt: str, target_script: str = "arabic") -> dict[str, Any]:
     """Script confusion: exploit weaker safety in non-Latin scripts.
 
@@ -92,6 +95,7 @@ async def research_script_confusion(prompt: str, target_script: str = "arabic") 
         return {"error": str(exc), "tool": "research_script_confusion"}
 
 
+@handle_tool_errors("research_token_split_attack")
 async def research_token_split_attack(prompt: str, split_method: str = "zero_width") -> dict[str, Any]:
     """Token splitting: disrupt tokenization via Unicode tricks.
 

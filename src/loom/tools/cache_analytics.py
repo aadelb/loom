@@ -11,6 +11,8 @@ import logging
 from pathlib import Path
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 try:
     from loom.cache import get_cache
     _CACHE_AVAILABLE = True
@@ -21,6 +23,7 @@ except ImportError:
 logger = logging.getLogger("loom.tools.cache_analytics")
 
 
+@handle_tool_errors("research_cache_analyze")
 def research_cache_analyze() -> dict[str, Any]:
     """Analyze cache usage: total size, oldest/newest, daily stats, largest files, hit rate estimate."""
     if not _CACHE_AVAILABLE:
@@ -111,6 +114,7 @@ def research_cache_analyze() -> dict[str, Any]:
     }
 
 
+@handle_tool_errors("research_cache_optimize")
 def research_cache_optimize(
     max_age_days: int = 30, max_size_mb: int = 500, dry_run: bool = True
 ) -> dict[str, Any]:

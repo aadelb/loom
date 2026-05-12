@@ -16,6 +16,7 @@ from typing import Any
 from uuid import uuid4
 
 import aiosqlite
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.redteam_hub")
 HUB_DB = Path.home() / ".loom" / "hub.db"
@@ -35,6 +36,7 @@ async def _init_db() -> aiosqlite.Connection:
     return conn
 
 
+@handle_tool_errors("research_hub_share")
 async def research_hub_share(
     finding_type: str,
     title: str,
@@ -73,6 +75,7 @@ async def research_hub_share(
         return {"success": False, "error": str(e)}
 
 
+@handle_tool_errors("research_hub_feed")
 async def research_hub_feed(
     type_filter: str = "all",
     limit: int = 20,
@@ -106,6 +109,7 @@ async def research_hub_feed(
         return {"findings": [], "total": 0, "error": str(e)}
 
 
+@handle_tool_errors("research_hub_vote")
 async def research_hub_vote(
     finding_id: str,
     vote: int = 1,

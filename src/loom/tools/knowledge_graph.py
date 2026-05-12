@@ -10,6 +10,7 @@ Also exposes legacy research_knowledge_graph for backward compatibility.
 """
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import asyncio
 import json
@@ -525,6 +526,7 @@ def _graph_action_visualize(
     }
 
 
+@handle_tool_errors("research_graph")
 async def research_graph(
     action: Literal["extract", "query", "merge", "visualize"] = "extract",
     query: str | None = None,
@@ -587,6 +589,7 @@ async def research_graph(
         return {"error": str(exc), "tool": "research_graph"}
 
 
+@handle_tool_errors("research_knowledge_graph")
 async def research_knowledge_graph(
     query: str,
     max_nodes: int = 100,

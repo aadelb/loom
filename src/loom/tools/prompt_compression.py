@@ -10,10 +10,12 @@ import logging
 from typing import Any
 
 from loom.prompt_compressor import estimate_tokens, get_compressor
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.prompt_compression")
 
 
+@handle_tool_errors("research_compress_prompt")
 async def research_compress_prompt(
     text: str,
     target_ratio: float = 0.5,
@@ -117,6 +119,7 @@ async def research_compress_prompt(
         }
 
 
+@handle_tool_errors("research_compression_stats")
 async def research_compression_stats() -> dict[str, Any]:
     """Get cumulative compression statistics and performance metrics.
 
@@ -170,6 +173,7 @@ async def research_compression_stats() -> dict[str, Any]:
         }
 
 
+@handle_tool_errors("research_compression_reset")
 async def research_compression_reset() -> dict[str, str]:
     """Reset cumulative compression statistics.
 

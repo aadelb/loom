@@ -13,6 +13,7 @@ from __future__ import annotations
 import logging
 import re
 from typing import Any, Literal
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.model_router")
 
@@ -280,6 +281,7 @@ def estimate_call_cost(
     return (total_tokens / 1_000_000) * cost_per_1m
 
 
+@handle_tool_errors("research_route_to_model")
 async def research_route_to_model(
     query: str,
     override_complexity: str = "",

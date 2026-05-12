@@ -11,6 +11,7 @@ from urllib.parse import quote
 import httpx
 
 from loom.http_helpers import fetch_json
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.gap_tools_academic")
 
@@ -78,6 +79,7 @@ def _jaccard_distance(set_a: set[str], set_b: set[str]) -> float:
     return 1.0 - (intersection / union)
 
 
+@handle_tool_errors("research_ideological_drift")
 async def research_ideological_drift(field: str, years: int = 10) -> dict[str, Any]:
     """Track how a research field's beliefs change over time using keyword evolution.
 
@@ -157,6 +159,7 @@ async def research_ideological_drift(field: str, years: int = 10) -> dict[str, A
         return {"error": str(exc), "tool": "research_ideological_drift"}
 
 
+@handle_tool_errors("research_author_clustering")
 async def research_author_clustering(field: str, max_authors: int = 50) -> dict[str, Any]:
     """Detect emerging research clusters by analyzing co-authorship patterns.
 
@@ -249,6 +252,7 @@ async def research_author_clustering(field: str, max_authors: int = 50) -> dict[
         return {"error": str(exc), "tool": "research_author_clustering"}
 
 
+@handle_tool_errors("research_citation_cartography")
 async def research_citation_cartography(paper_id: str, depth: int = 2) -> dict[str, Any]:
     """DEPRECATED: Use research_graph(action="extract", ...) instead.
 

@@ -3,7 +3,9 @@ from __future__ import annotations
 import gc, importlib.util, logging, psutil, sys, time
 from pathlib import Path
 from typing import Any
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.tool_profiler")
+@handle_tool_errors("research_profile_tool")
 
 async def research_profile_tool(tool_name: str, iterations: int = 5) -> dict[str, Any]:
     """Profile a single tool to identify performance bottlenecks and memory usage.
@@ -62,6 +64,7 @@ async def research_profile_tool(tool_name: str, iterations: int = 5) -> dict[str
         return {"tool": tool_name, "module": tool_module, "iterations": iterations, "import_ms": round(import_ms, 3), "avg_call_ms": round(avg_call_ms, 3), "min_call_ms": round(min(valid_timings), 3), "max_call_ms": round(max(valid_timings), 3), "memory_delta_kb": round(mem_after - mem_before, 2), "bottleneck": bottleneck}
     except Exception as e:
         return {"error": str(e)}
+@handle_tool_errors("research_profile_hotspots")
 
 async def research_profile_hotspots(top_n: int = 10) -> dict[str, Any]:
     """Identify slowest-to-import tool modules (hotspots) across the codebase.

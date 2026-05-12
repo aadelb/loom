@@ -11,6 +11,7 @@ from urllib.parse import urljoin
 import httpx
 
 from loom.http_helpers import fetch_text
+from loom.error_responses import handle_tool_errors
 from loom.validators import validate_url, UrlSafetyError
 
 logger = logging.getLogger("loom.tools.metadata_forensics")
@@ -157,6 +158,7 @@ def _extract_exif(image_bytes: bytes) -> dict[str, Any]:
 		return {"error": str(exc)}
 
 
+@handle_tool_errors("research_metadata_forensics")
 async def research_metadata_forensics(
 	url: str,
 	extract_exif: bool = True,

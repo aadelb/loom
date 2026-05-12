@@ -10,6 +10,7 @@ import asyncio
 import json
 import logging
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 try:
     from loom.daisy_chain import DaisyChainDecomposer, _compute_daisy_chain_hcs
@@ -23,6 +24,7 @@ except ImportError:
 logger = logging.getLogger("loom.tools.daisy_chain")
 
 
+@handle_tool_errors("research_daisy_chain")
 async def research_daisy_chain(
     query: str,
     available_models: list[str] | None = None,

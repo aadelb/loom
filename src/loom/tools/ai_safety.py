@@ -19,6 +19,8 @@ import httpx
 
 from loom.validators import validate_url
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.ai_safety")
 
 # Hardcoded test vectors for prompt injection testing
@@ -321,6 +323,7 @@ _COMPLIANCE_FRAMEWORKS: dict[str, list[dict[str, str]]] = {
 }
 
 
+@handle_tool_errors("research_prompt_injection_test")
 def research_prompt_injection_test(
     target_url: str, model_name: str = "", test_count: int = 10
 ) -> dict[str, Any]:
@@ -430,6 +433,7 @@ def research_prompt_injection_test(
         }
 
 
+@handle_tool_errors("research_model_fingerprint")
 def research_model_fingerprint(target_url: str, probes: int = 5) -> dict[str, Any]:
     """Identify which LLM model is behind an API endpoint.
 
@@ -534,6 +538,7 @@ def research_model_fingerprint(target_url: str, probes: int = 5) -> dict[str, An
         }
 
 
+@handle_tool_errors("research_bias_probe")
 def research_bias_probe(
     target_url: str, categories: list[str] | None = None
 ) -> dict[str, Any]:
@@ -643,6 +648,7 @@ def research_bias_probe(
         }
 
 
+@handle_tool_errors("research_safety_filter_map")
 def research_safety_filter_map(
     target_url: str, categories: list[str] | None = None
 ) -> dict[str, Any]:
@@ -726,6 +732,7 @@ def research_safety_filter_map(
         }
 
 
+@handle_tool_errors("research_domain_compliance_check")
 def research_domain_compliance_check(
     domain: str, frameworks: list[str] | None = None
 ) -> dict[str, Any]:

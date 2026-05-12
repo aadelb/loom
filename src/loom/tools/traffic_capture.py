@@ -14,6 +14,7 @@ except ImportError:
 
 from loom.validators import validate_url, UrlSafetyError
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.traffic_capture")
 
 
@@ -39,6 +40,7 @@ def _build_har_entry(request: httpx.Request, response: httpx.Response, elapsed_m
         "timings": {"total": elapsed_ms},
     }
 
+@handle_tool_errors("research_capture_har")
 
 async def research_capture_har(url: str, duration_seconds: int = 10, include_bodies: bool = True) -> dict[str, Any]:
     """Capture HTTP traffic as HAR format.
@@ -83,6 +85,7 @@ async def research_capture_har(url: str, duration_seconds: int = 10, include_bod
         "domains_contacted": sorted(list(domains)),
     }
 
+@handle_tool_errors("research_extract_cookies")
 
 async def research_extract_cookies(url: str, follow_redirects: bool = True) -> dict[str, Any]:
     """Extract cookies set by a URL with security assessment.

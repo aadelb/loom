@@ -12,6 +12,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.tool_catalog")
 
 
@@ -720,6 +721,7 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
 # MAIN TOOL DISCOVERY FUNCTIONS
 # ============================================================================
 
+@handle_tool_errors("research_tool_catalog")
 
 def research_tool_catalog(
     category: str | None = None,
@@ -777,6 +779,7 @@ def research_tool_catalog(
         logger.exception("research_tool_catalog failed")
         return {"error": str(exc), "tool": "research_tool_catalog"}
 
+@handle_tool_errors("research_tool_graph")
 
 def research_tool_graph() -> dict[str, Any]:
     """Return complete tool connection graph.
@@ -845,6 +848,7 @@ def research_tool_graph() -> dict[str, Any]:
         logger.exception("research_tool_graph failed")
         return {"error": str(exc), "tool": "research_tool_graph"}
 
+@handle_tool_errors("research_tool_pipeline")
 
 def research_tool_pipeline(
     goal: str,
@@ -909,6 +913,7 @@ def research_tool_pipeline(
         logger.exception("research_tool_pipeline failed")
         return {"error": str(exc), "tool": "research_tool_pipeline"}
 
+@handle_tool_errors("research_tool_standalone")
 
 def research_tool_standalone(tool_name: str) -> dict[str, Any]:
     """Get complete standalone usage info for a tool.

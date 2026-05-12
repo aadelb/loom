@@ -11,6 +11,7 @@ import logging
 import os
 import re
 from typing import Any, Literal
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.misp_backend")
 
@@ -59,6 +60,7 @@ def _detect_indicator_type(indicator: str) -> str:
     return "unknown"
 
 
+@handle_tool_errors("research_misp_lookup")
 async def research_misp_lookup(
     indicator: str,
     indicator_type: str | Literal["auto", "ip", "domain", "hash", "email"] = "auto",

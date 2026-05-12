@@ -7,6 +7,7 @@ import re
 from typing import Any
 
 import httpx
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.cve_lookup")
 
@@ -18,6 +19,7 @@ def _validate_cve_id(cve_id: str) -> bool:
     return bool(re.match(r"^CVE-\d{4}-\d{4,}$", cve_id.upper()))
 
 
+@handle_tool_errors("research_cve_lookup")
 async def research_cve_lookup(query: str, limit: int = 10) -> dict[str, Any]:
     """Search CVE database using NVD API (free, rate limited).
 
@@ -118,6 +120,7 @@ async def research_cve_lookup(query: str, limit: int = 10) -> dict[str, Any]:
         return {"query": query, "total_results": 0, "cves": [], "error": str(exc)}
 
 
+@handle_tool_errors("research_cve_detail")
 async def research_cve_detail(cve_id: str) -> dict[str, Any]:
     """Get detailed information for a specific CVE.
 

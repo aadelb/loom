@@ -18,6 +18,7 @@ import httpx
 
 from loom.validators import UrlSafetyError, validate_url
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.unstructured_backend")
 
 # Max file size: 100 MB
@@ -38,6 +39,7 @@ SUPPORTED_EXTENSIONS = {
 # Extraction strategies
 VALID_STRATEGIES = {"auto", "fast", "hi_res", "ocr_only"}
 
+@handle_tool_errors("research_document_extract")
 
 async def research_document_extract(
     file_path: str = "",

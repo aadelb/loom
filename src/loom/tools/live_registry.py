@@ -5,6 +5,7 @@ health metrics, and usage patterns.
 """
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import asyncio
 import importlib
@@ -43,6 +44,7 @@ def _get_registry_lock() -> asyncio.Lock:
     return _registry_lock
 
 
+@handle_tool_errors("research_registry_status")
 async def research_registry_status() -> dict[str, Any]:
     """Return live status of ALL registered tools.
 
@@ -88,6 +90,7 @@ async def research_registry_status() -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_registry_status"}
 
 
+@handle_tool_errors("research_registry_search")
 async def research_registry_search(
     query: str = "",
     status: str = "all",
@@ -149,6 +152,7 @@ async def research_registry_search(
         return {"error": str(exc), "tool": "research_registry_search"}
 
 
+@handle_tool_errors("research_registry_refresh")
 async def research_registry_refresh() -> dict[str, Any]:
     """Force re-scan all modules, update health status.
 

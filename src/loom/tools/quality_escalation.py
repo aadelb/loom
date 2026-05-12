@@ -21,6 +21,7 @@ import re
 from typing import Any
 
 from loom.providers.base import LLMResponse
+from loom.error_responses import handle_tool_errors
 
 try:
     from loom.tools.llm import _call_with_cascade
@@ -101,6 +102,7 @@ DIMENSION_SUFFIXES = {
 }
 
 
+@handle_tool_errors("research_quality_escalate")
 async def research_quality_escalate(
     prompt: str,
     response: str = "",

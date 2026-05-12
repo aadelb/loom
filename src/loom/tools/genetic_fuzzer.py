@@ -12,6 +12,7 @@ import asyncio
 import logging
 import random
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 try:
     from loom.tools.prompt_reframe import _apply_strategy, _STRATEGIES
@@ -33,6 +34,7 @@ _MUTATION_STRATEGIES = [
 ]
 
 
+@handle_tool_errors("research_genetic_fuzz")
 async def research_genetic_fuzz(
     target_prompt: str,
     population_size: int = 10,

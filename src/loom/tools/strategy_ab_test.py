@@ -5,6 +5,8 @@ from __future__ import annotations
 import logging
 import math
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.strategy_ab_test")
 
 METRICS = {"compliance_rate", "response_length", "specificity", "stealth_score"}
@@ -15,6 +17,7 @@ def _cdf(z: float) -> float:
     return 0.5 * (1.0 + math.tanh(math.sqrt(2 / math.pi) * (z + 0.044715 * z**3)))
 
 
+@handle_tool_errors("research_ab_test_design")
 async def research_ab_test_design(strategy_a: str, strategy_b: str, sample_size: int = 30, metric: str = "compliance_rate") -> dict:
     """Design A/B test with power and minimum detectable effect."""
     try:
@@ -40,6 +43,7 @@ async def research_ab_test_design(strategy_a: str, strategy_b: str, sample_size:
         }
 
 
+@handle_tool_errors("research_ab_test_analyze")
 async def research_ab_test_analyze(results_a: list[float], results_b: list[float], metric: str = "compliance_rate") -> dict:
     """Analyze A/B test results with statistical significance and Cohen's d effect size."""
     try:

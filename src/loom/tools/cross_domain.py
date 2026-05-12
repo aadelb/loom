@@ -10,10 +10,12 @@ from __future__ import annotations
 import json
 import logging
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.cross_domain")
 
 
+@handle_tool_errors("research_cross_domain")
 async def research_cross_domain(
     domain_a: str,
     domain_b: str,

@@ -20,6 +20,7 @@ from urllib.parse import quote
 import httpx
 
 from loom.http_helpers import fetch_json, fetch_text
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.gap_tools_advanced")
 
@@ -220,6 +221,7 @@ def _detect_domain_shifts(patents: list[dict[str, Any]]) -> list[str]:
     return []
 
 
+@handle_tool_errors("research_talent_migration")
 async def research_talent_migration(
     person_name: str, field: str = ""
 ) -> dict[str, Any]:
@@ -282,6 +284,7 @@ async def research_talent_migration(
         return {"error": str(exc), "tool": "research_talent_migration"}
 
 
+@handle_tool_errors("research_funding_pipeline")
 async def research_funding_pipeline(company_or_field: str) -> dict[str, Any]:
     """Track full grant→patent→hiring pipeline.
 
@@ -389,6 +392,7 @@ async def research_funding_pipeline(company_or_field: str) -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_funding_pipeline"}
 
 
+@handle_tool_errors("research_patent_embargo")
 async def research_patent_embargo(
     company: str, months_back: int = 12
 ) -> dict[str, Any]:
@@ -460,6 +464,7 @@ async def research_patent_embargo(
         return {"error": str(exc), "tool": "research_patent_embargo"}
 
 
+@handle_tool_errors("research_jailbreak_library")
 def research_jailbreak_library(
     target_url: str = "", test_category: str = "all"
 ) -> dict[str, Any]:

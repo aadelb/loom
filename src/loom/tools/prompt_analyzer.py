@@ -9,6 +9,7 @@ Used by orchestrator BEFORE any model call to:
 from __future__ import annotations
 
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 # Topic sensitivity categories (from OWASP + Pangea + Llama Guard)
 SENSITIVITY_CATEGORIES: dict[str, dict[str, Any]] = {
@@ -92,6 +93,7 @@ MODEL_THRESHOLDS: dict[str, float] = {
 }
 
 
+@handle_tool_errors("research_prompt_analyze")
 async def research_prompt_analyze(
     prompt: str, target_model: str = "auto"
 ) -> dict[str, Any]:

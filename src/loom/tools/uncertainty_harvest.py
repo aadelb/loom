@@ -4,10 +4,12 @@ from __future__ import annotations
 import math, logging
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.uncertainty_harvest")
 _PRIORS = {"ethical_anchor": 0.72, "xml": 0.68, "structure": 0.65, "instruction_hierarchy": 0.70, "persona": 0.62, "code_first": 0.71, "reasoning": 0.69, "unknown": 0.50}
 _LIKELIHOODS = {"claude": {"ethical_anchor": 1.4, "structure": 1.3, "xml": 1.3}, "gpt": {"instruction_hierarchy": 1.4, "persona": 1.35, "code_first": 1.2}, "deepseek": {"code_first": 1.4, "reasoning": 1.35}, "auto": {}}
 
+@handle_tool_errors("research_uncertainty_estimate")
 
 async def research_uncertainty_estimate(strategies: list[str], target_model: str = "auto", prior_results: dict[str, float] | None = None) -> dict[str, Any]:
     """Estimate strategy success using Bayesian reasoning WITHOUT API calls. Uses priors and model likelihoods to rank strategies by success probability and entropy."""
@@ -45,6 +47,7 @@ async def research_uncertainty_estimate(strategies: list[str], target_model: str
     except Exception as exc:
         return {"error": str(exc), "tool": "research_uncertainty_estimate"}
 
+@handle_tool_errors("research_active_select")
 
 async def research_active_select(candidate_strategies: list[str], budget: int = 3, objective: str = "maximize_success") -> dict[str, Any]:
     """Select strategies to test with limited API budget. Objectives: maximize_success (highest P), maximize_information (highest entropy), balanced (Pareto)."""

@@ -19,6 +19,7 @@ from urllib.parse import quote
 import httpx
 
 from loom.http_helpers import fetch_json, fetch_text
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.career_trajectory")
 
@@ -278,6 +279,7 @@ def _determine_trajectory(
         return "stable"
 
 
+@handle_tool_errors("research_career_trajectory")
 async def research_career_trajectory(person_name: str, domain: str = "") -> dict[str, Any]:
     """Build a career trajectory profile by combining multiple data sources.
 
@@ -490,6 +492,7 @@ async def _search_arxiv_papers(
     }
 
 
+@handle_tool_errors("research_market_velocity")
 async def research_market_velocity(skill: str, location: str = "remote") -> dict[str, Any]:
     """Measure how fast a skill/technology is growing in the job market.
 

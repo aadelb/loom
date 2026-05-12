@@ -7,6 +7,7 @@ Falls back to research_llm_extract if instructor is not installed.
 """
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import logging
 from typing import Any
@@ -157,6 +158,7 @@ async def _patch_and_call_instructor(
     raise RuntimeError(error_msg)
 
 
+@handle_tool_errors("research_structured_extract")
 async def research_structured_extract(
     text: str,
     output_schema: dict[str, str] | str,

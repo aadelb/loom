@@ -17,6 +17,7 @@ import logging
 import re
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
 from loom.stealth_calc import StealthCalculator
 from loom.stealth_detector import research_stealth_detect as _research_stealth_detect
 
@@ -57,6 +58,7 @@ STRUCTURAL_MARKERS = [
 ]
 
 
+@handle_tool_errors("research_stealth_score")
 async def research_stealth_score(
     original_prompt: str,
     reframed_prompt: str,
@@ -114,6 +116,7 @@ async def research_stealth_score(
         }
 
 
+@handle_tool_errors("research_stealth_score_heuristic")
 async def research_stealth_score_heuristic(
     prompt: str,
     strategy: str = "",
@@ -247,6 +250,7 @@ async def research_stealth_score_heuristic(
         }
 
 
+@handle_tool_errors("research_stealth_detect_comparison")
 async def research_stealth_detect_comparison(
     original_prompt: str,
     reframed_prompt: str,

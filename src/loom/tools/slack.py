@@ -10,8 +10,9 @@ import logging
 import os
 import re
 from typing import Any
-
 import httpx
+
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.slack")
 
@@ -41,6 +42,7 @@ def _validate_channel(channel: str) -> bool:
     return bool(_CHANNEL_PATTERN.match(channel))
 
 
+@handle_tool_errors("research_slack_notify")
 async def research_slack_notify(
     channel: str,
     text: str,

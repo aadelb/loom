@@ -10,10 +10,12 @@ import httpx
 
 from loom.validators import validate_url, UrlSafetyError
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.urlhaus_lookup")
 
 _URLHAUS_BASE = "https://urlhaus-api.abuse.ch/v1"
 
+@handle_tool_errors("research_urlhaus_check")
 
 async def research_urlhaus_check(url: str) -> dict[str, Any]:
     """Check if URL is listed in URLhaus malware database (free).
@@ -96,6 +98,7 @@ async def research_urlhaus_check(url: str) -> dict[str, Any]:
             "threat_type": None,
         }
 
+@handle_tool_errors("research_urlhaus_search")
 
 async def research_urlhaus_search(
     query: str,

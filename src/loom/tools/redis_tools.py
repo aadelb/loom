@@ -9,10 +9,12 @@ from __future__ import annotations
 
 import logging
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 log = logging.getLogger("loom.tools.redis_tools")
 
 
+@handle_tool_errors("research_redis_stats")
 async def research_redis_stats() -> dict[str, Any]:
     """Get Redis connection pool and memory usage statistics.
 
@@ -51,6 +53,7 @@ async def research_redis_stats() -> dict[str, Any]:
         }
 
 
+@handle_tool_errors("research_redis_flush_cache")
 async def research_redis_flush_cache(
     prefix: str = "cache:",
 ) -> dict[str, Any]:

@@ -13,6 +13,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 from loom.validators import validate_url, UrlSafetyError
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.onion_spectra")
 
@@ -173,6 +174,7 @@ def _is_onion_url(url: str) -> bool:
 		return False
 
 
+@handle_tool_errors("research_onion_spectra")
 async def research_onion_spectra(
 	url: str,
 	fetch_content: bool = True,

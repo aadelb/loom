@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 # 10+ pre-built workflow templates with documented steps
 WORKFLOW_TEMPLATES = {
     "full_osint_person": {
@@ -379,6 +381,7 @@ WORKFLOW_TEMPLATES = {
 }
 
 
+@handle_tool_errors("research_workflow_list")
 def research_workflow_list() -> dict[str, Any]:
     """List all pre-built workflow templates.
 
@@ -400,7 +403,7 @@ def research_workflow_list() -> dict[str, Any]:
         )
     return {"workflows": workflows, "total": len(workflows)}
 
-
+@handle_tool_errors("research_workflow_get")
 def research_workflow_get(name: str) -> dict[str, Any]:
     """Get detailed workflow template definition.
 

@@ -14,6 +14,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 try:
     from loom.retry import with_retry
@@ -181,6 +182,7 @@ def _score_agreement(
 
 
 @with_retry(max_attempts=2, backoff_base=1.0)
+@handle_tool_errors("research_fact_verify")
 async def research_fact_verify(
     claim: str,
     sources: int = DEFAULT_SOURCES,
@@ -375,6 +377,7 @@ async def research_fact_verify(
         }
 
 
+@handle_tool_errors("research_batch_verify")
 async def research_batch_verify(
     claims: list[str],
     sources: int = DEFAULT_SOURCES,

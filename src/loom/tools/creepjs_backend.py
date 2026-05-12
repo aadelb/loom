@@ -6,6 +6,7 @@ import logging
 from typing import Any
 
 from loom.validators import validate_url, UrlSafetyError
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.creepjs_backend")
 
@@ -77,6 +78,7 @@ async def _run_creepjs_audit(target_url: str) -> dict[str, Any]:
 		return {"error": f"Browser automation failed: {str(exc)}"}
 
 
+@handle_tool_errors("research_creepjs_audit")
 async def research_creepjs_audit(
 	target_url: str = "https://creepjs.web.app",
 	headless: bool = True,

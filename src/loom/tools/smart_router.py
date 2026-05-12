@@ -9,6 +9,8 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.smart_router")
 _TOOL_INDEX: dict[str, set[str]] = {}
 _INDEX_LOCK: asyncio.Lock | None = None
@@ -68,6 +70,7 @@ async def _get_tool_index() -> dict[str, set[str]]:
     return _TOOL_INDEX
 
 
+@handle_tool_errors("research_route_query")
 async def research_route_query(query: str, intent: str = "auto") -> dict[str, Any]:
     """Route query to optimal tools via keyword matching against all tool docstrings.
 
@@ -118,6 +121,7 @@ async def research_route_query(query: str, intent: str = "auto") -> dict[str, An
         return {"error": str(exc), "tool": "research_route_query"}
 
 
+@handle_tool_errors("research_route_batch")
 async def research_route_batch(queries: list[str]) -> dict[str, Any]:
     """Route multiple queries with aggregated statistics."""
     try:
@@ -143,6 +147,7 @@ async def research_route_batch(queries: list[str]) -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_route_batch"}
 
 
+@handle_tool_errors("research_router_rebuild")
 async def research_router_rebuild() -> dict[str, Any]:
     """Force rebuild tool index (call when new tools added)."""
     try:

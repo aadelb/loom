@@ -26,6 +26,7 @@ import httpx
 from loom.validators import validate_url, UrlSafetyError
 from loom.http_helpers import fetch_json, fetch_text
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.unique_tools")
 
 # Default timeout for HTTP operations
@@ -50,6 +51,7 @@ async def _check_http_status(
             logger.debug("HTTP status check failed for %s: %s", url, exc)
     return None
 
+@handle_tool_errors("research_propaganda_detector")
 
 def research_propaganda_detector(text: str) -> dict[str, Any]:
     """Detect propaganda techniques in text using NLP analysis.
@@ -194,6 +196,7 @@ def research_propaganda_detector(text: str) -> dict[str, Any]:
         "dominant_technique": dominant_technique,
     }
 
+@handle_tool_errors("research_source_credibility")
 
 async def research_source_credibility(url: str) -> dict[str, Any]:
     """Rate source credibility using multiple factors.
@@ -337,6 +340,7 @@ async def research_source_credibility(url: str) -> dict[str, Any]:
 
     return await _run()
 
+@handle_tool_errors("research_information_cascade")
 
 async def research_information_cascade(
     topic: str, hours_back: int = 72
@@ -483,6 +487,7 @@ async def research_information_cascade(
 
     return await _run()
 
+@handle_tool_errors("research_web_time_machine")
 
 async def research_web_time_machine(url: str, snapshots: int = 10) -> dict[str, Any]:
     """Track website evolution via Wayback Machine CDX snapshots.
@@ -609,6 +614,7 @@ def _detect_tech_signatures(html: str) -> list[str]:
 
     return sorted(list(technologies))
 
+@handle_tool_errors("research_influence_operation")
 
 async def research_influence_operation(topic: str) -> dict[str, Any]:
     """Detect potential influence operations via coordinated posting patterns.
@@ -749,6 +755,7 @@ async def research_influence_operation(topic: str) -> dict[str, Any]:
 
     return await _run()
 
+@handle_tool_errors("research_dark_web_bridge")
 
 async def research_dark_web_bridge(query: str) -> dict[str, Any]:
     """Find clearnet references to dark web content.
@@ -857,6 +864,7 @@ async def research_dark_web_bridge(query: str) -> dict[str, Any]:
 
     return await _run()
 
+@handle_tool_errors("research_info_half_life")
 
 async def research_info_half_life(urls: list[str]) -> dict[str, Any]:
     """Estimate URL survival rate and information decay half-life.
@@ -958,6 +966,7 @@ async def research_info_half_life(urls: list[str]) -> dict[str, Any]:
 
     return await _run()
 
+@handle_tool_errors("research_search_discrepancy")
 
 async def research_search_discrepancy(query: str) -> dict[str, Any]:
     """Compare search results across multiple engines to find discrepancies.

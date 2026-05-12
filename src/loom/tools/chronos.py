@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 from datetime import UTC, datetime
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.chronos")
 
@@ -129,6 +130,7 @@ _DOMAIN_PATTERNS = {
 }
 
 
+@handle_tool_errors("research_chronos_reverse")
 async def research_chronos_reverse(
     future_state: str,
     domain: str = "technology",

@@ -10,6 +10,7 @@ import time
 from typing import Any
 
 from pydantic import BaseModel, Field
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.parallel_executor")
 
@@ -43,6 +44,7 @@ class ParallelPlanExecutorParams(BaseModel):
     model_config = {"extra": "forbid", "strict": True}
 
 
+@handle_tool_errors("research_parallel_execute")
 async def research_parallel_execute(
     tools: list[dict[str, Any]] | str, timeout_seconds: int = 30
 ) -> dict[str, Any]:
@@ -158,6 +160,7 @@ async def research_parallel_execute(
         }
 
 
+@handle_tool_errors("research_parallel_plan_and_execute")
 async def research_parallel_plan_and_execute(
     goal: str, max_parallel: int = 5
 ) -> dict[str, Any]:

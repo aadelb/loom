@@ -10,6 +10,7 @@ from urllib.parse import quote
 import httpx
 
 from loom.input_validators import validate_domain, ValidationError
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.passive_recon")
 
@@ -165,6 +166,7 @@ def _detect_tech_stack(
     return tech
 
 
+@handle_tool_errors("research_passive_recon")
 async def research_passive_recon(
     domain: str,
     check_ct_logs: bool = True,

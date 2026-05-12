@@ -8,6 +8,7 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.tool_tags")
 
 _TAGS_FILE = Path.home() / ".loom" / "tool_tags.json"
@@ -36,6 +37,7 @@ DEFAULT_TAGS = {
     "research_deep": ["research", "search"],
 }
 
+@handle_tool_errors("research_tag_tool")
 
 async def research_tag_tool(tool_name: str, tags: list[str]) -> dict:
     """Add tags to a tool for organization.
@@ -65,6 +67,7 @@ async def research_tag_tool(tool_name: str, tags: list[str]) -> dict:
         logger.error("tag_tool_error", extra={"tool": tool_name, "error": str(e)})
         return {"error": str(e), "tool": tool_name}
 
+@handle_tool_errors("research_tag_search")
 
 async def research_tag_search(tags: list[str], match: str = "any") -> dict:
     """Find tools by tag(s).
@@ -99,6 +102,7 @@ async def research_tag_search(tags: list[str], match: str = "any") -> dict:
         logger.error("tag_search_error", extra={"tags": tags, "error": str(e)})
         return {"error": str(e), "tags_searched": tags, "tools": []}
 
+@handle_tool_errors("research_tag_cloud")
 
 async def research_tag_cloud() -> dict:
     """Generate tag frequency cloud.

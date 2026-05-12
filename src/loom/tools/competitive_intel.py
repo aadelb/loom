@@ -17,6 +17,7 @@ from urllib.parse import quote
 import httpx
 
 from loom.http_helpers import fetch_json, fetch_text
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.competitive_intel")
 
@@ -414,6 +415,7 @@ def _synthesize_signals(
     return signals, overall_assessment
 
 
+@handle_tool_errors("research_competitive_intel")
 async def research_competitive_intel(
     company: str,
     domain: str | None = None,

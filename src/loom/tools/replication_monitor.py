@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 
+@handle_tool_errors("research_replication_status")
 async def research_replication_status() -> dict[str, Any]:
     """Check database replication status."""
     try:
@@ -19,6 +21,7 @@ async def research_replication_status() -> dict[str, Any]:
         }
 
 
+@handle_tool_errors("research_replication_lag")
 async def research_replication_lag() -> dict[str, Any]:
     """Measure replication lag in milliseconds."""
     try:

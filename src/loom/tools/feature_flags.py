@@ -8,6 +8,7 @@ import os
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, TypedDict
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.feature_flags")
 
@@ -105,6 +106,7 @@ def _save_flags(flags: dict[str, Any]) -> None:
     _write_flags_atomic(flags)
 
 
+@handle_tool_errors("research_flag_check")
 def research_flag_check(flag_name: str) -> FlagCheckResponse:
     """Check if a feature flag is enabled.
 
@@ -131,6 +133,7 @@ def research_flag_check(flag_name: str) -> FlagCheckResponse:
         return {"error": str(exc)}
 
 
+@handle_tool_errors("research_flag_toggle")
 def research_flag_toggle(flag_name: str, enabled: bool, description: str = "") -> FlagToggleResponse:
     """Enable or disable a feature flag.
 
@@ -167,6 +170,7 @@ def research_flag_toggle(flag_name: str, enabled: bool, description: str = "") -
         return {"error": str(exc)}
 
 
+@handle_tool_errors("research_flag_list")
 def research_flag_list() -> FlagListResponse:
     """List all feature flags and their status.
 

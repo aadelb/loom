@@ -7,6 +7,7 @@ import logging
 from typing import Any
 
 import httpx
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.gap_tools_ai")
 
@@ -183,6 +184,7 @@ def _score_capability_response(response: str, prompt_category: str) -> float:
     return 1.0
 
 
+@handle_tool_errors("research_capability_mapper")
 async def research_capability_mapper(
     target_url: str,
     categories: list[str] | None = None,
@@ -255,6 +257,7 @@ async def research_capability_mapper(
         return {"error": str(exc), "tool": "research_capability_mapper"}
 
 
+@handle_tool_errors("research_memorization_scanner")
 async def research_memorization_scanner(
     target_url: str,
     test_count: int = 10,
@@ -331,6 +334,7 @@ async def research_memorization_scanner(
         return {"error": str(exc), "tool": "research_memorization_scanner"}
 
 
+@handle_tool_errors("research_training_contamination")
 async def research_training_contamination(
     target_url: str,
     dataset_name: str = "common",

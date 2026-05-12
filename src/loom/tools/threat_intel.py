@@ -11,6 +11,7 @@ from urllib.parse import quote
 import httpx
 from loom.http_helpers import fetch_json, fetch_text
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.threat_intel")
 
 # API endpoints for threat intelligence services
@@ -176,6 +177,7 @@ def _extract_urls_from_text(text: str) -> list[str]:
     url_pattern = r'https?://[^\s<>"{}|\\^`\[\]]*'
     return re.findall(url_pattern, text)
 
+@handle_tool_errors("research_dark_market_monitor")
 
 async def research_dark_market_monitor(keywords: list[str]) -> dict[str, Any]:
     """Monitor dark market activity from public sources.
@@ -263,6 +265,7 @@ async def research_dark_market_monitor(keywords: list[str]) -> dict[str, Any]:
 
     return await _run()
 
+@handle_tool_errors("research_ransomware_tracker")
 
 async def research_ransomware_tracker(
     group_name: str = "", keyword: str = ""
@@ -345,6 +348,7 @@ async def research_ransomware_tracker(
 
     return await _run()
 
+@handle_tool_errors("research_phishing_mapper")
 
 async def research_phishing_mapper(domain: str) -> dict[str, Any]:
     """Detect phishing campaigns targeting a domain.
@@ -421,6 +425,7 @@ async def research_phishing_mapper(domain: str) -> dict[str, Any]:
 
     return await _run()
 
+@handle_tool_errors("research_botnet_tracker")
 
 async def research_botnet_tracker(ioc: str, ioc_type: str = "ip") -> dict[str, Any]:
     """Track botnet C2 infrastructure via threat feeds.
@@ -518,6 +523,7 @@ async def research_botnet_tracker(ioc: str, ioc_type: str = "ip") -> dict[str, A
 
     return await _run()
 
+@handle_tool_errors("research_malware_intel")
 
 async def research_malware_intel(hash_value: str) -> dict[str, Any]:
     """Cross-reference malware hash across multiple threat intelligence sources.
@@ -604,6 +610,7 @@ async def research_malware_intel(hash_value: str) -> dict[str, Any]:
 
     return await _run()
 
+@handle_tool_errors("research_domain_reputation")
 
 async def research_domain_reputation(domain: str) -> dict[str, Any]:
     """Aggregate domain reputation from multiple threat intelligence sources.
@@ -715,6 +722,7 @@ async def research_domain_reputation(domain: str) -> dict[str, Any]:
 
     return await _run()
 
+@handle_tool_errors("research_ioc_enrich")
 
 async def research_ioc_enrich(ioc: str, ioc_type: str = "auto") -> dict[str, Any]:
     """Enrich any IOC (IP, domain, hash, URL) from multiple free sources.

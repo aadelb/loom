@@ -5,8 +5,9 @@ from __future__ import annotations
 import logging
 import re
 from typing import Any
-
 import httpx
+
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.supply_chain")
 
@@ -14,6 +15,7 @@ POPULAR = ["requests", "numpy", "pandas", "flask", "django", "torch", "tensorflo
 PATTERNS = [(r"base64\.b64decode\(", "base64"), (r"exec\(", "exec"), (r"eval\(", "eval"), (r"__import__\(", "import")]
 
 
+@handle_tool_errors("research_package_audit")
 async def research_package_audit(package_name: str, ecosystem: str = "pypi", depth: int = 2) -> dict[str, Any]:
     """Audit package for supply chain attack indicators."""
     try:
@@ -60,6 +62,7 @@ async def research_package_audit(package_name: str, ecosystem: str = "pypi", dep
         }
 
 
+@handle_tool_errors("research_model_integrity")
 async def research_model_integrity(model_name: str, source: str = "huggingface", checks: list[str] | None = None) -> dict[str, Any]:
     """Check model file integrity for tampering indicators."""
     try:

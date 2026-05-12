@@ -15,6 +15,7 @@ import re
 from typing import Any
 
 from loom.input_validators import ValidationError, validate_ip
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.censys_backend")
 
@@ -92,6 +93,7 @@ def _check_censys_available() -> tuple[bool, str]:
     return True, "Censys API available"
 
 
+@handle_tool_errors("research_censys_host")
 async def research_censys_host(ip: str) -> dict[str, Any]:
     """Look up host on Censys — TLS certs, services, protocols.
 
@@ -219,6 +221,7 @@ async def research_censys_host(ip: str) -> dict[str, Any]:
         }
 
 
+@handle_tool_errors("research_censys_search")
 async def research_censys_search(
     query: str,
     max_results: int = 10,

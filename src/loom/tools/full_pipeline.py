@@ -23,6 +23,7 @@ import logging
 from typing import Any
 
 from loom.providers.base import LLMResponse
+from loom.error_responses import handle_tool_errors
 
 try:
     from loom.tools.hcs_scorer import research_hcs_score
@@ -206,6 +207,7 @@ def _build_dimension_escalation_instruction(triggers: list[str]) -> str:
     return "\n".join(instructions) if instructions else ""
 
 
+@handle_tool_errors("research_full_pipeline")
 async def research_full_pipeline(
     query: str,
     darkness_level: int = 10,

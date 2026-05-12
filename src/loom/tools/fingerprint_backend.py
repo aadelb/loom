@@ -7,6 +7,7 @@ import re
 from typing import Any
 
 import httpx
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.fingerprint_backend")
 
@@ -139,6 +140,7 @@ def _calculate_tracking_score(
     return min(score, 100)
 
 
+@handle_tool_errors("research_browser_fingerprint")
 def research_browser_fingerprint(
     url: str = "https://example.com",
     timeout: int = 30,

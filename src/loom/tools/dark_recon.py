@@ -19,6 +19,7 @@ except ImportError:
 from loom.cli_checker import is_available
 from loom.input_validators import validate_domain, ValidationError
 from loom.validators import validate_url, UrlSafetyError
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.dark_recon")
 
@@ -27,6 +28,7 @@ MAX_OUTPUT_SIZE = 10 * 1024 * 1024
 
 
 @requires_tier("pro")
+@handle_tool_errors("research_torbot")
 def research_torbot(url: str, depth: int = 2) -> dict[str, Any]:
     """Dark web OSINT crawling via TorBot subprocess.
 
@@ -132,6 +134,7 @@ def research_torbot(url: str, depth: int = 2) -> dict[str, Any]:
 
 
 @requires_tier("pro")
+@handle_tool_errors("research_amass_enum")
 def research_amass_enum(domain: str, passive: bool = True, timeout: int = 120) -> dict[str, Any]:
     """Attack surface mapping and asset discovery via OWASP Amass enum.
 
@@ -269,6 +272,7 @@ def research_amass_enum(domain: str, passive: bool = True, timeout: int = 120) -
 
 
 @requires_tier("pro")
+@handle_tool_errors("research_amass_intel")
 def research_amass_intel(domain: str) -> dict[str, Any]:
     """OSINT intelligence gathering via OWASP Amass intel.
 

@@ -11,6 +11,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.workflow_engine")
 
 # Regex pattern for valid Loom tool names: must start with "research_" and contain only lowercase letters, digits, underscores
@@ -68,6 +69,7 @@ def _init_db() -> None:
     finally:
         conn.close()
 
+@handle_tool_errors("research_workflow_create")
 
 def research_workflow_create(name: str, steps: list[dict]) -> dict[str, Any]:
     """Create workflow definition stored in SQLite.
@@ -117,6 +119,7 @@ def research_workflow_create(name: str, steps: list[dict]) -> dict[str, Any]:
     return {"workflow_id": wid, "name": name, "step_count": len(steps),
             "created_at": now, "status": "created"}
 
+@handle_tool_errors("research_workflow_run")
 
 def research_workflow_run(workflow_id: str, dry_run: bool = False) -> dict[str, Any]:
     """Execute workflow steps in dependency order.
@@ -198,6 +201,7 @@ def research_workflow_run(workflow_id: str, dry_run: bool = False) -> dict[str, 
     return {"workflow_id": workflow_id, "name": name, "status": run_status,
             "steps_completed": completed, "steps_failed": failed, "results": results}
 
+@handle_tool_errors("research_workflow_status")
 
 def research_workflow_status(workflow_id: str) -> dict[str, Any]:
     """Get current status of workflow.

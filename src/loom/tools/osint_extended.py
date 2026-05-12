@@ -8,6 +8,7 @@ import re
 from typing import Any
 
 import httpx
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.osint_extended")
 
@@ -221,6 +222,7 @@ async def _fetch_reddit_user(
         return {}
 
 
+@handle_tool_errors("research_social_engineering_score")
 async def research_social_engineering_score(
     target: str, target_type: str = "person"
 ) -> dict[str, Any]:
@@ -480,6 +482,7 @@ async def research_social_engineering_score(
             loop.close()
 
 
+@handle_tool_errors("research_behavioral_fingerprint")
 async def research_behavioral_fingerprint(username: str) -> dict[str, Any]:
     """Build behavioral fingerprint from public activity patterns.
 

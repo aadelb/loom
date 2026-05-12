@@ -5,10 +5,12 @@ from __future__ import annotations
 import asyncio
 import logging
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.experts")
 
 
+@handle_tool_errors("research_find_experts")
 async def research_find_experts(
     query: str,
     n: int = 5,

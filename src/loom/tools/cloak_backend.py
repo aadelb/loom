@@ -13,10 +13,12 @@ import asyncio
 import logging
 import time
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.cloak_backend")
 
 
+@handle_tool_errors("research_cloak_fetch")
 async def research_cloak_fetch(
     url: str,
     wait_for: str = "",
@@ -114,6 +116,7 @@ async def research_cloak_fetch(
     return await loop.run_in_executor(None, _fetch_cloak)
 
 
+@handle_tool_errors("research_cloak_extract")
 async def research_cloak_extract(
     url: str,
     css_selector: str = "",
@@ -199,6 +202,7 @@ async def research_cloak_extract(
     return await loop.run_in_executor(None, _extract_cloak)
 
 
+@handle_tool_errors("research_cloak_session")
 async def research_cloak_session(
     urls: list[str],
     humanize: bool = True,

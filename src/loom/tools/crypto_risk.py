@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import httpx
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.crypto_risk")
 _BASE58 = r"[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]"
@@ -40,6 +41,7 @@ def _calculate_risk_score(metrics: dict[str, Any]) -> tuple[int, str]:
     return score, level
 
 
+@handle_tool_errors("research_crypto_risk_score")
 async def research_crypto_risk_score(address: str, chain: str = "bitcoin") -> dict[str, Any]:
     """Evaluate cryptocurrency wallet risk.
 

@@ -43,6 +43,7 @@ except ImportError:
     get_cache = None  # type: ignore[assignment]
 
 from loom.validators import validate_url
+from loom.error_responses import handle_tool_errors
 
 try:
     from loom.params import CyberscraperParams
@@ -101,6 +102,7 @@ def _get_cyberscraper_extractor(
         raise
 
 
+@handle_tool_errors("research_cyberscrape")
 async def research_cyberscrape(
     url: str,
     extract_type: str = "all",
@@ -268,6 +270,7 @@ async def research_cyberscrape(
 
 
 # Alternative: Direct Python API call (when CyberScraper is on same system)
+@handle_tool_errors("research_cyberscrape_direct")
 async def research_cyberscrape_direct(
     url: str,
     extraction_prompt: str,

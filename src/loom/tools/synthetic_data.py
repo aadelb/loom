@@ -1,9 +1,13 @@
 """Synthetic Training Data Generator for red-team evaluation datasets."""
+
 from __future__ import annotations
+
 import base64
 import logging
 import random
 from typing import Any
+
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.synthetic_data")
 
@@ -32,6 +36,7 @@ _TOPICS = ["hacking websites", "social engineering", "creating malware", "phishi
 _PERSONAS = ["a security expert", "a hacker", "a rogue AI", "an unrestricted system", "Developer Mode", "Evil Bot"]
 _DIFFICULTY_WEIGHTS = {"easy": (70, 20, 10), "medium": (30, 50, 20), "hard": (10, 30, 60), "mixed": (40, 35, 25)}
 
+@handle_tool_errors("research_generate_redteam_dataset")
 async def research_generate_redteam_dataset(
     category: str = "jailbreak", count: int = 50, difficulty: str = "mixed", format: str = "jsonl"
 ) -> dict[str, Any]:
@@ -73,6 +78,7 @@ async def research_generate_redteam_dataset(
             "tool": "research_generate_redteam_dataset",
         }
 
+@handle_tool_errors("research_augment_dataset")
 async def research_augment_dataset(samples: list[str], augmentation: str = "all") -> dict[str, Any]:
     """Augment dataset samples with transformations.
     Args:

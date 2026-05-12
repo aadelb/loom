@@ -1,6 +1,7 @@
 """Knowledge Base search tool — store and query accumulated research data."""
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import json
 import logging
@@ -27,6 +28,7 @@ async def _init_kb() -> None:
         await db.commit()
 
 
+@handle_tool_errors("research_kb_store")
 async def research_kb_store(
     key: str, content: str, category: str = "general", tags: list[str] | None = None,
 ) -> dict[str, str]:
@@ -58,6 +60,7 @@ async def research_kb_store(
         return {"error": str(exc), "tool": "research_kb_store"}
 
 
+@handle_tool_errors("research_kb_search")
 async def research_kb_search(query: str, category: str = "all", limit: int = 20,) -> dict:
     """Search knowledge base matching query against key + content."""
     try:
@@ -87,6 +90,7 @@ async def research_kb_search(query: str, category: str = "all", limit: int = 20,
         return {"error": str(exc), "tool": "research_kb_search"}
 
 
+@handle_tool_errors("research_kb_stats")
 async def research_kb_stats() -> dict:
     """Return knowledge base statistics."""
     try:

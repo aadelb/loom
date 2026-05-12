@@ -12,10 +12,12 @@ import logging
 import random
 import string
 from typing import Any
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.fingerprint_evasion")
 
 
+@handle_tool_errors("research_fingerprint_evasion_test")
 async def research_fingerprint_evasion_test(
     anonymizer_config: str = "default",
     test_iterations: int = 5,

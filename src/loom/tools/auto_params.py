@@ -10,6 +10,8 @@ from typing import Any
 
 from loom.validators import validate_url, UrlSafetyError
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.auto_params")
 
 # Model name patterns for detection
@@ -142,6 +144,7 @@ def _infer_param_value(
     return None
 
 
+@handle_tool_errors("research_auto_params")
 async def research_auto_params(
     tool_name: str,
     query: str,
@@ -245,6 +248,7 @@ async def research_auto_params(
         }
 
 
+@handle_tool_errors("research_inspect_tool")
 async def research_inspect_tool(tool_name: str) -> dict[str, Any]:
     """Return full signature info for a tool.
 

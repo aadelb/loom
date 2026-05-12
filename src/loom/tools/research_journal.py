@@ -8,6 +8,8 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.research_journal")
 VALID_CATEGORIES = {"finding", "hypothesis", "experiment", "insight", "todo", "milestone"}
 
@@ -123,6 +125,7 @@ def _read_journal_timeline(months: int) -> tuple[list[dict[str, Any]], int, int]
     return timeline[:52], total, active_weeks
 
 
+@handle_tool_errors("research_journal_add")
 async def research_journal_add(title: str, content: str, tags: list[str] | None = None, category: str = "finding") -> dict[str, Any]:
     """Add entry to journal. Categories: finding, hypothesis, experiment, insight, todo, milestone."""
     try:
@@ -161,6 +164,7 @@ async def research_journal_add(title: str, content: str, tags: list[str] | None 
         return {"error": str(exc), "tool": "research_journal_add"}
 
 
+@handle_tool_errors("research_journal_search")
 async def research_journal_search(query: str = "", category: str = "all", limit: int = 20) -> dict[str, Any]:
     """Search journal entries by query and/or category. Returns {entries, total}."""
     try:
@@ -172,6 +176,7 @@ async def research_journal_search(query: str = "", category: str = "all", limit:
         return {"error": str(exc), "tool": "research_journal_search"}
 
 
+@handle_tool_errors("research_journal_timeline")
 async def research_journal_timeline(months: int = 3) -> dict[str, Any]:
     """Timeline aggregated by week. Returns {timeline, total_entries, active_weeks}."""
     try:

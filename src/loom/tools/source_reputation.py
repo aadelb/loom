@@ -1,10 +1,12 @@
 """Source reputation scoring for search result filtering."""
+
 from __future__ import annotations
 
 import logging
 from typing import Any
 from urllib.parse import urlparse
 
+from loom.error_responses import handle_tool_errors
 from loom.validators import validate_url, UrlSafetyError
 
 logger = logging.getLogger("loom.tools.source_reputation")
@@ -112,6 +114,7 @@ def filter_by_reputation(
     return filtered
 
 
+@handle_tool_errors("research_source_reputation")
 async def research_source_reputation(url: str) -> dict[str, Any]:
     """Score a URL's source reputation.
 

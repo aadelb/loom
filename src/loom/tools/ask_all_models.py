@@ -18,6 +18,8 @@ from typing import Any
 
 import httpx
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.ask_all_models")
 
 # All available models grouped by provider
@@ -357,6 +359,7 @@ def _query_cli(name: str, cmd: list[str], prompt: str, timeout: int = 60) -> dic
         return {"text": "", "tokens": 0, "error": _sanitize_error_message(str(exc))[:150]}
 
 
+@handle_tool_errors("research_ask_all_models")
 async def research_ask_all_models(
     prompt: str,
     models: list[str] | None = None,

@@ -14,6 +14,7 @@ import httpx
 from pydantic import BaseModel
 
 from loom.validators import validate_url
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.nightcrawler")
 _STATE_DIR = Path.home() / ".loom" / "nightcrawler"
@@ -88,6 +89,7 @@ def _store_paper(paper: ArxivPaper) -> None:
             conn.close()
 
 
+@handle_tool_errors("research_arxiv_scan")
 async def research_arxiv_scan(
     keywords: list[str] | None = None,
     days_back: int = 7,
@@ -128,6 +130,7 @@ async def research_arxiv_scan(
             "days_searched": days_back, "scan_timestamp": datetime.now(UTC).isoformat()}
 
 
+@handle_tool_errors("research_nightcrawler_status")
 def research_nightcrawler_status() -> dict[str, Any]:
     """Return status of the NIGHTCRAWLER monitoring system."""
     _ensure_state_db()

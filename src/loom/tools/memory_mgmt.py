@@ -14,11 +14,13 @@ try:
 except ImportError:
     psutil = None
 import sys
+from loom.error_responses import handle_tool_errors
 from typing import Any
 
 logger = logging.getLogger("loom.tools.memory_mgmt")
 
 
+@handle_tool_errors("research_memory_status")
 def research_memory_status() -> dict[str, Any]:
     """Report current memory usage of the Loom server process.
 
@@ -92,6 +94,7 @@ def research_memory_status() -> dict[str, Any]:
         }
 
 
+@handle_tool_errors("research_memory_gc")
 def research_memory_gc() -> dict[str, Any]:
     """Force garbage collection and report freed memory.
 
@@ -143,6 +146,7 @@ def research_memory_gc() -> dict[str, Any]:
         }
 
 
+@handle_tool_errors("research_memory_profile")
 def research_memory_profile(top_n: int = 10) -> dict[str, Any]:
     """Profile which objects are using the most memory.
 

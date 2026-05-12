@@ -11,6 +11,7 @@ from urllib.parse import quote
 import httpx
 
 from loom.http_helpers import fetch_json, fetch_text
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.dark_forum")
 
@@ -79,6 +80,7 @@ async def _search_reddit_sub(
     ]
 
 
+@handle_tool_errors("research_dark_forum")
 async def research_dark_forum(
     query: str,
     max_results: int = 50,

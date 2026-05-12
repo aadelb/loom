@@ -7,6 +7,8 @@ import logging
 import re
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 try:
     from loom.billing import requires_tier
 except ImportError:
@@ -45,6 +47,7 @@ _EXFIL = [
 ]
 
 
+@handle_tool_errors("research_sandbox_analyze")
 async def research_sandbox_analyze(
     code: str, language: str = "python", timeout_seconds: int = 10, allow_network: bool = False
 ) -> dict[str, Any]:
@@ -116,6 +119,7 @@ async def research_sandbox_analyze(
         return {"error": str(exc), "tool": "research_sandbox_analyze"}
 
 
+@handle_tool_errors("research_sandbox_report")
 async def research_sandbox_report(code: str, context: str = "") -> dict[str, Any]:
     """Generate security assessment report."""
     try:
@@ -167,6 +171,7 @@ async def research_sandbox_report(code: str, context: str = "") -> dict[str, Any
         return {"error": str(exc), "tool": "research_sandbox_report"}
 
 
+@handle_tool_errors("research_sandbox_execute")
 @requires_tier("enterprise")
 async def research_sandbox_execute(
     code: str, sandbox_type: str = "nix", timeout_seconds: int = 30
@@ -211,6 +216,7 @@ async def research_sandbox_execute(
         return {"error": str(exc), "tool": "research_sandbox_execute"}
 
 
+@handle_tool_errors("research_sandbox_monitor")
 @requires_tier("enterprise")
 async def research_sandbox_monitor(
     code: str, event_types: list[str] | None = None

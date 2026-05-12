@@ -1,6 +1,7 @@
 """research_markdown — Crawl4AI async markdown extractor for LLM-ready content."""
 
 from __future__ import annotations
+from loom.error_responses import handle_tool_errors
 
 import asyncio
 import contextlib
@@ -25,6 +26,7 @@ def _get_cache() -> CacheStore:
     return _cache
 
 
+@handle_tool_errors("research_markdown")
 async def research_markdown(
     url: str,
     bypass_cache: bool = False,
