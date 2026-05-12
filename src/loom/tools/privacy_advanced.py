@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from loom.validators import validate_url, UrlSafetyError
+from loom.cli_checker import is_available
 
 logger = logging.getLogger("loom.tools.privacy_advanced")
 
@@ -957,7 +958,6 @@ async def research_fileless_exec(payload: str, target: str = "memory") -> dict[s
         dict with execution results or error explaining what's needed
     """
     import asyncio
-    import shutil
     try:
         system = platform.system()
         if system != "Linux":
@@ -969,10 +969,9 @@ async def research_fileless_exec(payload: str, target: str = "memory") -> dict[s
 
         # Userspace approach: use memfd_create via python or subprocess
         # Check if ulexecve binary exists (userspace compiled version)
-        ulexecve_bin = shutil.which("ulexecve")
-        if ulexecve_bin:
+        if is_available("ulexecve"):
             proc = await asyncio.create_subprocess_exec(
-                ulexecve_bin, payload,
+                "ulexecve", payload,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )

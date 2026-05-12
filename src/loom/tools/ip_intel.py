@@ -3,28 +3,19 @@
 from __future__ import annotations
 
 import asyncio
-import ipaddress
 import logging
 import os
 from typing import Any
 
 import httpx
 
+from loom.input_validators import ValidationError, validate_ip
+
 logger = logging.getLogger("loom.tools.ip_intel")
 
 _IP_API_URL = "https://ip-api.com/json"
 _IPINFO_URL = "https://ipinfo.io"
 _ABUSEIPDB_URL = "https://api.abuseipdb.com/api/v2/check"
-
-
-def _is_valid_ip(ip: str) -> bool:
-    """Check if IP is valid IPv4 or IPv6."""
-    try:
-        addr = ipaddress.ip_address(ip)
-        # Block private IPs
-        return not addr.is_private
-    except ValueError:
-        return False
 
 
 async def research_ip_reputation(ip: str) -> dict[str, Any]:
@@ -42,7 +33,9 @@ async def research_ip_reputation(ip: str) -> dict[str, Any]:
         Dict with keys: ip, geolocation, abuse_score, is_tor_exit, reverse_dns
     """
     # Validate IP
-    if not _is_valid_ip(ip):
+    try:
+        validate_ip(ip)
+    except ValidationError:
         return {
             "ip": ip,
             "error": "Invalid IP address or private IP not allowed",
@@ -120,7 +113,9 @@ async def research_ip_geolocation(ip: str) -> dict[str, Any]:
         Dict with keys: ip, country, region, city, lat, lon, timezone, isp, org
     """
     # Validate IP
-    if not _is_valid_ip(ip):
+    try:
+        validate_ip(ip)
+    except ValidationError:
         return {
             "ip": ip,
             "error": "Invalid IP address or private IP not allowed",

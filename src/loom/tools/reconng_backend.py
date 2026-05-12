@@ -6,7 +6,7 @@ import asyncio
 import json
 import logging
 import os
-import shutil
+from loom.cli_checker import is_available
 import subprocess
 import tempfile
 from typing import Any
@@ -108,8 +108,7 @@ async def research_reconng_scan(
     params = ReconnGScanParams(target=target, modules=modules, timeout=timeout)
 
     # Check if recon-ng is available
-    reconng_path = shutil.which("recon-ng")
-    if not reconng_path:
+    if not is_available("recon-ng"):
         return {
             "error": "recon-ng not found in PATH. Install with: pip install recon-ng",
             "target": params.target,

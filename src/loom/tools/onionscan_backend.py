@@ -11,10 +11,10 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import shutil
 import subprocess
 from typing import Any
 
+from loom.cli_checker import is_available
 from loom.validators import validate_url, UrlSafetyError
 
 logger = logging.getLogger("loom.tools.onionscan_backend")
@@ -85,7 +85,7 @@ def _check_onionscan_available() -> tuple[bool, str]:
 	Returns:
 		Tuple of (available: bool, message: str)
 	"""
-	if shutil.which("onionscan"):
+	if is_available("onionscan"):
 		return True, "onionscan binary found"
 	return False, "onionscan not installed. Install from: https://github.com/s-rah/onionscan"
 

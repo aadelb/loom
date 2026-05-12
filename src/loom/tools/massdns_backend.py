@@ -5,13 +5,14 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
-import shutil
 import subprocess
 import tempfile
 import time
 from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
+
+from loom.cli_checker import is_available
 
 logger = logging.getLogger("loom.tools.massdns_backend")
 
@@ -150,8 +151,7 @@ async def research_massdns_resolve(
     )
 
     # Check if massdns is available
-    massdns_path = shutil.which("massdns")
-    if not massdns_path:
+    if not is_available("massdns"):
         return {
             "error": "massdns not found in PATH. Install from: https://github.com/blechschmidt/massdns",
             "resolved": 0,
@@ -187,7 +187,7 @@ async def research_massdns_resolve(
         try:
             # Build massdns command
             cmd = [
-                massdns_path,
+                "massdns",
                 "-r",
                 params.resolver_file,
                 "-t",

@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import logging
 import re
-import shutil
 import subprocess
 import tempfile
 from pathlib import Path
@@ -19,6 +18,7 @@ from urllib.parse import urljoin, urlparse
 import httpx
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from loom.cli_checker import is_available
 from loom.validators import validate_url
 
 logger = logging.getLogger("loom.tools.photon_backend")
@@ -94,7 +94,7 @@ class PhotonResult(BaseModel):
 
 def _has_photon_cli() -> bool:
     """Check if Photon CLI is installed and available."""
-    return shutil.which("photon") is not None
+    return is_available("photon")
 
 
 async def _run_photon_cli(

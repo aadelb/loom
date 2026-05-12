@@ -5,17 +5,18 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
-import shutil
 import subprocess
 import tempfile
 from typing import Any
 
 import httpx
 
+from loom.cli_checker import is_available
+
 logger = logging.getLogger("loom.tools.document")
 
-# Path to pandoc executable (uses shutil.which for cross-platform support)
-PANDOC_PATH = "pandoc"  # Will be resolved via PATH using shutil.which()
+# Path to pandoc executable (uses is_available for cross-platform support)
+PANDOC_PATH = "pandoc"  # Will be resolved via PATH using is_available()
 
 # Max file size (10MB)
 MAX_FILE_SIZE = 10 * 1024 * 1024
@@ -222,9 +223,8 @@ def _convert_with_pandoc(
     Returns:
         Dict with converted content and metadata.
     """
-    # Find pandoc in PATH
-    pandoc_path = shutil.which("pandoc")
-    if not pandoc_path:
+    # Check if pandoc is available
+    if not is_available("pandoc"):
         logger.warning("pandoc not found in PATH, falling back to text extraction")
         return _fallback_text_extraction(file_path)
 
@@ -239,7 +239,7 @@ def _convert_with_pandoc(
     try:
         # Build pandoc command
         cmd = [
-            pandoc_path,
+            "pandoc",
             f"--from={source_type}",
             f"--to={pandoc_output}",
             "--wrap=none",  # Don't rewrap lines

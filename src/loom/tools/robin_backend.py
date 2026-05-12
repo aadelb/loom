@@ -11,11 +11,11 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import shutil
 import subprocess
 from typing import Any
 
 import httpx
+from loom.cli_checker import is_available
 
 logger = logging.getLogger("loom.tools.robin_backend")
 
@@ -90,7 +90,7 @@ def _check_robin_available() -> tuple[bool, str]:
     Returns:
         Tuple of (available: bool, message: str)
     """
-    if shutil.which("robin"):
+    if is_available("robin"):
         return True, "robin CLI tool found"
     return False, "robin CLI tool not installed. Install from: https://github.com/robin-io/robin"
 

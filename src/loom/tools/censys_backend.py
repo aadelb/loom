@@ -14,6 +14,8 @@ import os
 import re
 from typing import Any
 
+from loom.input_validators import ValidationError, validate_ip
+
 logger = logging.getLogger("loom.tools.censys_backend")
 
 try:
@@ -21,34 +23,6 @@ try:
     CENSYS_AVAILABLE = True
 except ImportError:
     CENSYS_AVAILABLE = False
-
-
-def _validate_ip(ip: str) -> str:
-    """Validate IPv4 or IPv6 address.
-
-    Args:
-        ip: IP address to validate
-
-    Returns:
-        The validated IP address
-
-    Raises:
-        ValueError: if IP is invalid
-    """
-    ip = ip.strip() if isinstance(ip, str) else ""
-
-    if not ip or len(ip) > 45:
-        raise ValueError("IP must be 1-45 characters")
-
-    # Basic IPv4 validation: 4 octets separated by dots
-    ipv4_pattern = r"^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$"
-    # Basic IPv6 validation: contains colons and hex digits
-    ipv6_pattern = r"^(?:[0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$"
-
-    if not (re.match(ipv4_pattern, ip) or re.match(ipv6_pattern, ip)):
-        raise ValueError("IP must be a valid IPv4 or IPv6 address")
-
-    return ip
 
 
 def _validate_query(query: str) -> str:
@@ -139,8 +113,8 @@ async def research_censys_host(ip: str) -> dict[str, Any]:
         - error: error message if lookup failed (optional)
     """
     try:
-        ip = _validate_ip(ip)
-    except ValueError as exc:
+        ip = validate_ip(ip)
+    except ValidationError as exc:
         return {
             "ip": ip,
             "error": str(exc),

@@ -13,13 +13,13 @@ import json
 import logging
 import os
 import re
-import shutil
 import subprocess
 import tempfile
 from typing import Any
 
 from loom.input_validators import validate_domain, validate_port, ValidationError
 from loom.validators import validate_url
+from loom.cli_checker import is_available, get_path
 
 logger = logging.getLogger("loom.tools.projectdiscovery")
 
@@ -75,7 +75,7 @@ def _check_binary_exists(binary_name: str) -> tuple[bool, str | None]:
     Returns:
         Tuple of (exists: bool, path: str | None)
     """
-    path = shutil.which(binary_name)
+    path = get_path(binary_name)
     return (path is not None, path)
 
 

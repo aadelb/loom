@@ -14,12 +14,12 @@ import json
 import logging
 import os
 import re
-import shutil
 import subprocess
 import uuid
 from typing import Any
 
 logger = logging.getLogger("loom.tools.testssl_backend")
+from loom.cli_checker import is_available
 
 
 def _validate_hostname(host: str) -> str:
@@ -125,7 +125,7 @@ def _check_testssl_available() -> tuple[bool, str]:
         Tuple of (available: bool, message: str)
     """
     # Check for testssl.sh or testssl command
-    if shutil.which("testssl.sh") or shutil.which("testssl"):
+    if is_available("testssl.sh") or is_available("testssl"):
         return True, "testssl.sh binary found"
     return False, "testssl.sh not installed. Install from: https://github.com/drwetter/testssl.sh"
 
@@ -222,7 +222,7 @@ async def research_testssl(
         }
 
     # Determine testssl command
-    testssl_cmd = "testssl.sh" if shutil.which("testssl.sh") else "testssl"
+    testssl_cmd = "testssl.sh" if is_available("testssl.sh") else "testssl"
 
     tmp_file = f"/tmp/testssl_{uuid.uuid4().hex}.json"
     try:

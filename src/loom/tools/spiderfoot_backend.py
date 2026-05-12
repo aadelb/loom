@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import logging
 import re
-import shutil
 import subprocess
 import time
 from typing import Any
@@ -13,6 +12,7 @@ from typing import Any
 import httpx
 
 from loom.validators import validate_url, UrlSafetyError
+from loom.cli_checker import is_available
 
 logger = logging.getLogger("loom.tools.spiderfoot_backend")
 
@@ -50,14 +50,14 @@ def _validate_target(target: str) -> str:
 
 def _is_tool_available(tool_name: str) -> bool:
     """Check if a tool is available in the system PATH.
-
+    
     Args:
         tool_name: name of the tool to check (e.g., 'spiderfoot')
-
+    
     Returns:
         True if tool is available, False otherwise
     """
-    return shutil.which(tool_name) is not None
+    return is_available(tool_name)
 
 
 def _is_api_available() -> bool:

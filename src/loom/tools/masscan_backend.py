@@ -9,11 +9,12 @@ from __future__ import annotations
 import json
 import logging
 import os
-import shutil
 import subprocess
 import tempfile
 import time
 from typing import Any
+
+from loom.cli_checker import is_available
 
 logger = logging.getLogger("loom.tools.masscan_backend")
 
@@ -94,7 +95,7 @@ def research_masscan(
     }
 
     # Check if masscan is installed
-    if not shutil.which("masscan"):
+    if not is_available("masscan"):
         result["error"] = "masscan binary not found in PATH"
         logger.warning("masscan_not_installed")
         return result

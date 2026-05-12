@@ -12,6 +12,7 @@ import httpx
 
 from loom.config import CONFIG
 from loom.http_helpers import fetch_json, fetch_text
+from loom.input_validators import ValidationError, validate_ip
 
 logger = logging.getLogger("loom.tools.leak_scan")
 
@@ -260,21 +261,6 @@ async def _check_trello_dork(
         return 0, []
 
 
-def _is_valid_ip(ip: str) -> bool:
-    """Validate IPv4 address format."""
-    parts = ip.split(".")
-    if len(parts) != 4:
-        return False
-    for part in parts:
-        try:
-            num = int(part)
-            if num < 0 or num > 255:
-                return False
-        except ValueError:
-            return False
-    return True
-
-
 def _is_valid_email(email: str) -> bool:
     """Validate email format."""
     if not email or not isinstance(email, str):
@@ -339,7 +325,9 @@ async def research_leak_scan(
                     "exposures": [],
                 }
         elif target_type == "ip":
-            if not _is_valid_ip(target):
+            try:
+                validate_ip(target)
+            except ValidationError:
                 return {
                     "target": target,
                     "target_type": target_type,

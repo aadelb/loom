@@ -11,7 +11,7 @@ from urllib.parse import quote
 
 import httpx
 
-from loom.http_helpers import fetch_json, fetch_text
+from loom.http_helpers import fetch_bytes, fetch_json, fetch_text
 
 logger = logging.getLogger("loom.tools.infra_correlator")
 
@@ -21,14 +21,6 @@ _SHODAN_INTERNETDB = "https://internetdb.shodan.io/{ip}"
 
 
 
-async def _get_bytes(client: httpx.AsyncClient, url: str) -> bytes:
-    try:
-        resp = await client.get(url, timeout=15.0, follow_redirects=True)
-        if resp.status_code == 200:
-            return resp.content[:100_000]
-    except Exception as exc:
-        logger.debug("infra_correlator bytes fetch failed: %s", exc)
-    return b""
 
 
 async def _get_headers(client: httpx.AsyncClient, url: str) -> dict[str, str]:
@@ -50,7 +42,7 @@ def _mmh3_hash(data: bytes) -> int:
 
 
 async def _get_favicon_hash(client: httpx.AsyncClient, domain: str) -> int:
-    favicon_data = await _get_bytes(client, f"https://{domain}/favicon.ico")
+    favicon_data = await fetch_bytes(client, f"https://{domain}/favicon.ico")
     if not favicon_data:
         html_text = b""
         try:
@@ -70,7 +62,7 @@ async def _get_favicon_hash(client: httpx.AsyncClient, domain: str) -> int:
             icon_url = icon_match.group(1).decode("utf-8", errors="replace")
             if not icon_url.startswith("http"):
                 icon_url = f"https://{domain}/{icon_url.lstrip('/')}"
-            favicon_data = await _get_bytes(client, icon_url)
+            favicon_data = await fetch_bytes(client, icon_url)
     if favicon_data:
         return _mmh3_hash(favicon_data)
     return 0

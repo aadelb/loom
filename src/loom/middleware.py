@@ -94,39 +94,106 @@ except ImportError:
     _loom_tool_errors_total = _StubCounter()
 
 
+PARAM_ALIASES: dict[str, str] = {
+    "search_query": "query",
+    "max_results": "limit",
+    "model_name": "model",
+    "timeout_seconds": "timeout",
+    "target_url": "url",
+    "url_list": "urls",
+    "strategy_name": "strategy",
+    "target_language": "target_lang",
+}
+
+_pydantic_model_cache: dict[str, type | None] = {}
+
+
+def _resolve_aliases(kwargs: dict, valid_params: set[str]) -> dict:
+    """Resolve parameter aliases to canonical names."""
+    resolved = {}
+    for key, value in kwargs.items():
+        canonical = PARAM_ALIASES.get(key, key)
+        if canonical in valid_params:
+            resolved[canonical] = value
+        else:
+            resolved[key] = value
+    return resolved
+
+
+def _validate_with_pydantic(tool_name: str, kwargs: dict) -> dict:
+    """Auto-validate params using Pydantic model if one exists.
+
+    Looks up model by naming convention: research_foo → FooParams.
+    Falls back to unvalidated kwargs if no model found.
+    """
+    if tool_name in _pydantic_model_cache:
+        model_cls = _pydantic_model_cache[tool_name]
+    else:
+        suffix = tool_name.replace("research_", "")
+        model_name = "".join(w.capitalize() for w in suffix.split("_")) + "Params"
+        model_cls = None
+        try:
+            import loom.params as params_pkg
+            for mod_name in ["core", "llm", "intelligence", "adversarial",
+                             "infrastructure", "academic", "security",
+                             "research", "operations"]:
+                mod = getattr(params_pkg, mod_name, None)
+                if mod and hasattr(mod, model_name):
+                    model_cls = getattr(mod, model_name)
+                    break
+        except Exception:
+            pass
+        _pydantic_model_cache[tool_name] = model_cls
+
+    if model_cls is None:
+        return kwargs
+
+    try:
+        validated = model_cls(**kwargs)
+        return validated.model_dump()
+    except Exception as exc:
+        log.debug("pydantic_validation_skip tool=%s error=%s", tool_name, exc)
+        return kwargs
+
+
 def _fuzzy_correct_params(func: Callable[..., Any], kwargs: dict) -> tuple[dict, dict]:
     """Auto-correct misspelled param names using fuzzy matching.
-    
+
+    Also resolves parameter aliases and applies Pydantic validation
+    if a matching model exists in loom.params.
+
     Args:
         func: The function to extract parameter names from
         kwargs: The keyword arguments to correct
-    
+
     Returns:
         Tuple of (corrected_kwargs, corrections_made)
         corrections_made is dict mapping wrong_param -> correct_param (or None if dropped)
     """
     import inspect
-    
-    # Get valid param names from function signature
+
     sig = inspect.signature(func)
     valid_params = set(sig.parameters.keys())
-    
+
+    kwargs = _resolve_aliases(kwargs, valid_params)
+
     corrected = {}
     corrections = {}
-    
+
     for key, value in kwargs.items():
         if key in valid_params:
             corrected[key] = value
         else:
-            # Fuzzy match against valid params
             matches = difflib.get_close_matches(key, valid_params, n=1, cutoff=0.5)
             if matches:
                 corrected[matches[0]] = value
                 corrections[key] = matches[0]
             else:
-                # No close match — drop but report
-                corrections[key] = None  # means "no match found, dropped"
-    
+                corrections[key] = None
+
+    tool_name = func.__name__
+    corrected = _validate_with_pydantic(tool_name, corrected)
+
     return corrected, corrections
 
 
