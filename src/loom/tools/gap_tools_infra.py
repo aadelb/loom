@@ -68,16 +68,23 @@ async def research_cloud_enum(domain: str) -> dict[str, Any]:
                 "cloud_resources": [],
             }
 
-        # Validate domain format (basic check)
-        if not re.match(r"^[a-z0-9.-]+$", domain.lower()):
+        # Validate domain format: proper RFC domain pattern
+        # Require: label.label or single label; no trailing/leading dots
+        domain_lower = domain.lower()
+        if not re.match(
+            r"^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$",
+            domain_lower,
+        ):
             return {
                 "domain": domain,
-                "error": "domain contains invalid characters",
+                "error": "domain contains invalid characters or format",
                 "cloud_resources": [],
             }
 
         # Extract base domain for S3 bucket name (remove subdomains)
-        base_domain = domain.split(".")[0]
+        # For "api.example.com" → "example"; for "example.com" → "example"
+        parts = domain.lower().split(".")
+        base_domain = parts[-2] if len(parts) >= 2 else parts[0]
 
         cloud_endpoints = [
             # S3 buckets (two common patterns)
@@ -246,6 +253,7 @@ async def research_github_secrets(query: str, max_results: int = 20) -> dict[str
                 return {
                     "query": query,
                     "secrets_found": deduped[:max_results],
+                    "error": None,
                 }
 
         return await _run()
@@ -309,7 +317,11 @@ async def _search_crt_sh(
     registrant_email: str,
     timeout: float = 15.0,
 ) -> list[str]:
-    """Search crt.sh for domains with matching registrant email in SANs.
+    """Search certificate transparency logs for domains via crt.sh.
+
+    Searches the public certificate transparency database for certificates
+    that may be associated with the given email address via SANs or other
+    certificate fields.
 
     Args:
         client: AsyncClient instance
@@ -317,15 +329,42 @@ async def _search_crt_sh(
         timeout: request timeout in seconds
 
     Returns:
-        List of related domain names.
+        List of related domain names found in CT logs.
     """
     if not registrant_email:
         return []
 
     try:
-        # crt.sh API doesn't support direct email search, so we return empty
-        # In a real implementation, you'd correlate via certificate transparency logs
-        return []
+        # Query crt.sh API for certificate transparency records
+        # The API accepts email queries via the email parameter
+        url = "https://crt.sh"
+        params = {"q": registrant_email, "output": "json"}
+        resp = await client.get(url, params=params, timeout=timeout)
+
+        if resp.status_code != 200:
+            logger.debug("crt.sh query failed: %s", resp.status_code)
+            return []
+
+        data = resp.json()
+        if not isinstance(data, list):
+            return []
+
+        # Extract unique domain names from certificate records
+        domains = set()
+        for cert in data:
+            # Extract common name
+            if "common_name" in cert:
+                domains.add(cert["common_name"])
+
+            # Extract names from name_value field (may contain multiple domains)
+            if "name_value" in cert:
+                for name in cert["name_value"].split("\n"):
+                    domain = name.strip()
+                    if domain and not domain.startswith("*."):
+                        domains.add(domain)
+
+        return sorted(list(domains))[:100]  # Cap at 100 results
+
     except Exception as exc:
         logger.debug("crt.sh search failed: %s", exc)
         return []
@@ -356,11 +395,15 @@ async def research_whois_correlator(domain: str) -> dict[str, Any]:
                 "ownership_graph": {},
             }
 
-        # Basic domain validation
-        if not re.match(r"^[a-z0-9.-]+$", domain.lower()):
+        # Basic domain validation: proper RFC domain pattern
+        domain_lower = domain.lower()
+        if not re.match(
+            r"^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$",
+            domain_lower,
+        ):
             return {
                 "domain": domain,
-                "error": "domain contains invalid characters",
+                "error": "domain contains invalid characters or format",
                 "registrant_email": "",
                 "registrant_org": "",
                 "related_domains": [],
@@ -410,8 +453,9 @@ def _jaccard_similarity(set1: set[str], set2: set[str]) -> float:
     Returns:
         Similarity score between 0 and 1.
     """
-    if not set1 and not set2:
-        return 1.0
+    if not set1 or not set2:
+        # If either set is empty, no similarity can be measured
+        return 0.0
     intersection = len(set1 & set2)
     union = len(set1 | set2)
     return intersection / union if union > 0 else 0.0
@@ -435,9 +479,14 @@ async def _query_llm_endpoint(
         Response text from LLM endpoint.
     """
     try:
-        # Attempt to parse URL and make POST request
-        parsed = urlparse(target_url)
-        if not parsed.scheme or not parsed.netloc:
+        # Import validators to prevent SSRF attacks
+        from loom.validators import validate_url
+
+        # Validate URL to prevent SSRF (private IPs, invalid schemes, etc.)
+        try:
+            validate_url(target_url)
+        except Exception as exc:
+            logger.debug("url validation failed: %s", exc)
             return ""
 
         payload = {"prompt": prompt}
@@ -449,7 +498,8 @@ async def _query_llm_endpoint(
                 if isinstance(data, dict):
                     return data.get("response", data.get("text", ""))
                 return str(data)
-            except Exception:
+            except Exception as json_exc:
+                logger.debug("json parsing failed: %s", json_exc)
                 return resp.text
         return ""
     except Exception as exc:
@@ -551,8 +601,9 @@ async def research_output_consistency(
                 else:
                     variance = 0.0
 
-                # Consistency score: 1 - variance
-                consistency_score = max(0.0, 1.0 - variance)
+                # Consistency score: inverse variance (1 / (1 + variance))
+                # Maps variance 0 → score 1.0 (perfect), variance ∞ → score 0.0
+                consistency_score = 1.0 / (1.0 + variance) if variance >= 0 else 0.0
 
                 return {
                     "target": target_url,

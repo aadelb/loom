@@ -85,18 +85,37 @@ async def _query_llm_endpoint(
 
         if resp.status_code == 200:
             data = resp.json()
-            # Try common response formats
-            if isinstance(data, dict):
-                if "result" in data:
-                    return str(data["result"])
-                if "text" in data:
-                    return str(data["text"])
-                if "choices" in data and data["choices"]:
-                    return str(data["choices"][0].get("text", ""))
+            extracted = _safe_extract_llm_response(data)
+            if extracted is not None:
+                return extracted
             return str(data)
 
     except Exception as exc:
         logger.debug("llm endpoint query failed: %s", exc)
+
+    return None
+
+
+def _safe_extract_llm_response(data: Any) -> str | None:
+    """Safely extract text from LLM response dict.
+
+    Args:
+        data: Response data (dict, list, or string)
+
+    Returns:
+        Extracted text or None
+    """
+    if not isinstance(data, dict):
+        return str(data) if data else None
+
+    if "result" in data:
+        return str(data["result"])
+    if "text" in data:
+        return str(data["text"])
+    if "choices" in data and isinstance(data["choices"], list) and data["choices"]:
+        choice = data["choices"][0]
+        if isinstance(choice, dict):
+            return str(choice.get("text", ""))
 
     return None
 
@@ -271,20 +290,22 @@ async def research_memorization_scanner(
                     if not response:
                         continue
 
-                    # Check for verbatim completion (first 30 chars match)
-                    if response and text_prefix in response:
+                    # Check for verbatim completion (full prefix match = memorized)
+                    if text_prefix in response:
                         memorized_count += 1
                         examples.append({
                             "source": source_name,
                             "prefix": text_prefix[:50],
                             "completion_detected": True,
+                            "match_type": "full",
                         })
-                    elif response and text_prefix[:20].lower() in response.lower():
-                        # Partial match detected
+                    elif text_prefix[:20].lower() in response.lower():
+                        # Partial match detected (not counted as memorized, but recorded)
                         examples.append({
                             "source": source_name,
                             "prefix": text_prefix[:50],
                             "completion_detected": True,
+                            "match_type": "partial",
                         })
 
                 memorization_rate = (

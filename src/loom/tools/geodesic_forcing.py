@@ -77,7 +77,7 @@ def _describe_transformation(dim: str, from_score: float, to_score: float) -> st
             "Make request direct (explicit demands, clear intent)"
         ),
     }
-    base_desc = desc_map.get(dim, ("Change", "Change"))[1 if increase else 0]
+    base_desc = desc_map.get(dim, ("Change", "Change"))[0 if increase else 1]
     magnitude_str = "significantly" if magnitude > 0.3 else "moderately" if magnitude > 0.15 else "slightly"
     return f"{magnitude_str.capitalize()}: {base_desc}"
 
@@ -129,12 +129,13 @@ async def research_geodesic_path(
             to_score = min(0.95, max(0.05, from_score + direction * step_size * largest_gap))
             current_scores[largest_dim] = to_score
 
+            actual_gap_reduction = abs(to_score - from_score)
             path.append({
                 "step": step_num,
                 "dimension": largest_dim,
                 "from_score": round(from_score, 3),
                 "to_score": round(to_score, 3),
-                "gap_reduction": round(largest_gap, 3),
+                "gap_reduction": round(actual_gap_reduction, 3),
                 "transformation": _describe_transformation(largest_dim, from_score, to_score),
             })
 
@@ -142,7 +143,10 @@ async def research_geodesic_path(
         final_distance = sum((current_scores[k] - target_scores[k]) ** 2 for k in dims) ** 0.5
         distance_reduced = total_distance - final_distance
         efficiency_score = 100 * (distance_reduced / total_distance) if total_distance > 0 else 0
-        steps_needed = int(final_distance / (step_size * 0.5)) + len(path) if step_size > 0 else 99
+        # Estimate remaining steps: divide remaining distance by typical step magnitude
+        typical_step_magnitude = step_size * 0.5  # conservative estimate for adaptive scaling
+        remaining_steps = int(final_distance / typical_step_magnitude) if typical_step_magnitude > 0 else 0
+        steps_needed = len(path) + remaining_steps
 
         return {
             "start_scores": {k: round(v, 3) for k, v in start_scores.items()},
@@ -153,6 +157,8 @@ async def research_geodesic_path(
             "total_distance": round(total_distance, 3),
             "remaining_distance": round(final_distance, 3),
             "distance_reduced": round(distance_reduced, 3),
+            "steps_taken": len(path),
+            "steps_estimated_remaining": remaining_steps,
             "steps_needed": min(steps_needed, 99),
             "efficiency_score": round(efficiency_score, 1),
             "convergence_status": "converged" if final_distance < 0.1 else "in_progress",

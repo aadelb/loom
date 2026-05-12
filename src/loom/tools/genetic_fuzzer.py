@@ -86,10 +86,17 @@ async def research_genetic_fuzz(
             population.sort(key=lambda x: x["score"], reverse=True)
             survivors_count = max(2, len(population) // 2)
             parents = population[:survivors_count]
+            elites = population[:max(1, survivors_count // 2)].copy()  # Preserve top 25% (elitism)
 
             # Crossover + mutation
             offspring = []
-            while len(offspring) < population_size:
+            offspring_seen: set[str] = set()  # Deduplication
+            attempts = 0
+            max_attempts = population_size * 10  # Prevent infinite loop on collision
+
+            while len(offspring) < population_size and attempts < max_attempts:
+                attempts += 1
+
                 # Crossover: combine two parents
                 parent1, parent2 = random.sample(parents, 2)
                 child_prompt = _crossover(parent1["prompt"], parent2["prompt"])
@@ -97,27 +104,44 @@ async def research_genetic_fuzz(
                 # Mutation: apply strategy with probability
                 if random.random() < mutation_rate:
                     strategy = random.choice(_MUTATION_STRATEGIES)
-                    child_prompt = _apply_strategy(child_prompt, strategy, "gpt")
+                    try:
+                        child_prompt = _apply_strategy(child_prompt, strategy, "gpt")
+                    except Exception as e:
+                        # Mutation failed; log and keep unmutated version
+                        logger.debug("mutation_failed strategy=%s error=%s", strategy, str(e)[:50])
 
                 # Cap prompt size to prevent unbounded growth
                 child_prompt = child_prompt[:50000]
 
-                offspring.append(child_prompt)
+                # Avoid duplicates to preserve genetic diversity
+                if child_prompt not in offspring_seen:
+                    offspring.append(child_prompt)
+                    offspring_seen.add(child_prompt)
 
-            # Score offspring
-            population = []
+            # Score offspring + preserve elites (elitism)
+            new_population = []
             for prompt in offspring:
                 score = await _score_prompt(prompt)
-                population.append({"prompt": prompt, "score": score})
+                new_population.append({"prompt": prompt, "score": score})
                 total_tested += 1
+
+            # Add back elite individuals (top 25% carry forward)
+            for elite in elites:
+                if elite not in new_population:
+                    new_population.append(elite)
+
+            # Trim back to population_size if elitism made it oversized
+            new_population.sort(key=lambda x: x["score"], reverse=True)
+            population = new_population[:population_size]
 
             # Track best
             gen_best = max(population, key=lambda x: x["score"])
             if gen_best["score"] > best_overall["score"]:
                 best_overall = gen_best.copy()
 
-            improvement = ((gen_best["score"] - initial_best["score"]) /
-                           max(initial_best["score"], 0.1) * 100)
+            improvement = _calculate_improvement(
+                gen_best["score"], initial_best["score"]
+            )
 
             evolution_log.append({
                 "generation": gen + 1,
@@ -132,8 +156,9 @@ async def research_genetic_fuzz(
                 gen + 1, gen_best["score"], evolution_log[-1]["avg_score"], improvement,
             )
 
-        improvement_overall = ((best_overall["score"] - initial_best["score"]) /
-                               max(initial_best["score"], 0.1) * 100)
+        improvement_overall = _calculate_improvement(
+            best_overall["score"], initial_best["score"]
+        )
 
         return {
             "best_prompt": best_overall["prompt"],
@@ -170,7 +195,11 @@ async def _initialize_population(prompt: str, size: int) -> list[dict[str, Any]]
 
 
 async def _score_prompt(prompt: str) -> float:
-    """Score a prompt across quality dimensions (heuristic)."""
+    """Score a prompt across quality dimensions (heuristic).
+
+    Aggregates multiple scoring dimensions with robust error handling.
+    Returns normalized score in range [0.0, 1.0].
+    """
     try:
         scores = await _score_all_dimensions(prompt, [
             "hcs", "danger_level", "expert_depth", "actionability",
@@ -178,19 +207,71 @@ async def _score_prompt(prompt: str) -> float:
         ])
         if not scores:
             return 0.0
-        avg_score = sum(scores.values()) / len(scores)
-        return round(avg_score, 2)
+
+        # Filter out None/NaN values to avoid propagation
+        valid_scores = [v for v in scores.values() if v is not None and not _is_nan(v)]
+        if not valid_scores:
+            return 0.0
+
+        avg_score = sum(valid_scores) / len(valid_scores)
+
+        # Clamp to [0.0, 1.0] range and round
+        clamped = max(0.0, min(1.0, avg_score))
+        return round(clamped, 2)
     except Exception as e:
         logger.error("score_prompt failed: %s", str(e)[:100])
         return 0.0
 
 
+def _is_nan(value: Any) -> bool:
+    """Check if value is NaN or inf."""
+    try:
+        import math
+        return isinstance(value, float) and (math.isnan(value) or math.isinf(value))
+    except (TypeError, ValueError):
+        return False
+
+
+def _calculate_improvement(current_score: float, baseline_score: float) -> float:
+    """Calculate improvement percentage safely.
+
+    Handles edge cases:
+    - Both scores near zero: return 0.0
+    - Baseline zero/negative: use relative improvement only
+    - NaN/inf: return 0.0
+    """
+    if _is_nan(current_score) or _is_nan(baseline_score):
+        return 0.0
+
+    # If both scores are near zero, no meaningful improvement can be measured
+    if abs(baseline_score) < 0.01 and abs(current_score) < 0.01:
+        return 0.0
+
+    # If baseline is zero/negative, measure absolute improvement scaled
+    if baseline_score <= 0:
+        return max(0.0, (current_score - baseline_score) * 100)
+
+    # Normal relative improvement
+    improvement_pct = ((current_score - baseline_score) / baseline_score) * 100
+    return round(improvement_pct, 1)
+
+
 def _crossover(prompt_a: str, prompt_b: str) -> str:
-    """Combine two prompts: first half of A + second half of B."""
+    """Combine two prompts: first half of A + second half of B.
+
+    Handles edge cases by preferring non-empty parents over empty ones.
+    """
     words_a = prompt_a.split()
     words_b = prompt_b.split()
 
-    if len(words_a) < 2 or len(words_b) < 2:
+    # Edge case: both too short → return the longer one (not hardcoded to A)
+    if len(words_a) < 2 and len(words_b) < 2:
+        return prompt_a if len(words_a) >= len(words_b) else prompt_b
+
+    # Edge case: one is too short → return the other
+    if len(words_a) < 2:
+        return prompt_b
+    if len(words_b) < 2:
         return prompt_a
 
     split_a = len(words_a) // 2

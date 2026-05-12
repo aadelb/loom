@@ -188,7 +188,7 @@ def _calculate_filing_velocity(
             except (ValueError, AttributeError, TypeError):
                 continue
 
-        avg_per_month = recent_count / (months_back + 1) if months_back > 0 else 0.0
+        avg_per_month = recent_count / months_back if months_back > 0 else 0.0
 
         # Detect velocity pattern
         velocity = "steady"
@@ -230,13 +230,13 @@ def _detect_domain_shifts(patents: list[dict[str, Any]]) -> list[str]:
                 if main_class:
                     domains[main_class] = domains.get(main_class, 0) + 1
 
-        # If only 1-2 classes and new patent appears, it's a shift
-        if len(domains) > 2:
-            # Sort by count and detect if a new domain has 3+ patents
+        # If multiple distinct classes found, detect new domains with 3+ patents
+        if len(domains) > 1:
+            # Sort by count and detect if a domain has 3+ patents (indicative of shift)
             sorted_domains = sorted(domains.items(), key=lambda x: x[1], reverse=True)
             shifts = [
                 f"Class {domain}: {count} patents"
-                for domain, count in sorted_domains[1:3]
+                for domain, count in sorted_domains
                 if count >= 3
             ]
             return shifts
@@ -274,7 +274,7 @@ async def research_talent_migration(
             dblp_data = await _get_json(client, dblp_url, timeout=15.0)
 
             affiliations = _parse_dblp_affiliations(dblp_data or {})
-            current_affiliation = affiliations[0].get("affiliation", "unknown") if affiliations else "unknown"
+            current_affiliation = affiliations[0].get("affiliation", "unknown") if affiliations and len(affiliations) > 0 else "unknown"
 
             # Try Semantic Scholar for more detailed history
             ss_url = f"https://api.semanticscholar.org/graph/v1/author/search?query={quote(person_name)}&limit=3"
@@ -431,7 +431,6 @@ async def research_patent_embargo(
         Dict with company, patents_total, filing_velocity, domain_shifts,
         embargo_signals, and ma_prediction.
     """
-    from urllib.parse import quote
 
     async def _run() -> dict[str, Any]:
         async with httpx.AsyncClient(

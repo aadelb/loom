@@ -116,7 +116,7 @@ async def research_ideological_drift(field: str, years: int = 10) -> dict[str, A
                 # Fetch papers for each year
                 current_year = 2026
                 for year_offset in range(years):
-                    year = current_year - (years - year_offset - 1)
+                    year = current_year - years + year_offset + 1
 
                     # Query Semantic Scholar API
                     url = (
@@ -242,7 +242,8 @@ async def research_author_clustering(field: str, max_authors: int = 50) -> dict[
                         })
                         processed_authors.update(cluster)
 
-                # Identify emerging clusters (hypothetical: clusters with recent activity)
+                # Identify emerging clusters (clusters with 3+ co-authors; note: "emerging"
+                # is a simplified heuristic since formed_year is hardcoded above)
                 emerging = [c for c in clusters if len(c.get("authors", [])) >= 3][:5]
 
                 return {
@@ -275,6 +276,17 @@ async def research_citation_cartography(paper_id: str, depth: int = 2) -> dict[s
     Returns:
         Dict with paper_id, nodes, edges, flow_anomalies, manipulation_score.
     """
+    # Validate paper_id format
+    if not paper_id or len(paper_id.strip()) < 1:
+        return {
+            "paper_id": paper_id,
+            "error": "Invalid paper_id: must be non-empty string",
+            "nodes": [],
+            "edges": [],
+            "flow_anomalies": [],
+            "manipulation_score": 0.0,
+        }
+
     try:
         async def _run() -> dict[str, Any]:
             async with httpx.AsyncClient(
@@ -365,7 +377,7 @@ async def research_citation_cartography(paper_id: str, depth: int = 2) -> dict[s
                 # Calculate manipulation score (0-1, higher = more suspicious)
                 manipulation_score = 0.0
                 if len(flow_anomalies) > 0:
-                    manipulation_score = min(0.5, len(flow_anomalies) * 0.2)
+                    manipulation_score = min(1.0, len(flow_anomalies) * 0.25)
 
                 return {
                     "paper_id": paper_id,

@@ -52,7 +52,7 @@ def _validate_gcp_key(key: str) -> bool:
     Returns:
         True if appears valid, False otherwise
     """
-    return len(key) > 20 and not key.startswith("AIza")
+    return len(key) > 20 and key.startswith("AIza")
 
 
 def _load_gcp_credentials() -> str | None:
@@ -118,9 +118,35 @@ async def research_image_analyze(
             "error": "max_results must be 1-100",
         }
 
-    # Default features
+    # Validate and set default features
+    valid_features = {
+        "LABEL_DETECTION",
+        "TEXT_DETECTION",
+        "FACE_DETECTION",
+        "LANDMARK_DETECTION",
+        "LOGO_DETECTION",
+        "SAFE_SEARCH_DETECTION",
+        "IMAGE_PROPERTIES",
+        "OBJECT_LOCALIZATION",
+        "WEB_DETECTION",
+    }
+
     if features is None:
         features = ["LABEL_DETECTION", "TEXT_DETECTION"]
+    elif not features:
+        return {
+            "status": "failed",
+            "error": "features list cannot be empty",
+        }
+    else:
+        invalid = [f for f in features if f not in valid_features]
+        if invalid:
+            return {
+                "status": "failed",
+                "error": f"invalid features: {', '.join(invalid)}",
+                "valid_features": sorted(valid_features),
+            }
+        features = list(dict.fromkeys(features))  # Remove duplicates while preserving order
 
     # Get API key
     api_key = _load_gcp_credentials()
@@ -158,15 +184,13 @@ async def research_image_analyze(
 
         # Local file — read and encode as base64
         try:
-            file_size = os.path.getsize(validated_path)
-            if file_size > MAX_IMAGE_SIZE_BYTES:
-                return {
-                    "status": "failed",
-                    "error": f"image exceeds {MAX_IMAGE_SIZE_BYTES / 1024 / 1024:.0f} MB",
-                }
-
             with open(validated_path, "rb") as f:
-                image_bytes = f.read()
+                image_bytes = f.read(MAX_IMAGE_SIZE_BYTES + 1)
+                if len(image_bytes) > MAX_IMAGE_SIZE_BYTES:
+                    return {
+                        "status": "failed",
+                        "error": f"image exceeds {MAX_IMAGE_SIZE_BYTES / 1024 / 1024:.0f} MB",
+                    }
                 image_base64 = base64.b64encode(image_bytes).decode("utf-8")
                 image_source["content"] = image_base64
         except FileNotFoundError:
@@ -198,12 +222,12 @@ async def research_image_analyze(
     # Call Vision API
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
-            logger.info("gcp_vision_analyze url=%s features=%s", image_url, features)
+            logger.info("gcp_vision_analyze url_type=%s features=%s", "url" if image_url.startswith("http") else "local_file", features)
 
             response = await client.post(
                 _GCP_VISION_API,
                 json=request_body,
-                params={"key": api_key},
+                headers={"X-Goog-Api-Key": api_key},
             )
 
             if response.status_code != 200:
@@ -368,6 +392,14 @@ async def research_text_to_speech(
             "details": f"supported: {', '.join(_TTS_VOICE_SAMPLES.keys())}",
         }
 
+    # Validate language code (basic pattern: two-letter codes like "en", "es", "fr")
+    if not isinstance(language, str) or len(language) < 2 or not language.replace("-", "").isalnum():
+        return {
+            "status": "failed",
+            "error": "invalid language code format",
+            "example": "en, es, fr, ja, zh",
+        }
+
     # Validate speaking rate
     if speaking_rate < 0.25 or speaking_rate > 4.0:
         return {
@@ -406,7 +438,7 @@ async def research_text_to_speech(
             response = await client.post(
                 _GCP_TTS_API,
                 json=request_body,
-                params={"key": api_key},
+                headers={"X-Goog-Api-Key": api_key},
             )
 
             if response.status_code != 200:
@@ -482,7 +514,7 @@ async def research_tts_voices() -> dict[str, Any]:
             async with httpx.AsyncClient(timeout=10.0) as client:
                 response = await client.get(
                     _GCP_VOICES_API,
-                    params={"key": api_key},
+                    headers={"X-Goog-Api-Key": api_key},
                 )
                 if response.status_code == 200:
                     result = response.json()

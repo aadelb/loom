@@ -83,7 +83,15 @@ async def research_functor_translate(
     """
     try:
         if source_domain not in DOMAIN_CATEGORIES or target_domain not in DOMAIN_CATEGORIES:
-            return {"error": f"Unknown domain", "available_domains": list(DOMAIN_CATEGORIES.keys())}
+            unknown = []
+            if source_domain not in DOMAIN_CATEGORIES:
+                unknown.append(source_domain)
+            if target_domain not in DOMAIN_CATEGORIES:
+                unknown.append(target_domain)
+            return {
+                "error": f"Unknown domain(s): {', '.join(unknown)}",
+                "available_domains": list(DOMAIN_CATEGORIES.keys())
+            }
         if source_domain == target_domain:
             return {"translated_exploit": exploit, "novelty_score": 0.0, "structural_mapping": []}
 
@@ -94,6 +102,15 @@ async def research_functor_translate(
         for item in source_morphisms + source_objects:
             if item.lower() in exploit.lower():
                 identified.append(item)
+
+        # Validate that at least one element was identified
+        if not identified:
+            return {
+                "error": "No recognized domain elements in exploit",
+                "hint": f"Expected keywords from: {source_morphisms + source_objects}",
+                "source_domain": source_domain,
+                "target_domain": target_domain,
+            }
 
         # Build functor mapping (with fallback to synthetic functor)
         functor = FUNCTORS.get((source_domain, target_domain)) or _synthesize_functor(source_domain, target_domain)
@@ -127,11 +144,30 @@ async def research_functor_translate(
 
 
 def _synthesize_functor(source: str, target: str) -> dict[str, str]:
-    """Create synthetic functor via semantic fallback."""
+    """Create synthetic functor via semantic fallback.
+
+    Note: Uses modulo-based mapping which may create non-injective mappings
+    (many-to-one) if source domain has more elements than target domain.
+    This preserves structure count but may collapse distinct concepts.
+    """
     src_cat, tgt_cat = DOMAIN_CATEGORIES[source], DOMAIN_CATEGORIES[target]
+    src_morphs = src_cat["morphisms"]
+    src_objs = src_cat["objects"]
+    tgt_morphs = tgt_cat["morphisms"]
+    tgt_objs = tgt_cat["objects"]
+
+    # Log warning if collision risk exists
+    if len(src_morphs) > len(tgt_morphs) or len(src_objs) > len(tgt_objs):
+        logger.warning(
+            f"Synthetic functor {source} → {target}: source has more elements "
+            f"({len(src_morphs)} morphisms, {len(src_objs)} objects) than target "
+            f"({len(tgt_morphs)} morphisms, {len(tgt_objs)} objects); "
+            f"collisions may occur"
+        )
+
     functor = {}
-    for i, morph in enumerate(src_cat["morphisms"]):
-        functor[morph] = tgt_cat["morphisms"][i % len(tgt_cat["morphisms"])]
-    for i, obj in enumerate(src_cat["objects"]):
-        functor[obj] = tgt_cat["objects"][i % len(tgt_cat["objects"])]
+    for i, morph in enumerate(src_morphs):
+        functor[morph] = tgt_morphs[i % len(tgt_morphs)]
+    for i, obj in enumerate(src_objs):
+        functor[obj] = tgt_objs[i % len(tgt_objs)]
     return functor
