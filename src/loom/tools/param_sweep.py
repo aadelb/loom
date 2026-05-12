@@ -11,8 +11,12 @@ import json
 import logging
 from typing import Any
 
-from loom.param_sweeper import ParameterSweeper
-from loom.tools.llm import _call_with_cascade
+try:
+    from loom.param_sweeper import ParameterSweeper
+    from loom.tools.llm import _call_with_cascade
+    _SWEEP_DEPS = True
+except ImportError:
+    _SWEEP_DEPS = False
 
 logger = logging.getLogger("loom.tools.param_sweep")
 
