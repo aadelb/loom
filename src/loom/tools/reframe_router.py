@@ -16,7 +16,10 @@ import re
 from dataclasses import dataclass
 from typing import Any, Literal
 
-from loom.tools.reframe_strategies import ALL_STRATEGIES
+try:
+    from loom.tools.reframe_strategies import ALL_STRATEGIES
+except ImportError:
+    ALL_STRATEGIES = {}  # type: ignore[assignment]
 
 log = logging.getLogger("loom.tools.reframe_router")
 

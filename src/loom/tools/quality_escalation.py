@@ -19,9 +19,15 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from loom.tools.llm import _call_with_cascade
-from loom.tools.prompt_reframe import _apply_strategy, _STRATEGIES
 from loom.providers.base import LLMResponse
+
+try:
+    from loom.tools.llm import _call_with_cascade
+    from loom.tools.prompt_reframe import _apply_strategy, _STRATEGIES
+    _QE_DEPS = True
+except ImportError:
+    _QE_DEPS = False
+    _STRATEGIES = {}  # type: ignore[assignment]
 
 logger = logging.getLogger("loom.tools.quality_escalation")
 

@@ -12,12 +12,16 @@ import json
 import logging
 from typing import Any
 
-from loom.tools.llm import (
-    _call_with_cascade,
-    _safe_error_str,
-    _sanitize_error,
-    _wrap_untrusted_content,
-)
+try:
+    from loom.tools.llm import (
+        _call_with_cascade,
+        _safe_error_str,
+        _sanitize_error,
+        _wrap_untrusted_content,
+    )
+    _PYDANTIC_DEPS = True
+except ImportError:
+    _PYDANTIC_DEPS = False
 
 logger = logging.getLogger("loom.pydantic_ai")
 
