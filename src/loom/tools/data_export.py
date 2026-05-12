@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 from pathlib import Path
@@ -50,7 +51,11 @@ async def research_export_cache(limit: int = 50) -> dict[str, Any]:
         cache = get_cache()
         cache_dir = Path(cache.base_dir)
         entries = []
-        file_stats = [(f, f.stat()) for f in cache_dir.glob("**/*.json")]  # noqa: ASYNC240
+
+        # Run blocking filesystem operations in thread pool
+        file_stats = await asyncio.to_thread(
+            lambda: [(f, f.stat()) for f in cache_dir.glob("**/*.json")]
+        )
         file_stats.sort(key=lambda x: x[1].st_mtime, reverse=True)
         for f, st in file_stats[:limit]:
             entries.append(

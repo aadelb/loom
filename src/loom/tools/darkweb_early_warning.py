@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 from urllib.parse import quote
 
@@ -233,7 +233,7 @@ async def research_darkweb_early_warning(
                                 "title": result.get("title", ""),
                                 "url": result.get("url", ""),
                                 "severity": severity,
-                                "timestamp": datetime.now(UTC).isoformat(),
+                                "timestamp": datetime.now(timezone.utc).isoformat(),
                             }
                         )
                         if severity_map.get(severity, 0) > highest_severity_val:
@@ -260,7 +260,7 @@ async def research_darkweb_early_warning(
                     # Process Reddit results
                     for result in reddit_results:
                         created_ts = result.get("created_utc", 0)
-                        created_dt = datetime.fromtimestamp(created_ts, UTC).isoformat()
+                        created_dt = datetime.fromtimestamp(created_ts, timezone.utc).isoformat()
                         severity = _estimate_severity(keyword, 1)
                         alerts.append(
                             {
@@ -316,7 +316,7 @@ async def research_darkweb_early_warning(
                     "highest_severity": highest_severity,
                     "keyword_mention_counts": keyword_mentions,
                     "search_hours_back": hours_back,
-                    "timestamp": datetime.now(UTC).isoformat(),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
                 }
 
         return await _run()
