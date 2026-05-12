@@ -26,7 +26,7 @@ HEDGING_WORDS = {
     "reportedly", "seems", "appears", "might", "could", "may",
     "somewhat", "rather", "quite", "fairly", "relatively",
     "apparently", "likely", "probably", "roughly", "approximately",
-    "allegedly", "purportedly", "claimed"
+    "purportedly", "claimed"
 }
 
 # Citation indicators
@@ -88,12 +88,13 @@ def _specificity_score(claim: str) -> float:
 
     if claim_words == 0:
         return 0.0
-    return min(1.0, (entities + numbers * 0.5) / (claim_words / 5))
+    # Specificity ratio: specific markers per word (capped at 1.0)
+    return min(1.0, (entities + numbers * 0.5) / claim_words)
 
 
 def _is_factual_claim(claim: str) -> bool:
     """Determine if sentence is a factual claim vs. opinion/procedural."""
-    opinion_markers = {"I think", "I believe", "in my opinion", "should", "must"}
+    opinion_markers = {"i think", "i believe", "in my opinion", "should", "must"}
     procedural_markers = {"please", "you can", "to do", "how to", "step"}
 
     claim_lower = claim.lower()
@@ -110,7 +111,7 @@ def _compute_confidence(claim: str) -> float:
     if not _is_factual_claim(claim):
         return 0.0
 
-    score = 0.5  # baseline
+    score = 0.2  # baseline: unverified claims start at low confidence
     claim_words = len(re.findall(r"\b\w+\b", claim))
 
     if claim_words == 0:
@@ -125,7 +126,7 @@ def _compute_confidence(claim: str) -> float:
     # Specificity: +0.2
     score += _specificity_score(claim) * 0.2
 
-    # Hedging: -0.05 per hedging word
+    # Hedging: -0.05 per hedging word (max -0.2)
     score -= min(0.2, _hedging_count(claim) * 0.05)
 
     # Claim length penalty: very short claims less confident
@@ -178,7 +179,7 @@ async def research_epistemic_score(
 
     try:
         # Extract or use provided claims
-        if claims_to_verify:
+        if claims_to_verify is not None:
             claims = claims_to_verify[:MAX_CLAIMS]
         else:
             sentences = _extract_sentences(text)
@@ -193,6 +194,8 @@ async def research_epistemic_score(
                 "high_confidence_claims": [],
                 "low_confidence_claims": [],
                 "recommendations": ["No factual claims found in text"],
+                "text_length": len(text),
+                "total_claims_analyzed": 0,
             }
 
         # Score each claim
