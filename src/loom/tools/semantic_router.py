@@ -205,6 +205,9 @@ async def _similarity_search(query_embedding: np.ndarray, top_k: int = 5) -> lis
     if _TOOL_EMBEDDINGS is None or _TOOL_NAMES is None:
         return []
 
+    if not _SKLEARN_AVAILABLE:
+        return []
+
     if len(query_embedding.shape) == 1:
         query_embedding = query_embedding.reshape(1, -1)
 

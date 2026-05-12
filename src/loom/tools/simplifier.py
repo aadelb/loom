@@ -128,6 +128,9 @@ async def research_simplify(
     max_tokens = token_targets.get(target_audience, 300)
 
     # Call LLM via cascade
+    if not _LLM_AVAILABLE:
+        raise RuntimeError("LLM providers not available; cannot simplify")
+
     try:
         response = await _call_with_cascade(
             messages=[{"role": "user", "content": prompt}],

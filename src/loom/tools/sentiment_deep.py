@@ -72,7 +72,7 @@ _FEAR_APPEAL_PATTERNS = {
 
 _SOCIAL_PROOF_PATTERNS = {
     r"\beveryone\s+knows\b", r"\bmost\s+people\b", r"\bmillions?\s+of\b",
-    r"\bwidely\s+accepted\b", r"\beveryoneagrees\b", r"\bjoin\s+thousands?\b",
+    r"\bwidely\s+accepted\b", r"\beveryone\s+agrees\b", r"\bjoin\s+thousands?\b",
     r"\b\d+\s+people\b", r"\btrending\b", r"\bviral\b", r"\blawsuit\b",
     r"\bclass\s+action\b", r"\bconsensus\b"
 }

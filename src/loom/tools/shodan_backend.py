@@ -318,10 +318,11 @@ def _extract_services(banners: list[dict[str, Any]]) -> list[dict[str, str]]:
     """
     services = []
     for banner in banners:
+        port = banner.get("port")
         service = {
-            "port": str(banner.get("port", "")),
-            "product": banner.get("product", ""),
-            "version": banner.get("version", ""),
+            "port": str(port) if port is not None else "",
+            "product": banner.get("product", "") or "",
+            "version": banner.get("version", "") or "",
         }
         if service["product"]:  # Only add if product is present
             services.append(service)

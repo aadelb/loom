@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 import subprocess
 import tempfile
@@ -148,65 +149,75 @@ def research_sherlock_lookup(
         ) as tmp:
             output_file = tmp.name
 
-        # Build sherlock command
-        cmd = ["sherlock", username, "--json", output_file]
-
-        # Add timeout (sherlock's --timeout flag is in seconds)
-        cmd.extend(["--timeout", str(timeout)])
-
-        # Add specific platforms if requested
-        if validated_platforms:
-            cmd.extend(["--site"] + validated_platforms)
-
-        # Run sherlock
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=timeout + 10,  # Give subprocess extra time beyond sherlock's timeout
-        )
-
-        # Parse the JSON output
-        output: dict[str, Any] = {
-            "username": username,
-            "sherlock_available": True,
-        }
-
         try:
-            with open(output_file, "r") as f:
-                sherlock_output = json.load(f)
+            # Build sherlock command
+            cmd = ["sherlock", username, "--json", output_file]
 
-            # Sherlock output format: {username: {platform: {url, user_id, status_code, ...}}}
-            if username in sherlock_output:
-                found_on = []
-                total_checked = 0
-                total_found = 0
+            # Add timeout (sherlock's --timeout flag is in seconds)
+            cmd.extend(["--timeout", str(timeout)])
 
-                for platform, data in sherlock_output[username].items():
-                    total_checked += 1
-                    if isinstance(data, dict) and data.get("status_code") == 200:
-                        total_found += 1
-                        found_on.append(
-                            {
-                                "platform": platform,
-                                "url": data.get("url", ""),
-                                "user_id": data.get("user_id", ""),
-                                "status_code": data.get("status_code"),
-                            }
-                        )
+            # Add specific platforms if requested
+            # Sherlock requires --site repeated for each platform
+            if validated_platforms:
+                for platform in validated_platforms:
+                    cmd.extend(["--site", platform])
 
-                output["found_on"] = found_on
-                output["total_found"] = total_found
-                output["total_checked"] = total_checked
-            else:
-                output["found_on"] = []
-                output["total_found"] = 0
-                output["total_checked"] = 0
+            # Run sherlock
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=timeout + 10,  # Give subprocess extra time beyond sherlock's timeout
+            )
 
-        except (json.JSONDecodeError, IOError) as exc:
-            output["error"] = f"Failed to parse Sherlock output: {str(exc)}"
+            # Parse the JSON output
+            output: dict[str, Any] = {
+                "username": username,
+                "sherlock_available": True,
+            }
 
-        return output
+            try:
+                with open(output_file, "r") as f:
+                    sherlock_output = json.load(f)
+
+                # Sherlock output format: {username: {platform: {url, user_id, status_code, ...}}}
+                if username in sherlock_output:
+                    found_on = []
+                    total_checked = 0
+                    total_found = 0
+
+                    for platform, data in sherlock_output[username].items():
+                        total_checked += 1
+                        if isinstance(data, dict) and data.get("status_code") == 200:
+                            total_found += 1
+                            found_on.append(
+                                {
+                                    "platform": platform,
+                                    "url": data.get("url", ""),
+                                    "user_id": data.get("user_id", ""),
+                                    "status_code": data.get("status_code"),
+                                }
+                            )
+
+                    output["found_on"] = found_on
+                    output["total_found"] = total_found
+                    output["total_checked"] = total_checked
+                else:
+                    output["found_on"] = []
+                    output["total_found"] = 0
+                    output["total_checked"] = 0
+
+            except (json.JSONDecodeError, IOError) as exc:
+                output["error"] = f"Failed to parse Sherlock output: {str(exc)}"
+
+            return output
+        finally:
+            # Clean up temp file
+            try:
+                if os.path.exists(output_file):
+                    os.remove(output_file)
+            except Exception:
+                pass
 
     except subprocess.TimeoutExpired:
         return {

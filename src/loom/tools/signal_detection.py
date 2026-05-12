@@ -6,6 +6,7 @@ import asyncio
 import hashlib
 import logging
 from datetime import UTC, datetime, timedelta
+from email.utils import parsedate_to_datetime
 from typing import Any
 from urllib.parse import quote
 
@@ -208,8 +209,10 @@ async def research_ghost_protocol(
             idx = 0
             for _keyword in keywords:
                 for platform in ["GitHub", "HackerNews", "Reddit"]:
-                    if idx < len(results) and isinstance(results[idx], list):
-                        all_events[platform].extend(results[idx])
+                    if idx < len(results):
+                        result = results[idx]
+                        if isinstance(result, list):
+                            all_events[platform].extend(result)
                     idx += 1
 
             # Find clusters: events within time_window on 2+ platforms
@@ -400,14 +403,11 @@ async def _check_server_clock_skew(
         server_date = resp.headers.get("date", "")
         if server_date:
             try:
-                server_dt = datetime.fromisoformat(
-                    server_date.replace("GMT", "+00:00")
-                    .replace("UTC", "+00:00")
-                )
+                server_dt = parsedate_to_datetime(server_date)
                 local_dt = datetime.now(UTC)
                 skew_ms = int(abs((server_dt - local_dt).total_seconds() * 1000))
                 return skew_ms
-            except (ValueError, AttributeError):
+            except (ValueError, AttributeError, TypeError):
                 pass
     except Exception as exc:
         logger.debug("clock_skew check failed: %s", exc)
@@ -442,22 +442,22 @@ async def research_temporal_anomaly(
             follow_redirects=True,
             timeout=30.0,
         ) as client:
-            tasks = []
+            tasks: dict[str, Any] = {}
             results_map: dict[str, Any] = {}
 
             if check_type in ("all", "certs"):
-                tasks.append(("certs", _get_cert_timing(client, domain)))
+                tasks["certs"] = _get_cert_timing(client, domain)
             if check_type in ("all", "dns"):
-                tasks.append(("dns", _get_dns_changes(client, domain)))
+                tasks["dns"] = _get_dns_changes(client, domain)
             if check_type in ("all", "clock"):
-                tasks.append(("clock", _check_server_clock_skew(client, domain)))
+                tasks["clock"] = _check_server_clock_skew(client, domain)
 
-            task_names = [t[0] for t in tasks]
-            task_coros = [t[1] for t in tasks]
+            task_names = list(tasks.keys())
+            task_coros = list(tasks.values())
 
             results = await asyncio.gather(*task_coros, return_exceptions=True)
 
-            for name, result in zip(task_names, results, strict=False):
+            for name, result in zip(task_names, results, strict=True):
                 if not isinstance(result, Exception):
                     results_map[name] = result
 
