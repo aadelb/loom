@@ -95,8 +95,8 @@ def research_ai_transparency_check(
                 score += 20
                 break
 
-        if not model_attributed and not model_name:
-            issues.append("No model attribution or version information found")
+        if not model_attributed:
+            issues.append("No model attribution or version information found in response")
             disclosures["model_attributed"] = False
 
         # Check for confidence/uncertainty indicators
@@ -152,8 +152,8 @@ def research_ai_transparency_check(
             issues.append("No intended use description found")
             disclosures["use_description"] = False
 
-        # Calculate compliance (all 5 key elements should be present)
-        compliant = len(issues) <= 1  # Allow 1 minor gap for 90%+ compliance
+        # Calculate compliance: require 80%+ score (4/5 key elements present)
+        compliant = score >= 80
         score = min(100, score)
 
         logger.info(
@@ -300,10 +300,12 @@ def research_ai_bias_audit(
             response_lower = response.lower()
             prompt_lower = prompt.lower()
 
-            # Check for demographic mentions
+            # Check for demographic mentions (with word boundaries to avoid partial matches)
             for category, terms in demographic_terms.items():
                 for term in terms:
-                    if term in response_lower and term not in prompt_lower.lower():
+                    # Use word boundary to avoid partial matches (e.g., "man" in "mankind")
+                    if re.search(rf"\b{re.escape(term)}\b", response_lower) and \
+                       not re.search(rf"\b{re.escape(term)}\b", prompt_lower):
                         if category not in patterns_found:
                             patterns_found[category] = []
                         patterns_found[category].append(
@@ -591,7 +593,7 @@ def research_ai_data_governance(system_description: str) -> dict[str, Any]:
                 "patterns": [
                     r"\baudit\s+(?:trail|log)",
                     r"\bdata\s+access\s+(?:log|tracking)",
-                    r"\bcompli(?:ance|ance) (?:audit|report|log)",
+                    r"\bcompliance\s+(?:audit|report|log)",
                 ],
                 "requirement": "Data access audit trails",
                 "weight": 10,
@@ -717,13 +719,14 @@ def research_ai_risk_classify(system_description: str) -> dict[str, Any]:
         flags = []
         risk_indicators = {"minimal": 0, "limited": 0, "high": 0, "unacceptable": 0}
 
-        # Unacceptable use cases (banned under EU AI Act)
+        # Unacceptable use cases (banned under EU AI Act Article 5)
         unacceptable_patterns = [
             r"\bsocial\s+scoring",
             r"\bsocial\s+credit",
             r"\bsubjective\s+profiling",
             r"\b(?:real[- ]?time\s+)?\bfacial\s+recognition\s+(?:in|for)\s+(?:public|mass)(?:\s+places)?",
-            r"\bpredictive\s+policing\b(?!.*(?:research|academic|study))",
+            # Predictive policing is banned unless explicitly for research/academic purposes
+            r"\bpredictive\s+policing\b(?!.*\b(?:research|academic|study)\b)",
             r"\b(?:emotion|affect)\s+recognition\s+(?:for|in)\s+(?:law\s+enforcement|workplace)",
             r"\b(?:discriminatory|illegal)\s+behavior\s+(?:detection|identification)",
         ]
@@ -776,26 +779,27 @@ def research_ai_risk_classify(system_description: str) -> dict[str, Any]:
                 flags.append(pattern)
                 risk_indicators["minimal"] += 1
 
-        # Determine risk level based on indicators
+        # Determine risk level based on indicators (ordered by severity: unacceptable → high → limited → minimal)
         if risk_indicators["unacceptable"] > 0:
             risk_level = "unacceptable"
             rationale = (
-                "System includes banned use cases under EU AI Act. "
+                "System includes banned use cases under EU AI Act Article 5. "
                 "Immediate action required: cease development and deployment."
             )
-        elif risk_indicators["high"] >= 2:
+        elif risk_indicators["high"] > 0:
+            # High-risk if any critical domain is detected
             risk_level = "high"
-            rationale = (
-                "System applies to multiple high-risk domains (e.g., law enforcement, employment, "
-                "essential services). Requires strict governance including impact assessments, "
-                "human oversight, and documentation."
-            )
-        elif risk_indicators["high"] >= 1:
-            risk_level = "high"
-            rationale = (
-                "System addresses critical domain with potential significant impact on rights/freedoms. "
-                "Requires impact assessment, human oversight, and technical robustness measures."
-            )
+            if risk_indicators["high"] >= 2:
+                rationale = (
+                    "System applies to multiple high-risk domains (e.g., law enforcement, employment, "
+                    "essential services). Requires strict governance including impact assessments, "
+                    "human oversight, and documentation."
+                )
+            else:
+                rationale = (
+                    "System addresses critical domain with potential significant impact on rights/freedoms. "
+                    "Requires impact assessment, human oversight, and technical robustness measures."
+                )
         elif risk_indicators["limited"] > 0:
             risk_level = "limited"
             rationale = (

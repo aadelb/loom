@@ -29,13 +29,14 @@ def research_detect_language(text: str) -> dict[str, Any]:
         return {"language": "unknown", "confidence": 0.0, "error": "text too short"}
 
     try:
-        from langdetect import detect, detect_langs  # type: ignore[import-untyped]
+        from langdetect import detect, detect_langs, LangDetectException  # type: ignore[import-untyped]
     except ImportError:
         return {"language": "unknown", "confidence": 0.0, "error": "langdetect not installed"}
 
     try:
-        language = detect(text[:5000])
-        langs = detect_langs(text[:5000])
+        text_sample = text[:5000]
+        language = detect(text_sample)
+        langs = detect_langs(text_sample)
         alternatives = [
             {"lang": str(lang).split(":")[0], "prob": round(lang.prob, 3)} for lang in langs[:5]
         ]
@@ -47,12 +48,15 @@ def research_detect_language(text: str) -> dict[str, Any]:
             "alternatives": alternatives,
         }
 
+    except LangDetectException as exc:
+        logger.debug("language_detection_no_features: %s", exc)
+        return {"language": "unknown", "confidence": 0.0, "error": "insufficient text for detection"}
     except Exception as exc:
         logger.warning("language_detection_failed: %s", exc)
         return {"language": "unknown", "confidence": 0.0, "error": str(exc)}
 
 
-def research_wayback(
+async def research_wayback(
     url: str,
     limit: int = 1,
 ) -> dict[str, Any]:
@@ -73,8 +77,8 @@ def research_wayback(
     validate_url(url)
 
     try:
-        with httpx.Client(timeout=30.0) as client:
-            resp = client.get(
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.get(
                 _WAYBACK_CDX_URL,
                 params={
                     "url": url,
@@ -88,21 +92,29 @@ def research_wayback(
             resp.raise_for_status()
             rows = resp.json()
 
-        if len(rows) <= 1:
+        if not isinstance(rows, list) or len(rows) <= 1:
             return {"original_url": url, "snapshots": [], "error": "no snapshots found"}
 
         snapshots = []
         for row in rows[1:]:
-            timestamp = row[0]
-            archive_url = f"https://web.archive.org/web/{timestamp}/{url}"
-            snapshots.append(
-                {
-                    "timestamp": timestamp,
-                    "archive_url": archive_url,
-                    "status_code": row[2],
-                    "mimetype": row[3],
-                }
-            )
+            if not isinstance(row, (list, tuple)) or len(row) < 4:
+                logger.debug("wayback_skipped_malformed_row: %s", row)
+                continue
+
+            try:
+                timestamp = str(row[0])
+                archive_url = f"https://web.archive.org/web/{timestamp}/{url}"
+                snapshots.append(
+                    {
+                        "timestamp": timestamp,
+                        "archive_url": archive_url,
+                        "status_code": str(row[2]),
+                        "mimetype": str(row[3]),
+                    }
+                )
+            except (IndexError, TypeError) as exc:
+                logger.debug("wayback_parse_error: %s", exc)
+                continue
 
         return {"original_url": url, "snapshots": snapshots}
 
