@@ -18,7 +18,8 @@ _DOMAIN_RE = re.compile(
 )
 
 # Username validation: alphanumeric, dots, underscores, hyphens; 1-100 chars
-_USERNAME_RE = re.compile(r"^[a-zA-Z0-9._-]{1,100}$")
+# Prevents consecutive separators (.. __ --)
+_USERNAME_RE = re.compile(r"^(?!.*[._-]{2})[a-zA-Z0-9._-]{1,100}$")
 
 
 def _validate_domain(domain: str) -> None:
@@ -194,7 +195,11 @@ async def research_identity_resolve(
 
 
 async def _check_gravatar(client: httpx.AsyncClient, email: str) -> dict[str, Any]:
-    """Check Gravatar profile for email."""
+    """Check Gravatar profile for email.
+
+    WARNING: MD5 hash of email is cryptographically reversible via rainbow tables.
+    Only used internally for Gravatar API; not exposed to caller for privacy.
+    """
     email_lower = email.lower().strip()
     email_hash = hashlib.md5(email_lower.encode()).hexdigest()
     gravatar_url = f"https://gravatar.com/avatar/{email_hash}?d=404"
@@ -208,23 +213,27 @@ async def _check_gravatar(client: httpx.AsyncClient, email: str) -> dict[str, An
     return {
         "exists": exists,
         "url": gravatar_url if exists else None,
-        "hash": email_hash,
     }
 
 
 async def _check_pgp(client: httpx.AsyncClient, email: str) -> dict[str, Any]:
-    """Check OpenPGP keyserver for email."""
+    """Check OpenPGP keyserver for email.
+
+    Returns up to 10 keys per email. If more keys exist, includes truncated flag.
+    """
     try:
         url = f"https://keys.openpgp.org/vks/v1/by-email/{quote(email)}"
         resp = await client.get(url, timeout=15.0)
         if resp.status_code == 200:
             data = resp.json()
             keys = data.get("keys", [])
-            # Limit to 10 keys
+            total_count = len(keys)
             limited_keys = keys[:10]
             return {
                 "keys": limited_keys,
                 "key_count": len(limited_keys),
+                "total_key_count": total_count,
+                "truncated": total_count > 10,
             }
     except Exception as e:
         logger.debug("pgp check failed: %s", e)
@@ -232,20 +241,29 @@ async def _check_pgp(client: httpx.AsyncClient, email: str) -> dict[str, Any]:
     return {
         "keys": [],
         "key_count": 0,
+        "total_key_count": 0,
+        "truncated": False,
     }
 
 
 async def _check_github_commits(
     client: httpx.AsyncClient, email: str
 ) -> dict[str, Any]:
-    """Check GitHub for commits by email."""
+    """Check GitHub for commits by email.
+
+    Uses unauthenticated search (rate limit: 10 req/min).
+    Email is sent in plaintext URL; consider authentication for privacy.
+    """
     try:
         url = f"https://api.github.com/search/commits?q={quote(email)}"
         resp = await client.get(url, timeout=15.0)
+        # 403: rate limited; treat as no commits found
         if resp.status_code == 200:
             data = resp.json()
             commit_count = data.get("total_count", 0)
             return {"commit_count": commit_count}
+        elif resp.status_code == 403:
+            logger.warning("GitHub rate limited (10 req/min unauthenticated)")
     except Exception as e:
         logger.debug("github commits check failed: %s", e)
 
@@ -253,27 +271,37 @@ async def _check_github_commits(
 
 
 async def _check_platforms(client: httpx.AsyncClient, username: str) -> list[dict[str, Any]]:
-    """Check username existence on common platforms via HEAD requests."""
+    """Check username existence on common platforms via HEAD/GET requests.
+
+    Note: Some platforms (Twitter/X, Instagram) return 200 for missing profiles.
+    Results marked with 'unreliable': True should be manually verified.
+    Discord endpoint is deprecated; results unreliable.
+    """
     platforms = [
-        ("GitHub", f"https://github.com/{username}"),
-        ("Twitter/X", f"https://x.com/{username}"),
-        ("Reddit", f"https://www.reddit.com/user/{username}"),
-        ("HackerNews", f"https://news.ycombinator.com/user?id={username}"),
-        ("GitLab", f"https://gitlab.com/{username}"),
-        ("Keybase", f"https://keybase.io/{username}"),
-        ("LinkedIn", f"https://linkedin.com/in/{username}"),
-        ("Instagram", f"https://instagram.com/{username}"),
-        ("TikTok", f"https://www.tiktok.com/@{username}"),
-        ("Discord", f"https://discordapp.com/users/search?q={username}"),
+        ("GitHub", f"https://github.com/{username}", False),
+        ("Twitter/X", f"https://x.com/{username}", True),  # Unreliable: redirects to search
+        ("Reddit", f"https://www.reddit.com/user/{username}/about.json", False),
+        ("HackerNews", f"https://news.ycombinator.com/user?id={username}", False),
+        ("GitLab", f"https://gitlab.com/{username}", False),
+        ("Keybase", f"https://keybase.io/{username}", False),
+        ("LinkedIn", f"https://linkedin.com/in/{username}", False),
+        ("Instagram", f"https://instagram.com/{username}", True),  # Unreliable: returns 200 for missing
+        ("TikTok", f"https://www.tiktok.com/@{username}", False),
+        ("Discord", f"https://discord.com/api/v10/users/@me", True),  # Unreliable: requires auth
     ]
 
     results: list[dict[str, Any]] = []
 
-    for platform_name, url in platforms:
+    for platform_name, url, is_unreliable in platforms:
         exists = False
         try:
-            resp = await client.head(url, timeout=10.0, follow_redirects=True)
-            exists = resp.status_code == 200
+            # Use GET for Reddit (requires JSON response check)
+            if platform_name == "Reddit":
+                resp = await client.get(url, timeout=10.0, follow_redirects=True)
+                exists = resp.status_code == 200
+            else:
+                resp = await client.head(url, timeout=10.0, follow_redirects=True)
+                exists = resp.status_code == 200
         except Exception:
             pass
 
@@ -282,6 +310,7 @@ async def _check_platforms(client: httpx.AsyncClient, username: str) -> list[dic
                 "platform": platform_name,
                 "url": url,
                 "exists": exists,
+                "unreliable": is_unreliable,
             }
         )
 
@@ -289,7 +318,11 @@ async def _check_platforms(client: httpx.AsyncClient, username: str) -> list[dic
 
 
 async def _check_whois(client: httpx.AsyncClient, domain: str) -> dict[str, Any]:
-    """Check WHOIS registrant information."""
+    """Check WHOIS registrant information via RDAP.
+
+    Returns registrant name/organization or empty strings if GDPR-protected.
+    vCard format: ["type", [["params..."], "value"], ...]
+    """
     try:
         url = f"https://rdap.org/domain/{domain}"
         resp = await client.get(url, timeout=15.0)
@@ -298,17 +331,18 @@ async def _check_whois(client: httpx.AsyncClient, domain: str) -> dict[str, Any]
             contacts = data.get("entities", [])
             for contact in contacts:
                 if "registrant" in contact.get("roles", []):
-                    # Extract name from vcard
+                    # Extract name from vcard: ["fn", [["type", "text"], value], ...]
                     vcard_array = contact.get("vcardArray", [])
                     name = ""
                     organization = ""
                     if len(vcard_array) > 1:
                         for item in vcard_array[1]:
-                            if isinstance(item, list) and len(item) >= 3:
-                                if item[0] == "fn":
-                                    name = item[3] if len(item) > 3 else ""
-                                elif item[0] == "org":
-                                    organization = item[3] if len(item) > 3 else ""
+                            if isinstance(item, list) and len(item) >= 4:
+                                # vCard format: [type, params, type, value]
+                                if item[0] == "fn" and len(item) > 3:
+                                    name = str(item[3]) if item[3] else ""
+                                elif item[0] == "org" and len(item) > 3:
+                                    organization = str(item[3]) if item[3] else ""
                     return {"name": name, "organization": organization}
     except Exception as e:
         logger.debug("whois check failed: %s", e)
@@ -317,7 +351,12 @@ async def _check_whois(client: httpx.AsyncClient, domain: str) -> dict[str, Any]
 
 
 async def _check_dns_soa(client: httpx.AsyncClient, domain: str) -> str:
-    """Check DNS SOA record for admin email."""
+    """Check DNS SOA record for admin email.
+
+    SOA format: nameserver hostmaster serial refresh retry expire minimum
+    Converts hostmaster from DNS format (dots) to email format (@).
+    Example: hostmaster.example.com. → hostmaster@example.com
+    """
     try:
         url = f"https://dns.google/resolve?name={domain}&type=SOA"
         resp = await client.get(url, timeout=15.0)
@@ -325,12 +364,23 @@ async def _check_dns_soa(client: httpx.AsyncClient, domain: str) -> str:
             data = resp.json()
             answers = data.get("Answer", [])
             for answer in answers:
+                # Verify this is SOA type
+                if answer.get("type") != 1:  # 1 = SOA
+                    continue
                 soa_data = answer.get("data", "")
                 if soa_data:
                     parts = soa_data.split()
                     if len(parts) >= 2:
-                        # Return the rname (responsible name) as-is
-                        return parts[1]
+                        hostmaster = parts[1]
+                        # Convert DNS format to email: dots (.) to @ after first label
+                        # hostmaster.example.com. → hostmaster@example.com
+                        if "." in hostmaster:
+                            labels = hostmaster.rstrip(".").split(".")
+                            if len(labels) >= 2:
+                                # First label is user, rest is domain
+                                email = labels[0] + "@" + ".".join(labels[1:])
+                                return email
+                        return hostmaster  # Fallback to raw format
     except Exception as e:
         logger.debug("dns check failed: %s", e)
 

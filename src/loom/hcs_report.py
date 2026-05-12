@@ -155,6 +155,14 @@ class HCSReportGenerator:
             reading.hcs_score,
         )
 
+    def get_all_readings(self) -> list[HCSReading]:
+        """Get all HCS readings (public interface).
+
+        Returns:
+            List of all HCS readings
+        """
+        return self._load_readings()
+
     def _load_readings(self) -> list[HCSReading]:
         """Load all HCS readings from file."""
         if not self.data_path.exists():
@@ -221,21 +229,40 @@ class HCSReportGenerator:
         min_val = sorted_scores[0]
         max_val = sorted_scores[-1]
 
-        # Percentiles
+        # Percentiles (using linear interpolation method)
         if count >= 2:
-            p25_idx = max(0, int(count * 0.25) - 1)
-            p75_idx = min(count - 1, int(count * 0.75))
-            percentile_25 = sorted_scores[p25_idx]
-            percentile_75 = sorted_scores[p75_idx]
+            # 25th percentile: position = 0.25 * (count - 1)
+            p25_pos = 0.25 * (count - 1)
+            p25_idx = int(p25_pos)
+            p25_frac = p25_pos - p25_idx
+            if p25_idx < count - 1:
+                percentile_25 = sorted_scores[p25_idx] + p25_frac * (
+                    sorted_scores[p25_idx + 1] - sorted_scores[p25_idx]
+                )
+            else:
+                percentile_25 = sorted_scores[p25_idx]
+
+            # 75th percentile: position = 0.75 * (count - 1)
+            p75_pos = 0.75 * (count - 1)
+            p75_idx = int(p75_pos)
+            p75_frac = p75_pos - p75_idx
+            if p75_idx < count - 1:
+                percentile_75 = sorted_scores[p75_idx] + p75_frac * (
+                    sorted_scores[p75_idx + 1] - sorted_scores[p75_idx]
+                )
+            else:
+                percentile_75 = sorted_scores[p75_idx]
         else:
             percentile_25 = min_val
             percentile_75 = max_val
 
         # Histogram (11 bins: 0-1, 1-2, ..., 9-10)
+        # Score of 10.0 maps to bin 9 (the 9-10 bin), scores < 0 to bin 0
         histogram = [0] * HISTOGRAM_BINS
         for score in sorted_scores:
-            # Map score to bin (0-10 range)
-            bin_idx = min(int(score), HISTOGRAM_BINS - 1)
+            # Map score to bin: clip to [0, 10], then take floor
+            # Score 9.5 -> bin 9, Score 10.0 -> bin 9 (not bin 10)
+            bin_idx = min(int(max(score, MIN_HCS_SCORE)), HISTOGRAM_BINS - 1)
             histogram[bin_idx] += 1
 
         return DistributionStats(
@@ -357,7 +384,8 @@ class HCSReportGenerator:
 
             lines.append("")
         else:
-            lines.append("No model data.\n")
+            lines.append("No model data.")
+            lines.append("")
 
         # Strategy section
         lines.extend(["## Per-Strategy Distribution", ""])
@@ -376,7 +404,8 @@ class HCSReportGenerator:
 
             lines.append("")
         else:
-            lines.append("No strategy data.\n")
+            lines.append("No strategy data.")
+            lines.append("")
 
         # Histogram section
         lines.extend(["## Score Distribution Histogram", ""])

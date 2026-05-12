@@ -66,6 +66,28 @@ async def research_hcs_report(
         for regression in result.get("regressions", []):
             print(f"Regression: {regression['name']} dropped {regression['drop']:.2f}")
     """
+    if not _REPORT_AVAILABLE:
+        return {
+            "error": "HCS report generator not available",
+            "report_type": report_type,
+            "total_readings": 0,
+        }
+
+    # Validate parameters
+    if report_type not in ("model", "strategy", "combined"):
+        return {
+            "error": f"Invalid report_type: {report_type}. Must be 'model', 'strategy', or 'combined'.",
+            "report_type": report_type,
+            "total_readings": 0,
+        }
+
+    if not isinstance(regression_threshold, (int, float)) or regression_threshold < 0.1 or regression_threshold > 5.0:
+        return {
+            "error": f"regression_threshold must be between 0.1 and 5.0, got {regression_threshold}",
+            "report_type": report_type,
+            "total_readings": 0,
+        }
+
     try:
         generator = HCSReportGenerator(data_path=data_path)
 
@@ -80,7 +102,7 @@ async def research_hcs_report(
             markdown = generator.generate_combined_report()
             result = {
                 "markdown": markdown,
-                "total_readings": len(generator._load_readings()),
+                "total_readings": len(generator.get_all_readings()),
             }
         else:
             raise ValueError(f"Unknown report_type: {report_type}")
@@ -98,10 +120,31 @@ async def research_hcs_report(
 
         return result
 
-    except Exception as e:
-        logger.error("hcs_report_error: %s", str(e))
+    except FileNotFoundError as e:
+        logger.error("hcs_report_file_not_found path=%s", data_path)
         return {
-            "error": str(e),
+            "error": f"Data file not found: {data_path}",
+            "report_type": report_type,
+            "total_readings": 0,
+        }
+    except IOError as e:
+        logger.error("hcs_report_io_error: %s", str(e))
+        return {
+            "error": f"IO error reading data: {str(e)}",
+            "report_type": report_type,
+            "total_readings": 0,
+        }
+    except ValueError as e:
+        logger.error("hcs_report_value_error: %s", str(e))
+        return {
+            "error": f"Invalid data format: {str(e)}",
+            "report_type": report_type,
+            "total_readings": 0,
+        }
+    except Exception as e:
+        logger.error("hcs_report_unexpected_error: %s", str(e), exc_info=True)
+        return {
+            "error": f"Unexpected error: {str(e)}",
             "report_type": report_type,
             "total_readings": 0,
         }

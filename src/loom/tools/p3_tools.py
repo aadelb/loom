@@ -83,70 +83,77 @@ async def research_model_comparator(
         response_preview, response_time_ms, word_count), ``fastest`` (endpoint),
         and ``most_verbose`` (endpoint).
     """
+    try:
 
-    async def _run() -> dict[str, Any]:
-        comparisons: list[dict[str, Any]] = []
-        response_times: dict[str, float] = {}
-        word_counts: dict[str, int] = {}
-        responses: dict[str, str] = {}
-        response_words: dict[str, set[str]] = {}
+        async def _run() -> dict[str, Any]:
+            comparisons: list[dict[str, Any]] = []
+            response_times: dict[str, float] = {}
+            word_counts: dict[str, int] = {}
+            responses: dict[str, str] = {}
+            response_words: dict[str, set[str]] = {}
 
-        async with httpx.AsyncClient(
-            timeout=30.0,
-            headers={"User-Agent": "Loom-Research/1.0"},
-        ) as client:
-            tasks = []
-            for endpoint in endpoints:
-                endpoint = validate_url(endpoint)
-                tasks.append(_send_prompt(client, endpoint, prompt, response_times, responses))
+            async with httpx.AsyncClient(
+                timeout=30.0,
+                headers={"User-Agent": "Loom-Research/1.0"},
+            ) as client:
+                tasks = []
+                for endpoint in endpoints:
+                    endpoint = validate_url(endpoint)
+                    tasks.append(_send_prompt(client, endpoint, prompt, response_times, responses))
 
-            await asyncio.gather(*tasks, return_exceptions=True)
+                await asyncio.gather(*tasks, return_exceptions=True)
 
-            # Extract word sets for overlap analysis
-            for endpoint, response in responses.items():
-                response_words[endpoint] = _extract_word_set(response)
-                word_counts[endpoint] = len(response.split())
+                # Extract word sets for overlap analysis
+                for endpoint, response in responses.items():
+                    response_words[endpoint] = _extract_word_set(response)
+                    word_counts[endpoint] = len(response.split())
 
-            # Build comparisons
-            for endpoint in endpoints:
-                endpoint = validate_url(endpoint)
-                if endpoint not in response_times:
-                    continue
+                # Build comparisons
+                for endpoint in endpoints:
+                    endpoint = validate_url(endpoint)
+                    if endpoint not in response_times:
+                        continue
 
-                response = responses.get(endpoint, "")
-                preview = response[:150].replace("\n", " ")
-                if len(response) > 150:
-                    preview += "..."
+                    response = responses.get(endpoint, "")
+                    preview = response[:150].replace("\n", " ")
+                    if len(response) > 150:
+                        preview += "..."
 
-                comparisons.append({
-                    "endpoint": endpoint,
-                    "response_preview": preview,
-                    "response_time_ms": int(response_times[endpoint] * 1000),
-                    "word_count": word_counts.get(endpoint, 0),
-                })
+                    comparisons.append({
+                        "endpoint": endpoint,
+                        "response_preview": preview,
+                        "response_time_ms": int(response_times[endpoint] * 1000),
+                        "word_count": word_counts.get(endpoint, 0),
+                    })
 
-            # Find fastest and most verbose
-            fastest = min(response_times.items(), key=lambda x: x[1])[0] if response_times else ""
-            most_verbose = max(word_counts.items(), key=lambda x: x[1])[0] if word_counts else ""
+                # Find fastest and most verbose
+                fastest = min(response_times.items(), key=lambda x: x[1])[0] if response_times else ""
+                most_verbose = max(word_counts.items(), key=lambda x: x[1])[0] if word_counts else ""
 
-            # Calculate word overlap
-            all_words = set()
-            for words in response_words.values():
-                all_words.update(words)
-            overlap_score = len(all_words) / len(set().union(*response_words.values())) if response_words else 0.0
+                # Calculate word overlap
+                all_words = set()
+                for words in response_words.values():
+                    all_words.update(words)
+                overlap_score = len(all_words) / len(set().union(*response_words.values())) if response_words else 0.0
 
-            return {
-                "prompt": prompt,
-                "endpoint_count": len(endpoints),
-                "comparisons": comparisons,
-                "fastest": fastest,
-                "fastest_time_ms": int(response_times.get(fastest, 0) * 1000),
-                "most_verbose": most_verbose,
-                "most_verbose_words": word_counts.get(most_verbose, 0),
-                "word_overlap_score": round(overlap_score, 2),
-            }
+                return {
+                    "prompt": prompt,
+                    "endpoint_count": len(endpoints),
+                    "comparisons": comparisons,
+                    "fastest": fastest,
+                    "fastest_time_ms": int(response_times.get(fastest, 0) * 1000),
+                    "most_verbose": most_verbose,
+                    "most_verbose_words": word_counts.get(most_verbose, 0),
+                    "word_overlap_score": round(overlap_score, 2),
+                }
 
-    return await _run()
+        return await _run()
+    except Exception as exc:
+        logger.error("research_model_comparator failed: %s", exc)
+        return {
+            "error": str(exc),
+            "tool": "research_model_comparator",
+        }
 
 
 async def _send_prompt(
@@ -208,87 +215,94 @@ async def research_data_poisoning(
         detected anomalies), ``clean_rate`` (percentage of expected responses),
         and ``risk_level`` (low/medium/high).
     """
+    try:
 
-    async def _run() -> dict[str, Any]:
-        target_url_safe = validate_url(target_url)
+        async def _run() -> dict[str, Any]:
+            target_url_safe = validate_url(target_url)
 
-        # Default canaries: Wikipedia first sentences
-        if canary_phrases is None:
-            canaries = [
-                "Python is a high-level, interpreted programming language",
-                "Machine learning is a subset of artificial intelligence",
-                "The Internet is a global system of interconnected networks",
-                "Cryptography is the practice and study of techniques",
-                "Data science is an inter-disciplinary field",
-                "The famous quote: To be or not to be",
-                "Another quote: All that glitters is not gold",
-            ]
-        else:
-            canaries = canary_phrases
+            # Default canaries: Wikipedia first sentences
+            if canary_phrases is None:
+                canaries = [
+                    "Python is a high-level, interpreted programming language",
+                    "Machine learning is a subset of artificial intelligence",
+                    "The Internet is a global system of interconnected networks",
+                    "Cryptography is the practice and study of techniques",
+                    "Data science is an inter-disciplinary field",
+                    "The famous quote: To be or not to be",
+                    "Another quote: All that glitters is not gold",
+                ]
+            else:
+                canaries = canary_phrases
 
-        contamination_signals: list[dict[str, Any]] = []
-        tests_run = 0
-        matches = 0
+            contamination_signals: list[dict[str, Any]] = []
+            tests_run = 0
+            matches = 0
 
-        async with httpx.AsyncClient(
-            timeout=30.0,
-            headers={"User-Agent": "Loom-Research/1.0"},
-        ) as client:
-            for phrase in canaries:
-                tests_run += 1
-                try:
-                    start = time.time()
-                    resp = await client.post(
-                        target_url_safe,
-                        json={"prompt": phrase[:50], "max_tokens": 50},
-                        timeout=20.0,
-                    )
-                    elapsed = time.time() - start
+            async with httpx.AsyncClient(
+                timeout=30.0,
+                headers={"User-Agent": "Loom-Research/1.0"},
+            ) as client:
+                for phrase in canaries:
+                    tests_run += 1
+                    try:
+                        start = time.time()
+                        resp = await client.post(
+                            target_url_safe,
+                            json={"prompt": phrase[:50], "max_tokens": 50},
+                            timeout=20.0,
+                        )
+                        elapsed = time.time() - start
 
-                    if resp.status_code == 200:
-                        try:
-                            data = resp.json()
-                            response_text = ""
-                            if isinstance(data, dict):
-                                response_text = data.get("response", data.get("text", ""))
-                            else:
-                                response_text = str(data)
+                        if resp.status_code == 200:
+                            try:
+                                data = resp.json()
+                                response_text = ""
+                                if isinstance(data, dict):
+                                    response_text = data.get("response", data.get("text", ""))
+                                else:
+                                    response_text = str(data)
 
-                            # Check if response completes the canary phrase
-                            if phrase.lower() in response_text.lower():
-                                matches += 1
-                                contamination_signals.append({
-                                    "phrase": phrase[:80],
-                                    "found_in_response": True,
-                                    "response_time_ms": int(elapsed * 1000),
-                                    "risk": "high",
-                                })
-                        except Exception as exc:
-                            logger.debug("failed to parse response: %s", exc)
-                except Exception as exc:
-                    logger.debug("canary test failed: %s", exc)
+                                # Check if response completes the canary phrase
+                                if phrase.lower() in response_text.lower():
+                                    matches += 1
+                                    contamination_signals.append({
+                                        "phrase": phrase[:80],
+                                        "found_in_response": True,
+                                        "response_time_ms": int(elapsed * 1000),
+                                        "risk": "high",
+                                    })
+                            except Exception as exc:
+                                logger.debug("failed to parse response: %s", exc)
+                    except Exception as exc:
+                        logger.debug("canary test failed: %s", exc)
 
-        clean_rate = round(((tests_run - len(contamination_signals)) / tests_run * 100), 1) if tests_run > 0 else 100.0
+            clean_rate = round(((tests_run - len(contamination_signals)) / tests_run * 100), 1) if tests_run > 0 else 100.0
 
-        # Determine risk level
-        contamination_ratio = len(contamination_signals) / tests_run if tests_run > 0 else 0
-        if contamination_ratio > 0.5:
-            risk_level = "high"
-        elif contamination_ratio > 0.2:
-            risk_level = "medium"
-        else:
-            risk_level = "low"
+            # Determine risk level
+            contamination_ratio = len(contamination_signals) / tests_run if tests_run > 0 else 0
+            if contamination_ratio > 0.5:
+                risk_level = "high"
+            elif contamination_ratio > 0.2:
+                risk_level = "medium"
+            else:
+                risk_level = "low"
 
+            return {
+                "target": target_url_safe,
+                "tests_run": tests_run,
+                "contamination_signals": contamination_signals,
+                "signals_detected": len(contamination_signals),
+                "clean_rate": clean_rate,
+                "risk_level": risk_level,
+            }
+
+        return await _run()
+    except Exception as exc:
+        logger.error("research_data_poisoning failed: %s", exc)
         return {
-            "target": target_url_safe,
-            "tests_run": tests_run,
-            "contamination_signals": contamination_signals,
-            "signals_detected": len(contamination_signals),
-            "clean_rate": clean_rate,
-            "risk_level": risk_level,
+            "error": str(exc),
+            "tool": "research_data_poisoning",
         }
-
-    return await _run()
 
 
 async def research_wiki_event_correlator(
@@ -309,100 +323,107 @@ async def research_wiki_event_correlator(
         with high activity), ``correlated_events`` (HN stories matching burst times),
         and ``activity_trend``.
     """
+    try:
 
-    async def _run() -> dict[str, Any]:
-        page_title_safe = page_title[:200]  # Limit length
+        async def _run() -> dict[str, Any]:
+            page_title_safe = page_title[:200]  # Limit length
 
-        # Fetch Wikipedia revisions
-        wiki_params = {
-            "action": "query",
-            "titles": page_title_safe,
-            "prop": "revisions",
-            "rvlimit": 100,
-            "rvprop": "timestamp|user|size",
-            "format": "json",
-        }
-
-        edits: list[dict[str, Any]] = []
-        edit_bursts: list[dict[str, Any]] = []
-        correlated_events: list[dict[str, Any]] = []
-
-        async with httpx.AsyncClient(
-            timeout=30.0,
-            headers={"User-Agent": "Loom-Research/1.0"},
-        ) as client:
-            wiki_data = await _get_json(
-                client,
-                f"{_WIKIPEDIA_API}?{__build_query_string(wiki_params)}",
-            )
-
-            if wiki_data and "query" in wiki_data:
-                pages = wiki_data["query"].get("pages", {})
-                for page_id, page_data in pages.items():
-                    revisions = page_data.get("revisions", [])
-                    for rev in revisions[:100]:
-                        timestamp = rev.get("timestamp", "")
-                        size = rev.get("size", 0)
-                        edits.append({
-                            "timestamp": timestamp,
-                            "size": size,
-                            "user": rev.get("user", "unknown"),
-                        })
-
-            # Detect edit bursts (5+ edits in 1 hour window)
-            if edits:
-                for i in range(len(edits) - 4):
-                    window_edits = edits[i:i+5]
-                    # Assuming edits are time-sorted
-                    if window_edits:
-                        first_time = window_edits[0].get("timestamp", "")
-                        burst_size = sum(e.get("size", 0) for e in window_edits)
-                        edit_bursts.append({
-                            "time": first_time,
-                            "edits_in_window": len(window_edits),
-                            "total_size_changed": burst_size,
-                        })
-
-            # Correlate with Hacker News
-            hn_search_query = quote(page_title_safe[:50])
-            hn_data = await _get_json(
-                client,
-                f"{_HACKERNEWS_SEARCH}?query={hn_search_query}&hitsPerPage=20",
-            )
-
-            if hn_data and "hits" in hn_data:
-                for hit in hn_data.get("hits", [])[:10]:
-                    correlated_events.append({
-                        "title": hit.get("title", "")[:100],
-                        "url": hit.get("url", "")[:200],
-                        "points": hit.get("points", 0),
-                        "date": hit.get("created_at", ""),
-                    })
-
-            # Calculate trend
-            activity_trend = "stable"
-            if len(edits) > 10:
-                recent = edits[:5]
-                older = edits[-5:]
-                recent_size = sum(e.get("size", 0) for e in recent)
-                older_size = sum(e.get("size", 0) for e in older)
-                if recent_size > older_size * 1.5:
-                    activity_trend = "increasing"
-                elif recent_size < older_size * 0.7:
-                    activity_trend = "decreasing"
-
-            return {
-                "page": page_title_safe,
-                "edit_count": len(edits),
-                "edits_analyzed": min(len(edits), 100),
-                "edit_bursts": edit_bursts[:20],
-                "burst_count": len(edit_bursts),
-                "correlated_events": correlated_events,
-                "activity_trend": activity_trend,
-                "days_analyzed": days_back,
+            # Fetch Wikipedia revisions
+            wiki_params = {
+                "action": "query",
+                "titles": page_title_safe,
+                "prop": "revisions",
+                "rvlimit": 100,
+                "rvprop": "timestamp|user|size",
+                "format": "json",
             }
 
-    return await _run()
+            edits: list[dict[str, Any]] = []
+            edit_bursts: list[dict[str, Any]] = []
+            correlated_events: list[dict[str, Any]] = []
+
+            async with httpx.AsyncClient(
+                timeout=30.0,
+                headers={"User-Agent": "Loom-Research/1.0"},
+            ) as client:
+                wiki_data = await _get_json(
+                    client,
+                    f"{_WIKIPEDIA_API}?{__build_query_string(wiki_params)}",
+                )
+
+                if wiki_data and "query" in wiki_data:
+                    pages = wiki_data["query"].get("pages", {})
+                    for page_id, page_data in pages.items():
+                        revisions = page_data.get("revisions", [])
+                        for rev in revisions[:100]:
+                            timestamp = rev.get("timestamp", "")
+                            size = rev.get("size", 0)
+                            edits.append({
+                                "timestamp": timestamp,
+                                "size": size,
+                                "user": rev.get("user", "unknown"),
+                            })
+
+                # Detect edit bursts (5+ edits in 1 hour window)
+                if edits:
+                    for i in range(len(edits) - 4):
+                        window_edits = edits[i:i+5]
+                        # Assuming edits are time-sorted
+                        if window_edits:
+                            first_time = window_edits[0].get("timestamp", "")
+                            burst_size = sum(e.get("size", 0) for e in window_edits)
+                            edit_bursts.append({
+                                "time": first_time,
+                                "edits_in_window": len(window_edits),
+                                "total_size_changed": burst_size,
+                            })
+
+                # Correlate with Hacker News
+                hn_search_query = quote(page_title_safe[:50])
+                hn_data = await _get_json(
+                    client,
+                    f"{_HACKERNEWS_SEARCH}?query={hn_search_query}&hitsPerPage=20",
+                )
+
+                if hn_data and "hits" in hn_data:
+                    for hit in hn_data.get("hits", [])[:10]:
+                        correlated_events.append({
+                            "title": hit.get("title", "")[:100],
+                            "url": hit.get("url", "")[:200],
+                            "points": hit.get("points", 0),
+                            "date": hit.get("created_at", ""),
+                        })
+
+                # Calculate trend
+                activity_trend = "stable"
+                if len(edits) > 10:
+                    recent = edits[:5]
+                    older = edits[-5:]
+                    recent_size = sum(e.get("size", 0) for e in recent)
+                    older_size = sum(e.get("size", 0) for e in older)
+                    if recent_size > older_size * 1.5:
+                        activity_trend = "increasing"
+                    elif recent_size < older_size * 0.7:
+                        activity_trend = "decreasing"
+
+                return {
+                    "page": page_title_safe,
+                    "edit_count": len(edits),
+                    "edits_analyzed": min(len(edits), 100),
+                    "edit_bursts": edit_bursts[:20],
+                    "burst_count": len(edit_bursts),
+                    "correlated_events": correlated_events,
+                    "activity_trend": activity_trend,
+                    "days_analyzed": days_back,
+                }
+
+        return await _run()
+    except Exception as exc:
+        logger.error("research_wiki_event_correlator failed: %s", exc)
+        return {
+            "error": str(exc),
+            "tool": "research_wiki_event_correlator",
+        }
 
 
 def __build_query_string(params: dict[str, Any]) -> str:
@@ -427,51 +448,58 @@ async def research_foia_tracker(
         Dict with ``query``, ``documents_found`` (list of {source, title, url, date}),
         ``total`` count, ``sources`` breakdown, and ``latest_date``.
     """
+    try:
 
-    async def _run() -> dict[str, Any]:
-        query_safe = query[:100]
-        documents: list[dict[str, Any]] = []
-        sources_breakdown: dict[str, int] = {}
+        async def _run() -> dict[str, Any]:
+            query_safe = query[:100]
+            documents: list[dict[str, Any]] = []
+            sources_breakdown: dict[str, int] = {}
 
-        async with httpx.AsyncClient(
-            timeout=30.0,
-            headers={"User-Agent": "Loom-Research/1.0"},
-        ) as client:
-            # Search MuckRock
-            muckrock_docs = await _search_muckrock(client, query_safe)
-            documents.extend(muckrock_docs)
-            sources_breakdown["muckrock"] = len(muckrock_docs)
+            async with httpx.AsyncClient(
+                timeout=30.0,
+                headers={"User-Agent": "Loom-Research/1.0"},
+            ) as client:
+                # Search MuckRock
+                muckrock_docs = await _search_muckrock(client, query_safe)
+                documents.extend(muckrock_docs)
+                sources_breakdown["muckrock"] = len(muckrock_docs)
 
-            # Search FOIA.gov via Google Dork simulation
-            foia_dork = await _search_foia_dork(client, query_safe)
-            documents.extend(foia_dork)
-            sources_breakdown["foia.gov"] = len(foia_dork)
+                # Search FOIA.gov via Google Dork simulation
+                foia_dork = await _search_foia_dork(client, query_safe)
+                documents.extend(foia_dork)
+                sources_breakdown["foia.gov"] = len(foia_dork)
 
-            # Check government RSS feeds
-            rss_docs = await _search_govt_rss(client, query_safe)
-            documents.extend(rss_docs)
-            sources_breakdown["rss_feeds"] = len(rss_docs)
+                # Check government RSS feeds
+                rss_docs = await _search_govt_rss(client, query_safe)
+                documents.extend(rss_docs)
+                sources_breakdown["rss_feeds"] = len(rss_docs)
 
-        # Sort by date and deduplicate
-        seen_urls = set()
-        deduped: list[dict[str, Any]] = []
-        for doc in sorted(documents, key=lambda x: x.get("date", ""), reverse=True):
-            url = doc.get("url", "")
-            if url not in seen_urls:
-                seen_urls.add(url)
-                deduped.append(doc)
+            # Sort by date and deduplicate
+            seen_urls = set()
+            deduped: list[dict[str, Any]] = []
+            for doc in sorted(documents, key=lambda x: x.get("date", ""), reverse=True):
+                url = doc.get("url", "")
+                if url not in seen_urls:
+                    seen_urls.add(url)
+                    deduped.append(doc)
 
-        latest_date = deduped[0].get("date", "") if deduped else ""
+            latest_date = deduped[0].get("date", "") if deduped else ""
 
+            return {
+                "query": query_safe,
+                "documents_found": deduped[:50],
+                "total": len(deduped),
+                "sources": sources_breakdown,
+                "latest_date": latest_date,
+            }
+
+        return await _run()
+    except Exception as exc:
+        logger.error("research_foia_tracker failed: %s", exc)
         return {
-            "query": query_safe,
-            "documents_found": deduped[:50],
-            "total": len(deduped),
-            "sources": sources_breakdown,
-            "latest_date": latest_date,
+            "error": str(exc),
+            "tool": "research_foia_tracker",
         }
-
-    return await _run()
 
 
 async def _search_muckrock(

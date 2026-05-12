@@ -6,6 +6,8 @@ import importlib
 import inspect
 import json
 import logging
+import re
+from functools import lru_cache
 from typing import Any
 
 try:
@@ -73,11 +75,12 @@ TOOL_CATEGORIES = {
 }
 
 
+@lru_cache(maxsize=1)
 def _get_all_tools() -> dict[str, dict[str, Any]]:
     """Discover all research_* and tool_* functions from loom.tools modules.
 
     Returns:
-        Dict mapping tool_name -> {module, function, docstring, signature}
+        Dict mapping tool_name -> {module, function, docstring, signature, is_async}
     """
     tools = {}
 
@@ -92,6 +95,7 @@ def _get_all_tools() -> dict[str, dict[str, Any]]:
 
     tools_dir = pathlib.Path(tool_modules_path)
 
+    # Scan *.py files in tools/ directory (not subdirs to avoid reframe_strategies/)
     for py_file in sorted(tools_dir.glob("*.py")):
         module_name = py_file.stem
         if module_name.startswith("_") or module_name == "help_system":
@@ -99,21 +103,141 @@ def _get_all_tools() -> dict[str, dict[str, Any]]:
 
         try:
             mod = importlib.import_module(f"loom.tools.{module_name}")
-        except (ImportError, Exception) as e:
+        except ImportError as e:
             logger.debug(f"Failed to import loom.tools.{module_name}: {e}")
             continue
+        except Exception as e:
+            logger.warning(f"Unexpected error importing loom.tools.{module_name}: {e}")
+            continue
 
-        # Extract all research_* and tool_* functions
-        for name, obj in inspect.getmembers(mod, inspect.isfunction):
-            if name.startswith("research_") or name.startswith("tool_"):
-                tools[name] = {
-                    "module": module_name,
-                    "function": name,
-                    "docstring": inspect.getdoc(obj) or "No documentation available.",
-                    "signature": str(inspect.signature(obj)),
-                }
+        # Extract all research_* and tool_* functions (both sync and async)
+        for name, obj in inspect.getmembers(mod):
+            if not (name.startswith("research_") or name.startswith("tool_")):
+                continue
+
+            is_async = inspect.iscoroutinefunction(obj)
+            is_sync = inspect.isfunction(obj)
+
+            if not (is_sync or is_async):
+                continue
+
+            tools[name] = {
+                "module": module_name,
+                "function": name,
+                "docstring": inspect.getdoc(obj) or "No documentation available.",
+                "signature": str(inspect.signature(obj)),
+                "is_async": is_async,
+            }
 
     return tools
+
+
+def _format_annotation(annotation: Any) -> str:
+    """Format a type annotation for readable display.
+
+    Args:
+        annotation: The annotation object from inspect.Parameter
+
+    Returns:
+        Human-readable type string
+    """
+    if annotation == inspect.Parameter.empty:
+        return "Any"
+
+    # Handle common types
+    if hasattr(annotation, "__origin__"):
+        origin = annotation.__origin__
+        if origin is list:
+            args = getattr(annotation, "__args__", ())
+            if args:
+                return f"list[{_format_annotation(args[0])}]"
+            return "list"
+        elif origin is dict:
+            args = getattr(annotation, "__args__", ())
+            if len(args) >= 2:
+                return f"dict[{_format_annotation(args[0])}, {_format_annotation(args[1])}]"
+            return "dict"
+        elif origin is tuple:
+            args = getattr(annotation, "__args__", ())
+            if args:
+                formatted = ", ".join(_format_annotation(arg) for arg in args)
+                return f"tuple[{formatted}]"
+            return "tuple"
+
+    # Handle Union/Optional
+    type_str = str(annotation)
+    if "Union" in type_str:
+        return type_str.replace("typing.Union", "Union").replace("typing.", "")
+    if "Optional" in type_str:
+        return type_str.replace("typing.Optional", "Optional").replace("typing.", "")
+
+    # Simple types
+    if hasattr(annotation, "__name__"):
+        return annotation.__name__
+
+    return str(annotation).replace("typing.", "").replace("<class '", "").replace("'>", "")
+
+
+def _parse_docstring_params(docstring: str) -> dict[str, str]:
+    """Extract parameter descriptions from docstring.
+
+    Supports Google-style and Sphinx-style docstrings.
+
+    Args:
+        docstring: The docstring to parse
+
+    Returns:
+        Dict mapping param_name -> description
+    """
+    if not docstring:
+        return {}
+
+    params_dict = {}
+    lines = docstring.split("\n")
+    in_args_section = False
+    current_param = None
+    current_desc = []
+
+    for line in lines:
+        # Google-style: "Args:"
+        if line.strip() in ("Args:", "Arguments:"):
+            in_args_section = True
+            continue
+
+        # Sphinx-style: ":param name: description"
+        param_match = re.match(r":param\s+(\w+):\s*(.*)", line)
+        if param_match:
+            if current_param:
+                params_dict[current_param] = " ".join(current_desc).strip()
+            current_param = param_match.group(1)
+            current_desc = [param_match.group(2)]
+            continue
+
+        if in_args_section:
+            stripped = line.strip()
+
+            # End of Args section (new section starts)
+            if stripped and not line.startswith(" "):
+                in_args_section = False
+                continue
+
+            # Google-style: "    param_name: description"
+            if stripped and not line.startswith("        "):
+                match = re.match(r"(\w+)\s*:\s*(.*)", stripped)
+                if match:
+                    if current_param:
+                        params_dict[current_param] = " ".join(current_desc).strip()
+                    current_param = match.group(1)
+                    current_desc = [match.group(2)]
+                elif current_param:
+                    # Continuation of previous param description
+                    current_desc.append(stripped)
+
+    # Save last param
+    if current_param:
+        params_dict[current_param] = " ".join(current_desc).strip()
+
+    return params_dict
 
 
 def _get_tool_params(tool_name: str) -> dict[str, Any]:
@@ -123,7 +247,7 @@ def _get_tool_params(tool_name: str) -> dict[str, Any]:
         tool_name: Name of the tool (e.g., "research_fetch")
 
     Returns:
-        Dict with parameter details: {param_name -> {type, default, description}}
+        Dict with parameter details: {param_name -> {type, default, description, is_async}}
     """
     tools = _get_all_tools()
 
@@ -142,18 +266,23 @@ def _get_tool_params(tool_name: str) -> dict[str, Any]:
     sig = inspect.signature(func)
     params = {}
 
+    # Parse docstring for parameter descriptions
+    docstring_params = _parse_docstring_params(tool_info["docstring"])
+
     for param_name, param in sig.parameters.items():
         if param_name in ("self", "cls"):
             continue
 
+        param_desc = docstring_params.get(param_name, "See docstring for details")
+
         params[param_name] = {
-            "type": str(param.annotation) if param.annotation != inspect.Parameter.empty else "Any",
+            "type": _format_annotation(param.annotation),
             "default": (
                 str(param.default)
                 if param.default != inspect.Parameter.empty
                 else "Required"
             ),
-            "description": "See docstring for details",
+            "description": param_desc,
         }
 
     return params
@@ -162,15 +291,21 @@ def _get_tool_params(tool_name: str) -> dict[str, Any]:
 def _categorize_tool(tool_name: str) -> str:
     """Determine the category of a tool based on its name.
 
+    Uses exact word boundary matching to avoid false positives.
+
     Args:
         tool_name: Name of the tool
 
     Returns:
         Category string (e.g., "research", "analysis", "security")
     """
+    tool_lower = tool_name.lower()
+
     for category, patterns in TOOL_CATEGORIES.items():
         for pattern in patterns:
-            if pattern in tool_name.lower():
+            # Use word boundary matching to avoid substring false positives
+            # e.g., "fetch" should match "research_fetch" but not "prefetch"
+            if re.search(rf"\b{re.escape(pattern)}\b", tool_lower):
                 return category
 
     return "other"
@@ -235,6 +370,7 @@ def research_help(tool_name: str = "") -> dict[str, Any]:
             "module": tool_info["module"],
             "category": _categorize_tool(tool_name),
             "signature": tool_info["signature"],
+            "is_async": tool_info["is_async"],
             "documentation": tool_info["docstring"],
             "parameters": params,
         }

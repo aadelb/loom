@@ -145,7 +145,7 @@ EXIF_TAG_NAMES = {
     37385: "Flash",
     37386: "FocalLength",
     37500: "MakerNote",
-    40961: "ColorSpace",
+    40961: "ColorSpaceInfo",  # Differentiated from tag 37121
     40962: "PixelXDimension",
     40963: "PixelYDimension",
 }
@@ -218,9 +218,13 @@ def _extract_exif_blocking(image_data: bytes) -> dict[str, Any]:
                 if tag_id == 34853:
                     result["has_gps"] = True
                     try:
-                        gps = _parse_gps_info(value)
-                        if gps:
-                            result["gps"] = gps
+                        # Validate GPSInfo is a dict before parsing
+                        if isinstance(value, dict):
+                            gps = _parse_gps_info(value)
+                            if gps:
+                                result["gps"] = gps
+                        else:
+                            logger.warning("gps_invalid_type: expected dict, got %s", type(value).__name__)
                     except Exception as e:
                         logger.warning("gps_parse_failed: %s", e)
                     continue
@@ -278,6 +282,14 @@ def _parse_gps_info(gps_data: dict[int, Any]) -> dict[str, float] | None:
         if lon_ref == "W":
             lon = -lon
 
+        # Validate GPS bounds: latitude [-90, 90], longitude [-180, 180]
+        if not (-90 <= lat <= 90):
+            logger.warning("gps_latitude_out_of_bounds: %f", lat)
+            return None
+        if not (-180 <= lon <= 180):
+            logger.warning("gps_longitude_out_of_bounds: %f", lon)
+            return None
+
         result = {
             "latitude": round(lat, 6),
             "longitude": round(lon, 6),
@@ -318,7 +330,7 @@ async def research_exif_extract(url_or_path: str) -> dict[str, Any]:
     """
     url_or_path = url_or_path.strip()
 
-    logger.info("exif_extract_start source=%s", url_or_path[:80])
+    logger.debug("exif_extract_start source=%s", url_or_path[:80])
 
     # Determine if URL or file path
     is_url = url_or_path.startswith(("http://", "https://"))
@@ -408,7 +420,7 @@ async def research_ocr_extract(
             "language": language,
         }
 
-    logger.info("ocr_extract_start source=%s language=%s", url_or_path[:80], language)
+    logger.debug("ocr_extract_start source=%s language=%s", url_or_path[:80], language)
 
     # Determine if URL or file path
     is_url = url_or_path.startswith(("http://", "https://"))
@@ -511,11 +523,19 @@ def _ocr_blocking(image_data: bytes, language: str) -> dict[str, Any]:
                 return _ocr_pytesseract_blocking(image_data, language)
 
             # Read output file
+            output_txt_path = f"{temp_output}.txt"
             try:
-                with open(f"{temp_output}.txt", encoding="utf-8") as f:
+                with open(output_txt_path, encoding="utf-8") as f:
                     text = f.read().strip()
             except FileNotFoundError:
-                return {"error": "Tesseract output file not found", "text": "", "word_count": 0, "confidence": None, "method": "tesseract"}
+                logger.warning("tesseract_output_not_found: %s", output_txt_path)
+                return {
+                    "error": f"Tesseract output file not found: {output_txt_path}",
+                    "text": "",
+                    "word_count": 0,
+                    "confidence": None,
+                    "method": "tesseract",
+                }
 
             word_count = len(text.split())
 

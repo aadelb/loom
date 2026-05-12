@@ -2,16 +2,22 @@
 
 from __future__ import annotations
 
+import html
 import logging
+
 try:
     import psutil
 except ImportError:
     psutil = None
+
 from datetime import UTC, datetime
 from typing import Any
 
-
 logger = logging.getLogger("loom.tools.health_dashboard")
+
+# Magic number constants
+DEFAULT_LLM_PROVIDER_COUNT = 8
+DEFAULT_SEARCH_PROVIDER_COUNT = 21
 
 
 async def research_dashboard_html() -> dict[str, Any]:
@@ -19,32 +25,73 @@ async def research_dashboard_html() -> dict[str, Any]:
 
     Returns:
         Dict with html (complete page), generated_at (ISO timestamp),
-        metrics_summary (key metrics dict)
+        metrics_summary (key metrics dict). On error, returns dict with
+        error message, status code, and tool name.
     """
     try:
+        if psutil is None:
+            return {
+                "error": "psutil not installed; cannot gather system metrics",
+                "status": "unavailable",
+                "tool": "research_dashboard_html",
+            }
+
         from loom.tool_functions import research_health_check
+
         health = await research_health_check()
+        if not isinstance(health, dict):
+            return {
+                "error": f"Invalid health response type: {type(health).__name__}",
+                "status": "error",
+                "tool": "research_dashboard_html",
+            }
+
         process = psutil.Process()
         memory_mb = round(process.memory_info().rss / (1024 * 1024), 1)
-        cpu_percent = round(process.cpu_percent(interval=0.1), 1)
+        # Non-blocking CPU check; interval=None avoids synchronous delay
+        cpu_percent = round(process.cpu_percent(interval=None), 1)
 
-        llm_up = sum(1 for p in health.get("llm_providers", {}).values() if p.get("status") == "up")
-        search_up = sum(1 for p in health.get("search_providers", {}).values() if p.get("status") == "up")
+        # Safely count providers with type validation
+        llm_providers = health.get("llm_providers", {})
+        if not isinstance(llm_providers, dict):
+            llm_providers = {}
+        llm_up = sum(1 for p in llm_providers.values() if isinstance(p, dict) and p.get("status") == "up")
+
+        search_providers = health.get("search_providers", {})
+        if not isinstance(search_providers, dict):
+            search_providers = {}
+        search_up = sum(1 for p in search_providers.values() if isinstance(p, dict) and p.get("status") == "up")
 
         status = health.get("status", "unknown")
-        status_color = "#4CAF50" if status == "healthy" else "#FF9800" if status == "degraded" else "#F44336"
+        # Explicit status color mapping with documented defaults
+        status_colors = {
+            "healthy": "#4CAF50",
+            "degraded": "#FF9800",
+            "unknown": "#F44336",
+            "error": "#F44336",
+        }
+        status_color = status_colors.get(status, "#F44336")
 
         uptime_sec = health.get("uptime_seconds", 0)
         uptime_str = f"{uptime_sec // 86400}d {(uptime_sec % 86400) // 3600}h {(uptime_sec % 3600) // 60}m"
 
-        llm_html = "".join(
-            f'<div class="pi"><div class="ps-{"up" if p.get("status") == "up" else "dn"}"></div>{k}</div>'
-            for k, p in health.get("llm_providers", {}).items()
-        )
-        search_html = "".join(
-            f'<div class="pi"><div class="ps-{"up" if p.get("status") == "up" else "dn"}"></div>{k}</div>'
-            for k, p in health.get("search_providers", {}).items()
-        )
+        # Build provider status HTML with proper escaping and type checking
+        def build_provider_html(providers: dict[str, Any]) -> str:
+            """Build provider status grid HTML."""
+            if not isinstance(providers, dict):
+                return ""
+            items = []
+            for name, prov_data in providers.items():
+                if not isinstance(prov_data, dict):
+                    continue
+                status_val = "up" if prov_data.get("status") == "up" else "dn"
+                # Escape provider name to prevent HTML injection
+                escaped_name = html.escape(str(name))
+                items.append(f'<div class="pi"><div class="ps-{status_val}"></div>{escaped_name}</div>')
+            return "".join(items)
+
+        llm_html = build_provider_html(llm_providers)
+        search_html = build_provider_html(search_providers)
 
         metrics_summary = {
             "status": status,
@@ -82,8 +129,8 @@ async def research_dashboard_html() -> dict[str, Any]:
 <div class="mc"><div class="ml">Cache</div><div class="mv">{health.get("cache", {}).get("size_mb", 0)}<span class="mu">MB</span></div></div>
 <div class="mc"><div class="ml">Sessions</div><div class="mv">{health.get("sessions", {}).get("active", 0)}</div></div>
 </div>
-<div class="s"><div class="st2">LLM ({llm_up}/8)</div><div class="pg">{llm_html}</div></div>
-<div class="s"><div class="st2">Search ({search_up}/21)</div><div class="pg">{search_html}</div></div>
+<div class="s"><div class="st2">LLM ({llm_up}/{DEFAULT_LLM_PROVIDER_COUNT})</div><div class="pg">{llm_html}</div></div>
+<div class="s"><div class="st2">Search ({search_up}/{DEFAULT_SEARCH_PROVIDER_COUNT})</div><div class="pg">{search_html}</div></div>
 <div class="ft">Loom v{health.get("version", "?")} • {datetime.now(UTC).isoformat()}</div>
 </div></body></html>"""
 
@@ -93,4 +140,9 @@ async def research_dashboard_html() -> dict[str, Any]:
             "metrics_summary": metrics_summary,
         }
     except Exception as exc:
-        return {"error": str(exc), "tool": "research_dashboard_html"}
+        logger.exception("Dashboard generation failed")
+        return {
+            "error": str(exc),
+            "status": "error",
+            "tool": "research_dashboard_html",
+        }

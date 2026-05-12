@@ -28,23 +28,32 @@ def research_holographic_encode(
 
     Args:
         text: Input text to fragment
-        fragments: Number of fragments (1-20, default 5)
+        fragments: Number of fragments (1-20, clamped; default 5)
         method: Strategy (semantic_split, temporal_split, role_split,
-                analogy_split, acrostic)
+                analogy_split, acrostic; defaults to semantic_split if invalid)
 
     Returns:
-        Dict with: original_text, fragments (list), method,
-        reassembly_difficulty (0-100), detection_recommendations,
-        test_verdict (PASS/WARN/FAIL).
+        Dict with keys:
+        - original_text: Input text
+        - original_length: Character count of input
+        - fragments: List of dict with 'text', 'standalone_score' (0-100, 100=safe),
+                     'character_count'
+        - fragment_count: Number of resulting fragments
+        - method: Selected fragmentation strategy
+        - reassembly_difficulty: 0-100, difficulty to detect fragment reassembly
+        - average_harmlessness_score: Mean harmlessness across fragments (0-100)
+        - detection_recommendations: List of suggested detections
+        - test_verdict: 'PASS' (safe), 'WARN' (moderate risk), 'FAIL' (high risk)
+        - error: Error message (if applicable)
     """
     try:
         text = text.strip()
         if not text:
             return {"error": "Empty text", "fragments": [], "test_verdict": "FAIL", "tool": "research_holographic_encode"}
         fragments = max(1, min(fragments, 20))
-        method = method.lower() if method in (
-            "semantic_split", "temporal_split", "role_split",
-            "analogy_split", "acrostic") else "semantic_split"
+        method = method.lower()
+        if method not in ("semantic_split", "temporal_split", "role_split", "analogy_split", "acrostic"):
+            method = "semantic_split"
         units = re.split(r'(?<=[.!?])\s+', text)
         units = [u.strip() for u in units if u.strip()]
         if len(units) < fragments:
@@ -56,7 +65,7 @@ def research_holographic_encode(
             frags = [" ".join(units[i % len(units)::fragments])
                      for i in range(fragments)]
         elif method == "temporal_split":
-            frags = [" ".join(units[max(0, len(units)*i//fragments-1):
+            frags = [" ".join(units[len(units)*i//fragments:
                      len(units)*(i+1)//fragments]) for i in range(fragments)]
         elif method == "role_split":
             base_frags = [" ".join(units[i % len(units)::fragments])
@@ -71,6 +80,8 @@ def research_holographic_encode(
                     f"{' '.join(units[i%len(units)::fragments])}"
                     for i in range(fragments)]
         frags = [f.strip() for f in frags if f.strip()]
+        if not frags:
+            return {"error": "No valid fragments after processing", "fragments": [], "test_verdict": "FAIL", "tool": "research_holographic_encode"}
         scored = [{"text": f, "standalone_score": _score_harmlessness(f),
                    "character_count": len(f)} for f in frags]
         avg_harm = sum(s["standalone_score"] for s in scored) / len(scored)

@@ -473,8 +473,13 @@ class HCSRubric:
             pe += p1 * p2
 
         # Cohen's kappa formula
+        # Special case: if all raters assign the same score to all responses,
+        # pe (expected agreement) = 1.0, indicating perfect homogeneity.
+        # In this case, po = 1.0 (perfect observed agreement) and
+        # kappa = (1.0 - 1.0) / (1 - 1.0) = 0/0 (undefined).
+        # The correct interpretation is kappa = 1.0 (perfect agreement).
         if pe == 1.0:
-            return 0.0
+            return 1.0 if po == 1.0 else 0.0
 
         kappa = (po - pe) / (1 - pe)
         return min(1.0, max(-1.0, kappa))
