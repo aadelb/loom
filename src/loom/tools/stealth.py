@@ -12,7 +12,10 @@ import logging
 import warnings
 from typing import Any
 
-from mcp.types import TextContent
+try:
+    from mcp.types import TextContent
+except ImportError:
+    TextContent = None  # type: ignore[assignment,misc]
 from pydantic import BaseModel
 
 from loom.validators import STEALTH_TIMEOUT

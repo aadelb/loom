@@ -7,7 +7,13 @@ import logging
 import re
 from typing import Any
 
-from loom.billing import requires_tier
+try:
+    from loom.billing import requires_tier
+except ImportError:
+    def requires_tier(tier: str):  # type: ignore[misc]
+        def decorator(func):  # type: ignore[no-untyped-def]
+            return func
+        return decorator
 
 logger = logging.getLogger(__name__)
 

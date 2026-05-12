@@ -6,8 +6,12 @@ import asyncio
 import logging
 from typing import Any, Literal, cast
 
-from loom.params import SpiderParams
-from loom.tools.fetch import research_fetch
+try:
+    from loom.params import SpiderParams
+    from loom.tools.fetch import research_fetch
+    _SPIDER_DEPS = True
+except ImportError:
+    _SPIDER_DEPS = False
 
 log = logging.getLogger("loom.tools.spider")
 

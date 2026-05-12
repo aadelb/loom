@@ -7,10 +7,17 @@ import json
 import logging
 from typing import Any
 
-from mcp.types import TextContent
+try:
+    from mcp.types import TextContent
+except ImportError:
+    TextContent = None  # type: ignore[assignment,misc]
 
 from loom.retry import with_retry
-from loom.tools.source_reputation import filter_by_reputation
+
+try:
+    from loom.tools.source_reputation import filter_by_reputation
+except ImportError:
+    filter_by_reputation = None  # type: ignore[assignment]
 
 logger = logging.getLogger("loom.tools.search")
 

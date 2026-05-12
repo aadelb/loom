@@ -11,7 +11,10 @@ import json
 import logging
 from typing import Any
 
-from mcp.types import TextContent
+try:
+    from mcp.types import TextContent
+except ImportError:
+    TextContent = None  # type: ignore[assignment,misc]
 from pydantic import BaseModel, Field
 
 from loom.sandbox import SandboxResult, get_sandbox, is_docker_available

@@ -6,7 +6,10 @@ import json
 import logging
 from typing import Any
 
-from mcp.types import TextContent
+try:
+    from mcp.types import TextContent
+except ImportError:
+    TextContent = None  # type: ignore[assignment,misc]
 
 from loom.semantic_cache import get_semantic_cache
 

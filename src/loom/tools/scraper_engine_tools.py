@@ -12,13 +12,18 @@ import asyncio
 import logging
 from typing import Any
 
-from loom.params import (
-	ScraperEngineFetchParams,
-	ScraperEngineExtractParams,
-	ScraperEngineBatchParams,
-)
-from loom.tools.fetch import research_fetch
 from loom.validators import validate_url, UrlSafetyError
+
+try:
+	from loom.params import (
+		ScraperEngineFetchParams,
+		ScraperEngineExtractParams,
+		ScraperEngineBatchParams,
+	)
+	from loom.tools.fetch import research_fetch
+	_SCRAPER_DEPS = True
+except ImportError:
+	_SCRAPER_DEPS = False
 
 logger = logging.getLogger("loom.tools.scraper_engine_tools")
 
