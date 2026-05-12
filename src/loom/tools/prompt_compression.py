@@ -77,6 +77,10 @@ async def research_compress_prompt(
         # Estimate compressed token count
         compressed_tokens = estimate_tokens(compressed_text)
 
+        # Update compressor stats
+        compressor.stats.total_input_tokens += original_tokens
+        compressor.stats.total_output_tokens += compressed_tokens
+
         # Calculate actual compression ratio
         actual_ratio = compressed_tokens / original_tokens if original_tokens > 0 else 0
 
@@ -104,6 +108,12 @@ async def research_compress_prompt(
         return {
             "error": str(exc),
             "tool": "research_compress_prompt",
+            "original_tokens": None,
+            "compressed_tokens": None,
+            "compressed_text": None,
+            "ratio": None,
+            "method": None,
+            "reduction_percent": None,
         }
 
 

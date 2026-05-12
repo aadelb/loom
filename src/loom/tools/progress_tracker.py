@@ -148,6 +148,8 @@ async def research_progress_update(
         _save_investigations(data)
 
         created = datetime.fromisoformat(inv["created_at"])
+        if created.tzinfo is None:
+            created = created.replace(tzinfo=UTC)
         now = datetime.now(UTC)
         elapsed = (now - created).total_seconds() / 3600
         if step > 0:
@@ -192,7 +194,11 @@ async def research_progress_dashboard() -> dict[str, Any]:
                 completed_count += 1
             else:
                 created = datetime.fromisoformat(inv["created_at"])
+                if created.tzinfo is None:
+                    created = created.replace(tzinfo=UTC)
                 last_updated = datetime.fromisoformat(inv["last_updated"])
+                if last_updated.tzinfo is None:
+                    last_updated = last_updated.replace(tzinfo=UTC)
                 now = datetime.now(UTC)
                 elapsed_hours = (now - created).total_seconds() / 3600
 

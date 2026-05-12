@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 import shutil
 import subprocess
@@ -291,13 +292,16 @@ def research_katana_crawl(
                     logger.warning("Failed to parse katana output line: %s", line)
 
         unique_urls = sorted(list(set(urls_found)))  # Deduplicate and sort
-        return {
+        response = {
             "url": url,
             "pages_crawled": len(unique_urls),
             "urls_found": unique_urls,
             "depth_reached": max_depth_reached,
             "returncode": result.returncode,
         }
+        if result.returncode != 0 and result.stderr:
+            response["error"] = f"katana exited with code {result.returncode}: {result.stderr}"
+        return response
 
     except subprocess.TimeoutExpired:
         return {
@@ -440,27 +444,30 @@ def research_httpx_probe(
                         continue
                     try:
                         data = json.loads(line)
+                        tech = data.get("technology", [])
                         host_entry = {
                             "url": data.get("url", ""),
                             "status_code": data.get("status-code", 0),
                             "title": data.get("title", ""),
                             "server": data.get("server", ""),
-                            "tech": data.get("technology", []),
+                            "tech": tech if isinstance(tech, list) else [tech],
                         }
                         alive_hosts.append(host_entry)
                     except json.JSONDecodeError:
                         logger.warning("Failed to parse httpx output line: %s", line)
 
-            return {
+            response = {
                 "targets_checked": len(validated_targets),
                 "alive": alive_hosts,
                 "count": len(alive_hosts),
                 "returncode": result.returncode,
             }
+            if result.returncode != 0 and result.stderr:
+                response["error"] = f"httpx exited with code {result.returncode}: {result.stderr}"
+            return response
 
         finally:
             # Clean up temporary file
-            import os
             try:
                 os.unlink(targets_file)
             except Exception as exc:

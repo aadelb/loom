@@ -66,14 +66,16 @@ def _check_provider(provider: str) -> tuple[bool, bool]:
     key = os.environ.get(key_env, "").strip()
     if not key:
         return False, False
-    valid = len(key) >= 16 and all(c.isalnum() or c in "-_" for c in key)
+    valid = 16 <= len(key) <= 256 and all(c.isalnum() or c in "-_." for c in key)
     return True, valid
 
 
 async def research_provider_ping(provider: str = "all") -> dict[str, Any]:
     """Quick availability check for providers. Returns config status + API key format validity."""
     try:
-        providers_list = list(_KEYS.keys()) if provider == "all" else ([provider] if provider in _KEYS else [])
+        if provider != "all" and provider not in _KEYS:
+            return {"error": f"invalid provider: {provider}", "valid_providers": list(_KEYS.keys())}
+        providers_list = list(_KEYS.keys()) if provider == "all" else [provider]
         result = []
         healthy = 0
         for p in providers_list:
@@ -96,10 +98,10 @@ async def research_provider_history(provider: str = "", hours: int = 24) -> dict
         if not history:
             return {"provider": provider, "events": [], "uptime_pct": 0.0, "avg_response_ms": 0.0}
         cutoff = datetime.now(UTC).timestamp() - (hours * 3600)
-        recent = [e for e in history if e.get("timestamp", 0) > cutoff]
+        recent = [e for e in history if isinstance(e.get("timestamp"), (int, float)) and e.get("timestamp", 0) > cutoff]
         available = sum(1 for e in recent if e.get("status") == "available")
         uptime_pct = (available / len(recent) * 100) if recent else 0.0
-        response_times = [e.get("response_time_ms", 0) for e in recent if e.get("response_time_ms")]
+        response_times = [e.get("response_time_ms", 0) for e in recent if "response_time_ms" in e and e.get("response_time_ms") is not None]
         avg_ms = sum(response_times) / len(response_times) if response_times else 0.0
         return {
             "provider": provider,

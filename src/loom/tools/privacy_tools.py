@@ -19,8 +19,7 @@ _ZERO_WIDTH_CHARS = {
 
 
 def research_fingerprint_audit(
-    url: str = "https://browserleaks.com/javascript",
-    target_url: str = "",
+    target_url: str = "https://browserleaks.com/javascript",
 ) -> dict[str, Any]:
     """Launch headless browser and extract fingerprint vectors from target URL.
 
@@ -30,7 +29,7 @@ def research_fingerprint_audit(
     If playwright is not available, returns graceful error message.
 
     Args:
-        url: Target URL to fingerprint (default: browserleaks.com)
+        target_url: Target URL to fingerprint (default: browserleaks.com)
 
     Returns:
         Dict with keys:
@@ -43,9 +42,6 @@ def research_fingerprint_audit(
           - uniqueness_score: int (0-100, higher = more unique)
           - error: str (if playwright not installed)
     """
-    if target_url:
-        url = target_url
-
     try:
         import playwright
         from playwright.sync_api import sync_playwright
@@ -311,10 +307,10 @@ def research_privacy_exposure(target_url: str) -> dict[str, Any]:
     # Estimate exposure based on common third-party indicators
     third_party_count = len(detected_trackers) * 5  # Rough estimate
 
-    # Calculate exposure score
+    # Calculate exposure score (only count detected trackers, not theoretical max)
     exposure_score = min(
         100,
-        (len(detected_trackers) * 10) + (len(tracking_cookies) * 2),
+        (len(detected_trackers) * 10) + (len(detected_trackers) * 2),
     )
 
     return {
@@ -579,7 +575,7 @@ def research_stego_decode(encoded_message: str) -> dict[str, Any]:
 
         # Convert binary to text (8 bits per character)
         hidden_text = ""
-        for i in range(0, len(binary_str) - 7, 8):
+        for i in range(0, len(binary_str), 8):
             byte = binary_str[i:i + 8]
             if len(byte) == 8:
                 try:
@@ -818,8 +814,20 @@ def research_image_stego(
                 }
 
             # Load image and validate
-            img = Image.open(image_file)
-            img_type = img.format
+            try:
+                img = Image.open(image_file)
+                # Verify image is valid
+                img.verify()
+                # Reopen after verify() closes the file
+                img = Image.open(image_file)
+                img_type = img.format
+            except (IOError, OSError) as e:
+                return {
+                    "image_path": image_path,
+                    "mode": mode,
+                    "pillow_available": True,
+                    "error": f"Invalid image file: {e}",
+                }
 
             return {
                 "image_path": image_path,

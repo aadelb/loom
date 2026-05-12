@@ -423,18 +423,18 @@ async def research_auto_reframe(
                             messages=[{"role": "user", "content": reframed}],
                             max_tokens=1000,
                         )
-                        response_text = llm_result.get("text", "") if isinstance(llm_result, dict) else ""
+                        response_text = llm_result.text if hasattr(llm_result, "text") else llm_result.get("text", "") if isinstance(llm_result, dict) else ""
                         refused = _detect_refusal(response_text)
 
                         attempt_log.append(
                             {
                                 "attempt": i + 1,
                                 "strategy": strat,
-                                "strategy_name": _STRATEGIES[strat]["name"],
+                                "strategy_name": _STRATEGIES.get(strat, {}).get("name", strat),
                                 "reframed_preview": reframed[:300],
                                 "response_preview": response_text[:300],
                                 "refused": refused,
-                                "multiplier": _STRATEGIES[strat]["multiplier"],
+                                "multiplier": _STRATEGIES.get(strat, {}).get("multiplier", 1.0),
                                 "result": "tested_via_llm_cascade",
                             }
                         )
@@ -445,7 +445,7 @@ async def research_auto_reframe(
                                 "accepted": True,
                                 "attempts": i + 1,
                                 "successful_strategy": strat,
-                                "successful_strategy_name": _STRATEGIES[strat]["name"],
+                                "successful_strategy_name": _STRATEGIES.get(strat, {}).get("name", strat),
                                 "response_preview": response_text[:500],
                                 "attempt_log": attempt_log,
                             }
@@ -457,9 +457,9 @@ async def research_auto_reframe(
                     {
                         "attempt": i + 1,
                         "strategy": strat,
-                        "strategy_name": _STRATEGIES[strat]["name"],
+                        "strategy_name": _STRATEGIES.get(strat, {}).get("name", strat),
                         "reframed_preview": reframed[:300],
-                        "multiplier": _STRATEGIES[strat]["multiplier"],
+                        "multiplier": _STRATEGIES.get(strat, {}).get("multiplier", 1.0),
                         "result": "not_tested (no LLM available)" if use_llm else "not_tested (no target_url)",
                     }
                 )
@@ -498,11 +498,11 @@ async def research_auto_reframe(
                             {
                                 "attempt": i + 1,
                                 "strategy": strat,
-                                "strategy_name": _STRATEGIES[strat]["name"],
+                                "strategy_name": _STRATEGIES.get(strat, {}).get("name", strat),
                                 "reframed_preview": reframed[:300],
                                 "response_preview": response_text[:300],
                                 "refused": refused,
-                                "multiplier": _STRATEGIES[strat]["multiplier"],
+                                "multiplier": _STRATEGIES.get(strat, {}).get("multiplier", 1.0),
                             }
                         )
 
@@ -512,7 +512,7 @@ async def research_auto_reframe(
                                 "accepted": True,
                                 "attempts": i + 1,
                                 "successful_strategy": strat,
-                                "successful_strategy_name": _STRATEGIES[strat]["name"],
+                                "successful_strategy_name": _STRATEGIES.get(strat, {}).get("name", strat),
                                 "response_preview": response_text[:500],
                                 "attempt_log": attempt_log,
                             }
@@ -709,7 +709,7 @@ def _compute_stacked_multiplier(strategies: list[str]) -> float:
             pair = tuple(sorted([strategies[i], strategies[j]]))
             synergy = _STRATEGY_SYNERGY.get(pair, 0.55)
             marginal = (min(multipliers[i], multipliers[j]) - 1.0) * synergy
-            bonus += marginal / (1 + i + j - 1)
+            bonus += marginal / (1 + i + j)
     return min(10.0, base + bonus)
 
 
@@ -1340,7 +1340,8 @@ async def research_fingerprint_model(
         else:
             identified = max(scores, key=scores.get)
             max_score = scores[identified]
-            confidence = min(1.0, max_score / 3.0)
+            max_possible = len(_MODEL_FINGERPRINTS[identified].get("markers", [])) + 0.5
+            confidence = min(1.0, max(0.0, max_score / max_possible) if max_possible > 0 else 0.0)
 
         config = _MODEL_CONFIGS.get(identified, _MODEL_CONFIGS.get("gpt", {}))
 

@@ -246,7 +246,8 @@ async def research_preemptive_patch(
         patched_score = max(0, original_score - reduction)
 
         # Identify remaining risks
-        remaining_risks = [v for v in result.get("vulnerabilities", []) if v["type"] not in [v["type"] for v in vulns]]
+        patched_types = {v["type"] for v in vulns}
+        remaining_risks = [v for v in result.get("vulnerabilities", []) if v["type"] not in patched_types]
 
         return {
             "original_score": original_score,

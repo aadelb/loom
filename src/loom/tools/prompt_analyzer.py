@@ -141,13 +141,15 @@ async def research_prompt_analyze(
                 triggered[cat] = {"hits": hits, "weight": info["weight"]}
                 max_weight = max(max_weight, info["weight"])
 
-        # Overall danger score
-        danger_score = 0 if not triggered else min(10, max_weight * min(3, len(triggered)) // 2)
+        # Overall danger score: average weight of triggered categories, scaled 0-10
+        danger_score = 0 if not triggered else min(10, sum(info["weight"] for info in triggered.values()) // len(triggered))
 
-        # Refusal probability per model
+        # Refusal probability per model (higher threshold = higher refusal threshold = less likely to refuse)
         refusal_probs: dict[str, float] = {}
         for model, threshold in MODEL_THRESHOLDS.items():
-            prob = min(1.0, danger_score / 10 / threshold) if threshold > 0 else 0.0
+            # Probability = (danger_score / 10) normalized by threshold
+            # If danger_score/10 exceeds threshold, refusal is likely
+            prob = min(1.0, max(0.0, (danger_score / 10 - threshold) / (1.0 - threshold))) if threshold < 1.0 else 0.0
             refusal_probs[model] = round(prob, 2)
 
         # Filter to target model if specified
