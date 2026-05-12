@@ -23,12 +23,19 @@ def research_memory_status() -> dict[str, Any]:
     """Report current memory usage of the Loom server process.
 
     Tracks: RSS, VMS, shared memory, open file descriptors.
-    Compares against threshold (warn at 80% of available RAM).
+    Compares against threshold (warn at 80% of process memory percent).
 
     Returns:
         Dict with keys: pid, rss_mb, vms_mb, open_fds, percent_used,
-        threshold_mb, status ("ok"|"warning"|"critical"), recommendations
+        available_mb, status ("ok"|"warning"|"critical"), recommendations
     """
+    if psutil is None:
+        return {
+            "error": "psutil not installed",
+            "status": "error",
+            "pid": os.getpid(),
+        }
+
     try:
         process = psutil.Process(os.getpid())
         mem_info = process.memory_info()
@@ -36,7 +43,7 @@ def research_memory_status() -> dict[str, Any]:
 
         # Available system RAM
         system_mem = psutil.virtual_memory()
-        threshold_mb = system_mem.available / (1024 * 1024) * 0.8
+        available_mb = system_mem.available / (1024 * 1024)
 
         # Open file descriptors
         try:
@@ -47,7 +54,7 @@ def research_memory_status() -> dict[str, Any]:
         rss_mb = mem_info.rss / (1024 * 1024)
         vms_mb = mem_info.vms / (1024 * 1024)
 
-        # Determine status
+        # Determine status based on process memory percent
         if mem_percent >= 90:
             status = "critical"
             recommendations = [
@@ -72,7 +79,7 @@ def research_memory_status() -> dict[str, Any]:
             "vms_mb": round(vms_mb, 2),
             "open_fds": open_fds,
             "percent_used": round(mem_percent, 2),
-            "threshold_mb": round(threshold_mb, 2),
+            "available_mb": round(available_mb, 2),
             "status": status,
             "recommendations": recommendations,
         }
@@ -94,6 +101,12 @@ def research_memory_gc() -> dict[str, Any]:
         Dict with keys: before_mb, after_mb, freed_mb, gc_collected_objects,
         caches_cleared (list of cache names)
     """
+    if psutil is None:
+        return {
+            "error": "psutil not installed",
+            "status": "error",
+        }
+
     try:
         process = psutil.Process(os.getpid())
         before_mb = process.memory_info().rss / (1024 * 1024)
@@ -103,15 +116,6 @@ def research_memory_gc() -> dict[str, Any]:
 
         # Clear common module-level caches
         caches_cleared = []
-
-        # Clear strategy cache if it exists
-        try:
-            from loom.tools.reframe_strategies import ALL_STRATEGIES
-            if hasattr(ALL_STRATEGIES, "clear"):
-                ALL_STRATEGIES.clear()
-                caches_cleared.append("strategy_cache")
-        except (ImportError, AttributeError):
-            pass
 
         # Clear semantic cache if it exists
         try:
@@ -146,12 +150,15 @@ def research_memory_profile(top_n: int = 10) -> dict[str, Any]:
     Groups by type, sorts by total size.
 
     Args:
-        top_n: Number of top types to return (default 10)
+        top_n: Number of top types to return (default 10, max 100)
 
     Returns:
         Dict with keys: top_types (list of {type, count, total_bytes}),
         total_objects, total_tracked_bytes
     """
+    # Bound top_n to prevent unbounded output
+    top_n = min(max(1, top_n), 100)
+
     try:
         # Get objects, limiting sample size
         all_objects = gc.get_objects()

@@ -53,7 +53,6 @@ async def _init_db(conn: aiosqlite.Connection) -> None:
     await conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_created ON listings(created DESC)"
     )
-    await conn.commit()
 
 
 async def research_marketplace_list(
@@ -177,7 +176,6 @@ async def research_marketplace_publish(
                 "VALUES (?, ?, ?, ?, ?, ?, 0, 0.0, ?, ?)",
                 (listing_id, name, category, description, price_credits, author, now, content),
             )
-            await db_conn.commit()
 
             return {
                 "listing_id": listing_id,
@@ -218,17 +216,16 @@ async def research_marketplace_download(
             if not row:
                 return {"error": "Listing not found"}
 
-            listing_id_result, name, category, content, downloads = row
+            listing_id_db, name, category, content, downloads = row
 
             # Increment downloads
             await db_conn.execute(
                 "UPDATE listings SET downloads = downloads + 1 WHERE id = ?",
                 (listing_id,),
             )
-            await db_conn.commit()
 
             return {
-                "listing_id": listing_id_result,
+                "listing_id": listing_id_db,
                 "name": name,
                 "category": category,
                 "content": content,

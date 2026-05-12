@@ -13,7 +13,6 @@ import json
 import logging
 import re
 import subprocess
-import tempfile
 import time
 from typing import Any
 
@@ -119,12 +118,6 @@ def research_maigret(username: str, timeout: int = 60) -> dict[str, Any]:
     start_time = time.time()
 
     try:
-        # Create temp file for JSON output
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".json", delete=False
-        ) as tmp:
-            output_file = tmp.name
-
         # Build maigret command
         # maigret outputs JSON with: maigret username --json
         # We need to capture the output to parse it

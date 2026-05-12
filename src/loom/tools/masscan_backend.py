@@ -8,10 +8,11 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import shutil
 import subprocess
 import tempfile
-import uuid
+import time
 from typing import Any
 
 logger = logging.getLogger("loom.tools.masscan_backend")
@@ -117,9 +118,9 @@ def research_masscan(
         result["error"] = "timeout must be 1-300 seconds"
         return result
 
-    # Prepare temp output file
-    temp_uuid = str(uuid.uuid4())[:8]
-    output_file = f"/tmp/masscan_{temp_uuid}.json"
+    # Prepare temp output file using secure tempfile
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as tf:
+        output_file = tf.name
 
     try:
         # Build masscan command
@@ -134,7 +135,7 @@ def research_masscan(
 
         # Run masscan with timeout
         logger.info("masscan_scan_start target=%s ports=%s rate=%s", target, ports, rate)
-        start_time = __import__("time").time()
+        start_time = time.time()
 
         try:
             # Run without shell for safety
@@ -154,7 +155,7 @@ def research_masscan(
             logger.warning("masscan_permission_denied target=%s", target)
             return result
 
-        end_time = __import__("time").time()
+        end_time = time.time()
         scan_time = end_time - start_time
         result["scan_time_seconds"] = round(scan_time, 2)
 
@@ -190,9 +191,17 @@ def research_masscan(
             if "-" in ports:
                 # Range like "1-1000"
                 parts = ports.split("-")
-                start_port = int(parts[0])
-                end_port = int(parts[-1])
-                result["total_scanned"] = end_port - start_port + 1
+                if len(parts) != 2:
+                    # Malformed range (e.g., "80-443-8080")
+                    result["total_scanned"] = 0
+                else:
+                    start_port = int(parts[0])
+                    end_port = int(parts[1])
+                    # Validate port numbers are in valid range
+                    if not (1 <= start_port <= 65535 and 1 <= end_port <= 65535):
+                        result["total_scanned"] = 0
+                    else:
+                        result["total_scanned"] = end_port - start_port + 1
             elif "," in ports:
                 # List like "80,443,8080"
                 result["total_scanned"] = len(ports.split(","))
@@ -219,7 +228,7 @@ def research_masscan(
     finally:
         # Clean up temp file
         try:
-            __import__("os").remove(output_file)
+            os.remove(output_file)
         except FileNotFoundError:
             pass
         except Exception as exc:

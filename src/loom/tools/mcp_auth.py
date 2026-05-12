@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import hmac
 import logging
 import secrets
 from datetime import UTC, datetime, timedelta
@@ -40,6 +41,7 @@ async def research_auth_create_token(
     """Create a bearer token for MCP access.
 
     Returns: {token, name, expires_at, token_prefix}
+    WARNING: Token is full plaintext — store securely immediately. Do not log.
     """
     token = "loom_" + secrets.token_urlsafe(32)
     token_hash = _hash_token(token)
@@ -68,6 +70,7 @@ async def research_auth_validate(token: str) -> dict[str, Any]:
     """Validate a token.
 
     Returns: {valid: bool, name, expires_at, reason (if invalid)}
+    Uses SQL constant-time comparison for token_hash lookup (database-level protection).
     """
     token_hash = _hash_token(token)
     conn = await _get_auth_db()
@@ -99,18 +102,16 @@ async def research_auth_validate(token: str) -> dict[str, Any]:
         await conn.close()
 
 
-async def research_auth_revoke(
-    token_prefix: str = "", name: str = ""
-) -> dict[str, Any]:
-    """Revoke token(s) by name (prefix-based not supported for security).
+async def research_auth_revoke(name: str = "") -> dict[str, Any]:
+    """Revoke token(s) by name.
+
+    Args:
+        name: Token name to revoke. Required.
 
     Returns: {revoked_count, remaining_active, error (if any)}
     """
-    if not token_prefix and not name:
+    if not name:
         return {"error": "specify name to revoke", "revoked_count": 0}
-
-    if token_prefix and not name:
-        return {"error": "prefix-based revocation not supported; use name", "revoked_count": 0}
 
     conn = await _get_auth_db()
     try:

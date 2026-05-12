@@ -95,7 +95,7 @@ class MemeticSimulator:
 
         if mutation_occurred:
             # Mutation can improve or degrade fitness
-            mutation_delta = random.uniform(-0.1, 0.15)
+            mutation_delta = random.uniform(-0.15, 0.15)
             fitness_change = 1.0 + mutation_delta
             self.mutations_survived += 1
         else:
@@ -156,8 +156,8 @@ class MemeticSimulator:
         if not self.spread_curve or len(self.spread_curve) < 2:
             return 0.0
 
-        # Use generations 1-5 for R0 calculation (early exponential phase)
-        early_generations = self.spread_curve[: min(5, len(self.spread_curve))]
+        # Use generations 1-5 for R0 calculation (early exponential phase, skip seed gen)
+        early_generations = self.spread_curve[1 : min(6, len(self.spread_curve))]
 
         if len(early_generations) < 2:
             return 0.0
@@ -201,6 +201,13 @@ class MemeticSimulator:
         Returns:
             Complete simulation results with virality metrics
         """
+        # Reset state for fresh simulation
+        self.spread_curve = []
+        self.peak_infection_pct = 0.0
+        self.peak_generation = 0
+        self.mutations_survived = 0
+        self.population = []
+
         # Initialize population and seed idea
         self._create_population()
         self._seed_idea()

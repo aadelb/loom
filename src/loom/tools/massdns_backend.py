@@ -8,6 +8,7 @@ import os
 import shutil
 import subprocess
 import tempfile
+import time
 from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
@@ -83,6 +84,16 @@ class MassDNSResolveParams(BaseModel):
             raise ValueError(f"invalid record type: {v}")
         return v
 
+    @field_validator("output_format")
+    @classmethod
+    def validate_output_format(cls, v: str) -> str:
+        """Validate and normalize output format to massdns flag."""
+        format_map = {"simple": "S", "full": "F", "json": "J"}
+        v = v.strip().lower()
+        if v not in format_map:
+            raise ValueError(f"invalid output format: {v}. Must be: simple, full, json")
+        return format_map[v]
+
 
 class MassDNSResult(BaseModel):
     """Result from a massdns resolution operation."""
@@ -150,6 +161,7 @@ async def research_massdns_resolve(
         }
 
     result = MassDNSResult(total=len(params.domains))
+    start_time = time.time()
 
     try:
         # Check if resolver file exists
@@ -181,7 +193,7 @@ async def research_massdns_resolve(
                 "-t",
                 params.record_type,
                 "-o",
-                "S",  # Simple format output
+                params.output_format,  # Use validated output format (S, F, or J)
                 "-w",
                 output_file_path,
                 domain_file_path,
@@ -201,9 +213,9 @@ async def research_massdns_resolve(
                 result.error = f"massdns failed: {proc_result.stderr[:200]}"
                 logger.warning(f"massdns execution warning: {proc_result.stderr[:200]}")
 
-            # Parse output file
+            # Parse output file (wrap in asyncio.to_thread to avoid blocking event loop)
             if os.path.isfile(output_file_path):
-                _parse_massdns_output(output_file_path, result)
+                await asyncio.to_thread(_parse_massdns_output, output_file_path, result)
 
         finally:
             # Clean up temporary files
@@ -219,6 +231,9 @@ async def research_massdns_resolve(
     except Exception as e:
         result.error = f"massdns resolution failed: {str(e)[:200]}"
         logger.error(f"research_massdns_resolve error: {e}")
+    finally:
+        # Track elapsed time in milliseconds
+        result.elapsed_ms = int((time.time() - start_time) * 1000)
 
     return result.model_dump()
 
