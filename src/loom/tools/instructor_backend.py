@@ -11,13 +11,17 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from loom.providers.base import LLMResponse
-from loom.tools.llm import (
-    _call_with_cascade,
-    _safe_error_str,
-    _sanitize_error,
-    _wrap_untrusted_content,
-)
+try:
+    from loom.providers.base import LLMResponse
+    from loom.tools.llm import (
+        _call_with_cascade,
+        _safe_error_str,
+        _sanitize_error,
+        _wrap_untrusted_content,
+    )
+    _INSTRUCTOR_DEPS = True
+except ImportError:
+    _INSTRUCTOR_DEPS = False
 
 logger = logging.getLogger("loom.instructor")
 

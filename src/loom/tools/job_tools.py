@@ -14,7 +14,12 @@ import json
 import logging
 from typing import Any
 
-from loom.job_queue import get_job_queue
+try:
+    from loom.job_queue import get_job_queue
+    _JOB_QUEUE_AVAILABLE = True
+except ImportError:
+    _JOB_QUEUE_AVAILABLE = False
+    get_job_queue = None  # type: ignore[assignment]
 
 logger = logging.getLogger("loom.tools.job_tools")
 

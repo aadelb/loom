@@ -5,7 +5,12 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from loom.jailbreak_evolution import JailbreakEvolutionTracker
+try:
+    from loom.jailbreak_evolution import JailbreakEvolutionTracker
+    _EVOLUTION_AVAILABLE = True
+except ImportError:
+    _EVOLUTION_AVAILABLE = False
+    JailbreakEvolutionTracker = None  # type: ignore[assignment,misc]
 
 logger = logging.getLogger("loom.tools.jailbreak_evolution")
 
