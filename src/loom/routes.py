@@ -174,7 +174,7 @@ def register_http_routes(mcp: "FastMCP") -> None:
         except Exception as e:
             log.error("health_deep_check_failed error=%s", str(e))
             return JSONResponse(
-                {"status": "unhealthy", "error": "Deep health check failed", "details": str(e), "timestamp": datetime.now(UTC).isoformat()},
+                {"status": "unhealthy", "error": "Deep health check failed", "details": type(e).__name__, "timestamp": datetime.now(UTC).isoformat()},
                 status_code=500,
             )
 
@@ -187,7 +187,7 @@ def register_http_routes(mcp: "FastMCP") -> None:
         except Exception as e:
             log.error("health_deep_check_failed error=%s", str(e))
             return JSONResponse(
-                {"status": "unhealthy", "error": "Deep health check failed", "details": str(e), "timestamp": datetime.now(UTC).isoformat()},
+                {"status": "unhealthy", "error": "Deep health check failed", "details": type(e).__name__, "timestamp": datetime.now(UTC).isoformat()},
                 status_code=500,
             )
 

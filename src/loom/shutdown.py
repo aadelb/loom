@@ -124,8 +124,15 @@ async def _shutdown() -> None:
 _background_tasks: set[asyncio.Task[None]] = set()
 
 
+_signal_handled = False
+
+
 def _handle_signal(sig: int, _frame: Any) -> None:
     """Signal handler that runs graceful shutdown in a new event loop."""
+    global _signal_handled
+    if _signal_handled:
+        return
+    _signal_handled = True
     set_shutting_down()
     log.info("signal_handler_invoked signal=%s", signal.Signals(sig).name)
     try:
