@@ -216,8 +216,8 @@ async def _download_file_audio(url: str) -> str | None:
         Path to temp file, or None on failure.
     """
     try:
-        with httpx.Client(timeout=120.0, follow_redirects=True) as client:
-            response = client.get(url)
+        async with httpx.AsyncClient(timeout=120.0, follow_redirects=True) as client:
+            response = await client.get(url)
             response.raise_for_status()
 
             # Check content type

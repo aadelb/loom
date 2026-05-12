@@ -161,8 +161,8 @@ async def research_pdf_extract(
 
     try:
         # Download PDF
-        with httpx.Client() as client:
-            with client.stream("GET", url, timeout=30.0) as response:
+        async with httpx.AsyncClient() as client:
+            async with client.stream("GET", url, timeout=30.0) as response:
                 response.raise_for_status()
 
                 # Check content-type
@@ -176,7 +176,7 @@ async def research_pdf_extract(
 
                 # Stream to temp file with size check
                 pdf_data = io.BytesIO()
-                for chunk in response.iter_bytes(chunk_size=65536):
+                async for chunk in response.aiter_bytes(chunk_size=65536):
                     pdf_data.write(chunk)
                     if pdf_data.tell() > MAX_PDF_SIZE_BYTES:
                         return {

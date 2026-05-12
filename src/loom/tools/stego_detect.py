@@ -178,8 +178,8 @@ async def research_stego_detect(
     if image_url:
         image_bytes = b""
         try:
-            with httpx.Client(timeout=30.0, follow_redirects=True) as client:
-                resp = client.get(image_url)
+            async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+                resp = await client.get(image_url)
                 if resp.status_code == 200:
                     image_bytes = resp.content[:10_000_000]
         except Exception as exc:

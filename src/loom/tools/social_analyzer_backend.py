@@ -36,7 +36,6 @@ async def research_social_analyze(
         - total_found: Count of profiles found
         - error: Error message if any (instead of profiles on failure)
     """
-    await asyncio.sleep(0)
 
     result: dict[str, Any] = {
         "username": username,

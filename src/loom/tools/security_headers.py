@@ -47,7 +47,6 @@ async def research_security_headers(url: str = "", domain: str = "") -> dict[str
           - recommendations: list of security recommendations
           - error: str (if fetch failed)
     """
-    await asyncio.sleep(0)
     # Resolve URL: prefer domain parameter if provided (construct HTTPS URL)
     target_url = url
     if domain and not url:
