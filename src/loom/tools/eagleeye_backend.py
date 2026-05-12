@@ -1,5 +1,4 @@
 """research_reverse_image — Reverse image search across multiple engines."""
-
 from __future__ import annotations
 
 import asyncio
@@ -7,11 +6,11 @@ import logging
 import os
 import urllib.parse
 from typing import Any
-
 import httpx
 from pydantic import BaseModel, Field, field_validator
 
 from loom.validators import validate_url
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.eagleeye_backend")
 
@@ -94,6 +93,7 @@ class ReverseImageResult(BaseModel):
     elapsed_ms: int = 0
 
 
+@handle_tool_errors("research_reverse_image")
 async def research_reverse_image(
     image_url: str = "",
     image_path: str = "",

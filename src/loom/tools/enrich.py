@@ -1,17 +1,18 @@
 """Content enrichment tools — language detection, Wayback Machine recovery."""
-
 from __future__ import annotations
 
 import logging
 from typing import Any
-
 import httpx
+
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.enrich")
 
 _WAYBACK_CDX_URL = "https://web.archive.org/cdx/search/cdx"
 
 
+@handle_tool_errors("research_detect_language")
 def research_detect_language(text: str) -> dict[str, Any]:
     """Detect the language of text content (free, no API key).
 
@@ -56,6 +57,7 @@ def research_detect_language(text: str) -> dict[str, Any]:
         return {"language": "unknown", "confidence": 0.0, "error": str(exc)}
 
 
+@handle_tool_errors("research_wayback")
 async def research_wayback(
     url: str,
     limit: int = 1,

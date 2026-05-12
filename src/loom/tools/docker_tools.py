@@ -3,7 +3,10 @@ from __future__ import annotations
 
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
 
+
+@handle_tool_errors("research_container_inspect")
 async def research_container_inspect() -> dict[str, Any]:
     """Inspect running Docker containers."""
     try:
@@ -24,6 +27,7 @@ async def research_container_inspect() -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_container_inspect"}
 
 
+@handle_tool_errors("research_container_logs")
 async def research_container_logs() -> dict[str, Any]:
     """Retrieve container logs."""
     try:

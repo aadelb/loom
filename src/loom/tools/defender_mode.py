@@ -2,13 +2,14 @@
 
 Tools for testing YOUR OWN defenses against Loom's attack strategies.
 """
-
 from __future__ import annotations
 
 import hashlib
 import logging
 import re
 from typing import Any
+
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.defender_mode")
 
@@ -94,6 +95,7 @@ def _score_defense(prompt: str) -> tuple[int, list[str]]:
     return score, vulnerabilities
 
 
+@handle_tool_errors("research_defend_test")
 async def research_defend_test(
     system_prompt: str,
     attack_categories: list[str] | None = None,
@@ -214,6 +216,7 @@ async def research_defend_test(
         return {"error": str(exc), "tool": "research_defend_test"}
 
 
+@handle_tool_errors("research_harden_prompt")
 async def research_harden_prompt(
     system_prompt: str,
     vulnerabilities: list[str] | None = None,

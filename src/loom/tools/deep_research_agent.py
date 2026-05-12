@@ -7,16 +7,18 @@ Implements a 5-stage hierarchical research pipeline:
 4. Synthesize findings with LLM
 5. Return structured report with confidence scoring
 """
-
 from __future__ import annotations
 
 import asyncio
 import logging
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.deep_research_agent")
 
 
+@handle_tool_errors("research_hierarchical_research")
 async def research_hierarchical_research(
     query: str,
     depth: int = 2,

@@ -1,5 +1,4 @@
 """Environment inspection tools for Loom runtime diagnostics."""
-
 from __future__ import annotations
 
 import asyncio
@@ -8,6 +7,9 @@ import json
 import logging
 import os
 import platform
+
+from loom.error_responses import handle_tool_errors
+
 try:
     import psutil
 except ImportError:
@@ -19,6 +21,7 @@ import time
 from typing import Any
 
 import loom
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.env_inspector")
 
@@ -41,6 +44,7 @@ def _get_installed_packages() -> int:
     return 0
 
 
+@handle_tool_errors("research_env_inspect")
 async def research_env_inspect() -> dict[str, Any]:
     """Inspect the full runtime environment.
 
@@ -78,6 +82,7 @@ async def research_env_inspect() -> dict[str, Any]:
     }
 
 
+@handle_tool_errors("research_env_requirements")
 async def research_env_requirements() -> dict[str, Any]:
     """Check if all required dependencies are installed.
 

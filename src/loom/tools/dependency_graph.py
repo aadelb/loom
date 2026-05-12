@@ -1,5 +1,4 @@
 """Tool dependency graph analysis — maps inter-tool dependencies."""
-
 from __future__ import annotations
 
 import ast
@@ -7,6 +6,8 @@ import logging
 from collections import defaultdict, deque
 from pathlib import Path
 from typing import Any
+
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.dependency_graph")
 
@@ -31,6 +32,7 @@ def _extract_tool_imports(source_code: str) -> set[str]:
     return imports
 
 
+@handle_tool_errors("research_dependency_graph")
 async def research_dependency_graph() -> dict[str, Any]:
     """Analyze tool modules to find inter-tool dependencies.
 
@@ -90,6 +92,7 @@ async def research_dependency_graph() -> dict[str, Any]:
     }
 
 
+@handle_tool_errors("research_tool_impact")
 async def research_tool_impact(tool_name: str) -> dict[str, Any]:
     """Show what would break if a tool failed.
 

@@ -1,11 +1,12 @@
 """MCP tool wrapper for model behavioral drift monitoring."""
-
 from __future__ import annotations
 
 import asyncio
 import json
 import logging
 from typing import Any
+
+from loom.error_responses import handle_tool_errors
 
 try:
     from mcp.types import TextContent
@@ -24,6 +25,7 @@ except ImportError:
 logger = logging.getLogger("loom.tools.drift_monitor")
 
 
+@handle_tool_errors("research_drift_monitor")
 async def research_drift_monitor(
     prompts: list[str] | str,
     model_name: str,
@@ -118,6 +120,7 @@ async def tool_drift_monitor(
     return [TextContent(type="text", text=json.dumps(result, indent=2))]
 
 
+@handle_tool_errors("research_drift_monitor_list")
 async def research_drift_monitor_list(
     storage_path: str = "~/.loom/drift/",
 ) -> dict[str, list[str]]:

@@ -4,12 +4,13 @@ Provides MCP tools for monitoring and managing the deadletter queue:
 - research_dlq_stats: Get queue statistics
 - research_dlq_retry_now: Force immediate retry of a specific item
 """
-
 from __future__ import annotations
 
 import json
 import logging
 from typing import Any
+
+from loom.error_responses import handle_tool_errors
 
 try:
     from loom.deadletter import get_dlq
@@ -21,6 +22,7 @@ except ImportError:
 log = logging.getLogger("loom.tools.dlq_management")
 
 
+@handle_tool_errors("research_dlq_stats")
 async def research_dlq_stats() -> dict[str, Any]:
     """Get deadletter queue statistics.
 
@@ -56,6 +58,7 @@ async def research_dlq_stats() -> dict[str, Any]:
         }
 
 
+@handle_tool_errors("research_dlq_retry_now")
 async def research_dlq_retry_now(dlq_id: int) -> dict[str, Any]:
     """Force immediate retry of a deadletter queue item.
 
@@ -124,6 +127,7 @@ async def research_dlq_retry_now(dlq_id: int) -> dict[str, Any]:
         }
 
 
+@handle_tool_errors("research_dlq_list")
 async def research_dlq_list(tool_name: str | None = None, include_failed: bool = False) -> dict[str, Any]:
     """List deadletter queue items.
 
@@ -184,6 +188,7 @@ async def research_dlq_list(tool_name: str | None = None, include_failed: bool =
         }
 
 
+@handle_tool_errors("research_dlq_clear_failed")
 async def research_dlq_clear_failed(days: int = 30) -> dict[str, Any]:
     """Clear permanently failed items older than specified days.
 

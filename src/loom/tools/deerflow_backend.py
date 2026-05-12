@@ -10,7 +10,6 @@ Note: Full DeerFlow integration requires Python 3.12+ for the embedded client.
       Until then, uses enhanced fallback mode with simulated multi-agent research.
       When DeerFlow HTTP server is available, can connect via REST API instead.
 """
-
 from __future__ import annotations
 
 import asyncio
@@ -18,6 +17,8 @@ import json
 import logging
 import os
 from typing import Any
+
+from loom.error_responses import handle_tool_errors
 
 try:
     # Requires Python 3.12+ for deerflow-harness
@@ -39,6 +40,7 @@ VALID_DEPTHS = ["shallow", "standard", "deep", "comprehensive"]
 DEERFLOW_HTTP_URL = os.environ.get("DEERFLOW_HTTP_URL", None)
 
 
+@handle_tool_errors("research_deer_flow")
 async def research_deer_flow(
     query: str,
     depth: str = "standard",

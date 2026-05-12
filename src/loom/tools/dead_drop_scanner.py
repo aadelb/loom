@@ -4,13 +4,14 @@ Scans a list of .onion URLs suspected to be ephemeral, stores content hashes
 and timestamps, and uses k-gram shingling to detect content reuse patterns
 across sites.
 """
-
 from __future__ import annotations
 
 import hashlib
 import logging
 from datetime import UTC, datetime
 from typing import Any
+
+from loom.error_responses import handle_tool_errors
 
 try:
     from loom.config import get_config
@@ -46,6 +47,7 @@ def _shingle_text(text: str, k: int = 10) -> set[str]:
     return shingles
 
 
+@handle_tool_errors("research_dead_drop_scanner")
 async def research_dead_drop_scanner(
     urls: list[str],
     interval_minutes: int = 5,

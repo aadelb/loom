@@ -3,13 +3,13 @@
 Provides semantic search and Q&A over documentation using DocsGPT instances
 via HTTP API calls.
 """
-
 from __future__ import annotations
 
 import logging
 from typing import Any
-
 import httpx
+
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.docsgpt_backend")
 
@@ -20,6 +20,7 @@ DEFAULT_DOCS_URL = "http://localhost:7091"
 REQUEST_TIMEOUT = 30
 
 
+@handle_tool_errors("research_docs_ai")
 async def research_docs_ai(
     query: str,
     docs_url: str | None = None,

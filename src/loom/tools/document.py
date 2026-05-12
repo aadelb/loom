@@ -1,5 +1,4 @@
 """research_convert_document — Document conversion using Pandoc."""
-
 from __future__ import annotations
 
 import asyncio
@@ -8,10 +7,10 @@ import os
 import subprocess
 import tempfile
 from typing import Any
-
 import httpx
 
 from loom.cli_checker import is_available
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.document")
 
@@ -28,6 +27,7 @@ SUPPORTED_SOURCES = ("pdf", "docx", "doc", "html", "epub", "rtf", "odt", "tex")
 SUPPORTED_OUTPUTS = ("markdown", "md", "txt", "html", "rst", "latex")
 
 
+@handle_tool_errors("research_convert_document")
 async def research_convert_document(
     url: str,
     output_format: str = "markdown",

@@ -1,9 +1,10 @@
 """Tool Execution Planner — generates and validates optimal execution plans for complex queries."""
-
 from __future__ import annotations
 
 import logging
 from typing import Any
+
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.execution_planner")
 
@@ -75,6 +76,7 @@ def _select_tools(
     return candidates[:max_tools]
 
 
+@handle_tool_errors("research_plan_execution")
 async def research_plan_execution(
     goal: str,
     constraints: dict[str, Any] | None = None,
@@ -167,6 +169,7 @@ async def research_plan_execution(
         return {"error": str(exc), "tool": "research_plan_execution"}
 
 
+@handle_tool_errors("research_plan_validate")
 async def research_plan_validate(
     steps: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:

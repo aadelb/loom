@@ -1,15 +1,14 @@
 """research_dead_content — Dead Content Resurrection Engine for deleted web pages."""
-
 from __future__ import annotations
 
 import logging
 from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import quote
-
 import httpx
 
 from loom.validators import validate_url
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.dead_content")
 
@@ -24,6 +23,7 @@ _ARCHIVE_SOURCES = [
 ]
 
 
+@handle_tool_errors("research_dead_content")
 async def research_dead_content(
     url: str,
     include_snapshots: bool = True,

@@ -1,5 +1,4 @@
 """Distributed tracing system for tracking requests across tool chains."""
-
 from __future__ import annotations
 
 import asyncio
@@ -13,6 +12,8 @@ from threading import Lock
 from typing import Any
 from uuid import uuid4
 
+from loom.error_responses import handle_tool_errors
+
 try:
     from mcp.types import TextContent
 except ImportError:
@@ -25,6 +26,7 @@ MAX_TRACES = 1000
 _TRACES_LOCK = Lock()  # Protect against concurrent modifications
 
 
+@handle_tool_errors("research_trace_create")
 async def research_trace_create(operation: str, parent_trace_id: str = "") -> dict[str, Any]:
     """Create a new trace span."""
     try:
@@ -46,6 +48,7 @@ async def research_trace_create(operation: str, parent_trace_id: str = "") -> di
         return {"error": str(exc), "tool": "research_trace_create"}
 
 
+@handle_tool_errors("research_trace_complete")
 async def research_trace_complete(trace_id: str, span_id: str = "", status: str = "ok", metadata: dict[str, Any] | None = None) -> dict[str, Any]:
     """Complete a trace/span."""
     try:
@@ -68,6 +71,7 @@ async def research_trace_complete(trace_id: str, span_id: str = "", status: str 
         return {"error": str(exc), "tool": "research_trace_complete"}
 
 
+@handle_tool_errors("research_trace_query")
 async def research_trace_query(operation: str = "", limit: int = 50, min_duration_ms: float = 0) -> dict[str, Any]:
     """Query completed traces."""
     try:

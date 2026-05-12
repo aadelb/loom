@@ -6,7 +6,6 @@ structured error responses. Includes error tracking and diagnostic tools.
 SECURITY: Error messages and tracebacks are sanitized before external exposure.
 Stack traces and internal paths are logged server-side only.
 """
-
 from __future__ import annotations
 
 import asyncio
@@ -18,6 +17,8 @@ import traceback
 from datetime import UTC, datetime
 from threading import Lock
 from typing import Any, Callable, TypeVar
+
+from loom.error_responses import handle_tool_errors
 
 log = logging.getLogger("loom.error_wrapper")
 
@@ -180,6 +181,7 @@ def _build_error_response(tool_name: str, error: Exception, internal_logs: bool 
     return response
 
 
+@handle_tool_errors("research_error_stats")
 async def research_error_stats() -> dict[str, Any]:
     """Get error statistics from all wrapped tools.
 
@@ -233,6 +235,7 @@ async def research_error_stats() -> dict[str, Any]:
         }
 
 
+@handle_tool_errors("research_error_clear")
 async def research_error_clear() -> dict[str, Any]:
     """Clear error history and reset tracking (thread-safe).
 

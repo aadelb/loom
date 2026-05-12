@@ -6,12 +6,13 @@ Scores truth probability for claims in text using heuristics:
 - Specificity (names, dates increase confidence)
 - Verifiability (can claim be fact-checked?)
 """
-
 from __future__ import annotations
 
 import logging
 import re
 from typing import Any
+
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.epistemic_score")
 
@@ -136,6 +137,7 @@ def _compute_confidence(claim: str) -> float:
     return max(0.0, min(1.0, score))
 
 
+@handle_tool_errors("research_epistemic_score")
 async def research_epistemic_score(
     text: str,
     claims_to_verify: list[str] | None = None,

@@ -1,5 +1,4 @@
 """Deployment automation tools for Loom."""
-
 from __future__ import annotations
 
 import asyncio
@@ -12,10 +11,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.deployment")
 _DEPLOY_FILE = Path.home() / ".loom" / "deploy_history.jsonl"
 
 
+@handle_tool_errors("research_deploy_status")
 async def research_deploy_status() -> dict[str, Any]:
     """Check deployment status: service, port, uptime, memory, health."""
     result = {
@@ -89,6 +91,7 @@ async def research_deploy_status() -> dict[str, Any]:
     return result
 
 
+@handle_tool_errors("research_deploy_history")
 async def research_deploy_history(limit: int = 20) -> dict[str, Any]:
     """Show deployment history from ~/.loom/deploy_history.jsonl."""
     if not _DEPLOY_FILE.exists():
@@ -101,6 +104,7 @@ async def research_deploy_history(limit: int = 20) -> dict[str, Any]:
         return {"deploys": [], "total_deploys": 0}
 
 
+@handle_tool_errors("research_deploy_record")
 async def research_deploy_record(
     commit_hash: str = "",
     tool_count: int = 0,

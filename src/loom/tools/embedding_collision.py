@@ -5,6 +5,7 @@ import re
 from typing import Any, Literal
 
 from loom.text_utils import jaccard_similarity
+from loom.error_responses import handle_tool_errors
 
 
 def _synonym_swap(text: str, payload: str) -> str:
@@ -113,6 +114,7 @@ def _retrieval_poison(text: str, payload: str) -> str:
     return chunk + " " + payload.strip()
 
 
+@handle_tool_errors("research_embedding_collide")
 async def research_embedding_collide(
     target_text: str,
     malicious_payload: str,
@@ -202,6 +204,7 @@ async def research_embedding_collide(
         return {"error": str(exc), "tool": "research_embedding_collide"}
 
 
+@handle_tool_errors("research_rag_attack")
 async def research_rag_attack(
     query: str,
     attack_type: Literal[

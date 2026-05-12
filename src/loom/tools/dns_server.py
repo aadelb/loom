@@ -3,7 +3,10 @@ from __future__ import annotations
 
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
 
+
+@handle_tool_errors("research_dns_query")
 async def research_dns_query(domain: str) -> dict[str, Any]:
     """Perform DNS query for a domain."""
     try:
@@ -25,6 +28,7 @@ async def research_dns_query(domain: str) -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_dns_query"}
 
 
+@handle_tool_errors("research_dns_stats")
 async def research_dns_stats() -> dict[str, Any]:
     """Get DNS query statistics."""
     try:

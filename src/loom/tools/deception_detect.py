@@ -1,11 +1,12 @@
 """research_deception_detect — Linguistic deception and fraud detection."""
-
 from __future__ import annotations
 
 import json
 import logging
 import re
 from typing import Any
+
+from loom.error_responses import handle_tool_errors
 
 try:
     from mcp.types import TextContent
@@ -262,6 +263,7 @@ async def _try_llm_assessment(text: str) -> str | None:
     return None
 
 
+@handle_tool_errors("research_deception_detect")
 async def research_deception_detect(text: str) -> dict[str, Any]:
     """Detect deceptive or fraudulent content using linguistic cues.
 

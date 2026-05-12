@@ -1,5 +1,4 @@
 """Data Pipeline Builder for ETL-style research workflows."""
-
 from __future__ import annotations
 
 import json
@@ -7,6 +6,8 @@ import logging
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.data_pipeline")
 
@@ -18,6 +19,7 @@ def _pipeline_dir() -> Path:
     return d
 
 
+@handle_tool_errors("research_pipeline_create")
 async def research_pipeline_create(name: str, stages: list[dict[str, Any]]) -> dict[str, Any]:
     """Create and store an ETL pipeline definition."""
     try:
@@ -47,6 +49,7 @@ async def research_pipeline_create(name: str, stages: list[dict[str, Any]]) -> d
         return {"error": str(exc), "tool": "research_pipeline_create"}
 
 
+@handle_tool_errors("research_pipeline_validate")
 async def research_pipeline_validate(name: str) -> dict[str, Any]:
     """Validate pipeline definition."""
     try:
@@ -77,6 +80,7 @@ async def research_pipeline_validate(name: str) -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_pipeline_validate"}
 
 
+@handle_tool_errors("research_pipeline_list")
 async def research_pipeline_list() -> dict[str, Any]:
     """List all defined pipelines."""
     try:

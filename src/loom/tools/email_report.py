@@ -3,7 +3,6 @@
 Tool:
 - research_email_report: Send research findings via email
 """
-
 from __future__ import annotations
 
 import asyncio
@@ -15,6 +14,7 @@ from email.mime.text import MIMEText
 from typing import Any
 
 from loom.input_validators import validate_email, ValidationError
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.email_report")
 
@@ -33,6 +33,7 @@ def _sanitize_header(value: str) -> str:
     return value.replace("\r", "").replace("\n", "").replace("\x00", "")
 
 
+@handle_tool_errors("research_email_report")
 async def research_email_report(
     to: str,
     subject: str,

@@ -3,14 +3,14 @@
 Tools for combining evidence from multiple sources into unified, authoritative-seeming
 documents and stacking authority signals to overwhelm safety filters.
 """
-
 from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime
 from typing import Any
-
 from pydantic import BaseModel, Field
+
+from loom.error_responses import handle_tool_errors
 
 logger_name = "loom.tools.evidence_fusion"
 
@@ -41,6 +41,7 @@ class AuthorityStackResult(BaseModel):
     stack_id: str = ""
 
 
+@handle_tool_errors("research_fuse_evidence")
 async def research_fuse_evidence(
     claims: list[str],
     sources: list[str] | None = None,
@@ -121,6 +122,7 @@ async def research_fuse_evidence(
         return {"error": str(exc), "tool": "research_fuse_evidence"}
 
 
+@handle_tool_errors("research_authority_stack")
 async def research_authority_stack(
     prompt: str,
     authority_layers: int = 5,

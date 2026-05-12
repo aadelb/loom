@@ -3,12 +3,13 @@
 Enables DSPy to use Loom's LLM cascade instead of its own instances,
 ensuring all costs are tracked and routed through the same provider fallback chain.
 """
-
 from __future__ import annotations
 
 import logging
 import time
 from typing import Any
+
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.dspy_bridge")
 
@@ -124,6 +125,7 @@ class LoomDSPyLM:
             raise
 
 
+@handle_tool_errors("research_dspy_configure")
 async def research_dspy_configure(
     model: str = "auto",
     max_tokens: int = 2000,
@@ -201,6 +203,7 @@ async def research_dspy_configure(
         }
 
 
+@handle_tool_errors("research_dspy_cost_report")
 async def research_dspy_cost_report() -> dict[str, Any]:
     """Report DSPy's cumulative LLM usage through Loom's cascade.
 

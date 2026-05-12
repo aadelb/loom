@@ -1,8 +1,7 @@
 """Domain intelligence tools — WHOIS, DNS lookup, and port scanning."""
-
 from __future__ import annotations
-import asyncio
 
+import asyncio
 import ipaddress
 import logging
 import re
@@ -11,6 +10,7 @@ import subprocess
 from typing import Any
 
 from loom.input_validators import validate_domain, validate_ip, ValidationError
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.domain_intel")
 
@@ -79,6 +79,7 @@ def _run_nmap(cmd: list[str]) -> tuple[str, int]:
     return result.stdout, result.returncode
 
 
+@handle_tool_errors("research_whois")
 async def research_whois(domain: str) -> dict[str, Any]:
     """Run whois lookup on a domain.
 
@@ -211,6 +212,7 @@ async def research_whois(domain: str) -> dict[str, Any]:
         return {"domain": domain, "error": str(exc)}
 
 
+@handle_tool_errors("research_dns_lookup")
 async def research_dns_lookup(
     domain: str, record_types: list[str] | None = None
 ) -> dict[str, Any]:
@@ -319,6 +321,7 @@ async def research_dns_lookup(
     return output
 
 
+@handle_tool_errors("research_nmap_scan")
 async def research_nmap_scan(
     target: str, ports: str = "80,443,8080,8443", scan_type: str = "basic"
 ) -> dict[str, Any]:

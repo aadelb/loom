@@ -7,7 +7,6 @@ Usage:
     research_do_expert("What are the latest AI safety vulnerabilities?")
     research_do_expert("Analyze supply chain risks in semiconductors", darkness_level=7)
 """
-
 from __future__ import annotations
 
 import asyncio
@@ -15,9 +14,12 @@ import logging
 import time
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 log = logging.getLogger("loom.do_expert")
 
 
+@handle_tool_errors("research_do_expert")
 async def research_do_expert(
     instruction: str,
     quality: str = "expert",

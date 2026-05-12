@@ -1,5 +1,4 @@
 """Ethereum blockchain analysis — transaction decoding and DeFi security auditing."""
-
 from __future__ import annotations
 
 import logging
@@ -7,8 +6,9 @@ import os
 import re
 from decimal import Decimal
 from typing import Any
-
 import httpx
+
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.ethereum_tools")
 
@@ -62,6 +62,7 @@ def _validate_tx_hash(tx_hash: str) -> bool:
     return bool(re.match(r"^0x[0-9a-fA-F]{64}$", tx_hash))
 
 
+@handle_tool_errors("research_ethereum_tx_decode")
 async def research_ethereum_tx_decode(tx_hash: str) -> dict[str, Any]:
     """Decode Ethereum transaction from etherscan.io.
 
@@ -125,6 +126,7 @@ async def research_ethereum_tx_decode(tx_hash: str) -> dict[str, Any]:
         return {"tx_hash": tx_hash, "error": f"Request failed: {str(exc)[:100]}", "decoded": None, "pattern": None, "value_eth": 0.0, "status": None}
 
 
+@handle_tool_errors("research_defi_security_audit")
 async def research_defi_security_audit(contract_address: str) -> dict[str, Any]:
     """Audit DeFi smart contract for vulnerabilities.
 

@@ -1,7 +1,11 @@
 """Ensemble Adversarial Training — combine strategies for robustness."""
 from __future__ import annotations
+
 import base64, hashlib, logging, random
 from typing import Any
+
+from loom.error_responses import handle_tool_errors
+
 try:
     from loom.tools.reframe_strategies import ALL_STRATEGIES
 except ImportError:
@@ -11,6 +15,7 @@ logger = logging.getLogger("loom.tools.ensemble_attack")
 DEFAULT_STRATEGIES = ["ethical_anchor", "deep_inception", "compliance_audit_fork", "reasoning_chain_hijack", "persona"]
 
 
+@handle_tool_errors("research_ensemble_attack")
 async def research_ensemble_attack(
     prompt: str, strategies: list[str] | None = None, combination_method: str = "sequential", max_strategies: int = 5,
 ) -> dict[str, Any]:
@@ -40,6 +45,7 @@ async def research_ensemble_attack(
         return {"error": str(exc), "tool": "research_ensemble_attack"}
 
 
+@handle_tool_errors("research_attack_portfolio")
 async def research_attack_portfolio(target_model: str = "auto", portfolio_size: int = 10) -> dict[str, Any]:
     """Build diversified attack portfolio using portfolio theory.
 

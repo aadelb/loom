@@ -1,5 +1,4 @@
 """research_deception_job_scan — Analyze job postings for deception signals."""
-
 from __future__ import annotations
 
 import asyncio
@@ -8,8 +7,9 @@ import re
 from datetime import UTC, datetime, timedelta
 from typing import Any
 from urllib.parse import quote
-
 import httpx
+
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.deception_job_scanner")
 
@@ -154,6 +154,7 @@ async def _search_company_glassdoor(company_name: str) -> int:
     return 0
 
 
+@handle_tool_errors("research_deception_job_scan")
 async def research_deception_job_scan(
     job_url: str = "", job_text: str = ""
 ) -> dict[str, Any]:

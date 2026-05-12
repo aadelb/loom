@@ -1,12 +1,12 @@
 """Discord OSINT intelligence — public server discovery and analysis."""
-
 from __future__ import annotations
 
 import logging
 import re
 from typing import Any
-
 import httpx
+
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.discord_osint")
 
@@ -166,6 +166,7 @@ def _extract_server_info_from_html(html: str) -> dict[str, Any]:
     return info
 
 
+@handle_tool_errors("research_discord_intel")
 async def research_discord_intel(
     server_id: str = "",
     invite_code: str = "",

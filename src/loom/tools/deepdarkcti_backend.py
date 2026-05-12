@@ -1,13 +1,13 @@
 """deepdarkCTI threat intelligence aggregation — dark web & public feed collection."""
-
 from __future__ import annotations
 
 import logging
 import re
 import time
 from typing import Any
-
 import httpx
+
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.deepdarkcti_backend")
 
@@ -102,6 +102,7 @@ def _extract_iocs(text: str) -> list[dict[str, Any]]:
     return iocs
 
 
+@handle_tool_errors("research_dark_cti")
 def research_dark_cti(
     query: str,
     sources: list[str] | None = None,

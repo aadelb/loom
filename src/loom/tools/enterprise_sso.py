@@ -5,7 +5,6 @@ Tools:
     research_sso_validate_token — Validate an SSO token (structure, expiry, signature format)
     research_sso_user_info — Extract user info from SSO token (JWT claims parsing)
 """
-
 from __future__ import annotations
 
 import base64
@@ -14,6 +13,8 @@ import logging
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, Literal
+
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.enterprise_sso")
 
@@ -75,6 +76,7 @@ def _decode_jwt_parts(token: str) -> tuple[dict, dict] | None:
         return None
 
 
+@handle_tool_errors("research_sso_configure")
 async def research_sso_configure(
     provider: Literal["saml", "oidc", "oauth2", "ldap"] = "saml",
     metadata_url: str = "",
@@ -134,6 +136,7 @@ async def research_sso_configure(
         }
 
 
+@handle_tool_errors("research_sso_validate_token")
 async def research_sso_validate_token(
     token: str,
     provider: Literal["saml", "oidc", "oauth2", "ldap", "auto"] = "auto",
@@ -228,6 +231,7 @@ async def research_sso_validate_token(
         return {"valid": False, "provider": provider, "reason": str(e)}
 
 
+@handle_tool_errors("research_sso_user_info")
 async def research_sso_user_info(token: str) -> dict[str, Any]:
     """Extract user info from SSO token (JWT claims parsing).
 

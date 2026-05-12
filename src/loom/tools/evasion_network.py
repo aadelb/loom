@@ -1,5 +1,4 @@
 """Evasion network tools — Tor circuit rotation and proxy testing."""
-
 from __future__ import annotations
 
 import asyncio
@@ -7,10 +6,10 @@ import logging
 import os
 import time
 from typing import Any
-
 import httpx
 
 from loom.validators import validate_url, UrlSafetyError
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.evasion_network")
 
@@ -53,6 +52,7 @@ def _send_tor_rotate() -> tuple[bool, str, str]:
         return (False, "", f"Error: {type(exc).__name__}")
 
 
+@handle_tool_errors("research_tor_rotate")
 async def research_tor_rotate() -> dict[str, Any]:
     """Rotate Tor circuit via NEWNYM signal (rate-limited 1 per 10s).
     Returns: {rotated, new_ip, circuit_id, latency_ms}
@@ -82,6 +82,7 @@ async def research_tor_rotate() -> dict[str, Any]:
                 "latency_ms": int((time.time() - start_time) * 1000)}
 
 
+@handle_tool_errors("research_proxy_check")
 async def research_proxy_check(proxy_url: str = "") -> dict[str, Any]:
     """Test proxy for connectivity and anonymity.
     Returns: {proxy, working, ip_visible, anonymity_level, latency_ms}

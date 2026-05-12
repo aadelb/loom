@@ -17,7 +17,6 @@ Combines all available Loom tools into a single orchestrated 12-stage pipeline:
 
 NOTE: Bidirectional connection with research_full_pipeline via shared cache.
 """
-
 from __future__ import annotations
 
 import asyncio
@@ -28,6 +27,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 from loom.validators import EXTERNAL_TIMEOUT_SECS
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.deep")
 
@@ -268,6 +268,7 @@ def _extract_factual_claims(text: str, max_claims: int = 3) -> list[str]:
     return claims
 
 
+@handle_tool_errors("research_deep")
 async def research_deep(
     query: str,
     depth: int = 2,

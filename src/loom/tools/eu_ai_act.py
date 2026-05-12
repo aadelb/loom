@@ -7,7 +7,6 @@ Provides five tools for authorized compliance assessment:
   - research_ai_data_governance: Evaluate data handling practices
   - research_ai_risk_classify: Classify system risk level per EU AI Act tiers
 """
-
 from __future__ import annotations
 
 import logging
@@ -15,10 +14,12 @@ import re
 from typing import Any, Literal
 
 from loom.text_utils import jaccard_similarity
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.eu_ai_act")
 
 
+@handle_tool_errors("research_ai_transparency_check")
 def research_ai_transparency_check(
     model_response: str, model_name: str = ""
 ) -> dict[str, Any]:
@@ -177,6 +178,7 @@ def research_ai_transparency_check(
         return {"error": str(exc), "tool": "research_ai_transparency_check"}
 
 
+@handle_tool_errors("research_ai_bias_audit")
 def research_ai_bias_audit(
     prompts: list[str], responses: list[str]
 ) -> dict[str, Any]:
@@ -383,6 +385,7 @@ def research_ai_bias_audit(
         return {"error": str(exc), "tool": "research_ai_bias_audit"}
 
 
+@handle_tool_errors("research_ai_robustness_test")
 def research_ai_robustness_test(
     model_name: str, test_prompts: list[str]
 ) -> dict[str, Any]:
@@ -484,6 +487,7 @@ def research_ai_robustness_test(
         return {"error": str(exc), "tool": "research_ai_robustness_test"}
 
 
+@handle_tool_errors("research_ai_data_governance")
 def research_ai_data_governance(system_description: str) -> dict[str, Any]:
     """Assess data handling practices against EU AI Act requirements.
 
@@ -677,6 +681,7 @@ def research_ai_data_governance(system_description: str) -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_ai_data_governance"}
 
 
+@handle_tool_errors("research_ai_risk_classify")
 def research_ai_risk_classify(system_description: str) -> dict[str, Any]:
     """Classify AI system risk level per EU AI Act Annex III tiers.
 

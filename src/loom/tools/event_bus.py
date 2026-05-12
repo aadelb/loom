@@ -3,7 +3,6 @@
 Provides pub/sub event emission, subscription, and history retrieval
 for asynchronous tool-to-tool messaging without direct coupling.
 """
-
 from __future__ import annotations
 
 import logging
@@ -12,6 +11,8 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.event_bus")
 
 # Module-level event storage and subscriptions
@@ -19,6 +20,7 @@ _events: deque[dict[str, Any]] = deque(maxlen=1000)
 _subscribers: dict[str, list[dict[str, Any]]] = defaultdict(list)
 
 
+@handle_tool_errors("research_event_emit")
 async def research_event_emit(
     event_type: str,
     data: dict[str, Any],
@@ -73,6 +75,7 @@ async def research_event_emit(
         return {"error": str(exc), "tool": "research_event_emit"}
 
 
+@handle_tool_errors("research_event_subscribe")
 async def research_event_subscribe(
     event_type: str,
     callback_tool: str = "",
@@ -113,6 +116,7 @@ async def research_event_subscribe(
         return {"error": str(exc), "tool": "research_event_subscribe"}
 
 
+@handle_tool_errors("research_event_history")
 async def research_event_history(
     event_type: str = "",
     limit: int = 50,

@@ -4,7 +4,6 @@ Forces finding, fetching, and analysis of multiple URLs related to a research
 topic, then passes all content to a long-context model (Gemini 3.1 Pro, 1M tokens)
 for comprehensive synthesis.
 """
-
 from __future__ import annotations
 
 import asyncio
@@ -12,6 +11,8 @@ import logging
 import subprocess
 import tempfile
 from typing import Any
+
+from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.deep_url_analysis")
 
@@ -21,6 +22,7 @@ _PAID_PROVIDERS = ["exa", "tavily", "brave", "firecrawl"]
 _ALL_PROVIDERS = _FREE_PROVIDERS + _PAID_PROVIDERS
 
 
+@handle_tool_errors("research_deep_url_analysis")
 async def research_deep_url_analysis(
     topic: str,
     num_urls: int = 10,
