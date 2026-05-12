@@ -22,6 +22,9 @@ _SHARED_RESULTS: dict[str, dict[str, Any]] = {}
 # TTL in seconds (5 minutes)
 _RESULT_TTL = 300
 
+# Sentinel for "entry found but result is None"
+_CACHE_HIT_SENTINEL = object()
+
 
 def _normalize_query_hash(query: str) -> str:
     """Generate SHA-256 hash of normalized query (lowercase, trimmed)."""
@@ -52,7 +55,8 @@ def check_shared_cache(query: str) -> dict[str, Any] | None:
         return None
 
     logger.debug("shared_cache_hit query_hash=%s age_secs=%.1f", query_hash[:8], time.time() - stored_time)
-    return cached.get("results")
+    # Use sentinel to distinguish "not in cache" from "cached result is None"
+    return cached.get("results", _CACHE_HIT_SENTINEL)
 
 
 def store_shared_cache(query: str, results: dict[str, Any]) -> None:
@@ -74,3 +78,22 @@ def clear_shared_cache() -> None:
     """Clear all entries from shared cache (useful for testing)."""
     _SHARED_RESULTS.clear()
     logger.debug("shared_cache_cleared")
+
+
+def _cleanup_expired_entries() -> int:
+    """Remove all expired entries from shared cache.
+
+    Returns:
+        Number of entries removed.
+    """
+    now = time.time()
+    expired_keys = [
+        key
+        for key, cached in _SHARED_RESULTS.items()
+        if now - cached.get("_stored_at", 0) > _RESULT_TTL
+    ]
+    for key in expired_keys:
+        del _SHARED_RESULTS[key]
+    if expired_keys:
+        logger.debug("shared_cache_cleanup removed=%d", len(expired_keys))
+    return len(expired_keys)

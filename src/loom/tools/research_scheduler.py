@@ -48,7 +48,7 @@ def _save_schedules(data: dict[str, Any]) -> None:
             tmp_path.unlink()
 
 
-async def research_schedule_create(
+def research_schedule_create(
     name: str,
     tool_name: str,
     params: dict,
@@ -101,7 +101,7 @@ async def research_schedule_create(
         return {"error": str(exc), "tool": "research_schedule_create"}
 
 
-async def research_schedule_list() -> dict[str, Any]:
+def research_schedule_list() -> dict[str, Any]:
     """List all scheduled tasks with metadata.
 
     Returns:
@@ -135,7 +135,7 @@ async def research_schedule_list() -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_schedule_list"}
 
 
-async def research_schedule_check() -> dict[str, Any]:
+def research_schedule_check() -> dict[str, Any]:
     """Check which scheduled tasks are due for execution.
 
     Returns:

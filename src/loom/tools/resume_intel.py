@@ -183,7 +183,8 @@ Provide suggestions as JSON array with structure:
 
 Only return valid JSON, no markdown."""
 
-            response = await provider.chat(prompt, max_tokens=500, temperature=0.3)
+            messages = [{"role": "user", "content": prompt}]
+            response = await provider.chat(messages, max_tokens=500, temperature=0.3)
             if response and response.text:
                 try:
                     # Try to extract JSON from response (non-greedy match)
@@ -443,7 +444,8 @@ Generate JSON with this structure:
 
 Generate 2-3 questions per category. Only return valid JSON."""
 
-    response = await provider.chat(prompt, max_tokens=1000, temperature=0.5)
+    messages = [{"role": "user", "content": prompt}]
+    response = await provider.chat(messages, max_tokens=1000, temperature=0.5)
 
     if not response or not response.text:
         return _generate_basic_questions(job_description, role_title)

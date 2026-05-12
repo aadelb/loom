@@ -127,6 +127,9 @@ After the synthesized report, add a JSON block like this:
 
 Generate the report now."""
 
+    if not _LLM_AVAILABLE:
+        raise RuntimeError("LLM tools not available (failed to import llm module)")
+
     try:
         response = await _call_with_cascade(
             messages=[{"role": "user", "content": synthesis_prompt}],

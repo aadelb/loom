@@ -63,7 +63,8 @@ def _search_journal_entries(query: str, category: str, limit: int) -> tuple[list
 
     entries.sort(key=lambda e: e.get("timestamp", ""), reverse=True)
     for entry in entries[:limit]:
-        entry["preview"] = entry.get("content", "")[:150] + "..."
+        content = entry.get("content", "")
+        entry["preview"] = content[:150] + ("..." if len(content) > 150 else "")
 
     return entries[:limit], len(entries)
 
@@ -91,7 +92,7 @@ def _read_journal_timeline(months: int) -> tuple[list[dict[str, Any]], int, int]
                     entry = json.loads(line)
                     try:
                         dt = datetime.fromisoformat(entry.get("timestamp", ""))
-                        week = dt.strftime("%Y-W%V")
+                        week = dt.strftime("%G-W%V")
                         if week not in entries_by_week:
                             entries_by_week[week] = []
                         entries_by_week[week].append(entry)
@@ -118,7 +119,8 @@ def _read_journal_timeline(months: int) -> tuple[list[dict[str, Any]], int, int]
         timeline.append({"week": week, "entries_count": len(entries), "categories": cats, "highlights": highlights})
         total += len(entries)
 
-    return timeline[:52], total, len(timeline)
+    active_weeks = len(timeline)
+    return timeline[:52], total, active_weeks
 
 
 async def research_journal_add(title: str, content: str, tags: list[str] | None = None, category: str = "finding") -> dict[str, Any]:

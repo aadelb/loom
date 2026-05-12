@@ -43,8 +43,15 @@ async def research_checkpoint_save(
     sj = json.dumps(state, default=str)
     conn = await _get_db()
     try:
+        # Check if task exists before insert
+        check = await conn.execute(
+            "SELECT 1 FROM checkpoints WHERE task_id=?",
+            (task_id,),
+        )
+        exists = await check.fetchone() is not None
+
         c = await conn.execute(
-            "INSERT INTO checkpoints VALUES(?,?,?,?,?)ON CONFLICT(task_id)"
+            "INSERT INTO checkpoints VALUES(?,?,?,?,?) ON CONFLICT(task_id) "
             "DO UPDATE SET state=excluded.state,progress=excluded.progress,"
             "updated_at=excluded.updated_at",
             (task_id, sj, progress_pct, now, now),
@@ -54,7 +61,7 @@ async def research_checkpoint_save(
             "task_id": task_id,
             "progress_pct": progress_pct,
             "checkpoint_size_bytes": len(sj.encode()),
-            "action": "inserted" if c.rowcount == 1 else "updated",
+            "action": "updated" if exists else "inserted",
         }
     finally:
         await conn.close()
@@ -81,6 +88,9 @@ async def research_checkpoint_resume(task_id: str) -> dict[str, Any]:
                 "age_seconds": None,
             }
         u = datetime.fromisoformat(r[2])
+        # Ensure timezone-aware comparison
+        if u.tzinfo is None:
+            u = u.replace(tzinfo=UTC)
         a = (datetime.now(UTC) - u).total_seconds()
         return {
             "task_id": task_id,
@@ -114,6 +124,9 @@ async def research_checkpoint_list(status: str = "all") -> dict[str, Any]:
         cp, ic = [], 0
         for tid, p, ts in r:
             u = datetime.fromisoformat(ts)
+            # Ensure timezone-aware comparison
+            if u.tzinfo is None:
+                u = u.replace(tzinfo=UTC)
             ag = (n - u).total_seconds()
             if status == "incomplete" and p >= 100:
                 continue

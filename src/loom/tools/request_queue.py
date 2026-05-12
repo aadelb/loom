@@ -31,7 +31,9 @@ async def research_queue_add(tool_name: str, params: dict[str, Any], priority: i
             "queued_at": datetime.now(UTC).isoformat(),
         }
         await _queue.put((priority, timestamp, item))
-        return {"queued": True, "queue_id": queue_id, "position": _queue.qsize(), "priority": priority}
+        async with _lock:
+            position = _queue.qsize()
+        return {"queued": True, "queue_id": queue_id, "position": position, "priority": priority}
     except Exception as exc:
         logger.error("queue_add_error: %s", exc)
         return {"error": str(exc), "tool": "research_queue_add"}
@@ -46,9 +48,10 @@ async def research_queue_status() -> dict[str, Any]:
         oldest_waiting_seconds = None
         if not _queue.empty():
             try:
+                # Access under lock to prevent race between empty() check and _queue[0] access
                 _, timestamp, _ = _queue._queue[0]  # type: ignore
                 oldest_waiting_seconds = datetime.now(UTC).timestamp() - timestamp
-            except (IndexError, AttributeError):
+            except (IndexError, AttributeError, TypeError):
                 pass
 
         by_priority: dict[int, int] = {}
@@ -73,7 +76,7 @@ async def research_queue_status() -> dict[str, Any]:
 
 async def research_queue_drain(max_items: int = 10) -> dict[str, Any]:
     """Dequeue up to max_items in FIFO order within priority. Execution is caller's responsibility."""
-    global _processing_count, _completed_count
+    global _processing_count
     try:
         if max_items < 1:
             raise ValueError("max_items must be at least 1")
@@ -91,10 +94,9 @@ async def research_queue_drain(max_items: int = 10) -> dict[str, Any]:
                 break
 
         async with _lock:
-            _processing_count -= len(drained_items)
-            _completed_count += len(drained_items)
+            remaining_queue = _queue.qsize()
 
-        return {"drained": len(drained_items), "items": drained_items, "remaining": _queue.qsize()}
+        return {"drained": len(drained_items), "items": drained_items, "remaining": remaining_queue}
     except Exception as exc:
         logger.error("queue_drain_error: %s", exc)
         return {"error": str(exc), "tool": "research_queue_drain"}

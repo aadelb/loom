@@ -80,14 +80,18 @@ async def research_aggregate_results(
 
         elif strategy == "deduplicate":
             text_fields = {}
+            non_text_fields = {}
             for result in results:
                 for key, value in result.items():
                     if isinstance(value, str):
                         text_fields.setdefault(key, []).append(value)
                     else:
-                        aggregated[key] = value
+                        non_text_fields.setdefault(key, []).append(value)
             for key, texts in text_fields.items():
                 aggregated[key] = "\n".join(_deduplicate_texts(texts))
+                fields_merged += 1
+            for key, values in non_text_fields.items():
+                aggregated[key] = values[0] if len(values) == 1 else values
                 fields_merged += 1
 
         elif strategy == "rank":

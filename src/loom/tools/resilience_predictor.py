@@ -109,7 +109,7 @@ async def research_predict_resilience(
     # Confidence based on complexity and age
     confidence = {"simple": 0.85, "medium": 0.75, "complex": 0.65, "novel": 0.4}.get(complexity, 0.65)
     if age_days > 730:
-        confidence = min(0.95, confidence + 0.15)
+        confidence = min(1.0, confidence + 0.15)
     elif age_days < 30:
         confidence = max(0.3, confidence - 0.15)
 

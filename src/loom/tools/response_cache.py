@@ -160,10 +160,10 @@ def research_response_cache_stats() -> dict[str, Any]:
     try:
         now = time.time()
 
-        # Clean expired entries
-        expired = [k for k, v in _response_cache.items() if now > v["expires_at"]]
-        for k in expired:
-            del _response_cache[k]
+        # Clean expired entries (atomic to prevent TOCTOU race conditions)
+        _response_cache = {
+            k: v for k, v in _response_cache.items() if now <= v["expires_at"]
+        }
 
         total_entries = len(_response_cache)
         total_requests = _cache_stats["hits"] + _cache_stats["misses"]
@@ -187,8 +187,9 @@ def research_response_cache_stats() -> dict[str, Any]:
         )
 
         # Rough memory estimate (response + metadata per entry)
-        memory_kb = sum(len(v["response"]) for v in _response_cache.values()) // 1024
-        memory_kb += total_entries * 0.5  # ~500 bytes overhead per entry
+        response_bytes = sum(len(v["response"]) for v in _response_cache.values())
+        overhead_bytes = total_entries * 500  # ~500 bytes overhead per entry
+        memory_kb = (response_bytes + overhead_bytes) / 1024.0
 
         return {
             "entries": total_entries,
