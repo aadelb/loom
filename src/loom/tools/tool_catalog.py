@@ -721,7 +721,7 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
 # ============================================================================
 
 
-async def research_tool_catalog(
+def research_tool_catalog(
     category: str | None = None,
     capability: str | None = None,
 ) -> dict[str, Any]:
@@ -738,6 +738,13 @@ async def research_tool_catalog(
         tools = []
 
         for tool_name, metadata in TOOL_REGISTRY.items():
+            # Validate metadata has required keys
+            required_keys = ["category", "subcategory", "description", "capabilities",
+                           "input_types", "output_types", "dependencies", "connects_to"]
+            if not all(key in metadata for key in required_keys):
+                logger.warning(f"Tool '{tool_name}' missing required metadata keys")
+                continue
+
             # Apply filters
             if category and metadata["category"] != category:
                 continue
@@ -771,7 +778,7 @@ async def research_tool_catalog(
         return {"error": str(exc), "tool": "research_tool_catalog"}
 
 
-async def research_tool_graph() -> dict[str, Any]:
+def research_tool_graph() -> dict[str, Any]:
     """Return complete tool connection graph.
 
     Shows which tools can feed into which others based on output→input matching.
@@ -796,6 +803,7 @@ async def research_tool_graph() -> dict[str, Any]:
         # Build edges from connects_to relationships
         edges = []
         edge_set = set()
+        invalid_refs = []
 
         for tool_name, metadata in TOOL_REGISTRY.items():
             for target in metadata["connects_to"]:
@@ -809,6 +817,12 @@ async def research_tool_graph() -> dict[str, Any]:
                             "reason": f"{metadata['output_types']} → {TOOL_REGISTRY[target]['input_types']}",
                         })
                         edge_set.add(edge_id)
+                else:
+                    invalid_refs.append((tool_name, target))
+
+        # Warn about invalid tool references
+        if invalid_refs:
+            logger.warning(f"Found {len(invalid_refs)} invalid tool references in connects_to: {invalid_refs[:5]}")
 
         # Identify clusters (category-based grouping)
         clusters = {}
@@ -825,13 +839,14 @@ async def research_tool_graph() -> dict[str, Any]:
             "node_count": len(nodes),
             "edge_count": len(edges),
             "cluster_count": len(clusters),
+            "invalid_references": len(invalid_refs),
         }
     except Exception as exc:
         logger.exception("research_tool_graph failed")
         return {"error": str(exc), "tool": "research_tool_graph"}
 
 
-async def research_tool_pipeline(
+def research_tool_pipeline(
     goal: str,
     max_steps: int = 5,
 ) -> dict[str, Any]:
@@ -861,7 +876,9 @@ async def research_tool_pipeline(
         elif "summarize" in goal_lower or "analyze" in goal_lower:
             target_category = "llm"
         else:
-            target_category = None
+            # Default to search if goal is unrecognized
+            target_category = "search"
+            logger.debug(f"Goal '{goal}' did not match specific categories; defaulting to 'search'")
 
         # Find tools in target category
         pipeline = []
@@ -893,7 +910,7 @@ async def research_tool_pipeline(
         return {"error": str(exc), "tool": "research_tool_pipeline"}
 
 
-async def research_tool_standalone(tool_name: str) -> dict[str, Any]:
+def research_tool_standalone(tool_name: str) -> dict[str, Any]:
     """Get complete standalone usage info for a tool.
 
     Args:
@@ -906,7 +923,8 @@ async def research_tool_standalone(tool_name: str) -> dict[str, Any]:
         if tool_name not in TOOL_REGISTRY:
             return {
                 "error": f"Tool '{tool_name}' not found",
-                "available_tools": list(TOOL_REGISTRY.keys())[:10],
+                "available_tools": list(TOOL_REGISTRY.keys()),
+                "total_available": len(TOOL_REGISTRY),
             }
 
         metadata = TOOL_REGISTRY[tool_name]

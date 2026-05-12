@@ -68,7 +68,7 @@ async def _check_pgp(client: httpx.AsyncClient, email: str) -> list[dict[str, st
             _PGP_KEYSERVER.format(email=quote(email)), timeout=10.0
         )
         if resp.status_code == 200:
-            return [{"source": "openpgp", "email": email, "key_found": "true"}]
+            return [{"source": "openpgp", "email": email, "key_found": True}]
     except Exception:
         pass
     return []
@@ -187,6 +187,14 @@ async def research_threat_profile(
                     platforms_found.append(result)
 
             timestamps = []
+            if gh_data.get("created_at"):
+                try:
+                    # Parse ISO 8601 timestamp to Unix timestamp
+                    from datetime import datetime
+                    dt = datetime.fromisoformat(gh_data["created_at"].replace("Z", "+00:00"))
+                    timestamps.append(int(dt.timestamp()))
+                except Exception:
+                    pass
             if hn_data.get("created"):
                 timestamps.append(hn_data["created"])
 

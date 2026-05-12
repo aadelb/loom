@@ -240,9 +240,13 @@ async def research_tool_dependencies(
         transitive_deps.discard(tool_name)  # Don't include self
 
         execution_order = get_execution_plan([tool_name])
-        # Remove the last group which is the tool itself
-        if execution_order and execution_order[-1] == [tool_name]:
-            execution_order = execution_order[:-1]
+        # Remove the tool itself from all execution groups
+        execution_order = [
+            [t for t in group if t != tool_name]
+            for group in execution_order
+        ]
+        # Remove empty groups
+        execution_order = [group for group in execution_order if group]
 
         return {
             "tool": tool_name,
@@ -554,7 +558,10 @@ async def research_dependency_graph_stats() -> dict[str, Any]:
             if tool in depths:
                 return depths[tool]
             if tool in visited_global:
-                return 0
+                # Circular dependency detected
+                raise ValueError(
+                    f"Circular dependency detected in graph involving tool: {tool}"
+                )
             visited_global.add(tool)
 
             deps = DEPENDENCY_GRAPH.get(tool, [])

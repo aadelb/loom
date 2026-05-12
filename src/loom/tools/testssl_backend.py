@@ -224,10 +224,8 @@ async def research_testssl(
     # Determine testssl command
     testssl_cmd = "testssl.sh" if shutil.which("testssl.sh") else "testssl"
 
+    tmp_file = f"/tmp/testssl_{uuid.uuid4().hex}.json"
     try:
-        # Create temp file for JSON output
-        tmp_file = f"/tmp/testssl_{uuid.uuid4().hex}.json"
-
         # Build testssl command
         cmd = [
             testssl_cmd,
@@ -316,11 +314,17 @@ async def research_testssl(
                         }
                     )
                 elif id_val.startswith("cipher_"):
+                    bits_val = result_item.get("bits")
+                    if isinstance(bits_val, str):
+                        try:
+                            bits_val = int(bits_val)
+                        except (ValueError, TypeError):
+                            bits_val = 0
                     ciphers.append(
                         {
                             "name": result_item.get("cipher", id_val),
                             "strength": severity,
-                            "bits": result_item.get("bits", 0),
+                            "bits": bits_val if isinstance(bits_val, int) else 0,
                         }
                     )
                 elif id_val.startswith("cert_"):
@@ -347,10 +351,6 @@ async def research_testssl(
         high_vulns = len([v for v in vulnerabilities if v.get("severity") == "HIGH"])
         med_vulns = len([v for v in vulnerabilities if v.get("severity") == "MEDIUM"])
 
-        # Clean up temp file
-        with contextlib.suppress(Exception):
-            os.remove(tmp_file)
-
         return {
             "host": host,
             "port": port,
@@ -367,7 +367,7 @@ async def research_testssl(
             "testssl_available": True,
         }
 
-    except TimeoutError:
+    except subprocess.TimeoutExpired:
         return {
             "host": host,
             "port": port,
@@ -392,3 +392,7 @@ async def research_testssl(
             "error": f"testssl subprocess error: {type(e).__name__}: {e}",
             "testssl_available": True,
         }
+    finally:
+        # Clean up temp file
+        with contextlib.suppress(Exception):
+            os.remove(tmp_file)

@@ -107,11 +107,6 @@ def _extract_entities(text: str) -> list[dict[str, Any]]:
                         entity_text = " ".join(word for word, tag in subtree.leaves())
                         entity_type = subtree.label()
 
-                        if entity_text not in entity_counts:
-                            entity_counts[entity_text] = {}
-
-                        entity_counts[entity_type] = entity_counts.get(entity_type, 0) + 1
-
                         # Track by type
                         if entity_text not in entity_counts:
                             entity_counts[entity_text] = {"type": entity_type, "count": 0}
@@ -348,7 +343,7 @@ def _compute_language_stats(text: str) -> dict[str, Any]:
         }
 
 
-async def research_text_analyze(
+def research_text_analyze(
     text: str,
     analyses: list[str] | None = None,
 ) -> dict[str, Any]:

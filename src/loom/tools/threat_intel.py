@@ -194,7 +194,7 @@ async def _circl_hashlookup(
     return {}
 
 
-async def _extract_urls_from_text(text: str) -> list[str]:
+def _extract_urls_from_text(text: str) -> list[str]:
     """Extract URLs from text content."""
     url_pattern = r'https?://[^\s<>"{}|\\^`\[\]]*'
     return re.findall(url_pattern, text)
@@ -655,7 +655,7 @@ async def research_domain_reputation(domain: str) -> dict[str, Any]:
 
     async def _run() -> dict[str, Any]:
         verdicts: dict[str, dict[str, Any]] = {}
-        malicious_votes = 0
+        malicious_votes = 0.0
         total_sources = 0
 
         async with httpx.AsyncClient(
