@@ -230,9 +230,9 @@ async def research_fetch(
 
     # Wire config defaults for auto_escalate
     if auto_escalate is None:
-        from loom.config import get_config
+        from loom.config_manager import fetch_auto_escalate
 
-        auto_escalate = get_config().get("FETCH_AUTO_ESCALATE", False)
+        auto_escalate = fetch_auto_escalate()
 
     logger.info(
         "fetch_start url=%s backend=%s mode=%s return=%s bypass_cache=%s auto_escalate=%s",

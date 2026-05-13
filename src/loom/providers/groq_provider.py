@@ -6,79 +6,29 @@ with global rate limiting (30 parallel requests by default).
 
 from __future__ import annotations
 
-import asyncio
-import json
-import logging
-import os
-import time
 from typing import Any
 
-import httpx
-
-from loom.providers.base import LLMProvider, LLMResponse, _estimate_cost
-
-logger = logging.getLogger("loom.llm")
-
-# Global semaphore for Groq rate limiting
-_GROQ_SEMAPHORE: asyncio.Semaphore | None = None
+from loom.providers.llm_openai_compat import OpenAICompatProvider
 
 
-def _get_groq_semaphore(max_parallel: int = 30) -> asyncio.Semaphore:
-    """Get or create the global Groq semaphore."""
-    global _GROQ_SEMAPHORE
-    if _GROQ_SEMAPHORE is None:
-        _GROQ_SEMAPHORE = asyncio.Semaphore(max_parallel)
-    return _GROQ_SEMAPHORE
-
-
-class GroqProvider(LLMProvider):
+class GroqProvider(OpenAICompatProvider):
     """Groq provider using OpenAI-compatible API.
 
     Attributes:
-        name: "groq"
-        default_model: "llama-3.3-70b-versatile"
+        PROVIDER_NAME: "groq"
+        DEFAULT_MODEL: "llama-3.3-70b-versatile"
+        SEMAPHORE_SIZE: 30 (Groq is very fast)
     """
 
-    name = "groq"
-    default_model = "llama-3.3-70b-versatile"
-
-    def __init__(self, max_parallel: int = 30) -> None:
-        """Initialize Groq provider.
-
-        Args:
-            max_parallel: Max concurrent requests (default 30, Groq is very fast)
-        """
-        self.endpoint = os.environ.get("GROQ_ENDPOINT", "https://api.groq.com/openai/v1")
-        self.api_key = os.environ.get("GROQ_API_KEY", "")
-        self.semaphore = _get_groq_semaphore(max_parallel)
-        self.client: httpx.AsyncClient | None = None
-
-    async def _get_client(self) -> httpx.AsyncClient:
-        """Lazy-initialize async HTTP client."""
-        if self.client is None:
-            self.client = httpx.AsyncClient(
-                base_url=self.endpoint,
-                headers={
-                    "Authorization": f"Bearer {self.api_key}",
-                    "Content-Type": "application/json",
-                },
-                timeout=httpx.Timeout(60.0),
-            )
-        return self.client
-
-    def available(self) -> bool:
-        """Check if Groq is configured with a non-empty key.
-
-        Rejects whitespace-only keys so `available()` does not lie and cause
-        a 401 at the API boundary.
-        """
-        return bool(self.api_key and self.api_key.strip())
-
-    async def close(self) -> None:
-        """Close the HTTP client."""
-        if self.client is not None:
-            await self.client.aclose()
-            self.client = None
+    PROVIDER_NAME = "groq"
+    ENV_KEY = "GROQ_API_KEY"
+    BASE_URL = "https://api.groq.com/openai/v1"
+    DEFAULT_MODEL = "llama-3.3-70b-versatile"
+    ENV_ENDPOINT_KEY = "GROQ_ENDPOINT"
+    SUPPORTS_EMBED = False
+    COST_INPUT_PER_M = 0.59
+    COST_OUTPUT_PER_M = 0.79
+    SEMAPHORE_SIZE = 30
 
     async def chat(
         self,
@@ -89,8 +39,10 @@ class GroqProvider(LLMProvider):
         temperature: float = 0.2,
         response_format: dict[str, Any] | None = None,
         timeout: int = 60,  # noqa: ASYNC109
-    ) -> LLMResponse:
+    ):
         """Send chat messages to Groq.
+
+        Groq-specific model validation: rejects non-Groq models and cross-provider models.
 
         Args:
             messages: List of message dicts with 'role' and 'content'
@@ -106,114 +58,24 @@ class GroqProvider(LLMProvider):
         # Validate timeout to prevent abuse
         timeout = max(1, min(int(timeout), 600))
         # Use provider's own default if passed model isn't a Groq-compatible model
-        GROQ_MODELS = {"llama-3.3-70b-versatile", "llama-3.1-70b-versatile", "mixtral-8x7b-32768", "gemma2-9b-it", "llama-guard-3-8b"}
+        GROQ_MODELS = {
+            "llama-3.3-70b-versatile",
+            "llama-3.1-70b-versatile",
+            "mixtral-8x7b-32768",
+            "gemma2-9b-it",
+            "llama-guard-3-8b",
+        }
         if model and "/" in model:
             model = self.default_model
         elif model and model not in GROQ_MODELS:
             model = self.default_model
         model = model or self.default_model
-        async with self.semaphore:
-            return await self._chat_impl(
-                messages,
-                model=model,
-                max_tokens=max_tokens,
-                temperature=temperature,
-                timeout=timeout,
-            )
 
-    async def _chat_impl(
-        self,
-        messages: list[dict[str, str]],
-        model: str,
-        max_tokens: int,
-        temperature: float,
-        timeout: int,  # noqa: ASYNC109
-    ) -> LLMResponse:
-        """Internal chat implementation."""
-        client = await self._get_client()
-        start = time.time()
-
-        payload = {
-            "model": model,
-            "messages": messages,
-            "max_tokens": max_tokens,
-            "temperature": temperature,
-        }
-
-        try:
-            response = await client.post(
-                "/chat/completions",
-                json=payload,
-                timeout=float(timeout),
-            )
-            response.raise_for_status()
-        except httpx.TimeoutException:
-            logger.error("Groq timeout after %.1fs", time.time() - start)
-            raise
-        except httpx.HTTPStatusError as e:
-            logger.error(
-                "Groq error: %d %s",
-                e.response.status_code,
-                e.response.text[:200],
-            )
-            raise
-
-        try:
-            data = response.json()
-        except (json.JSONDecodeError, ValueError):
-            raise RuntimeError(f"Invalid JSON from groq: {response.text[:200]}")
-
-        latency_ms = int((time.time() - start) * 1000)
-
-        # Extract response data
-        choice = data.get("choices", [{}])[0]
-        text = choice.get("message", {}).get("content", "")
-        finish_reason = choice.get("finish_reason")
-
-        # Token counts
-        usage = data.get("usage", {})
-        input_tokens = usage.get("prompt_tokens", 0)
-        output_tokens = usage.get("completion_tokens", 0)
-
-        # Cost estimation
-        cost_usd = _estimate_cost(self.name, model, input_tokens, output_tokens)
-
-        logger.info(
-            "llm_call_ok provider=%s model=%s latency=%dms tokens=%d/%d cost=$%.5f",
-            self.name,
-            model,
-            latency_ms,
-            input_tokens,
-            output_tokens,
-            cost_usd,
-        )
-
-        return LLMResponse(
-            text=text,
+        return await super().chat(
+            messages,
             model=model,
-            input_tokens=input_tokens,
-            output_tokens=output_tokens,
-            cost_usd=cost_usd,
-            latency_ms=latency_ms,
-            provider=self.name,
-            finish_reason=finish_reason,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            response_format=response_format,
+            timeout=timeout,
         )
-
-    async def embed(
-        self,
-        texts: list[str],
-        *,
-        model: str | None = None,
-        timeout: int = 60,  # noqa: ASYNC109
-    ) -> list[list[float]]:
-        """Groq does not support embeddings.
-
-        Args:
-            texts: List of text strings (unused)
-            model: Embedding model (unused)
-            timeout: Per-call timeout in seconds (unused)
-
-        Raises:
-            NotImplementedError: Groq does not provide embedding endpoints
-        """
-        raise NotImplementedError("Groq does not support embeddings")

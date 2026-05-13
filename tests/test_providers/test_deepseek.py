@@ -193,7 +193,7 @@ class TestDeepSeekProvider:
 
             provider = DeepSeekProvider()
             await provider.close()
-            assert provider.client is None
+            assert provider._client is None
 
     async def test_embed_not_implemented(self):
         """Test that embed raises NotImplementedError."""

@@ -22,7 +22,8 @@ from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.competitive_intel")
 
 # Semaphore to limit concurrent DNS/HTTP requests
-_request_semaphore = asyncio.Semaphore(5)
+from loom.providers.semaphore_registry import get_semaphore
+_request_semaphore = get_semaphore("competitive_intel", max_concurrent=5)
 
 
 async def _get_json_semaphore(

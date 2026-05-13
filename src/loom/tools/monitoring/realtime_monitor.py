@@ -151,7 +151,8 @@ async def _fetch_newsapi(client: httpx.AsyncClient, topic: str) -> list[dict[str
     try:
         from loom.config import get_config
 
-        api_key = get_config().get("NEWS_API_KEY", "")
+        from loom.config_manager import _cfg
+        api_key = _cfg().get("NEWS_API_KEY", "")
         if not api_key:
             return []
 
