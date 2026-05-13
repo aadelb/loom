@@ -25,11 +25,9 @@ def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip anomaly_detector: %s", e)
         record_failure("intelligence", "anomaly_detector", str(e))
     try:
-        from loom.tools.breach_check import research_breach_check, research_password_check
+        from loom.tools.breach_check import research_breach_check
         mcp.tool()(wrap_tool(research_breach_check))
         record_success("intelligence", "research_breach_check")
-        mcp.tool()(wrap_tool(research_password_check))
-        record_success("intelligence", "research_password_check")
     except (ImportError, AttributeError) as e:
         log.debug("skip breach_check: %s", e)
         record_failure("intelligence", "breach_check", str(e))
@@ -214,11 +212,9 @@ def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip stego_detect: %s", e)
         record_failure("intelligence", "stego_detect", str(e))
     try:
-        from loom.tools.threat_intel import research_dark_market_monitor, research_malware_bazaar
+        from loom.tools.threat_intel import research_dark_market_monitor
         mcp.tool()(wrap_tool(research_dark_market_monitor))
         record_success("intelligence", "research_dark_market_monitor")
-        mcp.tool()(wrap_tool(research_malware_bazaar))
-        record_success("intelligence", "research_malware_bazaar")
     except (ImportError, AttributeError) as e:
         log.debug("skip threat_intel_mod: %s", e)
         record_failure("intelligence", "threat_intel", str(e))
