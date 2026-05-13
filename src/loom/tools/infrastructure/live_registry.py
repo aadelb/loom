@@ -15,7 +15,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from loom.tools import error_wrapper
+from loom.tools.infrastructure import error_wrapper
 
 log = logging.getLogger("loom.tools.live_registry")
 

@@ -22,8 +22,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-import aiodocker
-from aiodocker.exceptions import DockerError
+try:
+    import aiodocker
+    from aiodocker.exceptions import DockerError
+    _HAS_AIODOCKER = True
+except ImportError:
+    aiodocker = None  # type: ignore[assignment]
+    DockerError = Exception  # type: ignore[assignment,misc]
+    _HAS_AIODOCKER = False
 
 logger = logging.getLogger("loom.sandbox")
 
