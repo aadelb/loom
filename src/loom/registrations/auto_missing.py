@@ -1886,5 +1886,365 @@ def register_missing_tools(mcp, wrap_tool):
         count += 1
     except Exception:
         pass
+    try:
+        from loom.tools.llm.creative import research_ai_detect
+        mcp.tool()(wrap_tool(research_ai_detect))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.backends.ytdlp_backend import research_audio_extract
+        mcp.tool()(wrap_tool(research_audio_extract))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.core.audit_query import research_audit_query
+        mcp.tool()(wrap_tool(research_audit_query))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.research.synthetic_data import research_augment_dataset
+        mcp.tool()(wrap_tool(research_augment_dataset))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.career.career_trajectory import research_career_trajectory
+        mcp.tool()(wrap_tool(research_career_trajectory))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.llm.creative import research_citation_graph
+        mcp.tool()(wrap_tool(research_citation_graph))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.llm.creative import research_community_sentiment
+        mcp.tool()(wrap_tool(research_community_sentiment))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.core.document import research_convert_document
+        mcp.tool()(wrap_tool(research_convert_document))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.llm.creative import research_curriculum
+        mcp.tool()(wrap_tool(research_curriculum))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.intelligence.dead_drop_scanner import research_dead_drop_scanner
+        mcp.tool()(wrap_tool(research_dead_drop_scanner))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.core.enrich import research_detect_language
+        mcp.tool()(wrap_tool(research_detect_language))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.privacy.privacy_advanced import research_fileless_exec
+        mcp.tool()(wrap_tool(research_fileless_exec))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.llm.experts import research_find_experts
+        mcp.tool()(wrap_tool(research_find_experts))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.backends.neo4j_backend import research_graph_store
+        mcp.tool()(wrap_tool(research_graph_store))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.adversarial.hcs_scorer import research_hcs_score
+        mcp.tool()(wrap_tool(research_hcs_score))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.career.resume_intel import research_interview_prep
+        mcp.tool()(wrap_tool(research_interview_prep))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.intelligence.ip_intel import research_ip_geolocation
+        mcp.tool()(wrap_tool(research_ip_geolocation))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.career.job_research import research_job_market
+        mcp.tool()(wrap_tool(research_job_market))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.career.job_research import research_job_search
+        mcp.tool()(wrap_tool(research_job_search))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.llm.llm import research_llm_answer
+        mcp.tool()(wrap_tool(research_llm_answer))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.llm.llm import research_llm_chat
+        mcp.tool()(wrap_tool(research_llm_chat))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.llm.llm import research_llm_classify
+        mcp.tool()(wrap_tool(research_llm_classify))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.llm.llm import research_llm_embed
+        mcp.tool()(wrap_tool(research_llm_embed))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.llm.llm import research_llm_extract
+        mcp.tool()(wrap_tool(research_llm_extract))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.llm.llm import research_llm_query_expand
+        mcp.tool()(wrap_tool(research_llm_query_expand))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.llm.llm import research_llm_summarize
+        mcp.tool()(wrap_tool(research_llm_summarize))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.llm.llm import research_llm_translate
+        mcp.tool()(wrap_tool(research_llm_translate))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.career.career_intel import research_map_research_to_product
+        mcp.tool()(wrap_tool(research_map_research_to_product))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.career.career_trajectory import research_market_velocity
+        mcp.tool()(wrap_tool(research_market_velocity))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.llm.creative import research_misinfo_check
+        mcp.tool()(wrap_tool(research_misinfo_check))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.llm.creative import research_multilingual
+        mcp.tool()(wrap_tool(research_multilingual))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.adversarial.network_persona import research_network_persona
+        mcp.tool()(wrap_tool(research_network_persona))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.career.resume_intel import research_optimize_resume
+        mcp.tool()(wrap_tool(research_optimize_resume))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.research.param_sweep import research_parameter_sweep
+        mcp.tool()(wrap_tool(research_parameter_sweep))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.adversarial.persona_profile import research_persona_profile
+        mcp.tool()(wrap_tool(research_persona_profile))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.intelligence.radicalization_detect import research_radicalization_detect
+        mcp.tool()(wrap_tool(research_radicalization_detect))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.llm.embedding_collision import research_rag_attack
+        mcp.tool()(wrap_tool(research_rag_attack))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.llm.creative import research_red_team
+        mcp.tool()(wrap_tool(research_red_team))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.llm.reframe_router import research_reframe_or_integrate
+        mcp.tool()(wrap_tool(research_reframe_or_integrate))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.infrastructure.retry_stats import research_retry_stats
+        mcp.tool()(wrap_tool(research_retry_stats))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.research.auto_experiment import research_run_experiment
+        mcp.tool()(wrap_tool(research_run_experiment))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.core.screenshot import research_screenshot
+        mcp.tool()(wrap_tool(research_screenshot))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.core.semantic_cache_mgmt import research_semantic_cache_clear
+        mcp.tool()(wrap_tool(research_semantic_cache_clear))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.core.semantic_cache_mgmt import research_semantic_cache_stats
+        mcp.tool()(wrap_tool(research_semantic_cache_stats))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.llm.creative import research_semantic_sitemap
+        mcp.tool()(wrap_tool(research_semantic_sitemap))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.research.sentiment_deep import research_sentiment_deep
+        mcp.tool()(wrap_tool(research_sentiment_deep))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.adversarial.hcs10_academic import research_shell_funding
+        mcp.tool()(wrap_tool(research_shell_funding))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.intelligence.social_intel import research_social_profile
+        mcp.tool()(wrap_tool(research_social_profile))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.security.enterprise_sso import research_sso_configure
+        mcp.tool()(wrap_tool(research_sso_configure))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.privacy.stego_encoder import research_stego_encode
+        mcp.tool()(wrap_tool(research_stego_encode))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.llm.creative import research_temporal_diff
+        mcp.tool()(wrap_tool(research_temporal_diff))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.research.text_analyze import research_text_analyze
+        mcp.tool()(wrap_tool(research_text_analyze))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.adversarial.multilang_attack import research_token_split_attack
+        mcp.tool()(wrap_tool(research_token_split_attack))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.core.transcribe import research_transcribe
+        mcp.tool()(wrap_tool(research_transcribe))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.career.career_intel import research_translate_academic_skills
+        mcp.tool()(wrap_tool(research_translate_academic_skills))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.security.input_sanitizer import research_validate_params
+        mcp.tool()(wrap_tool(research_validate_params))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.backends.ytdlp_backend import research_video_download
+        mcp.tool()(wrap_tool(research_video_download))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.backends.ytdlp_backend import research_video_info
+        mcp.tool()(wrap_tool(research_video_info))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.core.enrich import research_wayback
+        mcp.tool()(wrap_tool(research_wayback))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.tools.llm.creative import research_wiki_ghost
+        mcp.tool()(wrap_tool(research_wiki_ghost))
+        count += 1
+    except Exception:
+        pass
     log.info('auto_registered_missing count=%d', count)
     return count
