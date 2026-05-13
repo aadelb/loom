@@ -12,6 +12,7 @@ import asyncio
 import logging
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
 from loom.validators import validate_url, UrlSafetyError
 
 try:
@@ -49,6 +50,7 @@ def _map_engine_mode_to_fetch_mode(engine_mode: str) -> str:
 	return mode_map.get(engine_mode, "stealthy")
 
 
+@handle_tool_errors("research_engine_fetch")
 async def research_engine_fetch(params: ScraperEngineFetchParams) -> dict[str, Any]:
 	"""Fetch URL with automatic backend escalation.
 
@@ -121,6 +123,7 @@ async def research_engine_fetch(params: ScraperEngineFetchParams) -> dict[str, A
 		return {"error": str(exc), "tool": "research_engine_fetch"}
 
 
+@handle_tool_errors("research_engine_extract")
 async def research_engine_extract(params: ScraperEngineExtractParams) -> dict[str, Any]:
 	"""Fetch + selector/LLM-powered structured data extraction.
 
@@ -236,6 +239,7 @@ async def research_engine_extract(params: ScraperEngineExtractParams) -> dict[st
 		return {"error": str(exc), "tool": "research_engine_extract"}
 
 
+@handle_tool_errors("research_engine_batch")
 async def research_engine_batch(params: ScraperEngineBatchParams) -> dict[str, Any]:
 	"""Batch fetch multiple URLs with escalation and concurrent limiting.
 

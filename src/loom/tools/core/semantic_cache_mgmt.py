@@ -11,11 +11,13 @@ try:
 except ImportError:
     TextContent = None  # type: ignore[assignment,misc]
 
+from loom.error_responses import handle_tool_errors
 from loom.semantic_cache import get_semantic_cache
 
 logger = logging.getLogger("loom.tools.semantic_cache")
 
 
+@handle_tool_errors("research_semantic_cache_stats")
 async def research_semantic_cache_stats() -> dict[str, Any]:
     """Return semantic cache statistics.
 
@@ -41,6 +43,7 @@ async def research_semantic_cache_stats() -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_semantic_cache_stats"}
 
 
+@handle_tool_errors("research_semantic_cache_clear")
 async def research_semantic_cache_clear(older_than_days: int = 30) -> dict[str, Any]:
     """Remove semantic cache entries older than N days.
 

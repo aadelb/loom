@@ -9,6 +9,8 @@ import socket
 import time
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.scapy_backend")
 
 # Valid packet types
@@ -18,6 +20,7 @@ VALID_PACKET_TYPES = ["tcp_syn", "tcp_rst", "icmp_echo", "udp_probe"]
 MAX_TIMEOUT_SECONDS = 30
 
 
+@handle_tool_errors("research_packet_craft")
 async def research_packet_craft(
     target: str,
     packet_type: str = "tcp_syn",

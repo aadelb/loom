@@ -66,7 +66,8 @@ async def _crt_sh_lookalikes(
             return []
 
         lookalikes: set[str] = set()
-        for entry in data:
+        # Limit to 1000 entries to prevent OOM on large CT responses
+        for entry in data[:1000]:
             name = entry.get("name_value", "")
             for line in name.split("\n"):
                 line = line.strip().lstrip("*.")

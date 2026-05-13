@@ -13,6 +13,7 @@ import httpx
 from loom.http_helpers import fetch_json, fetch_text
 from loom.error_responses import handle_tool_errors
 from loom.html_utils import strip_tags
+from loom.result_aggregator import deduplicate_by
 
 logger = logging.getLogger("loom.tools.multi_search")
 
@@ -173,22 +174,12 @@ async def _search_crt_sh(client: httpx.AsyncClient, query: str) -> list[dict[str
     ]
 
 
-def _deduplicate(results: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    seen: set[str] = set()
-    unique: list[dict[str, Any]] = []
-    for r in results:
-        url = r.get("url", "")
-        if not url:
-            continue
-        parsed = urlparse(url)
-        key = f"{parsed.netloc}{parsed.path}".lower().rstrip("/")
-        if key not in seen:
-            seen.add(key)
-            unique.append(r)
-    return unique
-
-
 def _rank_results(results: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Rank search results by source weight and base score.
+
+    This is source-specific logic that cannot be generalized,
+    so it remains local to this tool.
+    """
     source_weights = {
         "wikipedia": 5,
         "arxiv": 4,
@@ -269,7 +260,8 @@ async def research_multi_search(
                         all_results.extend(result)
 
                 total_raw = len(all_results)
-                deduped = _deduplicate(all_results)
+                # Use shared deduplicate_by for URL-based deduplication with normalization
+                deduped = deduplicate_by(all_results, "url", normalize_url=True)
                 ranked = _rank_results(deduped)[:max_results]
 
                 source_breakdown: dict[str, int] = {}

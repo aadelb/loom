@@ -118,7 +118,7 @@ def _fetch_dynamic(params: FetchParams) -> FetchResult:
         with sync_playwright() as p:
             browser = p.chromium.launch()
             page = browser.new_page()
-            page.goto(params.url, wait_until="networkidle", timeout=params.timeout * 1000 or 30000)
+            page.goto(params.url, wait_until="domcontentloaded", timeout=params.timeout * 1000 or 30000)
             if params.wait_for:
                 page.wait_for_selector(params.wait_for)
             content = page.content()

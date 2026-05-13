@@ -12,6 +12,7 @@ try:
 except ImportError:
     TextContent = None  # type: ignore[assignment,misc]
 
+from loom.error_responses import handle_tool_errors
 from loom.retry import with_retry
 
 try:
@@ -41,6 +42,7 @@ def _apply_reputation_filter(result: dict[str, Any]) -> dict[str, Any]:
 
 
 @with_retry(max_attempts=3, backoff_base=1.0)
+@handle_tool_errors("research_search")
 async def research_search(
     query: str,
     provider: str | None = None,

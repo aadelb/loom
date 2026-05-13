@@ -17,6 +17,7 @@ try:
 except ImportError:
     _HAS_PLAYWRIGHT = False
 
+from loom.error_responses import handle_tool_errors
 from loom.validators import validate_url
 
 logger = logging.getLogger("loom.tools.screenshot")
@@ -28,6 +29,7 @@ DEFAULT_VIEWPORT_WIDTH = 1920
 DEFAULT_VIEWPORT_HEIGHT = 1080
 
 
+@handle_tool_errors("research_screenshot")
 async def research_screenshot(
     url: str,
     full_page: bool = False,

@@ -325,9 +325,12 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                 log.warning(f"Invalid LOOM_USER_BALANCE value, defaulting to 0")
                 current_balance = 0
             token_economy_result = {}
+            tool_cost = 0  # Cache cost to ensure consistency
 
             if token_economy_enabled:
                 balance_check = check_balance(user_id, current_balance, tool_name)
+                # Use cost from balance_check to ensure consistency
+                tool_cost = balance_check["required"]
 
                 if not balance_check["sufficient"]:
                     log.warning(
@@ -348,7 +351,7 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                     }
 
                 token_economy_result = {
-                    "cost": balance_check["required"],
+                    "cost": tool_cost,
                     "balance_before": current_balance,
                 }
 
@@ -374,15 +377,15 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
 
                 # Token Economy: deduct credits after successful execution
                 if token_economy_enabled:
-                    cost = get_tool_cost(tool_name)
-                    new_balance = max(0, current_balance - cost)
+                    # Use cached tool_cost from balance_check, not a fresh call to get_tool_cost
+                    new_balance = max(0, current_balance - tool_cost)
                     token_economy_result["balance_after"] = new_balance
 
                     log.info(
                         "token_economy_deduction",
                         user_id=user_id,
                         tool_name=tool_name,
-                        cost=cost,
+                        cost=tool_cost,
                         balance_before=current_balance,
                         balance_after=new_balance,
                     )
@@ -429,7 +432,7 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                     except Exception as e:
                         log.error(f"Billing error for {tool_name}: {e}", exc_info=False)
 
-                
+
                 # Analytics: record tool call
                 try:
                     analytics = ToolAnalytics.get_instance()
@@ -471,7 +474,7 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                 _loom_tool_errors_total.labels(tool_name=tool_name, error_type="timeout").inc()
                 duration = time.time() - start_time
                 _loom_tool_duration_seconds.labels(tool_name=tool_name).observe(duration)
-                
+
                 # Analytics: record tool call error
                 try:
                     analytics = ToolAnalytics.get_instance()
@@ -584,9 +587,12 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                 log.warning(f"Invalid LOOM_USER_BALANCE value, defaulting to 0")
                 current_balance = 0
             token_economy_result = {}
+            tool_cost = 0  # Cache cost to ensure consistency
 
             if token_economy_enabled:
                 balance_check = check_balance(user_id, current_balance, tool_name)
+                # Use cost from balance_check to ensure consistency
+                tool_cost = balance_check["required"]
 
                 if not balance_check["sufficient"]:
                     log.warning(
@@ -607,7 +613,7 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                     }
 
                 token_economy_result = {
-                    "cost": balance_check["required"],
+                    "cost": tool_cost,
                     "balance_before": current_balance,
                 }
 
@@ -625,19 +631,19 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
 
                 # Token Economy: deduct credits after successful execution
                 if token_economy_enabled:
-                    cost = get_tool_cost(tool_name)
-                    new_balance = max(0, current_balance - cost)
+                    # Use cached tool_cost from balance_check, not a fresh call to get_tool_cost
+                    new_balance = max(0, current_balance - tool_cost)
                     token_economy_result["balance_after"] = new_balance
-                    
+
                     log.info(
                         "token_economy_deduction",
                         user_id=user_id,
                         tool_name=tool_name,
-                        cost=cost,
+                        cost=tool_cost,
                         balance_before=current_balance,
                         balance_after=new_balance,
                     )
-                    
+
                     if isinstance(result, dict):
                         result["_token_economy"] = token_economy_result
 

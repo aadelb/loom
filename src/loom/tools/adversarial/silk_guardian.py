@@ -1,6 +1,8 @@
 from __future__ import annotations
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 # TODO: STUB - needs real implementation
 # Expected functionality: Monitor Linux system for forensic activity triggers
 # - Check for unauthorized file access attempts
@@ -10,6 +12,7 @@ from typing import Any
 # - Support dry-run mode for testing
 # Reference: https://github.com/NullArray/silk-guardian
 
+@handle_tool_errors("research_silk_guardian_monitor")
 async def research_silk_guardian_monitor(check_usb: bool = True, check_processes: bool = True, check_mounts: bool = True, trigger_action: str = "alert", dry_run: bool = True) -> dict[str, Any]:
     """Monitor Linux system for forensic activity and trigger defensive actions (STUB).
 

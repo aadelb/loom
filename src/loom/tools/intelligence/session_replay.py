@@ -12,6 +12,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.session_replay")
 
 REPLAY_DIR = Path.home() / ".loom" / "sessions" / "replay"
@@ -35,6 +37,7 @@ def _load_jsonl_steps(session_file: Path) -> list[dict]:
     return steps
 
 
+@handle_tool_errors("research_session_record")
 async def research_session_record(
     session_id: str,
     tool_name: str,
@@ -75,6 +78,7 @@ async def research_session_record(
         return {"error": str(exc), "tool": "research_session_record"}
 
 
+@handle_tool_errors("research_session_replay")
 async def research_session_replay(
     session_id: str,
 ) -> dict[str, Any]:
@@ -107,6 +111,7 @@ async def research_session_replay(
         return {"error": str(exc), "tool": "research_session_replay"}
 
 
+@handle_tool_errors("research_session_list")
 async def research_session_list() -> dict[str, Any]:
     """List all recorded sessions with metadata.
 

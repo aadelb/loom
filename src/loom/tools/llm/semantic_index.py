@@ -4,6 +4,8 @@ import ast, asyncio, logging, math, re
 from pathlib import Path
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.semantic_index")
 _INDEX: dict[str, list[float]] = {}
 _IDF: dict[str, float] = {}
@@ -65,6 +67,7 @@ def _cosine(v1: list[float], v2: list[float]) -> float:
     n2 = math.sqrt(sum(x**2 for x in v2)) or 1.0
     return dot / (n1 * n2) if n1 * n2 > 0 else 0.0
 
+@handle_tool_errors("research_semantic_search")
 async def research_semantic_search(query: str, top_k: int = 10) -> dict[str, Any]:
     """Search tools by semantic similarity using TF-IDF vectors.
 
@@ -109,6 +112,7 @@ async def research_semantic_search(query: str, top_k: int = 10) -> dict[str, Any
     except Exception as exc:
         return {"error": str(exc), "tool": "research_semantic_search"}
 
+@handle_tool_errors("research_semantic_rebuild")
 async def research_semantic_rebuild() -> dict[str, Any]:
     """Force rebuild the semantic index. Call after adding new tools.
 

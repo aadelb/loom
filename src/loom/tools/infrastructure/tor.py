@@ -11,17 +11,14 @@ import os
 import time
 from typing import Any
 
-import httpx
-
+from loom.connection_pool_manager import get_client
 from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.tor")
 
 # Rate limiting for NEWNYM requests (1 per 10 seconds)
 _last_newnym_time: float = 0.0
 _newnym_lock: asyncio.Lock | None = None
-
-# Module-level client for Tor proxy connectivity checks
-_tor_client: httpx.AsyncClient | None = None
 
 
 def _get_newnym_lock() -> asyncio.Lock:
@@ -32,22 +29,7 @@ def _get_newnym_lock() -> asyncio.Lock:
     return _newnym_lock
 
 
-async def _get_tor_client() -> httpx.AsyncClient:
-    """Get or create async HTTP client configured for Tor proxy."""
-    global _tor_client
-    if _tor_client is None:
-        from loom.config import CONFIG
-
-        proxy = CONFIG.get("TOR_SOCKS5_PROXY", "socks5h://127.0.0.1:9050")
-        _tor_client = httpx.AsyncClient(
-            proxy=proxy,
-            timeout=10.0,
-            limits=httpx.Limits(max_connections=5),
-        )
-    return _tor_client
-
 @handle_tool_errors("research_tor_status")
-
 async def research_tor_status() -> dict[str, Any]:
     """Check Tor daemon status and get current exit node IP.
 
@@ -74,7 +56,12 @@ async def research_tor_status() -> dict[str, Any]:
     proxy = CONFIG.get("TOR_SOCKS5_PROXY", "socks5h://127.0.0.1:9050")
 
     try:
-        client = await _get_tor_client()
+        client = await get_client(
+            base_url="",
+            timeout=10.0,
+            max_connections=5,
+            proxy=proxy,
+        )
         resp = await client.get(
             "https://check.torproject.org/api/ip",
             timeout=10.0,
@@ -91,25 +78,27 @@ async def research_tor_status() -> dict[str, Any]:
         logger.info("tor_status_check_success exit_ip=%s", exit_ip)
         return result
 
-    except (httpx.ConnectError, httpx.ProxyError) as exc:
-        logger.warning("tor_status_proxy_error: %s", type(exc).__name__)
-        return {
-            "tor_running": False,
-            "exit_ip": "",
-            "socks5_proxy": proxy,
-            "error": "Tor SOCKS5 proxy not accessible (is Tor running?)",
-        }
+    except (Exception,) as exc:
+        import httpx
 
-    except httpx.TimeoutException as exc:
-        logger.warning("tor_status_timeout: %s", type(exc).__name__)
-        return {
-            "tor_running": False,
-            "exit_ip": "",
-            "socks5_proxy": proxy,
-            "error": "Timeout connecting to check.torproject.org",
-        }
+        if isinstance(exc, (httpx.ConnectError, httpx.ProxyError)):
+            logger.warning("tor_status_proxy_error: %s", type(exc).__name__)
+            return {
+                "tor_running": False,
+                "exit_ip": "",
+                "socks5_proxy": proxy,
+                "error": "Tor SOCKS5 proxy not accessible (is Tor running?)",
+            }
 
-    except Exception as exc:
+        if isinstance(exc, httpx.TimeoutException):
+            logger.warning("tor_status_timeout: %s", type(exc).__name__)
+            return {
+                "tor_running": False,
+                "exit_ip": "",
+                "socks5_proxy": proxy,
+                "error": "Timeout connecting to check.torproject.org",
+            }
+
         logger.error("tor_status_unexpected: %s", type(exc).__name__)
         return {
             "tor_running": False,
@@ -149,8 +138,8 @@ def _send_tor_newnym() -> bool:
         logger.error("tor_newnym_failed: %s", type(exc).__name__)
         return False
 
-@handle_tool_errors("research_tor_new_identity")
 
+@handle_tool_errors("research_tor_new_identity")
 async def research_tor_new_identity() -> dict[str, Any]:
     """Request a new Tor circuit (exit node rotation).
 

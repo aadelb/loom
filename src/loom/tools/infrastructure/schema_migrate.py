@@ -7,6 +7,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.schema_migrate")
 
 _MIGRATIONS = {
@@ -26,6 +28,7 @@ _MIGRATIONS = {
 _TARGET_VERSIONS = {"auth": 2, "gamification": 2, "change_monitor": 2, "dlq": 1, "checkpoints": 1, "hitl_eval": 1}
 
 
+@handle_tool_errors("research_migrate_status")
 async def research_migrate_status() -> dict[str, Any]:
     """Check migration status of all SQLite databases in ~/.loom."""
     loom_dir = Path.home() / ".loom"
@@ -54,6 +57,7 @@ async def research_migrate_status() -> dict[str, Any]:
     return {"databases": databases, "total": len(databases)}
 
 
+@handle_tool_errors("research_migrate_run")
 async def research_migrate_run(database: str = "all", dry_run: bool = True) -> dict[str, Any]:
     """Run pending migrations on SQLite databases."""
     loom_dir = Path.home() / ".loom"
@@ -90,6 +94,7 @@ async def research_migrate_run(database: str = "all", dry_run: bool = True) -> d
     return {"database": database, "migrations_applied": migrations_applied, "dry_run": dry_run, "changed": len(migrations_applied)}
 
 
+@handle_tool_errors("research_migrate_backup")
 async def research_migrate_backup(database: str) -> dict[str, Any]:
     """Create backup of database before migration."""
     loom_dir = Path.home() / ".loom"

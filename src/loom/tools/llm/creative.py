@@ -43,18 +43,6 @@ except ImportError:
         return _unsafe_fromstring(text)
 
 
-    """Parse JSON from LLM output, stripping markdown code fences."""
-    text = text.strip()
-    if text.startswith("```json"):
-        text = text[7:]
-    elif text.startswith("```"):
-        text = text[3:]
-    if text.endswith("```"):
-        text = text[:-3]
-    try:
-        return json.loads(text.strip())
-    except (json.JSONDecodeError, ValueError):
-        return fallback if fallback is not None else []
 
 # ── Red Team Mode (#23) ─────────────────────────────────────────────
 

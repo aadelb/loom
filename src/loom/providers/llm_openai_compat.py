@@ -178,6 +178,9 @@ class OpenAICompatProvider(LLMProvider):
                 e.response.status_code,
                 e.response.text[:200],
             )
+            # Force client reconnect on server errors (502, 503, 504)
+            if e.response.status_code in (502, 503, 504):
+                self._client = None
             raise
 
         try:

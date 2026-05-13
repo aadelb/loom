@@ -11,6 +11,8 @@ import logging
 import os
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.shodan_backend")
 
 try:
@@ -40,6 +42,7 @@ def _get_shodan_api() -> Any:
         return None
 
 
+@handle_tool_errors("research_shodan_host")
 async def research_shodan_host(ip: str) -> dict[str, Any]:
     """Look up host information on Shodan.
 
@@ -156,6 +159,7 @@ async def research_shodan_host(ip: str) -> dict[str, Any]:
         }
 
 
+@handle_tool_errors("research_shodan_search")
 async def research_shodan_search(
     query: str, max_results: int = 10
 ) -> dict[str, Any]:
