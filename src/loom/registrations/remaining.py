@@ -858,4 +858,10 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
         record_success("remaining", "research_security_audit")
     except (ImportError, AttributeError) as e:
         record_failure("remaining", "security_audit", str(e))
+    try:
+        from loom.tools.intelligence.breach_check import research_password_check
+        mcp.tool()(wrap_tool(research_password_check))
+        record_success("remaining", "research_password_check")
+    except (ImportError, AttributeError) as e:
+        record_failure("remaining", "password_check", str(e))
     log.info("registered remaining tools")
