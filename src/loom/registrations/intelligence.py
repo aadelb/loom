@@ -110,9 +110,13 @@ def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip darkweb_early_warning_mod: %s", e)
         record_failure("intelligence", "darkweb_early_warning", str(e))
     try:
-        from loom.tools.intelligence.domain_intel import research_whois
+        from loom.tools.intelligence.domain_intel import research_whois, research_dns_lookup, research_nmap_scan
         mcp.tool()(wrap_tool(research_whois))
         record_success("intelligence", "research_whois")
+        mcp.tool()(wrap_tool(research_dns_lookup))
+        record_success("intelligence", "research_dns_lookup")
+        mcp.tool()(wrap_tool(research_nmap_scan))
+        record_success("intelligence", "research_nmap_scan")
     except (ImportError, AttributeError) as e:
         log.debug("skip domain_intel: %s", e)
         record_failure("intelligence", "domain_intel", str(e))
@@ -212,9 +216,21 @@ def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip stego_detect: %s", e)
         record_failure("intelligence", "stego_detect", str(e))
     try:
-        from loom.tools.intelligence.threat_intel import research_dark_market_monitor
+        from loom.tools.intelligence.threat_intel import research_dark_market_monitor, research_ransomware_tracker, research_phishing_mapper, research_botnet_tracker, research_malware_intel, research_domain_reputation, research_ioc_enrich
         mcp.tool()(wrap_tool(research_dark_market_monitor))
         record_success("intelligence", "research_dark_market_monitor")
+        mcp.tool()(wrap_tool(research_ransomware_tracker))
+        record_success("intelligence", "research_ransomware_tracker")
+        mcp.tool()(wrap_tool(research_phishing_mapper))
+        record_success("intelligence", "research_phishing_mapper")
+        mcp.tool()(wrap_tool(research_botnet_tracker))
+        record_success("intelligence", "research_botnet_tracker")
+        mcp.tool()(wrap_tool(research_malware_intel))
+        record_success("intelligence", "research_malware_intel")
+        mcp.tool()(wrap_tool(research_domain_reputation))
+        record_success("intelligence", "research_domain_reputation")
+        mcp.tool()(wrap_tool(research_ioc_enrich))
+        record_success("intelligence", "research_ioc_enrich")
     except (ImportError, AttributeError) as e:
         log.debug("skip threat_intel_mod: %s", e)
         record_failure("intelligence", "threat_intel", str(e))

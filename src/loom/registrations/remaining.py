@@ -785,4 +785,77 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip webcheck_backend: %s", e)
         record_failure("remaining", "webcheck_backend", str(e))
-    log.info("registered remaining tools count=150")
+    # ── Restored missing tools ──
+    try:
+        from loom.tools.research.synthetic_data import research_augment_dataset
+        mcp.tool()(wrap_tool(research_augment_dataset))
+        record_success("remaining", "research_augment_dataset")
+    except (ImportError, AttributeError) as e:
+        record_failure("remaining", "augment_dataset", str(e))
+    try:
+        from loom.tools.privacy.privacy_advanced import research_fileless_exec
+        mcp.tool()(wrap_tool(research_fileless_exec))
+        record_success("remaining", "research_fileless_exec")
+    except (ImportError, AttributeError) as e:
+        record_failure("remaining", "fileless_exec", str(e))
+    try:
+        from loom.tools.backends.neo4j_backend import research_graph_store
+        mcp.tool()(wrap_tool(research_graph_store))
+        record_success("remaining", "research_graph_store")
+    except (ImportError, AttributeError) as e:
+        record_failure("remaining", "graph_store", str(e))
+    try:
+        from loom.tools.llm.embedding_collision import research_rag_attack
+        mcp.tool()(wrap_tool(research_rag_attack))
+        record_success("remaining", "research_rag_attack")
+    except (ImportError, AttributeError) as e:
+        record_failure("remaining", "rag_attack", str(e))
+    try:
+        from loom.tools.research.auto_experiment import research_run_experiment
+        mcp.tool()(wrap_tool(research_run_experiment))
+        record_success("remaining", "research_run_experiment")
+    except (ImportError, AttributeError) as e:
+        record_failure("remaining", "run_experiment", str(e))
+    try:
+        from loom.tools.adversarial.hcs10_academic import research_shell_funding
+        mcp.tool()(wrap_tool(research_shell_funding))
+        record_success("remaining", "research_shell_funding")
+    except (ImportError, AttributeError) as e:
+        record_failure("remaining", "shell_funding", str(e))
+    try:
+        from loom.tools.intelligence.social_intel import research_social_profile
+        mcp.tool()(wrap_tool(research_social_profile))
+        record_success("remaining", "research_social_profile")
+    except (ImportError, AttributeError) as e:
+        record_failure("remaining", "social_profile", str(e))
+    try:
+        from loom.tools.security.enterprise_sso import research_sso_configure
+        mcp.tool()(wrap_tool(research_sso_configure))
+        record_success("remaining", "research_sso_configure")
+    except (ImportError, AttributeError) as e:
+        record_failure("remaining", "sso_configure", str(e))
+    try:
+        from loom.tools.privacy.stego_encoder import research_stego_encode
+        mcp.tool()(wrap_tool(research_stego_encode))
+        record_success("remaining", "research_stego_encode")
+    except (ImportError, AttributeError) as e:
+        record_failure("remaining", "stego_encode", str(e))
+    try:
+        from loom.tools.adversarial.multilang_attack import research_token_split_attack
+        mcp.tool()(wrap_tool(research_token_split_attack))
+        record_success("remaining", "research_token_split_attack")
+    except (ImportError, AttributeError) as e:
+        record_failure("remaining", "token_split_attack", str(e))
+    try:
+        from loom.tools.security.input_sanitizer import research_validate_params
+        mcp.tool()(wrap_tool(research_validate_params))
+        record_success("remaining", "research_validate_params")
+    except (ImportError, AttributeError) as e:
+        record_failure("remaining", "validate_params", str(e))
+    try:
+        from loom.tools.security.security_checklist import research_security_checklist as research_security_audit
+        mcp.tool(name="research_security_audit")(wrap_tool(research_security_audit))
+        record_success("remaining", "research_security_audit")
+    except (ImportError, AttributeError) as e:
+        record_failure("remaining", "security_audit", str(e))
+    log.info("registered remaining tools")
