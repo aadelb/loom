@@ -134,7 +134,7 @@ async def research_hierarchical_research(
 async def _decompose_query(query: str, depth: int) -> list[str]:
     """Decompose a query into sub-questions using LLM."""
     try:
-        from loom.tools.llm import research_llm_answer
+        from loom.tools.llm.llm import research_llm_answer
 
         prompt = (
             f"Break down this research query into {min(depth + 1, 4)} specific, "
@@ -168,7 +168,7 @@ async def _fetch_sources_for_question(
 
     try:
         # Stage 2: Search
-        from loom.tools.search import research_search
+        from loom.tools.core.search import research_search
 
         search_result = await research_search(
             question, provider="exa", n=min(max_sources, 10)
@@ -177,7 +177,7 @@ async def _fetch_sources_for_question(
             return findings, sources, content_list
 
         # Stage 3: Fetch top results
-        from loom.tools.fetch import research_fetch
+        from loom.tools.core.fetch import research_fetch
 
         for result in search_result["results"][:max_sources]:
             url = result.get("url")
@@ -221,7 +221,7 @@ async def _synthesize_findings(
 ) -> tuple[str, float]:
     """Synthesize findings using LLM and compute confidence score."""
     try:
-        from loom.tools.llm import research_llm_answer
+        from loom.tools.llm.llm import research_llm_answer
 
         # Build synthesis prompt
         findings_text = "\n".join(

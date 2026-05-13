@@ -63,8 +63,8 @@ async def research_deep_url_analysis(
         - sources: List of {url, title, chars_extracted}
         - errors: List of {url, error} for failed fetches
     """
-    from loom.tools.search import research_search
-    from loom.tools.markdown import research_markdown
+    from loom.tools.core.search import research_search
+    from loom.tools.core.markdown import research_markdown
 
     if not topic or len(topic.strip()) < 3:
         return {"error": "Topic too short (min 3 chars)", "topic": topic}

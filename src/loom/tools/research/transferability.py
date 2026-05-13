@@ -75,7 +75,7 @@ def _apply_strategy(prompt: str, strategy_name: str) -> str:
 
 async def _query_model(provider: str, prompt: str) -> str:
     """Query a single LLM provider."""
-    from loom.tools.llm import _call_with_cascade
+    from loom.tools.llm.llm import _call_with_cascade
     response = await _call_with_cascade(messages=[{"role": "user", "content": prompt}],
         provider_override=provider, max_tokens=500, temperature=0.2)
     return response.text if hasattr(response, "text") else str(response)

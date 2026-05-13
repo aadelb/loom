@@ -16,7 +16,7 @@ from typing import Any
 from loom.error_responses import handle_tool_errors
 
 try:
-    from loom.tools.strategy_feedback import _get_db_conn
+    from loom.tools.llm.strategy_feedback import _get_db_conn
     _FEEDBACK_AVAILABLE = True
 except ImportError:
     _FEEDBACK_AVAILABLE = False

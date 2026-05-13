@@ -7,7 +7,7 @@ from typing import Any
 from loom.error_responses import handle_tool_errors
 
 try:
-    from loom.tools.cache_analytics import (
+    from loom.tools.core.cache_analytics import (
         research_cache_analyze as _real_analyze,
         research_cache_optimize as _real_optimize,
     )

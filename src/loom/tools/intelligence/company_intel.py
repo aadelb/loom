@@ -49,7 +49,7 @@ async def research_company_diligence(company_name: str) -> dict[str, Any]:
         - red_flags: list of concerning findings
         - recommendation: summary recommendation for job seekers
     """
-    from loom.tools.search import research_search
+    from loom.tools.core.search import research_search
 
     if not company_name or len(company_name) > 200:
         return {
@@ -205,7 +205,7 @@ async def research_company_diligence(company_name: str) -> dict[str, Any]:
         # Stage 4: LLM synthesis of culture score and recommendation
         logger.debug("stage=llm_synthesis company=%s", company_name)
         try:
-            from loom.tools.llm import _call_with_cascade
+            from loom.tools.llm.llm import _call_with_cascade
 
             synthesis_prompt = f"""Based on the following company research, provide:
 1. A culture_score (0-5 float)
@@ -322,7 +322,7 @@ async def research_salary_intelligence(
         - remote_adjustment: string like "10-15% lower for remote"
         - data_confidence: float 0-1 based on number of data points
     """
-    from loom.tools.search import research_search
+    from loom.tools.core.search import research_search
 
     if not role or len(role) > 200:
         return {

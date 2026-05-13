@@ -103,7 +103,7 @@ async def research_do_expert(
 
     try:
         # Import expert_engine dynamically to avoid circular imports
-        from loom.tools.expert_engine import research_expert
+        from loom.tools.llm.expert_engine import research_expert
 
         # Call the expert engine with appropriate parameters
         try:

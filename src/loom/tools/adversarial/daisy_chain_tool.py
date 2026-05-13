@@ -90,7 +90,7 @@ async def research_daisy_chain(
     async def real_llm_callback(model_name: str, prompt: str) -> str:
         """Call real LLM providers via cascade system."""
         try:
-            from loom.tools.llm import _call_with_cascade
+            from loom.tools.llm.llm import _call_with_cascade
             response = await _call_with_cascade(
                 [{"role": "user", "content": prompt}],
                 max_tokens=500,

@@ -16,14 +16,14 @@ def register_llm_tools(mcp: "FastMCP", wrap_tool) -> None:
     from loom.registrations.tracking import record_success, record_failure
 
     try:
-        from loom.tools.ask_all_models import research_ask_all_models
+        from loom.tools.llm.ask_all_models import research_ask_all_models
         mcp.tool()(wrap_tool(research_ask_all_models))
         record_success("llm", "research_ask_all_models")
     except (ImportError, AttributeError) as e:
         log.debug("skip ask_all_models: %s", e)
         record_failure("llm", "ask_all_models", str(e))
     try:
-        from loom.tools.multi_llm import research_ask_all_llms
+        from loom.tools.llm.multi_llm import research_ask_all_llms
         mcp.tool()(wrap_tool(research_ask_all_llms))
         record_success("llm", "research_ask_all_llms")
     except (ImportError, AttributeError) as e:
@@ -36,7 +36,7 @@ def register_compression_tools(mcp: "FastMCP", wrap_tool) -> None:
     from loom.registrations.tracking import record_success, record_failure
 
     try:
-        from loom.tools.prompt_compression import (
+        from loom.tools.llm.prompt_compression import (
             research_compress_prompt,
             research_compression_stats,
             research_compression_reset,

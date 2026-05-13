@@ -14,7 +14,7 @@ from loom.error_responses import handle_tool_errors
 
 try:
     from loom.param_sweeper import ParameterSweeper
-    from loom.tools.llm import _call_with_cascade
+    from loom.tools.llm.llm import _call_with_cascade
     _SWEEP_DEPS = True
 except ImportError:
     _SWEEP_DEPS = False

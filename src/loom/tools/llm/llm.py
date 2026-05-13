@@ -71,7 +71,7 @@ from loom.quota_tracker import get_quota_tracker, record_usage
 logger = logging.getLogger("loom.llm")
 
 try:
-    from loom.tools.model_router import classify_query_complexity
+    from loom.tools.llm.model_router import classify_query_complexity
     _MODEL_ROUTER_AVAILABLE = True
 except ImportError:
     _MODEL_ROUTER_AVAILABLE = False
@@ -848,7 +848,7 @@ async def _call_with_refusal_handling(
         return response, refusal_meta
 
     try:
-        from loom.tools.prompt_reframe import _detect_refusal, research_prompt_reframe
+        from loom.tools.llm.prompt_reframe import _detect_refusal, research_prompt_reframe
     except ImportError:
         return response, refusal_meta
 

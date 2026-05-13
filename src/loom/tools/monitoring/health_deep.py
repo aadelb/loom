@@ -287,7 +287,7 @@ async def _check_postgresql() -> dict[str, Any]:
 
 async def _check_llm_providers() -> dict[str, Any]:
     """Check LLM providers: API key presence and optional test call."""
-    from loom.tools.provider_health import research_provider_ping
+    from loom.tools.monitoring.provider_health import research_provider_ping
 
     start = time.time()
 

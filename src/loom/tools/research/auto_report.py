@@ -60,8 +60,8 @@ async def research_auto_report(
             - depth: str (brief|standard|comprehensive)
             - format: str (markdown|json|html)
     """
-    from loom.tools.search import research_search
-    from loom.tools.fetch import research_fetch
+    from loom.tools.core.search import research_search
+    from loom.tools.core.fetch import research_fetch
     from loom.validators import validate_url
 
     # Validate and normalize input
@@ -314,7 +314,7 @@ async def _synthesize_findings(
     Falls back gracefully if LLM is unavailable.
     """
     try:
-        from loom.tools.llm import research_llm_summarize
+        from loom.tools.llm.llm import research_llm_summarize
 
         # Concatenate findings for summarization
         combined_text = "\n\n---\n\n".join(

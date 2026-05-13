@@ -1037,7 +1037,7 @@ def _generate_reframe_variants(questions: list[str], darkness_level: int) -> lis
     Returns list of {original, strategy, reframed, target_model, multiplier}
     """
     try:
-        from loom.tools.prompt_reframe import _apply_strategy, _STRATEGIES, _MODEL_CONFIGS
+        from loom.tools.llm.prompt_reframe import _apply_strategy, _STRATEGIES, _MODEL_CONFIGS
     except ImportError:
         return []
 

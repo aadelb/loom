@@ -12,7 +12,7 @@ import logging
 from typing import Any, Literal
 
 try:
-    from loom.tools.llm import _call_with_cascade
+    from loom.tools.llm.llm import _call_with_cascade
     _LLM_AVAILABLE = True
 except ImportError:
     _LLM_AVAILABLE = False

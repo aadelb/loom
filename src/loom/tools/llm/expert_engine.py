@@ -34,8 +34,8 @@ from loom.validators import EXTERNAL_TIMEOUT_SECS
 from loom.error_responses import handle_tool_errors
 
 try:
-    from loom.tools.llm import _call_with_cascade
-    from loom.tools.prompt_reframe import research_auto_reframe, research_refusal_detector
+    from loom.tools.llm.llm import _call_with_cascade
+    from loom.tools.llm.prompt_reframe import research_auto_reframe, research_refusal_detector
     _DEPS_AVAILABLE = True
 except ImportError:
     _DEPS_AVAILABLE = False
@@ -242,8 +242,8 @@ async def _gather_evidence_for_angle(
         Dict with findings, sources, and raw evidence
     """
     try:
-        from loom.tools.search import research_search
-        from loom.tools.deep import research_deep
+        from loom.tools.core.search import research_search
+        from loom.tools.core.deep import research_deep
 
         findings: dict[str, Any] = {
             "angle": angle,
@@ -506,7 +506,7 @@ async def _iterative_refinement(
             len(critic_feedback.get("gaps", [])),
         )
 
-        from loom.tools.deep import research_deep
+        from loom.tools.core.deep import research_deep
 
         # Focus on gaps identified by critic
         gaps = critic_feedback.get("gaps", [])
@@ -767,7 +767,7 @@ async def research_expert(
 
     # ── AUTO-SCORE EXPERT OUTPUT WITH HCS (NON-BLOCKING) ─────────────────
     try:
-        from loom.tools.hcs_scorer import research_hcs_score_full
+        from loom.tools.adversarial.hcs_scorer import research_hcs_score_full
         
         # Score using executive summary as the response
         expert_response = output.get("executive_summary", "")

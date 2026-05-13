@@ -82,7 +82,7 @@ async def _extract_research_areas_llm(research_description: str) -> list[str]:
         List of identified research areas/techniques
     """
     try:
-        from loom.tools.llm import research_llm_chat
+        from loom.tools.llm.llm import research_llm_chat
 
         response = await research_llm_chat(
             messages=[
@@ -133,7 +133,7 @@ async def _search_companies_for_areas(areas: list[str], n: int = 10) -> dict[str
     Returns:
         Dict mapping areas to lists of company/product findings
     """
-    from loom.tools.search import research_search
+    from loom.tools.core.search import research_search
 
     result = {}
 
@@ -198,7 +198,7 @@ async def _search_github_repos(areas: list[str], n: int = 10) -> dict[str, list[
     Returns:
         Dict mapping areas to lists of GitHub repository findings
     """
-    from loom.tools.github import research_github
+    from loom.tools.core.github import research_github
 
     result = {}
 
@@ -388,7 +388,7 @@ async def _extract_skills_llm(text: str, context: str = "academic") -> list[str]
         List of identified skills
     """
     try:
-        from loom.tools.llm import research_llm_chat
+        from loom.tools.llm.llm import research_llm_chat
 
         prompt = (
             f"Extract key {context} skills from the following text. "

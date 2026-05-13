@@ -243,7 +243,7 @@ def _calculate_deception_score(indicators: dict[str, Any], red_flags: list[str])
 async def _try_llm_assessment(text: str) -> str | None:
     """Attempt to get LLM-based deception assessment if available."""
     try:
-        from loom.tools.llm import research_llm_classify
+        from loom.tools.llm.llm import research_llm_classify
 
         result = await research_llm_classify(
             text=text,

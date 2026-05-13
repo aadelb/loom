@@ -26,8 +26,8 @@ async def research_vision_browse(url: str, task: str) -> dict[str, Any]:
         Dict with: url, task, screenshot_taken, analysis, suggested_actions
     """
     from loom.validators import validate_url
-    from loom.tools.fetch import research_fetch
-    from loom.tools.llm import _get_provider
+    from loom.tools.core.fetch import research_fetch
+    from loom.tools.llm.llm import _get_provider
 
     try:
         url = validate_url(url)
@@ -129,8 +129,8 @@ async def research_vision_compare(url1: str, url2: str) -> dict[str, Any]:
         Dict with: url1, url2, similarities, differences, layout_match_score
     """
     from loom.validators import validate_url
-    from loom.tools.fetch import research_fetch
-    from loom.tools.llm import _get_provider
+    from loom.tools.core.fetch import research_fetch
+    from loom.tools.llm.llm import _get_provider
 
     if not url1 or not url1.strip():
         raise ValueError("url1 is required and cannot be empty")

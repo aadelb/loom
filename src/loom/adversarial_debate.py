@@ -19,7 +19,7 @@ from dataclasses import dataclass, field, asdict
 from typing import Any, Callable
 
 from loom.providers.base import LLMResponse
-from loom.tools.llm import _get_provider
+from loom.tools.llm.llm import _get_provider
 
 logger = logging.getLogger("loom.adversarial_debate")
 

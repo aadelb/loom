@@ -46,7 +46,7 @@ async def _classify_post(
         Dict with category, confidence, and sentiment
     """
     try:
-        from loom.tools.llm import research_llm_classify
+        from loom.tools.llm.llm import research_llm_classify
     except ImportError:
         return {
             "category": "other",
@@ -135,7 +135,7 @@ async def research_forum_cortex(
     category_counts: dict[str, int] = dict.fromkeys(_POST_CATEGORIES, 0)
 
     try:
-        from loom.tools.search import research_search
+        from loom.tools.core.search import research_search
     except ImportError:
         return {
             "topic": topic,

@@ -168,7 +168,7 @@ def register_http_routes(mcp: "FastMCP") -> None:
     @mcp.custom_route("/v1/health/deep", methods=["GET"])
     async def v1_health_deep_endpoint(request: Request) -> JSONResponse:
         try:
-            from loom.tools.health_deep import research_health_deep
+            from loom.tools.monitoring.health_deep import research_health_deep
             result = await research_health_deep()
             return JSONResponse(result)
         except Exception as e:
@@ -181,7 +181,7 @@ def register_http_routes(mcp: "FastMCP") -> None:
     @mcp.custom_route("/health/deep", methods=["GET"])
     async def health_deep_endpoint(request: Request) -> JSONResponse:
         try:
-            from loom.tools.health_deep import research_health_deep
+            from loom.tools.monitoring.health_deep import research_health_deep
             result = await research_health_deep()
             return JSONResponse(result)
         except Exception as e:

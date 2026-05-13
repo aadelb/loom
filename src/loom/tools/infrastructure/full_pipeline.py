@@ -26,12 +26,12 @@ from loom.providers.base import LLMResponse
 from loom.error_responses import handle_tool_errors
 
 try:
-    from loom.tools.hcs_scorer import research_hcs_score
-    from loom.tools.hcs_scorer import research_hcs_score_full
-    from loom.tools.llm import _call_with_cascade
-    from loom.tools.query_builder import research_build_query
-    from loom.tools.prompt_reframe import research_auto_reframe, _apply_strategy, _STRATEGIES
-    from loom.tools.strategy_cache import research_cached_strategy
+    from loom.tools.adversarial.hcs_scorer import research_hcs_score
+    from loom.tools.adversarial.hcs_scorer import research_hcs_score_full
+    from loom.tools.llm.llm import _call_with_cascade
+    from loom.tools.llm.query_builder import research_build_query
+    from loom.tools.llm.prompt_reframe import research_auto_reframe, _apply_strategy, _STRATEGIES
+    from loom.tools.llm.strategy_cache import research_cached_strategy
     _PIPELINE_DEPS = True
 except ImportError:
     _PIPELINE_DEPS = False
@@ -40,7 +40,7 @@ logger = logging.getLogger("loom.tools.full_pipeline")
 
 # Try to import cost estimator; fallback gracefully
 try:
-    from loom.tools.cost_estimator import research_estimate_cost
+    from loom.tools.infrastructure.cost_estimator import research_estimate_cost
     _COST_ESTIMATION_AVAILABLE = True
 except ImportError:
     _COST_ESTIMATION_AVAILABLE = False
@@ -48,7 +48,7 @@ except ImportError:
 
 # Try to import meta_learner; fallback gracefully
 try:
-    from loom.tools.meta_learner import research_meta_learn
+    from loom.tools.llm.meta_learner import research_meta_learn
     META_LEARNER_AVAILABLE = True
 except ImportError:
     logger.warning("meta_learner not available; will use default escalation strategy")
@@ -56,7 +56,7 @@ except ImportError:
 
 # Try to import strategy_adapter for real-time ranking; fallback gracefully
 try:
-    from loom.tools.strategy_adapter import StrategyAdapter
+    from loom.tools.llm.strategy_adapter import StrategyAdapter
     STRATEGY_ADAPTER_AVAILABLE = True
 except ImportError:
     STRATEGY_ADAPTER_AVAILABLE = False
@@ -64,7 +64,7 @@ except ImportError:
 
 # Try to import explainability engine; fallback gracefully
 try:
-    from loom.tools.explainability import research_explain_bypass
+    from loom.tools.research.explainability import research_explain_bypass
     EXPLAINABILITY_AVAILABLE = True
 except ImportError:
     logger.debug("explainability engine not available; will skip bypass explanation")
@@ -749,8 +749,8 @@ async def research_full_pipeline(
     if darkness_level >= 7:
         logger.info("stage2_5_dark_web_enrichment_start darkness=%d", darkness_level)
         try:
-            from loom.tools.dark_forum import research_dark_forum
-            from loom.tools.darkweb_early_warning import research_darkweb_early_warning
+            from loom.tools.intelligence.dark_forum import research_dark_forum
+            from loom.tools.intelligence.darkweb_early_warning import research_darkweb_early_warning
 
             for idx, sub_q in enumerate(sub_questions):
                 # Check if sub-question contains dark indicators
@@ -1121,7 +1121,7 @@ async def _fallback_to_deep(sub_q: str, max_cost_usd: float) -> str:
         Answer text from research_deep or error message
     """
     try:
-        from loom.tools.deep import research_deep
+        from loom.tools.core.deep import research_deep
 
         logger.info("fallback_to_deep sub_q=%s", sub_q[:60])
 

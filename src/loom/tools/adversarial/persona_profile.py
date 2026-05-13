@@ -400,7 +400,7 @@ async def research_persona_profile(
     # Try LLM assessment if available
     llm_assessment = None
     try:
-        from loom.tools.llm import research_llm_chat
+        from loom.tools.llm.llm import research_llm_chat
 
         prompt = (
             f"Based on these text samples, provide a brief (1-2 sentences) "

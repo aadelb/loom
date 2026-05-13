@@ -15,8 +15,8 @@ from typing import Any
 from loom.error_responses import handle_tool_errors
 
 try:
-    from loom.tools.prompt_reframe import _STRATEGIES
-    from loom.tools.quality_escalation import _score_all_dimensions
+    from loom.tools.llm.prompt_reframe import _STRATEGIES
+    from loom.tools.llm.quality_escalation import _score_all_dimensions
     _EVOLUTION_DEPS = True
 except ImportError:
     _EVOLUTION_DEPS = False
@@ -27,7 +27,7 @@ logger = logging.getLogger("loom.tools.strategy_evolution")
 
 def _get_top_seeds(count: int = 10) -> list[str]:
     """Get top seed strategies by multiplier from model configs."""
-    from loom.tools.prompt_reframe import _MODEL_CONFIGS
+    from loom.tools.llm.prompt_reframe import _MODEL_CONFIGS
     scores: dict[str, float] = {}
     for cfg in _MODEL_CONFIGS.values():
         if "best_strategy" in cfg:

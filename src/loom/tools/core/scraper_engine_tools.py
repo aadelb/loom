@@ -20,7 +20,7 @@ try:
 		ScraperEngineExtractParams,
 		ScraperEngineBatchParams,
 	)
-	from loom.tools.fetch import research_fetch
+	from loom.tools.core.fetch import research_fetch
 	_SCRAPER_DEPS = True
 except ImportError:
 	_SCRAPER_DEPS = False
@@ -204,7 +204,7 @@ async def research_engine_extract(params: ScraperEngineExtractParams) -> dict[st
 		# Extract using LLM if requested and content available
 		if llm_extract and content:
 			try:
-				from loom.tools.llm import research_llm_extract
+				from loom.tools.llm.llm import research_llm_extract
 
 				extract_result = await research_llm_extract(
 					text=content[:5000],

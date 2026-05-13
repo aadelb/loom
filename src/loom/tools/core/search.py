@@ -15,7 +15,7 @@ except ImportError:
 from loom.retry import with_retry
 
 try:
-    from loom.tools.source_reputation import filter_by_reputation
+    from loom.tools.research.source_reputation import filter_by_reputation
 except ImportError:
     filter_by_reputation = None  # type: ignore[assignment]
 

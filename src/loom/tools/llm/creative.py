@@ -82,7 +82,7 @@ async def research_red_team(
     total_cost = 0.0
 
     try:
-        from loom.tools.llm import research_llm_chat
+        from loom.tools.llm.llm import research_llm_chat
     except ImportError:
         return {"claim": claim, "error": "LLM tools not available"}
 
@@ -106,7 +106,7 @@ async def research_red_team(
     except Exception:
         counter_claims = []
 
-    from loom.tools.search import research_search
+    from loom.tools.core.search import research_search
 
     counter_arguments = []
     for counter in counter_claims[:n_counter]:
@@ -161,7 +161,7 @@ async def research_multilingual(
     if languages is None:
         languages = ["ar", "es", "de", "zh", "ru"]
 
-    from loom.tools.search import research_search
+    from loom.tools.core.search import research_search
 
     region_map = {
         "ar": "xa-ar",
@@ -248,8 +248,8 @@ async def research_consensus(
     if providers is None:
         providers = ["exa", "tavily", "brave", "ddgs"]
 
-    from loom.tools.deep import _normalize_url
-    from loom.tools.search import research_search
+    from loom.tools.core.deep import _normalize_url
+    from loom.tools.core.search import research_search
 
     url_votes: dict[str, dict[str, Any]] = {}
     providers_used: list[str] = []
@@ -328,7 +328,7 @@ async def research_misinfo_check(
     """
 
     try:
-        from loom.tools.llm import research_llm_chat
+        from loom.tools.llm.llm import research_llm_chat
     except ImportError:
         return {"claim": claim, "error": "LLM tools not available"}
 
@@ -350,7 +350,7 @@ async def research_misinfo_check(
     except Exception:
         false_claims = []
 
-    from loom.tools.search import research_search
+    from loom.tools.core.search import research_search
 
     flagged_sources: list[dict[str, Any]] = []
     for false_claim in false_claims[:3]:
@@ -413,7 +413,7 @@ async def research_temporal_diff(
     Returns:
         Dict with ``changes_summary``, ``archive_date``, ``current_date``.
     """
-    from loom.tools.enrich import research_wayback
+    from loom.tools.core.enrich import research_wayback
     from loom.validators import UrlSafetyError, validate_url
 
     wayback = research_wayback(url, limit=1)
@@ -456,7 +456,7 @@ async def research_temporal_diff(
         return {"url": url, "error": "could not fetch either version"}
 
     try:
-        from loom.tools.llm import research_llm_chat
+        from loom.tools.llm.llm import research_llm_chat
 
         diff_prompt = (
             "Compare these two versions of a webpage and summarize what changed. "
@@ -646,7 +646,7 @@ async def research_ai_detect(
         return {"error": "text too short (need 100+ chars)", "ai_probability": 0.0}
 
     try:
-        from loom.tools.llm import research_llm_chat
+        from loom.tools.llm.llm import research_llm_chat
     except ImportError:
         return {"error": "LLM tools not available", "ai_probability": 0.0}
 
@@ -699,7 +699,7 @@ async def research_curriculum(
     Returns:
         Dict with ``levels`` (beginner/intermediate/advanced), each with resources.
     """
-    from loom.tools.search import research_search
+    from loom.tools.core.search import research_search
 
     levels: dict[str, list[dict[str, Any]]] = {
         "beginner": [],
@@ -1043,7 +1043,7 @@ async def research_semantic_sitemap(
     texts_for_embed = [f"{p['title']} {p['snippet']}" for p in page_data]
 
     try:
-        from loom.tools.llm import research_llm_embed
+        from loom.tools.llm.llm import research_llm_embed
 
         embed_result = await research_llm_embed(texts=texts_for_embed)
         embeddings = embed_result.get("embeddings", [])

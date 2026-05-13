@@ -33,7 +33,7 @@ logger = logging.getLogger("loom.deep")
 
 # Try to import cost estimator with graceful fallback
 try:
-    from loom.tools.cost_estimator import research_estimate_cost
+    from loom.tools.infrastructure.cost_estimator import research_estimate_cost
     _COST_ESTIMATION_AVAILABLE = True
 except ImportError:
     _COST_ESTIMATION_AVAILABLE = False
@@ -41,7 +41,7 @@ except ImportError:
 
 # Try to import shared cache
 try:
-    from loom.tools.research_cache_shared import check_shared_cache, store_shared_cache
+    from loom.tools.infrastructure.research_cache_shared import check_shared_cache, store_shared_cache
     _SHARED_CACHE_AVAILABLE = True
 except ImportError:
     _SHARED_CACHE_AVAILABLE = False
@@ -325,7 +325,7 @@ async def research_deep(
         elapsed_ms, fact_checks, provider_tier, and cost_estimate_usd.
     """
     from loom.config import get_config
-    from loom.tools.search import research_search
+    from loom.tools.core.search import research_search
 
     start_time = time.time()
     config = get_config()
@@ -378,7 +378,7 @@ async def research_deep(
 
     # Apply provider_tier filtering to search_providers
     if provider_tier == "free_only":
-        from loom.tools.search import _FREE_PROVIDERS
+        from loom.tools.core.search import _FREE_PROVIDERS
         search_providers = [p for p in search_providers if p in _FREE_PROVIDERS]
         if not search_providers:
             # Fallback to at least ddgs
@@ -391,7 +391,7 @@ async def research_deep(
     search_variations: list[str] = [query]
     if expand_queries and total_cost < max_cost_usd:
         try:
-            from loom.tools.llm import research_llm_query_expand
+            from loom.tools.llm.llm import research_llm_query_expand
 
             expand_result = await research_llm_query_expand(query, n=3)
             if "error" not in expand_result:
@@ -463,7 +463,7 @@ async def research_deep(
             results_are_thin,
         )
         try:
-            from loom.tools.full_pipeline import research_full_pipeline
+            from loom.tools.infrastructure.full_pipeline import research_full_pipeline
 
             fp_result = await research_full_pipeline(
                 query=query,
@@ -520,8 +520,8 @@ async def research_deep(
         }
 
     # ── STAGE 3: Parallel Fetch + Markdown ───────────────────────────────
-    from loom.tools.fetch import research_fetch
-    from loom.tools.markdown import research_markdown
+    from loom.tools.core.fetch import research_fetch
+    from loom.tools.core.markdown import research_markdown
 
     concurrency = config.get("SPIDER_CONCURRENCY", 5)
     sem = asyncio.Semaphore(concurrency)
@@ -580,7 +580,7 @@ async def research_deep(
 
             if len(markdown) < 100:
                 try:
-                    from loom.tools.enrich import research_wayback
+                    from loom.tools.core.enrich import research_wayback
 
                     wb = await asyncio.to_thread(research_wayback, url, 1)
                     snapshots = wb.get("snapshots", [])
@@ -628,7 +628,7 @@ async def research_deep(
     # ── STAGE 4: LLM Extraction (PARALLELIZED) ──────────────────────────
     if extract and pages and total_cost < max_cost_usd:
         try:
-            from loom.tools.llm import research_llm_extract
+            from loom.tools.llm.llm import research_llm_extract
 
             schema = {
                 "key_points": "array",
@@ -704,7 +704,7 @@ async def research_deep(
                     })
                 else:
                     try:
-                        from loom.tools.llm import research_llm_answer
+                        from loom.tools.llm.llm import research_llm_answer
 
                         sources = [
                             {
@@ -728,7 +728,7 @@ async def research_deep(
             except Exception as exc:
                 logger.warning("cost_estimation_fail: %s", exc)
                 try:
-                    from loom.tools.llm import research_llm_answer
+                    from loom.tools.llm.llm import research_llm_answer
 
                     sources = [
                         {
@@ -751,7 +751,7 @@ async def research_deep(
                     warnings.append({"stage": "synthesis", "error": str(exc2)})
         else:
             try:
-                from loom.tools.llm import research_llm_answer
+                from loom.tools.llm.llm import research_llm_answer
 
                 sources = [
                     {
@@ -779,7 +779,7 @@ async def research_deep(
         query_words = set(query.lower().split())
         if query_words & _CODE_KEYWORDS:
             try:
-                from loom.tools.github import research_github, research_github_readme
+                from loom.tools.core.github import research_github, research_github_readme
 
                 gh_result = await loop.run_in_executor(
                     None,
@@ -808,7 +808,7 @@ async def research_deep(
     # ── STAGE 8: Language Detection ─────────────────────────────────────
     language_stats: dict[str, int] = {}
     try:
-        from loom.tools.enrich import research_detect_language
+        from loom.tools.core.enrich import research_detect_language
 
         for page in top_pages:
             snippet = page.get("markdown", "")[:1000]
@@ -827,7 +827,7 @@ async def research_deep(
         tech_keywords = _CODE_KEYWORDS | {"tool", "app", "service", "platform", "startup"}
         if query_words & tech_keywords:
             try:
-                from loom.tools.creative import research_community_sentiment
+                from loom.tools.llm.creative import research_community_sentiment
 
                 community_sentiment = await research_community_sentiment(query, n=5)
             except Exception as exc:
@@ -838,7 +838,7 @@ async def research_deep(
     red_team_report: dict[str, Any] | None = None
     if include_red_team and synthesis_result and total_cost < max_cost_usd:
         try:
-            from loom.tools.creative import research_red_team
+            from loom.tools.llm.creative import research_red_team
 
             claim = synthesis_result.get("answer", "")[:500]
             if claim:
@@ -854,7 +854,7 @@ async def research_deep(
     misinfo_report: dict[str, Any] | None = None
     if include_misinfo_check and synthesis_result and total_cost < max_cost_usd:
         try:
-            from loom.tools.creative import research_misinfo_check
+            from loom.tools.llm.creative import research_misinfo_check
 
             claim = synthesis_result.get("answer", "")[:300]
             if claim:
@@ -869,7 +869,7 @@ async def research_deep(
     fact_checks: list[dict[str, Any]] | None = None
     if synthesis_result:
         try:
-            from loom.tools.fact_checker import research_fact_check
+            from loom.tools.research.fact_checker import research_fact_check
 
             final_answer = synthesis_result.get("answer", "")
             claims = _extract_factual_claims(final_answer, max_claims=3)
@@ -918,7 +918,7 @@ async def research_deep(
     }
 
     try:
-        from loom.tools.hcs_scorer import research_hcs_score_full
+        from loom.tools.adversarial.hcs_scorer import research_hcs_score_full
 
         hcs_score = await research_hcs_score_full(query, final_answer)
         if hcs_score.get("status") == "success":

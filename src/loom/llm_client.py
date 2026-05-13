@@ -28,7 +28,7 @@ async def query_llm(
 
     Returns dict with 'text', 'provider', 'model', 'cost_usd', 'error'.
     """
-    from loom.tools.llm import _call_with_cascade
+    from loom.tools.llm.llm import _call_with_cascade
 
     messages: list[dict[str, str]] = []
     if system:

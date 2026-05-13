@@ -93,7 +93,7 @@ async def _get_browser():
 async def _call_llm_vision(page: str, ss: str | None, instr: str) -> str:
     """Call LLM vision to analyze page."""
     try:
-        from loom.tools.llm import research_llm_answer
+        from loom.tools.llm.llm import research_llm_answer
     except ImportError:
         return "LLM tools not available"
     prompt = f"Instruction: {instr}\n\nPage:\n{page[:5000]}"
@@ -180,7 +180,7 @@ async def research_stagehand_extract(url: str, schema: dict[str, Any] | str) -> 
             page_text = await page.evaluate("() => document.body.innerText")
 
             try:
-                from loom.tools.llm import research_llm_answer
+                from loom.tools.llm.llm import research_llm_answer
             except ImportError:
                 result["error"] = "LLM tools not available"
                 return result

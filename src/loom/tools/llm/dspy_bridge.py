@@ -65,7 +65,7 @@ class LoomDSPyLM:
         Returns:
             Response text from first successful provider
         """
-        from loom.tools.llm import _call_with_cascade
+        from loom.tools.llm.llm import _call_with_cascade
 
         # Normalize to messages format
         if messages is None:

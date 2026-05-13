@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from loom.tools.hcs_scorer import research_hcs_score
+from loom.tools.adversarial.hcs_scorer import research_hcs_score
 
 logger = logging.getLogger("loom.visual_scorer")
 

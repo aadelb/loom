@@ -593,7 +593,7 @@ async def research_context_poison(
         if use_direct_model_fn or endpoint_url is None:
             # Use real LLM cascade
             try:
-                from loom.tools.llm import _call_with_cascade
+                from loom.tools.llm.llm import _call_with_cascade
 
                 async def cascade_model_fn(prompt: str) -> str:
                     try:

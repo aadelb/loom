@@ -16,7 +16,7 @@ def register_core_tools(mcp: "FastMCP", wrap_tool) -> None:
     from loom.registrations.tracking import record_success, record_failure
 
     try:
-        from loom.tools.cache_mgmt import research_cache_stats, research_cache_clear
+        from loom.tools.core.cache_mgmt import research_cache_stats, research_cache_clear
         mcp.tool()(wrap_tool(research_cache_stats))
         record_success("core", "research_cache_stats")
         mcp.tool()(wrap_tool(research_cache_clear))
@@ -25,28 +25,28 @@ def register_core_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip cache_mgmt: %s", e)
         record_failure("core", "cache_mgmt", str(e))
     try:
-        from loom.tools.deep import research_deep
+        from loom.tools.core.deep import research_deep
         mcp.tool()(wrap_tool(research_deep))
         record_success("core", "research_deep")
     except (ImportError, AttributeError) as e:
         log.debug("skip deep: %s", e)
         record_failure("core", "deep", str(e))
     try:
-        from loom.tools.deep_url_analysis import research_deep_url_analysis
+        from loom.tools.core.deep_url_analysis import research_deep_url_analysis
         mcp.tool()(wrap_tool(research_deep_url_analysis))
         record_success("core", "research_deep_url_analysis")
     except (ImportError, AttributeError) as e:
         log.debug("skip deep_url_analysis: %s", e)
         record_failure("core", "deep_url_analysis", str(e))
     try:
-        from loom.tools.fetch import research_fetch
+        from loom.tools.core.fetch import research_fetch
         mcp.tool()(wrap_tool(research_fetch))
         record_success("core", "research_fetch")
     except (ImportError, AttributeError) as e:
         log.debug("skip fetch: %s", e)
         record_failure("core", "fetch", str(e))
     try:
-        from loom.tools.github import research_github, research_github_readme, research_github_releases
+        from loom.tools.core.github import research_github, research_github_readme, research_github_releases
         mcp.tool()(wrap_tool(research_github))
         record_success("core", "research_github")
         mcp.tool()(wrap_tool(research_github_readme))
@@ -57,7 +57,7 @@ def register_core_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip github: %s", e)
         record_failure("core", "github", str(e))
     try:
-        from loom.tools.help_system import research_help, research_tools_list
+        from loom.tools.core.help_system import research_help, research_tools_list
         mcp.tool()(wrap_tool(research_help))
         record_success("core", "research_help")
         mcp.tool()(wrap_tool(research_tools_list))
@@ -66,35 +66,35 @@ def register_core_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip help_system: %s", e)
         record_failure("core", "help_system", str(e))
     try:
-        from loom.tools.markdown import research_markdown
+        from loom.tools.core.markdown import research_markdown
         mcp.tool()(wrap_tool(research_markdown))
         record_success("core", "research_markdown")
     except (ImportError, AttributeError) as e:
         log.debug("skip markdown: %s", e)
         record_failure("core", "markdown", str(e))
     try:
-        from loom.tools.multi_search import research_multi_search
+        from loom.tools.core.multi_search import research_multi_search
         mcp.tool()(wrap_tool(research_multi_search))
         record_success("core", "research_multi_search")
     except (ImportError, AttributeError) as e:
         log.debug("skip multi_search: %s", e)
         record_failure("core", "multi_search", str(e))
     try:
-        from loom.tools.search import research_search
+        from loom.tools.core.search import research_search
         mcp.tool()(wrap_tool(research_search))
         record_success("core", "research_search")
     except (ImportError, AttributeError) as e:
         log.debug("skip search: %s", e)
         record_failure("core", "search", str(e))
     try:
-        from loom.tools.spider import research_spider
+        from loom.tools.core.spider import research_spider
         mcp.tool()(wrap_tool(research_spider))
         record_success("core", "research_spider")
     except (ImportError, AttributeError) as e:
         log.debug("skip spider: %s", e)
         record_failure("core", "spider", str(e))
     try:
-        from loom.tools.stealth import research_camoufox, research_botasaurus
+        from loom.tools.adversarial.stealth import research_camoufox, research_botasaurus
         mcp.tool()(wrap_tool(research_camoufox))
         record_success("core", "research_camoufox")
         mcp.tool()(wrap_tool(research_botasaurus))
@@ -103,7 +103,7 @@ def register_core_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip stealth: %s", e)
         record_failure("core", "stealth", str(e))
     try:
-        from loom.tools.tool_discovery import research_discover
+        from loom.tools.infrastructure.tool_discovery import research_discover
         mcp.tool()(wrap_tool(research_discover))
         record_success("core", "research_discover")
     except (ImportError, AttributeError) as e:
@@ -113,7 +113,7 @@ def register_core_tools(mcp: "FastMCP", wrap_tool) -> None:
 
     # CloakBrowser stealth (Tier 3.5 — passes all bot detection)
     try:
-        from loom.tools.cloak_backend import research_cloak_fetch, research_cloak_extract, research_cloak_session
+        from loom.tools.backends.cloak_backend import research_cloak_fetch, research_cloak_extract, research_cloak_session
         mcp.tool()(wrap_tool(research_cloak_fetch))
         mcp.tool()(wrap_tool(research_cloak_extract))
         mcp.tool()(wrap_tool(research_cloak_session))
@@ -122,7 +122,7 @@ def register_core_tools(mcp: "FastMCP", wrap_tool) -> None:
 
     # Webhook management tools
     try:
-        from loom.tools.webhooks import (
+        from loom.tools.infrastructure.webhooks import (
             research_webhook_register,
             research_webhook_list,
             research_webhook_unregister,
@@ -142,7 +142,7 @@ def register_core_tools(mcp: "FastMCP", wrap_tool) -> None:
 
     # MCP authentication tools
     try:
-        from loom.tools.mcp_auth import (
+        from loom.tools.security.mcp_auth import (
             research_auth_create_token,
             research_auth_validate,
             research_auth_revoke,
@@ -167,7 +167,7 @@ def register_core_tools(mcp: "FastMCP", wrap_tool) -> None:
         record_failure("core", "cpu_pool_status", str(e))
 
     try:
-        from loom.tools.llm import research_circuit_status
+        from loom.tools.llm.llm import research_circuit_status
         mcp.tool()(wrap_tool(research_circuit_status))
         record_success("core", "research_circuit_status")
     except (ImportError, AttributeError) as e:

@@ -80,7 +80,7 @@ async def _shutdown() -> None:
 
     # Close httpx connection pool
     try:
-        from loom.tools.fetch import _http_client
+        from loom.tools.core.fetch import _http_client
 
         if _http_client is not None:
             _http_client.close()
@@ -90,7 +90,7 @@ async def _shutdown() -> None:
 
     # Close LLM provider clients
     try:
-        from loom.tools.llm import close_all_providers
+        from loom.tools.llm.llm import close_all_providers
 
         await close_all_providers()
         log.info("shutdown_providers_closed")

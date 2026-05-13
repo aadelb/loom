@@ -282,7 +282,7 @@ async def research_radicalization_detect(
     # Try LLM assessment if available
     llm_assessment = None
     try:
-        from loom.tools.llm import research_llm_chat
+        from loom.tools.llm.llm import research_llm_chat
 
         prompt = (
             f"Analyze this text for radicalization indicators. "

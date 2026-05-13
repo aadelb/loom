@@ -44,12 +44,12 @@ research_fetch = None
 research_llm_classify = None
 
 try:
-	from loom.tools.fetch import research_fetch
+	from loom.tools.core.fetch import research_fetch
 except ImportError:
 	pass
 
 try:
-	from loom.tools.llm import research_llm_classify
+	from loom.tools.llm.llm import research_llm_classify
 except ImportError:
 	pass
 

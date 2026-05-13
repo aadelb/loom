@@ -1026,28 +1026,28 @@ def repl(server_url: str = ServerURL) -> None:
             # Route to tool_* wrappers for quick REPL execution
             try:
                 if cmd == "fetch" and args:
-                    from loom.tools.fetch import tool_fetch
+                    from loom.tools.core.fetch import tool_fetch
 
                     result = tool_fetch(url=args[0])
                     console.print(result[0].text if result else "No result")
                 elif cmd == "search" and args:
-                    from loom.tools.search import tool_search
+                    from loom.tools.core.search import tool_search
 
                     result = tool_search(query=" ".join(args))
                     console.print(result[0].text if result else "No result")
                 elif cmd == "github" and len(args) >= 2:
-                    from loom.tools.github import tool_github
+                    from loom.tools.core.github import tool_github
 
                     result = tool_github(kind=args[0], query=" ".join(args[1:]))
                     console.print(result[0].text if result else "No result")
                 elif cmd == "cache" and args:
                     if args[0] == "stats":
-                        from loom.tools.cache_mgmt import tool_cache_stats
+                        from loom.tools.core.cache_mgmt import tool_cache_stats
 
                         result = tool_cache_stats()
                         console.print(result[0].text if result else "No result")
                     elif args[0] == "clear":
-                        from loom.tools.cache_mgmt import tool_cache_clear
+                        from loom.tools.core.cache_mgmt import tool_cache_clear
 
                         result = tool_cache_clear()
                         console.print(result[0].text if result else "No result")
@@ -1063,7 +1063,7 @@ def repl(server_url: str = ServerURL) -> None:
                         result = tool_session_close(args[1])
                         console.print(result[0].text if result else "No result")
                 elif cmd == "camoufox" and args:
-                    from loom.tools.stealth import tool_camoufox
+                    from loom.tools.adversarial.stealth import tool_camoufox
 
                     result = tool_camoufox(url=args[0])
                     console.print(result[0].text if result else "No result")

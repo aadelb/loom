@@ -77,7 +77,7 @@ async def research_bpj_generate(
 
     # Use real LLM cascade for safety classification
     try:
-        from loom.tools.llm import _call_with_cascade
+        from loom.tools.llm.llm import _call_with_cascade
 
         async def llm_model_fn(prompt: str) -> tuple[bool, str]:
             """Real LLM-based safety classifier."""

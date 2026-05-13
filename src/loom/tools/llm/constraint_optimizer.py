@@ -19,9 +19,9 @@ from loom.error_responses import handle_tool_errors
 
 try:
     from loom.constraint_optimizer import ConstraintOptimizer
-    from loom.tools.hcs_scorer import research_hcs_score
-    from loom.tools.stealth_score import research_stealth_score
-    from loom.tools.attack_scorer import research_attack_score
+    from loom.tools.adversarial.hcs_scorer import research_hcs_score
+    from loom.tools.adversarial.stealth_score import research_stealth_score
+    from loom.tools.adversarial.attack_scorer import research_attack_score
     _DEPS_AVAILABLE = True
 except ImportError:
     _DEPS_AVAILABLE = False

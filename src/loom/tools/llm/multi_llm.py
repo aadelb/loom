@@ -121,7 +121,7 @@ async def research_ask_all_llms(
     successful = [r for r in responses if r["text"] and not r["error"]]
     refused = []
     if include_reframe:
-        from loom.tools.prompt_reframe import _detect_refusal, research_prompt_reframe
+        from loom.tools.llm.prompt_reframe import _detect_refusal, research_prompt_reframe
         for r in responses:
             if r["text"] and _detect_refusal(r["text"]):
                 r["refused"] = True

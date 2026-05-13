@@ -412,7 +412,7 @@ async def research_auto_reframe(
 
         if not target_url:
             try:
-                from loom.tools.llm import research_llm_chat
+                from loom.tools.llm.llm import research_llm_chat
                 use_llm = True
             except ImportError:
                 use_llm = False

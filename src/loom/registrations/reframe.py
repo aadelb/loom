@@ -16,14 +16,14 @@ def register_reframe_tools(mcp: "FastMCP", wrap_tool) -> None:
     from loom.registrations.tracking import record_success, record_failure
 
     try:
-        from loom.tools.prompt_analyzer import research_prompt_analyze
+        from loom.tools.llm.prompt_analyzer import research_prompt_analyze
         mcp.tool()(wrap_tool(research_prompt_analyze))
         record_success("reframe", "research_prompt_analyze")
     except (ImportError, AttributeError) as e:
         log.debug("skip prompt_analyzer: %s", e)
         record_failure("reframe", "prompt_analyzer", str(e))
     try:
-        from loom.tools.prompt_reframe import research_prompt_reframe, research_auto_reframe, research_refusal_detector, research_stack_reframe, research_crescendo_chain, research_model_vulnerability_profile, research_format_smuggle, research_fingerprint_model, research_adaptive_reframe
+        from loom.tools.llm.prompt_reframe import research_prompt_reframe, research_auto_reframe, research_refusal_detector, research_stack_reframe, research_crescendo_chain, research_model_vulnerability_profile, research_format_smuggle, research_fingerprint_model, research_adaptive_reframe
         mcp.tool()(wrap_tool(research_prompt_reframe))
         record_success("reframe", "research_prompt_reframe")
         mcp.tool()(wrap_tool(research_auto_reframe))
@@ -46,7 +46,7 @@ def register_reframe_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip prompt_reframe: %s", e)
         record_failure("reframe", "prompt_reframe", str(e))
     try:
-        from loom.tools.psycholinguistic import research_psycholinguistic
+        from loom.tools.research.psycholinguistic import research_psycholinguistic
         mcp.tool()(wrap_tool(research_psycholinguistic))
         record_success("reframe", "research_psycholinguistic")
     except (ImportError, AttributeError) as e:

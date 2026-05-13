@@ -19,7 +19,7 @@ from loom.error_responses import handle_tool_errors
 from typing import Any
 
 try:
-    from loom.tools.llm import _call_with_cascade
+    from loom.tools.llm.llm import _call_with_cascade
     _LLM_AVAILABLE = True
 except ImportError:
     _LLM_AVAILABLE = False

@@ -18,9 +18,9 @@ from typing import Any
 from loom.error_responses import handle_tool_errors
 
 try:
-    from loom.tools.llm import _call_with_cascade
-    from loom.tools.prompt_reframe import _apply_strategy, _STRATEGIES
-    from loom.tools.strategy_feedback import research_strategy_log
+    from loom.tools.llm.llm import _call_with_cascade
+    from loom.tools.llm.prompt_reframe import _apply_strategy, _STRATEGIES
+    from loom.tools.llm.strategy_feedback import research_strategy_log
     _DEPS_AVAILABLE = True
 except ImportError as _ie:
     _DEPS_AVAILABLE = False

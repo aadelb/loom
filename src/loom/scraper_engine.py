@@ -331,7 +331,7 @@ class ScraperEngine:
         # For now, return the content with a basic summary
         try:
             # Try to extract a summary using LLM tools if available
-            from loom.tools.llm import research_llm_summarize
+            from loom.tools.llm.llm import research_llm_summarize
 
             summary = await research_llm_summarize(
                 text=fetch_result.content[:5000],

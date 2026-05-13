@@ -262,7 +262,7 @@ async def research_fact_verify(
     )
 
     try:
-        from loom.tools.search import research_search
+        from loom.tools.core.search import research_search
 
         # Search using multiple providers in parallel
         # Try different providers for better coverage

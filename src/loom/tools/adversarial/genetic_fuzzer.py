@@ -15,8 +15,8 @@ from typing import Any
 from loom.error_responses import handle_tool_errors
 
 try:
-    from loom.tools.prompt_reframe import _apply_strategy, _STRATEGIES
-    from loom.tools.quality_escalation import _score_all_dimensions
+    from loom.tools.llm.prompt_reframe import _apply_strategy, _STRATEGIES
+    from loom.tools.llm.quality_escalation import _score_all_dimensions
     _FUZZER_DEPS = True
 except ImportError:
     _FUZZER_DEPS = False

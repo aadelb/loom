@@ -166,7 +166,7 @@ async def research_botasaurus(
         )
         logger.warning("botasaurus_deprecated: use research_fetch(backend='botasaurus')")
 
-        from loom.tools.fetch import research_fetch
+        from loom.tools.core.fetch import research_fetch
 
         logger.info("botasaurus_start url=%s", url)
         result: dict[str, Any] = await research_fetch(

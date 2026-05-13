@@ -14,7 +14,7 @@ from typing import Any
 from loom.error_responses import handle_tool_errors
 
 try:
-    from loom.tools.llm import (
+    from loom.tools.llm.llm import (
         _call_with_cascade,
         _safe_error_str,
         _sanitize_error,
@@ -117,7 +117,7 @@ async def research_pydantic_agent(
             "pydantic-ai not available, falling back to standard LLM: %s",
             _PYDANTIC_AI_IMPORT_ERROR,
         )
-        from loom.tools.llm import research_llm_answer
+        from loom.tools.llm.llm import research_llm_answer
         try:
             result = await research_llm_answer(
                 question=prompt,
@@ -198,7 +198,7 @@ async def research_structured_llm(
             "pydantic-ai not available, falling back to research_llm_extract: %s",
             _PYDANTIC_AI_IMPORT_ERROR,
         )
-        from loom.tools.llm import research_llm_extract
+        from loom.tools.llm.llm import research_llm_extract
         try:
             result = await research_llm_extract(
                 text=prompt,

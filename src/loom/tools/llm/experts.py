@@ -32,7 +32,7 @@ async def research_find_experts(
 
     # Search GitHub for active contributors
     try:
-        from loom.tools.github import research_github
+        from loom.tools.core.github import research_github
 
         gh_result = await loop.run_in_executor(
             None,

@@ -16,7 +16,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
     from loom.registrations.tracking import record_success, record_failure
 
     try:
-        from loom.tools.academic_integrity import research_citation_analysis, research_retraction_check, research_predatory_journal_check
+        from loom.tools.research.academic_integrity import research_citation_analysis, research_retraction_check, research_predatory_journal_check
         mcp.tool()(wrap_tool(research_citation_analysis))
         record_success("research", "research_citation_analysis")
         mcp.tool()(wrap_tool(research_retraction_check))
@@ -27,7 +27,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip academic_integrity: %s", e)
         record_failure("research", "academic_integrity", str(e))
     try:
-        from loom.tools.access_tools import research_legal_takedown, research_open_access, research_content_authenticity, research_credential_monitor, research_deepfake_checker
+        from loom.tools.infrastructure.access_tools import research_legal_takedown, research_open_access, research_content_authenticity, research_credential_monitor, research_deepfake_checker
         mcp.tool()(wrap_tool(research_legal_takedown))
         record_success("research", "research_legal_takedown")
         mcp.tool()(wrap_tool(research_open_access))
@@ -42,7 +42,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip access_tools: %s", e)
         record_failure("research", "access_tools", str(e))
     try:
-        from loom.tools.agent_benchmark import research_agent_benchmark
+        from loom.tools.research.agent_benchmark import research_agent_benchmark
         mcp.tool()(wrap_tool(research_agent_benchmark))
         record_success("research", "research_agent_benchmark")
     except (ImportError, AttributeError) as e:
@@ -50,7 +50,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
         record_failure("research", "agent_benchmark", str(e))
     # ── Composer & Pipeline Tools ──
     try:
-        from loom.tools.composer import research_compose, research_compose_validate, research_merge
+        from loom.tools.llm.composer import research_compose, research_compose_validate, research_merge
         mcp.tool()(wrap_tool(research_compose))
         record_success("research", "research_compose")
         mcp.tool()(wrap_tool(research_compose_validate))
@@ -61,7 +61,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip composer: %s", e)
         record_failure("research", "composer", str(e))
     try:
-        from loom.tools.pipeline_enhancer import research_compose_pipeline, research_enhance, research_enhance_batch, research_enhance_with_dependencies
+        from loom.tools.infrastructure.pipeline_enhancer import research_compose_pipeline, research_enhance, research_enhance_batch, research_enhance_with_dependencies
         mcp.tool()(wrap_tool(research_compose_pipeline))
         record_success("research", "research_compose_pipeline")
         mcp.tool()(wrap_tool(research_enhance))
@@ -76,7 +76,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
 
     # ── Prompt & Compression Tools ──
     try:
-        from loom.tools.prompt_compression import research_compress_prompt, research_compression_stats
+        from loom.tools.llm.prompt_compression import research_compress_prompt, research_compression_stats
         mcp.tool()(wrap_tool(research_compress_prompt))
         record_success("research", "research_compress_prompt")
         mcp.tool()(wrap_tool(research_compression_stats))
@@ -87,7 +87,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
 
     # ── Verification Tools ──
     try:
-        from loom.tools.fact_verification import research_fact_verify, research_batch_verify
+        from loom.tools.research.fact_verification import research_fact_verify, research_batch_verify
         mcp.tool()(wrap_tool(research_fact_verify))
         record_success("research", "research_fact_verify")
         mcp.tool()(wrap_tool(research_batch_verify))
@@ -98,7 +98,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
 
     # ── Stealth Detection Tools ──
     try:
-        from loom.tools.stealth_score import research_stealth_score, research_stealth_score_heuristic, research_stealth_detect_comparison
+        from loom.tools.adversarial.stealth_score import research_stealth_score, research_stealth_score_heuristic, research_stealth_detect_comparison
         mcp.tool()(wrap_tool(research_stealth_score))
         record_success("research", "research_stealth_score")
         mcp.tool()(wrap_tool(research_stealth_score_heuristic))
@@ -111,21 +111,21 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
 
     # ── Scoring & Evaluation Tools ──
     try:
-        from loom.tools.attack_scorer import research_attack_score
+        from loom.tools.adversarial.attack_scorer import research_attack_score
         mcp.tool()(wrap_tool(research_attack_score))
         record_success("research", "research_attack_score")
     except (ImportError, AttributeError) as e:
         log.debug("skip attack_scorer: %s", e)
         record_failure("research", "attack_scorer", str(e))
     try:
-        from loom.tools.potency_meter import research_potency_score
+        from loom.tools.adversarial.potency_meter import research_potency_score
         mcp.tool()(wrap_tool(research_potency_score))
         record_success("research", "research_potency_score")
     except (ImportError, AttributeError) as e:
         log.debug("skip potency_meter: %s", e)
         record_failure("research", "potency_meter", str(e))
     try:
-        from loom.tools.toxicity_checker_tool import research_toxicity_check
+        from loom.tools.research.toxicity_checker_tool import research_toxicity_check
         mcp.tool()(wrap_tool(research_toxicity_check))
         record_success("research", "research_toxicity_check")
     except (ImportError, AttributeError) as e:
@@ -134,21 +134,21 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
 
     # ── Strategy & Orchestration Tools ──
     try:
-        from loom.tools.strategy_oracle import research_strategy_oracle
+        from loom.tools.llm.strategy_oracle import research_strategy_oracle
         mcp.tool()(wrap_tool(research_strategy_oracle))
         record_success("research", "research_strategy_oracle")
     except (ImportError, AttributeError) as e:
         log.debug("skip strategy_oracle: %s", e)
         record_failure("research", "strategy_oracle", str(e))
     try:
-        from loom.tools.daisy_chain_tool import research_daisy_chain
+        from loom.tools.adversarial.daisy_chain_tool import research_daisy_chain
         mcp.tool()(wrap_tool(research_daisy_chain))
         record_success("research", "research_daisy_chain")
     except (ImportError, AttributeError) as e:
         log.debug("skip daisy_chain_tool: %s", e)
         record_failure("research", "daisy_chain_tool", str(e))
     try:
-        from loom.tools.consistency_pressure import research_consistency_pressure, research_consistency_pressure_history, research_consistency_pressure_record
+        from loom.tools.adversarial.consistency_pressure import research_consistency_pressure, research_consistency_pressure_history, research_consistency_pressure_record
         mcp.tool()(wrap_tool(research_consistency_pressure))
         record_success("research", "research_consistency_pressure")
         mcp.tool()(wrap_tool(research_consistency_pressure_history))
@@ -159,7 +159,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip consistency_pressure: %s", e)
         record_failure("research", "consistency_pressure", str(e))
     try:
-        from loom.tools.constraint_optimizer import research_constraint_optimize
+        from loom.tools.llm.constraint_optimizer import research_constraint_optimize
         mcp.tool()(wrap_tool(research_constraint_optimize))
         record_success("research", "research_constraint_optimize")
     except (ImportError, AttributeError) as e:
@@ -168,7 +168,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
 
     # ── Monitoring & Tracking Tools ──
     try:
-        from loom.tools.drift_monitor_tool import research_drift_monitor, research_drift_monitor_list
+        from loom.tools.monitoring.drift_monitor_tool import research_drift_monitor, research_drift_monitor_list
         mcp.tool()(wrap_tool(research_drift_monitor))
         record_success("research", "research_drift_monitor")
         mcp.tool()(wrap_tool(research_drift_monitor_list))
@@ -177,7 +177,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip drift_monitor_tool: %s", e)
         record_failure("research", "drift_monitor_tool", str(e))
     try:
-        from loom.tools.model_consensus import research_multi_consensus
+        from loom.tools.llm.model_consensus import research_multi_consensus
         mcp.tool()(wrap_tool(research_multi_consensus))
         record_success("research", "research_multi_consensus")
     except (ImportError, AttributeError) as e:
@@ -186,7 +186,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
 
     # ── Data Export Tools ──
     try:
-        from loom.tools.bpj import research_bpj_generate
+        from loom.tools.adversarial.bpj import research_bpj_generate
         mcp.tool()(wrap_tool(research_bpj_generate))
         record_success("research", "research_bpj_generate")
     except (ImportError, AttributeError) as e:
@@ -195,7 +195,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
 
     # ── Sandbox Execution Tools ──
     try:
-        from loom.tools.sandbox_executor import research_sandbox_execute, research_sandbox_monitor
+        from loom.tools.security.sandbox_executor import research_sandbox_execute, research_sandbox_monitor
         mcp.tool()(wrap_tool(research_sandbox_execute))
         record_success("research", "research_sandbox_execute")
         mcp.tool()(wrap_tool(research_sandbox_monitor))
@@ -206,7 +206,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
 
     # ── Steganography Tools ──
     try:
-        from loom.tools.stego_decoder import research_stego_decode
+        from loom.tools.privacy.stego_decoder import research_stego_decode
         mcp.tool()(wrap_tool(research_stego_decode))
         record_success("research", "research_stego_decode")
     except (ImportError, AttributeError) as e:
@@ -215,7 +215,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
 
     # ── OCR Tools ──
     try:
-        from loom.tools.image_intel import research_ocr_extract
+        from loom.tools.intelligence.image_intel import research_ocr_extract
         mcp.tool()(wrap_tool(research_ocr_extract))
         record_success("research", "research_ocr_extract")
     except (ImportError, AttributeError) as e:
@@ -224,7 +224,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
 
     # ── Graph & Visualization Tools ──
     try:
-        from loom.tools.graph_scraper import research_graph_scrape
+        from loom.tools.core.graph_scraper import research_graph_scrape
         mcp.tool()(wrap_tool(research_graph_scrape))
         record_success("research", "research_graph_scrape")
     except (ImportError, AttributeError) as e:
@@ -233,7 +233,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
 
     # ── Audit Tools ──
     try:
-        from loom.tools.audit_query import research_audit_stats
+        from loom.tools.core.audit_query import research_audit_stats
         mcp.tool()(wrap_tool(research_audit_stats))
         record_success("research", "research_audit_stats")
     except (ImportError, AttributeError) as e:
@@ -242,7 +242,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
 
     # ── Ethereum/DeFi Tools ──
     try:
-        from loom.tools.ethereum_tools import research_ethereum_tx_decode, research_defi_security_audit
+        from loom.tools.infrastructure.ethereum_tools import research_ethereum_tx_decode, research_defi_security_audit
         mcp.tool()(wrap_tool(research_ethereum_tx_decode))
         record_success("research", "research_ethereum_tx_decode")
         mcp.tool()(wrap_tool(research_defi_security_audit))
@@ -253,7 +253,7 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
 
     # ── Routing & Recommendation Tools ──
     try:
-        from loom.tools.router import research_route_to_model, research_recommend_tools
+        from loom.tools.llm.router import research_route_to_model, research_recommend_tools
         mcp.tool()(wrap_tool(research_route_to_model))
         record_success("research", "research_route_to_model")
         mcp.tool()(wrap_tool(research_recommend_tools))
@@ -264,14 +264,14 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
 
     # ── Demo Tools ──
     try:
-        from loom.tools.threat_profile_demo import research_threat_profile_demo
+        from loom.tools.intelligence.threat_profile_demo import research_threat_profile_demo
         mcp.tool()(wrap_tool(research_threat_profile_demo))
         record_success("research", "research_threat_profile_demo")
     except (ImportError, AttributeError) as e:
         log.debug("skip threat_profile_demo: %s", e)
         record_failure("research", "threat_profile_demo", str(e))
     try:
-        from loom.tools.social_graph_demo import research_social_graph_demo
+        from loom.tools.intelligence.social_graph_demo import research_social_graph_demo
         mcp.tool()(wrap_tool(research_social_graph_demo))
         record_success("research", "research_social_graph_demo")
     except (ImportError, AttributeError) as e:

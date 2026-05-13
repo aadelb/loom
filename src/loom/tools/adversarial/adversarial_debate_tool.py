@@ -87,7 +87,7 @@ async def research_adversarial_debate(
         return {"error": f"Invalid parameters: {exc}", "tool": "research_adversarial_debate"}
 
     try:
-        from loom.tools.llm import _call_with_cascade
+        from loom.tools.llm.llm import _call_with_cascade
     except ImportError:
         logger.error("LLM cascade not available for debate")
         return {"error": "LLM provider required but unavailable", "topic": topic}

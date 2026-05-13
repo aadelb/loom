@@ -115,7 +115,7 @@ async def research_synth_echo(
 
     # Import real LLM cascade
     try:
-        from loom.tools.llm import _call_with_cascade
+        from loom.tools.llm.llm import _call_with_cascade
     except ImportError:
         logger.error("synth_echo: llm cascade not available")
         return {

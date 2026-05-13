@@ -352,7 +352,7 @@ async def _verify_factual_claims(result: Any) -> dict[str, Any]:
         Dict with fact-check results and verified claims
     """
     try:
-        from loom.tools.llm import research_llm_classify
+        from loom.tools.llm.llm import research_llm_classify
 
         result_text = str(result) if result else ""
         if len(result_text) < 50:
@@ -501,7 +501,7 @@ async def research_enhance_with_dependencies(
 
     try:
         # Step 1: Resolve dependencies
-        from loom.tools.tool_dependencies import prepare_tool_execution
+        from loom.tools.infrastructure.tool_dependencies import prepare_tool_execution
 
         prep_result = await prepare_tool_execution(tool_names)
 
@@ -607,7 +607,7 @@ async def research_compose_pipeline(
     start_time = time.time()
 
     try:
-        from loom.tools.tool_dependencies import (
+        from loom.tools.infrastructure.tool_dependencies import (
             get_execution_plan,
             resolve_dependencies,
         )

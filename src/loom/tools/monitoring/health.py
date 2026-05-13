@@ -14,7 +14,7 @@ logger = logging.getLogger("loom.tools.health")
 
 # Re-export research_health_deep from health_deep
 try:
-    from loom.tools.health_deep import research_health_deep
+    from loom.tools.monitoring.health_deep import research_health_deep
 except ImportError as e:
     logger.warning("Could not import research_health_deep from health_deep: %s", e)
 

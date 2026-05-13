@@ -373,7 +373,7 @@ async def research_model_evidence(
 
     # Import LLM provider infrastructure
     try:
-        from loom.tools.llm import _get_provider
+        from loom.tools.llm.llm import _get_provider
     except ImportError:
         return {
             "error": "LLM providers not available",

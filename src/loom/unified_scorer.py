@@ -30,8 +30,8 @@ from loom.policy_validator import PolicyValidator
 from loom.quality_scorer import ResponseQualityScorer
 from loom.stealth_calc import StealthCalculator
 from loom.toxicity_checker import ToxicityChecker
-from loom.tools.hcs_scorer import research_hcs_score
-from loom.tools.model_sentiment import ModelSentimentAnalyzer
+from loom.tools.adversarial.hcs_scorer import research_hcs_score
+from loom.tools.llm.model_sentiment import ModelSentimentAnalyzer
 
 logger = logging.getLogger("loom.unified_scorer")
 

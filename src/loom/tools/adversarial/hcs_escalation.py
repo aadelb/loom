@@ -13,9 +13,9 @@ from typing import Any
 from loom.error_responses import handle_tool_errors
 
 try:
-    from loom.tools.hcs_scorer import research_hcs_score
-    from loom.tools.llm import _call_with_cascade
-    from loom.tools.prompt_reframe import _apply_strategy
+    from loom.tools.adversarial.hcs_scorer import research_hcs_score
+    from loom.tools.llm.llm import _call_with_cascade
+    from loom.tools.llm.prompt_reframe import _apply_strategy
     _HCS_DEPS = True
 except ImportError:
     _HCS_DEPS = False

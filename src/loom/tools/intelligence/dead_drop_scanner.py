@@ -16,7 +16,7 @@ from loom.error_responses import handle_tool_errors
 try:
     from loom.config import get_config
     from loom.text_utils import jaccard_similarity
-    from loom.tools.fetch import research_fetch
+    from loom.tools.core.fetch import research_fetch
     from loom.validators import validate_url
     _DEPS_AVAILABLE = True
 except ImportError:

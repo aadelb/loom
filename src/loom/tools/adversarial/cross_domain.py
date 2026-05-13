@@ -77,7 +77,7 @@ async def research_cross_domain(
         f"}}"
     )
 
-    from loom.tools.llm import _call_with_cascade
+    from loom.tools.llm.llm import _call_with_cascade
 
     try:
         response = await _call_with_cascade(

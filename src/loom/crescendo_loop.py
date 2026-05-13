@@ -126,7 +126,7 @@ async def crescendo_hcs_loop(
         else:
             # No query_fn provided: try to use _call_with_cascade, otherwise error
             try:
-                from loom.tools.llm import _call_with_cascade
+                from loom.tools.llm.llm import _call_with_cascade
                 try:
                     response_obj = await _call_with_cascade(
                         [{"role": "user", "content": prompt}],

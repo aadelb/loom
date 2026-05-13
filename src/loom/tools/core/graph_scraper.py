@@ -40,8 +40,8 @@ try:
         MultiPageGraphParams,
     )
     from loom.providers.base import LLMProvider
-    from loom.tools.fetch import research_fetch
-    from loom.tools.markdown import research_markdown
+    from loom.tools.core.fetch import research_fetch
+    from loom.tools.core.markdown import research_markdown
     _GRAPH_DEPS = True
 except ImportError:
     _GRAPH_DEPS = False

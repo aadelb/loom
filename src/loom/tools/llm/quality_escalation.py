@@ -24,8 +24,8 @@ from loom.providers.base import LLMResponse
 from loom.error_responses import handle_tool_errors
 
 try:
-    from loom.tools.llm import _call_with_cascade
-    from loom.tools.prompt_reframe import _apply_strategy, _STRATEGIES
+    from loom.tools.llm.llm import _call_with_cascade
+    from loom.tools.llm.prompt_reframe import _apply_strategy, _STRATEGIES
     _QE_DEPS = True
 except ImportError:
     _QE_DEPS = False

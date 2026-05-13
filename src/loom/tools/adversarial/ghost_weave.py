@@ -16,7 +16,7 @@ from typing import Any
 from urllib.parse import parse_qs, urljoin, urlparse, urlencode
 
 from loom.config import get_config
-from loom.tools.fetch import research_fetch
+from loom.tools.core.fetch import research_fetch
 from loom.validators import validate_url
 from loom.error_responses import handle_tool_errors
 

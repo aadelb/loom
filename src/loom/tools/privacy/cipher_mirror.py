@@ -173,7 +173,7 @@ async def research_cipher_mirror(
     ]
 
     try:
-        from loom.tools.search import research_search
+        from loom.tools.core.search import research_search
     except ImportError:
         return {
             "query": query,

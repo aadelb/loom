@@ -10,7 +10,7 @@ from loom.error_responses import handle_tool_errors
 
 try:
     from loom.params import SpiderParams
-    from loom.tools.fetch import research_fetch
+    from loom.tools.core.fetch import research_fetch
     _SPIDER_DEPS = True
 except ImportError:
     _SPIDER_DEPS = False

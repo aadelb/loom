@@ -14,7 +14,7 @@ from typing import Any
 
 try:
     from loom.providers.base import LLMResponse
-    from loom.tools.llm import (
+    from loom.tools.llm.llm import (
         _call_with_cascade,
         _safe_error_str,
         _sanitize_error,
@@ -206,7 +206,7 @@ async def research_structured_extract(
         )
         # Import and call the fallback
         try:
-            from loom.tools.llm import research_llm_extract
+            from loom.tools.llm.llm import research_llm_extract
             fallback_result = await research_llm_extract(
                 text=text,
                 schema=output_schema,
@@ -261,11 +261,11 @@ async def research_structured_extract(
         # Now use instructor to validate/extract
         # We need the actual provider client to patch it
         if provider_override:
-            from loom.tools.llm import _get_provider
+            from loom.tools.llm.llm import _get_provider
             provider_instance = _get_provider(provider_override)
         else:
             # Use the provider from the cascade response
-            from loom.tools.llm import _get_provider
+            from loom.tools.llm.llm import _get_provider
             provider_name = response.provider.lower()
             provider_instance = _get_provider(provider_name)
 

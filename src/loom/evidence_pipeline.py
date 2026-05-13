@@ -403,9 +403,9 @@ async def research_evidence_pipeline(
     Returns:
         Dict with pipeline results
     """
-    from loom.tools.search import research_search
-    from loom.tools.prompt_reframe import research_prompt_reframe
-    from loom.tools.llm import research_llm_chat
+    from loom.tools.core.search import research_search
+    from loom.tools.llm.prompt_reframe import research_prompt_reframe
+    from loom.tools.llm.llm import research_llm_chat
 
     async def search_wrapper(q: str) -> dict[str, Any]:
         """Wrapper for search_fn."""

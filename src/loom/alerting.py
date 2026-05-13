@@ -114,7 +114,7 @@ async def send_alert(
         alert_email = os.environ.get("LOOM_ALERT_EMAIL", "").strip()
         if alert_email:
             try:
-                from loom.tools.email_report import research_email_report
+                from loom.tools.infrastructure.email_report import research_email_report
 
                 # Format email subject and body
                 subject = f"[Loom Alert - {level.upper()}] {message[:100]}"

@@ -88,17 +88,17 @@ from loom.analytics import ToolAnalytics, research_analytics_dashboard
 log = logging.getLogger("loom.server")
 from loom.registrations.tracking import record_optional_module_loaded, record_import_failure
 from loom.secret_manager import get_secret_manager, research_secret_health
-from loom.tools.quota_status import research_quota_status
-from loom.tools.sla_status import research_sla_status
+from loom.tools.monitoring.quota_status import research_quota_status
+from loom.tools.monitoring.sla_status import research_sla_status
 from loom.startup_validator import (
     validate_all_tools,
     validate_registrations,
     research_validate_startup,
 )
 from loom.tool_latency import get_latency_tracker
-from loom.tools.latency_report import research_latency_report
+from loom.tools.monitoring.latency_report import research_latency_report
 from loom.tool_rate_limiter import check_tool_rate_limit, research_rate_limits
-from loom.tools.scheduler_status import research_scheduler_status
+from loom.tools.monitoring.scheduler_status import research_scheduler_status
 from loom.sla_monitor import get_sla_monitor
 
 # ── Extracted modules (wired in) ──

@@ -63,7 +63,7 @@ def _compute_match_score(
 async def _get_llm_provider() -> Any:
     """Get the default LLM provider for analysis."""
     try:
-        from loom.tools.llm import _get_provider
+        from loom.tools.llm.llm import _get_provider
         from loom.config import CONFIG
 
         cascade = CONFIG.get("LLM_CASCADE_ORDER", ["nvidia", "openai", "anthropic"])
@@ -343,7 +343,7 @@ async def _fetch_company_values(company: str) -> list[str] | None:
     Returns list of company values or None if not found.
     """
     try:
-        from loom.tools.search import research_search
+        from loom.tools.core.search import research_search
 
         results = await research_search(
             query=f"{company} company values mission",

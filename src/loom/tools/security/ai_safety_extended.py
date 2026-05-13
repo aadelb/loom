@@ -63,7 +63,7 @@ async def _call_loom_llm_locally(query: str) -> str:
     Falls back to empty string if no providers available.
     """
     try:
-        from loom.tools.llm import _call_with_cascade
+        from loom.tools.llm.llm import _call_with_cascade
 
         response = await _call_with_cascade(
             [{"role": "user", "content": query}], max_tokens=500
