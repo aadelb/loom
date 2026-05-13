@@ -2,7 +2,8 @@
 
 Consolidates common scoring patterns used across 12+ scorer modules (attack_scorer,
 stealth_calc, quality_scorer, harm_assessor, toxicity_checker, danger_prescore,
-executability, stealth_detector, etc.) to eliminate ~2300 lines of duplicated logic.
+executability, stealth_detector, potency_meter, etc.) to eliminate ~2300 lines of
+duplicated logic.
 
 Provides base classes and utilities for:
 - Defining scoring dimensions with keywords and weights
@@ -10,6 +11,8 @@ Provides base classes and utilities for:
 - Aggregating dimension scores with weighted averaging
 - Mapping scores to categorical labels (risk levels, grades, tiers)
 - Generating structured assessment results
+
+Adoption: Currently used by potency_meter.py for multi-dimensional attack potency scoring.
 """
 
 from __future__ import annotations

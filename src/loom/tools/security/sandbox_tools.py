@@ -17,6 +17,7 @@ except ImportError:
     TextContent = None  # type: ignore[assignment,misc]
 from pydantic import BaseModel, Field
 
+from loom.error_responses import handle_tool_errors
 from loom.sandbox import SandboxResult, get_sandbox, is_docker_available
 
 logger = logging.getLogger("loom.tools.sandbox_tools")
@@ -42,6 +43,7 @@ class SandboxRunParams(BaseModel):
     model_config = {"extra": "forbid", "strict": True}
 
 
+@handle_tool_errors("research_sandbox_run")
 async def research_sandbox_run(
     command: list[str],
     timeout: int = 300,
@@ -182,6 +184,7 @@ async def research_sandbox_run(
         )
 
 
+@handle_tool_errors("research_sandbox_status")
 async def research_sandbox_status() -> TextContent:
     """Check Docker availability and sandbox status.
 

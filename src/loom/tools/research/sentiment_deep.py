@@ -11,6 +11,8 @@ import logging
 import re
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.sentiment_deep")
 
 # Emotion lexicons: keyword -> emotion category
@@ -131,6 +133,7 @@ def _detect_pattern_presence(text: str, patterns: set[str]) -> tuple[float, list
     return score, matches_found
 
 
+@handle_tool_errors("research_sentiment_deep")
 async def research_sentiment_deep(
     text: str,
     language: str = "en",

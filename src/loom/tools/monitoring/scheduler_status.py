@@ -5,11 +5,13 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
 from loom.scheduler import get_scheduler
 
 logger = logging.getLogger("loom.tools.scheduler_status")
 
 
+@handle_tool_errors("research_scheduler_status")
 async def research_scheduler_status() -> dict[str, Any]:
     """Get the status of all scheduled background tasks.
 

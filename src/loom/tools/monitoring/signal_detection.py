@@ -11,6 +11,7 @@ from typing import Any
 from urllib.parse import quote
 
 import httpx
+from loom.error_responses import handle_tool_errors
 from loom.http_helpers import fetch_json, fetch_text
 
 logger = logging.getLogger("loom.tools.signal_detection")
@@ -131,6 +132,7 @@ async def _search_reddit(
     return events
 
 
+@handle_tool_errors("research_ghost_protocol")
 async def research_ghost_protocol(
     keywords: list[str], time_window_minutes: int = 30
 ) -> dict[str, Any]:
@@ -383,6 +385,7 @@ async def _check_server_clock_skew(
     return 0
 
 
+@handle_tool_errors("research_temporal_anomaly")
 async def research_temporal_anomaly(
     domain: str, check_type: str = "all"
 ) -> dict[str, Any]:
@@ -469,6 +472,7 @@ async def research_temporal_anomaly(
         return {"error": str(exc), "tool": "research_temporal_anomaly"}
 
 
+@handle_tool_errors("research_sec_tracker")
 async def research_sec_tracker(
     company: str, filing_types: list[str] | None = None
 ) -> dict[str, Any]:

@@ -16,6 +16,7 @@ import logging
 import re
 from dataclasses import dataclass
 from loom.error_responses import handle_tool_errors
+from loom.async_tool_runner import invoke
 
 logger = logging.getLogger("loom.tools.paradox_detector")
 
@@ -239,8 +240,11 @@ async def research_paradox_immunize(system_prompt: str) -> dict:
           - hardening_diff: summary of changes
     """
     try:
-        # Check vulnerabilities in original prompt
-        original_result = await research_detect_paradox(system_prompt)
+        # Check vulnerabilities in original prompt (with timeout protection)
+        original_result = await invoke(research_detect_paradox, system_prompt, timeout=30.0)
+        if "error" in original_result:
+            return original_result
+
         original_score = original_result["total_risk"]
         defended_types = [f["type"] for f in original_result["paradoxes_found"]]
 
@@ -256,8 +260,11 @@ async def research_paradox_immunize(system_prompt: str) -> dict:
 
         immunized = base_prompt + defense_section
 
-        # Re-scan immunized version
-        new_result = await research_detect_paradox(immunized)
+        # Re-scan immunized version (with timeout protection)
+        new_result = await invoke(research_detect_paradox, immunized, timeout=30.0)
+        if "error" in new_result:
+            return new_result
+
         new_score = new_result["total_risk"]
 
         return {

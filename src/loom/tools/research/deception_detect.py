@@ -7,6 +7,7 @@ import re
 from typing import Any
 
 from loom.error_responses import handle_tool_errors
+from loom.async_tool_runner import invoke
 
 try:
     from mcp.types import TextContent
@@ -245,12 +246,9 @@ async def _try_llm_assessment(text: str) -> str | None:
     try:
         from loom.tools.llm.llm import research_llm_classify
 
-        result = await research_llm_classify(
-            text=text,
-            categories=["truthful", "deceptive", "uncertain"],
-        )
+        result = await invoke(research_llm_classify, text=text, categories=["truthful", "deceptive", "uncertain"], timeout=30.0)
 
-        if isinstance(result, dict) and "classification" in result:
+        if "error" not in result and isinstance(result, dict) and "classification" in result:
             classification = result["classification"]
             explanation = result.get("explanation", "")
             return f"LLM classification: {classification}. {explanation}"
@@ -305,7 +303,7 @@ async def research_deception_detect(text: str) -> dict[str, Any]:
         else:
             verdict = "likely_deceptive"
 
-        # Try to get LLM assessment
+        # Try to get LLM assessment (with timeout protection)
         llm_assessment = await _try_llm_assessment(text)
 
         result: dict[str, Any] = {

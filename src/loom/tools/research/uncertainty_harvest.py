@@ -5,6 +5,8 @@ import math, logging
 from typing import Any
 
 from loom.error_responses import handle_tool_errors
+from loom.async_tool_runner import invoke
+
 logger = logging.getLogger("loom.uncertainty_harvest")
 _PRIORS = {"ethical_anchor": 0.72, "xml": 0.68, "structure": 0.65, "instruction_hierarchy": 0.70, "persona": 0.62, "code_first": 0.71, "reasoning": 0.69, "unknown": 0.50}
 _LIKELIHOODS = {"claude": {"ethical_anchor": 1.4, "structure": 1.3, "xml": 1.3}, "gpt": {"instruction_hierarchy": 1.4, "persona": 1.35, "code_first": 1.2}, "deepseek": {"code_first": 1.4, "reasoning": 1.35}, "auto": {}}
@@ -56,7 +58,9 @@ async def research_active_select(candidate_strategies: list[str], budget: int = 
         if budget < 1 or budget > 20: raise ValueError("budget must be 1-20")
         if objective not in ("maximize_success", "maximize_information", "balanced"): raise ValueError(f"invalid objective: {objective}")
 
-        est = await research_uncertainty_estimate(candidate_strategies, "auto")
+        est = await invoke(research_uncertainty_estimate, candidate_strategies, "auto", timeout=30.0)
+        if "error" in est:
+            return est
         posteriors, uncertainties = est["posterior_probabilities"], est["uncertainty_scores"]
         budget_actual = min(budget, len(candidate_strategies))
 

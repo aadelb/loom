@@ -3,8 +3,11 @@ from __future__ import annotations
 import os, logging
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.security_checklist")
 
+@handle_tool_errors("research_security_checklist")
 async def research_security_checklist() -> dict[str, Any]:
     """Run 15 security checks and return pass/fail report."""
     try:

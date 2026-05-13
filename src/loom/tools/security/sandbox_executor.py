@@ -4,9 +4,12 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.sandbox_executor")
 
 
+@handle_tool_errors("research_sandbox_execute")
 async def research_sandbox_execute(code: str) -> dict[str, Any]:
     """Execute code in isolated sandbox."""
     try:
@@ -22,6 +25,7 @@ async def research_sandbox_execute(code: str) -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_sandbox_execute"}
 
 
+@handle_tool_errors("research_sandbox_monitor")
 async def research_sandbox_monitor() -> dict[str, Any]:
     """Monitor sandbox execution status."""
     try:

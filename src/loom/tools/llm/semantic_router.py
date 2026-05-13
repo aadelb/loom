@@ -16,6 +16,8 @@ from typing import Any
 
 import numpy as np
 
+from loom.error_responses import handle_tool_errors
+
 logger = logging.getLogger("loom.tools.semantic_router")
 
 # ── Lazy imports with fallbacks ──
@@ -250,6 +252,7 @@ def _keyword_fallback(query: str, top_k: int = 5) -> list[tuple[str, float]]:
     return sorted_tools[:top_k]
 
 
+@handle_tool_errors("research_semantic_route")
 async def research_semantic_route(query: str, top_k: int = 5) -> dict[str, Any]:
     """Route query to optimal tools via semantic embeddings.
 
@@ -344,6 +347,7 @@ async def research_semantic_route(query: str, top_k: int = 5) -> dict[str, Any]:
         return {"error": str(exc), "tool": "research_semantic_route"}
 
 
+@handle_tool_errors("research_semantic_batch_route")
 async def research_semantic_batch_route(
     queries: list[str], top_k: int = 5
 ) -> dict[str, Any]:
@@ -386,6 +390,7 @@ async def research_semantic_batch_route(
         return {"error": str(exc), "tool": "research_semantic_batch_route"}
 
 
+@handle_tool_errors("research_semantic_router_rebuild")
 async def research_semantic_router_rebuild() -> dict[str, Any]:
     """Force rebuild semantic embeddings (call when new tools added).
 

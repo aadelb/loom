@@ -11,6 +11,8 @@ from __future__ import annotations
 import logging
 from typing import Any, Literal
 
+from loom.error_responses import handle_tool_errors
+
 try:
     from loom.tools.llm.llm import _call_with_cascade
     _LLM_AVAILABLE = True
@@ -75,6 +77,7 @@ Output only the headline, nothing else.""",
 }
 
 
+@handle_tool_errors("research_simplify")
 async def research_simplify(
     text: str,
     target_audience: str = "executive",
