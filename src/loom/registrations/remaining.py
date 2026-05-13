@@ -864,4 +864,16 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
         record_success("remaining", "research_password_check")
     except (ImportError, AttributeError) as e:
         record_failure("remaining", "password_check", str(e))
+    try:
+        from loom.tool_functions import research_full_spectrum
+        mcp.tool()(wrap_tool(research_full_spectrum))
+        record_success("remaining", "research_full_spectrum")
+    except (ImportError, AttributeError) as e:
+        record_failure("remaining", "full_spectrum", str(e))
+    try:
+        from loom.tool_functions import research_dashboard
+        mcp.tool()(wrap_tool(research_dashboard))
+        record_success("remaining", "research_dashboard")
+    except (ImportError, AttributeError) as e:
+        record_failure("remaining", "dashboard", str(e))
     log.info("registered remaining tools")

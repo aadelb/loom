@@ -175,3 +175,143 @@ async def research_coverage_run(
     results = await runner.run_coverage(tools_to_test=tools_to_test, timeout=timeout)
     results["report_markdown"] = runner.generate_coverage_report(results)
     return results
+
+
+async def research_full_spectrum(
+    query: str,
+    model_name: str = "unknown",
+    target_hcs: float = 8.0,
+    reframing_strategy: str = "auto_select",
+    include_multi_strategy: bool = False,
+    include_report: bool = True,
+    include_recommendations: bool = True,
+) -> dict:
+    """Run full-spectrum red-team pipeline: analyze → reframe → query → score → report.
+
+    Combines all scoring dimensions (danger, quality, attack effectiveness, stealth,
+    executability, harm, toxicity) with reframing strategies.
+
+    Args:
+        query: Original (potentially harmful) query to analyze
+        model_name: Target model identifier (e.g., gpt-4, claude-3-sonnet)
+        target_hcs: Target HCS (helpfulness/compliance/specificity) score (0-10)
+        reframing_strategy: Strategy to apply or "auto_select" for automatic
+        include_multi_strategy: Run all strategies and compare
+        include_report: Generate executive summary
+        include_recommendations: Generate improvement recommendations
+
+    Returns:
+        Dict with status, analysis, prompts, response, scores, violations, report, recommendations
+    """
+    pipeline = FullSpectrumPipeline()
+
+    # Real LLM model function using cascade
+    try:
+        from loom.tools.llm import _call_with_cascade
+
+        async def cascade_model(prompt: str = "") -> str:
+            try:
+                response_obj = await _call_with_cascade(
+                    [{"role": "user", "content": prompt}],
+                    max_tokens=1500,
+                )
+                return response_obj.text
+            except Exception as e:
+                return f"Error calling LLM: {str(e)[:200]}"
+
+        model_fn = cascade_model
+    except ImportError:
+        logger.error("research_full_spectrum: LLM cascade not available")
+        return {
+            "error": "LLM provider required but unavailable",
+            "query": query,
+            "model_name": model_name,
+        }
+
+    strategy = None if reframing_strategy == "auto_select" else reframing_strategy
+
+    if include_multi_strategy:
+        result = await pipeline.run_multi_strategy(
+            query=query,
+            model_fn=model_fn,
+            model_name=model_name,
+        )
+    else:
+        result = await pipeline.run(
+            query=query,
+            model_fn=model_fn,
+            model_name=model_name,
+            target_hcs=target_hcs,
+            reframing_strategy=strategy,
+        )
+
+    return result
+
+async def research_dashboard(
+    action: str,
+    event_type: str | None = None,
+    event_data: dict[str, Any] | None = None,
+    since: int = 0,
+) -> dict[str, Any]:
+    """Real-time attack visualization dashboard.
+
+    Provides live event streaming and summary statistics for attack visualization.
+    Supports adding events, retrieving event logs, generating summaries, and
+    generating a standalone HTML dashboard page.
+
+    Args:
+        action: One of "add_event", "get_events", "summary", or "html"
+        event_type: Event type when action="add_event"
+                   (strategy_applied, model_response, score_update, attack_success, attack_failure)
+        event_data: Event data dictionary when action="add_event"
+        since: Get events since index N (default: 0)
+
+    Returns:
+        Dictionary with action results:
+        - add_event: {success: bool, index: int}
+        - get_events: {events: list, count: int}
+        - summary: {total_attacks, successes, failures, success_rate, top_strategies, ...}
+        - html: {html: str, size_bytes: int, event_count: int}
+    """
+    from loom.params import DashboardParams
+
+    # Validate input
+    params = DashboardParams(
+        action=action,
+        event_type=event_type,
+        event_data=event_data or {},
+        since=since,
+    )
+
+    dashboard = _get_dashboard()
+
+    if params.action == "add_event":
+        if not params.event_type or not params.event_data:
+            raise ValueError("add_event requires event_type and event_data")
+        dashboard.add_event(params.event_type, params.event_data)
+        return {
+            "success": True,
+            "index": len(dashboard.events) - 1,
+        }
+
+    elif params.action == "get_events":
+        events = dashboard.get_events(params.since)
+        return {
+            "events": events,
+            "count": len(events),
+            "total_count": len(dashboard.events),
+        }
+
+    elif params.action == "summary":
+        return dashboard.get_summary()
+
+    elif params.action == "html":
+        html = dashboard.generate_html()
+        return {
+            "html": html,
+            "size_bytes": len(html.encode("utf-8")),
+            "event_count": len(dashboard.events),
+        }
+
+    else:
+        raise ValueError(f"Unknown action: {params.action}")
