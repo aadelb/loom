@@ -8,6 +8,7 @@ from typing import Any
 
 import httpx
 
+from loom.error_responses import handle_tool_errors
 from loom.validators import EXTERNAL_TIMEOUT_SECS, validate_url
 
 logger = logging.getLogger("loom.tools.security_headers")
@@ -26,6 +27,7 @@ SECURITY_HEADERS = {
 }
 
 
+@handle_tool_errors("research_security_headers")
 async def research_security_headers(url: str = "", domain: str = "") -> dict[str, Any]:
     """Analyze HTTP security headers of a given URL.
 
