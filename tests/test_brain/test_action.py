@@ -294,3 +294,50 @@ class TestGetToolFunction:
         with patch("loom.brain.action._resolve_tool", return_value=mock_func):
             func = _get_tool_function("research_search")
             assert callable(func)
+
+
+class TestBuildSchema:
+    """Test _build_schema reads function signature."""
+
+    def test_build_schema_from_function(self) -> None:
+        from loom.brain.action import _build_schema
+
+        async def sample_tool(query: str, limit: int = 10, timeout: float = 30.0) -> dict:
+            pass
+
+        schema = _build_schema(sample_tool)
+        assert "query" in schema
+        assert schema["query"]["type"] == "string"
+        assert "limit" in schema
+        assert "timeout" in schema
+
+    def test_build_schema_no_params(self) -> None:
+        from loom.brain.action import _build_schema
+
+        async def no_params_tool() -> dict:
+            pass
+
+        schema = _build_schema(no_params_tool)
+        assert schema == {} or len(schema) == 0
+
+
+class TestFilterAndValidateParams:
+    """Test _filter_and_validate_params strips unknown params."""
+
+    def test_strips_unknown_params(self) -> None:
+        from loom.brain.action import _filter_and_validate_params
+
+        schema = {"query": {"type": "string"}, "limit": {"type": "integer"}}
+        params = {"query": "test", "limit": 5, "unknown_param": "should_be_removed"}
+        filtered = _filter_and_validate_params(params, schema)
+        assert "query" in filtered
+        assert "limit" in filtered
+        assert "unknown_param" not in filtered
+
+    def test_preserves_valid_params(self) -> None:
+        from loom.brain.action import _filter_and_validate_params
+
+        schema = {"query": {"type": "string"}, "n": {"type": "integer"}}
+        params = {"query": "hello", "n": 10}
+        filtered = _filter_and_validate_params(params, schema)
+        assert filtered == params

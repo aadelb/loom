@@ -311,3 +311,30 @@ class TestReflectWithLLM:
             # Should fall back to heuristic evaluation
             assert "complete" in evaluation
             assert "next_action" in evaluation
+
+
+class TestParseReflectionResponse:
+    """Test _parse_reflection_response parses JSON from markdown."""
+
+    def test_parses_json_from_markdown_block(self) -> None:
+        from loom.brain.reflection import _parse_reflection_response
+
+        response = '```json\n{"complete": true, "next_action": "done", "confidence": 0.9}\n```'
+        result = _parse_reflection_response(response)
+        assert result is not None
+        assert result["complete"] is True
+        assert result["next_action"] == "done"
+
+    def test_parses_plain_json(self) -> None:
+        from loom.brain.reflection import _parse_reflection_response
+
+        response = '{"complete": false, "next_action": "retry"}'
+        result = _parse_reflection_response(response)
+        assert result is not None
+        assert result["complete"] is False
+
+    def test_returns_none_for_invalid(self) -> None:
+        from loom.brain.reflection import _parse_reflection_response
+
+        result = _parse_reflection_response("This is not JSON at all")
+        assert result is None

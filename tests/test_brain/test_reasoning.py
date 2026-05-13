@@ -252,3 +252,25 @@ class TestToolScoring:
         # Unknown tool should score lower
         score_unknown = _usage_score("unknown_tool")
         assert isinstance(score_unknown, (int, float))
+
+
+class TestResolveToolName:
+    """Test _resolve_tool_name fuzzy matching."""
+
+    def test_exact_match(self, mock_brain_index: dict) -> None:
+        from loom.brain.reasoning import _resolve_tool_name
+
+        result = _resolve_tool_name("research_search", mock_brain_index)
+        assert result == "research_search"
+
+    def test_fuzzy_match_high_similarity(self, mock_brain_index: dict) -> None:
+        from loom.brain.reasoning import _resolve_tool_name
+
+        result = _resolve_tool_name("research_searc", mock_brain_index)
+        assert result in ("research_search", "research_searc")
+
+    def test_no_match_returns_unchanged(self, mock_brain_index: dict) -> None:
+        from loom.brain.reasoning import _resolve_tool_name
+
+        result = _resolve_tool_name("completely_different_name", mock_brain_index)
+        assert result == "completely_different_name"
