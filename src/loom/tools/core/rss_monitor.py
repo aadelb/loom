@@ -12,6 +12,7 @@ import httpx
 
 from loom.validators import validate_url
 from loom.error_responses import handle_tool_errors
+from loom.html_utils import strip_tags
 
 logger = logging.getLogger("loom.tools.rss_monitor")
 
@@ -154,7 +155,7 @@ def _parse_feed(xml_content: str, url: str) -> dict[str, Any]:
                     categories.append(cat_text)
 
         # Clean HTML from summary
-        summary = _strip_html(summary)
+        summary = strip_tags(summary)
         if len(summary) > 500:
             summary = summary[:500] + "…"
 
@@ -179,17 +180,6 @@ def _parse_feed(xml_content: str, url: str) -> dict[str, Any]:
         "item_count": len(items),
         "format": fmt,
     }
-
-
-def _strip_html(text: str) -> str:
-    """Remove HTML tags from text."""
-    # Remove script and style tags
-    text = re.sub(r"<(script|style)[^>]*>.*?</\1>", " ", text, flags=re.DOTALL | re.IGNORECASE)
-    # Remove HTML tags
-    text = re.sub(r"<[^>]+>", " ", text)
-    # Clean up whitespace
-    text = " ".join(text.split())
-    return text
 
 
 @handle_tool_errors("research_rss_fetch")

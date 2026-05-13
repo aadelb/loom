@@ -12,6 +12,7 @@ import httpx
 
 from loom.http_helpers import fetch_json, fetch_text
 from loom.error_responses import handle_tool_errors
+from loom.html_utils import strip_tags
 
 logger = logging.getLogger("loom.tools.multi_search")
 
@@ -77,7 +78,7 @@ async def _search_wikipedia(client: httpx.AsyncClient, query: str) -> list[dict[
             "title": r.get("title", ""),
             "url": f"https://en.wikipedia.org/wiki/{quote(r.get('title', '').replace(' ', '_'))}",
             "source": "wikipedia",
-            "snippet": re.sub(r"<[^>]+>", "", r.get("snippet", "")),
+            "snippet": strip_tags(r.get("snippet", "")),
             "score": r.get("wordcount", 0),
         }
         for r in results[:5]
@@ -122,10 +123,10 @@ async def _search_ddgs(client: httpx.AsyncClient, query: str) -> list[dict[str, 
             url = unquote(url.split("uddg=")[1].split("&")[0])
         results.append(
             {
-                "title": re.sub(r"<[^>]+>", "", match.group(2)).strip(),
+                "title": strip_tags(match.group(2)).strip(),
                 "url": url,
                 "source": "duckduckgo",
-                "snippet": re.sub(r"<[^>]+>", "", match.group(3)).strip()[:200],
+                "snippet": strip_tags(match.group(3)).strip()[:200],
                 "score": 0,
             }
         )

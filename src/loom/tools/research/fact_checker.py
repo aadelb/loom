@@ -16,6 +16,7 @@ import httpx
 
 from loom.http_helpers import fetch_json, fetch_text
 from loom.error_responses import handle_tool_errors
+from loom.html_utils import strip_tags
 
 logger = logging.getLogger("loom.tools.fact_checker")
 
@@ -128,7 +129,7 @@ async def _search_wikipedia_for_claim(
         title = result.get("title", "")
         snippet = result.get("snippet", "").replace("<span class='searchmatch'>", "")
         snippet = snippet.replace("</span>", "")
-        snippet = re.sub(r"<[^>]+>", "", snippet)  # Remove HTML tags
+        snippet = strip_tags(snippet)
 
         if title:
             # Wikipedia URLs use underscores for spaces, not percent-encoding

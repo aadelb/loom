@@ -5,6 +5,7 @@ import logging
 import re
 import unicodedata
 from typing import Any
+from loom.html_utils import strip_tags
 
 logger = logging.getLogger("loom.tools.input_sanitizer")
 
@@ -35,7 +36,7 @@ async def research_sanitize_input(text: str, rules: list[str] | None = None) -> 
                 changes.append(f"remove_control_chars: {b - len(text)}")
         if "strip_html" in rules:
             b = len(text)
-            text = re.sub(r"<[^>]+>", "", text)
+            text = strip_tags(text)
             if len(text) < b:
                 changes.append(f"strip_html: {b - len(text)}")
         if "escape_special" in rules:

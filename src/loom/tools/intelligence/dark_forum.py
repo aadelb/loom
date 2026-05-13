@@ -12,6 +12,7 @@ import httpx
 
 from loom.http_helpers import fetch_json, fetch_text
 from loom.error_responses import handle_tool_errors
+from loom.html_utils import strip_tags
 
 logger = logging.getLogger("loom.tools.dark_forum")
 
@@ -32,7 +33,7 @@ async def _search_ahmia(client: httpx.AsyncClient, query: str) -> list[dict[str,
         re.DOTALL,
     ):
         url = match.group(1)
-        title = re.sub(r"<[^>]+>", "", match.group(2)).strip()
+        title = strip_tags(match.group(2)).strip()
         results.append({"source": "ahmia", "url": url, "title": title[:200]})
     return results[:20]
 

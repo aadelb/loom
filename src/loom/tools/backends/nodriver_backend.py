@@ -34,6 +34,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from loom.cache import get_cache
 from loom.error_responses import handle_tool_errors
 from loom.validators import EXTERNAL_TIMEOUT_SECS, validate_url
+from loom.html_utils import strip_tags
 
 logger = logging.getLogger("loom.nodriver_backend")
 
@@ -616,15 +617,7 @@ def _extract_text_from_html(html: str) -> str:
         return ""
 
     try:
-        import re
-
-        # Remove script and style elements
-        text = re.sub(r"<(script|style)[^>]*>.*?</\1>", " ", html, flags=re.DOTALL | re.IGNORECASE)
-        # Remove HTML tags
-        text = re.sub(r"<[^>]+>", " ", text)
-        # Normalize whitespace
-        text = " ".join(text.split())
-        return text
+        return strip_tags(html)
     except Exception as e:
         logger.warning("text_extraction_failed error=%s", e)
         return ""

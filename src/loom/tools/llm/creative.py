@@ -25,6 +25,7 @@ from typing import Any
 
 import httpx
 from loom.error_responses import handle_tool_errors
+from loom.llm_parsers import extract_json_or_default
 
 logger = logging.getLogger("loom.tools.creative")
 
@@ -42,7 +43,6 @@ except ImportError:
         return _unsafe_fromstring(text)
 
 
-def _parse_llm_json(text: str, fallback: Any = None) -> Any:
     """Parse JSON from LLM output, stripping markdown code fences."""
     text = text.strip()
     if text.startswith("```json"):
@@ -55,7 +55,6 @@ def _parse_llm_json(text: str, fallback: Any = None) -> Any:
         return json.loads(text.strip())
     except (json.JSONDecodeError, ValueError):
         return fallback if fallback is not None else []
-
 
 # ── Red Team Mode (#23) ─────────────────────────────────────────────
 
@@ -100,7 +99,7 @@ async def research_red_team(
         )
         total_cost += chat_result.get("cost_usd", 0.0)
 
-        counter_claims = _parse_llm_json(chat_result.get("text", "[]"), fallback=[])
+        counter_claims = extract_json_or_default(chat_result.get("text", "[]"), default=[])
         if not isinstance(counter_claims, list):
             counter_claims = []
     except Exception:
@@ -344,7 +343,7 @@ async def research_misinfo_check(
             max_tokens=300,
             temperature=0.3,
         )
-        false_claims = _parse_llm_json(chat_result.get("text", "[]"), fallback=[])
+        false_claims = extract_json_or_default(chat_result.get("text", "[]"), default=[])
         if not isinstance(false_claims, list):
             false_claims = []
     except Exception:
@@ -665,7 +664,7 @@ async def research_ai_detect(
             temperature=0.1,
         )
 
-        analysis = _parse_llm_json(result.get("text", "{}"), fallback={})
+        analysis = extract_json_or_default(result.get("text", "{}"), default={})
         prob = analysis.get("ai_probability", 50) / 100.0
 
         return {
