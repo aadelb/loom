@@ -105,7 +105,8 @@ PARAM_ALIASES: dict[str, str] = {
     "target_language": "target_lang",
 }
 
-_pydantic_model_cache: dict[str, type | None] = {}
+_NOT_FOUND = object()  # Sentinel to distinguish "looked up and not found" from "never looked up"
+_pydantic_model_cache: dict[str, type | object] = {}
 
 
 def _resolve_aliases(kwargs: dict, valid_params: set[str]) -> dict:
@@ -126,9 +127,15 @@ def _validate_with_pydantic(tool_name: str, kwargs: dict) -> dict:
     Looks up model by naming convention: research_foo → FooParams.
     Falls back to unvalidated kwargs if no model found.
     """
-    if tool_name in _pydantic_model_cache:
-        model_cls = _pydantic_model_cache[tool_name]
+    cached = _pydantic_model_cache.get(tool_name)
+    if cached is _NOT_FOUND:
+        # Already looked up and not found — skip retry
+        return kwargs
+    elif cached is not None:
+        # Found and cached
+        model_cls = cached
     else:
+        # Not looked up yet
         suffix = tool_name.replace("research_", "")
         model_name = "".join(w.capitalize() for w in suffix.split("_")) + "Params"
         model_cls = None
@@ -143,7 +150,11 @@ def _validate_with_pydantic(tool_name: str, kwargs: dict) -> dict:
                     break
         except Exception:
             pass
-        _pydantic_model_cache[tool_name] = model_cls
+        # Only cache if found; use sentinel if not found
+        if model_cls is not None:
+            _pydantic_model_cache[tool_name] = model_cls
+        else:
+            _pydantic_model_cache[tool_name] = _NOT_FOUND
 
     if model_cls is None:
         return kwargs
@@ -184,12 +195,13 @@ def _fuzzy_correct_params(func: Callable[..., Any], kwargs: dict) -> tuple[dict,
         if key in valid_params:
             corrected[key] = value
         else:
-            matches = difflib.get_close_matches(key, valid_params, n=1, cutoff=0.5)
+            matches = difflib.get_close_matches(key, valid_params, n=1, cutoff=0.7)
             if matches:
                 corrected[matches[0]] = value
                 corrections[key] = matches[0]
             else:
                 corrections[key] = None
+                log.warning("param_dropped tool=%s param=%s (no close match found)", func.__name__, key)
 
     tool_name = func.__name__
     corrected = _validate_with_pydantic(tool_name, corrected)
@@ -263,13 +275,13 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
     billing_enabled = os.getenv("LOOM_BILLING_ENABLED", "").lower() == "true"
     token_economy_enabled = os.getenv("LOOM_TOKEN_ECONOMY", "").lower() == "true"
     tool_name = func.__name__
-    
+
     # Detect if function is CPU-bound
     is_cpu_bound_func = getattr(func, "_cpu_bound", False) is True
 
 
     if is_async:
-        if category:
+        if category and not getattr(func, "_rate_limited", False):
             func = rate_limited(category)(func)
 
         @functools.wraps(func)
@@ -485,28 +497,41 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
 
                 return {"error": f"Tool timed out after {tool_timeout}s", "tool": tool_name}
             except Exception as e:
+                # Preserve the full traceback immediately
+                log.exception("tool_execution_failed tool=%s", tool_name)
+
                 # WebSocket: broadcast tool failed
                 try:
                     ws_mgr = get_ws_manager()
                     error_msg = str(e)
                     job_id = request_id
                     await ws_mgr.broadcast_tool_failed(tool_name, error_msg)
-                except Exception as ws_e:
-                    log.debug(f"WebSocket broadcast error (tool.failed): {ws_e}")
+                except Exception:
+                    pass
 
                 # Prometheus: record error
                 error_type = type(e).__name__
-                _loom_tool_calls_total.labels(tool_name=tool_name, status="error").inc()
-                _loom_tool_errors_total.labels(tool_name=tool_name, error_type=error_type).inc()
+                try:
+                    _loom_tool_calls_total.labels(tool_name=tool_name, status="error").inc()
+                except Exception:
+                    pass
+                try:
+                    _loom_tool_errors_total.labels(tool_name=tool_name, error_type=error_type).inc()
+                except Exception:
+                    pass
+
                 duration = time.time() - start_time
-                _loom_tool_duration_seconds.labels(tool_name=tool_name).observe(duration)
-                
+                try:
+                    _loom_tool_duration_seconds.labels(tool_name=tool_name).observe(duration)
+                except Exception:
+                    pass
+
                 # Send alert for critical errors via webhook/email
                 try:
                     await handle_tool_error(tool_name, e, execution_time_ms=duration * 1000)
-                except Exception as alert_e:
-                    log.error(f"Alerting error for {tool_name}: {alert_e}", exc_info=False)
-                
+                except Exception:
+                    pass
+
                 # Audit: Log tool call error
                 try:
                     client_id = os.getenv("LOOM_CLIENT_ID", os.getenv("LOOM_USER_ID", "anonymous"))
@@ -518,14 +543,14 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                         duration_ms=int(duration * 1000),
                         status="error"
                     )
-                except Exception as audit_e:
-                    log.debug(f"Audit logging error at error: {audit_e}")
+                except Exception:
+                    pass
 
                 raise
 
         return async_wrapper
     else:
-        if category:
+        if category and not getattr(func, "_rate_limited", False):
             from loom.rate_limiter import sync_rate_limited
             func = sync_rate_limited(category)(func)
 
@@ -673,12 +698,26 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                 result = _normalize_result(result, tool_name, category, duration)
                 return result
             except Exception as e:
+                # Preserve the full traceback immediately
+                log.exception("tool_execution_failed tool=%s", tool_name)
+
                 # Prometheus: record error
                 error_type = type(e).__name__
-                _loom_tool_calls_total.labels(tool_name=tool_name, status="error").inc()
-                _loom_tool_errors_total.labels(tool_name=tool_name, error_type=error_type).inc()
+                try:
+                    _loom_tool_calls_total.labels(tool_name=tool_name, status="error").inc()
+                except Exception:
+                    pass
+                try:
+                    _loom_tool_errors_total.labels(tool_name=tool_name, error_type=error_type).inc()
+                except Exception:
+                    pass
+
                 duration = time.time() - start_time
-                _loom_tool_duration_seconds.labels(tool_name=tool_name).observe(duration)
+                try:
+                    _loom_tool_duration_seconds.labels(tool_name=tool_name).observe(duration)
+                except Exception:
+                    pass
+
                 # Audit: Log tool call error (sync wrapper)
                 try:
                     client_id = os.getenv("LOOM_CLIENT_ID", os.getenv("LOOM_USER_ID", "anonymous"))
@@ -690,8 +729,8 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                         duration_ms=int(duration * 1000),
                         status="error"
                     )
-                except Exception as audit_e:
-                    log.debug(f"Audit logging error at error (sync): {audit_e}")
+                except Exception:
+                    pass
 
                 raise
 

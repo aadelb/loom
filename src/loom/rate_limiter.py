@@ -349,6 +349,7 @@ def rate_limited(category: str) -> Callable[..., Any]:
                 }
             return await fn(*args, **kwargs)
 
+        wrapper._rate_limited = True
         return wrapper
 
     return decorator
@@ -517,6 +518,7 @@ def sync_rate_limited(category: str) -> Callable[..., Any]:
                 }
             return fn(*args, **kwargs)
 
+        wrapper._rate_limited = True
         return wrapper
 
     return decorator
