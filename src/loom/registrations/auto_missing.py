@@ -2246,5 +2246,35 @@ def register_missing_tools(mcp, wrap_tool):
         count += 1
     except Exception:
         pass
+    try:
+        from loom.encrypted_db import research_db_encryption_status
+        mcp.tool()(wrap_tool(research_db_encryption_status))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.doc_parser import research_document_analyze
+        mcp.tool()(wrap_tool(research_document_analyze))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.doc_parser import research_ocr_advanced
+        mcp.tool()(wrap_tool(research_ocr_advanced))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.doc_parser import research_pdf_advanced
+        mcp.tool()(wrap_tool(research_pdf_advanced))
+        count += 1
+    except Exception:
+        pass
+    try:
+        from loom.mcp_security import research_mcp_security_scan
+        mcp.tool()(wrap_tool(research_mcp_security_scan))
+        count += 1
+    except Exception:
+        pass
     log.info('auto_registered_missing count=%d', count)
     return count

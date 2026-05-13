@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What is Loom
 
-Loom is a Python MCP (Model Context Protocol) server that exposes 220+ research and attack tools over streamable-HTTP (port 8787). It wraps scraping (Scrapling, Crawl4AI, Camoufox, Botasaurus), search across 21 providers, 8 LLM providers, infrastructure tools (VastAI, Stripe, Billing), communication tools (Email, Joplin notes), media tools (Audio transcription, Document conversion), Tor/darkweb tools, GitHub CLI, persistent browser sessions, creative research tools, killer research tools, dark research tools, intelligence tools, revolutionary tools, AI safety tools, academic integrity tools, career intelligence tools, signal detection tools, supply chain intelligence tools, plus a content-hash cache and 957 prompt reframing strategies into a single MCP service. It also ships a Typer CLI (`loom`) that calls the MCP server as a client.
+Loom is a Python MCP (Model Context Protocol) server that exposes 440+ research and attack tools over streamable-HTTP (port 8787). It wraps scraping (Scrapling, Crawl4AI, Camoufox, Botasaurus), search across 21 providers, 8 LLM providers, infrastructure tools (VastAI, Stripe, Billing), communication tools (Email, Joplin notes), media tools (Audio transcription, Document conversion), Tor/darkweb tools, GitHub CLI, persistent browser sessions, creative research tools, killer research tools, dark research tools, intelligence tools, revolutionary tools, AI safety tools, academic integrity tools, career intelligence tools, signal detection tools, supply chain intelligence tools, plus a content-hash cache and 957 prompt reframing strategies into a single MCP service. It also ships a Typer CLI (`loom`) that calls the MCP server as a client.
 
 ## Commands
 
@@ -45,7 +45,7 @@ src/loom/                        61 core modules:
   server.py                      FastMCP instance creation + tool registration (create_app / _register_tools)
   cli.py                         Typer CLI; each subcommand calls MCP tools via streamable-http client
   config.py                      Pydantic v2 ConfigModel + module-level CONFIG dict; atomic save/load
-  params.py                      Pydantic v2 parameter models per tool (FetchParams, SpiderParams, etc.)
+  params.py                      Pydantic v2 parameter models per tool (317 models in params/ subdirectory)
   validators.py                  SSRF-safe URL validation, character capping, GitHub query sanitization
   cache.py                       Content-hash CacheStore (SHA-256, daily dirs, atomic writes, singleton)
   sessions.py                    Persistent browser session management (in-memory registry + SQLite SessionManager)
@@ -119,136 +119,94 @@ src/loom/                        61 core modules:
   Legacy/Utility (5 modules):
     errors.py, __init__.py, __main__.py, orchestrator.py, scoring.py
   
-  tools/                         154 tool modules (220+ MCP tools + 957 strategies):
-    fetch.py                     research_fetch (Scrapling 3-tier: http/stealthy/dynamic + Cloudflare auto-escalation)
-    spider.py                    research_spider (concurrent multi-URL fetch)
-    markdown.py                  research_markdown (Crawl4AI + Trafilatura fallback for HTML-to-markdown)
-    search.py                    research_search (multi-provider: 21 search engines)
-    deep.py                      research_deep (12-stage pipeline: query detection → search → fetch → escalation → markdown → extraction)
-    github.py                    research_github (gh CLI wrapper)
-    stealth.py                   research_camoufox + research_botasaurus
-    cache_mgmt.py                research_cache_stats + research_cache_clear
-    
-    Killer Research Tools (20+ tools):
-    dead_content.py              recover archived/shadow-banned content
-    invisible_web.py             dark web, intranets, API-only sites
-    js_intel.py                  JavaScript runtime introspection
-    multi_search.py              parallel search across 21+ providers
-    dark_forum.py                search 24M+ darkweb forum posts
-    infra_correlator.py          link domains/IPs via infrastructure
-    passive_recon.py             DNS/WHOIS/ASN enrichment
-    infra_analysis.py            registry_graveyard + subdomain_temporal + commit_analyzer
-    onion_discover.py            crawl Tor exit node directories
-    metadata_forensics.py        EXIF/PDF/document metadata extraction
-    crypto_trace.py              blockchain address clustering
-    stego_detect.py              steganography & covert channel detection
-    threat_profile.py            adversary infrastructure profiling
-    leak_scan.py                 breach database + paste site scanning
-    social_graph.py              relationship mapping across platforms
-    
-    Dark & Intelligence Tools (25+ tools):
-    dark_forum.py, onion_discover.py, leak_scan.py, infra_correlator.py
-    darkweb_early_warning.py, identity_resolve.py, change_monitor.py, social_graph.py
-    competitive_intel.py, crypto_trace.py, stego_detect.py, threat_profile.py
-    company_intel.py, supply_chain_intel.py, signal_detection.py
-    
-    Revolutionary Tools (4 tools):
-    knowledge_graph.py           semantic entity extraction
-    fact_checker.py              claim verification
-    trend_predictor.py           signal→trend forecasting
-    report_generator.py          structured intelligence reports
-    
-    AI Safety Tools (7+ tools — EU AI Act Article 15 compliance):
-    ai_safety.py                 prompt_injection_test + model_fingerprint + bias_probe + safety_filter_map + compliance_check
-    ai_safety_extended.py        hallucination_benchmark + adversarial_robustness
-    
-    Academic Integrity Tools (11+ tools):
-    academic_integrity.py        citation_analysis + retraction_check + predatory_journal_check
-    hcs10_academic.py            grant_forensics + monoculture_detect + review_cartel + data_fabrication + institutional_decay + shell_funding + conference_arbitrage + preprint_manipulation
-    hcs_scorer.py, gap_tools_academic.py, gap_tools_advanced.py
-    
-    Career Intelligence Tools (6+ tools):
-    job_signals.py, career_intel.py, career_trajectory.py, resume_intel.py
-    deception_job_scanner.py, salary_synthesizer.py
-    
-    Creative Research Tools (11+ tools):
-    creative.py, prompt_reframe.py, prompt_analyzer.py, psycholinguistic.py
-    model_sentiment.py, bias_lens.py, culture_dna.py
-    
-    Advanced Analysis Tools (20+ tools):
-    persona_profile.py, radicalization_detect.py, sentiment_deep.py, network_persona.py
-    threat_intel.py, osint_extended.py, stylometry.py, deception_detect.py
-    stealth_detect.py, stealth_score.py, consistency_pressure.py
-    
-    Research & Extraction Tools (15+ tools):
-    pdf_extract.py, text_analyze.py, screenshot.py, rss_monitor.py
-    social_intel.py, image_intel.py, geoip_local.py, knowledge_graph.py
-    
-    LLM & Language Tools (10+ tools):
-    llm.py                       research_llm_summarize + extract + classify + translate + expand + answer + embed + chat
-    enrich.py                    detect_language + wayback
-    multi_llm.py, ask_all_models.py
-    
-    Security & Infrastructure (15+ tools):
-    cert_analyzer.py, security_headers.py, breach_check.py, ip_intel.py
-    cve_lookup.py, vuln_intel.py, urlhaus_lookup.py, domain_intel.py
-    
-    Infrastructure & Services (15+ tools):
-    vastai.py, billing.py, email_report.py, joplin.py, tor.py
-    transcribe.py, document.py, metrics.py, slack.py, gcp.py, vercel.py
-    
-    Darkweb & Specialized Tools (15+ tools):
-    cipher_mirror.py, forum_cortex.py, onion_spectra.py, ghost_weave.py
-    dead_drop_scanner.py, job_research.py, experts.py
-    access_tools.py, p3_tools.py, unique_tools.py, infowar_tools.py
-    realtime_monitor.py, param_sweep.py, tool_recommender_tool.py
-    
-    Session & Config Tools (6 tools):
-    sessions.py                  research_session_open + research_session_list + research_session_close
-    config.py                    research_config_get + research_config_set
-    server.py                    research_health_check (server status)
-
-  tools/reframe_strategies/     32 strategy modules (957 total strategies):
-    __init__.py                  ALL_STRATEGIES (unified registry across 32 modules)
-    core.py                      Core reframing strategies
-    advanced.py                  Advanced manipulation techniques
-    encoding.py                  Encoding/obfuscation strategies
-    jailbreak.py                 Jailbreak-specific patterns
-    reasoning.py                 Reasoning chain exploits
-    persona.py                   Persona-based attacks
-    format_exploit.py            Format/encoding exploits
-    attention.py                 Attention hijacking
-    legal.py                     Legal framework manipulation
-    multiturn.py                 Multi-turn conversation exploits
-    specialized.py               Specialized domain attacks
-    novel_2026.py                Novel 2026 techniques (937 strategies)
-    multimodal.py                Multimodal attack vectors
-    agent_tool.py                Agent/tool-based exploits
-    token_repr.py                Token representation manipulation
-    reasoning_cot.py             Chain-of-thought reasoning bypasses
-    defense_evasion.py           Defense evasion tactics
-    research_2026.py             Research-derived 2026 methods
-    persuasion.py                Persuasion & social engineering
-    advanced_novel.py            Advanced novel techniques
-    skills_extracted.py          Skills from prior research
-    guardrail_suite.py           Guardrail bypass suite
-    arxiv_nim.py                 ArXiv + NIM-derived strategies
-    remaining.py                 Remaining/uncategorized techniques
-    reid_psychology.py           REID psychology specialization
-    advanced_psychology.py       Advanced psychological manipulation
-    psychology_extended.py       Extended psychology techniques
-    fusion_10x.py                10x fusion strategies
-    research_derived.py          Research paper-derived techniques
-    arabic_attacks.py            Arabic-language attack vectors
-    token_smuggling.py           Token smuggling techniques
+  params/                        317 Pydantic v2 models:
+    (auto-organized subdirectories by tool category)
+    Base validation: extra="forbid", strict=True, URL fields via validators.validate_url()
   
+  tools/                         440+ tools organized in 11 subdirectories:
+    core/                        27 files: fetch, search, spider, markdown, deep, github, stealth, cache_mgmt
+    llm/                         49 files: llm, multi_llm, prompt_reframe, creative, enrich, ask_all_models, etc.
+    intelligence/                50 files: osint, threat_intel, dark_forum, social_intel, metadata_forensics, etc.
+    security/                    29 files: ai_safety, cert_analyzer, pentest, compliance, cve_lookup, etc.
+    privacy/                     10 files: privacy_tools, stego_detect, antiforensics, fingerprint_audit, etc.
+    adversarial/                 37 files: stealth_score, hcs_scorer, attack_scorer, jailbreak_evolution, etc.
+    career/                      10 files: job_signals, resume_intel, salary_synthesizer, deception_scanner, etc.
+    infrastructure/              84 files: billing, vastai, slack, joplin, tor, transcribe, document, email, etc.
+    backends/                    45 files: sherlock, maigret, spiderfoot, photon, instaloader, yt-dlp, etc.
+    research/                    49 files: fact_checker, knowledge_graph, text_analyze, pdf_extract, rss_monitor, etc.
+    monitoring/                  26 files: metrics, health, observability, telemetry, realtime_monitor, etc.
+    
+    reframe_strategies/          32 strategy modules (957 total strategies):
+      __init__.py                ALL_STRATEGIES (unified registry across 32 modules)
+      core.py                    Core reframing strategies
+      advanced.py                Advanced manipulation techniques
+      encoding.py                Encoding/obfuscation strategies
+      jailbreak.py               Jailbreak-specific patterns
+      reasoning.py               Reasoning chain exploits
+      persona.py                 Persona-based attacks
+      format_exploit.py          Format/encoding exploits
+      attention.py               Attention hijacking
+      legal.py                   Legal framework manipulation
+      multiturn.py               Multi-turn conversation exploits
+      specialized.py             Specialized domain attacks
+      novel_2026.py              Novel 2026 techniques (937 strategies)
+      multimodal.py              Multimodal attack vectors
+      agent_tool.py              Agent/tool-based exploits
+      token_repr.py              Token representation manipulation
+      reasoning_cot.py           Chain-of-thought reasoning bypasses
+      defense_evasion.py         Defense evasion tactics
+      research_2026.py           Research-derived 2026 methods
+      persuasion.py              Persuasion & social engineering
+      advanced_novel.py          Advanced novel techniques
+      skills_extracted.py        Skills from prior research
+      guardrail_suite.py         Guardrail bypass suite
+      arxiv_nim.py               ArXiv + NIM-derived strategies
+      remaining.py               Remaining/uncategorized techniques
+      reid_psychology.py         REID psychology specialization
+      advanced_psychology.py     Advanced psychological manipulation
+      psychology_extended.py     Extended psychology techniques
+      fusion_10x.py              10x fusion strategies
+      research_derived.py        Research paper-derived techniques
+      arabic_attacks.py          Arabic-language attack vectors
+      token_smuggling.py         Token smuggling techniques
+  
+  Shared Modules (28 files):
+    http_helpers.py              HTTP client utilities, connection pooling, retry logic
+    input_validators.py          Input sanitization, bounds checking, type coercion
+    score_utils.py               Scoring algorithm utilities, normalization, aggregation
+    db_helpers.py                Database operation wrappers, transaction management
+    error_responses.py           @handle_tool_errors decorator, error serialization
+    subprocess_helpers.py        Subprocess execution, shell escaping, timeout handling
+    cli_checker.py               CLI tool detection, version checking, availability
+    text_utils.py                Text processing, encoding detection, normalization
+    html_utils.py                HTML parsing, DOM traversal, content extraction
+    sanitization.py              XSS prevention, SQL injection prevention, path traversal
+    llm_parsers.py               LLM response parsing, JSON extraction, structured output
+    report_formatters.py         Report generation, Markdown/HTML/PDF export
+    scoring_framework.py         Generic scoring framework for all metric types
+    pipeline_runner.py           Pipeline orchestration, stage execution, result threading
+    async_tool_runner.py         Async task execution, concurrency management, semaphores
+    config_manager.py            Config loading, environment variable resolution, hot reload
+    tool_introspection.py        Tool metadata inspection, parameter extraction
+    evolution_engine.py          Strategy evolution, performance tracking, adaptation
+    exif_utils.py                EXIF extraction, geolocation parsing, metadata analysis
+    provider_router.py           LLM provider selection, fallback logic, cost estimation
+    result_aggregator.py         Result deduplication, ranking, confidence scoring
+    llm_client.py                Unified LLM client wrapper, provider abstraction
+    sandbox_manager.py           Sandboxing, process isolation, resource limits
+    rate_limit_manager.py        Rate limiting per user/endpoint/IP
+    connection_pool_manager.py   Connection pooling, lifecycle management
+    providers/llm_openai_compat.py   OpenAI-compatible base for 4 LLM providers
+    providers/semaphore_registry.py  Concurrent request limiting, semaphore management
+    providers/search_normalizer.py    Normalize search results across 21 search providers
+
   providers/                     8 LLM providers + 21 search providers:
     base.py                      Abstract LLMProvider + LLMResponse dataclass + _estimate_cost
-    groq_provider.py             GROQ API
-    nvidia_nim.py                NVIDIA NIM free tier (integrate.api.nvidia.com)
-    deepseek_provider.py         DeepSeek API
+    groq_provider.py             GROQ API (OpenAI-compatible)
+    nvidia_nim.py                NVIDIA NIM free tier (OpenAI-compatible)
+    deepseek_provider.py         DeepSeek API (OpenAI-compatible)
+    moonshot_provider.py         Moonshot (Kimi) API (OpenAI-compatible)
     gemini_provider.py           Google Gemini API
-    moonshot_provider.py         Moonshot (Kimi) API
     openai_provider.py           OpenAI API
     anthropic_provider.py        Anthropic Claude API
     vllm_local.py                Local vLLM endpoint
@@ -277,9 +235,10 @@ src/loom/                        61 core modules:
 
 ### Key patterns
 
-- **Tool registration**: `server.py:_register_tools()` explicitly registers each tool function with `mcp.tool()()`. LLM tools are optional (guarded by ImportError).
-- **Parameter validation**: Every tool has a Pydantic model in `params.py` with `extra="forbid"` and `strict=True`. URL fields pass through `validators.validate_url()` for SSRF prevention.
-- **LLM cascade**: Config key `LLM_CASCADE_ORDER` (default: groq -> nvidia_nim -> deepseek -> gemini -> moonshot -> openai -> anthropic -> vllm) controls provider fallback. Providers implement the `LLMProvider` ABC with `chat()`, `embed()`, `available()`, `close()`.
+- **Tool registration**: `server.py:_register_tools()` explicitly registers each tool function with `mcp.tool()()`. All tools use `@handle_tool_errors("research_tool_name")` decorator from `error_responses.py`.
+- **Parameter validation**: Every tool has a Pydantic v2 model in `params/` subdirectory with `extra="forbid"` and `strict=True`. URL fields pass through `validators.validate_url()` for SSRF prevention. `_wrap_tool()` auto-validates params via `_validate_with_pydantic()`.
+- **Parameter aliases**: `PARAM_ALIASES` middleware resolves legacy param names (max_results→limit, model_name→model, text→query, etc.) for backward compatibility.
+- **LLM providers**: 4 providers (Groq, NVIDIA NIM, DeepSeek, Moonshot) subclass `OpenAICompatProvider` for unified API compatibility. LLM cascade (Config key `LLM_CASCADE_ORDER`) controls provider fallback. Providers implement the `LLMProvider` ABC with `chat()`, `embed()`, `available()`, `close()`.
 - **Cache**: SHA-256 content-hash keyed, stored in daily subdirectories (`~/.cache/loom/YYYY-MM-DD/`). Atomic writes via uuid tmp + `os.replace`. Singleton via `get_cache()`.
 - **Sessions**: Two systems coexist — an in-memory async registry (global `_sessions` dict with asyncio.Lock) and a SQLite-backed `SessionManager` class with LRU eviction (max 8). Session names must match `^[a-z0-9_-]{1,32}$`.
 - **Config**: `ConfigModel` in `config.py` provides validated bounds on all settings. `CONFIG` is a module-level dict updated by `load_config()`. Config file resolved via: explicit path > `$LOOM_CONFIG_PATH` > `./config.json`. All config keys are wired to code.
@@ -406,7 +365,7 @@ Five documentation files in `docs/`:
 
 - **tool_params.json** — Machine-readable source of truth for ALL 806 tool parameters (auto-generated from source inspection)
 - **TOOL_PARAMS_REFERENCE.md** — Human-readable param reference for all 806 tools (auto-generated from tool_params.json)
-- **tools-reference.md** — Complete reference for 220+ tools, parameters, and examples
+- **tools-reference.md** — Complete reference for 440+ tools, parameters, and examples
 - **api-keys.md** — API key setup for all 8 LLM providers + 21 search providers + infrastructure/communication/media services
 - **architecture.md** — Deep dive into pipeline design, escalation strategy, and tool composition
 - **help.md** — Troubleshooting, common patterns, and FAQ
@@ -466,14 +425,15 @@ Check with: `GET /api/v1/tools/{name}/info` → `"async": true/false`
 ### Adding new tools
 
 Every new tool requires ALL of:
-1. Implementation in src/loom/tools/ (154 modules, 220+ tools)
-2. Tool function registration in `server.py:_register_tools()` with `mcp.tool()(_wrap_tool(...))`
-3. Parameter validation model in `params.py` with Pydantic v2 (`extra="forbid"`, `strict=True`)
-4. Comprehensive tests in `tests/test_tools/` with 80%+ coverage target
-5. Entry in `docs/tools-reference.md` with parameters, examples, and cost estimation
-6. Entry in `docs/help.md` with troubleshooting and use cases
-7. Optional: Handle ImportError in `server.py` if tool depends on external packages
-8. Run `scripts/verify_completeness.py` to confirm zero documentation drift
+1. Implementation in appropriate subdirectory of `src/loom/tools/` (core/, llm/, intelligence/, security/, privacy/, adversarial/, career/, infrastructure/, backends/, research/, or monitoring/)
+2. Parameter validation model in `src/loom/params/` subdirectory with Pydantic v2 (`extra="forbid"`, `strict=True`)
+3. Tool function registration in `server.py:_register_tools()` with `mcp.tool()(_wrap_tool(...))`
+4. Error handling via `@handle_tool_errors("research_tool_name")` decorator from `error_responses.py`
+5. Comprehensive tests in `tests/test_tools/` with 80%+ coverage target
+6. Entry in `docs/tools-reference.md` with parameters, examples, and cost estimation
+7. Entry in `docs/help.md` with troubleshooting and use cases
+8. Optional: Handle ImportError in `server.py` if tool depends on external packages
+9. Run `scripts/verify_completeness.py` to confirm zero documentation drift
 
 ### Adding new strategies
 
@@ -494,7 +454,7 @@ Below are integration priorities split into 3 tiers.
 
 - [x] **INTEGRATE-032: FingerprintJS fingerprint audit**
   - Repo: https://github.com/fingerprintjs/fingerprintjs (27020⭐)
-  - File: src/loom/tools/privacy_tools.py
+  - File: src/loom/tools/privacy/privacy_tools.py
   - Tool: `research_fingerprint_audit(target_url, include_canvas, include_webgl, include_audio, include_fonts)`
   - Returns: Fingerprint vector map with 70+ device attributes
   - Tests: Unit tests for attribute extraction + privacy exposure scoring
@@ -503,7 +463,7 @@ Below are integration priorities split into 3 tiers.
 
 - [x] **INTEGRATE-033: creepjs privacy exposure detector**
   - Repo: https://github.com/abrahamjuliot/creepjs (2360⭐)
-  - File: src/loom/tools/privacy_tools.py
+  - File: src/loom/tools/privacy/privacy_tools.py
   - Tool: `research_privacy_exposure(target_url, include_interactive=False)`
   - Returns: Privacy baseline + fingerprint vector inventory
   - Tests: Integration tests with live browser + interactive mode
@@ -512,7 +472,7 @@ Below are integration priorities split into 3 tiers.
 
 - [x] **INTEGRATE-034: usbkill USB kill-switch monitor**
   - Repo: https://github.com/hephaest0s/usbkill (4583⭐)
-  - File: src/loom/tools/privacy_advanced.py
+  - File: src/loom/tools/privacy/privacy_advanced.py
   - Tool: `research_usb_monitor(trigger_action='wipe', target_path='/path/to/secure', dry_run=True)`
   - Returns: USB activity detection results + wipe simulation
   - Tests: Unit tests for udev rule validation + dry-run wipe
@@ -521,7 +481,7 @@ Below are integration priorities split into 3 tiers.
 
 - [x] **INTEGRATE-035: Forensia anti-forensics toolkit**
   - Repo: https://github.com/Forensia/Forensia (783⭐)
-  - File: src/loom/tools/privacy_tools.py
+  - File: src/loom/tools/privacy/privacy_tools.py
   - Tool: `research_artifact_cleanup(target_paths=['logs', 'cache', 'temp'], os_type='linux|windows|macos')`
   - Returns: Artifact cleanup report + safe deletion verification
   - Tests: Integration tests with real artifacts (test dirs only)
@@ -532,7 +492,7 @@ Below are integration priorities split into 3 tiers.
 
 - [x] **INTEGRATE-036: supercookie favicon tracker**
   - Repo: https://github.com/jonasstrehle/supercookie (7042⭐)
-  - File: src/loom/tools/privacy_tools.py
+  - File: src/loom/tools/privacy/privacy_tools.py
   - Tool: `research_fingerprint_audit()` (supercookie tests integrated)
   - Returns: Favicon-based re-identification vector assessment
   - Tests: Unit tests for favicon color encoding/decoding
@@ -541,7 +501,7 @@ Below are integration priorities split into 3 tiers.
 
 - [x] **INTEGRATE-037: fingerprint-suite evasion validator**
   - Repo: https://github.com/amnemonic/fingerprint-suite (2076⭐)
-  - File: src/loom/tools/privacy_advanced.py
+  - File: src/loom/tools/privacy/privacy_advanced.py
   - Tool: `research_browser_privacy_score(browser, test_iterations=10)`
   - Returns: Fingerprint spoofing effectiveness score (0-100%)
   - Tests: Multi-iteration tests validating randomization entropy
@@ -550,7 +510,7 @@ Below are integration priorities split into 3 tiers.
 
 - [x] **INTEGRATE-038: silk-guardian Linux anti-forensics**
   - Repo: https://github.com/NullArray/silk-guardian (720⭐)
-  - File: src/loom/tools/privacy_advanced.py
+  - File: src/loom/tools/privacy/privacy_advanced.py
   - Tool: `research_usb_monitor()` + `research_secure_delete()` (Linux hardening integrated)
   - Returns: Forensic activity detection + containment status
   - Tests: Integration tests with Linux syscall monitoring
@@ -559,7 +519,7 @@ Below are integration priorities split into 3 tiers.
 
 - [x] **INTEGRATE-039: LSB steganography encoder**
   - Repo: https://github.com/amitvkulkarni/LSB-Steganography-Python (13⭐)
-  - File: src/loom/tools/privacy_tools.py
+  - File: src/loom/tools/privacy/privacy_tools.py
   - Tool: `research_stego_encode_zw(input_media, secret_data, output_format='png|bmp')`
   - Returns: Encoded media file + steganography capacity analysis
   - Tests: Round-trip tests (encode → decode verification)
@@ -570,7 +530,7 @@ Below are integration priorities split into 3 tiers.
 
 - [ ] **INTEGRATE-040: ulexecve fileless execution**
   - Repo: https://github.com/mempodipog/ulexecve (208⭐)
-  - File: src/loom/tools/privacy_fileless_exec.py
+  - File: src/loom/tools/privacy/privacy_fileless_exec.py
   - Effort: 4-5 days
   - Value: EDR evasion via memory-only execution
   - Note: Requires ptrace-based process manipulation; high OS dependency
