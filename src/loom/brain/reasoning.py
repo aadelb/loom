@@ -139,7 +139,7 @@ def _build_tool_name_index() -> dict[str, str]:
     index: dict[str, str] = {}
     tools_dir = Path(__file__).parent.parent / "tools"
     if tools_dir.is_dir():
-        for py_file in tools_dir.glob("*.py"):
+        for py_file in tools_dir.rglob("*.py"):
             if py_file.name.startswith("_"):
                 continue
             try:

@@ -52,16 +52,19 @@ def _resolve_tool(tool_name: str) -> Callable[..., Any] | None:
 
     name_index = _build_tool_name_index()
     if tool_name in name_index:
-        file_path = name_index[tool_name]
-        module_name = Path(file_path).stem
+        file_path = Path(name_index[tool_name])
+        tools_root = Path(__file__).parent.parent / "tools"
         try:
             import importlib
 
-            mod = importlib.import_module(f"loom.tools.{module_name}")
+            rel_path = file_path.relative_to(tools_root)
+            parts = list(rel_path.with_suffix("").parts)
+            module_path = "loom.tools." + ".".join(parts)
+            mod = importlib.import_module(module_path)
             func = getattr(mod, tool_name, None)
             if func and callable(func):
                 return func
-        except (ImportError, AttributeError):
+        except (ImportError, AttributeError, ValueError):
             pass
 
     return None
