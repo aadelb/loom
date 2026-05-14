@@ -6,6 +6,7 @@ import asyncio
 import inspect
 import json
 import logging
+import re
 import time
 from pathlib import Path
 from typing import Any, Callable
@@ -153,13 +154,17 @@ async def extract_params(
 
     Strategy:
     1. Rule-based extraction from entities/keywords
-    2. LLM extraction via NVIDIA NIM (if available)
-    3. Fill defaults for missing required params
+    2. Validate against schema (ensure required params are found)
+    3. LLM extraction via NVIDIA NIM (if available and needed)
+    4. Fill defaults for missing required params
     """
     params: dict[str, Any] = {}
 
     # Rule-based extraction
     params = _rule_based_extract(query, schema)
+
+    # Validate critical required params — try harder to fill them
+    params = _validate_and_improve_params(query, params, schema)
 
     # LLM extraction (NVIDIA only)
     if _LLM_AVAILABLE and quality_mode != QualityMode.ECONOMY:
@@ -213,6 +218,44 @@ def _rule_based_extract(query: str, schema: dict[str, Any]) -> dict[str, Any]:
                 params[param_name] = domains[0]
         elif param_name == "depth" and param_type == "integer":
             params.setdefault(param_name, 2)
+
+    return params
+
+
+def _validate_and_improve_params(
+    query: str, params: dict[str, Any], schema: dict[str, Any]
+) -> dict[str, Any]:
+    """Validate and attempt to fill critical required parameters.
+
+    For required params that are still missing, try additional extraction strategies.
+    For example, if 'url' is required but not found in initial rule-based extraction,
+    search more aggressively for URLs in the query.
+    """
+    for param_name, info in schema.items():
+        if param_name in params and params[param_name] is not None:
+            continue  # Already have a value
+
+        if not info.get("required", False):
+            continue  # Not required, skip
+
+        # Try harder for required params
+        if param_name == "url" and param_name not in params:
+            # Extended URL search (more lenient patterns)
+            urls = re.findall(r"https?://\S+|www\.\S+", query, re.IGNORECASE)
+            if urls:
+                params[param_name] = urls[0]
+                logger.debug("recovered required param '%s' via extended search", param_name)
+
+        elif param_name in ("domain", "target") and param_name not in params:
+            # Try case-insensitive domain extraction
+            domains = re.findall(
+                r"\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}\b",
+                query.lower(),
+                re.IGNORECASE,
+            )
+            if domains:
+                params[param_name] = domains[0]
+                logger.debug("recovered required param '%s' via case-insensitive search", param_name)
 
     return params
 

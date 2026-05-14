@@ -93,7 +93,11 @@ def _is_empty_result(output: Any) -> bool:
 
 
 def _assess_completeness(query: str, output: Any) -> float:
-    """Heuristic completeness score (0.0–1.0) based on output richness."""
+    """Heuristic completeness score (0.0–1.0) based on output richness and semantic alignment.
+
+    Combines structural richness (keys, items) with semantic alignment
+    (how many query terms appear in the result).
+    """
     score = 0.0
 
     if isinstance(output, dict):
@@ -119,15 +123,31 @@ def _assess_completeness(query: str, output: Any) -> float:
         elif len(output) > 50:
             score += 0.3
 
-        query_words = set(query.lower().split())
-        output_words = set(output.lower().split())
-        overlap = len(query_words & output_words) / max(len(query_words), 1)
-        score += overlap * 0.3
+        # Semantic alignment: check how many query terms appear in result
+        semantic_overlap = _assess_semantic_alignment(query, output)
+        score += semantic_overlap * 0.3
 
     elif isinstance(output, list):
         score += min(len(output) / 5, 0.5)
 
     return min(score, 1.0)
+
+
+def _assess_semantic_alignment(query: str, result_text: str) -> float:
+    """Assess semantic alignment between query and result.
+
+    Returns 0.0–1.0 score based on what fraction of query terms appear in result.
+    Only counts words > 3 chars to filter stop words.
+    """
+    query_words = set(w.lower() for w in query.split() if len(w) > 3)
+    result_words = set(w.lower() for w in result_text.split() if len(w) > 3)
+
+    if not query_words:
+        return 0.0
+
+    matches = sum(1 for w in query_words if w in result_words)
+    coverage = matches / len(query_words)
+    return min(coverage, 1.0)
 
 
 async def reflect_with_llm(

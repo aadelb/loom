@@ -13,6 +13,51 @@ logger = logging.getLogger("loom.brain.memory")
 _MAX_HISTORY = 100
 _MAX_SESSION_CONTEXT = 20
 
+# Category-based reliability priors for cold-start tool selection
+# Tools with no historical data start with these priors instead of 0.5
+_CATEGORY_PRIORS = {
+    "search": 0.85,  # search tools are generally reliable
+    "fetch": 0.80,  # fetch tools handle HTTP reasonably well
+    "llm": 0.75,  # LLM tools have variable latency
+    "github": 0.90,  # GitHub API is reliable
+    "cache": 0.95,  # cache lookups are very reliable
+    "spider": 0.78,  # bulk crawling has moderate reliability
+    "markdown": 0.82,  # markdown extraction reasonably reliable
+}
+
+
+def _infer_tool_category(tool_name: str) -> str:
+    """Infer tool category from its name to determine prior reliability."""
+    name_lower = tool_name.lower()
+
+    if "cache" in name_lower or "cache" in name_lower:
+        return "cache"
+    elif "search" in name_lower:
+        return "search"
+    elif "fetch" in name_lower or "html" in name_lower:
+        return "fetch"
+    elif "github" in name_lower or "git" in name_lower:
+        return "github"
+    elif "llm" in name_lower or "ask" in name_lower or "model" in name_lower:
+        return "llm"
+    elif "spider" in name_lower or "crawl" in name_lower:
+        return "spider"
+    elif "markdown" in name_lower or "extract" in name_lower:
+        return "markdown"
+    else:
+        # Default: slightly conservative prior
+        return "general"
+
+
+def _get_category_prior(tool_name: str) -> float:
+    """Get the reliability prior for a tool based on its category.
+
+    Returns value between 0.0 and 1.0. Known categories return specific priors,
+    unknown categories return 0.75 (slightly conservative).
+    """
+    category = _infer_tool_category(tool_name)
+    return _CATEGORY_PRIORS.get(category, 0.75)
+
 
 @dataclass
 class ToolUsageRecord:
@@ -34,6 +79,8 @@ class BrainMemory:
     - Recent tool calls for context chaining
     - Tool success/failure rates for adaptive selection
     - Frequently used tool combinations
+
+    Uses category-based priors for cold-start tool reliability estimation.
     """
 
     def __init__(self) -> None:
@@ -91,10 +138,19 @@ class BrainMemory:
         ]
 
     def get_tool_reliability(self, tool_name: str) -> float:
-        """Get success rate for a tool (0.0–1.0). Returns 0.5 for unknown tools."""
+        """Get success rate for a tool (0.0–1.0).
+
+        For tools with no history, returns category-based prior instead of 0.5.
+        This improves cold-start reliability estimation for new tools.
+        """
         stats = self._tool_stats.get(tool_name)
         if not stats or stats["calls"] == 0:
-            return 0.5
+            # Use category-based prior for unknown tools
+            prior = _get_category_prior(tool_name)
+            logger.debug("cold-start prior for %s: %.2f (category: %s)",
+                        tool_name, prior, _infer_tool_category(tool_name))
+            return prior
+
         return stats["successes"] / stats["calls"]
 
     def get_suggested_next_tools(self, current_tool: str, top_k: int = 3) -> list[str]:

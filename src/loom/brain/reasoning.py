@@ -32,6 +32,20 @@ _server_tools: dict[str, ToolMeta] | None = None
 _brain_index_loaded = False
 _tool_examples: dict[str, list[str]] | None = None
 
+# Cost/latency weights for tool preference adjustment
+# Penalizes slow and expensive tools to favor fast, cheap alternatives
+_COST_WEIGHTS = {
+    "research_deep": 0.85,  # slow, expensive deep research
+    "research_ask_all_models": 0.80,  # very expensive multi-LLM
+    "research_multi_llm": 0.85,  # expensive LLM routing
+    "research_fetch": 1.0,  # fast, cheap single fetch
+    "research_search": 1.0,  # fast semantic search
+    "research_cache_stats": 1.0,  # instant cache lookup
+    "research_github": 0.95,  # moderate, GitHub API rate-limited
+    "research_spider": 0.90,  # slower multi-URL bulk fetch
+    "research_markdown": 0.92,  # slower Crawl4AI parsing
+}
+
 
 def _load_tool_examples() -> dict[str, list[str]]:
     """Load few-shot examples for tool matching."""
@@ -180,6 +194,16 @@ def _resolve_tool_name(candidate: str) -> str:
     return candidate
 
 
+def _apply_cost_weight(tool_name: str, score: float) -> float:
+    """Apply cost/latency weight adjustment to penalize slow/expensive tools.
+
+    Default weight is 0.95 (5% penalty) for unknown tools.
+    Specific high-latency tools like research_deep get 0.85 (15% penalty).
+    """
+    weight = _COST_WEIGHTS.get(tool_name, 0.95)
+    return score * weight
+
+
 def select_tools(
     query: str,
     quality_mode: QualityMode = QualityMode.AUTO,
@@ -195,6 +219,9 @@ def select_tools(
         signature: 0.10
         category:  0.10
         usage:     0.05
+
+    After composite scoring, applies cost/latency weight adjustment to
+    penalize slow and expensive tools (research_deep, research_ask_all_models, etc.)
     """
     if forced_tools:
         return [
@@ -247,6 +274,9 @@ def select_tools(
         # High-confidence example boost: if example matches >0.8, it's almost certainly the right tool
         if example_score > 0.8:
             composite += 0.15
+
+        # Apply cost/latency weight penalty for slow/expensive tools
+        composite = _apply_cost_weight(tool_name, composite)
 
         if composite > 0.08:
             scored.append((tool_name, composite, "composite"))
@@ -427,6 +457,8 @@ def _fallback_keyword_match(
         hits = sum(1 for kw in keywords if kw in name_parts)
         if hits > 0:
             score = hits / max(len(keywords), 1)
+            # Apply cost weight in fallback too
+            score = _apply_cost_weight(func_name, score)
             scored.append((func_name, score))
 
     scored.sort(key=lambda x: x[1], reverse=True)
