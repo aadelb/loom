@@ -17,7 +17,7 @@ from urllib.parse import quote
 import httpx
 
 from loom.error_responses import handle_tool_errors
-from loom.validators import validate_url, UrlSafetyError
+from loom.validators import validate_url
 from loom.http_helpers import fetch_json, fetch_text
 
 logger = logging.getLogger("loom.tools.supply_chain_intel")

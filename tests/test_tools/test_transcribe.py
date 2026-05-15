@@ -16,7 +16,7 @@ class TestResearchTranscribe:
     async def test_missing_whisper(self):
         """Test error when whisper is not installed."""
         with patch.dict("sys.modules", {"whisper": None}):
-            from loom.tools.transcribe import research_transcribe
+            from loom.tools.core.transcribe import research_transcribe
 
             result = await research_transcribe("https://example.com/audio.mp3")
 
@@ -29,7 +29,7 @@ class TestResearchTranscribe:
         """Test error for invalid model_size."""
         import sys
         with patch.dict(sys.modules, {"whisper": MagicMock()}):
-            from loom.tools.transcribe import research_transcribe
+            from loom.tools.core.transcribe import research_transcribe
 
             result = await research_transcribe(
                 "https://example.com/audio.mp3", model_size="invalid"
@@ -44,7 +44,7 @@ class TestResearchTranscribe:
         """Test error for invalid URL."""
         import sys
         with patch.dict(sys.modules, {"whisper": MagicMock()}):
-            from loom.tools.transcribe import research_transcribe
+            from loom.tools.core.transcribe import research_transcribe
 
             result = await research_transcribe("not a valid url")
 
@@ -57,11 +57,11 @@ class TestResearchTranscribe:
         import sys
         with (
             patch.dict(sys.modules, {"whisper": MagicMock()}),
-            patch("loom.tools.transcribe._download_audio", new_callable=AsyncMock) as mock_download,
+            patch("loom.tools.core.transcribe._download_audio", new_callable=AsyncMock) as mock_download,
         ):
             mock_download.return_value = None
 
-            from loom.tools.transcribe import research_transcribe
+            from loom.tools.core.transcribe import research_transcribe
 
             result = await research_transcribe("https://example.com/audio.mp3")
 
@@ -74,7 +74,7 @@ class TestResearchTranscribe:
         import sys
         with (
             patch.dict(sys.modules, {"whisper": MagicMock()}),
-            patch("loom.tools.transcribe._download_audio", new_callable=AsyncMock) as mock_download,
+            patch("loom.tools.core.transcribe._download_audio", new_callable=AsyncMock) as mock_download,
             patch("os.path.getsize") as mock_getsize,
         ):
             # Create a temporary file
@@ -86,7 +86,7 @@ class TestResearchTranscribe:
                 # Set file size to 600MB (exceeds 500MB limit)
                 mock_getsize.return_value = 600 * 1024 * 1024
 
-                from loom.tools.transcribe import research_transcribe
+                from loom.tools.core.transcribe import research_transcribe
 
                 result = await research_transcribe("https://example.com/audio.mp3")
 
@@ -103,11 +103,11 @@ class TestResearchTranscribe:
         with (
             patch.dict(sys.modules, {"whisper": MagicMock()}),
             patch(
-                "loom.tools.transcribe._download_audio", new_callable=AsyncMock
+                "loom.tools.core.transcribe._download_audio", new_callable=AsyncMock
             ) as mock_download,
             patch("os.path.getsize") as mock_getsize,
             patch(
-                "loom.tools.transcribe._transcribe_audio", new_callable=AsyncMock
+                "loom.tools.core.transcribe._transcribe_audio", new_callable=AsyncMock
             ) as mock_transcribe,
             patch("os.path.exists") as mock_exists,
             patch("os.unlink") as mock_unlink,
@@ -139,7 +139,7 @@ class TestResearchTranscribe:
                     )
                     mock_get_loop.return_value = mock_loop
 
-                    from loom.tools.transcribe import research_transcribe
+                    from loom.tools.core.transcribe import research_transcribe
 
                     result = await research_transcribe(
                         "https://example.com/audio.mp3", model_size="base"
@@ -165,7 +165,7 @@ class TestResearchTranscribe:
         with (
             patch.dict(sys.modules, {"whisper": MagicMock()}),
             patch(
-                "loom.tools.transcribe._download_audio", new_callable=AsyncMock
+                "loom.tools.core.transcribe._download_audio", new_callable=AsyncMock
             ) as mock_download,
             patch("os.path.getsize") as mock_getsize,
             patch("os.path.exists") as mock_exists,
@@ -191,7 +191,7 @@ class TestResearchTranscribe:
                     )
                     mock_get_loop.return_value = mock_loop
 
-                    from loom.tools.transcribe import research_transcribe
+                    from loom.tools.core.transcribe import research_transcribe
 
                     result = await research_transcribe(
                         "https://example.com/audio.mp3",
@@ -216,7 +216,7 @@ class TestResearchTranscribe:
         with (
             patch.dict(sys.modules, {"whisper": MagicMock()}),
             patch(
-                "loom.tools.transcribe._download_audio", new_callable=AsyncMock
+                "loom.tools.core.transcribe._download_audio", new_callable=AsyncMock
             ) as mock_download,
             patch("os.path.getsize") as mock_getsize,
             patch("os.path.exists") as mock_exists,
@@ -238,7 +238,7 @@ class TestResearchTranscribe:
                 )
                 mock_get_loop.return_value = mock_loop
 
-                from loom.tools.transcribe import research_transcribe
+                from loom.tools.core.transcribe import research_transcribe
 
                 result = await research_transcribe("https://example.com/audio.mp3")
 
@@ -253,9 +253,9 @@ class TestDownloadAudio:
     @pytest.mark.asyncio
     async def test_youtube_url_detection(self):
         """Test YouTube URL detection."""
-        from loom.tools.transcribe import _download_audio
+        from loom.tools.core.transcribe import _download_audio
 
-        with patch("loom.tools.transcribe._download_youtube_audio", new_callable=AsyncMock) as mock_yt:
+        with patch("loom.tools.core.transcribe._download_youtube_audio", new_callable=AsyncMock) as mock_yt:
             mock_yt.return_value = "/tmp/audio.wav"
 
             result = await _download_audio("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
@@ -264,9 +264,9 @@ class TestDownloadAudio:
     @pytest.mark.asyncio
     async def test_youtu_be_url_detection(self):
         """Test youtu.be short URL detection."""
-        from loom.tools.transcribe import _download_audio
+        from loom.tools.core.transcribe import _download_audio
 
-        with patch("loom.tools.transcribe._download_youtube_audio", new_callable=AsyncMock) as mock_yt:
+        with patch("loom.tools.core.transcribe._download_youtube_audio", new_callable=AsyncMock) as mock_yt:
             mock_yt.return_value = "/tmp/audio.wav"
 
             result = await _download_audio("https://youtu.be/dQw4w9WgXcQ")
@@ -275,9 +275,9 @@ class TestDownloadAudio:
     @pytest.mark.asyncio
     async def test_direct_audio_url(self):
         """Test direct audio URL handling."""
-        from loom.tools.transcribe import _download_audio
+        from loom.tools.core.transcribe import _download_audio
 
-        with patch("loom.tools.transcribe._download_file_audio", new_callable=AsyncMock) as mock_file:
+        with patch("loom.tools.core.transcribe._download_file_audio", new_callable=AsyncMock) as mock_file:
             mock_file.return_value = "/tmp/audio.wav"
 
             result = await _download_audio("https://example.com/audio.mp3")
@@ -291,7 +291,7 @@ class TestDownloadYoutubeAudio:
     async def test_yt_dlp_not_installed(self):
         """Test handling when yt-dlp is not installed."""
         with patch.dict("sys.modules", {"yt_dlp": None}):
-            from loom.tools.transcribe import _download_youtube_audio
+            from loom.tools.core.transcribe import _download_youtube_audio
 
             result = await _download_youtube_audio("https://www.youtube.com/watch?v=test")
             assert result is None
@@ -310,7 +310,7 @@ class TestDownloadYoutubeAudio:
         mock_yt_dlp.YoutubeDL.return_value = mock_ydl
 
         with patch.dict(sys.modules, {"yt_dlp": mock_yt_dlp}):
-            from loom.tools.transcribe import _download_youtube_audio
+            from loom.tools.core.transcribe import _download_youtube_audio
 
             result = await _download_youtube_audio("https://www.youtube.com/watch?v=test")
             assert result == "/tmp/audio.wav"
@@ -328,7 +328,7 @@ class TestDownloadYoutubeAudio:
         mock_yt_dlp.YoutubeDL.return_value = mock_ydl
 
         with patch.dict(sys.modules, {"yt_dlp": mock_yt_dlp}):
-            from loom.tools.transcribe import _download_youtube_audio
+            from loom.tools.core.transcribe import _download_youtube_audio
 
             result = await _download_youtube_audio("https://www.youtube.com/watch?v=test")
             assert result is None
@@ -340,7 +340,7 @@ class TestDownloadFileAudio:
     @pytest.mark.asyncio
     async def test_successful_download(self):
         """Test successful file download."""
-        from loom.tools.transcribe import _download_file_audio
+        from loom.tools.core.transcribe import _download_file_audio
 
         with patch("httpx.Client") as mock_client_cls:
             mock_response = MagicMock()
@@ -364,7 +364,7 @@ class TestDownloadFileAudio:
     @pytest.mark.asyncio
     async def test_file_too_large(self):
         """Test handling of files exceeding size limit."""
-        from loom.tools.transcribe import _download_file_audio
+        from loom.tools.core.transcribe import _download_file_audio
 
         with patch("httpx.Client") as mock_client_cls:
             mock_response = MagicMock()
@@ -384,7 +384,7 @@ class TestDownloadFileAudio:
     @pytest.mark.asyncio
     async def test_http_error(self):
         """Test handling of HTTP errors."""
-        from loom.tools.transcribe import _download_file_audio
+        from loom.tools.core.transcribe import _download_file_audio
 
         with patch("httpx.Client") as mock_client_cls:
             mock_ctx = MagicMock()
@@ -408,7 +408,7 @@ class TestTranscribeAudio:
         mock_whisper.load_model.return_value = mock_model
 
         with patch.dict(sys.modules, {"whisper": mock_whisper}):
-            from loom.tools.transcribe import _transcribe_audio
+            from loom.tools.core.transcribe import _transcribe_audio
 
             result = _transcribe_audio("/nonexistent/audio.mp3", "base", None)
             assert "error" in result
@@ -417,7 +417,7 @@ class TestTranscribeAudio:
         """Test handling of audio exceeding max duration."""
         import sys
 
-        from loom.tools.transcribe import MAX_AUDIO_DURATION_SECS
+        from loom.tools.core.transcribe import MAX_AUDIO_DURATION_SECS
 
         mock_whisper = MagicMock()
         mock_model = MagicMock()
@@ -431,7 +431,7 @@ class TestTranscribeAudio:
         with (
             patch.dict(sys.modules, {"whisper": mock_whisper, "librosa": mock_librosa}),
         ):
-            from loom.tools.transcribe import _transcribe_audio
+            from loom.tools.core.transcribe import _transcribe_audio
 
             result = _transcribe_audio("/tmp/audio.wav", "base", None)
             assert "error" in result
@@ -443,45 +443,45 @@ class TestGetFileExtension:
 
     def test_mp3_extension(self):
         """Test MP3 content type."""
-        from loom.tools.transcribe import _get_file_extension
+        from loom.tools.core.transcribe import _get_file_extension
 
         assert _get_file_extension("audio/mpeg") == ".mp3"
         assert _get_file_extension("audio/mp3") == ".mp3"
 
     def test_wav_extension(self):
         """Test WAV content type."""
-        from loom.tools.transcribe import _get_file_extension
+        from loom.tools.core.transcribe import _get_file_extension
 
         assert _get_file_extension("audio/wav") == ".wav"
 
     def test_flac_extension(self):
         """Test FLAC content type."""
-        from loom.tools.transcribe import _get_file_extension
+        from loom.tools.core.transcribe import _get_file_extension
 
         assert _get_file_extension("audio/flac") == ".flac"
 
     def test_mp4_extension(self):
         """Test MP4 content type."""
-        from loom.tools.transcribe import _get_file_extension
+        from loom.tools.core.transcribe import _get_file_extension
 
         assert _get_file_extension("video/mp4") == ".mp4"
 
     def test_webm_extension(self):
         """Test WebM content type."""
-        from loom.tools.transcribe import _get_file_extension
+        from loom.tools.core.transcribe import _get_file_extension
 
         assert _get_file_extension("video/webm") == ".webm"
 
     def test_unknown_extension(self):
         """Test unknown content type."""
-        from loom.tools.transcribe import _get_file_extension
+        from loom.tools.core.transcribe import _get_file_extension
 
         assert _get_file_extension("application/octet-stream") == ".audio"
         assert _get_file_extension("unknown/type") == ".audio"
 
     def test_case_insensitive(self):
         """Test case-insensitive content type handling."""
-        from loom.tools.transcribe import _get_file_extension
+        from loom.tools.core.transcribe import _get_file_extension
 
         assert _get_file_extension("AUDIO/MPEG") == ".mp3"
         assert _get_file_extension("Audio/Mp3") == ".mp3"

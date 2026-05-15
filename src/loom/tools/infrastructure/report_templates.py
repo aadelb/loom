@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from datetime import UTC, datetime
-from typing import Any, Literal
+from typing import Any
 from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.report_templates")

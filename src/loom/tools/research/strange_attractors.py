@@ -18,9 +18,16 @@ from __future__ import annotations
 import logging
 import math
 from typing import Any, Literal
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
 from loom.error_responses import handle_tool_errors
+
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(v: float, lo: float = 0.0, hi: float = 1.0) -> float:
+        """Fallback clamp if score_utils unavailable."""
+        return max(lo, min(hi, v))
 
 logger = logging.getLogger("loom.tools.strange_attractors")
 
@@ -52,7 +59,7 @@ async def research_attractor_trap(
     prompt: str,
     attractor_type: str = "lorenz",
     iterations: int = 100,
-) -> AttractorResult | dict[str, Any]:
+) -> dict[str, Any]:
     """Generate prompts that trap safety evaluators in chaotic oscillations.
 
     Creates strange attractor dynamics in prompt space: classifier oscillates
@@ -157,7 +164,7 @@ def _generate_lorenz_orbit(iterations: int) -> list[float]:
 
         # Map x to [0,1] using tanh normalization
         normalized = (math.tanh(x / 25.0) + 1.0) / 2.0
-        safety_levels.append(max(0.0, min(1.0, normalized)))
+        safety_levels.append(clamp(normalized, 0.0, 1.0))
 
     return safety_levels
 
@@ -184,7 +191,7 @@ def _generate_rossler_orbit(iterations: int) -> list[float]:
 
         # Map x to [0,1] using tanh
         normalized = (math.tanh(x / 20.0) + 1.0) / 2.0
-        safety_levels.append(max(0.0, min(1.0, normalized)))
+        safety_levels.append(clamp(normalized, 0.0, 1.0))
 
     return safety_levels
 
@@ -207,7 +214,7 @@ def _generate_henon_map(iterations: int) -> list[float]:
 
         # Map x ∈ [-1.5, 1.5] to [0,1]
         normalized = (x + 1.5) / 3.0
-        safety_levels.append(max(0.0, min(1.0, normalized)))
+        safety_levels.append(clamp(normalized, 0.0, 1.0))
 
     return safety_levels
 
@@ -224,7 +231,7 @@ def _generate_logistic_map(iterations: int) -> list[float]:
 
     for _ in range(iterations):
         x = r * x * (1.0 - x)
-        safety_levels.append(max(0.0, min(1.0, x)))
+        safety_levels.append(clamp(x, 0.0, 1.0))
 
     return safety_levels
 

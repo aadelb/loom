@@ -22,7 +22,7 @@ class TestFinanceQueryAutoRouting:
     @pytest.mark.asyncio
     async def test_bitcoin_query_routes_to_finance_providers(self) -> None:
         """Bitcoin query should detect finance type and add binance/investing providers."""
-        from loom.tools.deep import _detect_query_type
+        from loom.tools.core.deep import _detect_query_type
 
         query_types = _detect_query_type("bitcoin price prediction")
         assert "finance" in query_types
@@ -30,7 +30,7 @@ class TestFinanceQueryAutoRouting:
     @pytest.mark.asyncio
     async def test_ethereum_query_finance_detection(self) -> None:
         """Ethereum query should detect finance type."""
-        from loom.tools.deep import _detect_query_type
+        from loom.tools.core.deep import _detect_query_type
 
         query_types = _detect_query_type("ethereum market trends")
         assert "finance" in query_types
@@ -38,7 +38,7 @@ class TestFinanceQueryAutoRouting:
     @pytest.mark.asyncio
     async def test_crypto_query_finance_detection(self) -> None:
         """Crypto query should detect finance type."""
-        from loom.tools.deep import _detect_query_type
+        from loom.tools.core.deep import _detect_query_type
 
         query_types = _detect_query_type("cryptocurrency blockchain defi nft")
         assert "finance" in query_types
@@ -46,7 +46,7 @@ class TestFinanceQueryAutoRouting:
     @pytest.mark.asyncio
     async def test_stock_query_finance_detection(self) -> None:
         """Stock market query should detect finance type."""
-        from loom.tools.deep import _detect_query_type
+        from loom.tools.core.deep import _detect_query_type
 
         query_types = _detect_query_type("stock market trading nasdaq")
         assert "finance" in query_types
@@ -58,7 +58,7 @@ class TestNewsQueryAutoRouting:
     @pytest.mark.asyncio
     async def test_ai_news_query_detection(self) -> None:
         """'latest AI news' should detect news type."""
-        from loom.tools.deep import _detect_query_type
+        from loom.tools.core.deep import _detect_query_type
 
         query_types = _detect_query_type("latest AI news")
         assert "news" in query_types
@@ -66,7 +66,7 @@ class TestNewsQueryAutoRouting:
     @pytest.mark.asyncio
     async def test_breaking_news_detection(self) -> None:
         """Breaking news query should detect news type."""
-        from loom.tools.deep import _detect_query_type
+        from loom.tools.core.deep import _detect_query_type
 
         query_types = _detect_query_type("breaking news today")
         assert "news" in query_types
@@ -74,7 +74,7 @@ class TestNewsQueryAutoRouting:
     @pytest.mark.asyncio
     async def test_headline_detection(self) -> None:
         """Headline query should detect news type."""
-        from loom.tools.deep import _detect_query_type
+        from loom.tools.core.deep import _detect_query_type
 
         query_types = _detect_query_type("latest headlines announcement")
         assert "news" in query_types
@@ -117,7 +117,7 @@ class TestLLMCascadeWithEightProviders:
     @pytest.mark.asyncio
     async def test_provider_get_creates_instances(self) -> None:
         """_get_provider() should create provider instances."""
-        from loom.tools.llm import _get_provider
+        from loom.tools.llm.llm import _get_provider
 
         # Test that each provider name returns a provider instance
         provider_names = ["nvidia", "openai", "anthropic", "vllm", "groq", "deepseek", "gemini", "moonshot"]
@@ -134,7 +134,7 @@ class TestLLMCascadeWithEightProviders:
     @pytest.mark.asyncio
     async def test_unknown_provider_raises_error(self) -> None:
         """_get_provider() with unknown provider should raise ValueError."""
-        from loom.tools.llm import _get_provider
+        from loom.tools.llm.llm import _get_provider
 
         with pytest.raises(ValueError, match="unknown provider"):
             _get_provider("nonexistent_provider")
@@ -142,7 +142,7 @@ class TestLLMCascadeWithEightProviders:
     @pytest.mark.asyncio
     async def test_cascade_fallback_on_provider_failure(self) -> None:
         """Cascade should try next provider when current fails."""
-        from loom.tools.llm import _PROVIDERS, _get_provider
+        from loom.tools.llm.llm import _PROVIDERS, _get_provider
 
         # Clear cached providers
         _PROVIDERS.clear()
@@ -384,7 +384,7 @@ class TestTokenRedactionCoverageAllPatterns:
 
     def test_sanitize_openai_key_pattern(self) -> None:
         """_sanitize_error should redact OpenAI sk- pattern."""
-        from loom.tools.llm import _sanitize_error
+        from loom.tools.llm.llm import _sanitize_error
 
         error = "API error with key sk-1234567890abcdefghij"
         sanitized = _sanitize_error(error)
@@ -393,7 +393,7 @@ class TestTokenRedactionCoverageAllPatterns:
 
     def test_sanitize_nvidia_key_pattern(self) -> None:
         """_sanitize_error should redact NVIDIA nvapi- pattern."""
-        from loom.tools.llm import _sanitize_error
+        from loom.tools.llm.llm import _sanitize_error
 
         error = "NVIDIA error: nvapi-1234567890abcdef"
         sanitized = _sanitize_error(error)
@@ -402,7 +402,7 @@ class TestTokenRedactionCoverageAllPatterns:
 
     def test_sanitize_github_token_pattern(self) -> None:
         """_sanitize_error should redact GitHub ghp_ pattern."""
-        from loom.tools.llm import _sanitize_error
+        from loom.tools.llm.llm import _sanitize_error
 
         error = "GitHub error: ghp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
         sanitized = _sanitize_error(error)
@@ -411,7 +411,7 @@ class TestTokenRedactionCoverageAllPatterns:
 
     def test_sanitize_aws_key_pattern(self) -> None:
         """_sanitize_error should redact AWS AKIA pattern."""
-        from loom.tools.llm import _sanitize_error
+        from loom.tools.llm.llm import _sanitize_error
 
         error = "AWS error: AKIA1234567890ABCDEF"
         sanitized = _sanitize_error(error)
@@ -420,7 +420,7 @@ class TestTokenRedactionCoverageAllPatterns:
 
     def test_sanitize_bearer_token_pattern(self) -> None:
         """_sanitize_error should redact Bearer token pattern."""
-        from loom.tools.llm import _sanitize_error
+        from loom.tools.llm.llm import _sanitize_error
 
         error = "Auth error: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
         sanitized = _sanitize_error(error)
@@ -429,7 +429,7 @@ class TestTokenRedactionCoverageAllPatterns:
 
     def test_sanitize_multiple_patterns_in_one_error(self) -> None:
         """_sanitize_error should redact multiple patterns in one error."""
-        from loom.tools.llm import _sanitize_error
+        from loom.tools.llm.llm import _sanitize_error
 
         error = (
             "Multiple errors: sk-abc123def456ghij and nvapi-xyz789abcdef and "
@@ -445,7 +445,7 @@ class TestTokenRedactionCoverageAllPatterns:
 
     def test_sanitize_preserves_non_secret_content(self) -> None:
         """_sanitize_error should preserve non-secret content."""
-        from loom.tools.llm import _sanitize_error
+        from loom.tools.llm.llm import _sanitize_error
 
         error = "Error: connection timeout while calling API endpoint"
         sanitized = _sanitize_error(error)
@@ -453,7 +453,7 @@ class TestTokenRedactionCoverageAllPatterns:
 
     def test_sanitize_case_insensitive_bearer(self) -> None:
         """_sanitize_error should handle Bearer case-insensitively."""
-        from loom.tools.llm import _sanitize_error
+        from loom.tools.llm.llm import _sanitize_error
 
         error_lower = "Auth: bearer token_1234567890"
         error_upper = "Auth: BEARER token_1234567890"
@@ -465,13 +465,13 @@ class TestTokenRedactionCoverageAllPatterns:
 
     def test_sanitize_empty_string(self) -> None:
         """_sanitize_error should handle empty string."""
-        from loom.tools.llm import _sanitize_error
+        from loom.tools.llm.llm import _sanitize_error
 
         assert _sanitize_error("") == ""
 
     def test_sanitize_long_keys(self) -> None:
         """_sanitize_error should handle long keys (bounded quantifiers)."""
-        from loom.tools.llm import _sanitize_error
+        from loom.tools.llm.llm import _sanitize_error
 
         # OpenAI keys can be 48 chars
         long_key = "sk-" + "a" * 48

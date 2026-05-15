@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from loom.tools.stylometry import (
+from loom.tools.research.stylometry import (
     research_stylometry,
     _extract_features,
     _tokenize_sentences,

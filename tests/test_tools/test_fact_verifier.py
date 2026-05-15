@@ -6,7 +6,7 @@ import asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from loom.tools.fact_verifier import (
+from loom.tools.research.fact_verifier import (
     research_fact_verify,
     research_batch_verify,
     _extract_evidence,
@@ -199,7 +199,7 @@ class TestResearchFactVerify:
 
     async def test_fact_verify_valid_claim_with_mocked_search(self):
         """Test verification with valid claim using mocked search."""
-        with patch("loom.tools.fact_verifier.research_search") as mock_search:
+        with patch("loom.tools.research.fact_verifier.research_search") as mock_search:
             # Mock search results
             mock_search.side_effect = [
                 {
@@ -244,7 +244,7 @@ class TestResearchFactVerify:
 
     async def test_fact_verify_handles_search_errors(self):
         """Test verification handles search provider errors gracefully."""
-        with patch("loom.tools.fact_verifier.research_search") as mock_search:
+        with patch("loom.tools.research.fact_verifier.research_search") as mock_search:
             # Mock one provider failing, others returning empty
             mock_search.side_effect = [
                 Exception("Connection error"),
@@ -260,7 +260,7 @@ class TestResearchFactVerify:
 
     async def test_fact_verify_respects_min_confidence(self):
         """Test that low confidence results are marked unverified."""
-        with patch("loom.tools.fact_verifier.research_search") as mock_search:
+        with patch("loom.tools.research.fact_verifier.research_search") as mock_search:
             # Mock results with mixed/weak evidence
             mock_search.side_effect = [
                 {
@@ -290,7 +290,7 @@ class TestResearchFactVerify:
 
     async def test_fact_verify_sources_parameter(self):
         """Test that sources parameter is validated and used."""
-        with patch("loom.tools.fact_verifier.research_search") as mock_search:
+        with patch("loom.tools.research.fact_verifier.research_search") as mock_search:
             mock_search.return_value = {
                 "provider": "exa",
                 "results": []
@@ -303,7 +303,7 @@ class TestResearchFactVerify:
 
     async def test_fact_verify_returns_complete_structure(self):
         """Test that result has all expected keys."""
-        with patch("loom.tools.fact_verifier.research_search") as mock_search:
+        with patch("loom.tools.research.fact_verifier.research_search") as mock_search:
             mock_search.return_value = {
                 "provider": "exa",
                 "results": []
@@ -345,7 +345,7 @@ class TestResearchBatchVerify:
 
     async def test_batch_verify_single_claim(self):
         """Test batch verification with single claim."""
-        with patch("loom.tools.fact_verifier.research_fact_verify") as mock_verify:
+        with patch("loom.tools.research.fact_verifier.research_fact_verify") as mock_verify:
             mock_verify.return_value = {
                 "claim": "Test claim",
                 "verdict": "supported",
@@ -364,7 +364,7 @@ class TestResearchBatchVerify:
 
     async def test_batch_verify_multiple_claims(self):
         """Test batch verification with multiple claims."""
-        with patch("loom.tools.fact_verifier.research_fact_verify") as mock_verify:
+        with patch("loom.tools.research.fact_verifier.research_fact_verify") as mock_verify:
             async def mock_verify_impl(claim, **kwargs):
                 return {
                     "claim": claim,
@@ -388,7 +388,7 @@ class TestResearchBatchVerify:
 
     async def test_batch_verify_returns_complete_structure_per_claim(self):
         """Test that each result has required keys."""
-        with patch("loom.tools.fact_verifier.research_fact_verify") as mock_verify:
+        with patch("loom.tools.research.fact_verifier.research_fact_verify") as mock_verify:
             async def mock_verify_impl(claim, **kwargs):
                 return {
                     "claim": claim,
@@ -433,7 +433,7 @@ class TestIntegration:
 
     async def test_fact_verify_and_batch_verify_consistency(self):
         """Test that batch verify produces same results as individual verify."""
-        with patch("loom.tools.fact_verifier.research_search") as mock_search:
+        with patch("loom.tools.research.fact_verifier.research_search") as mock_search:
             mock_search.return_value = {
                 "provider": "exa",
                 "results": []

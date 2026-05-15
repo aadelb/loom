@@ -14,7 +14,7 @@ class TestREQ001Wealth:
 
     @pytest.mark.asyncio
     async def test_deep_research_wealth(self):
-        from loom.tools.deep import research_deep
+        from loom.tools.core.deep import research_deep
         result = await research_deep(query="how to be rich", max_results=5)
         assert isinstance(result, dict)
         RESULTS_DIR.mkdir(exist_ok=True)
@@ -26,7 +26,7 @@ class TestREQ002AIWealth:
 
     @pytest.mark.asyncio
     async def test_ai_wealth_search(self):
-        from loom.tools.search import research_search
+        from loom.tools.core.search import research_search
         result = await research_search(query="how to use AI to generate wealth 2026", provider="ddgs", max_results=5)
         assert isinstance(result, dict)
         RESULTS_DIR.mkdir(exist_ok=True)
@@ -38,7 +38,7 @@ class TestREQ004UAEJobs:
 
     @pytest.mark.asyncio
     async def test_uae_jobs_search(self):
-        from loom.tools.search import research_search
+        from loom.tools.core.search import research_search
         result = await research_search(query="top paying jobs in UAE 2026", provider="ddgs", max_results=5)
         assert isinstance(result, dict)
         RESULTS_DIR.mkdir(exist_ok=True)
@@ -50,7 +50,7 @@ class TestREQ008MultiSearch:
 
     @pytest.mark.asyncio
     async def test_multi_search(self):
-        from loom.tools.multi_search import research_multi_search
+        from loom.tools.core.multi_search import research_multi_search
         result = await research_multi_search(query="AI safety tools 2026")
         assert isinstance(result, dict)
         RESULTS_DIR.mkdir(exist_ok=True)

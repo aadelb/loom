@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 
-from loom.tools.prompt_reframe import (
+from loom.tools.llm.prompt_reframe import (
     research_crescendo_chain,
     research_format_smuggle,
 )

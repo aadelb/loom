@@ -45,6 +45,7 @@ def search_ddgs(
 
         if search_type == "news":
             raw = list(ddgs.news(query, **search_kwargs))
+            total = max(len(raw), 1)
             results = [
                 {
                     "url": r.get("url", ""),
@@ -52,18 +53,21 @@ def search_ddgs(
                     "snippet": (r.get("body", "") or "")[:500],
                     "published_date": r.get("date"),
                     "source": r.get("source"),
+                    "score": 1.0 - (idx / total),
                 }
-                for r in raw
+                for idx, r in enumerate(raw)
             ]
         else:
             raw = list(ddgs.text(query, **search_kwargs))
+            total = max(len(raw), 1)
             results = [
                 {
                     "url": r.get("href", ""),
                     "title": r.get("title", ""),
                     "snippet": (r.get("body", "") or "")[:500],
+                    "score": 1.0 - (idx / total),
                 }
-                for r in raw
+                for idx, r in enumerate(raw)
             ]
 
         return {"results": results, "query": query}

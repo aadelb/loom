@@ -21,6 +21,14 @@ from loom.error_responses import handle_tool_errors
 from loom.stealth_calc import StealthCalculator
 from loom.stealth_detector import research_stealth_detect as _research_stealth_detect
 
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    # Fallback if score_utils not available
+    def clamp(value: float, low: float = 0.0, high: float = 1.0) -> float:
+        """Fallback clamp implementation."""
+        return max(low, min(high, value))
+
 logger = logging.getLogger("loom.tools.stealth_score")
 
 # Known attack patterns (high risk)
@@ -198,7 +206,7 @@ async def research_stealth_score_heuristic(
         score -= structure_deduction
 
         # Clamp score to [0, 10]
-        final_score = max(0.0, min(10.0, score))
+        final_score = clamp(score, 0.0, 10.0)
 
         # Determine recommendation based on final score
         if final_score >= 8.5:
@@ -314,7 +322,7 @@ def _score_pattern_matching(prompt: str) -> float:
         if re.search(pattern, prompt_lower, re.IGNORECASE):
             score -= 2.0
 
-    return max(0.0, score)
+    return clamp(score, 0.0, 10.0)
 
 
 def _score_length_analysis(prompt: str) -> float:
@@ -410,7 +418,7 @@ def _score_naturalness(prompt: str) -> float:
         if max_freq / len(words) > 0.15:  # Word appears >15% of the time
             score -= 1.5
 
-    return max(0.0, score)
+    return clamp(score, 0.0, 10.0)
 
 
 def _score_structure(prompt: str) -> float:

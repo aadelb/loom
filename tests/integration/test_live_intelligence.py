@@ -57,7 +57,7 @@ def safe_test_inputs() -> dict[str, Any]:
 def test_identity_resolve_email(safe_test_inputs: dict[str, Any]) -> None:
     """research_identity_resolve with email — assert profile linkage."""
     try:
-        from loom.tools.identity_resolve import research_identity_resolve
+        from loom.tools.intelligence.identity_resolve import research_identity_resolve
     except ImportError:
         pytest.skip("Loom not installed")
 
@@ -84,7 +84,7 @@ def test_identity_resolve_email(safe_test_inputs: dict[str, Any]) -> None:
 def test_identity_resolve_username(safe_test_inputs: dict[str, Any]) -> None:
     """research_identity_resolve with username — assert cross-platform presence."""
     try:
-        from loom.tools.identity_resolve import research_identity_resolve
+        from loom.tools.intelligence.identity_resolve import research_identity_resolve
     except ImportError:
         pytest.skip("Loom not installed")
 
@@ -114,7 +114,7 @@ def test_identity_resolve_username(safe_test_inputs: dict[str, Any]) -> None:
 def test_change_monitor_initial_snapshot(safe_test_inputs: dict[str, Any]) -> None:
     """research_change_monitor initial snapshot — assert content hash recorded."""
     try:
-        from loom.tools.change_monitor import research_change_monitor
+        from loom.tools.intelligence.change_monitor import research_change_monitor
     except ImportError:
         pytest.skip("Loom not installed")
 
@@ -141,7 +141,7 @@ def test_change_monitor_initial_snapshot(safe_test_inputs: dict[str, Any]) -> No
 def test_change_monitor_second_snapshot(safe_test_inputs: dict[str, Any]) -> None:
     """research_change_monitor second snapshot — assert delta detection."""
     try:
-        from loom.tools.change_monitor import research_change_monitor
+        from loom.tools.intelligence.change_monitor import research_change_monitor
     except ImportError:
         pytest.skip("Loom not installed")
 
@@ -176,7 +176,7 @@ def test_change_monitor_second_snapshot(safe_test_inputs: dict[str, Any]) -> Non
 def test_social_graph_github_network(safe_test_inputs: dict[str, Any]) -> None:
     """research_social_graph — assert graph nodes and edges."""
     try:
-        from loom.tools.social_graph import research_social_graph
+        from loom.tools.intelligence.social_graph import research_social_graph
     except ImportError:
         pytest.skip("Loom not installed")
 
@@ -214,7 +214,7 @@ def test_social_graph_github_network(safe_test_inputs: dict[str, Any]) -> None:
 def test_competitive_intel_company_analysis(safe_test_inputs: dict[str, Any]) -> None:
     """research_competitive_intel — assert intel signals."""
     try:
-        from loom.tools.competitive_intel import research_competitive_intel
+        from loom.tools.intelligence.competitive_intel import research_competitive_intel
     except ImportError:
         pytest.skip("Loom not installed")
 
@@ -243,7 +243,7 @@ def test_competitive_intel_company_analysis(safe_test_inputs: dict[str, Any]) ->
 def test_crypto_trace_ethereum_address(safe_test_inputs: dict[str, Any]) -> None:
     """research_crypto_trace Ethereum — assert address trace data."""
     try:
-        from loom.tools.crypto_trace import research_crypto_trace
+        from loom.tools.intelligence.crypto_trace import research_crypto_trace
     except ImportError:
         pytest.skip("Loom not installed")
 
@@ -267,7 +267,7 @@ def test_crypto_trace_ethereum_address(safe_test_inputs: dict[str, Any]) -> None
 def test_crypto_trace_bitcoin_address(safe_test_inputs: dict[str, Any]) -> None:
     """research_crypto_trace Bitcoin — assert UTXO trace."""
     try:
-        from loom.tools.crypto_trace import research_crypto_trace
+        from loom.tools.intelligence.crypto_trace import research_crypto_trace
     except ImportError:
         pytest.skip("Loom not installed")
 
@@ -295,7 +295,7 @@ def test_crypto_trace_bitcoin_address(safe_test_inputs: dict[str, Any]) -> None:
 def test_stego_detect_public_image(safe_test_inputs: dict[str, Any]) -> None:
     """research_stego_detect image URL — assert stego analysis."""
     try:
-        from loom.tools.stego_detect import research_stego_detect
+        from loom.tools.privacy.stego_detect import research_stego_detect
     except ImportError:
         pytest.skip("Loom not installed")
 
@@ -324,7 +324,7 @@ def test_stego_detect_public_image(safe_test_inputs: dict[str, Any]) -> None:
 def test_threat_profile_username(safe_test_inputs: dict[str, Any]) -> None:
     """research_threat_profile username — assert threat indicators."""
     try:
-        from loom.tools.threat_profile import research_threat_profile
+        from loom.tools.intelligence.threat_profile import research_threat_profile
     except ImportError:
         pytest.skip("Loom not installed")
 
@@ -353,7 +353,7 @@ def test_threat_profile_username(safe_test_inputs: dict[str, Any]) -> None:
 def test_company_diligence_well_known(safe_test_inputs: dict[str, Any]) -> None:
     """research_company_diligence — assert company fundamentals."""
     try:
-        from loom.tools.company_intel import research_company_diligence
+        from loom.tools.intelligence.company_intel import research_company_diligence
     except ImportError:
         pytest.skip("Loom not installed")
 
@@ -383,7 +383,7 @@ def test_company_diligence_well_known(safe_test_inputs: dict[str, Any]) -> None:
 def test_salary_intelligence_job_title(safe_test_inputs: dict[str, Any]) -> None:
     """research_salary_intelligence — assert salary ranges."""
     try:
-        from loom.tools.company_intel import research_salary_intelligence
+        from loom.tools.intelligence.company_intel import research_salary_intelligence
     except ImportError:
         pytest.skip("Loom not installed")
 
@@ -416,7 +416,7 @@ def test_salary_intelligence_job_title(safe_test_inputs: dict[str, Any]) -> None
 def test_supply_chain_risk_pypi_package(safe_test_inputs: dict[str, Any]) -> None:
     """research_supply_chain_risk PyPI — assert risk assessment."""
     try:
-        from loom.tools.supply_chain_intel import research_supply_chain_risk
+        from loom.tools.intelligence.supply_chain_intel import research_supply_chain_risk
     except ImportError:
         pytest.skip("Loom not installed")
 
@@ -446,7 +446,7 @@ def test_supply_chain_risk_pypi_package(safe_test_inputs: dict[str, Any]) -> Non
 def test_patent_landscape_technology(safe_test_inputs: dict[str, Any]) -> None:
     """research_patent_landscape — assert patent data."""
     try:
-        from loom.tools.supply_chain_intel import research_patent_landscape
+        from loom.tools.intelligence.supply_chain_intel import research_patent_landscape
     except ImportError:
         pytest.skip("Loom not installed")
 
@@ -475,7 +475,7 @@ def test_patent_landscape_technology(safe_test_inputs: dict[str, Any]) -> None:
 def test_dependency_audit_github_repo(safe_test_inputs: dict[str, Any]) -> None:
     """research_dependency_audit — assert vulnerability findings."""
     try:
-        from loom.tools.supply_chain_intel import research_dependency_audit
+        from loom.tools.intelligence.supply_chain_intel import research_dependency_audit
     except ImportError:
         pytest.skip("Loom not installed")
 
@@ -511,7 +511,7 @@ def test_dependency_audit_github_repo(safe_test_inputs: dict[str, Any]) -> None:
 def test_identity_resolve_multiple_emails(email_input: str) -> None:
     """research_identity_resolve multiple emails — assert robustness."""
     try:
-        from loom.tools.identity_resolve import research_identity_resolve
+        from loom.tools.intelligence.identity_resolve import research_identity_resolve
     except ImportError:
         pytest.skip("Loom not installed")
 
@@ -536,7 +536,7 @@ def test_identity_resolve_multiple_emails(email_input: str) -> None:
 def test_salary_intelligence_multiple_roles(job_title: str) -> None:
     """research_salary_intelligence multiple roles — assert coverage."""
     try:
-        from loom.tools.company_intel import research_salary_intelligence
+        from loom.tools.intelligence.company_intel import research_salary_intelligence
     except ImportError:
         pytest.skip("Loom not installed")
 
@@ -561,7 +561,7 @@ def test_salary_intelligence_multiple_roles(job_title: str) -> None:
 def test_supply_chain_risk_multiple_packages(package_name: str) -> None:
     """research_supply_chain_risk multiple packages — assert scalability."""
     try:
-        from loom.tools.supply_chain_intel import research_supply_chain_risk
+        from loom.tools.intelligence.supply_chain_intel import research_supply_chain_risk
     except ImportError:
         pytest.skip("Loom not installed")
 

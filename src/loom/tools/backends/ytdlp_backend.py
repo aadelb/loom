@@ -11,7 +11,7 @@ import asyncio
 import logging
 import os
 import tempfile
-from typing import Any, Literal
+from typing import Any
 
 from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.ytdlp_backend")

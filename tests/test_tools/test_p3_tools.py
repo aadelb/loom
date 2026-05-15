@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
 
-from loom.tools import p3_tools
+import loom.tools.intelligence.p3_tools
 
 
 pytestmark = pytest.mark.asyncio

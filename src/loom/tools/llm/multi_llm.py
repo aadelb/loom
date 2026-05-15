@@ -1,6 +1,14 @@
 """Multi-LLM query tool — send a prompt to ALL available LLM providers simultaneously."""
 
 from __future__ import annotations
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text, max_chars=500, *, suffix="..."):
+        if len(text) <= max_chars: return text
+        return text[:max_chars - len(suffix)] + suffix
+
+
 
 import asyncio
 import contextlib
@@ -93,7 +101,7 @@ async def research_ask_all_llms(
             return {
                 "provider": name,
                 "model": response.model if hasattr(response, "model") else name,
-                "text": text[:1000],
+                "text": truncate(text, 1000),
                 "tokens": (response.input_tokens + response.output_tokens) if hasattr(response, "input_tokens") else 0,
                 "elapsed_ms": int(elapsed * 1000),
                 "refused": False,
@@ -112,7 +120,7 @@ async def research_ask_all_llms(
             }
 
     tasks = [_query_provider(name, prov) for name, prov in providers_available]
-    responses = await asyncio.gather(*tasks)
+    responses = await asyncio.gather(*tasks, return_exceptions=True)
 
     for prov in providers_available:
         with contextlib.suppress(Exception):

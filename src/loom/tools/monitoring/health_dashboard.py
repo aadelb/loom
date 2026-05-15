@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import html
 import logging
 from loom.error_responses import handle_tool_errors
 

@@ -11,15 +11,14 @@ Uses theHarvester as a subprocess since it's not easily pip-installable as a lib
 
 from __future__ import annotations
 
-import ipaddress
 import logging
 import re
-import subprocess
 import time
 from typing import Any
 
 from loom.input_validators import validate_domain, validate_email, validate_ip, ValidationError
 from loom.error_responses import handle_tool_errors
+from loom.subprocess_helpers import run_command
 
 logger = logging.getLogger("loom.tools.harvester_backend")
 
@@ -73,16 +72,16 @@ def _check_harvester_available() -> tuple[bool, str]:
         Tuple of (available: bool, message: str)
     """
     try:
-        result = subprocess.run(
+        result = run_command(
             ["theHarvester", "-h"],
             capture_output=True,
             text=True,
             timeout=5,
         )
-        if result.returncode == 0:
+        if result["success"]:
             return True, "theHarvester CLI found"
         else:
-            return False, f"theHarvester help check failed: {result.stderr}"
+            return False, f"theHarvester help check failed: {result["stderr"]}"
     except FileNotFoundError:
         return False, (
             "theHarvester CLI not found. Install with: pip install theHarvester"
@@ -254,7 +253,7 @@ def research_harvest(
         cmd = ["theHarvester", "-d", domain, "-b", sources, "-l", str(limit)]
 
         # Run theHarvester with 120-second timeout
-        result = subprocess.run(
+        result = run_command(
             cmd,
             capture_output=True,
             text=True,
@@ -262,7 +261,7 @@ def research_harvest(
         )
 
         # Parse output
-        emails, subdomains, ips = _parse_harvester_output(result.stdout, result.stderr)
+        emails, subdomains, ips = _parse_harvester_output(result["stdout"], result["stderr"])
 
         # Calculate duration
         duration_ms = int((time.time() - start_time) * 1000)

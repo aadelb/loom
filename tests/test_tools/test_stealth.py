@@ -6,7 +6,7 @@ import pytest
 import asyncio
 from unittest.mock import MagicMock, patch
 
-from loom.tools.stealth import research_botasaurus, research_camoufox
+from loom.tools.adversarial.stealth import research_botasaurus, research_camoufox
 
 
 
@@ -16,7 +16,7 @@ class TestCamoufox:
 
     async def test_camoufox_import_error_graceful(self) -> None:
         """ImportError on camoufox import returns error dict."""
-        with patch("loom.tools.stealth._fetch_camoufox") as mock_fetch:
+        with patch("loom.tools.adversarial.stealth._fetch_camoufox") as mock_fetch:
             # Simulate ImportError
             mock_fetch.return_value = MagicMock(
                 url="https://example.com",
@@ -44,7 +44,7 @@ class TestCamoufox:
             "html": "<html>example</html>",
         }
 
-        with patch("loom.tools.stealth._fetch_camoufox", return_value=mock_result):
+        with patch("loom.tools.adversarial.stealth._fetch_camoufox", return_value=mock_result):
 
             async def run_test() -> None:
                 result = await research_camoufox("https://example.com")
@@ -61,7 +61,7 @@ class TestBotasaurus:
 
     async def test_botasaurus_delegates_to_fetch(self) -> None:
         """botasaurus delegates to research_fetch with mode='dynamic'."""
-        with patch("loom.tools.fetch.research_fetch") as mock_fetch:
+        with patch("loom.tools.core.fetch.research_fetch") as mock_fetch:
             mock_fetch.return_value = {
                 "url": "https://example.com",
                 "text": "Content",
@@ -78,7 +78,7 @@ class TestBotasaurus:
 
     async def test_botasaurus_returns_tool_field(self) -> None:
         """botasaurus result has tool='botasaurus'."""
-        with patch("loom.tools.fetch.research_fetch") as mock_fetch:
+        with patch("loom.tools.core.fetch.research_fetch") as mock_fetch:
             mock_fetch.return_value = {
                 "url": "https://example.com",
                 "text": "Content",

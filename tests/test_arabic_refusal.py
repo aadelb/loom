@@ -10,7 +10,7 @@ import re
 
 import pytest
 
-from loom.tools.prompt_reframe import (
+from loom.tools.llm.prompt_reframe import (
     _REFUSAL_PATTERNS,
     research_refusal_detector,
 )

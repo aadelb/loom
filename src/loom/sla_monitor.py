@@ -15,8 +15,8 @@ from __future__ import annotations
 import logging
 import time
 from collections import deque
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta, UTC
+from dataclasses import dataclass
+from datetime import datetime, UTC
 from typing import Any
 
 log = logging.getLogger("loom.sla_monitor")

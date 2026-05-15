@@ -11,8 +11,8 @@ import pytest
 class TestResearchGhostWeave:
     async def test_invalid_seed_url(self):
         """Test error when seed URL is invalid."""
-        with patch("loom.tools.ghost_weave.validate_url", side_effect=ValueError("Invalid URL")):
-            from loom.tools.ghost_weave import research_ghost_weave
+        with patch("loom.tools.adversarial.ghost_weave.validate_url", side_effect=ValueError("Invalid URL")):
+            from loom.tools.adversarial.ghost_weave import research_ghost_weave
 
             result = await research_ghost_weave("not-a-url")
 
@@ -22,12 +22,12 @@ class TestResearchGhostWeave:
 
     async def test_tor_disabled(self):
         """Test error when Tor is disabled."""
-        with patch("loom.tools.ghost_weave.get_config") as mock_config, patch(
-            "loom.tools.ghost_weave.validate_url"
+        with patch("loom.tools.adversarial.ghost_weave.get_config") as mock_config, patch(
+            "loom.tools.adversarial.ghost_weave.validate_url"
         ):
             mock_config.return_value = {"TOR_ENABLED": False}
 
-            from loom.tools.ghost_weave import research_ghost_weave
+            from loom.tools.adversarial.ghost_weave import research_ghost_weave
 
             result = await research_ghost_weave("http://example.onion")
 
@@ -36,14 +36,14 @@ class TestResearchGhostWeave:
 
     async def test_depth_clamping(self):
         """Test that depth is clamped to 1-3 range."""
-        with patch("loom.tools.ghost_weave.get_config") as mock_config, patch(
-            "loom.tools.ghost_weave.validate_url"
+        with patch("loom.tools.adversarial.ghost_weave.get_config") as mock_config, patch(
+            "loom.tools.adversarial.ghost_weave.validate_url"
         ), patch(
-            "loom.tools.ghost_weave.research_fetch"
+            "loom.tools.adversarial.ghost_weave.research_fetch"
         ):
             mock_config.return_value = {"TOR_ENABLED": True, "TOR_SOCKS5_PROXY": "socks5h://127.0.0.1:9050"}
 
-            from loom.tools.ghost_weave import research_ghost_weave
+            from loom.tools.adversarial.ghost_weave import research_ghost_weave
 
             # Request depth=10 should be clamped to 3
             result = await research_ghost_weave("http://example.onion", depth=10)
@@ -54,14 +54,14 @@ class TestResearchGhostWeave:
 
     async def test_max_pages_clamping(self):
         """Test that max_pages is clamped to 1-100 range."""
-        with patch("loom.tools.ghost_weave.get_config") as mock_config, patch(
-            "loom.tools.ghost_weave.validate_url"
+        with patch("loom.tools.adversarial.ghost_weave.get_config") as mock_config, patch(
+            "loom.tools.adversarial.ghost_weave.validate_url"
         ), patch(
-            "loom.tools.ghost_weave.research_fetch"
+            "loom.tools.adversarial.ghost_weave.research_fetch"
         ):
             mock_config.return_value = {"TOR_ENABLED": True, "TOR_SOCKS5_PROXY": "socks5h://127.0.0.1:9050"}
 
-            from loom.tools.ghost_weave import research_ghost_weave
+            from loom.tools.adversarial.ghost_weave import research_ghost_weave
 
             # Request max_pages=500 should be clamped to 100
             result = await research_ghost_weave("http://example.onion", max_pages=500)
@@ -77,15 +77,15 @@ class TestResearchGhostWeave:
             "title": "Example Page",
         }
 
-        with patch("loom.tools.ghost_weave.get_config") as mock_config, patch(
-            "loom.tools.ghost_weave.validate_url"
+        with patch("loom.tools.adversarial.ghost_weave.get_config") as mock_config, patch(
+            "loom.tools.adversarial.ghost_weave.validate_url"
         ), patch(
-            "loom.tools.ghost_weave.research_fetch",
+            "loom.tools.adversarial.ghost_weave.research_fetch",
             return_value=fetch_result,
         ):
             mock_config.return_value = {"TOR_ENABLED": True, "TOR_SOCKS5_PROXY": "socks5h://127.0.0.1:9050"}
 
-            from loom.tools.ghost_weave import research_ghost_weave
+            from loom.tools.adversarial.ghost_weave import research_ghost_weave
 
             result = await research_ghost_weave("http://example.onion", depth=1, max_pages=10)
 
@@ -102,15 +102,15 @@ class TestResearchGhostWeave:
             "title": "Source",
         }
 
-        with patch("loom.tools.ghost_weave.get_config") as mock_config, patch(
-            "loom.tools.ghost_weave.validate_url"
+        with patch("loom.tools.adversarial.ghost_weave.get_config") as mock_config, patch(
+            "loom.tools.adversarial.ghost_weave.validate_url"
         ), patch(
-            "loom.tools.ghost_weave.research_fetch",
+            "loom.tools.adversarial.ghost_weave.research_fetch",
             return_value=fetch_result,
         ):
             mock_config.return_value = {"TOR_ENABLED": True, "TOR_SOCKS5_PROXY": "socks5h://127.0.0.1:9050"}
 
-            from loom.tools.ghost_weave import research_ghost_weave
+            from loom.tools.adversarial.ghost_weave import research_ghost_weave
 
             result = await research_ghost_weave("http://example.onion", depth=1)
 
@@ -120,15 +120,15 @@ class TestResearchGhostWeave:
         """Test that failed fetches are tracked as dead links."""
         fetch_result = {"error": "Connection timeout"}
 
-        with patch("loom.tools.ghost_weave.get_config") as mock_config, patch(
-            "loom.tools.ghost_weave.validate_url"
+        with patch("loom.tools.adversarial.ghost_weave.get_config") as mock_config, patch(
+            "loom.tools.adversarial.ghost_weave.validate_url"
         ), patch(
-            "loom.tools.ghost_weave.research_fetch",
+            "loom.tools.adversarial.ghost_weave.research_fetch",
             return_value=fetch_result,
         ):
             mock_config.return_value = {"TOR_ENABLED": True, "TOR_SOCKS5_PROXY": "socks5h://127.0.0.1:9050"}
 
-            from loom.tools.ghost_weave import research_ghost_weave
+            from loom.tools.adversarial.ghost_weave import research_ghost_weave
 
             result = await research_ghost_weave("http://example.onion")
 
@@ -143,15 +143,15 @@ class TestResearchGhostWeave:
             "title": "Page",
         }
 
-        with patch("loom.tools.ghost_weave.get_config") as mock_config, patch(
-            "loom.tools.ghost_weave.validate_url"
+        with patch("loom.tools.adversarial.ghost_weave.get_config") as mock_config, patch(
+            "loom.tools.adversarial.ghost_weave.validate_url"
         ), patch(
-            "loom.tools.ghost_weave.research_fetch",
+            "loom.tools.adversarial.ghost_weave.research_fetch",
             return_value=fetch_result,
         ):
             mock_config.return_value = {"TOR_ENABLED": True, "TOR_SOCKS5_PROXY": "socks5h://127.0.0.1:9050"}
 
-            from loom.tools.ghost_weave import research_ghost_weave
+            from loom.tools.adversarial.ghost_weave import research_ghost_weave
 
             result = await research_ghost_weave("http://example.onion", depth=1, max_pages=5)
 
@@ -163,14 +163,14 @@ class TestResearchGhostWeave:
 
     async def test_response_structure(self):
         """Test that response has all required keys."""
-        with patch("loom.tools.ghost_weave.get_config") as mock_config, patch(
-            "loom.tools.ghost_weave.validate_url"
+        with patch("loom.tools.adversarial.ghost_weave.get_config") as mock_config, patch(
+            "loom.tools.adversarial.ghost_weave.validate_url"
         ), patch(
-            "loom.tools.ghost_weave.research_fetch"
+            "loom.tools.adversarial.ghost_weave.research_fetch"
         ):
             mock_config.return_value = {"TOR_ENABLED": False}
 
-            from loom.tools.ghost_weave import research_ghost_weave
+            from loom.tools.adversarial.ghost_weave import research_ghost_weave
 
             result = await research_ghost_weave("http://example.onion")
 
@@ -184,7 +184,7 @@ class TestResearchGhostWeave:
 class TestUrlExtraction:
     def test_extract_hyperlinks_from_html(self):
         """Test extracting hyperlinks from HTML."""
-        from loom.tools.ghost_weave import _extract_hyperlinks
+        from loom.tools.adversarial.ghost_weave import _extract_hyperlinks
 
         html = '''
             <a href="http://example.onion/page1">Page 1</a>
@@ -200,7 +200,7 @@ class TestUrlExtraction:
 
     def test_relative_url_resolution(self):
         """Test that relative URLs are resolved."""
-        from loom.tools.ghost_weave import _extract_hyperlinks
+        from loom.tools.adversarial.ghost_weave import _extract_hyperlinks
 
         html = '<a href="/subpage">Sub</a>'
         base_url = "http://example.onion/path/"
@@ -213,7 +213,7 @@ class TestUrlExtraction:
 
     def test_onion_urls_included(self):
         """Test that .onion URLs are included."""
-        from loom.tools.ghost_weave import _extract_hyperlinks
+        from loom.tools.adversarial.ghost_weave import _extract_hyperlinks
 
         html = '<a href="http://other.onion">Onion</a>'
         base_url = "http://example.onion"
@@ -224,7 +224,7 @@ class TestUrlExtraction:
 
     def test_malformed_urls_skipped(self):
         """Test that malformed URLs are skipped."""
-        from loom.tools.ghost_weave import _extract_hyperlinks
+        from loom.tools.adversarial.ghost_weave import _extract_hyperlinks
 
         html = '''
             <a href="http://valid.onion">Valid</a>
@@ -241,7 +241,7 @@ class TestUrlExtraction:
 class TestUrlNormalization:
     def test_normalize_url_removes_fragment(self):
         """Test that URL fragments are removed."""
-        from loom.tools.ghost_weave import _normalize_url
+        from loom.tools.adversarial.ghost_weave import _normalize_url
 
         url = "http://example.onion/page#section"
         normalized = _normalize_url(url)
@@ -250,7 +250,7 @@ class TestUrlNormalization:
 
     def test_normalize_url_keeps_query(self):
         """Test that query parameters are kept."""
-        from loom.tools.ghost_weave import _normalize_url
+        from loom.tools.adversarial.ghost_weave import _normalize_url
 
         url = "http://example.onion/page?id=123"
         normalized = _normalize_url(url)
@@ -259,7 +259,7 @@ class TestUrlNormalization:
 
     def test_normalize_identical_calls(self):
         """Test that normalization is idempotent."""
-        from loom.tools.ghost_weave import _normalize_url
+        from loom.tools.adversarial.ghost_weave import _normalize_url
 
         url = "http://example.onion/page?key=value#frag"
         norm1 = _normalize_url(url)

@@ -167,6 +167,8 @@ class IdempotencyManager:
             )
             return None
 
+        except ValueError:
+            raise
         except Exception as e:
             log.error(
                 "idempotency_check_error key=%s error=%s",

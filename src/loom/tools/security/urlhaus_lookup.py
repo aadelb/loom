@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
-from typing import Any, Literal
+from typing import Any
 
 import httpx
 
-from loom.validators import validate_url, UrlSafetyError
+from loom.validators import validate_url
 
 from loom.error_responses import handle_tool_errors
+from loom.http_helpers import fetch_json, fetch_text, fetch_bytes
 logger = logging.getLogger("loom.tools.urlhaus_lookup")
 
 _URLHAUS_BASE = "https://urlhaus-api.abuse.ch/v1"
@@ -102,7 +102,7 @@ async def research_urlhaus_check(url: str) -> dict[str, Any]:
 
 async def research_urlhaus_search(
     query: str,
-    search_type: Literal["tag", "signature", "hash"] = "tag",
+    search_type: str = "tag",
 ) -> dict[str, Any]:
     """Search URLhaus by tag, signature, or payload hash (free).
 

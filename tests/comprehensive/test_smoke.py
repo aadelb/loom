@@ -34,8 +34,8 @@ class TestServerImport:
     def test_fastmcp_instance_created(self) -> None:
         """FastMCP instance can be created."""
         try:
-            from loom.server import app  # noqa: F401
-
+            from loom.server import create_app
+            app = create_app()
             assert app is not None
         except Exception as e:
             pytest.fail(f"FastMCP instance creation failed: {e}")
@@ -65,9 +65,13 @@ class TestToolsExist:
         assert tools_dir.exists(), f"Tools directory not found at {tools_dir}"
 
     def test_tool_modules_count(self) -> None:
-        """Verify significant number of tool modules exist."""
+        """Verify significant number of tool modules exist (including subdirectories)."""
         tools_dir = Path(__file__).parent.parent.parent / "src" / "loom" / "tools"
+        skip_dirs = {"reframe_strategies", "__pycache__"}
         tool_files = [f for f in tools_dir.glob("*.py") if f.name != "__init__.py"]
+        for subdir in tools_dir.iterdir():
+            if subdir.is_dir() and subdir.name not in skip_dirs:
+                tool_files.extend(f for f in subdir.glob("*.py") if f.name != "__init__.py")
         assert len(tool_files) > 400, f"Expected >400 tool modules, found {len(tool_files)}"
 
     def test_tools_init_imports(self) -> None:
@@ -122,7 +126,7 @@ class TestVersionInfo:
 
             info = get_version_info()
             assert isinstance(info, dict)
-            assert "version" in info or "build" in info
+            assert "default_version" in info or "versions" in info or "version" in info
         except Exception as e:
             pytest.fail(f"get_version_info failed: {e}")
 

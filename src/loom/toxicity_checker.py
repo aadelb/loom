@@ -11,8 +11,14 @@ from __future__ import annotations
 
 import logging
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Literal
+
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(value: float, low: float = 0.0, high: float = 1.0) -> float:
+        return max(low, min(high, value))
 
 logger = logging.getLogger("loom.toxicity_checker")
 
@@ -215,8 +221,8 @@ class ToxicityChecker:
                 max_matches = len(config["keywords"])
                 weight = config["weight"]
 
-                # Normalize: (matches / max_matches) * 10
-                category_score = min(10.0, (match_count / max_matches) * 10.0)
+                # Normalize: (matches / max_matches) * 10, then clamp
+                category_score = clamp((match_count / max_matches) * 10.0, 0.0, 10.0)
                 category_scores[category] = category_score
 
                 total_weighted_score += category_score * weight
@@ -226,7 +232,7 @@ class ToxicityChecker:
 
         # Calculate overall toxicity (0-10 weighted average)
         if total_weight > 0:
-            overall_toxicity = min(10.0, (total_weighted_score / total_weight))
+            overall_toxicity = clamp(total_weighted_score / total_weight, 0.0, 10.0)
         else:
             overall_toxicity = 0.0
 

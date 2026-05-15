@@ -9,11 +9,11 @@ Implements a 5-stage hierarchical research pipeline:
 """
 from __future__ import annotations
 
-import asyncio
 import logging
 from typing import Any
 
 from loom.error_responses import handle_tool_errors
+from loom.pipeline_runner import run_pipeline
 
 logger = logging.getLogger("loom.tools.deep_research_agent")
 
@@ -81,44 +81,55 @@ async def research_hierarchical_research(
     }
 
     try:
-        # Stage 1: Decompose query into sub-questions
-        sub_questions = await _decompose_query(query, depth)
-        result["sub_questions"] = sub_questions
+        # Define pipeline stages
+        stages = [
+            (
+                "decompose",
+                lambda ctx: _decompose_query(query, depth),
+            ),
+            (
+                "fetch_sources",
+                lambda ctx: _fetch_all_sources(ctx.get("decompose", []), max_sources),
+            ),
+            (
+                "synthesize",
+                lambda ctx: _synthesize_findings(
+                    query,
+                    ctx.get("fetch_sources", {}).get("findings", []),
+                    ctx.get("fetch_sources", {}).get("content", []),
+                    model,
+                ),
+            ),
+        ]
 
-        # Stage 2-3: Search, fetch, and extract per sub-question
-        findings_by_question: dict[str, list[dict[str, Any]]] = {}
-        sources_set: set[str] = set()
-        all_content = []
+        # Execute pipeline
+        pipeline_result = await run_pipeline(
+            stages,
+            context={},
+            stop_on_failure=True,
+            timeout_per_stage=120.0,
+        )
 
-        for sub_q in sub_questions:
-            try:
-                findings_list, sources_list, content = await _fetch_sources_for_question(
-                    sub_q, max_sources
-                )
-                findings_by_question[sub_q] = findings_list
-                sources_set.update(sources_list)
-                all_content.extend(content)
-            except Exception as e:
-                logger.warning(
-                    "fetch_failed sub_question=%s error=%s",
-                    sub_q[:50],
-                    str(e)[:100],
-                )
-                # Continue with other sub-questions
-                continue
+        if not pipeline_result.success:
+            result["error"] = f"Pipeline failed at stage: {[s.name for s in pipeline_result.stages if not s.success]}"
+            return result
 
-        result["findings"] = [f for findings in findings_by_question.values() for f in findings]
-        result["sources"] = list(sources_set)[:30]  # Cap to 30 unique sources
+        # Extract results from pipeline context
+        sub_questions = pipeline_result.get_stage("decompose")
+        if sub_questions and sub_questions.success:
+            result["sub_questions"] = sub_questions.data or []
 
-        # Stage 4: Synthesize with LLM
-        if result["findings"]:
-            synthesis, confidence = await _synthesize_findings(
-                query, result["findings"], all_content, model
-            )
-            result["synthesis"] = synthesis
-            result["confidence_score"] = confidence
-        else:
-            result["confidence_score"] = 0.0
+        fetch_results = pipeline_result.get_stage("fetch_sources")
+        if fetch_results and fetch_results.success:
+            fetch_data = fetch_results.data or {}
+            result["findings"] = fetch_data.get("findings", [])
+            result["sources"] = fetch_data.get("sources", [])[:30]
+
+        synthesize_results = pipeline_result.get_stage("synthesize")
+        if synthesize_results and synthesize_results.success:
+            synthesis_data = synthesize_results.data or ({}, 0.0)
+            result["synthesis"] = synthesis_data[0] if isinstance(synthesis_data, tuple) else ""
+            result["confidence_score"] = synthesis_data[1] if isinstance(synthesis_data, tuple) else 0.0
 
     except Exception as e:
         logger.error(
@@ -152,6 +163,42 @@ async def _decompose_query(query: str, depth: int) -> list[str]:
     except Exception as e:
         logger.warning("query_decompose_failed error=%s", str(e)[:100])
         return [query]  # Fallback: use original query
+
+
+async def _fetch_all_sources(
+    questions: list[str], max_sources: int
+) -> dict[str, Any]:
+    """Search, fetch, and extract content for all sub-questions.
+
+    Returns:
+        Dict with 'findings' and 'sources' keys
+    """
+    findings = []
+    sources = []
+    content_list = []
+
+    for question in questions:
+        try:
+            sub_findings, sub_sources, sub_content = await _fetch_sources_for_question(
+                question, max_sources
+            )
+            findings.extend(sub_findings)
+            sources.extend(sub_sources)
+            content_list.extend(sub_content)
+        except Exception as e:
+            logger.warning(
+                "fetch_failed sub_question=%s error=%s",
+                question[:50],
+                str(e)[:100],
+            )
+            # Continue with other sub-questions
+            continue
+
+    return {
+        "findings": findings,
+        "sources": list(set(sources)),  # Deduplicate
+        "content": content_list,
+    }
 
 
 async def _fetch_sources_for_question(

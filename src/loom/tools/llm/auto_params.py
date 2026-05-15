@@ -12,6 +12,12 @@ from loom.validators import validate_url, UrlSafetyError
 
 from loom.error_responses import handle_tool_errors
 
+try:
+    from loom.tool_introspection import get_tool_signature, get_tool_params, get_tool_docstring, is_tool_async
+    _INTROSPECTION_AVAILABLE = True
+except ImportError:
+    _INTROSPECTION_AVAILABLE = False
+
 logger = logging.getLogger("loom.tools.auto_params")
 
 # Model name patterns for detection
@@ -186,31 +192,55 @@ async def research_auto_params(
                 "error": f"Tool {tool_name} not found",
             }
 
-        sig = inspect.signature(func)
+        # Use tool_introspection if available
+        if _INTROSPECTION_AVAILABLE:
+            try:
+                sig_info = get_tool_signature(func)
+                params_list = sig_info.get("params", [])
+            except Exception:
+                # Fallback to inspect
+                sig = inspect.signature(func)
+                params_list = []
+                for param_name, param in sig.parameters.items():
+                    if param_name not in ("self", "cls"):
+                        params_list.append({
+                            "name": param_name,
+                            "type": str(param.annotation) if param.annotation != inspect.Parameter.empty else "Any",
+                            "default": param.default,
+                            "required": param.default == inspect.Parameter.empty,
+                        })
+        else:
+            sig = inspect.signature(func)
+            params_list = []
+            for param_name, param in sig.parameters.items():
+                if param_name not in ("self", "cls"):
+                    params_list.append({
+                        "name": param_name,
+                        "type": str(param.annotation) if param.annotation != inspect.Parameter.empty else "Any",
+                        "default": param.default,
+                        "required": param.default == inspect.Parameter.empty,
+                    })
+
         generated = {}
         inferred_count = 0
         defaulted_count = 0
 
-        for param_name, param in sig.parameters.items():
-            if param_name in ("self", "cls"):
-                continue
-
-            # Get parameter type
-            param_type = param.annotation
-            if param_type == inspect.Parameter.empty:
-                param_type = type(None)
+        for param_info in params_list:
+            param_name = param_info["name"]
+            param_type = param_info["type"]
+            param_default = param_info.get("default", inspect.Parameter.empty)
 
             # Try to infer value
-            inferred = _infer_param_value(param_name, param_type, query, param.default)
+            inferred = _infer_param_value(param_name, param_type, query, param_default)
 
             if inferred is not None:
                 generated[param_name] = inferred
                 inferred_count += 1
-            elif param.default != inspect.Parameter.empty:
+            elif param_default != inspect.Parameter.empty:
                 defaulted_count += 1
 
         # Confidence: high if we inferred > 50% of params
-        total_params = len([p for p in sig.parameters.keys() if p not in ("self", "cls")])
+        total_params = len(params_list)
         confidence = int((inferred_count / max(total_params, 1)) * 100) if total_params > 0 else 100
 
         logger.info(
@@ -283,28 +313,46 @@ async def research_inspect_tool(tool_name: str) -> dict[str, Any]:
                 "error": f"Tool {tool_name} not found",
             }
 
-        sig = inspect.signature(func)
-        module_name = module.__name__
-
-        params = []
-        for param_name, param in sig.parameters.items():
-            if param_name in ("self", "cls"):
-                continue
-
-            param_type = str(param.annotation) if param.annotation != inspect.Parameter.empty else "Any"
-            default = param.default if param.default != inspect.Parameter.empty else None
-            required = default is None
-
-            params.append({
-                "name": param_name,
-                "type": param_type,
-                "default": str(default) if default is not None else None,
-                "required": required,
-            })
-
-        docstring = None
-        if func.__doc__:
-            docstring = func.__doc__[:200].strip()
+        # Use tool_introspection if available
+        if _INTROSPECTION_AVAILABLE:
+            try:
+                sig_info = get_tool_signature(func)
+                params = sig_info.get("params", [])
+                docstring = sig_info.get("docstring")
+                module_name = module.__name__
+            except Exception:
+                # Fallback to inspect
+                sig = inspect.signature(func)
+                params = []
+                for param_name, param in sig.parameters.items():
+                    if param_name not in ("self", "cls"):
+                        param_type = str(param.annotation) if param.annotation != inspect.Parameter.empty else "Any"
+                        default = param.default if param.default != inspect.Parameter.empty else None
+                        required = default is None
+                        params.append({
+                            "name": param_name,
+                            "type": param_type,
+                            "default": str(default) if default is not None else None,
+                            "required": required,
+                        })
+                docstring = (func.__doc__[:200].strip() if func.__doc__ else None)
+                module_name = module.__name__
+        else:
+            sig = inspect.signature(func)
+            params = []
+            for param_name, param in sig.parameters.items():
+                if param_name not in ("self", "cls"):
+                    param_type = str(param.annotation) if param.annotation != inspect.Parameter.empty else "Any"
+                    default = param.default if param.default != inspect.Parameter.empty else None
+                    required = default is None
+                    params.append({
+                        "name": param_name,
+                        "type": param_type,
+                        "default": str(default) if default is not None else None,
+                        "required": required,
+                    })
+            docstring = (func.__doc__[:200].strip() if func.__doc__ else None)
+            module_name = module.__name__
 
         try:
             source_file = inspect.getsourcefile(func)

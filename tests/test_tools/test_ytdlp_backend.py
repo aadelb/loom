@@ -16,7 +16,7 @@ class TestResearchVideoDownload:
     async def test_missing_yt_dlp(self):
         """Test error when yt-dlp is not installed."""
         with patch.dict("sys.modules", {"yt_dlp": None}):
-            from loom.tools.ytdlp_backend import research_video_download
+            from loom.tools.backends.ytdlp_backend import research_video_download
 
             result = await research_video_download("https://www.youtube.com/watch?v=test")
 
@@ -29,7 +29,7 @@ class TestResearchVideoDownload:
         """Test error for invalid URL."""
         import sys
         with patch.dict(sys.modules, {"yt_dlp": MagicMock()}):
-            from loom.tools.ytdlp_backend import research_video_download
+            from loom.tools.backends.ytdlp_backend import research_video_download
 
             result = await research_video_download("not a valid url")
 
@@ -59,7 +59,7 @@ class TestResearchVideoDownload:
             )
             mock_get_loop.return_value = mock_loop
 
-            from loom.tools.ytdlp_backend import research_video_download
+            from loom.tools.backends.ytdlp_backend import research_video_download
             
             result = await research_video_download(
                 "https://www.youtube.com/watch?v=test",
@@ -73,7 +73,7 @@ class TestResearchVideoDownload:
         """Test error for invalid max_duration."""
         import sys
         with patch.dict(sys.modules, {"yt_dlp": MagicMock()}):
-            from loom.tools.ytdlp_backend import research_video_download
+            from loom.tools.backends.ytdlp_backend import research_video_download
 
             # Test too high
             result = await research_video_download(
@@ -142,7 +142,7 @@ class TestResearchVideoDownload:
             )
             mock_get_loop.return_value = mock_loop
 
-            from loom.tools.ytdlp_backend import research_video_download
+            from loom.tools.backends.ytdlp_backend import research_video_download
 
             result = await research_video_download(
                 "https://www.youtube.com/watch?v=test",
@@ -199,7 +199,7 @@ class TestResearchVideoDownload:
             )
             mock_get_loop.return_value = mock_loop
 
-            from loom.tools.ytdlp_backend import research_video_download
+            from loom.tools.backends.ytdlp_backend import research_video_download
 
             result = await research_video_download(
                 "https://www.youtube.com/watch?v=test",
@@ -232,7 +232,7 @@ class TestResearchVideoDownload:
             )
             mock_get_loop.return_value = mock_loop
 
-            from loom.tools.ytdlp_backend import research_video_download
+            from loom.tools.backends.ytdlp_backend import research_video_download
 
             result = await research_video_download(
                 "https://www.youtube.com/watch?v=test",
@@ -267,7 +267,7 @@ class TestResearchVideoDownload:
             )
             mock_get_loop.return_value = mock_loop
 
-            from loom.tools.ytdlp_backend import research_video_download
+            from loom.tools.backends.ytdlp_backend import research_video_download
 
             result = await research_video_download(
                 "https://www.youtube.com/watch?v=test",
@@ -284,7 +284,7 @@ class TestResearchVideoInfo:
     async def test_missing_yt_dlp(self):
         """Test error when yt-dlp is not installed."""
         with patch.dict("sys.modules", {"yt_dlp": None}):
-            from loom.tools.ytdlp_backend import research_video_info
+            from loom.tools.backends.ytdlp_backend import research_video_info
 
             result = await research_video_info("https://www.youtube.com/watch?v=test")
 
@@ -296,7 +296,7 @@ class TestResearchVideoInfo:
         """Test error for invalid URL."""
         import sys
         with patch.dict(sys.modules, {"yt_dlp": MagicMock()}):
-            from loom.tools.ytdlp_backend import research_video_info
+            from loom.tools.backends.ytdlp_backend import research_video_info
 
             result = await research_video_info("not a valid url")
 
@@ -344,7 +344,7 @@ class TestResearchVideoInfo:
             )
             mock_get_loop.return_value = mock_loop
 
-            from loom.tools.ytdlp_backend import research_video_info
+            from loom.tools.backends.ytdlp_backend import research_video_info
 
             result = await research_video_info("https://www.youtube.com/watch?v=test")
 
@@ -375,7 +375,7 @@ class TestResearchVideoInfo:
             )
             mock_get_loop.return_value = mock_loop
 
-            from loom.tools.ytdlp_backend import research_video_info
+            from loom.tools.backends.ytdlp_backend import research_video_info
 
             result = await research_video_info("https://www.youtube.com/watch?v=test")
 
@@ -389,7 +389,7 @@ class TestResearchAudioExtract:
     async def test_missing_yt_dlp(self):
         """Test error when yt-dlp is not installed."""
         with patch.dict("sys.modules", {"yt_dlp": None}):
-            from loom.tools.ytdlp_backend import research_audio_extract
+            from loom.tools.backends.ytdlp_backend import research_audio_extract
 
             result = await research_audio_extract("https://www.youtube.com/watch?v=test")
 
@@ -401,7 +401,7 @@ class TestResearchAudioExtract:
         """Test error for invalid URL."""
         import sys
         with patch.dict(sys.modules, {"yt_dlp": MagicMock()}):
-            from loom.tools.ytdlp_backend import research_audio_extract
+            from loom.tools.backends.ytdlp_backend import research_audio_extract
 
             result = await research_audio_extract("not a valid url")
 
@@ -412,7 +412,7 @@ class TestResearchAudioExtract:
         """Test error for unsupported audio format."""
         import sys
         with patch.dict(sys.modules, {"yt_dlp": MagicMock()}):
-            from loom.tools.ytdlp_backend import research_audio_extract
+            from loom.tools.backends.ytdlp_backend import research_audio_extract
 
             result = await research_audio_extract(
                 "https://www.youtube.com/watch?v=test",
@@ -458,7 +458,7 @@ class TestResearchAudioExtract:
             )
             mock_get_loop.return_value = mock_loop
 
-            from loom.tools.ytdlp_backend import research_audio_extract
+            from loom.tools.backends.ytdlp_backend import research_audio_extract
 
             result = await research_audio_extract(
                 "https://www.youtube.com/watch?v=test",
@@ -506,7 +506,7 @@ class TestResearchAudioExtract:
             )
             mock_get_loop.return_value = mock_loop
 
-            from loom.tools.ytdlp_backend import research_audio_extract
+            from loom.tools.backends.ytdlp_backend import research_audio_extract
 
             result = await research_audio_extract(
                 "https://www.youtube.com/watch?v=test",
@@ -538,7 +538,7 @@ class TestResearchAudioExtract:
             )
             mock_get_loop.return_value = mock_loop
 
-            from loom.tools.ytdlp_backend import research_audio_extract
+            from loom.tools.backends.ytdlp_backend import research_audio_extract
 
             result = await research_audio_extract("https://www.youtube.com/watch?v=test")
 
@@ -551,7 +551,7 @@ class TestDownloadMedia:
     def test_missing_yt_dlp_in_executor(self):
         """Test error when yt-dlp is not installed in executor."""
         with patch.dict("sys.modules", {"yt_dlp": None}):
-            from loom.tools.ytdlp_backend import _download_media
+            from loom.tools.backends.ytdlp_backend import _download_media
 
             result = _download_media(
                 "https://www.youtube.com/watch?v=test",
@@ -575,7 +575,7 @@ class TestDownloadMedia:
         mock_yt_dlp.YoutubeDL.return_value = mock_ydl
 
         with patch.dict(sys.modules, {"yt_dlp": mock_yt_dlp}):
-            from loom.tools.ytdlp_backend import _download_media
+            from loom.tools.backends.ytdlp_backend import _download_media
 
             result = _download_media(
                 "https://www.youtube.com/watch?v=test",
@@ -594,7 +594,7 @@ class TestExtractInfo:
     def test_missing_yt_dlp_in_executor(self):
         """Test error when yt-dlp is not installed."""
         with patch.dict("sys.modules", {"yt_dlp": None}):
-            from loom.tools.ytdlp_backend import _extract_info
+            from loom.tools.backends.ytdlp_backend import _extract_info
 
             result = _extract_info("https://www.youtube.com/watch?v=test")
 
@@ -613,7 +613,7 @@ class TestExtractInfo:
         mock_yt_dlp.YoutubeDL.return_value = mock_ydl
 
         with patch.dict(sys.modules, {"yt_dlp": mock_yt_dlp}):
-            from loom.tools.ytdlp_backend import _extract_info
+            from loom.tools.backends.ytdlp_backend import _extract_info
 
             result = _extract_info("https://www.youtube.com/watch?v=test")
 
@@ -627,7 +627,7 @@ class TestExtractAudio:
     def test_missing_yt_dlp_in_executor(self):
         """Test error when yt-dlp is not installed."""
         with patch.dict("sys.modules", {"yt_dlp": None}):
-            from loom.tools.ytdlp_backend import _extract_audio
+            from loom.tools.backends.ytdlp_backend import _extract_audio
 
             result = _extract_audio(
                 "https://www.youtube.com/watch?v=test",
@@ -649,7 +649,7 @@ class TestExtractAudio:
         mock_yt_dlp.YoutubeDL.return_value = mock_ydl
 
         with patch.dict(sys.modules, {"yt_dlp": mock_yt_dlp}):
-            from loom.tools.ytdlp_backend import _extract_audio
+            from loom.tools.backends.ytdlp_backend import _extract_audio
 
             result = _extract_audio(
                 "https://www.youtube.com/watch?v=test",

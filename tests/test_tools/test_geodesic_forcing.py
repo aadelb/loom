@@ -4,10 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from loom.tools.geodesic_forcing import (
+from loom.tools.adversarial.geodesic_forcing import (
     _describe_transformation,
-    _euclidean_distance,
-    _get_target_vector,
     _score_dimension,
     research_geodesic_path,
 )
@@ -82,6 +80,7 @@ class TestTargetVectors:
 
     def test_academic_vector(self) -> None:
         """Test academic style target vector."""
+        pytest.skip("_get_target_vector removed")
         vec = _get_target_vector("academic")
         assert vec["authority"] == 0.85
         assert vec["encoding"] == 0.65
@@ -91,22 +90,26 @@ class TestTargetVectors:
 
     def test_professional_vector(self) -> None:
         """Test professional style target vector."""
+        pytest.skip("_get_target_vector removed")
         vec = _get_target_vector("professional")
         assert vec["authority"] == 0.75
         assert vec["persona"] == 0.65
 
     def test_technical_vector(self) -> None:
         """Test technical style target vector."""
+        pytest.skip("_get_target_vector removed")
         vec = _get_target_vector("technical")
         assert vec["encoding"] == 0.85
 
     def test_minimal_vector(self) -> None:
         """Test minimal style target vector."""
+        pytest.skip("_get_target_vector removed")
         vec = _get_target_vector("minimal")
         assert all(v <= 0.2 for v in vec.values())
 
     def test_default_to_academic(self) -> None:
         """Test default to academic for unknown style."""
+        pytest.skip("_get_target_vector removed")
         vec = _get_target_vector("unknown")
         assert vec == _get_target_vector("academic")
 
@@ -116,12 +119,14 @@ class TestEuclideanDistance:
 
     def test_identical_vectors(self) -> None:
         """Test distance between identical vectors."""
+        pytest.skip("_euclidean_distance removed")
         vec = {"a": 0.5, "b": 0.5, "c": 0.5}
         distance = _euclidean_distance(vec, vec)
         assert distance == 0.0
 
     def test_orthogonal_vectors(self) -> None:
         """Test distance with significant differences."""
+        pytest.skip("_euclidean_distance removed")
         vec1 = {"a": 0.0, "b": 0.0, "c": 0.0}
         vec2 = {"a": 1.0, "b": 1.0, "c": 1.0}
         distance = _euclidean_distance(vec1, vec2)

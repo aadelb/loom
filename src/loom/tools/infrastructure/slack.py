@@ -13,6 +13,13 @@ from typing import Any
 import httpx
 
 from loom.error_responses import handle_tool_errors
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text, max_chars=500, *, suffix="..."):
+        if len(text) <= max_chars: return text
+        return text[:max_chars - len(suffix)] + suffix
+
 
 logger = logging.getLogger("loom.tools.slack")
 
@@ -160,7 +167,7 @@ async def research_slack_notify(
                     "status": "failed",
                     "channel": channel,
                     "error": f"HTTP {response.status_code}",
-                    "details": response.text[:500],
+                    "details": truncate(response.text, 500),
                 }
 
             # Parse response

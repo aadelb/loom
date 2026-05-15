@@ -1,7 +1,6 @@
 """research_security_headers — Analyze HTTP security headers of a URL."""
 
 from __future__ import annotations
-import asyncio
 
 import logging
 from typing import Any
@@ -10,6 +9,13 @@ import httpx
 
 from loom.error_responses import handle_tool_errors
 from loom.validators import EXTERNAL_TIMEOUT_SECS, validate_url
+
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(v: float, lo: float = 0.0, hi: float = 1.0) -> float:
+        """Fallback clamp if score_utils unavailable."""
+        return max(lo, min(hi, v))
 
 logger = logging.getLogger("loom.tools.security_headers")
 
@@ -129,7 +135,7 @@ async def research_security_headers(url: str = "", domain: str = "") -> dict[str
 
     # Compute score (0-100)
     score = (earned_points / total_possible_points * 100) if total_possible_points > 0 else 0
-    score = max(0, min(100, score))
+    score = clamp(score, 0, 100)
 
     # Assign letter grade
     if score >= 90:

@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from loom.tools.onion_spectra import (
+from loom.tools.intelligence.onion_spectra import (
     research_onion_spectra,
     _detect_language,
     _classify_safety,
@@ -40,7 +40,7 @@ class TestOnionSpectra:
     @pytest.mark.asyncio
     async def test_onion_spectra_with_content_fetch(self) -> None:
         """Tool fetches and analyzes content from .onion URL."""
-        with patch("loom.tools.onion_spectra.research_fetch") as mock_fetch:
+        with patch("loom.tools.intelligence.onion_spectra.research_fetch") as mock_fetch:
             mock_fetch.return_value = {
                 "content": "This is a benign informational site about privacy",
                 "title": "Privacy Guide",
@@ -48,7 +48,7 @@ class TestOnionSpectra:
             }
 
             with patch(
-                "loom.tools.onion_spectra.research_llm_classify",
+                "loom.tools.intelligence.onion_spectra.research_llm_classify",
                 new_callable=AsyncMock,
             ) as mock_classify:
                 # Mock language detection
@@ -81,7 +81,7 @@ class TestOnionSpectra:
     @pytest.mark.asyncio
     async def test_onion_spectra_fetch_failure_handled(self) -> None:
         """Tool handles fetch failures gracefully."""
-        with patch("loom.tools.onion_spectra.research_fetch") as mock_fetch:
+        with patch("loom.tools.intelligence.onion_spectra.research_fetch") as mock_fetch:
             mock_fetch.side_effect = Exception("Connection timeout")
 
             result = await research_onion_spectra(
@@ -128,7 +128,7 @@ class TestOnionSpectra:
     async def test_detect_language_llm_fallback(self) -> None:
         """Language detection falls back to English on LLM unavailable."""
         with patch(
-            "loom.tools.onion_spectra.research_llm_classify", None
+            "loom.tools.intelligence.onion_spectra.research_llm_classify", None
         ) as mock_classify:
             result = await _detect_language("Some random text")
 
@@ -139,7 +139,7 @@ class TestOnionSpectra:
     async def test_classify_safety_benign(self) -> None:
         """Safety classification identifies benign content."""
         with patch(
-            "loom.tools.onion_spectra.research_llm_classify",
+            "loom.tools.intelligence.onion_spectra.research_llm_classify",
             new_callable=AsyncMock,
         ) as mock_classify:
             mock_classify.return_value = {
@@ -161,7 +161,7 @@ class TestOnionSpectra:
     async def test_classify_safety_illegal(self) -> None:
         """Safety classification flags illegal content."""
         with patch(
-            "loom.tools.onion_spectra.research_llm_classify",
+            "loom.tools.intelligence.onion_spectra.research_llm_classify",
             new_callable=AsyncMock,
         ) as mock_classify:
             mock_classify.return_value = {
@@ -182,7 +182,7 @@ class TestOnionSpectra:
     @pytest.mark.asyncio
     async def test_classify_safety_llm_unavailable(self) -> None:
         """Safety classification falls back on LLM unavailable."""
-        with patch("loom.tools.onion_spectra.research_llm_classify", None):
+        with patch("loom.tools.intelligence.onion_spectra.research_llm_classify", None):
             result = await _classify_safety(
                 title="Test Site", content="Some content here"
             )
@@ -194,7 +194,7 @@ class TestOnionSpectra:
     @pytest.mark.asyncio
     async def test_onion_spectra_max_chars_respected(self) -> None:
         """Tool respects max_chars limit for content analysis."""
-        with patch("loom.tools.onion_spectra.research_fetch") as mock_fetch:
+        with patch("loom.tools.intelligence.onion_spectra.research_fetch") as mock_fetch:
             # Create content longer than max_chars
             long_content = "x" * 10000
             mock_fetch.return_value = {
@@ -204,7 +204,7 @@ class TestOnionSpectra:
             }
 
             with patch(
-                "loom.tools.onion_spectra.research_llm_classify",
+                "loom.tools.intelligence.onion_spectra.research_llm_classify",
                 new_callable=AsyncMock,
             ) as mock_classify:
                 mock_classify.side_effect = [
@@ -222,7 +222,7 @@ class TestOnionSpectra:
     @pytest.mark.asyncio
     async def test_onion_spectra_summary_format(self) -> None:
         """Tool generates properly formatted summary."""
-        with patch("loom.tools.onion_spectra.research_fetch") as mock_fetch:
+        with patch("loom.tools.intelligence.onion_spectra.research_fetch") as mock_fetch:
             mock_fetch.return_value = {
                 "content": "Test content",
                 "title": "Test Title",
@@ -230,7 +230,7 @@ class TestOnionSpectra:
             }
 
             with patch(
-                "loom.tools.onion_spectra.research_llm_classify",
+                "loom.tools.intelligence.onion_spectra.research_llm_classify",
                 new_callable=AsyncMock,
             ) as mock_classify:
                 mock_classify.side_effect = [

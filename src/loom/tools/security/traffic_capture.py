@@ -12,7 +12,7 @@ try:
 except ImportError:
     TextContent = None  # type: ignore[assignment,misc]
 
-from loom.validators import validate_url, UrlSafetyError
+from loom.validators import validate_url
 
 from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.traffic_capture")

@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from loom.tools.webhooks import (
+from loom.tools.infrastructure.webhooks import (
     research_webhook_register,
     research_webhook_list,
     research_webhook_unregister,

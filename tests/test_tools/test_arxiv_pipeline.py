@@ -9,7 +9,7 @@ import asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from loom.tools.arxiv_pipeline import (
+from loom.tools.research.arxiv_pipeline import (
     research_arxiv_ingest,
     research_arxiv_extract_techniques,
     _extract_relevance_score,

@@ -11,6 +11,13 @@ import httpx
 
 from loom.error_responses import handle_tool_errors
 
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(v: float, lo: float = 0.0, hi: float = 1.0) -> float:
+        """Fallback clamp if score_utils unavailable."""
+        return max(lo, min(hi, v))
+
 logger = logging.getLogger("loom.tools.docsgpt_backend")
 
 # Constraints
@@ -168,7 +175,7 @@ async def research_docs_ai(
             "query": query,
             "answer": answer,
             "sources": sources,
-            "confidence": min(1.0, max(0.0, confidence)),  # Clamp to [0, 1]
+            "confidence": clamp(confidence, 0.0, 1.0),  # Clamp to [0, 1]
             "docs_url": docs_url,
         }
 

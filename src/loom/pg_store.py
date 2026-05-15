@@ -9,11 +9,8 @@ Connection: DATABASE_URL env var (default: postgresql://loom:loom_secure_2026@lo
 from __future__ import annotations
 
 import asyncio
-import hashlib
-import json
 import logging
 import os
-from datetime import UTC, datetime
 from typing import Any
 
 import asyncpg

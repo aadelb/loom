@@ -12,12 +12,11 @@ for undetectable automation in async-first applications.
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 import time
-from typing import Any, Literal
+from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field
 
 try:
     import zendriver as zd
@@ -26,7 +25,7 @@ try:
 except ImportError:  # pragma: no cover — optional dependency
     _HAS_ZENDRIVER = False
 
-from loom.validators import validate_url, EXTERNAL_TIMEOUT_SECS
+from loom.validators import validate_url
 
 logger = logging.getLogger("loom.zendriver_backend")
 

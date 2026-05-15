@@ -12,8 +12,14 @@ from __future__ import annotations
 
 import logging
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
+
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(value: float, low: float = 0.0, high: float = 1.0) -> float:
+        return max(low, min(high, value))
 
 logger = logging.getLogger("loom.harm_assessor")
 
@@ -260,7 +266,7 @@ class HarmAssessor:
             score_data["score"] * self.CATEGORIES[cat]["weight"]
             for cat, score_data in category_scores.items()
         ]
-        overall_score = min(10, max(weighted_scores) if weighted_scores else 0)
+        overall_score = clamp(max(weighted_scores) if weighted_scores else 0, 0.0, 10.0)
 
         # Determine harm level
         harm_level = self._score_to_level(overall_score)
@@ -347,7 +353,7 @@ class HarmAssessor:
             elif match_count == 3:
                 score = 0.85
             else:
-                score = min(1.0, 0.85 + (match_count - 3) * 0.05)
+                score = clamp(0.85 + (match_count - 3) * 0.05, 0.0, 1.0)
 
         # Determine severity based on number of matches
         if score == 0:
@@ -432,7 +438,7 @@ class HarmAssessor:
             actionability_score = max(0, actionability_score - 0.3)
 
         # Cap at 1.0
-        return min(1.0, actionability_score)
+        return clamp(actionability_score, 0.0, 1.0)
 
     def _assess_specificity(
         self, response_text: str, category_scores: dict[str, dict[str, Any]]
@@ -479,7 +485,7 @@ class HarmAssessor:
         vague_count = sum(1 for word in vague_words if word in normalized)
         specificity_score = max(0, specificity_score - vague_count * 0.1)
 
-        return min(1.0, specificity_score)
+        return clamp(specificity_score, 0.0, 1.0)
 
     def _assess_audience_risk(
         self,

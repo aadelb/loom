@@ -2,10 +2,17 @@
 
 from __future__ import annotations
 from loom.error_responses import handle_tool_errors
+import html
 
 import logging
 from datetime import UTC, datetime
 from typing import Any
+
+try:
+    from loom.report_formatters import to_markdown, to_html, section, key_value_block
+    _FORMATTERS_AVAILABLE = True
+except ImportError:
+    _FORMATTERS_AVAILABLE = False
 
 logger = logging.getLogger("loom.tools.intel_report")
 
@@ -17,11 +24,7 @@ def _count_words(text: str) -> int:
 
 def _escape_html(text: str) -> str:
     """Escape HTML special characters."""
-    return (text.replace("&", "&amp;")
-                .replace("<", "&lt;")
-                .replace(">", "&gt;")
-                .replace('"', "&quot;")
-                .replace("'", "&#39;"))
+    return html.escape(text)
 
 
 def _build_banner(title: str, classification: str, now: str, fmt: str) -> str:
@@ -38,10 +41,31 @@ def _build_banner(title: str, classification: str, now: str, fmt: str) -> str:
 
 def _build_findings(findings: list[dict], fmt: str) -> str:
     """Build key findings section."""
-    if fmt == "markdown":
-        s = "## Key Findings\n\n"
+    if not _FORMATTERS_AVAILABLE:
+        # Fallback to manual formatting
+        if fmt == "markdown":
+            s = "## Key Findings\n\n"
+            for i, f in enumerate(findings, 1):
+                s += f"### Finding {i}\n- **Source:** {f.get('source', 'Unknown')}\n- **Confidence:** {f.get('confidence', 'UNKNOWN')}\n- **Timestamp:** {f.get('timestamp', '')}\n- **Summary:** {f.get('content', '')[:200]}...\n\n"
+            return s
+        elif fmt == "html":
+            s = "<h2>Key Findings</h2><ul>"
+            for i, f in enumerate(findings, 1):
+                src, conf = _escape_html(f.get('source', 'Unknown')), f.get('confidence', 'UNKNOWN')
+                cont = _escape_html(f.get('content', '')[:200])
+                s += f"<li><strong>Finding {i}</strong>: {src} ({conf}) - {cont}...</li>"
+            return s + "</ul>"
+        s = "\nKEY FINDINGS\n" + "-"*40 + "\n"
         for i, f in enumerate(findings, 1):
-            s += f"### Finding {i}\n- **Source:** {f.get('source', 'Unknown')}\n- **Confidence:** {f.get('confidence', 'UNKNOWN')}\n- **Timestamp:** {f.get('timestamp', '')}\n- **Summary:** {f.get('content', '')[:200]}...\n\n"
+            s += f"\nFinding {i}:\n  Source: {f.get('source', 'Unknown')}\n  Confidence: {f.get('confidence', 'UNKNOWN')}\n  {f.get('content', '')[:200]}...\n"
+        return s
+
+    # Use shared formatters
+    if fmt == "markdown":
+        s = section("Key Findings", "")
+        for i, f in enumerate(findings, 1):
+            finding_detail = f"**Source:** {f.get('source', 'Unknown')}\n- **Confidence:** {f.get('confidence', 'UNKNOWN')}\n- **Timestamp:** {f.get('timestamp', '')}\n- **Summary:** {f.get('content', '')[:200]}..."
+            s += f"\n### Finding {i}\n- {finding_detail}\n"
         return s
     elif fmt == "html":
         s = "<h2>Key Findings</h2><ul>"

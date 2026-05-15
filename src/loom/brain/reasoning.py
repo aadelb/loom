@@ -7,12 +7,8 @@ fuzzy methods as secondary signals. Provider is always NVIDIA NIM (free tier).
 from __future__ import annotations
 
 import difflib
-import inspect
-import json
 import logging
-import re
 from pathlib import Path
-from typing import Any
 
 from loom.brain.memory import get_memory
 from loom.brain.perception import parse_intent
@@ -108,7 +104,7 @@ def _load_brain_index() -> dict[str, ToolMeta]:
 
 def _fetch_server_tools_sync() -> dict[str, ToolMeta]:
     """Fallback: fetch tool list from running server."""
-    global _server_tools
+    global _server_tools, _brain_index_loaded
     if _server_tools is not None:
         return _server_tools
 
@@ -135,12 +131,14 @@ def _fetch_server_tools_sync() -> dict[str, ToolMeta]:
                     if name:
                         tools[name] = ToolMeta(name=name)
             _server_tools = tools
+            _brain_index_loaded = True
             logger.info("fetched %d tools from server", len(tools))
             return tools
     except Exception as exc:
         logger.debug("server tool fetch failed: %s", exc)
 
     _server_tools = {}
+    _brain_index_loaded = True
     return _server_tools
 
 
@@ -306,7 +304,7 @@ def _keyword_score(
     Uses both exact match and substring match for higher recall.
     Weights exact matches higher than substring matches.
     """
-    name_parts = set(tool_name.replace("research_", "").split("_"))
+    name_parts = set(tool_name.replace("research_", "").lower().split("_"))
     desc_words = set(meta.description.lower().split()) if meta.description else set()
     searchable = name_parts | desc_words
 
@@ -366,9 +364,9 @@ def _name_match_score(tool_name: str, keywords: list[str]) -> float:
     """
     if not keywords:
         return 0.0
-    name_parts = set(tool_name.replace("research_", "").split("_"))
+    name_parts = set(tool_name.replace("research_", "").lower().split("_"))
     hits = sum(1 for kw in keywords if kw in name_parts)
-    return min(hits / max(len(keywords), 2), 1.0)
+    return min(hits / max(len(keywords), 1), 1.0)
 
 
 def _semantic_score(tool_name: str, meta: ToolMeta, query: str) -> float:

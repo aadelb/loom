@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from loom.tools.memetic_simulator import (
+from loom.tools.adversarial.memetic_simulator import (
     Agent,
     MemeticSimulator,
     research_memetic_simulate,

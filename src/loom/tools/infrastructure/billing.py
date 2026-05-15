@@ -18,6 +18,7 @@ from typing import Any
 import httpx
 
 from loom.error_responses import handle_tool_errors
+from loom.http_helpers import fetch_json
 
 logger = logging.getLogger("loom.tools.billing")
 
@@ -175,12 +176,11 @@ async def research_stripe_balance() -> dict[str, Any]:
 
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
-            resp = await client.get(
+            data = await fetch_json(client, 
                 f"{_STRIPE_API_BASE}/balance",
                 headers=headers,
             )
             resp.raise_for_status()
-            data = resp.json()
 
             available = 0
             pending = 0

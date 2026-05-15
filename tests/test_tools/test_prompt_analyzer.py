@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from loom.tools.prompt_analyzer import (
+from loom.tools.llm.prompt_analyzer import (
     MODEL_THRESHOLDS,
     SENSITIVITY_CATEGORIES,
     research_prompt_analyze,

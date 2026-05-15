@@ -10,13 +10,11 @@ Predicts emerging research directions by:
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import re
 from collections import Counter
 from datetime import UTC, datetime, timedelta
 from typing import Any
-from urllib.parse import quote
 
 import httpx
 

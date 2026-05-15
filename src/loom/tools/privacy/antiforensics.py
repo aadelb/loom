@@ -8,11 +8,11 @@ from __future__ import annotations
 
 import logging
 import platform
-import subprocess
 from pathlib import Path
 from typing import Any
 
 from loom.error_responses import handle_tool_errors
+from loom.subprocess_helpers import run_command
 
 logger = logging.getLogger("loom.tools.antiforensics")
 
@@ -50,27 +50,27 @@ def research_usb_kill_monitor(
 
     try:
         if os_type == "Linux":
-            result = subprocess.run(
+            result = run_command(
                 ["lsusb"],
                 capture_output=True,
                 text=True,
                 timeout=5,
             )
-            if result.returncode == 0:
+            if result["success"]:
                 # Parse: Bus 001 Device 002: ID 1234:5678 Manufacturer Device Name
-                for line in result.stdout.strip().split("\n"):
+                for line in result["stdout"].strip().split("\n"):
                     if line.strip():
                         devices.append(line.strip())
         elif os_type == "Darwin":
-            result = subprocess.run(
+            result = run_command(
                 ["system_profiler", "SPUSBDataType"],
                 capture_output=True,
                 text=True,
                 timeout=5,
             )
-            if result.returncode == 0:
+            if result["success"]:
                 # Extract device lines (simple heuristic)
-                for line in result.stdout.split("\n"):
+                for line in result["stdout"].split("\n"):
                     if "Product ID" in line or "Vendor ID" in line or "Device Name" in line:
                         devices.append(line.strip())
         else:

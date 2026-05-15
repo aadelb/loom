@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from httpx import Response
 
-from loom.tools.slack import research_slack_notify, _validate_channel
+from loom.tools.infrastructure.slack import research_slack_notify, _validate_channel
 
 
 class TestSlackValidation:

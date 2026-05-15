@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import pytest
-from loom.tools.trend_forecaster import (
+from loom.tools.research.trend_forecaster import (
     _extract_terms,
     _compute_term_frequencies,
     _classify_trend_signals,

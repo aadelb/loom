@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from loom.tools.unique_tools import (
+from loom.tools.infrastructure.unique_tools import (
     _detect_tech_signatures,
     research_dark_web_bridge,
     research_info_half_life,

@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 import httpx
 import pytest
 
-from loom.tools.academic_integrity import (
+from loom.tools.research.academic_integrity import (
     research_citation_analysis,
     research_predatory_journal_check,
     research_retraction_check,
@@ -31,7 +31,7 @@ class TestCitationAnalysis:
             mock_get.return_value = None
 
             with patch(
-                "loom.tools.academic_integrity._get_json", return_value=None
+                "loom.tools.research.academic_integrity._get_json", return_value=None
             ):
                 result = await research_citation_analysis("invalid_paper_id")
                 assert "error" in result
@@ -66,7 +66,7 @@ class TestCitationAnalysis:
         }
 
         with patch(
-            "loom.tools.academic_integrity._get_json",
+            "loom.tools.research.academic_integrity._get_json",
             return_value=mock_paper_data,
         ):
             result = await research_citation_analysis("test123", depth=1)
@@ -107,7 +107,7 @@ class TestCitationAnalysis:
         }
 
         with patch(
-            "loom.tools.academic_integrity._get_json",
+            "loom.tools.research.academic_integrity._get_json",
             return_value=mock_paper_data,
         ):
             result = await research_citation_analysis("test123", depth=1)
@@ -136,7 +136,7 @@ class TestCitationAnalysis:
         }
 
         with patch(
-            "loom.tools.academic_integrity._get_json",
+            "loom.tools.research.academic_integrity._get_json",
             return_value=mock_paper_data,
         ):
             result = await research_citation_analysis("test123", depth=1)
@@ -160,7 +160,7 @@ class TestCitationAnalysis:
         }
 
         with patch(
-            "loom.tools.academic_integrity._get_json",
+            "loom.tools.research.academic_integrity._get_json",
             return_value=mock_paper_data,
         ):
             # Should accept depth 1-3
@@ -186,7 +186,7 @@ class TestRetractionCheck:
         }
 
         with patch(
-            "loom.tools.academic_integrity._get_json",
+            "loom.tools.research.academic_integrity._get_json",
             return_value=mock_crossref_data,
         ):
             result = await research_retraction_check("nonexistent query", max_results=20)
@@ -200,7 +200,7 @@ class TestRetractionCheck:
     async def test_crossref_api_failure(self) -> None:
         """API failure returns gracefully."""
         with patch(
-            "loom.tools.academic_integrity._get_json",
+            "loom.tools.research.academic_integrity._get_json",
             return_value=None,
         ):
             result = await research_retraction_check("test query")
@@ -231,7 +231,7 @@ class TestRetractionCheck:
         }
 
         with patch(
-            "loom.tools.academic_integrity._get_json",
+            "loom.tools.research.academic_integrity._get_json",
             return_value=mock_crossref_data,
         ):
             result = await research_retraction_check("test author")
@@ -256,7 +256,7 @@ class TestRetractionCheck:
         }
 
         with patch(
-            "loom.tools.academic_integrity._get_json",
+            "loom.tools.research.academic_integrity._get_json",
             return_value=mock_crossref_data,
         ):
             result = await research_retraction_check("test", max_results=10)
@@ -303,7 +303,7 @@ class TestPredatoryJournalCheck:
                 return mock_crossref_data
 
         with patch(
-            "loom.tools.academic_integrity._get_json",
+            "loom.tools.research.academic_integrity._get_json",
             side_effect=mock_get_json,
         ):
             result = await research_predatory_journal_check("Nature")
@@ -317,7 +317,7 @@ class TestPredatoryJournalCheck:
     async def test_unregistered_journal_high_risk(self) -> None:
         """Unregistered journal gets high risk score."""
         with patch(
-            "loom.tools.academic_integrity._get_json",
+            "loom.tools.research.academic_integrity._get_json",
             return_value=None,
         ):
             result = await research_predatory_journal_check("Unknown Journal XYZ")
@@ -333,7 +333,7 @@ class TestPredatoryJournalCheck:
         mock_data = None
 
         with patch(
-            "loom.tools.academic_integrity._get_json",
+            "loom.tools.research.academic_integrity._get_json",
             return_value=mock_data,
         ):
             result = await research_predatory_journal_check("  Journal Name  ")
@@ -359,7 +359,7 @@ class TestPredatoryJournalCheck:
         }
 
         with patch(
-            "loom.tools.academic_integrity._get_json",
+            "loom.tools.research.academic_integrity._get_json",
             return_value=mock_crossref_data,
         ):
             result = await research_predatory_journal_check("Suspicious Journal")
@@ -386,7 +386,7 @@ class TestPredatoryJournalCheck:
         }
 
         with patch(
-            "loom.tools.academic_integrity._get_json",
+            "loom.tools.research.academic_integrity._get_json",
             return_value=mock_crossref_data,
         ):
             result = await research_predatory_journal_check("Test Journal")
@@ -470,7 +470,7 @@ class TestIntegration:
         }
 
         with patch(
-            "loom.tools.academic_integrity._get_json",
+            "loom.tools.research.academic_integrity._get_json",
             return_value=mock_paper_data,
         ):
             result = await research_citation_analysis("complete123")
@@ -505,7 +505,7 @@ class TestIntegration:
         }
 
         with patch(
-            "loom.tools.academic_integrity._get_json",
+            "loom.tools.research.academic_integrity._get_json",
             return_value=mock_crossref_data,
         ):
             result = await research_retraction_check("test query")
@@ -536,7 +536,7 @@ class TestIntegration:
         }
 
         with patch(
-            "loom.tools.academic_integrity._get_json",
+            "loom.tools.research.academic_integrity._get_json",
             return_value=mock_crossref_data,
         ):
             result = await research_predatory_journal_check("Journal")

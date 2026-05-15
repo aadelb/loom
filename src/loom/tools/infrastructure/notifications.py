@@ -8,7 +8,7 @@ import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 from loom.error_responses import handle_tool_errors
-from typing import Any, Literal
+from typing import Any
 
 logger = logging.getLogger("loom.tools.notifications")
 NOTIFICATIONS_DIR = Path.home() / ".loom"

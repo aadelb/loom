@@ -213,7 +213,7 @@ class TestTracing:
 
 class TestTokenRedaction:
     def setup_method(self) -> None:
-        from loom.tools.llm import _sanitize_error
+        from loom.tools.llm.llm import _sanitize_error
 
         self.sanitize = _sanitize_error
 
@@ -298,11 +298,11 @@ class TestDeepWarnings:
         from unittest.mock import patch
 
         async def run() -> dict:
-            with patch("loom.tools.search.research_search", return_value={
+            with patch("loom.tools.core.search.research_search", return_value={
                 "provider": "mock",
                 "results": [],
             }):
-                from loom.tools.deep import research_deep
+                from loom.tools.core.deep import research_deep
                 return await research_deep("test query", depth=1, expand_queries=False)
 
         result = await run()

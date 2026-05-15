@@ -11,7 +11,7 @@ class TestResearchToxicityCheck:
 
     async def test_check_single_text(self) -> None:
         """Test checking a single text."""
-        from loom.tools.toxicity_checker_tool import research_toxicity_check
+        from loom.tools.research.toxicity_checker_tool import research_toxicity_check
 
         result = await research_toxicity_check(text="This is clean text.")
         assert result["type"] == "single"
@@ -22,7 +22,7 @@ class TestResearchToxicityCheck:
 
     async def test_check_toxic_text(self) -> None:
         """Test checking text with toxicity."""
-        from loom.tools.toxicity_checker_tool import research_toxicity_check
+        from loom.tools.research.toxicity_checker_tool import research_toxicity_check
 
         result = await research_toxicity_check(text="I will kill you.")
         assert result["type"] == "single"
@@ -31,7 +31,7 @@ class TestResearchToxicityCheck:
 
     async def test_compare_texts(self) -> None:
         """Test comparing prompt and response."""
-        from loom.tools.toxicity_checker_tool import research_toxicity_check
+        from loom.tools.research.toxicity_checker_tool import research_toxicity_check
 
         result = await research_toxicity_check(
             text="ignored",
@@ -46,7 +46,7 @@ class TestResearchToxicityCheck:
 
     async def test_compare_clean_texts(self) -> None:
         """Test comparing clean texts."""
-        from loom.tools.toxicity_checker_tool import research_toxicity_check
+        from loom.tools.research.toxicity_checker_tool import research_toxicity_check
 
         result = await research_toxicity_check(
             text="ignored",
@@ -58,7 +58,7 @@ class TestResearchToxicityCheck:
 
     async def test_only_prompt_no_response(self) -> None:
         """Test with only prompt (no response) uses single mode."""
-        from loom.tools.toxicity_checker_tool import research_toxicity_check
+        from loom.tools.research.toxicity_checker_tool import research_toxicity_check
 
         result = await research_toxicity_check(
             text="This is clean.",
@@ -70,7 +70,7 @@ class TestResearchToxicityCheck:
 
     async def test_invalid_text_too_short(self) -> None:
         """Test with text too short raises error."""
-        from loom.tools.toxicity_checker_tool import research_toxicity_check
+        from loom.tools.research.toxicity_checker_tool import research_toxicity_check
         from pydantic import ValidationError
 
         with pytest.raises(ValidationError):
@@ -78,7 +78,7 @@ class TestResearchToxicityCheck:
 
     async def test_invalid_text_too_long(self) -> None:
         """Test with text too long raises error."""
-        from loom.tools.toxicity_checker_tool import research_toxicity_check
+        from loom.tools.research.toxicity_checker_tool import research_toxicity_check
         from pydantic import ValidationError
 
         with pytest.raises(ValidationError):
@@ -86,7 +86,7 @@ class TestResearchToxicityCheck:
 
     async def test_result_has_required_fields_single(self) -> None:
         """Test single check result has all required fields."""
-        from loom.tools.toxicity_checker_tool import research_toxicity_check
+        from loom.tools.research.toxicity_checker_tool import research_toxicity_check
 
         result = await research_toxicity_check(text="test text")
         required_fields = {
@@ -102,7 +102,7 @@ class TestResearchToxicityCheck:
 
     async def test_result_has_required_fields_comparison(self) -> None:
         """Test comparison result has all required fields."""
-        from loom.tools.toxicity_checker_tool import research_toxicity_check
+        from loom.tools.research.toxicity_checker_tool import research_toxicity_check
 
         result = await research_toxicity_check(
             text="ignored",
@@ -122,7 +122,7 @@ class TestResearchToxicityCheck:
 
     async def test_multiple_calls_consistent(self) -> None:
         """Test multiple calls return consistent results."""
-        from loom.tools.toxicity_checker_tool import research_toxicity_check
+        from loom.tools.research.toxicity_checker_tool import research_toxicity_check
 
         result1 = await research_toxicity_check(text="test text")
         result2 = await research_toxicity_check(text="test text")
@@ -130,7 +130,7 @@ class TestResearchToxicityCheck:
 
     async def test_checker_singleton(self) -> None:
         """Test checker is reused across calls."""
-        from loom.tools import toxicity_checker_tool
+        import loom.tools.research.toxicity_checker_tool
 
         # Get the checker before first call
         checker1 = toxicity_checker_tool._get_checker()

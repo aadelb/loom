@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from loom.tools.sentiment_deep import (
+from loom.tools.research.sentiment_deep import (
     research_sentiment_deep,
     _count_keywords,
     _score_emotion_category,

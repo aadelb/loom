@@ -10,7 +10,7 @@ import logging
 import signal
 from typing import Any
 
-from loom.server_state import set_shutting_down, is_shutting_down
+from loom.server_state import set_shutting_down
 
 log = logging.getLogger("loom.shutdown")
 

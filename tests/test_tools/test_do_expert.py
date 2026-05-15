@@ -4,7 +4,7 @@ import asyncio
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
 
-from loom.tools import do_expert
+import loom.tools.llm.do_expert
 
 
 @pytest.mark.asyncio
@@ -24,7 +24,7 @@ async def test_research_do_expert_signature():
 @pytest.mark.asyncio
 async def test_research_do_expert_import_error():
     """Test graceful handling when expert_engine is unavailable."""
-    with patch("loom.tools.expert_engine.research_expert", side_effect=ImportError("test error")):
+    with patch("loom.tools.llm.expert_engine.research_expert", side_effect=ImportError("test error")):
         result = await do_expert.research_do_expert("test query")
 
         assert "instruction" in result
@@ -38,7 +38,7 @@ async def test_research_do_expert_import_error():
 async def test_research_do_expert_execution_error():
     """Test graceful handling of execution errors."""
     with patch(
-        "loom.tools.expert_engine.research_expert", side_effect=RuntimeError("test error")
+        "loom.tools.llm.expert_engine.research_expert", side_effect=RuntimeError("test error")
     ):
         result = await do_expert.research_do_expert("test query")
 
@@ -81,7 +81,7 @@ async def test_research_do_expert_quality_levels():
     }
 
     for quality in ["quick", "standard", "expert", "publication"]:
-        with patch("loom.tools.expert_engine.research_expert", return_value=mock_result):
+        with patch("loom.tools.llm.expert_engine.research_expert", return_value=mock_result):
             result = await do_expert.research_do_expert("test query", quality=quality)
 
             assert result["quality"] == quality
@@ -105,7 +105,7 @@ async def test_research_do_expert_darkness_levels():
     }
 
     for darkness in [1, 3, 5, 7, 10]:
-        with patch("loom.tools.expert_engine.research_expert", return_value=mock_result) as mock_expert:
+        with patch("loom.tools.llm.expert_engine.research_expert", return_value=mock_result) as mock_expert:
             result = await do_expert.research_do_expert("test query", darkness_level=darkness)
 
             assert result["darkness_level"] == darkness
@@ -139,7 +139,7 @@ async def test_research_do_expert_output_format():
         "warnings": [],
     }
 
-    with patch("loom.tools.expert_engine.research_expert", return_value=mock_result):
+    with patch("loom.tools.llm.expert_engine.research_expert", return_value=mock_result):
         result = await do_expert.research_do_expert("What is AI safety?")
 
         # Verify required output fields
@@ -184,7 +184,7 @@ async def test_research_do_expert_answer_truncation():
         "warnings": [],
     }
 
-    with patch("loom.tools.expert_engine.research_expert", return_value=mock_result):
+    with patch("loom.tools.llm.expert_engine.research_expert", return_value=mock_result):
         result = await do_expert.research_do_expert("test query")
 
         # Answer should be truncated
@@ -208,7 +208,7 @@ async def test_research_do_expert_basic_functionality():
         "warnings": [],
     }
 
-    with patch("loom.tools.expert_engine.research_expert", return_value=mock_result):
+    with patch("loom.tools.llm.expert_engine.research_expert", return_value=mock_result):
         result = await do_expert.research_do_expert("test query")
 
         # Verify basic fields

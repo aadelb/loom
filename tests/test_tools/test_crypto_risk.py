@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from unittest.mock import AsyncMock, patch
 
-from loom.tools.crypto_risk import (
+from loom.tools.intelligence.crypto_risk import (
     _validate_bitcoin_address,
     _validate_ethereum_address,
     _calculate_risk_score,
@@ -143,7 +143,7 @@ class TestCryptoRiskScore:
         assert result["error"] is not None
         assert "Unsupported chain" in result["error"]
 
-    @patch("loom.tools.crypto_risk.httpx.AsyncClient")
+    @patch("loom.tools.intelligence.crypto_risk.httpx.AsyncClient")
     async def test_bitcoin_success(self, mock_client_class) -> None:
         """Bitcoin address scoring succeeds with valid API response."""
         # Mock the blockchain.info API responses

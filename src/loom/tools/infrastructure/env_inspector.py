@@ -15,13 +15,13 @@ try:
 except ImportError:
     psutil = None
 import shutil
-import subprocess
 import sys
 import time
 from typing import Any
 
 import loom
 from loom.error_responses import handle_tool_errors
+from loom.subprocess_helpers import run_command
 
 logger = logging.getLogger("loom.tools.env_inspector")
 
@@ -33,12 +33,12 @@ def _get_installed_packages() -> int:
         Count of installed packages
     """
     try:
-        result = subprocess.run(
+        result = run_command(
             [sys.executable, "-m", "pip", "list", "--format=json"],
             capture_output=True, text=True, timeout=10
         )
-        if result.returncode == 0:
-            return len(json.loads(result.stdout))
+        if result["success"]:
+            return len(json.loads(result["stdout"]))
     except Exception:
         pass
     return 0

@@ -14,12 +14,18 @@ from __future__ import annotations
 import json
 import logging
 import sqlite3
-import time
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from loom.error_responses import handle_tool_errors
+
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(v: float, lo: float = 0.0, hi: float = 1.0) -> float:
+        """Fallback clamp if score_utils unavailable."""
+        return max(lo, min(hi, v))
 
 try:
     from loom.providers.base import LLMProvider
@@ -437,7 +443,7 @@ def research_leaderboard_update(
     _init_leaderboard_db()
 
     # Clamp score to 0-1
-    score = max(0.0, min(1.0, score))
+    score = clamp(score, 0.0, 1.0)
 
     db_path = _get_leaderboard_db()
     conn = sqlite3.connect(db_path)

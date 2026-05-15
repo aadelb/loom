@@ -1,11 +1,20 @@
 """Content enrichment tools — language detection, Wayback Machine recovery."""
 from __future__ import annotations
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text, max_chars=500, *, suffix="..."):
+        if len(text) <= max_chars: return text
+        return text[:max_chars - len(suffix)] + suffix
+
+
 
 import logging
 from typing import Any
 import httpx
 
 from loom.error_responses import handle_tool_errors
+from loom.http_helpers import fetch_json
 
 logger = logging.getLogger("loom.tools.enrich")
 
@@ -35,7 +44,7 @@ def research_detect_language(text: str) -> dict[str, Any]:
         return {"language": "unknown", "confidence": 0.0, "error": "langdetect not installed"}
 
     try:
-        text_sample = text[:5000]
+        text_sample = truncate(text, 5000)
         language = detect(text_sample)
         langs = detect_langs(text_sample)
         alternatives = [
@@ -80,7 +89,7 @@ async def research_wayback(
 
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.get(
+            rows = await fetch_json(client, 
                 _WAYBACK_CDX_URL,
                 params={
                     "url": url,
@@ -92,7 +101,6 @@ async def research_wayback(
                 },
             )
             resp.raise_for_status()
-            rows = resp.json()
 
         if not isinstance(rows, list) or len(rows) <= 1:
             return {"original_url": url, "snapshots": [], "error": "no snapshots found"}

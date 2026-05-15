@@ -12,8 +12,8 @@ import pytest
 class TestResearchExifExtract:
     async def test_invalid_url(self):
         """Test rejection of invalid URL."""
-        with patch("loom.tools.image_intel.validate_url", side_effect=ValueError("Invalid URL")):
-            from loom.tools.image_intel import research_exif_extract
+        with patch("loom.tools.intelligence.image_intel.validate_url", side_effect=ValueError("Invalid URL")):
+            from loom.tools.intelligence.image_intel import research_exif_extract
 
             result = await research_exif_extract("not-a-url")
 
@@ -21,11 +21,11 @@ class TestResearchExifExtract:
 
     async def test_url_download_failure(self):
         """Test handling of download failure."""
-        with patch("loom.tools.image_intel.validate_url"), patch(
-            "loom.tools.image_intel._download_image",
+        with patch("loom.tools.intelligence.image_intel.validate_url"), patch(
+            "loom.tools.intelligence.image_intel._download_image",
             return_value=None,
         ):
-            from loom.tools.image_intel import research_exif_extract
+            from loom.tools.intelligence.image_intel import research_exif_extract
 
             result = await research_exif_extract("https://example.com/image.jpg")
 
@@ -35,7 +35,7 @@ class TestResearchExifExtract:
     async def test_local_file_not_found(self):
         """Test error when local file doesn't exist."""
         with patch("builtins.open", side_effect=FileNotFoundError()):
-            from loom.tools.image_intel import research_exif_extract
+            from loom.tools.intelligence.image_intel import research_exif_extract
 
             result = await research_exif_extract("/path/to/nonexistent.jpg")
 
@@ -48,7 +48,7 @@ class TestResearchExifExtract:
             "os.path.getsize",
             return_value=25 * 1024 * 1024,  # 25MB, exceeds 20MB limit
         ):
-            from loom.tools.image_intel import research_exif_extract
+            from loom.tools.intelligence.image_intel import research_exif_extract
 
             result = await research_exif_extract("/path/to/huge.jpg")
 
@@ -69,14 +69,14 @@ class TestResearchExifExtract:
             "has_gps": False,
         }
 
-        with patch("loom.tools.image_intel.validate_url"), patch(
-            "loom.tools.image_intel._download_image",
+        with patch("loom.tools.intelligence.image_intel.validate_url"), patch(
+            "loom.tools.intelligence.image_intel._download_image",
             return_value=b"fake-image-data",
         ), patch(
-            "loom.tools.image_intel._extract_exif_blocking",
+            "loom.tools.intelligence.image_intel._extract_exif_blocking",
             return_value=mock_exif_data,
         ):
-            from loom.tools.image_intel import research_exif_extract
+            from loom.tools.intelligence.image_intel import research_exif_extract
 
             result = await research_exif_extract("https://example.com/photo.jpg")
 
@@ -98,14 +98,14 @@ class TestResearchExifExtract:
             "has_gps": True,
         }
 
-        with patch("loom.tools.image_intel.validate_url"), patch(
-            "loom.tools.image_intel._download_image",
+        with patch("loom.tools.intelligence.image_intel.validate_url"), patch(
+            "loom.tools.intelligence.image_intel._download_image",
             return_value=b"image",
         ), patch(
-            "loom.tools.image_intel._extract_exif_blocking",
+            "loom.tools.intelligence.image_intel._extract_exif_blocking",
             return_value=mock_exif_data,
         ):
-            from loom.tools.image_intel import research_exif_extract
+            from loom.tools.intelligence.image_intel import research_exif_extract
 
             result = await research_exif_extract("https://example.com/geotagged.jpg")
 
@@ -117,7 +117,7 @@ class TestResearchExifExtract:
 class TestResearchOcrExtract:
     async def test_invalid_language_code(self):
         """Test rejection of invalid language code."""
-        from loom.tools.image_intel import research_ocr_extract
+        from loom.tools.intelligence.image_intel import research_ocr_extract
 
         result = await research_ocr_extract("https://example.com/text.jpg", language="invalid_lang")
 
@@ -126,7 +126,7 @@ class TestResearchOcrExtract:
 
     async def test_valid_language_codes(self):
         """Test that common language codes are accepted."""
-        from loom.tools.image_intel import VALID_LANGUAGES
+        from loom.tools.intelligence.image_intel import VALID_LANGUAGES
 
         assert "eng" in VALID_LANGUAGES
         assert "ara" in VALID_LANGUAGES
@@ -135,11 +135,11 @@ class TestResearchOcrExtract:
 
     async def test_url_download_failure_ocr(self):
         """Test OCR error on download failure."""
-        with patch("loom.tools.image_intel.validate_url"), patch(
-            "loom.tools.image_intel._download_image",
+        with patch("loom.tools.intelligence.image_intel.validate_url"), patch(
+            "loom.tools.intelligence.image_intel._download_image",
             return_value=None,
         ):
-            from loom.tools.image_intel import research_ocr_extract
+            from loom.tools.intelligence.image_intel import research_ocr_extract
 
             result = await research_ocr_extract("https://example.com/image.jpg", language="eng")
 
@@ -155,14 +155,14 @@ class TestResearchOcrExtract:
             "method": "tesseract",
         }
 
-        with patch("loom.tools.image_intel.validate_url"), patch(
-            "loom.tools.image_intel._download_image",
+        with patch("loom.tools.intelligence.image_intel.validate_url"), patch(
+            "loom.tools.intelligence.image_intel._download_image",
             return_value=b"image-data",
         ), patch(
-            "loom.tools.image_intel._ocr_blocking",
+            "loom.tools.intelligence.image_intel._ocr_blocking",
             return_value=mock_ocr_result,
         ):
-            from loom.tools.image_intel import research_ocr_extract
+            from loom.tools.intelligence.image_intel import research_ocr_extract
 
             result = await research_ocr_extract("https://example.com/text.jpg", language="eng")
 
@@ -180,12 +180,12 @@ class TestResearchOcrExtract:
         }
 
         with patch("builtins.open", create=True) as mock_open, patch(
-            "loom.tools.image_intel._ocr_blocking",
+            "loom.tools.intelligence.image_intel._ocr_blocking",
             return_value=mock_ocr_result,
         ):
             mock_open.return_value.__enter__.return_value.read.return_value = b"image"
 
-            from loom.tools.image_intel import research_ocr_extract
+            from loom.tools.intelligence.image_intel import research_ocr_extract
 
             result = await research_ocr_extract("/path/to/text.jpg", language="eng")
 
@@ -197,7 +197,7 @@ class TestExtractExifBlocking:
     def test_pillow_not_installed(self):
         """Test error when Pillow is not installed."""
         with patch.dict("sys.modules", {"PIL": None}):
-            from loom.tools.image_intel import _extract_exif_blocking
+            from loom.tools.intelligence.image_intel import _extract_exif_blocking
 
             result = _extract_exif_blocking(b"image-data")
 
@@ -213,7 +213,7 @@ class TestExtractExifBlocking:
         mock_image.getexif.return_value = {}
 
         with patch("loom.tools.image_intel.PIL.Image.open", return_value=mock_image):
-            from loom.tools.image_intel import _extract_exif_blocking
+            from loom.tools.intelligence.image_intel import _extract_exif_blocking
 
             result = _extract_exif_blocking(b"image")
 
@@ -236,7 +236,7 @@ class TestExtractExifBlocking:
         }
 
         with patch("loom.tools.image_intel.PIL.Image.open", return_value=mock_image):
-            from loom.tools.image_intel import _extract_exif_blocking
+            from loom.tools.intelligence.image_intel import _extract_exif_blocking
 
             result = _extract_exif_blocking(b"image")
 
@@ -247,7 +247,7 @@ class TestExtractExifBlocking:
 class TestParseGpsInfo:
     def test_valid_gps_dms_conversion(self):
         """Test conversion of DMS to decimal degrees."""
-        from loom.tools.image_intel import _parse_gps_info
+        from loom.tools.intelligence.image_intel import _parse_gps_info
 
         gps_data = {
             1: "N",
@@ -266,7 +266,7 @@ class TestParseGpsInfo:
 
     def test_gps_south_west(self):
         """Test GPS with South/West coordinates."""
-        from loom.tools.image_intel import _parse_gps_info
+        from loom.tools.intelligence.image_intel import _parse_gps_info
 
         gps_data = {
             1: "S",
@@ -282,7 +282,7 @@ class TestParseGpsInfo:
 
     def test_gps_with_altitude(self):
         """Test GPS extraction with altitude."""
-        from loom.tools.image_intel import _parse_gps_info
+        from loom.tools.intelligence.image_intel import _parse_gps_info
 
         gps_data = {
             1: "N",
@@ -306,7 +306,7 @@ class TestDownloadImage:
         mock_response.headers = {"content-length": str(25 * 1024 * 1024)}  # 25MB
 
         with patch("httpx.AsyncClient.get", return_value=mock_response):
-            from loom.tools.image_intel import _download_image
+            from loom.tools.intelligence.image_intel import _download_image
 
             result = await _download_image("https://example.com/huge.jpg")
 
@@ -320,7 +320,7 @@ class TestDownloadImage:
         mock_response.raise_for_status = AsyncMock()
 
         with patch("httpx.AsyncClient.get", return_value=mock_response):
-            from loom.tools.image_intel import _download_image
+            from loom.tools.intelligence.image_intel import _download_image
 
             result = await _download_image("https://example.com/image.jpg")
 
@@ -329,7 +329,7 @@ class TestDownloadImage:
     async def test_download_timeout(self):
         """Test handling of download timeout."""
         with patch("httpx.AsyncClient.get", side_effect=httpx.TimeoutException("Timeout")):
-            from loom.tools.image_intel import _download_image
+            from loom.tools.intelligence.image_intel import _download_image
 
             result = await _download_image("https://example.com/image.jpg")
 
@@ -343,7 +343,7 @@ class TestOcrBlocking:
             mock_run.return_value.returncode = 0
             mock_open.return_value.__enter__.return_value.read.return_value = "Extracted text"
 
-            from loom.tools.image_intel import _ocr_blocking
+            from loom.tools.intelligence.image_intel import _ocr_blocking
 
             result = _ocr_blocking(b"image", "eng")
 
@@ -353,7 +353,7 @@ class TestOcrBlocking:
     def test_tesseract_not_found_fallback(self):
         """Test fallback to pytesseract when tesseract not found."""
         with patch("subprocess.run", side_effect=FileNotFoundError()):
-            from loom.tools.image_intel import _ocr_blocking
+            from loom.tools.intelligence.image_intel import _ocr_blocking
 
             # When tesseract is not found, it should try pytesseract
             result = _ocr_blocking(b"image", "eng")

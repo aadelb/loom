@@ -7,6 +7,12 @@ import re
 from typing import Any
 from loom.error_responses import handle_tool_errors
 
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(v: float, lo: float = 0.0, hi: float = 1.0) -> float:
+        return max(lo, min(hi, v))
+
 logger = logging.getLogger("loom.tools.compliance_checker")
 
 # PII patterns (email, phone, SSN, credit_card, IP)
@@ -160,7 +166,7 @@ def research_compliance_check(
             "frameworks_checked": frameworks,
             "violations": violations,
             "compliant": len(violations) == 0,
-            "risk_score": min(10, len(violations) + pii_count),
+            "risk_score": clamp(len(violations) + pii_count, 0, 10),
             "total_violations": len(violations),
         }
     except Exception as exc:
@@ -185,14 +191,14 @@ def research_pii_scan(text: str) -> dict[str, Any]:
 
         for pii_type, pattern in _PII.items():
             for match in re.finditer(pattern, text, re.IGNORECASE):
-                start = max(0, match.start() - 20)
-                end = min(len(text), match.end() + 20)
+                start = clamp(match.start() - 20, 0, len(text))
+                end = clamp(match.end() + 20, 0, len(text))
                 pii_found.append(
                     {
                         "type": pii_type,
                         "value_masked": _mask(match.group(), pii_type),
                         "position": match.start(),
-                        "context": text[start:end].strip(),
+                        "context": text[int(start):int(end)].strip(),
                     }
                 )
 

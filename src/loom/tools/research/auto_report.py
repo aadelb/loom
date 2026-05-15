@@ -14,6 +14,13 @@ from typing import Any, Literal
 
 from loom.retry import with_retry
 from loom.error_responses import handle_tool_errors
+import html
+
+try:
+    from loom.report_formatters import to_markdown, to_html, to_json, format_report
+    _FORMATTERS_AVAILABLE = True
+except ImportError:
+    _FORMATTERS_AVAILABLE = False
 
 logger = logging.getLogger("loom.tools.auto_report")
 
@@ -456,16 +463,26 @@ def _build_recommendations_section(topic: str, synthesis: dict[str, Any]) -> str
 
 def _format_report(sections: list[dict[str, Any]], format: str, depth: str) -> str:
     """Format report sections into requested output format."""
+    if not _FORMATTERS_AVAILABLE:
+        # Fallback to inline formatting if shared module not available
+        if format == "json":
+            return json.dumps(sections, indent=2)
+        elif format == "html":
+            return _fallback_to_html(sections)
+        else:  # markdown (default)
+            return _fallback_to_markdown(sections)
+
+    # Use shared formatters
     if format == "json":
-        return json.dumps(sections, indent=2)
+        return to_json(sections)
     elif format == "html":
-        return _to_html(sections)
+        return to_html(sections)
     else:  # markdown (default)
-        return _to_markdown(sections)
+        return to_markdown(sections)
 
 
-def _to_markdown(sections: list[dict[str, Any]]) -> str:
-    """Convert sections to Markdown format."""
+def _fallback_to_markdown(sections: list[dict[str, Any]]) -> str:
+    """Convert sections to Markdown format (fallback)."""
     lines = []
     for i, section in enumerate(sections, 1):
         title = section.get("title", "")
@@ -481,8 +498,8 @@ def _to_markdown(sections: list[dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 
-def _to_html(sections: list[dict[str, Any]]) -> str:
-    """Convert sections to HTML format."""
+def _fallback_to_html(sections: list[dict[str, Any]]) -> str:
+    """Convert sections to HTML format (fallback)."""
     html_parts = [
         "<!DOCTYPE html>",
         "<html>",
@@ -515,13 +532,7 @@ def _to_html(sections: list[dict[str, Any]]) -> str:
 
 def _escape_html(text: str) -> str:
     """Escape HTML special characters."""
-    return (
-        text.replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-        .replace('"', "&quot;")
-        .replace("'", "&#39;")
-    )
+    return html.escape(text)
 
 
 def _error_response(error_message: str) -> dict[str, Any]:

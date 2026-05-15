@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from loom.tools import infra_analysis
+import loom.tools.intelligence.infra_analysis
 
 
 pytestmark = pytest.mark.asyncio
@@ -18,7 +18,7 @@ class TestRegistryGraveyard:
 
     async def test_pypi_yanked_detection(self) -> None:
         """Detects yanked versions on PyPI."""
-        with patch("loom.tools.infra_analysis._get_json") as mock_get:
+        with patch("loom.tools.intelligence.infra_analysis._get_json") as mock_get:
             mock_get.return_value = {
                 "releases": {
                     "1.0.0": [{"yanked": False}],
@@ -41,7 +41,7 @@ class TestRegistryGraveyard:
 
     async def test_npm_deprecated_detection(self) -> None:
         """Detects deprecated versions on NPM."""
-        with patch("loom.tools.infra_analysis._get_json") as mock_get:
+        with patch("loom.tools.intelligence.infra_analysis._get_json") as mock_get:
             mock_get.return_value = {
                 "versions": {
                     "1.0.0": {"deprecated": False},
@@ -62,7 +62,7 @@ class TestRegistryGraveyard:
 
     async def test_rubygems_yanked_versions(self) -> None:
         """Detects yanked versions on RubyGems."""
-        with patch("loom.tools.infra_analysis._get_json") as mock_get:
+        with patch("loom.tools.intelligence.infra_analysis._get_json") as mock_get:
             mock_get.return_value = [
                 {"number": "1.0.0", "yanked": False},
                 {"number": "1.0.1", "yanked": True},
@@ -105,7 +105,7 @@ class TestRegistryGraveyard:
 
     async def test_risk_level_assessment(self) -> None:
         """Risk level is assessed based on yanked/deprecated status."""
-        with patch("loom.tools.infra_analysis._get_json") as mock_get:
+        with patch("loom.tools.intelligence.infra_analysis._get_json") as mock_get:
             # High risk: many yanked versions
             mock_get.return_value = {
                 "releases": {
@@ -138,7 +138,7 @@ class TestSubdomainTemporal:
         """Parses Certificate Transparency logs correctly."""
         now = datetime.now(UTC)
 
-        with patch("loom.tools.infra_analysis._get_json") as mock_get:
+        with patch("loom.tools.intelligence.infra_analysis._get_json") as mock_get:
             mock_get.return_value = [
                 {
                     "name_value": "example.com\nwww.example.com\napi.example.com",
@@ -163,7 +163,7 @@ class TestSubdomainTemporal:
         """Detects exposed internal tool subdomains."""
         now = datetime.now(UTC)
 
-        with patch("loom.tools.infra_analysis._get_json") as mock_get:
+        with patch("loom.tools.intelligence.infra_analysis._get_json") as mock_get:
             mock_get.return_value = [
                 {
                     "name_value": "jenkins.example.com\njira.example.com\ngrafana.example.com",
@@ -184,7 +184,7 @@ class TestSubdomainTemporal:
         """Risk is critical when internal tools are exposed."""
         now = datetime.now(UTC)
 
-        with patch("loom.tools.infra_analysis._get_json") as mock_get:
+        with patch("loom.tools.intelligence.infra_analysis._get_json") as mock_get:
             mock_get.return_value = [
                 {
                     "name_value": "jenkins.example.com\njira.example.com\ngrafana.example.com\nkibana.example.com",
@@ -205,7 +205,7 @@ class TestSubdomainTemporal:
         """Detects certificate issuance bursts."""
         now = datetime.now(UTC)
 
-        with patch("loom.tools.infra_analysis._get_json") as mock_get:
+        with patch("loom.tools.intelligence.infra_analysis._get_json") as mock_get:
             # Simulate 20 certs in one month and 2 in others
             certs = []
             for i in range(20):
@@ -232,7 +232,7 @@ class TestSubdomainTemporal:
 
     async def test_days_back_validation(self) -> None:
         """Validates days_back parameter bounds."""
-        with patch("loom.tools.infra_analysis._get_json") as mock_get:
+        with patch("loom.tools.intelligence.infra_analysis._get_json") as mock_get:
             mock_get.return_value = []
 
             result = await infra_analysis.research_subdomain_temporal(
@@ -243,7 +243,7 @@ class TestSubdomainTemporal:
 
     async def test_empty_ct_logs(self) -> None:
         """Handles empty CT logs gracefully."""
-        with patch("loom.tools.infra_analysis._get_json") as mock_get:
+        with patch("loom.tools.intelligence.infra_analysis._get_json") as mock_get:
             mock_get.return_value = None
 
             result = await infra_analysis.research_subdomain_temporal(
@@ -258,7 +258,7 @@ class TestSubdomainTemporal:
         """Tracks subdomain creation by month."""
         now = datetime.now(UTC)
 
-        with patch("loom.tools.infra_analysis._get_json") as mock_get:
+        with patch("loom.tools.intelligence.infra_analysis._get_json") as mock_get:
             mock_get.return_value = [
                 {
                     "name_value": "api.example.com",
@@ -304,7 +304,7 @@ class TestCommitAnalyzer:
                 },
             ]
 
-        with patch("loom.tools.infra_analysis._get_json") as mock_get:
+        with patch("loom.tools.intelligence.infra_analysis._get_json") as mock_get:
             # Mock the httpx.AsyncClient.get method
             mock_resp = MagicMock()
             mock_resp.status_code = 200
@@ -587,7 +587,7 @@ class TestEntropyCalculation:
 )
 async def test_registry_graveyard_ecosystems(ecosystem: str) -> None:
     """Tests all supported ecosystems."""
-    with patch("loom.tools.infra_analysis._get_json") as mock_get:
+    with patch("loom.tools.intelligence.infra_analysis._get_json") as mock_get:
         if ecosystem == "pypi":
             mock_get.return_value = {"releases": {"1.0.0": [{"yanked": False}]}}
         elif ecosystem == "npm":

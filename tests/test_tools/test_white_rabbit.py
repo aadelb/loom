@@ -6,8 +6,8 @@ import asyncio
 
 import pytest
 
-from loom.tools.white_rabbit import (
-    _extract_keywords,
+from loom.text_utils import extract_keywords as _extract_keywords
+from loom.tools.intelligence.white_rabbit import (
     _score_anomaly,
     research_white_rabbit,
 )

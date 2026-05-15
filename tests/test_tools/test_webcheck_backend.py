@@ -8,7 +8,8 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
-from loom.tools.webcheck_backend import (
+from loom.input_validators import validate_domain
+from loom.tools.backends.webcheck_backend import (
     _check_cookies,
     _check_dns,
     _check_headers,
@@ -20,7 +21,6 @@ from loom.tools.webcheck_backend import (
     _fetch_url,
     _parse_cert_date,
     _parse_dn,
-    _validate_domain,
     research_web_check,
 )
 
@@ -30,49 +30,49 @@ class TestValidateDomain:
 
     def test_valid_simple_domain(self) -> None:
         """Valid simple domain passes validation."""
-        assert _validate_domain("example.com") == "example.com"
+        assert validate_domain("example.com") == "example.com"
 
     def test_valid_subdomain(self) -> None:
         """Valid subdomain passes validation."""
-        assert _validate_domain("sub.example.com") == "sub.example.com"
+        assert validate_domain("sub.example.com") == "sub.example.com"
 
     def test_domain_lowercased(self) -> None:
         """Domain is lowercased."""
-        assert _validate_domain("Example.Com") == "example.com"
+        assert validate_domain("Example.Com") == "example.com"
 
     def test_domain_stripped(self) -> None:
         """Domain is stripped of whitespace."""
-        assert _validate_domain("  example.com  ") == "example.com"
+        assert validate_domain("  example.com  ") == "example.com"
 
     def test_domain_www_removed(self) -> None:
         """Leading www. is removed."""
-        assert _validate_domain("www.example.com") == "example.com"
+        assert validate_domain("www.example.com") == "example.com"
 
     def test_domain_https_removed(self) -> None:
         """Leading https:// is removed."""
-        assert _validate_domain("https://example.com") == "example.com"
+        assert validate_domain("https://example.com") == "example.com"
 
     def test_domain_http_removed(self) -> None:
         """Leading http:// is removed."""
-        assert _validate_domain("http://example.com") == "example.com"
+        assert validate_domain("http://example.com") == "example.com"
 
     def test_invalid_empty_domain(self) -> None:
         """Empty domain fails validation."""
-        assert _validate_domain("") == ""
+        assert validate_domain("") == ""
 
     def test_invalid_no_dot(self) -> None:
         """Domain without dot fails validation."""
-        assert _validate_domain("localhost") == ""
+        assert validate_domain("localhost") == ""
 
     def test_invalid_special_chars(self) -> None:
         """Domain with special characters fails validation."""
-        assert _validate_domain("example@com") == ""
-        assert _validate_domain("example!.com") == ""
+        assert validate_domain("example@com") == ""
+        assert validate_domain("example!.com") == ""
 
     def test_invalid_too_long(self) -> None:
         """Domain exceeding 255 chars fails validation."""
         long_domain = "a" * 256 + ".com"
-        assert _validate_domain(long_domain) == ""
+        assert validate_domain(long_domain) == ""
 
 
 class TestParseDN:
@@ -269,7 +269,7 @@ class TestDetectTech:
             assert isinstance(techs, list)
 
 
-@patch("loom.tools.webcheck_backend.httpx.Client")
+@patch("loom.tools.backends.webcheck_backend.httpx.Client")
 def test_fetch_url_success(mock_client_class: Mock) -> None:
     """Fetch URL successfully."""
     mock_response = Mock()
@@ -288,7 +288,7 @@ def test_fetch_url_success(mock_client_class: Mock) -> None:
     assert result["html"] == "<html></html>"
 
 
-@patch("loom.tools.webcheck_backend.httpx.Client")
+@patch("loom.tools.backends.webcheck_backend.httpx.Client")
 def test_fetch_url_failure(mock_client_class: Mock) -> None:
     """Fetch URL handles errors gracefully."""
     mock_client = Mock()
@@ -301,7 +301,7 @@ def test_fetch_url_failure(mock_client_class: Mock) -> None:
     assert result is None
 
 
-@patch("loom.tools.webcheck_backend._fetch_url")
+@patch("loom.tools.backends.webcheck_backend._fetch_url")
 def test_research_web_check_basic(mock_fetch: Mock) -> None:
     """Basic web_check call."""
     mock_fetch.return_value = {
@@ -327,7 +327,7 @@ def test_research_web_check_no_checks() -> None:
     assert "error" in result
 
 
-@patch("loom.tools.webcheck_backend.httpx.Client")
+@patch("loom.tools.backends.webcheck_backend.httpx.Client")
 def test_check_robots_found(mock_client_class: Mock) -> None:
     """Check robots.txt when found."""
     mock_response = Mock()
@@ -346,7 +346,7 @@ def test_check_robots_found(mock_client_class: Mock) -> None:
     assert "/private" in result["disallowed_paths"]
 
 
-@patch("loom.tools.webcheck_backend.httpx.Client")
+@patch("loom.tools.backends.webcheck_backend.httpx.Client")
 def test_check_robots_not_found(mock_client_class: Mock) -> None:
     """Check robots.txt when not found."""
     mock_response = Mock()
@@ -362,8 +362,8 @@ def test_check_robots_not_found(mock_client_class: Mock) -> None:
     assert result["found"] is False
 
 
-@patch("loom.tools.webcheck_backend.socket.socket")
-@patch("loom.tools.webcheck_backend.ssl.create_default_context")
+@patch("loom.tools.backends.webcheck_backend.socket.socket")
+@patch("loom.tools.backends.webcheck_backend.ssl.create_default_context")
 def test_check_ssl_success(mock_ssl_context: Mock, mock_socket_class: Mock) -> None:
     """Check SSL certificate successfully."""
     # Mock SSL context and socket
@@ -394,7 +394,7 @@ def test_check_dns_with_invalid_domain() -> None:
     assert "domain" in result
 
 
-@patch("loom.tools.webcheck_backend.socket.getaddrinfo")
+@patch("loom.tools.backends.webcheck_backend.socket.getaddrinfo")
 def test_check_dns_resolution(mock_getaddrinfo: Mock) -> None:
     """Check DNS A record resolution."""
     mock_getaddrinfo.return_value = [

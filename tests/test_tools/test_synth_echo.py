@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from loom.tools.synth_echo import (
+from loom.tools.intelligence.synth_echo import (
     _is_refusal,
     _rephrase_prompt,
     _semantic_hash,

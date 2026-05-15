@@ -17,6 +17,13 @@ from typing import Any
 from loom.error_responses import handle_tool_errors
 from loom.attack_tracker import get_strategy_stats
 
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(v: float, lo: float = 0.0, hi: float = 1.0) -> float:
+        """Fallback clamp if score_utils unavailable."""
+        return max(lo, min(hi, v))
+
 logger = logging.getLogger("loom.tools.strategy_oracle")
 
 
@@ -253,7 +260,7 @@ class StrategyOracle:
             stats = get_strategy_stats(strategy=strategy_name, model=model_name)
 
             # Calculate predicted success rate
-            empirical_asr = max(0.0, min(1.0, stats.get("asr", 0.0)))
+            empirical_asr = clamp(stats.get("asr", 0.0, 0.0, 1.0))
             sample_count = stats.get("total_attempts", 0)
 
             if sample_count >= 10:
@@ -428,7 +435,7 @@ class StrategyOracle:
         blended = empirical * empirical_weight + heuristic * (
             1.0 - empirical_weight
         )
-        return min(1.0, max(0.0, blended))
+        return clamp(blended, 0.0, 1.0)
 
 
 @handle_tool_errors("research_strategy_oracle")

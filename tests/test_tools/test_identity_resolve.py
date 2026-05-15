@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from loom.tools.identity_resolve import research_identity_resolve
+from loom.tools.intelligence.identity_resolve import research_identity_resolve
 
 
 pytestmark = pytest.mark.asyncio

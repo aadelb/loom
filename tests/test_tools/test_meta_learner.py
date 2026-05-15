@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from loom.tools.meta_learner import research_meta_learn
+from loom.tools.llm.meta_learner import research_meta_learn
 from loom.tools.reframe_strategies import ALL_STRATEGIES
 
 

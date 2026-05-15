@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import pytest
 
-from loom.tools.adversarial_craft import (
+from loom.tools.adversarial.adversarial_craft import (
     research_craft_adversarial,
     research_adversarial_batch,
 )

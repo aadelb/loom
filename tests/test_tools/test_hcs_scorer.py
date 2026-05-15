@@ -14,7 +14,7 @@ from __future__ import annotations
 import asyncio
 import pytest
 
-from loom.tools.hcs_scorer import research_hcs_score
+from loom.tools.adversarial.hcs_scorer import research_hcs_score
 
 
 class TestHcsScoreBasics:

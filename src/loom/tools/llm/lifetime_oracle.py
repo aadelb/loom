@@ -3,6 +3,13 @@
 from __future__ import annotations
 from loom.error_responses import handle_tool_errors
 
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(v: float, lo: float = 0.0, hi: float = 1.0) -> float:
+        """Fallback clamp if score_utils unavailable."""
+        return max(lo, min(hi, v))
+
 import logging
 import re
 from datetime import UTC, datetime, timedelta
@@ -113,7 +120,7 @@ async def research_lifetime_predict(
             "publication_penalty": round(penalty, 2),
             "novelty_bonus": round(bonus, 2),
             "predicted_lifespan": {"min": max(1, int(expected * 0.7)), "expected": expected, "max": int(expected * 1.5)},
-            "confidence": round(max(0.3, min(1.0, confidence)), 2),
+            "confidence": round(clamp(confidence, 0.3, 1.0), 2),
             "recommendation": rec,
             "reasoning": reasoning,
             "optimal_publish_date": opt_date,

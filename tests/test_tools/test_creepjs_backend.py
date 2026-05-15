@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from loom.tools.creepjs_backend import (
+from loom.tools.backends.creepjs_backend import (
     research_creepjs_audit,
     _extract_creepjs_metrics,
 )
@@ -89,7 +89,7 @@ class TestResearchCreepjsAudit:
         assert result["success"] is False
         assert "Invalid URL" in result["error"]
 
-    @patch("loom.tools.creepjs_backend._run_creepjs_audit")
+    @patch("loom.tools.backends.creepjs_backend._run_creepjs_audit")
     def test_successful_audit(self, mock_run: MagicMock) -> None:
         """Successful audit returns expected structure."""
         mock_run.return_value = {

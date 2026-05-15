@@ -88,7 +88,7 @@ class TestLLMCascadeFailover:
     @pytest.mark.asyncio
     async def test_cascade_tries_providers_in_order(self) -> None:
         """Cascade tries providers in configured order."""
-        from loom.tools.llm import _build_provider_chain, _call_with_cascade
+        from loom.tools.llm.llm import _build_provider_chain, _call_with_cascade
 
         # Load config
         load_config()
@@ -165,7 +165,7 @@ class TestLLMCascadeFailover:
 
                         # Mock config
                         with patch("loom.config.CONFIG", {"LLM_CASCADE_ORDER": ["provider1", "provider2"]}):
-                            from loom.tools.llm import _call_with_cascade
+                            from loom.tools.llm.llm import _call_with_cascade
 
                             result = await _call_with_cascade([{"role": "user", "content": "test"}])
 
@@ -203,7 +203,7 @@ class TestLLMCascadeFailover:
 
         with patch("loom.tools.llm._build_provider_chain", return_value=[p1, p2]):
             with patch("loom.config.CONFIG", {"LLM_CASCADE_ORDER": ["provider1", "provider2"]}):
-                from loom.tools.llm import _call_with_cascade
+                from loom.tools.llm.llm import _call_with_cascade
 
                 result = await _call_with_cascade([{"role": "user", "content": "test"}])
 
@@ -228,7 +228,7 @@ class TestLLMCascadeFailover:
 
         with patch("loom.tools.llm._build_provider_chain", return_value=[p1, p2]):
             with patch("loom.config.CONFIG", {"LLM_CASCADE_ORDER": ["provider1", "provider2"]}):
-                from loom.tools.llm import _call_with_cascade
+                from loom.tools.llm.llm import _call_with_cascade
 
                 with pytest.raises(RuntimeError):
                     await _call_with_cascade([{"role": "user", "content": "test"}])
@@ -268,7 +268,7 @@ class TestLLMCascadeFailover:
 
         with patch("loom.tools.llm._build_provider_chain", return_value=[p1, p2]):
             with patch("loom.config.CONFIG", {"LLM_CASCADE_ORDER": ["provider1", "provider2"]}):
-                from loom.tools.llm import _call_with_cascade
+                from loom.tools.llm.llm import _call_with_cascade
 
                 result = await _call_with_cascade([{"role": "user", "content": "test"}])
 
@@ -302,7 +302,7 @@ class TestLLMCascadeFailover:
 
         with patch("loom.tools.llm._build_provider_chain", return_value=[p1, p2]):
             with patch("loom.config.CONFIG", {"LLM_CASCADE_ORDER": ["provider1", "provider2"]}):
-                from loom.tools.llm import _call_with_cascade
+                from loom.tools.llm.llm import _call_with_cascade
 
                 result = await _call_with_cascade([{"role": "user", "content": "test"}])
 

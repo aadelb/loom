@@ -7,6 +7,14 @@ import logging
 import re
 from loom.error_responses import handle_tool_errors
 from typing import Any
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text: str, max_chars: int = 500, *, suffix: str = "...") -> str:
+        """Fallback truncate if text_utils unavailable."""
+        if len(text) <= max_chars:
+            return text
+        return text[: max_chars - len(suffix)] + suffix
 
 logger = logging.getLogger("loom.tools.career_intel")
 
@@ -404,7 +412,7 @@ async def _extract_skills_llm(text: str, context: str = "academic") -> list[str]
                 },
                 {
                     "role": "user",
-                    "content": f"Text:\n{text[:3000]}"
+                    "content": f"Text:\n{truncate(text, 3000)}"
                 }
             ],
             max_tokens=500,

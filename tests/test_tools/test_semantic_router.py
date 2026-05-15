@@ -7,7 +7,7 @@ from unittest.mock import patch, MagicMock
 
 import numpy as np
 
-from loom.tools import semantic_router
+import loom.tools.llm.semantic_router
 
 
 @pytest.mark.asyncio
@@ -161,7 +161,7 @@ async def test_semantic_batch_route_aggregates_tools():
 @pytest.mark.unit
 def test_load_sentence_transformers_unavailable():
     """Test graceful fallback when sentence-transformers unavailable."""
-    with patch("loom.tools.semantic_router._SENTENCE_TRANSFORMERS_AVAILABLE", False):
+    with patch("loom.tools.llm.semantic_router._SENTENCE_TRANSFORMERS_AVAILABLE", False):
         # Should not raise even if sentence-transformers missing
         assert semantic_router._SENTENCE_TRANSFORMERS_AVAILABLE is False
 
@@ -169,6 +169,6 @@ def test_load_sentence_transformers_unavailable():
 @pytest.mark.unit
 def test_sklearn_unavailable():
     """Test graceful fallback when sklearn unavailable."""
-    with patch("loom.tools.semantic_router._SKLEARN_AVAILABLE", False):
+    with patch("loom.tools.llm.semantic_router._SKLEARN_AVAILABLE", False):
         # Should not raise even if sklearn missing
         assert semantic_router._SKLEARN_AVAILABLE is False

@@ -10,6 +10,13 @@ from __future__ import annotations
 import json
 import logging
 from typing import Any
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(value: float, low: float = 0.0, high: float = 1.0) -> float:
+        """Fallback clamp implementation."""
+        return max(low, min(high, value))
+
 from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.cross_domain")
@@ -128,7 +135,7 @@ async def research_cross_domain(
         breakthrough_potential = round(
             (avg_novelty * 0.7 + avg_applicability * 0.3), 1
         )
-        breakthrough_potential = max(0, min(10, breakthrough_potential))
+        breakthrough_potential = clamp(breakthrough_potential, 0.0, 10.0)
 
         return {
             "domain_a": domain_a,

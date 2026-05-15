@@ -12,8 +12,8 @@ class TestResearchForumCortex:
     async def test_search_tools_not_available(self):
         """Test error when search tools are unavailable."""
         # Patch at the source where it would be imported
-        with patch('loom.tools.search.research_search', side_effect=ImportError("search not available")):
-            from loom.tools.forum_cortex import research_forum_cortex
+        with patch('loom.tools.core.search.research_search', side_effect=ImportError("search not available")):
+            from loom.tools.intelligence.forum_cortex import research_forum_cortex
             result = await research_forum_cortex("test topic")
             
             assert result["topic"] == "test topic"
@@ -24,8 +24,8 @@ class TestResearchForumCortex:
         # Use sync mock since research_search is run in executor
         mock_search = MagicMock(return_value={'results': []})
         
-        with patch('loom.tools.search.research_search', mock_search):
-            from loom.tools.forum_cortex import research_forum_cortex
+        with patch('loom.tools.core.search.research_search', mock_search):
+            from loom.tools.intelligence.forum_cortex import research_forum_cortex
 
             result = await research_forum_cortex("nonexistent topic", n=5)
 
@@ -52,8 +52,8 @@ class TestResearchForumCortex:
         mock_search = MagicMock(return_value={'results': search_results})
         mock_classify = AsyncMock(return_value={'category': 'technical', 'confidence': 0.8, 'sentiment': 'neutral'})
 
-        with patch('loom.tools.search.research_search', mock_search),              patch('loom.tools.forum_cortex._classify_post', mock_classify):
-            from loom.tools.forum_cortex import research_forum_cortex
+        with patch('loom.tools.core.search.research_search', mock_search),              patch('loom.tools.intelligence.forum_cortex._classify_post', mock_classify):
+            from loom.tools.intelligence.forum_cortex import research_forum_cortex
 
             result = await research_forum_cortex("security threat", n=5)
 
@@ -86,8 +86,8 @@ class TestResearchForumCortex:
         mock_search = MagicMock(return_value={'results': search_results})
         mock_classify = AsyncMock(return_value={"category": "other", "confidence": 0.5, "sentiment": "neutral"})
 
-        with patch('loom.tools.search.research_search', mock_search),              patch('loom.tools.forum_cortex._classify_post', mock_classify):
-            from loom.tools.forum_cortex import research_forum_cortex
+        with patch('loom.tools.core.search.research_search', mock_search),              patch('loom.tools.intelligence.forum_cortex._classify_post', mock_classify):
+            from loom.tools.intelligence.forum_cortex import research_forum_cortex
 
             result = await research_forum_cortex("test", n=10)
 
@@ -119,8 +119,8 @@ class TestResearchForumCortex:
         # Use sync mock since research_search is run in executor
         mock_search = MagicMock(return_value={'results': search_results})
 
-        with patch('loom.tools.search.research_search', mock_search),              patch('loom.tools.forum_cortex._classify_post', side_effect=classify_mock):
-            from loom.tools.forum_cortex import research_forum_cortex
+        with patch('loom.tools.core.search.research_search', mock_search),              patch('loom.tools.intelligence.forum_cortex._classify_post', side_effect=classify_mock):
+            from loom.tools.intelligence.forum_cortex import research_forum_cortex
 
             result = await research_forum_cortex("test", n=5)
 
@@ -131,8 +131,8 @@ class TestResearchForumCortex:
         # Use sync mock since research_search is run in executor
         mock_search = MagicMock(return_value={'results': []})
 
-        with patch('loom.tools.search.research_search', mock_search):
-            from loom.tools.forum_cortex import research_forum_cortex
+        with patch('loom.tools.core.search.research_search', mock_search):
+            from loom.tools.intelligence.forum_cortex import research_forum_cortex
 
             result = await research_forum_cortex("test")
 
@@ -157,8 +157,8 @@ class TestResearchForumCortex:
         mock_search = MagicMock(return_value={'results': search_results})
         mock_classify = AsyncMock(return_value={"category": "other", "confidence": 0.5, "sentiment": "neutral"})
 
-        with patch('loom.tools.search.research_search', mock_search),              patch('loom.tools.forum_cortex._classify_post', mock_classify):
-            from loom.tools.forum_cortex import research_forum_cortex
+        with patch('loom.tools.core.search.research_search', mock_search),              patch('loom.tools.intelligence.forum_cortex._classify_post', mock_classify):
+            from loom.tools.intelligence.forum_cortex import research_forum_cortex
 
             result = await research_forum_cortex("test", n=5)
 
@@ -170,7 +170,7 @@ class TestResearchForumCortex:
 class TestClassifyPost:
     async def test_llm_unavailable(self):
         """Test post classification when LLM is unavailable."""
-        from loom.tools.forum_cortex import _classify_post
+        from loom.tools.intelligence.forum_cortex import _classify_post
 
         result = await _classify_post("Title", "Content snippet")
 
@@ -189,7 +189,7 @@ class TestClassifyPost:
         }
 
         with patch('loom.tools.llm.research_llm_classify', new_callable=AsyncMock, return_value=mock_result):
-            from loom.tools.forum_cortex import _classify_post
+            from loom.tools.intelligence.forum_cortex import _classify_post
 
             result = await _classify_post("Threat title", "Malicious content")
 
@@ -207,7 +207,7 @@ class TestClassifyPost:
         }
 
         with patch('loom.tools.llm.research_llm_classify', new_callable=AsyncMock, return_value=mock_result):
-            from loom.tools.forum_cortex import _classify_post
+            from loom.tools.intelligence.forum_cortex import _classify_post
 
             result = await _classify_post("Technical post", "How to...")
 
@@ -217,7 +217,7 @@ class TestClassifyPost:
     async def test_classification_exception_handling(self):
         """Test handling of classification exceptions."""
         with patch('loom.tools.llm.research_llm_classify', new_callable=AsyncMock, side_effect=Exception("API error")):
-            from loom.tools.forum_cortex import _classify_post
+            from loom.tools.intelligence.forum_cortex import _classify_post
 
             result = await _classify_post("Title", "Content")
 
@@ -228,7 +228,7 @@ class TestClassifyPost:
 class TestPostCategories:
     def test_post_category_constants(self):
         """Test that post categories are defined."""
-        from loom.tools.forum_cortex import _POST_CATEGORIES
+        from loom.tools.intelligence.forum_cortex import _POST_CATEGORIES
 
         expected_categories = [
             "informational",
@@ -244,7 +244,7 @@ class TestPostCategories:
 
     def test_darkweb_sources(self):
         """Test that dark web sources are defined."""
-        from loom.tools.forum_cortex import _DARKWEB_SOURCES
+        from loom.tools.intelligence.forum_cortex import _DARKWEB_SOURCES
 
         assert "ahmia.fi" in _DARKWEB_SOURCES
         assert "darksearch.io" in _DARKWEB_SOURCES

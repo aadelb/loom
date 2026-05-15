@@ -6,7 +6,6 @@ import json
 import logging
 from collections import Counter
 from pathlib import Path
-from typing import Any
 
 from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.tool_tags")

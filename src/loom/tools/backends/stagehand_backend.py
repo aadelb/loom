@@ -11,6 +11,13 @@ from pydantic import BaseModel, field_validator
 from loom.error_responses import handle_tool_errors
 from loom.validators import validate_url
 
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text, max_chars=500, *, suffix="..."):
+        if len(text) <= max_chars: return text
+        return text[:max_chars - len(suffix)] + suffix
+
 logger = logging.getLogger("loom.tools.stagehand_backend")
 _browser = None
 
@@ -96,7 +103,7 @@ async def _call_llm_vision(page: str, ss: str | None, instr: str) -> str:
         from loom.tools.llm.llm import research_llm_answer
     except ImportError:
         return "LLM tools not available"
-    prompt = f"Instruction: {instr}\n\nPage:\n{page[:5000]}"
+    prompt = f"Instruction: {instr}\n\nPage:\n{truncate(page, 5000)}"
     if ss:
         prompt += f"\nScreenshot: {ss}"
     try:
@@ -185,7 +192,7 @@ async def research_stagehand_extract(url: str, schema: dict[str, Any] | str) -> 
                 result["error"] = "LLM tools not available"
                 return result
 
-            prompt = f"Extract schema:\n{json.dumps(params.schema)}\n\nPage:\n{page_text[:3000]}\n\nReturn JSON with extracted data and 'confidence' (0-1)."
+            prompt = f"Extract schema:\n{json.dumps(params.schema)}\n\nPage:\n{truncate(page_text, 3000)}\n\nReturn JSON with extracted data and 'confidence' (0-1)."
             r = await research_llm_answer(prompt)
             text = r.get("answer", str(r)) if isinstance(r, dict) else str(r)
 

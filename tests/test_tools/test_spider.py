@@ -12,9 +12,9 @@ import pytest
 @pytest.mark.asyncio
 async def test_spider_empty_urls_raises_validation_error() -> None:
     """Spider with empty URL list raises validation error."""
-    pytest.importorskip("loom.tools.spider")
+    pytest.importorskip("loom.tools.core.spider")
 
-    from loom.tools.spider import research_spider
+    from loom.tools.core.spider import research_spider
     from pydantic_core import ValidationError
 
     with pytest.raises(ValidationError):
@@ -26,9 +26,9 @@ async def test_spider_empty_urls_raises_validation_error() -> None:
 @pytest.mark.asyncio
 async def test_spider_parallel_fetches() -> None:
     """Spider fetches URLs in parallel up to concurrency limit."""
-    pytest.importorskip("loom.tools.spider")
+    pytest.importorskip("loom.tools.core.spider")
 
-    from loom.tools.spider import research_spider
+    from loom.tools.core.spider import research_spider
 
     urls = [
         "https://example.com/1",
@@ -36,7 +36,7 @@ async def test_spider_parallel_fetches() -> None:
         "https://example.com/3",
     ]
 
-    with patch("loom.tools.spider.research_fetch") as mock_fetch:
+    with patch("loom.tools.core.spider.research_fetch") as mock_fetch:
         mock_fetch.return_value = {
             "url": "https://example.com/test",
             "text": "content",
@@ -53,9 +53,9 @@ async def test_spider_parallel_fetches() -> None:
 @pytest.mark.asyncio
 async def test_spider_respects_concurrency_limit() -> None:
     """Spider respects concurrency parameter."""
-    pytest.importorskip("loom.tools.spider")
+    pytest.importorskip("loom.tools.core.spider")
 
-    from loom.tools.spider import research_spider
+    from loom.tools.core.spider import research_spider
 
     urls = [f"https://example.com/{i}" for i in range(10)]
 
@@ -79,7 +79,7 @@ async def test_spider_respects_concurrency_limit() -> None:
             "title": "title",
         }
 
-    with patch("loom.tools.spider.research_fetch", side_effect=slow_fetch):
+    with patch("loom.tools.core.spider.research_fetch", side_effect=slow_fetch):
         await research_spider(urls=urls, concurrency=3)
 
         # Max concurrent should be <= 3
@@ -89,9 +89,9 @@ async def test_spider_respects_concurrency_limit() -> None:
 @pytest.mark.asyncio
 async def test_spider_mixed_ok_fail() -> None:
     """Spider handles mixed ok/fail results gracefully."""
-    pytest.importorskip("loom.tools.spider")
+    pytest.importorskip("loom.tools.core.spider")
 
-    from loom.tools.spider import research_spider
+    from loom.tools.core.spider import research_spider
 
     urls = [
         "https://good.com",
@@ -104,8 +104,8 @@ async def test_spider_mixed_ok_fail() -> None:
             return {"url": url, "error": "timeout"}
         return {"url": url, "text": "content", "title": "ok"}
 
-    with patch("loom.tools.spider.research_fetch", side_effect=mock_fetch):
-        with patch("loom.tools.spider.SpiderParams") as mock_params:
+    with patch("loom.tools.core.spider.research_fetch", side_effect=mock_fetch):
+        with patch("loom.tools.core.spider.SpiderParams") as mock_params:
             # Mock the validator to accept any URL
             mock_params.return_value.urls = urls
             mock_params.return_value.dedupe = False
@@ -132,9 +132,9 @@ async def test_spider_mixed_ok_fail() -> None:
 @pytest.mark.asyncio
 async def test_spider_deduplication() -> None:
     """Spider with dedupe=True removes duplicate URLs."""
-    pytest.importorskip("loom.tools.spider")
+    pytest.importorskip("loom.tools.core.spider")
 
-    from loom.tools.spider import research_spider
+    from loom.tools.core.spider import research_spider
 
     urls = [
         "https://example.com",
@@ -142,9 +142,9 @@ async def test_spider_deduplication() -> None:
         "https://test.com",
     ]
 
-    with patch("loom.tools.spider.research_fetch") as mock_fetch:
+    with patch("loom.tools.core.spider.research_fetch") as mock_fetch:
         mock_fetch.return_value = {"url": "test", "text": "content"}
-        with patch("loom.tools.spider.SpiderParams") as mock_params:
+        with patch("loom.tools.core.spider.SpiderParams") as mock_params:
             # Mock the validator to accept any URL
             mock_params.return_value.urls = urls
             mock_params.return_value.dedupe = True

@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import logging
 import re
-import subprocess
 from typing import Any
 
 try:
@@ -20,6 +19,7 @@ from loom.cli_checker import is_available
 from loom.input_validators import validate_domain, ValidationError
 from loom.validators import validate_url, UrlSafetyError
 from loom.error_responses import handle_tool_errors
+from loom.subprocess_helpers import run_command
 
 logger = logging.getLogger("loom.tools.dark_recon")
 
@@ -72,28 +72,38 @@ def research_torbot(url: str, depth: int = 2) -> dict[str, Any]:
         }
 
     try:
-        result = subprocess.run(
+        result = run_command(
             ["torbot", "-u", url, "--depth", str(depth), "--json"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            errors="replace",
             timeout=300,  # 5 minutes for deep crawls
         )
 
+        # Check for timeout error
+        if not result["success"]:
+            if result.get("error") and "Command timed out" in result["error"]:
+                return {
+                    "url": url,
+                    "error": "torbot crawl timed out (exceeded 300 seconds)",
+                    "links_found": [],
+                    "emails_found": [],
+                    "phone_numbers": [],
+                    "depth_crawled": 0,
+                }
+            else:
+                return {
+                    "url": url,
+                    "error": f"torbot command failed: {result['stderr'][:500] if result['stderr'] else result.get('error', 'Unknown error')}",
+                    "links_found": [],
+                    "emails_found": [],
+                    "phone_numbers": [],
+                    "depth_crawled": 0,
+                }
+
         # Limit stdout read to prevent OOM from huge output
-        stdout = result.stdout[:MAX_OUTPUT_SIZE] if result.stdout else ""
-        if result.stdout and len(result.stdout) > MAX_OUTPUT_SIZE:
+        stdout = result["stdout"][:MAX_OUTPUT_SIZE] if result["stdout"] else ""
+        if result["stdout"] and len(result["stdout"]) > MAX_OUTPUT_SIZE:
             logger.warning("torbot output truncated (exceeded %d bytes)", MAX_OUTPUT_SIZE)
 
         output: dict[str, Any] = {"url": url, "depth_crawled": depth}
-
-        if result.returncode != 0:
-            output["error"] = f"torbot command failed: {result.stderr[:500]}"
-            output["links_found"] = []
-            output["emails_found"] = []
-            output["phone_numbers"] = []
-            return output
 
         # Parse JSON output from torbot
         try:
@@ -112,15 +122,6 @@ def research_torbot(url: str, depth: int = 2) -> dict[str, Any]:
 
         return output
 
-    except subprocess.TimeoutExpired:
-        return {
-            "url": url,
-            "error": "torbot crawl timed out (exceeded 300 seconds)",
-            "links_found": [],
-            "emails_found": [],
-            "phone_numbers": [],
-            "depth_crawled": 0,
-        }
     except Exception as exc:
         logger.error("torbot error url=%s error=%s", url, exc)
         return {
@@ -185,30 +186,40 @@ def research_amass_enum(domain: str, passive: bool = True, timeout: int = 120) -
         if passive:
             cmd.append("-passive")
 
-        result = subprocess.run(
+        result = run_command(
             cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            errors="replace",
             timeout=timeout,
         )
 
+        # Check for timeout or other errors
+        if not result["success"]:
+            if result.get("error") and "Command timed out" in result["error"]:
+                return {
+                    "domain": domain,
+                    "error": f"amass enum timed out (exceeded {timeout} seconds)",
+                    "subdomains": [],
+                    "asns": [],
+                    "ip_addresses": [],
+                    "count": 0,
+                    "sources": [],
+                }
+            else:
+                return {
+                    "domain": domain,
+                    "error": f"amass enum command failed: {result['stderr'][:500] if result['stderr'] else result.get('error', 'Unknown error')}",
+                    "subdomains": [],
+                    "asns": [],
+                    "ip_addresses": [],
+                    "count": 0,
+                    "sources": [],
+                }
+
         # Limit stdout read to prevent OOM
-        stdout = result.stdout[:MAX_OUTPUT_SIZE] if result.stdout else ""
-        if result.stdout and len(result.stdout) > MAX_OUTPUT_SIZE:
+        stdout = result["stdout"][:MAX_OUTPUT_SIZE] if result["stdout"] else ""
+        if result["stdout"] and len(result["stdout"]) > MAX_OUTPUT_SIZE:
             logger.warning("amass output truncated (exceeded %d bytes)", MAX_OUTPUT_SIZE)
 
         output: dict[str, Any] = {"domain": domain}
-
-        if result.returncode != 0:
-            output["error"] = f"amass enum command failed: {result.stderr[:500]}"
-            output["subdomains"] = []
-            output["asns"] = []
-            output["ip_addresses"] = []
-            output["count"] = 0
-            output["sources"] = []
-            return output
 
         # Parse JSON lines output from amass
         subdomains: set[str] = set()
@@ -248,16 +259,6 @@ def research_amass_enum(domain: str, passive: bool = True, timeout: int = 120) -
 
         return output
 
-    except subprocess.TimeoutExpired:
-        return {
-            "domain": domain,
-            "error": f"amass enum timed out (exceeded {timeout} seconds)",
-            "subdomains": [],
-            "asns": [],
-            "ip_addresses": [],
-            "count": 0,
-            "sources": [],
-        }
     except Exception as exc:
         logger.error("amass enum error domain=%s error=%s", domain, exc)
         return {
@@ -309,28 +310,36 @@ def research_amass_intel(domain: str) -> dict[str, Any]:
         }
 
     try:
-        result = subprocess.run(
+        result = run_command(
             ["amass", "intel", "-d", domain, "-json"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            errors="replace",
             timeout=120,
         )
 
+        # Check for timeout or other errors
+        if not result["success"]:
+            if result.get("error") and "Command timed out" in result["error"]:
+                return {
+                    "domain": domain,
+                    "error": "amass intel timed out (exceeded 120 seconds)",
+                    "organizations": [],
+                    "emails": [],
+                    "related_domains": [],
+                }
+            else:
+                return {
+                    "domain": domain,
+                    "error": f"amass intel command failed: {result['stderr'][:500] if result['stderr'] else result.get('error', 'Unknown error')}",
+                    "organizations": [],
+                    "emails": [],
+                    "related_domains": [],
+                }
+
         # Limit stdout read to prevent OOM
-        stdout = result.stdout[:MAX_OUTPUT_SIZE] if result.stdout else ""
-        if result.stdout and len(result.stdout) > MAX_OUTPUT_SIZE:
+        stdout = result["stdout"][:MAX_OUTPUT_SIZE] if result["stdout"] else ""
+        if result["stdout"] and len(result["stdout"]) > MAX_OUTPUT_SIZE:
             logger.warning("amass intel output truncated (exceeded %d bytes)", MAX_OUTPUT_SIZE)
 
         output: dict[str, Any] = {"domain": domain}
-
-        if result.returncode != 0:
-            output["error"] = f"amass intel command failed: {result.stderr[:500]}"
-            output["organizations"] = []
-            output["emails"] = []
-            output["related_domains"] = []
-            return output
 
         # Parse JSON lines output from amass intel
         organizations: set[str] = set()
@@ -364,14 +373,6 @@ def research_amass_intel(domain: str) -> dict[str, Any]:
 
         return output
 
-    except subprocess.TimeoutExpired:
-        return {
-            "domain": domain,
-            "error": "amass intel timed out (exceeded 120 seconds)",
-            "organizations": [],
-            "emails": [],
-            "related_domains": [],
-        }
     except Exception as exc:
         logger.error("amass intel error domain=%s error=%s", domain, exc)
         return {

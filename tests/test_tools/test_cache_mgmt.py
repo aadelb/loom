@@ -7,7 +7,7 @@ import os
 import time
 from pathlib import Path
 
-from loom.tools.cache_mgmt import research_cache_clear, research_cache_stats
+from loom.tools.core.cache_mgmt import research_cache_clear, research_cache_stats
 
 
 

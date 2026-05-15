@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from httpx import Response
 
-from loom.tools.urlhaus_lookup import research_urlhaus_check, research_urlhaus_search
+from loom.tools.security.urlhaus_lookup import research_urlhaus_check, research_urlhaus_search
 
 
 class TestURLhausCheck:

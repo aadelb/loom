@@ -19,7 +19,7 @@ from typing import Any
 import pytest
 
 from loom.orchestrator import classify_intent, estimate_refusal_risk, select_pipeline
-from loom.tools.hcs_scorer import research_hcs_score
+from loom.tools.adversarial.hcs_scorer import research_hcs_score
 
 
 class TestREQ035HistoricalHCSTracking:

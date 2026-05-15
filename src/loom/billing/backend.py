@@ -85,7 +85,6 @@ async def verify_backend() -> dict[str, Any]:
             }
     else:
         # JSON backend is always available
-        from pathlib import Path
         from loom.billing.meter import _METER_DIR
         from loom.billing.customers import _CUSTOMERS_FILE
 

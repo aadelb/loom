@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from loom.tools.job_research import (
+from loom.tools.career.job_research import (
     _extract_skills,
     _search_adzuna,
     _search_github_jobs,
@@ -298,12 +298,12 @@ class TestResearchJobSearch:
 
     async def test_job_search_success(self) -> None:
         """Returns aggregated job results."""
-        with patch("loom.tools.job_research._search_adzuna") as mock_adzuna, patch(
-            "loom.tools.job_research._search_remoteok"
+        with patch("loom.tools.career.job_research._search_adzuna") as mock_adzuna, patch(
+            "loom.tools.career.job_research._search_remoteok"
         ) as mock_remoteok, patch(
-            "loom.tools.job_research._search_hn_hiring"
+            "loom.tools.career.job_research._search_hn_hiring"
         ) as mock_hn, patch(
-            "loom.tools.job_research._search_github_jobs"
+            "loom.tools.career.job_research._search_github_jobs"
         ) as mock_github:
             mock_adzuna.return_value = [
                 {
@@ -336,12 +336,12 @@ class TestResearchJobSearch:
 
     async def test_job_search_remote_only(self) -> None:
         """Filters to remote jobs only."""
-        with patch("loom.tools.job_research._search_adzuna") as mock_adzuna, patch(
-            "loom.tools.job_research._search_remoteok"
+        with patch("loom.tools.career.job_research._search_adzuna") as mock_adzuna, patch(
+            "loom.tools.career.job_research._search_remoteok"
         ) as mock_remoteok, patch(
-            "loom.tools.job_research._search_hn_hiring"
+            "loom.tools.career.job_research._search_hn_hiring"
         ) as mock_hn, patch(
-            "loom.tools.job_research._search_github_jobs"
+            "loom.tools.career.job_research._search_github_jobs"
         ) as mock_github:
             mock_adzuna.return_value = [
                 {
@@ -374,12 +374,12 @@ class TestResearchJobSearch:
 
     async def test_job_search_deduplication(self) -> None:
         """Deduplicates results by URL."""
-        with patch("loom.tools.job_research._search_adzuna") as mock_adzuna, patch(
-            "loom.tools.job_research._search_remoteok"
+        with patch("loom.tools.career.job_research._search_adzuna") as mock_adzuna, patch(
+            "loom.tools.career.job_research._search_remoteok"
         ) as mock_remoteok, patch(
-            "loom.tools.job_research._search_hn_hiring"
+            "loom.tools.career.job_research._search_hn_hiring"
         ) as mock_hn, patch(
-            "loom.tools.job_research._search_github_jobs"
+            "loom.tools.career.job_research._search_github_jobs"
         ) as mock_github:
             duplicate_url = "http://example.com/job"
             mock_adzuna.return_value = [
@@ -410,12 +410,12 @@ class TestResearchJobSearch:
 
     async def test_job_search_respects_limit(self) -> None:
         """Respects the limit parameter."""
-        with patch("loom.tools.job_research._search_adzuna") as mock_adzuna, patch(
-            "loom.tools.job_research._search_remoteok"
+        with patch("loom.tools.career.job_research._search_adzuna") as mock_adzuna, patch(
+            "loom.tools.career.job_research._search_remoteok"
         ) as mock_remoteok, patch(
-            "loom.tools.job_research._search_hn_hiring"
+            "loom.tools.career.job_research._search_hn_hiring"
         ) as mock_hn, patch(
-            "loom.tools.job_research._search_github_jobs"
+            "loom.tools.career.job_research._search_github_jobs"
         ) as mock_github:
             # Return many results
             mock_adzuna.return_value = [
@@ -438,12 +438,12 @@ class TestResearchJobSearch:
 
     async def test_job_search_with_location(self) -> None:
         """Passes location parameter to search functions."""
-        with patch("loom.tools.job_research._search_adzuna") as mock_adzuna, patch(
-            "loom.tools.job_research._search_remoteok"
+        with patch("loom.tools.career.job_research._search_adzuna") as mock_adzuna, patch(
+            "loom.tools.career.job_research._search_remoteok"
         ) as mock_remoteok, patch(
-            "loom.tools.job_research._search_hn_hiring"
+            "loom.tools.career.job_research._search_hn_hiring"
         ) as mock_hn, patch(
-            "loom.tools.job_research._search_github_jobs"
+            "loom.tools.career.job_research._search_github_jobs"
         ) as mock_github:
             mock_adzuna.return_value = []
             mock_remoteok.return_value = []
@@ -485,7 +485,7 @@ class TestResearchJobMarket:
             },
         ]
 
-        with patch("loom.tools.job_research.research_job_search") as mock_search:
+        with patch("loom.tools.career.job_research.research_job_search") as mock_search:
             mock_search.return_value = {
                 "query": "Python Developer",
                 "results": mock_jobs,
@@ -506,7 +506,7 @@ class TestResearchJobMarket:
 
     async def test_job_market_no_results(self) -> None:
         """Returns empty market data when no jobs found."""
-        with patch("loom.tools.job_research.research_job_search") as mock_search:
+        with patch("loom.tools.career.job_research.research_job_search") as mock_search:
             mock_search.return_value = {
                 "query": "Nonexistent Role",
                 "results": [],
@@ -523,7 +523,7 @@ class TestResearchJobMarket:
 
     async def test_job_market_with_location(self) -> None:
         """Passes location to job search."""
-        with patch("loom.tools.job_research.research_job_search") as mock_search:
+        with patch("loom.tools.career.job_research.research_job_search") as mock_search:
             mock_search.return_value = {
                 "query": "Python Developer",
                 "results": [],
@@ -560,7 +560,7 @@ class TestResearchJobMarket:
             },
         ]
 
-        with patch("loom.tools.job_research.research_job_search") as mock_search:
+        with patch("loom.tools.career.job_research.research_job_search") as mock_search:
             mock_search.return_value = {
                 "query": "Python",
                 "results": mock_jobs,
@@ -588,12 +588,12 @@ class TestResearchJobMarket:
 )
 async def test_job_search_parametrized(query: str) -> None:
     """Test job search with various queries."""
-    with patch("loom.tools.job_research._search_adzuna") as mock_adzuna, patch(
-        "loom.tools.job_research._search_remoteok"
+    with patch("loom.tools.career.job_research._search_adzuna") as mock_adzuna, patch(
+        "loom.tools.career.job_research._search_remoteok"
     ) as mock_remoteok, patch(
-        "loom.tools.job_research._search_hn_hiring"
+        "loom.tools.career.job_research._search_hn_hiring"
     ) as mock_hn, patch(
-        "loom.tools.job_research._search_github_jobs"
+        "loom.tools.career.job_research._search_github_jobs"
     ) as mock_github:
         mock_adzuna.return_value = []
         mock_remoteok.return_value = []

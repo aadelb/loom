@@ -258,7 +258,7 @@ async def test_step_a_query_expand(mock_query_expand_response: dict[str, Any]) -
     - Sub-questions generated correctly
     - No critical errors
     """
-    from loom.tools.llm import research_llm_query_expand
+    from loom.tools.llm.llm import research_llm_query_expand
 
     t0 = time.time()
     try:
@@ -303,7 +303,7 @@ async def test_step_b_search(mock_search_response: dict[str, Any]) -> None:
     - Search provider accessible
     - Results have expected structure
     """
-    from loom.tools.search import research_search
+    from loom.tools.core.search import research_search
 
     t0 = time.time()
     try:
@@ -348,7 +348,7 @@ async def test_step_c_deep_pipeline(mock_deep_response: dict[str, Any]) -> None:
     - Stages completed list includes major stages
     - Synthesis result generated
     """
-    from loom.tools.deep import research_deep
+    from loom.tools.core.deep import research_deep
 
     t0 = time.time()
     try:
@@ -408,7 +408,7 @@ async def test_step_d_full_pipeline(mock_full_pipeline_response: dict[str, Any])
     - HCS scoring applied
     - Synthesis generated
     """
-    from loom.tools.full_pipeline import research_full_pipeline
+    from loom.tools.infrastructure.full_pipeline import research_full_pipeline
 
     t0 = time.time()
     try:
@@ -473,7 +473,7 @@ async def test_step_e_orchestrator(mock_orchestrator_response: dict[str, Any]) -
     - Execution plan generated
     - Multiple tools executed
     """
-    from loom.tools.universal_orchestrator import research_orchestrate_smart
+    from loom.tools.infrastructure.universal_orchestrator import research_orchestrate_smart
 
     t0 = time.time()
     try:
@@ -532,7 +532,7 @@ async def test_step_f_hcs_score(mock_hcs_score_response: dict[str, Any]) -> None
     - All dimensions present
     - Score in valid range (1-10)
     """
-    from loom.tools.hcs_scorer import research_hcs_score
+    from loom.tools.adversarial.hcs_scorer import research_hcs_score
 
     sample_response = (
         "Dubai offers multiple pathways to wealth building through real estate investment, "
@@ -600,7 +600,7 @@ async def test_step_g_consensus(mock_consensus_response: dict[str, Any]) -> None
     - Consensus answer generated
     - Agreement score computed
     """
-    from loom.tools.model_consensus import research_multi_consensus
+    from loom.tools.llm.model_consensus import research_multi_consensus
 
     t0 = time.time()
     try:
@@ -801,7 +801,7 @@ async def test_full_e2e_pipeline(
 @pytest.mark.asyncio
 async def test_live_query_expand() -> None:
     """Live test: Query expansion with real LLM API."""
-    from loom.tools.llm import research_llm_query_expand
+    from loom.tools.llm.llm import research_llm_query_expand
 
     result = await research_llm_query_expand(TEST_QUERY, n=5)
     assert isinstance(result, dict)
@@ -813,7 +813,7 @@ async def test_live_query_expand() -> None:
 @pytest.mark.asyncio
 async def test_live_search() -> None:
     """Live test: Search with real search provider."""
-    from loom.tools.search import research_search
+    from loom.tools.core.search import research_search
 
     result = await research_search(TEST_QUERY, provider="ddgs", n=3)
     assert isinstance(result, dict)
@@ -825,7 +825,7 @@ async def test_live_search() -> None:
 @pytest.mark.asyncio
 async def test_live_deep_pipeline() -> None:
     """Live test: Full deep research pipeline."""
-    from loom.tools.deep import research_deep
+    from loom.tools.core.deep import research_deep
 
     result = await research_deep(
         TEST_QUERY,

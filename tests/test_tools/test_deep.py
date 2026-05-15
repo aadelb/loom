@@ -6,9 +6,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-pytest.importorskip("loom.tools.deep")
+pytest.importorskip("loom.tools.core.deep")
 
-from loom.tools.deep import research_deep
+from loom.tools.core.deep import research_deep
 
 _MOCK_CONFIG: dict = {
     "RESEARCH_SEARCH_PROVIDERS": ["exa"],
@@ -48,9 +48,9 @@ async def test_deep_returns_expected_shape() -> None:
 
     with (
         patch("loom.config.get_config", return_value=_MOCK_CONFIG),
-        patch("loom.tools.search.research_search", mock_search),
-        patch("loom.tools.markdown.research_markdown", mock_markdown),
-        patch("loom.tools.fetch.research_fetch", side_effect=_mock_fetch),
+        patch("loom.tools.core.search.research_search", mock_search),
+        patch("loom.tools.core.markdown.research_markdown", mock_markdown),
+        patch("loom.tools.core.fetch.research_fetch", side_effect=_mock_fetch),
     ):
         result = await research_deep(query="test query", expand_queries=False)
 
@@ -68,7 +68,7 @@ async def test_deep_handles_search_failure() -> None:
 
     with (
         patch("loom.config.get_config", return_value=_MOCK_CONFIG),
-        patch("loom.tools.search.research_search", mock_search),
+        patch("loom.tools.core.search.research_search", mock_search),
     ):
         result = await research_deep(query="test query", expand_queries=False)
 
@@ -98,9 +98,9 @@ async def test_deep_handles_markdown_failure() -> None:
 
     with (
         patch("loom.config.get_config", return_value=_MOCK_CONFIG),
-        patch("loom.tools.search.research_search", mock_search),
-        patch("loom.tools.markdown.research_markdown", mock_markdown),
-        patch("loom.tools.fetch.research_fetch", side_effect=_mock_fetch),
+        patch("loom.tools.core.search.research_search", mock_search),
+        patch("loom.tools.core.markdown.research_markdown", mock_markdown),
+        patch("loom.tools.core.fetch.research_fetch", side_effect=_mock_fetch),
     ):
         result = await research_deep(query="test query", expand_queries=False)
 
@@ -122,9 +122,9 @@ async def test_deep_respects_depth_parameter() -> None:
 
     with (
         patch("loom.config.get_config", return_value=_MOCK_CONFIG),
-        patch("loom.tools.search.research_search", mock_search),
-        patch("loom.tools.markdown.research_markdown", mock_markdown),
-        patch("loom.tools.fetch.research_fetch", side_effect=_mock_fetch),
+        patch("loom.tools.core.search.research_search", mock_search),
+        patch("loom.tools.core.markdown.research_markdown", mock_markdown),
+        patch("loom.tools.core.fetch.research_fetch", side_effect=_mock_fetch),
     ):
         result = await research_deep(query="test", depth=1, expand_queries=False)
 
@@ -138,7 +138,7 @@ async def test_deep_empty_query() -> None:
 
     with (
         patch("loom.config.get_config", return_value=_MOCK_CONFIG),
-        patch("loom.tools.search.research_search", mock_search),
+        patch("loom.tools.core.search.research_search", mock_search),
     ):
         result = await research_deep(query="", expand_queries=False)
 

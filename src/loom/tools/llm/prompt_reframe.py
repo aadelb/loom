@@ -23,6 +23,23 @@ logger = logging.getLogger("loom.tools.prompt_reframe")
 
 from loom.tools.reframe_strategies import ALL_STRATEGIES
 from loom.error_responses import handle_tool_errors
+from loom.tools.llm.strategy_ranker import rank_strategies, get_fallback_strategies
+from loom.http_helpers import fetch_json, fetch_text, fetch_bytes
+
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(v: float, lo: float = 0.0, hi: float = 1.0) -> float:
+        """Fallback clamp if score_utils unavailable."""
+        return max(lo, min(hi, v))
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text: str, max_chars: int = 500, *, suffix: str = "...") -> str:
+        """Fallback truncate if text_utils unavailable."""
+        if len(text) <= max_chars:
+            return text
+        return text[: max_chars - len(suffix)] + suffix
 
 _STRATEGIES: dict[str, dict[str, Any]] = ALL_STRATEGIES
 
@@ -285,7 +302,11 @@ def _apply_strategy(
     try:
         return template.format(**defaults)
     except (KeyError, ValueError, IndexError):
-        return template.replace("{prompt}", prompt)
+        # Fallback 1: try replacing just {prompt}
+        if "{prompt}" in template:
+            return template.replace("{prompt}", prompt)
+        # Fallback 2: return original prompt if no placeholders can be resolved
+        return prompt
 
 
 @handle_tool_errors("research_prompt_reframe")
@@ -378,35 +399,21 @@ async def research_auto_reframe(
     try:
         model_family = _detect_model(model) if model != "auto" else "gpt"
 
-        strategy_order = [
-            "compliance_audit_fork",
-            "echo_chamber",
-            "time_locked_mandate",
-            "deep_inception",
-            "recursive_authority",
-            "multi_turn_recursive_escalation",
-            "nested_role_simulation",
-            "crescendo",
-            "constitutional_conflict",
-            "legal_mandate",
-            "ethical_anchor",
-            "capability_probe_documentation",
-            "scaffolded_layered_depth",
-            "temporal_displacement",
-            "academic",
-            "cognitive_wedge",
-            "meta_cognitive",
-            "code_first",
-            "regulatory",
-            "decomposition",
-            "persona",
-        ]
+        # Use dynamic strategy ranking (replaces hardcoded list)
+        # Falls back to get_fallback_strategies if ranking fails
+        try:
+            ranked = rank_strategies(
+                model_family=model_family,
+                refusal_type=None,
+                top_k=max_attempts
+            )
+            strategy_order = [s["name"] for s in ranked]
+        except Exception as rank_err:
+            logger.warning("strategy_ranking_failed: %s, using fallback", rank_err)
+            strategy_order = get_fallback_strategies(model_family, top_k=max_attempts)
 
         config = _MODEL_CONFIGS.get(model_family, {})
         best = config.get("best_strategy", "ethical_anchor")
-        if best in strategy_order:
-            strategy_order.remove(best)
-            strategy_order.insert(0, best)
 
         attempt_log: list[dict[str, Any]] = []
 
@@ -435,7 +442,7 @@ async def research_auto_reframe(
                                 "strategy": strat,
                                 "strategy_name": _STRATEGIES.get(strat, {}).get("name", strat),
                                 "reframed_preview": reframed[:300],
-                                "response_preview": response_text[:300],
+                                "response_preview": truncate(response_text, 300),
                                 "refused": refused,
                                 "multiplier": _STRATEGIES.get(strat, {}).get("multiplier", 1.0),
                                 "result": "tested_via_llm_cascade",
@@ -449,7 +456,7 @@ async def research_auto_reframe(
                                 "attempts": i + 1,
                                 "successful_strategy": strat,
                                 "successful_strategy_name": _STRATEGIES.get(strat, {}).get("name", strat),
-                                "response_preview": response_text[:500],
+                                "response_preview": truncate(response_text, 500),
                                 "attempt_log": attempt_log,
                             }
                         continue
@@ -503,7 +510,7 @@ async def research_auto_reframe(
                                 "strategy": strat,
                                 "strategy_name": _STRATEGIES.get(strat, {}).get("name", strat),
                                 "reframed_preview": reframed[:300],
-                                "response_preview": response_text[:300],
+                                "response_preview": truncate(response_text, 300),
                                 "refused": refused,
                                 "multiplier": _STRATEGIES.get(strat, {}).get("multiplier", 1.0),
                             }
@@ -516,7 +523,7 @@ async def research_auto_reframe(
                                 "attempts": i + 1,
                                 "successful_strategy": strat,
                                 "successful_strategy_name": _STRATEGIES.get(strat, {}).get("name", strat),
-                                "response_preview": response_text[:500],
+                                "response_preview": truncate(response_text, 500),
                                 "attempt_log": attempt_log,
                             }
                 except Exception as exc:
@@ -850,7 +857,7 @@ async def research_crescendo_chain(
     """
     try:
         model_family = _detect_model(model) if model != "auto" else "gpt"
-        turns = max(3, min(7, turns))
+        turns = clamp(turns, 3, 7)
 
         chain: list[dict[str, str]] = []
 

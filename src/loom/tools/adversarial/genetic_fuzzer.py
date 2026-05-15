@@ -8,10 +8,16 @@ Author: Ahmed Adel Bakr Alderai
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import random
 from typing import Any
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(value: float, low: float = 0.0, high: float = 1.0) -> float:
+        """Fallback clamp implementation."""
+        return max(low, min(high, value))
+
 from loom.error_responses import handle_tool_errors
 
 try:
@@ -67,7 +73,7 @@ async def research_genetic_fuzz(
 
         population_size = max(2, min(population_size, 50))
         generations = max(1, min(generations, 20))
-        mutation_rate = max(0.0, min(mutation_rate, 1.0))
+        mutation_rate = clamp(mutation_rate, 0.0, 1.0)
 
         # ── Step 1: Initialize population ──
         population = await _initialize_population(target_prompt, population_size)
@@ -218,7 +224,7 @@ async def _score_prompt(prompt: str) -> float:
         avg_score = sum(valid_scores) / len(valid_scores)
 
         # Clamp to [0.0, 1.0] range and round
-        clamped = max(0.0, min(1.0, avg_score))
+        clamped = clamp(avg_score, 0.0, 1.0)
         return round(clamped, 2)
     except Exception as e:
         logger.error("score_prompt failed: %s", str(e)[:100])

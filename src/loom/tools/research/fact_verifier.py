@@ -17,6 +17,15 @@ from typing import Any
 from loom.error_responses import handle_tool_errors
 
 try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text: str, max_chars: int = 500, *, suffix: str = "...") -> str:
+        """Fallback truncate if text_utils unavailable."""
+        if len(text) <= max_chars:
+            return text
+        return text[: max_chars - len(suffix)] + suffix
+
+try:
     from loom.retry import with_retry
 except ImportError:
     def with_retry(*args, **kwargs):  # type: ignore[misc]
@@ -54,7 +63,7 @@ def _extract_evidence(
 
     # Combine title and snippet for better evidence context
     evidence_text = f"{title}. {snippet}".strip()
-    return url, evidence_text[:500]  # Cap at 500 chars
+    return url, truncate(evidence_text, 500)
 
 
 def _score_agreement(

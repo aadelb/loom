@@ -15,7 +15,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from loom.tools.antiforensics import research_artifact_cleanup, research_usb_kill_monitor
+from loom.tools.privacy.antiforensics import research_forensics_cleanup, research_usb_kill_monitor
 
 
 class TestUSBKillMonitor:
@@ -88,18 +88,18 @@ class TestUSBKillMonitor:
 
 
 class TestArtifactCleanup:
-    """research_artifact_cleanup identifies artifacts safely (dry-run only)."""
+    """research_forensics_cleanup identifies artifacts safely (dry-run only)."""
 
     def test_artifact_cleanup_dry_run_guaranteed(self) -> None:
         """Artifact cleanup is always dry-run (safety guarantee)."""
-        result = research_artifact_cleanup()
+        result = research_forensics_cleanup()
 
         assert result["dry_run"] is True
         assert "DRY-RUN" in result["note"]
 
     def test_artifact_cleanup_returns_required_fields(self) -> None:
         """Artifact cleanup response includes all required fields."""
-        result = research_artifact_cleanup()
+        result = research_forensics_cleanup()
 
         required_fields = [
             "artifacts_found",
@@ -115,7 +115,7 @@ class TestArtifactCleanup:
 
     def test_artifact_cleanup_artifacts_list_shape(self) -> None:
         """Artifact cleanup artifacts are well-formed dicts."""
-        result = research_artifact_cleanup()
+        result = research_forensics_cleanup()
 
         assert isinstance(result["artifacts_found"], list)
         for artifact in result["artifacts_found"]:
@@ -127,14 +127,14 @@ class TestArtifactCleanup:
 
     def test_artifact_cleanup_total_size_nonnegative(self) -> None:
         """Artifact cleanup total size is non-negative float."""
-        result = research_artifact_cleanup()
+        result = research_forensics_cleanup()
 
         assert isinstance(result["total_size_mb"], float)
         assert result["total_size_mb"] >= 0
 
     def test_artifact_cleanup_plan_is_list(self) -> None:
         """Artifact cleanup plan is a list of action strings."""
-        result = research_artifact_cleanup()
+        result = research_forensics_cleanup()
 
         assert isinstance(result["cleanup_plan"], list)
         for action in result["cleanup_plan"]:
@@ -142,19 +142,19 @@ class TestArtifactCleanup:
 
     def test_artifact_cleanup_os_detection(self) -> None:
         """Artifact cleanup detects OS type."""
-        result = research_artifact_cleanup()
+        result = research_forensics_cleanup()
 
         assert result["os_type"] in ["linux", "darwin", "windows", "Linux", "Darwin", "Windows"]
 
     def test_artifact_cleanup_custom_os_type(self) -> None:
         """Artifact cleanup accepts custom OS type."""
-        result = research_artifact_cleanup(os_type="linux")
+        result = research_forensics_cleanup(os_type="linux")
         assert result["os_type"] == "linux"
 
     def test_artifact_cleanup_custom_paths(self) -> None:
         """Artifact cleanup scans custom target paths."""
         custom_paths = ["/tmp/test"]
-        result = research_artifact_cleanup(target_paths=custom_paths)
+        result = research_forensics_cleanup(target_paths=custom_paths)
 
         # Should include custom paths in artifacts
         assert any("/tmp/test" in str(a.get("path", "")) for a in result["artifacts_found"])
@@ -169,7 +169,7 @@ class TestArtifactCleanup:
             test_file.write_text("test data")
 
             # Run cleanup on this directory
-            result = research_artifact_cleanup(target_paths=[str(test_dir)])
+            result = research_forensics_cleanup(target_paths=[str(test_dir)])
 
             # File should still exist
             assert test_file.exists(), "Artifact cleanup deleted a file in dry-run mode!"
@@ -186,7 +186,7 @@ class TestArtifactCleanup:
         # Use a path that likely won't be accessible
         restricted_paths = ["/root/sensitive"]
 
-        result = research_artifact_cleanup(target_paths=restricted_paths)
+        result = research_forensics_cleanup(target_paths=restricted_paths)
 
         # Should return without crashing
         assert isinstance(result, dict)
@@ -195,7 +195,7 @@ class TestArtifactCleanup:
     @pytest.mark.parametrize("os_type", ["linux", "darwin", "windows"])
     def test_artifact_cleanup_os_variants(self, os_type: str) -> None:
         """Artifact cleanup handles different OS types."""
-        result = research_artifact_cleanup(os_type=os_type)
+        result = research_forensics_cleanup(os_type=os_type)
 
         assert result["os_type"] == os_type
         assert isinstance(result["artifacts_found"], list)
@@ -208,7 +208,7 @@ class TestAntiForensicsIntegration:
     def test_both_tools_never_destructive(self) -> None:
         """Both tools are safe: dry-run=True, no deletions."""
         usb_result = research_usb_kill_monitor(dry_run=True)
-        artifact_result = research_artifact_cleanup()
+        artifact_result = research_forensics_cleanup()
 
         assert usb_result["dry_run"] is True
         assert artifact_result["dry_run"] is True
@@ -218,7 +218,7 @@ class TestAntiForensicsIntegration:
     def test_tools_have_timestamps(self) -> None:
         """Both tools include ISO timestamps."""
         usb_result = research_usb_kill_monitor()
-        artifact_result = research_artifact_cleanup()
+        artifact_result = research_forensics_cleanup()
 
         assert "timestamp" in usb_result
         assert "timestamp" in artifact_result

@@ -6,7 +6,7 @@ import asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from loom.tools import retry_middleware
+import loom.tools.infrastructure.retry_middleware
 
 
 class TestRetryExecute:

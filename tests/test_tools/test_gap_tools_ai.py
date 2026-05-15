@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from loom.tools.gap_tools_ai import (
+from loom.tools.research.gap_tools_ai import (
     research_capability_mapper,
     research_memorization_scanner,
     research_training_contamination,

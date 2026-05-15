@@ -48,7 +48,7 @@ class TestDataPoisoning:
         ]
 
         # Import fact_verifier scoring function
-        from loom.tools.fact_verifier import _score_agreement
+        from loom.tools.research.fact_verifier import _score_agreement
 
         verdict, confidence, supporting, contradicting = _score_agreement(mock_results)
 
@@ -63,7 +63,7 @@ class TestEmptyResults:
 
     def test_empty_search_results_no_crash(self) -> None:
         """Verify graceful 'no results' when all providers return []."""
-        from loom.tools.fact_verifier import _score_agreement
+        from loom.tools.research.fact_verifier import _score_agreement
 
         # All search providers return empty lists
         empty_results = [[], [], []]
@@ -78,7 +78,7 @@ class TestEmptyResults:
 
     def test_none_in_results_list(self) -> None:
         """Verify handling of None values mixed with results."""
-        from loom.tools.fact_verifier import _score_agreement
+        from loom.tools.research.fact_verifier import _score_agreement
 
         # Mix of None and empty lists
         mixed_results = [None, [], None]
@@ -295,7 +295,7 @@ class TestNullAndNoneHandling:
 
     def test_search_result_with_missing_fields(self) -> None:
         """Verify search result with missing fields is handled."""
-        from loom.tools.fact_verifier import _extract_evidence
+        from loom.tools.research.fact_verifier import _extract_evidence
 
         # Minimal result missing optional fields
         result = {
@@ -310,7 +310,7 @@ class TestNullAndNoneHandling:
 
     def test_search_result_all_none_values(self) -> None:
         """Verify search result with all None values doesn't crash."""
-        from loom.tools.fact_verifier import _extract_evidence
+        from loom.tools.research.fact_verifier import _extract_evidence
 
         result = {
             "url": None,
@@ -329,7 +329,7 @@ class TestNullAndNoneHandling:
 
     def test_confidence_score_bounds(self) -> None:
         """Verify confidence scores stay within [0.0, 1.0] bounds."""
-        from loom.tools.fact_verifier import _score_agreement
+        from loom.tools.research.fact_verifier import _score_agreement
 
         # Various result combinations
         test_cases = [

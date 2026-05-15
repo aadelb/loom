@@ -14,7 +14,6 @@ import json
 import logging
 import os
 import re
-import subprocess
 import uuid
 from typing import Any
 
@@ -22,6 +21,7 @@ from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.testssl_backend")
 from loom.cli_checker import is_available
+from loom.subprocess_helpers import run_command
 
 
 def _validate_hostname(host: str) -> str:
@@ -266,14 +266,14 @@ async def research_testssl(
             check=False,
         )
 
-        if result.returncode not in (0, 1):  # testssl.sh exits 0 or 1
-            logger.warning("testssl_failed returncode=%d stderr=%s", result.returncode, result.stderr)
+        if result["returncode"] not in (0, 1):  # testssl.sh exits 0 or 1
+            logger.warning("testssl_failed returncode=%d stderr=%s", result["returncode"], result["stderr"])
             return {
                 "host": host,
                 "port": port,
                 "success": False,
-                "error": f"testssl.sh exited with code {result.returncode}",
-                "stderr": result.stderr[:500],
+                "error": f"testssl.sh exited with code {result["returncode"]}",
+                "stderr": result["stderr"][:500],
                 "testssl_available": True,
             }
 

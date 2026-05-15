@@ -15,7 +15,7 @@ from __future__ import annotations
 import asyncio
 import pytest
 
-from loom.tools.prompt_reframe import research_prompt_reframe, research_adaptive_reframe
+from loom.tools.llm.prompt_reframe import research_prompt_reframe, research_adaptive_reframe
 from loom.tools.reframe_strategies import ALL_STRATEGIES
 
 

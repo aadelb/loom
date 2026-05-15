@@ -6,7 +6,6 @@ for testing AI model resilience, compliance, and hallucination behavior.
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import re
 from collections.abc import Callable

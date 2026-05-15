@@ -8,9 +8,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from loom.tools.projectdiscovery import (
+from loom.input_validators import validate_domain
+from loom.tools.infrastructure.projectdiscovery import (
     _check_binary_exists,
-    _validate_domain,
     research_httpx_probe,
     research_katana_crawl,
     research_nuclei_scan,
@@ -23,36 +23,36 @@ class TestValidateDomain:
 
     def test_valid_domain(self) -> None:
         """Valid domains pass validation."""
-        assert _validate_domain("example.com") == "example.com"
-        assert _validate_domain("sub.example.org") == "sub.example.org"
-        assert _validate_domain("test-domain.co.uk") == "test-domain.co.uk"
-        assert _validate_domain("my_domain.net") == "my_domain.net"
+        assert validate_domain("example.com") == "example.com"
+        assert validate_domain("sub.example.org") == "sub.example.org"
+        assert validate_domain("test-domain.co.uk") == "test-domain.co.uk"
+        assert validate_domain("my_domain.net") == "my_domain.net"
 
     def test_domain_too_long(self) -> None:
         """Domain exceeding 255 chars raises error."""
         long_domain = "a" * 256 + ".com"
         with pytest.raises(ValueError, match="1-255 characters"):
-            _validate_domain(long_domain)
+            validate_domain(long_domain)
 
     def test_domain_empty(self) -> None:
         """Empty domain raises error."""
         with pytest.raises(ValueError):
-            _validate_domain("")
+            validate_domain("")
 
     def test_domain_disallowed_chars(self) -> None:
         """Domain with spaces or special chars raises error."""
         with pytest.raises(ValueError, match="disallowed characters"):
-            _validate_domain("example .com")
+            validate_domain("example .com")
         with pytest.raises(ValueError, match="disallowed characters"):
-            _validate_domain("example@com")
+            validate_domain("example@com")
         with pytest.raises(ValueError, match="disallowed characters"):
-            _validate_domain("example/com")
+            validate_domain("example/com")
 
 
 class TestCheckBinaryExists:
     """Binary existence checking."""
 
-    @patch("loom.tools.projectdiscovery.shutil.which")
+    @patch("loom.tools.infrastructure.projectdiscovery.shutil.which")
     def test_binary_exists(self, mock_which: MagicMock) -> None:
         """Binary in PATH returns True and path."""
         mock_which.return_value = "/usr/local/bin/subfinder"
@@ -60,7 +60,7 @@ class TestCheckBinaryExists:
         assert exists is True
         assert path == "/usr/local/bin/subfinder"
 
-    @patch("loom.tools.projectdiscovery.shutil.which")
+    @patch("loom.tools.infrastructure.projectdiscovery.shutil.which")
     def test_binary_not_exists(self, mock_which: MagicMock) -> None:
         """Binary not in PATH returns False and None."""
         mock_which.return_value = None
@@ -72,8 +72,8 @@ class TestCheckBinaryExists:
 class TestSubfinder:
     """research_subfinder command execution and output parsing."""
 
-    @patch("loom.tools.projectdiscovery.subprocess.run")
-    @patch("loom.tools.projectdiscovery._check_binary_exists")
+    @patch("loom.tools.infrastructure.projectdiscovery.subprocess.run")
+    @patch("loom.tools.infrastructure.projectdiscovery._check_binary_exists")
     def test_subfinder_success(
         self,
         mock_check: MagicMock,
@@ -100,7 +100,7 @@ class TestSubfinder:
         assert "certspotter" in result["sources_used"]
         assert "crtsh" in result["sources_used"]
 
-    @patch("loom.tools.projectdiscovery._check_binary_exists")
+    @patch("loom.tools.infrastructure.projectdiscovery._check_binary_exists")
     def test_subfinder_binary_not_found(self, mock_check: MagicMock) -> None:
         """Missing binary returns error."""
         mock_check.return_value = (False, None)
@@ -116,8 +116,8 @@ class TestSubfinder:
         assert "error" in result
         assert result["count"] == 0
 
-    @patch("loom.tools.projectdiscovery.subprocess.run")
-    @patch("loom.tools.projectdiscovery._check_binary_exists")
+    @patch("loom.tools.infrastructure.projectdiscovery.subprocess.run")
+    @patch("loom.tools.infrastructure.projectdiscovery._check_binary_exists")
     def test_subfinder_timeout(
         self,
         mock_check: MagicMock,
@@ -130,8 +130,8 @@ class TestSubfinder:
         assert "error" in result
         assert result["count"] == 0
 
-    @patch("loom.tools.projectdiscovery.subprocess.run")
-    @patch("loom.tools.projectdiscovery._check_binary_exists")
+    @patch("loom.tools.infrastructure.projectdiscovery.subprocess.run")
+    @patch("loom.tools.infrastructure.projectdiscovery._check_binary_exists")
     def test_subfinder_deduplication(
         self,
         mock_check: MagicMock,
@@ -150,8 +150,8 @@ class TestSubfinder:
         assert result["count"] == 1
         assert len(result["subdomains"]) == 1
 
-    @patch("loom.tools.projectdiscovery.subprocess.run")
-    @patch("loom.tools.projectdiscovery._check_binary_exists")
+    @patch("loom.tools.infrastructure.projectdiscovery.subprocess.run")
+    @patch("loom.tools.infrastructure.projectdiscovery._check_binary_exists")
     def test_subfinder_empty_output(
         self,
         mock_check: MagicMock,
@@ -171,8 +171,8 @@ class TestSubfinder:
 class TestKatanaCrawl:
     """research_katana_crawl command execution and output parsing."""
 
-    @patch("loom.tools.projectdiscovery.subprocess.run")
-    @patch("loom.tools.projectdiscovery._check_binary_exists")
+    @patch("loom.tools.infrastructure.projectdiscovery.subprocess.run")
+    @patch("loom.tools.infrastructure.projectdiscovery._check_binary_exists")
     def test_katana_success(
         self,
         mock_check: MagicMock,
@@ -197,7 +197,7 @@ class TestKatanaCrawl:
         assert "https://example.com/contact" in result["urls_found"]
         assert result["depth_reached"] == 1
 
-    @patch("loom.tools.projectdiscovery._check_binary_exists")
+    @patch("loom.tools.infrastructure.projectdiscovery._check_binary_exists")
     def test_katana_binary_not_found(self, mock_check: MagicMock) -> None:
         """Missing binary returns error."""
         mock_check.return_value = (False, None)
@@ -212,22 +212,22 @@ class TestKatanaCrawl:
         assert "error" in result
         assert result["pages_crawled"] == 0
 
-    @patch("loom.tools.projectdiscovery._check_binary_exists")
+    @patch("loom.tools.infrastructure.projectdiscovery._check_binary_exists")
     def test_katana_invalid_depth(self, mock_check: MagicMock) -> None:
         """Invalid depth returns error."""
         mock_check.return_value = (True, "/usr/local/bin/katana")
         result = research_katana_crawl("https://example.com", depth=10)
         assert "error" in result
 
-    @patch("loom.tools.projectdiscovery._check_binary_exists")
+    @patch("loom.tools.infrastructure.projectdiscovery._check_binary_exists")
     def test_katana_invalid_max_pages(self, mock_check: MagicMock) -> None:
         """Invalid max_pages returns error."""
         mock_check.return_value = (True, "/usr/local/bin/katana")
         result = research_katana_crawl("https://example.com", max_pages=2000)
         assert "error" in result
 
-    @patch("loom.tools.projectdiscovery.subprocess.run")
-    @patch("loom.tools.projectdiscovery._check_binary_exists")
+    @patch("loom.tools.infrastructure.projectdiscovery.subprocess.run")
+    @patch("loom.tools.infrastructure.projectdiscovery._check_binary_exists")
     def test_katana_timeout(
         self,
         mock_check: MagicMock,
@@ -240,8 +240,8 @@ class TestKatanaCrawl:
         assert "error" in result
         assert result["pages_crawled"] == 0
 
-    @patch("loom.tools.projectdiscovery.subprocess.run")
-    @patch("loom.tools.projectdiscovery._check_binary_exists")
+    @patch("loom.tools.infrastructure.projectdiscovery.subprocess.run")
+    @patch("loom.tools.infrastructure.projectdiscovery._check_binary_exists")
     def test_katana_deduplication(
         self,
         mock_check: MagicMock,
@@ -264,8 +264,8 @@ class TestKatanaCrawl:
 class TestHttpxProbe:
     """research_httpx_probe command execution and output parsing."""
 
-    @patch("loom.tools.projectdiscovery.subprocess.run")
-    @patch("loom.tools.projectdiscovery._check_binary_exists")
+    @patch("loom.tools.infrastructure.projectdiscovery.subprocess.run")
+    @patch("loom.tools.infrastructure.projectdiscovery._check_binary_exists")
     def test_httpx_success(
         self,
         mock_check: MagicMock,
@@ -288,7 +288,7 @@ class TestHttpxProbe:
         assert result["alive"][0]["status_code"] == 200
         assert result["alive"][0]["title"] == "Example Domain"
 
-    @patch("loom.tools.projectdiscovery._check_binary_exists")
+    @patch("loom.tools.infrastructure.projectdiscovery._check_binary_exists")
     def test_httpx_binary_not_found(self, mock_check: MagicMock) -> None:
         """Missing binary returns error."""
         mock_check.return_value = (False, None)
@@ -309,15 +309,15 @@ class TestHttpxProbe:
         result = research_httpx_probe(targets)
         assert "error" in result
 
-    @patch("loom.tools.projectdiscovery._check_binary_exists")
+    @patch("loom.tools.infrastructure.projectdiscovery._check_binary_exists")
     def test_httpx_invalid_ports(self, mock_check: MagicMock) -> None:
         """Invalid ports return error."""
         mock_check.return_value = (True, "/usr/local/bin/httpx")
         result = research_httpx_probe(["example.com"], ports="99999")
         assert "error" in result
 
-    @patch("loom.tools.projectdiscovery.subprocess.run")
-    @patch("loom.tools.projectdiscovery._check_binary_exists")
+    @patch("loom.tools.infrastructure.projectdiscovery.subprocess.run")
+    @patch("loom.tools.infrastructure.projectdiscovery._check_binary_exists")
     def test_httpx_timeout(
         self,
         mock_check: MagicMock,
@@ -330,8 +330,8 @@ class TestHttpxProbe:
         assert "error" in result
         assert result["count"] == 0
 
-    @patch("loom.tools.projectdiscovery.subprocess.run")
-    @patch("loom.tools.projectdiscovery._check_binary_exists")
+    @patch("loom.tools.infrastructure.projectdiscovery.subprocess.run")
+    @patch("loom.tools.infrastructure.projectdiscovery._check_binary_exists")
     def test_httpx_mixed_targets(
         self,
         mock_check: MagicMock,
@@ -351,8 +351,8 @@ class TestHttpxProbe:
 class TestNucleiScan:
     """research_nuclei_scan command execution and output parsing."""
 
-    @patch("loom.tools.projectdiscovery.subprocess.run")
-    @patch("loom.tools.projectdiscovery._check_binary_exists")
+    @patch("loom.tools.infrastructure.projectdiscovery.subprocess.run")
+    @patch("loom.tools.infrastructure.projectdiscovery._check_binary_exists")
     def test_nuclei_success(
         self,
         mock_check: MagicMock,
@@ -375,7 +375,7 @@ class TestNucleiScan:
         assert result["vulnerabilities"][0]["severity"] == "high"
         assert result["vulnerabilities"][1]["severity"] == "critical"
 
-    @patch("loom.tools.projectdiscovery._check_binary_exists")
+    @patch("loom.tools.infrastructure.projectdiscovery._check_binary_exists")
     def test_nuclei_binary_not_found(self, mock_check: MagicMock) -> None:
         """Missing binary returns error."""
         mock_check.return_value = (False, None)
@@ -390,22 +390,22 @@ class TestNucleiScan:
         assert "error" in result
         assert result["count"] == 0
 
-    @patch("loom.tools.projectdiscovery._check_binary_exists")
+    @patch("loom.tools.infrastructure.projectdiscovery._check_binary_exists")
     def test_nuclei_invalid_templates(self, mock_check: MagicMock) -> None:
         """Invalid templates return error."""
         mock_check.return_value = (True, "/usr/local/bin/nuclei")
         result = research_nuclei_scan("https://example.com", templates="cves;DROP")
         assert "error" in result
 
-    @patch("loom.tools.projectdiscovery._check_binary_exists")
+    @patch("loom.tools.infrastructure.projectdiscovery._check_binary_exists")
     def test_nuclei_invalid_severity(self, mock_check: MagicMock) -> None:
         """Invalid severity returns error."""
         mock_check.return_value = (True, "/usr/local/bin/nuclei")
         result = research_nuclei_scan("https://example.com", severity="medium;DROP")
         assert "error" in result
 
-    @patch("loom.tools.projectdiscovery.subprocess.run")
-    @patch("loom.tools.projectdiscovery._check_binary_exists")
+    @patch("loom.tools.infrastructure.projectdiscovery.subprocess.run")
+    @patch("loom.tools.infrastructure.projectdiscovery._check_binary_exists")
     def test_nuclei_timeout(
         self,
         mock_check: MagicMock,
@@ -418,8 +418,8 @@ class TestNucleiScan:
         assert "error" in result
         assert result["count"] == 0
 
-    @patch("loom.tools.projectdiscovery.subprocess.run")
-    @patch("loom.tools.projectdiscovery._check_binary_exists")
+    @patch("loom.tools.infrastructure.projectdiscovery.subprocess.run")
+    @patch("loom.tools.infrastructure.projectdiscovery._check_binary_exists")
     def test_nuclei_empty_output(
         self,
         mock_check: MagicMock,
@@ -435,8 +435,8 @@ class TestNucleiScan:
         assert result["count"] == 0
         assert result["vulnerabilities"] == []
 
-    @patch("loom.tools.projectdiscovery.subprocess.run")
-    @patch("loom.tools.projectdiscovery._check_binary_exists")
+    @patch("loom.tools.infrastructure.projectdiscovery.subprocess.run")
+    @patch("loom.tools.infrastructure.projectdiscovery._check_binary_exists")
     def test_nuclei_custom_severity(
         self,
         mock_check: MagicMock,

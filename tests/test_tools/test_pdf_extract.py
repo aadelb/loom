@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
-from loom.tools.pdf_extract import (
+from loom.tools.core.pdf_extract import (
     _parse_pages_arg,
     research_pdf_extract,
     research_pdf_search,

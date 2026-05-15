@@ -18,7 +18,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 # Import tools
 try:
-    from loom.tools.llm import (
+    from loom.tools.llm.llm import (
         research_llm_summarize,
         research_llm_extract,
         research_llm_classify,
@@ -31,7 +31,7 @@ except ImportError as e:
     pytest.skip(f"LLM tools import failed: {e}", allow_module_level=True)
 
 try:
-    from loom.tools.enrich import research_detect_language
+    from loom.tools.core.enrich import research_detect_language
 except ImportError as e:
     pytest.skip(f"Enrich tools import failed: {e}", allow_module_level=True)
 

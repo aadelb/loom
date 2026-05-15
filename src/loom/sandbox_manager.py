@@ -9,7 +9,6 @@ import asyncio
 import logging
 import os
 import resource
-import signal
 from contextlib import contextmanager
 from typing import Any, Generator
 

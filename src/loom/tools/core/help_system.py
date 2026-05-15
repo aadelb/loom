@@ -12,6 +12,12 @@ from typing import Any
 from loom.error_responses import handle_tool_errors
 
 try:
+    from loom.tool_introspection import get_tool_signature, get_tool_docstring, is_tool_async
+    _INTROSPECTION_AVAILABLE = True
+except ImportError:
+    _INTROSPECTION_AVAILABLE = False
+
+try:
     from mcp.types import TextContent
 except ImportError:
     TextContent = None  # type: ignore[assignment,misc]
@@ -96,19 +102,32 @@ def _get_all_tools() -> dict[str, dict[str, Any]]:
 
     tools_dir = pathlib.Path(tool_modules_path)
 
-    # Scan *.py files in tools/ directory (not subdirs to avoid reframe_strategies/)
-    for py_file in sorted(tools_dir.glob("*.py")):
+    # Scan *.py files in tools/ directory AND subdirectories (except reframe_strategies/)
+    skip_dirs = {"reframe_strategies", "__pycache__"}
+    py_files = sorted(tools_dir.glob("*.py"))
+    for subdir in sorted(tools_dir.iterdir()):
+        if subdir.is_dir() and subdir.name not in skip_dirs:
+            py_files.extend(sorted(subdir.glob("*.py")))
+
+    for py_file in py_files:
         module_name = py_file.stem
         if module_name.startswith("_") or module_name == "help_system":
             continue
 
+        # Build import path: loom.tools.module or loom.tools.subdir.module
+        rel = py_file.relative_to(tools_dir)
+        if len(rel.parts) == 1:
+            import_path = f"loom.tools.{module_name}"
+        else:
+            import_path = f"loom.tools.{rel.parent.name}.{module_name}"
+
         try:
-            mod = importlib.import_module(f"loom.tools.{module_name}")
+            mod = importlib.import_module(import_path)
         except ImportError as e:
-            logger.debug(f"Failed to import loom.tools.{module_name}: {e}")
+            logger.debug(f"Failed to import {import_path}: {e}")
             continue
         except Exception as e:
-            logger.warning(f"Unexpected error importing loom.tools.{module_name}: {e}")
+            logger.warning(f"Unexpected error importing {import_path}: {e}")
             continue
 
         # Extract all research_* and tool_* functions (both sync and async)
@@ -122,11 +141,25 @@ def _get_all_tools() -> dict[str, dict[str, Any]]:
             if not (is_sync or is_async):
                 continue
 
+            # Use tool_introspection if available
+            if _INTROSPECTION_AVAILABLE:
+                try:
+                    sig_info = get_tool_signature(obj)
+                    docstring = sig_info.get("docstring", inspect.getdoc(obj) or "No documentation available.")
+                    signature = str(inspect.signature(obj))
+                except Exception:
+                    # Fallback to inspect
+                    docstring = inspect.getdoc(obj) or "No documentation available."
+                    signature = str(inspect.signature(obj))
+            else:
+                docstring = inspect.getdoc(obj) or "No documentation available."
+                signature = str(inspect.signature(obj))
+
             tools[name] = {
                 "module": module_name,
                 "function": name,
-                "docstring": inspect.getdoc(obj) or "No documentation available.",
-                "signature": str(inspect.signature(obj)),
+                "docstring": docstring,
+                "signature": signature,
                 "is_async": is_async,
             }
 
@@ -264,23 +297,52 @@ def _get_tool_params(tool_name: str) -> dict[str, Any]:
     except (ImportError, AttributeError):
         return {}
 
-    sig = inspect.signature(func)
+    # Use tool_introspection if available
+    if _INTROSPECTION_AVAILABLE:
+        try:
+            sig_info = get_tool_signature(func)
+            params_list = sig_info.get("params", [])
+        except Exception:
+            # Fallback to inspect
+            sig = inspect.signature(func)
+            params_list = []
+            for param_name, param in sig.parameters.items():
+                if param_name not in ("self", "cls"):
+                    params_list.append({
+                        "name": param_name,
+                        "annotation": param.annotation,
+                        "default": param.default,
+                    })
+    else:
+        sig = inspect.signature(func)
+        params_list = []
+        for param_name, param in sig.parameters.items():
+            if param_name not in ("self", "cls"):
+                params_list.append({
+                    "name": param_name,
+                    "annotation": param.annotation,
+                    "default": param.default,
+                })
+
     params = {}
 
     # Parse docstring for parameter descriptions
     docstring_params = _parse_docstring_params(tool_info["docstring"])
 
-    for param_name, param in sig.parameters.items():
-        if param_name in ("self", "cls"):
+    for item in params_list:
+        param_name = item.get("name")
+        if not param_name:
             continue
 
+        param_annotation = item.get("annotation", inspect.Parameter.empty)
+        param_default = item.get("default", inspect.Parameter.empty)
         param_desc = docstring_params.get(param_name, "See docstring for details")
 
         params[param_name] = {
-            "type": _format_annotation(param.annotation),
+            "type": _format_annotation(param_annotation),
             "default": (
-                str(param.default)
-                if param.default != inspect.Parameter.empty
+                str(param_default)
+                if param_default != inspect.Parameter.empty
                 else "Required"
             ),
             "description": param_desc,

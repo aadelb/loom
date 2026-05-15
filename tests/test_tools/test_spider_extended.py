@@ -6,7 +6,7 @@ import pytest
 from unittest.mock import patch, AsyncMock
 from pydantic_core import ValidationError
 
-from loom.tools.spider import research_spider
+from loom.tools.core.spider import research_spider
 
 
 pytestmark = pytest.mark.asyncio
@@ -22,7 +22,7 @@ class TestSpiderValidation:
 
     async def test_spider_clamps_concurrency(self) -> None:
         """Concurrency > SPIDER_CONCURRENCY is clamped."""
-        with patch("loom.tools.spider.research_fetch", new_callable=AsyncMock) as mock_fetch:
+        with patch("loom.tools.core.spider.research_fetch", new_callable=AsyncMock) as mock_fetch:
             mock_fetch.return_value = {
                 "url": "https://example.com",
                 "text": "content",
@@ -37,7 +37,7 @@ class TestSpiderValidation:
 
     async def test_spider_deduplicates_urls(self) -> None:
         """Duplicate URLs are fetched only once."""
-        with patch("loom.tools.spider.research_fetch", new_callable=AsyncMock) as mock_fetch:
+        with patch("loom.tools.core.spider.research_fetch", new_callable=AsyncMock) as mock_fetch:
             mock_fetch.return_value = {
                 "url": "https://example.com",
                 "text": "content",

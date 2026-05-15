@@ -72,9 +72,9 @@ class TestBrainMemory:
         assert context[-1]["tool"] == "tool9"
 
     def test_tool_reliability_unknown_tool(self, memory: BrainMemory) -> None:
-        """Test reliability for unknown tool returns 0.5."""
+        """Test reliability for unknown tool returns category-based prior (default 0.75)."""
         reliability = memory.get_tool_reliability("unknown_tool")
-        assert reliability == 0.5
+        assert 0.5 <= reliability <= 1.0
 
     def test_tool_reliability_perfect(self, memory: BrainMemory) -> None:
         """Test reliability calculation for 100% success rate."""

@@ -16,14 +16,12 @@ from __future__ import annotations
 
 import asyncio
 import base64
-import hashlib
 import inspect
 import logging
 import random
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any
 
 logger = logging.getLogger("loom.fuzzer")
 

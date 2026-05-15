@@ -1,6 +1,14 @@
 """research_onion_discover — Discover .onion hidden services using multiple methods."""
 
 from __future__ import annotations
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text, max_chars=500, *, suffix="..."):
+        if len(text) <= max_chars: return text
+        return text[:max_chars - len(suffix)] + suffix
+
+
 
 import asyncio
 import logging
@@ -12,6 +20,7 @@ import httpx
 
 from loom.validators import validate_url
 from loom.error_responses import handle_tool_errors
+from loom.http_helpers import fetch_json, fetch_text
 
 logger = logging.getLogger("loom.tools.onion_discover")
 
@@ -23,7 +32,7 @@ async def _fetch_ahmia(
     urls = []
     try:
         search_url = f"https://ahmia.fi/search/?q={quote(query)}"
-        resp = await client.get(search_url, timeout=timeout)
+        data = await fetch_json(client, search_url, timeout=timeout)
         if resp.status_code == 200:
             # Parse HTML for .onion links
             onion_pattern = r"(https?://[a-z0-9]+\.onion[^\s<>\"']*)"
@@ -49,22 +58,20 @@ async def _fetch_darksearch(
     urls = []
     try:
         api_url = f"https://darksearch.io/api/search?query={quote(query)}&page=1"
-        resp = await client.get(api_url, timeout=timeout)
-        if resp.status_code == 200:
-            data = resp.json()
-            if isinstance(data, dict) and "data" in data:
-                for result in data["data"]:
-                    if isinstance(result, dict):
-                        result_url = result.get("url", "")
-                        if ".onion" in result_url:
-                            urls.append(
-                                {
-                                    "url": result_url,
-                                    "source": "darksearch",
-                                    "title": result.get("title", ""),
-                                    "snippet": result.get("description", ""),
-                                }
-                            )
+        data = await fetch_json(client, api_url, timeout=timeout)
+        if data and isinstance(data, dict) and "data" in data:
+            for result in data["data"]:
+                if isinstance(result, dict):
+                    result_url = result.get("url", "")
+                    if ".onion" in result_url:
+                        urls.append(
+                            {
+                                "url": result_url,
+                                "source": "darksearch",
+                                "title": result.get("title", ""),
+                                "snippet": result.get("description", ""),
+                            }
+                        )
     except Exception as exc:
         logger.debug("darksearch fetch failed: %s", exc)
     return urls
@@ -113,12 +120,10 @@ async def _fetch_ct_onion_certs(
     urls = []
     try:
         ct_url = "https://crt.sh/?q=%25.onion&output=json"
-        resp = await client.get(ct_url, timeout=timeout)
-        if resp.status_code == 200:
-            data = resp.json()
-            if isinstance(data, list):
-                seen = set()
-                for entry in data:
+        data = await fetch_json(client, ct_url, timeout=timeout)
+        if data and isinstance(data, list):
+            seen = set()
+            for entry in data:
                     if isinstance(entry, dict):
                         name_value = entry.get("name_value", "")
                         for line in name_value.split("\n"):
@@ -146,32 +151,30 @@ async def _fetch_reddit_onions(
     try:
         reddit_url = f"https://www.reddit.com/r/onions/search.json?q={quote(query)}&limit=10"
         headers = {"User-Agent": "Loom-Research/1.0"}
-        resp = await client.get(reddit_url, headers=headers, timeout=timeout)
-        if resp.status_code == 200:
-            data = resp.json()
-            if isinstance(data, dict) and "data" in data:
-                posts = data["data"].get("children", [])
-                for post in posts:
-                    if isinstance(post, dict):
-                        post_data = post.get("data", {})
-                        title = post_data.get("title", "")
-                        selftext = post_data.get("selftext", "")
-                        content = f"{title} {selftext}"
+        data = await fetch_json(client, reddit_url, headers=headers, timeout=timeout)
+        if data and isinstance(data, dict) and "data" in data:
+            posts = data["data"].get("children", [])
+            for post in posts:
+                if isinstance(post, dict):
+                    post_data = post.get("data", {})
+                    title = post_data.get("title", "")
+                    selftext = post_data.get("selftext", "")
+                    content = f"{title} {selftext}"
 
-                        # Find .onion URLs in title and content
-                        onion_pattern = (
-                            r"(https?://[a-z0-9]+\.onion[^\s<>\"']*)"
+                    # Find .onion URLs in title and content
+                    onion_pattern = (
+                        r"(https?://[a-z0-9]+\.onion[^\s<>\"']*)"
+                    )
+                    matches = re.findall(onion_pattern, content, re.IGNORECASE)
+                    for match in matches:
+                        urls.append(
+                            {
+                                "url": match,
+                                "source": "reddit_onions",
+                                "title": title[:100],
+                                "snippet": truncate(selftext, 200),
+                            }
                         )
-                        matches = re.findall(onion_pattern, content, re.IGNORECASE)
-                        for match in matches:
-                            urls.append(
-                                {
-                                    "url": match,
-                                    "source": "reddit_onions",
-                                    "title": title[:100],
-                                    "snippet": selftext[:200],
-                                }
-                            )
     except Exception as exc:
         logger.debug("reddit onions fetch failed: %s", exc)
     return urls

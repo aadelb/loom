@@ -7,6 +7,7 @@ from typing import Any
 import httpx
 
 from loom.error_responses import handle_tool_errors
+from loom.http_helpers import fetch_json, fetch_text
 
 logger = logging.getLogger("loom.tools.discord_osint")
 

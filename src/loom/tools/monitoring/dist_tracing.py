@@ -1,7 +1,6 @@
 """Distributed tracing system for tracking requests across tool chains."""
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
 import statistics

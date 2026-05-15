@@ -11,7 +11,7 @@ import pytest
 class TestResearchGeoipLocal:
     async def test_invalid_ip_address(self):
         """Test rejection of invalid IP addresses."""
-        from loom.tools.geoip_local import research_geoip_local
+        from loom.tools.intelligence.geoip_local import research_geoip_local
 
         result = await research_geoip_local("not-an-ip")
 
@@ -20,7 +20,7 @@ class TestResearchGeoipLocal:
 
     async def test_private_ip_rejection(self):
         """Test rejection of private IP addresses."""
-        from loom.tools.geoip_local import research_geoip_local
+        from loom.tools.intelligence.geoip_local import research_geoip_local
 
         result = await research_geoip_local("192.168.1.1")
 
@@ -29,7 +29,7 @@ class TestResearchGeoipLocal:
 
     async def test_ipv4_private_rejection(self):
         """Test rejection of 10.0.0.0/8 range."""
-        from loom.tools.geoip_local import research_geoip_local
+        from loom.tools.intelligence.geoip_local import research_geoip_local
 
         result = await research_geoip_local("10.0.0.1")
 
@@ -37,7 +37,7 @@ class TestResearchGeoipLocal:
 
     async def test_localhost_rejection(self):
         """Test rejection of localhost."""
-        from loom.tools.geoip_local import research_geoip_local
+        from loom.tools.intelligence.geoip_local import research_geoip_local
 
         result = await research_geoip_local("127.0.0.1")
 
@@ -45,8 +45,8 @@ class TestResearchGeoipLocal:
 
     async def test_database_not_found(self):
         """Test error when database is not found."""
-        with patch("loom.tools.geoip_local._find_geoip_database", return_value=None):
-            from loom.tools.geoip_local import research_geoip_local
+        with patch("loom.tools.intelligence.geoip_local._find_geoip_database", return_value=None):
+            from loom.tools.intelligence.geoip_local import research_geoip_local
 
             result = await research_geoip_local("8.8.8.8")
 
@@ -66,8 +66,8 @@ class TestResearchGeoipLocal:
         mock_response.continent.code = "NA"
         mock_response.postal.code = "10001"
 
-        with patch("loom.tools.geoip_local._find_geoip_database", return_value="/path/to/db.mmdb"), patch(
-            "loom.tools.geoip_local._lookup_ip"
+        with patch("loom.tools.intelligence.geoip_local._find_geoip_database", return_value="/path/to/db.mmdb"), patch(
+            "loom.tools.intelligence.geoip_local._lookup_ip"
         ) as mock_lookup:
             mock_lookup.return_value = {
                 "ip": "8.8.8.8",
@@ -83,7 +83,7 @@ class TestResearchGeoipLocal:
                 "source": "local_geoip2",
             }
 
-            from loom.tools.geoip_local import research_geoip_local
+            from loom.tools.intelligence.geoip_local import research_geoip_local
 
             result = await research_geoip_local("8.8.8.8")
 
@@ -108,11 +108,11 @@ class TestResearchGeoipLocal:
             "source": "local_geoip2",
         }
 
-        with patch("loom.tools.geoip_local._find_geoip_database", return_value="/path/to/db.mmdb"), patch(
-            "loom.tools.geoip_local._lookup_ip",
+        with patch("loom.tools.intelligence.geoip_local._find_geoip_database", return_value="/path/to/db.mmdb"), patch(
+            "loom.tools.intelligence.geoip_local._lookup_ip",
             return_value=mock_result,
         ):
-            from loom.tools.geoip_local import research_geoip_local
+            from loom.tools.intelligence.geoip_local import research_geoip_local
 
             result = await research_geoip_local("1.1.1.1")
 
@@ -124,35 +124,35 @@ class TestResearchGeoipLocal:
 class TestValidateIp:
     def test_valid_ipv4(self):
         """Test validation of valid IPv4."""
-        from loom.tools.geoip_local import _validate_ip
+        from loom.tools.intelligence.geoip_local import _validate_ip
 
         result = _validate_ip("8.8.8.8")
         assert result == "8.8.8.8"
 
     def test_valid_ipv6(self):
         """Test validation of valid IPv6."""
-        from loom.tools.geoip_local import _validate_ip
+        from loom.tools.intelligence.geoip_local import _validate_ip
 
         result = _validate_ip("2001:4860:4860::8888")
         assert result == "2001:4860:4860::8888"
 
     def test_invalid_ipv4_raises_error(self):
         """Test that invalid IPv4 raises error."""
-        from loom.tools.geoip_local import _validate_ip
+        from loom.tools.intelligence.geoip_local import _validate_ip
 
         with pytest.raises(ValueError):
             _validate_ip("256.256.256.256")
 
     def test_private_ipv4_raises_error(self):
         """Test that private IPv4 raises error."""
-        from loom.tools.geoip_local import _validate_ip
+        from loom.tools.intelligence.geoip_local import _validate_ip
 
         with pytest.raises(ValueError):
             _validate_ip("192.168.0.1")
 
     def test_private_ipv6_raises_error(self):
         """Test that private IPv6 raises error."""
-        from loom.tools.geoip_local import _validate_ip
+        from loom.tools.intelligence.geoip_local import _validate_ip
 
         with pytest.raises(ValueError):
             _validate_ip("::1")  # IPv6 localhost
@@ -165,7 +165,7 @@ class TestFindGeoipDatabase:
             # First location exists
             mock_isfile.return_value = True
 
-            from loom.tools.geoip_local import _find_geoip_database
+            from loom.tools.intelligence.geoip_local import _find_geoip_database
 
             result = _find_geoip_database()
 
@@ -175,7 +175,7 @@ class TestFindGeoipDatabase:
     def test_database_not_found_at_any_location(self):
         """Test when database doesn't exist at any location."""
         with patch("os.path.isfile", return_value=False):
-            from loom.tools.geoip_local import _find_geoip_database
+            from loom.tools.intelligence.geoip_local import _find_geoip_database
 
             result = _find_geoip_database()
 
@@ -187,7 +187,7 @@ class TestFindGeoipDatabase:
             mock_isfile.side_effect = [False, False, True]  # Found at 3rd location
             mock_expand.side_effect = lambda x: x.replace("~", "/home/user")
 
-            from loom.tools.geoip_local import _find_geoip_database
+            from loom.tools.intelligence.geoip_local import _find_geoip_database
 
             result = _find_geoip_database()
 
@@ -199,7 +199,7 @@ class TestLookupIp:
     def test_geoip2_import_error(self):
         """Test handling when geoip2 is not installed."""
         with patch.dict("sys.modules", {"geoip2": None, "geoip2.database": None}):
-            from loom.tools.geoip_local import _lookup_ip
+            from loom.tools.intelligence.geoip_local import _lookup_ip
 
             result = _lookup_ip("/path/to/db.mmdb", "8.8.8.8")
 
@@ -211,7 +211,7 @@ class TestLookupIp:
         with patch("geoip2.database.Reader") as mock_reader:
             mock_reader.side_effect = Exception("Database corrupted")
 
-            from loom.tools.geoip_local import _lookup_ip
+            from loom.tools.intelligence.geoip_local import _lookup_ip
 
             result = _lookup_ip("/path/to/db.mmdb", "8.8.8.8")
 
@@ -234,7 +234,7 @@ class TestLookupIp:
         with patch("geoip2.database.Reader") as mock_reader_cls:
             mock_reader_cls.return_value.__enter__.return_value.city.return_value = mock_response
 
-            from loom.tools.geoip_local import _lookup_ip
+            from loom.tools.intelligence.geoip_local import _lookup_ip
 
             result = _lookup_ip("/path/to/db.mmdb", "8.8.8.8")
 
@@ -246,7 +246,7 @@ class TestLookupIp:
 class TestExtractGpsInfo:
     def test_no_gps_info(self):
         """Test when EXIF data has no GPS info."""
-        from loom.tools.geoip_local import _extract_gps_info
+        from loom.tools.intelligence.geoip_local import _extract_gps_info
 
         exif_dict = {306: "DateTime"}
 
@@ -256,7 +256,7 @@ class TestExtractGpsInfo:
 
     def test_gps_extraction_success(self):
         """Test successful GPS extraction from EXIF."""
-        from loom.tools.geoip_local import _extract_gps_info
+        from loom.tools.intelligence.geoip_local import _extract_gps_info
 
         # DMS format: (degrees, minutes, seconds) each as (numerator, denominator)
         exif_dict = {
@@ -280,7 +280,7 @@ class TestExtractGpsInfo:
 
     def test_gps_south_west_coordinates(self):
         """Test GPS extraction for South/West coordinates."""
-        from loom.tools.geoip_local import _extract_gps_info
+        from loom.tools.intelligence.geoip_local import _extract_gps_info
 
         exif_dict = {
             34853: {

@@ -14,6 +14,7 @@ except ImportError:
 
 from loom.validators import validate_url
 from loom.error_responses import handle_tool_errors
+from loom.http_helpers import fetch_json, fetch_text, fetch_bytes
 
 logger = logging.getLogger("loom.tools.polyglot_scraper")
 

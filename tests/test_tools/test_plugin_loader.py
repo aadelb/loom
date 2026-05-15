@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from loom.tools import plugin_loader
+import loom.tools.infrastructure.plugin_loader
 
 
 @pytest.mark.asyncio

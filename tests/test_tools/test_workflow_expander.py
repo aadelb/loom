@@ -1,7 +1,7 @@
 """Tests for workflow_expander tool coverage generation."""
 
 import pytest
-from loom.tools.workflow_expander import (
+from loom.tools.infrastructure.workflow_expander import (
     _categorize_tool,
     _extract_tool_functions,
     _get_tool_modules,
@@ -192,7 +192,7 @@ class TestCategoryKeywords:
 
     def test_all_categories_have_keywords(self):
         """Verify all categories are mapped to keywords."""
-        from loom.tools.workflow_expander import CATEGORY_KEYWORDS
+        from loom.tools.infrastructure.workflow_expander import CATEGORY_KEYWORDS
 
         assert len(CATEGORY_KEYWORDS) > 0
         required_categories = {"security", "osint", "adversarial", "research"}

@@ -384,7 +384,7 @@ class TestIntegration:
     @pytest.mark.asyncio
     async def test_stealth_score_tool_integration(self) -> None:
         """Test integration with research_stealth_score MCP tool."""
-        from loom.tools.stealth_score import research_stealth_score
+        from loom.tools.adversarial.stealth_score import research_stealth_score
 
         result = await research_stealth_score(
             original_prompt="how to exploit systems",

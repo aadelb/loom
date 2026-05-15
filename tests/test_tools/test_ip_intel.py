@@ -11,7 +11,7 @@ import pytest
 class TestResearchIpReputation:
     def test_invalid_ip_address(self):
         """Test rejection of invalid IP addresses."""
-        from loom.tools.ip_intel import research_ip_reputation
+        from loom.tools.intelligence.ip_intel import research_ip_reputation
 
         result = research_ip_reputation("not-an-ip")
 
@@ -20,7 +20,7 @@ class TestResearchIpReputation:
 
     def test_private_ip_rejection(self):
         """Test rejection of private IP addresses."""
-        from loom.tools.ip_intel import research_ip_reputation
+        from loom.tools.intelligence.ip_intel import research_ip_reputation
 
         result = research_ip_reputation("192.168.1.1")
 
@@ -29,7 +29,7 @@ class TestResearchIpReputation:
 
     def test_localhost_rejection(self):
         """Test rejection of localhost."""
-        from loom.tools.ip_intel import research_ip_reputation
+        from loom.tools.intelligence.ip_intel import research_ip_reputation
 
         result = research_ip_reputation("127.0.0.1")
 
@@ -56,7 +56,7 @@ class TestResearchIpReputation:
             mock_client.get.return_value = mock_response
             mock_client_cls.return_value = mock_client
 
-            from loom.tools.ip_intel import research_ip_reputation
+            from loom.tools.intelligence.ip_intel import research_ip_reputation
 
             result = research_ip_reputation("8.8.8.8")
 
@@ -69,7 +69,7 @@ class TestResearchIpReputation:
         with patch("socket.gethostbyaddr") as mock_gethostbyaddr:
             mock_gethostbyaddr.return_value = ("dns.google.com", [], ["8.8.8.8"])
 
-            from loom.tools.ip_intel import research_ip_reputation
+            from loom.tools.intelligence.ip_intel import research_ip_reputation
 
             result = research_ip_reputation("8.8.8.8")
 
@@ -78,7 +78,7 @@ class TestResearchIpReputation:
     def test_reverse_dns_failure(self):
         """Test handling of reverse DNS failure."""
         with patch("socket.gethostbyaddr", side_effect=Exception("DNS error")):
-            from loom.tools.ip_intel import research_ip_reputation
+            from loom.tools.intelligence.ip_intel import research_ip_reputation
 
             result = research_ip_reputation("8.8.8.8")
 
@@ -105,7 +105,7 @@ class TestResearchIpReputation:
             mock_client.get.return_value = mock_response
             mock_client_cls.return_value = mock_client
 
-            from loom.tools.ip_intel import research_ip_reputation
+            from loom.tools.intelligence.ip_intel import research_ip_reputation
 
             result = research_ip_reputation("8.8.8.8")
 
@@ -131,7 +131,7 @@ class TestResearchIpReputation:
             mock_client.get.return_value = mock_response
             mock_client_cls.return_value = mock_client
 
-            from loom.tools.ip_intel import research_ip_reputation
+            from loom.tools.intelligence.ip_intel import research_ip_reputation
 
             result = research_ip_reputation("8.8.8.8")
 
@@ -140,7 +140,7 @@ class TestResearchIpReputation:
 
     def test_response_structure(self):
         """Test that response has all required keys."""
-        from loom.tools.ip_intel import research_ip_reputation
+        from loom.tools.intelligence.ip_intel import research_ip_reputation
 
         result = research_ip_reputation("not-valid")
 
@@ -152,7 +152,7 @@ class TestResearchIpReputation:
 class TestResearchIpGeolocation:
     def test_invalid_ip_geolocation(self):
         """Test rejection of invalid IP."""
-        from loom.tools.ip_intel import research_ip_geolocation
+        from loom.tools.intelligence.ip_intel import research_ip_geolocation
 
         result = research_ip_geolocation("invalid")
 
@@ -161,7 +161,7 @@ class TestResearchIpGeolocation:
 
     def test_private_ip_geolocation_rejection(self):
         """Test rejection of private IP for geolocation."""
-        from loom.tools.ip_intel import research_ip_geolocation
+        from loom.tools.intelligence.ip_intel import research_ip_geolocation
 
         result = research_ip_geolocation("10.0.0.1")
 
@@ -190,7 +190,7 @@ class TestResearchIpGeolocation:
             mock_client.get.return_value = mock_response
             mock_client_cls.return_value = mock_client
 
-            from loom.tools.ip_intel import research_ip_geolocation
+            from loom.tools.intelligence.ip_intel import research_ip_geolocation
 
             result = research_ip_geolocation("8.8.8.8")
 
@@ -216,7 +216,7 @@ class TestResearchIpGeolocation:
             mock_client.get.return_value = mock_response
             mock_client_cls.return_value = mock_client
 
-            from loom.tools.ip_intel import research_ip_geolocation
+            from loom.tools.intelligence.ip_intel import research_ip_geolocation
 
             result = research_ip_geolocation("8.8.8.8")
 
@@ -232,7 +232,7 @@ class TestResearchIpGeolocation:
             mock_client.get.side_effect = httpx.ConnectError("Connection failed")
             mock_client_cls.return_value = mock_client
 
-            from loom.tools.ip_intel import research_ip_geolocation
+            from loom.tools.intelligence.ip_intel import research_ip_geolocation
 
             result = research_ip_geolocation("8.8.8.8")
 
@@ -248,7 +248,7 @@ class TestResearchIpGeolocation:
             mock_client.get.side_effect = httpx.TimeoutException("Timeout")
             mock_client_cls.return_value = mock_client
 
-            from loom.tools.ip_intel import research_ip_geolocation
+            from loom.tools.intelligence.ip_intel import research_ip_geolocation
 
             result = research_ip_geolocation("8.8.8.8")
 
@@ -277,7 +277,7 @@ class TestResearchIpGeolocation:
             mock_client.get.return_value = mock_response
             mock_client_cls.return_value = mock_client
 
-            from loom.tools.ip_intel import research_ip_geolocation
+            from loom.tools.intelligence.ip_intel import research_ip_geolocation
 
             result = research_ip_geolocation("8.8.8.8")
 
@@ -289,27 +289,27 @@ class TestResearchIpGeolocation:
 class TestIsValidIp:
     def test_valid_ipv4(self):
         """Test validation of valid IPv4."""
-        from loom.tools.ip_intel import _is_valid_ip
+        from loom.tools.intelligence.ip_intel import _is_valid_ip
 
         assert _is_valid_ip("8.8.8.8") is True
         assert _is_valid_ip("1.1.1.1") is True
 
     def test_valid_ipv6(self):
         """Test validation of valid IPv6."""
-        from loom.tools.ip_intel import _is_valid_ip
+        from loom.tools.intelligence.ip_intel import _is_valid_ip
 
         assert _is_valid_ip("2001:4860:4860::8888") is True
 
     def test_invalid_ipv4(self):
         """Test rejection of invalid IPv4."""
-        from loom.tools.ip_intel import _is_valid_ip
+        from loom.tools.intelligence.ip_intel import _is_valid_ip
 
         assert _is_valid_ip("256.256.256.256") is False
         assert _is_valid_ip("invalid.ip.addr") is False
 
     def test_private_ipv4_range(self):
         """Test rejection of all private IPv4 ranges."""
-        from loom.tools.ip_intel import _is_valid_ip
+        from loom.tools.intelligence.ip_intel import _is_valid_ip
 
         # 10.0.0.0/8
         assert _is_valid_ip("10.0.0.1") is False
@@ -322,7 +322,7 @@ class TestIsValidIp:
 
     def test_private_ipv6_range(self):
         """Test rejection of private IPv6 ranges."""
-        from loom.tools.ip_intel import _is_valid_ip
+        from loom.tools.intelligence.ip_intel import _is_valid_ip
 
         # IPv6 loopback
         assert _is_valid_ip("::1") is False

@@ -10,7 +10,7 @@ import pytest
 from loom.providers.base import LLMResponse
 from loom.providers.nvidia_nim import NvidiaNimProvider
 from loom.providers.openai_provider import OpenAIProvider
-from loom.tools.llm import _build_provider_chain, _call_with_cascade
+from loom.tools.llm.llm import _build_provider_chain, _call_with_cascade
 
 
 @pytest.fixture

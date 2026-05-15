@@ -11,10 +11,24 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Literal
+from typing import Any
 
 from loom.text_utils import jaccard_similarity
 from loom.error_responses import handle_tool_errors
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text: str, max_chars: int = 500, *, suffix: str = "...") -> str:
+        """Fallback truncate if text_utils unavailable."""
+        if len(text) <= max_chars:
+            return text
+        return text[: max_chars - len(suffix)] + suffix
+
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(v: float, lo: float = 0.0, hi: float = 1.0) -> float:
+        return max(lo, min(hi, v))
 
 logger = logging.getLogger("loom.tools.eu_ai_act")
 
@@ -157,7 +171,7 @@ def research_ai_transparency_check(
 
         # Calculate compliance: require 80%+ score (4/5 key elements present)
         compliant = score >= 80
-        score = min(100, score)
+        score = clamp(score, 0, 100)
 
         logger.info(
             "transparency_check model=%s score=%d compliant=%s",
@@ -345,7 +359,7 @@ def research_ai_bias_audit(
                         )
 
         # Calculate bias score (0-100)
-        bias_score = min(100, bias_indicators * 5)
+        bias_score = clamp(bias_indicators * 5, 0, 100)
 
         # Generate recommendation
         if bias_score == 0:
@@ -444,7 +458,7 @@ def research_ai_robustness_test(
                     )
 
         avg_similarity = sum(similarity_scores) / len(similarity_scores) if similarity_scores else 0
-        consistency_score = max(0, min(100, int(avg_similarity * 100)))
+        consistency_score = clamp(int(avg_similarity * 100), 0, 100)
 
         # Generate recommendation
         if consistency_score >= 80:
@@ -639,7 +653,7 @@ def research_ai_data_governance(system_description: str) -> dict[str, Any]:
                 "Implement enhanced safeguards and impact assessments for special category data"
             )
 
-        compliance_score = min(100, score)
+        compliance_score = clamp(score, 0, 100)
 
         # Add summary recommendation
         if compliance_score >= 80:

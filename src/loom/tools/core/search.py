@@ -106,6 +106,7 @@ async def research_search(
     )
 
     try:
+        result: dict[str, Any] | None = None
         if provider == "exa":
             from loom.providers.exa import search_exa
 
@@ -121,7 +122,7 @@ async def research_search(
             result["provider"] = "exa"
             result["cost_estimate_usd"] = 0.05  # Estimated per-call cost
             result["free_tier"] = False
-            return _apply_reputation_filter(result)  # type: ignore[no-any-return]
+            pass  # type: ignore[no-any-return]
 
         elif provider == "tavily":
             from loom.providers.tavily import search_tavily
@@ -138,7 +139,7 @@ async def research_search(
             result["provider"] = "tavily"
             result["cost_estimate_usd"] = 0.03  # Estimated per-call cost
             result["free_tier"] = False
-            return _apply_reputation_filter(result)  # type: ignore[no-any-return]
+            pass  # type: ignore[no-any-return]
 
         elif provider == "firecrawl":
             from loom.providers.firecrawl import search_firecrawl
@@ -153,7 +154,7 @@ async def research_search(
             result["provider"] = "firecrawl"
             result["cost_estimate_usd"] = 0.02  # Estimated per-call cost
             result["free_tier"] = False
-            return _apply_reputation_filter(result)  # type: ignore[no-any-return]
+            pass  # type: ignore[no-any-return]
 
         elif provider == "brave":
             from loom.providers.brave import search_brave
@@ -164,7 +165,7 @@ async def research_search(
             result["provider"] = "brave"
             result["cost_estimate_usd"] = 0.01  # Brave free tier is cheap
             result["free_tier"] = False
-            return _apply_reputation_filter(result)  # type: ignore[no-any-return]
+            pass  # type: ignore[no-any-return]
 
         elif provider == "ddgs":
             from loom.providers.ddgs import search_ddgs
@@ -177,7 +178,7 @@ async def research_search(
             result["provider"] = "ddgs"
             result["cost_estimate_usd"] = 0.0  # Free
             result["free_tier"] = True
-            return _apply_reputation_filter(result)  # type: ignore[no-any-return]
+            pass  # type: ignore[no-any-return]
 
         elif provider == "arxiv":
             from loom.providers.arxiv_search import search_arxiv
@@ -190,7 +191,7 @@ async def research_search(
             result["provider"] = "arxiv"
             result["cost_estimate_usd"] = 0.0  # Free
             result["free_tier"] = True
-            return _apply_reputation_filter(result)  # type: ignore[no-any-return]
+            pass  # type: ignore[no-any-return]
 
         elif provider == "wikipedia":
             from loom.providers.wikipedia_search import search_wikipedia
@@ -203,7 +204,7 @@ async def research_search(
             result["provider"] = "wikipedia"
             result["cost_estimate_usd"] = 0.0  # Free
             result["free_tier"] = True
-            return _apply_reputation_filter(result)  # type: ignore[no-any-return]
+            pass  # type: ignore[no-any-return]
 
         elif provider == "hackernews":
             from loom.providers.hn_reddit import search_hackernews
@@ -216,7 +217,7 @@ async def research_search(
             result["provider"] = "hackernews"
             result["cost_estimate_usd"] = 0.0  # Free
             result["free_tier"] = True
-            return _apply_reputation_filter(result)  # type: ignore[no-any-return]
+            pass  # type: ignore[no-any-return]
 
         elif provider == "reddit":
             from loom.providers.hn_reddit import search_reddit
@@ -229,7 +230,7 @@ async def research_search(
             result["provider"] = "reddit"
             result["cost_estimate_usd"] = 0.0  # Free
             result["free_tier"] = True
-            return _apply_reputation_filter(result)  # type: ignore[no-any-return]
+            pass  # type: ignore[no-any-return]
 
         elif provider == "newsapi":
             from loom.providers.newsapi_search import search_newsapi
@@ -242,7 +243,7 @@ async def research_search(
             result["provider"] = "newsapi"
             result["cost_estimate_usd"] = 0.0  # NewsAPI has free tier
             result["free_tier"] = False
-            return _apply_reputation_filter(result)  # type: ignore[no-any-return]
+            pass  # type: ignore[no-any-return]
 
         elif provider == "crypto":
             from loom.providers.coinmarketcap import search_crypto
@@ -255,7 +256,7 @@ async def research_search(
             result["provider"] = "crypto"
             result["cost_estimate_usd"] = 0.0  # CoinMarketCap free data
             result["free_tier"] = True
-            return _apply_reputation_filter(result)  # type: ignore[no-any-return]
+            pass  # type: ignore[no-any-return]
 
         elif provider == "coindesk":
             from loom.providers.coindesk_search import search_coindesk_news
@@ -268,7 +269,7 @@ async def research_search(
             result["provider"] = "coindesk"
             result["cost_estimate_usd"] = 0.0  # Free
             result["free_tier"] = True
-            return _apply_reputation_filter(result)  # type: ignore[no-any-return]
+            pass  # type: ignore[no-any-return]
 
         elif provider == "binance":
             from loom.providers.binance_data import search_binance
@@ -281,7 +282,7 @@ async def research_search(
             result["provider"] = "binance"
             result["cost_estimate_usd"] = 0.0  # Free
             result["free_tier"] = True
-            return _apply_reputation_filter(result)  # type: ignore[no-any-return]
+            pass  # type: ignore[no-any-return]
 
         elif provider == "investing":
             from loom.providers.investing_data import search_investing
@@ -294,7 +295,7 @@ async def research_search(
             result["provider"] = "investing"
             result["cost_estimate_usd"] = 0.01
             result["free_tier"] = False
-            return _apply_reputation_filter(result)  # type: ignore[no-any-return]
+            pass  # type: ignore[no-any-return]
 
         elif provider == "ahmia":
             from loom.providers.ahmia_search import search_ahmia
@@ -307,7 +308,7 @@ async def research_search(
             result["provider"] = "ahmia"
             result["cost_estimate_usd"] = 0.0  # Free
             result["free_tier"] = True
-            return _apply_reputation_filter(result)  # type: ignore[no-any-return]
+            pass  # type: ignore[no-any-return]
 
         elif provider == "darksearch":
             from loom.providers.darksearch_search import search_darksearch
@@ -320,7 +321,7 @@ async def research_search(
             result["provider"] = "darksearch"
             result["cost_estimate_usd"] = 0.0  # Free
             result["free_tier"] = True
-            return _apply_reputation_filter(result)  # type: ignore[no-any-return]
+            pass  # type: ignore[no-any-return]
 
         elif provider == "ummro":
             from loom.providers.ummro_rag import search_ummro_rag
@@ -333,7 +334,7 @@ async def research_search(
             result["provider"] = "ummro"
             result["cost_estimate_usd"] = 0.0
             result["free_tier"] = True
-            return _apply_reputation_filter(result)  # type: ignore[no-any-return]
+            pass  # type: ignore[no-any-return]
 
         elif provider == "onionsearch":
             from loom.providers.onionsearch import search_onionsearch
@@ -346,7 +347,7 @@ async def research_search(
             result["provider"] = "onionsearch"
             result["cost_estimate_usd"] = 0.0  # Free
             result["free_tier"] = True
-            return _apply_reputation_filter(result)  # type: ignore[no-any-return]
+            pass  # type: ignore[no-any-return]
 
         elif provider == "torcrawl":
             from loom.providers.torcrawl import crawl_onion
@@ -359,7 +360,7 @@ async def research_search(
             result["provider"] = "torcrawl"
             result["cost_estimate_usd"] = 0.0
             result["free_tier"] = True
-            return _apply_reputation_filter(result)  # type: ignore[no-any-return]
+            pass  # type: ignore[no-any-return]
 
         elif provider == "darkweb_cti":
             from loom.providers.darkweb_cti import search_darkweb_cti
@@ -372,7 +373,7 @@ async def research_search(
             result["provider"] = "darkweb_cti"
             result["cost_estimate_usd"] = 0.0
             result["free_tier"] = True
-            return _apply_reputation_filter(result)  # type: ignore[no-any-return]
+            pass  # type: ignore[no-any-return]
 
         elif provider == "robin_osint":
             from loom.providers.robin_osint import search_robin_osint
@@ -385,7 +386,7 @@ async def research_search(
             result["provider"] = "robin_osint"
             result["cost_estimate_usd"] = 0.0
             result["free_tier"] = True
-            return _apply_reputation_filter(result)  # type: ignore[no-any-return]
+            pass  # type: ignore[no-any-return]
 
         else:
             logger.error("unknown_search_provider provider=%s", provider)
@@ -397,6 +398,25 @@ async def research_search(
                 "cost_estimate_usd": 0.0,
                 "free_tier": False,
             }
+
+        # Automatic fallback to free provider when paid provider fails
+        if result is not None and "error" in result and not is_free:
+            logger.warning(
+                "paid_provider_failed provider=%s error=%s; falling back to ddgs",
+                provider,
+                result["error"],
+            )
+            from loom.providers.ddgs import search_ddgs
+            result = await asyncio.to_thread(search_ddgs, query=query, n=n)
+            result["provider"] = "ddgs"
+            result["cost_estimate_usd"] = 0.0
+            result["free_tier"] = True
+
+        # Enforce n limit on returned results
+        if result is not None and "results" in result and isinstance(result["results"], list):
+            result["results"] = result["results"][:n]
+
+        return _apply_reputation_filter(result)  # type: ignore[no-any-return]
 
     except Exception as exc:
         logger.exception("search_failed provider=%s", provider)

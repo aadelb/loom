@@ -36,7 +36,7 @@ class TestResearchTextAnalyze:
     @pytest.mark.asyncio
     async def test_text_analyze_basic(self) -> None:
         """Test text_analyze with basic input."""
-        from loom.tools.text_analyze import research_text_analyze
+        from loom.tools.research.text_analyze import research_text_analyze
 
         result = await research_text_analyze(text=SAMPLE_TEXT)
         assert isinstance(result, dict)
@@ -45,7 +45,7 @@ class TestResearchTextAnalyze:
     @pytest.mark.asyncio
     async def test_text_analyze_returns_dict(self) -> None:
         """Verify text_analyze returns dict."""
-        from loom.tools.text_analyze import research_text_analyze
+        from loom.tools.research.text_analyze import research_text_analyze
 
         result = await research_text_analyze(text="Hello world")
         assert isinstance(result, dict)
@@ -57,7 +57,7 @@ class TestResearchPdfExtract:
 
     def test_pdf_extract_with_url(self) -> None:
         """Test pdf_extract with valid URL."""
-        from loom.tools.pdf_extract import research_pdf_extract
+        from loom.tools.core.pdf_extract import research_pdf_extract
 
         result = research_pdf_extract(
             url="https://www.w3.org/WAI/WCAG21/Techniques/pdf/pdf1.pdf"
@@ -67,7 +67,7 @@ class TestResearchPdfExtract:
 
     def test_pdf_extract_returns_dict(self) -> None:
         """Verify pdf_extract returns dict."""
-        from loom.tools.pdf_extract import research_pdf_extract
+        from loom.tools.core.pdf_extract import research_pdf_extract
 
         result = research_pdf_extract(url="https://example.com/notapdf.txt")
         assert isinstance(result, dict)
@@ -79,7 +79,7 @@ class TestResearchPsycholinguistic:
 
     def test_psycholinguistic_basic(self) -> None:
         """Test psycholinguistic analysis."""
-        from loom.tools.psycholinguistic import research_psycholinguistic
+        from loom.tools.research.psycholinguistic import research_psycholinguistic
 
         result = research_psycholinguistic(text=SAMPLE_TEXT)
         assert isinstance(result, dict)
@@ -87,7 +87,7 @@ class TestResearchPsycholinguistic:
 
     def test_psycholinguistic_returns_dict(self) -> None:
         """Verify psycholinguistic returns dict."""
-        from loom.tools.psycholinguistic import research_psycholinguistic
+        from loom.tools.research.psycholinguistic import research_psycholinguistic
 
         result = research_psycholinguistic(text="Hello world")
         assert isinstance(result, dict)
@@ -99,7 +99,7 @@ class TestResearchStylometry:
 
     def test_stylometry_basic(self) -> None:
         """Test stylometry analysis."""
-        from loom.tools.stylometry import research_stylometry
+        from loom.tools.research.stylometry import research_stylometry
 
         result = research_stylometry(text=SAMPLE_TEXT, compare_texts=SAMPLE_COMPARE_TEXTS)
         assert isinstance(result, dict)
@@ -112,7 +112,7 @@ class TestResearchStylometry:
 
     def test_stylometry_returns_dict(self) -> None:
         """Verify stylometry returns dict."""
-        from loom.tools.stylometry import research_stylometry
+        from loom.tools.research.stylometry import research_stylometry
 
         result = research_stylometry(text="Test text")
         assert isinstance(result, dict)
@@ -124,7 +124,7 @@ class TestResearchDeceptionDetect:
 
     def test_deception_detect_basic(self) -> None:
         """Test deception detection."""
-        from loom.tools.deception_detect import research_deception_detect
+        from loom.tools.research.deception_detect import research_deception_detect
 
         result = research_deception_detect(text=SAMPLE_TEXT)
         assert isinstance(result, dict)
@@ -132,7 +132,7 @@ class TestResearchDeceptionDetect:
 
     def test_deception_detect_returns_dict(self) -> None:
         """Verify deception_detect returns dict."""
-        from loom.tools.deception_detect import research_deception_detect
+        from loom.tools.research.deception_detect import research_deception_detect
 
         result = research_deception_detect(text="This is a test")
         assert isinstance(result, dict)
@@ -145,7 +145,7 @@ class TestResearchSentimentDeep:
     @pytest.mark.asyncio
     async def test_sentiment_deep_basic(self) -> None:
         """Test deep sentiment analysis."""
-        from loom.tools.sentiment_deep import research_sentiment_deep
+        from loom.tools.research.sentiment_deep import research_sentiment_deep
 
         result = await research_sentiment_deep(text=SAMPLE_TEXT)
         assert isinstance(result, dict)
@@ -154,7 +154,7 @@ class TestResearchSentimentDeep:
     @pytest.mark.asyncio
     async def test_sentiment_deep_returns_dict(self) -> None:
         """Verify sentiment_deep returns dict."""
-        from loom.tools.sentiment_deep import research_sentiment_deep
+        from loom.tools.research.sentiment_deep import research_sentiment_deep
 
         result = await research_sentiment_deep(text="Great work!")
         assert isinstance(result, dict)
@@ -167,7 +167,7 @@ class TestResearchPromptAnalyze:
     @pytest.mark.asyncio
     async def test_prompt_analyze_basic(self) -> None:
         """Test prompt analysis."""
-        from loom.tools.prompt_analyzer import research_prompt_analyze
+        from loom.tools.llm.prompt_analyzer import research_prompt_analyze
 
         result = await research_prompt_analyze(prompt="What is the capital of France?")
         assert isinstance(result, dict)
@@ -187,7 +187,7 @@ class TestResearchPromptAnalyze:
     @pytest.mark.asyncio
     async def test_prompt_analyze_returns_dict(self) -> None:
         """Verify prompt_analyze returns dict."""
-        from loom.tools.prompt_analyzer import research_prompt_analyze
+        from loom.tools.llm.prompt_analyzer import research_prompt_analyze
 
         result = await research_prompt_analyze(prompt="test")
         assert isinstance(result, dict)
@@ -199,7 +199,7 @@ class TestResearchBiasLens:
 
     def test_bias_lens_basic(self) -> None:
         """Test bias analysis."""
-        from loom.tools.bias_lens import research_bias_lens
+        from loom.tools.research.bias_lens import research_bias_lens
 
         result = research_bias_lens(text=SAMPLE_TEXT)
         assert isinstance(result, dict)
@@ -212,7 +212,7 @@ class TestResearchBiasLens:
 
     def test_bias_lens_returns_dict(self) -> None:
         """Verify bias_lens returns dict."""
-        from loom.tools.bias_lens import research_bias_lens
+        from loom.tools.research.bias_lens import research_bias_lens
 
         result = research_bias_lens(text="Test content")
         assert isinstance(result, dict)
@@ -228,7 +228,7 @@ class TestNLPToolsCoverage:
         tools_tested = []
 
         try:
-            from loom.tools.text_analyze import research_text_analyze
+            from loom.tools.research.text_analyze import research_text_analyze
 
             result = await research_text_analyze(text="test")
             assert isinstance(result, dict)
@@ -237,7 +237,7 @@ class TestNLPToolsCoverage:
             logger.warning(f"research_text_analyze failed: {e}")
 
         try:
-            from loom.tools.pdf_extract import research_pdf_extract
+            from loom.tools.core.pdf_extract import research_pdf_extract
 
             result = research_pdf_extract(url="https://example.com/test.pdf")
             assert isinstance(result, dict)
@@ -246,7 +246,7 @@ class TestNLPToolsCoverage:
             logger.warning(f"research_pdf_extract failed: {e}")
 
         try:
-            from loom.tools.psycholinguistic import research_psycholinguistic
+            from loom.tools.research.psycholinguistic import research_psycholinguistic
 
             result = research_psycholinguistic(text="test")
             assert isinstance(result, dict)
@@ -255,7 +255,7 @@ class TestNLPToolsCoverage:
             logger.warning(f"research_psycholinguistic failed: {e}")
 
         try:
-            from loom.tools.stylometry import research_stylometry
+            from loom.tools.research.stylometry import research_stylometry
 
             result = research_stylometry(text="test")
             assert isinstance(result, dict)
@@ -264,7 +264,7 @@ class TestNLPToolsCoverage:
             logger.warning(f"research_stylometry failed: {e}")
 
         try:
-            from loom.tools.deception_detect import research_deception_detect
+            from loom.tools.research.deception_detect import research_deception_detect
 
             result = research_deception_detect(text="test")
             assert isinstance(result, dict)
@@ -273,7 +273,7 @@ class TestNLPToolsCoverage:
             logger.warning(f"research_deception_detect failed: {e}")
 
         try:
-            from loom.tools.sentiment_deep import research_sentiment_deep
+            from loom.tools.research.sentiment_deep import research_sentiment_deep
 
             result = await research_sentiment_deep(text="test")
             assert isinstance(result, dict)
@@ -282,7 +282,7 @@ class TestNLPToolsCoverage:
             logger.warning(f"research_sentiment_deep failed: {e}")
 
         try:
-            from loom.tools.prompt_analyzer import research_prompt_analyze
+            from loom.tools.llm.prompt_analyzer import research_prompt_analyze
 
             result = await research_prompt_analyze(prompt="test")
             assert isinstance(result, dict)
@@ -291,7 +291,7 @@ class TestNLPToolsCoverage:
             logger.warning(f"research_prompt_analyze failed: {e}")
 
         try:
-            from loom.tools.bias_lens import research_bias_lens
+            from loom.tools.research.bias_lens import research_bias_lens
 
             result = research_bias_lens(text="test")
             assert isinstance(result, dict)

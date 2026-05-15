@@ -240,7 +240,6 @@ def trace_tool_execution(func: Callable[..., Any]) -> Callable[..., Any]:
     Returns:
         Wrapped function with OpenTelemetry tracing
     """
-    import asyncio
     import inspect
 
     is_async = inspect.iscoroutinefunction(func)

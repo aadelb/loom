@@ -21,7 +21,7 @@ Integrates 9 scoring systems into a single coherent assessment:
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Literal
 
 from loom.attack_scorer import AttackEffectivenessScorer

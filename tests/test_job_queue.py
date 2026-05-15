@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from loom.job_queue import Job, JobQueue, get_job_queue
-from loom.tools.job_tools import (
+from loom.tools.career.job_tools import (
     research_job_submit,
     research_job_status,
     research_job_result,
@@ -283,7 +283,7 @@ class TestJobTools:
     async def test_research_job_submit(self, job_queue_temp) -> None:
         """Test research_job_submit tool."""
         # We need to mock the global queue for this
-        import loom.tools.job_tools as job_tools_module
+        import loom.tools.career.job_tools as job_tools_module
         original_get_queue = job_tools_module.get_job_queue
 
         try:
@@ -301,7 +301,7 @@ class TestJobTools:
 
     async def test_research_job_status_tool(self, job_queue_temp) -> None:
         """Test research_job_status tool."""
-        import loom.tools.job_tools as job_tools_module
+        import loom.tools.career.job_tools as job_tools_module
         original_get_queue = job_tools_module.get_job_queue
 
         try:

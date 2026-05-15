@@ -32,7 +32,7 @@ logger = logging.getLogger("loom.tests.e2e")
 @pytest.mark.asyncio
 async def test_research_deep_returns_dict() -> None:
     """Verify research_deep returns a dictionary with expected structure."""
-    from loom.tools.deep import research_deep
+    from loom.tools.core.deep import research_deep
 
     result = await research_deep(
         query="what is machine learning",
@@ -47,7 +47,7 @@ async def test_research_deep_returns_dict() -> None:
 @pytest.mark.asyncio
 async def test_research_deep_cost_tracking() -> None:
     """Verify research_deep includes cost estimation."""
-    from loom.tools.deep import research_deep
+    from loom.tools.core.deep import research_deep
 
     result = await research_deep(
         query="define AI",
@@ -67,7 +67,7 @@ async def test_research_deep_cost_tracking() -> None:
 @pytest.mark.asyncio
 async def test_research_deep_has_sources() -> None:
     """Verify research_deep includes source citations."""
-    from loom.tools.deep import research_deep
+    from loom.tools.core.deep import research_deep
 
     result = await research_deep(
         query="Paris France facts",
@@ -83,7 +83,7 @@ async def test_research_deep_has_sources() -> None:
 @pytest.mark.asyncio
 async def test_research_deep_with_cost_limit() -> None:
     """Verify research_deep respects max_cost_usd budget."""
-    from loom.tools.deep import research_deep
+    from loom.tools.core.deep import research_deep
 
     # Very low budget should trigger cost gating
     result = await research_deep(
@@ -105,7 +105,7 @@ async def test_research_deep_with_cost_limit() -> None:
 @pytest.mark.asyncio
 async def test_universal_orchestrator_returns_dict() -> None:
     """Verify universal_orchestrator returns valid dictionary."""
-    from loom.tools.universal_orchestrator import research_orchestrate_smart
+    from loom.tools.infrastructure.universal_orchestrator import research_orchestrate_smart
 
     result = await research_orchestrate_smart(
         query="what is Python programming",
@@ -119,7 +119,7 @@ async def test_universal_orchestrator_returns_dict() -> None:
 @pytest.mark.asyncio
 async def test_universal_orchestrator_router_confidence() -> None:
     """Verify orchestrator includes router_confidence in results."""
-    from loom.tools.universal_orchestrator import research_orchestrate_smart
+    from loom.tools.infrastructure.universal_orchestrator import research_orchestrate_smart
 
     result = await research_orchestrate_smart(
         query="search for AI safety papers",
@@ -136,7 +136,7 @@ async def test_universal_orchestrator_router_confidence() -> None:
 @pytest.mark.asyncio
 async def test_universal_orchestrator_tool_discovery() -> None:
     """Verify orchestrator includes tool discovery metadata."""
-    from loom.tools.universal_orchestrator import research_orchestrate_smart
+    from loom.tools.infrastructure.universal_orchestrator import research_orchestrate_smart
 
     result = await research_orchestrate_smart(
         query="find GitHub repositories",
@@ -154,7 +154,7 @@ async def test_universal_orchestrator_tool_discovery() -> None:
 @pytest.mark.asyncio
 async def test_universal_orchestrator_timeout_handling() -> None:
     """Verify orchestrator handles timeouts gracefully."""
-    from loom.tools.universal_orchestrator import research_orchestrate_smart
+    from loom.tools.infrastructure.universal_orchestrator import research_orchestrate_smart
 
     # Short timeout should not crash
     result = await research_orchestrate_smart(
@@ -175,7 +175,7 @@ async def test_universal_orchestrator_timeout_handling() -> None:
 @pytest.mark.asyncio
 async def test_full_pipeline_returns_dict() -> None:
     """Verify full_pipeline returns valid structure."""
-    from loom.tools.full_pipeline import research_full_pipeline
+    from loom.tools.infrastructure.full_pipeline import research_full_pipeline
 
     result = await research_full_pipeline(
         query="what is climate change",
@@ -189,7 +189,7 @@ async def test_full_pipeline_returns_dict() -> None:
 @pytest.mark.asyncio
 async def test_full_pipeline_has_structure() -> None:
     """Verify full_pipeline includes expected fields."""
-    from loom.tools.full_pipeline import research_full_pipeline
+    from loom.tools.infrastructure.full_pipeline import research_full_pipeline
 
     result = await research_full_pipeline(
         query="define economics",
@@ -209,7 +209,7 @@ async def test_full_pipeline_has_structure() -> None:
 @pytest.mark.asyncio
 async def test_full_pipeline_strategy_source() -> None:
     """Verify full_pipeline reports strategy source."""
-    from loom.tools.full_pipeline import research_full_pipeline
+    from loom.tools.infrastructure.full_pipeline import research_full_pipeline
 
     result = await research_full_pipeline(
         query="test query",
@@ -228,7 +228,7 @@ async def test_full_pipeline_strategy_source() -> None:
 @pytest.mark.asyncio
 async def test_full_pipeline_escalation() -> None:
     """Verify full_pipeline logs escalation attempts."""
-    from loom.tools.full_pipeline import research_full_pipeline
+    from loom.tools.infrastructure.full_pipeline import research_full_pipeline
 
     result = await research_full_pipeline(
         query="test escalation",
@@ -253,7 +253,7 @@ async def test_full_pipeline_escalation() -> None:
 @pytest.mark.asyncio
 async def test_pipeline_enhancer_wraps_tool() -> None:
     """Verify pipeline_enhancer successfully wraps a tool."""
-    from loom.tools.pipeline_enhancer import research_enhance
+    from loom.tools.infrastructure.pipeline_enhancer import research_enhance
 
     result = await research_enhance(
         tool_name="research_search",
@@ -274,7 +274,7 @@ async def test_pipeline_enhancer_wraps_tool() -> None:
 @pytest.mark.asyncio
 async def test_pipeline_enhancer_cost_estimation() -> None:
     """Verify pipeline_enhancer includes cost estimation."""
-    from loom.tools.pipeline_enhancer import research_enhance
+    from loom.tools.infrastructure.pipeline_enhancer import research_enhance
 
     result = await research_enhance(
         tool_name="research_search",
@@ -293,7 +293,7 @@ async def test_pipeline_enhancer_cost_estimation() -> None:
 @pytest.mark.asyncio
 async def test_pipeline_enhancer_execution_time() -> None:
     """Verify pipeline_enhancer tracks execution time."""
-    from loom.tools.pipeline_enhancer import research_enhance
+    from loom.tools.infrastructure.pipeline_enhancer import research_enhance
 
     result = await research_enhance(
         tool_name="research_search",
@@ -311,7 +311,7 @@ async def test_pipeline_enhancer_execution_time() -> None:
 @pytest.mark.asyncio
 async def test_pipeline_enhancer_with_hcs_scoring() -> None:
     """Verify pipeline_enhancer attaches HCS scores."""
-    from loom.tools.pipeline_enhancer import research_enhance
+    from loom.tools.infrastructure.pipeline_enhancer import research_enhance
 
     result = await research_enhance(
         tool_name="research_search",
@@ -330,7 +330,7 @@ async def test_pipeline_enhancer_with_hcs_scoring() -> None:
 @pytest.mark.asyncio
 async def test_pipeline_enhancer_with_suggestions() -> None:
     """Verify pipeline_enhancer suggests related tools."""
-    from loom.tools.pipeline_enhancer import research_enhance
+    from loom.tools.infrastructure.pipeline_enhancer import research_enhance
 
     result = await research_enhance(
         tool_name="research_search",
@@ -355,7 +355,7 @@ async def test_pipeline_enhancer_with_suggestions() -> None:
 async def test_cost_estimator_availability() -> None:
     """Verify cost_estimator module can be imported."""
     try:
-        from loom.tools.cost_estimator import research_estimate_cost
+        from loom.tools.infrastructure.cost_estimator import research_estimate_cost
 
         assert callable(research_estimate_cost), "cost_estimator should be callable"
     except ImportError:
@@ -367,7 +367,7 @@ async def test_cost_estimator_availability() -> None:
 async def test_cost_estimator_estimates_tool() -> None:
     """Verify cost_estimator can estimate tool costs."""
     try:
-        from loom.tools.cost_estimator import research_estimate_cost
+        from loom.tools.infrastructure.cost_estimator import research_estimate_cost
 
         result = await research_estimate_cost(
             tool_name="research_search",
@@ -388,7 +388,7 @@ async def test_cost_estimator_estimates_tool() -> None:
 async def test_hcs_scorer_availability() -> None:
     """Verify HCS scorer module can be imported."""
     try:
-        from loom.tools.hcs_scorer import research_hcs_score
+        from loom.tools.adversarial.hcs_scorer import research_hcs_score
 
         assert callable(research_hcs_score), "hcs_scorer should be callable"
     except ImportError:
@@ -400,7 +400,7 @@ async def test_hcs_scorer_availability() -> None:
 async def test_hcs_scorer_scores_content() -> None:
     """Verify HCS scorer returns scoring dictionary."""
     try:
-        from loom.tools.hcs_scorer import research_hcs_score
+        from loom.tools.adversarial.hcs_scorer import research_hcs_score
 
         test_content = "This is a test response with some information."
         result = await research_hcs_score(content=test_content)
@@ -422,7 +422,7 @@ async def test_hcs_scorer_scores_content() -> None:
 async def test_prompt_reframe_availability() -> None:
     """Verify prompt_reframe module can be imported."""
     try:
-        from loom.tools.prompt_reframe import research_auto_reframe
+        from loom.tools.llm.prompt_reframe import research_auto_reframe
 
         assert callable(research_auto_reframe), "prompt_reframe should be callable"
     except ImportError:
@@ -434,7 +434,7 @@ async def test_prompt_reframe_availability() -> None:
 async def test_prompt_reframe_reframes_query() -> None:
     """Verify prompt_reframe can reframe a query."""
     try:
-        from loom.tools.prompt_reframe import research_auto_reframe
+        from loom.tools.llm.prompt_reframe import research_auto_reframe
 
         result = await research_auto_reframe(
             original_prompt="How to become rich",
@@ -452,7 +452,7 @@ async def test_prompt_reframe_reframes_query() -> None:
 async def test_strategy_cache_availability() -> None:
     """Verify strategy_cache module can be imported."""
     try:
-        from loom.tools.strategy_cache import research_cached_strategy
+        from loom.tools.llm.strategy_cache import research_cached_strategy
 
         assert callable(research_cached_strategy), "strategy_cache should be callable"
     except ImportError:
@@ -468,7 +468,7 @@ async def test_strategy_cache_availability() -> None:
 @pytest.mark.asyncio
 async def test_canonical_query_deep() -> None:
     """Verify canonical query works with research_deep."""
-    from loom.tools.deep import research_deep
+    from loom.tools.core.deep import research_deep
 
     result = await research_deep(
         query="how to become rich in Dubai",
@@ -484,7 +484,7 @@ async def test_canonical_query_deep() -> None:
 @pytest.mark.asyncio
 async def test_canonical_query_orchestrator() -> None:
     """Verify canonical query works with orchestrator."""
-    from loom.tools.universal_orchestrator import research_orchestrate_smart
+    from loom.tools.infrastructure.universal_orchestrator import research_orchestrate_smart
 
     result = await research_orchestrate_smart(
         query="how to become rich in Dubai",
@@ -498,7 +498,7 @@ async def test_canonical_query_orchestrator() -> None:
 @pytest.mark.asyncio
 async def test_canonical_query_full_pipeline() -> None:
     """Verify canonical query works with full_pipeline."""
-    from loom.tools.full_pipeline import research_full_pipeline
+    from loom.tools.infrastructure.full_pipeline import research_full_pipeline
 
     result = await research_full_pipeline(
         query="how to become rich in Dubai",
@@ -517,7 +517,7 @@ async def test_canonical_query_full_pipeline() -> None:
 @pytest.mark.asyncio
 async def test_concurrent_tool_execution() -> None:
     """Verify multiple tools can execute concurrently."""
-    from loom.tools.search import research_search
+    from loom.tools.core.search import research_search
 
     tasks = [
         research_search(query="python", provider="ddgs", n=1),
@@ -536,7 +536,7 @@ async def test_concurrent_tool_execution() -> None:
 @pytest.mark.asyncio
 async def test_pipeline_with_error_handling() -> None:
     """Verify pipelines handle errors gracefully."""
-    from loom.tools.deep import research_deep
+    from loom.tools.core.deep import research_deep
 
     # Invalid query should still return dict (with error field)
     result = await research_deep(query="", max_results=1)
@@ -549,7 +549,7 @@ async def test_pipeline_with_error_handling() -> None:
 @pytest.mark.asyncio
 async def test_research_enhance_with_missing_tool() -> None:
     """Verify enhancer handles missing tools gracefully."""
-    from loom.tools.pipeline_enhancer import research_enhance
+    from loom.tools.infrastructure.pipeline_enhancer import research_enhance
 
     result = await research_enhance(
         tool_name="research_nonexistent_tool",

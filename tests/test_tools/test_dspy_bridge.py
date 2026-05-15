@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from loom.tools.dspy_bridge import (
+from loom.tools.llm.dspy_bridge import (
     LoomDSPyLM,
     research_dspy_configure,
     research_dspy_cost_report,
@@ -125,7 +125,7 @@ class TestDspyStatsTracking:
     @pytest.mark.asyncio
     async def test_cost_report_stats_dict_exists(self):
         """Test that stats dictionary is properly initialized."""
-        from loom.tools.dspy_bridge import _dspy_stats
+        from loom.tools.llm.dspy_bridge import _dspy_stats
 
         # Verify all expected keys exist
         assert "total_calls" in _dspy_stats
@@ -141,7 +141,7 @@ class TestDspyModuleStructure:
 
     def test_module_exports(self):
         """Test that all expected functions are exported."""
-        from loom.tools import dspy_bridge
+        import loom.tools.llm.dspy_bridge
 
         assert hasattr(dspy_bridge, "research_dspy_configure")
         assert hasattr(dspy_bridge, "research_dspy_cost_report")

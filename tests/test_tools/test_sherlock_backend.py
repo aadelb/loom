@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
-from loom.tools.sherlock_backend import (
+from loom.tools.backends.sherlock_backend import (
     _check_sherlock_available,
     _validate_platform,
     _validate_username,
@@ -153,7 +153,7 @@ class TestSherlockLookup:
         assert "error" in result
         assert result["sherlock_available"] is False
 
-    @patch("loom.tools.sherlock_backend._check_sherlock_available")
+    @patch("loom.tools.backends.sherlock_backend._check_sherlock_available")
     def test_sherlock_unavailable(self, mock_check: Mock) -> None:
         """Returns error when Sherlock unavailable."""
         mock_check.return_value = (False, "Sherlock not found")
@@ -162,7 +162,7 @@ class TestSherlockLookup:
         assert "error" in result
         assert "not found" in result["error"].lower()
 
-    @patch("loom.tools.sherlock_backend._check_sherlock_available")
+    @patch("loom.tools.backends.sherlock_backend._check_sherlock_available")
     @patch("loom.tools.sherlock_backend.subprocess.run")
     @patch("builtins.open", create=True)
     def test_username_found(self, mock_open: Mock, mock_run: Mock, mock_check: Mock) -> None:
@@ -206,7 +206,7 @@ class TestSherlockLookup:
         assert result["found_on"][0]["platform"] == "twitter"
         assert result["found_on"][0]["url"] == "https://twitter.com/testuser"
 
-    @patch("loom.tools.sherlock_backend._check_sherlock_available")
+    @patch("loom.tools.backends.sherlock_backend._check_sherlock_available")
     @patch("loom.tools.sherlock_backend.subprocess.run")
     @patch("builtins.open", create=True)
     def test_username_not_found_anywhere(
@@ -236,7 +236,7 @@ class TestSherlockLookup:
         assert result["total_checked"] == 3
         assert result["found_on"] == []
 
-    @patch("loom.tools.sherlock_backend._check_sherlock_available")
+    @patch("loom.tools.backends.sherlock_backend._check_sherlock_available")
     @patch("loom.tools.sherlock_backend.subprocess.run")
     def test_timeout(self, mock_run: Mock, mock_check: Mock) -> None:
         """Returns error on timeout."""
@@ -251,7 +251,7 @@ class TestSherlockLookup:
         assert "error" in result
         assert "timed out" in result["error"].lower()
 
-    @patch("loom.tools.sherlock_backend._check_sherlock_available")
+    @patch("loom.tools.backends.sherlock_backend._check_sherlock_available")
     @patch("loom.tools.sherlock_backend.subprocess.run")
     def test_platforms_filter(self, mock_run: Mock, mock_check: Mock) -> None:
         """Passes platforms to subprocess command."""
@@ -276,7 +276,7 @@ class TestSherlockLookup:
             assert "twitter" in cmd
             assert "github" in cmd
 
-    @patch("loom.tools.sherlock_backend._check_sherlock_available")
+    @patch("loom.tools.backends.sherlock_backend._check_sherlock_available")
     @patch("loom.tools.sherlock_backend.subprocess.run")
     def test_custom_timeout(self, mock_run: Mock, mock_check: Mock) -> None:
         """Uses custom timeout value."""
@@ -298,7 +298,7 @@ class TestSherlockLookup:
             assert "--timeout" in cmd
             assert "60" in cmd
 
-    @patch("loom.tools.sherlock_backend._check_sherlock_available")
+    @patch("loom.tools.backends.sherlock_backend._check_sherlock_available")
     @patch("loom.tools.sherlock_backend.subprocess.run")
     def test_malformed_json_output(self, mock_run: Mock, mock_check: Mock) -> None:
         """Handles malformed JSON output gracefully."""
@@ -323,12 +323,12 @@ class TestSherlockBatch:
 
     def test_empty_usernames(self) -> None:
         """Empty usernames list returns error."""
-        with patch("loom.tools.sherlock_backend._check_sherlock_available") as mock_check:
+        with patch("loom.tools.backends.sherlock_backend._check_sherlock_available") as mock_check:
             mock_check.return_value = (True, "Available")
             result = research_sherlock_batch([])
             assert result["error"] == "No valid usernames provided"
 
-    @patch("loom.tools.sherlock_backend._check_sherlock_available")
+    @patch("loom.tools.backends.sherlock_backend._check_sherlock_available")
     def test_sherlock_unavailable(self, mock_check: Mock) -> None:
         """Returns error when Sherlock unavailable."""
         mock_check.return_value = (False, "Sherlock not found")
@@ -337,8 +337,8 @@ class TestSherlockBatch:
         assert "error" in result
         assert result["results"] == {}
 
-    @patch("loom.tools.sherlock_backend._check_sherlock_available")
-    @patch("loom.tools.sherlock_backend.research_sherlock_lookup")
+    @patch("loom.tools.backends.sherlock_backend._check_sherlock_available")
+    @patch("loom.tools.backends.sherlock_backend.research_sherlock_lookup")
     def test_batch_multiple_users(
         self, mock_lookup: Mock, mock_check: Mock
     ) -> None:
@@ -373,8 +373,8 @@ class TestSherlockBatch:
         assert "user2" in result["results"]
         assert mock_lookup.call_count == 2
 
-    @patch("loom.tools.sherlock_backend._check_sherlock_available")
-    @patch("loom.tools.sherlock_backend.research_sherlock_lookup")
+    @patch("loom.tools.backends.sherlock_backend._check_sherlock_available")
+    @patch("loom.tools.backends.sherlock_backend.research_sherlock_lookup")
     def test_batch_deduplicates_usernames(
         self, mock_lookup: Mock, mock_check: Mock
     ) -> None:
@@ -391,8 +391,8 @@ class TestSherlockBatch:
         assert result["usernames_checked"] == 1
         assert mock_lookup.call_count == 1
 
-    @patch("loom.tools.sherlock_backend._check_sherlock_available")
-    @patch("loom.tools.sherlock_backend.research_sherlock_lookup")
+    @patch("loom.tools.backends.sherlock_backend._check_sherlock_available")
+    @patch("loom.tools.backends.sherlock_backend.research_sherlock_lookup")
     def test_batch_skips_invalid_usernames(
         self, mock_lookup: Mock, mock_check: Mock
     ) -> None:
@@ -412,8 +412,8 @@ class TestSherlockBatch:
         assert result["usernames_checked"] == 2
         assert mock_lookup.call_count == 2
 
-    @patch("loom.tools.sherlock_backend._check_sherlock_available")
-    @patch("loom.tools.sherlock_backend.research_sherlock_lookup")
+    @patch("loom.tools.backends.sherlock_backend._check_sherlock_available")
+    @patch("loom.tools.backends.sherlock_backend.research_sherlock_lookup")
     def test_batch_passes_platforms(
         self, mock_lookup: Mock, mock_check: Mock
     ) -> None:
@@ -436,8 +436,8 @@ class TestSherlockBatch:
         # research_sherlock_lookup(username, platforms, timeout)
         assert call_args[0][1] == ["twitter", "github"]
 
-    @patch("loom.tools.sherlock_backend._check_sherlock_available")
-    @patch("loom.tools.sherlock_backend.research_sherlock_lookup")
+    @patch("loom.tools.backends.sherlock_backend._check_sherlock_available")
+    @patch("loom.tools.backends.sherlock_backend.research_sherlock_lookup")
     def test_batch_accumulates_total_found(
         self, mock_lookup: Mock, mock_check: Mock
     ) -> None:
@@ -469,8 +469,8 @@ class TestSherlockBatch:
 
         assert result["total_accounts_found"] == 10
 
-    @patch("loom.tools.sherlock_backend._check_sherlock_available")
-    @patch("loom.tools.sherlock_backend.research_sherlock_lookup")
+    @patch("loom.tools.backends.sherlock_backend._check_sherlock_available")
+    @patch("loom.tools.backends.sherlock_backend.research_sherlock_lookup")
     def test_batch_handles_lookup_errors(
         self, mock_lookup: Mock, mock_check: Mock
     ) -> None:
@@ -503,8 +503,8 @@ class TestSherlockBatch:
         assert result["total_accounts_found"] == 3
         assert "error" in result["results"]["user2"]
 
-    @patch("loom.tools.sherlock_backend._check_sherlock_available")
-    @patch("loom.tools.sherlock_backend.research_sherlock_lookup")
+    @patch("loom.tools.backends.sherlock_backend._check_sherlock_available")
+    @patch("loom.tools.backends.sherlock_backend.research_sherlock_lookup")
     def test_batch_respects_max_usernames(
         self, mock_lookup: Mock, mock_check: Mock
     ) -> None:

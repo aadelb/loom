@@ -7,8 +7,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from loom.tools.domain_intel import (
-    _validate_domain,
+from loom.input_validators import validate_domain
+from loom.tools.intelligence.domain_intel import (
     _validate_ip_or_domain,
     research_dns_lookup,
     research_nmap_scan,
@@ -21,28 +21,28 @@ class TestValidateDomain:
 
     def test_valid_domain(self) -> None:
         """Valid domains pass validation."""
-        assert _validate_domain("example.com") == "example.com"
-        assert _validate_domain("sub.example.org") == "sub.example.org"
-        assert _validate_domain("test-domain.co.uk") == "test-domain.co.uk"
-        assert _validate_domain("my_domain.net") == "my_domain.net"
+        assert validate_domain("example.com") == "example.com"
+        assert validate_domain("sub.example.org") == "sub.example.org"
+        assert validate_domain("test-domain.co.uk") == "test-domain.co.uk"
+        assert validate_domain("my_domain.net") == "my_domain.net"
 
     def test_domain_too_long(self) -> None:
         """Domain exceeding 255 chars raises error."""
         long_domain = "a" * 256 + ".com"
         with pytest.raises(ValueError, match="1-255 characters"):
-            _validate_domain(long_domain)
+            validate_domain(long_domain)
 
     def test_domain_empty(self) -> None:
         """Empty domain raises error."""
         with pytest.raises(ValueError):
-            _validate_domain("")
+            validate_domain("")
 
     def test_domain_disallowed_chars(self) -> None:
         """Domain with spaces or special chars raises error."""
         with pytest.raises(ValueError, match="disallowed characters"):
-            _validate_domain("example .com")
+            validate_domain("example .com")
         with pytest.raises(ValueError, match="disallowed characters"):
-            _validate_domain("example@com")
+            validate_domain("example@com")
 
 
 class TestValidateIpOrDomain:
@@ -77,7 +77,7 @@ class TestValidateIpOrDomain:
 class TestWhois:
     """research_whois command execution and output parsing."""
 
-    @patch("loom.tools.domain_intel.subprocess.run")
+    @patch("loom.tools.intelligence.domain_intel.subprocess.run")
     def test_whois_success(self, mock_run: MagicMock) -> None:
         """Successful whois lookup returns parsed fields."""
         whois_output = """
@@ -107,7 +107,7 @@ class TestWhois:
         assert len(result.get("nameservers", [])) == 2
         assert len(result.get("status", [])) == 2
 
-    @patch("loom.tools.domain_intel.subprocess.run")
+    @patch("loom.tools.intelligence.domain_intel.subprocess.run")
     def test_whois_command_failure(self, mock_run: MagicMock) -> None:
         """Whois command failure returns error."""
         mock_run.return_value = MagicMock(
@@ -119,7 +119,7 @@ class TestWhois:
         assert "error" in result
         assert result["domain"] == "invalid.test"
 
-    @patch("loom.tools.domain_intel.subprocess.run")
+    @patch("loom.tools.intelligence.domain_intel.subprocess.run")
     def test_whois_timeout(self, mock_run: MagicMock) -> None:
         """Whois timeout returns error."""
         import subprocess
@@ -152,7 +152,7 @@ class TestWhois:
 class TestDnsLookup:
     """research_dns_lookup with dnspython and fallback."""
 
-    @patch("loom.tools.domain_intel.socket.getaddrinfo")
+    @patch("loom.tools.intelligence.domain_intel.socket.getaddrinfo")
     def test_dns_lookup_socket_fallback(self, mock_getaddrinfo) -> None:
         """DNS lookup using socket when dnspython unavailable."""
         # Mock returns socket.AF_INET (2) and socket.AF_INET6 (10) families
@@ -169,7 +169,7 @@ class TestDnsLookup:
         assert len(result["ip_addresses"]) > 0
 
     @pytest.mark.skip(reason="Patching socket in dnspython context is complex; socket path is tested via manual integration tests")
-    @patch("loom.tools.domain_intel.socket.getaddrinfo")
+    @patch("loom.tools.intelligence.domain_intel.socket.getaddrinfo")
     def test_dns_lookup_failure(self, mock_getaddrinfo) -> None:
         """DNS lookup failure returns error."""
         import socket as socket_module
@@ -187,7 +187,7 @@ class TestDnsLookup:
 
         assert "error" in result
 
-    @patch("loom.tools.domain_intel.socket.getaddrinfo")
+    @patch("loom.tools.intelligence.domain_intel.socket.getaddrinfo")
     def test_dns_lookup_custom_record_types(self, mock_getaddrinfo) -> None:
         """DNS lookup respects custom record types."""
         mock_getaddrinfo.return_value = [
@@ -203,7 +203,7 @@ class TestDnsLookup:
 class TestNmapScan:
     """research_nmap_scan command execution and parsing."""
 
-    @patch("loom.tools.domain_intel.subprocess.run")
+    @patch("loom.tools.intelligence.domain_intel.subprocess.run")
     def test_nmap_basic_scan(self, mock_run: MagicMock) -> None:
         """Nmap basic scan parses open ports."""
         nmap_output = """
@@ -228,7 +228,7 @@ class TestNmapScan:
         assert any(p["port"] == 443 for p in result["ports"])
         assert result["host_up"] is True
 
-    @patch("loom.tools.domain_intel.subprocess.run")
+    @patch("loom.tools.intelligence.domain_intel.subprocess.run")
     def test_nmap_no_open_ports(self, mock_run: MagicMock) -> None:
         """Nmap returns empty port list when no ports open."""
         nmap_output = """
@@ -243,7 +243,7 @@ class TestNmapScan:
         assert len(result["ports"]) == 0
         assert result["host_up"] is False
 
-    @patch("loom.tools.domain_intel.subprocess.run")
+    @patch("loom.tools.intelligence.domain_intel.subprocess.run")
     def test_nmap_not_installed(self, mock_run: MagicMock) -> None:
         """Nmap not found returns error."""
         mock_run.side_effect = FileNotFoundError()
@@ -253,7 +253,7 @@ class TestNmapScan:
         assert "error" in result
         assert "not found" in result["error"]
 
-    @patch("loom.tools.domain_intel.subprocess.run")
+    @patch("loom.tools.intelligence.domain_intel.subprocess.run")
     def test_nmap_timeout(self, mock_run: MagicMock) -> None:
         """Nmap timeout returns error."""
         import subprocess
@@ -283,7 +283,7 @@ class TestNmapScan:
 
         assert "error" in result
 
-    @patch("loom.tools.domain_intel.subprocess.run")
+    @patch("loom.tools.intelligence.domain_intel.subprocess.run")
     def test_nmap_service_version_detection(self, mock_run: MagicMock) -> None:
         """Nmap service scan includes service names."""
         nmap_output = """

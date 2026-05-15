@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 import pytest
 
-from loom.tools.rag_anything import (
+from loom.tools.llm.rag_anything import (
     research_rag_clear,
     research_rag_ingest,
     research_rag_query,
@@ -24,9 +24,9 @@ from loom.tools.rag_anything import (
 def temp_rag_dir():
     """Create temporary RAG directory for testing."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        with patch("loom.tools.rag_anything._RAG_DIR", Path(tmpdir)):
+        with patch("loom.tools.llm.rag_anything._RAG_DIR", Path(tmpdir)):
             with patch(
-                "loom.tools.rag_anything._DB_PATH",
+                "loom.tools.llm.rag_anything._DB_PATH",
                 Path(tmpdir) / "store.db",
             ):
                 yield Path(tmpdir)

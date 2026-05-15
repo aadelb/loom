@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import pytest
 
-from loom.tools.eu_ai_act import (
+from loom.tools.security.eu_ai_act import (
     research_ai_transparency_check,
     research_ai_bias_audit,
     research_ai_robustness_test,

@@ -93,7 +93,7 @@ class TestSearchFunctionality:
     async def test_search_module_imports(self) -> None:
         """Search module imports successfully."""
         try:
-            from loom.tools.search import research_search  # noqa: F401
+            from loom.tools.core.search import research_search  # noqa: F401
 
             assert True
         except ImportError:
@@ -103,7 +103,7 @@ class TestSearchFunctionality:
     async def test_fetch_module_imports(self) -> None:
         """Fetch module imports successfully."""
         try:
-            from loom.tools.fetch import research_fetch  # noqa: F401
+            from loom.tools.core.fetch import research_fetch  # noqa: F401
 
             assert True
         except ImportError:
@@ -113,7 +113,7 @@ class TestSearchFunctionality:
     async def test_markdown_module_imports(self) -> None:
         """Markdown module imports successfully."""
         try:
-            from loom.tools.markdown import research_markdown  # noqa: F401
+            from loom.tools.core.markdown import research_markdown  # noqa: F401
 
             assert True
         except ImportError:
@@ -127,7 +127,7 @@ class TestDeepResearchPipeline:
     async def test_deep_module_imports(self) -> None:
         """Deep research module imports."""
         try:
-            from loom.tools.deep import research_deep  # noqa: F401
+            from loom.tools.core.deep import research_deep  # noqa: F401
 
             assert True
         except ImportError:
@@ -151,7 +151,7 @@ class TestLLMIntegration:
     async def test_llm_module_imports(self) -> None:
         """LLM module imports successfully."""
         try:
-            from loom.tools.llm import research_llm_summarize  # noqa: F401
+            from loom.tools.llm.llm import research_llm_summarize  # noqa: F401
 
             assert True
         except ImportError:

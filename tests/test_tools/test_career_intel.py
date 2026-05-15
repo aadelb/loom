@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from loom.tools.career_intel import (
+from loom.tools.career.career_intel import (
     _extract_research_areas_simple,
     _extract_skills_simple,
     _match_skills,
@@ -27,12 +27,12 @@ class TestMapResearchToProduct:
     async def test_invalid_n_parameter_too_small(self) -> None:
         """n < 1 is clamped to 1."""
         with patch(
-            "loom.tools.career_intel._extract_research_areas_llm"
+            "loom.tools.career.career_intel._extract_research_areas_llm"
         ) as mock_extract:
             mock_extract.return_value = ["machine learning"]
-            with patch("loom.tools.career_intel._search_companies_for_areas") as mock_search:
+            with patch("loom.tools.career.career_intel._search_companies_for_areas") as mock_search:
                 mock_search.return_value = {"machine learning": {"companies": [], "products": [], "total_results": 0}}
-                with patch("loom.tools.career_intel._search_github_repos") as mock_github:
+                with patch("loom.tools.career.career_intel._search_github_repos") as mock_github:
                     mock_github.return_value = {"machine learning": []}
 
                     result = await research_map_research_to_product("test research", n=0)
@@ -42,12 +42,12 @@ class TestMapResearchToProduct:
     async def test_invalid_n_parameter_too_large(self) -> None:
         """n > 50 is clamped to 50."""
         with patch(
-            "loom.tools.career_intel._extract_research_areas_llm"
+            "loom.tools.career.career_intel._extract_research_areas_llm"
         ) as mock_extract:
             mock_extract.return_value = ["machine learning"]
-            with patch("loom.tools.career_intel._search_companies_for_areas") as mock_search:
+            with patch("loom.tools.career.career_intel._search_companies_for_areas") as mock_search:
                 mock_search.return_value = {"machine learning": {"companies": [], "products": [], "total_results": 0}}
-                with patch("loom.tools.career_intel._search_github_repos") as mock_github:
+                with patch("loom.tools.career.career_intel._search_github_repos") as mock_github:
                     mock_github.return_value = {"machine learning": []}
 
                     result = await research_map_research_to_product("test research", n=100)
@@ -57,10 +57,10 @@ class TestMapResearchToProduct:
     async def test_returns_required_fields(self) -> None:
         """Result contains all required fields."""
         with patch(
-            "loom.tools.career_intel._extract_research_areas_llm"
+            "loom.tools.career.career_intel._extract_research_areas_llm"
         ) as mock_extract:
             mock_extract.return_value = ["machine learning"]
-            with patch("loom.tools.career_intel._search_companies_for_areas") as mock_search:
+            with patch("loom.tools.career.career_intel._search_companies_for_areas") as mock_search:
                 mock_search.return_value = {
                     "machine learning": {
                         "companies": ["OpenAI"],
@@ -68,7 +68,7 @@ class TestMapResearchToProduct:
                         "total_results": 1,
                     }
                 }
-                with patch("loom.tools.career_intel._search_github_repos") as mock_github:
+                with patch("loom.tools.career.career_intel._search_github_repos") as mock_github:
                     mock_github.return_value = {"machine learning": []}
 
                     result = await research_map_research_to_product("test research")
@@ -82,12 +82,12 @@ class TestMapResearchToProduct:
     async def test_extracts_research_areas(self) -> None:
         """Tool extracts research areas correctly."""
         with patch(
-            "loom.tools.career_intel._extract_research_areas_llm"
+            "loom.tools.career.career_intel._extract_research_areas_llm"
         ) as mock_extract:
             mock_extract.return_value = ["reinforcement learning", "NLP"]
-            with patch("loom.tools.career_intel._search_companies_for_areas") as mock_search:
+            with patch("loom.tools.career.career_intel._search_companies_for_areas") as mock_search:
                 mock_search.return_value = {}
-                with patch("loom.tools.career_intel._search_github_repos") as mock_github:
+                with patch("loom.tools.career.career_intel._search_github_repos") as mock_github:
                     mock_github.return_value = {}
 
                     result = await research_map_research_to_product("deep learning research")
@@ -96,7 +96,7 @@ class TestMapResearchToProduct:
     async def test_handles_search_errors_gracefully(self) -> None:
         """Tool handles search errors gracefully."""
         with patch(
-            "loom.tools.career_intel._extract_research_areas_llm"
+            "loom.tools.career.career_intel._extract_research_areas_llm"
         ) as mock_extract:
             mock_extract.side_effect = Exception("Search failed")
 
@@ -108,10 +108,10 @@ class TestMapResearchToProduct:
     async def test_commercial_mapping_structure(self) -> None:
         """Commercial mapping has correct structure."""
         with patch(
-            "loom.tools.career_intel._extract_research_areas_llm"
+            "loom.tools.career.career_intel._extract_research_areas_llm"
         ) as mock_extract:
             mock_extract.return_value = ["machine learning"]
-            with patch("loom.tools.career_intel._search_companies_for_areas") as mock_search:
+            with patch("loom.tools.career.career_intel._search_companies_for_areas") as mock_search:
                 mock_search.return_value = {
                     "machine learning": {
                         "companies": ["OpenAI", "DeepMind"],
@@ -119,7 +119,7 @@ class TestMapResearchToProduct:
                         "total_results": 5,
                     }
                 }
-                with patch("loom.tools.career_intel._search_github_repos") as mock_github:
+                with patch("loom.tools.career.career_intel._search_github_repos") as mock_github:
                     mock_github.return_value = {"machine learning": []}
 
                     result = await research_map_research_to_product("test research")
@@ -142,12 +142,12 @@ class TestTranslateAcademicSkills:
 
     async def test_returns_required_fields(self) -> None:
         """Result contains all required fields."""
-        with patch("loom.tools.career_intel._extract_skills_llm") as mock_extract:
+        with patch("loom.tools.career.career_intel._extract_skills_llm") as mock_extract:
             mock_extract.side_effect = [
                 ["machine learning", "teaching"],
                 ["Python", "system design"],
             ]
-            with patch("loom.tools.career_intel._match_skills") as mock_match:
+            with patch("loom.tools.career.career_intel._match_skills") as mock_match:
                 mock_match.return_value = []
 
                 result = await research_translate_academic_skills("CV text", "JD text")
@@ -160,12 +160,12 @@ class TestTranslateAcademicSkills:
 
     async def test_extracts_academic_skills(self) -> None:
         """Tool extracts academic skills correctly."""
-        with patch("loom.tools.career_intel._extract_skills_llm") as mock_extract:
+        with patch("loom.tools.career.career_intel._extract_skills_llm") as mock_extract:
             mock_extract.side_effect = [
                 ["machine learning", "mentoring"],
                 ["Python"],
             ]
-            with patch("loom.tools.career_intel._match_skills") as mock_match:
+            with patch("loom.tools.career.career_intel._match_skills") as mock_match:
                 mock_match.return_value = []
 
                 result = await research_translate_academic_skills("CV with ML and mentoring", "JD")
@@ -180,7 +180,7 @@ class TestTranslateAcademicSkills:
                 ["machine learning"],
                 ["Python", "system design", "leadership"],
             ]
-            with patch("loom.tools.career_intel._match_skills") as mock_match:
+            with patch("loom.tools.career.career_intel._match_skills") as mock_match:
                 mock_match.return_value = []
 
                 result = await research_translate_academic_skills("CV", "JD with Python")
@@ -190,9 +190,9 @@ class TestTranslateAcademicSkills:
 
     async def test_match_percentage_calculation(self) -> None:
         """Match percentage is calculated correctly."""
-        with patch("loom.tools.career_intel._extract_skills_llm") as mock_extract:
+        with patch("loom.tools.career.career_intel._extract_skills_llm") as mock_extract:
             mock_extract.side_effect = [["skill1", "skill2"], ["skill1", "skill2", "skill3", "skill4"]]
-            with patch("loom.tools.career_intel._match_skills") as mock_match:
+            with patch("loom.tools.career.career_intel._match_skills") as mock_match:
                 # 2 out of 4 required skills matched
                 mock_match.return_value = [
                     {"academic": "skill1", "industry": "skill1", "match_score": 1.0},
@@ -205,12 +205,12 @@ class TestTranslateAcademicSkills:
 
     async def test_identifies_skill_gaps(self) -> None:
         """Tool identifies skill gaps correctly."""
-        with patch("loom.tools.career_intel._extract_skills_llm") as mock_extract:
+        with patch("loom.tools.career.career_intel._extract_skills_llm") as mock_extract:
             mock_extract.side_effect = [
                 ["machine learning"],
                 ["machine learning", "Python", "DevOps"],
             ]
-            with patch("loom.tools.career_intel._match_skills") as mock_match:
+            with patch("loom.tools.career.career_intel._match_skills") as mock_match:
                 mock_match.return_value = [
                     {"academic": "machine learning", "industry": "machine learning", "match_score": 1.0}
                 ]
@@ -225,9 +225,9 @@ class TestTranslateAcademicSkills:
 
     async def test_skill_gaps_have_learning_resources(self) -> None:
         """Skill gaps include learning resource recommendations."""
-        with patch("loom.tools.career_intel._extract_skills_llm") as mock_extract:
+        with patch("loom.tools.career.career_intel._extract_skills_llm") as mock_extract:
             mock_extract.side_effect = [["skill1"], ["Python"]]
-            with patch("loom.tools.career_intel._match_skills") as mock_match:
+            with patch("loom.tools.career.career_intel._match_skills") as mock_match:
                 mock_match.return_value = []
 
                 result = await research_translate_academic_skills("CV", "JD")
@@ -239,7 +239,7 @@ class TestTranslateAcademicSkills:
 
     async def test_handles_extraction_errors_gracefully(self) -> None:
         """Tool handles extraction errors gracefully."""
-        with patch("loom.tools.career_intel._extract_skills_llm") as mock_extract:
+        with patch("loom.tools.career.career_intel._extract_skills_llm") as mock_extract:
             mock_extract.side_effect = Exception("LLM error")
 
             result = await research_translate_academic_skills("CV", "JD")
@@ -366,10 +366,10 @@ class TestIntegration:
     async def test_full_research_mapping_workflow(self) -> None:
         """Test complete research mapping workflow."""
         with patch(
-            "loom.tools.career_intel._extract_research_areas_llm"
+            "loom.tools.career.career_intel._extract_research_areas_llm"
         ) as mock_extract:
             mock_extract.return_value = ["machine learning", "NLP"]
-            with patch("loom.tools.career_intel._search_companies_for_areas") as mock_search:
+            with patch("loom.tools.career.career_intel._search_companies_for_areas") as mock_search:
                 mock_search.return_value = {
                     "machine learning": {
                         "companies": ["OpenAI"],
@@ -382,7 +382,7 @@ class TestIntegration:
                         "total_results": 3,
                     },
                 }
-                with patch("loom.tools.career_intel._search_github_repos") as mock_github:
+                with patch("loom.tools.career.career_intel._search_github_repos") as mock_github:
                     mock_github.return_value = {
                         "machine learning": [
                             {"name": "pytorch", "stars": 75000}
@@ -405,12 +405,12 @@ class TestIntegration:
         cv_text = "Mentored students and published research in machine learning"
         jd_text = "Seeking candidate with leadership, Python skills, system design"
 
-        with patch("loom.tools.career_intel._extract_skills_llm") as mock_extract:
+        with patch("loom.tools.career.career_intel._extract_skills_llm") as mock_extract:
             mock_extract.side_effect = [
                 ["mentoring", "published research", "machine learning"],
                 ["leadership", "Python", "system design"],
             ]
-            with patch("loom.tools.career_intel._match_skills") as mock_match:
+            with patch("loom.tools.career.career_intel._match_skills") as mock_match:
                 mock_match.return_value = [
                     {"academic": "mentoring", "industry": "leadership", "match_score": 0.8}
                 ]

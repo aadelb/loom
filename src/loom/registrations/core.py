@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import logging
-from contextlib import suppress
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -106,7 +105,7 @@ def register_core_tools(mcp: "FastMCP", wrap_tool) -> None:
         from loom.tools.infrastructure.tool_discovery import research_discover
         mcp.tool()(wrap_tool(research_discover))
         record_success("core", "research_discover")
-    except (ImportError, AttributeError) as e:
+    except Exception as e:
         log.debug("skip tool_discovery: %s", e)
         record_failure("core", "tool_discovery", str(e))
     log.info("registered core tools count=17")

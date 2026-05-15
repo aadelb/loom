@@ -11,7 +11,7 @@ Tools:
 from __future__ import annotations
 
 import logging
-from typing import Any, Literal
+from typing import Any
 
 from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.thinking_injection")

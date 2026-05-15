@@ -14,7 +14,7 @@ from typing import Any
 from urllib.parse import quote
 
 import httpx
-from loom.http_helpers import fetch_json, fetch_text
+from loom.http_helpers import fetch_json
 
 from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.vuln_intel")

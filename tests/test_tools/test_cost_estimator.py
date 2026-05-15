@@ -6,7 +6,7 @@ import asyncio
 
 import pytest
 
-from loom.tools.cost_estimator import (
+from loom.tools.infrastructure.cost_estimator import (
     COST_MAP,
     TOKEN_ESTIMATES,
     _calculate_cost,
@@ -229,7 +229,7 @@ class TestEstimateCost:
     async def test_estimate_accumulates_history(self) -> None:
         """Multiple estimates accumulate in history."""
         # Clear history first
-        from loom.tools import cost_estimator
+        import loom.tools.infrastructure.cost_estimator
         cost_estimator._cost_history.clear()
 
         await research_estimate_cost("research_fetch")
@@ -254,7 +254,7 @@ class TestCostSummary:
 
     async def test_summary_empty_history(self) -> None:
         """Summary on empty history returns zeros."""
-        from loom.tools import cost_estimator
+        import loom.tools.infrastructure.cost_estimator
         cost_estimator._cost_history.clear()
 
         result = await research_cost_summary()
@@ -266,7 +266,7 @@ class TestCostSummary:
 
     async def test_summary_with_history(self) -> None:
         """Summary aggregates accumulated costs."""
-        from loom.tools import cost_estimator
+        import loom.tools.infrastructure.cost_estimator
         cost_estimator._cost_history.clear()
 
         # Add some estimates
@@ -281,7 +281,7 @@ class TestCostSummary:
 
     async def test_summary_period_today(self) -> None:
         """Summary respects period parameter."""
-        from loom.tools import cost_estimator
+        import loom.tools.infrastructure.cost_estimator
         cost_estimator._cost_history.clear()
 
         await research_estimate_cost("research_fetch")
@@ -292,7 +292,7 @@ class TestCostSummary:
 
     async def test_summary_returns_breakdown(self) -> None:
         """Summary returns per-provider and per-tool breakdown."""
-        from loom.tools import cost_estimator
+        import loom.tools.infrastructure.cost_estimator
         cost_estimator._cost_history.clear()
 
         await research_estimate_cost("research_fetch", provider="groq")
@@ -304,7 +304,7 @@ class TestCostSummary:
 
     async def test_summary_finds_cheapest_provider(self) -> None:
         """Summary identifies cheapest provider used."""
-        from loom.tools import cost_estimator
+        import loom.tools.infrastructure.cost_estimator
         cost_estimator._cost_history.clear()
 
         await research_estimate_cost("research_fetch", provider="groq")
@@ -315,7 +315,7 @@ class TestCostSummary:
 
     async def test_summary_finds_most_expensive_tool(self) -> None:
         """Summary identifies tool with highest cost."""
-        from loom.tools import cost_estimator
+        import loom.tools.infrastructure.cost_estimator
         cost_estimator._cost_history.clear()
 
         await research_estimate_cost("research_fetch", provider="groq")
@@ -330,7 +330,7 @@ class TestCostSummary:
 
     async def test_summary_avg_cost_calculation(self) -> None:
         """Summary calculates average cost per call."""
-        from loom.tools import cost_estimator
+        import loom.tools.infrastructure.cost_estimator
         cost_estimator._cost_history.clear()
 
         await research_estimate_cost("research_fetch", provider="groq")  # 0.0

@@ -17,6 +17,12 @@ except ImportError:
             return func
         return decorator
 
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(v: float, lo: float = 0.0, hi: float = 1.0) -> float:
+        return max(lo, min(hi, v))
+
 logger = logging.getLogger(__name__)
 
 _CRITICAL = [
@@ -92,7 +98,7 @@ async def research_sandbox_analyze(
         # Multiple threats compound risk linearly.
         risk_score = sum(f["severity"] for f in findings)
         # Normalize to 0-10 scale: divide by 1.5 for good threshold spread
-        risk = min(10, risk_score / 1.5) if findings else 0
+        risk = clamp(risk_score / 1.5, 0, 10) if findings else 0
 
         # Classify by explicit thresholds
         if risk <= 2:

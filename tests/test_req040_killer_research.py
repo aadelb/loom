@@ -15,25 +15,25 @@ from typing import Any
 # Add src to path for imports
 sys.path.insert(0, "/opt/research-toolbox/src")
 
-from loom.tools.dead_content import research_dead_content
-from loom.tools.invisible_web import research_invisible_web
-from loom.tools.js_intel import research_js_intel
-from loom.tools.multi_search import research_multi_search
-from loom.tools.dark_forum import research_dark_forum
-from loom.tools.infra_correlator import research_infra_correlator
-from loom.tools.passive_recon import research_passive_recon
-from loom.tools.infra_analysis import (
+from loom.tools.core.dead_content import research_dead_content
+from loom.tools.intelligence.invisible_web import research_invisible_web
+from loom.tools.intelligence.js_intel import research_js_intel
+from loom.tools.core.multi_search import research_multi_search
+from loom.tools.intelligence.dark_forum import research_dark_forum
+from loom.tools.intelligence.infra_correlator import research_infra_correlator
+from loom.tools.intelligence.passive_recon import research_passive_recon
+from loom.tools.intelligence.infra_analysis import (
     research_registry_graveyard,
     research_subdomain_temporal,
     research_commit_analyzer,
 )
-from loom.tools.onion_discover import research_onion_discover
-from loom.tools.metadata_forensics import research_metadata_forensics
-from loom.tools.crypto_trace import research_crypto_trace
-from loom.tools.stego_detect import research_stego_detect
-from loom.tools.threat_profile import research_threat_profile
-from loom.tools.leak_scan import research_leak_scan
-from loom.tools.social_graph import research_social_graph
+from loom.tools.intelligence.onion_discover import research_onion_discover
+from loom.tools.intelligence.metadata_forensics import research_metadata_forensics
+from loom.tools.intelligence.crypto_trace import research_crypto_trace
+from loom.tools.privacy.stego_detect import research_stego_detect
+from loom.tools.intelligence.threat_profile import research_threat_profile
+from loom.tools.intelligence.leak_scan import research_leak_scan
+from loom.tools.intelligence.social_graph import research_social_graph
 
 
 

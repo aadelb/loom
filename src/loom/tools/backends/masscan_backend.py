@@ -10,12 +10,12 @@ from loom.error_responses import handle_tool_errors
 import json
 import logging
 import os
-import subprocess
 import tempfile
 import time
 from typing import Any
 
 from loom.cli_checker import is_available
+from loom.subprocess_helpers import run_command
 
 logger = logging.getLogger("loom.tools.masscan_backend")
 
@@ -142,7 +142,7 @@ def research_masscan(
 
         try:
             # Run without shell for safety
-            subprocess.run(
+            run_command(
                 cmd,
                 timeout=timeout,
                 capture_output=True,

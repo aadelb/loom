@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from loom.tools.fact_checker import (
+from loom.tools.research.fact_checker import (
     research_fact_check,
     _aggregate_assessments,
     _search_google_fact_check,

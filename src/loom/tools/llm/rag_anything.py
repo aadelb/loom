@@ -8,10 +8,17 @@ import logging
 import re
 import sqlite3
 import uuid
-from pathlib import Path
 from typing import Any
 from loom.error_responses import handle_tool_errors
 from loom.db_helpers import get_db_path, init_db, db_connection
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text: str, max_chars: int = 500, *, suffix: str = "...") -> str:
+        """Fallback truncate if text_utils unavailable."""
+        if len(text) <= max_chars:
+            return text
+        return text[: max_chars - len(suffix)] + suffix
 
 logger = logging.getLogger("loom.tools.rag_anything")
 _DB_PATH = get_db_path("rag_store")
@@ -112,7 +119,7 @@ def research_rag_query(
 			results = [
 				{
 					"chunk_id": chunk_id,
-					"text": text[:200] + ("..." if len(text) > 200 else ""),
+					"text": truncate(text, 200) + ("..." if len(text) > 200 else ""),
 					"score": 1.0,
 					"content_type": ctype,
 					"metadata": json.loads(meta_json) if meta_json else {},

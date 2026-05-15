@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from loom.tools.supply_chain_intel import (
+from loom.tools.intelligence.supply_chain_intel import (
     research_supply_chain_risk,
     research_patent_landscape,
     research_dependency_audit,

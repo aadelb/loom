@@ -13,7 +13,7 @@ pytestmark = pytest.mark.asyncio
 class TestResearchVulnIntel:
     async def test_empty_query(self):
         """Test handling of empty query."""
-        from loom.tools.vuln_intel import research_vuln_intel
+        from loom.tools.intelligence.vuln_intel import research_vuln_intel
 
         result = await research_vuln_intel("", max_results=30)
 
@@ -24,7 +24,7 @@ class TestResearchVulnIntel:
 
     async def test_whitespace_only_query(self):
         """Test handling of whitespace-only query."""
-        from loom.tools.vuln_intel import research_vuln_intel
+        from loom.tools.intelligence.vuln_intel import research_vuln_intel
 
         result = await research_vuln_intel("   ", max_results=30)
 
@@ -34,7 +34,7 @@ class TestResearchVulnIntel:
 
     async def test_max_results_validation(self):
         """Test that max_results is clamped to valid range."""
-        from loom.tools.vuln_intel import research_vuln_intel
+        from loom.tools.intelligence.vuln_intel import research_vuln_intel
 
         # Test with value > 100 (should clamp to 30)
         with patch("loom.tools.vuln_intel.asyncio.run") as mock_run:
@@ -49,7 +49,7 @@ class TestResearchVulnIntel:
 
     async def test_max_results_minimum(self):
         """Test that max_results defaults to 30 when < 1."""
-        from loom.tools.vuln_intel import research_vuln_intel
+        from loom.tools.intelligence.vuln_intel import research_vuln_intel
 
         with patch("loom.tools.vuln_intel.asyncio.run") as mock_run:
             mock_run.return_value = {
@@ -63,7 +63,7 @@ class TestResearchVulnIntel:
 
     async def test_nvd_search_success(self):
         """Test successful NVD search."""
-        from loom.tools.vuln_intel import research_vuln_intel
+        from loom.tools.intelligence.vuln_intel import research_vuln_intel
 
         mock_response = MagicMock()
         mock_response.json.return_value = {
@@ -104,7 +104,7 @@ class TestResearchVulnIntel:
 
     async def test_deduplication_by_cve_id(self):
         """Test deduplication of vulnerabilities by CVE ID."""
-        from loom.tools.vuln_intel import research_vuln_intel
+        from loom.tools.intelligence.vuln_intel import research_vuln_intel
 
         nvd_response = MagicMock()
         nvd_response.json.return_value = {
@@ -167,7 +167,7 @@ class TestResearchVulnIntel:
 
     async def test_severity_sorting(self):
         """Test that results are sorted by severity."""
-        from loom.tools.vuln_intel import research_vuln_intel
+        from loom.tools.intelligence.vuln_intel import research_vuln_intel
 
         nvd_response = MagicMock()
         nvd_response.json.return_value = {
@@ -227,7 +227,7 @@ class TestResearchVulnIntel:
 
     async def test_cisa_kev_marked_as_exploited(self):
         """Test that CISA KEV results are marked with exploits_available=True."""
-        from loom.tools.vuln_intel import research_vuln_intel
+        from loom.tools.intelligence.vuln_intel import research_vuln_intel
 
         cisa_response = MagicMock()
         cisa_response.json.return_value = {
@@ -255,7 +255,7 @@ class TestResearchVulnIntel:
 
     async def test_github_poc_marked_as_exploited(self):
         """Test that GitHub PoC results are marked with exploits_available=True."""
-        from loom.tools.vuln_intel import research_vuln_intel
+        from loom.tools.intelligence.vuln_intel import research_vuln_intel
 
         poc_response = MagicMock()
         poc_response.json.return_value = {
@@ -284,7 +284,7 @@ class TestResearchVulnIntel:
 
     async def test_vulners_search_success(self):
         """Test successful Vulners API search."""
-        from loom.tools.vuln_intel import research_vuln_intel
+        from loom.tools.intelligence.vuln_intel import research_vuln_intel
 
         vulners_response = MagicMock()
         vulners_response.json.return_value = {
@@ -317,7 +317,7 @@ class TestResearchVulnIntel:
 
     async def test_description_truncation(self):
         """Test that descriptions are truncated appropriately."""
-        from loom.tools.vuln_intel import research_vuln_intel
+        from loom.tools.intelligence.vuln_intel import research_vuln_intel
 
         nvd_response = MagicMock()
         long_description = "A" * 1000
@@ -359,7 +359,7 @@ class TestResearchVulnIntel:
 
     async def test_extract_cve_id_from_text(self):
         """Test CVE ID extraction from text."""
-        from loom.tools.vuln_intel import _extract_cve_id
+        from loom.tools.intelligence.vuln_intel import _extract_cve_id
 
         assert _extract_cve_id("CVE-2021-44228") == "CVE-2021-44228"
         assert _extract_cve_id("Found CVE-2020-12345 in docs") == "CVE-2020-12345"
@@ -368,7 +368,7 @@ class TestResearchVulnIntel:
 
     async def test_deduplication_with_cve_in_description(self):
         """Test deduplication when CVE ID is in description."""
-        from loom.tools.vuln_intel import _deduplicate_vulns
+        from loom.tools.intelligence.vuln_intel import _deduplicate_vulns
 
         vulns = [
             {
@@ -393,7 +393,7 @@ class TestResearchVulnIntel:
 
     async def test_sources_checked_list(self):
         """Test that sources_checked includes all attempted sources."""
-        from loom.tools.vuln_intel import research_vuln_intel
+        from loom.tools.intelligence.vuln_intel import research_vuln_intel
 
         with patch("httpx.AsyncClient") as mock_client_cls:
             mock_client = AsyncMock()
@@ -418,7 +418,7 @@ class TestResearchVulnIntel:
 
     async def test_total_vulns_count(self):
         """Test that total_vulns matches the length of vulns list."""
-        from loom.tools.vuln_intel import research_vuln_intel
+        from loom.tools.intelligence.vuln_intel import research_vuln_intel
 
         nvd_response = MagicMock()
         nvd_response.json.return_value = {
@@ -458,7 +458,7 @@ class TestResearchVulnIntel:
 
     async def test_exploit_availability_sorting(self):
         """Test that exploits_available=True entries come first."""
-        from loom.tools.vuln_intel import _deduplicate_vulns
+        from loom.tools.intelligence.vuln_intel import _deduplicate_vulns
 
         vulns = [
             {
@@ -475,7 +475,7 @@ class TestResearchVulnIntel:
             },
         ]
 
-        from loom.tools.vuln_intel import research_vuln_intel
+        from loom.tools.intelligence.vuln_intel import research_vuln_intel
 
         # Simulate sorting behavior from research_vuln_intel
         severity_order = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3, "UNKNOWN": 4}
@@ -493,7 +493,7 @@ class TestResearchVulnIntel:
 
     async def test_handles_missing_fields(self):
         """Test handling of vulnerabilities with missing fields."""
-        from loom.tools.vuln_intel import research_vuln_intel
+        from loom.tools.intelligence.vuln_intel import research_vuln_intel
 
         nvd_response = MagicMock()
         nvd_response.json.return_value = {
@@ -525,7 +525,7 @@ class TestResearchVulnIntel:
 
     async def test_max_results_limit_enforced(self):
         """Test that max_results limit is enforced."""
-        from loom.tools.vuln_intel import research_vuln_intel
+        from loom.tools.intelligence.vuln_intel import research_vuln_intel
 
         nvd_response = MagicMock()
         nvd_response.json.return_value = {
@@ -566,7 +566,7 @@ class TestResearchVulnIntel:
 
     async def test_result_contains_required_fields(self):
         """Test that result contains all required fields."""
-        from loom.tools.vuln_intel import research_vuln_intel
+        from loom.tools.intelligence.vuln_intel import research_vuln_intel
 
         nvd_response = MagicMock()
         nvd_response.json.return_value = {

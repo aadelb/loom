@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-pytest.importorskip("loom.tools.llm")
+pytest.importorskip("loom.tools.llm.llm")
 
 
 def _mock_response(text: str = "example") -> MagicMock:
@@ -28,7 +28,7 @@ def _mock_response(text: str = "example") -> MagicMock:
 
 async def test_llm_chat_returns_expected_structure() -> None:
     """LLM chat returns structure with text, model, tokens, cost, latency."""
-    from loom.tools.llm import research_llm_chat
+    from loom.tools.llm.llm import research_llm_chat
 
     with patch(
         "loom.tools.llm._call_with_cascade",
@@ -44,7 +44,7 @@ async def test_llm_chat_returns_expected_structure() -> None:
 
 async def test_llm_summarize_respects_max_length() -> None:
     """LLM summarize respects max_tokens bounds."""
-    from loom.tools.llm import research_llm_summarize
+    from loom.tools.llm.llm import research_llm_summarize
 
     with patch(
         "loom.tools.llm._call_with_cascade",
@@ -58,7 +58,7 @@ async def test_llm_summarize_respects_max_length() -> None:
 
 async def test_llm_extract_validates_against_schema() -> None:
     """LLM extract validates result against provided schema."""
-    from loom.tools.llm import research_llm_extract
+    from loom.tools.llm.llm import research_llm_extract
 
     schema = {"name": "string"}
 
@@ -74,7 +74,7 @@ async def test_llm_extract_validates_against_schema() -> None:
 
 async def test_llm_classify_respects_label_allowlist() -> None:
     """LLM classify returns a label from the allow-list."""
-    from loom.tools.llm import research_llm_classify
+    from loom.tools.llm.llm import research_llm_classify
 
     with patch(
         "loom.tools.llm._call_with_cascade",
@@ -91,7 +91,7 @@ async def test_llm_classify_respects_label_allowlist() -> None:
 
 async def test_llm_translate_preserves_arabic() -> None:
     """LLM translate returns a structured result for non-English input."""
-    from loom.tools.llm import research_llm_translate
+    from loom.tools.llm.llm import research_llm_translate
 
     with patch(
         "loom.tools.llm._call_with_cascade",
@@ -107,7 +107,7 @@ async def test_llm_translate_preserves_arabic() -> None:
 
 async def test_llm_query_expand_returns_multiple() -> None:
     """LLM query expand returns multiple expanded queries."""
-    from loom.tools.llm import research_llm_query_expand
+    from loom.tools.llm.llm import research_llm_query_expand
 
     with patch(
         "loom.tools.llm._call_with_cascade",

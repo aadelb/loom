@@ -14,6 +14,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 from loom.error_responses import handle_tool_errors
 
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(v: float, lo: float = 0.0, hi: float = 1.0) -> float:
+        """Fallback clamp if score_utils unavailable."""
+        return max(lo, min(hi, v))
+
 logger = logging.getLogger("loom.tools.persistent_memory")
 _MEMORY_DB = Path.home() / ".loom" / "memory" / "persistent.db"
 
@@ -71,7 +78,7 @@ def research_remember(
         return {"stored": False, "error": "content cannot be empty"}
 
     _init_memory_db()
-    importance = max(0.0, min(1.0, importance))
+    importance = clamp(importance, 0.0, 1.0)
     entities = _extract_entities(content)
     tags = ",".join(entities[:10]) if entities else ""
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from loom.tools.smart_router import (
+from loom.tools.llm.smart_router import (
     research_route_query,
     research_route_batch,
 )

@@ -22,7 +22,7 @@ import inspect
 import logging
 from typing import Any, Callable, TypeVar
 
-from loom.billing.tiers import TIERS, get_tier
+from loom.billing.tiers import get_tier
 
 logger = logging.getLogger("loom.billing.tier_gating")
 
@@ -53,7 +53,6 @@ def _get_current_user_tier() -> str:
     # - FastAPI request context (user principal)
     # - Environment variable for service-to-service calls
     try:
-        from contextvars import ContextVar
 
         # If we had a context var, we'd check it here
         # user_context: ContextVar[dict] = ContextVar("user", default=None)

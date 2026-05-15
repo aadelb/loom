@@ -6,7 +6,7 @@ import asyncio
 
 import pytest
 
-from loom.tools import request_queue
+import loom.tools.infrastructure.request_queue
 
 
 @pytest.mark.asyncio

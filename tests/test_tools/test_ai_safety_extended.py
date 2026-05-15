@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from loom.tools.ai_safety_extended import (
+from loom.tools.security.ai_safety_extended import (
     _encode_rot13,
     _unicode_confusables,
     research_adversarial_robustness,

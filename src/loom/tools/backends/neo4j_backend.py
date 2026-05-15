@@ -8,7 +8,6 @@ DEPRECATED: Use research_graph() unified interface instead.
 from __future__ import annotations
 import json, logging, sqlite3
 from datetime import UTC, datetime
-from pathlib import Path
 from loom.error_responses import handle_tool_errors
 from loom.db_helpers import get_db_path, init_db, db_connection
 from typing import Any

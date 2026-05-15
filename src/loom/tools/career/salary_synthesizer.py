@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
-import json
 import logging
 import re
 from typing import Any
@@ -109,9 +107,8 @@ async def _search_github_salary_mentions(
         f"salary+in:readme&per_page=20"
     )
     try:
-        resp = await client.get(url, timeout=15.0)
-        if resp.status_code == 200:
-            data = resp.json()
+        data = await fetch_json(client, url, timeout=15.0)
+        if data:
             for item in data.get("items", [])[:10]:
                 # Try to fetch the file content
                 download_url = item.get("download_url")

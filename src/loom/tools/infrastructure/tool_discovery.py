@@ -722,7 +722,7 @@ async def research_discover(
     query: str = "",
     tags: str = "",
     detailed: bool = False,
-) -> DiscoverResponse:
+) -> dict[str, Any]:
     """Discover available tools by category, search, or tags.
 
     Efficiently returns tool metadata to reduce context window impact.

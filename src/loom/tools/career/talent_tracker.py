@@ -7,6 +7,11 @@ from typing import Any
 
 from loom.error_responses import handle_tool_errors
 
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    clamp = lambda v, lo, hi: max(lo, min(hi, v))
+
 logger = logging.getLogger("loom.tools.talent_tracker")
 
 # Talent flow patterns: (from_org, to_org) -> flow metadata
@@ -54,7 +59,7 @@ async def research_track_researcher(
 
         # Influence score: base + name length + field boost
         influence = 50.0 + (len(name) - 10) / 2 + (15 if field == "ai_safety" else 0)
-        influence = max(0, min(100, influence))
+        influence = clamp(influence, 0, 100)
 
         return {
             "name": name,

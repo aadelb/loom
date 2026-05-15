@@ -11,7 +11,7 @@ Tests cover:
 from __future__ import annotations
 import pytest
 
-from loom.tools.deep import _detect_query_type
+from loom.tools.core.deep import _detect_query_type
 
 
 

@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from loom.tools.realtime_monitor import research_realtime_monitor
+from loom.tools.monitoring.realtime_monitor import research_realtime_monitor
 
 
 @pytest.mark.asyncio
@@ -37,12 +37,12 @@ class TestResearchRealtimeMonitor:
             }
         ]
 
-        with patch("loom.tools.realtime_monitor._fetch_hackernews", new_callable=AsyncMock) as mock_hn:
-            with patch("loom.tools.realtime_monitor._fetch_reddit", new_callable=AsyncMock) as mock_reddit:
-                with patch("loom.tools.realtime_monitor._fetch_arxiv", new_callable=AsyncMock) as mock_arxiv:
-                    with patch("loom.tools.realtime_monitor._fetch_newsapi", new_callable=AsyncMock) as mock_news:
+        with patch("loom.tools.monitoring.realtime_monitor._fetch_hackernews", new_callable=AsyncMock) as mock_hn:
+            with patch("loom.tools.monitoring.realtime_monitor._fetch_reddit", new_callable=AsyncMock) as mock_reddit:
+                with patch("loom.tools.monitoring.realtime_monitor._fetch_arxiv", new_callable=AsyncMock) as mock_arxiv:
+                    with patch("loom.tools.monitoring.realtime_monitor._fetch_newsapi", new_callable=AsyncMock) as mock_news:
                         with patch(
-                            "loom.tools.realtime_monitor._fetch_wikipedia_changes", new_callable=AsyncMock
+                            "loom.tools.monitoring.realtime_monitor._fetch_wikipedia_changes", new_callable=AsyncMock
                         ) as mock_wiki:
                             mock_hn.return_value = mock_items
                             mock_reddit.return_value = []
@@ -83,12 +83,12 @@ class TestResearchRealtimeMonitor:
             }
         ]
 
-        with patch("loom.tools.realtime_monitor._fetch_hackernews", new_callable=AsyncMock) as mock_hn:
-            with patch("loom.tools.realtime_monitor._fetch_reddit", new_callable=AsyncMock) as mock_reddit:
-                with patch("loom.tools.realtime_monitor._fetch_arxiv", new_callable=AsyncMock) as mock_arxiv:
-                    with patch("loom.tools.realtime_monitor._fetch_newsapi", new_callable=AsyncMock) as mock_news:
+        with patch("loom.tools.monitoring.realtime_monitor._fetch_hackernews", new_callable=AsyncMock) as mock_hn:
+            with patch("loom.tools.monitoring.realtime_monitor._fetch_reddit", new_callable=AsyncMock) as mock_reddit:
+                with patch("loom.tools.monitoring.realtime_monitor._fetch_arxiv", new_callable=AsyncMock) as mock_arxiv:
+                    with patch("loom.tools.monitoring.realtime_monitor._fetch_newsapi", new_callable=AsyncMock) as mock_news:
                         with patch(
-                            "loom.tools.realtime_monitor._fetch_wikipedia_changes", new_callable=AsyncMock
+                            "loom.tools.monitoring.realtime_monitor._fetch_wikipedia_changes", new_callable=AsyncMock
                         ) as mock_wiki:
                             # HackerNews returns item for Python topic
                             mock_hn.side_effect = lambda client, topic, hours: (
@@ -123,8 +123,8 @@ class TestResearchRealtimeMonitor:
             }
         ]
 
-        with patch("loom.tools.realtime_monitor._fetch_reddit", new_callable=AsyncMock) as mock_reddit:
-            with patch("loom.tools.realtime_monitor._fetch_hackernews", new_callable=AsyncMock) as mock_hn:
+        with patch("loom.tools.monitoring.realtime_monitor._fetch_reddit", new_callable=AsyncMock) as mock_reddit:
+            with patch("loom.tools.monitoring.realtime_monitor._fetch_hackernews", new_callable=AsyncMock) as mock_hn:
                 mock_reddit.return_value = mock_items
                 # If HackerNews is called, fail the test
                 mock_hn.side_effect = AssertionError("HackerNews should not be called")
@@ -164,12 +164,12 @@ class TestResearchRealtimeMonitor:
             "score": 15.0,
         }
 
-        with patch("loom.tools.realtime_monitor._fetch_hackernews", new_callable=AsyncMock) as mock_hn:
-            with patch("loom.tools.realtime_monitor._fetch_reddit", new_callable=AsyncMock) as mock_reddit:
-                with patch("loom.tools.realtime_monitor._fetch_arxiv", new_callable=AsyncMock) as mock_arxiv:
-                    with patch("loom.tools.realtime_monitor._fetch_newsapi", new_callable=AsyncMock) as mock_news:
+        with patch("loom.tools.monitoring.realtime_monitor._fetch_hackernews", new_callable=AsyncMock) as mock_hn:
+            with patch("loom.tools.monitoring.realtime_monitor._fetch_reddit", new_callable=AsyncMock) as mock_reddit:
+                with patch("loom.tools.monitoring.realtime_monitor._fetch_arxiv", new_callable=AsyncMock) as mock_arxiv:
+                    with patch("loom.tools.monitoring.realtime_monitor._fetch_newsapi", new_callable=AsyncMock) as mock_news:
                         with patch(
-                            "loom.tools.realtime_monitor._fetch_wikipedia_changes", new_callable=AsyncMock
+                            "loom.tools.monitoring.realtime_monitor._fetch_wikipedia_changes", new_callable=AsyncMock
                         ) as mock_wiki:
                             # Return items in mixed order
                             mock_hn.return_value = [older_item, newer_item, middle_item]
@@ -218,12 +218,12 @@ class TestResearchRealtimeMonitor:
             }
         ]
 
-        with patch("loom.tools.realtime_monitor._fetch_hackernews", new_callable=AsyncMock) as mock_hn:
-            with patch("loom.tools.realtime_monitor._fetch_reddit", new_callable=AsyncMock) as mock_reddit:
-                with patch("loom.tools.realtime_monitor._fetch_arxiv", new_callable=AsyncMock) as mock_arxiv:
-                    with patch("loom.tools.realtime_monitor._fetch_newsapi", new_callable=AsyncMock) as mock_news:
+        with patch("loom.tools.monitoring.realtime_monitor._fetch_hackernews", new_callable=AsyncMock) as mock_hn:
+            with patch("loom.tools.monitoring.realtime_monitor._fetch_reddit", new_callable=AsyncMock) as mock_reddit:
+                with patch("loom.tools.monitoring.realtime_monitor._fetch_arxiv", new_callable=AsyncMock) as mock_arxiv:
+                    with patch("loom.tools.monitoring.realtime_monitor._fetch_newsapi", new_callable=AsyncMock) as mock_news:
                         with patch(
-                            "loom.tools.realtime_monitor._fetch_wikipedia_changes", new_callable=AsyncMock
+                            "loom.tools.monitoring.realtime_monitor._fetch_wikipedia_changes", new_callable=AsyncMock
                         ) as mock_wiki:
                             mock_hn.return_value = hn_items
                             mock_reddit.return_value = reddit_items
@@ -239,12 +239,12 @@ class TestResearchRealtimeMonitor:
 
     async def test_hours_back_parameter_passed(self) -> None:
         """hours_back parameter is passed to HackerNews fetch."""
-        with patch("loom.tools.realtime_monitor._fetch_hackernews", new_callable=AsyncMock) as mock_hn:
-            with patch("loom.tools.realtime_monitor._fetch_reddit", new_callable=AsyncMock) as mock_reddit:
-                with patch("loom.tools.realtime_monitor._fetch_arxiv", new_callable=AsyncMock) as mock_arxiv:
-                    with patch("loom.tools.realtime_monitor._fetch_newsapi", new_callable=AsyncMock) as mock_news:
+        with patch("loom.tools.monitoring.realtime_monitor._fetch_hackernews", new_callable=AsyncMock) as mock_hn:
+            with patch("loom.tools.monitoring.realtime_monitor._fetch_reddit", new_callable=AsyncMock) as mock_reddit:
+                with patch("loom.tools.monitoring.realtime_monitor._fetch_arxiv", new_callable=AsyncMock) as mock_arxiv:
+                    with patch("loom.tools.monitoring.realtime_monitor._fetch_newsapi", new_callable=AsyncMock) as mock_news:
                         with patch(
-                            "loom.tools.realtime_monitor._fetch_wikipedia_changes", new_callable=AsyncMock
+                            "loom.tools.monitoring.realtime_monitor._fetch_wikipedia_changes", new_callable=AsyncMock
                         ) as mock_wiki:
                             mock_hn.return_value = []
                             mock_reddit.return_value = []
@@ -262,12 +262,12 @@ class TestResearchRealtimeMonitor:
 
     async def test_invalid_sources_ignored(self) -> None:
         """Invalid source names are silently ignored."""
-        with patch("loom.tools.realtime_monitor._fetch_hackernews", new_callable=AsyncMock) as mock_hn:
-            with patch("loom.tools.realtime_monitor._fetch_reddit", new_callable=AsyncMock) as mock_reddit:
-                with patch("loom.tools.realtime_monitor._fetch_arxiv", new_callable=AsyncMock) as mock_arxiv:
-                    with patch("loom.tools.realtime_monitor._fetch_newsapi", new_callable=AsyncMock) as mock_news:
+        with patch("loom.tools.monitoring.realtime_monitor._fetch_hackernews", new_callable=AsyncMock) as mock_hn:
+            with patch("loom.tools.monitoring.realtime_monitor._fetch_reddit", new_callable=AsyncMock) as mock_reddit:
+                with patch("loom.tools.monitoring.realtime_monitor._fetch_arxiv", new_callable=AsyncMock) as mock_arxiv:
+                    with patch("loom.tools.monitoring.realtime_monitor._fetch_newsapi", new_callable=AsyncMock) as mock_news:
                         with patch(
-                            "loom.tools.realtime_monitor._fetch_wikipedia_changes", new_callable=AsyncMock
+                            "loom.tools.monitoring.realtime_monitor._fetch_wikipedia_changes", new_callable=AsyncMock
                         ) as mock_wiki:
                             mock_hn.return_value = []
                             mock_reddit.return_value = []
@@ -317,12 +317,12 @@ class TestResearchRealtimeMonitor:
             },
         ]
 
-        with patch("loom.tools.realtime_monitor._fetch_hackernews", new_callable=AsyncMock) as mock_hn:
-            with patch("loom.tools.realtime_monitor._fetch_reddit", new_callable=AsyncMock) as mock_reddit:
-                with patch("loom.tools.realtime_monitor._fetch_arxiv", new_callable=AsyncMock) as mock_arxiv:
-                    with patch("loom.tools.realtime_monitor._fetch_newsapi", new_callable=AsyncMock) as mock_news:
+        with patch("loom.tools.monitoring.realtime_monitor._fetch_hackernews", new_callable=AsyncMock) as mock_hn:
+            with patch("loom.tools.monitoring.realtime_monitor._fetch_reddit", new_callable=AsyncMock) as mock_reddit:
+                with patch("loom.tools.monitoring.realtime_monitor._fetch_arxiv", new_callable=AsyncMock) as mock_arxiv:
+                    with patch("loom.tools.monitoring.realtime_monitor._fetch_newsapi", new_callable=AsyncMock) as mock_news:
                         with patch(
-                            "loom.tools.realtime_monitor._fetch_wikipedia_changes", new_callable=AsyncMock
+                            "loom.tools.monitoring.realtime_monitor._fetch_wikipedia_changes", new_callable=AsyncMock
                         ) as mock_wiki:
                             # Return different items for different topics
                             def hn_side_effect(client, topic, hours):  # type: ignore
@@ -351,7 +351,7 @@ class TestHackerNewsFetch:
     @pytest.mark.asyncio
     async def test_hackernews_parse_response(self, mock_httpx_transport) -> None:
         """Test HackerNews response parsing."""
-        from loom.tools import realtime_monitor
+        import loom.tools.monitoring.realtime_monitor
 
         mock_response = {
             "hits": [
@@ -394,7 +394,7 @@ class TestRedditFetch:
     @pytest.mark.asyncio
     async def test_reddit_parse_response(self) -> None:
         """Test Reddit response parsing."""
-        from loom.tools import realtime_monitor
+        import loom.tools.monitoring.realtime_monitor
 
         mock_response = {
             "data": {
@@ -433,7 +433,7 @@ class TestArxivFetch:
     @pytest.mark.asyncio
     async def test_arxiv_parse_atom_feed(self) -> None:
         """Test arXiv Atom feed parsing."""
-        from loom.tools import realtime_monitor
+        import loom.tools.monitoring.realtime_monitor
 
         atom_response = """<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">

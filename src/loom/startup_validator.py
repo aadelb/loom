@@ -9,8 +9,6 @@ from __future__ import annotations
 import ast
 import importlib
 import logging
-import os
-import sys
 import time
 from pathlib import Path
 from typing import Any
@@ -51,8 +49,12 @@ def validate_all_tools() -> dict[str, Any]:
     passed = 0
     failed = 0
 
-    # Find all .py files in tools directory
+    # Find all .py files in tools directory AND subdirectories (except reframe_strategies/)
+    skip_dirs = {"reframe_strategies", "__pycache__"}
     tool_files = sorted(tools_dir.glob("*.py"))
+    for subdir in sorted(tools_dir.iterdir()):
+        if subdir.is_dir() and subdir.name not in skip_dirs:
+            tool_files.extend(sorted(subdir.glob("*.py")))
 
     for tool_file in tool_files:
         # Skip __init__.py and test files
@@ -60,7 +62,11 @@ def validate_all_tools() -> dict[str, Any]:
             continue
 
         file_name = tool_file.name
-        relative_path = f"loom.tools.{file_name[:-3]}"
+        rel = tool_file.relative_to(tools_dir)
+        if len(rel.parts) == 1:
+            relative_path = f"loom.tools.{file_name[:-3]}"
+        else:
+            relative_path = f"loom.tools.{rel.parent.name}.{file_name[:-3]}"
 
         # Stage 1: Syntax validation via ast.parse()
         try:

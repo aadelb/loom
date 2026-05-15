@@ -26,7 +26,7 @@ async def test_research_ask_all_llms_basic() -> None:
     - Has providers_queried >= 1 or returns error gracefully
     - responses list is present
     """
-    from loom.tools.multi_llm import research_ask_all_llms
+    from loom.tools.llm.multi_llm import research_ask_all_llms
 
     result = await research_ask_all_llms(
         prompt="What is 2+2?",
@@ -60,7 +60,7 @@ async def test_research_ask_all_llms_basic() -> None:
 @pytest.mark.asyncio
 async def test_research_ask_all_llms_with_max_tokens() -> None:
     """Test research_ask_all_llms respects max_tokens parameter."""
-    from loom.tools.multi_llm import research_ask_all_llms
+    from loom.tools.llm.multi_llm import research_ask_all_llms
 
     result = await research_ask_all_llms(
         prompt="Hello",
@@ -80,7 +80,7 @@ async def test_research_llm_query_expand_basic() -> None:
     - Returns expected fields (model, provider, cost_usd)
     - Handles graceful errors if no providers available
     """
-    from loom.tools.llm import research_llm_query_expand
+    from loom.tools.llm.llm import research_llm_query_expand
 
     result = await research_llm_query_expand(
         query="best programming languages 2026",
@@ -106,7 +106,7 @@ async def test_research_llm_query_expand_basic() -> None:
 @pytest.mark.asyncio
 async def test_research_llm_query_expand_n_parameter() -> None:
     """Test research_llm_query_expand respects n parameter clamping."""
-    from loom.tools.llm import research_llm_query_expand
+    from loom.tools.llm.llm import research_llm_query_expand
 
     # Test with n=1 (minimum)
     result_min = await research_llm_query_expand(
@@ -145,7 +145,7 @@ async def test_research_ask_all_models_basic() -> None:
     - Has models_queried and responses fields
     - Handles no API keys gracefully
     """
-    from loom.tools.ask_all_models import research_ask_all_models
+    from loom.tools.llm.ask_all_models import research_ask_all_models
 
     result = await research_ask_all_models(
         prompt="2+2=?",
@@ -177,7 +177,7 @@ async def test_research_ask_all_models_basic() -> None:
 
 async def test_research_ask_all_models_timeout_respect() -> None:
     """Test research_ask_all_models respects timeout parameter."""
-    from loom.tools.ask_all_models import research_ask_all_models
+    from loom.tools.llm.ask_all_models import research_ask_all_models
 
     # Use very short timeout to test parameter acceptance
     result = await research_ask_all_models(
@@ -191,7 +191,7 @@ async def test_research_ask_all_models_timeout_respect() -> None:
 
 async def test_research_ask_all_models_auto_reframe_param() -> None:
     """Test research_ask_all_models auto_reframe parameter is accepted."""
-    from loom.tools.ask_all_models import research_ask_all_models
+    from loom.tools.llm.ask_all_models import research_ask_all_models
 
     result = await research_ask_all_models(
         prompt="test",
@@ -205,8 +205,8 @@ async def test_research_ask_all_models_auto_reframe_param() -> None:
 @pytest.mark.asyncio
 async def test_multi_llm_concurrent_execution() -> None:
     """Test that multi-LLM tools handle concurrent execution safely."""
-    from loom.tools.multi_llm import research_ask_all_llms
-    from loom.tools.llm import research_llm_query_expand
+    from loom.tools.llm.multi_llm import research_ask_all_llms
+    from loom.tools.llm.llm import research_llm_query_expand
 
     # Run two concurrent queries
     results = await asyncio.gather(
@@ -222,7 +222,7 @@ async def test_multi_llm_concurrent_execution() -> None:
 @pytest.mark.asyncio
 async def test_ask_all_llms_empty_prompt() -> None:
     """Test research_ask_all_llms handles empty prompt gracefully."""
-    from loom.tools.multi_llm import research_ask_all_llms
+    from loom.tools.llm.multi_llm import research_ask_all_llms
 
     result = await research_ask_all_llms(
         prompt="",
@@ -236,7 +236,7 @@ async def test_ask_all_llms_empty_prompt() -> None:
 @pytest.mark.asyncio
 async def test_query_expand_long_query() -> None:
     """Test research_llm_query_expand handles long queries."""
-    from loom.tools.llm import research_llm_query_expand
+    from loom.tools.llm.llm import research_llm_query_expand
 
     long_query = "x" * 1000  # 1000 char query
 
@@ -250,7 +250,7 @@ async def test_query_expand_long_query() -> None:
 
 async def test_ask_all_models_models_parameter() -> None:
     """Test research_ask_all_models models filter parameter."""
-    from loom.tools.ask_all_models import research_ask_all_models
+    from loom.tools.llm.ask_all_models import research_ask_all_models
 
     result = await research_ask_all_models(
         prompt="test",
@@ -264,7 +264,7 @@ async def test_ask_all_models_models_parameter() -> None:
 @pytest.mark.asyncio
 async def test_research_llm_query_expand_response_format() -> None:
     """Test query_expand returns properly formatted responses."""
-    from loom.tools.llm import research_llm_query_expand
+    from loom.tools.llm.llm import research_llm_query_expand
 
     result = await research_llm_query_expand(
         query="artificial intelligence trends",
@@ -285,7 +285,7 @@ async def test_research_llm_query_expand_response_format() -> None:
 @pytest.mark.asyncio
 async def test_ask_all_llms_response_structure() -> None:
     """Test research_ask_all_llms response has all expected fields."""
-    from loom.tools.multi_llm import research_ask_all_llms
+    from loom.tools.llm.multi_llm import research_ask_all_llms
 
     result = await research_ask_all_llms(
         prompt="test",

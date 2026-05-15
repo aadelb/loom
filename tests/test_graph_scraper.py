@@ -8,7 +8,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from loom.params import GraphScraperParams, KnowledgeExtractParams, MultiPageGraphParams
-from loom.tools.graph_scraper import (
+from loom.tools.core.graph_scraper import (
     research_graph_scrape,
     research_knowledge_extract,
     research_multi_page_graph,
@@ -252,9 +252,9 @@ class TestFetchUrlContent:
     @pytest.mark.asyncio
     async def test_fetch_valid_url(self):
         """Test fetching content from valid URL."""
-        with patch("loom.tools.graph_scraper.research_fetch") as mock_fetch:
+        with patch("loom.tools.core.graph_scraper.research_fetch") as mock_fetch:
             mock_fetch = AsyncMock(return_value={"text": "Page content"})
-            with patch("loom.tools.graph_scraper.research_fetch", mock_fetch):
+            with patch("loom.tools.core.graph_scraper.research_fetch", mock_fetch):
                 result = await _fetch_url_content("https://example.com")
                 assert "Page content" in result
                 mock_fetch.assert_called_once()
@@ -262,7 +262,7 @@ class TestFetchUrlContent:
     @pytest.mark.asyncio
     async def test_fetch_fallback_to_http(self):
         """Test fallback to raw HTTP when research_fetch fails."""
-        with patch("loom.tools.graph_scraper.research_fetch") as mock_fetch:
+        with patch("loom.tools.core.graph_scraper.research_fetch") as mock_fetch:
             mock_fetch.side_effect = Exception("Fetch failed")
             with patch("httpx.AsyncClient") as mock_client:
                 mock_response = AsyncMock()
@@ -277,7 +277,7 @@ class TestFetchUrlContent:
     @pytest.mark.asyncio
     async def test_fetch_respects_max_chars(self):
         """Test max_chars parameter limits content."""
-        with patch("loom.tools.graph_scraper.research_fetch") as mock_fetch:
+        with patch("loom.tools.core.graph_scraper.research_fetch") as mock_fetch:
             large_content = "x" * 30000
             mock_fetch.return_value = {"text": large_content}
             result = await _fetch_url_content("https://example.com", max_chars=1000)
@@ -354,9 +354,9 @@ class TestGraphScrape:
     @pytest.mark.asyncio
     async def test_graph_scrape_basic(self):
         """Test basic graph scraping."""
-        with patch("loom.tools.graph_scraper._get_llm_provider") as mock_get_provider:
-            with patch("loom.tools.graph_scraper._fetch_url_content") as mock_fetch:
-                with patch("loom.tools.graph_scraper._extract_with_llm") as mock_extract:
+        with patch("loom.tools.core.graph_scraper._get_llm_provider") as mock_get_provider:
+            with patch("loom.tools.core.graph_scraper._fetch_url_content") as mock_fetch:
+                with patch("loom.tools.core.graph_scraper._extract_with_llm") as mock_extract:
                     mock_provider = AsyncMock()
                     mock_get_provider.return_value = mock_provider
                     mock_provider.default_model = "groq/llama-3.3-70b-versatile"
@@ -389,8 +389,8 @@ class TestGraphScrape:
     @pytest.mark.asyncio
     async def test_knowledge_extract_basic(self):
         """Test basic knowledge extraction."""
-        with patch("loom.tools.graph_scraper._get_llm_provider") as mock_get:
-            with patch("loom.tools.graph_scraper._extract_with_llm") as mock_extract:
+        with patch("loom.tools.core.graph_scraper._get_llm_provider") as mock_get:
+            with patch("loom.tools.core.graph_scraper._extract_with_llm") as mock_extract:
                 mock_provider = AsyncMock()
                 mock_get.return_value = mock_provider
                 mock_provider.default_model = "groq/llama-3.3-70b-versatile"
@@ -417,8 +417,8 @@ class TestGraphScrape:
     @pytest.mark.asyncio
     async def test_knowledge_extract_with_entity_types(self):
         """Test extraction with specific entity types."""
-        with patch("loom.tools.graph_scraper._get_llm_provider") as mock_get:
-            with patch("loom.tools.graph_scraper._extract_with_llm") as mock_extract:
+        with patch("loom.tools.core.graph_scraper._get_llm_provider") as mock_get:
+            with patch("loom.tools.core.graph_scraper._extract_with_llm") as mock_extract:
                 mock_provider = AsyncMock()
                 mock_get.return_value = mock_provider
                 mock_provider.default_model = "test_model"
@@ -441,7 +441,7 @@ class TestGraphScrape:
     @pytest.mark.asyncio
     async def test_knowledge_extract_no_provider(self):
         """Test extraction handles missing provider."""
-        with patch("loom.tools.graph_scraper._get_llm_provider") as mock_get:
+        with patch("loom.tools.core.graph_scraper._get_llm_provider") as mock_get:
             mock_get.return_value = None
 
             result = await research_knowledge_extract("Test content")
@@ -456,7 +456,7 @@ class TestMultiPageGraph:
     @pytest.mark.asyncio
     async def test_multi_page_basic(self):
         """Test basic multi-page graph scraping."""
-        with patch("loom.tools.graph_scraper.research_graph_scrape") as mock_scrape:
+        with patch("loom.tools.core.graph_scraper.research_graph_scrape") as mock_scrape:
             # Mock results for two URLs
             mock_scrape.side_effect = [
                 {
@@ -494,7 +494,7 @@ class TestMultiPageGraph:
     @pytest.mark.asyncio
     async def test_multi_page_deduplicates_entities(self):
         """Test multi-page deduplicates entities by name."""
-        with patch("loom.tools.graph_scraper.research_graph_scrape") as mock_scrape:
+        with patch("loom.tools.core.graph_scraper.research_graph_scrape") as mock_scrape:
             # Both pages return same entity with different properties
             mock_scrape.side_effect = [
                 {
@@ -528,7 +528,7 @@ class TestMultiPageGraph:
     @pytest.mark.asyncio
     async def test_multi_page_partial_failure(self):
         """Test multi-page with some failures."""
-        with patch("loom.tools.graph_scraper.research_graph_scrape") as mock_scrape:
+        with patch("loom.tools.core.graph_scraper.research_graph_scrape") as mock_scrape:
             # First succeeds, second fails
             mock_scrape.side_effect = [
                 {
@@ -567,10 +567,10 @@ class TestIntegration:
     @pytest.mark.asyncio
     async def test_graph_scrape_caching(self):
         """Test caching works for graph scrape results."""
-        with patch("loom.tools.graph_scraper._get_llm_provider") as mock_get:
-            with patch("loom.tools.graph_scraper._fetch_url_content") as mock_fetch:
-                with patch("loom.tools.graph_scraper._extract_with_llm") as mock_extract:
-                    with patch("loom.tools.graph_scraper.get_cache") as mock_cache:
+        with patch("loom.tools.core.graph_scraper._get_llm_provider") as mock_get:
+            with patch("loom.tools.core.graph_scraper._fetch_url_content") as mock_fetch:
+                with patch("loom.tools.core.graph_scraper._extract_with_llm") as mock_extract:
+                    with patch("loom.tools.core.graph_scraper.get_cache") as mock_cache:
                         # Setup mocks
                         mock_provider = AsyncMock()
                         mock_get.return_value = mock_provider
@@ -606,8 +606,8 @@ class TestIntegration:
     @pytest.mark.asyncio
     async def test_graph_scrape_returns_dict(self):
         """Test graph scrape always returns a dict."""
-        with patch("loom.tools.graph_scraper._get_llm_provider") as mock_get:
-            with patch("loom.tools.graph_scraper._fetch_url_content") as mock_fetch:
+        with patch("loom.tools.core.graph_scraper._get_llm_provider") as mock_get:
+            with patch("loom.tools.core.graph_scraper._fetch_url_content") as mock_fetch:
                 mock_get.return_value = AsyncMock()
                 async def async_fetch(*args, **kwargs):
                     return ""

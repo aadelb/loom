@@ -11,7 +11,6 @@ import logging
 from typing import Any, Callable, TypeVar
 
 from loom.jwt_auth import (
-    InsufficientPermissionsError,
     InvalidTokenError,
     TokenExpiredError,
     check_tool_access,

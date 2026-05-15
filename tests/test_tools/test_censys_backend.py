@@ -14,7 +14,7 @@ class TestCensysHost:
 
     async def test_invalid_ip_returns_error(self) -> None:
         """Invalid IP address returns error dict."""
-        from loom.tools.censys_backend import research_censys_host
+        from loom.tools.backends.censys_backend import research_censys_host
 
         result = await research_censys_host("not-an-ip")
         assert "error" in result
@@ -23,7 +23,7 @@ class TestCensysHost:
 
     async def test_missing_credentials_returns_error(self) -> None:
         """Missing API credentials returns error with helpful message."""
-        from loom.tools.censys_backend import research_censys_host
+        from loom.tools.backends.censys_backend import research_censys_host
 
         # Ensure env vars are not set
         old_id = os.environ.pop("CENSYS_API_ID", None)
@@ -42,13 +42,13 @@ class TestCensysHost:
 
     async def test_censys_not_installed_returns_error(self) -> None:
         """Missing censys library returns error with install instruction."""
-        from loom.tools.censys_backend import research_censys_host
+        from loom.tools.backends.censys_backend import research_censys_host
 
         os.environ["CENSYS_API_ID"] = "test-id"
         os.environ["CENSYS_API_SECRET"] = "test-secret"
 
         try:
-            with patch("loom.tools.censys_backend.CENSYS_AVAILABLE", False):
+            with patch("loom.tools.backends.censys_backend.CENSYS_AVAILABLE", False):
                 result = await research_censys_host("192.0.2.1")
                 assert "error" in result
                 assert "not installed" in result["error"].lower()
@@ -59,7 +59,7 @@ class TestCensysHost:
 
     async def test_successful_host_lookup(self) -> None:
         """Successful host lookup returns structured data."""
-        from loom.tools.censys_backend import research_censys_host
+        from loom.tools.backends.censys_backend import research_censys_host
 
         os.environ["CENSYS_API_ID"] = "test-id"
         os.environ["CENSYS_API_SECRET"] = "test-secret"
@@ -103,9 +103,9 @@ class TestCensysHost:
                 },
             }
 
-            with patch("loom.tools.censys_backend.CENSYS_AVAILABLE", True):
+            with patch("loom.tools.backends.censys_backend.CENSYS_AVAILABLE", True):
                 with patch(
-                    "loom.tools.censys_backend.CensysHosts"
+                    "loom.tools.backends.censys_backend.CensysHosts"
                 ) as mock_censys_class:
                     mock_client = MagicMock()
                     mock_client.view.return_value = mock_host_data
@@ -129,15 +129,15 @@ class TestCensysHost:
 
     async def test_api_exception_handling(self) -> None:
         """API exceptions are caught and returned gracefully."""
-        from loom.tools.censys_backend import research_censys_host
+        from loom.tools.backends.censys_backend import research_censys_host
 
         os.environ["CENSYS_API_ID"] = "test-id"
         os.environ["CENSYS_API_SECRET"] = "test-secret"
 
         try:
-            with patch("loom.tools.censys_backend.CENSYS_AVAILABLE", True):
+            with patch("loom.tools.backends.censys_backend.CENSYS_AVAILABLE", True):
                 with patch(
-                    "loom.tools.censys_backend.CensysHosts"
+                    "loom.tools.backends.censys_backend.CensysHosts"
                 ) as mock_censys_class:
                     mock_client = MagicMock()
                     mock_client.view.side_effect = Exception("API rate limit exceeded")
@@ -155,15 +155,15 @@ class TestCensysHost:
 
     async def test_ipv6_validation(self) -> None:
         """IPv6 addresses are validated correctly."""
-        from loom.tools.censys_backend import research_censys_host
+        from loom.tools.backends.censys_backend import research_censys_host
 
         os.environ["CENSYS_API_ID"] = "test-id"
         os.environ["CENSYS_API_SECRET"] = "test-secret"
 
         try:
-            with patch("loom.tools.censys_backend.CENSYS_AVAILABLE", True):
+            with patch("loom.tools.backends.censys_backend.CENSYS_AVAILABLE", True):
                 with patch(
-                    "loom.tools.censys_backend.CensysHosts"
+                    "loom.tools.backends.censys_backend.CensysHosts"
                 ) as mock_censys_class:
                     mock_client = MagicMock()
                     mock_client.view.return_value = {
@@ -190,7 +190,7 @@ class TestCensysSearch:
 
     async def test_invalid_query_returns_error(self) -> None:
         """Invalid query returns error dict."""
-        from loom.tools.censys_backend import research_censys_search
+        from loom.tools.backends.censys_backend import research_censys_search
 
         result = await research_censys_search("<script>alert('xss')</script>")
         assert "error" in result
@@ -198,7 +198,7 @@ class TestCensysSearch:
 
     async def test_invalid_max_results_returns_error(self) -> None:
         """Invalid max_results returns error."""
-        from loom.tools.censys_backend import research_censys_search
+        from loom.tools.backends.censys_backend import research_censys_search
 
         result = await research_censys_search("services.service_name: HTTP", max_results=5001)
         assert "error" in result
@@ -206,7 +206,7 @@ class TestCensysSearch:
 
     async def test_missing_credentials_returns_error(self) -> None:
         """Missing API credentials returns error."""
-        from loom.tools.censys_backend import research_censys_search
+        from loom.tools.backends.censys_backend import research_censys_search
 
         old_id = os.environ.pop("CENSYS_API_ID", None)
         old_secret = os.environ.pop("CENSYS_API_SECRET", None)
@@ -224,7 +224,7 @@ class TestCensysSearch:
 
     async def test_successful_search(self) -> None:
         """Successful search returns structured results."""
-        from loom.tools.censys_backend import research_censys_search
+        from loom.tools.backends.censys_backend import research_censys_search
 
         os.environ["CENSYS_API_ID"] = "test-id"
         os.environ["CENSYS_API_SECRET"] = "test-secret"
@@ -248,9 +248,9 @@ class TestCensysSearch:
                 },
             ]
 
-            with patch("loom.tools.censys_backend.CENSYS_AVAILABLE", True):
+            with patch("loom.tools.backends.censys_backend.CENSYS_AVAILABLE", True):
                 with patch(
-                    "loom.tools.censys_backend.CensysHosts"
+                    "loom.tools.backends.censys_backend.CensysHosts"
                 ) as mock_censys_class:
                     mock_client = MagicMock()
                     mock_client.search.return_value = mock_results
@@ -276,7 +276,7 @@ class TestCensysSearch:
 
     async def test_search_respects_max_results(self) -> None:
         """Search limits results to max_results parameter."""
-        from loom.tools.censys_backend import research_censys_search
+        from loom.tools.backends.censys_backend import research_censys_search
 
         os.environ["CENSYS_API_ID"] = "test-id"
         os.environ["CENSYS_API_SECRET"] = "test-secret"
@@ -293,9 +293,9 @@ class TestCensysSearch:
                 for i in range(1, 21)
             ]
 
-            with patch("loom.tools.censys_backend.CENSYS_AVAILABLE", True):
+            with patch("loom.tools.backends.censys_backend.CENSYS_AVAILABLE", True):
                 with patch(
-                    "loom.tools.censys_backend.CensysHosts"
+                    "loom.tools.backends.censys_backend.CensysHosts"
                 ) as mock_censys_class:
                     mock_client = MagicMock()
                     mock_client.search.return_value = mock_results
@@ -314,15 +314,15 @@ class TestCensysSearch:
 
     async def test_api_exception_handling(self) -> None:
         """API exceptions are caught and returned gracefully."""
-        from loom.tools.censys_backend import research_censys_search
+        from loom.tools.backends.censys_backend import research_censys_search
 
         os.environ["CENSYS_API_ID"] = "test-id"
         os.environ["CENSYS_API_SECRET"] = "test-secret"
 
         try:
-            with patch("loom.tools.censys_backend.CENSYS_AVAILABLE", True):
+            with patch("loom.tools.backends.censys_backend.CENSYS_AVAILABLE", True):
                 with patch(
-                    "loom.tools.censys_backend.CensysHosts"
+                    "loom.tools.backends.censys_backend.CensysHosts"
                 ) as mock_censys_class:
                     mock_client = MagicMock()
                     mock_client.search.side_effect = Exception("Invalid query syntax")

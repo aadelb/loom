@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from loom.params import SherlockBatchParams, SherlockLookupParams
-from loom.tools import sherlock_backend
+import loom.tools.backends.sherlock_backend
 
 
 class TestSherlockIntegration:
@@ -22,7 +22,7 @@ class TestSherlockIntegration:
         )
 
         with patch(
-            "loom.tools.sherlock_backend._check_sherlock_available"
+            "loom.tools.backends.sherlock_backend._check_sherlock_available"
         ) as mock_check:
             mock_check.return_value = (False, "Not available")
 
@@ -43,7 +43,7 @@ class TestSherlockIntegration:
         )
 
         with patch(
-            "loom.tools.sherlock_backend._check_sherlock_available"
+            "loom.tools.backends.sherlock_backend._check_sherlock_available"
         ) as mock_check:
             mock_check.return_value = (False, "Not available")
 
@@ -66,7 +66,7 @@ class TestSherlockIntegration:
 
         # Can call the function
         with patch(
-            "loom.tools.sherlock_backend._check_sherlock_available"
+            "loom.tools.backends.sherlock_backend._check_sherlock_available"
         ) as mock_check:
             mock_check.return_value = (True, "Available")
 
@@ -101,12 +101,12 @@ class TestSherlockIntegration:
 
         # Can call the function
         with patch(
-            "loom.tools.sherlock_backend._check_sherlock_available"
+            "loom.tools.backends.sherlock_backend._check_sherlock_available"
         ) as mock_check:
             mock_check.return_value = (True, "Available")
 
             with patch(
-                "loom.tools.sherlock_backend.research_sherlock_lookup"
+                "loom.tools.backends.sherlock_backend.research_sherlock_lookup"
             ) as mock_lookup:
                 mock_lookup.return_value = {
                     "username": "user1",
@@ -172,7 +172,7 @@ class TestSherlockIntegration:
     def test_full_response_structure(self) -> None:
         """Full response structure from research_sherlock_lookup is valid."""
         with patch(
-            "loom.tools.sherlock_backend._check_sherlock_available"
+            "loom.tools.backends.sherlock_backend._check_sherlock_available"
         ) as mock_check:
             mock_check.return_value = (True, "Available")
 

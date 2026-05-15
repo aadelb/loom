@@ -5,13 +5,13 @@ from loom.error_responses import handle_tool_errors
 
 import hashlib
 import logging
-import re
 from typing import Any
 from urllib.parse import quote
 
 import httpx
 
 from loom.input_validators import validate_domain, validate_username, ValidationError
+from loom.http_helpers import fetch_json
 
 logger = logging.getLogger("loom.tools.identity_resolve")
 
@@ -178,9 +178,8 @@ async def _check_pgp(client: httpx.AsyncClient, email: str) -> dict[str, Any]:
     """
     try:
         url = f"https://keys.openpgp.org/vks/v1/by-email/{quote(email)}"
-        resp = await client.get(url, timeout=15.0)
-        if resp.status_code == 200:
-            data = resp.json()
+        data = await fetch_json(client, url, timeout=15.0)
+        if data:
             keys = data.get("keys", [])
             total_count = len(keys)
             limited_keys = keys[:10]
@@ -280,9 +279,8 @@ async def _check_whois(client: httpx.AsyncClient, domain: str) -> dict[str, Any]
     """
     try:
         url = f"https://rdap.org/domain/{domain}"
-        resp = await client.get(url, timeout=15.0)
-        if resp.status_code == 200:
-            data = resp.json()
+        data = await fetch_json(client, url, timeout=15.0)
+        if data:
             contacts = data.get("entities", [])
             for contact in contacts:
                 if "registrant" in contact.get("roles", []):
@@ -314,9 +312,8 @@ async def _check_dns_soa(client: httpx.AsyncClient, domain: str) -> str:
     """
     try:
         url = f"https://dns.google/resolve?name={domain}&type=SOA"
-        resp = await client.get(url, timeout=15.0)
-        if resp.status_code == 200:
-            data = resp.json()
+        data = await fetch_json(client, url, timeout=15.0)
+        if data:
             answers = data.get("Answer", [])
             for answer in answers:
                 # Verify this is SOA type

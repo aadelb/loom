@@ -32,10 +32,9 @@ async def research_vercel_status() -> dict[str, Any]:
         async with httpx.AsyncClient(timeout=10.0) as client:
             for status_url in status_urls:
                 try:
-                    response = await client.get(status_url)
-                    if response.status_code == 200:
-                        status_data = response.json()
+                    status_data = await fetch_json(client, status_url)
 
+                    if status_data:
                         # Parse Vercel status response
                         status_page = status_data.get("page", {})
                         components = status_data.get("components", [])

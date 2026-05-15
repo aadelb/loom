@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from loom.tools import resumption
+import loom.tools.infrastructure.resumption
 
 
 @pytest.fixture

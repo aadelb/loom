@@ -16,6 +16,12 @@ import logging
 import re
 from typing import Any, ClassVar
 
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(value: float, low: float = 0.0, high: float = 1.0) -> float:
+        return max(low, min(high, value))
+
 logger = logging.getLogger("loom.danger_prescore")
 
 
@@ -207,11 +213,11 @@ class DangerPreScorer:
 
         # Detect intent markers
         intent_markers = self._detect_intent_markers(prompt)
-        intent_score = min(10.0, len(intent_markers) * 2.0)  # Each marker adds 2 points
+        intent_score = clamp(len(intent_markers) * 2.0, 0.0, 10.0)  # Each marker adds 2 points
 
         # Calculate specificity
         specificity_score = self._calculate_specificity(prompt)
-        specificity_danger = specificity_score * 3.0  # Specificity up to 3 points of danger
+        specificity_danger = clamp(specificity_score * 3.0, 0.0, 3.0)  # Specificity up to 3 points of danger
 
         # Evaluate dual-use (legitimate research vs harmful)
         dual_use_probability = self._calculate_dual_use_probability(prompt, detected_topics)
@@ -223,8 +229,7 @@ class DangerPreScorer:
         # Calculate final danger score (weighted average)
         # Reduce danger if high dual-use probability (legitimate research)
         raw_danger = topic_score + intent_score + specificity_danger + language_danger
-        danger_score = raw_danger * (1.0 - dual_use_probability * 0.4)  # -40% max
-        danger_score = min(10.0, max(0.0, danger_score))
+        danger_score = clamp(raw_danger * (1.0 - dual_use_probability * 0.4), 0.0, 10.0)  # -40% max
 
         # Determine risk level
         risk_level = self._score_to_risk_level(danger_score)
@@ -285,7 +290,7 @@ class DangerPreScorer:
                     {"topic": topic, "score": round(score, 2), "count": count}
                 )
 
-        return detected_topics, min(10.0, total_score)
+        return detected_topics, clamp(total_score, 0.0, 10.0)
 
     def _detect_intent_markers(self, prompt: str) -> list[dict[str, Any]]:
         """Detect explicit intent markers (dangerous action indicators)."""
@@ -306,21 +311,21 @@ class DangerPreScorer:
 
         # Count named entities
         named_matches = self.SPECIFICITY_PATTERNS["named_entity"].findall(prompt)
-        specificity_score += min(len(named_matches) * 0.15, 0.25)  # max 0.25
+        specificity_score += clamp(len(named_matches) * 0.15, 0.0, 0.25)  # max 0.25
 
         # Count location references
         location_matches = self.SPECIFICITY_PATTERNS["location"].findall(prompt)
-        specificity_score += min(len(location_matches) * 0.2, 0.25)  # max 0.25
+        specificity_score += clamp(len(location_matches) * 0.2, 0.0, 0.25)  # max 0.25
 
         # Count date references
         date_matches = self.SPECIFICITY_PATTERNS["date"].findall(prompt)
-        specificity_score += min(len(date_matches) * 0.15, 0.25)  # max 0.25
+        specificity_score += clamp(len(date_matches) * 0.15, 0.0, 0.25)  # max 0.25
 
         # Count tool/substance references
         tool_matches = self.SPECIFICITY_PATTERNS["tool"].findall(prompt)
-        specificity_score += min(len(tool_matches) * 0.1, 0.25)  # max 0.25
+        specificity_score += clamp(len(tool_matches) * 0.1, 0.0, 0.25)  # max 0.25
 
-        return min(1.0, specificity_score)
+        return clamp(specificity_score, 0.0, 1.0)
 
     def _calculate_dual_use_probability(
         self, prompt: str, detected_topics: list[dict[str, Any]]
@@ -355,7 +360,7 @@ class DangerPreScorer:
             if phrase.lower() in prompt.lower():
                 dual_use_score += 0.15
 
-        return min(1.0, dual_use_score)
+        return clamp(dual_use_score, 0.0, 1.0)
 
     def _analyze_language_register(self, prompt: str) -> str:
         """Analyze language register (academic, casual, threatening, neutral)."""

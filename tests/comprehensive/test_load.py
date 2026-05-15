@@ -17,7 +17,7 @@ from typing import Any
 import pytest
 
 
-pytestmark = pytest.mark.load
+pytestmark = pytest.mark.asyncio
 
 
 class TestConcurrentRequests:
@@ -50,7 +50,8 @@ class TestConcurrentRequests:
                 from loom.cache import get_cache
 
                 cache = get_cache()
-                cache.put(f"load_test_{idx}", b"test_data")
+                # Store JSON-serializable data (not bytes)
+                cache.put(f"load_test_{idx}", {"data": "test_data"})
 
                 result = cache.get(f"load_test_{idx}")
                 return result is not None
@@ -85,7 +86,8 @@ class TestThroughputMeasurement:
 
             start = time.perf_counter()
             for i in range(100):
-                cache.put(f"throughput_{i}", b"test_value")
+                # Store JSON-serializable data (not bytes)
+                cache.put(f"throughput_{i}", {"value": "test_value"})
             elapsed = time.perf_counter() - start
 
             # Should be able to do 100 puts in under 1 second
@@ -136,7 +138,8 @@ class TestMemoryLeakDetection:
 
             # Perform 1000 cache operations
             for i in range(1000):
-                cache.put(f"leak_test_{i % 100}", b"test_value")
+                # Store JSON-serializable data (not bytes)
+                cache.put(f"leak_test_{i % 100}", {"value": "test"})
                 cache.get(f"leak_test_{i % 100}")
 
             # Clean up and check memory
@@ -173,7 +176,8 @@ class TestErrorRecovery:
                 if idx % 10 == 0:
                     raise ValueError("Simulated error")
 
-                cache.put(f"error_test_{idx}", b"data")
+                # Store JSON-serializable data (not bytes)
+                cache.put(f"error_test_{idx}", {"data": "test"})
                 return True
             except Exception:
                 return False
@@ -199,18 +203,20 @@ class TestResourceCleanup:
         try:
             from loom.sessions import research_session_open, research_session_list
 
-            initial_sessions = await research_session_list()
-            initial_count = len(initial_sessions)
+            initial_sessions = research_session_list()
+            initial_count = len(initial_sessions) if isinstance(initial_sessions, (list, dict)) else 0
 
             # Create multiple sessions
             for i in range(10):
                 try:
-                    await research_session_open(f"cleanup_test_{i}")
+                    result = research_session_open(f"cleanup_test_{i}")
+                    if asyncio.iscoroutine(result):
+                        await result
                 except Exception:
                     pass
 
             # List sessions
-            sessions = await research_session_list()
+            sessions = research_session_list()
             peak_count = len(sessions)
 
             # We should have created some new sessions
@@ -239,7 +245,8 @@ class TestLoadStability:
 
                     async def do_op(k: str) -> bool:
                         try:
-                            cache.put(k, b"data")
+                            # Store JSON-serializable data (not bytes)
+                            cache.put(k, {"data": "test"})
                             return cache.get(k) is not None
                         except Exception:
                             return False

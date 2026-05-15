@@ -12,6 +12,13 @@ import logging
 import re
 from typing import Any
 from loom.error_responses import handle_tool_errors
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text, max_chars=500, *, suffix="..."):
+        if len(text) <= max_chars: return text
+        return text[:max_chars - len(suffix)] + suffix
+
 
 logger = logging.getLogger("loom.tools.radicalization_detect")
 
@@ -287,7 +294,7 @@ async def research_radicalization_detect(
         prompt = (
             f"Analyze this text for radicalization indicators. "
             f"Provide a brief (1-2 sentences) assessment of the radicalization risk level "
-            f"and key concerning elements. Text:\n\n{text[:800]}"
+            f"and key concerning elements. Text:\n\n{truncate(text, 800)}"
         )
         if context:
             prompt += f"\n\nContext: {context}"

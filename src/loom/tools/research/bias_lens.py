@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
-import json
 import logging
 import re
 import time
@@ -11,7 +9,7 @@ from typing import Any
 
 import httpx
 
-from loom.http_helpers import fetch_json
+from loom.http_helpers import fetch_json, fetch_text
 from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.bias_lens")

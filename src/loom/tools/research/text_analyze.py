@@ -20,6 +20,15 @@ try:
 except ImportError:
     _HAS_NLTK = False
 
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text: str, max_chars: int = 500, *, suffix: str = "...") -> str:
+        """Fallback truncate if text_utils unavailable."""
+        if len(text) <= max_chars:
+            return text
+        return text[: max_chars - len(suffix)] + suffix
+
 from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.text_analyze")
 
@@ -89,7 +98,7 @@ def _extract_entities(text: str) -> list[dict[str, Any]]:
 
     try:
         # Tokenize into sentences
-        sentences = sent_tokenize(text[:5000])  # Limit to first 5K chars for performance
+        sentences = sent_tokenize(truncate(text, 5000))
 
         entity_counts: dict[str, dict[str, int]] = {}  # {entity_text: {type: count}}
 
@@ -159,6 +168,7 @@ def _extract_keywords(text: str) -> list[dict[str, Any]]:
         try:
             stop_words = set(stopwords.words("english"))
         except Exception:
+            logger.exception("Failed to load NLTK stopwords")
             stop_words = set()
 
         # Filter tokens
@@ -303,6 +313,7 @@ def _compute_language_stats(text: str) -> dict[str, Any]:
             try:
                 stop_words = set(stopwords.words("english"))
             except Exception:
+                logger.exception("Failed to load NLTK stopwords for lexical density")
                 stop_words = set()
         else:
             stop_words = set()
@@ -401,7 +412,7 @@ def research_text_analyze(
     analyses = [a for a in analyses if a in valid_analyses]
 
     result: dict[str, Any] = {}
-    
+
     try:
         result["word_count"] = len(word_tokenize(text)) if _HAS_NLTK else 0
     except Exception as e:

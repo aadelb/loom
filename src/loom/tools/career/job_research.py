@@ -9,7 +9,6 @@ from __future__ import annotations
 from loom.error_responses import handle_tool_errors
 
 import asyncio
-import json
 import logging
 import os
 import re
@@ -18,6 +17,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import httpx
+from loom.http_helpers import fetch_json
 
 logger = logging.getLogger("loom.tools.job_research")
 
@@ -68,9 +68,8 @@ async def _search_adzuna(
 
             logger.debug("adzuna_fetch query=%s location=%s", query[:50], location)
 
-            resp = await client.get(url, params=params)
+            data = await fetch_json(client, url, params=params)
             resp.raise_for_status()
-            data = resp.json()
 
             for job in data.get("results", []):
                 salary_min = job.get("salary_min")
@@ -119,9 +118,8 @@ async def _search_remoteok(
 
             logger.debug("remoteok_fetch query=%s", query[:50])
 
-            resp = await client.get(url)
+            jobs = await fetch_json(client, url)
             resp.raise_for_status()
-            jobs = resp.json()
 
             # Filter by query (search in title and description)
             query_lower = query.lower()
@@ -187,9 +185,8 @@ async def _search_hn_hiring(
                 "hitsPerPage": 5,
             }
 
-            resp = await client.get(url, params=params)
+            stories = await fetch_json(client, url, params=params)
             resp.raise_for_status()
-            stories = resp.json()
 
             # For each story, search comments for the job query
             for story in stories.get("hits", []):
@@ -205,7 +202,7 @@ async def _search_hn_hiring(
                     "hitsPerPage": limit - len(results),
                 }
 
-                comment_resp = await client.get(url, params=comment_params)
+                comment_data = await fetch_json(client, url, params=comment_params)
                 comment_resp.raise_for_status()
                 comments = comment_resp.json()
 
@@ -279,7 +276,6 @@ async def _search_github_jobs(
 
                 resp = await client.get(url, params=params)
                 resp.raise_for_status()
-                data = resp.json()
 
                 for result in data.get("Results", [])[:5]:
                     if len(results) >= limit:

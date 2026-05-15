@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import httpx
 import pytest
 
-from loom.tools.competitive_monitor import (
+from loom.tools.intelligence.competitive_monitor import (
     DEFAULT_COMPETITORS,
     LOOM_CAPABILITIES,
     research_competitive_advantage,

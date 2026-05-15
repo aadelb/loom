@@ -13,7 +13,6 @@ This module implements:
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 from dataclasses import dataclass
 from typing import Any, Callable, Literal

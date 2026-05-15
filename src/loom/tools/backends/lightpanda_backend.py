@@ -9,12 +9,12 @@ Uses Lightpanda as a subprocess since it's not easily pip-installable as a libra
 
 from __future__ import annotations
 from loom.error_responses import handle_tool_errors
+from loom.subprocess_helpers import run_command
 
 import asyncio
 import json
 import logging
 import os
-import subprocess
 import tempfile
 from typing import Any
 
@@ -28,16 +28,16 @@ def _check_lightpanda_available() -> tuple[bool, str]:
         Tuple of (available: bool, message: str)
     """
     try:
-        result = subprocess.run(
+        result = run_command(
             ["lightpanda", "--version"],
             capture_output=True,
             text=True,
             timeout=5,
         )
-        if result.returncode == 0:
+        if result["success"]:
             return True, "Lightpanda CLI found"
         else:
-            return False, f"Lightpanda version check failed: {result.stderr}"
+            return False, f"Lightpanda version check failed: {result["stderr"]}"
     except FileNotFoundError:
         return False, (
             "Lightpanda CLI not found. Install from: https://github.com/PSPDFKit/lightpanda"
@@ -122,7 +122,7 @@ async def research_lightpanda_fetch(
         loop = asyncio.get_running_loop()
         result = await loop.run_in_executor(
             None,
-            lambda: subprocess.run(
+            lambda: run_command(
                 cmd,
                 capture_output=True,
                 text=True,

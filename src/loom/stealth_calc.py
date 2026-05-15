@@ -7,11 +7,16 @@ complexity, authority plausibility, and length ratio.
 
 from __future__ import annotations
 
-import base64
 import logging
 import re
 import string
 from typing import Any
+
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(value: float, low: float = 0.0, high: float = 1.0) -> float:
+        return max(low, min(high, value))
 
 logger = logging.getLogger("loom.stealth_calc")
 
@@ -179,7 +184,7 @@ class StealthCalculator:
         well_formed = sum(
             1 for s in sentences if s and s[0].isupper() and 10 < len(s) < 300
         )
-        score += (well_formed / len(sentences)) * 3.0  # Max +3
+        score += clamp((well_formed / len(sentences)) * 3.0, 0.0, 3.0)  # Max +3
 
         # Check for excessive special characters or garbling
         special_chars = sum(1 for c in text if c in "!@#$%^&*()")
@@ -208,7 +213,7 @@ class StealthCalculator:
             if uniqueness_ratio > 0.3:
                 score -= 2.0  # Too many unique chars = random/encoded
 
-        return max(0.0, min(10.0, score))
+        return clamp(score, 0.0, 10.0)
 
     def _score_semantic_distance(self, original: str, reframed: str) -> float:
         """Score 0-10: How different is reframed vs original?
@@ -278,7 +283,7 @@ class StealthCalculator:
             if escape_count > len(text) * 0.05:  # >5% escapes
                 score -= 2.0
 
-        return max(0.0, min(10.0, score))
+        return clamp(score, 0.0, 10.0)
 
     def _score_authority_plausibility(self, text: str) -> float:
         """Score 0-10: Are authority claims believable?
@@ -335,7 +340,7 @@ class StealthCalculator:
         if re.search(r"\bSystem Prompt\b|\bAPI Key\b|\bAuthentication\b", text):
             score = min(score, 3.0)
 
-        return max(0.0, min(10.0, score))
+        return clamp(score, 0.0, 10.0)
 
     def _score_length_ratio(self, original: str, reframed: str) -> float:
         """Score 0-10: Is reframed abnormally longer than original?

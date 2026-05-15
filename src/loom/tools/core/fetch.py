@@ -18,7 +18,6 @@ import hashlib
 import json
 import logging
 import time
-from dataclasses import asdict
 from typing import Any, Literal, cast
 from loom.error_responses import handle_tool_errors
 
@@ -26,11 +25,20 @@ try:
     from mcp.types import TextContent
 except ImportError:
     TextContent = None  # type: ignore[assignment,misc]
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from loom.cache import get_cache
 from loom.params import FetchParams
 from loom.validators import validate_url, MAX_FETCH_CHARS
+
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text: str, max_chars: int = 500, *, suffix: str = "...") -> str:
+        """Fallback truncate if text_utils unavailable."""
+        if len(text) <= max_chars:
+            return text
+        return text[: max_chars - len(suffix)] + suffix
 
 logger = logging.getLogger("loom.tools.fetch")
 
@@ -72,10 +80,21 @@ def _fetch_http(params: FetchParams) -> FetchResult:
         response.raise_for_status()
         return FetchResult(
             url=params.url,
-            text=response.text[: params.max_chars],
-            html=response.text[: params.max_chars],
+            text=truncate(response.text, params.max_chars),
+            html=truncate(response.text, params.max_chars),
             html_len=len(response.text),
             fetched_at=time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            tool="http",
+        )
+    except requests.HTTPError as e:
+        # Preserve response body so Cloudflare detection can work on non-2xx responses
+        body = e.response.text if e.response else ""
+        return FetchResult(
+            url=params.url,
+            text=truncate(body, params.max_chars),
+            html=truncate(body, params.max_chars),
+            html_len=len(body),
+            error=str(e),
             tool="http",
         )
     except Exception as e:
@@ -98,8 +117,8 @@ def _fetch_stealthy(params: FetchParams) -> FetchResult:
         text = body.decode("utf-8", errors="replace") if isinstance(body, bytes) else str(body)
         return FetchResult(
             url=params.url,
-            text=text[: params.max_chars],
-            html=text[: params.max_chars],
+            text=truncate(text, params.max_chars),
+            html=truncate(text, params.max_chars),
             html_len=len(text),
             fetched_at=time.strftime("%Y-%m-%dT%H:%M:%SZ"),
             tool="stealthy",
@@ -117,23 +136,37 @@ def _fetch_dynamic(params: FetchParams) -> FetchResult:
 
         with sync_playwright() as p:
             browser = p.chromium.launch()
-            page = browser.new_page()
-            page.goto(params.url, wait_until="domcontentloaded", timeout=params.timeout * 1000 or 30000)
-            if params.wait_for:
-                page.wait_for_selector(params.wait_for)
-            content = page.content()
-            screenshot_b64 = page.screenshot(full_page=True, type="png") if params.return_format == "screenshot" else None
-            browser.close()
-            return FetchResult(
-                url=params.url,
-                text=content[: params.max_chars],
-                html=content[: params.max_chars],
-                html_len=len(content),
-                screenshot=screenshot_b64,
-                fetched_at=time.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                tool="dynamic",
-                backend="playwright",
-            )
+            context = None
+            try:
+                context = (
+                    browser.new_context(proxy={"server": params.proxy})
+                    if params.proxy
+                    else browser.new_context()
+                )
+                page = context.new_page()
+                page.goto(params.url, wait_until="domcontentloaded", timeout=(params.timeout or 30) * 1000)
+                if params.wait_for:
+                    page.wait_for_selector(params.wait_for)
+                content = page.content()
+                screenshot_b64 = None
+                if params.return_format == "screenshot":
+                    import base64
+                    raw = page.screenshot(full_page=True, type="png")
+                    screenshot_b64 = base64.b64encode(raw).decode()
+                return FetchResult(
+                    url=params.url,
+                    text=truncate(content, params.max_chars),
+                    html=truncate(content, params.max_chars),
+                    html_len=len(content),
+                    screenshot=screenshot_b64,
+                    fetched_at=time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    tool="dynamic",
+                    backend="playwright",
+                )
+            finally:
+                if context:
+                    context.close()
+                browser.close()
     except Exception as e:
         logger.error("dynamic_fetch_error url=%s error=%s", params.url, str(e))
         return FetchResult(url=params.url, error=str(e), tool="dynamic")
@@ -141,10 +174,11 @@ def _fetch_dynamic(params: FetchParams) -> FetchResult:
 
 def _is_cloudflare_block(result: FetchResult) -> bool:
     """Detect if result is Cloudflare block."""
+    text = result.text.lower()
     return (
-        "cloudflare" in result.text.lower()
-        or "403" in result.text
-        or "challenge" in result.text.lower()
+        "cf-ray" in text
+        or ("challenge" in text and ("cloudflare" in text or "cf_challenge" in text))
+        or ("cloudflare" in text and "checking your browser" in text)
     )
 
 
@@ -272,18 +306,19 @@ async def research_fetch(
         )
 
     # Auto-escalation: http -> stealthy -> dynamic on Cloudflare block
-    if auto_escalate and params.mode == "http" and _is_cloudflare_block(result):
-        logger.info("auto_escalate http -> stealthy url=%s", url)
-        params.mode = "stealthy"
-        result = await asyncio.to_thread(_fetch_stealthy, params)
+    if auto_escalate and _is_cloudflare_block(result):
+        if params.mode == "http":
+            logger.info("auto_escalate http -> stealthy url=%s", url)
+            params.mode = "stealthy"
+            result = await asyncio.to_thread(_fetch_stealthy, params)
 
-        if _is_cloudflare_block(result):
-            logger.info("auto_escalate stealthy -> dynamic url=%s", url)
+        if _is_cloudflare_block(result) and params.mode != "dynamic":
+            logger.info("auto_escalate %s -> dynamic url=%s", params.mode, url)
             params.mode = "dynamic"
             result = await asyncio.to_thread(_fetch_dynamic, params)
 
-    # Cache successful result
-    if not result.error:
+    # Cache successful result unless it's a Cloudflare block
+    if not result.error and not _is_cloudflare_block(result):
         get_cache().put(cache_key, result.model_dump(exclude_none=True))
 
     # Convert to dict

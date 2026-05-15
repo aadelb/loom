@@ -17,6 +17,13 @@ from pathlib import Path
 from typing import Any
 from loom.error_responses import handle_tool_errors
 
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text, max_chars=500, *, suffix="..."):
+        if len(text) <= max_chars: return text
+        return text[:max_chars - len(suffix)] + suffix
+
 logger = logging.getLogger("loom.tools.hipporag")
 
 # Constants for validation
@@ -322,7 +329,7 @@ class HippoRAGStore:
                 is_truncated = len(content_text) > max_preview_chars
                 results.append(
                     {
-                        "content": content_text[:max_preview_chars],
+                        "content": truncate(content_text, max_preview_chars),
                         "is_truncated": is_truncated,
                         "stored_at": row["created_at"],
                         "metadata": metadata,

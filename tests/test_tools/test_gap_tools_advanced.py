@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from loom.tools.gap_tools_advanced import (
+from loom.tools.research.gap_tools_advanced import (
     research_talent_migration,
     research_funding_pipeline,
     research_jailbreak_library,
@@ -218,7 +218,7 @@ class TestDetectDomainShifts:
 class TestResearchTalentMigration:
     """Tests for research_talent_migration tool."""
 
-    @patch("loom.tools.gap_tools_advanced._get_json")
+    @patch("loom.tools.research.gap_tools_advanced._get_json")
     async def test_talent_migration_basic(self, mock_get_json: AsyncMock) -> None:
         """Basic talent migration returns expected fields."""
         mock_get_json.return_value = {

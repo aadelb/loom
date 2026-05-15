@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from loom.tools.report_generator import (
+from loom.tools.infrastructure.report_generator import (
     _arxiv_recent,
     _generate_markdown_report,
     _hackernews_discussion,
@@ -364,15 +364,15 @@ class TestResearchGenerateReport:
 
     async def test_full_report_generation(self) -> None:
         """Generate complete research report with all sources."""
-        with patch("loom.tools.report_generator._wikipedia_overview") as mock_wiki:
+        with patch("loom.tools.infrastructure.report_generator._wikipedia_overview") as mock_wiki:
             with patch(
-                "loom.tools.report_generator._semantic_scholar_papers"
+                "loom.tools.infrastructure.report_generator._semantic_scholar_papers"
             ) as mock_scholar:
                 with patch(
-                    "loom.tools.report_generator._arxiv_recent"
+                    "loom.tools.infrastructure.report_generator._arxiv_recent"
                 ) as mock_arxiv:
                     with patch(
-                        "loom.tools.report_generator._hackernews_discussion"
+                        "loom.tools.infrastructure.report_generator._hackernews_discussion"
                     ) as mock_hn:
                         mock_wiki.return_value = {
                             "title": "Transformers",
@@ -429,15 +429,15 @@ class TestResearchGenerateReport:
 
     async def test_report_with_deep_depth(self) -> None:
         """Generate report with deep depth level."""
-        with patch("loom.tools.report_generator._wikipedia_overview") as mock_wiki:
+        with patch("loom.tools.infrastructure.report_generator._wikipedia_overview") as mock_wiki:
             with patch(
-                "loom.tools.report_generator._semantic_scholar_papers"
+                "loom.tools.infrastructure.report_generator._semantic_scholar_papers"
             ) as mock_scholar:
                 with patch(
-                    "loom.tools.report_generator._arxiv_recent"
+                    "loom.tools.infrastructure.report_generator._arxiv_recent"
                 ) as mock_arxiv:
                     with patch(
-                        "loom.tools.report_generator._hackernews_discussion"
+                        "loom.tools.infrastructure.report_generator._hackernews_discussion"
                     ) as mock_hn:
                         mock_wiki.return_value = {
                             "title": "AI",
@@ -464,15 +464,15 @@ class TestResearchGenerateReport:
 
     async def test_report_with_brief_depth(self) -> None:
         """Generate brief report with minimal content."""
-        with patch("loom.tools.report_generator._wikipedia_overview") as mock_wiki:
+        with patch("loom.tools.infrastructure.report_generator._wikipedia_overview") as mock_wiki:
             with patch(
-                "loom.tools.report_generator._semantic_scholar_papers"
+                "loom.tools.infrastructure.report_generator._semantic_scholar_papers"
             ) as mock_scholar:
                 with patch(
-                    "loom.tools.report_generator._arxiv_recent"
+                    "loom.tools.infrastructure.report_generator._arxiv_recent"
                 ) as mock_arxiv:
                     with patch(
-                        "loom.tools.report_generator._hackernews_discussion"
+                        "loom.tools.infrastructure.report_generator._hackernews_discussion"
                     ) as mock_hn:
                         mock_wiki.return_value = {
                             "title": "Topic",
@@ -499,15 +499,15 @@ class TestResearchGenerateReport:
 
     async def test_report_sources_used_tracked(self) -> None:
         """Track which sources were used in report."""
-        with patch("loom.tools.report_generator._wikipedia_overview") as mock_wiki:
+        with patch("loom.tools.infrastructure.report_generator._wikipedia_overview") as mock_wiki:
             with patch(
-                "loom.tools.report_generator._semantic_scholar_papers"
+                "loom.tools.infrastructure.report_generator._semantic_scholar_papers"
             ) as mock_scholar:
                 with patch(
-                    "loom.tools.report_generator._arxiv_recent"
+                    "loom.tools.infrastructure.report_generator._arxiv_recent"
                 ) as mock_arxiv:
                     with patch(
-                        "loom.tools.report_generator._hackernews_discussion"
+                        "loom.tools.infrastructure.report_generator._hackernews_discussion"
                     ) as mock_hn:
                         mock_wiki.return_value = {
                             "title": "Test",

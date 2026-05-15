@@ -14,6 +14,7 @@ from typing import Any
 import httpx
 
 from loom.error_responses import handle_tool_errors
+from loom.http_helpers import fetch_json
 logger = logging.getLogger("loom.tools.vastai")
 
 _VASTAI_API_BASE = "https://console.vast.ai/api/v0"
@@ -52,13 +53,12 @@ async def research_vastai_search(
 
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
-            resp = await client.get(
+            data = await fetch_json(client, 
                 f"{_VASTAI_API_BASE}/bundles/",
                 headers=headers,
                 params=params,
             )
             resp.raise_for_status()
-            data = resp.json()
 
             instances = []
             for item in data.get("bundles", [])[:n]:
@@ -116,12 +116,11 @@ async def research_vastai_status() -> dict[str, Any]:
 
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
-            resp = await client.get(
+            data = await fetch_json(client, 
                 f"{_VASTAI_API_BASE}/users/current/",
                 headers=headers,
             )
             resp.raise_for_status()
-            data = resp.json()
 
             balance = data.get("balance", 0.0)
             running_instances = len(data.get("instances", []))

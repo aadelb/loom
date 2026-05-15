@@ -9,11 +9,11 @@ from pathlib import Path
 
 import pytest
 
-from loom.tools.workflow_engine import (
+from loom.db_helpers import get_db_path as _get_db_path
+from loom.tools.infrastructure.workflow_engine import (
     research_workflow_create,
     research_workflow_run,
     research_workflow_status,
-    _get_db_path,
     _init_db,
 )
 

@@ -11,12 +11,13 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import subprocess
 from typing import Any
 
 import httpx
 from loom.cli_checker import is_available
 from loom.error_responses import handle_tool_errors
+from loom.http_helpers import fetch_json
+from loom.subprocess_helpers import run_command
 
 logger = logging.getLogger("loom.tools.robin_backend")
 
@@ -130,20 +131,20 @@ async def _run_robin_subprocess(
             check=False,
         )
 
-        if result.returncode != 0:
-            logger.warning("robin_subprocess_failed returncode=%d stderr=%s", result.returncode, result.stderr)
+        if not result["success"]:
+            logger.warning("robin_subprocess_failed returncode=%d stderr=%s", result["returncode"], result["stderr"])
             return {
                 "success": False,
-                "error": f"robin exited with code {result.returncode}",
-                "stderr": result.stderr[:500],
+                "error": f"robin exited with code {result["returncode"]}",
+                "stderr": result["stderr"][:500],
             }
 
         # Try to parse JSON output (monitor mode)
         try:
-            output = json.loads(result.stdout)
+            output = json.loads(result["stdout"])
         except json.JSONDecodeError:
             # Fall back to plain text output
-            output = {"raw_output": result.stdout}
+            output = {"raw_output": result["stdout"]}
 
         return {
             "success": True,

@@ -1,7 +1,7 @@
 """Tests for strange_attractors tool — chaos theory for safety evaluator traps."""
 
 import pytest
-from loom.tools.strange_attractors import (
+from loom.tools.research.strange_attractors import (
     research_attractor_trap,
     _generate_lorenz_orbit,
     _generate_rossler_orbit,

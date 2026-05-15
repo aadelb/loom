@@ -18,6 +18,13 @@ from typing import Any
 
 import aiosqlite
 
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text, max_chars=500, *, suffix="..."):
+        if len(text) <= max_chars: return text
+        return text[:max_chars - len(suffix)] + suffix
+
 logger = logging.getLogger("loom.tools.hitl_eval")
 
 _DB_PATH = Path.home() / ".loom" / "hitl_eval.db"
@@ -93,13 +100,6 @@ def _validate_tags(tags: list[str] | None) -> tuple[bool, str]:
     return True, ""
 
 
-def _truncate_text(text: str, max_len: int) -> str:
-    """Safely truncate text to max length."""
-    if len(text) > max_len:
-        return text[:max_len]
-    return text
-
-
 @handle_tool_errors("research_hitl_submit")
 async def research_hitl_submit(
     strategy: str,
@@ -128,8 +128,8 @@ async def research_hitl_submit(
             return {"error": "response must be a non-empty string", "tool": "research_hitl_submit"}
 
         # Truncate large inputs to prevent DB bloat
-        prompt_safe = _truncate_text(prompt, _MAX_PROMPT_LENGTH)
-        response_safe = _truncate_text(response, _MAX_RESPONSE_LENGTH)
+        prompt_safe = truncate(prompt, _MAX_PROMPT_LENGTH)
+        response_safe = truncate(response, _MAX_RESPONSE_LENGTH)
 
         await _init_db()
         eval_id = str(uuid.uuid4())
@@ -191,7 +191,7 @@ async def research_hitl_evaluate(
         if not is_valid:
             return {"error": msg, "tool": "research_hitl_evaluate"}
 
-        notes_safe = _truncate_text(notes, _MAX_NOTES_LENGTH)
+        notes_safe = truncate(notes, _MAX_NOTES_LENGTH)
 
         await _init_db()
         now = datetime.now(UTC).isoformat()
@@ -272,7 +272,7 @@ async def research_hitl_queue(
                     {
                         "eval_id": row[0],
                         "strategy": row[1],
-                        "prompt_preview": row[2][:100] + ("..." if len(row[2]) > 100 else ""),
+                        "prompt_preview": truncate(row[2], 100),
                         "model": row[3],
                         "submitted": row[4],
                     }

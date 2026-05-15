@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from loom.tools.competitive_intel import (
+from loom.tools.intelligence.competitive_intel import (
     _fetch_certificate_transparency,
     _fetch_dns_records,
     _fetch_github_activity,
@@ -30,7 +30,7 @@ class TestFetchSecFilings:
         10-Q | 2024-08-20
         10-K | 2024-03-10
         """
-        with patch("loom.tools.competitive_intel._get_text", new_callable=AsyncMock) as mock_get:
+        with patch("loom.tools.intelligence.competitive_intel._get_text", new_callable=AsyncMock) as mock_get:
             mock_get.return_value = mock_html
 
             import httpx
@@ -45,7 +45,7 @@ class TestFetchSecFilings:
     @pytest.mark.asyncio
     async def test_sec_filings_no_results(self) -> None:
         """SEC filing fetch with no results returns zero count."""
-        with patch("loom.tools.competitive_intel._get_text", new_callable=AsyncMock) as mock_get:
+        with patch("loom.tools.intelligence.competitive_intel._get_text", new_callable=AsyncMock) as mock_get:
             mock_get.return_value = ""
 
             import httpx
@@ -59,7 +59,7 @@ class TestFetchSecFilings:
     @pytest.mark.asyncio
     async def test_sec_filings_network_error(self) -> None:
         """SEC filing fetch with network error returns empty gracefully."""
-        with patch("loom.tools.competitive_intel._get_text", new_callable=AsyncMock) as mock_get:
+        with patch("loom.tools.intelligence.competitive_intel._get_text", new_callable=AsyncMock) as mock_get:
             mock_get.side_effect = Exception("Network error")
 
             import httpx
@@ -88,7 +88,7 @@ class TestFetchPatents:
             }
         }
 
-        with patch("loom.tools.competitive_intel._get_json", new_callable=AsyncMock) as mock_get:
+        with patch("loom.tools.intelligence.competitive_intel._get_json", new_callable=AsyncMock) as mock_get:
             mock_get.return_value = mock_response
 
             import httpx
@@ -112,7 +112,7 @@ class TestFetchPatents:
             }
         }
 
-        with patch("loom.tools.competitive_intel._get_json", new_callable=AsyncMock) as mock_get:
+        with patch("loom.tools.intelligence.competitive_intel._get_json", new_callable=AsyncMock) as mock_get:
             mock_get.return_value = mock_response
 
             import httpx
@@ -126,7 +126,7 @@ class TestFetchPatents:
     @pytest.mark.asyncio
     async def test_patents_no_response_field(self) -> None:
         """Patent fetch with missing response field returns empty."""
-        with patch("loom.tools.competitive_intel._get_json", new_callable=AsyncMock) as mock_get:
+        with patch("loom.tools.intelligence.competitive_intel._get_json", new_callable=AsyncMock) as mock_get:
             mock_get.return_value = {}
 
             import httpx
@@ -140,7 +140,7 @@ class TestFetchPatents:
     @pytest.mark.asyncio
     async def test_patents_network_error(self) -> None:
         """Patent fetch with network error returns empty gracefully."""
-        with patch("loom.tools.competitive_intel._get_json", new_callable=AsyncMock) as mock_get:
+        with patch("loom.tools.intelligence.competitive_intel._get_json", new_callable=AsyncMock) as mock_get:
             mock_get.side_effect = Exception("Network timeout")
 
             import httpx
@@ -179,7 +179,7 @@ class TestFetchGithubActivity:
             },
         ]
 
-        with patch("loom.tools.competitive_intel._get_json", new_callable=AsyncMock) as mock_get:
+        with patch("loom.tools.intelligence.competitive_intel._get_json", new_callable=AsyncMock) as mock_get:
             mock_get.return_value = mock_repos
 
             import httpx
@@ -205,7 +205,7 @@ class TestFetchGithubActivity:
             },
         ]
 
-        with patch("loom.tools.competitive_intel._get_json", new_callable=AsyncMock) as mock_get:
+        with patch("loom.tools.intelligence.competitive_intel._get_json", new_callable=AsyncMock) as mock_get:
             mock_get.return_value = mock_repos
 
             import httpx
@@ -219,7 +219,7 @@ class TestFetchGithubActivity:
     @pytest.mark.asyncio
     async def test_github_activity_not_list(self) -> None:
         """GitHub fetch with non-list response returns empty."""
-        with patch("loom.tools.competitive_intel._get_json", new_callable=AsyncMock) as mock_get:
+        with patch("loom.tools.intelligence.competitive_intel._get_json", new_callable=AsyncMock) as mock_get:
             mock_get.return_value = {"error": "Not found"}
 
             import httpx
@@ -234,7 +234,7 @@ class TestFetchGithubActivity:
     @pytest.mark.asyncio
     async def test_github_activity_network_error(self) -> None:
         """GitHub fetch with network error returns empty gracefully."""
-        with patch("loom.tools.competitive_intel._get_json", new_callable=AsyncMock) as mock_get:
+        with patch("loom.tools.intelligence.competitive_intel._get_json", new_callable=AsyncMock) as mock_get:
             mock_get.side_effect = Exception("Connection refused")
 
             import httpx
@@ -258,7 +258,7 @@ class TestFetchCertificateTransparency:
             {"name_value": "mail.example.com"},
         ]
 
-        with patch("loom.tools.competitive_intel._get_json", new_callable=AsyncMock) as mock_get:
+        with patch("loom.tools.intelligence.competitive_intel._get_json", new_callable=AsyncMock) as mock_get:
             mock_get.return_value = mock_ct_data
 
             import httpx
@@ -277,7 +277,7 @@ class TestFetchCertificateTransparency:
             {"name_value": "www.example.com\nwww.example.com\napi.example.com"},
         ]
 
-        with patch("loom.tools.competitive_intel._get_json", new_callable=AsyncMock) as mock_get:
+        with patch("loom.tools.intelligence.competitive_intel._get_json", new_callable=AsyncMock) as mock_get:
             mock_get.return_value = mock_ct_data
 
             import httpx
@@ -292,7 +292,7 @@ class TestFetchCertificateTransparency:
     @pytest.mark.asyncio
     async def test_ct_subdomains_no_results(self) -> None:
         """CT fetch with no results returns empty."""
-        with patch("loom.tools.competitive_intel._get_json", new_callable=AsyncMock) as mock_get:
+        with patch("loom.tools.intelligence.competitive_intel._get_json", new_callable=AsyncMock) as mock_get:
             mock_get.return_value = []
 
             import httpx
@@ -306,7 +306,7 @@ class TestFetchCertificateTransparency:
     @pytest.mark.asyncio
     async def test_ct_subdomains_network_error(self) -> None:
         """CT fetch with network error returns empty gracefully."""
-        with patch("loom.tools.competitive_intel._get_json", new_callable=AsyncMock) as mock_get:
+        with patch("loom.tools.intelligence.competitive_intel._get_json", new_callable=AsyncMock) as mock_get:
             mock_get.side_effect = Exception("Timeout")
 
             import httpx
@@ -344,7 +344,7 @@ class TestFetchDnsRecords:
                 return {"Answer": [{"data": "cdn.cloudflare.net"}]}
             return {"Answer": []}
 
-        with patch("loom.tools.competitive_intel._get_json", new_callable=AsyncMock) as mock_get:
+        with patch("loom.tools.intelligence.competitive_intel._get_json", new_callable=AsyncMock) as mock_get:
             mock_get.side_effect = mock_get_json_side_effect
 
             import httpx
@@ -361,7 +361,7 @@ class TestFetchDnsRecords:
     @pytest.mark.asyncio
     async def test_dns_records_no_answer(self) -> None:
         """DNS fetch with no Answer field returns empty records."""
-        with patch("loom.tools.competitive_intel._get_json", new_callable=AsyncMock) as mock_get:
+        with patch("loom.tools.intelligence.competitive_intel._get_json", new_callable=AsyncMock) as mock_get:
             mock_get.return_value = {"Status": 0}
 
             import httpx
@@ -375,7 +375,7 @@ class TestFetchDnsRecords:
     @pytest.mark.asyncio
     async def test_dns_records_network_error(self) -> None:
         """DNS fetch with network error returns empty gracefully."""
-        with patch("loom.tools.competitive_intel._get_json", new_callable=AsyncMock) as mock_get:
+        with patch("loom.tools.intelligence.competitive_intel._get_json", new_callable=AsyncMock) as mock_get:
             mock_get.side_effect = Exception("Network error")
 
             import httpx
@@ -451,11 +451,11 @@ class TestResearchCompetitiveIntel:
     @pytest.mark.asyncio
     async def test_competitive_intel_valid_company(self) -> None:
         """Competitive intel returns proper structure for valid company."""
-        with patch("loom.tools.competitive_intel._fetch_sec_filings", new_callable=AsyncMock) as mock_sec, \
-             patch("loom.tools.competitive_intel._fetch_patents", new_callable=AsyncMock) as mock_patent, \
-             patch("loom.tools.competitive_intel._fetch_github_activity", new_callable=AsyncMock) as mock_github, \
-             patch("loom.tools.competitive_intel._fetch_certificate_transparency", new_callable=AsyncMock) as mock_ct, \
-             patch("loom.tools.competitive_intel._fetch_dns_records", new_callable=AsyncMock) as mock_dns:
+        with patch("loom.tools.intelligence.competitive_intel._fetch_sec_filings", new_callable=AsyncMock) as mock_sec, \
+             patch("loom.tools.intelligence.competitive_intel._fetch_patents", new_callable=AsyncMock) as mock_patent, \
+             patch("loom.tools.intelligence.competitive_intel._fetch_github_activity", new_callable=AsyncMock) as mock_github, \
+             patch("loom.tools.intelligence.competitive_intel._fetch_certificate_transparency", new_callable=AsyncMock) as mock_ct, \
+             patch("loom.tools.intelligence.competitive_intel._fetch_dns_records", new_callable=AsyncMock) as mock_dns:
 
             mock_sec.return_value = {"count": 2, "recent": []}
             mock_patent.return_value = {"count": 5, "recent_titles": []}
@@ -484,11 +484,11 @@ class TestResearchCompetitiveIntel:
     @pytest.mark.asyncio
     async def test_competitive_intel_with_optional_params(self) -> None:
         """Competitive intel accepts optional domain and github_org."""
-        with patch("loom.tools.competitive_intel._fetch_sec_filings", new_callable=AsyncMock) as mock_sec, \
-             patch("loom.tools.competitive_intel._fetch_patents", new_callable=AsyncMock) as mock_patent, \
-             patch("loom.tools.competitive_intel._fetch_github_activity", new_callable=AsyncMock) as mock_github, \
-             patch("loom.tools.competitive_intel._fetch_certificate_transparency", new_callable=AsyncMock) as mock_ct, \
-             patch("loom.tools.competitive_intel._fetch_dns_records", new_callable=AsyncMock) as mock_dns:
+        with patch("loom.tools.intelligence.competitive_intel._fetch_sec_filings", new_callable=AsyncMock) as mock_sec, \
+             patch("loom.tools.intelligence.competitive_intel._fetch_patents", new_callable=AsyncMock) as mock_patent, \
+             patch("loom.tools.intelligence.competitive_intel._fetch_github_activity", new_callable=AsyncMock) as mock_github, \
+             patch("loom.tools.intelligence.competitive_intel._fetch_certificate_transparency", new_callable=AsyncMock) as mock_ct, \
+             patch("loom.tools.intelligence.competitive_intel._fetch_dns_records", new_callable=AsyncMock) as mock_dns:
 
             mock_sec.return_value = {"count": 1, "recent": []}
             mock_patent.return_value = {"count": 0, "recent_titles": []}
@@ -525,11 +525,11 @@ class TestResearchCompetitiveIntel:
     @pytest.mark.asyncio
     async def test_competitive_intel_domain_inference(self) -> None:
         """Competitive intel infers domain from company name."""
-        with patch("loom.tools.competitive_intel._fetch_sec_filings", new_callable=AsyncMock) as mock_sec, \
-             patch("loom.tools.competitive_intel._fetch_patents", new_callable=AsyncMock) as mock_patent, \
-             patch("loom.tools.competitive_intel._fetch_github_activity", new_callable=AsyncMock) as mock_github, \
-             patch("loom.tools.competitive_intel._fetch_certificate_transparency", new_callable=AsyncMock) as mock_ct, \
-             patch("loom.tools.competitive_intel._fetch_dns_records", new_callable=AsyncMock) as mock_dns:
+        with patch("loom.tools.intelligence.competitive_intel._fetch_sec_filings", new_callable=AsyncMock) as mock_sec, \
+             patch("loom.tools.intelligence.competitive_intel._fetch_patents", new_callable=AsyncMock) as mock_patent, \
+             patch("loom.tools.intelligence.competitive_intel._fetch_github_activity", new_callable=AsyncMock) as mock_github, \
+             patch("loom.tools.intelligence.competitive_intel._fetch_certificate_transparency", new_callable=AsyncMock) as mock_ct, \
+             patch("loom.tools.intelligence.competitive_intel._fetch_dns_records", new_callable=AsyncMock) as mock_dns:
 
             mock_sec.return_value = {"count": 0, "recent": []}
             mock_patent.return_value = {"count": 0, "recent_titles": []}
@@ -546,11 +546,11 @@ class TestResearchCompetitiveIntel:
     @pytest.mark.asyncio
     async def test_competitive_intel_github_org_inference(self) -> None:
         """Competitive intel infers github_org from company name."""
-        with patch("loom.tools.competitive_intel._fetch_sec_filings", new_callable=AsyncMock) as mock_sec, \
-             patch("loom.tools.competitive_intel._fetch_patents", new_callable=AsyncMock) as mock_patent, \
-             patch("loom.tools.competitive_intel._fetch_github_activity", new_callable=AsyncMock) as mock_github, \
-             patch("loom.tools.competitive_intel._fetch_certificate_transparency", new_callable=AsyncMock) as mock_ct, \
-             patch("loom.tools.competitive_intel._fetch_dns_records", new_callable=AsyncMock) as mock_dns:
+        with patch("loom.tools.intelligence.competitive_intel._fetch_sec_filings", new_callable=AsyncMock) as mock_sec, \
+             patch("loom.tools.intelligence.competitive_intel._fetch_patents", new_callable=AsyncMock) as mock_patent, \
+             patch("loom.tools.intelligence.competitive_intel._fetch_github_activity", new_callable=AsyncMock) as mock_github, \
+             patch("loom.tools.intelligence.competitive_intel._fetch_certificate_transparency", new_callable=AsyncMock) as mock_ct, \
+             patch("loom.tools.intelligence.competitive_intel._fetch_dns_records", new_callable=AsyncMock) as mock_dns:
 
             mock_sec.return_value = {"count": 0, "recent": []}
             mock_patent.return_value = {"count": 0, "recent_titles": []}
@@ -567,11 +567,11 @@ class TestResearchCompetitiveIntel:
     @pytest.mark.asyncio
     async def test_competitive_intel_whitespace_normalization(self) -> None:
         """Competitive intel normalizes whitespace in inputs."""
-        with patch("loom.tools.competitive_intel._fetch_sec_filings", new_callable=AsyncMock) as mock_sec, \
-             patch("loom.tools.competitive_intel._fetch_patents", new_callable=AsyncMock) as mock_patent, \
-             patch("loom.tools.competitive_intel._fetch_github_activity", new_callable=AsyncMock) as mock_github, \
-             patch("loom.tools.competitive_intel._fetch_certificate_transparency", new_callable=AsyncMock) as mock_ct, \
-             patch("loom.tools.competitive_intel._fetch_dns_records", new_callable=AsyncMock) as mock_dns:
+        with patch("loom.tools.intelligence.competitive_intel._fetch_sec_filings", new_callable=AsyncMock) as mock_sec, \
+             patch("loom.tools.intelligence.competitive_intel._fetch_patents", new_callable=AsyncMock) as mock_patent, \
+             patch("loom.tools.intelligence.competitive_intel._fetch_github_activity", new_callable=AsyncMock) as mock_github, \
+             patch("loom.tools.intelligence.competitive_intel._fetch_certificate_transparency", new_callable=AsyncMock) as mock_ct, \
+             patch("loom.tools.intelligence.competitive_intel._fetch_dns_records", new_callable=AsyncMock) as mock_dns:
 
             mock_sec.return_value = {"count": 0, "recent": []}
             mock_patent.return_value = {"count": 0, "recent_titles": []}

@@ -7,7 +7,6 @@ import hashlib
 import json
 import logging
 import os
-import subprocess
 import tempfile
 import uuid
 from typing import Any
@@ -16,6 +15,7 @@ import httpx
 
 from loom.input_validators import validate_email, ValidationError
 from loom.error_responses import handle_tool_errors
+from loom.subprocess_helpers import run_command
 
 logger = logging.getLogger("loom.tools.h8mail_backend")
 
@@ -114,25 +114,23 @@ async def _search_with_h8mail(
         result = await asyncio.wait_for(
             loop.run_in_executor(
                 None,
-                lambda: subprocess.run(  # noqa: ASYNC221,S603
+                lambda: run_command(
                     cmd,
-                    capture_output=True,
-                    text=True,
                     timeout=search_timeout,
                 ),
             ),
             timeout=search_timeout + 5,  # Add buffer for process cleanup
         )
 
-        logger.info("h8mail_completed returncode=%d", result.returncode)
+        logger.info("h8mail_completed returncode=%d", result["returncode"])
 
         # Parse h8mail JSON output
         if not os.path.exists(tmp_file):  # noqa: ASYNC240
             return {
                 "email": email,
-                "error": f"h8mail failed with return code {result.returncode}",
+                "error": f"h8mail failed with return code {result['returncode']}",
                 "h8mail_available": True,
-                "h8mail_stderr": _sanitize_output(result.stderr[:500]) if result.stderr else "",
+                "h8mail_stderr": _sanitize_output(result["stderr"][:500]) if result["stderr"] else "",
             }
 
         try:
@@ -194,13 +192,6 @@ async def _search_with_h8mail(
         return {
             "email": email,
             "error": f"h8mail search timed out after {search_timeout} seconds",
-            "h8mail_available": True,
-        }
-    except subprocess.TimeoutExpired:
-        logger.error("h8mail_subprocess_timeout")
-        return {
-            "email": email,
-            "error": f"h8mail process timed out after {search_timeout} seconds",
             "h8mail_available": True,
         }
     except OSError as e:
@@ -369,18 +360,16 @@ def _find_h8mail() -> str | None:
     """
     try:
         # Check if h8mail is in PATH
-        result = subprocess.run(
+        result = run_command(
             ["which", "h8mail"],  # noqa: S607
-            capture_output=True,
-            text=True,
             timeout=5,
         )
-        if result.returncode == 0:
-            path = result.stdout.strip()
+        if result["success"]:
+            path = result["stdout"].strip()
             if os.path.isfile(path) and os.access(path, os.X_OK):
                 logger.info("h8mail_found path=%s", path)
                 return path
-    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+    except (FileNotFoundError, OSError):
         pass
 
     logger.debug("h8mail_not_found in PATH")
@@ -401,22 +390,30 @@ def _is_valid_header_value(value: str) -> bool:
     """
     if not isinstance(value, str):
         return False
-
-    # Check for control characters and newlines (HTTP header injection prevention)
-    return not any(c in value for c in ["\n", "\r", "\0", "\t"])
+    # Reject control characters and newlines
+    return not any(ord(c) < 32 or ord(c) == 127 for c in value)
 
 
 def _sanitize_output(output: str) -> str:
-    """Remove potentially problematic characters from subprocess output.
+    """Sanitize subprocess output for logging.
+
+    Truncates and removes potentially sensitive data (IPs, domains, etc).
 
     Args:
         output: Raw subprocess output
 
     Returns:
-        Sanitized output safe for logging
+        Sanitized version safe for logging
     """
-    if not isinstance(output, str):
+    if not output:
         return ""
 
-    # Remove control characters except standard whitespace
-    return "".join(c for c in output if c.isprintable() or c in "\n\t")[:500]
+    # Truncate to first 500 chars
+    sanitized = output[:500]
+
+    # Remove any obvious credentials or sensitive patterns
+    import re
+    sanitized = re.sub(r"[A-Za-z0-9._+-]+@[A-Za-z0-9.-]+", "[EMAIL]", sanitized)
+    sanitized = re.sub(r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b", "[IP]", sanitized)
+
+    return sanitized

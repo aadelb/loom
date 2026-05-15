@@ -6,23 +6,23 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from loom.tools.bias_lens import (
+from loom.tools.research.bias_lens import (
     _analyze_citation_network,
     _count_hedging_language,
     _detect_p_hacking_indicators,
     _extract_p_values,
     research_bias_lens,
 )
-from loom.tools.darkweb_early_warning import (
+from loom.tools.intelligence.darkweb_early_warning import (
     _estimate_severity,
     research_darkweb_early_warning,
 )
-from loom.tools.deception_job_scanner import (
+from loom.tools.career.deception_job_scanner import (
     _count_pattern_matches,
     _extract_salary_range,
     research_deception_job_scan,
 )
-from loom.tools.salary_synthesizer import (
+from loom.tools.career.salary_synthesizer import (
     _calculate_statistics,
     _infer_location_adjustment,
     research_salary_synthesize,
@@ -63,10 +63,10 @@ class TestDarkwebEarlyWarning:
 
     async def test_result_structure(self) -> None:
         """Result has expected structure."""
-        with patch("loom.tools.darkweb_early_warning._ahmia_search", new_callable=AsyncMock) as mock_ahmia:
-            with patch("loom.tools.darkweb_early_warning._otx_search", new_callable=AsyncMock) as mock_otx:
-                with patch("loom.tools.darkweb_early_warning._reddit_darknet_search", new_callable=AsyncMock) as mock_reddit:
-                    with patch("loom.tools.darkweb_early_warning._hackernews_search", new_callable=AsyncMock) as mock_hn:
+        with patch("loom.tools.intelligence.darkweb_early_warning._ahmia_search", new_callable=AsyncMock) as mock_ahmia:
+            with patch("loom.tools.intelligence.darkweb_early_warning._otx_search", new_callable=AsyncMock) as mock_otx:
+                with patch("loom.tools.intelligence.darkweb_early_warning._reddit_darknet_search", new_callable=AsyncMock) as mock_reddit:
+                    with patch("loom.tools.intelligence.darkweb_early_warning._hackernews_search", new_callable=AsyncMock) as mock_hn:
                         mock_ahmia.return_value = []
                         mock_otx.return_value = []
                         mock_reddit.return_value = []
@@ -289,10 +289,10 @@ class TestIntegration:
 
     async def test_darkweb_warning_with_data(self) -> None:
         """Darkweb warning returns structured data."""
-        with patch("loom.tools.darkweb_early_warning._ahmia_search", new_callable=AsyncMock) as mock_ahmia:
-            with patch("loom.tools.darkweb_early_warning._otx_search", new_callable=AsyncMock) as mock_otx:
-                with patch("loom.tools.darkweb_early_warning._reddit_darknet_search", new_callable=AsyncMock) as mock_reddit:
-                    with patch("loom.tools.darkweb_early_warning._hackernews_search", new_callable=AsyncMock) as mock_hn:
+        with patch("loom.tools.intelligence.darkweb_early_warning._ahmia_search", new_callable=AsyncMock) as mock_ahmia:
+            with patch("loom.tools.intelligence.darkweb_early_warning._otx_search", new_callable=AsyncMock) as mock_otx:
+                with patch("loom.tools.intelligence.darkweb_early_warning._reddit_darknet_search", new_callable=AsyncMock) as mock_reddit:
+                    with patch("loom.tools.intelligence.darkweb_early_warning._hackernews_search", new_callable=AsyncMock) as mock_hn:
                         mock_ahmia.return_value = [
                             {
                                 "title": "Exploit discussion",

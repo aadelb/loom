@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 
-from loom.tools.paradox_detector import (
+from loom.tools.research.paradox_detector import (
     research_detect_paradox,
     research_paradox_immunize,
     PARADOX_PATTERNS,

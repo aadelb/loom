@@ -16,7 +16,7 @@ from typing import Any
 import httpx
 
 from loom.input_validators import validate_domain, ValidationError
-from loom.validators import EXTERNAL_TIMEOUT_SECS, validate_url
+from loom.validators import EXTERNAL_TIMEOUT_SECS
 
 from loom.error_responses import handle_tool_errors
 logger = logging.getLogger("loom.tools.webcheck_backend")

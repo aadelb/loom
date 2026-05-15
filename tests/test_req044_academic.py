@@ -35,7 +35,7 @@ class TestAcademicCitationAnalysis:
 
     async def test_citation_analysis_returns_dict(self) -> None:
         """Test citation_analysis returns academic data."""
-        from loom.tools.academic_integrity import research_citation_analysis
+        from loom.tools.research.academic_integrity import research_citation_analysis
 
         # Use a test paper ID
         result = await research_citation_analysis(
@@ -67,7 +67,7 @@ class TestAcademicRetractionCheck:
 
     async def test_retraction_check_returns_dict(self) -> None:
         """Test retraction_check returns academic data."""
-        from loom.tools.academic_integrity import research_retraction_check
+        from loom.tools.research.academic_integrity import research_retraction_check
 
         result = await research_retraction_check(
             query="machine learning bias",
@@ -99,7 +99,7 @@ class TestAcademicPredatoryJournal:
 
     async def test_predatory_journal_check_returns_dict(self) -> None:
         """Test predatory_journal_check returns journal assessment data."""
-        from loom.tools.academic_integrity import research_predatory_journal_check
+        from loom.tools.research.academic_integrity import research_predatory_journal_check
 
         result = await research_predatory_journal_check(journal_name="PLOS ONE")
 
@@ -129,7 +129,7 @@ class TestAcademicGrantForensics:
 
     async def test_grant_forensics_returns_dict(self) -> None:
         """Test grant_forensics analyzes grant text."""
-        from loom.tools.hcs10_academic import research_grant_forensics
+        from loom.tools.adversarial.hcs10_academic import research_grant_forensics
 
         grant_text = """
         Grant: Deep Learning for Medical Imaging
@@ -167,7 +167,7 @@ class TestAcademicMonocultureDetect:
 
     async def test_monoculture_detect_returns_dict(self) -> None:
         """Test monoculture_detect finds citation monopolies."""
-        from loom.tools.hcs10_academic import research_monoculture_detect
+        from loom.tools.adversarial.hcs10_academic import research_monoculture_detect
 
         result = await research_monoculture_detect(field="machine learning", max_papers=20)
 
@@ -196,7 +196,7 @@ class TestAcademicReviewCartel:
 
     async def test_review_cartel_returns_dict(self) -> None:
         """Test review_cartel detects peer review networks."""
-        from loom.tools.hcs10_academic import research_review_cartel
+        from loom.tools.adversarial.hcs10_academic import research_review_cartel
 
         result = await research_review_cartel(author_id="test_researcher")
 
@@ -225,7 +225,7 @@ class TestAcademicDataFabrication:
 
     async def test_data_fabrication_returns_dict(self) -> None:
         """Test data_fabrication detects suspicious data patterns."""
-        from loom.tools.hcs10_academic import research_data_fabrication
+        from loom.tools.adversarial.hcs10_academic import research_data_fabrication
 
         numbers = [1.2, 1.3, 1.25, 1.28, 1.31]
 
@@ -258,7 +258,7 @@ class TestAcademicInstitutionalDecay:
 
     async def test_institutional_decay_returns_dict(self) -> None:
         """Test institutional_decay tracks institution quality."""
-        from loom.tools.hcs10_academic import research_institutional_decay
+        from loom.tools.adversarial.hcs10_academic import research_institutional_decay
 
         result = await research_institutional_decay(institution="Harvard University")
 
@@ -288,7 +288,7 @@ class TestAcademicShellFunding:
 
     async def test_shell_funding_returns_dict(self) -> None:
         """Test shell_funding detects fraudulent funding sources."""
-        from loom.tools.hcs10_academic import research_shell_funding
+        from loom.tools.adversarial.hcs10_academic import research_shell_funding
 
         result = await research_shell_funding(company="Alphabet Inc.")
 
@@ -317,7 +317,7 @@ class TestAcademicConferenceArbitrage:
 
     async def test_conference_arbitrage_returns_dict(self) -> None:
         """Test conference_arbitrage detects conference manipulation."""
-        from loom.tools.hcs10_academic import research_conference_arbitrage
+        from loom.tools.adversarial.hcs10_academic import research_conference_arbitrage
 
         result = await research_conference_arbitrage(conference="NeurIPS")
 
@@ -347,7 +347,7 @@ class TestAcademicPreprintManipulation:
 
     async def test_preprint_manipulation_returns_dict(self) -> None:
         """Test preprint_manipulation detects arXiv manipulation."""
-        from loom.tools.hcs10_academic import research_preprint_manipulation
+        from loom.tools.adversarial.hcs10_academic import research_preprint_manipulation
 
         result = await research_preprint_manipulation(topic="machine learning")
 
@@ -392,12 +392,12 @@ class TestAllAcademicTools:
             ("preprint_manipulation", {}),
         ]
 
-        from loom.tools.academic_integrity import (
+        from loom.tools.research.academic_integrity import (
             research_citation_analysis,
             research_predatory_journal_check,
             research_retraction_check,
         )
-        from loom.tools.hcs10_academic import (
+        from loom.tools.adversarial.hcs10_academic import (
             research_conference_arbitrage,
             research_data_fabrication,
             research_grant_forensics,

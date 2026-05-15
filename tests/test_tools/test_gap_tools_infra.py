@@ -8,10 +8,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import httpx
 import pytest
 
-from loom.tools.gap_tools_infra import (
+from loom.text_utils import jaccard_similarity as _jaccard_similarity
+from loom.tools.research.gap_tools_infra import (
     _check_cloud_resource,
     _get_rdap_data,
-    _jaccard_similarity,
     _query_llm_endpoint,
     _search_crt_sh,
     research_cloud_enum,

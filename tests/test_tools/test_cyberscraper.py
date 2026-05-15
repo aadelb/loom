@@ -13,7 +13,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from loom.tools.cyberscraper import (
+from loom.tools.intelligence.cyberscraper import (
     SmartExtractParams,
     SmartExtractResult,
     PaginateParams,
@@ -293,7 +293,7 @@ class TestSmartExtractAsync:
 
         os.environ["LOOM_CACHE_DIR"] = str(tmp_cache_dir)
 
-        with patch("loom.tools.cyberscraper._PatchrightAdapter") as mock_browser_class:
+        with patch("loom.tools.intelligence.cyberscraper._PatchrightAdapter") as mock_browser_class:
             # Mock browser fetch
             mock_browser = AsyncMock()
             mock_browser_class.return_value = mock_browser
@@ -305,7 +305,7 @@ class TestSmartExtractAsync:
             }
 
             # Mock LLM provider
-            with patch("loom.tools.cyberscraper._get_llm_provider") as mock_llm:
+            with patch("loom.tools.intelligence.cyberscraper._get_llm_provider") as mock_llm:
                 mock_provider = AsyncMock()
                 mock_llm.return_value = mock_provider
 
@@ -333,7 +333,7 @@ class TestSmartExtractAsync:
     @pytest.mark.asyncio
     async def test_smart_extract_error_handling(self) -> None:
         """Error handling in smart_extract."""
-        with patch("loom.tools.cyberscraper._PatchrightAdapter") as mock_browser_class:
+        with patch("loom.tools.intelligence.cyberscraper._PatchrightAdapter") as mock_browser_class:
             # Mock browser failure
             mock_browser = AsyncMock()
             mock_browser_class.return_value = mock_browser
@@ -361,7 +361,7 @@ class TestSmartExtractAsync:
 
         os.environ["LOOM_CACHE_DIR"] = str(tmp_cache_dir)
 
-        with patch("loom.tools.cyberscraper._PatchrightAdapter") as mock_browser_class:
+        with patch("loom.tools.intelligence.cyberscraper._PatchrightAdapter") as mock_browser_class:
             mock_browser = AsyncMock()
             mock_browser_class.return_value = mock_browser
             mock_browser.fetch_with_patchright.return_value = {
@@ -414,7 +414,7 @@ class TestPaginateScrapeAsync:
     @pytest.mark.asyncio
     async def test_paginate_scrape_multiple_pages(self) -> None:
         """Scrape multiple pages with pagination."""
-        with patch("loom.tools.cyberscraper._PatchrightAdapter") as mock_browser_class:
+        with patch("loom.tools.intelligence.cyberscraper._PatchrightAdapter") as mock_browser_class:
             mock_browser = AsyncMock()
             mock_browser_class.return_value = mock_browser
 
@@ -434,7 +434,7 @@ class TestPaginateScrapeAsync:
                 },
             ]
 
-            with patch("loom.tools.cyberscraper._get_llm_provider") as mock_llm:
+            with patch("loom.tools.intelligence.cyberscraper._get_llm_provider") as mock_llm:
                 mock_provider = AsyncMock()
                 mock_llm.return_value = mock_provider
 
@@ -472,7 +472,7 @@ class TestPaginateScrapeAsync:
     @pytest.mark.asyncio
     async def test_paginate_auto_detect_pattern(self) -> None:
         """Auto-detect pagination pattern."""
-        with patch("loom.tools.cyberscraper._PatchrightAdapter") as mock_browser_class:
+        with patch("loom.tools.intelligence.cyberscraper._PatchrightAdapter") as mock_browser_class:
             mock_browser = AsyncMock()
             mock_browser_class.return_value = mock_browser
             mock_browser.fetch_with_patchright.return_value = {
@@ -482,8 +482,8 @@ class TestPaginateScrapeAsync:
                 "error": None,
             }
 
-            with patch("loom.tools.cyberscraper._get_llm_provider"):
-                with patch("loom.tools.cyberscraper._detect_pagination_pattern") as mock_detect:
+            with patch("loom.tools.intelligence.cyberscraper._get_llm_provider"):
+                with patch("loom.tools.intelligence.cyberscraper._detect_pagination_pattern") as mock_detect:
                     mock_detect.return_value = "page={page}"
 
                     result = await research_paginate_scrape(
@@ -504,7 +504,7 @@ class TestStealthBrowserAsync:
     @pytest.mark.asyncio
     async def test_stealth_browser_basic(self) -> None:
         """Basic stealth browser fetch."""
-        with patch("loom.tools.cyberscraper._PatchrightAdapter") as mock_browser_class:
+        with patch("loom.tools.intelligence.cyberscraper._PatchrightAdapter") as mock_browser_class:
             mock_browser = AsyncMock()
             mock_browser_class.return_value = mock_browser
             mock_browser.fetch_with_patchright.return_value = {
@@ -528,7 +528,7 @@ class TestStealthBrowserAsync:
     @pytest.mark.asyncio
     async def test_stealth_browser_with_screenshot(self) -> None:
         """Screenshot capture in stealth browser."""
-        with patch("loom.tools.cyberscraper._PatchrightAdapter") as mock_browser_class:
+        with patch("loom.tools.intelligence.cyberscraper._PatchrightAdapter") as mock_browser_class:
             mock_browser = AsyncMock()
             mock_browser_class.return_value = mock_browser
             mock_browser.fetch_with_patchright.return_value = {
@@ -549,7 +549,7 @@ class TestStealthBrowserAsync:
     @pytest.mark.asyncio
     async def test_stealth_browser_error(self) -> None:
         """Error handling in stealth browser."""
-        with patch("loom.tools.cyberscraper._PatchrightAdapter") as mock_browser_class:
+        with patch("loom.tools.intelligence.cyberscraper._PatchrightAdapter") as mock_browser_class:
             mock_browser = AsyncMock()
             mock_browser_class.return_value = mock_browser
             mock_browser.fetch_with_patchright.return_value = {
@@ -570,7 +570,7 @@ class TestStealthBrowserAsync:
     @pytest.mark.asyncio
     async def test_stealth_browser_max_chars(self) -> None:
         """Respect max_chars limit."""
-        with patch("loom.tools.cyberscraper._PatchrightAdapter") as mock_browser_class:
+        with patch("loom.tools.intelligence.cyberscraper._PatchrightAdapter") as mock_browser_class:
             mock_browser = AsyncMock()
             mock_browser_class.return_value = mock_browser
 
@@ -598,7 +598,7 @@ class TestIntegrationScenarios:
     @pytest.mark.asyncio
     async def test_workflow_fetch_then_extract(self) -> None:
         """Workflow: stealth fetch then smart extract."""
-        with patch("loom.tools.cyberscraper._PatchrightAdapter"):
+        with patch("loom.tools.intelligence.cyberscraper._PatchrightAdapter"):
             # This demonstrates the two-step workflow
             # In real usage, smart_extract does both internally
             pass

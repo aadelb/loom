@@ -11,7 +11,6 @@ Three capability levels:
 
 from __future__ import annotations
 
-from typing import Any
 
 CAPABILITY_LEVELS = {
     "full_offline": "Works completely offline using cached data",

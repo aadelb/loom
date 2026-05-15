@@ -3,13 +3,12 @@
 
 from __future__ import annotations
 
-import re
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
 from loom.config import CONFIG
-from loom.validators import filter_headers, validate_js_script, validate_local_file_path, validate_url
+from loom.validators import validate_url
 
 # Default Accept-Language header sourced from config
 _DEFAULT_ACCEPT_LANG = CONFIG.get("DEFAULT_ACCEPT_LANGUAGE", "en-US,en;q=0.9,ar;q=0.8")

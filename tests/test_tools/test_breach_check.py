@@ -7,8 +7,8 @@ from unittest.mock import MagicMock, patch
 import httpx
 import pytest
 
-from loom.tools.breach_check import (
-    _is_valid_email,
+from loom.input_validators import validate_email
+from loom.tools.intelligence.breach_check import (
     research_breach_check,
     research_password_check,
 )
@@ -19,37 +19,37 @@ class TestIsValidEmail:
 
     def test_valid_email(self) -> None:
         """Valid emails pass validation."""
-        assert _is_valid_email("user@example.com")
-        assert _is_valid_email("test.name@subdomain.example.org")
-        assert _is_valid_email("john+tag@company.co.uk")
+        assert validate_email("user@example.com")
+        assert validate_email("test.name@subdomain.example.org")
+        assert validate_email("john+tag@company.co.uk")
 
     def test_invalid_email_no_at(self) -> None:
         """Email without @ fails validation."""
-        assert not _is_valid_email("userexample.com")
+        assert not validate_email("userexample.com")
 
     def test_invalid_email_no_domain(self) -> None:
         """Email without domain fails validation."""
-        assert not _is_valid_email("user@")
-        assert not _is_valid_email("@example.com")
+        assert not validate_email("user@")
+        assert not validate_email("@example.com")
 
     def test_invalid_email_multiple_at(self) -> None:
         """Email with multiple @ fails validation."""
-        assert not _is_valid_email("user@@example.com")
+        assert not validate_email("user@@example.com")
 
     def test_invalid_email_spaces(self) -> None:
         """Email with spaces fails validation."""
-        assert not _is_valid_email("user @example.com")
-        assert not _is_valid_email("user@ example.com")
+        assert not validate_email("user @example.com")
+        assert not validate_email("user@ example.com")
 
     def test_invalid_email_empty(self) -> None:
         """Empty email fails validation."""
-        assert not _is_valid_email("")
-        assert not _is_valid_email(None)
+        assert not validate_email("")
+        assert not validate_email(None)
 
     def test_email_too_long(self) -> None:
         """Email exceeding 254 chars fails validation."""
         long_email = "a" * 250 + "@example.com"
-        assert not _is_valid_email(long_email)
+        assert not validate_email(long_email)
 
 
 class TestBreachCheck:

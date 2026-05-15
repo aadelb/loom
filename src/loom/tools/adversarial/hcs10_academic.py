@@ -6,7 +6,6 @@ institutional decay, shell funding, conference arbitrage, and preprint manipulat
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import math
 import re

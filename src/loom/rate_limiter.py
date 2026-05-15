@@ -170,7 +170,7 @@ class RateLimiter:
         Returns:
             True if call is allowed, False if rate limit exceeded.
         """
-        # Get tier limits
+        # Tier limits take precedence; constructor max_calls is the category default
         tier_limits = TIER_LIMITS.get(tier, TIER_LIMITS["free"])
         max_per_min = tier_limits["per_min"]
 

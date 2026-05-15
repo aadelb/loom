@@ -7,7 +7,6 @@ Provides research_agent_benchmark tool that evaluates AI agents against
 
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
 from typing import Any
@@ -16,7 +15,7 @@ import httpx
 
 from loom.agent_benchmark import AgentScenarioBenchmark, BenchmarkSummary
 from loom.error_responses import handle_tool_errors
-from loom.validators import validate_url, UrlSafetyError
+from loom.validators import validate_url
 
 logger = logging.getLogger("loom.tools.agent_benchmark")
 

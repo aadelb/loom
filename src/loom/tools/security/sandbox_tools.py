@@ -52,7 +52,7 @@ async def research_sandbox_run(
     cpus: int = 1,
     env: dict[str, str] | None = None,
     working_dir: str | None = None,
-) -> TextContent:
+) -> dict[str, Any]:
     if TextContent is None:
         raise ImportError("MCP TextContent unavailable; mcp.types import failed")
     """Run command in isolated Docker container.
@@ -185,7 +185,7 @@ async def research_sandbox_run(
 
 
 @handle_tool_errors("research_sandbox_status")
-async def research_sandbox_status() -> TextContent:
+async def research_sandbox_status() -> dict[str, Any]:
     """Check Docker availability and sandbox status.
 
     Returns system information about Docker and sandbox configuration.

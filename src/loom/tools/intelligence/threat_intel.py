@@ -1,11 +1,14 @@
-"""Threat intelligence tools — monitor dark markets, ransomware, phishing, botnets, malware, domains, and IOCs."""
+"""Threat intelligence tools — monitor dark markets, ransomware, phishing, botnets, malware, domains, and IOCs.
+
+Integrates with research_llm_chat for structured threat analysis.
+"""
 
 from __future__ import annotations
 
-import asyncio
+import json
 import logging
 import re
-from typing import Any, Literal
+from typing import Any
 from urllib.parse import quote
 
 import httpx
@@ -177,6 +180,49 @@ def _extract_urls_from_text(text: str) -> list[str]:
     """Extract URLs from text content."""
     url_pattern = r'https?://[^\s<>"{}|\\^`\[\]]*'
     return re.findall(url_pattern, text)
+
+
+async def _llm_analyze_threat_data(
+    threat_data: dict[str, Any], use_llm_analysis: bool = False
+) -> dict[str, Any]:
+    """Optionally use LLM to analyze and structure threat data.
+
+    Integration point 2: Wires threat_intel to research_llm_chat for analysis.
+    """
+    if not use_llm_analysis:
+        return {}
+
+    try:
+        from loom.tools.llm.llm import research_llm_chat
+
+        # Build a summary of the threat data
+        summary = json.dumps(threat_data, indent=2)[:2000]
+
+        prompt = f"""Analyze the following threat intelligence data and provide:
+1. Key threats identified
+2. Recommended mitigation steps
+3. Overall risk assessment
+
+Data:
+{summary}"""
+
+        logger.debug("threat_intel integrating with research_llm_chat for analysis")
+
+        result = await research_llm_chat(
+            prompt=prompt,
+            model="auto",
+        )
+
+        if result and "response" in result:
+            return {
+                "llm_analysis": result.get("response", ""),
+                "model_used": result.get("model", ""),
+            }
+    except Exception as exc:
+        logger.debug("LLM analysis integration failed: %s", exc)
+
+    return {}
+
 
 @handle_tool_errors("research_dark_market_monitor")
 
@@ -613,7 +659,7 @@ async def research_malware_intel(hash_value: str) -> dict[str, Any]:
 
 @handle_tool_errors("research_domain_reputation")
 
-async def research_domain_reputation(domain: str) -> dict[str, Any]:
+async def research_domain_reputation(domain: str, use_llm_analysis: bool = False) -> dict[str, Any]:
     """Aggregate domain reputation from multiple threat intelligence sources.
 
     Checks domain reputation across 5+ sources:
@@ -623,8 +669,11 @@ async def research_domain_reputation(domain: str) -> dict[str, Any]:
     - Ahmia darknet search
     - Certificate Transparency typosquatting
 
+    Optionally integrates with research_llm_chat for enhanced analysis.
+
     Args:
         domain: domain to check (e.g., "example.com")
+        use_llm_analysis: if True, use LLM to provide detailed threat analysis
 
     Returns:
         Dict with keys: domain, reputation_score, verdicts_by_source, is_malicious
@@ -712,7 +761,7 @@ async def research_domain_reputation(domain: str) -> dict[str, Any]:
         reputation_score = max(0, 100 - int((malicious_votes / total_sources) * 100)) if total_sources > 0 else 0
         is_malicious = malicious_votes >= (total_sources * 0.5) if total_sources > 0 else False
 
-        return {
+        result = {
             "domain": domain,
             "reputation_score": reputation_score,
             "verdicts_by_source": verdicts,
@@ -720,6 +769,13 @@ async def research_domain_reputation(domain: str) -> dict[str, Any]:
             "malicious_sources": int(malicious_votes),
             "total_sources_checked": total_sources,
         }
+
+        # Optional LLM analysis integration
+        if use_llm_analysis:
+            llm_analysis = await _llm_analyze_threat_data(result, True)
+            result.update(llm_analysis)
+
+        return result
 
     return await _run()
 

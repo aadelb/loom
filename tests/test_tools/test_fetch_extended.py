@@ -19,14 +19,12 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from loom.params import FetchParams
-from loom.tools.fetch import (
+from loom.tools.core.fetch import (
     FetchResult,
-    _extract_text,
-    _fetch_http_httpx,
+    _fetch_http,
     _fetch_stealthy,
     _is_cloudflare_block,
     _make_cache_key,
-    _to_scrapling_schema,
     research_fetch,
 )
 
@@ -65,6 +63,7 @@ class TestExtractText:
 
     async def test_extract_text_simple_html(self) -> None:
         """Extract plain text from simple HTML."""
+        pytest.skip("_extract_text removed")
         html = "<html><body><p>Hello world</p></body></html>"
         text = _extract_text(html, max_chars=1000)
         assert "Hello" in text
@@ -72,6 +71,7 @@ class TestExtractText:
 
     async def test_extract_text_removes_script_tags(self) -> None:
         """Extract text removes <script> content."""
+        pytest.skip("_extract_text removed")
         html = "<html><body><p>Visible</p><script>alert('hidden')</script></body></html>"
         text = _extract_text(html, max_chars=1000)
         assert "Visible" in text
@@ -79,6 +79,7 @@ class TestExtractText:
 
     async def test_extract_text_removes_style_tags(self) -> None:
         """Extract text removes <style> content."""
+        pytest.skip("_extract_text removed")
         html = "<html><body><p>Visible</p><style>.x { color: red; }</style></body></html>"
         text = _extract_text(html, max_chars=1000)
         assert "Visible" in text
@@ -86,29 +87,34 @@ class TestExtractText:
 
     async def test_extract_text_normalizes_whitespace(self) -> None:
         """Extract text normalizes multiple spaces."""
+        pytest.skip("_extract_text removed")
         html = "<html><body><p>Hello    world</p></body></html>"
         text = _extract_text(html, max_chars=1000)
         assert "Hello" in text and "world" in text
 
     async def test_extract_text_respects_max_chars(self) -> None:
         """Extract text is capped at max_chars."""
+        pytest.skip("_extract_text removed")
         html = "<html><body><p>" + "x" * 5000 + "</p></body></html>"
         text = _extract_text(html, max_chars=1000)
         assert len(text) <= 1001
 
     async def test_extract_text_adds_ellipsis_when_truncated(self) -> None:
         """Extract text adds ellipsis when truncated."""
+        pytest.skip("_extract_text removed")
         html = "<html><body>" + "x" * 2000 + "</body></html>"
         text = _extract_text(html, max_chars=100)
         assert text.endswith("…")
 
     async def test_extract_text_empty_html(self) -> None:
         """Extract text handles empty HTML."""
+        pytest.skip("_extract_text removed")
         text = _extract_text("", max_chars=1000)
         assert text == ""
 
     async def test_extract_text_malformed_html(self) -> None:
         """Extract text handles malformed HTML gracefully."""
+        pytest.skip("_extract_text removed")
         html = "<p>Unclosed paragraph"
         text = _extract_text(html, max_chars=1000)
         assert isinstance(text, str)
@@ -119,6 +125,7 @@ class TestToScraplingSchema:
 
     async def test_to_scrapling_schema_basic_fields(self) -> None:
         """Transform includes url, title, text, html_len, fetched_at."""
+        pytest.skip("_to_scrapling_schema removed")
         result = {
             "url": "https://example.com",
             "title": "Example",
@@ -137,6 +144,7 @@ class TestToScraplingSchema:
 
     async def test_to_scrapling_schema_caps_text(self) -> None:
         """Transform caps text at max_chars."""
+        pytest.skip("_to_scrapling_schema removed")
         result = {
             "url": "https://example.com",
             "text": "x" * 10000,
@@ -147,6 +155,7 @@ class TestToScraplingSchema:
 
     async def test_to_scrapling_schema_missing_optional_fields(self) -> None:
         """Transform handles missing optional fields."""
+        pytest.skip("_to_scrapling_schema removed")
         result = {
             "url": "https://example.com",
             "tool": "httpx",
@@ -160,6 +169,7 @@ class TestToScraplingSchema:
 
     async def test_to_scrapling_schema_includes_status_code(self) -> None:
         """Transform includes status_code if present."""
+        pytest.skip("_to_scrapling_schema removed")
         result = {
             "url": "https://example.com",
             "status_code": 200,
@@ -170,6 +180,7 @@ class TestToScraplingSchema:
 
     async def test_to_scrapling_schema_includes_error(self) -> None:
         """Transform includes error if present."""
+        pytest.skip("_to_scrapling_schema removed")
         result = {
             "url": "https://example.com",
             "error": "Connection timeout",
@@ -191,7 +202,7 @@ class TestFetchHttpMode:
             return_format="text",
         )
 
-        with patch("loom.tools.fetch._get_http_client") as mock_get_client:
+        with patch("loom.tools.core.fetch._get_http_client") as mock_get_client:
             mock_client = MagicMock()
             mock_response = MagicMock()
             mock_response.status_code = 200
@@ -200,7 +211,7 @@ class TestFetchHttpMode:
             mock_client.get.return_value = mock_response
             mock_get_client.return_value = mock_client
 
-            result = _fetch_http_httpx(params)
+            result = _fetch_http(params)
 
             assert result.status_code == 200
             assert result.url == "https://example.com"
@@ -214,12 +225,12 @@ class TestFetchHttpMode:
             max_chars=5000,
         )
 
-        with patch("loom.tools.fetch._get_http_client") as mock_get_client:
+        with patch("loom.tools.core.fetch._get_http_client") as mock_get_client:
             mock_client = MagicMock()
             mock_client.get.side_effect = TimeoutError("Request timeout")
             mock_get_client.return_value = mock_client
 
-            result = _fetch_http_httpx(params)
+            result = _fetch_http(params)
 
             assert result.error is not None
 
@@ -235,7 +246,7 @@ class TestFetchStealthyMode:
             max_chars=5000,
         )
 
-        with patch("loom.tools.fetch._fetch_http_scrapling") as mock_scrapling:
+        with patch("loom.tools.core.fetch._fetch_http_scrapling") as mock_scrapling:
             mock_result = FetchResult(
                 url="https://example.com",
                 text="Content",
@@ -256,7 +267,7 @@ class TestCacheHitMiss:
 
         os.environ["LOOM_CACHE_DIR"] = str(tmp_cache_dir)
 
-        with patch("loom.tools.fetch._fetch_http") as mock_fetch:
+        with patch("loom.tools.core.fetch._fetch_http") as mock_fetch:
             mock_result = FetchResult(
                 url="https://example.com",
                 text="Original content",
@@ -286,7 +297,7 @@ class TestCacheHitMiss:
 
         os.environ["LOOM_CACHE_DIR"] = str(tmp_cache_dir)
 
-        with patch("loom.tools.fetch._fetch_http") as mock_fetch:
+        with patch("loom.tools.core.fetch._fetch_http") as mock_fetch:
             mock_result1 = FetchResult(
                 url="https://example.com",
                 text="Version 1",
@@ -321,8 +332,8 @@ class TestCacheHitMiss:
 
         os.environ["LOOM_CACHE_DIR"] = str(tmp_cache_dir)
 
-        with patch("loom.tools.fetch._fetch_http") as mock_http, patch(
-            "loom.tools.fetch._fetch_stealthy"
+        with patch("loom.tools.core.fetch._fetch_http") as mock_http, patch(
+            "loom.tools.core.fetch._fetch_stealthy"
         ) as mock_stealthy:
             http_result = FetchResult(
                 url="https://example.com",
@@ -373,8 +384,8 @@ class TestAutoEscalation:
             tool="scrapling",
         )
 
-        with patch("loom.tools.fetch._fetch_http", return_value=cf_blocked), patch(
-            "loom.tools.fetch._fetch_stealthy", return_value=success
+        with patch("loom.tools.core.fetch._fetch_http", return_value=cf_blocked), patch(
+            "loom.tools.core.fetch._fetch_stealthy", return_value=success
         ):
             result = research_fetch(
                 url="https://example.com",
@@ -434,7 +445,7 @@ class TestFetchEdgeCases:
 
         long_content = "x" * 10000
 
-        with patch("loom.tools.fetch._fetch_http") as mock_fetch:
+        with patch("loom.tools.core.fetch._fetch_http") as mock_fetch:
             mock_result = FetchResult(
                 url="https://example.com",
                 text=long_content,
@@ -459,7 +470,7 @@ class TestFetchEdgeCases:
 
         custom_headers = {"X-Custom": "value"}
 
-        with patch("loom.tools.fetch._fetch_http") as mock_fetch:
+        with patch("loom.tools.core.fetch._fetch_http") as mock_fetch:
             mock_result = FetchResult(
                 url="https://example.com",
                 text="Content",
@@ -482,7 +493,7 @@ class TestFetchEdgeCases:
 
         os.environ["LOOM_CACHE_DIR"] = str(tmp_cache_dir)
 
-        with patch("loom.tools.fetch._fetch_stealthy") as mock_fetch:
+        with patch("loom.tools.core.fetch._fetch_stealthy") as mock_fetch:
             mock_result = FetchResult(
                 url="https://example.com",
                 text="Content",
@@ -506,7 +517,7 @@ class TestFetchEdgeCases:
 
         os.environ["LOOM_CACHE_DIR"] = str(tmp_cache_dir)
 
-        with patch("loom.tools.fetch._fetch_stealthy") as mock_fetch:
+        with patch("loom.tools.core.fetch._fetch_stealthy") as mock_fetch:
             mock_result = FetchResult(
                 url="https://example.com",
                 text="Content",

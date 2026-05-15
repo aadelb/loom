@@ -15,6 +15,7 @@ from pydantic import BaseModel
 
 from loom.validators import validate_url
 from loom.error_responses import handle_tool_errors
+from loom.http_helpers import fetch_bytes
 
 logger = logging.getLogger("loom.tools.nightcrawler")
 _STATE_DIR = Path.home() / ".loom" / "nightcrawler"

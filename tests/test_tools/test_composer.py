@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import pytest
 
-from loom.tools.composer import (
+from loom.tools.llm.composer import (
     ComposerResult,
     PipelineStep,
     research_compose,

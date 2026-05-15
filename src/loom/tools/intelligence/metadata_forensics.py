@@ -10,8 +10,9 @@ from urllib.parse import urljoin
 
 import httpx
 
-from loom.http_helpers import fetch_text
+from loom.http_helpers import fetch_bytes, fetch_text
 from loom.error_responses import handle_tool_errors
+from loom.exif_utils import extract_exif_from_bytes
 from loom.validators import validate_url, UrlSafetyError
 
 logger = logging.getLogger("loom.tools.metadata_forensics")
@@ -130,32 +131,7 @@ def _extract_image_urls(html: str, base_url: str) -> list[str]:
 
 def _extract_exif(image_bytes: bytes) -> dict[str, Any]:
 	"""Extract EXIF data from image bytes (blocking I/O)."""
-	try:
-		import io
-
-		from PIL import Image
-		from PIL.ExifTags import TAGS
-
-		img = Image.open(io.BytesIO(image_bytes))
-		exif_data = img.getexif()
-		if not exif_data:
-			return {}
-		result: dict[str, Any] = {}
-		for tag_id, value in exif_data.items():
-			tag = TAGS.get(tag_id, str(tag_id))
-			try:
-				if isinstance(value, bytes):
-					value = value.decode("utf-8", errors="replace")[:100]
-				else:
-					value = str(value)[:200]
-				result[tag] = value
-			except Exception as e:
-				logger.debug("exif_value_parse_error: %s", e)
-		return result
-	except ImportError:
-		return {"error": "Pillow not installed"}
-	except Exception as exc:
-		return {"error": str(exc)}
+	return extract_exif_from_bytes(image_bytes)
 
 
 @handle_tool_errors("research_metadata_forensics")

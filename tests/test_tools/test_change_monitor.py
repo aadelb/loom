@@ -21,7 +21,7 @@ def tmp_db_dir():
 def mock_db_path(tmp_db_dir, monkeypatch):
     """Mock the database path to use a temporary directory."""
     db_path = tmp_db_dir / "change_monitor.db"
-    monkeypatch.setattr("loom.tools.change_monitor._DB_PATH", db_path)
+    monkeypatch.setattr("loom.tools.intelligence.change_monitor._DB_PATH", db_path)
     return db_path
 
 
@@ -30,11 +30,11 @@ class TestResearchChangeMonitor:
 
     def test_first_check_no_previous(self, mock_db_path):
         """Test first check of a URL with no previous record."""
-        from loom.tools.change_monitor import research_change_monitor
+        from loom.tools.intelligence.change_monitor import research_change_monitor
 
         test_content = "<html><body>Hello World</body></html>"
 
-        with patch("loom.tools.change_monitor._fetch_content", return_value=test_content):
+        with patch("loom.tools.intelligence.change_monitor._fetch_content", return_value=test_content):
             result = research_change_monitor("https://example.com", store_result=True)
 
         assert result["url"] == "https://example.com"
@@ -48,11 +48,11 @@ class TestResearchChangeMonitor:
 
     def test_second_check_no_change(self, mock_db_path):
         """Test second check with identical content."""
-        from loom.tools.change_monitor import research_change_monitor
+        from loom.tools.intelligence.change_monitor import research_change_monitor
 
         test_content = "<html><body>Hello World</body></html>"
 
-        with patch("loom.tools.change_monitor._fetch_content", return_value=test_content):
+        with patch("loom.tools.intelligence.change_monitor._fetch_content", return_value=test_content):
             # First check
             result1 = research_change_monitor("https://example.com", store_result=True)
             first_hash = result1["current_hash"]
@@ -68,12 +68,12 @@ class TestResearchChangeMonitor:
 
     def test_content_added(self, mock_db_path):
         """Test detection of added content."""
-        from loom.tools.change_monitor import research_change_monitor
+        from loom.tools.intelligence.change_monitor import research_change_monitor
 
         content1 = "<html><body>Original content</body></html>"
         content2 = "<html><body>Original content\nNew line added</body></html>"
 
-        with patch("loom.tools.change_monitor._fetch_content") as mock_fetch:
+        with patch("loom.tools.intelligence.change_monitor._fetch_content") as mock_fetch:
             # First check
             mock_fetch.return_value = content1
             _ = research_change_monitor("https://example.com", store_result=True)
@@ -89,12 +89,12 @@ class TestResearchChangeMonitor:
 
     def test_content_removed(self, mock_db_path):
         """Test detection of removed content."""
-        from loom.tools.change_monitor import research_change_monitor
+        from loom.tools.intelligence.change_monitor import research_change_monitor
 
         content1 = "<html><body>Line 1\nLine 2\nLine 3</body></html>"
         content2 = "<html><body>Line 1\nLine 3</body></html>"
 
-        with patch("loom.tools.change_monitor._fetch_content") as mock_fetch:
+        with patch("loom.tools.intelligence.change_monitor._fetch_content") as mock_fetch:
             # First check
             mock_fetch.return_value = content1
             _ = research_change_monitor("https://example.com", store_result=True)
@@ -109,12 +109,12 @@ class TestResearchChangeMonitor:
 
     def test_content_modified(self, mock_db_path):
         """Test detection of modified content (same length)."""
-        from loom.tools.change_monitor import research_change_monitor
+        from loom.tools.intelligence.change_monitor import research_change_monitor
 
         content1 = "<html><body>Hello</body></html>"
         content2 = "<html><body>World</body></html>"
 
-        with patch("loom.tools.change_monitor._fetch_content") as mock_fetch:
+        with patch("loom.tools.intelligence.change_monitor._fetch_content") as mock_fetch:
             # First check
             mock_fetch.return_value = content1
             _ = research_change_monitor("https://example.com", store_result=True)
@@ -128,9 +128,9 @@ class TestResearchChangeMonitor:
 
     def test_fetch_failure(self, mock_db_path):
         """Test handling of fetch failures."""
-        from loom.tools.change_monitor import research_change_monitor
+        from loom.tools.intelligence.change_monitor import research_change_monitor
 
-        with patch("loom.tools.change_monitor._fetch_content", side_effect=Exception("Connection error")):
+        with patch("loom.tools.intelligence.change_monitor._fetch_content", side_effect=Exception("Connection error")):
             result = research_change_monitor("https://example.com", store_result=False)
 
         assert "error" in result
@@ -139,11 +139,11 @@ class TestResearchChangeMonitor:
 
     def test_store_result_false(self, mock_db_path):
         """Test that store_result=False prevents database updates."""
-        from loom.tools.change_monitor import research_change_monitor
+        from loom.tools.intelligence.change_monitor import research_change_monitor
 
         test_content = "<html><body>Test</body></html>"
 
-        with patch("loom.tools.change_monitor._fetch_content", return_value=test_content):
+        with patch("loom.tools.intelligence.change_monitor._fetch_content", return_value=test_content):
             result = research_change_monitor("https://example.com", store_result=False)
 
         # Check that it still returns valid result
@@ -152,12 +152,12 @@ class TestResearchChangeMonitor:
 
     def test_multiple_urls_independent(self, mock_db_path):
         """Test that multiple URLs are tracked independently."""
-        from loom.tools.change_monitor import research_change_monitor
+        from loom.tools.intelligence.change_monitor import research_change_monitor
 
         content1 = "<html>URL1</html>"
         content2 = "<html>URL2</html>"
 
-        with patch("loom.tools.change_monitor._fetch_content") as mock_fetch:
+        with patch("loom.tools.intelligence.change_monitor._fetch_content") as mock_fetch:
             # Monitor two different URLs
             mock_fetch.return_value = content1
             result1a = research_change_monitor("https://example1.com", store_result=True)
@@ -182,12 +182,12 @@ class TestResearchChangeMonitor:
 
     def test_diff_summary_truncated(self, mock_db_path):
         """Test that diff_summary is truncated appropriately."""
-        from loom.tools.change_monitor import research_change_monitor
+        from loom.tools.intelligence.change_monitor import research_change_monitor
 
         content1 = "line 1\nline 2\nline 3\n"
         content2 = "line 1\nline 2 modified\nline 3\n"
 
-        with patch("loom.tools.change_monitor._fetch_content") as mock_fetch:
+        with patch("loom.tools.intelligence.change_monitor._fetch_content") as mock_fetch:
             mock_fetch.return_value = content1
             _ = research_change_monitor("https://example.com", store_result=True)
 
@@ -204,18 +204,18 @@ class TestDatabaseOperations:
 
     def test_db_initialization(self, mock_db_path):
         """Test that database is initialized properly."""
-        from loom.tools.change_monitor import _init_db
+        from loom.tools.intelligence.change_monitor import _init_db
 
         _init_db()
         assert mock_db_path.exists()
 
     def test_db_persistence(self, mock_db_path):
         """Test that data persists across function calls."""
-        from loom.tools.change_monitor import research_change_monitor
+        from loom.tools.intelligence.change_monitor import research_change_monitor
 
         content = "<html><body>Test</body></html>"
 
-        with patch("loom.tools.change_monitor._fetch_content", return_value=content):
+        with patch("loom.tools.intelligence.change_monitor._fetch_content", return_value=content):
             # First call
             result1 = research_change_monitor("https://example.com", store_result=True)
             hash1 = result1["current_hash"]
@@ -233,7 +233,7 @@ class TestHashComputation:
 
     def test_consistent_hash(self):
         """Test that same content produces same hash."""
-        from loom.tools.change_monitor import _compute_hash
+        from loom.tools.intelligence.change_monitor import _compute_hash
 
         content = "<html><body>Test</body></html>"
         hash1 = _compute_hash(content)
@@ -243,7 +243,7 @@ class TestHashComputation:
 
     def test_different_content_different_hash(self):
         """Test that different content produces different hash."""
-        from loom.tools.change_monitor import _compute_hash
+        from loom.tools.intelligence.change_monitor import _compute_hash
 
         hash1 = _compute_hash("content1")
         hash2 = _compute_hash("content2")
@@ -252,7 +252,7 @@ class TestHashComputation:
 
     def test_hash_format(self):
         """Test that hash is SHA-256 hex format."""
-        from loom.tools.change_monitor import _compute_hash
+        from loom.tools.intelligence.change_monitor import _compute_hash
 
         hash_val = _compute_hash("test")
 
@@ -265,7 +265,7 @@ class TestDiffComputation:
 
     def test_diff_computation_basic(self):
         """Test basic diff computation."""
-        from loom.tools.change_monitor import _compute_diff
+        from loom.tools.intelligence.change_monitor import _compute_diff
 
         old = "line1\nline2\nline3"
         new = "line1\nline2b\nline3"
@@ -277,7 +277,7 @@ class TestDiffComputation:
 
     def test_diff_with_additions(self):
         """Test diff with added lines."""
-        from loom.tools.change_monitor import _compute_diff
+        from loom.tools.intelligence.change_monitor import _compute_diff
 
         old = "line1\nline2"
         new = "line1\nline2\nline3\nline4"

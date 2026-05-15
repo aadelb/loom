@@ -11,6 +11,12 @@ from typing import Any
 
 from loom.error_responses import handle_tool_errors
 
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(v: float, lo: float = 0.0, hi: float = 1.0) -> float:
+        return max(lo, min(hi, v))
+
 logger = logging.getLogger("loom.tools.defender_mode")
 
 # Attack templates by category
@@ -209,7 +215,7 @@ async def research_defend_test(
             "attacks_blocked": attacks_blocked,
             "attacks_bypassed": attacks_bypassed,
             "vulnerability_report": vulns,
-            "defense_score": min(100, defense_score),
+            "defense_score": clamp(defense_score, 0, 100),
             "recommendations": recommendations,
         }
     except Exception as exc:
@@ -269,7 +275,7 @@ async def research_harden_prompt(
             hardened += hardening
 
         # Estimate new score (assume improvements bring score up by 25 points)
-        new_score = min(100, original_score + 25)
+        new_score = clamp(original_score + 25, 0, 100)
 
         improvements = []
         for vuln in vulnerabilities:

@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from loom.tools.benchmark_leaderboard import (
+from loom.tools.research.benchmark_leaderboard import (
     _get_leaderboard_db,
     _init_leaderboard_db,
     _score_injection_resistance,
@@ -113,7 +113,7 @@ class TestLeaderboardDatabase:
         # Use temp directory for this test
         test_db = tmp_path / "test.db"
 
-        with patch("loom.tools.benchmark_leaderboard._get_leaderboard_db") as mock_get:
+        with patch("loom.tools.research.benchmark_leaderboard._get_leaderboard_db") as mock_get:
             mock_get.return_value = test_db
 
             _init_leaderboard_db()
@@ -133,7 +133,7 @@ class TestLeaderboardDatabase:
         """Test database initialization creates required indexes."""
         test_db = tmp_path / "test.db"
 
-        with patch("loom.tools.benchmark_leaderboard._get_leaderboard_db") as mock_get:
+        with patch("loom.tools.research.benchmark_leaderboard._get_leaderboard_db") as mock_get:
             mock_get.return_value = test_db
 
             _init_leaderboard_db()
@@ -162,7 +162,7 @@ class TestLeaderboardUpdate:
         """Test that update creates a new leaderboard record."""
         test_db = tmp_path / "test.db"
 
-        with patch("loom.tools.benchmark_leaderboard._get_leaderboard_db") as mock_get:
+        with patch("loom.tools.research.benchmark_leaderboard._get_leaderboard_db") as mock_get:
             mock_get.return_value = test_db
 
             result = research_leaderboard_update(
@@ -182,7 +182,7 @@ class TestLeaderboardUpdate:
         """Test that scores are clamped to 0-1 range."""
         test_db = tmp_path / "test.db"
 
-        with patch("loom.tools.benchmark_leaderboard._get_leaderboard_db") as mock_get:
+        with patch("loom.tools.research.benchmark_leaderboard._get_leaderboard_db") as mock_get:
             mock_get.return_value = test_db
 
             # Test clamping high
@@ -205,7 +205,7 @@ class TestLeaderboardUpdate:
         """Test that details are stored as JSON."""
         test_db = tmp_path / "test.db"
 
-        with patch("loom.tools.benchmark_leaderboard._get_leaderboard_db") as mock_get:
+        with patch("loom.tools.research.benchmark_leaderboard._get_leaderboard_db") as mock_get:
             mock_get.return_value = test_db
 
             details = {"test_count": 10, "tester": "automation"}
@@ -237,7 +237,7 @@ class TestLeaderboardView:
         """Test that leaderboard view returns correct structure."""
         test_db = tmp_path / "test.db"
 
-        with patch("loom.tools.benchmark_leaderboard._get_leaderboard_db") as mock_get:
+        with patch("loom.tools.research.benchmark_leaderboard._get_leaderboard_db") as mock_get:
             mock_get.return_value = test_db
 
             # Add some test data
@@ -260,7 +260,7 @@ class TestLeaderboardView:
         """Test that rankings are sorted by score descending."""
         test_db = tmp_path / "test.db"
 
-        with patch("loom.tools.benchmark_leaderboard._get_leaderboard_db") as mock_get:
+        with patch("loom.tools.research.benchmark_leaderboard._get_leaderboard_db") as mock_get:
             mock_get.return_value = test_db
 
             # Add test data with varying scores
@@ -286,7 +286,7 @@ class TestLeaderboardView:
         """Test that rankings include rank numbers."""
         test_db = tmp_path / "test.db"
 
-        with patch("loom.tools.benchmark_leaderboard._get_leaderboard_db") as mock_get:
+        with patch("loom.tools.research.benchmark_leaderboard._get_leaderboard_db") as mock_get:
             mock_get.return_value = test_db
 
             for i in range(3):
@@ -305,7 +305,7 @@ class TestLeaderboardView:
         """Test that leaderboard view respects limit parameter."""
         test_db = tmp_path / "test.db"
 
-        with patch("loom.tools.benchmark_leaderboard._get_leaderboard_db") as mock_get:
+        with patch("loom.tools.research.benchmark_leaderboard._get_leaderboard_db") as mock_get:
             mock_get.return_value = test_db
 
             # Add 10 records
@@ -324,7 +324,7 @@ class TestLeaderboardView:
         """Test that category filter works correctly."""
         test_db = tmp_path / "test.db"
 
-        with patch("loom.tools.benchmark_leaderboard._get_leaderboard_db") as mock_get:
+        with patch("loom.tools.research.benchmark_leaderboard._get_leaderboard_db") as mock_get:
             mock_get.return_value = test_db
 
             # Add records for different categories
@@ -349,7 +349,7 @@ class TestLeaderboardView:
         """Test that overall view averages across categories."""
         test_db = tmp_path / "test.db"
 
-        with patch("loom.tools.benchmark_leaderboard._get_leaderboard_db") as mock_get:
+        with patch("loom.tools.research.benchmark_leaderboard._get_leaderboard_db") as mock_get:
             mock_get.return_value = test_db
 
             # Add same model with different category scores

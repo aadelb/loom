@@ -381,7 +381,7 @@ class TestGracefulShutdown:
         with patch("loom.server.cleanup_all_sessions") as mock_cleanup:
             mock_cleanup.return_value = {"closed": [], "errors": []}
 
-            with patch("loom.tools.fetch._http_client") as mock_client:
+            with patch("loom.tools.core.fetch._http_client") as mock_client:
                 await _shutdown()
 
                 if mock_client is not None:

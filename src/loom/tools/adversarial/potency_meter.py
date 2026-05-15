@@ -8,7 +8,6 @@ Uses shared scoring_framework.py for consistent multi-dimensional evaluation.
 from __future__ import annotations
 
 import logging
-import re
 from typing import Any
 
 from loom.error_responses import handle_tool_errors

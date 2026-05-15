@@ -2,7 +2,7 @@
 
 import pytest
 
-from loom.tools import realtime_adapt
+import loom.tools.intelligence.realtime_adapt
 
 
 @pytest.fixture(autouse=True)

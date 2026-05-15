@@ -7,7 +7,7 @@ import logging
 import math
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any
 from uuid import uuid4
 from loom.error_responses import handle_tool_errors
 

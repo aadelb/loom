@@ -10,6 +10,13 @@ from typing import Any
 import httpx
 from loom.error_responses import handle_tool_errors
 
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text, max_chars=500, *, suffix="..."):
+        if len(text) <= max_chars: return text
+        return text[:max_chars - len(suffix)] + suffix
+
 logger = logging.getLogger("loom.tools.opencti_backend")
 
 # GraphQL query for indicator lookups
@@ -210,7 +217,7 @@ def research_opencti_query(
         )
 
     except httpx.HTTPStatusError as exc:
-        response_text = exc.response.text[:200]  # Truncate to prevent data leakage
+        response_text = truncate(exc.response.text, 200)  # Truncate to prevent data leakage
         result["error"] = (
             f"OpenCTI API error ({exc.response.status_code}): {response_text}"
         )

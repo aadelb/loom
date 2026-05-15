@@ -1,7 +1,6 @@
 """research_reverse_image — Reverse image search across multiple engines."""
 from __future__ import annotations
 
-import asyncio
 import logging
 import os
 import urllib.parse

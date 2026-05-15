@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from loom.tools.trend_predictor import (
+from loom.tools.research.trend_predictor import (
     _arxiv_publication_rate,
     _compute_trend_direction,
     _github_repo_momentum,
@@ -363,15 +363,15 @@ class TestResearchTrendPredict:
 
     async def test_basic_trend_prediction(self) -> None:
         """Basic trend prediction returns expected structure."""
-        with patch("loom.tools.trend_predictor._arxiv_publication_rate") as mock_arxiv:
+        with patch("loom.tools.research.trend_predictor._arxiv_publication_rate") as mock_arxiv:
             with patch(
-                "loom.tools.trend_predictor._semantic_scholar_citations"
+                "loom.tools.research.trend_predictor._semantic_scholar_citations"
             ) as mock_semantic:
                 with patch(
-                    "loom.tools.trend_predictor._github_repo_momentum"
+                    "loom.tools.research.trend_predictor._github_repo_momentum"
                 ) as mock_github:
                     with patch(
-                        "loom.tools.trend_predictor._hackernews_discussion"
+                        "loom.tools.research.trend_predictor._hackernews_discussion"
                     ) as mock_hn:
                         mock_arxiv.return_value = {
                             "papers_per_month": {"2026-06": 10},
@@ -408,15 +408,15 @@ class TestResearchTrendPredict:
 
     async def test_invalid_topic_handles_gracefully(self) -> None:
         """Invalid topic still returns valid structure."""
-        with patch("loom.tools.trend_predictor._arxiv_publication_rate") as mock_arxiv:
+        with patch("loom.tools.research.trend_predictor._arxiv_publication_rate") as mock_arxiv:
             with patch(
-                "loom.tools.trend_predictor._semantic_scholar_citations"
+                "loom.tools.research.trend_predictor._semantic_scholar_citations"
             ) as mock_semantic:
                 with patch(
-                    "loom.tools.trend_predictor._github_repo_momentum"
+                    "loom.tools.research.trend_predictor._github_repo_momentum"
                 ) as mock_github:
                     with patch(
-                        "loom.tools.trend_predictor._hackernews_discussion"
+                        "loom.tools.research.trend_predictor._hackernews_discussion"
                     ) as mock_hn:
                         mock_arxiv.return_value = {
                             "papers_per_month": {},

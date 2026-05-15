@@ -13,14 +13,14 @@ import json
 import logging
 import os
 import re
-import subprocess
 import tempfile
 from typing import Any
 
 from loom.input_validators import validate_domain, validate_port, ValidationError
 from loom.validators import validate_url
-from loom.cli_checker import is_available, get_path
+from loom.cli_checker import get_path
 from loom.error_responses import handle_tool_errors
+from loom.subprocess_helpers import run_command
 
 logger = logging.getLogger("loom.tools.projectdiscovery")
 
@@ -127,7 +127,7 @@ def research_subfinder(
 
         # Run subfinder with JSON output
         cmd = ["subfinder", "-d", domain, "-json"]
-        result = subprocess.run(
+        result = run_command(
             cmd,
             capture_output=True,
             text=True,
@@ -138,8 +138,8 @@ def research_subfinder(
         sources_used = set()
 
         # Parse JSON output (one JSON object per line)
-        if result.stdout:
-            for line in result.stdout.strip().split("\n"):
+        if result["stdout"]:
+            for line in result["stdout"].strip().split("\n"):
                 if not line.strip():
                     continue
                 try:
@@ -156,7 +156,7 @@ def research_subfinder(
             "subdomains": sorted(list(set(subdomains))),  # Deduplicate and sort
             "count": len(set(subdomains)),
             "sources_used": sorted(list(sources_used)),
-            "returncode": result.returncode,
+            "returncode": result["returncode"],
         }
 
     except subprocess.TimeoutExpired:
@@ -243,7 +243,7 @@ def research_katana_crawl(
             "-p", str(max_pages),
             "-json",
         ]
-        result = subprocess.run(
+        result = run_command(
             cmd,
             capture_output=True,
             text=True,
@@ -254,8 +254,8 @@ def research_katana_crawl(
         max_depth_reached = 0
 
         # Parse JSON output (one JSON object per line)
-        if result.stdout:
-            for line in result.stdout.strip().split("\n"):
+        if result["stdout"]:
+            for line in result["stdout"].strip().split("\n"):
                 if not line.strip():
                     continue
                 try:
@@ -273,10 +273,10 @@ def research_katana_crawl(
             "pages_crawled": len(unique_urls),
             "urls_found": unique_urls,
             "depth_reached": max_depth_reached,
-            "returncode": result.returncode,
+            "returncode": result["returncode"],
         }
-        if result.returncode != 0 and result.stderr:
-            response["error"] = f"katana exited with code {result.returncode}: {result.stderr}"
+        if not result["success"] and result["stderr"]:
+            response["error"] = f"katana exited with code {result["returncode"]}: {result["stderr"]}"
         return response
 
     except subprocess.TimeoutExpired:
@@ -404,7 +404,7 @@ def research_httpx_probe(
                 "-ports", ports,
                 "-json",
             ]
-            result = subprocess.run(
+            result = run_command(
                 cmd,
                 capture_output=True,
                 text=True,
@@ -414,8 +414,8 @@ def research_httpx_probe(
             alive_hosts = []
 
             # Parse JSON output (one JSON object per line)
-            if result.stdout:
-                for line in result.stdout.strip().split("\n"):
+            if result["stdout"]:
+                for line in result["stdout"].strip().split("\n"):
                     if not line.strip():
                         continue
                     try:
@@ -436,10 +436,10 @@ def research_httpx_probe(
                 "targets_checked": len(validated_targets),
                 "alive": alive_hosts,
                 "count": len(alive_hosts),
-                "returncode": result.returncode,
+                "returncode": result["returncode"],
             }
-            if result.returncode != 0 and result.stderr:
-                response["error"] = f"httpx exited with code {result.returncode}: {result.stderr}"
+            if not result["success"] and result["stderr"]:
+                response["error"] = f"httpx exited with code {result["returncode"]}: {result["stderr"]}"
             return response
 
         finally:
@@ -532,7 +532,7 @@ def research_nuclei_scan(
             "-s", severity,
             "-json",
         ]
-        result = subprocess.run(
+        result = run_command(
             cmd,
             capture_output=True,
             text=True,
@@ -542,8 +542,8 @@ def research_nuclei_scan(
         vulnerabilities = []
 
         # Parse JSON output (one JSON object per line)
-        if result.stdout:
-            for line in result.stdout.strip().split("\n"):
+        if result["stdout"]:
+            for line in result["stdout"].strip().split("\n"):
                 if not line.strip():
                     continue
                 try:
@@ -563,7 +563,7 @@ def research_nuclei_scan(
             "target": target,
             "vulnerabilities": vulnerabilities,
             "count": len(vulnerabilities),
-            "returncode": result.returncode,
+            "returncode": result["returncode"],
         }
 
     except subprocess.TimeoutExpired:

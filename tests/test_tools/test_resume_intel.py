@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from loom.tools.resume_intel import (
+from loom.tools.career.resume_intel import (
     _extract_keywords,
     _compute_match_score,
     research_optimize_resume,

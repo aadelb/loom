@@ -11,12 +11,11 @@ from loom.error_responses import handle_tool_errors
 
 import asyncio
 import logging
-import re
 from typing import Any
 from urllib.parse import quote
 
 import httpx
-from loom.http_helpers import fetch_json, fetch_text
+from loom.http_helpers import fetch_json
 
 logger = logging.getLogger("loom.tools.job_signals")
 
@@ -733,3 +732,31 @@ async def research_interviewer_profiler(
         return await _run()
     except Exception as exc:
         return {"error": str(exc), "tool": "research_interviewer_profiler"}
+
+
+async def _cross_reference_with_resume_analysis(
+    resume_text: str = "", use_resume_analysis: bool = False
+) -> dict[str, Any]:
+    """Optionally cross-reference job signals with resume analysis.
+
+    Integration 4b: Wires job_signals to resume_intel for skill alignment.
+    """
+    if not use_resume_analysis or not resume_text:
+        return {}
+
+    try:
+        from loom.tools.career.resume_intel import _extract_keywords
+
+        logger.debug("job_signals integrating with resume analysis")
+
+        resume_keywords = _extract_keywords(resume_text)
+
+        return {
+            "resume_keywords_count": len(resume_keywords),
+            "sample_keywords": list(resume_keywords)[:10],
+            "integration": "resume_intel",
+        }
+    except Exception as exc:
+        logger.debug("resume_intel integration failed: %s", exc)
+
+    return {}

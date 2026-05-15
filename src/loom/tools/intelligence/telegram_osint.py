@@ -1,6 +1,14 @@
 """Telegram OSINT intelligence — public channel discovery and analysis."""
 
 from __future__ import annotations
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text, max_chars=500, *, suffix="..."):
+        if len(text) <= max_chars: return text
+        return text[:max_chars - len(suffix)] + suffix
+
+
 
 import logging
 import re
@@ -8,6 +16,7 @@ from typing import Any
 import httpx
 
 from loom.error_responses import handle_tool_errors
+from loom.http_helpers import fetch_text
 
 logger = logging.getLogger("loom.tools.telegram_osint")
 
@@ -184,7 +193,7 @@ def _extract_recent_messages(html: str, limit: int = 10) -> list[dict[str, Any]]
         timestamp = time_match.group(1).strip() if time_match else ""
 
         if text or timestamp:
-            messages.append({"text": text[:500], "timestamp": timestamp})
+            messages.append({"text": truncate(text, 500), "timestamp": timestamp})
 
     return messages
 

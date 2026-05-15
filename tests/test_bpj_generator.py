@@ -7,7 +7,7 @@ import pytest
 
 from loom.bpj_generator import BPJGenerator, BoundaryResult, RegionMapResult
 from loom.params import BPJParams
-from loom.tools.bpj import research_bpj_generate
+from loom.tools.adversarial.bpj import research_bpj_generate
 
 
 class TestBPJParams:

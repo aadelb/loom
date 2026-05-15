@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from loom.tools.auto_params import (
+from loom.tools.llm.auto_params import (
     _detect_language,
     _detect_model,
     _extract_domain,

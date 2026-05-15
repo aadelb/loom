@@ -21,7 +21,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from loom.tools.strategy_oracle import (
+from loom.tools.llm.strategy_oracle import (
     StrategyOracle,
     research_strategy_oracle,
 )

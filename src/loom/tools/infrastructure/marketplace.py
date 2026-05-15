@@ -3,16 +3,14 @@
 from __future__ import annotations
 from loom.error_responses import handle_tool_errors
 
-import json
 import logging
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any
 from uuid import uuid4
 
 import aiosqlite
 
-from loom.validators import validate_url
 
 logger = logging.getLogger("loom.tools.marketplace")
 

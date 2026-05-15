@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from loom.tools.career_trajectory import (
+from loom.tools.career.career_trajectory import (
     research_career_trajectory,
     research_market_velocity,
 )
@@ -35,15 +35,15 @@ class TestCareerTrajectory:
     async def test_returns_required_fields(self) -> None:
         """Result contains all required fields."""
         with patch(
-            "loom.tools.career_trajectory._search_semantic_scholar",
+            "loom.tools.career.career_trajectory._search_semantic_scholar",
             new_callable=AsyncMock,
             return_value={},
         ), patch(
-            "loom.tools.career_trajectory._search_github_user",
+            "loom.tools.career.career_trajectory._search_github_user",
             new_callable=AsyncMock,
             return_value={},
         ), patch(
-            "loom.tools.career_trajectory._search_orcid",
+            "loom.tools.career.career_trajectory._search_orcid",
             new_callable=AsyncMock,
             return_value={},
         ):
@@ -66,15 +66,15 @@ class TestCareerTrajectory:
     async def test_person_name_trimmed(self) -> None:
         """Person name is trimmed."""
         with patch(
-            "loom.tools.career_trajectory._search_semantic_scholar",
+            "loom.tools.career.career_trajectory._search_semantic_scholar",
             new_callable=AsyncMock,
             return_value={},
         ), patch(
-            "loom.tools.career_trajectory._search_github_user",
+            "loom.tools.career.career_trajectory._search_github_user",
             new_callable=AsyncMock,
             return_value={},
         ), patch(
-            "loom.tools.career_trajectory._search_orcid",
+            "loom.tools.career.career_trajectory._search_orcid",
             new_callable=AsyncMock,
             return_value={},
         ):
@@ -84,15 +84,15 @@ class TestCareerTrajectory:
     async def test_domain_filter_optional(self) -> None:
         """Domain filter is optional."""
         with patch(
-            "loom.tools.career_trajectory._search_semantic_scholar",
+            "loom.tools.career.career_trajectory._search_semantic_scholar",
             new_callable=AsyncMock,
             return_value={},
         ), patch(
-            "loom.tools.career_trajectory._search_github_user",
+            "loom.tools.career.career_trajectory._search_github_user",
             new_callable=AsyncMock,
             return_value={},
         ), patch(
-            "loom.tools.career_trajectory._search_orcid",
+            "loom.tools.career.career_trajectory._search_orcid",
             new_callable=AsyncMock,
             return_value={},
         ):
@@ -102,15 +102,15 @@ class TestCareerTrajectory:
     async def test_academic_publications_structure(self) -> None:
         """Academic publications result has correct structure."""
         with patch(
-            "loom.tools.career_trajectory._search_semantic_scholar",
+            "loom.tools.career.career_trajectory._search_semantic_scholar",
             new_callable=AsyncMock,
             return_value={},
         ), patch(
-            "loom.tools.career_trajectory._search_github_user",
+            "loom.tools.career.career_trajectory._search_github_user",
             new_callable=AsyncMock,
             return_value={},
         ), patch(
-            "loom.tools.career_trajectory._search_orcid",
+            "loom.tools.career.career_trajectory._search_orcid",
             new_callable=AsyncMock,
             return_value={},
         ):
@@ -124,15 +124,15 @@ class TestCareerTrajectory:
     async def test_github_activity_structure(self) -> None:
         """GitHub activity result has correct structure."""
         with patch(
-            "loom.tools.career_trajectory._search_semantic_scholar",
+            "loom.tools.career.career_trajectory._search_semantic_scholar",
             new_callable=AsyncMock,
             return_value={},
         ), patch(
-            "loom.tools.career_trajectory._search_github_user",
+            "loom.tools.career.career_trajectory._search_github_user",
             new_callable=AsyncMock,
             return_value={},
         ), patch(
-            "loom.tools.career_trajectory._search_orcid",
+            "loom.tools.career.career_trajectory._search_orcid",
             new_callable=AsyncMock,
             return_value={},
         ):
@@ -154,15 +154,15 @@ class TestCareerTrajectory:
     async def test_orcid_profile_structure(self) -> None:
         """ORCID profile result has correct structure."""
         with patch(
-            "loom.tools.career_trajectory._search_semantic_scholar",
+            "loom.tools.career.career_trajectory._search_semantic_scholar",
             new_callable=AsyncMock,
             return_value={},
         ), patch(
-            "loom.tools.career_trajectory._search_github_user",
+            "loom.tools.career.career_trajectory._search_github_user",
             new_callable=AsyncMock,
             return_value={},
         ), patch(
-            "loom.tools.career_trajectory._search_orcid",
+            "loom.tools.career.career_trajectory._search_orcid",
             new_callable=AsyncMock,
             return_value={},
         ):
@@ -176,15 +176,15 @@ class TestCareerTrajectory:
     async def test_impact_score_in_valid_range(self) -> None:
         """Combined impact score is 0-100."""
         with patch(
-            "loom.tools.career_trajectory._search_semantic_scholar",
+            "loom.tools.career.career_trajectory._search_semantic_scholar",
             new_callable=AsyncMock,
             return_value={},
         ), patch(
-            "loom.tools.career_trajectory._search_github_user",
+            "loom.tools.career.career_trajectory._search_github_user",
             new_callable=AsyncMock,
             return_value={},
         ), patch(
-            "loom.tools.career_trajectory._search_orcid",
+            "loom.tools.career.career_trajectory._search_orcid",
             new_callable=AsyncMock,
             return_value={},
         ):
@@ -196,15 +196,15 @@ class TestCareerTrajectory:
     async def test_with_github_data(self) -> None:
         """GitHub data is included in result."""
         with patch(
-            "loom.tools.career_trajectory._search_semantic_scholar",
+            "loom.tools.career.career_trajectory._search_semantic_scholar",
             new_callable=AsyncMock,
             return_value={},
         ), patch(
-            "loom.tools.career_trajectory._search_github_user",
+            "loom.tools.career.career_trajectory._search_github_user",
             new_callable=AsyncMock,
             return_value={"username": "johndoe"},
         ), patch(
-            "loom.tools.career_trajectory._search_orcid",
+            "loom.tools.career.career_trajectory._search_orcid",
             new_callable=AsyncMock,
             return_value={},
         ):
@@ -215,15 +215,15 @@ class TestCareerTrajectory:
     async def test_career_stages_generated(self) -> None:
         """Career stages are generated."""
         with patch(
-            "loom.tools.career_trajectory._search_semantic_scholar",
+            "loom.tools.career.career_trajectory._search_semantic_scholar",
             new_callable=AsyncMock,
             return_value={},
         ), patch(
-            "loom.tools.career_trajectory._search_github_user",
+            "loom.tools.career.career_trajectory._search_github_user",
             new_callable=AsyncMock,
             return_value={},
         ), patch(
-            "loom.tools.career_trajectory._search_orcid",
+            "loom.tools.career.career_trajectory._search_orcid",
             new_callable=AsyncMock,
             return_value={},
         ):
@@ -251,15 +251,15 @@ class TestMarketVelocity:
     async def test_returns_required_fields(self) -> None:
         """Result contains all required fields."""
         with patch(
-            "loom.tools.career_trajectory._search_github_trending",
+            "loom.tools.career.career_trajectory._search_github_trending",
             new_callable=AsyncMock,
             return_value={},
         ), patch(
-            "loom.tools.career_trajectory._search_hacker_news",
+            "loom.tools.career.career_trajectory._search_hacker_news",
             new_callable=AsyncMock,
             return_value={},
         ), patch(
-            "loom.tools.career_trajectory._search_arxiv_papers",
+            "loom.tools.career.career_trajectory._search_arxiv_papers",
             new_callable=AsyncMock,
             return_value={},
         ):
@@ -281,15 +281,15 @@ class TestMarketVelocity:
     async def test_skill_trimmed(self) -> None:
         """Skill is trimmed."""
         with patch(
-            "loom.tools.career_trajectory._search_github_trending",
+            "loom.tools.career.career_trajectory._search_github_trending",
             new_callable=AsyncMock,
             return_value={},
         ), patch(
-            "loom.tools.career_trajectory._search_hacker_news",
+            "loom.tools.career.career_trajectory._search_hacker_news",
             new_callable=AsyncMock,
             return_value={},
         ), patch(
-            "loom.tools.career_trajectory._search_arxiv_papers",
+            "loom.tools.career.career_trajectory._search_arxiv_papers",
             new_callable=AsyncMock,
             return_value={},
         ):
@@ -299,15 +299,15 @@ class TestMarketVelocity:
     async def test_location_optional(self) -> None:
         """Location parameter is optional."""
         with patch(
-            "loom.tools.career_trajectory._search_github_trending",
+            "loom.tools.career.career_trajectory._search_github_trending",
             new_callable=AsyncMock,
             return_value={},
         ), patch(
-            "loom.tools.career_trajectory._search_hacker_news",
+            "loom.tools.career.career_trajectory._search_hacker_news",
             new_callable=AsyncMock,
             return_value={},
         ), patch(
-            "loom.tools.career_trajectory._search_arxiv_papers",
+            "loom.tools.career.career_trajectory._search_arxiv_papers",
             new_callable=AsyncMock,
             return_value={},
         ):
@@ -317,15 +317,15 @@ class TestMarketVelocity:
     async def test_confidence_score_in_range(self) -> None:
         """Confidence score is 0-100."""
         with patch(
-            "loom.tools.career_trajectory._search_github_trending",
+            "loom.tools.career.career_trajectory._search_github_trending",
             new_callable=AsyncMock,
             return_value={},
         ), patch(
-            "loom.tools.career_trajectory._search_hacker_news",
+            "loom.tools.career.career_trajectory._search_hacker_news",
             new_callable=AsyncMock,
             return_value={},
         ), patch(
-            "loom.tools.career_trajectory._search_arxiv_papers",
+            "loom.tools.career.career_trajectory._search_arxiv_papers",
             new_callable=AsyncMock,
             return_value={},
         ):
@@ -335,7 +335,7 @@ class TestMarketVelocity:
     async def test_hot_skill_detection(self) -> None:
         """Hot skill is detected when all signals are strong."""
         with patch(
-            "loom.tools.career_trajectory._search_github_trending",
+            "loom.tools.career.career_trajectory._search_github_trending",
             new_callable=AsyncMock,
             return_value={
                 "total_count": 100,
@@ -345,7 +345,7 @@ class TestMarketVelocity:
                 "creation_momentum": {},
             },
         ), patch(
-            "loom.tools.career_trajectory._search_hacker_news",
+            "loom.tools.career.career_trajectory._search_hacker_news",
             new_callable=AsyncMock,
             return_value={
                 "total_hits": 500,
@@ -355,7 +355,7 @@ class TestMarketVelocity:
                 ] * 5,
             },
         ), patch(
-            "loom.tools.career_trajectory._search_arxiv_papers",
+            "loom.tools.career.career_trajectory._search_arxiv_papers",
             new_callable=AsyncMock,
             return_value={
                 "total_papers": 100,
@@ -370,7 +370,7 @@ class TestMarketVelocity:
     async def test_cooling_skill_detection(self) -> None:
         """Cooling skill is detected when all signals are weak."""
         with patch(
-            "loom.tools.career_trajectory._search_github_trending",
+            "loom.tools.career.career_trajectory._search_github_trending",
             new_callable=AsyncMock,
             return_value={
                 "total_count": 10,
@@ -380,7 +380,7 @@ class TestMarketVelocity:
                 "creation_momentum": {},
             },
         ), patch(
-            "loom.tools.career_trajectory._search_hacker_news",
+            "loom.tools.career.career_trajectory._search_hacker_news",
             new_callable=AsyncMock,
             return_value={
                 "total_hits": 0,
@@ -388,7 +388,7 @@ class TestMarketVelocity:
                 "top_stories": [],
             },
         ), patch(
-            "loom.tools.career_trajectory._search_arxiv_papers",
+            "loom.tools.career.career_trajectory._search_arxiv_papers",
             new_callable=AsyncMock,
             return_value={
                 "total_papers": 0,

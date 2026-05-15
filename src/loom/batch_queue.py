@@ -525,7 +525,7 @@ class BatchQueue:
 
         # Process all items concurrently
         tasks = [self._process_single_item(item) for item in items_to_process]
-        await asyncio.gather(*tasks)
+        await asyncio.gather(*tasks, return_exceptions=True)
 
         return len(items_to_process)
 

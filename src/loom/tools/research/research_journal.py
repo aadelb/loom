@@ -9,6 +9,14 @@ from typing import Any
 from uuid import uuid4
 
 from loom.error_responses import handle_tool_errors
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text: str, max_chars: int = 500, *, suffix: str = "...") -> str:
+        """Fallback truncate if text_utils unavailable."""
+        if len(text) <= max_chars:
+            return text
+        return text[: max_chars - len(suffix)] + suffix
 
 logger = logging.getLogger("loom.tools.research_journal")
 VALID_CATEGORIES = {"finding", "hypothesis", "experiment", "insight", "todo", "milestone"}
@@ -66,7 +74,7 @@ def _search_journal_entries(query: str, category: str, limit: int) -> tuple[list
     entries.sort(key=lambda e: e.get("timestamp", ""), reverse=True)
     for entry in entries[:limit]:
         content = entry.get("content", "")
-        entry["preview"] = content[:150] + ("..." if len(content) > 150 else "")
+        entry["preview"] = truncate(content, 150) + ("..." if len(content) > 150 else "")
 
     return entries[:limit], len(entries)
 

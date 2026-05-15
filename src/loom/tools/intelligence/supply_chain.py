@@ -9,6 +9,13 @@ import httpx
 
 from loom.error_responses import handle_tool_errors
 
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(v: float, lo: float = 0.0, hi: float = 1.0) -> float:
+        """Fallback clamp if score_utils unavailable."""
+        return max(lo, min(hi, v))
+
 logger = logging.getLogger("loom.tools.supply_chain")
 
 POPULAR = ["requests", "numpy", "pandas", "flask", "django", "torch", "tensorflow", "transformers", "openai", "anthropic"]
@@ -49,7 +56,7 @@ async def research_package_audit(package_name: str, ecosystem: str = "pypi", dep
         return {
             "package": package_name,
             "ecosystem": ecosystem,
-            "risk_score": min(100, max(0, risk_score)),
+            "risk_score": clamp(risk_score, 0, 100),
             "indicators": indicators,
             "typosquatting_candidates": typosquatting,
             "recommendations": _get_recs(risk_score, indicators),
@@ -105,9 +112,8 @@ async def _fetch_pypi_info(pkg_name: str) -> dict[str, Any] | None:
     """Fetch PyPI metadata."""
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            r = await client.get(f"https://pypi.org/pypi/{pkg_name}/json", follow_redirects=True)
-            if r.status_code == 200:
-                data = r.json()
+            data = await fetch_json(client, f"https://pypi.org/pypi/{pkg_name}/json", follow_redirects=True)
+            if data:
                 info = data.get("info", {})
                 desc = info.get("description", "")
                 return {

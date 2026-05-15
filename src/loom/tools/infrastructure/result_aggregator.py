@@ -7,6 +7,13 @@ from typing import Any
 
 from loom.error_responses import handle_tool_errors
 
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text, max_chars=500, *, suffix="..."):
+        if len(text) <= max_chars: return text
+        return text[:max_chars - len(suffix)] + suffix
+
 logger = logging.getLogger("loom.tools.result_aggregator")
 
 MAX_RESULTS, MAX_TEXTS, MAX_TEXT_LENGTH = 100, 50, 50000
@@ -146,7 +153,7 @@ async def research_aggregate_texts(
         else:
             output_text = "\n".join(str(t) for t in texts)
 
-        output_text = output_text[:max_length] + ("..." if len(output_text) > max_length else "")
+        output_text = truncate(output_text, max_length)
         compression_ratio = round(len(output_text) / input_chars, 2) if input_chars > 0 else 0
 
         logger.info("aggregate_texts completed method=%s input_count=%d output_len=%d",

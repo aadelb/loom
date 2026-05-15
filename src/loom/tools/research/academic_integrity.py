@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from typing import Any
 from urllib.parse import quote
@@ -10,7 +9,7 @@ from urllib.parse import quote
 import httpx
 
 from loom.error_responses import handle_tool_errors
-from loom.http_helpers import fetch_json, fetch_text
+from loom.http_helpers import fetch_json
 
 logger = logging.getLogger("loom.tools.academic_integrity")
 

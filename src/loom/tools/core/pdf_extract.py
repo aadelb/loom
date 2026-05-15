@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-import asyncio
 import io
 import logging
 import os
-import subprocess
 import tempfile
 from typing import Any
 
@@ -14,6 +12,15 @@ import httpx
 
 from loom.validators import UrlSafetyError, validate_url
 from loom.error_responses import handle_tool_errors
+from loom.subprocess_helpers import run_command
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text: str, max_chars: int = 500, *, suffix: str = "...") -> str:
+        """Fallback truncate if text_utils unavailable."""
+        if len(text) <= max_chars:
+            return text
+        return text[: max_chars - len(suffix)] + suffix
 
 logger = logging.getLogger("loom.tools.pdf_extract")
 
@@ -92,20 +99,20 @@ def _extract_pdf_text_pdftotext(pdf_bytes: bytes, start_page: int | None, end_pa
 
         cmd.extend([tmp_path, "-"])
 
-        result = subprocess.run(
+        result = run_command(
             cmd,
             capture_output=True,
             text=True,
             timeout=30,
         )
 
-        if result.returncode != 0:
-            logger.warning("pdftotext_failed returncode=%d", result.returncode)
+        if not result["success"]:
+            logger.warning("pdftotext_failed returncode=%d", result["returncode"])
             return None, None, None
 
         logger.info("pdf_extraction_pdftotext_success")
         # pdftotext doesn't report page count
-        return result.stdout, "pdftotext", None
+        return result["stdout"], "pdftotext", None
 
     except FileNotFoundError:
         logger.error("pdftotext_not_found")
@@ -341,7 +348,7 @@ async def research_pdf_search(url: str, query: str) -> dict[str, Any]:
 
                 # Truncate context to reasonable length
                 if len(context) > 500:
-                    context = context[:500] + "..."
+                    context = truncate(context, 500) + "..."
 
                 matches.append({
                     "line": line_idx + 1,

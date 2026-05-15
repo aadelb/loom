@@ -8,7 +8,7 @@ from __future__ import annotations
 import pytest
 
 from loom.redis_store import close_redis_store, get_redis_store
-from loom.tools.redis_tools import research_redis_flush_cache, research_redis_stats
+from loom.tools.infrastructure.redis_tools import research_redis_flush_cache, research_redis_stats
 
 
 @pytest.mark.asyncio

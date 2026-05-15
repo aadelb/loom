@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from loom.tools.pipeline_enhancer import (
+from loom.tools.infrastructure.pipeline_enhancer import (
     research_enhance,
     research_enhance_batch,
     _default_hcs_scores,
@@ -27,7 +27,7 @@ class TestExecuteTool:
     async def test_execute_tool_fetch(self) -> None:
         """Execute research_fetch tool."""
         # Mock the fetch module
-        with patch("loom.tools.fetch.research_fetch", new_callable=AsyncMock) as mock_fetch:
+        with patch("loom.tools.core.fetch.research_fetch", new_callable=AsyncMock) as mock_fetch:
             mock_fetch.return_value = {"url": "https://example.com", "text": "test"}
             result = await _execute_tool("research_fetch", {"url": "https://example.com"})
             assert result == {"url": "https://example.com", "text": "test"}
@@ -198,7 +198,7 @@ class TestResearchEnhance:
     @pytest.mark.asyncio
     async def test_enhance_basic_execution(self) -> None:
         """Execute basic enhancement with all defaults."""
-        with patch("loom.tools.pipeline_enhancer._execute_tool", new_callable=AsyncMock) as mock_exec:
+        with patch("loom.tools.infrastructure.pipeline_enhancer._execute_tool", new_callable=AsyncMock) as mock_exec:
             mock_exec.return_value = {"result": "test"}
             result = await research_enhance("research_fetch", {"url": "https://example.com"})
             assert "_original_result" in result
@@ -207,7 +207,7 @@ class TestResearchEnhance:
     @pytest.mark.asyncio
     async def test_enhance_with_cost_estimation(self) -> None:
         """Enable cost estimation."""
-        with patch("loom.tools.pipeline_enhancer._execute_tool", new_callable=AsyncMock) as mock_exec:
+        with patch("loom.tools.infrastructure.pipeline_enhancer._execute_tool", new_callable=AsyncMock) as mock_exec:
             mock_exec.return_value = {"result": "test"}
             result = await research_enhance(
                 "research_fetch",
@@ -220,7 +220,7 @@ class TestResearchEnhance:
     @pytest.mark.asyncio
     async def test_enhance_with_hcs_scoring(self) -> None:
         """Enable HCS scoring."""
-        with patch("loom.tools.pipeline_enhancer._execute_tool", new_callable=AsyncMock) as mock_exec:
+        with patch("loom.tools.infrastructure.pipeline_enhancer._execute_tool", new_callable=AsyncMock) as mock_exec:
             mock_exec.return_value = "test response"
             result = await research_enhance(
                 "research_fetch",
@@ -233,7 +233,7 @@ class TestResearchEnhance:
     @pytest.mark.asyncio
     async def test_enhance_all_features_disabled(self) -> None:
         """Run with all enrichment disabled."""
-        with patch("loom.tools.pipeline_enhancer._execute_tool", new_callable=AsyncMock) as mock_exec:
+        with patch("loom.tools.infrastructure.pipeline_enhancer._execute_tool", new_callable=AsyncMock) as mock_exec:
             mock_exec.return_value = {"result": "test"}
             result = await research_enhance(
                 "research_fetch",
@@ -253,7 +253,7 @@ class TestResearchEnhance:
     @pytest.mark.asyncio
     async def test_enhance_handles_tool_error(self) -> None:
         """Handle tool execution errors gracefully."""
-        with patch("loom.tools.pipeline_enhancer._execute_tool", new_callable=AsyncMock) as mock_exec:
+        with patch("loom.tools.infrastructure.pipeline_enhancer._execute_tool", new_callable=AsyncMock) as mock_exec:
             mock_exec.side_effect = Exception("Tool execution failed")
             result = await research_enhance("research_fetch", {"url": "https://example.com"})
             assert "_error" in result
@@ -262,7 +262,7 @@ class TestResearchEnhance:
     @pytest.mark.asyncio
     async def test_enhance_execution_time_recorded(self) -> None:
         """Always record execution time."""
-        with patch("loom.tools.pipeline_enhancer._execute_tool", new_callable=AsyncMock) as mock_exec:
+        with patch("loom.tools.infrastructure.pipeline_enhancer._execute_tool", new_callable=AsyncMock) as mock_exec:
             mock_exec.return_value = {"result": "test"}
             result = await research_enhance("research_fetch", {"url": "https://example.com"})
             assert "_execution_time_ms" in result
@@ -276,7 +276,7 @@ class TestResearchEnhanceBatch:
     @pytest.mark.asyncio
     async def test_batch_single_task(self) -> None:
         """Execute batch with single task."""
-        with patch("loom.tools.pipeline_enhancer._execute_tool", new_callable=AsyncMock) as mock_exec:
+        with patch("loom.tools.infrastructure.pipeline_enhancer._execute_tool", new_callable=AsyncMock) as mock_exec:
             mock_exec.return_value = {"result": "test"}
             result = await research_enhance_batch([
                 {
@@ -293,7 +293,7 @@ class TestResearchEnhanceBatch:
     @pytest.mark.asyncio
     async def test_batch_multiple_tasks(self) -> None:
         """Execute batch with multiple tasks."""
-        with patch("loom.tools.pipeline_enhancer._execute_tool", new_callable=AsyncMock) as mock_exec:
+        with patch("loom.tools.infrastructure.pipeline_enhancer._execute_tool", new_callable=AsyncMock) as mock_exec:
             mock_exec.return_value = {"result": "test"}
             tasks = [
                 {"tool_name": "research_fetch", "params": {"url": "https://a.com"}},
@@ -308,7 +308,7 @@ class TestResearchEnhanceBatch:
     @pytest.mark.asyncio
     async def test_batch_partial_failures(self) -> None:
         """Handle partial failures in batch."""
-        with patch("loom.tools.pipeline_enhancer._execute_tool", new_callable=AsyncMock) as mock_exec:
+        with patch("loom.tools.infrastructure.pipeline_enhancer._execute_tool", new_callable=AsyncMock) as mock_exec:
             # First call succeeds, second fails
             mock_exec.side_effect = [
                 {"result": "test1"},
@@ -327,7 +327,7 @@ class TestResearchEnhanceBatch:
     @pytest.mark.asyncio
     async def test_batch_with_custom_flags(self) -> None:
         """Batch respects custom enhancement flags."""
-        with patch("loom.tools.pipeline_enhancer._execute_tool", new_callable=AsyncMock) as mock_exec:
+        with patch("loom.tools.infrastructure.pipeline_enhancer._execute_tool", new_callable=AsyncMock) as mock_exec:
             mock_exec.return_value = {"result": "test"}
             tasks = [
                 {
@@ -343,7 +343,7 @@ class TestResearchEnhanceBatch:
     @pytest.mark.asyncio
     async def test_batch_timing(self) -> None:
         """Batch records total execution time."""
-        with patch("loom.tools.pipeline_enhancer._execute_tool", new_callable=AsyncMock) as mock_exec:
+        with patch("loom.tools.infrastructure.pipeline_enhancer._execute_tool", new_callable=AsyncMock) as mock_exec:
             mock_exec.return_value = {"result": "test"}
             tasks = [
                 {"tool_name": "research_fetch", "params": {"url": "https://example.com"}},
@@ -360,8 +360,8 @@ class TestEnhancementIntegration:
     @pytest.mark.asyncio
     async def test_enhance_with_reframing_strategy(self) -> None:
         """Enhance result with reframing strategy data."""
-        with patch("loom.tools.pipeline_enhancer._execute_tool", new_callable=AsyncMock) as mock_exec:
-            with patch("loom.tools.pipeline_enhancer._feed_to_meta_learner", new_callable=AsyncMock) as mock_learn:
+        with patch("loom.tools.infrastructure.pipeline_enhancer._execute_tool", new_callable=AsyncMock) as mock_exec:
+            with patch("loom.tools.infrastructure.pipeline_enhancer._feed_to_meta_learner", new_callable=AsyncMock) as mock_learn:
                 mock_exec.return_value = {"response": "bypassed content"}
                 mock_learn.return_value = True
                 result = await research_enhance(
@@ -388,8 +388,8 @@ class TestEnhancementIntegration:
             await asyncio.sleep(0.01)
             return _default_hcs_scores()
 
-        with patch("loom.tools.pipeline_enhancer._execute_tool", new_callable=AsyncMock) as mock_exec:
-            with patch("loom.tools.pipeline_enhancer._score_with_hcs", side_effect=slow_hcs_score):
+        with patch("loom.tools.infrastructure.pipeline_enhancer._execute_tool", new_callable=AsyncMock) as mock_exec:
+            with patch("loom.tools.infrastructure.pipeline_enhancer._score_with_hcs", side_effect=slow_hcs_score):
                 mock_exec.return_value = "test response"
                 result = await research_enhance(
                     "research_fetch",

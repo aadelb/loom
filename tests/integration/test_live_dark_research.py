@@ -58,7 +58,7 @@ class TestResearchDarkForum:
         - If TOR_ENABLED=false: returns graceful response (may have 0 results or error)
         - Either way: No exceptions, valid dict structure
         """
-        from loom.tools.dark_forum import research_dark_forum
+        from loom.tools.intelligence.dark_forum import research_dark_forum
 
         # Basic search query
         result = research_dark_forum(query="security", max_results=10)
@@ -95,7 +95,7 @@ class TestResearchDarkForum:
         Searches for common security threat keywords (e.g., 'ransomware', 'exploit').
         Tests resilience with realistic dark web search patterns.
         """
-        from loom.tools.dark_forum import research_dark_forum
+        from loom.tools.intelligence.dark_forum import research_dark_forum
 
         keywords = ["exploit", "malware", "threat"]
         for keyword in keywords:
@@ -113,7 +113,7 @@ class TestResearchDarkForum:
     @pytest.mark.timeout(30)
     def test_dark_forum_max_results_limit(self) -> None:
         """Test dark_forum respects max_results parameter."""
-        from loom.tools.dark_forum import research_dark_forum
+        from loom.tools.intelligence.dark_forum import research_dark_forum
 
         result = research_dark_forum(query="test", max_results=3)
 
@@ -134,7 +134,7 @@ class TestResearchOnionDiscover:
         - If TOR_ENABLED=false: may return 0 results but valid structure
         - Either way: No exceptions, valid dict structure
         """
-        from loom.tools.onion_discover import research_onion_discover
+        from loom.tools.intelligence.onion_discover import research_onion_discover
 
         result = research_onion_discover(query="market", max_results=10)
 
@@ -163,7 +163,7 @@ class TestResearchOnionDiscover:
     @pytest.mark.timeout(30)
     def test_onion_discover_sources_checked(self) -> None:
         """Test onion_discover reports all sources checked."""
-        from loom.tools.onion_discover import research_onion_discover
+        from loom.tools.intelligence.onion_discover import research_onion_discover
 
         result = research_onion_discover(query="search", max_results=5)
 
@@ -182,7 +182,7 @@ class TestResearchOnionDiscover:
     @pytest.mark.timeout(30)
     def test_onion_discover_max_results(self) -> None:
         """Test onion_discover respects max_results parameter."""
-        from loom.tools.onion_discover import research_onion_discover
+        from loom.tools.intelligence.onion_discover import research_onion_discover
 
         result = research_onion_discover(query="forum", max_results=5)
 
@@ -204,7 +204,7 @@ class TestResearchDarkwebEarlyWarning:
         - If TOR_ENABLED=false: may return no alerts but valid structure
         - Either way: No exceptions, valid dict structure
         """
-        from loom.tools.darkweb_early_warning import research_darkweb_early_warning
+        from loom.tools.intelligence.darkweb_early_warning import research_darkweb_early_warning
 
         result = research_darkweb_early_warning(keywords=["exploit"], hours_back=72)
 
@@ -238,7 +238,7 @@ class TestResearchDarkwebEarlyWarning:
     @pytest.mark.timeout(30)
     def test_early_warning_multiple_keywords(self) -> None:
         """Test darkweb_early_warning with multiple keywords."""
-        from loom.tools.darkweb_early_warning import research_darkweb_early_warning
+        from loom.tools.intelligence.darkweb_early_warning import research_darkweb_early_warning
 
         keywords = ["malware", "ransomware", "breach"]
         result = research_darkweb_early_warning(keywords=keywords, hours_back=48)
@@ -260,7 +260,7 @@ class TestResearchDarkwebEarlyWarning:
 
         Should return a graceful error response.
         """
-        from loom.tools.darkweb_early_warning import research_darkweb_early_warning
+        from loom.tools.intelligence.darkweb_early_warning import research_darkweb_early_warning
 
         result = research_darkweb_early_warning(keywords=[], hours_back=72)
 
@@ -272,7 +272,7 @@ class TestResearchDarkwebEarlyWarning:
     @pytest.mark.timeout(30)
     def test_early_warning_severity_levels(self) -> None:
         """Test darkweb_early_warning returns valid severity levels."""
-        from loom.tools.darkweb_early_warning import research_darkweb_early_warning
+        from loom.tools.intelligence.darkweb_early_warning import research_darkweb_early_warning
 
         result = research_darkweb_early_warning(keywords=["zero-day"], hours_back=24)
 
@@ -306,7 +306,7 @@ class TestResearchTorStatus:
         - If Tor not running: tor_running=False, may have error message
         - Either way: No exceptions, valid dict structure
         """
-        from loom.tools.tor import research_tor_status
+        from loom.tools.infrastructure.tor import research_tor_status
 
         result = await research_tor_status()
 
@@ -335,7 +335,7 @@ class TestResearchTorStatus:
     @pytest.mark.asyncio
     async def test_tor_status_proxy_config(self) -> None:
         """Test tor_status reports configured proxy."""
-        from loom.tools.tor import research_tor_status
+        from loom.tools.infrastructure.tor import research_tor_status
 
         result = await research_tor_status()
 
@@ -362,7 +362,7 @@ class TestResearchTorNewIdentity:
         - If Tor not running: status is "failed" with error message
         - Either way: No exceptions, valid dict structure
         """
-        from loom.tools.tor import research_tor_new_identity
+        from loom.tools.infrastructure.tor import research_tor_new_identity
 
         result = await research_tor_new_identity()
 
@@ -392,7 +392,7 @@ class TestResearchTorNewIdentity:
 
         Sends two requests in quick succession and verifies the second is rate-limited.
         """
-        from loom.tools.tor import research_tor_new_identity
+        from loom.tools.infrastructure.tor import research_tor_new_identity
 
         # First request
         result1 = await research_tor_new_identity()
@@ -425,21 +425,21 @@ class TestDarkResearchGracefulDegradation:
             pytest.skip("Test requires Tor disabled", allow_module_level=False)
 
         # Test dark_forum
-        from loom.tools.dark_forum import research_dark_forum
+        from loom.tools.intelligence.dark_forum import research_dark_forum
 
         result = research_dark_forum(query="test", max_results=5)
         assert isinstance(result, dict), "dark_forum should return dict"
         assert "results" in result, "dark_forum should have results key"
 
         # Test onion_discover
-        from loom.tools.onion_discover import research_onion_discover
+        from loom.tools.intelligence.onion_discover import research_onion_discover
 
         result = research_onion_discover(query="test", max_results=5)
         assert isinstance(result, dict), "onion_discover should return dict"
         assert "onion_urls_found" in result, "onion_discover should have onion_urls_found key"
 
         # Test darkweb_early_warning
-        from loom.tools.darkweb_early_warning import research_darkweb_early_warning
+        from loom.tools.intelligence.darkweb_early_warning import research_darkweb_early_warning
 
         result = research_darkweb_early_warning(keywords=["test"], hours_back=24)
         assert isinstance(result, dict), "darkweb_early_warning should return dict"
@@ -450,7 +450,7 @@ class TestDarkResearchGracefulDegradation:
     @pytest.mark.asyncio
     async def test_tor_tools_return_valid_responses(self) -> None:
         """Test Tor tools return valid responses regardless of Tor status."""
-        from loom.tools.tor import research_tor_new_identity, research_tor_status
+        from loom.tools.infrastructure.tor import research_tor_new_identity, research_tor_status
 
         # Test research_tor_status
         status_result = await research_tor_status()
@@ -470,7 +470,7 @@ class TestDarkResearchResponseValidation:
     @pytest.mark.timeout(30)
     def test_dark_forum_response_schema(self) -> None:
         """Validate complete schema of dark_forum response."""
-        from loom.tools.dark_forum import research_dark_forum
+        from loom.tools.intelligence.dark_forum import research_dark_forum
 
         result = research_dark_forum(query="test", max_results=5)
 
@@ -497,7 +497,7 @@ class TestDarkResearchResponseValidation:
     @pytest.mark.timeout(30)
     def test_onion_discover_response_schema(self) -> None:
         """Validate complete schema of onion_discover response."""
-        from loom.tools.onion_discover import research_onion_discover
+        from loom.tools.intelligence.onion_discover import research_onion_discover
 
         result = research_onion_discover(query="test", max_results=5)
 
@@ -520,7 +520,7 @@ class TestDarkResearchResponseValidation:
     @pytest.mark.timeout(30)
     def test_darkweb_early_warning_response_schema(self) -> None:
         """Validate complete schema of darkweb_early_warning response."""
-        from loom.tools.darkweb_early_warning import research_darkweb_early_warning
+        from loom.tools.intelligence.darkweb_early_warning import research_darkweb_early_warning
 
         result = research_darkweb_early_warning(keywords=["test"], hours_back=24)
 

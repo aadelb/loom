@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from loom.tools.screenshot import research_screenshot
+from loom.tools.core.screenshot import research_screenshot
 
 
 class TestScreenshot:
@@ -52,7 +52,7 @@ class TestScreenshot:
     @pytest.mark.asyncio
     async def test_screenshot_playwright_not_available(self) -> None:
         """Tool handles Playwright unavailable gracefully."""
-        with patch("loom.tools.screenshot._HAS_PLAYWRIGHT", False):
+        with patch("loom.tools.core.screenshot._HAS_PLAYWRIGHT", False):
             result = await research_screenshot(url="https://example.com")
 
             assert "error" in result
@@ -72,7 +72,7 @@ class TestScreenshot:
         mock_browser = AsyncMock()
         mock_browser.new_page = AsyncMock(return_value=mock_page)
 
-        with patch("loom.tools.screenshot.async_playwright") as mock_pw:
+        with patch("loom.tools.core.screenshot.async_playwright") as mock_pw:
             mock_pw.return_value.__aenter__.return_value.chromium.launch = AsyncMock(
                 return_value=mock_browser
             )
@@ -100,7 +100,7 @@ class TestScreenshot:
         mock_browser = AsyncMock()
         mock_browser.new_page = AsyncMock(return_value=mock_page)
 
-        with patch("loom.tools.screenshot.async_playwright") as mock_pw:
+        with patch("loom.tools.core.screenshot.async_playwright") as mock_pw:
             mock_pw.return_value.__aenter__.return_value.chromium.launch = AsyncMock(
                 return_value=mock_browser
             )
@@ -128,7 +128,7 @@ class TestScreenshot:
         mock_browser = AsyncMock()
         mock_browser.new_page = AsyncMock(return_value=mock_page)
 
-        with patch("loom.tools.screenshot.async_playwright") as mock_pw:
+        with patch("loom.tools.core.screenshot.async_playwright") as mock_pw:
             mock_pw.return_value.__aenter__.return_value.chromium.launch = AsyncMock(
                 return_value=mock_browser
             )
@@ -150,7 +150,7 @@ class TestScreenshot:
         mock_browser = AsyncMock()
         mock_browser.new_page = AsyncMock(return_value=mock_page)
 
-        with patch("loom.tools.screenshot.async_playwright") as mock_pw:
+        with patch("loom.tools.core.screenshot.async_playwright") as mock_pw:
             mock_pw.return_value.__aenter__.return_value.chromium.launch = AsyncMock(
                 return_value=mock_browser
             )
@@ -171,7 +171,7 @@ class TestScreenshot:
         mock_browser = AsyncMock()
         mock_browser.new_page = AsyncMock(return_value=mock_page)
 
-        with patch("loom.tools.screenshot.async_playwright") as mock_pw:
+        with patch("loom.tools.core.screenshot.async_playwright") as mock_pw:
             mock_pw.return_value.__aenter__.return_value.chromium.launch = AsyncMock(
                 return_value=mock_browser
             )
@@ -192,7 +192,7 @@ class TestScreenshot:
         mock_browser = AsyncMock()
         mock_browser.new_page = AsyncMock(return_value=mock_page)
 
-        with patch("loom.tools.screenshot.async_playwright") as mock_pw:
+        with patch("loom.tools.core.screenshot.async_playwright") as mock_pw:
             mock_pw.return_value.__aenter__.return_value.chromium.launch = AsyncMock(
                 return_value=mock_browser
             )
@@ -214,7 +214,7 @@ class TestScreenshot:
         mock_browser.new_page = AsyncMock(return_value=mock_page)
         mock_browser.close = AsyncMock()
 
-        with patch("loom.tools.screenshot.async_playwright") as mock_pw:
+        with patch("loom.tools.core.screenshot.async_playwright") as mock_pw:
             mock_pw.return_value.__aenter__.return_value.chromium.launch = AsyncMock(
                 return_value=mock_browser
             )

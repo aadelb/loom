@@ -11,9 +11,9 @@ import pytest
 
 @pytest.fixture(autouse=True)
 def _clear_joplin_module():
-    sys.modules.pop("loom.tools.joplin", None)
+    sys.modules.pop("loom.tools.infrastructure.joplin", None)
     yield
-    sys.modules.pop("loom.tools.joplin", None)
+    sys.modules.pop("loom.tools.infrastructure.joplin", None)
 
 
 @pytest.mark.asyncio
@@ -21,7 +21,7 @@ class TestResearchSaveNote:
     async def test_missing_token(self):
         """Test returns error when JOPLIN_TOKEN is not set."""
         with patch.dict("os.environ", {}, clear=True):
-            from loom.tools.joplin import research_save_note
+            from loom.tools.infrastructure.joplin import research_save_note
 
             result = await research_save_note(
                 title="Test Note",
@@ -34,7 +34,7 @@ class TestResearchSaveNote:
     async def test_empty_title(self):
         """Test returns error with empty title."""
         with patch.dict("os.environ", {"JOPLIN_TOKEN": "token123"}):
-            from loom.tools.joplin import research_save_note
+            from loom.tools.infrastructure.joplin import research_save_note
 
             result = await research_save_note(
                 title="",
@@ -47,7 +47,7 @@ class TestResearchSaveNote:
     async def test_empty_body(self):
         """Test returns error with empty body."""
         with patch.dict("os.environ", {"JOPLIN_TOKEN": "token123"}):
-            from loom.tools.joplin import research_save_note
+            from loom.tools.infrastructure.joplin import research_save_note
 
             result = await research_save_note(
                 title="Test",
@@ -60,7 +60,7 @@ class TestResearchSaveNote:
     async def test_title_exceeds_max_length(self):
         """Test returns error when title exceeds max length."""
         with patch.dict("os.environ", {"JOPLIN_TOKEN": "token123"}):
-            from loom.tools.joplin import research_save_note
+            from loom.tools.infrastructure.joplin import research_save_note
 
             long_title = "x" * 501
             result = await research_save_note(
@@ -74,7 +74,7 @@ class TestResearchSaveNote:
     async def test_body_exceeds_max_length(self):
         """Test returns error when body exceeds max length."""
         with patch.dict("os.environ", {"JOPLIN_TOKEN": "token123"}):
-            from loom.tools.joplin import research_save_note
+            from loom.tools.infrastructure.joplin import research_save_note
 
             long_body = "x" * 100001
             result = await research_save_note(
@@ -88,7 +88,7 @@ class TestResearchSaveNote:
     async def test_invalid_notebook_id(self):
         """Test returns error with invalid notebook ID format."""
         with patch.dict("os.environ", {"JOPLIN_TOKEN": "token123"}):
-            from loom.tools.joplin import research_save_note
+            from loom.tools.infrastructure.joplin import research_save_note
 
             result = await research_save_note(
                 title="Test",
@@ -116,7 +116,7 @@ class TestResearchSaveNote:
             mock_instance.__aexit__ = AsyncMock(return_value=None)
             mock_client_class.return_value = mock_instance
 
-            from loom.tools.joplin import research_save_note
+            from loom.tools.infrastructure.joplin import research_save_note
 
             result = await research_save_note(
                 title="Test Note",
@@ -144,7 +144,7 @@ class TestResearchSaveNote:
             mock_instance.__aexit__ = AsyncMock(return_value=None)
             mock_client_class.return_value = mock_instance
 
-            from loom.tools.joplin import research_save_note
+            from loom.tools.infrastructure.joplin import research_save_note
 
             result = await research_save_note(
                 title="Test Note",
@@ -176,7 +176,7 @@ class TestResearchSaveNote:
             mock_instance.__aexit__ = AsyncMock(return_value=None)
             mock_client_class.return_value = mock_instance
 
-            from loom.tools.joplin import research_save_note
+            from loom.tools.infrastructure.joplin import research_save_note
 
             result = await research_save_note(
                 title="Test",
@@ -205,7 +205,7 @@ class TestResearchSaveNote:
             mock_instance.__aexit__ = AsyncMock(return_value=None)
             mock_client_class.return_value = mock_instance
 
-            from loom.tools.joplin import research_save_note
+            from loom.tools.infrastructure.joplin import research_save_note
 
             result = await research_save_note(
                 title="Test",
@@ -228,7 +228,7 @@ class TestResearchSaveNote:
             mock_instance.__aexit__ = AsyncMock(return_value=None)
             mock_client_class.return_value = mock_instance
 
-            from loom.tools.joplin import research_save_note
+            from loom.tools.infrastructure.joplin import research_save_note
 
             result = await research_save_note(
                 title="Test",
@@ -251,7 +251,7 @@ class TestResearchSaveNote:
             mock_instance.__aexit__ = AsyncMock(return_value=None)
             mock_client_class.return_value = mock_instance
 
-            from loom.tools.joplin import research_save_note
+            from loom.tools.infrastructure.joplin import research_save_note
 
             result = await research_save_note(
                 title="Test",
@@ -266,7 +266,7 @@ class TestResearchListNotebooks:
     async def test_missing_token(self):
         """Test returns error when JOPLIN_TOKEN is not set."""
         with patch.dict("os.environ", {}, clear=True):
-            from loom.tools.joplin import research_list_notebooks
+            from loom.tools.infrastructure.joplin import research_list_notebooks
 
             result = await research_list_notebooks()
 
@@ -303,7 +303,7 @@ class TestResearchListNotebooks:
             mock_instance.__aexit__ = AsyncMock(return_value=None)
             mock_client_class.return_value = mock_instance
 
-            from loom.tools.joplin import research_list_notebooks
+            from loom.tools.infrastructure.joplin import research_list_notebooks
 
             result = await research_list_notebooks()
 
@@ -332,7 +332,7 @@ class TestResearchListNotebooks:
             mock_instance.__aexit__ = AsyncMock(return_value=None)
             mock_client_class.return_value = mock_instance
 
-            from loom.tools.joplin import research_list_notebooks
+            from loom.tools.infrastructure.joplin import research_list_notebooks
 
             result = await research_list_notebooks()
 
@@ -352,7 +352,7 @@ class TestResearchListNotebooks:
             mock_instance.__aexit__ = AsyncMock(return_value=None)
             mock_client_class.return_value = mock_instance
 
-            from loom.tools.joplin import research_list_notebooks
+            from loom.tools.infrastructure.joplin import research_list_notebooks
 
             result = await research_list_notebooks()
 
@@ -372,7 +372,7 @@ class TestResearchListNotebooks:
             mock_instance.__aexit__ = AsyncMock(return_value=None)
             mock_client_class.return_value = mock_instance
 
-            from loom.tools.joplin import research_list_notebooks
+            from loom.tools.infrastructure.joplin import research_list_notebooks
 
             result = await research_list_notebooks()
 
@@ -396,7 +396,7 @@ class TestResearchListNotebooks:
             mock_instance.__aexit__ = AsyncMock(return_value=None)
             mock_client_class.return_value = mock_instance
 
-            from loom.tools.joplin import research_list_notebooks
+            from loom.tools.infrastructure.joplin import research_list_notebooks
 
             result = await research_list_notebooks()
 
@@ -432,7 +432,7 @@ class TestResearchListNotebooks:
             mock_instance.__aexit__ = AsyncMock(return_value=None)
             mock_client_class.return_value = mock_instance
 
-            from loom.tools.joplin import research_list_notebooks
+            from loom.tools.infrastructure.joplin import research_list_notebooks
 
             result = await research_list_notebooks()
 

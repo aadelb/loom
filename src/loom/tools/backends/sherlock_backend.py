@@ -13,9 +13,11 @@ import json
 import logging
 import os
 import re
-import subprocess
 import tempfile
 from typing import Any
+
+from loom.error_responses import handle_tool_errors
+from loom.subprocess_helpers import run_command
 
 logger = logging.getLogger("loom.tools.sherlock_backend")
 
@@ -36,7 +38,7 @@ def _validate_username(username: str) -> str:
         ValueError: if username is invalid
     """
     username = username.strip() if isinstance(username, str) else ""
-    
+
     if not username or len(username) > 255:
         raise ValueError("username must be 1-255 characters")
 
@@ -63,7 +65,7 @@ def _validate_platform(platform: str) -> str:
         ValueError: if platform name is invalid
     """
     platform = platform.strip() if isinstance(platform, str) else ""
-    
+
     if not platform or len(platform) > 100:
         raise ValueError("platform must be 1-100 characters")
 
@@ -79,27 +81,27 @@ def _check_sherlock_available() -> tuple[bool, str]:
     Returns:
         Tuple of (available: bool, message: str)
     """
-    try:
-        result = subprocess.run(
-            ["sherlock", "--version"],
-            capture_output=True,
-            text=True,
-            timeout=5,
-        )
-        if result.returncode == 0:
-            return True, "Sherlock CLI found"
+    result = run_command(
+        ["sherlock", "--version"],
+        timeout=5,
+    )
+
+    if result["success"]:
+        return True, "Sherlock CLI found"
+    elif result.get("error"):
+        if "Command timed out" in result["error"]:
+            return False, "Sherlock CLI timeout during version check"
+        elif "Binary not found" in result["error"]:
+            return False, (
+                "Sherlock CLI not found. Install with: pip install sherlock-project"
+            )
         else:
-            return False, f"Sherlock version check failed: {result.stderr}"
-    except FileNotFoundError:
-        return False, (
-            "Sherlock CLI not found. Install with: pip install sherlock-project"
-        )
-    except subprocess.TimeoutExpired:
-        return False, "Sherlock CLI timeout during version check"
-    except Exception as exc:
-        return False, f"Sherlock availability check error: {str(exc)}"
+            return False, f"Sherlock availability check error: {result['error']}"
+    else:
+        return False, f"Sherlock version check failed: {result['stderr']}"
 
 
+@handle_tool_errors("research_sherlock_lookup")
 def research_sherlock_lookup(
     username: str, platforms: list[str] | None = None, timeout: int = 30
 ) -> dict[str, Any]:
@@ -163,10 +165,8 @@ def research_sherlock_lookup(
                     cmd.extend(["--site", platform])
 
             # Run sherlock
-            result = subprocess.run(
+            result = run_command(
                 cmd,
-                capture_output=True,
-                text=True,
                 timeout=timeout + 10,  # Give subprocess extra time beyond sherlock's timeout
             )
 
@@ -175,6 +175,28 @@ def research_sherlock_lookup(
                 "username": username,
                 "sherlock_available": True,
             }
+
+            # Check for timeout or other errors
+            if not result["success"]:
+                if result.get("error"):
+                    if "Command timed out" in result["error"]:
+                        return {
+                            "username": username,
+                            "error": f"Sherlock lookup timed out after {timeout} seconds",
+                            "sherlock_available": True,
+                        }
+                    else:
+                        return {
+                            "username": username,
+                            "error": f"Sherlock lookup error: {result['error']}",
+                            "sherlock_available": True,
+                        }
+                else:
+                    return {
+                        "username": username,
+                        "error": f"sherlock failed with return code {result['returncode']}",
+                        "sherlock_available": True,
+                    }
 
             try:
                 with open(output_file, "r") as f:
@@ -219,12 +241,6 @@ def research_sherlock_lookup(
             except Exception:
                 pass
 
-    except subprocess.TimeoutExpired:
-        return {
-            "username": username,
-            "error": f"Sherlock lookup timed out after {timeout} seconds",
-            "sherlock_available": True,
-        }
     except Exception as exc:
         return {
             "username": username,
@@ -233,6 +249,7 @@ def research_sherlock_lookup(
         }
 
 
+@handle_tool_errors("research_sherlock_batch")
 def research_sherlock_batch(
     usernames: list[str], platforms: list[str] | None = None, timeout: int = 30
 ) -> dict[str, Any]:

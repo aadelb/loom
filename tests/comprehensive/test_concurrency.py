@@ -36,7 +36,7 @@ class TestConcurrentCacheStats:
     @pytest.mark.asyncio
     async def test_50_concurrent_cache_stats_no_timeout(self) -> None:
         """50 concurrent cache_stats calls complete within 5 seconds."""
-        from loom.tools.cache_mgmt import research_cache_stats
+        from loom.tools.core.cache_mgmt import research_cache_stats
 
         start = time.perf_counter()
 
@@ -71,7 +71,7 @@ class TestConcurrentSearchMocked:
     @pytest.mark.asyncio
     async def test_20_concurrent_search_no_deadlock(self) -> None:
         """20 concurrent search calls complete without deadlock."""
-        from loom.tools.search import research_search
+        from loom.tools.core.search import research_search
 
         # Mock the search to avoid real network calls
         mock_result = {
@@ -85,12 +85,12 @@ class TestConcurrentSearchMocked:
         start = time.perf_counter()
         search_calls = []
 
-        # Mock the internal search provider calls
-        with patch("loom.tools.search._search_providers", new_callable=MagicMock):
-            with patch.object(
-                research_search, "__wrapped__", new_callable=AsyncMock
-            ) as mock_search:
-                mock_search.return_value = mock_result
+        # Mock the search function directly
+        with patch(
+            "loom.tools.core.search.research_search",
+            new_callable=AsyncMock,
+            return_value=mock_result,
+        ) as mock_search:
 
                 # Create 20 concurrent search tasks
                 tasks = [
@@ -120,7 +120,7 @@ class TestMemoryLeakDetection:
 
     def test_100_tool_calls_no_memory_growth(self) -> None:
         """100 tool calls should not cause >10MB memory growth."""
-        from loom.tools.cache_mgmt import research_cache_stats
+        from loom.tools.core.cache_mgmt import research_cache_stats
 
         # Force garbage collection and get baseline
         gc.collect()
@@ -187,8 +187,8 @@ class TestToolChainRecursion:
         # Should terminate at max_depth
         assert result["depth"] == max_depth, f"Expected depth {max_depth}, got {result['depth']}"
 
-        # Call count should be 3 * max_depth (each level calls 3 tools)
-        expected_calls = 3 * (max_depth + 1)
+        # Call count should be max_depth + 1 (each depth calls one function in the chain)
+        expected_calls = max_depth + 1
         assert call_count == expected_calls, f"Expected {expected_calls} calls, got {call_count}"
 
         logger.info(f"Tool chain completed with {call_count} calls at depth {max_depth}")
@@ -264,7 +264,7 @@ class TestRateLimiterConcurrency:
         """Rate limiter should track concurrent calls without race conditions."""
         from loom.rate_limiter import RateLimiter
 
-        limiter = RateLimiter()
+        limiter = RateLimiter(max_calls=60, window_seconds=60)
 
         # Track call counts per user
         call_counts: dict[str, int] = {}
@@ -272,7 +272,7 @@ class TestRateLimiterConcurrency:
 
         async def make_limited_call(user_id: str, call_num: int) -> dict[str, Any]:
             """Make a rate-limited call and track it."""
-            result = limiter.check_limit(
+            result = await limiter.check(
                 user_id=user_id,
                 category="test",
                 tier="pro",  # pro tier: 60 per minute
@@ -284,7 +284,7 @@ class TestRateLimiterConcurrency:
             return {
                 "user": user_id,
                 "call": call_num,
-                "allowed": result.get("allowed", True),
+                "allowed": result,
                 "count": call_counts.get(user_id),
             }
 
@@ -320,7 +320,7 @@ class TestConcurrencyStressTest:
     @pytest.mark.asyncio
     async def test_mixed_concurrent_workload(self) -> None:
         """Mixed workload: cache reads, limited writes, chain calls."""
-        from loom.tools.cache_mgmt import research_cache_stats
+        from loom.tools.core.cache_mgmt import research_cache_stats
         from loom.cache import CacheStore
 
         cache = CacheStore(base_dir="/tmp/loom_test_stress")

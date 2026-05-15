@@ -11,9 +11,9 @@ import pytest
 @pytest.fixture(autouse=True)
 def _clear_module_cache():
     """Ensure clean import state for each test."""
-    sys.modules.pop("loom.tools.creative", None)
+    sys.modules.pop("loom.tools.llm.creative", None)
     yield
-    sys.modules.pop("loom.tools.creative", None)
+    sys.modules.pop("loom.tools.llm.creative", None)
 
 
 @pytest.mark.asyncio
@@ -29,9 +29,9 @@ class TestCreativeTools:
 
         with (
             patch("loom.tools.llm.research_llm_chat", return_value=mock_llm_result),
-            patch("loom.tools.search.research_search", return_value=mock_search_result),
+            patch("loom.tools.core.search.research_search", return_value=mock_search_result),
         ):
-            from loom.tools.creative import research_red_team
+            from loom.tools.llm.creative import research_red_team
 
             result = await research_red_team("Test claim")
 
@@ -43,8 +43,8 @@ class TestCreativeTools:
         assert len(result["counter_arguments"][0]["sources"]) == 2
 
     async def test_research_red_team_llm_not_available(self):
-        with patch.dict("sys.modules", {"loom.tools.llm": None}):
-            from loom.tools.creative import research_red_team
+        with patch.dict("sys.modules", {"loom.tools.llm.llm": None}):
+            from loom.tools.llm.creative import research_red_team
 
             result = await research_red_team("Test claim")
             assert "error" in result
@@ -52,8 +52,8 @@ class TestCreativeTools:
     async def test_research_multilingual_basic(self):
         mock_search_result = {"results": [{"title": "Res 1", "url": "http://res1.com"}]}
 
-        with patch("loom.tools.search.research_search", return_value=mock_search_result):
-            from loom.tools.creative import research_multilingual
+        with patch("loom.tools.core.search.research_search", return_value=mock_search_result):
+            from loom.tools.llm.creative import research_multilingual
 
             result = await research_multilingual("test query", languages=["ar", "es"])
 
@@ -71,8 +71,8 @@ class TestCreativeTools:
             ]
         }
 
-        with patch("loom.tools.search.research_search", return_value=mock_search_result):
-            from loom.tools.creative import research_consensus
+        with patch("loom.tools.core.search.research_search", return_value=mock_search_result):
+            from loom.tools.llm.creative import research_consensus
 
             result = await research_consensus("test query", providers=["exa", "ddgs"])
 
@@ -88,9 +88,9 @@ class TestCreativeTools:
 
         with (
             patch("loom.tools.llm.research_llm_chat", return_value=mock_llm_result),
-            patch("loom.tools.search.research_search", return_value=mock_search_result),
+            patch("loom.tools.core.search.research_search", return_value=mock_search_result),
         ):
-            from loom.tools.creative import research_misinfo_check
+            from loom.tools.llm.creative import research_misinfo_check
 
             result = await research_misinfo_check("True claim")
 
@@ -106,14 +106,14 @@ class TestCreativeTools:
         mock_llm = {"text": "Summary of changes"}
 
         with (
-            patch("loom.tools.enrich.research_wayback", return_value=mock_wayback),
+            patch("loom.tools.core.enrich.research_wayback", return_value=mock_wayback),
             patch(
                 "loom.providers.trafilatura_extract.extract_with_trafilatura",
                 return_value=mock_extract,
             ),
             patch("loom.tools.llm.research_llm_chat", return_value=mock_llm),
         ):
-            from loom.tools.creative import research_temporal_diff
+            from loom.tools.llm.creative import research_temporal_diff
 
             result = await research_temporal_diff("http://example.com")
 
@@ -122,8 +122,8 @@ class TestCreativeTools:
         assert result["changes_summary"] == "Summary of changes"
 
     async def test_research_temporal_diff_no_archive(self):
-        with patch("loom.tools.enrich.research_wayback", return_value={"snapshots": []}):
-            from loom.tools.creative import research_temporal_diff
+        with patch("loom.tools.core.enrich.research_wayback", return_value={"snapshots": []}):
+            from loom.tools.llm.creative import research_temporal_diff
 
             result = await research_temporal_diff("http://example.com")
 
@@ -183,7 +183,7 @@ class TestCreativeTools:
         mock_client.get.side_effect = mock_get
 
         with patch("httpx.Client", return_value=mock_client):
-            from loom.tools.creative import research_citation_graph
+            from loom.tools.llm.creative import research_citation_graph
 
             result = await research_citation_graph("Seed Paper")
 
@@ -203,7 +203,7 @@ class TestCreativeTools:
         mock_client.get.return_value = mock_search_resp
 
         with patch("httpx.Client", return_value=mock_client):
-            from loom.tools.creative import research_citation_graph
+            from loom.tools.llm.creative import research_citation_graph
 
             result = await research_citation_graph("Unknown Paper")
 
@@ -216,7 +216,7 @@ class TestCreativeTools:
         }
 
         with patch("loom.tools.llm.research_llm_chat", return_value=mock_llm):
-            from loom.tools.creative import research_ai_detect
+            from loom.tools.llm.creative import research_ai_detect
 
             result = await research_ai_detect("x" * 150)
 
@@ -226,7 +226,7 @@ class TestCreativeTools:
         assert result["verdict"] == "likely_ai"
 
     async def test_research_ai_detect_short_text(self):
-        from loom.tools.creative import research_ai_detect
+        from loom.tools.llm.creative import research_ai_detect
 
         result = await research_ai_detect("short")
         assert "error" in result
@@ -242,10 +242,10 @@ class TestCreativeTools:
         }
 
         with (
-            patch("loom.tools.search.research_search", return_value=mock_search),
+            patch("loom.tools.core.search.research_search", return_value=mock_search),
             patch("loom.providers.arxiv_search.search_arxiv", return_value=mock_arxiv),
         ):
-            from loom.tools.creative import research_curriculum
+            from loom.tools.llm.creative import research_curriculum
 
             result = await research_curriculum("Python")
 
@@ -261,7 +261,7 @@ class TestCreativeTools:
             patch("loom.providers.hn_reddit.search_hackernews", return_value=mock_hn),
             patch("loom.providers.hn_reddit.search_reddit", return_value=mock_reddit),
         ):
-            from loom.tools.creative import research_community_sentiment
+            from loom.tools.llm.creative import research_community_sentiment
 
             result = await research_community_sentiment("Rust")
 
@@ -313,7 +313,7 @@ class TestCreativeTools:
         mock_client.get.side_effect = mock_get
 
         with patch("httpx.Client", return_value=mock_client):
-            from loom.tools.creative import research_wiki_ghost
+            from loom.tools.llm.creative import research_wiki_ghost
 
             result = await research_wiki_ghost("Test Topic")
 
@@ -334,7 +334,7 @@ class TestCreativeTools:
         mock_client.get.return_value = mock_search_resp
 
         with patch("httpx.Client", return_value=mock_client):
-            from loom.tools.creative import research_wiki_ghost
+            from loom.tools.llm.creative import research_wiki_ghost
 
             result = await research_wiki_ghost("Unknown Topic")
 
@@ -367,7 +367,7 @@ class TestCreativeTools:
             ),
             patch("loom.tools.llm.research_llm_embed", return_value=mock_embed),
         ):
-            from loom.tools.creative import research_semantic_sitemap
+            from loom.tools.llm.creative import research_semantic_sitemap
 
             result = await research_semantic_sitemap("example.com", cluster_threshold=0.5)
 
@@ -384,7 +384,7 @@ class TestCreativeTools:
         mock_client.get.return_value = mock_resp
 
         with patch("httpx.Client", return_value=mock_client):
-            from loom.tools.creative import research_semantic_sitemap
+            from loom.tools.llm.creative import research_semantic_sitemap
 
             result = await research_semantic_sitemap("example.com")
 

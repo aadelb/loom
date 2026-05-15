@@ -23,7 +23,7 @@ class TestSearchTools:
     def test_search_module_callable(self) -> None:
         """Search tools are callable."""
         try:
-            from loom.tools.search import research_search
+            from loom.tools.core.search import research_search
 
             assert callable(research_search)
         except ImportError:
@@ -32,7 +32,7 @@ class TestSearchTools:
     def test_deep_search_callable(self) -> None:
         """Deep search tool is callable."""
         try:
-            from loom.tools.deep import research_deep
+            from loom.tools.core.deep import research_deep
 
             assert callable(research_deep)
         except ImportError:
@@ -45,7 +45,7 @@ class TestFetchTools:
     def test_fetch_callable(self) -> None:
         """Fetch tool is callable."""
         try:
-            from loom.tools.fetch import research_fetch
+            from loom.tools.core.fetch import research_fetch
 
             assert callable(research_fetch)
         except ImportError:
@@ -54,7 +54,7 @@ class TestFetchTools:
     def test_spider_callable(self) -> None:
         """Spider tool is callable."""
         try:
-            from loom.tools.spider import research_spider
+            from loom.tools.core.spider import research_spider
 
             assert callable(research_spider)
         except ImportError:
@@ -63,7 +63,7 @@ class TestFetchTools:
     def test_markdown_callable(self) -> None:
         """Markdown tool is callable."""
         try:
-            from loom.tools.markdown import research_markdown
+            from loom.tools.core.markdown import research_markdown
 
             assert callable(research_markdown)
         except ImportError:
@@ -76,7 +76,7 @@ class TestLLMTools:
     def test_llm_summarize_callable(self) -> None:
         """LLM summarize tool is callable."""
         try:
-            from loom.tools.llm import research_llm_summarize
+            from loom.tools.llm.llm import research_llm_summarize
 
             assert callable(research_llm_summarize)
         except ImportError:
@@ -85,7 +85,7 @@ class TestLLMTools:
     def test_llm_chat_callable(self) -> None:
         """LLM chat tool is callable."""
         try:
-            from loom.tools.llm import research_llm_chat
+            from loom.tools.llm.llm import research_llm_chat
 
             assert callable(research_llm_chat)
         except ImportError:
@@ -94,7 +94,7 @@ class TestLLMTools:
     def test_ask_all_models_callable(self) -> None:
         """Multi-LLM tool is callable."""
         try:
-            from loom.tools.ask_all_models import research_ask_all_models
+            from loom.tools.llm.ask_all_models import research_ask_all_models
 
             assert callable(research_ask_all_models)
         except ImportError:
@@ -107,7 +107,7 @@ class TestSecurityTools:
     def test_ai_safety_callable(self) -> None:
         """AI safety tool is callable."""
         try:
-            from loom.tools.ai_safety import research_ai_safety_check
+            from loom.tools.security.ai_safety import research_ai_safety_check
 
             assert callable(research_ai_safety_check)
         except ImportError:
@@ -116,7 +116,7 @@ class TestSecurityTools:
     def test_breach_check_callable(self) -> None:
         """Breach check tool is callable."""
         try:
-            from loom.tools.breach_check import research_breach_check
+            from loom.tools.intelligence.breach_check import research_breach_check
 
             assert callable(research_breach_check)
         except ImportError:
@@ -125,7 +125,7 @@ class TestSecurityTools:
     def test_threat_intel_callable(self) -> None:
         """Threat intel tool is callable."""
         try:
-            from loom.tools.threat_intel import research_threat_intel
+            from loom.tools.intelligence.threat_intel import research_threat_intel
 
             assert callable(research_threat_intel)
         except ImportError:
@@ -138,7 +138,7 @@ class TestPrivacyTools:
     def test_privacy_exposure_callable(self) -> None:
         """Privacy exposure tool is callable."""
         try:
-            from loom.tools.privacy_exposure import research_privacy_exposure
+            from loom.tools.privacy.privacy_tools import research_privacy_exposure
 
             assert callable(research_privacy_exposure)
         except ImportError:
@@ -147,7 +147,7 @@ class TestPrivacyTools:
     def test_metadata_forensics_callable(self) -> None:
         """Metadata forensics tool is callable."""
         try:
-            from loom.tools.metadata_forensics import research_metadata_forensics
+            from loom.tools.intelligence.metadata_forensics import research_metadata_forensics
 
             assert callable(research_metadata_forensics)
         except ImportError:
@@ -160,7 +160,7 @@ class TestOSINTTools:
     def test_social_intel_callable(self) -> None:
         """Social intel tool is callable."""
         try:
-            from loom.tools.social_intel import research_social_intel
+            from loom.tools.intelligence.social_intel import research_social_intel
 
             assert callable(research_social_intel)
         except ImportError:
@@ -169,7 +169,7 @@ class TestOSINTTools:
     def test_ip_intel_callable(self) -> None:
         """IP intel tool is callable."""
         try:
-            from loom.tools.ip_intel import research_ip_intel
+            from loom.tools.intelligence.ip_intel import research_ip_intel
 
             assert callable(research_ip_intel)
         except ImportError:
@@ -178,7 +178,7 @@ class TestOSINTTools:
     def test_domain_intel_callable(self) -> None:
         """Domain intel tool is callable."""
         try:
-            from loom.tools.domain_intel import research_domain_intel
+            from loom.tools.intelligence.domain_intel import research_domain_intel
 
             assert callable(research_domain_intel)
         except ImportError:
@@ -191,7 +191,7 @@ class TestCacheTools:
     def test_cache_stats_callable(self) -> None:
         """Cache stats tool is callable."""
         try:
-            from loom.tools.cache_mgmt import research_cache_stats
+            from loom.tools.core.cache_mgmt import research_cache_stats
 
             assert callable(research_cache_stats)
         except ImportError:
@@ -200,7 +200,7 @@ class TestCacheTools:
     def test_cache_clear_callable(self) -> None:
         """Cache clear tool is callable."""
         try:
-            from loom.tools.cache_mgmt import research_cache_clear
+            from loom.tools.core.cache_mgmt import research_cache_clear
 
             assert callable(research_cache_clear)
         except ImportError:
@@ -214,7 +214,7 @@ class TestSessionTools:
     async def test_session_open_callable(self) -> None:
         """Session open tool is callable."""
         try:
-            from loom.tools.sessions import research_session_open
+            from loom.sessions import research_session_open
 
             assert callable(research_session_open)
         except ImportError:
@@ -224,7 +224,7 @@ class TestSessionTools:
     async def test_session_list_callable(self) -> None:
         """Session list tool is callable."""
         try:
-            from loom.tools.sessions import research_session_list
+            from loom.sessions import research_session_list
 
             assert callable(research_session_list)
         except ImportError:
@@ -238,7 +238,7 @@ class TestConfigTools:
     async def test_config_get_callable(self) -> None:
         """Config get tool is callable."""
         try:
-            from loom.tools.config import research_config_get
+            from loom.config import research_config_get
 
             assert callable(research_config_get)
         except ImportError:
@@ -248,7 +248,7 @@ class TestConfigTools:
     async def test_config_set_callable(self) -> None:
         """Config set tool is callable."""
         try:
-            from loom.tools.config import research_config_set
+            from loom.config import research_config_set
 
             assert callable(research_config_set)
         except ImportError:
@@ -264,26 +264,31 @@ class TestToolDocumentation:
         import inspect
 
         found_count = 0
-        for tool_full_name in critical_tools[:5]:
-            # Parse "research_X" to find module
-            parts = tool_full_name.split("_", 1)
-            if len(parts) < 2:
+        # Use a small subset to test
+        test_tools = ["research_cache_stats", "research_search", "research_fetch"]
+
+        for tool_full_name in test_tools:
+            # Try to import the tool from expected modules
+            module_name_map = {
+                "research_cache_stats": "loom.tools.core.cache_mgmt",
+                "research_search": "loom.tools.core.search",
+                "research_fetch": "loom.tools.core.fetch",
+            }
+
+            module_name = module_name_map.get(tool_full_name)
+            if not module_name:
                 continue
 
-            # Try common module names
-            for potential_module in ["cache_mgmt", "sessions", "config", "search"]:
-                try:
-                    module = importlib.import_module(f"loom.tools.{potential_module}")
+            try:
+                module = importlib.import_module(module_name)
+                obj = getattr(module, tool_full_name, None)
 
-                    for name, obj in inspect.getmembers(module):
-                        if name == tool_full_name and callable(obj):
-                            assert obj.__doc__ is not None, (
-                                f"{tool_full_name} missing docstring"
-                            )
-                            found_count += 1
-                            break
-                except (ImportError, AttributeError):
-                    continue
+                if obj and callable(obj):
+                    # Tools should have docstrings via the decorator or function definition
+                    assert obj.__doc__ is not None, f"{tool_full_name} missing docstring"
+                    found_count += 1
+            except (ImportError, AttributeError):
+                continue
 
         # We should find at least a few documented tools
         assert found_count > 0, "No documented critical tools found"

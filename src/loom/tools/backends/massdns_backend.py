@@ -6,7 +6,6 @@ from loom.error_responses import handle_tool_errors
 import asyncio
 import logging
 import os
-import subprocess
 import tempfile
 import time
 from typing import Any
@@ -14,6 +13,7 @@ from typing import Any
 from pydantic import BaseModel, Field, field_validator
 
 from loom.cli_checker import is_available
+from loom.subprocess_helpers import run_command
 
 logger = logging.getLogger("loom.tools.massdns_backend")
 
@@ -210,10 +210,10 @@ async def research_massdns_resolve(
                 check=False,
             )
 
-            if proc_result.returncode != 0 and proc_result.returncode != 1:
+            if proc_result["returncode"] != 0 and proc_result["returncode"] != 1:
                 # Return code 1 may indicate some domains didn't resolve (not necessarily an error)
-                result.error = f"massdns failed: {proc_result.stderr[:200]}"
-                logger.warning(f"massdns execution warning: {proc_result.stderr[:200]}")
+                result.error = f"massdns failed: {proc_result["stderr"][:200]}"
+                logger.warning(f"massdns execution warning: {proc_result["stderr"][:200]}")
 
             # Parse output file (wrap in asyncio.to_thread to avoid blocking event loop)
             if os.path.isfile(output_file_path):

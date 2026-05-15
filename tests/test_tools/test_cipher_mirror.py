@@ -15,8 +15,8 @@ class TestResearchCipherMirror:
             mock_loop.return_value.run_in_executor = AsyncMock(return_value=[])
 
             # Simulate ImportError for search tools
-            with patch("loom.tools.cipher_mirror.research_search", side_effect=ImportError()):
-                from loom.tools.cipher_mirror import research_cipher_mirror
+            with patch("loom.tools.privacy.cipher_mirror.research_search", side_effect=ImportError()):
+                from loom.tools.privacy.cipher_mirror import research_cipher_mirror
 
                 result = await research_cipher_mirror("openai api key")
 
@@ -33,8 +33,8 @@ class TestResearchCipherMirror:
             executor_mock.return_value = []
             mock_loop.return_value.run_in_executor = executor_mock
 
-            with patch("loom.tools.cipher_mirror.research_search", return_value=mock_search_result):
-                from loom.tools.cipher_mirror import research_cipher_mirror
+            with patch("loom.tools.privacy.cipher_mirror.research_search", return_value=mock_search_result):
+                from loom.tools.privacy.cipher_mirror import research_cipher_mirror
 
                 result = await research_cipher_mirror("nonexistent_secret", n=5)
 
@@ -45,10 +45,10 @@ class TestResearchCipherMirror:
 
     async def test_detects_api_key_credentials(self):
         """Test detection of high-entropy API keys."""
-        from loom.tools.cipher_mirror import research_cipher_mirror
+        from loom.tools.privacy.cipher_mirror import research_cipher_mirror
 
         # Test the helper functions directly
-        from loom.tools.cipher_mirror import _detect_credentials, _entropy_score
+        from loom.tools.privacy.cipher_mirror import _detect_credentials, _entropy_score
 
         # High-entropy string (simulating API key)
         api_key = "sk-aBcDeFgHiJkLmNoPqRsT1234"
@@ -66,7 +66,7 @@ class TestResearchCipherMirror:
 
     async def test_detects_model_weights(self):
         """Test detection of model weight file references."""
-        from loom.tools.cipher_mirror import _detect_model_weights
+        from loom.tools.privacy.cipher_mirror import _detect_model_weights
 
         text = "Downloaded model.safetensors and pytorch_model.bin from repository"
         weights = _detect_model_weights(text)
@@ -77,7 +77,7 @@ class TestResearchCipherMirror:
 
     async def test_entropy_threshold_filtering(self):
         """Test that entropy threshold filters low-confidence findings."""
-        from loom.tools.cipher_mirror import research_cipher_mirror
+        from loom.tools.privacy.cipher_mirror import research_cipher_mirror
 
         with patch("loom.tools.cipher_mirror.asyncio.get_running_loop"):
             result = await research_cipher_mirror(
@@ -93,7 +93,7 @@ class TestResearchCipherMirror:
 
     async def test_deduplication_by_url(self):
         """Test that duplicate URLs are removed from findings."""
-        from loom.tools.cipher_mirror import research_cipher_mirror
+        from loom.tools.privacy.cipher_mirror import research_cipher_mirror
 
         # Mock search results with duplicate URLs
         duplicate_results = [
@@ -118,7 +118,7 @@ class TestResearchCipherMirror:
 
     async def test_cost_budget_parameter(self):
         """Test that cost budget parameter is accepted."""
-        from loom.tools.cipher_mirror import research_cipher_mirror
+        from loom.tools.privacy.cipher_mirror import research_cipher_mirror
 
         with patch("loom.tools.cipher_mirror.asyncio.get_running_loop"):
             result = await research_cipher_mirror(
@@ -133,7 +133,7 @@ class TestResearchCipherMirror:
 
     async def test_multiple_key_types_detected(self):
         """Test detection of multiple API key types."""
-        from loom.tools.cipher_mirror import _detect_credentials
+        from loom.tools.privacy.cipher_mirror import _detect_credentials
 
         text = (
             "Multiple keys found: "
@@ -152,25 +152,25 @@ class TestResearchCipherMirror:
 class TestEntropyScore:
     def test_empty_string_has_zero_entropy(self):
         """Test that empty string returns 0 entropy."""
-        from loom.tools.cipher_mirror import _entropy_score
+        from loom.tools.privacy.cipher_mirror import _entropy_score
 
         assert _entropy_score("") == 0.0
 
     def test_repeated_character_has_low_entropy(self):
         """Test that repeated characters have low entropy."""
-        from loom.tools.cipher_mirror import _entropy_score
+        from loom.tools.privacy.cipher_mirror import _entropy_score
 
         assert _entropy_score("aaaaaaaaaa") < 0.2
 
     def test_random_string_has_high_entropy(self):
         """Test that random strings have high entropy."""
-        from loom.tools.cipher_mirror import _entropy_score
+        from loom.tools.privacy.cipher_mirror import _entropy_score
 
         assert _entropy_score("x9K2mL7pQ1RwEbVzS4cD") > 0.5
 
     def test_window_size_parameter(self):
         """Test that window_size parameter works."""
-        from loom.tools.cipher_mirror import _entropy_score
+        from loom.tools.privacy.cipher_mirror import _entropy_score
 
         text = "uniform" * 10  # Repeated pattern
         score1 = _entropy_score(text, window_size=7)
@@ -184,7 +184,7 @@ class TestEntropyScore:
 class TestShingleDetection:
     def test_model_weight_pattern_matching(self):
         """Test that model weight patterns are correctly identified."""
-        from loom.tools.cipher_mirror import _detect_model_weights
+        from loom.tools.privacy.cipher_mirror import _detect_model_weights
 
         patterns = [
             "Downloaded model.safetensors successfully",
@@ -199,7 +199,7 @@ class TestShingleDetection:
 
     def test_no_false_positives(self):
         """Test that legitimate content doesn't trigger false positives."""
-        from loom.tools.cipher_mirror import _detect_model_weights
+        from loom.tools.privacy.cipher_mirror import _detect_model_weights
 
         text = "The model of the car was interesting. This is bin collection day."
         weights = _detect_model_weights(text)

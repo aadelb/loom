@@ -3,7 +3,6 @@
 from __future__ import annotations
 from loom.error_responses import handle_tool_errors
 
-import asyncio
 import logging
 import os
 from typing import Any
@@ -11,6 +10,7 @@ from typing import Any
 import httpx
 
 from loom.input_validators import ValidationError, validate_ip
+from loom.http_helpers import fetch_json
 
 logger = logging.getLogger("loom.tools.ip_intel")
 
@@ -69,13 +69,12 @@ async def research_ip_reputation(ip: str) -> dict[str, Any]:
     if abuseipdb_key:
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
-                resp = await client.get(
+                data = await fetch_json(client, 
                     _ABUSEIPDB_URL,
                     params={"ipAddress": ip, "maxAgeInDays": 90},
                     headers={"Key": abuseipdb_key, "Accept": "application/json"},
                 )
                 resp.raise_for_status()
-                data = resp.json()
                 if data.get("data"):
                     result["abuse_score"] = data["data"].get("abuseConfidenceScore")
                     result["is_tor_exit"] = data["data"].get("isTor")
@@ -85,9 +84,8 @@ async def research_ip_reputation(ip: str) -> dict[str, Any]:
     # Query ip-api.com (free, no key, 45 req/min)
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.get(f"{_IP_API_URL}/{ip}")
+            data = await fetch_json(client, f"{_IP_API_URL}/{ip}")
             resp.raise_for_status()
-            data = resp.json()
             if data.get("status") == "success":
                 result["geolocation"] = {
                     "country": data.get("country"),
@@ -134,9 +132,8 @@ async def research_ip_geolocation(ip: str) -> dict[str, Any]:
 
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.get(f"{_IP_API_URL}/{ip}")
+            data = await fetch_json(client, f"{_IP_API_URL}/{ip}")
             resp.raise_for_status()
-            data = resp.json()
 
         if data.get("status") == "success":
             return {

@@ -8,9 +8,14 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from functools import partial
 from typing import Any
 from loom.error_responses import handle_tool_errors
+
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(v: float, lo: float = 0.0, hi: float = 1.0) -> float:
+        return max(lo, min(hi, v))
 
 logger = logging.getLogger("loom.tools.forum_cortex")
 
@@ -85,7 +90,7 @@ async def _classify_post(
             if not isinstance(confidence, (int, float)):
                 confidence = 0.5
             else:
-                confidence = max(0.0, min(1.0, float(confidence)))
+                confidence = clamp(float(confidence), 0.0, 1.0)
 
             return {
                 "category": category,

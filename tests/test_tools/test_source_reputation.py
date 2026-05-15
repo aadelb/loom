@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pytest
 
-from loom.tools.source_reputation import (
+from loom.tools.research.source_reputation import (
     BLOCKLIST,
     HIGH_QUALITY,
     TLD_SCORES,

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from loom.tools.prompt_reframe import (
+from loom.tools.llm.prompt_reframe import (
     research_model_vulnerability_profile,
     research_fingerprint_model,
     _detect_model,

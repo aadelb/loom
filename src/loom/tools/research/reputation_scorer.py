@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from loom.validators import validate_url, UrlSafetyError
+from loom.validators import validate_url
 from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.reputation_scorer")

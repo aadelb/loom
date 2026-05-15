@@ -25,7 +25,7 @@ from loom.agent_benchmark import (
     ScenarioResult,
 )
 from loom.params import AgentBenchmarkParams
-from loom.tools.agent_benchmark import research_agent_benchmark
+from loom.tools.research.agent_benchmark import research_agent_benchmark
 
 
 class TestAgentScenarioBenchmarkInit:

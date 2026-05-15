@@ -8,6 +8,7 @@ import re
 from typing import Any
 
 import httpx
+from loom.http_helpers import fetch_text
 
 logger = logging.getLogger("loom.tools.linkedin_osint")
 
@@ -248,10 +249,8 @@ async def research_linkedin_intel(
         url = f"https://www.linkedin.com/company/{company.lower().replace(' ', '-')}"
         try:
             async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT, follow_redirects=True) as client:
-                resp = await client.get(url, headers={"User-Agent": _USER_AGENT})
-
-                if resp.status_code == 200:
-                    html = resp.text
+                html = await fetch_text(client, url, headers={"User-Agent": _USER_AGENT})
+                if html:
                     company_info = _extract_company_info(html)
                     result["company_info"] = company_info
 
@@ -276,10 +275,8 @@ async def research_linkedin_intel(
 
         try:
             async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT, follow_redirects=True) as client:
-                resp = await client.get(url, headers={"User-Agent": _USER_AGENT})
-
-                if resp.status_code == 200:
-                    html = resp.text
+                html = await fetch_text(client, url, headers={"User-Agent": _USER_AGENT})
+                if html:
                     profile_info = _extract_profile_info(html)
                     profile_info["url"] = url
 

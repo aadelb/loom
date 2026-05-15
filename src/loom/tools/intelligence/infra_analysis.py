@@ -3,10 +3,8 @@
 from __future__ import annotations
 from loom.error_responses import handle_tool_errors
 
-import asyncio
 import logging
 import math
-import re
 from collections import Counter, defaultdict
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -14,7 +12,7 @@ from urllib.parse import quote
 
 import httpx
 
-from loom.http_helpers import fetch_json, fetch_text
+from loom.http_helpers import fetch_json
 
 logger = logging.getLogger("loom.tools.infra_analysis")
 

@@ -12,7 +12,6 @@ import asyncio
 import logging
 import time
 from collections import defaultdict
-from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger("loom.tool_rate_limiter")

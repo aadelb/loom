@@ -12,8 +12,8 @@ class TestResearchShodanHost:
     @pytest.mark.asyncio
     async def test_sdk_not_installed(self):
         """Test graceful handling when Shodan SDK not installed."""
-        with patch("loom.tools.shodan_backend._HAS_SHODAN", False):
-            from loom.tools.shodan_backend import research_shodan_host
+        with patch("loom.tools.backends.shodan_backend._HAS_SHODAN", False):
+            from loom.tools.backends.shodan_backend import research_shodan_host
 
             result = await research_shodan_host("8.8.8.8")
 
@@ -24,9 +24,9 @@ class TestResearchShodanHost:
     @pytest.mark.asyncio
     async def test_api_key_not_set(self):
         """Test graceful handling when SHODAN_API_KEY not set."""
-        with patch("loom.tools.shodan_backend._HAS_SHODAN", True):
-            with patch("loom.tools.shodan_backend._get_shodan_api", return_value=None):
-                from loom.tools.shodan_backend import research_shodan_host
+        with patch("loom.tools.backends.shodan_backend._HAS_SHODAN", True):
+            with patch("loom.tools.backends.shodan_backend._get_shodan_api", return_value=None):
+                from loom.tools.backends.shodan_backend import research_shodan_host
 
                 result = await research_shodan_host("8.8.8.8")
 
@@ -70,15 +70,15 @@ class TestResearchShodanHost:
 
         mock_api = MagicMock()
 
-        with patch("loom.tools.shodan_backend._HAS_SHODAN", True):
+        with patch("loom.tools.backends.shodan_backend._HAS_SHODAN", True):
             with patch(
-                "loom.tools.shodan_backend._get_shodan_api", return_value=mock_api
+                "loom.tools.backends.shodan_backend._get_shodan_api", return_value=mock_api
             ):
                 with patch(
-                    "loom.tools.shodan_backend._fetch_host",
+                    "loom.tools.backends.shodan_backend._fetch_host",
                     return_value=mock_host_data,
                 ):
-                    from loom.tools.shodan_backend import research_shodan_host
+                    from loom.tools.backends.shodan_backend import research_shodan_host
 
                     result = await research_shodan_host("8.8.8.8")
 
@@ -103,14 +103,14 @@ class TestResearchShodanHost:
 
         error = MockAPIError("API error 404: Host not found")
 
-        with patch("loom.tools.shodan_backend._HAS_SHODAN", True):
+        with patch("loom.tools.backends.shodan_backend._HAS_SHODAN", True):
             with patch(
-                "loom.tools.shodan_backend._get_shodan_api", return_value=mock_api
+                "loom.tools.backends.shodan_backend._get_shodan_api", return_value=mock_api
             ):
                 with patch(
-                    "loom.tools.shodan_backend._fetch_host", side_effect=error
+                    "loom.tools.backends.shodan_backend._fetch_host", side_effect=error
                 ):
-                    from loom.tools.shodan_backend import research_shodan_host
+                    from loom.tools.backends.shodan_backend import research_shodan_host
 
                     result = await research_shodan_host("192.0.2.1")
 
@@ -130,14 +130,14 @@ class TestResearchShodanHost:
 
         error = MockAPIError("API error 401: Invalid API key")
 
-        with patch("loom.tools.shodan_backend._HAS_SHODAN", True):
+        with patch("loom.tools.backends.shodan_backend._HAS_SHODAN", True):
             with patch(
-                "loom.tools.shodan_backend._get_shodan_api", return_value=mock_api
+                "loom.tools.backends.shodan_backend._get_shodan_api", return_value=mock_api
             ):
                 with patch(
-                    "loom.tools.shodan_backend._fetch_host", side_effect=error
+                    "loom.tools.backends.shodan_backend._fetch_host", side_effect=error
                 ):
-                    from loom.tools.shodan_backend import research_shodan_host
+                    from loom.tools.backends.shodan_backend import research_shodan_host
 
                     result = await research_shodan_host("8.8.8.8")
 
@@ -157,14 +157,14 @@ class TestResearchShodanHost:
 
         error = MockAPIError("API error 429: Rate limit exceeded")
 
-        with patch("loom.tools.shodan_backend._HAS_SHODAN", True):
+        with patch("loom.tools.backends.shodan_backend._HAS_SHODAN", True):
             with patch(
-                "loom.tools.shodan_backend._get_shodan_api", return_value=mock_api
+                "loom.tools.backends.shodan_backend._get_shodan_api", return_value=mock_api
             ):
                 with patch(
-                    "loom.tools.shodan_backend._fetch_host", side_effect=error
+                    "loom.tools.backends.shodan_backend._fetch_host", side_effect=error
                 ):
-                    from loom.tools.shodan_backend import research_shodan_host
+                    from loom.tools.backends.shodan_backend import research_shodan_host
 
                     result = await research_shodan_host("8.8.8.8")
 
@@ -176,15 +176,15 @@ class TestResearchShodanHost:
         """Test handling of unexpected exceptions."""
         mock_api = MagicMock()
 
-        with patch("loom.tools.shodan_backend._HAS_SHODAN", True):
+        with patch("loom.tools.backends.shodan_backend._HAS_SHODAN", True):
             with patch(
-                "loom.tools.shodan_backend._get_shodan_api", return_value=mock_api
+                "loom.tools.backends.shodan_backend._get_shodan_api", return_value=mock_api
             ):
                 with patch(
-                    "loom.tools.shodan_backend._fetch_host",
+                    "loom.tools.backends.shodan_backend._fetch_host",
                     side_effect=RuntimeError("Network error"),
                 ):
-                    from loom.tools.shodan_backend import research_shodan_host
+                    from loom.tools.backends.shodan_backend import research_shodan_host
 
                     result = await research_shodan_host("8.8.8.8")
 
@@ -196,8 +196,8 @@ class TestResearchShodanSearch:
     @pytest.mark.asyncio
     async def test_sdk_not_installed(self):
         """Test graceful handling when Shodan SDK not installed."""
-        with patch("loom.tools.shodan_backend._HAS_SHODAN", False):
-            from loom.tools.shodan_backend import research_shodan_search
+        with patch("loom.tools.backends.shodan_backend._HAS_SHODAN", False):
+            from loom.tools.backends.shodan_backend import research_shodan_search
 
             result = await research_shodan_search("apache country:US port:443")
 
@@ -209,9 +209,9 @@ class TestResearchShodanSearch:
     @pytest.mark.asyncio
     async def test_api_key_not_set(self):
         """Test graceful handling when SHODAN_API_KEY not set."""
-        with patch("loom.tools.shodan_backend._HAS_SHODAN", True):
-            with patch("loom.tools.shodan_backend._get_shodan_api", return_value=None):
-                from loom.tools.shodan_backend import research_shodan_search
+        with patch("loom.tools.backends.shodan_backend._HAS_SHODAN", True):
+            with patch("loom.tools.backends.shodan_backend._get_shodan_api", return_value=None):
+                from loom.tools.backends.shodan_backend import research_shodan_search
 
                 result = await research_shodan_search("apache")
 
@@ -259,15 +259,15 @@ class TestResearchShodanSearch:
 
         mock_api = MagicMock()
 
-        with patch("loom.tools.shodan_backend._HAS_SHODAN", True):
+        with patch("loom.tools.backends.shodan_backend._HAS_SHODAN", True):
             with patch(
-                "loom.tools.shodan_backend._get_shodan_api", return_value=mock_api
+                "loom.tools.backends.shodan_backend._get_shodan_api", return_value=mock_api
             ):
                 with patch(
-                    "loom.tools.shodan_backend._search_devices",
+                    "loom.tools.backends.shodan_backend._search_devices",
                     return_value=mock_search_result,
                 ):
-                    from loom.tools.shodan_backend import research_shodan_search
+                    from loom.tools.backends.shodan_backend import research_shodan_search
 
                     result = await research_shodan_search(
                         "apache country:US port:443", max_results=10
@@ -287,15 +287,15 @@ class TestResearchShodanSearch:
 
         mock_api = MagicMock()
 
-        with patch("loom.tools.shodan_backend._HAS_SHODAN", True):
+        with patch("loom.tools.backends.shodan_backend._HAS_SHODAN", True):
             with patch(
-                "loom.tools.shodan_backend._get_shodan_api", return_value=mock_api
+                "loom.tools.backends.shodan_backend._get_shodan_api", return_value=mock_api
             ):
                 with patch(
-                    "loom.tools.shodan_backend._search_devices",
+                    "loom.tools.backends.shodan_backend._search_devices",
                     return_value=mock_search_result,
                 ) as mock_search:
-                    from loom.tools.shodan_backend import research_shodan_search
+                    from loom.tools.backends.shodan_backend import research_shodan_search
 
                     # Try max_results > 5000, should be clamped to 5000
                     await research_shodan_search("apache", max_results=10000)
@@ -319,14 +319,14 @@ class TestResearchShodanSearch:
 
         error = MockAPIError('API error 400: Invalid query syntax: "port"')
 
-        with patch("loom.tools.shodan_backend._HAS_SHODAN", True):
+        with patch("loom.tools.backends.shodan_backend._HAS_SHODAN", True):
             with patch(
-                "loom.tools.shodan_backend._get_shodan_api", return_value=mock_api
+                "loom.tools.backends.shodan_backend._get_shodan_api", return_value=mock_api
             ):
                 with patch(
-                    "loom.tools.shodan_backend._search_devices", side_effect=error
+                    "loom.tools.backends.shodan_backend._search_devices", side_effect=error
                 ):
-                    from loom.tools.shodan_backend import research_shodan_search
+                    from loom.tools.backends.shodan_backend import research_shodan_search
 
                     result = await research_shodan_search("invalid [query")
 
@@ -346,14 +346,14 @@ class TestResearchShodanSearch:
 
         error = MockAPIError("API error 429: Rate limit exceeded")
 
-        with patch("loom.tools.shodan_backend._HAS_SHODAN", True):
+        with patch("loom.tools.backends.shodan_backend._HAS_SHODAN", True):
             with patch(
-                "loom.tools.shodan_backend._get_shodan_api", return_value=mock_api
+                "loom.tools.backends.shodan_backend._get_shodan_api", return_value=mock_api
             ):
                 with patch(
-                    "loom.tools.shodan_backend._search_devices", side_effect=error
+                    "loom.tools.backends.shodan_backend._search_devices", side_effect=error
                 ):
-                    from loom.tools.shodan_backend import research_shodan_search
+                    from loom.tools.backends.shodan_backend import research_shodan_search
 
                     result = await research_shodan_search("apache")
 
@@ -365,15 +365,15 @@ class TestResearchShodanSearch:
         """Test handling of unexpected exceptions during search."""
         mock_api = MagicMock()
 
-        with patch("loom.tools.shodan_backend._HAS_SHODAN", True):
+        with patch("loom.tools.backends.shodan_backend._HAS_SHODAN", True):
             with patch(
-                "loom.tools.shodan_backend._get_shodan_api", return_value=mock_api
+                "loom.tools.backends.shodan_backend._get_shodan_api", return_value=mock_api
             ):
                 with patch(
-                    "loom.tools.shodan_backend._search_devices",
+                    "loom.tools.backends.shodan_backend._search_devices",
                     side_effect=ValueError("Network error"),
                 ):
-                    from loom.tools.shodan_backend import research_shodan_search
+                    from loom.tools.backends.shodan_backend import research_shodan_search
 
                     result = await research_shodan_search("apache")
 
@@ -384,7 +384,7 @@ class TestResearchShodanSearch:
 class TestShodanHelpers:
     def test_extract_services(self):
         """Test service extraction from banners."""
-        from loom.tools.shodan_backend import _extract_services
+        from loom.tools.backends.shodan_backend import _extract_services
 
         banners = [
             {
@@ -414,7 +414,7 @@ class TestShodanHelpers:
 
     def test_extract_services_empty(self):
         """Test service extraction with empty banners."""
-        from loom.tools.shodan_backend import _extract_services
+        from loom.tools.backends.shodan_backend import _extract_services
 
         services = _extract_services([])
 

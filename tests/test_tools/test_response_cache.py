@@ -8,13 +8,13 @@ from unittest.mock import patch
 
 import pytest
 
-from loom.tools.response_cache import (
+from loom.tools.core.response_cache import (
     _normalize_query,
     _response_cache,
     _cache_stats,
     research_cache_store,
     research_cache_lookup,
-    research_cache_stats,
+    research_response_cache_stats,
 )
 
 
@@ -215,7 +215,7 @@ class TestCacheStats:
 
     def test_stats_empty_cache(self) -> None:
         """Stats for empty cache return zeros."""
-        result = research_cache_stats()
+        result = research_response_cache_stats()
         assert result["entries"] == 0
         assert result["hits"] == 0
         assert result["misses"] == 0
@@ -229,7 +229,7 @@ class TestCacheStats:
         research_cache_store("query1", "response1")
         research_cache_store("query2", "response2")
 
-        result = research_cache_stats()
+        result = research_response_cache_stats()
         assert result["entries"] == 2
         assert result["oldest_entry"] is not None
         assert result["newest_entry"] is not None
@@ -242,7 +242,7 @@ class TestCacheStats:
         research_cache_lookup("query")
         research_cache_lookup("nonexistent")
 
-        result = research_cache_stats()
+        result = research_response_cache_stats()
         # 2 hits / 3 total = 66.67%
         assert result["hit_rate_pct"] == pytest.approx(66.67, abs=0.01)
 
@@ -252,7 +252,7 @@ class TestCacheStats:
         research_cache_store("query2", "response2", ttl_hours=0.0001)
         time.sleep(0.1)
 
-        result = research_cache_stats()
+        result = research_response_cache_stats()
         # Should only have 1 entry (expired one deleted)
         assert result["entries"] == 1
 
@@ -261,14 +261,14 @@ class TestCacheStats:
         response = "x" * 1000
         research_cache_store("query", response)
 
-        result = research_cache_stats()
+        result = research_response_cache_stats()
         # Should estimate at least 1KB (1000 bytes)
         assert result["memory_estimate_kb"] >= 1.0
 
     def test_stats_timestamps_are_iso(self) -> None:
         """Timestamps are in ISO 8601 format."""
         research_cache_store("query", "response")
-        result = research_cache_stats()
+        result = research_response_cache_stats()
 
         if result["oldest_entry"]:
             # Should be parseable as ISO 8601

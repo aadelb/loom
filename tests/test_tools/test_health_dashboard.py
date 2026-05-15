@@ -8,7 +8,7 @@ import pytest
 @pytest.mark.asyncio
 async def test_research_dashboard_html():
     """Test that dashboard HTML generation works."""
-    from loom.tools.health_dashboard import research_dashboard_html
+    from loom.tools.monitoring.health_dashboard import research_dashboard_html
 
     result = await research_dashboard_html()
 
@@ -35,7 +35,7 @@ async def test_research_dashboard_html():
 @pytest.mark.asyncio
 async def test_dashboard_html_contains_sections():
     """Test that dashboard contains all expected sections."""
-    from loom.tools.health_dashboard import research_dashboard_html
+    from loom.tools.monitoring.health_dashboard import research_dashboard_html
 
     result = await research_dashboard_html()
     html = result["html"]
@@ -53,7 +53,7 @@ async def test_dashboard_html_contains_sections():
 @pytest.mark.asyncio
 async def test_dashboard_metrics_summary_structure():
     """Test metrics summary has expected structure."""
-    from loom.tools.health_dashboard import research_dashboard_html
+    from loom.tools.monitoring.health_dashboard import research_dashboard_html
 
     result = await research_dashboard_html()
     metrics = result["metrics_summary"]
@@ -73,7 +73,7 @@ async def test_dashboard_metrics_summary_structure():
 @pytest.mark.asyncio
 async def test_dashboard_html_styling():
     """Test that HTML includes required styling."""
-    from loom.tools.health_dashboard import research_dashboard_html
+    from loom.tools.monitoring.health_dashboard import research_dashboard_html
 
     result = await research_dashboard_html()
     html = result["html"]

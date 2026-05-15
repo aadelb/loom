@@ -7,10 +7,9 @@ from __future__ import annotations
 
 import pytest
 
-from loom.tools.universal_orchestrator import (
+from loom.tools.infrastructure.universal_orchestrator import (
     _auto_generate_params,
     _build_tool_index,
-    _extract_url_from_query,
     _score_tool_relevance,
     research_orchestrate_smart,
 )
@@ -102,6 +101,10 @@ class TestRelevanceScoring:
         assert 0 <= score <= 100
 
 
+pytestmark_url = pytest.mark.skip(reason="_extract_url_from_query removed")
+
+
+@pytest.mark.skip(reason="_extract_url_from_query removed")
 class TestURLExtraction:
     """Tests for URL extraction from query."""
 

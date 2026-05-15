@@ -16,8 +16,14 @@ import hashlib
 import logging
 import time
 from datetime import UTC, datetime
-from io import BytesIO
 from typing import Any, Literal
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text, max_chars=500, *, suffix="..."):
+        if len(text) <= max_chars: return text
+        return text[:max_chars - len(suffix)] + suffix
+
 
 try:
     import nodriver as uc
@@ -209,7 +215,7 @@ async def research_nodriver_fetch(
 
             # Get page content
             html = await page.get_content()
-            result.html = html[:50000] if html else ""
+            result.html = truncate(html, 50000) if html else ""
 
             # Extract text
             text = _extract_text_from_html(html)
@@ -646,7 +652,7 @@ async def _extract_element_data(elements: list[Any]) -> list[dict[str, Any]]:
             except Exception:
                 pass
 
-            result.append({"tag": tag, "text": text[:500], "attrs": attrs})
+            result.append({"tag": tag, "text": truncate(text, 500), "attrs": attrs})
         except Exception as e:
             logger.debug("element_extraction_failed error=%s", str(e)[:100])
 

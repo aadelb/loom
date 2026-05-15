@@ -31,7 +31,7 @@ class TestDarkForum:
     @pytest.mark.asyncio
     async def test_dark_forum_basic_search(self) -> None:
         """Test dark_forum with basic search query."""
-        from loom.tools.dark_forum import research_dark_forum
+        from loom.tools.intelligence.dark_forum import research_dark_forum
 
         result = await research_dark_forum(
             query="test security",
@@ -60,7 +60,7 @@ class TestDarkForum:
     @pytest.mark.asyncio
     async def test_dark_forum_empty_query(self) -> None:
         """Test dark_forum with empty query."""
-        from loom.tools.dark_forum import research_dark_forum
+        from loom.tools.intelligence.dark_forum import research_dark_forum
 
         result = await research_dark_forum(query="", max_results=5)
 
@@ -78,7 +78,7 @@ class TestOnionDiscover:
     @pytest.mark.asyncio
     async def test_onion_discover_basic_search(self) -> None:
         """Test onion_discover with basic search query."""
-        from loom.tools.onion_discover import research_onion_discover
+        from loom.tools.intelligence.onion_discover import research_onion_discover
 
         result = await research_onion_discover(
             query="privacy",
@@ -109,7 +109,7 @@ class TestOnionDiscover:
     @pytest.mark.asyncio
     async def test_onion_discover_max_results(self) -> None:
         """Test onion_discover respects max_results parameter."""
-        from loom.tools.onion_discover import research_onion_discover
+        from loom.tools.intelligence.onion_discover import research_onion_discover
 
         result = await research_onion_discover(
             query="market",
@@ -129,7 +129,7 @@ class TestLeakScan:
     @pytest.mark.asyncio
     async def test_leak_scan_domain(self) -> None:
         """Test leak_scan with domain target."""
-        from loom.tools.leak_scan import research_leak_scan
+        from loom.tools.intelligence.leak_scan import research_leak_scan
 
         result = await research_leak_scan(
             target="example.com",
@@ -158,7 +158,7 @@ class TestLeakScan:
     @pytest.mark.asyncio
     async def test_leak_scan_email(self) -> None:
         """Test leak_scan with email target."""
-        from loom.tools.leak_scan import research_leak_scan
+        from loom.tools.intelligence.leak_scan import research_leak_scan
 
         result = await research_leak_scan(
             target="test@example.com",
@@ -171,7 +171,7 @@ class TestLeakScan:
     @pytest.mark.asyncio
     async def test_leak_scan_invalid_email(self) -> None:
         """Test leak_scan with invalid email format."""
-        from loom.tools.leak_scan import research_leak_scan
+        from loom.tools.intelligence.leak_scan import research_leak_scan
 
         result = await research_leak_scan(
             target="invalid-email",
@@ -190,7 +190,7 @@ class TestDarkwebEarlyWarning:
     @pytest.mark.asyncio
     async def test_darkweb_early_warning_single_keyword(self) -> None:
         """Test darkweb_early_warning with single keyword."""
-        from loom.tools.darkweb_early_warning import research_darkweb_early_warning
+        from loom.tools.intelligence.darkweb_early_warning import research_darkweb_early_warning
 
         result = await research_darkweb_early_warning(
             keywords=["exploit"],
@@ -217,7 +217,7 @@ class TestDarkwebEarlyWarning:
     @pytest.mark.asyncio
     async def test_darkweb_early_warning_multiple_keywords(self) -> None:
         """Test darkweb_early_warning with multiple keywords."""
-        from loom.tools.darkweb_early_warning import research_darkweb_early_warning
+        from loom.tools.intelligence.darkweb_early_warning import research_darkweb_early_warning
 
         result = await research_darkweb_early_warning(
             keywords=["malware", "botnet", "ransomware"],
@@ -231,7 +231,7 @@ class TestDarkwebEarlyWarning:
     @pytest.mark.asyncio
     async def test_darkweb_early_warning_empty_keywords(self) -> None:
         """Test darkweb_early_warning with empty keywords."""
-        from loom.tools.darkweb_early_warning import research_darkweb_early_warning
+        from loom.tools.intelligence.darkweb_early_warning import research_darkweb_early_warning
 
         result = await research_darkweb_early_warning(keywords=[], hours_back=24)
 
@@ -247,7 +247,7 @@ class TestTorTools:
     @pytest.mark.asyncio
     async def test_tor_status(self) -> None:
         """Test research_tor_status tool."""
-        from loom.tools.tor import research_tor_status
+        from loom.tools.infrastructure.tor import research_tor_status
 
         result = await research_tor_status()
 
@@ -265,7 +265,7 @@ class TestTorTools:
     @pytest.mark.asyncio
     async def test_tor_new_identity(self) -> None:
         """Test research_tor_new_identity tool."""
-        from loom.tools.tor import research_tor_new_identity
+        from loom.tools.infrastructure.tor import research_tor_new_identity
 
         result = await research_tor_new_identity()
 
@@ -288,10 +288,10 @@ class TestNoUnhandledExceptions:
     @pytest.mark.asyncio
     async def test_all_sync_tools_return_dict(self) -> None:
         """Verify all sync tools return dict and don't crash."""
-        from loom.tools.dark_forum import research_dark_forum
-        from loom.tools.darkweb_early_warning import research_darkweb_early_warning
-        from loom.tools.leak_scan import research_leak_scan
-        from loom.tools.onion_discover import research_onion_discover
+        from loom.tools.intelligence.dark_forum import research_dark_forum
+        from loom.tools.intelligence.darkweb_early_warning import research_darkweb_early_warning
+        from loom.tools.intelligence.leak_scan import research_leak_scan
+        from loom.tools.intelligence.onion_discover import research_onion_discover
 
         tools = [
             ("dark_forum", research_dark_forum("test")),
@@ -312,7 +312,7 @@ class TestNoUnhandledExceptions:
 
     async def test_all_async_tools_return_dict(self) -> None:
         """Verify all async tools return dict and don't crash."""
-        from loom.tools.tor import research_tor_new_identity, research_tor_status
+        from loom.tools.infrastructure.tor import research_tor_new_identity, research_tor_status
 
         tools = [
             ("tor_status", research_tor_status()),

@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from loom.tools.hipporag_backend import (
+from loom.tools.backends.hipporag_backend import (
     HippoRAGStore,
     research_memory_recall,
     research_memory_store,

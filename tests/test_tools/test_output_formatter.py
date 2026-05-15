@@ -2,7 +2,7 @@
 
 import pytest
 
-from loom.tools.output_formatter import (
+from loom.tools.infrastructure.output_formatter import (
     research_extract_actionables,
     research_format_report,
 )

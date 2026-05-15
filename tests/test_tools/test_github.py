@@ -7,9 +7,9 @@ from unittest.mock import patch
 
 import pytest
 
-pytest.importorskip("loom.tools.github")
+pytest.importorskip("loom.tools.core.github")
 
-from loom.tools.github import research_github, research_github_readme, research_github_releases
+from loom.tools.core.github import research_github, research_github_readme, research_github_releases
 
 
 class TestGitHub:

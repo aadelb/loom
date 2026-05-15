@@ -294,6 +294,7 @@ class TestBillingIdempotency:
     async def test_idempotency_ttl_respected(self) -> None:
         """Test that idempotency cache respects TTL setting."""
         mock_redis = AsyncMock()
+        mock_redis.cache_get.return_value = None
         mock_redis.cache_set = AsyncMock()
 
         manager = IdempotencyManager(redis_store=mock_redis)

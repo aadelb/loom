@@ -17,10 +17,9 @@ Patterns:
 
 from __future__ import annotations
 
-import json
 import logging
 import re
-from typing import Any, Callable, Literal
+from typing import Any
 from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.query_builder")
@@ -1423,7 +1422,7 @@ def _build_pipeline(
 def research_build_query(
     user_request: str,
     context: str = "",
-    output_type: Literal["research", "osint", "threat_intel", "academic"] = "research",
+    output_type: str = "research",
     max_queries: int = 5,
     optimize: bool = True,
     darkness_level: int = 1,

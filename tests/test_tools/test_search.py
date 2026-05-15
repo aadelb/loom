@@ -6,7 +6,7 @@ import pytest
 import sys
 from unittest.mock import MagicMock, patch
 
-from loom.tools.search import research_search
+from loom.tools.core.search import research_search
 
 
 class TestSearchMocked:

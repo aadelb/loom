@@ -12,6 +12,20 @@ import re
 from collections import Counter
 from typing import Any
 from loom.error_responses import handle_tool_errors
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text, max_chars=500, *, suffix="..."):
+        if len(text) <= max_chars: return text
+        return text[:max_chars - len(suffix)] + suffix
+
+
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(v: float, lo: float = 0.0, hi: float = 1.0) -> float:
+        """Fallback clamp if score_utils unavailable."""
+        return max(lo, min(hi, v))
 
 logger = logging.getLogger("loom.tools.persona_profile")
 
@@ -138,7 +152,7 @@ def _calculate_formality(text: str) -> float:
 
     # Normalize to 0-1
     formality = formal_score / (formal_score + informal_score + 0.1)
-    return min(1.0, max(0.0, formality))
+    return clamp(formality, 0.0, 1.0)
 
 
 def _estimate_vocabulary_tier(text: str) -> str:
@@ -406,7 +420,7 @@ async def research_persona_profile(
             f"Based on these text samples, provide a brief (1-2 sentences) "
             f"assessment of the author's communication style, psychological profile, "
             f"and potential education/expertise level. Text samples:\n\n"
-            f"{combined_text[:1000]}..."
+            f"{truncate(combined_text, 1000)}..."
         )
 
         llm_result = await research_llm_chat(

@@ -1,7 +1,7 @@
 """Unit tests for tool_catalog module."""
 
 import pytest
-from loom.tools import tool_catalog
+import loom.tools.infrastructure.tool_catalog
 
 
 @pytest.mark.unit

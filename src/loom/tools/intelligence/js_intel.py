@@ -12,7 +12,7 @@ from urllib.parse import urljoin
 import httpx
 
 from loom.http_helpers import fetch_text
-from loom.validators import validate_url, UrlSafetyError
+from loom.validators import validate_url
 
 logger = logging.getLogger("loom.tools.js_intel")
 

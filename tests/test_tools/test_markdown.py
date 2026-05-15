@@ -7,9 +7,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-pytest.importorskip("loom.tools.markdown")
+pytest.importorskip("loom.tools.core.markdown")
 
-from loom.tools.markdown import research_markdown
+from loom.tools.core.markdown import research_markdown
 
 
 # Create a mock crawl4ai module for testing

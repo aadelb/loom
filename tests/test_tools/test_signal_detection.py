@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import httpx
 import pytest
 
-from loom.tools.signal_detection import (
+from loom.tools.monitoring.signal_detection import (
     research_ghost_protocol,
     research_sec_tracker,
     research_temporal_anomaly,
@@ -137,7 +137,7 @@ class TestTemporalAnomaly:
     async def test_clock_skew_zero_on_error(self) -> None:
         """Clock skew defaults to 0 on error."""
         with patch(
-            "loom.tools.signal_detection._check_server_clock_skew",
+            "loom.tools.monitoring.signal_detection._check_server_clock_skew",
             return_value=0,
         ):
             result = await research_temporal_anomaly("invalid..domain")

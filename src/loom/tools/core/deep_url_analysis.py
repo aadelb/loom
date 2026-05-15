@@ -8,11 +8,11 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import subprocess
 import tempfile
 from typing import Any
 
 from loom.error_responses import handle_tool_errors
+from loom.subprocess_helpers import run_command
 
 logger = logging.getLogger("loom.tools.deep_url_analysis")
 
@@ -144,7 +144,7 @@ async def research_deep_url_analysis(
         return None
 
     tasks = [_fetch_one(u) for u in urls]
-    results = await asyncio.gather(*tasks)
+    results = await asyncio.gather(*tasks, return_exceptions=True)
     fetched = [r for r in results if r]
 
     if not fetched:
@@ -200,7 +200,7 @@ async def research_deep_url_analysis(
         loop = asyncio.get_running_loop()
         result = await loop.run_in_executor(
             None,
-            lambda: subprocess.run(
+            lambda: run_command(
                 ["gemini", "-m", model, "--approval-mode", "yolo", "-f", tmp_path],
                 capture_output=True,
                 text=True,
@@ -209,10 +209,10 @@ async def research_deep_url_analysis(
             ),
         )
 
-        if result.returncode == 0:
-            gemini_response = result.stdout.strip()
+        if result["success"]:
+            gemini_response = result["stdout"].strip()
         else:
-            gemini_response = f"Gemini CLI error (exit {result.returncode}): {result.stderr[:500]}"
+            gemini_response = f"Gemini CLI error (exit {result["returncode"]}): {result["stderr"][:500]}"
 
     except subprocess.TimeoutExpired:
         gemini_response = "Gemini CLI timed out after 300s"

@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from loom.tools.social_scraper import (
+from loom.tools.intelligence.social_scraper import (
     research_instagram,
     research_article_extract,
     research_article_batch,
@@ -21,7 +21,7 @@ class TestInstagram:
 
     async def test_instagram_missing_library(self):
         """Test graceful handling when instaloader is not installed."""
-        with patch("loom.tools.social_scraper._HAS_INSTALOADER", False):
+        with patch("loom.tools.intelligence.social_scraper._HAS_INSTALOADER", False):
             result = await research_instagram("testuser")
             assert "error" in result
             assert "instaloader not installed" in result["error"]
@@ -55,7 +55,7 @@ class TestInstagram:
 
     async def test_instagram_library_check_after_validation(self):
         """Test library check happens after valid input."""
-        with patch("loom.tools.social_scraper._HAS_INSTALOADER", False):
+        with patch("loom.tools.intelligence.social_scraper._HAS_INSTALOADER", False):
             # Valid username but missing library
             result = await research_instagram("validuser")
             assert "error" in result
@@ -63,21 +63,21 @@ class TestInstagram:
 
     async def test_instagram_max_posts_positive(self):
         """Test max_posts parameter with positive value."""
-        with patch("loom.tools.social_scraper._HAS_INSTALOADER", False):
+        with patch("loom.tools.intelligence.social_scraper._HAS_INSTALOADER", False):
             result = await research_instagram("user", max_posts=50)
             # Should still fail due to missing library
             assert "error" in result
 
     async def test_instagram_max_posts_zero_or_negative(self):
         """Test max_posts parameter clamping with zero/negative values."""
-        with patch("loom.tools.social_scraper._HAS_INSTALOADER", False):
+        with patch("loom.tools.intelligence.social_scraper._HAS_INSTALOADER", False):
             result = await research_instagram("user", max_posts=-10)
             # Should clamp to 1, then fail on library
             assert "error" in result
 
     async def test_instagram_max_posts_large_value(self):
         """Test max_posts parameter clamping with large values."""
-        with patch("loom.tools.social_scraper._HAS_INSTALOADER", False):
+        with patch("loom.tools.intelligence.social_scraper._HAS_INSTALOADER", False):
             result = await research_instagram("user", max_posts=500)
             # Should clamp to 100, then fail on library
             assert "error" in result
@@ -94,7 +94,7 @@ class TestArticleExtract:
 
     async def test_article_missing_library(self):
         """Test graceful handling when newspaper3k is not installed."""
-        with patch("loom.tools.social_scraper._HAS_NEWSPAPER", False):
+        with patch("loom.tools.intelligence.social_scraper._HAS_NEWSPAPER", False):
             result = await research_article_extract("https://example.com/article")
             assert "error" in result
             assert "newspaper3k not installed" in result["error"]
@@ -121,7 +121,7 @@ class TestArticleExtract:
 
     async def test_article_library_check_after_validation(self):
         """Test library check happens after valid URL input."""
-        with patch("loom.tools.social_scraper._HAS_NEWSPAPER", False):
+        with patch("loom.tools.intelligence.social_scraper._HAS_NEWSPAPER", False):
             result = await research_article_extract("https://example.com/article")
             assert "error" in result
             assert "newspaper3k not installed" in result["error"]
@@ -144,8 +144,8 @@ class TestArticleExtract:
         mock_article.top_image = "https://example.com/img.jpg"
         mock_article.movies = ["https://example.com/video.mp4"]
 
-        with patch("loom.tools.social_scraper._HAS_NEWSPAPER", True):
-            with patch("loom.tools.social_scraper.Article") as mock_class:
+        with patch("loom.tools.intelligence.social_scraper._HAS_NEWSPAPER", True):
+            with patch("loom.tools.intelligence.social_scraper.Article") as mock_class:
                 mock_class.return_value = mock_article
                 result = await research_article_extract("https://example.com/test")
 
@@ -171,8 +171,8 @@ class TestArticleExtract:
         mock_article.top_image = None
         mock_article.movies = None
 
-        with patch("loom.tools.social_scraper._HAS_NEWSPAPER", True):
-            with patch("loom.tools.social_scraper.Article") as mock_class:
+        with patch("loom.tools.intelligence.social_scraper._HAS_NEWSPAPER", True):
+            with patch("loom.tools.intelligence.social_scraper.Article") as mock_class:
                 mock_class.return_value = mock_article
                 result = await research_article_extract("https://example.com/test")
 
@@ -184,8 +184,8 @@ class TestArticleExtract:
 
     async def test_article_extraction_with_exceptions(self):
         """Test error handling during extraction."""
-        with patch("loom.tools.social_scraper._HAS_NEWSPAPER", True):
-            with patch("loom.tools.social_scraper.Article") as mock_class:
+        with patch("loom.tools.intelligence.social_scraper._HAS_NEWSPAPER", True):
+            with patch("loom.tools.intelligence.social_scraper.Article") as mock_class:
                 mock_article = MagicMock()
                 mock_article.download.side_effect = RuntimeError("Download failed")
                 mock_class.return_value = mock_article
@@ -201,7 +201,7 @@ class TestArticleBatch:
 
     async def test_batch_missing_library(self):
         """Test graceful handling when newspaper3k is not installed."""
-        with patch("loom.tools.social_scraper._HAS_NEWSPAPER", False):
+        with patch("loom.tools.intelligence.social_scraper._HAS_NEWSPAPER", False):
             result = await research_article_batch(
                 ["https://example.com/1", "https://example.com/2"]
             )
@@ -230,16 +230,16 @@ class TestArticleBatch:
 
     async def test_batch_library_check_after_validation(self):
         """Test library check happens after valid input."""
-        with patch("loom.tools.social_scraper._HAS_NEWSPAPER", False):
+        with patch("loom.tools.intelligence.social_scraper._HAS_NEWSPAPER", False):
             result = await research_article_batch(["https://example.com/1"])
             assert "error" in result
             assert "newspaper3k not installed" in result["error"]
 
     async def test_batch_returns_expected_structure(self):
         """Test batch result has expected keys."""
-        with patch("loom.tools.social_scraper._HAS_NEWSPAPER", True):
+        with patch("loom.tools.intelligence.social_scraper._HAS_NEWSPAPER", True):
             with patch(
-                "loom.tools.social_scraper.research_article_extract"
+                "loom.tools.intelligence.social_scraper.research_article_extract"
             ) as mock_extract:
                 mock_extract.return_value = {
                     "url": "https://example.com/1",
@@ -265,9 +265,9 @@ class TestArticleBatch:
         """Test batch processes URLs correctly."""
         urls = ["https://example.com/1", "https://example.com/2"]
 
-        with patch("loom.tools.social_scraper._HAS_NEWSPAPER", True):
+        with patch("loom.tools.intelligence.social_scraper._HAS_NEWSPAPER", True):
             with patch(
-                "loom.tools.social_scraper.research_article_extract"
+                "loom.tools.intelligence.social_scraper.research_article_extract"
             ) as mock_extract:
                 mock_extract.return_value = {
                     "url": "https://example.com/1",
@@ -290,9 +290,9 @@ class TestArticleBatch:
         """Test max_concurrent parameter is accepted."""
         urls = ["https://example.com/1"]
 
-        with patch("loom.tools.social_scraper._HAS_NEWSPAPER", True):
+        with patch("loom.tools.intelligence.social_scraper._HAS_NEWSPAPER", True):
             with patch(
-                "loom.tools.social_scraper.research_article_extract"
+                "loom.tools.intelligence.social_scraper.research_article_extract"
             ) as mock_extract:
                 mock_extract.return_value = {
                     "url": "https://example.com/1",
@@ -321,9 +321,9 @@ class TestArticleBatch:
         # Create more than 200 URLs
         urls = [f"https://example.com/{i}" for i in range(250)]
 
-        with patch("loom.tools.social_scraper._HAS_NEWSPAPER", True):
+        with patch("loom.tools.intelligence.social_scraper._HAS_NEWSPAPER", True):
             with patch(
-                "loom.tools.social_scraper.research_article_extract"
+                "loom.tools.intelligence.social_scraper.research_article_extract"
             ) as mock_extract:
                 mock_extract.return_value = {
                     "url": "https://example.com/1",
@@ -346,9 +346,9 @@ class TestArticleBatch:
         """Test batch handles extraction failures."""
         urls = ["https://example.com/1", "https://example.com/2"]
 
-        with patch("loom.tools.social_scraper._HAS_NEWSPAPER", True):
+        with patch("loom.tools.intelligence.social_scraper._HAS_NEWSPAPER", True):
             with patch(
-                "loom.tools.social_scraper.research_article_extract"
+                "loom.tools.intelligence.social_scraper.research_article_extract"
             ) as mock_extract:
                 # First succeeds, second fails
                 mock_extract.side_effect = [

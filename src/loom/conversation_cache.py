@@ -12,8 +12,7 @@ import gzip
 import hashlib
 import json
 import logging
-from datetime import UTC, datetime, timedelta
-from pathlib import Path
+from datetime import UTC, datetime
 from typing import Any, cast
 
 from loom.cache import get_cache

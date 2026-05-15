@@ -11,12 +11,12 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import subprocess
 from typing import Any
 
 from loom.cli_checker import is_available
 from loom.error_responses import handle_tool_errors
-from loom.validators import validate_url, UrlSafetyError
+from loom.validators import validate_url
+from loom.subprocess_helpers import run_command
 
 logger = logging.getLogger("loom.tools.onionscan_backend")
 
@@ -205,27 +205,27 @@ async def research_onionscan(
 			check=False,
 		)
 
-		if result.returncode != 0:
-			logger.warning("onionscan_failed returncode=%d stderr=%s", result.returncode, result.stderr)
+		if not result["success"]:
+			logger.warning("onionscan_failed returncode=%d stderr=%s", result["returncode"], result["stderr"])
 			return {
 				"url": onion_url,
 				"success": False,
-				"error": f"onionscan exited with code {result.returncode}",
-				"stderr": result.stderr[:500],
+				"error": f"onionscan exited with code {result["returncode"]}",
+				"stderr": result["stderr"][:500],
 				"onionscan_available": True,
 				"tor_available": True,
 			}
 
 		# Try to parse JSON output
 		try:
-			output = json.loads(result.stdout)
+			output = json.loads(result["stdout"])
 		except json.JSONDecodeError:
 			logger.warning("onionscan_json_parse_failed")
 			return {
 				"url": onion_url,
 				"success": False,
 				"error": "Failed to parse onionscan JSON output",
-				"raw_output": result.stdout[:1000],
+				"raw_output": result["stdout"][:1000],
 				"onionscan_available": True,
 				"tor_available": True,
 			}

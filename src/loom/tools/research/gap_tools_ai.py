@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from typing import Any
 
 import httpx
 from loom.error_responses import handle_tool_errors
+from loom.http_helpers import fetch_json, fetch_text, fetch_bytes
 
 logger = logging.getLogger("loom.tools.gap_tools_ai")
 

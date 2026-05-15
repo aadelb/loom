@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from loom.tools.psycholinguistic import (
+from loom.tools.research.psycholinguistic import (
     _calculate_avg_sentence_length,
     _calculate_cognitive_complexity,
     _calculate_ttr,

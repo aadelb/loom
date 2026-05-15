@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 
-from loom.tools.dead_content import research_dead_content
+from loom.tools.core.dead_content import research_dead_content
 from loom.validators import UrlSafetyError
 
 

@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from typing import Any
 import httpx
 
 from loom.error_responses import handle_tool_errors
+from loom.http_helpers import fetch_bytes
 
 logger = logging.getLogger("loom.tools.stego_detect")
 
@@ -181,9 +181,7 @@ async def research_stego_detect(
         image_bytes = b""
         try:
             async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
-                resp = await client.get(image_url)
-                if resp.status_code == 200:
-                    image_bytes = resp.content[:10_000_000]
+                image_bytes = await fetch_bytes(client, image_url)[:10_000_000]
         except Exception as exc:
             logger.warning("stego_detect image fetch failed: %s", exc)
 

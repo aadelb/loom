@@ -9,6 +9,7 @@ from typing import Any
 
 import httpx
 from loom.error_responses import handle_tool_errors
+from loom.http_helpers import fetch_json
 
 logger = logging.getLogger("loom.tools.competitive_monitor")
 
@@ -74,11 +75,10 @@ async def _fetch_repo_stats(
         # Fetch latest release
         latest_release = None
         try:
-            release_resp = await client.get(
+            rd = await fetch_json(client,
                 f"{repo_url}/releases/latest", timeout=10.0
             )
-            if release_resp.status_code == 200:
-                rd = release_resp.json()
+            if rd:
                 latest_release = {
                     "tag": rd.get("tag_name"),
                     "date": rd.get("published_at"),

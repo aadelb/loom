@@ -8,9 +8,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from loom.tools.dark_recon import (
-    _is_tool_available,
-    _validate_domain,
+from loom.cli_checker import is_available
+from loom.input_validators import validate_domain
+from loom.tools.intelligence.dark_recon import (
     research_amass_enum,
     research_amass_intel,
     research_torbot,
@@ -22,56 +22,56 @@ class TestValidateDomain:
 
     def test_valid_domain(self) -> None:
         """Valid domains pass validation."""
-        assert _validate_domain("example.com") == "example.com"
-        assert _validate_domain("sub.example.org") == "sub.example.org"
-        assert _validate_domain("test-domain.co.uk") == "test-domain.co.uk"
-        assert _validate_domain("my_domain.net") == "my_domain.net"
+        assert validate_domain("example.com") == "example.com"
+        assert validate_domain("sub.example.org") == "sub.example.org"
+        assert validate_domain("test-domain.co.uk") == "test-domain.co.uk"
+        assert validate_domain("my_domain.net") == "my_domain.net"
 
     def test_domain_too_long(self) -> None:
         """Domain exceeding 255 chars raises error."""
         long_domain = "a" * 256 + ".com"
         with pytest.raises(ValueError, match="1-255 characters"):
-            _validate_domain(long_domain)
+            validate_domain(long_domain)
 
     def test_domain_empty(self) -> None:
         """Empty domain raises error."""
         with pytest.raises(ValueError):
-            _validate_domain("")
+            validate_domain("")
 
     def test_domain_disallowed_chars(self) -> None:
         """Domain with spaces or special chars raises error."""
         with pytest.raises(ValueError, match="disallowed characters"):
-            _validate_domain("example .com")
+            validate_domain("example .com")
         with pytest.raises(ValueError, match="disallowed characters"):
-            _validate_domain("example@com")
+            validate_domain("example@com")
         with pytest.raises(ValueError, match="disallowed characters"):
-            _validate_domain("example/com")
+            validate_domain("example/com")
 
 
 class TestIsToolAvailable:
     """Tool availability detection."""
 
-    @patch("loom.tools.dark_recon.shutil.which")
+    @patch("loom.tools.intelligence.dark_recon.shutil.which")
     def test_tool_available(self, mock_which: MagicMock) -> None:
         """shutil.which returns path for available tool."""
         mock_which.return_value = "/usr/bin/torbot"
-        assert _is_tool_available("torbot") is True
+        assert is_available("torbot") is True
         mock_which.assert_called_once_with("torbot")
 
-    @patch("loom.tools.dark_recon.shutil.which")
+    @patch("loom.tools.intelligence.dark_recon.shutil.which")
     def test_tool_not_available(self, mock_which: MagicMock) -> None:
         """shutil.which returns None for unavailable tool."""
         mock_which.return_value = None
-        assert _is_tool_available("torbot") is False
+        assert is_available("torbot") is False
         mock_which.assert_called_once_with("torbot")
 
 
 class TestTorbot:
     """research_torbot command execution and output parsing."""
 
-    @patch("loom.tools.dark_recon.subprocess.run")
-    @patch("loom.tools.dark_recon._is_tool_available")
-    @patch("loom.tools.dark_recon.validate_url")
+    @patch("loom.tools.intelligence.dark_recon.subprocess.run")
+    @patch("loom.tools.intelligence.dark_recon.is_available")
+    @patch("loom.tools.intelligence.dark_recon.validate_url")
     def test_torbot_success_json(
         self, mock_validate_url: MagicMock, mock_available: MagicMock, mock_run: MagicMock
     ) -> None:
@@ -102,9 +102,9 @@ class TestTorbot:
             timeout=300,
         )
 
-    @patch("loom.tools.dark_recon.subprocess.run")
-    @patch("loom.tools.dark_recon._is_tool_available")
-    @patch("loom.tools.dark_recon.validate_url")
+    @patch("loom.tools.intelligence.dark_recon.subprocess.run")
+    @patch("loom.tools.intelligence.dark_recon.is_available")
+    @patch("loom.tools.intelligence.dark_recon.validate_url")
     def test_torbot_success_text_fallback(
         self, mock_validate_url: MagicMock, mock_available: MagicMock, mock_run: MagicMock
     ) -> None:
@@ -126,8 +126,8 @@ class TestTorbot:
         assert len(result["emails_found"]) >= 1
         assert len(result["phone_numbers"]) >= 1
 
-    @patch("loom.tools.dark_recon._is_tool_available")
-    @patch("loom.tools.dark_recon.validate_url")
+    @patch("loom.tools.intelligence.dark_recon.is_available")
+    @patch("loom.tools.intelligence.dark_recon.validate_url")
     def test_torbot_not_installed(
         self, mock_validate_url: MagicMock, mock_available: MagicMock
     ) -> None:
@@ -145,9 +145,9 @@ class TestTorbot:
         assert result["phone_numbers"] == []
         assert result["depth_crawled"] == 0
 
-    @patch("loom.tools.dark_recon.subprocess.run")
-    @patch("loom.tools.dark_recon._is_tool_available")
-    @patch("loom.tools.dark_recon.validate_url")
+    @patch("loom.tools.intelligence.dark_recon.subprocess.run")
+    @patch("loom.tools.intelligence.dark_recon.is_available")
+    @patch("loom.tools.intelligence.dark_recon.validate_url")
     def test_torbot_command_failed(
         self, mock_validate_url: MagicMock, mock_available: MagicMock, mock_run: MagicMock
     ) -> None:
@@ -163,9 +163,9 @@ class TestTorbot:
         assert "torbot command failed" in result["error"]
         assert result["links_found"] == []
 
-    @patch("loom.tools.dark_recon.subprocess.run")
-    @patch("loom.tools.dark_recon._is_tool_available")
-    @patch("loom.tools.dark_recon.validate_url")
+    @patch("loom.tools.intelligence.dark_recon.subprocess.run")
+    @patch("loom.tools.intelligence.dark_recon.is_available")
+    @patch("loom.tools.intelligence.dark_recon.validate_url")
     def test_torbot_timeout(
         self, mock_validate_url: MagicMock, mock_available: MagicMock, mock_run: MagicMock
     ) -> None:
@@ -185,19 +185,19 @@ class TestTorbot:
         """Invalid URL returns error."""
         from loom.validators import UrlSafetyError
 
-        with patch("loom.tools.dark_recon.validate_url", side_effect=UrlSafetyError("Invalid URL")):
+        with patch("loom.tools.intelligence.dark_recon.validate_url", side_effect=UrlSafetyError("Invalid URL")):
             result = research_torbot("not a valid url")
             assert "error" in result
 
     def test_torbot_invalid_depth_type(self) -> None:
         """Non-integer depth returns error."""
-        with patch("loom.tools.dark_recon.validate_url", return_value="http://example.onion"):
+        with patch("loom.tools.intelligence.dark_recon.validate_url", return_value="http://example.onion"):
             result = research_torbot("http://example.onion", depth="invalid")  # type: ignore
             assert "error" in result
             assert "depth must be an integer" in result["error"]
 
-    @patch("loom.tools.dark_recon._is_tool_available")
-    @patch("loom.tools.dark_recon.validate_url")
+    @patch("loom.tools.intelligence.dark_recon.is_available")
+    @patch("loom.tools.intelligence.dark_recon.validate_url")
     def test_torbot_invalid_depth_range(
         self, mock_validate_url: MagicMock, mock_available: MagicMock
     ) -> None:
@@ -215,8 +215,8 @@ class TestTorbot:
 class TestAmassEnum:
     """research_amass_enum command execution and output parsing."""
 
-    @patch("loom.tools.dark_recon.subprocess.run")
-    @patch("loom.tools.dark_recon._is_tool_available")
+    @patch("loom.tools.intelligence.dark_recon.subprocess.run")
+    @patch("loom.tools.intelligence.dark_recon.is_available")
     def test_amass_enum_success(self, mock_available: MagicMock, mock_run: MagicMock) -> None:
         """Successful Amass enum returns parsed subdomains, ASNs, and IPs."""
         mock_available.return_value = True
@@ -237,8 +237,8 @@ class TestAmassEnum:
         assert "12345" in result["asns"]
         assert result["count"] > 0
 
-    @patch("loom.tools.dark_recon.subprocess.run")
-    @patch("loom.tools.dark_recon._is_tool_available")
+    @patch("loom.tools.intelligence.dark_recon.subprocess.run")
+    @patch("loom.tools.intelligence.dark_recon.is_available")
     def test_amass_enum_with_passive_flag(self, mock_available: MagicMock, mock_run: MagicMock) -> None:
         """Amass enum respects passive flag."""
         mock_available.return_value = True
@@ -252,7 +252,7 @@ class TestAmassEnum:
         call_args = mock_run.call_args[0][0]
         assert "-passive" not in call_args
 
-    @patch("loom.tools.dark_recon._is_tool_available")
+    @patch("loom.tools.intelligence.dark_recon.is_available")
     def test_amass_enum_not_installed(self, mock_available: MagicMock) -> None:
         """Amass not installed returns graceful warning."""
         mock_available.return_value = False
@@ -267,8 +267,8 @@ class TestAmassEnum:
         assert result["asns"] == []
         assert result["count"] == 0
 
-    @patch("loom.tools.dark_recon.subprocess.run")
-    @patch("loom.tools.dark_recon._is_tool_available")
+    @patch("loom.tools.intelligence.dark_recon.subprocess.run")
+    @patch("loom.tools.intelligence.dark_recon.is_available")
     def test_amass_enum_command_failed(self, mock_available: MagicMock, mock_run: MagicMock) -> None:
         """Amass enum command failure returns error."""
         mock_available.return_value = True
@@ -278,8 +278,8 @@ class TestAmassEnum:
 
         assert "error" in result
 
-    @patch("loom.tools.dark_recon.subprocess.run")
-    @patch("loom.tools.dark_recon._is_tool_available")
+    @patch("loom.tools.intelligence.dark_recon.subprocess.run")
+    @patch("loom.tools.intelligence.dark_recon.is_available")
     def test_amass_enum_timeout(self, mock_available: MagicMock, mock_run: MagicMock) -> None:
         """Amass enum timeout returns error."""
         import subprocess
@@ -300,7 +300,7 @@ class TestAmassEnum:
         assert "error" in result
         assert "disallowed characters" in result["error"]
 
-    @patch("loom.tools.dark_recon._is_tool_available")
+    @patch("loom.tools.intelligence.dark_recon.is_available")
     def test_amass_enum_invalid_timeout(self, mock_available: MagicMock) -> None:
         """Timeout out of range returns error."""
         mock_available.return_value = True
@@ -311,8 +311,8 @@ class TestAmassEnum:
         result = research_amass_enum("example.com", timeout=601)
         assert "error" in result
 
-    @patch("loom.tools.dark_recon.subprocess.run")
-    @patch("loom.tools.dark_recon._is_tool_available")
+    @patch("loom.tools.intelligence.dark_recon.subprocess.run")
+    @patch("loom.tools.intelligence.dark_recon.is_available")
     def test_amass_enum_malformed_json(self, mock_available: MagicMock, mock_run: MagicMock) -> None:
         """Amass enum with malformed JSON lines skips them gracefully."""
         mock_available.return_value = True
@@ -332,8 +332,8 @@ class TestAmassEnum:
 class TestAmassIntel:
     """research_amass_intel command execution and output parsing."""
 
-    @patch("loom.tools.dark_recon.subprocess.run")
-    @patch("loom.tools.dark_recon._is_tool_available")
+    @patch("loom.tools.intelligence.dark_recon.subprocess.run")
+    @patch("loom.tools.intelligence.dark_recon.is_available")
     def test_amass_intel_success(self, mock_available: MagicMock, mock_run: MagicMock) -> None:
         """Successful Amass intel returns organizations, emails, and related domains."""
         mock_available.return_value = True
@@ -353,8 +353,8 @@ class TestAmassIntel:
         assert len(result["related_domains"]) >= 2
         assert "related.com" in result["related_domains"]
 
-    @patch("loom.tools.dark_recon.subprocess.run")
-    @patch("loom.tools.dark_recon._is_tool_available")
+    @patch("loom.tools.intelligence.dark_recon.subprocess.run")
+    @patch("loom.tools.intelligence.dark_recon.is_available")
     def test_amass_intel_name_field_as_domain(self, mock_available: MagicMock, mock_run: MagicMock) -> None:
         """Amass intel extracts domains from 'name' field as fallback."""
         mock_available.return_value = True
@@ -365,7 +365,7 @@ class TestAmassIntel:
 
         assert "fallback-domain.com" in result["related_domains"]
 
-    @patch("loom.tools.dark_recon._is_tool_available")
+    @patch("loom.tools.intelligence.dark_recon.is_available")
     def test_amass_intel_not_installed(self, mock_available: MagicMock) -> None:
         """Amass not installed returns graceful warning."""
         mock_available.return_value = False
@@ -379,8 +379,8 @@ class TestAmassIntel:
         assert result["emails"] == []
         assert result["related_domains"] == []
 
-    @patch("loom.tools.dark_recon.subprocess.run")
-    @patch("loom.tools.dark_recon._is_tool_available")
+    @patch("loom.tools.intelligence.dark_recon.subprocess.run")
+    @patch("loom.tools.intelligence.dark_recon.is_available")
     def test_amass_intel_command_failed(self, mock_available: MagicMock, mock_run: MagicMock) -> None:
         """Amass intel command failure returns error."""
         mock_available.return_value = True
@@ -390,8 +390,8 @@ class TestAmassIntel:
 
         assert "error" in result
 
-    @patch("loom.tools.dark_recon.subprocess.run")
-    @patch("loom.tools.dark_recon._is_tool_available")
+    @patch("loom.tools.intelligence.dark_recon.subprocess.run")
+    @patch("loom.tools.intelligence.dark_recon.is_available")
     def test_amass_intel_timeout(self, mock_available: MagicMock, mock_run: MagicMock) -> None:
         """Amass intel timeout returns error."""
         import subprocess
@@ -411,8 +411,8 @@ class TestAmassIntel:
         assert "error" in result
         assert "disallowed characters" in result["error"]
 
-    @patch("loom.tools.dark_recon.subprocess.run")
-    @patch("loom.tools.dark_recon._is_tool_available")
+    @patch("loom.tools.intelligence.dark_recon.subprocess.run")
+    @patch("loom.tools.intelligence.dark_recon.is_available")
     def test_amass_intel_malformed_json(self, mock_available: MagicMock, mock_run: MagicMock) -> None:
         """Amass intel with malformed JSON lines skips them gracefully."""
         mock_available.return_value = True
@@ -428,8 +428,8 @@ class TestAmassIntel:
         assert len(result["organizations"]) == 2
         assert "Valid Corp" in result["organizations"]
 
-    @patch("loom.tools.dark_recon.subprocess.run")
-    @patch("loom.tools.dark_recon._is_tool_available")
+    @patch("loom.tools.intelligence.dark_recon.subprocess.run")
+    @patch("loom.tools.intelligence.dark_recon.is_available")
     def test_amass_intel_empty_output(self, mock_available: MagicMock, mock_run: MagicMock) -> None:
         """Amass intel with empty output returns empty lists."""
         mock_available.return_value = True

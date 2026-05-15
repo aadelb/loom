@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import re
-import subprocess
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import logging
 from loom.error_responses import handle_tool_errors
+from loom.subprocess_helpers import run_command
 
 logger = logging.getLogger("loom.tools.changelog_gen")
 
@@ -16,8 +16,8 @@ logger = logging.getLogger("loom.tools.changelog_gen")
 def _run_git(cmd: list[str]) -> str:
     """Run git command and return stdout."""
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30, cwd=".")
-        return result.stdout.strip() if result.returncode == 0 else ""
+        result = run_command(cmd, timeout=30, cwd=".")
+        return result["stdout"].strip() if result["success"] else ""
     except Exception as e:
         logger.error("Git error: %s", e)
         return ""

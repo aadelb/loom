@@ -2,7 +2,7 @@
 
 import pytest
 
-from loom.tools.execution_planner import (
+from loom.tools.llm.execution_planner import (
     research_plan_execution,
     research_plan_validate,
 )

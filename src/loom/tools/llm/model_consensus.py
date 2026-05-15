@@ -112,7 +112,7 @@ async def research_multi_consensus(
             return (model_name, None)
 
     # Gather all responses in parallel
-    results = await asyncio.gather(*[_call_model(m) for m in models])
+    results = await asyncio.gather(*[_call_model(m) for m in models], return_exceptions=True)
 
     # Process results
     responses: dict[str, str] = {}

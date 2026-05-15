@@ -1,6 +1,14 @@
 """research_detect_anomalies — Detect numerical and textual anomalies in research data."""
 
 from __future__ import annotations
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text, max_chars=500, *, suffix="..."):
+        if len(text) <= max_chars: return text
+        return text[:max_chars - len(suffix)] + suffix
+
+
 import logging, math, random
 from typing import Any
 
@@ -100,7 +108,7 @@ async def research_detect_text_anomalies(texts: list[str], baseline: str = "") -
                 score += 0.2
 
             if anom_types:
-                anomalies.append({"index": idx, "text_preview": text[:100], "anomaly_types": anom_types, "score": round(score, 3)})
+                anomalies.append({"index": idx, "text_preview": truncate(text, 100), "anomaly_types": anom_types, "score": round(score, 3)})
                 for t in anom_types:
                     types_found[t] = types_found.get(t, 0) + 1
 

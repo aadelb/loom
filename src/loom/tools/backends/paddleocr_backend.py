@@ -15,6 +15,13 @@ import httpx
 from loom.validators import UrlSafetyError, validate_url
 from loom.error_responses import handle_tool_errors
 
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text, max_chars=500, *, suffix="..."):
+        if len(text) <= max_chars: return text
+        return text[:max_chars - len(suffix)] + suffix
+
 logger = logging.getLogger("loom.tools.paddleocr_backend")
 
 # Max image file size: 100 MB
@@ -221,7 +228,7 @@ async def research_paddle_ocr(
 
                 full_text = " ".join(text_parts)
                 if len(full_text) > MAX_EXTRACTED_TEXT:
-                    full_text = full_text[:MAX_EXTRACTED_TEXT]
+                    full_text = truncate(full_text, MAX_EXTRACTED_TEXT)
 
                 return full_text, blocks
 

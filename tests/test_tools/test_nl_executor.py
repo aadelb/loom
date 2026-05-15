@@ -9,7 +9,7 @@ import os
 # Add src to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../src'))
 
-from loom.tools import nl_executor
+import loom.tools.llm.nl_executor
 
 
 class TestNLExecutor:

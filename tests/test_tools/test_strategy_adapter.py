@@ -11,7 +11,7 @@ import pytest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from loom.tools.strategy_adapter import StrategyAdapter, StrategyStats
+from loom.tools.llm.strategy_adapter import StrategyAdapter, StrategyStats
 
 
 class TestStrategyStats:

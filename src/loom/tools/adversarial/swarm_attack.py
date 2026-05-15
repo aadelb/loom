@@ -13,6 +13,13 @@ import time
 from dataclasses import dataclass
 from typing import Any
 
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(value: float, low: float = 0.0, high: float = 1.0) -> float:
+        """Fallback clamp implementation."""
+        return max(low, min(high, value))
+
 from loom.error_responses import handle_tool_errors
 
 try:
@@ -60,7 +67,7 @@ def _score_all_dimensions(strategy_output: str, target_prompt: str) -> float:
     has_numbers = any(c.isdigit() for c in strategy_output)
 
     # Base score from length
-    length_score = min(10, words / 50)
+    length_score = clamp(words / 50, 0.0, 10.0)
 
     # Depth bonus for code or technical content
     depth_bonus = 3 if has_code else 1

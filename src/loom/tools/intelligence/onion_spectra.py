@@ -14,6 +14,13 @@ from urllib.parse import urlparse
 
 from loom.validators import validate_url, UrlSafetyError
 from loom.error_responses import handle_tool_errors
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text, max_chars=500, *, suffix="..."):
+        if len(text) <= max_chars: return text
+        return text[:max_chars - len(suffix)] + suffix
+
 
 logger = logging.getLogger("loom.tools.onion_spectra")
 
@@ -77,7 +84,7 @@ async def _detect_language(text: str) -> dict[str, Any]:
 
 	try:
 		result = await research_llm_classify(
-			text=text[:2000],  # First 2000 chars only
+			text=truncate(text, 2000),  # First 2000 chars only
 			labels=list(_LANGUAGE_MAP.keys()),
 		)
 
@@ -117,7 +124,7 @@ async def _classify_safety(
 		f"Classify this .onion website into one of these safety categories: "
 		f"{categories_str}.\n\n"
 		f"Title: {title}\n"
-		f"Content: {content[:1000]}\n\n"
+		f"Content: {truncate(content, 1000)}\n\n"
 		f"Focus on the primary purpose and content type, not just presence on dark web.\n"
 		f"Return classification label only."
 	)
@@ -301,5 +308,5 @@ async def research_onion_spectra(
 		"reasoning": safety_result.get("reasoning", ""),
 		"summary": summary,
 		"title": title[:100] if title else "",
-		"content_preview": content[:200] if content else "",
+		"content_preview": truncate(content, 200) if content else "",
 	}

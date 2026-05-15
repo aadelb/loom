@@ -16,7 +16,6 @@ import hashlib
 import logging
 import time
 from datetime import UTC, datetime
-from io import BytesIO
 from typing import Any, Literal
 
 try:

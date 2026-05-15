@@ -9,11 +9,11 @@ Uses Maigret as a subprocess since it's not easily pip-installable as a library.
 
 from __future__ import annotations
 from loom.error_responses import handle_tool_errors
+from loom.subprocess_helpers import run_command
 
 import json
 import logging
 import re
-import subprocess
 import time
 from typing import Any
 
@@ -55,16 +55,16 @@ def _check_maigret_available() -> tuple[bool, str]:
         Tuple of (available: bool, message: str)
     """
     try:
-        result = subprocess.run(
+        result = run_command(
             ["maigret", "--version"],
             capture_output=True,
             text=True,
             timeout=5,
         )
-        if result.returncode == 0:
+        if result["success"]:
             return True, "Maigret CLI found"
         else:
-            return False, f"Maigret version check failed: {result.stderr}"
+            return False, f"Maigret version check failed: {result["stderr"]}"
     except FileNotFoundError:
         return False, "Maigret CLI not found. Install with: pip install maigret"
     except subprocess.TimeoutExpired:
@@ -126,7 +126,7 @@ def research_maigret(username: str, timeout: int = 60) -> dict[str, Any]:
         cmd = ["maigret", username, "--json", "--timeout", str(timeout)]
 
         # Run maigret
-        result = subprocess.run(
+        result = run_command(
             cmd,
             capture_output=True,
             text=True,
@@ -147,9 +147,9 @@ def research_maigret(username: str, timeout: int = 60) -> dict[str, Any]:
 
         try:
             # Try to parse from stdout first
-            if result.stdout:
+            if result["stdout"]:
                 try:
-                    maigret_output = json.loads(result.stdout)
+                    maigret_output = json.loads(result["stdout"])
                 except json.JSONDecodeError:
                     # If stdout is not valid JSON, try reading the file
                     maigret_output = None

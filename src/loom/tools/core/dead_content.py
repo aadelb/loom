@@ -9,6 +9,7 @@ import httpx
 
 from loom.validators import validate_url
 from loom.error_responses import handle_tool_errors
+from loom.http_helpers import fetch_json
 
 logger = logging.getLogger("loom.tools.dead_content")
 
@@ -71,16 +72,14 @@ async def research_dead_content(
         if sources_checked < max_sources:
             sources_checked += 1
             try:
-                resp = await client.get(
+                data = await fetch_json(client,
                     "https://web.archive.org/cdx/search/cdx",
                     params={"url": url, "output": "json", "limit": 10},
                 )
-                if resp.status_code == 200:
-                    data = resp.json()
-                    if data and len(data) > 1:
-                        found_in.append("wayback_machine")
-                        # data[0] is header row, rest are snapshots
-                        for row in data[1:6]:  # Cap at 5 snapshots
+                if data and len(data) > 1:
+                    found_in.append("wayback_machine")
+                    # data[0] is header row, rest are snapshots
+                    for row in data[1:6]:  # Cap at 5 snapshots
                             if include_snapshots and len(row) >= 4:
                                 snapshots.append(
                                     {
@@ -114,13 +113,11 @@ async def research_dead_content(
         if sources_checked < max_sources:
             sources_checked += 1
             try:
-                resp = await client.get(
+                data = await fetch_json(client,
                     "https://index.commoncrawl.org/CC-MAIN-2024-10-index",
                     params={"url": url, "output": "json"},
                 )
-                if resp.status_code == 200:
-                    data = resp.json()
-                    if data and isinstance(data, list) and len(data) > 0:
+                if data and isinstance(data, list) and len(data) > 0:
                         found_in.append("common_crawl")
                         if include_snapshots and len(data) > 0:
                             entry = data[0]
@@ -138,12 +135,10 @@ async def research_dead_content(
         if sources_checked < max_sources:
             sources_checked += 1
             try:
-                resp = await client.get(
+                data = await fetch_json(client,
                     f"https://timetravel.mementoweb.org/timemap/json/{url}"
                 )
-                if resp.status_code == 200:
-                    data = resp.json()
-                    if data and "mementos" in data and data["mementos"].get("list"):
+                if data and "mementos" in data and data["mementos"].get("list"):
                         found_in.append("memento_timetravel")
                         if include_snapshots:
                             for mem in data["mementos"]["list"][:3]:

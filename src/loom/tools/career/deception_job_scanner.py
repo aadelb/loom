@@ -1,15 +1,20 @@
 """research_deception_job_scan — Analyze job postings for deception signals."""
 from __future__ import annotations
 
-import asyncio
 import logging
 import re
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import quote
 import httpx
 
 from loom.error_responses import handle_tool_errors
+from loom.http_helpers import fetch_json, fetch_text
+
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    clamp = lambda v, lo, hi: max(lo, min(hi, v))
 
 logger = logging.getLogger("loom.tools.deception_job_scanner")
 
@@ -142,9 +147,8 @@ async def _search_company_glassdoor(company_name: str) -> int:
                 f"https://duckduckgo.com/?q={quote(company_name)}+glassdoor+"
                 f"reviews&format=json"
             )
-            resp = await client.get(search_url, timeout=10.0)
-            if resp.status_code == 200:
-                data = resp.json()
+            data = await fetch_json(client, search_url, timeout=10.0)
+            if data:
                 results = data.get("results", [])
                 return len(
                     [r for r in results if "glassdoor" in r.get("url", "").lower()]
@@ -287,7 +291,7 @@ async def research_deception_job_scan(
                 risk_score += 10
 
         # Clamp risk score to 0-100
-        risk_score = max(0, min(100, risk_score))
+        risk_score = clamp(risk_score, 0, 100)
 
         return {
             "risk_score": risk_score,

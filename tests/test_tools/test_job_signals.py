@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from loom.tools.job_signals import (
+from loom.tools.career.job_signals import (
     research_funding_signal,
     research_interviewer_profiler,
     research_stealth_hire_scanner,
@@ -21,11 +21,11 @@ class TestFundingSignal:
     async def test_valid_company(self) -> None:
         """Valid company name returns structured funding signals."""
         with patch(
-            "loom.tools.job_signals._fetch_sec_filings"
+            "loom.tools.career.job_signals._fetch_sec_filings"
         ) as mock_sec, patch(
-            "loom.tools.job_signals._fetch_github_activity"
+            "loom.tools.career.job_signals._fetch_github_activity"
         ) as mock_github, patch(
-            "loom.tools.job_signals._fetch_crt_sh_subdomains"
+            "loom.tools.career.job_signals._fetch_crt_sh_subdomains"
         ) as mock_crt:
             mock_sec.return_value = {
                 "cik": "1234567",
@@ -67,9 +67,9 @@ class TestFundingSignal:
     async def test_domain_optional(self) -> None:
         """Domain parameter is optional."""
         with patch(
-            "loom.tools.job_signals._fetch_sec_filings"
+            "loom.tools.career.job_signals._fetch_sec_filings"
         ) as mock_sec, patch(
-            "loom.tools.job_signals._fetch_github_activity"
+            "loom.tools.career.job_signals._fetch_github_activity"
         ) as mock_github:
             mock_sec.return_value = {"cik": None, "filings": []}
             mock_github.return_value = {"repos": [], "activity_level": "low"}
@@ -82,9 +82,9 @@ class TestFundingSignal:
     async def test_high_likelihood_on_s1_filing(self) -> None:
         """S-1 IPO filing sets hiring_likelihood to 'high'."""
         with patch(
-            "loom.tools.job_signals._fetch_sec_filings"
+            "loom.tools.career.job_signals._fetch_sec_filings"
         ) as mock_sec, patch(
-            "loom.tools.job_signals._fetch_github_activity"
+            "loom.tools.career.job_signals._fetch_github_activity"
         ) as mock_github:
             mock_sec.return_value = {
                 "cik": "999",
@@ -106,9 +106,9 @@ class TestFundingSignal:
     async def test_evidence_field_populated(self) -> None:
         """Evidence field contains human-readable findings."""
         with patch(
-            "loom.tools.job_signals._fetch_sec_filings"
+            "loom.tools.career.job_signals._fetch_sec_filings"
         ) as mock_sec, patch(
-            "loom.tools.job_signals._fetch_github_activity"
+            "loom.tools.career.job_signals._fetch_github_activity"
         ) as mock_github:
             mock_sec.return_value = {"cik": None, "filings": []}
             mock_github.return_value = {"repos": [], "activity_level": "low"}
@@ -125,11 +125,11 @@ class TestStealthHireScanner:
     async def test_valid_keywords(self) -> None:
         """Valid keywords return stealth job opportunities."""
         with patch(
-            "loom.tools.job_signals._fetch_github_jobs_keywords"
+            "loom.tools.career.job_signals._fetch_github_jobs_keywords"
         ) as mock_github, patch(
-            "loom.tools.job_signals._fetch_hackernews_hiring"
+            "loom.tools.career.job_signals._fetch_hackernews_hiring"
         ) as mock_hn, patch(
-            "loom.tools.job_signals._fetch_reddit_hiring"
+            "loom.tools.career.job_signals._fetch_reddit_hiring"
         ) as mock_reddit:
             mock_github.return_value = [
                 {
@@ -182,11 +182,11 @@ class TestStealthHireScanner:
     async def test_location_filter(self) -> None:
         """Location parameter filters results."""
         with patch(
-            "loom.tools.job_signals._fetch_github_jobs_keywords"
+            "loom.tools.career.job_signals._fetch_github_jobs_keywords"
         ) as mock_github, patch(
-            "loom.tools.job_signals._fetch_hackernews_hiring"
+            "loom.tools.career.job_signals._fetch_hackernews_hiring"
         ) as mock_hn, patch(
-            "loom.tools.job_signals._fetch_reddit_hiring"
+            "loom.tools.career.job_signals._fetch_reddit_hiring"
         ) as mock_reddit:
             mock_github.return_value = []
             mock_hn.return_value = [
@@ -207,11 +207,11 @@ class TestStealthHireScanner:
     async def test_consolidates_multiple_sources(self) -> None:
         """Results from GitHub, HN, and Reddit are consolidated."""
         with patch(
-            "loom.tools.job_signals._fetch_github_jobs_keywords"
+            "loom.tools.career.job_signals._fetch_github_jobs_keywords"
         ) as mock_github, patch(
-            "loom.tools.job_signals._fetch_hackernews_hiring"
+            "loom.tools.career.job_signals._fetch_hackernews_hiring"
         ) as mock_hn, patch(
-            "loom.tools.job_signals._fetch_reddit_hiring"
+            "loom.tools.career.job_signals._fetch_reddit_hiring"
         ) as mock_reddit:
             mock_github.return_value = [
                 {"source": "GitHub", "title": "Job1", "url": "url1", "description": "", "stars": 0}
@@ -234,11 +234,11 @@ class TestInterviewerProfiler:
     async def test_valid_person(self) -> None:
         """Valid person name returns comprehensive profile."""
         with patch(
-            "loom.tools.job_signals._fetch_github_profile"
+            "loom.tools.career.job_signals._fetch_github_profile"
         ) as mock_github, patch(
-            "loom.tools.job_signals._fetch_semantic_scholar"
+            "loom.tools.career.job_signals._fetch_semantic_scholar"
         ) as mock_scholar, patch(
-            "loom.tools.job_signals._fetch_hackernews_activity"
+            "loom.tools.career.job_signals._fetch_hackernews_activity"
         ) as mock_hn:
             mock_github.return_value = {
                 "found": True,
@@ -305,11 +305,11 @@ class TestInterviewerProfiler:
     async def test_company_optional(self) -> None:
         """Company parameter is optional."""
         with patch(
-            "loom.tools.job_signals._fetch_github_profile"
+            "loom.tools.career.job_signals._fetch_github_profile"
         ) as mock_github, patch(
-            "loom.tools.job_signals._fetch_semantic_scholar"
+            "loom.tools.career.job_signals._fetch_semantic_scholar"
         ) as mock_scholar, patch(
-            "loom.tools.job_signals._fetch_hackernews_activity"
+            "loom.tools.career.job_signals._fetch_hackernews_activity"
         ) as mock_hn:
             mock_github.return_value = {"found": False}
             mock_scholar.return_value = {"publications": []}
@@ -327,11 +327,11 @@ class TestInterviewerProfiler:
     async def test_tech_stack_consolidated(self) -> None:
         """Tech stack combines data from GitHub languages and HN interests."""
         with patch(
-            "loom.tools.job_signals._fetch_github_profile"
+            "loom.tools.career.job_signals._fetch_github_profile"
         ) as mock_github, patch(
-            "loom.tools.job_signals._fetch_semantic_scholar"
+            "loom.tools.career.job_signals._fetch_semantic_scholar"
         ) as mock_scholar, patch(
-            "loom.tools.job_signals._fetch_hackernews_activity"
+            "loom.tools.career.job_signals._fetch_hackernews_activity"
         ) as mock_hn:
             mock_github.return_value = {
                 "found": True,
@@ -363,11 +363,11 @@ class TestInterviewerProfiler:
     async def test_talking_points_generated(self) -> None:
         """Talking points are generated from GitHub bio and HN posts."""
         with patch(
-            "loom.tools.job_signals._fetch_github_profile"
+            "loom.tools.career.job_signals._fetch_github_profile"
         ) as mock_github, patch(
-            "loom.tools.job_signals._fetch_semantic_scholar"
+            "loom.tools.career.job_signals._fetch_semantic_scholar"
         ) as mock_scholar, patch(
-            "loom.tools.job_signals._fetch_hackernews_activity"
+            "loom.tools.career.job_signals._fetch_hackernews_activity"
         ) as mock_hn:
             mock_github.return_value = {
                 "found": True,

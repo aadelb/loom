@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 
-from loom.server import _fuzzy_correct_params
+from loom.middleware import _fuzzy_correct_params
 
 
 def dummy_tool(query: str, max_results: int = 10, timeout: float = 30.0) -> dict:
@@ -140,7 +140,7 @@ class TestWrapToolIntegration:
     @pytest.mark.asyncio
     async def test_async_tool_with_corrections_in_response(self):
         """Test that async tool includes _param_corrections in response."""
-        from loom.server import _wrap_tool
+        from loom.middleware import _wrap_tool
 
         async def sample_async_tool(query: str, limit: int = 10) -> dict:
             return {"results": [query] * limit}
@@ -154,7 +154,7 @@ class TestWrapToolIntegration:
 
     def test_sync_tool_with_corrections_in_response(self):
         """Test that sync tool includes _param_corrections in response."""
-        from loom.server import _wrap_tool
+        from loom.middleware import _wrap_tool
 
         def sample_sync_tool(query: str, limit: int = 10) -> dict:
             return {"results": [query] * limit}
@@ -169,7 +169,7 @@ class TestWrapToolIntegration:
     @pytest.mark.asyncio
     async def test_async_tool_no_corrections(self):
         """Test that async tool without corrections has no metadata."""
-        from loom.server import _wrap_tool
+        from loom.middleware import _wrap_tool
 
         async def sample_async_tool(query: str, limit: int = 10) -> dict:
             return {"results": [query] * limit}
@@ -181,7 +181,7 @@ class TestWrapToolIntegration:
 
     def test_sync_tool_non_dict_return(self):
         """Test that non-dict returns are not modified."""
-        from loom.server import _wrap_tool
+        from loom.middleware import _wrap_tool
 
         def sample_sync_tool(query: str) -> str:
             return f"Query: {query}"

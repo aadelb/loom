@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from loom.brain.prompts import PARAM_EXTRACTION_SYSTEM, PARAM_EXTRACTION_USER
-from loom.brain.types import PlanStep, QualityMode, ToolMeta
+from loom.brain.types import PlanStep, QualityMode
 
 logger = logging.getLogger("loom.brain.action")
 
@@ -241,7 +241,7 @@ def _validate_and_improve_params(
         # Try harder for required params
         if param_name == "url" and param_name not in params:
             # Extended URL search (more lenient patterns)
-            urls = re.findall(r"https?://\S+|www\.\S+", query, re.IGNORECASE)
+            urls = re.findall(r"https?://[^\s\"'<>]+|www\.[^\s\"'<>]+", query, re.IGNORECASE)
             if urls:
                 params[param_name] = urls[0]
                 logger.debug("recovered required param '%s' via extended search", param_name)

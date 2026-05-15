@@ -11,7 +11,7 @@ from __future__ import annotations
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from loom.tools.model_fingerprinter import (
+from loom.tools.llm.model_fingerprinter import (
     research_fingerprint_behavior,
     _compute_personality_vector,
     _recommend_attacks,
@@ -39,7 +39,7 @@ class TestFingerprintBehavior:
         """Test with valid probe_count at boundaries."""
         for count in [1, 5, 10]:
             with patch(
-                "loom.tools.model_fingerprinter._call_with_cascade"
+                "loom.tools.llm.model_fingerprinter._call_with_cascade"
             ) as mock_cascade:
                 mock_response = MagicMock()
                 mock_response.text = "Sample response text."
@@ -57,7 +57,7 @@ class TestFingerprintBehavior:
     async def test_response_structure(self):
         """Test that response has all required keys."""
         with patch(
-            "loom.tools.model_fingerprinter._call_with_cascade"
+            "loom.tools.llm.model_fingerprinter._call_with_cascade"
         ) as mock_cascade:
             mock_response = MagicMock()
             mock_response.text = "Test response."
@@ -92,7 +92,7 @@ class TestFingerprintBehavior:
     async def test_probe_results_structure(self):
         """Test that probe_results have correct structure."""
         with patch(
-            "loom.tools.model_fingerprinter._call_with_cascade"
+            "loom.tools.llm.model_fingerprinter._call_with_cascade"
         ) as mock_cascade:
             mock_response = MagicMock()
             mock_response.text = "Response with structure. 1. Item one. 2. Item two."
@@ -115,7 +115,7 @@ class TestFingerprintBehavior:
     async def test_failed_probes_handled(self):
         """Test handling of failed probes."""
         with patch(
-            "loom.tools.model_fingerprinter._call_with_cascade"
+            "loom.tools.llm.model_fingerprinter._call_with_cascade"
         ) as mock_cascade:
             # First call succeeds, second fails
             mock_response = MagicMock()
@@ -138,7 +138,7 @@ class TestFingerprintBehavior:
     async def test_metadata_accuracy(self):
         """Test that metadata correctly tracks probes."""
         with patch(
-            "loom.tools.model_fingerprinter._call_with_cascade"
+            "loom.tools.llm.model_fingerprinter._call_with_cascade"
         ) as mock_cascade:
             mock_response = MagicMock()
             mock_response.text = "Test response."

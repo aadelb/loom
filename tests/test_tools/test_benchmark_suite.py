@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from loom.tools.benchmark_suite import (
+from loom.tools.research.benchmark_suite import (
     research_benchmark_run,
     research_benchmark_compare,
     _get_tool_function,

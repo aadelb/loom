@@ -10,9 +10,9 @@ import pytest
 
 @pytest.fixture(autouse=True)
 def _clear_email_module():
-    sys.modules.pop("loom.tools.email_report", None)
+    sys.modules.pop("loom.tools.infrastructure.email_report", None)
     yield
-    sys.modules.pop("loom.tools.email_report", None)
+    sys.modules.pop("loom.tools.infrastructure.email_report", None)
 
 
 @pytest.mark.asyncio
@@ -20,7 +20,7 @@ class TestResearchEmailReport:
     async def test_invalid_recipient_email(self):
         """Test returns error with invalid recipient email."""
         with patch.dict("os.environ", {"SMTP_USER": "sender@test.com", "SMTP_APP_PASSWORD": "pass"}):
-            from loom.tools.email_report import research_email_report
+            from loom.tools.infrastructure.email_report import research_email_report
 
             result = await research_email_report(
                 to="invalid-email",
@@ -34,7 +34,7 @@ class TestResearchEmailReport:
     async def test_subject_exceeds_max_length(self):
         """Test returns error when subject exceeds max length."""
         with patch.dict("os.environ", {"SMTP_USER": "sender@test.com", "SMTP_APP_PASSWORD": "pass"}):
-            from loom.tools.email_report import research_email_report
+            from loom.tools.infrastructure.email_report import research_email_report
 
             long_subject = "x" * 201
             result = await research_email_report(
@@ -49,7 +49,7 @@ class TestResearchEmailReport:
     async def test_body_exceeds_max_length(self):
         """Test returns error when body exceeds max length."""
         with patch.dict("os.environ", {"SMTP_USER": "sender@test.com", "SMTP_APP_PASSWORD": "pass"}):
-            from loom.tools.email_report import research_email_report
+            from loom.tools.infrastructure.email_report import research_email_report
 
             long_body = "x" * 50001
             result = await research_email_report(
@@ -64,7 +64,7 @@ class TestResearchEmailReport:
     async def test_missing_smtp_credentials(self):
         """Test returns error when SMTP credentials are missing."""
         with patch.dict("os.environ", {}, clear=True):
-            from loom.tools.email_report import research_email_report
+            from loom.tools.infrastructure.email_report import research_email_report
 
             result = await research_email_report(
                 to="test@example.com",
@@ -78,7 +78,7 @@ class TestResearchEmailReport:
     async def test_invalid_sender_email(self):
         """Test returns error with invalid sender email in credentials."""
         with patch.dict("os.environ", {"SMTP_USER": "not-an-email", "SMTP_APP_PASSWORD": "pass"}):
-            from loom.tools.email_report import research_email_report
+            from loom.tools.infrastructure.email_report import research_email_report
 
             result = await research_email_report(
                 to="test@example.com",
@@ -102,7 +102,7 @@ class TestResearchEmailReport:
                 return_value=(True, "email sent successfully")
             )
 
-            from loom.tools.email_report import research_email_report
+            from loom.tools.infrastructure.email_report import research_email_report
 
             result = await research_email_report(
                 to="test@example.com",
@@ -117,7 +117,7 @@ class TestResearchEmailReport:
     async def test_fallback_gmail_credentials(self):
         """Test that fallback to GMAIL_USER and GMAIL_APP_PASSWORD works."""
         with patch.dict("os.environ", {"GMAIL_USER": "sender@gmail.com", "GMAIL_APP_PASSWORD": "apppass"}):
-            from loom.tools.email_report import research_email_report
+            from loom.tools.infrastructure.email_report import research_email_report
 
             result = await research_email_report(
                 to="test@example.com",
@@ -131,7 +131,7 @@ class TestResearchEmailReport:
     async def test_email_format_validation_at_boundary(self):
         """Test email validation at boundaries."""
         with patch.dict("os.environ", {"SMTP_USER": "sender@test.com", "SMTP_APP_PASSWORD": "pass"}):
-            from loom.tools.email_report import research_email_report
+            from loom.tools.infrastructure.email_report import research_email_report
 
             # Test with valid email
             result = await research_email_report(
@@ -146,7 +146,7 @@ class TestResearchEmailReport:
     async def test_subject_at_max_length(self):
         """Test subject at exactly max length is accepted."""
         with patch.dict("os.environ", {"SMTP_USER": "sender@test.com", "SMTP_APP_PASSWORD": "pass"}):
-            from loom.tools.email_report import research_email_report
+            from loom.tools.infrastructure.email_report import research_email_report
 
             subject = "x" * 200
             result = await research_email_report(
@@ -161,7 +161,7 @@ class TestResearchEmailReport:
     async def test_body_at_max_length(self):
         """Test body at exactly max length is accepted."""
         with patch.dict("os.environ", {"SMTP_USER": "sender@test.com", "SMTP_APP_PASSWORD": "pass"}):
-            from loom.tools.email_report import research_email_report
+            from loom.tools.infrastructure.email_report import research_email_report
 
             body = "x" * 50000
             result = await research_email_report(

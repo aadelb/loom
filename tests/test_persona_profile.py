@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from loom.tools.persona_profile import research_persona_profile
+from loom.tools.adversarial.persona_profile import research_persona_profile
 
 
 class TestPersonaProfileBasic:

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import pytest
-from loom.tools.sla_status import research_sla_status
+from loom.tools.monitoring.sla_status import research_sla_status
 from loom.sla_monitor import get_sla_monitor, SLA_TARGETS
 
 

@@ -11,6 +11,7 @@ from urllib.parse import quote
 import httpx
 
 from loom.error_responses import handle_tool_errors
+from loom.http_helpers import fetch_json, fetch_text, fetch_bytes
 logger = logging.getLogger("loom.tools.threat_profile")
 
 _PLATFORMS = [
@@ -77,11 +78,10 @@ async def _check_pgp(client: httpx.AsyncClient, email: str) -> list[dict[str, st
 
 async def _github_profile(client: httpx.AsyncClient, username: str) -> dict[str, Any]:
     try:
-        resp = await client.get(
+        data = await fetch_json(client,
             _GITHUB_USER.format(username=username), timeout=10.0
         )
-        if resp.status_code == 200:
-            data = resp.json()
+        if data:
             return {
                 "name": data.get("name", ""),
                 "bio": data.get("bio", ""),
@@ -100,11 +100,9 @@ async def _github_profile(client: httpx.AsyncClient, username: str) -> dict[str,
 async def _hn_profile(client: httpx.AsyncClient, username: str) -> dict[str, Any]:
     data = None
     try:
-        resp = await client.get(
+        data = await fetch_json(client, 
             _HN_USER.format(username=username), timeout=10.0
         )
-        if resp.status_code == 200:
-            data = resp.json()
     except Exception:
         pass
     if not data:
@@ -174,7 +172,11 @@ async def research_threat_profile(
             pgp_task = _check_pgp(client, email) if email else None
 
             platform_results = await asyncio.gather(*tasks, return_exceptions=True)
-            gh_data, hn_data = await asyncio.gather(github_task, hn_task)
+            gh_data, hn_data = await asyncio.gather(github_task, hn_task, return_exceptions=True)
+            if isinstance(gh_data, BaseException):
+                gh_data = {}
+            if isinstance(hn_data, BaseException):
+                hn_data = {}
 
             gravatar_data: dict[str, Any] = {}
             pgp_data: list[dict[str, str]] = []

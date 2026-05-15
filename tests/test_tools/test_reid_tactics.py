@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from loom.tools.reid_tactics import research_reid_tactics, REID_TACTICS
-from loom.params import ReidTacticsParams
+from loom.tools.adversarial.reid_tactics import research_reid_tactics, REID_TACTICS
+from loom.params.research import ReidTacticsParams
 
 
 class TestReidTacticsKnowledgeBase:

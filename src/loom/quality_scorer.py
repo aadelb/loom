@@ -14,6 +14,38 @@ import logging
 import re
 from typing import Any
 
+try:
+    from loom.score_utils import clamp, score_to_grade, weighted_average
+except ImportError:
+    # Fallback if score_utils is unavailable
+    def clamp(value: float, low: float = 0.0, high: float = 1.0) -> float:
+        return max(low, min(high, value))
+
+    def score_to_grade(value: float, *, scale: int = 100) -> str:
+        if scale <= 0:
+            return "F"
+        normalized = (value / scale) * 100.0 if scale != 100 else value
+        normalized = clamp(normalized, 0.0, 100.0)
+        if normalized >= 90:
+            return "A"
+        elif normalized >= 80:
+            return "B"
+        elif normalized >= 70:
+            return "C"
+        elif normalized >= 60:
+            return "D"
+        else:
+            return "F"
+
+    def weighted_average(scores: dict[str, float], weights: dict[str, float]) -> float:
+        total_weight = 0.0
+        weighted_sum = 0.0
+        for key, weight in weights.items():
+            if key in scores and weight > 0:
+                total_weight += weight
+                weighted_sum += scores[key] * weight
+        return round(weighted_sum / total_weight, 2) if total_weight > 0 else 0.0
+
 logger = logging.getLogger("loom.quality_scorer")
 
 
@@ -82,8 +114,8 @@ class ResponseQualityScorer:
             "formatting": self._score_formatting(response),
         }
 
-        # Calculate weighted total
-        total_score = self._calculate_total_score(dimensions)
+        # Calculate weighted total using shared function
+        total_score = weighted_average(dimensions, self.DIMENSION_WEIGHTS)
 
         # Determine quality tier
         quality_tier = self._get_quality_tier(total_score)
@@ -123,7 +155,7 @@ class ResponseQualityScorer:
         if not query:
             # Without query, assume reasonable length response is complete
             # Minimum 50 chars gets base score, scales up
-            length_score = min(10.0, max(2.0, len(response) / 100))
+            length_score = clamp(len(response) / 100, 2.0, 10.0)
             has_intro = bool(re.search(r"^[^.!?]*[.!?]", response[:100]))
             return (length_score + (5.0 if has_intro else 2.0)) / 2
 
@@ -134,7 +166,7 @@ class ResponseQualityScorer:
 
         # Check if response seems to address the query
         coverage = len(common_words) / max(len(query_words), 1)
-        length_bonus = min(4.0, len(response) / 150)  # Max 4 points for length
+        length_bonus = clamp(len(response) / 150, 0.0, 4.0)  # Max 4 points for length
 
         # Check for answer-like patterns
         has_answer = bool(
@@ -146,7 +178,7 @@ class ResponseQualityScorer:
             base_score += 3.0  # Answers score higher
         base_score += length_bonus
 
-        return min(10.0, base_score)
+        return clamp(base_score, 0.0, 10.0)
 
     def _score_specificity(self, response: str) -> float:
         """Score 0-10: Named entities, numbers, code, URLs vs vague language.
@@ -157,23 +189,23 @@ class ResponseQualityScorer:
 
         # Named entities (capitalize + patterns)
         named_entities = len(re.findall(r"\b[A-Z][a-z]+\b", response))
-        score += min(2.0, named_entities / 2)
+        score += clamp(named_entities / 2, 0.0, 2.0)
 
         # Numbers and percentages
         numbers = len(re.findall(r"\b\d+(?:[.,]\d+)?\b", response))
-        score += min(2.5, numbers / 2)
+        score += clamp(numbers / 2, 0.0, 2.5)
 
         # URLs
         urls = len(re.findall(r"https?://\S+", response))
-        score += min(2.0, urls)
+        score += clamp(urls, 0.0, 2.0)
 
         # Code blocks (backticks or markdown)
         code_blocks = len(re.findall(r"```|`[^`]+`", response))
-        score += min(2.0, code_blocks)
+        score += clamp(code_blocks, 0.0, 2.0)
 
         # Quoted text or data
         quotes = len(re.findall(r'["\'].*?["\']', response))
-        score += min(1.5, quotes / 3)
+        score += clamp(quotes / 3, 0.0, 1.5)
 
         # Penalize vague language
         vague_words = len(
@@ -183,9 +215,9 @@ class ResponseQualityScorer:
                 re.I,
             )
         )
-        vague_penalty = min(1.0, vague_words * 0.05)
+        vague_penalty = clamp(vague_words * 0.05, 0.0, 1.0)
 
-        return min(10.0, max(0.0, score - vague_penalty))
+        return clamp(score - vague_penalty, 0.0, 10.0)
 
     def _score_accuracy_signals(self, response: str) -> float:
         """Score 0-10: Citations, data, verifiable claims.
@@ -196,7 +228,7 @@ class ResponseQualityScorer:
 
         # URLs (common citation form)
         urls = len(re.findall(r"https?://\S+", response))
-        score += min(2.0, urls * 0.5)
+        score += clamp(urls * 0.5, 0.0, 2.0)
 
         # Data indicators (According to, data shows, research indicates)
         data_patterns = len(
@@ -206,7 +238,7 @@ class ResponseQualityScorer:
                 re.I,
             )
         )
-        score += min(3.0, data_patterns / 1.5)
+        score += clamp(data_patterns / 1.5, 0.0, 3.0)
 
         # Specific metrics/numbers (signs of data)
         has_metrics = bool(re.search(r"\d+\s*(?:%|percent|million|billion|thousand|x|times)", response))
@@ -218,9 +250,9 @@ class ResponseQualityScorer:
 
         # Citations in brackets [1] [2] or (Smith, 2020)
         citations = len(re.findall(r"\[\d+\]|\(\w+,\s*\d{4}\)", response))
-        score += min(1.5, citations * 0.3)
+        score += clamp(citations * 0.3, 0.0, 1.5)
 
-        return min(10.0, score)
+        return clamp(score, 0.0, 10.0)
 
     def _score_actionability(self, response: str) -> float:
         """Score 0-10: Can reader act on this immediately?
@@ -231,7 +263,7 @@ class ResponseQualityScorer:
 
         # Step-by-step indicators
         steps = len(re.findall(r"^\s*(?:\d+\.|step|procedure|process)", response, re.MULTILINE | re.I))
-        score += min(3.0, steps * 1.0)
+        score += clamp(steps * 1.0, 0.0, 3.0)
 
         # Command/action words
         action_words = len(
@@ -241,11 +273,11 @@ class ResponseQualityScorer:
                 re.I,
             )
         )
-        score += min(2.0, action_words / 2)
+        score += clamp(action_words / 2, 0.0, 2.0)
 
         # Code examples or commands (```...``` or `...`)
         code_blocks = len(re.findall(r"```|`[a-z0-9\-./=:$#]+`", response, re.I))
-        score += min(2.5, code_blocks * 1.0)
+        score += clamp(code_blocks * 1.0, 0.0, 2.5)
 
         # Recommendations (should do, best practice)
         recommendations = len(
@@ -255,7 +287,7 @@ class ResponseQualityScorer:
                 re.I,
             )
         )
-        score += min(1.5, recommendations / 2)
+        score += clamp(recommendations / 2, 0.0, 1.5)
 
         # Checklists or lists
         has_list = bool(
@@ -267,7 +299,7 @@ class ResponseQualityScorer:
         )
         score += 1.0 if has_list else 0.0
 
-        return min(10.0, score)
+        return clamp(score, 0.0, 10.0)
 
     def _score_technical_depth(self, response: str) -> float:
         """Score 0-10: Domain expertise level demonstrated.
@@ -287,7 +319,7 @@ class ResponseQualityScorer:
                 re.I,
             )
         )
-        score += min(3.5, tech_terms / 1.5)
+        score += clamp(tech_terms / 1.5, 0.0, 3.5)
 
         # Advanced concepts (trade-offs, nuances)
         nuance_words = len(
@@ -298,7 +330,7 @@ class ResponseQualityScorer:
                 re.I,
             )
         )
-        score += min(3.0, nuance_words / 1.5)
+        score += clamp(nuance_words / 1.5, 0.0, 3.0)
 
         # Mathematical or formal language
         has_formalism = bool(re.search(r"[∑∆∈∉≤≥≈]|O\(|x\s*[+\-*/]=", response))
@@ -306,15 +338,15 @@ class ResponseQualityScorer:
 
         # Specific implementation details / version numbers
         impl_terms = len(re.findall(r"\b(?:implement|version|v?[0-9]\.[0-9]|feature|pattern|method)\b", response))
-        score += min(1.5, impl_terms / 2)
+        score += clamp(impl_terms / 2, 0.0, 1.5)
 
         # Penalty for oversimplification
         oversimplified = len(
             re.findall(r"\b(basically|just|simply|obviously|trivial)\b", response, re.I)
         )
-        penalty = min(2.0, oversimplified * 0.3)
+        penalty = clamp(oversimplified * 0.3, 0.0, 2.0)
 
-        return min(10.0, max(0.0, score - penalty))
+        return clamp(score - penalty, 0.0, 10.0)
 
     def _score_clarity(self, response: str) -> float:
         """Score 0-10: Readability, structure, organization.
@@ -326,11 +358,11 @@ class ResponseQualityScorer:
         # Paragraph structure (multiple paragraphs = better)
         paragraphs = len([p for p in response.split("\n\n") if p.strip()])
         if paragraphs > 1:
-            score += min(2.0, paragraphs / 3)
+            score += clamp(paragraphs / 3, 0.0, 2.0)
 
         # Headers/structure
         headers = len(re.findall(r"^#{1,6}\s+\w+", response, re.MULTILINE))
-        score += min(1.5, headers * 0.5)
+        score += clamp(headers * 0.5, 0.0, 1.5)
 
         # Average sentence length (ideal: 15-20 words)
         sentences = re.split(r"[.!?]+", response)
@@ -348,9 +380,9 @@ class ResponseQualityScorer:
 
         # Bullet points or lists (improve readability)
         lists = len(re.findall(r"(?:^|\n)\s*[-*•]", response, re.MULTILINE))
-        score += min(1.0, lists / 3)
+        score += clamp(lists / 3, 0.0, 1.0)
 
-        return min(10.0, max(0.0, score))
+        return clamp(score, 0.0, 10.0)
 
     def _score_originality(self, response: str) -> float:
         """Score 0-10: Novel insights vs generic/template responses.
@@ -369,14 +401,14 @@ class ResponseQualityScorer:
                 re.I,
             )
         )
-        score -= min(2.0, templates * 0.2)
+        score -= clamp(templates * 0.2, 0.0, 2.0)
 
         # Original phrasing (longer phrases, metaphors)
         # Look for phrases that aren't common expressions
         phrase_length = len(
             re.findall(r"\b[a-z]{6,}\s+[a-z]{6,}\s+[a-z]{6,}", response, re.I)
         )
-        score += min(1.5, phrase_length / 5)
+        score += clamp(phrase_length / 5, 0.0, 1.5)
 
         # Unique insights or specific examples
         has_novel = bool(
@@ -398,9 +430,9 @@ class ResponseQualityScorer:
                     word_freq[word] = word_freq.get(word, 0) + 1
             # Find words that appear >25% of the time (too repetitive)
             repetitive = sum(1 for freq in word_freq.values() if freq > len(words) * 0.25)
-            score -= min(1.5, repetitive * 0.15)
+            score -= clamp(repetitive * 0.15, 0.0, 1.5)
 
-        return min(10.0, max(0.0, score))
+        return clamp(score, 0.0, 10.0)
 
     def _score_hedging(self, response: str) -> float:
         """Score 0-10: Inverse hedging (less hedging = higher score).
@@ -426,7 +458,7 @@ class ResponseQualityScorer:
 
         # Slight bonus for some uncertainty (shows intellectual honesty)
         if 0.005 < hedging_density < 0.03:
-            score = min(10.0, score + 1.0)
+            score = clamp(score + 1.0, 0.0, 10.0)
 
         return score
 
@@ -439,17 +471,17 @@ class ResponseQualityScorer:
 
         # Rhetorical questions
         questions = len(re.findall(r"\?", response))
-        score += min(2.0, questions / 2)
+        score += clamp(questions / 2, 0.0, 2.0)
 
         # Exclamation marks (engagement)
         exclamations = len(re.findall(r"!", response))
-        score += min(1.0, exclamations / 2)
+        score += clamp(exclamations / 2, 0.0, 1.0)
 
         # Varied vocabulary (unique words)
         words = re.findall(r"\b[a-z]+\b", response.lower())
         if len(words) > 0:
             unique_ratio = len(set(words)) / len(words)
-            score += unique_ratio * 3.5  # Max 3.5 points
+            score += clamp(unique_ratio * 3.5, 0.0, 3.5)  # Max 3.5 points
 
         # Interesting adjectives/adverbs
         descriptive = len(
@@ -460,7 +492,7 @@ class ResponseQualityScorer:
                 re.I,
             )
         )
-        score += min(1.5, descriptive * 0.2)
+        score += clamp(descriptive * 0.2, 0.0, 1.5)
 
         # Conversational tone (contractions, informal)
         contractions = len(re.findall(r"\b(don't|can't|won't|isn't|it's|that's|let's|you're)\b", response, re.I))
@@ -472,7 +504,7 @@ class ResponseQualityScorer:
         if all_caps > len(response.split()) * 0.08:
             score -= 1.0
 
-        return min(10.0, max(0.0, score))
+        return clamp(score, 0.0, 10.0)
 
     def _score_formatting(self, response: str) -> float:
         """Score 0-10: Proper markdown, code blocks, lists, headers.
@@ -483,41 +515,29 @@ class ResponseQualityScorer:
 
         # Headers (# ## ### etc)
         headers = len(re.findall(r"^#{1,6}\s+", response, re.MULTILINE))
-        score += min(1.5, headers * 0.4)
+        score += clamp(headers * 0.4, 0.0, 1.5)
 
         # Bold/italic markdown
         emphasis = len(re.findall(r"\*\*.*?\*\*|__.*?__|(?<!\*)\*(?!\*)[^*]+\*(?!\*)|_(?!_)[^_]+_(?!_)", response))
-        score += min(2.0, emphasis / 2)
+        score += clamp(emphasis / 2, 0.0, 2.0)
 
         # Code blocks (backticks, triple backticks)
         code = len(re.findall(r"```[\s\S]*?```|`[^`]+`", response))
-        score += min(2.5, code)
+        score += clamp(code, 0.0, 2.5)
 
         # Lists (unordered)
         lists = len(re.findall(r"(?:^|\n)\s*[-*•]\s+", response, re.MULTILINE))
-        score += min(1.5, lists / 2)
+        score += clamp(lists / 2, 0.0, 1.5)
 
         # Numbered lists
         numbered = len(re.findall(r"(?:^|\n)\s*\d+\.\s+", response, re.MULTILINE))
-        score += min(1.0, numbered / 2)
+        score += clamp(numbered / 2, 0.0, 1.0)
 
         # Links/URLs
         links = len(re.findall(r"\[.*?\]\(.*?\)", response))
-        score += min(1.0, links)
+        score += clamp(links, 0.0, 1.0)
 
-        return min(10.0, score)
-
-    def _calculate_total_score(self, dimensions: dict[str, float]) -> float:
-        """Calculate weighted average of dimension scores."""
-        total = 0.0
-        total_weight = 0.0
-
-        for dimension, score in dimensions.items():
-            weight = self.DIMENSION_WEIGHTS.get(dimension, 1.0)
-            total += score * weight
-            total_weight += weight
-
-        return total / total_weight if total_weight > 0 else 0.0
+        return clamp(score, 0.0, 10.0)
 
     def _get_quality_tier(self, score: float) -> str:
         """Map score to quality tier."""

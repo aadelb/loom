@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from loom.tools import safety_predictor
+import loom.tools.security.safety_predictor
 
 
 @pytest.mark.unit

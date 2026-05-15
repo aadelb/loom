@@ -2,10 +2,18 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Literal
+from typing import Any
 
 from loom.text_utils import jaccard_similarity
 from loom.error_responses import handle_tool_errors
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text: str, max_chars: int = 500, *, suffix: str = "...") -> str:
+        """Fallback truncate if text_utils unavailable."""
+        if len(text) <= max_chars:
+            return text
+        return text[: max_chars - len(suffix)] + suffix
 
 
 def _synonym_swap(text: str, payload: str) -> str:
@@ -118,9 +126,7 @@ def _retrieval_poison(text: str, payload: str) -> str:
 async def research_embedding_collide(
     target_text: str,
     malicious_payload: str,
-    method: Literal[
-        "synonym_swap", "context_inject", "semantic_trojan", "retrieval_poison"
-    ] = "synonym_swap",
+    method: str = "synonym_swap",
 ) -> dict[str, Any]:
     """Craft text that collides in embedding space with hidden payload.
 
@@ -192,7 +198,7 @@ async def research_embedding_collide(
         }
 
         return {
-            "target_text": target_text[:100] + "..." if len(target_text) > 100 else target_text,
+            "target_text": truncate(target_text, 100) + "..." if len(target_text) > 100 else target_text,
             "malicious_payload": malicious_payload[:100] + "..." if len(malicious_payload) > 100 else malicious_payload,
             "method": method,
             "collision_text": collision_text,
@@ -207,9 +213,7 @@ async def research_embedding_collide(
 @handle_tool_errors("research_rag_attack")
 async def research_rag_attack(
     query: str,
-    attack_type: Literal[
-        "retrieval_poison", "synonym_swap", "context_inject", "semantic_trojan"
-    ] = "retrieval_poison",
+    attack_type: str = "retrieval_poison",
     num_chunks: int = 5,
 ) -> dict[str, Any]:
     """Generate poisoned document chunks for RAG system injection.

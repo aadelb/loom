@@ -17,7 +17,6 @@ from __future__ import annotations
 import asyncio
 import difflib
 import functools
-import inspect
 import logging
 import os
 import time
@@ -36,7 +35,7 @@ from loom.tool_rate_limiter import check_tool_rate_limit
 from loom.sla_monitor import get_sla_monitor
 from loom.analytics import ToolAnalytics
 from loom.billing.meter import record_usage
-from loom.billing.token_economy import check_balance, get_tool_cost
+from loom.billing.token_economy import check_balance
 
 log = logging.getLogger("loom.middleware")
 
@@ -551,6 +550,9 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
 
                 raise
 
+        async_wrapper.__annotations__ = {
+            k: v for k, v in async_wrapper.__annotations__.items() if k != "return"
+        }
         return async_wrapper
     else:
         if category and not getattr(func, "_rate_limited", False):
@@ -740,5 +742,8 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
 
                 raise
 
+        sync_wrapper.__annotations__ = {
+            k: v for k, v in sync_wrapper.__annotations__.items() if k != "return"
+        }
         return sync_wrapper
 

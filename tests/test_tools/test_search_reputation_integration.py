@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pytest
 
-from loom.tools.search import _apply_reputation_filter
+from loom.tools.core.search import _apply_reputation_filter
 
 
 class TestSearchReputationIntegration:

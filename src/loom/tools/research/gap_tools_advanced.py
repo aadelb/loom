@@ -9,17 +9,14 @@ Provides:
 
 from __future__ import annotations
 
-import asyncio
-import json
 import logging
-import re
 from datetime import datetime, timedelta
 from typing import Any
 from urllib.parse import quote
 
 import httpx
 
-from loom.http_helpers import fetch_json, fetch_text
+from loom.http_helpers import fetch_json
 from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.gap_tools_advanced")
@@ -339,9 +336,8 @@ async def research_funding_pipeline(company_or_field: str) -> dict[str, Any]:
                     f"https://developer.uspto.gov/ibd-api/v1/application/publications"
                     f"?searchText={quote(company_or_field)}&limit=10"
                 )
-                resp = await client.get(uspto_url, timeout=20.0)
-                if resp.status_code == 200:
-                    uspto_data = resp.json()
+                uspto_data = await fetch_json(client, uspto_url, timeout=20.0)
+                if uspto_data:
                     patents_found = len(uspto_data.get("patents", []))
                     if patents_found > 0:
                         first_patent = uspto_data["patents"][0]
@@ -422,9 +418,8 @@ async def research_patent_embargo(
                     f"https://developer.uspto.gov/ibd-api/v1/application/publications"
                     f"?searchText={quote(company)}&limit=50"
                 )
-                resp = await client.get(uspto_url, timeout=20.0)
-                if resp.status_code == 200:
-                    data = resp.json()
+                data = await fetch_json(client, uspto_url, timeout=20.0)
+                if data:
                     patents = data.get("patents", [])
             except Exception as exc:
                 logger.debug("USPTO patent fetch failed: %s", exc)

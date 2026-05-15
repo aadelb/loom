@@ -69,7 +69,7 @@ class TestGracefulShutdown:
 
     async def test_shutdown_closes_http_client(self) -> None:
         """_shutdown closes the httpx connection pool."""
-        with patch("loom.tools.fetch._http_client") as mock_client:
+        with patch("loom.tools.core.fetch._http_client") as mock_client:
             mock_client.close = MagicMock()
             mock_client.__bool__ = MagicMock(return_value=True)
 

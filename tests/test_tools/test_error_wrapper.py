@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import pytest
 
-from loom.tools.error_wrapper import (
+from loom.tools.infrastructure.error_wrapper import (
     safe_tool_call,
     research_error_stats,
     research_error_clear,

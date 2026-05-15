@@ -20,20 +20,15 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import os
-import subprocess
 import sys
-import tempfile
 from pathlib import Path
-from typing import Any, Literal
-from urllib.parse import urlparse
+from typing import Any
 
 try:
     from mcp.types import TextContent
 except ImportError:
     TextContent = None  # type: ignore[assignment,misc]
 
-from pydantic import BaseModel, Field, field_validator
 
 try:
     from loom.cache import get_cache
@@ -42,7 +37,6 @@ except ImportError:
     _CACHE_AVAILABLE = False
     get_cache = None  # type: ignore[assignment]
 
-from loom.validators import validate_url
 from loom.error_responses import handle_tool_errors
 
 try:

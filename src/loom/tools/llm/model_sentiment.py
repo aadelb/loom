@@ -7,6 +7,13 @@ import re
 from typing import Any
 from loom.error_responses import handle_tool_errors
 
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(v: float, lo: float = 0.0, hi: float = 1.0) -> float:
+        """Fallback clamp if score_utils unavailable."""
+        return max(lo, min(hi, v))
+
 logger = logging.getLogger("loom.tools.model_sentiment")
 
 
@@ -235,7 +242,7 @@ class ModelSentimentAnalyzer:
         score += min(0.3, positive_count * 0.1)  # +0.1 per compliance phrase, capped at 0.3
         score -= min(0.4, refusal_count * 0.15)  # -0.15 per refusal, capped at 0.4
 
-        return max(0.0, min(1.0, score))
+        return clamp(score, 0.0, 1.0)
 
     def analyze(self, response: str, context: str = "") -> dict[str, Any]:
         """Analyze model's emotional state from response text.

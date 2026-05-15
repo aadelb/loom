@@ -9,7 +9,7 @@ from typing import Any
 import httpx
 
 from loom.error_responses import handle_tool_errors
-from loom.http_helpers import fetch_json, fetch_text
+from loom.http_helpers import fetch_json
 
 logger = logging.getLogger("loom.tools.social_graph")
 

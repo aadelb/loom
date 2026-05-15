@@ -7,7 +7,7 @@ Falls back to standard LLM tools when pydantic-ai is unavailable.
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from loom.tools.pydantic_ai_backend import (
+from loom.tools.backends.pydantic_ai_backend import (
     _build_pydantic_model,
     research_pydantic_agent,
     research_structured_llm,
@@ -86,7 +86,7 @@ class TestPydanticAgent:
     @pytest.mark.asyncio
     async def test_pydantic_agent_success(self):
         """Agent should return response on success."""
-        with patch("loom.tools.pydantic_ai_backend._call_with_cascade") as mock_cascade:
+        with patch("loom.tools.backends.pydantic_ai_backend._call_with_cascade") as mock_cascade:
             mock_response = MagicMock()
             mock_response.content = "Agent response text"
             mock_response.model = "nvidia-llama2"
@@ -108,9 +108,9 @@ class TestPydanticAgent:
     @pytest.mark.asyncio
     async def test_pydantic_agent_fallback_to_llm(self):
         """Should fallback to research_llm_answer when pydantic-ai unavailable."""
-        with patch("loom.tools.pydantic_ai_backend._PYDANTIC_AI_AVAILABLE", False):
+        with patch("loom.tools.backends.pydantic_ai_backend._PYDANTIC_AI_AVAILABLE", False):
             with patch(
-                "loom.tools.pydantic_ai_backend.research_llm_answer"
+                "loom.tools.backends.pydantic_ai_backend.research_llm_answer"
             ) as mock_llm:
                 mock_llm.return_value = {
                     "answer": "2+2 equals 4",
@@ -128,7 +128,7 @@ class TestPydanticAgent:
     @pytest.mark.asyncio
     async def test_pydantic_agent_error_handling(self):
         """Agent should handle errors gracefully."""
-        with patch("loom.tools.pydantic_ai_backend._call_with_cascade") as mock_cascade:
+        with patch("loom.tools.backends.pydantic_ai_backend._call_with_cascade") as mock_cascade:
             mock_cascade.side_effect = ValueError("Test error")
 
             result = await research_pydantic_agent(
@@ -151,7 +151,7 @@ class TestStructuredLLM:
 
         schema = {"name": "str", "age": "int"}
 
-        with patch("loom.tools.pydantic_ai_backend._call_with_cascade") as mock_cascade:
+        with patch("loom.tools.backends.pydantic_ai_backend._call_with_cascade") as mock_cascade:
             mock_response = MagicMock()
             mock_response.content = json.dumps({"name": "Alice", "age": 30})
             mock_response.model = "nvidia-llama2"
@@ -174,7 +174,7 @@ class TestStructuredLLM:
         """Should handle JSON wrapped in markdown code blocks."""
         schema = {"title": "str"}
 
-        with patch("loom.tools.pydantic_ai_backend._call_with_cascade") as mock_cascade:
+        with patch("loom.tools.backends.pydantic_ai_backend._call_with_cascade") as mock_cascade:
             mock_response = MagicMock()
             mock_response.content = '```json\n{"title": "Test"}\n```'
             mock_response.model = "gpt-4"
@@ -195,7 +195,7 @@ class TestStructuredLLM:
         """Should fail gracefully on invalid JSON."""
         schema = {"name": "str"}
 
-        with patch("loom.tools.pydantic_ai_backend._call_with_cascade") as mock_cascade:
+        with patch("loom.tools.backends.pydantic_ai_backend._call_with_cascade") as mock_cascade:
             mock_response = MagicMock()
             mock_response.content = "not valid json at all"
             mock_cascade.return_value = mock_response
@@ -214,7 +214,7 @@ class TestStructuredLLM:
         """Should fail when response doesn't match schema."""
         schema = {"name": "str", "age": "int"}
 
-        with patch("loom.tools.pydantic_ai_backend._call_with_cascade") as mock_cascade:
+        with patch("loom.tools.backends.pydantic_ai_backend._call_with_cascade") as mock_cascade:
             import json
             mock_response = MagicMock()
             # Missing required 'age' field
@@ -232,9 +232,9 @@ class TestStructuredLLM:
     @pytest.mark.asyncio
     async def test_structured_llm_fallback(self):
         """Should fallback to research_llm_extract when pydantic-ai unavailable."""
-        with patch("loom.tools.pydantic_ai_backend._PYDANTIC_AI_AVAILABLE", False):
+        with patch("loom.tools.backends.pydantic_ai_backend._PYDANTIC_AI_AVAILABLE", False):
             with patch(
-                "loom.tools.pydantic_ai_backend.research_llm_extract"
+                "loom.tools.backends.pydantic_ai_backend.research_llm_extract"
             ) as mock_extract:
                 mock_extract.return_value = {
                     "data": {"name": "Charlie"},
@@ -254,7 +254,7 @@ class TestStructuredLLM:
         """Should pass provider_override to cascade."""
         schema = {"data": "str"}
 
-        with patch("loom.tools.pydantic_ai_backend._call_with_cascade") as mock_cascade:
+        with patch("loom.tools.backends.pydantic_ai_backend._call_with_cascade") as mock_cascade:
             import json
             mock_response = MagicMock()
             mock_response.content = json.dumps({"data": "test"})
@@ -282,7 +282,7 @@ class TestIntegration:
         """Check if pydantic-ai availability flag is set correctly."""
         # If pydantic-ai is installed, the flag should be True
         # If not, it should be False with an error message
-        from loom.tools import pydantic_ai_backend
+        import loom.tools.backends.pydantic_ai_backend
 
         if pydantic_ai_backend._PYDANTIC_AI_AVAILABLE:
             assert pydantic_ai_backend._PYDANTIC_AI_IMPORT_ERROR is None
@@ -294,10 +294,10 @@ class TestIntegration:
     async def test_graceful_degradation(self):
         """Tools should work even if pydantic-ai is not installed."""
         # Both tools should return valid responses or fallbacks
-        from loom.tools import pydantic_ai_backend
+        import loom.tools.backends.pydantic_ai_backend
 
         with patch.object(pydantic_ai_backend, "_PYDANTIC_AI_AVAILABLE", False):
-            with patch("loom.tools.pydantic_ai_backend.research_llm_answer") as mock_llm:
+            with patch("loom.tools.backends.pydantic_ai_backend.research_llm_answer") as mock_llm:
                 mock_llm.return_value = {"answer": "response"}
 
                 result = await research_pydantic_agent(prompt="test")

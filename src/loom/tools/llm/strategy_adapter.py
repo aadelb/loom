@@ -16,7 +16,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -164,7 +164,6 @@ class StrategyAdapter:
 
     async def flush_state(self, force: bool = False) -> None:
         """Persist stats to disk (debounced, every 60s or on force)."""
-        import time
 
         now = datetime.now(UTC)
         elapsed = (now - self._last_flush).total_seconds()

@@ -22,6 +22,13 @@ except ImportError:
     _EVOLUTION_DEPS = False
     _STRATEGIES = {}  # type: ignore[assignment]
 
+try:
+    from loom.evolution_engine import Individual, create_population, crossover, mutate, evolve
+    _ENGINE_AVAILABLE = True
+except ImportError:
+    _ENGINE_AVAILABLE = False
+    Individual = None  # type: ignore[assignment]
+
 logger = logging.getLogger("loom.tools.strategy_evolution")
 
 
@@ -36,7 +43,7 @@ def _get_top_seeds(count: int = 10) -> list[str]:
     return [s for s, _ in sorted(scores.items(), key=lambda x: x[1], reverse=True)[:count] if s in _STRATEGIES]
 
 
-def _crossover(template1: str, template2: str) -> str:
+def _crossover_templates(template1: str, template2: str) -> str:
     """Combine two templates by selecting sentence fragments."""
     f1 = [s.strip() for s in template1.split(".") if s.strip()]
     f2 = [s.strip() for s in template2.split(".") if s.strip()]
@@ -48,7 +55,7 @@ def _crossover(template1: str, template2: str) -> str:
     return ". ".join(selected) if selected else template1
 
 
-def _mutate(template: str, rate: float = 0.4) -> str:
+def _mutate_template(template: str, rate: float = 0.4) -> str:
     """Mutate template by inserting/removing/swapping words."""
     words = template.split()
     if not words or len(words) < 3:
@@ -117,40 +124,67 @@ async def research_evolve_strategies(
         if not seeds:
             return {"error": "No seed strategies", "generations_run": 0, "best_evolved": [], "improvement_pct": 0.0, "lineage": {}}
 
-        init_fit: float | None = None  # Track initial fitness before evolution
-
-        pop: dict[str, dict[str, Any]] = {}
         existing = {s.get("template", "") for s in _STRATEGIES.values()}
-
-        # Initialize with seeds
-        for name in seeds[:population_size]:
-            if name in _STRATEGIES:
-                pop[name] = {
-                    "template": _STRATEGIES[name]["template"],
-                    "origin": "seed", "generation": 0, "fitness": 0.0, "parents": []
-                }
-
-        # Fill with mutations
-        while len(pop) < population_size:
-            parent = random.choice(list(pop.values()))
-            mutant = _mutate(parent["template"], mutation_rate)
-            uid = f"mutant_{random.randint(10000, 99999)}"
-            pop[uid] = {
-                "template": mutant, "origin": "mutation", "generation": 0,
-                "fitness": 0.0, "parents": [list(pop.keys())[list(pop.values()).index(parent)]]
-            }
-
         lineage: dict[str, list[str]] = {}
         best_evolved: list[dict[str, Any]] = []
 
-        # Evolution loop
+        # Initialize population from seed strategies
+        init_fit: float | None = None
+        pop: list[Individual] = []
+
+        for name in seeds[:population_size]:
+            if name in _STRATEGIES:
+                template = _STRATEGIES[name]["template"]
+                ind = Individual(
+                    genome={"template": template},
+                    metadata={"origin": "seed", "generation": 0, "parents": [], "name": name}
+                )
+                pop.append(ind)
+
+        # Fill with mutations
+        while len(pop) < population_size:
+            parent = random.choice(pop)
+            mutant_template = _mutate_template(parent.genome["template"], mutation_rate)
+            uid = f"mutant_{random.randint(10000, 99999)}"
+            ind = Individual(
+                genome={"template": mutant_template},
+                metadata={"origin": "mutation", "generation": 0, "parents": [parent.metadata.get("name", "")], "name": uid}
+            )
+            pop.append(ind)
+
+        # Define custom mutation for evolution_engine
+        def custom_mutate_fn(key: str, value: Any) -> Any:
+            if key == "template" and isinstance(value, str):
+                return _mutate_template(value, mutation_rate)
+            return value
+
+        # Define custom crossover for evolution_engine
+        def custom_crossover_fn(parent_a: Individual, parent_b: Individual) -> Individual:
+            template_a = parent_a.genome.get("template", "")
+            template_b = parent_b.genome.get("template", "")
+            child_template = _crossover_templates(template_a, template_b)
+            return Individual(
+                genome={"template": child_template},
+                metadata={
+                    "origin": "crossover",
+                    "generation": max(parent_a.metadata.get("generation", 0), parent_b.metadata.get("generation", 0)) + 1,
+                    "parents": [parent_a.metadata.get("name", ""), parent_b.metadata.get("name", "")]
+                }
+            )
+
+        # Define fitness function
+        async def fitness_fn(ind: Individual) -> float:
+            template = ind.genome.get("template", "")
+            return await _eval_fitness(template, test_prompt)
+
+        # Evolution loop (custom async wrapper since evolve() is sync)
         for gen in range(generations):
             # Evaluate fitness
-            for ind in pop.values():
-                if ind["fitness"] == 0.0:
-                    ind["fitness"] = await _eval_fitness(ind["template"], test_prompt)
+            for ind in pop:
+                if ind.fitness == 0.0:
+                    ind.fitness = await fitness_fn(ind)
 
-            fitness_scores = [ind["fitness"] for ind in pop.values()]
+            fitness_scores = [ind.fitness for ind in pop]
             avg_fit = sum(fitness_scores) / len(fitness_scores) if fitness_scores else 0.0
 
             # Capture initial fitness after first evaluation
@@ -160,40 +194,33 @@ async def research_evolve_strategies(
             logger.info(f"evolution gen={gen} pop_size={len(pop)} avg_fitness={avg_fit:.3f}")
 
             # Selection: top 50%
-            sorted_pop = sorted(pop.items(), key=lambda x: x[1]["fitness"], reverse=True)
-            survivors = dict(sorted_pop[:max(1, len(pop) // 2)])
+            pop.sort(key=lambda x: x.fitness, reverse=True)
+            survivors = pop[:max(1, len(pop) // 2)]
 
             # Reproduction
-            offspring: dict[str, dict[str, Any]] = {}
-            while len(survivors) + len(offspring) < population_size:
-                p1_id, p1 = random.choice(list(survivors.items()))
-                p2_id, p2 = random.choice(list(survivors.items()))
+            next_gen = survivors.copy()
+            while len(next_gen) < population_size:
+                p1 = random.choice(survivors)
+                p2 = random.choice(survivors)
+                child = custom_crossover_fn(p1, p2)
+                child = mutate(child, mutation_rate=mutation_rate, mutate_fn=custom_mutate_fn)
+                next_gen.append(child)
 
-                # Crossover operates on templates (strings), not strategy names
-                child_tmpl = _crossover(p1["template"], p2["template"])
-                child_tmpl = _mutate(child_tmpl, mutation_rate)
-
-                cid = f"offspring_{gen}_{random.randint(10000, 99999)}"
-                offspring[cid] = {
-                    "template": child_tmpl, "origin": "crossover", "generation": gen + 1,
-                    "fitness": 0.0, "parents": [p1_id, p2_id]
-                }
-                lineage[cid] = [p1_id, p2_id]
-
-            pop = {**survivors, **offspring}
+            pop = next_gen
 
             # Extract new evolved strategies
-            for ind_id, ind in pop.items():
-                tmpl = ind["template"]
-                if tmpl not in existing and ind["fitness"] > 0:
+            for ind in pop:
+                tmpl = ind.genome.get("template", "")
+                if tmpl not in existing and ind.fitness > 0:
                     best_evolved.append({
-                        "template": tmpl, "fitness": ind["fitness"],
-                        "origin": ind["origin"], "generation": ind["generation"]
+                        "template": tmpl, "fitness": ind.fitness,
+                        "origin": ind.metadata.get("origin", "unknown"),
+                        "generation": ind.metadata.get("generation", gen)
                     })
 
         best_evolved.sort(key=lambda x: x["fitness"], reverse=True)
 
-        final_fit = sum(ind["fitness"] for ind in pop.values()) / max(len(pop), 1)
+        final_fit = sum(ind.fitness for ind in pop) / max(len(pop), 1)
         improvement = ((final_fit - init_fit) / max(init_fit, 0.1) * 100) if init_fit and init_fit > 0 else 0.0
 
         return {

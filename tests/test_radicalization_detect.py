@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from loom.tools.radicalization_detect import research_radicalization_detect
+from loom.tools.intelligence.radicalization_detect import research_radicalization_detect
 
 
 class TestRadicalizationDetectBasic:

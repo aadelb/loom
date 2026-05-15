@@ -98,7 +98,7 @@ class TestSendAlert:
             return_value={"status": "sent", "to": "admin@example.com"}
         )
 
-        with patch("loom.tools.email_report.research_email_report", mock_email_func):
+        with patch("loom.tools.infrastructure.email_report.research_email_report", mock_email_func):
             with patch("loom.alerting.logger"):
                 result = await send_alert(
                     "error",
@@ -124,7 +124,7 @@ class TestSendAlert:
             return_value={"status": "sent", "to": "admin@example.com"}
         )
 
-        with patch("loom.tools.email_report.research_email_report", mock_email_func):
+        with patch("loom.tools.infrastructure.email_report.research_email_report", mock_email_func):
             with patch("loom.alerting.logger"):
                 result = await send_alert("warning", "warning message")
 

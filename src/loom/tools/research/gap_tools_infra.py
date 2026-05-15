@@ -6,12 +6,12 @@ import asyncio
 import logging
 import re
 from typing import Any
-from urllib.parse import urlparse
 
 import httpx
 
 from loom.text_utils import jaccard_similarity
 from loom.error_responses import handle_tool_errors
+from loom.http_helpers import fetch_json, fetch_text
 
 logger = logging.getLogger("loom.tools.gap_tools_infra")
 

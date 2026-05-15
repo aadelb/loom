@@ -6,7 +6,7 @@ import asyncio
 import pytest
 from datetime import datetime, UTC
 
-from loom.tools import telemetry
+import loom.tools.monitoring.telemetry
 
 
 @pytest.mark.asyncio

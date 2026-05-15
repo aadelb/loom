@@ -9,11 +9,18 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
-from functools import partial
 from typing import Any
 
 import math
 from loom.error_responses import handle_tool_errors
+
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text, max_chars=500, *, suffix="..."):
+        if len(text) <= max_chars: return text
+        return text[:max_chars - len(suffix)] + suffix
+
 logger = logging.getLogger("loom.tools.cipher_mirror")
 
 # Common API key patterns (prefix-based detection)
@@ -101,7 +108,7 @@ def _detect_credentials(text: str) -> list[dict[str, Any]]:
                     "key_type": key_type,
                     "confidence": round(min(0.95, entropy + 0.1), 2),
                     "length": len(candidate),
-                    "snippet": candidate[:20] + "..." if len(candidate) > 20 else candidate,
+                    "snippet": truncate(candidate, 20),
                 })
 
     return findings

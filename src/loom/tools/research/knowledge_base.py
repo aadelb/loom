@@ -10,6 +10,14 @@ from pathlib import Path
 from uuid import uuid4
 
 import aiosqlite
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text: str, max_chars: int = 500, *, suffix: str = "...") -> str:
+        """Fallback truncate if text_utils unavailable."""
+        if len(text) <= max_chars:
+            return text
+        return text[: max_chars - len(suffix)] + suffix
 
 logger = logging.getLogger("loom.tools.knowledge_base")
 
@@ -78,7 +86,7 @@ async def research_kb_search(query: str, category: str = "all", limit: int = 20,
             rows = await cursor.fetchall()
         results = []
         for kb_id, key, content, cat, tags_json, created in rows:
-            preview = (content[:200] + "...") if len(content) > 200 else content
+            preview = (truncate(content, 200) + "...") if len(content) > 200 else content
             results.append({
                 "kb_id": kb_id, "key": key, "content_preview": preview, "category": cat,
                 "tags": json.loads(tags_json) if tags_json else [], "created": created,

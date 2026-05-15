@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 
-from loom.tools.metrics import research_metrics
+from loom.tools.monitoring.metrics import research_metrics
 
 
 pytestmark = pytest.mark.asyncio
@@ -121,7 +121,7 @@ class TestMetricsCollection:
 
     async def test_metrics_percentile_calculation(self) -> None:
         """Percentile function correctly calculates p50, p95, p99."""
-        from loom.tools.metrics import _percentile
+        from loom.tools.monitoring.metrics import _percentile
 
         values = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
         assert _percentile(values, 50) == 55  # Median

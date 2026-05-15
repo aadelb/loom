@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-pytest.importorskip("loom.tools.llm")
+pytest.importorskip("loom.tools.llm.llm")
 
 
 def _mock_response(text: str = "example") -> MagicMock:
@@ -27,7 +27,7 @@ def _mock_response(text: str = "example") -> MagicMock:
 
 async def test_llm_extract_returns_parsed_json() -> None:
     """research_llm_extract returns parsed JSON dict from cascade response."""
-    from loom.tools.llm import research_llm_extract
+    from loom.tools.llm.llm import research_llm_extract
 
     with patch(
         "loom.tools.llm._call_with_cascade",
@@ -46,7 +46,7 @@ async def test_llm_extract_returns_parsed_json() -> None:
 
 async def test_llm_classify_returns_label() -> None:
     """research_llm_classify enforces allow-list and returns single label."""
-    from loom.tools.llm import research_llm_classify
+    from loom.tools.llm.llm import research_llm_classify
 
     with patch(
         "loom.tools.llm._call_with_cascade",
@@ -64,7 +64,7 @@ async def test_llm_classify_returns_label() -> None:
 
 async def test_llm_translate_returns_translated_text() -> None:
     """research_llm_translate returns translated text in target language."""
-    from loom.tools.llm import research_llm_translate
+    from loom.tools.llm.llm import research_llm_translate
 
     with patch(
         "loom.tools.llm._call_with_cascade",
@@ -83,7 +83,7 @@ async def test_llm_translate_returns_translated_text() -> None:
 
 async def test_llm_query_expand_returns_list() -> None:
     """research_llm_query_expand returns list of expanded query strings."""
-    from loom.tools.llm import research_llm_query_expand
+    from loom.tools.llm.llm import research_llm_query_expand
 
     mock_queries = '["query1", "query2", "query3", "query4", "query5"]'
 
@@ -101,7 +101,7 @@ async def test_llm_query_expand_returns_list() -> None:
 
 async def test_llm_answer_returns_cited_text() -> None:
     """research_llm_answer returns answer with citations list."""
-    from loom.tools.llm import research_llm_answer
+    from loom.tools.llm.llm import research_llm_answer
 
     sources = [
         {"title": "Paper A", "text": "Content A", "url": "http://a.com"},

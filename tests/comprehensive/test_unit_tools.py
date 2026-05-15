@@ -21,14 +21,19 @@ pytestmark = pytest.mark.unit
 
 
 def _get_tool_modules() -> list[str]:
-    """Get all tool module names from src/loom/tools."""
+    """Get all tool module names from src/loom/tools (including subdirectories)."""
     tools_dir = Path(__file__).parent.parent.parent / "src" / "loom" / "tools"
-    tool_files = [
-        f.stem
-        for f in tools_dir.glob("*.py")
-        if f.name != "__init__.py" and not f.name.startswith("_")
-    ]
-    return sorted(tool_files)
+    skip_dirs = {"reframe_strategies", "__pycache__"}
+    tool_modules = []
+    for f in tools_dir.glob("*.py"):
+        if f.name != "__init__.py" and not f.name.startswith("_"):
+            tool_modules.append(f.stem)
+    for subdir in sorted(tools_dir.iterdir()):
+        if subdir.is_dir() and subdir.name not in skip_dirs:
+            for f in subdir.glob("*.py"):
+                if f.name != "__init__.py" and not f.name.startswith("_"):
+                    tool_modules.append(f"{subdir.name}.{f.stem}")
+    return sorted(tool_modules)
 
 
 class TestToolModuleImports:
@@ -49,15 +54,22 @@ class TestToolFunctionSignatures:
     def test_tool_functions_callable(self) -> None:
         """Tool functions are callable and have type hints."""
         tools_dir = Path(__file__).parent.parent.parent / "src" / "loom" / "tools"
-        tool_files = [
-            f for f in tools_dir.glob("*.py") if f.name != "__init__.py"
-        ]
+        skip_dirs = {"reframe_strategies", "__pycache__"}
+        tool_files = list(tools_dir.glob("*.py"))
+        for subdir in sorted(tools_dir.iterdir()):
+            if subdir.is_dir() and subdir.name not in skip_dirs:
+                tool_files.extend(subdir.glob("*.py"))
+        tool_files = [f for f in tool_files if f.name != "__init__.py"]
 
         checked_count = 0
         for tool_file in tool_files[:20]:  # Check first 20 tools
-            module_name = tool_file.stem
+            rel = tool_file.relative_to(tools_dir)
+            if len(rel.parts) == 1:
+                import_path = f"loom.tools.{tool_file.stem}"
+            else:
+                import_path = f"loom.tools.{rel.parent.name}.{tool_file.stem}"
             try:
-                module = importlib.import_module(f"loom.tools.{module_name}")
+                module = importlib.import_module(import_path)
 
                 # Find research_* functions
                 for name, obj in inspect.getmembers(module):
@@ -83,11 +95,11 @@ class TestToolDocstrings:
     def test_sample_tools_have_docstrings(self) -> None:
         """Sample of tool modules have docstrings."""
         sample_modules = [
-            "fetch",
-            "spider",
-            "markdown",
-            "search",
-            "deep",
+            "core.fetch",
+            "core.spider",
+            "core.markdown",
+            "core.search",
+            "core.deep",
         ]
 
         for module_name in sample_modules:
@@ -116,7 +128,7 @@ class TestTypeHints:
 
     def test_sample_functions_have_type_hints(self) -> None:
         """Sample functions have type annotations."""
-        sample_modules = ["fetch", "cache_mgmt"]
+        sample_modules = ["core.fetch", "core.cache_mgmt"]
 
         checked_count = 0
         for module_name in sample_modules:
@@ -177,7 +189,7 @@ class TestToolModuleStructure:
 
     def test_sample_module_has_docstring(self) -> None:
         """Sample tool modules have module-level docstrings."""
-        sample = ["fetch", "spider"]
+        sample = ["core.fetch", "core.spider"]
 
         for module_name in sample:
             try:

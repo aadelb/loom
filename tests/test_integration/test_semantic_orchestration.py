@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import patch, AsyncMock
 
-from loom.tools import universal_orchestrator, semantic_router
+import loom.tools.infrastructure.universal_orchestrator, loom.tools.llm.semantic_router
 
 
 @pytest.mark.asyncio

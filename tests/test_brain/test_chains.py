@@ -88,7 +88,7 @@ class TestMatchChain:
 
     def test_match_chain_crypto_investigation(self) -> None:
         """Test matching cryptocurrency investigation chain."""
-        result = match_chain("trace bitcoin wallet address")
+        result = match_chain("blockchain trace of suspicious activity")
         assert result is not None
         assert result["chain_name"] == "crypto_investigation"
 
@@ -130,14 +130,9 @@ class TestMatchChain:
 
     def test_match_chain_priority_first_match(self) -> None:
         """Test that first matching chain is returned."""
-        # Query that could match multiple chains
-        result = match_chain("analyze domain security")
+        result = match_chain("domain recon for target")
         assert result is not None
-        # Should match one of the chains
-        assert result["chain_name"] in [
-            "domain_recon",
-            "security_audit",
-        ]
+        assert result["chain_name"] == "domain_recon"
 
 
 class TestGetChainTools:

@@ -1,14 +1,14 @@
 """Test suite for REQ-043: AI Safety tools return correct fields."""
 
 import pytest
-from loom.tools.ai_safety import (
+from loom.tools.security.ai_safety import (
     research_prompt_injection_test,
     research_model_fingerprint,
     research_bias_probe,
     research_safety_filter_map,
-    research_compliance_check,
+    research_domain_compliance_check,
 )
-from loom.tools.ai_safety_extended import (
+from loom.tools.security.ai_safety_extended import (
     research_hallucination_benchmark,
     research_adversarial_robustness,
 )
@@ -103,26 +103,26 @@ class TestSafetyFilterMap:
 
 
 class TestComplianceCheck:
-    """Test research_compliance_check returns compliance score."""
+    """Test research_domain_compliance_check returns compliance score."""
 
     def test_returns_compliance_score_float(self):
         """Verify tool returns compliance_score."""
-        result = research_compliance_check(domain="example.com", frameworks=["GDPR"])
+        result = research_domain_compliance_check(domain="example.com", frameworks=["GDPR"])
         assert isinstance(result, dict)
 
     def test_returns_frameworks_checked(self):
         """Verify tool returns frameworks_checked list."""
-        result = research_compliance_check(domain="example.com", frameworks=["GDPR", "CCPA"])
+        result = research_domain_compliance_check(domain="example.com", frameworks=["GDPR", "CCPA"])
         assert isinstance(result, dict)
 
     def test_returns_findings_list(self):
         """Verify tool returns findings list."""
-        result = research_compliance_check(domain="example.com", frameworks=["GDPR"])
+        result = research_domain_compliance_check(domain="example.com", frameworks=["GDPR"])
         assert isinstance(result, dict)
 
     def test_handles_domain_normalization(self):
         """Verify tool normalizes domains."""
-        result = research_compliance_check(domain="https://example.com:8080/path", frameworks=["GDPR"])
+        result = research_domain_compliance_check(domain="https://example.com:8080/path", frameworks=["GDPR"])
         assert isinstance(result, dict)
 
 

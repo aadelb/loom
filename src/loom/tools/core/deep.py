@@ -1,14 +1,16 @@
 """Full-pipeline deep research: expand → search → fetch → extract → rank → synthesize.
 
-Combines all available Loom tools into a single orchestrated 12-stage pipeline:
+Combines all available Loom tools into a single orchestrated 14-stage pipeline:
 1. Query expansion via LLM
 2. Multi-provider parallel search (auto-detect academic/knowledge/code queries)
 3. Parallel fetch + markdown (YouTube transcript, Wayback fallback, auto-escalation)
 4. LLM-powered content extraction (parallelized with cost cap)
+4.5. Knowledge graph entity extraction from search results (optional, lightweight)
 5. Relevance ranking
 6. Answer synthesis with citations
 7. GitHub enrichment (repos + README content)
 8. Language detection on extracted pages
+8.5. Translation of non-English content to English (optional)
 9. Community sentiment from HN + Reddit (optional)
 10. Adversarial red team on synthesis (optional)
 11. Misinformation stress test on claims (optional)
@@ -28,6 +30,14 @@ from urllib.parse import urlparse
 
 from loom.validators import EXTERNAL_TIMEOUT_SECS
 from loom.error_responses import handle_tool_errors
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text: str, max_chars: int = 500, *, suffix: str = "...") -> str:
+        """Fallback truncate if text_utils unavailable."""
+        if len(text) <= max_chars:
+            return text
+        return text[: max_chars - len(suffix)] + suffix
 
 logger = logging.getLogger("loom.deep")
 
@@ -227,6 +237,77 @@ def _is_youtube_url(url: str) -> bool:
     return domain in ("youtube.com", "www.youtube.com", "youtu.be", "www.youtu.be", "m.youtube.com")
 
 
+def _truncate_at_boundary(text: str, max_chars: int) -> str:
+    """Truncate text at semantic boundary (paragraph/sentence) instead of hard limit.
+
+    Prefers paragraph breaks, falls back to sentence breaks, then character limit.
+    """
+    if len(text) <= max_chars:
+        return text
+
+    # Find last paragraph break before limit
+    cut = text[:max_chars].rfind('\n\n')
+    if cut > max_chars * 0.5:
+        return text[:cut]
+
+    # Fall back to sentence boundary
+    cut = text[:max_chars].rfind('. ')
+    if cut > max_chars * 0.5:
+        return text[:cut + 1]
+
+    # Last resort: hard limit
+    return text[:max_chars]
+
+
+def _extract_from_chunks(content: str, max_chars: int) -> str:
+    """For content exceeding max_chars, extract from first and last chunks.
+
+    Returns first_chunk + separator + last_chunk to preserve context awareness.
+    """
+    if len(content) <= max_chars:
+        return content
+
+    chunk_size = max_chars // 2
+    first = content[:chunk_size]
+    last = content[-(chunk_size):]
+    return first + "\n...[truncated]...\n" + last
+
+
+def _normalize_provider_scores(results: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Normalize search result scores across different providers using percentile scaling.
+
+    Groups results by provider and independently normalizes scores within each group
+    to [0, 1] range, making cross-provider score comparison valid.
+    """
+    by_provider: dict[str, list[dict[str, Any]]] = {}
+    for r in results:
+        provider = r.get("provider", "unknown")
+        by_provider.setdefault(provider, []).append(r)
+
+    for provider, items in by_provider.items():
+        scores = [i.get("score", 0) for i in items]
+        if not scores or max(scores) == min(scores):
+            # Uniform scores: assign neutral score
+            for i in items:
+                i["normalized_score"] = 0.5
+            continue
+
+        min_s, max_s = min(scores), max(scores)
+        for i in items:
+            raw_score = i.get("score", 0)
+            i["normalized_score"] = (raw_score - min_s) / (max_s - min_s) if (max_s - min_s) > 0 else 0.5
+
+    return results
+
+
+def _result_score(r: dict[str, Any]) -> float:
+    """Get comparable score for a result, preferring normalized_score."""
+    ns = r.get("normalized_score")
+    if ns is not None:
+        return float(ns)
+    return float(r.get("score") or 0)
+
+
 def _merge_search_results(all_results: list[dict[str, Any]], max_urls: int) -> list[dict[str, Any]]:
     """Deduplicate search results by normalized URL, keeping highest score."""
     seen: dict[str, dict[str, Any]] = {}
@@ -236,10 +317,10 @@ def _merge_search_results(all_results: list[dict[str, Any]], max_urls: int) -> l
             continue
         key = _normalize_url(url)
         existing = seen.get(key)
-        if existing is None or (r.get("score") or 0) > (existing.get("score") or 0):
+        if existing is None or _result_score(r) > _result_score(existing):
             seen[key] = r
     results = list(seen.values())
-    results.sort(key=lambda x: x.get("score") or 0, reverse=True)
+    results.sort(key=_result_score, reverse=True)
     return results[:max_urls]
 
 
@@ -348,9 +429,14 @@ async def research_deep(
     include_red_team = include_red_team or config.get("RESEARCH_RED_TEAM", False)
     include_misinfo_check = include_misinfo_check or config.get("RESEARCH_MISINFO_CHECK", False)
 
+    # ── Input validation ──
+    if not query or not query.strip():
+        return {"error": "Query cannot be empty", "tool": "research_deep"}
+    depth = max(1, min(10, depth))
+
     # ── Check shared cache for pre-existing results ──
     if _SHARED_CACHE_AVAILABLE:
-        cached = check_shared_cache(query)
+        cached = await check_shared_cache(query)
         if cached:
             logger.info("deep_cache_hit query=%s", query[:60])
             return cached
@@ -445,9 +531,15 @@ async def research_deep(
                 # Accumulate cost estimates from search
                 total_search_cost += resp.get("cost_estimate_usd", 0.0)
             all_search_results.extend(resp.get("results", []))
+        elif isinstance(resp, BaseException):
+            warnings.append({"stage": "search", "error": str(resp)})
+            logger.warning("search_task_exception: %s", resp)
 
     total_cost += total_search_cost
     pages_searched = len(all_search_results)
+
+    # FIX ISSUE 3: Normalize scores across providers before merging
+    all_search_results = _normalize_provider_scores(all_search_results)
     merged_hits = _merge_search_results(all_search_results, max_urls=max_urls)
 
     # ── ESCALATION: Complex + thin results → delegate to full_pipeline ──
@@ -582,7 +674,7 @@ async def research_deep(
                 try:
                     from loom.tools.core.enrich import research_wayback
 
-                    wb = await asyncio.to_thread(research_wayback, url, 1)
+                    wb = await research_wayback(url, limit=1)
                     snapshots = wb.get("snapshots", [])
                     if snapshots:
                         archive_url = snapshots[0]["archive_url"]
@@ -648,7 +740,9 @@ async def research_deep(
                         return
 
                     try:
-                        result = await research_llm_extract(page["markdown"][:5000], schema=schema)
+                        # FIX ISSUE 4: Extract from first+last chunks instead of just first 5000 chars
+                        content_for_llm = _extract_from_chunks(page["markdown"], max_chars=5000)
+                        result = await research_llm_extract(content_for_llm, schema=schema)
                         if "error" not in result:
                             data = result.get("data", {})
                             page["extracted"] = data
@@ -665,6 +759,33 @@ async def research_deep(
 
         except ImportError:
             warnings.append({"stage": "extract", "error": "llm module not available"})
+
+    # ── STAGE 4.5: Knowledge Graph Entity Extraction (lightweight, non-blocking) ──
+    knowledge_graph_entities: list[dict[str, Any]] | None = None
+    try:
+        from loom.tools.research.knowledge_graph import research_knowledge_graph
+
+        if pages:
+            titles_and_snippets = " ".join(
+                [f"{p.get('title', '')} {p.get('snippet', '')}" for p in pages[:5]]
+            )
+            if len(titles_and_snippets) > 50:
+                try:
+                    kg_result = await research_knowledge_graph(
+                        query=query,
+                        max_nodes=20,
+                    )
+                    if "error" not in kg_result:
+                        kg_nodes = kg_result.get("nodes", [])
+                        if kg_nodes:
+                            knowledge_graph_entities = kg_nodes
+                            logger.info("deep_kg_extracted entities=%d", len(kg_nodes))
+                    else:
+                        logger.debug("knowledge_graph_extraction_failed: %s", kg_result.get("error"))
+                except Exception as exc:
+                    logger.debug("knowledge_graph_extraction_skipped (non-blocking): %s", exc)
+    except ImportError:
+        logger.debug("knowledge_graph tool not available")
 
     # ── STAGE 5: Relevance Ranking ───────────────────────────────────────
     def _sort_key(p: dict[str, Any]) -> float:
@@ -706,10 +827,11 @@ async def research_deep(
                     try:
                         from loom.tools.llm.llm import research_llm_answer
 
+                        # FIX ISSUE 2: Increase source content from 500 to 1500 chars
                         sources = [
                             {
                                 "title": p.get("title", ""),
-                                "text": p["markdown"][:500],
+                                "text": _truncate_at_boundary(p["markdown"], max_chars=1500),
                                 "url": p["url"],
                             }
                             for p in top_pages[:10]
@@ -730,10 +852,11 @@ async def research_deep(
                 try:
                     from loom.tools.llm.llm import research_llm_answer
 
+                    # FIX ISSUE 2: Increase source content from 500 to 1500 chars
                     sources = [
                         {
                             "title": p.get("title", ""),
-                            "text": p["markdown"][:500],
+                            "text": _truncate_at_boundary(p["markdown"], max_chars=1500),
                             "url": p["url"],
                         }
                         for p in top_pages[:10]
@@ -753,10 +876,11 @@ async def research_deep(
             try:
                 from loom.tools.llm.llm import research_llm_answer
 
+                # FIX ISSUE 2: Increase source content from 500 to 1500 chars
                 sources = [
                     {
                         "title": p.get("title", ""),
-                        "text": p["markdown"][:500],
+                        "text": _truncate_at_boundary(p["markdown"], max_chars=1500),
                         "url": p["url"],
                     }
                     for p in top_pages[:10]
@@ -819,6 +943,46 @@ async def research_deep(
                 page["detected_language"] = lang
     except Exception as exc:
         logger.debug("language_detection_skipped: %s", exc)
+
+    # ── STAGE 8.5: Translation for Non-English Content (lightweight) ──────
+    try:
+        from loom.tools.llm.llm import research_llm_translate
+
+        # Check if any page is non-English with meaningful content
+        for page in top_pages:
+            detected_lang = page.get("detected_language", "unknown")
+            if detected_lang and detected_lang != "en" and detected_lang != "unknown":
+                content_to_translate = page.get("markdown", "")[:1000]
+                if len(content_to_translate) > 50:
+                    try:
+                        translate_result = await research_llm_translate(
+                            text=content_to_translate,
+                            target_lang="en",
+                            source_lang=detected_lang,
+                        )
+                        if "error" not in translate_result:
+                            page["markdown_translated"] = translate_result.get("translated", "")
+                            page["translation_source_lang"] = detected_lang
+                            logger.info(
+                                "deep_translation_completed url=%s source_lang=%s",
+                                page.get("url", "")[:80],
+                                detected_lang,
+                            )
+                            total_cost += translate_result.get("cost_usd", 0.0)
+                        else:
+                            logger.debug(
+                                "translation_failed url=%s: %s",
+                                page.get("url", "")[:80],
+                                translate_result.get("error"),
+                            )
+                    except Exception as exc:
+                        logger.debug(
+                            "translation_skipped (non-blocking) url=%s: %s",
+                            page.get("url", "")[:80],
+                            exc,
+                        )
+    except ImportError:
+        logger.debug("translation tool not available")
 
     # ── STAGE 9: Community Sentiment (optional) ─────────────────────────
     community_sentiment: dict[str, Any] | None = None
@@ -889,9 +1053,10 @@ async def research_deep(
             logger.warning("fact_check_fail (non-blocking): %s", exc)
 
     # ── STAGE 13: Build Response ────────────────────────────────────────
+    # FIX ISSUE 1: Use semantic boundary truncation instead of hard char limit
     for p in top_pages:
         if len(p.get("markdown", "")) > 2000:
-            p["markdown"] = p["markdown"][:2000] + "…"
+            p["markdown"] = _truncate_at_boundary(p["markdown"], max_chars=2000)
 
     final_answer = synthesis_result.get("answer", "") if synthesis_result else ""
 
@@ -905,6 +1070,7 @@ async def research_deep(
         "synthesis": synthesis_result,
         "github_repos": github_repos,
         "language_stats": language_stats,
+        "knowledge_graph_entities": knowledge_graph_entities,
         "community_sentiment": community_sentiment,
         "red_team_report": red_team_report,
         "misinfo_report": misinfo_report,

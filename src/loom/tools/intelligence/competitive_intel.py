@@ -503,6 +503,7 @@ async def research_competitive_intel(
                             github_task,
                             ct_task,
                             dns_task,
+                            return_exceptions=True,
                         ),
                         timeout=60.0,
                     )
@@ -512,7 +513,6 @@ async def research_competitive_intel(
                     "competitive_intel timeout after 60s company=%s",
                     company_clean,
                 )
-                # Return partial results with empty data for timed-out tasks
                 sec_data = {"count": 0, "recent": []}
                 patent_data = {"count": 0, "recent_titles": []}
                 github_data = {
@@ -523,6 +523,17 @@ async def research_competitive_intel(
                 }
                 ct_data = {"total_found": 0, "recent_subdomains": []}
                 dns_data = {"records": {}, "detected_technologies": []}
+            else:
+                if isinstance(sec_data, BaseException):
+                    sec_data = {"count": 0, "recent": []}
+                if isinstance(patent_data, BaseException):
+                    patent_data = {"count": 0, "recent_titles": []}
+                if isinstance(github_data, BaseException):
+                    github_data = {"repo_count": 0, "total_stars": 0, "languages": [], "recent_repos": []}
+                if isinstance(ct_data, BaseException):
+                    ct_data = {"total_found": 0, "recent_subdomains": []}
+                if isinstance(dns_data, BaseException):
+                    dns_data = {"records": {}, "detected_technologies": []}
 
         # Synthesize signals
         signals, overall_assessment = _synthesize_signals(

@@ -139,7 +139,7 @@ class TestNetworkPartition:
             chat=AsyncMock(side_effect=timeout_error),
             available=AsyncMock(return_value=True)
         ), patch.multiple(
-            "loom.providers.nvidia_nim.NIMProvider",
+            "loom.providers.nvidia_nim.NvidiaNimProvider",
             chat=AsyncMock(side_effect=timeout_error),
             available=AsyncMock(return_value=True)
         ):
@@ -341,8 +341,9 @@ class TestFallbackMechanisms:
 
         # Simulate cache with a previous result
         cache = {
-            "query": "test search",
-            "results": ["cached_result_1", "cached_result_2"]
+            "test search": {
+                "results": ["cached_result_1", "cached_result_2"]
+            }
         }
 
         # Provider fails
@@ -443,7 +444,7 @@ class TestErrorMessages:
         )
 
         assert str(timeout_seconds) in error_message
-        assert "timeout" in error_message.lower()
+        assert "timed out" in error_message.lower() or "timeout" in error_message.lower()
         assert "try again" in error_message.lower()
 
     def test_rate_limit_error_message_includes_retry_after(self) -> None:

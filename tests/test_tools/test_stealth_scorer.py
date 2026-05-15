@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import pytest
 
-from loom.tools.stealth_scorer import research_stealth_score
+from loom.tools.adversarial.stealth_score import research_stealth_score
 
 
 @pytest.mark.asyncio

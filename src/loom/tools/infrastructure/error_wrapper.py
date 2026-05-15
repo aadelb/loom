@@ -8,7 +8,6 @@ Stack traces and internal paths are logged server-side only.
 """
 from __future__ import annotations
 
-import asyncio
 import functools
 import inspect
 import logging

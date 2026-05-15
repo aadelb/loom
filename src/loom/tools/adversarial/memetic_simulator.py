@@ -7,6 +7,13 @@ import random
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(value: float, low: float = 0.0, high: float = 1.0) -> float:
+        """Fallback clamp implementation."""
+        return max(low, min(high, value))
+
 from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.memetic_simulator")
@@ -145,7 +152,7 @@ class MemeticSimulator:
 
         # Apply mutations to idea
         fitness_change, _mutation_occurred = self._apply_mutations(generation)
-        new_fitness = max(0.01, min(1.0, idea_fitness * fitness_change))
+        new_fitness = clamp(idea_fitness * fitness_change, 0.01, 1.0)
 
         return len(newly_infected), new_fitness
 

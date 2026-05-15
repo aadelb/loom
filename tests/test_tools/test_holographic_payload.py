@@ -2,7 +2,7 @@
 
 import pytest
 
-from loom.tools.holographic_payload import research_holographic_encode
+from loom.tools.adversarial.holographic_payload import research_holographic_encode
 
 
 class TestHolographicEncode:

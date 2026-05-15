@@ -111,49 +111,40 @@ class TestRateLimiterIsolation:
         try:
             from loom.rate_limiter import RateLimiter
 
-            limiter = RateLimiter(max_calls=3, window_seconds=60)
+            limiter = RateLimiter(max_calls=10, window_seconds=60)
 
-            # User A exhausts their quota (max 3 calls)
-            user_a_allowed_1 = await limiter.check(
-                category="test", key="user_a", user_id="user_a", tier="free"
-            )
-            assert user_a_allowed_1 is True, "User A's 1st call should be allowed"
+            # User A exhausts their quota (free tier = 10/min)
+            for i in range(10):
+                result = await limiter.check(
+                    category="test", user_id="user_a", tier="free"
+                )
+                assert result is True, f"User A's call {i+1} should be allowed"
 
-            user_a_allowed_2 = await limiter.check(
-                category="test", key="user_a", user_id="user_a", tier="free"
-            )
-            assert user_a_allowed_2 is True, "User A's 2nd call should be allowed"
-
-            user_a_allowed_3 = await limiter.check(
-                category="test", key="user_a", user_id="user_a", tier="free"
-            )
-            assert user_a_allowed_3 is True, "User A's 3rd call should be allowed"
-
-            # User A hits rate limit
+            # User A hits rate limit (11th call)
             user_a_blocked = await limiter.check(
-                category="test", key="user_a", user_id="user_a", tier="free"
+                category="test", user_id="user_a", tier="free"
             )
-            assert user_a_blocked is False, "User A's 4th call should be blocked"
+            assert user_a_blocked is False, "User A's 11th call should be blocked"
 
             # User B should still have full quota
             user_b_allowed_1 = await limiter.check(
-                category="test", key="user_b", user_id="user_b", tier="free"
+                category="test", user_id="user_b", tier="free"
             )
             assert user_b_allowed_1 is True, "User B's 1st call should still be allowed"
 
             user_b_allowed_2 = await limiter.check(
-                category="test", key="user_b", user_id="user_b", tier="free"
+                category="test", user_id="user_b", tier="free"
             )
             assert user_b_allowed_2 is True, "User B's 2nd call should still be allowed"
 
             user_b_allowed_3 = await limiter.check(
-                category="test", key="user_b", user_id="user_b", tier="free"
+                category="test", user_id="user_b", tier="free"
             )
             assert user_b_allowed_3 is True, "User B's 3rd call should still be allowed"
 
             # User B should also be able to make a 4th call (separate quota)
             user_b_allowed_4 = await limiter.check(
-                category="test", key="user_b", user_id="user_b", tier="free"
+                category="test", user_id="user_b", tier="free"
             )
             # Note: This may fail if rate limit is global, not per-user
             # If so, investigate the rate limiter key composition
@@ -171,25 +162,21 @@ class TestRateLimiterIsolation:
             limiter = RateLimiter(max_calls=2, window_seconds=60)
 
             # Free tier user (max 2 calls)
-            free_user_1 = await limiter.check(
-                category="test", key="free_user", user_id="free_user", tier="free"
-            )
-            assert free_user_1 is True
+            # Free tier = 10 calls/min, exhaust quota
+            for i in range(10):
+                result = await limiter.check(
+                    category="test", user_id="free_user", tier="free"
+                )
+                assert result is True, f"Free user call {i+1} should be allowed"
 
-            free_user_2 = await limiter.check(
-                category="test", key="free_user", user_id="free_user", tier="free"
+            free_user_blocked = await limiter.check(
+                category="test", user_id="free_user", tier="free"
             )
-            assert free_user_2 is True
-
-            free_user_3 = await limiter.check(
-                category="test", key="free_user", user_id="free_user", tier="free"
-            )
-            assert free_user_3 is False, "Free user should hit limit at 3rd call"
+            assert free_user_blocked is False, "Free user should hit limit at 11th call"
 
             # Pro tier user should have higher limit (60 per min)
-            # Create separate limiter or verify tier-based limits
             pro_user_1 = await limiter.check(
-                category="test", key="pro_user", user_id="pro_user", tier="pro"
+                category="test", user_id="pro_user", tier="pro"
             )
             assert pro_user_1 is True, "Pro user should have their own quota"
 
@@ -213,8 +200,8 @@ class TestTokenBudgetIsolation:
             assert allowed is True, "User A should have enough credits"
 
             user_a_credits, cost_a = deduct(user_a_credits, "fetch")
-            assert user_a_credits == 3, "User A should have 3 credits remaining"
-            assert cost_a == 2, "Fetch should cost 2 credits"
+            assert user_a_credits == 2, "User A should have 2 credits remaining (fetch costs 3)"
+            assert cost_a == 3, "Fetch should cost 3 credits"
 
             # User B independently has 1 credit
             user_b_credits = 1
@@ -227,7 +214,7 @@ class TestTokenBudgetIsolation:
             assert user_b_credits == 1, "User B's balance should not be affected"
 
             # User A's balance should be unchanged (already deducted)
-            assert user_a_credits == 3, "User A's deduction should persist"
+            assert user_a_credits == 2, "User A's deduction should persist"
 
         except ImportError:
             pytest.skip("Credits module not available")
@@ -425,29 +412,25 @@ class TestDataIsolationEdgeCases:
                 results = []
                 for i in range(num_calls):
                     allowed = await limiter.check(
-                        category="test", key=user_id, user_id=user_id, tier="free"
+                        category="test", user_id=user_id, tier="free"
                     )
                     results.append(allowed)
                 return results
 
-            # Run concurrent rate limit checks
+            # Free tier = 10/min; run 11 calls each to verify limit
             results = await asyncio.gather(
-                user_check_rate_limit("user_a", 3),
-                user_check_rate_limit("user_b", 3),
+                user_check_rate_limit("user_a", 11),
+                user_check_rate_limit("user_b", 11),
             )
 
-            # Each user should have independent quotas
             user_a_results, user_b_results = results
 
-            # Both users should be able to make 2 calls (quota)
-            assert user_a_results[0] is True
-            assert user_a_results[1] is True
-            assert user_a_results[2] is False, "User A should be rate limited on 3rd call"
+            # First 10 calls should be allowed, 11th should be blocked
+            assert all(user_a_results[:10]), "User A's first 10 calls should be allowed"
+            assert user_a_results[10] is False, "User A should be rate limited on 11th call"
 
-            # User B should have independent quota
-            assert user_b_results[0] is True
-            assert user_b_results[1] is True
-            assert user_b_results[2] is False, "User B should be rate limited on 3rd call"
+            assert all(user_b_results[:10]), "User B's first 10 calls should be allowed"
+            assert user_b_results[10] is False, "User B should be rate limited on 11th call"
 
         except ImportError:
             pytest.skip("RateLimiter not available")

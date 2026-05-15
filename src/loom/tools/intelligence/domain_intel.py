@@ -1,16 +1,23 @@
 """Domain intelligence tools — WHOIS, DNS lookup, and port scanning."""
 from __future__ import annotations
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text, max_chars=500, *, suffix="..."):
+        if len(text) <= max_chars: return text
+        return text[:max_chars - len(suffix)] + suffix
+
+
 
 import asyncio
-import ipaddress
 import logging
 import re
 import socket
-import subprocess
 from typing import Any
 
 from loom.input_validators import validate_domain, validate_ip, ValidationError
 from loom.error_responses import handle_tool_errors
+from loom.subprocess_helpers import run_command
 
 logger = logging.getLogger("loom.tools.domain_intel")
 
@@ -52,13 +59,13 @@ def _run_whois(domain: str) -> tuple[str, int, str]:
     Returns:
         Tuple of (stdout, returncode, stderr)
     """
-    result = subprocess.run(
+    result = run_command(
         ["whois", domain],
         capture_output=True,
         text=True,
         timeout=15,
     )
-    return result.stdout, result.returncode, result.stderr
+    return result["stdout"], result["returncode"], result["stderr"]
 
 
 def _run_nmap(cmd: list[str]) -> tuple[str, int]:
@@ -70,13 +77,13 @@ def _run_nmap(cmd: list[str]) -> tuple[str, int]:
     Returns:
         Tuple of (stdout, returncode)
     """
-    result = subprocess.run(
+    result = run_command(
         cmd,
         capture_output=True,
         text=True,
         timeout=60,
     )
-    return result.stdout, result.returncode
+    return result["stdout"], result["returncode"]
 
 
 @handle_tool_errors("research_whois")
@@ -199,7 +206,7 @@ async def research_whois(domain: str) -> dict[str, Any]:
             output["status"] = [s.strip() for s in status_lines]
 
         # Include truncated raw text
-        output["raw_text"] = raw_text[:2000]
+        output["raw_text"] = truncate(raw_text, 2000)
 
         logger.info("whois_lookup_success domain=%s", domain)
         return output

@@ -94,7 +94,6 @@ async def research_dlq_retry_now(dlq_id: int) -> dict[str, Any]:
         # Reset next_retry_at to now to make item immediately available
         with dlq._lock:
             with dlq._get_connection() as conn:
-                import sqlite3
                 from datetime import UTC, datetime
 
                 now_iso = datetime.now(UTC).isoformat()

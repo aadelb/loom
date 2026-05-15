@@ -182,7 +182,7 @@ class TestRateLimiting:
         try:
             from loom.rate_limiter import rate_limited
 
-            @rate_limited(requests_per_minute=10)
+            @rate_limited("test_category")
             async def test_func() -> str:
                 return "ok"
 

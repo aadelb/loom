@@ -6,7 +6,7 @@ import asyncio
 import logging
 import re
 from typing import Any
-from urllib.parse import quote, unquote, urlparse
+from urllib.parse import quote, unquote
 
 import httpx
 

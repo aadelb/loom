@@ -11,7 +11,7 @@ import pytest
 class TestResearchDeadDropScanner:
     async def test_empty_urls_list(self):
         """Test handling of empty URLs list."""
-        from loom.tools.dead_drop_scanner import research_dead_drop_scanner
+        from loom.tools.intelligence.dead_drop_scanner import research_dead_drop_scanner
 
         result = await research_dead_drop_scanner([])
 
@@ -22,10 +22,10 @@ class TestResearchDeadDropScanner:
 
     async def test_tor_disabled(self):
         """Test error when Tor is disabled in config."""
-        with patch("loom.tools.dead_drop_scanner.get_config") as mock_config:
+        with patch("loom.tools.intelligence.dead_drop_scanner.get_config") as mock_config:
             mock_config.return_value = {"TOR_ENABLED": False}
 
-            from loom.tools.dead_drop_scanner import research_dead_drop_scanner
+            from loom.tools.intelligence.dead_drop_scanner import research_dead_drop_scanner
 
             urls = ["http://example.onion"]
             result = await research_dead_drop_scanner(urls)
@@ -36,13 +36,13 @@ class TestResearchDeadDropScanner:
 
     async def test_invalid_url_handling(self):
         """Test handling of invalid URLs."""
-        with patch("loom.tools.dead_drop_scanner.get_config") as mock_config, patch(
-            "loom.tools.dead_drop_scanner.validate_url",
+        with patch("loom.tools.intelligence.dead_drop_scanner.get_config") as mock_config, patch(
+            "loom.tools.intelligence.dead_drop_scanner.validate_url",
             side_effect=ValueError("Invalid URL"),
         ):
             mock_config.return_value = {"TOR_ENABLED": True, "TOR_SOCKS5_PROXY": "socks5h://127.0.0.1:9050"}
 
-            from loom.tools.dead_drop_scanner import research_dead_drop_scanner
+            from loom.tools.intelligence.dead_drop_scanner import research_dead_drop_scanner
 
             result = await research_dead_drop_scanner(["not-a-valid-url"])
 
@@ -59,15 +59,15 @@ class TestResearchDeadDropScanner:
             "title": "Test Page",
         }
 
-        with patch("loom.tools.dead_drop_scanner.get_config") as mock_config, patch(
-            "loom.tools.dead_drop_scanner.validate_url"
+        with patch("loom.tools.intelligence.dead_drop_scanner.get_config") as mock_config, patch(
+            "loom.tools.intelligence.dead_drop_scanner.validate_url"
         ), patch(
-            "loom.tools.dead_drop_scanner.research_fetch",
+            "loom.tools.intelligence.dead_drop_scanner.research_fetch",
             return_value=fetch_result,
         ):
             mock_config.return_value = {"TOR_ENABLED": True, "TOR_SOCKS5_PROXY": "socks5h://127.0.0.1:9050"}
 
-            from loom.tools.dead_drop_scanner import research_dead_drop_scanner
+            from loom.tools.intelligence.dead_drop_scanner import research_dead_drop_scanner
 
             result = await research_dead_drop_scanner(["http://example.onion"])
 
@@ -81,15 +81,15 @@ class TestResearchDeadDropScanner:
         """Test handling when fetch returns empty content."""
         fetch_result = {"text": "", "html": ""}
 
-        with patch("loom.tools.dead_drop_scanner.get_config") as mock_config, patch(
-            "loom.tools.dead_drop_scanner.validate_url"
+        with patch("loom.tools.intelligence.dead_drop_scanner.get_config") as mock_config, patch(
+            "loom.tools.intelligence.dead_drop_scanner.validate_url"
         ), patch(
-            "loom.tools.dead_drop_scanner.research_fetch",
+            "loom.tools.intelligence.dead_drop_scanner.research_fetch",
             return_value=fetch_result,
         ):
             mock_config.return_value = {"TOR_ENABLED": True, "TOR_SOCKS5_PROXY": "socks5h://127.0.0.1:9050"}
 
-            from loom.tools.dead_drop_scanner import research_dead_drop_scanner
+            from loom.tools.intelligence.dead_drop_scanner import research_dead_drop_scanner
 
             result = await research_dead_drop_scanner(["http://example.onion"])
 
@@ -101,15 +101,15 @@ class TestResearchDeadDropScanner:
         """Test handling of fetch errors."""
         fetch_result = {"error": "Connection timeout"}
 
-        with patch("loom.tools.dead_drop_scanner.get_config") as mock_config, patch(
-            "loom.tools.dead_drop_scanner.validate_url"
+        with patch("loom.tools.intelligence.dead_drop_scanner.get_config") as mock_config, patch(
+            "loom.tools.intelligence.dead_drop_scanner.validate_url"
         ), patch(
-            "loom.tools.dead_drop_scanner.research_fetch",
+            "loom.tools.intelligence.dead_drop_scanner.research_fetch",
             return_value=fetch_result,
         ):
             mock_config.return_value = {"TOR_ENABLED": True, "TOR_SOCKS5_PROXY": "socks5h://127.0.0.1:9050"}
 
-            from loom.tools.dead_drop_scanner import research_dead_drop_scanner
+            from loom.tools.intelligence.dead_drop_scanner import research_dead_drop_scanner
 
             result = await research_dead_drop_scanner(["http://example.onion"])
 
@@ -119,10 +119,10 @@ class TestResearchDeadDropScanner:
 
     async def test_urls_capped_at_100(self):
         """Test that URLs list is capped at 100."""
-        with patch("loom.tools.dead_drop_scanner.get_config") as mock_config:
+        with patch("loom.tools.intelligence.dead_drop_scanner.get_config") as mock_config:
             mock_config.return_value = {"TOR_ENABLED": True}
 
-            from loom.tools.dead_drop_scanner import research_dead_drop_scanner
+            from loom.tools.intelligence.dead_drop_scanner import research_dead_drop_scanner
 
             urls = [f"http://example{i}.onion" for i in range(150)]
             result = await research_dead_drop_scanner(urls)
@@ -131,10 +131,10 @@ class TestResearchDeadDropScanner:
 
     async def test_response_has_required_keys(self):
         """Test that response has all required keys."""
-        with patch("loom.tools.dead_drop_scanner.get_config") as mock_config:
+        with patch("loom.tools.intelligence.dead_drop_scanner.get_config") as mock_config:
             mock_config.return_value = {"TOR_ENABLED": False}
 
-            from loom.tools.dead_drop_scanner import research_dead_drop_scanner
+            from loom.tools.intelligence.dead_drop_scanner import research_dead_drop_scanner
 
             result = await research_dead_drop_scanner(["http://example.onion"])
 
@@ -150,7 +150,7 @@ class TestResearchDeadDropScanner:
 class TestShinglingAndSimilarity:
     async def test_shingle_generation(self):
         """Test k-gram shingle generation."""
-        from loom.tools.dead_drop_scanner import _shingle_text
+        from loom.tools.intelligence.dead_drop_scanner import _shingle_text
 
         text = "thequickbrownfox"
         shingles = _shingle_text(text, k=5)
@@ -162,7 +162,7 @@ class TestShinglingAndSimilarity:
 
     def test_shingle_empty_text(self):
         """Test shingle generation with empty text."""
-        from loom.tools.dead_drop_scanner import _shingle_text
+        from loom.tools.intelligence.dead_drop_scanner import _shingle_text
 
         shingles = _shingle_text("", k=10)
 
@@ -170,7 +170,7 @@ class TestShinglingAndSimilarity:
 
     def test_shingle_text_shorter_than_k(self):
         """Test shingle generation when text is shorter than k."""
-        from loom.tools.dead_drop_scanner import _shingle_text
+        from loom.tools.intelligence.dead_drop_scanner import _shingle_text
 
         shingles = _shingle_text("short", k=10)
 
@@ -178,7 +178,7 @@ class TestShinglingAndSimilarity:
 
     def test_jaccard_similarity_identical_sets(self):
         """Test Jaccard similarity of identical sets."""
-        from loom.tools.dead_drop_scanner import _jaccard_similarity
+        from loom.tools.intelligence.dead_drop_scanner import _jaccard_similarity
 
         set1 = {"a", "b", "c"}
         set2 = {"a", "b", "c"}
@@ -189,7 +189,7 @@ class TestShinglingAndSimilarity:
 
     def test_jaccard_similarity_disjoint_sets(self):
         """Test Jaccard similarity of disjoint sets."""
-        from loom.tools.dead_drop_scanner import _jaccard_similarity
+        from loom.tools.intelligence.dead_drop_scanner import _jaccard_similarity
 
         set1 = {"a", "b", "c"}
         set2 = {"x", "y", "z"}
@@ -200,7 +200,7 @@ class TestShinglingAndSimilarity:
 
     def test_jaccard_similarity_partial_overlap(self):
         """Test Jaccard similarity with partial overlap."""
-        from loom.tools.dead_drop_scanner import _jaccard_similarity
+        from loom.tools.intelligence.dead_drop_scanner import _jaccard_similarity
 
         set1 = {"a", "b", "c"}
         set2 = {"b", "c", "d"}
@@ -213,7 +213,7 @@ class TestShinglingAndSimilarity:
 
     def test_jaccard_similarity_empty_sets(self):
         """Test Jaccard similarity of empty sets."""
-        from loom.tools.dead_drop_scanner import _jaccard_similarity
+        from loom.tools.intelligence.dead_drop_scanner import _jaccard_similarity
 
         set1 = set()
         set2 = set()
@@ -233,15 +233,15 @@ class TestShinglingAndSimilarity:
             call_count[0] += 1
             return fetch_result1 if call_count[0] == 1 else fetch_result2
 
-        with patch("loom.tools.dead_drop_scanner.get_config") as mock_config, patch(
-            "loom.tools.dead_drop_scanner.validate_url"
+        with patch("loom.tools.intelligence.dead_drop_scanner.get_config") as mock_config, patch(
+            "loom.tools.intelligence.dead_drop_scanner.validate_url"
         ), patch(
-            "loom.tools.dead_drop_scanner.research_fetch",
+            "loom.tools.intelligence.dead_drop_scanner.research_fetch",
             side_effect=fetch_side_effect,
         ):
             mock_config.return_value = {"TOR_ENABLED": True, "TOR_SOCKS5_PROXY": "socks5h://127.0.0.1:9050"}
 
-            from loom.tools.dead_drop_scanner import research_dead_drop_scanner
+            from loom.tools.intelligence.dead_drop_scanner import research_dead_drop_scanner
 
             result = await research_dead_drop_scanner([
                 "http://site1.onion",

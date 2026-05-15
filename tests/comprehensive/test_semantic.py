@@ -12,7 +12,7 @@ import pytest
 
 from loom.content_sanitizer import sanitize_for_llm
 from loom.prompt_compressor import PromptCompressor, estimate_tokens
-from loom.tools.input_sanitizer import research_sanitize_input
+from loom.tools.security.input_sanitizer import research_sanitize_input
 from loom.tools.reframe_strategies import ALL_STRATEGIES
 
 

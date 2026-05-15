@@ -6,13 +6,13 @@ from loom.error_responses import handle_tool_errors
 import asyncio
 import logging
 import os
-import subprocess
 import tempfile
 from typing import Any
 
 import httpx
 
 from loom.validators import validate_url
+from loom.subprocess_helpers import run_command
 
 logger = logging.getLogger("loom.tools.image_intel")
 
@@ -513,15 +513,15 @@ def _ocr_blocking(image_data: bytes, language: str) -> dict[str, Any]:
 
         # Try tesseract first
         try:
-            result = subprocess.run(
+            result = run_command(
                 ["tesseract", temp_image, temp_output, "-l", language],
                 capture_output=True,
                 text=True,
                 timeout=30,
             )
 
-            if result.returncode != 0:
-                logger.warning("tesseract_error: %s", result.stderr)
+            if not result["success"]:
+                logger.warning("tesseract_error: %s", result["stderr"])
                 # Fall back to pytesseract if tesseract binary failed
                 return _ocr_pytesseract_blocking(image_data, language)
 

@@ -10,7 +10,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from loom.providers.base import LLMResponse
-from loom.tools.full_pipeline import research_full_pipeline, _build_report
+from loom.tools.infrastructure.full_pipeline import research_full_pipeline, _build_report
 
 
 class TestFullPipelineValidation:
@@ -54,10 +54,10 @@ class TestFullPipelineValidation:
 class TestFullPipelineFlow:
     """Test end-to-end pipeline flow with mocked dependencies."""
 
-    @patch("loom.tools.full_pipeline.research_build_query")
-    @patch("loom.tools.full_pipeline._call_with_cascade")
-    @patch("loom.tools.full_pipeline.research_hcs_score")
-    @patch("loom.tools.full_pipeline.research_reframe_strategies")
+    @patch("loom.tools.infrastructure.full_pipeline.research_build_query")
+    @patch("loom.tools.infrastructure.full_pipeline._call_with_cascade")
+    @patch("loom.tools.infrastructure.full_pipeline.research_hcs_score")
+    @patch("loom.tools.infrastructure.full_pipeline.research_reframe_strategies")
     async def test_successful_pipeline_no_escalation(
         self,
         mock_reframe,
@@ -115,10 +115,10 @@ class TestFullPipelineFlow:
         assert result["metadata"]["successful_answers"] == 2
         assert result["metadata"]["avg_hcs_score"] == pytest.approx(8.5, rel=0.01)
 
-    @patch("loom.tools.full_pipeline.research_build_query")
-    @patch("loom.tools.full_pipeline._call_with_cascade")
-    @patch("loom.tools.full_pipeline.research_hcs_score")
-    @patch("loom.tools.full_pipeline.research_reframe_strategies")
+    @patch("loom.tools.infrastructure.full_pipeline.research_build_query")
+    @patch("loom.tools.infrastructure.full_pipeline._call_with_cascade")
+    @patch("loom.tools.infrastructure.full_pipeline.research_hcs_score")
+    @patch("loom.tools.infrastructure.full_pipeline.research_reframe_strategies")
     async def test_pipeline_with_escalation(
         self,
         mock_reframe,
@@ -166,8 +166,8 @@ class TestFullPipelineFlow:
         assert result["metadata"]["escalation_events"] >= 1
         assert mock_reframe.call_count >= 1
 
-    @patch("loom.tools.full_pipeline.research_build_query")
-    @patch("loom.tools.full_pipeline._call_with_cascade")
+    @patch("loom.tools.infrastructure.full_pipeline.research_build_query")
+    @patch("loom.tools.infrastructure.full_pipeline._call_with_cascade")
     async def test_pipeline_handles_llm_failure_gracefully(
         self,
         mock_cascade,
@@ -193,7 +193,7 @@ class TestFullPipelineFlow:
             RuntimeError("Provider timeout"),
         ]
 
-        with patch("loom.tools.full_pipeline.research_hcs_score") as mock_hcs:
+        with patch("loom.tools.infrastructure.full_pipeline.research_hcs_score") as mock_hcs:
             mock_hcs.return_value = {"hcs_score": 7.0}
             result = await research_full_pipeline(
                 query="Test?",
@@ -263,10 +263,10 @@ class TestReportGeneration:
 class TestPipelineOutputFormats:
     """Test different output formats."""
 
-    @patch("loom.tools.full_pipeline.research_build_query")
-    @patch("loom.tools.full_pipeline._call_with_cascade")
-    @patch("loom.tools.full_pipeline.research_hcs_score")
-    @patch("loom.tools.full_pipeline.research_reframe_strategies")
+    @patch("loom.tools.infrastructure.full_pipeline.research_build_query")
+    @patch("loom.tools.infrastructure.full_pipeline._call_with_cascade")
+    @patch("loom.tools.infrastructure.full_pipeline.research_hcs_score")
+    @patch("loom.tools.infrastructure.full_pipeline.research_reframe_strategies")
     async def test_raw_output_format(
         self,
         mock_reframe,
@@ -296,10 +296,10 @@ class TestPipelineOutputFormats:
         assert "answers" in result
         assert "synthesis" in result
 
-    @patch("loom.tools.full_pipeline.research_build_query")
-    @patch("loom.tools.full_pipeline._call_with_cascade")
-    @patch("loom.tools.full_pipeline.research_hcs_score")
-    @patch("loom.tools.full_pipeline.research_reframe_strategies")
+    @patch("loom.tools.infrastructure.full_pipeline.research_build_query")
+    @patch("loom.tools.infrastructure.full_pipeline._call_with_cascade")
+    @patch("loom.tools.infrastructure.full_pipeline.research_hcs_score")
+    @patch("loom.tools.infrastructure.full_pipeline.research_reframe_strategies")
     async def test_report_output_format(
         self,
         mock_reframe,

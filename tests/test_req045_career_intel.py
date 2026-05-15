@@ -15,21 +15,21 @@ Total tools: 9 (expanded from initial 6)
 """
 
 import pytest
-from loom.tools.job_signals import (
+from loom.tools.career.job_signals import (
     research_funding_signal,
     research_stealth_hire_scanner,
     research_interviewer_profiler,
 )
-from loom.tools.career_trajectory import (
+from loom.tools.career.career_trajectory import (
     research_career_trajectory,
     research_market_velocity,
 )
-from loom.tools.resume_intel import (
+from loom.tools.career.resume_intel import (
     research_optimize_resume,
     research_interview_prep,
 )
-from loom.tools.deception_job_scanner import research_deception_job_scan
-from loom.tools.salary_synthesizer import research_salary_synthesize
+from loom.tools.career.deception_job_scanner import research_deception_job_scan
+from loom.tools.career.salary_synthesizer import research_salary_synthesize
 
 
 class TestFundingSignal:

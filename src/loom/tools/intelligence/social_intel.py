@@ -10,6 +10,7 @@ import httpx
 
 from loom.error_responses import handle_tool_errors
 from loom.validators import validate_url
+from loom.http_helpers import fetch_text
 
 logger = logging.getLogger("loom.tools.social_intel")
 
@@ -66,7 +67,7 @@ async def _check_profile_exists(username: str, platform: str, url: str) -> tuple
                 return (platform, "not_found", url)
             else:
                 # Try GET as fallback for HEAD-rejecting servers
-                resp = await client.get(url, headers={"User-Agent": "Mozilla/5.0"})
+                html = await fetch_text(client, url, headers={"User-Agent": "Mozilla/5.0"})
                 if resp.status_code == 200:
                     return (platform, "exists", url)
                 elif resp.status_code == 404:
@@ -220,7 +221,6 @@ async def research_social_profile(url: str) -> dict[str, Any]:
             async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT) as client:
                 resp = await client.get(url, headers={"User-Agent": "Mozilla/5.0"})
                 resp.raise_for_status()
-                html = resp.text
         except Exception as e:
             logger.warning("profile_fetch_failed url=%s error=%s", url, e)
             return {

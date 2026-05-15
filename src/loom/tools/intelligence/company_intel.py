@@ -13,7 +13,21 @@ import re
 from typing import Any
 from loom.error_responses import handle_tool_errors
 
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(v: float, lo: float = 0.0, hi: float = 1.0) -> float:
+        """Fallback clamp if score_utils unavailable."""
+        return max(lo, min(hi, v))
+
 logger = logging.getLogger("loom.tools.company_intel")
+
+try:
+    from loom.llm_client import query_llm
+    _LLM_AVAILABLE = True
+except ImportError:
+    _LLM_AVAILABLE = False
+    query_llm = None  # type: ignore[assignment]
 
 
 def _sanitize_company_name(name: str) -> str:
@@ -205,7 +219,8 @@ async def research_company_diligence(company_name: str) -> dict[str, Any]:
         # Stage 4: LLM synthesis of culture score and recommendation
         logger.debug("stage=llm_synthesis company=%s", company_name)
         try:
-            from loom.tools.llm.llm import _call_with_cascade
+            if not _LLM_AVAILABLE:
+                raise RuntimeError("LLM module not available")
 
             synthesis_prompt = f"""Based on the following company research, provide:
 1. A culture_score (0-5 float)
@@ -219,19 +234,20 @@ Red Flags: {', '.join(result['red_flags']) if result['red_flags'] else 'None'}
 
 Respond as JSON only: {{"culture_score": float, "recommendation": string}}"""
 
-            messages = [{"role": "user", "content": synthesis_prompt}]
-
-            # Call async LLM
-            llm_result = await _call_with_cascade(
-                messages,
-                model="auto",
-                max_tokens=200,
+            # Call LLM via llm_client
+            llm_result = await query_llm(
+                synthesis_prompt,
                 temperature=0.3,
+                max_tokens=200,
             )
 
-            if llm_result and llm_result.get("success") and llm_result.get("text"):
+            if llm_result.get("error"):
+                raise RuntimeError(llm_result.get("error"))
+
+            llm_text = llm_result.get("text", "")
+            if llm_text:
                 # Parse JSON from response
-                json_match = re.search(r"\{.*\}", llm_result.get("text", ""), re.DOTALL)
+                json_match = re.search(r"\{.*\}", llm_text, re.DOTALL)
                 if json_match:
                     try:
                         synthesis = json.loads(json_match.group(0))
@@ -273,7 +289,7 @@ Respond as JSON only: {{"culture_score": float, "recommendation": string}}"""
             )
 
         # Ensure culture_score is in valid range
-        result["culture_score"] = max(0.0, min(5.0, result["culture_score"]))
+        result["culture_score"] = clamp(result["culture_score"], 0.0, 5.0)
 
         logger.info(
             "company_diligence_complete company=%s culture_score=%.1f",

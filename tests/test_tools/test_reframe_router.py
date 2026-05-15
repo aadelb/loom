@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from loom.tools.reframe_router import (
+from loom.tools.llm.reframe_router import (
     ReframeRouter,
     RouterDecision,
     research_reframe_or_integrate,

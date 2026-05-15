@@ -1,8 +1,15 @@
 """Input sanitization and validation tools for Loom."""
 from __future__ import annotations
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text, max_chars=500, *, suffix="..."):
+        if len(text) <= max_chars: return text
+        return text[:max_chars - len(suffix)] + suffix
+
+
 from loom.error_responses import handle_tool_errors
 import logging
-import re
 import unicodedata
 from typing import Any
 from loom.html_utils import strip_tags
@@ -28,7 +35,7 @@ async def research_sanitize_input(text: str, rules: list[str] | None = None) -> 
                 changes.append("normalize_unicode")
         if "limit_length" in rules and len(text) > 10000:
             changes.append(f"limit_length: {len(text)} -> 10000")
-            text = text[:10000]
+            text = truncate(text, 10000)
         if "remove_control_chars" in rules:
             b = len(text)
             text = "".join(c for c in text if ord(c) >= 32 or c in "\n\t")

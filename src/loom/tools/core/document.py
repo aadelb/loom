@@ -4,13 +4,13 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
-import subprocess
 import tempfile
 from typing import Any
 import httpx
 
 from loom.cli_checker import is_available
 from loom.error_responses import handle_tool_errors
+from loom.subprocess_helpers import run_command
 
 logger = logging.getLogger("loom.tools.document")
 
@@ -204,6 +204,7 @@ def _detect_source_type(url: str, file_path: str) -> str:
         if magic.startswith(b"{\\rtf"):
             return "rtf"
     except Exception:
+        logger.exception("Failed to detect file type from magic bytes")
         pass
 
     # Default to binary
@@ -247,22 +248,22 @@ def _convert_with_pandoc(
         ]
 
         # Run pandoc
-        result = subprocess.run(
+        result = run_command(
             cmd,
             capture_output=True,
             text=True,
             timeout=120,
         )
 
-        if result.returncode != 0:
+        if not result["success"]:
             logger.warning(
                 "pandoc_error file=%s stderr=%s",
                 file_path,
-                result.stderr[:200],
+                result["stderr"][:200],
             )
             return _fallback_text_extraction(file_path)
 
-        content = result.stdout.strip()
+        content = result["stdout"].strip()
         if not content:
             return {"error": "Pandoc produced empty output"}
 
@@ -337,6 +338,7 @@ def _fallback_text_extraction(file_path: str) -> dict[str, Any]:
             if content:
                 return {"content": content}
     except Exception:
+        logger.exception("Failed to read document as text")
         pass
 
     return {"error": "Could not extract text from document"}

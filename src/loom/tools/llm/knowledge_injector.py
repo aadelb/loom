@@ -9,7 +9,6 @@ from loom.error_responses import handle_tool_errors
 
 import logging
 import re
-from typing import Any
 
 logger = logging.getLogger("loom.tools.knowledge_injector")
 

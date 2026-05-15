@@ -10,13 +10,19 @@ from __future__ import annotations
 import base64
 import logging
 import os
-from pathlib import Path
 from typing import Any
 
 import httpx
 
 from loom.validators import PathSafetyError, validate_local_file_path
 from loom.error_responses import handle_tool_errors
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text, max_chars=500, *, suffix="..."):
+        if len(text) <= max_chars: return text
+        return text[:max_chars - len(suffix)] + suffix
+
 
 logger = logging.getLogger("loom.tools.gcp")
 
@@ -237,7 +243,7 @@ async def research_image_analyze(
                 return {
                     "status": "failed",
                     "error": f"HTTP {response.status_code}",
-                    "details": response.text[:500],
+                    "details": truncate(response.text, 500),
                 }
 
             result = response.json()
@@ -449,7 +455,7 @@ async def research_text_to_speech(
                 return {
                     "status": "failed",
                     "error": f"HTTP {response.status_code}",
-                    "details": response.text[:500],
+                    "details": truncate(response.text, 500),
                 }
 
             result = response.json()
@@ -516,12 +522,11 @@ async def research_tts_voices() -> dict[str, Any]:
     if api_key:
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
-                response = await client.get(
+                result = await fetch_json(client,
                     _GCP_VOICES_API,
                     headers={"X-Goog-Api-Key": api_key},
                 )
-                if response.status_code == 200:
-                    result = response.json()
+                if result:
                     voices = {}
                     for voice in result.get("voices", []):
                         voice_name = voice.get("name", "")

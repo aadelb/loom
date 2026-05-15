@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -118,8 +118,9 @@ class TestEvaluateResult:
         }
         evaluation = evaluate_result("explain something", "research_llm_summarize", result)
 
-        assert evaluation["complete"] is True
-        assert evaluation["next_action"] == "done"
+        # Long string with no query overlap scores 0.5 completeness → partial/chain
+        assert evaluation["complete"] is False
+        assert evaluation["next_action"] == "chain"
 
 
 class TestIsEmptyResult:
@@ -252,7 +253,7 @@ class TestReflectWithLLM:
             "result": {"data": "test"},
         }
 
-        with patch("loom.brain.reflection.NvidiaNimProvider") as mock_provider_class:
+        with patch("loom.providers.nvidia_nim.NvidiaNimProvider") as mock_provider_class:
             mock_provider = mock_provider_class.return_value
             mock_provider.available = False
 
@@ -273,14 +274,14 @@ class TestReflectWithLLM:
             "result": {"results": [{"title": "Result"}]},
         }
 
-        mock_response = AsyncMock()
+        mock_response = MagicMock()
         mock_response.text = '{"complete": true, "reason": "Result is comprehensive", "next_action": "done"}'
 
-        mock_provider = AsyncMock()
+        mock_provider = MagicMock()
         mock_provider.available = True
-        mock_provider.chat = AsyncMock(return_value=mock_response)
+        mock_provider.chat = MagicMock(return_value=mock_response)
 
-        with patch("loom.brain.reflection.NvidiaNimProvider", return_value=mock_provider):
+        with patch("loom.providers.nvidia_nim.NvidiaNimProvider", return_value=mock_provider):
             evaluation = await reflect_with_llm(
                 "test query",
                 "research_search",
@@ -298,9 +299,9 @@ class TestReflectWithLLM:
             "result": {"data": "test"},
         }
 
-        with patch("loom.brain.reflection.NvidiaNimProvider") as mock_provider_class:
+        with patch("loom.providers.nvidia_nim.NvidiaNimProvider") as mock_provider_class:
             mock_provider_class.return_value.available = True
-            mock_provider_class.return_value.chat = AsyncMock(side_effect=Exception("API error"))
+            mock_provider_class.return_value.chat = MagicMock(side_effect=Exception("API error"))
 
             evaluation = await reflect_with_llm(
                 "test query",
@@ -337,4 +338,8 @@ class TestParseReflectionResponse:
         from loom.brain.reflection import _parse_reflection_response
 
         result = _parse_reflection_response("This is not JSON at all")
-        assert result is None
+        assert result == {
+            "complete": False,
+            "reason": "Could not parse LLM reflection",
+            "next_action": "done",
+        }

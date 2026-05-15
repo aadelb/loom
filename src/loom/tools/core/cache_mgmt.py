@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import logging
 import time
 from datetime import UTC, datetime
@@ -90,7 +89,7 @@ def research_cache_clear(older_than_days: int | None = None) -> dict[str, Any]:
     if older_than_days is None:
         from loom.config import get_config
 
-        older_than_days = int(_cfg().get("CACHE_TTL_DAYS", 30))
+        older_than_days = int(get_config().get("CACHE_TTL_DAYS", 30))
     cache = get_cache()
     cache_dir = Path(cache.base_dir)
 

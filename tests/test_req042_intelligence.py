@@ -23,18 +23,16 @@ import asyncio
 import pytest
 
 # Import the tools
-from loom.tools import (
-    company_intel,
-    crypto_trace,
-    fact_checker,
-    knowledge_graph,
-    persona_profile,
-    signal_detection,
-    social_graph,
-    stego_detect,
-    supply_chain_intel,
-    threat_intel,
-)
+import loom.tools.intelligence.company_intel as company_intel
+import loom.tools.intelligence.crypto_trace as crypto_trace
+import loom.tools.research.fact_checker as fact_checker
+import loom.tools.research.knowledge_graph as knowledge_graph
+import loom.tools.adversarial.persona_profile as persona_profile
+import loom.tools.monitoring.signal_detection as signal_detection
+import loom.tools.intelligence.social_graph as social_graph
+import loom.tools.privacy.stego_detect as stego_detect
+import loom.tools.intelligence.supply_chain_intel as supply_chain_intel
+import loom.tools.intelligence.threat_intel as threat_intel
 
 
 class TestIntelligenceToolsStructuredOutput:

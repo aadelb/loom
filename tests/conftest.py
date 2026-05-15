@@ -277,6 +277,24 @@ def fixture_journey_dir() -> Path:
     return fixture_dir
 
 
+@pytest.fixture
+def private_url() -> str:
+    """Return a private IP URL for SSRF testing."""
+    return "http://192.168.1.1"
+
+
+@pytest.fixture
+def localhost_url() -> str:
+    """Return a localhost URL for SSRF testing."""
+    return "http://localhost:8080"
+
+
+@pytest.fixture
+def test_url() -> str:
+    """Return a valid public URL for testing."""
+    return "https://example.com"
+
+
 @pytest.fixture(autouse=True)
 def reset_analytics_state():
     """Reset analytics module-level state before each test in test_analytics.py."""

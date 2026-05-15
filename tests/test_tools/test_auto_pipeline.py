@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import pytest
 
-from loom.tools import auto_pipeline
+import loom.tools.infrastructure.auto_pipeline
 
 
 @pytest.mark.asyncio

@@ -11,6 +11,13 @@ import re
 from typing import Any
 from loom.error_responses import handle_tool_errors
 
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(v: float, lo: float = 0.0, hi: float = 1.0) -> float:
+        """Fallback clamp if score_utils unavailable."""
+        return max(lo, min(hi, v))
+
 # Target vectors for each style
 _VECTORS = {
     "academic": {"authority": 0.85, "encoding": 0.65, "persona": 0.3, "context": 0.8, "indirection": 0.6},
@@ -48,7 +55,7 @@ def _score_dimension(prompt: str, dimension: str) -> float:
         return min(0.95, 0.15 + match_count * 0.18 + min(len(prompt.split()) / 100, 0.3))
     elif dimension == "indirection":
         direct_count = sum(len(re.findall(p, prompt_lower)) for p in _DIRECT)
-        return min(0.95, max(0.05, 0.1 + match_count * 0.15 - direct_count * 0.1))
+        return clamp(0.1 + match_count * 0.15 - direct_count * 0.1, 0.05, 0.95)
     return 0.5
 
 
@@ -128,7 +135,7 @@ async def research_geodesic_path(
 
             from_score = current_scores[largest_dim]
             direction = 1 if target_scores[largest_dim] > from_score else -1
-            to_score = min(0.95, max(0.05, from_score + direction * step_size * largest_gap))
+            to_score = clamp(from_score + direction * step_size * largest_gap, 0.05, 0.95)
             current_scores[largest_dim] = to_score
 
             actual_gap_reduction = abs(to_score - from_score)

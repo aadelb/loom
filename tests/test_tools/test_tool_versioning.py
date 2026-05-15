@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from loom.tools.tool_versioning import (
+from loom.tools.infrastructure.tool_versioning import (
     _count_lines,
     _hash_file,
     _tool_info,
@@ -108,14 +108,14 @@ class TestResearchToolVersion:
         assert "error" in result
 
     @pytest.mark.asyncio
-    @patch("loom.tools.tool_versioning.TOOLS_DIR")
+    @patch("loom.tools.infrastructure.tool_versioning.TOOLS_DIR")
     async def test_single_tool_found(self, mock_tools_dir, tmp_path):
         """Get version for existing tool."""
         tool_file = tmp_path / "sample.py"
         tool_file.write_text("# sample tool\n")
         mock_tools_dir.__truediv__.return_value = tool_file
 
-        with patch("loom.tools.tool_versioning.TOOLS_DIR", tmp_path):
+        with patch("loom.tools.infrastructure.tool_versioning.TOOLS_DIR", tmp_path):
             # Create a real tool file in tmp_path
             tool_file = tmp_path / "sample.py"
             tool_file.write_text("# sample tool\n")
@@ -126,7 +126,7 @@ class TestResearchToolVersion:
             assert "file_size" in result
 
     @pytest.mark.asyncio
-    @patch("loom.tools.tool_versioning.TOOLS_DIR")
+    @patch("loom.tools.infrastructure.tool_versioning.TOOLS_DIR")
     async def test_all_tools(self, mock_tools_dir, tmp_path):
         """Get versions for all tools."""
         # Create sample tool files
@@ -134,7 +134,7 @@ class TestResearchToolVersion:
         (tmp_path / "tool2.py").write_text("# tool2")
         (tmp_path / "__init__.py").write_text("")  # Should be skipped
 
-        with patch("loom.tools.tool_versioning.TOOLS_DIR", tmp_path):
+        with patch("loom.tools.infrastructure.tool_versioning.TOOLS_DIR", tmp_path):
             result = await research_tool_version()
 
             assert "tools_count" in result
@@ -154,13 +154,13 @@ class TestResearchVersionDiff:
         assert "error" in result
 
     @pytest.mark.asyncio
-    @patch("loom.tools.tool_versioning.TOOLS_DIR")
+    @patch("loom.tools.infrastructure.tool_versioning.TOOLS_DIR")
     async def test_diff_with_previous_hash(self, mock_tools_dir, tmp_path):
         """Diff with previous hash shows changed status."""
         tool_file = tmp_path / "sample.py"
         tool_file.write_text("# updated content")
 
-        with patch("loom.tools.tool_versioning.TOOLS_DIR", tmp_path):
+        with patch("loom.tools.infrastructure.tool_versioning.TOOLS_DIR", tmp_path):
             result = await research_version_diff("sample", "oldhash123")
 
             assert result["tool"] == "sample"
@@ -171,27 +171,27 @@ class TestResearchVersionDiff:
             assert "current_lines" in result
 
     @pytest.mark.asyncio
-    @patch("loom.tools.tool_versioning.TOOLS_DIR")
+    @patch("loom.tools.infrastructure.tool_versioning.TOOLS_DIR")
     async def test_diff_same_hash(self, mock_tools_dir, tmp_path):
         """Diff with matching hash shows unchanged."""
         tool_file = tmp_path / "sample.py"
         tool_file.write_text("# content")
         current_hash = _hash_file(tool_file)
 
-        with patch("loom.tools.tool_versioning.TOOLS_DIR", tmp_path):
+        with patch("loom.tools.infrastructure.tool_versioning.TOOLS_DIR", tmp_path):
             result = await research_version_diff("sample", current_hash)
 
             assert result["changed"] is False
             assert result["current_hash"] == current_hash
 
     @pytest.mark.asyncio
-    @patch("loom.tools.tool_versioning.TOOLS_DIR")
+    @patch("loom.tools.infrastructure.tool_versioning.TOOLS_DIR")
     async def test_diff_no_previous_hash(self, mock_tools_dir, tmp_path):
         """Diff without previous hash uses 'none'."""
         tool_file = tmp_path / "sample.py"
         tool_file.write_text("# content")
 
-        with patch("loom.tools.tool_versioning.TOOLS_DIR", tmp_path):
+        with patch("loom.tools.infrastructure.tool_versioning.TOOLS_DIR", tmp_path):
             result = await research_version_diff("sample")
 
             assert result["previous_hash"] == "none"
@@ -204,8 +204,8 @@ class TestResearchVersionSnapshot:
     @pytest.mark.asyncio
     async def test_snapshot_creation(self, tmp_path):
         """Create version snapshot."""
-        with patch("loom.tools.tool_versioning.TOOLS_DIR", tmp_path):
-            with patch("loom.tools.tool_versioning.SNAPSHOTS_DIR", tmp_path / "snapshots"):
+        with patch("loom.tools.infrastructure.tool_versioning.TOOLS_DIR", tmp_path):
+            with patch("loom.tools.infrastructure.tool_versioning.SNAPSHOTS_DIR", tmp_path / "snapshots"):
                 # Create tool files
                 (tmp_path / "tool1.py").write_text("# tool1")
                 (tmp_path / "tool2.py").write_text("# tool2")
@@ -222,8 +222,8 @@ class TestResearchVersionSnapshot:
     @pytest.mark.asyncio
     async def test_snapshot_file_structure(self, tmp_path):
         """Snapshot file has correct JSON structure."""
-        with patch("loom.tools.tool_versioning.TOOLS_DIR", tmp_path):
-            with patch("loom.tools.tool_versioning.SNAPSHOTS_DIR", tmp_path / "snapshots"):
+        with patch("loom.tools.infrastructure.tool_versioning.TOOLS_DIR", tmp_path):
+            with patch("loom.tools.infrastructure.tool_versioning.SNAPSHOTS_DIR", tmp_path / "snapshots"):
                 (tmp_path / "sample.py").write_text("# sample")
 
                 result = await research_version_snapshot()
@@ -239,8 +239,8 @@ class TestResearchVersionSnapshot:
     @pytest.mark.asyncio
     async def test_snapshot_handles_permission_error(self, tmp_path):
         """Snapshot handles permission errors gracefully."""
-        with patch("loom.tools.tool_versioning.TOOLS_DIR", tmp_path):
-            with patch("loom.tools.tool_versioning.SNAPSHOTS_DIR", Path("/root/impossible")):
+        with patch("loom.tools.infrastructure.tool_versioning.TOOLS_DIR", tmp_path):
+            with patch("loom.tools.infrastructure.tool_versioning.SNAPSHOTS_DIR", Path("/root/impossible")):
                 result = await research_version_snapshot()
                 # Should handle error gracefully
                 assert "error" in result or "snapshot_id" in result
@@ -252,8 +252,8 @@ class TestIntegration:
     @pytest.mark.asyncio
     async def test_version_workflow(self, tmp_path):
         """Test complete versioning workflow."""
-        with patch("loom.tools.tool_versioning.TOOLS_DIR", tmp_path):
-            with patch("loom.tools.tool_versioning.SNAPSHOTS_DIR", tmp_path / "snapshots"):
+        with patch("loom.tools.infrastructure.tool_versioning.TOOLS_DIR", tmp_path):
+            with patch("loom.tools.infrastructure.tool_versioning.SNAPSHOTS_DIR", tmp_path / "snapshots"):
                 # Create initial tools
                 (tmp_path / "tool1.py").write_text("# v1")
                 (tmp_path / "tool2.py").write_text("# v1")

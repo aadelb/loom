@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import statistics
 from datetime import UTC, datetime
-from typing import Any, Literal
+from typing import Any
 
 
 class ReportGenerator:

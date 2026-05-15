@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import httpx
 import pytest
 
-from loom.tools.infowar_tools import (
+from loom.tools.adversarial.infowar_tools import (
     _analyze_posting_times,
     _arxiv_search,
     _diff_robots_rules,
@@ -32,7 +32,7 @@ class TestNarrativeTrackerHelper:
     async def test_hn_search_returns_posts(self) -> None:
         """HN search returns formatted post objects."""
         client = httpx.AsyncClient()
-        with patch("loom.tools.infowar_tools._fetch_json") as mock_fetch:
+        with patch("loom.tools.adversarial.infowar_tools._fetch_json") as mock_fetch:
             mock_fetch.return_value = {
                 "hits": [
                     {
@@ -55,7 +55,7 @@ class TestNarrativeTrackerHelper:
     async def test_hn_search_empty_response(self) -> None:
         """HN search handles missing hits gracefully."""
         client = httpx.AsyncClient()
-        with patch("loom.tools.infowar_tools._fetch_json") as mock_fetch:
+        with patch("loom.tools.adversarial.infowar_tools._fetch_json") as mock_fetch:
             mock_fetch.return_value = None
             results = await _hn_search(client, "AI", 72)
             assert results == []
@@ -64,7 +64,7 @@ class TestNarrativeTrackerHelper:
     async def test_reddit_search_returns_posts(self) -> None:
         """Reddit search returns formatted post objects."""
         client = httpx.AsyncClient()
-        with patch("loom.tools.infowar_tools._fetch_json") as mock_fetch:
+        with patch("loom.tools.adversarial.infowar_tools._fetch_json") as mock_fetch:
             mock_fetch.return_value = {
                 "data": [
                     {
@@ -87,7 +87,7 @@ class TestNarrativeTrackerHelper:
     async def test_reddit_search_empty_response(self) -> None:
         """Reddit search handles missing data gracefully."""
         client = httpx.AsyncClient()
-        with patch("loom.tools.infowar_tools._fetch_json") as mock_fetch:
+        with patch("loom.tools.adversarial.infowar_tools._fetch_json") as mock_fetch:
             mock_fetch.return_value = None
             results = await _reddit_search(client, "test", 72)
             assert results == []
@@ -105,7 +105,7 @@ class TestNarrativeTrackerHelper:
 <id>http://arxiv.org/abs/2604.12345v1</id>
 </entry>
 </feed>"""
-        with patch("loom.tools.infowar_tools._fetch_text") as mock_fetch:
+        with patch("loom.tools.adversarial.infowar_tools._fetch_text") as mock_fetch:
             mock_fetch.return_value = xml_response
             results = await _arxiv_search(client, "AI", 72)
             assert len(results) == 1
@@ -116,7 +116,7 @@ class TestNarrativeTrackerHelper:
     async def test_arxiv_search_empty_response(self) -> None:
         """arXiv search handles empty response."""
         client = httpx.AsyncClient()
-        with patch("loom.tools.infowar_tools._fetch_text") as mock_fetch:
+        with patch("loom.tools.adversarial.infowar_tools._fetch_text") as mock_fetch:
             mock_fetch.return_value = ""
             results = await _arxiv_search(client, "AI", 72)
             assert results == []
@@ -134,9 +134,9 @@ class TestNarrativeTracker:
             mock_client.__aexit__.return_value = None
             mock_client_class.return_value = mock_client
 
-            with patch("loom.tools.infowar_tools._hn_search") as mock_hn:
-                with patch("loom.tools.infowar_tools._reddit_search") as mock_reddit:
-                    with patch("loom.tools.infowar_tools._arxiv_search") as mock_arxiv:
+            with patch("loom.tools.adversarial.infowar_tools._hn_search") as mock_hn:
+                with patch("loom.tools.adversarial.infowar_tools._reddit_search") as mock_reddit:
+                    with patch("loom.tools.adversarial.infowar_tools._arxiv_search") as mock_arxiv:
                         mock_hn.return_value = [
                             {
                                 "platform": "hn",
@@ -172,9 +172,9 @@ class TestNarrativeTracker:
             mock_client.__aexit__.return_value = None
             mock_client_class.return_value = mock_client
 
-            with patch("loom.tools.infowar_tools._hn_search") as mock_hn:
-                with patch("loom.tools.infowar_tools._reddit_search") as mock_reddit:
-                    with patch("loom.tools.infowar_tools._arxiv_search") as mock_arxiv:
+            with patch("loom.tools.adversarial.infowar_tools._hn_search") as mock_hn:
+                with patch("loom.tools.adversarial.infowar_tools._reddit_search") as mock_reddit:
+                    with patch("loom.tools.adversarial.infowar_tools._arxiv_search") as mock_arxiv:
                         mock_hn.return_value = []
                         mock_reddit.return_value = []
                         mock_arxiv.return_value = []
@@ -227,8 +227,8 @@ class TestBotDetector:
             mock_client.__aexit__.return_value = None
             mock_client_class.return_value = mock_client
 
-            with patch("loom.tools.infowar_tools._reddit_search") as mock_reddit:
-                with patch("loom.tools.infowar_tools._hn_search") as mock_hn:
+            with patch("loom.tools.adversarial.infowar_tools._reddit_search") as mock_reddit:
+                with patch("loom.tools.adversarial.infowar_tools._hn_search") as mock_hn:
                     mock_reddit.return_value = [
                         {
                             "platform": "reddit",
@@ -256,8 +256,8 @@ class TestBotDetector:
             mock_client.__aexit__.return_value = None
             mock_client_class.return_value = mock_client
 
-            with patch("loom.tools.infowar_tools._reddit_search") as mock_reddit:
-                with patch("loom.tools.infowar_tools._hn_search") as mock_hn:
+            with patch("loom.tools.adversarial.infowar_tools._reddit_search") as mock_reddit:
+                with patch("loom.tools.adversarial.infowar_tools._hn_search") as mock_hn:
                     mock_reddit.return_value = []
                     mock_hn.return_value = []
 
@@ -275,7 +275,7 @@ class TestCensorshipDetectorHelper:
     async def test_dns_lookup_doh_google(self) -> None:
         """DNS lookup via Google DoH."""
         client = httpx.AsyncClient()
-        with patch("loom.tools.infowar_tools._fetch_json") as mock_fetch:
+        with patch("loom.tools.adversarial.infowar_tools._fetch_json") as mock_fetch:
             mock_fetch.return_value = {
                 "Answer": [{"data": "1.2.3.4"}, {"data": "5.6.7.8"}]
             }
@@ -290,7 +290,7 @@ class TestCensorshipDetectorHelper:
     async def test_dns_lookup_doh_failure(self) -> None:
         """DNS lookup handles failure."""
         client = httpx.AsyncClient()
-        with patch("loom.tools.infowar_tools._fetch_json") as mock_fetch:
+        with patch("loom.tools.adversarial.infowar_tools._fetch_json") as mock_fetch:
             mock_fetch.return_value = None
             result = await _dns_lookup_doh(
                 client, "example.com", "https://dns.google/resolve"
@@ -301,7 +301,7 @@ class TestCensorshipDetectorHelper:
     async def test_lumen_database_check(self) -> None:
         """Lumen database check returns notices."""
         client = httpx.AsyncClient()
-        with patch("loom.tools.infowar_tools._fetch_json") as mock_fetch:
+        with patch("loom.tools.adversarial.infowar_tools._fetch_json") as mock_fetch:
             mock_fetch.return_value = {
                 "notices": [
                     {
@@ -331,9 +331,9 @@ class TestCensorshipDetector:
             mock_client.__aexit__.return_value = None
             mock_client_class.return_value = mock_client
 
-            with patch("loom.tools.infowar_tools._dns_lookup_doh") as mock_dns:
+            with patch("loom.tools.adversarial.infowar_tools._dns_lookup_doh") as mock_dns:
                 with patch(
-                    "loom.tools.infowar_tools._lumen_database_check"
+                    "loom.tools.adversarial.infowar_tools._lumen_database_check"
                 ) as mock_lumen:
                     mock_dns.return_value = {
                         "provider": "google",
@@ -362,7 +362,7 @@ class TestDeletedSocialHelper:
     async def test_robots_txt_cdx(self) -> None:
         """Robots.txt CDX search returns versions."""
         client = httpx.AsyncClient()
-        with patch("loom.tools.infowar_tools._fetch_json") as mock_fetch:
+        with patch("loom.tools.adversarial.infowar_tools._fetch_json") as mock_fetch:
             mock_fetch.return_value = [
                 ["timestamp", "original", "statuscode"],  # Header row
                 ["20260101000000", "https://example.com/robots.txt", "200"],
@@ -376,7 +376,7 @@ class TestDeletedSocialHelper:
     async def test_robots_txt_content(self) -> None:
         """Robots.txt content fetch returns text."""
         client = httpx.AsyncClient()
-        with patch("loom.tools.infowar_tools._fetch_text") as mock_fetch:
+        with patch("loom.tools.adversarial.infowar_tools._fetch_text") as mock_fetch:
             mock_fetch.return_value = "User-agent: *\nDisallow: /admin"
             result = await _robots_txt_content(
                 client, "https://web.archive.org/web/20260101000000/example.com/robots.txt"
@@ -396,7 +396,7 @@ class TestDeletedSocial:
             mock_client.__aexit__.return_value = None
             mock_client_class.return_value = mock_client
 
-            with patch("loom.tools.infowar_tools._wayback_search_social") as mock_wayback:
+            with patch("loom.tools.adversarial.infowar_tools._wayback_search_social") as mock_wayback:
                 mock_wayback.return_value = []
 
                 result = await research_deleted_social(
@@ -416,7 +416,7 @@ class TestDeletedSocial:
             mock_client.__aexit__.return_value = None
             mock_client_class.return_value = mock_client
 
-            with patch("loom.tools.infowar_tools._wayback_search_social") as mock_wayback:
+            with patch("loom.tools.adversarial.infowar_tools._wayback_search_social") as mock_wayback:
                 mock_wayback.return_value = []
 
                 result = await research_deleted_social("https://reddit.com/r/test/comments/123")
@@ -432,7 +432,7 @@ class TestDeletedSocial:
             mock_client.__aexit__.return_value = None
             mock_client_class.return_value = mock_client
 
-            with patch("loom.tools.infowar_tools._wayback_search_social") as mock_wayback:
+            with patch("loom.tools.adversarial.infowar_tools._wayback_search_social") as mock_wayback:
                 mock_wayback.return_value = []
 
                 result = await research_deleted_social("https://example.com/page")
@@ -452,8 +452,8 @@ class TestRobotsArchaeology:
             mock_client.__aexit__.return_value = None
             mock_client_class.return_value = mock_client
 
-            with patch("loom.tools.infowar_tools._robots_txt_cdx") as mock_cdx:
-                with patch("loom.tools.infowar_tools._robots_txt_content") as mock_content:
+            with patch("loom.tools.adversarial.infowar_tools._robots_txt_cdx") as mock_cdx:
+                with patch("loom.tools.adversarial.infowar_tools._robots_txt_content") as mock_content:
                     mock_cdx.return_value = [
                         {
                             "timestamp": "20260101000000",
@@ -479,7 +479,7 @@ class TestRobotsArchaeology:
             mock_client.__aexit__.return_value = None
             mock_client_class.return_value = mock_client
 
-            with patch("loom.tools.infowar_tools._robots_txt_cdx") as mock_cdx:
+            with patch("loom.tools.adversarial.infowar_tools._robots_txt_cdx") as mock_cdx:
                 mock_cdx.return_value = []
 
                 result = await research_robots_archaeology("example.com", snapshots=10)

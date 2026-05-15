@@ -6,7 +6,6 @@ Extracts key attack techniques from paper abstracts with relevance scoring.
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import re
 import xml.etree.ElementTree as ET
@@ -16,6 +15,7 @@ from urllib.parse import quote
 import httpx
 
 from loom.error_responses import handle_tool_errors
+from loom.http_helpers import fetch_text
 
 logger = logging.getLogger("loom.tools.arxiv_pipeline")
 
@@ -161,9 +161,8 @@ async def research_arxiv_ingest(
         url = f"https://export.arxiv.org/api/query?{search_query}"
 
         async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.get(url)
+            resp_text = await fetch_text(client, url)
             resp.raise_for_status()
-            resp_text = resp.text
 
         # Parse Atom XML response
         root = ET.fromstring(resp_text)

@@ -23,7 +23,7 @@ class TestSocialSearch:
         mock_client.head = AsyncMock(return_value=mock_resp)
 
         with patch("httpx.AsyncClient", return_value=mock_client):
-            from loom.tools.social_intel import research_social_search
+            from loom.tools.intelligence.social_intel import research_social_search
 
             result = await research_social_search("testuser", platforms=["github"])
 
@@ -33,7 +33,7 @@ class TestSocialSearch:
 
     async def test_invalid_username(self):
         """Test with invalid username characters."""
-        from loom.tools.social_intel import research_social_search
+        from loom.tools.intelligence.social_intel import research_social_search
 
         result = await research_social_search("user@invalid#name", platforms=["github"])
         assert "error" in result
@@ -41,7 +41,7 @@ class TestSocialSearch:
 
     async def test_username_too_long(self):
         """Test with username exceeding length limit."""
-        from loom.tools.social_intel import research_social_search
+        from loom.tools.intelligence.social_intel import research_social_search
 
         long_username = "a" * 300
         result = await research_social_search(long_username)
@@ -49,7 +49,7 @@ class TestSocialSearch:
 
     async def test_empty_username(self):
         """Test with empty username."""
-        from loom.tools.social_intel import research_social_search
+        from loom.tools.intelligence.social_intel import research_social_search
 
         result = await research_social_search("", platforms=["github"])
         assert "error" in result
@@ -65,7 +65,7 @@ class TestSocialSearch:
         mock_client.head = AsyncMock(return_value=mock_resp)
 
         with patch("httpx.AsyncClient", return_value=mock_client):
-            from loom.tools.social_intel import research_social_search
+            from loom.tools.intelligence.social_intel import research_social_search
 
             result = await research_social_search("testuser")
 
@@ -75,7 +75,7 @@ class TestSocialSearch:
 
     async def test_unknown_platform(self):
         """Test handling of unknown platform."""
-        from loom.tools.social_intel import research_social_search
+        from loom.tools.intelligence.social_intel import research_social_search
 
         result = await research_social_search("testuser", platforms=["unknown_platform"])
         assert "error" in result
@@ -91,7 +91,7 @@ class TestSocialSearch:
         mock_client.head = AsyncMock(return_value=mock_resp)
 
         with patch("httpx.AsyncClient", return_value=mock_client):
-            from loom.tools.social_intel import research_social_search
+            from loom.tools.intelligence.social_intel import research_social_search
 
             result = await research_social_search("github", platforms=["github"])
 
@@ -108,7 +108,7 @@ class TestSocialSearch:
         mock_client.head = AsyncMock(return_value=mock_resp)
 
         with patch("httpx.AsyncClient", return_value=mock_client):
-            from loom.tools.social_intel import research_social_search
+            from loom.tools.intelligence.social_intel import research_social_search
 
             result = await research_social_search("nonexistentuser123xyz", platforms=["github"])
 
@@ -117,7 +117,7 @@ class TestSocialSearch:
 
     async def test_valid_usernames(self):
         """Test various valid username formats."""
-        from loom.tools.social_intel import research_social_search
+        from loom.tools.intelligence.social_intel import research_social_search
 
         valid_usernames = ["user123", "user_name", "user-name", "UserName", "123user"]
 
@@ -151,7 +151,7 @@ class TestSocialProfile:
         mock_client.get = AsyncMock(return_value=mock_resp)
 
         with patch("loom.tools.social_intel.httpx.AsyncClient", return_value=mock_client):
-            from loom.tools.social_intel import research_social_profile
+            from loom.tools.intelligence.social_intel import research_social_profile
 
             result = await research_social_profile("https://github.com/johndoe")
 
@@ -186,7 +186,7 @@ class TestSocialProfile:
             mock_client.get = AsyncMock(return_value=mock_resp)
 
             with patch("loom.tools.social_intel.httpx.AsyncClient", return_value=mock_client):
-                from loom.tools.social_intel import research_social_profile
+                from loom.tools.intelligence.social_intel import research_social_profile
 
                 result = await research_social_profile(url)
 
@@ -194,7 +194,7 @@ class TestSocialProfile:
 
     async def test_invalid_url(self):
         """Test with invalid URL."""
-        from loom.tools.social_intel import research_social_profile
+        from loom.tools.intelligence.social_intel import research_social_profile
 
         result = await research_social_profile("not a valid url")
         assert "error" in result
@@ -208,7 +208,7 @@ class TestSocialProfile:
         mock_client.get = AsyncMock(side_effect=Exception("Network timeout"))
 
         with patch("loom.tools.social_intel.httpx.AsyncClient", return_value=mock_client):
-            from loom.tools.social_intel import research_social_profile
+            from loom.tools.intelligence.social_intel import research_social_profile
 
             result = await research_social_profile("https://github.com/user")
 
@@ -236,7 +236,7 @@ class TestSocialProfile:
         mock_client.get = AsyncMock(return_value=mock_resp)
 
         with patch("loom.tools.social_intel.httpx.AsyncClient", return_value=mock_client):
-            from loom.tools.social_intel import research_social_profile
+            from loom.tools.intelligence.social_intel import research_social_profile
 
             result = await research_social_profile("https://github.com/user")
 
@@ -257,7 +257,7 @@ class TestSocialProfile:
         mock_client.get = AsyncMock(return_value=mock_resp)
 
         with patch("loom.tools.social_intel.httpx.AsyncClient", return_value=mock_client):
-            from loom.tools.social_intel import research_social_profile
+            from loom.tools.intelligence.social_intel import research_social_profile
 
             result = await research_social_profile("HTTPS://GITHUB.COM/USER")
 
@@ -284,7 +284,7 @@ class TestSocialProfile:
         mock_client.get = AsyncMock(return_value=mock_resp)
 
         with patch("loom.tools.social_intel.httpx.AsyncClient", return_value=mock_client):
-            from loom.tools.social_intel import research_social_profile
+            from loom.tools.intelligence.social_intel import research_social_profile
 
             result = await research_social_profile("https://medium.com/@jane")
 

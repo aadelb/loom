@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from loom.tools.js_intel import (
+from loom.tools.intelligence.js_intel import (
     _extract_js_urls,
     _scan_for_endpoints,
     _scan_for_env_vars,
@@ -242,7 +242,7 @@ class TestResearchJsIntel:
 
     async def test_returns_dict_with_expected_keys(self) -> None:
         """Result dict has url, js_files_found, and analysis keys."""
-        with patch("loom.tools.js_intel._fetch_text") as mock_fetch:
+        with patch("loom.tools.intelligence.js_intel._fetch_text") as mock_fetch:
             mock_fetch.side_effect = [
                 "<html><script src='app.js'></script></html>",  # HTML
                 "console.log('test');",  # JS file
@@ -260,7 +260,7 @@ class TestResearchJsIntel:
 
     async def test_honors_max_js_files(self) -> None:
         """Respects max_js_files parameter."""
-        with patch("loom.tools.js_intel._fetch_text") as mock_fetch:
+        with patch("loom.tools.intelligence.js_intel._fetch_text") as mock_fetch:
             html = "".join(
                 [f'<script src="file{i}.js"></script>' for i in range(50)]
             )
@@ -271,7 +271,7 @@ class TestResearchJsIntel:
 
     async def test_handles_fetch_failure_gracefully(self) -> None:
         """Return error dict when page fetch fails."""
-        with patch("loom.tools.js_intel._fetch_text") as mock_fetch:
+        with patch("loom.tools.intelligence.js_intel._fetch_text") as mock_fetch:
             mock_fetch.return_value = ""
 
             result = await research_js_intel("https://example.com")
@@ -280,7 +280,7 @@ class TestResearchJsIntel:
 
     async def test_skips_source_maps_when_disabled(self) -> None:
         """Skip .map files when check_source_maps=False."""
-        with patch("loom.tools.js_intel._fetch_text") as mock_fetch:
+        with patch("loom.tools.intelligence.js_intel._fetch_text") as mock_fetch:
             call_count = [0]
 
             async def side_effect(client, url, timeout=20.0):
@@ -300,7 +300,7 @@ class TestResearchJsIntel:
 
     async def test_extracts_intelligence_from_js_files(self) -> None:
         """Extract secrets, endpoints, flags from JS content."""
-        with patch("loom.tools.js_intel._fetch_text") as mock_fetch:
+        with patch("loom.tools.intelligence.js_intel._fetch_text") as mock_fetch:
             js_with_secrets = """
             const apiKey = 'sk-proj-abc123def456';
             fetch('/api/v1/users');
@@ -324,7 +324,7 @@ class TestResearchJsIntel:
 
     async def test_handles_multiple_js_files(self) -> None:
         """Process multiple JS files in parallel."""
-        with patch("loom.tools.js_intel._fetch_text") as mock_fetch:
+        with patch("loom.tools.intelligence.js_intel._fetch_text") as mock_fetch:
 
             async def side_effect(client, url, timeout=20.0):
                 if "app.js" in url:
@@ -388,7 +388,7 @@ class TestJSIntelIntegration:
         };
         """
 
-        with patch("loom.tools.js_intel._fetch_text") as mock_fetch:
+        with patch("loom.tools.intelligence.js_intel._fetch_text") as mock_fetch:
 
             async def side_effect(client, url, timeout=20.0):
                 if "example.com" in url and ".js" not in url and ".map" not in url:
@@ -414,7 +414,7 @@ class TestJSIntelIntegration:
 
     async def test_concurrent_js_file_fetching(self) -> None:
         """Verify concurrent fetching of JS files."""
-        with patch("loom.tools.js_intel._fetch_text") as mock_fetch:
+        with patch("loom.tools.intelligence.js_intel._fetch_text") as mock_fetch:
             files = [f"file{i}" for i in range(10)]
             html = "".join([f'<script src="{f}.js"></script>' for f in files])
 

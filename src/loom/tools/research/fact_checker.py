@@ -2,6 +2,7 @@
 
 Cross-references claims against Google Fact Check API, Wikipedia, Semantic Scholar,
 and aggregates fact-check sources (Snopes, PolitiFact, FactCheck.org).
+Also integrates with research_search for enhanced claim verification.
 """
 
 from __future__ import annotations
@@ -17,6 +18,11 @@ import httpx
 from loom.http_helpers import fetch_json, fetch_text
 from loom.error_responses import handle_tool_errors
 from loom.html_utils import strip_tags
+
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    clamp = lambda v, lo, hi: max(lo, min(hi, v))
 
 logger = logging.getLogger("loom.tools.fact_checker")
 
@@ -175,6 +181,44 @@ async def _search_semantic_scholar_for_claim(
     return sources
 
 
+async def _search_research_search_integration(
+    claim: str, use_research_search: bool = True
+) -> list[dict[str, Any]]:
+    """Optionally use research_search to find relevant sources for the claim.
+
+    Integration point 1: Wires fact_checker to research_search for enhanced verification.
+    """
+    if not use_research_search:
+        return []
+
+    try:
+        from loom.tools.core.search import research_search
+
+        logger.debug("fact_check integrating with research_search for claim=%s", claim[:50])
+
+        # Call research_search to find sources for the claim
+        result = await research_search(
+            query=claim,
+            provider="ddgs",  # Use free provider to avoid API key issues
+            n=5,
+        )
+
+        if result and "results" in result:
+            sources = []
+            for item in result.get("results", [])[:5]:
+                sources.append({
+                    "source": f"Web Search: {item.get('title', 'Unknown')}",
+                    "url": item.get("url", ""),
+                    "assessment": "Search result",
+                    "snippet": item.get("snippet", "")[:200],
+                })
+            return sources
+    except Exception as exc:
+        logger.debug("research_search integration failed: %s", exc)
+
+    return []
+
+
 def _aggregate_assessments(sources: list[dict[str, Any]]) -> tuple[str, float]:
     """Aggregate fact-check assessments into a single verdict and confidence.
 
@@ -222,15 +266,15 @@ def _aggregate_assessments(sources: list[dict[str, Any]]) -> tuple[str, float]:
     # Higher confidence only if strong consensus
     if supported_count > 0 and refuted_count == 0 and mixed_count == 0:
         # All clear assessments are supportive
-        confidence = min(1.0, supported_count / len(sources))
+        confidence = clamp(supported_count / len(sources), 0.0, 1.0)
         return "supported", round(confidence, 2)
     elif refuted_count > 0 and supported_count == 0 and mixed_count == 0:
         # All clear assessments are refutative
-        confidence = min(1.0, refuted_count / len(sources))
+        confidence = clamp(refuted_count / len(sources), 0.0, 1.0)
         return "refuted", round(confidence, 2)
     elif mixed_count > 0 or (supported_count > 0 and refuted_count > 0):
         # Conflicting assessments
-        confidence = min(1.0, (supported_count + refuted_count) / len(sources))
+        confidence = clamp((supported_count + refuted_count) / len(sources), 0.0, 1.0)
         return "mixed", round(confidence, 2)
     else:
         # Insufficient clear assessments
@@ -241,15 +285,18 @@ def _aggregate_assessments(sources: list[dict[str, Any]]) -> tuple[str, float]:
 async def research_fact_check(
     claim: str,
     max_sources: int = 10,
+    use_research_search: bool = False,
 ) -> dict[str, Any]:
     """Verify a claim across multiple fact-checking sources.
 
     Searches Google Fact Check API, Wikipedia, Semantic Scholar, and
     aggregates results from Snopes, PolitiFact, and FactCheck.org.
+    Optionally integrates with research_search for web-based verification.
 
     Args:
         claim: the claim to fact-check (e.g., "The Earth is flat")
         max_sources: maximum number of source results to return (1-50)
+        use_research_search: if True, also query research_search for additional sources
 
     Returns:
         Dict with keys:
@@ -260,9 +307,9 @@ async def research_fact_check(
         - total_sources_checked: count of unique sources consulted
     """
     try:
-        max_sources = max(1, min(max_sources, 50))
+        max_sources = clamp(max_sources, 1, 50)
 
-        logger.info("fact_check claim=%s", claim[:50])
+        logger.info("fact_check claim=%s use_research_search=%s", claim[:50], use_research_search)
 
         async def _run() -> dict[str, Any]:
             async with httpx.AsyncClient(
@@ -277,6 +324,7 @@ async def research_fact_check(
                     _search_snopes_politifact_factcheck(client, claim),
                     _search_wikipedia_for_claim(client, claim),
                     _search_semantic_scholar_for_claim(client, claim),
+                    _search_research_search_integration(claim, use_research_search),
                     return_exceptions=True,
                 )
 
@@ -285,10 +333,11 @@ async def research_fact_check(
                 snopes_sources = results[1] if isinstance(results[1], list) else []
                 wiki_sources = results[2] if isinstance(results[2], list) else []
                 scholar_sources = results[3] if isinstance(results[3], list) else []
+                web_sources = results[4] if isinstance(results[4], list) else []
 
                 # Combine all sources and deduplicate by URL
                 all_sources = (
-                    google_sources + snopes_sources + wiki_sources + scholar_sources
+                    google_sources + snopes_sources + wiki_sources + scholar_sources + web_sources
                 )
 
                 # Deduplicate by URL (keep first occurrence)

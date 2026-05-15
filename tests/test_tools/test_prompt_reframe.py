@@ -6,7 +6,7 @@ import re
 
 import pytest
 
-from loom.tools.prompt_reframe import (
+from loom.tools.llm.prompt_reframe import (
     _FORMAT_SMUGGLE_TEMPLATES,
     _MODEL_CONFIGS,
     _MODEL_FINGERPRINTS,

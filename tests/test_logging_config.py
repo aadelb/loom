@@ -128,7 +128,7 @@ class TestJsonFormatter:
         """Test formatting includes tool-specific fields when present."""
         formatter = JsonFormatter()
         record = logging.LogRecord(
-            name="loom.tools.fetch",
+            name="loom.tools.core.fetch",
             level=logging.INFO,
             pathname="test.py",
             lineno=42,
@@ -156,7 +156,7 @@ class TestJsonFormatter:
         """Test formatting with only some tool fields present."""
         formatter = JsonFormatter()
         record = logging.LogRecord(
-            name="loom.tools.fetch",
+            name="loom.tools.core.fetch",
             level=logging.INFO,
             pathname="test.py",
             lineno=42,
@@ -183,7 +183,7 @@ class TestJsonFormatter:
         """Test formatting skips None values for tool fields."""
         formatter = JsonFormatter()
         record = logging.LogRecord(
-            name="loom.tools.fetch",
+            name="loom.tools.core.fetch",
             level=logging.INFO,
             pathname="test.py",
             lineno=42,

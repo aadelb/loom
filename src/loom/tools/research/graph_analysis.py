@@ -15,6 +15,7 @@ from typing import Any
 
 import httpx
 from loom.error_responses import handle_tool_errors
+from loom.http_helpers import fetch_json, fetch_text
 
 logger = logging.getLogger("loom.tools.graph_analysis")
 
@@ -209,9 +210,8 @@ async def research_transaction_graph(addresses: list[str], chain: str = "bitcoin
                         if balance > 1_000_000_000:
                             suspicious_patterns.append({"type": "high_balance", "address": addr, "balance_sat": balance})
 
-                    tx_resp = await client.get(f"https://blockchain.info/address/{addr}?format=json&limit=5")
-                    if tx_resp.status_code == 200:
-                        data = tx_resp.json()
+                    data = await fetch_json(client, f"https://blockchain.info/address/{addr}?format=json&limit=5")
+                    if data:
                         if data.get("n_tx", 0) > 100:
                             suspicious_patterns.append({"type": "high_transaction_volume", "address": addr, "tx_count": data["n_tx"]})
                         for tx in data.get("txs", [])[:5]:

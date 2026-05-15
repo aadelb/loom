@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from loom.tools.threat_intel import (
+from loom.tools.intelligence.threat_intel import (
     research_botnet_tracker,
     research_dark_market_monitor,
     research_domain_reputation,

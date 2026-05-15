@@ -6,7 +6,6 @@ Provides: memory status reporting, garbage collection, and object profiling.
 from __future__ import annotations
 
 import gc
-import json
 import logging
 import os
 try:

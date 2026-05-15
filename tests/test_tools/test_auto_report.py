@@ -7,20 +7,20 @@ import pytest
 from datetime import datetime
 from typing import Any
 
-from loom.tools.auto_report import (
-    research_generate_report,
+from loom.tools.research.auto_report import (
+    research_auto_report,
     research_report_from_results,
 )
 
 
 @pytest.mark.asyncio
 class TestGenerateReport:
-    """Test research_generate_report tool."""
+    """Test research_auto_report tool."""
 
     @pytest.mark.live
     async def test_generate_report_standard(self) -> None:
         """Test generating a standard-depth report."""
-        result = await research_generate_report(
+        result = await research_auto_report(
             topic="Python programming best practices",
             depth="standard",
             format="markdown",
@@ -52,7 +52,7 @@ class TestGenerateReport:
     @pytest.mark.live
     async def test_generate_report_brief(self) -> None:
         """Test generating a brief-depth report."""
-        result = await research_generate_report(
+        result = await research_auto_report(
             topic="Cloud computing",
             depth="brief",
             format="markdown",
@@ -66,7 +66,7 @@ class TestGenerateReport:
     @pytest.mark.live
     async def test_generate_report_comprehensive(self) -> None:
         """Test generating a comprehensive-depth report."""
-        result = await research_generate_report(
+        result = await research_auto_report(
             topic="Machine learning algorithms",
             depth="comprehensive",
             format="markdown",
@@ -80,7 +80,7 @@ class TestGenerateReport:
     @pytest.mark.live
     async def test_generate_report_json_format(self) -> None:
         """Test report generation with JSON format."""
-        result = await research_generate_report(
+        result = await research_auto_report(
             topic="API design patterns",
             depth="standard",
             format="json",
@@ -98,7 +98,7 @@ class TestGenerateReport:
     @pytest.mark.live
     async def test_generate_report_html_format(self) -> None:
         """Test report generation with HTML format."""
-        result = await research_generate_report(
+        result = await research_auto_report(
             topic="Web security",
             depth="standard",
             format="html",
@@ -111,7 +111,7 @@ class TestGenerateReport:
     @pytest.mark.live
     async def test_generate_report_custom_num_sources(self) -> None:
         """Test report with custom number of sources."""
-        result = await research_generate_report(
+        result = await research_auto_report(
             topic="Cybersecurity trends",
             depth="standard",
             num_sources=3,
@@ -122,7 +122,7 @@ class TestGenerateReport:
     @pytest.mark.live
     async def test_generate_report_without_methodology(self) -> None:
         """Test report generation without methodology section."""
-        result = await research_generate_report(
+        result = await research_auto_report(
             topic="Data science",
             depth="standard",
             include_methodology=False,
@@ -135,7 +135,7 @@ class TestGenerateReport:
     @pytest.mark.live
     async def test_generate_report_without_recommendations(self) -> None:
         """Test report generation without recommendations section."""
-        result = await research_generate_report(
+        result = await research_auto_report(
             topic="DevOps practices",
             depth="standard",
             include_recommendations=False,
@@ -149,18 +149,18 @@ class TestGenerateReport:
         """Test that empty topic raises validation error."""
         with pytest.raises(ValueError, match="topic cannot be empty"):
             import asyncio
-            asyncio.run(research_generate_report(topic="", depth="standard"))
+            asyncio.run(research_auto_report(topic="", depth="standard"))
 
     def test_generate_report_invalid_topic_too_long(self) -> None:
         """Test that overly long topic raises validation error."""
         with pytest.raises(ValueError, match="topic must be <= 2000 characters"):
             import asyncio
-            asyncio.run(research_generate_report(topic="x" * 2001, depth="standard"))
+            asyncio.run(research_auto_report(topic="x" * 2001, depth="standard"))
 
     @pytest.mark.live
     async def test_generate_report_sections_structure(self) -> None:
         """Test that report sections have required structure."""
-        result = await research_generate_report(
+        result = await research_auto_report(
             topic="Software architecture",
             depth="standard",
         )
@@ -177,7 +177,7 @@ class TestGenerateReport:
     @pytest.mark.live
     async def test_generate_report_title_generation(self) -> None:
         """Test that report title is properly generated."""
-        result = await research_generate_report(
+        result = await research_auto_report(
             topic="Kubernetes container orchestration",
             depth="standard",
         )
@@ -189,7 +189,7 @@ class TestGenerateReport:
     @pytest.mark.live
     async def test_generate_report_has_executive_summary(self) -> None:
         """Test that report includes executive summary section."""
-        result = await research_generate_report(
+        result = await research_auto_report(
             topic="Internet of Things",
             depth="standard",
         )
@@ -201,7 +201,7 @@ class TestGenerateReport:
     @pytest.mark.live
     async def test_generate_report_has_findings(self) -> None:
         """Test that report includes findings section."""
-        result = await research_generate_report(
+        result = await research_auto_report(
             topic="Artificial intelligence",
             depth="standard",
         )
@@ -212,7 +212,7 @@ class TestGenerateReport:
     @pytest.mark.live
     async def test_generate_report_timestamp_valid(self) -> None:
         """Test that generated_at is a valid ISO timestamp."""
-        result = await research_generate_report(
+        result = await research_auto_report(
             topic="Testing methodology",
             depth="standard",
         )
@@ -227,7 +227,7 @@ class TestGenerateReport:
     @pytest.mark.live
     async def test_generate_report_confidence_score(self) -> None:
         """Test that confidence score is valid."""
-        result = await research_generate_report(
+        result = await research_auto_report(
             topic="Database design",
             depth="standard",
         )

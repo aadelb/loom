@@ -85,14 +85,17 @@ def search_brave(
         resp.raise_for_status()
         data = resp.json()
 
+        raw_results = data.get("web", {}).get("results", [])
+        total = max(len(raw_results), 1)
         results = [
             {
                 "url": item.get("url", ""),
                 "title": item.get("title", ""),
                 "snippet": (item.get("description", "") or "")[:500],
                 "published_date": item.get("page_age"),
+                "score": 1.0 - (idx / total),
             }
-            for item in data.get("web", {}).get("results", [])
+            for idx, item in enumerate(raw_results)
         ]
         return {"results": results, "query": query}
 

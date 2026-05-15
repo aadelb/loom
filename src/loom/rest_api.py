@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import asyncio
 import inspect
-import json
 import logging
 import time
 from typing import Any
@@ -36,7 +35,6 @@ def create_rest_app(mcp: Any = None) -> Starlette:
         if _tool_registry:
             return
         import importlib
-        import os
         import pathlib
 
         tools_dir = pathlib.Path(__file__).parent / "tools"

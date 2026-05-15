@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from loom.tools.topology_manifold import (
+from loom.tools.research.topology_manifold import (
     _describe_hole,
     _euclidean_distance,
     _extract_strategy_features,

@@ -22,7 +22,6 @@ import hashlib
 import json
 import logging
 import os
-import re
 import time
 from typing import Any
 
@@ -30,6 +29,15 @@ import httpx
 
 from loom.validators import validate_url
 from loom.error_responses import handle_tool_errors
+from loom.http_helpers import fetch_text
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text: str, max_chars: int = 500, *, suffix: str = "...") -> str:
+        """Fallback truncate if text_utils unavailable."""
+        if len(text) <= max_chars:
+            return text
+        return text[: max_chars - len(suffix)] + suffix
 
 try:
     from loom.cache import get_cache
@@ -103,7 +111,7 @@ async def _fetch_url_content(url: str, max_chars: int = 20000) -> str:
         async with httpx.AsyncClient(timeout=15.0) as client:
             resp = await client.get(url)
             resp.raise_for_status()
-            return resp.text[:max_chars]
+            return truncate(resp.text, max_chars)
     except Exception as e:
         logger.error("Failed to fetch URL %s: %s", url, e)
         return ""
@@ -215,7 +223,7 @@ def _build_extraction_prompt(
     if not query:
         raise ValueError("query cannot be empty")
 
-    text_preview = text[:2000] if len(text) > 2000 else text
+    text_preview = truncate(text, 2000) if len(text) > 2000 else text
 
     entity_spec = ""
     if entity_types:

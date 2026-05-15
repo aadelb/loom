@@ -511,11 +511,11 @@ class TestJailbreakEvolutionToolsModule:
     @pytest.mark.asyncio
     async def test_record_tool_async(self, temp_tracker_path: str) -> None:
         """Test async record tool."""
-        from loom.tools.jailbreak_evolution import research_jailbreak_evolution_record
+        from loom.tools.adversarial.jailbreak_evolution import research_jailbreak_evolution_record
 
         # Patch global tracker to use temp path
         with patch(
-            "loom.tools.jailbreak_evolution._get_tracker",
+            "loom.tools.adversarial.jailbreak_evolution._get_tracker",
             return_value=JailbreakEvolutionTracker(storage_path=temp_tracker_path),
         ):
             result = await research_jailbreak_evolution_record(
@@ -531,7 +531,7 @@ class TestJailbreakEvolutionToolsModule:
     @pytest.mark.asyncio
     async def test_get_evolution_tool_async(self, temp_tracker_path: str) -> None:
         """Test async get evolution tool."""
-        from loom.tools.jailbreak_evolution import (
+        from loom.tools.adversarial.jailbreak_evolution import (
             research_jailbreak_evolution_get,
             research_jailbreak_evolution_record,
         )
@@ -539,7 +539,7 @@ class TestJailbreakEvolutionToolsModule:
         tracker = JailbreakEvolutionTracker(storage_path=temp_tracker_path)
 
         with patch(
-            "loom.tools.jailbreak_evolution._get_tracker",
+            "loom.tools.adversarial.jailbreak_evolution._get_tracker",
             return_value=tracker,
         ):
             # Record some data
@@ -556,7 +556,7 @@ class TestJailbreakEvolutionToolsModule:
     @pytest.mark.asyncio
     async def test_patches_tool_async(self, temp_tracker_path: str) -> None:
         """Test async patches detection tool."""
-        from loom.tools.jailbreak_evolution import (
+        from loom.tools.adversarial.jailbreak_evolution import (
             research_jailbreak_evolution_patches,
             research_jailbreak_evolution_record,
         )
@@ -564,7 +564,7 @@ class TestJailbreakEvolutionToolsModule:
         tracker = JailbreakEvolutionTracker(storage_path=temp_tracker_path)
 
         with patch(
-            "loom.tools.jailbreak_evolution._get_tracker",
+            "loom.tools.adversarial.jailbreak_evolution._get_tracker",
             return_value=tracker,
         ):
             # Record patched strategy

@@ -53,6 +53,11 @@ TOOL_CHAINS: dict[str, dict[str, Any]] = {
         "chain": ["research_crypto_trace", "research_threat_intel"],
         "description": "Blockchain trace + Threat intel correlation",
     },
+    "cve_lookup": {
+        "triggers": ["cve", "cves", "vulnerability", "exploit", "log4j", "zero-day", "0day"],
+        "chain": ["research_cve_lookup", "research_exploit_search"],
+        "description": "CVE lookup + Exploit search",
+    },
 }
 
 

@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 import pytest
 
-from loom.tools import credential_vault
+import loom.tools.security.credential_vault
 
 
 class TestCredentialVaultCore:

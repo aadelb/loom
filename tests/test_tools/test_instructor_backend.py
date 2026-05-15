@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from loom.tools.instructor_backend import (
+from loom.tools.backends.instructor_backend import (
     _INSTRUCTOR_AVAILABLE,
     _create_pydantic_model,
     research_structured_extract,

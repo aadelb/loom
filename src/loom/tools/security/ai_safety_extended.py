@@ -12,6 +12,14 @@ import httpx
 from loom.validators import validate_url
 
 from loom.error_responses import handle_tool_errors
+from loom.http_helpers import fetch_json, fetch_text, fetch_bytes
+
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(v: float, lo: float = 0.0, hi: float = 1.0) -> float:
+        """Fallback clamp if score_utils unavailable."""
+        return max(lo, min(hi, v))
 
 logger = logging.getLogger("loom.tools.ai_safety_extended")
 
@@ -438,7 +446,7 @@ async def research_adversarial_robustness(
                     "target": target_url,
                     "tests_run": tests_run,
                     "failures": failures,
-                    "robustness_score": round(max(0.0, min(1.0, robustness_score)), 4),
+                    "robustness_score": round(clamp(robustness_score, 0.0, 1.0), 4),
                 }
 
         return await _run()
@@ -600,7 +608,7 @@ async def research_adversarial_robustness(
                         "tests_run": tests_run,
                         "failures": failures,
                         "robustness_score": round(
-                            max(0.0, min(1.0, robustness_score)), 4
+                            clamp(robustness_score, 0.0, 1.0), 4
                         ),
                     }
 

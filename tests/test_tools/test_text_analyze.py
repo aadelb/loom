@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from loom.tools.text_analyze import (
+from loom.tools.research.text_analyze import (
     research_text_analyze,
     _count_syllables,
     _extract_entities,
@@ -22,7 +22,7 @@ class TestTextAnalyze:
     @pytest.mark.asyncio
     async def test_text_analyze_nltk_not_available(self) -> None:
         """Tool returns error when NLTK not installed."""
-        with patch("loom.tools.text_analyze._HAS_NLTK", False):
+        with patch("loom.tools.research.text_analyze._HAS_NLTK", False):
             result = await research_text_analyze(text="Some text here")
 
             assert "error" in result
@@ -51,22 +51,22 @@ class TestTextAnalyze:
         """Tool runs all analyses when none specified."""
         text = "The quick brown fox jumps over the lazy dog. This is a test sentence."
 
-        with patch("loom.tools.text_analyze._HAS_NLTK", True):
-            with patch("loom.tools.text_analyze.word_tokenize") as mock_tokenize:
+        with patch("loom.tools.research.text_analyze._HAS_NLTK", True):
+            with patch("loom.tools.research.text_analyze.word_tokenize") as mock_tokenize:
                 mock_tokenize.return_value = text.split()
 
-                with patch("loom.tools.text_analyze._extract_entities") as mock_entities:
+                with patch("loom.tools.research.text_analyze._extract_entities") as mock_entities:
                     mock_entities.return_value = []
 
                     with patch(
-                        "loom.tools.text_analyze._extract_keywords"
+                        "loom.tools.research.text_analyze._extract_keywords"
                     ) as mock_keywords:
                         mock_keywords.return_value = [
                             {"term": "quick", "frequency": 1, "tfidf": 0.1}
                         ]
 
                         with patch(
-                            "loom.tools.text_analyze._compute_readability"
+                            "loom.tools.research.text_analyze._compute_readability"
                         ) as mock_readability:
                             mock_readability.return_value = {
                                 "flesch_kincaid_grade": 8.5,
@@ -76,7 +76,7 @@ class TestTextAnalyze:
                             }
 
                             with patch(
-                                "loom.tools.text_analyze._compute_language_stats"
+                                "loom.tools.research.text_analyze._compute_language_stats"
                             ) as mock_stats:
                                 mock_stats.return_value = {
                                     "words": 14,
@@ -101,12 +101,12 @@ class TestTextAnalyze:
         """Tool runs only requested analyses."""
         text = "Test text for analysis purposes"
 
-        with patch("loom.tools.text_analyze._HAS_NLTK", True):
-            with patch("loom.tools.text_analyze.word_tokenize") as mock_tokenize:
+        with patch("loom.tools.research.text_analyze._HAS_NLTK", True):
+            with patch("loom.tools.research.text_analyze.word_tokenize") as mock_tokenize:
                 mock_tokenize.return_value = text.split()
 
                 with patch(
-                    "loom.tools.text_analyze._extract_keywords"
+                    "loom.tools.research.text_analyze._extract_keywords"
                 ) as mock_keywords:
                     mock_keywords.return_value = [
                         {"term": "test", "frequency": 1, "tfidf": 0.1}
@@ -168,16 +168,16 @@ class TestTextAnalyze:
     def test_compute_readability_simple_text(self) -> None:
         """Readability computes grade level metrics."""
         # Use simple mock to avoid NLTK dependency
-        with patch("loom.tools.text_analyze._count_syllables") as mock_syllables:
+        with patch("loom.tools.research.text_analyze._count_syllables") as mock_syllables:
             mock_syllables.return_value = 1
 
-            with patch("loom.tools.text_analyze.sent_tokenize") as mock_sent:
+            with patch("loom.tools.research.text_analyze.sent_tokenize") as mock_sent:
                 mock_sent.return_value = [
                     "This is a test.",
                     "It has two sentences.",
                 ]
 
-                with patch("loom.tools.text_analyze.word_tokenize") as mock_word:
+                with patch("loom.tools.research.text_analyze.word_tokenize") as mock_word:
                     mock_word.return_value = [
                         "this",
                         "is",
@@ -205,10 +205,10 @@ class TestTextAnalyze:
 
     def test_compute_readability_empty_text(self) -> None:
         """Readability handles empty text."""
-        with patch("loom.tools.text_analyze.sent_tokenize") as mock_sent:
+        with patch("loom.tools.research.text_analyze.sent_tokenize") as mock_sent:
             mock_sent.return_value = []
 
-            with patch("loom.tools.text_analyze.word_tokenize") as mock_word:
+            with patch("loom.tools.research.text_analyze.word_tokenize") as mock_word:
                 mock_word.return_value = []
 
                 result = _compute_readability("")
@@ -219,10 +219,10 @@ class TestTextAnalyze:
 
     def test_compute_language_stats_basic(self) -> None:
         """Language stats counts words, sentences, paragraphs."""
-        with patch("loom.tools.text_analyze.sent_tokenize") as mock_sent:
+        with patch("loom.tools.research.text_analyze.sent_tokenize") as mock_sent:
             mock_sent.return_value = ["First sentence.", "Second sentence."]
 
-            with patch("loom.tools.text_analyze.word_tokenize") as mock_word:
+            with patch("loom.tools.research.text_analyze.word_tokenize") as mock_word:
                 mock_word.return_value = [
                     "first",
                     "sentence",
@@ -243,10 +243,10 @@ class TestTextAnalyze:
 
     def test_compute_language_stats_empty(self) -> None:
         """Language stats handles empty text."""
-        with patch("loom.tools.text_analyze.sent_tokenize") as mock_sent:
+        with patch("loom.tools.research.text_analyze.sent_tokenize") as mock_sent:
             mock_sent.return_value = []
 
-            with patch("loom.tools.text_analyze.word_tokenize") as mock_word:
+            with patch("loom.tools.research.text_analyze.word_tokenize") as mock_word:
                 mock_word.return_value = []
 
                 result = _compute_language_stats("")
@@ -261,8 +261,8 @@ class TestTextAnalyze:
         """Tool handles analysis errors gracefully."""
         text = "Valid text for testing"
 
-        with patch("loom.tools.text_analyze._HAS_NLTK", True):
-            with patch("loom.tools.text_analyze.word_tokenize") as mock_tokenize:
+        with patch("loom.tools.research.text_analyze._HAS_NLTK", True):
+            with patch("loom.tools.research.text_analyze.word_tokenize") as mock_tokenize:
                 mock_tokenize.side_effect = Exception("NLTK error")
 
                 result = await research_text_analyze(text=text)
@@ -276,8 +276,8 @@ class TestTextAnalyze:
         """Tool ignores invalid analysis type names."""
         text = "Test text for analysis"
 
-        with patch("loom.tools.text_analyze._HAS_NLTK", True):
-            with patch("loom.tools.text_analyze.word_tokenize") as mock_tokenize:
+        with patch("loom.tools.research.text_analyze._HAS_NLTK", True):
+            with patch("loom.tools.research.text_analyze.word_tokenize") as mock_tokenize:
                 mock_tokenize.return_value = text.split()
 
                 result = await research_text_analyze(

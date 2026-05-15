@@ -4,7 +4,6 @@ from __future__ import annotations
 from loom.error_responses import handle_tool_errors
 
 import hashlib
-import hmac
 import logging
 import secrets
 from datetime import UTC, datetime, timedelta

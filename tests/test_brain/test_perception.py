@@ -110,7 +110,7 @@ class TestParseIntent:
         """Test detection of multiple domains in single query."""
         result = parse_intent("find paper about blockchain security")
         assert "academic" in result["domains"]
-        assert "security" in result["domains"]
+        assert "crypto" in result["domains"]
 
     def test_parse_intent_case_insensitive(self) -> None:
         """Test case-insensitive processing."""

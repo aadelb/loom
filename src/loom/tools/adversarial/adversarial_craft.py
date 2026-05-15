@@ -10,7 +10,14 @@ from __future__ import annotations
 import asyncio
 import logging
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Any
+
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(value: float, low: float = 0.0, high: float = 1.0) -> float:
+        """Fallback clamp implementation."""
+        return max(low, min(high, value))
 
 from loom.error_responses import handle_tool_errors
 
@@ -265,7 +272,7 @@ async def research_craft_adversarial(
             for c in changes
         ],
         "target_alignment_score": round(alignment_score, 4),
-        "detection_difficulty": round(max(0.0, min(1.0, detection_difficulty)), 4),
+        "detection_difficulty": round(clamp(detection_difficulty, 0.0, 1.0), 4),
     }
 
 
@@ -305,7 +312,7 @@ async def research_adversarial_batch(
         for inp in inputs
     ]
 
-    results = await asyncio.gather(*tasks)
+    results = await asyncio.gather(*tasks, return_exceptions=True)
     successful = [r for r in results if "error" not in r]
 
     avg_pert = (

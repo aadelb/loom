@@ -1,14 +1,20 @@
 """Web page change monitoring — track and detect meaningful content changes over time."""
 
 from __future__ import annotations
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text, max_chars=500, *, suffix="..."):
+        if len(text) <= max_chars: return text
+        return text[:max_chars - len(suffix)] + suffix
+
+
 
 import asyncio
 import difflib
 import hashlib
 import logging
-import sqlite3
 from datetime import UTC, datetime
-from pathlib import Path
 from typing import Any
 
 import httpx
@@ -307,7 +313,7 @@ async def research_change_monitor(url: str, store_result: bool = True) -> dict[s
 			previous_preview = row[0]
 			diff_text, changes_detected = _compute_diff(previous_preview, current_content)
 			change_type = _classify_change(previous_preview, current_content, changes_detected)
-			diff_summary = diff_text[:500]
+			diff_summary = truncate(diff_text, 500)
 
 	# Store the new snapshot if requested
 	if store_result:

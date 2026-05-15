@@ -16,13 +16,10 @@ from unittest.mock import MagicMock, Mock, patch
 import httpx
 import pytest
 
-from loom.tools.ai_safety import (
-    _calculate_bias_score,
+from loom.tools.security.ai_safety import (
     _detect_bypass,
-    _find_safety_threshold,
-    _infer_model_from_indicators,
     research_bias_probe,
-    research_compliance_check,
+    research_domain_compliance_check,
     research_model_fingerprint,
     research_prompt_injection_test,
     research_safety_filter_map,
@@ -334,11 +331,11 @@ class TestSafetyFilterMap:
 
 
 class TestComplianceCheck:
-    """Tests for research_compliance_check."""
+    """Tests for research_domain_compliance_check."""
 
     def test_invalid_domain(self):
         """Test with invalid domain."""
-        result = research_compliance_check("not a valid domain")
+        result = research_domain_compliance_check("not a valid domain")
         assert "error" in result or "domain" in result
 
     def test_domain_normalization(self):
@@ -351,7 +348,7 @@ class TestComplianceCheck:
             mock_response.status_code = 200
             mock_client.get.return_value = mock_response
 
-            result = research_compliance_check("example.com")
+            result = research_domain_compliance_check("example.com")
 
             # Should have normalized domain
             assert "domain" in result
@@ -367,7 +364,7 @@ class TestComplianceCheck:
             mock_response.status_code = 200
             mock_client.get.return_value = mock_response
 
-            result = research_compliance_check("https://example.com")
+            result = research_domain_compliance_check("https://example.com")
 
             assert "frameworks_checked" in result
             assert len(result["frameworks_checked"]) > 0
@@ -382,7 +379,7 @@ class TestComplianceCheck:
             mock_response.status_code = 200
             mock_client.get.return_value = mock_response
 
-            result = research_compliance_check(
+            result = research_domain_compliance_check(
                 "https://example.com", frameworks=["eu_ai_act", "gdpr"]
             )
 
@@ -398,7 +395,7 @@ class TestComplianceCheck:
             mock_response.status_code = 200
             mock_client.get.return_value = mock_response
 
-            result = research_compliance_check("https://example.com")
+            result = research_domain_compliance_check("https://example.com")
 
             assert "compliance_score" in result
             assert 0 <= result["compliance_score"] <= 100
@@ -413,7 +410,7 @@ class TestComplianceCheck:
             mock_response.status_code = 200
             mock_client.get.return_value = mock_response
 
-            result = research_compliance_check(
+            result = research_domain_compliance_check(
                 "https://example.com", frameworks=["gdpr"]
             )
 
@@ -448,34 +445,40 @@ class TestHelperFunctions:
 
     def test_infer_model_recent_knowledge(self):
         """Test model inference with recent knowledge indicator."""
+        pytest.skip("_infer_model_from_indicators removed")
         indicators = {"recent_knowledge": 1, "capable_coder": 1}
         model = _infer_model_from_indicators(indicators)
         assert model == "gpt-4-turbo"
 
     def test_infer_model_coder_only(self):
         """Test model inference with coding capability only."""
+        pytest.skip("_infer_model_from_indicators removed")
         indicators = {"capable_coder": 1}
         model = _infer_model_from_indicators(indicators)
         assert model == "gpt-3.5-turbo"
 
     def test_infer_model_unknown(self):
         """Test model inference with no indicators."""
+        pytest.skip("_infer_model_from_indicators removed")
         indicators = {}
         model = _infer_model_from_indicators(indicators)
         assert model == "unknown-model"
 
     def test_calculate_bias_score_no_responses(self):
         """Test bias score with no responses."""
+        pytest.skip("_calculate_bias_score removed")
         score = _calculate_bias_score([])
         assert score == 0.0
 
     def test_calculate_bias_score_single_response(self):
         """Test bias score with single response."""
+        pytest.skip("_calculate_bias_score removed")
         score = _calculate_bias_score(["single response"])
         assert score == 0.0
 
     def test_calculate_bias_score_similar_lengths(self):
         """Test bias score with similar length responses."""
+        pytest.skip("_calculate_bias_score removed")
         responses = ["x" * 100, "y" * 110, "z" * 95]
         score = _calculate_bias_score(responses)
         assert 0 <= score <= 1
@@ -484,12 +487,14 @@ class TestHelperFunctions:
 
     def test_calculate_bias_score_different_lengths(self):
         """Test bias score with different length responses."""
+        pytest.skip("_calculate_bias_score removed")
         responses = ["x" * 10, "y" * 1000, "z" * 50]
         score = _calculate_bias_score(responses)
         assert 0 <= score <= 1
 
     def test_find_safety_threshold_mock(self):
         """Test safety threshold finding with mocked client."""
+        pytest.skip("_find_safety_threshold removed")
         mock_client = MagicMock()
         prompts = [
             (1, "benign"),
@@ -545,7 +550,7 @@ class TestIntegration:
             result4 = research_safety_filter_map("https://example.com/api")
             assert "target" in result4
 
-            result5 = research_compliance_check("https://example.com")
+            result5 = research_domain_compliance_check("https://example.com")
             assert "domain" in result5
 
 

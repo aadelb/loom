@@ -694,7 +694,7 @@ class TestMCPToolWrapper:
     @pytest.mark.asyncio
     async def test_tool_get_rubric_action(self) -> None:
         """MCP tool: get_rubric action returns full rubric."""
-        from loom.tools.hcs_rubric_tool import research_hcs_rubric
+        from loom.tools.adversarial.hcs_scorer import research_hcs_rubric
 
         result = await research_hcs_rubric(action="get_rubric")
 
@@ -706,7 +706,7 @@ class TestMCPToolWrapper:
     @pytest.mark.asyncio
     async def test_tool_get_definition_action(self) -> None:
         """MCP tool: get_definition action returns score definition."""
-        from loom.tools.hcs_rubric_tool import research_hcs_rubric
+        from loom.tools.adversarial.hcs_scorer import research_hcs_rubric
 
         result = await research_hcs_rubric(action="get_definition", score=7)
 
@@ -718,7 +718,7 @@ class TestMCPToolWrapper:
     @pytest.mark.asyncio
     async def test_tool_score_response_action(self) -> None:
         """MCP tool: score_response action matches response to rubric."""
-        from loom.tools.hcs_rubric_tool import research_hcs_rubric
+        from loom.tools.adversarial.hcs_scorer import research_hcs_rubric
 
         result = await research_hcs_rubric(
             action="score_response",
@@ -733,7 +733,7 @@ class TestMCPToolWrapper:
     @pytest.mark.asyncio
     async def test_tool_calibrate_action(self) -> None:
         """MCP tool: calibrate action calculates inter-rater agreement."""
-        from loom.tools.hcs_rubric_tool import research_hcs_rubric
+        from loom.tools.adversarial.hcs_scorer import research_hcs_rubric
 
         result = await research_hcs_rubric(
             action="calibrate",
@@ -750,7 +750,7 @@ class TestMCPToolWrapper:
     @pytest.mark.asyncio
     async def test_tool_invalid_action(self) -> None:
         """MCP tool: invalid action returns error."""
-        from loom.tools.hcs_rubric_tool import research_hcs_rubric
+        from loom.tools.adversarial.hcs_scorer import research_hcs_rubric
 
         result = await research_hcs_rubric(action="invalid_action")
 
@@ -760,7 +760,7 @@ class TestMCPToolWrapper:
     @pytest.mark.asyncio
     async def test_tool_missing_required_param(self) -> None:
         """MCP tool: missing required parameter returns error."""
-        from loom.tools.hcs_rubric_tool import research_hcs_rubric
+        from loom.tools.adversarial.hcs_scorer import research_hcs_rubric
 
         # get_definition requires score parameter
         result = await research_hcs_rubric(action="get_definition")
@@ -771,7 +771,7 @@ class TestMCPToolWrapper:
     @pytest.mark.asyncio
     async def test_tool_score_response_missing_response(self) -> None:
         """MCP tool: score_response without response parameter returns error."""
-        from loom.tools.hcs_rubric_tool import research_hcs_rubric
+        from loom.tools.adversarial.hcs_scorer import research_hcs_rubric
 
         result = await research_hcs_rubric(action="score_response", score=5)
 
@@ -781,7 +781,7 @@ class TestMCPToolWrapper:
     @pytest.mark.asyncio
     async def test_tool_calibrate_missing_scores(self) -> None:
         """MCP tool: calibrate without responses_with_scores returns error."""
-        from loom.tools.hcs_rubric_tool import research_hcs_rubric
+        from loom.tools.adversarial.hcs_scorer import research_hcs_rubric
 
         result = await research_hcs_rubric(action="calibrate")
 
@@ -791,7 +791,7 @@ class TestMCPToolWrapper:
     @pytest.mark.asyncio
     async def test_tool_pydantic_validation(self) -> None:
         """MCP tool: Pydantic validation catches invalid inputs."""
-        from loom.tools.hcs_rubric_tool import research_hcs_rubric
+        from loom.tools.adversarial.hcs_scorer import research_hcs_rubric
 
         # Invalid score (> 10)
         result = await research_hcs_rubric(

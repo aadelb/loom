@@ -18,12 +18,18 @@ Public API:
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from typing import Any
 
 from loom.providers.base import LLMResponse
 from loom.error_responses import handle_tool_errors
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text, max_chars=500, *, suffix="..."):
+        if len(text) <= max_chars: return text
+        return text[:max_chars - len(suffix)] + suffix
+
 
 try:
     from loom.tools.adversarial.hcs_scorer import research_hcs_score
@@ -1145,7 +1151,7 @@ async def _fallback_to_deep(sub_q: str, max_cost_usd: float) -> str:
             combined_text = "\n\n".join([p.get("markdown", "")[:500] for p in top_pages[:3]])
             if combined_text:
                 logger.info("fallback_to_deep success sub_q=%s text_len=%d", sub_q[:60], len(combined_text))
-                return combined_text[:1000]
+                return truncate(combined_text, 1000)
 
         logger.warning("fallback_to_deep no_content sub_q=%s", sub_q[:60])
         return "[research_deep returned no content]"

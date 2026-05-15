@@ -32,7 +32,7 @@ class TestResearchFetch:
 
     def test_fetch_basic_http(self) -> None:
         """Test fetch with basic HTTP mode."""
-        from loom.tools.fetch import research_fetch
+        from loom.tools.core.fetch import research_fetch
 
         result = research_fetch(
             url="https://httpbin.org/get",
@@ -55,7 +55,7 @@ class TestResearchFetch:
 
     def test_fetch_stealthy_mode(self) -> None:
         """Test fetch with stealthy mode."""
-        from loom.tools.fetch import research_fetch
+        from loom.tools.core.fetch import research_fetch
 
         result = research_fetch(
             url="https://httpbin.org/get",
@@ -76,7 +76,7 @@ class TestResearchSpider:
     @pytest.mark.asyncio
     async def test_spider_multiple_urls(self) -> None:
         """Test spider with multiple URLs."""
-        from loom.tools.spider import research_spider
+        from loom.tools.core.spider import research_spider
 
         urls = [
             "https://httpbin.org/get",
@@ -106,7 +106,7 @@ class TestResearchSpider:
 
     def test_spider_sync_wrapper(self) -> None:
         """Test spider via sync wrapper (common usage pattern)."""
-        from loom.tools.spider import research_spider
+        from loom.tools.core.spider import research_spider
 
         urls = ["https://httpbin.org/get"]
 
@@ -131,7 +131,7 @@ class TestResearchMarkdown:
     @pytest.mark.asyncio
     async def test_markdown_extraction(self) -> None:
         """Test markdown extraction from HTML."""
-        from loom.tools.markdown import research_markdown
+        from loom.tools.core.markdown import research_markdown
 
         result = await research_markdown(
             url="https://httpbin.org/html",
@@ -154,7 +154,7 @@ class TestResearchMarkdown:
 
     def test_markdown_sync_wrapper(self) -> None:
         """Test markdown via sync wrapper."""
-        from loom.tools.markdown import research_markdown
+        from loom.tools.core.markdown import research_markdown
 
         result = asyncio.run(
             research_markdown(
@@ -174,7 +174,7 @@ class TestResearchSearch:
 
     def test_search_ddgs_provider(self) -> None:
         """Test search with ddgs provider."""
-        from loom.tools.search import research_search
+        from loom.tools.core.search import research_search
 
         result = research_search(
             query="Python testing",
@@ -194,7 +194,7 @@ class TestResearchSearch:
 
     def test_search_wikipedia_fallback(self) -> None:
         """Test search with wikipedia provider."""
-        from loom.tools.search import research_search
+        from loom.tools.core.search import research_search
 
         result = research_search(
             query="Python programming language",
@@ -213,7 +213,7 @@ class TestResearchDeep:
     @pytest.mark.asyncio
     async def test_deep_research_basic(self) -> None:
         """Test deep research with basic query."""
-        from loom.tools.deep import research_deep
+        from loom.tools.core.deep import research_deep
 
         result = await research_deep(
             query="what is Python",
@@ -245,7 +245,7 @@ class TestResearchDeep:
 
     def test_deep_research_sync(self) -> None:
         """Test deep research via sync wrapper."""
-        from loom.tools.deep import research_deep
+        from loom.tools.core.deep import research_deep
 
         result = asyncio.run(
             research_deep(
@@ -267,7 +267,7 @@ class TestResearchGitHub:
 
     def test_github_repo_search(self) -> None:
         """Test GitHub repo search."""
-        from loom.tools.github import research_github
+        from loom.tools.core.github import research_github
 
         result = research_github(
             kind="repo",
@@ -288,7 +288,7 @@ class TestResearchGitHub:
 
     def test_github_code_search(self) -> None:
         """Test GitHub code search."""
-        from loom.tools.github import research_github
+        from loom.tools.core.github import research_github
 
         result = research_github(
             kind="code",
@@ -308,7 +308,7 @@ class TestResearchCamoufox:
     @pytest.mark.asyncio
     async def test_camoufox_fetch(self) -> None:
         """Test camoufox fetch (may fail gracefully if not installed)."""
-        from loom.tools.stealth import research_camoufox
+        from loom.tools.adversarial.stealth import research_camoufox
 
         result = await research_camoufox(
             url="https://httpbin.org/get",
@@ -337,7 +337,7 @@ class TestResearchCamoufox:
 
     def test_camoufox_sync(self) -> None:
         """Test camoufox via sync wrapper."""
-        from loom.tools.stealth import research_camoufox
+        from loom.tools.adversarial.stealth import research_camoufox
 
         result = asyncio.run(
             research_camoufox(
@@ -357,13 +357,13 @@ class TestToolImports:
     def test_all_tools_importable(self) -> None:
         """Verify all 7 tools import without errors."""
         tools = [
-            "loom.tools.fetch",
-            "loom.tools.spider",
-            "loom.tools.markdown",
-            "loom.tools.search",
-            "loom.tools.deep",
-            "loom.tools.github",
-            "loom.tools.stealth",
+            "loom.tools.core.fetch",
+            "loom.tools.core.spider",
+            "loom.tools.core.markdown",
+            "loom.tools.core.search",
+            "loom.tools.core.deep",
+            "loom.tools.core.github",
+            "loom.tools.adversarial.stealth",
         ]
 
         imported = []
@@ -388,7 +388,7 @@ class TestToolReturnTypes:
 
     def test_fetch_returns_dict(self) -> None:
         """Fetch returns dict."""
-        from loom.tools.fetch import research_fetch
+        from loom.tools.core.fetch import research_fetch
 
         result = research_fetch(url="https://httpbin.org/get", timeout=10)
         assert isinstance(result, dict)
@@ -398,7 +398,7 @@ class TestToolReturnTypes:
     @pytest.mark.asyncio
     async def test_spider_returns_list(self) -> None:
         """Spider returns list of dicts."""
-        from loom.tools.spider import research_spider
+        from loom.tools.core.spider import research_spider
 
         result = await research_spider(urls=["https://httpbin.org/get"], timeout=10)
         assert isinstance(result, list)
@@ -409,7 +409,7 @@ class TestToolReturnTypes:
     @pytest.mark.asyncio
     async def test_markdown_returns_dict(self) -> None:
         """Markdown returns dict."""
-        from loom.tools.markdown import research_markdown
+        from loom.tools.core.markdown import research_markdown
 
         result = await research_markdown(url="https://httpbin.org/html", timeout=10)
         assert isinstance(result, dict)
@@ -418,7 +418,7 @@ class TestToolReturnTypes:
 
     def test_search_returns_dict(self) -> None:
         """Search returns dict."""
-        from loom.tools.search import research_search
+        from loom.tools.core.search import research_search
 
         result = research_search(query="test", provider="ddgs", n=1)
         assert isinstance(result, dict)
@@ -427,7 +427,7 @@ class TestToolReturnTypes:
     @pytest.mark.asyncio
     async def test_deep_returns_dict(self) -> None:
         """Deep returns dict."""
-        from loom.tools.deep import research_deep
+        from loom.tools.core.deep import research_deep
 
         result = await research_deep(
             query="test",
@@ -440,7 +440,7 @@ class TestToolReturnTypes:
 
     def test_github_returns_dict(self) -> None:
         """GitHub returns dict."""
-        from loom.tools.github import research_github
+        from loom.tools.core.github import research_github
 
         result = research_github(kind="repo", query="test", limit=1)
         assert isinstance(result, dict)
@@ -449,7 +449,7 @@ class TestToolReturnTypes:
     @pytest.mark.asyncio
     async def test_camoufox_returns_dict(self) -> None:
         """Camoufox returns dict."""
-        from loom.tools.stealth import research_camoufox
+        from loom.tools.adversarial.stealth import research_camoufox
 
         result = await research_camoufox(url="https://httpbin.org/get")
         assert isinstance(result, dict)

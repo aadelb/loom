@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from loom.tools.gap_tools_academic import (
+from loom.tools.research.gap_tools_academic import (
     research_author_clustering,
     research_citation_cartography,
     research_ideological_drift,

@@ -1,9 +1,16 @@
 """Passive infrastructure reconnaissance — map hidden infrastructure without active scanning."""
 
 from __future__ import annotations
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text, max_chars=500, *, suffix="..."):
+        if len(text) <= max_chars: return text
+        return text[:max_chars - len(suffix)] + suffix
+
+
 
 import logging
-import re
 from typing import Any
 from urllib.parse import quote
 
@@ -11,6 +18,7 @@ import httpx
 
 from loom.input_validators import validate_domain, ValidationError
 from loom.error_responses import handle_tool_errors
+from loom.http_helpers import fetch_json, fetch_text
 
 logger = logging.getLogger("loom.tools.passive_recon")
 
@@ -223,13 +231,11 @@ async def research_passive_recon(
             if check_ct_logs:
                 try:
                     ct_url = f"https://crt.sh/?q=%25.{quote(domain)}&output=json"
-                    resp = await client.get(ct_url, timeout=15.0)
-                    if resp.status_code == 200:
-                        ct_data = resp.json()
-                        if isinstance(ct_data, list):
-                            subdomains = _extract_ct_subdomains(ct_data)
-                            output["subdomains"] = subdomains
-                            finding_count += len(subdomains)
+                    ct_data = await fetch_json(client, ct_url, timeout=15.0)
+                    if ct_data and isinstance(ct_data, list):
+                        subdomains = _extract_ct_subdomains(ct_data)
+                        output["subdomains"] = subdomains
+                        finding_count += len(subdomains)
                 except Exception as exc:
                     logger.debug("ct_logs_failed domain=%s: %s", domain, exc)
 
@@ -242,9 +248,8 @@ async def research_passive_recon(
                             f"https://dns.google/resolve?"
                             f"name={quote(domain)}&type={rtype}"
                         )
-                        resp = await client.get(dns_url, timeout=10.0)
-                        if resp.status_code == 200:
-                            dns_json = resp.json()
+                        dns_json = await fetch_json(client, dns_url, timeout=10.0)
+                        if dns_json:
                             records = _extract_dns_records(dns_json)
                             if records:
                                 dns_records[rtype] = records
@@ -273,17 +278,15 @@ async def research_passive_recon(
                         rev_url = (
                             f"https://api.hackertarget.com/reverseiplookup/?q={ip}"
                         )
-                        resp = await client.get(rev_url, timeout=10.0)
-                        if resp.status_code == 200:
-                            text = resp.text
-                            if text and "error" not in text.lower():
-                                reverse_domains = [
-                                    line.strip()
-                                    for line in text.splitlines()
-                                    if line.strip()
-                                ]
-                                output["reverse_ip_domains"] = reverse_domains[:50]
-                                finding_count += len(reverse_domains)
+                        text = await fetch_text(client, rev_url, timeout=10.0)
+                        if text and "error" not in text.lower():
+                            reverse_domains = [
+                                line.strip()
+                                for line in text.splitlines()
+                                if line.strip()
+                            ]
+                            output["reverse_ip_domains"] = reverse_domains[:50]
+                            finding_count += len(reverse_domains)
                     except Exception as exc:
                         logger.debug(
                             "reverse_ip_failed domain=%s ip=%s: %s",
@@ -307,7 +310,7 @@ async def research_passive_recon(
                                     k.lower(): v
                                     for k, v in headers_dict.items()
                                 }
-                                html = resp.text[:10000]  # First 10KB
+                                html = truncate(resp.text, 10000)  # First 10KB
                                 tech = _detect_tech_stack(
                                     domain, headers_lower, html
                                 )

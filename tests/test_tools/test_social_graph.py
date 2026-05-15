@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from loom.tools.social_graph import (
+from loom.tools.intelligence.social_graph import (
     _extract_hn_topics,
     _fetch_github_data,
     _fetch_hackernews_data,
@@ -416,7 +416,7 @@ class TestResearchSocialGraph:
 
     async def test_valid_username_github_only(self) -> None:
         """Analyze GitHub platform only."""
-        with patch("loom.tools.social_graph._fetch_github_data") as mock_github:
+        with patch("loom.tools.intelligence.social_graph._fetch_github_data") as mock_github:
             mock_github.return_value = (
                 [{"id": "github:testuser", "platform": "github", "name": "testuser"}],
                 [],
@@ -436,9 +436,9 @@ class TestResearchSocialGraph:
 
     async def test_default_platforms(self) -> None:
         """Use default platforms when none specified."""
-        with patch("loom.tools.social_graph._fetch_github_data") as mock_github, \
-             patch("loom.tools.social_graph._fetch_reddit_data") as mock_reddit, \
-             patch("loom.tools.social_graph._fetch_hackernews_data") as mock_hn:
+        with patch("loom.tools.intelligence.social_graph._fetch_github_data") as mock_github, \
+             patch("loom.tools.intelligence.social_graph._fetch_reddit_data") as mock_reddit, \
+             patch("loom.tools.intelligence.social_graph._fetch_hackernews_data") as mock_hn:
 
             mock_github.return_value = (
                 [{"id": "github:testuser", "platform": "github", "name": "testuser"}],
@@ -457,8 +457,8 @@ class TestResearchSocialGraph:
 
     async def test_deduplication(self) -> None:
         """Deduplicate nodes and edges."""
-        with patch("loom.tools.social_graph._fetch_github_data") as mock_github, \
-             patch("loom.tools.social_graph._fetch_reddit_data") as mock_reddit:
+        with patch("loom.tools.intelligence.social_graph._fetch_github_data") as mock_github, \
+             patch("loom.tools.intelligence.social_graph._fetch_reddit_data") as mock_reddit:
 
             # Both platforms return same node/edge (simulating duplicate)
             shared_node = {"id": "user:john", "platform": "shared", "name": "john"}
@@ -481,7 +481,7 @@ class TestResearchSocialGraph:
 
     async def test_response_structure(self) -> None:
         """Response has required fields."""
-        with patch("loom.tools.social_graph._fetch_github_data") as mock_github:
+        with patch("loom.tools.intelligence.social_graph._fetch_github_data") as mock_github:
             mock_github.return_value = (
                 [{"id": "github:testuser", "platform": "github", "name": "testuser"}],
                 [],
@@ -501,7 +501,7 @@ class TestResearchSocialGraph:
 
     async def test_connection_count(self) -> None:
         """total_connections matches edges count."""
-        with patch("loom.tools.social_graph._fetch_github_data") as mock_github:
+        with patch("loom.tools.intelligence.social_graph._fetch_github_data") as mock_github:
             edge1 = ("github:user1", "github:user2", "collaborated", 1)
             edge2 = ("github:user2", "github:user3", "collaborated", 1)
 

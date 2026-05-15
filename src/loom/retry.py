@@ -15,7 +15,6 @@ import logging
 import os
 import random
 import time
-from datetime import UTC, datetime
 from typing import Any, Callable, TypeVar, cast, overload
 
 logger = logging.getLogger("loom.retry")

@@ -10,7 +10,6 @@ This module tests Loom's own MCP tools for security issues including:
 
 from __future__ import annotations
 
-import json
 import logging
 import re
 import unicodedata

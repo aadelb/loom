@@ -17,7 +17,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from loom.tools.fetch import FetchResult, _is_cloudflare_block, research_fetch
+from loom.tools.core.fetch import FetchResult, _is_cloudflare_block, research_fetch
 
 _SCRAPLING_API_TODO = (
     "fetch.py currently uses httpx; Scrapling cache+return-shape API "
@@ -219,7 +219,7 @@ class TestFetchAutoEscalation:
         cf_result = FetchResult(
             url="https://example.com", status_code=403, text="Cloudflare Ray ID: x", tool="httpx"
         )
-        with patch("loom.tools.fetch._fetch_http", return_value=cf_result):
+        with patch("loom.tools.core.fetch._fetch_http", return_value=cf_result):
             result = await research_fetch(
                 url="https://example.com", mode="http", auto_escalate=False, bypass_cache=True
             )
@@ -238,8 +238,8 @@ class TestFetchAutoEscalation:
         )
 
         with (
-            patch("loom.tools.fetch._fetch_http", return_value=cf_result),
-            patch("loom.tools.fetch._fetch_stealthy", return_value=ok_result),
+            patch("loom.tools.core.fetch._fetch_http", return_value=cf_result),
+            patch("loom.tools.core.fetch._fetch_stealthy", return_value=ok_result),
         ):
             result = await research_fetch(
                 url="https://example.com", mode="http", auto_escalate=True, bypass_cache=True

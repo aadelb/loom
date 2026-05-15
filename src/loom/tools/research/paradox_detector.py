@@ -18,6 +18,12 @@ from dataclasses import dataclass
 from loom.error_responses import handle_tool_errors
 from loom.async_tool_runner import invoke
 
+try:
+    from loom.report_formatters import section
+    _FORMATTERS_AVAILABLE = True
+except ImportError:
+    _FORMATTERS_AVAILABLE = False
+
 logger = logging.getLogger("loom.tools.paradox_detector")
 
 # Paradox pattern definitions: name → (keywords, regex pattern, confusion_potential)
@@ -254,9 +260,7 @@ async def research_paradox_immunize(system_prompt: str) -> dict:
             base_prompt += "."
 
         # Add defense clauses
-        defense_section = "\n\n## Paradox Immunity\n"
-        for paradox_name in PARADOX_PATTERNS.keys():
-            defense_section += f"- {DEFENSE_TEMPLATES[paradox_name]}\n"
+        defense_section = _build_defense_section()
 
         immunized = base_prompt + defense_section
 
@@ -286,3 +290,20 @@ async def research_paradox_immunize(system_prompt: str) -> dict:
             "error": str(exc),
             "tool": "research_paradox_immunize",
         }
+
+
+def _build_defense_section() -> str:
+    """Build paradox immunity defense section using shared formatter if available."""
+    if _FORMATTERS_AVAILABLE:
+        try:
+            content = "\n".join([f"- {DEFENSE_TEMPLATES[k]}" for k in PARADOX_PATTERNS.keys()])
+            return "\n\n" + section("Paradox Immunity", content, level=2)
+        except Exception:
+            pass
+
+    # Fallback to manual section building
+    defense_section = "\n\n## Paradox Immunity\n"
+    for paradox_name in PARADOX_PATTERNS.keys():
+        defense_section += f"- {DEFENSE_TEMPLATES[paradox_name]}\n"
+
+    return defense_section

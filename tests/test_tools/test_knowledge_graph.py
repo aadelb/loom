@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from httpx import MockTransport, Response
 
-from loom.tools.knowledge_graph import (
+from loom.tools.research.knowledge_graph import (
     research_knowledge_graph,
     _deduplicate_nodes,
     _deduplicate_edges,
@@ -90,7 +90,7 @@ async def test_search_semantic_scholar_success() -> None:
         ]
     }
 
-    with patch("loom.tools.knowledge_graph._fetch_json", new_callable=AsyncMock) as mock_fetch:
+    with patch("loom.tools.research.knowledge_graph._fetch_json", new_callable=AsyncMock) as mock_fetch:
         mock_fetch.return_value = mock_response
 
         import httpx
@@ -104,7 +104,7 @@ async def test_search_semantic_scholar_success() -> None:
 @pytest.mark.asyncio
 async def test_search_semantic_scholar_empty() -> None:
     """Semantic Scholar search returns empty on error."""
-    with patch("loom.tools.knowledge_graph._fetch_json", new_callable=AsyncMock) as mock_fetch:
+    with patch("loom.tools.research.knowledge_graph._fetch_json", new_callable=AsyncMock) as mock_fetch:
         mock_fetch.return_value = {}
 
         import httpx
@@ -132,7 +132,7 @@ async def test_search_wikipedia_success() -> None:
         }
     }
 
-    with patch("loom.tools.knowledge_graph._fetch_json", new_callable=AsyncMock) as mock_fetch:
+    with patch("loom.tools.research.knowledge_graph._fetch_json", new_callable=AsyncMock) as mock_fetch:
         mock_fetch.return_value = mock_response
 
         import httpx
@@ -161,7 +161,7 @@ async def test_search_wikidata_success() -> None:
         ]
     }
 
-    with patch("loom.tools.knowledge_graph._fetch_json", new_callable=AsyncMock) as mock_fetch:
+    with patch("loom.tools.research.knowledge_graph._fetch_json", new_callable=AsyncMock) as mock_fetch:
         mock_fetch.return_value = mock_response
 
         import httpx
@@ -190,9 +190,9 @@ class TestResearchKnowledgeGraph:
 
     async def test_knowledge_graph_default_sources(self) -> None:
         """Default source configuration is used."""
-        with patch("loom.tools.knowledge_graph._search_semantic_scholar", new_callable=AsyncMock) as mock_ss, \
-             patch("loom.tools.knowledge_graph._search_wikipedia", new_callable=AsyncMock) as mock_wiki, \
-             patch("loom.tools.knowledge_graph._search_wikidata", new_callable=AsyncMock) as mock_wd:
+        with patch("loom.tools.research.knowledge_graph._search_semantic_scholar", new_callable=AsyncMock) as mock_ss, \
+             patch("loom.tools.research.knowledge_graph._search_wikipedia", new_callable=AsyncMock) as mock_wiki, \
+             patch("loom.tools.research.knowledge_graph._search_wikidata", new_callable=AsyncMock) as mock_wd:
             mock_ss.return_value = ([], [])
             mock_wiki.return_value = ([], [])
             mock_wd.return_value = ([], [])
@@ -208,9 +208,9 @@ class TestResearchKnowledgeGraph:
 
     async def test_knowledge_graph_output_structure(self) -> None:
         """Output has expected structure."""
-        with patch("loom.tools.knowledge_graph._search_semantic_scholar", new_callable=AsyncMock) as mock_ss, \
-             patch("loom.tools.knowledge_graph._search_wikipedia", new_callable=AsyncMock) as mock_wiki, \
-             patch("loom.tools.knowledge_graph._search_wikidata", new_callable=AsyncMock) as mock_wd:
+        with patch("loom.tools.research.knowledge_graph._search_semantic_scholar", new_callable=AsyncMock) as mock_ss, \
+             patch("loom.tools.research.knowledge_graph._search_wikipedia", new_callable=AsyncMock) as mock_wiki, \
+             patch("loom.tools.research.knowledge_graph._search_wikidata", new_callable=AsyncMock) as mock_wd:
             mock_ss.return_value = ([], [])
             mock_wiki.return_value = ([], [])
             mock_wd.return_value = ([], [])
@@ -224,9 +224,9 @@ class TestResearchKnowledgeGraph:
 
     async def test_knowledge_graph_truncates_to_max_nodes(self) -> None:
         """Results are truncated to max_nodes parameter."""
-        with patch("loom.tools.knowledge_graph._search_semantic_scholar", new_callable=AsyncMock) as mock_ss, \
-             patch("loom.tools.knowledge_graph._search_wikipedia", new_callable=AsyncMock) as mock_wiki, \
-             patch("loom.tools.knowledge_graph._search_wikidata", new_callable=AsyncMock) as mock_wd:
+        with patch("loom.tools.research.knowledge_graph._search_semantic_scholar", new_callable=AsyncMock) as mock_ss, \
+             patch("loom.tools.research.knowledge_graph._search_wikipedia", new_callable=AsyncMock) as mock_wiki, \
+             patch("loom.tools.research.knowledge_graph._search_wikidata", new_callable=AsyncMock) as mock_wd:
             # Return many nodes with proper structure
             mock_ss.return_value = ([{"id": f"p{i}", "type": "paper", "name": f"Paper {i}", "metadata": {}} for i in range(100)], [])
             mock_wiki.return_value = ([], [])
@@ -237,9 +237,9 @@ class TestResearchKnowledgeGraph:
 
     async def test_knowledge_graph_empty_results(self) -> None:
         """Empty results are handled gracefully."""
-        with patch("loom.tools.knowledge_graph._search_semantic_scholar", new_callable=AsyncMock) as mock_ss, \
-             patch("loom.tools.knowledge_graph._search_wikipedia", new_callable=AsyncMock) as mock_wiki, \
-             patch("loom.tools.knowledge_graph._search_wikidata", new_callable=AsyncMock) as mock_wd:
+        with patch("loom.tools.research.knowledge_graph._search_semantic_scholar", new_callable=AsyncMock) as mock_ss, \
+             patch("loom.tools.research.knowledge_graph._search_wikipedia", new_callable=AsyncMock) as mock_wiki, \
+             patch("loom.tools.research.knowledge_graph._search_wikidata", new_callable=AsyncMock) as mock_wd:
             mock_ss.return_value = ([], [])
             mock_wiki.return_value = ([], [])
             mock_wd.return_value = ([], [])

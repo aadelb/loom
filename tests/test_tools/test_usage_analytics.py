@@ -11,7 +11,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from loom.tools import usage_analytics
+import loom.tools.infrastructure.usage_analytics
 
 
 class TestUsageRecord:

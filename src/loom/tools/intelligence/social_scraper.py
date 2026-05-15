@@ -4,11 +4,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime
 from typing import Any, TypedDict
 
 from loom.error_responses import handle_tool_errors
-from loom.validators import validate_url, UrlSafetyError
+from loom.validators import validate_url
 
 try:
     import instaloader
@@ -291,7 +290,7 @@ async def research_article_batch(
         tasks = [extract_with_semaphore(url) for url in urls]
 
         # Run all tasks concurrently
-        await asyncio.gather(*tasks)
+        await asyncio.gather(*tasks, return_exceptions=True)
 
         logger.info(
             "article_batch_complete urls_requested=%d articles_extracted=%d failed_count=%d",

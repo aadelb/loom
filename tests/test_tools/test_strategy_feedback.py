@@ -6,7 +6,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-from loom.tools import strategy_feedback
+import loom.tools.llm.strategy_feedback
 
 
 @pytest.fixture

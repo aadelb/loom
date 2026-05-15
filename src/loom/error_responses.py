@@ -69,7 +69,15 @@ def error_response(
     Returns:
         Dict with error response structure (error + metadata)
     """
-    msg = str(error) if isinstance(error, Exception) else error
+    if isinstance(error, Exception):
+        raw = str(error)
+        for pattern in ("://", "api_key=", "token=", "password=", "secret="):
+            if pattern in raw.lower():
+                raw = type(error).__name__
+                break
+        msg = raw
+    else:
+        msg = error
     result: dict[str, Any] = {"error": msg}
     if tool:
         result["tool"] = tool
@@ -111,8 +119,12 @@ def handle_tool_errors(tool_name: str) -> Callable[[F], F]:
                 t0 = time.monotonic()
                 try:
                     result = await func(*args, **kwargs)
-                    if isinstance(result, dict) and "elapsed_ms" not in result:
-                        result["elapsed_ms"] = int((time.monotonic() - t0) * 1000)
+                    if isinstance(result, dict):
+                        if "elapsed_ms" not in result:
+                            result["elapsed_ms"] = int((time.monotonic() - t0) * 1000)
+                        if "error" in result:
+                            result.setdefault("tool", tool_name)
+                            result.setdefault("error_type", "ValidationError")
                     return result
                 except Exception as exc:
                     elapsed = int((time.monotonic() - t0) * 1000)
@@ -127,8 +139,12 @@ def handle_tool_errors(tool_name: str) -> Callable[[F], F]:
                 t0 = time.monotonic()
                 try:
                     result = func(*args, **kwargs)
-                    if isinstance(result, dict) and "elapsed_ms" not in result:
-                        result["elapsed_ms"] = int((time.monotonic() - t0) * 1000)
+                    if isinstance(result, dict):
+                        if "elapsed_ms" not in result:
+                            result["elapsed_ms"] = int((time.monotonic() - t0) * 1000)
+                        if "error" in result:
+                            result.setdefault("tool", tool_name)
+                            result.setdefault("error_type", "ValidationError")
                     return result
                 except Exception as exc:
                     elapsed = int((time.monotonic() - t0) * 1000)

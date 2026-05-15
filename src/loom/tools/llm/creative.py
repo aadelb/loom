@@ -16,16 +16,22 @@ Tools:
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 import re
-import xml.etree.ElementTree as ET
 from functools import partial
 from typing import Any
 
 import httpx
 from loom.error_responses import handle_tool_errors
 from loom.llm_parsers import extract_json_or_default
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text: str, max_chars: int = 500, *, suffix: str = "...") -> str:
+        """Fallback truncate if text_utils unavailable."""
+        if len(text) <= max_chars:
+            return text
+        return text[: max_chars - len(suffix)] + suffix
 
 logger = logging.getLogger("loom.tools.creative")
 
@@ -91,6 +97,7 @@ async def research_red_team(
         if not isinstance(counter_claims, list):
             counter_claims = []
     except Exception:
+        logger.exception("Failed to generate counter claims")
         counter_claims = []
 
     from loom.tools.core.search import research_search
@@ -112,6 +119,7 @@ async def research_red_team(
                 }
             )
         except Exception:
+            logger.exception("Failed to fetch evidence for counter claim: %s", counter)
             counter_arguments.append({"counter_claim": counter, "evidence_found": 0, "sources": []})
 
     return {
@@ -335,6 +343,7 @@ async def research_misinfo_check(
         if not isinstance(false_claims, list):
             false_claims = []
     except Exception:
+        logger.exception("Failed to generate false claims")
         false_claims = []
 
     from loom.tools.core.search import research_search
@@ -403,7 +412,7 @@ async def research_temporal_diff(
     from loom.tools.core.enrich import research_wayback
     from loom.validators import UrlSafetyError, validate_url
 
-    wayback = research_wayback(url, limit=1)
+    wayback = await research_wayback(url, limit=1)
     snapshots = wayback.get("snapshots", [])
     if not snapshots:
         return {"url": url, "error": "no archived versions found"}
@@ -457,6 +466,7 @@ async def research_temporal_diff(
         )
         changes = chat_result.get("text", "Could not summarize changes")
     except Exception:
+        logger.exception("Failed to summarize changes between versions")
         changes = "LLM not available for diff summary"
 
     return {
@@ -773,7 +783,14 @@ async def research_community_sentiment(
         hn_results, reddit_results = await asyncio.gather(
             loop.run_in_executor(None, lambda: search_hackernews(query, n=n)),
             loop.run_in_executor(None, lambda: search_reddit(query, n=n)),
+            return_exceptions=True,
         )
+        if isinstance(hn_results, BaseException):
+            logger.warning("community_sentiment hn_failed: %s", hn_results)
+            hn_results = {"results": []}
+        if isinstance(reddit_results, BaseException):
+            logger.warning("community_sentiment reddit_failed: %s", reddit_results)
+            reddit_results = {"results": []}
     except Exception as exc:
         logger.warning("community_sentiment_failed: %s", exc)
 
@@ -1018,6 +1035,7 @@ async def research_semantic_sitemap(
                     text = result.get("text", "")[:200]
                     page_data.append({"url": url, "title": title, "snippet": text})
             except Exception:
+                logger.exception("Failed to extract page data for %s", url)
                 page_data.append({"url": url, "title": "", "snippet": ""})
     except ImportError:
         for url in sitemap_urls[:20]:
@@ -1035,6 +1053,7 @@ async def research_semantic_sitemap(
         embed_result = await research_llm_embed(texts=texts_for_embed)
         embeddings = embed_result.get("embeddings", [])
     except Exception:
+        logger.exception("Failed to generate embeddings for page clustering")
         # Without embeddings, return all pages ungrouped
         return {
             "domain": base,
@@ -1094,6 +1113,6 @@ async def research_semantic_sitemap(
         "urls_found": len(sitemap_urls),
         "pages_analyzed": len(page_data),
         "clusters_found": len(clusters),
-        "redundancy_reduction": f"{round((1 - len(clusters) / max(len(page_data), 1)) * 100)}%",
+        "redundancy_reduction": f"{round(max(0, min(100, (1 - len(clusters) / max(len(page_data), 1)) * 100)))}%",
         "clusters": clusters,
     }

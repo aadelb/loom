@@ -14,7 +14,7 @@ pytestmark = pytest.mark.asyncio
 class TestResearchCveLookup:
     async def test_empty_query(self):
         """Test handling of empty query."""
-        from loom.tools.cve_lookup import research_cve_lookup
+        from loom.tools.security.cve_lookup import research_cve_lookup
 
         result = await research_cve_lookup("", limit=10)
 
@@ -32,7 +32,7 @@ class TestResearchCveLookup:
         with patch("httpx.AsyncClient.get") as mock_get:
             mock_get.return_value = mock_response
 
-            from loom.tools.cve_lookup import research_cve_lookup
+            from loom.tools.security.cve_lookup import research_cve_lookup
 
             result = await research_cve_lookup("openssl", limit=200)
 
@@ -76,7 +76,7 @@ class TestResearchCveLookup:
         with patch("httpx.AsyncClient.get") as mock_get:
             mock_get.return_value = mock_response
 
-            from loom.tools.cve_lookup import research_cve_lookup
+            from loom.tools.security.cve_lookup import research_cve_lookup
 
             result = await research_cve_lookup("log4j", limit=10)
 
@@ -119,7 +119,7 @@ class TestResearchCveLookup:
         with patch("httpx.AsyncClient.get") as mock_get:
             mock_get.return_value = mock_response
 
-            from loom.tools.cve_lookup import research_cve_lookup
+            from loom.tools.security.cve_lookup import research_cve_lookup
 
             result = await research_cve_lookup("test", limit=10)
 
@@ -131,7 +131,7 @@ class TestResearchCveLookup:
         with patch("httpx.AsyncClient.get") as mock_get:
             mock_get.side_effect = httpx.TimeoutException("Timeout")
 
-            from loom.tools.cve_lookup import research_cve_lookup
+            from loom.tools.security.cve_lookup import research_cve_lookup
 
             result = await research_cve_lookup("openssl", limit=10)
 
@@ -162,7 +162,7 @@ class TestResearchCveLookup:
         with patch("httpx.AsyncClient.get") as mock_get:
             mock_get.return_value = mock_response
 
-            from loom.tools.cve_lookup import research_cve_lookup
+            from loom.tools.security.cve_lookup import research_cve_lookup
 
             result = await research_cve_lookup("test")
 
@@ -192,7 +192,7 @@ class TestResearchCveLookup:
         with patch("httpx.AsyncClient.get") as mock_get:
             mock_get.return_value = mock_response
 
-            from loom.tools.cve_lookup import research_cve_lookup
+            from loom.tools.security.cve_lookup import research_cve_lookup
 
             result = await research_cve_lookup("test")
 
@@ -202,7 +202,7 @@ class TestResearchCveLookup:
 class TestResearchCveDetail:
     async def test_invalid_cve_id_format(self):
         """Test rejection of invalid CVE ID format."""
-        from loom.tools.cve_lookup import research_cve_detail
+        from loom.tools.security.cve_lookup import research_cve_detail
 
         result = await research_cve_detail("INVALID-1234")
 
@@ -218,7 +218,7 @@ class TestResearchCveDetail:
         with patch("httpx.AsyncClient.get") as mock_get:
             mock_get.return_value = mock_response
 
-            from loom.tools.cve_lookup import research_cve_detail
+            from loom.tools.security.cve_lookup import research_cve_detail
 
             result = await research_cve_detail("CVE-9999-99999")
 
@@ -275,7 +275,7 @@ class TestResearchCveDetail:
         with patch("httpx.AsyncClient.get") as mock_get:
             mock_get.return_value = mock_response
 
-            from loom.tools.cve_lookup import research_cve_detail
+            from loom.tools.security.cve_lookup import research_cve_detail
 
             result = await research_cve_detail("CVE-2021-44228")
 
@@ -316,7 +316,7 @@ class TestResearchCveDetail:
         with patch("httpx.AsyncClient.get") as mock_get:
             mock_get.return_value = mock_response
 
-            from loom.tools.cve_lookup import research_cve_detail
+            from loom.tools.security.cve_lookup import research_cve_detail
 
             result = await research_cve_detail("CVE-2021-1111")
 
@@ -327,7 +327,7 @@ class TestResearchCveDetail:
         with patch("httpx.AsyncClient.get") as mock_get:
             mock_get.side_effect = httpx.TimeoutException("Timeout")
 
-            from loom.tools.cve_lookup import research_cve_detail
+            from loom.tools.security.cve_lookup import research_cve_detail
 
             result = await research_cve_detail("CVE-2021-44228")
 

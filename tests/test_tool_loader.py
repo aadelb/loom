@@ -28,14 +28,14 @@ class TestLazyToolLoader:
 
     def test_register_simple(self, loader: LazyToolLoader) -> None:
         """Test basic tool registration."""
-        loader.register("test_tool", "loom.tools.fetch", "research_fetch")
+        loader.register("test_tool", "loom.tools.core.fetch", "research_fetch")
         assert "test_tool" in loader.get_all_registered()
 
     def test_register_duplicate_raises(self, loader: LazyToolLoader) -> None:
         """Test that registering duplicate tool name raises ValueError."""
-        loader.register("test_tool", "loom.tools.fetch", "research_fetch")
+        loader.register("test_tool", "loom.tools.core.fetch", "research_fetch")
         with pytest.raises(ValueError, match="already registered"):
-            loader.register("test_tool", "loom.tools.spider", "research_spider")
+            loader.register("test_tool", "loom.tools.core.spider", "research_spider")
 
     def test_load_valid_tool(self) -> None:
         """Test loading a real tool from loom.validators."""

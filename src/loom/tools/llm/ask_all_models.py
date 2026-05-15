@@ -12,13 +12,23 @@ import asyncio
 import logging
 import os
 import re
-import subprocess
 import time
 from typing import Any
 
 import httpx
 
 from loom.error_responses import handle_tool_errors
+from loom.sanitization import sanitize_text
+from loom.subprocess_helpers import run_command
+from loom.http_helpers import fetch_json, fetch_text, fetch_bytes
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text: str, max_chars: int = 500, *, suffix: str = "...") -> str:
+        """Fallback truncate if text_utils unavailable."""
+        if len(text) <= max_chars:
+            return text
+        return text[: max_chars - len(suffix)] + suffix
 
 logger = logging.getLogger("loom.tools.ask_all_models")
 
@@ -192,30 +202,8 @@ _CLI_TOOLS = [
 
 
 def _sanitize_error_message(error_str: str) -> str:
-    """Sanitize error messages to remove API keys and sensitive data.
-
-    Replaces common API key patterns (sk-*, gsk_*, AIza*, etc.) with [REDACTED].
-
-    Args:
-        error_str: The error message to sanitize
-
-    Returns:
-        Sanitized error message with API keys redacted
-    """
-    # Common API key patterns
-    patterns = [
-        r"sk-[a-zA-Z0-9]{20,}",  # OpenAI-style keys
-        r"gsk_[a-zA-Z0-9]{20,}",  # Groq-style keys
-        r"AIza[0-9A-Za-z\-_]{35}",  # Google-style keys
-        r"Bearer\s+[a-zA-Z0-9\-_]{20,}",  # Bearer tokens
-        r"key=[a-zA-Z0-9\-_]{20,}",  # URL query parameter keys
-    ]
-
-    sanitized = error_str
-    for pattern in patterns:
-        sanitized = re.sub(pattern, "[REDACTED]", sanitized)
-
-    return sanitized
+    """Sanitize error messages to remove API keys and sensitive data."""
+    return sanitize_text(error_str)
 
 
 async def _query_openai_compatible(
@@ -250,7 +238,7 @@ async def _query_openai_compatible(
                 "tokens": usage.get("total_tokens", 0),
                 "error": None,
             }
-        return {"text": "", "tokens": 0, "error": f"HTTP {resp.status_code}: {resp.text[:100]}"}
+        return {"text": "", "tokens": 0, "error": f"HTTP {resp.status_code}: {truncate(resp.text, 100)}"}
     except Exception as exc:
         return {"text": "", "tokens": 0, "error": _sanitize_error_message(str(exc))[:150]}
 
@@ -292,7 +280,7 @@ async def _query_anthropic(
                 "tokens": usage.get("input_tokens", 0) + usage.get("output_tokens", 0),
                 "error": None,
             }
-        return {"text": "", "tokens": 0, "error": f"HTTP {resp.status_code}: {resp.text[:100]}"}
+        return {"text": "", "tokens": 0, "error": f"HTTP {resp.status_code}: {truncate(resp.text, 100)}"}
     except Exception as exc:
         return {"text": "", "tokens": 0, "error": _sanitize_error_message(str(exc))[:150]}
 
@@ -321,7 +309,7 @@ async def _query_google(
                 parts = candidates[0].get("content", {}).get("parts", [])
                 text = " ".join(p.get("text", "") for p in parts)
             return {"text": text, "tokens": 0, "error": None}
-        return {"text": "", "tokens": 0, "error": f"HTTP {resp.status_code}: {resp.text[:100]}"}
+        return {"text": "", "tokens": 0, "error": f"HTTP {resp.status_code}: {truncate(resp.text, 100)}"}
     except Exception as exc:
         return {"text": "", "tokens": 0, "error": _sanitize_error_message(str(exc))[:150]}
 
@@ -340,17 +328,17 @@ def _query_cli(name: str, cmd: list[str], prompt: str, timeout: int = 60) -> dic
             "HOME": os.environ.get("HOME", "/tmp"),
             "LANG": os.environ.get("LANG", "en_US.UTF-8"),
         }
-        result = subprocess.run(
+        result = run_command(
             full_cmd,
             capture_output=True,
             text=True,
             timeout=timeout,
             env=safe_env,
         )
-        text = result.stdout.strip()
-        if not text and result.stderr:
-            return {"text": "", "tokens": 0, "error": _sanitize_error_message(result.stderr)[:200]}
-        return {"text": text[:2000], "tokens": 0, "error": None}
+        text = result["stdout"].strip()
+        if not text and result["stderr"]:
+            return {"text": "", "tokens": 0, "error": _sanitize_error_message(result["stderr"])[:200]}
+        return {"text": truncate(text, 2000), "tokens": 0, "error": None}
     except subprocess.TimeoutExpired:
         return {"text": "", "tokens": 0, "error": "CLI timeout"}
     except FileNotFoundError:

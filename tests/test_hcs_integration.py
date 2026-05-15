@@ -14,8 +14,8 @@ from typing import Any
 
 import pytest
 
-from loom.tools.hcs_scorer import research_hcs_score
-from loom.tools.prompt_reframe import (
+from loom.tools.adversarial.hcs_scorer import research_hcs_score
+from loom.tools.llm.prompt_reframe import (
     research_prompt_reframe,
     research_auto_reframe,
     research_stack_reframe,

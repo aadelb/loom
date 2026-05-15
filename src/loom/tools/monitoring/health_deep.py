@@ -669,7 +669,6 @@ async def _check_circuit_breakers() -> dict[str, Any]:
         healthy_count = 0
 
         try:
-            from loom.providers import base
 
             # Check if any provider health checks are available
             providers = ["groq", "nvidia_nim", "deepseek", "gemini", "moonshot", "openai", "anthropic"]

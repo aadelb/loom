@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from datetime import UTC, datetime
 
-from loom.tools.session_replay import (
+from loom.tools.intelligence.session_replay import (
     research_session_record,
     research_session_replay,
     research_session_list,
@@ -23,7 +23,7 @@ def replay_dir(tmp_path, monkeypatch):
         return replay_dir
 
     monkeypatch.setattr(
-        "loom.tools.session_replay._get_replay_dir",
+        "loom.tools.intelligence.session_replay._get_replay_dir",
         mock_get_replay_dir,
     )
     return replay_dir

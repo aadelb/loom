@@ -70,7 +70,7 @@ class TestParameterDocumentation:
 
     def test_fetch_params_required_in_function(self) -> None:
         """research_fetch function has url parameter (required in model)."""
-        from loom.tools.fetch import research_fetch
+        from loom.tools.core.fetch import research_fetch
         from loom.params import FetchParams
 
         sig = inspect.signature(research_fetch)
@@ -85,14 +85,14 @@ class TestParameterDocumentation:
 
     def test_spider_function_exists(self) -> None:
         """research_spider function exists and has urls parameter."""
-        from loom.tools.spider import research_spider
+        from loom.tools.core.spider import research_spider
 
         sig = inspect.signature(research_spider)
         assert "urls" in sig.parameters, "research_spider missing urls parameter"
 
     def test_markdown_function_exists(self) -> None:
         """research_markdown function exists and has url parameter."""
-        from loom.tools.markdown import research_markdown
+        from loom.tools.core.markdown import research_markdown
 
         sig = inspect.signature(research_markdown)
         assert "url" in sig.parameters, "research_markdown missing url parameter"
@@ -123,7 +123,7 @@ class TestReturnTypeContracts:
 
     def test_fetch_returns_dict(self) -> None:
         """research_fetch return type annotation is dict."""
-        from loom.tools.fetch import research_fetch
+        from loom.tools.core.fetch import research_fetch
 
         hints = get_type_hints(research_fetch)
         return_type = hints.get("return")
@@ -136,7 +136,7 @@ class TestReturnTypeContracts:
 
     def test_spider_returns_list(self) -> None:
         """research_spider return type annotation is list."""
-        from loom.tools.spider import research_spider
+        from loom.tools.core.spider import research_spider
 
         hints = get_type_hints(research_spider)
         return_type = hints.get("return")
@@ -148,9 +148,9 @@ class TestReturnTypeContracts:
 
     def test_all_tools_have_return_type_hints(self) -> None:
         """Sample of tools have return type hints."""
-        from loom.tools.fetch import research_fetch
-        from loom.tools.spider import research_spider
-        from loom.tools.markdown import research_markdown
+        from loom.tools.core.fetch import research_fetch
+        from loom.tools.core.spider import research_spider
+        from loom.tools.core.markdown import research_markdown
 
         tools = [research_fetch, research_spider, research_markdown]
 
@@ -167,7 +167,7 @@ class TestParameterTypeConsistency:
     def test_fetch_url_is_required_string(self) -> None:
         """FetchParams.url is required string matching function signature."""
         from loom.params import FetchParams
-        from loom.tools.fetch import research_fetch
+        from loom.tools.core.fetch import research_fetch
 
         # Check model
         schema = FetchParams.model_json_schema()

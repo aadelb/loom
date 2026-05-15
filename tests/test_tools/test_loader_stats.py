@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from loom.tools.loader_stats import research_loader_stats
+from loom.tools.monitoring.loader_stats import research_loader_stats
 from loom.tool_loader import get_loader, LazyToolLoader
 
 

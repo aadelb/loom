@@ -103,8 +103,16 @@ def register_http_routes(mcp: "FastMCP") -> None:
 
     @mcp.custom_route("/versions", methods=["GET"])
     async def versions_endpoint(request: Request) -> JSONResponse:
-        from loom.api_versioning import get_version_info
-        return JSONResponse(get_version_info())
+        try:
+            from loom.api_versioning import get_version_info
+            return JSONResponse(get_version_info())
+        except ImportError:
+            return JSONResponse({
+                "api_version": "v1",
+                "server_version": "3.0.0",
+                "mcp_version": "2024-11-05",
+                "python_version": __import__("sys").version,
+            })
 
     @mcp.custom_route("/v1/", methods=["GET"])
     async def v1_root_endpoint(request: Request) -> JSONResponse:
@@ -267,4 +275,72 @@ def register_http_routes(mcp: "FastMCP") -> None:
 </html>"""
         return Response(content=html, media_type="text/html")
 
-    log.info("http_routes_registered count=12")
+    @mcp.custom_route("/api/v1/tools", methods=["GET"])
+    async def api_v1_tools(request: Request) -> JSONResponse:
+        tools = {}
+        if hasattr(mcp, "_tool_manager"):
+            for name, tool in mcp._tool_manager._tools.items():
+                tools[name] = {
+                    "name": name,
+                    "description": getattr(tool, "description", ""),
+                }
+        return JSONResponse({"tools": tools, "count": len(tools)})
+
+    @mcp.custom_route("/api/v1/tools/{name}/info", methods=["GET"])
+    async def api_v1_tool_info(request: Request) -> JSONResponse:
+        import inspect
+        name = request.path_params.get("name", "")
+        if not hasattr(mcp, "_tool_manager") or name not in mcp._tool_manager._tools:
+            return JSONResponse({"error": f"Tool '{name}' not found"}, status_code=404)
+        tool = mcp._tool_manager._tools[name]
+        func = getattr(tool, "fn", None)
+        info: dict[str, Any] = {
+            "name": name,
+            "description": getattr(tool, "description", ""),
+            "async": inspect.iscoroutinefunction(func) if func else False,
+        }
+        if func:
+            sig = inspect.signature(func)
+            info["parameters"] = {
+                p.name: {
+                    "type": p.annotation.__name__ if hasattr(p.annotation, "__name__") else str(p.annotation),
+                    "default": str(p.default) if p.default is not inspect.Parameter.empty else None,
+                    "required": p.default is inspect.Parameter.empty,
+                }
+                for p in sig.parameters.values()
+            }
+        return JSONResponse(info)
+
+    @mcp.custom_route("/api/v1/tools/{name}", methods=["POST"])
+    async def api_v1_tool_call(request: Request) -> JSONResponse:
+        """Call any tool with JSON body: POST /api/v1/tools/{name} {"param1": "value"}"""
+        import inspect
+        name = request.path_params.get("name", "")
+        if not hasattr(mcp, "_tool_manager") or name not in mcp._tool_manager._tools:
+            return JSONResponse({"error": f"Tool '{name}' not found"}, status_code=404)
+        tool = mcp._tool_manager._tools[name]
+        func = getattr(tool, "fn", None)
+        if func is None:
+            return JSONResponse({"error": f"Tool '{name}' has no callable function"}, status_code=500)
+        try:
+            body = await request.json()
+        except Exception:
+            body = {}
+        try:
+            if inspect.iscoroutinefunction(func):
+                result = await func(**body)
+            else:
+                result = func(**body)
+            if isinstance(result, dict):
+                return JSONResponse(result)
+            return JSONResponse({"result": str(result) if result is not None else None})
+        except TypeError as e:
+            return JSONResponse({"error": f"Invalid parameters: {e}"}, status_code=400)
+        except Exception as e:
+            return JSONResponse({"error": str(e)[:500]}, status_code=500)
+
+    @mcp.custom_route("/api/v1/health", methods=["GET"])
+    async def api_v1_health(request: Request) -> JSONResponse:
+        return await health_endpoint(request)
+
+    log.info("http_routes_registered count=16")

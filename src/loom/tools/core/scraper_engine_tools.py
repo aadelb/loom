@@ -13,7 +13,7 @@ import logging
 from typing import Any
 
 from loom.error_responses import handle_tool_errors
-from loom.validators import validate_url, UrlSafetyError
+from loom.validators import validate_url
 
 try:
 	from loom.params import (

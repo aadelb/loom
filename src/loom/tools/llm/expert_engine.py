@@ -242,7 +242,6 @@ async def _gather_evidence_for_angle(
         Dict with findings, sources, and raw evidence
     """
     try:
-        from loom.tools.core.search import research_search
         from loom.tools.core.deep import research_deep
 
         findings: dict[str, Any] = {

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 
-from loom.tools.prompt_reframe import (
+from loom.tools.llm.prompt_reframe import (
     _STRATEGY_SYNERGY,
     _STRATEGIES,
     _compute_stacked_multiplier,
@@ -317,7 +317,7 @@ class TestAdaptiveReframe:
         )
         assert result["model_detected"] == "claude"
         # Claude best strategy
-        from loom.tools.prompt_reframe import _MODEL_CONFIGS
+        from loom.tools.llm.prompt_reframe import _MODEL_CONFIGS
         claude_best = _MODEL_CONFIGS["claude"]["best_strategy"]
         assert claude_best in result["strategy_chain"]
 
@@ -337,7 +337,7 @@ class TestAdaptiveReframe:
             "test", refusal_text="It's important to note", model="gemini-pro"
         )
         assert result["model_detected"] == "gemini"
-        from loom.tools.prompt_reframe import _MODEL_CONFIGS
+        from loom.tools.llm.prompt_reframe import _MODEL_CONFIGS
         gemini_best = _MODEL_CONFIGS["gemini"]["best_strategy"]
         assert gemini_best in result["strategy_chain"]
 

@@ -22,7 +22,7 @@ class TestSearchTools:
 
     def test_research_search_ddgs(self) -> None:
         """Test research_search with DuckDuckGo provider."""
-        from loom.tools.search import research_search
+        from loom.tools.core.search import research_search
 
         with patch("loom.providers.ddgs.search_ddgs") as mock_search:
             mock_search.return_value = {
@@ -36,7 +36,7 @@ class TestSearchTools:
 
     def test_research_search_wikipedia(self) -> None:
         """Test research_search with Wikipedia provider."""
-        from loom.tools.search import research_search
+        from loom.tools.core.search import research_search
 
         with patch("loom.providers.wikipedia_search.search_wikipedia") as mock_search:
             mock_search.return_value = {
@@ -48,7 +48,7 @@ class TestSearchTools:
 
     def test_research_search_arxiv(self) -> None:
         """Test research_search with arXiv provider."""
-        from loom.tools.search import research_search
+        from loom.tools.core.search import research_search
 
         with patch("loom.providers.arxiv_search.search_arxiv") as mock_search:
             mock_search.return_value = {
@@ -66,7 +66,7 @@ class TestSearchTools:
 
     def test_research_search_hackernews(self) -> None:
         """Test research_search with Hacker News provider."""
-        from loom.tools.search import research_search
+        from loom.tools.core.search import research_search
 
         with patch("loom.providers.hn_reddit.search_hn") as mock_search:
             mock_search.return_value = {"results": [{"title": "HN Story", "url": "https://news.ycombinator.com", "score": 100}]}
@@ -76,7 +76,7 @@ class TestSearchTools:
 
     def test_research_search_reddit(self) -> None:
         """Test research_search with Reddit provider."""
-        from loom.tools.search import research_search
+        from loom.tools.core.search import research_search
 
         with patch("loom.providers.hn_reddit.search_reddit") as mock_search:
             mock_search.return_value = {"results": [{"title": "Post", "url": "https://reddit.com", "score": 50}]}
@@ -86,7 +86,7 @@ class TestSearchTools:
 
     def test_research_search_exa(self) -> None:
         """Test research_search with Exa provider."""
-        from loom.tools.search import research_search
+        from loom.tools.core.search import research_search
 
         with patch("loom.providers.exa.search_exa") as mock_search:
             mock_search.return_value = {"results": [{"title": "Result", "url": "https://example.com", "text": "Content"}]}
@@ -112,7 +112,7 @@ class TestFetchTools:
 
     def test_research_fetch_http(self) -> None:
         """Test research_fetch with HTTP mode."""
-        from loom.tools.fetch import research_fetch
+        from loom.tools.core.fetch import research_fetch
 
         with patch("httpx.get") as mock_get:
             mock_response = MagicMock()
@@ -125,7 +125,7 @@ class TestFetchTools:
 
     def test_research_fetch_with_params(self) -> None:
         """Test research_fetch with various parameters."""
-        from loom.tools.fetch import research_fetch
+        from loom.tools.core.fetch import research_fetch
 
         with patch("httpx.get") as mock_get:
             mock_response = MagicMock()
@@ -144,9 +144,9 @@ class TestFetchTools:
     @pytest.mark.asyncio
     async def test_research_spider(self) -> None:
         """Test research_spider."""
-        from loom.tools.spider import research_spider
+        from loom.tools.core.spider import research_spider
 
-        with patch("loom.tools.fetch.research_fetch") as mock_fetch:
+        with patch("loom.tools.core.fetch.research_fetch") as mock_fetch:
             mock_fetch.return_value = {"text": "Content"}
 
             result = await research_spider(
@@ -157,9 +157,9 @@ class TestFetchTools:
     @pytest.mark.asyncio
     async def test_research_markdown(self) -> None:
         """Test research_markdown."""
-        from loom.tools.markdown import research_markdown
+        from loom.tools.core.markdown import research_markdown
 
-        with patch("loom.tools.markdown.research_fetch") as mock_fetch:
+        with patch("loom.tools.core.markdown.research_fetch") as mock_fetch:
             mock_fetch.return_value = {"text": "<h1>Title</h1><p>Content</p>"}
 
             result = await research_markdown("https://example.com")
@@ -171,7 +171,7 @@ class TestGitHubTools:
 
     def test_research_github_repo(self) -> None:
         """Test research_github for repos."""
-        from loom.tools.github import research_github
+        from loom.tools.core.github import research_github
 
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
@@ -183,7 +183,7 @@ class TestGitHubTools:
 
     def test_research_github_code(self) -> None:
         """Test research_github for code search."""
-        from loom.tools.github import research_github
+        from loom.tools.core.github import research_github
 
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(stdout='[{"path":"file.py"}]', returncode=0)
@@ -193,7 +193,7 @@ class TestGitHubTools:
 
     def test_research_github_issues(self) -> None:
         """Test research_github for issues."""
-        from loom.tools.github import research_github
+        from loom.tools.core.github import research_github
 
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(stdout='[{"title":"Issue"}]', returncode=0)
@@ -203,7 +203,7 @@ class TestGitHubTools:
 
     def test_research_github_readme(self) -> None:
         """Test research_github_readme."""
-        from loom.tools.github import research_github_readme
+        from loom.tools.core.github import research_github_readme
 
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(stdout="# README content", returncode=0)
@@ -213,7 +213,7 @@ class TestGitHubTools:
 
     def test_research_github_releases(self) -> None:
         """Test research_github_releases."""
-        from loom.tools.github import research_github_releases
+        from loom.tools.core.github import research_github_releases
 
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
@@ -230,7 +230,7 @@ class TestLLMTools:
     @pytest.mark.asyncio
     async def test_research_llm_chat(self) -> None:
         """Test research_llm_chat."""
-        from loom.tools.llm import research_llm_chat
+        from loom.tools.llm.llm import research_llm_chat
 
         with patch("loom.tools.llm.get_llm_provider") as mock_provider_factory:
             mock_response = MagicMock(text="Response text", tokens_used=10)
@@ -246,7 +246,7 @@ class TestLLMTools:
     @pytest.mark.asyncio
     async def test_research_llm_summarize(self) -> None:
         """Test research_llm_summarize."""
-        from loom.tools.llm import research_llm_summarize
+        from loom.tools.llm.llm import research_llm_summarize
 
         with patch("loom.tools.llm.research_llm_chat") as mock_chat:
             mock_chat.return_value = {"text": "Summary here"}
@@ -257,7 +257,7 @@ class TestLLMTools:
     @pytest.mark.asyncio
     async def test_research_llm_extract(self) -> None:
         """Test research_llm_extract."""
-        from loom.tools.llm import research_llm_extract
+        from loom.tools.llm.llm import research_llm_extract
 
         text = "John Doe works at Acme Corp earning $100,000 per year. " * 5
 
@@ -274,7 +274,7 @@ class TestLLMTools:
     @pytest.mark.asyncio
     async def test_research_llm_classify(self) -> None:
         """Test research_llm_classify."""
-        from loom.tools.llm import research_llm_classify
+        from loom.tools.llm.llm import research_llm_classify
 
         with patch("loom.tools.llm.research_llm_chat") as mock_chat:
             mock_chat.return_value = {"text": "positive"}
@@ -287,7 +287,7 @@ class TestLLMTools:
     @pytest.mark.asyncio
     async def test_research_llm_translate(self) -> None:
         """Test research_llm_translate."""
-        from loom.tools.llm import research_llm_translate
+        from loom.tools.llm.llm import research_llm_translate
 
         with patch("loom.tools.llm.research_llm_chat") as mock_chat:
             mock_chat.return_value = {"text": "Hola, ¿cómo estás?"}
@@ -298,7 +298,7 @@ class TestLLMTools:
     @pytest.mark.asyncio
     async def test_research_llm_query_expand(self) -> None:
         """Test research_llm_query_expand."""
-        from loom.tools.llm import research_llm_query_expand
+        from loom.tools.llm.llm import research_llm_query_expand
 
         with patch("loom.tools.llm.research_llm_chat") as mock_chat:
             mock_chat.return_value = {"text": "query1\nquery2\nquery3"}
@@ -309,7 +309,7 @@ class TestLLMTools:
     @pytest.mark.asyncio
     async def test_research_llm_answer(self) -> None:
         """Test research_llm_answer."""
-        from loom.tools.llm import research_llm_answer
+        from loom.tools.llm.llm import research_llm_answer
 
         with patch("loom.tools.llm.research_llm_chat") as mock_chat:
             mock_chat.return_value = {"text": "Answer here"}
@@ -325,7 +325,7 @@ class TestLLMTools:
     @pytest.mark.asyncio
     async def test_research_llm_embed(self) -> None:
         """Test research_llm_embed."""
-        from loom.tools.llm import research_llm_embed
+        from loom.tools.llm.llm import research_llm_embed
 
         with patch("loom.tools.llm.get_llm_provider") as mock_provider_factory:
             mock_provider = MagicMock()
@@ -342,7 +342,7 @@ class TestCreativeTools:
     @pytest.mark.asyncio
     async def test_research_red_team(self) -> None:
         """Test research_red_team."""
-        from loom.tools.creative import research_red_team
+        from loom.tools.llm.creative import research_red_team
 
         with patch("loom.tools.llm.research_llm_chat") as mock_chat:
             mock_chat.return_value = {"text": "Counter-argument here"}
@@ -353,9 +353,9 @@ class TestCreativeTools:
     @pytest.mark.asyncio
     async def test_research_misinfo_check(self) -> None:
         """Test research_misinfo_check."""
-        from loom.tools.creative import research_misinfo_check
+        from loom.tools.llm.creative import research_misinfo_check
 
-        with patch("loom.tools.search.research_search") as mock_search:
+        with patch("loom.tools.core.search.research_search") as mock_search:
             mock_search.return_value = {"results": []}
 
             result = await research_misinfo_check("The Earth is flat", n_sources=3)
@@ -364,7 +364,7 @@ class TestCreativeTools:
     @pytest.mark.asyncio
     async def test_research_ai_detect(self) -> None:
         """Test research_ai_detect."""
-        from loom.tools.creative import research_ai_detect
+        from loom.tools.llm.creative import research_ai_detect
 
         with patch("loom.tools.llm.research_llm_chat") as mock_chat:
             mock_chat.return_value = {"text": '{"score": 0.15}'}
@@ -375,9 +375,9 @@ class TestCreativeTools:
     @pytest.mark.asyncio
     async def test_research_temporal_diff(self) -> None:
         """Test research_temporal_diff."""
-        from loom.tools.creative import research_temporal_diff
+        from loom.tools.llm.creative import research_temporal_diff
 
-        with patch("loom.tools.enrich.research_wayback") as mock_wayback:
+        with patch("loom.tools.core.enrich.research_wayback") as mock_wayback:
             mock_wayback.return_value = {"snapshots": []}
 
             result = await research_temporal_diff("https://example.com")
@@ -386,9 +386,9 @@ class TestCreativeTools:
     @pytest.mark.asyncio
     async def test_research_semantic_sitemap(self) -> None:
         """Test research_semantic_sitemap."""
-        from loom.tools.creative import research_semantic_sitemap
+        from loom.tools.llm.creative import research_semantic_sitemap
 
-        with patch("loom.tools.spider.research_spider") as mock_spider:
+        with patch("loom.tools.core.spider.research_spider") as mock_spider:
             mock_spider.return_value = {"results": []}
 
             result = await research_semantic_sitemap("example.com", max_pages=5)
@@ -397,7 +397,7 @@ class TestCreativeTools:
     @pytest.mark.asyncio
     async def test_research_citation_graph(self) -> None:
         """Test research_citation_graph."""
-        from loom.tools.creative import research_citation_graph
+        from loom.tools.llm.creative import research_citation_graph
 
         with patch("loom.providers.arxiv_search.search_arxiv") as mock_search:
             mock_search.return_value = {"results": []}
@@ -408,7 +408,7 @@ class TestCreativeTools:
     @pytest.mark.asyncio
     async def test_research_community_sentiment(self) -> None:
         """Test research_community_sentiment."""
-        from loom.tools.creative import research_community_sentiment
+        from loom.tools.llm.creative import research_community_sentiment
 
         with patch("loom.providers.hn_reddit.search_hn") as mock_hn:
             mock_hn.return_value = {"results": []}
@@ -419,7 +419,7 @@ class TestCreativeTools:
     @pytest.mark.asyncio
     async def test_research_wiki_ghost(self) -> None:
         """Test research_wiki_ghost."""
-        from loom.tools.creative import research_wiki_ghost
+        from loom.tools.llm.creative import research_wiki_ghost
 
         with patch("loom.providers.wikipedia_search.search_wikipedia") as mock_wiki:
             mock_wiki.return_value = {"results": []}
@@ -430,9 +430,9 @@ class TestCreativeTools:
     @pytest.mark.asyncio
     async def test_research_multilingual(self) -> None:
         """Test research_multilingual."""
-        from loom.tools.creative import research_multilingual
+        from loom.tools.llm.creative import research_multilingual
 
-        with patch("loom.tools.search.research_search") as mock_search:
+        with patch("loom.tools.core.search.research_search") as mock_search:
             mock_search.return_value = {"results": []}
 
             result = await research_multilingual("bitcoin", languages=["ar", "es"], n_per_lang=2)
@@ -441,9 +441,9 @@ class TestCreativeTools:
     @pytest.mark.asyncio
     async def test_research_consensus(self) -> None:
         """Test research_consensus."""
-        from loom.tools.creative import research_consensus
+        from loom.tools.llm.creative import research_consensus
 
-        with patch("loom.tools.search.research_search") as mock_search:
+        with patch("loom.tools.core.search.research_search") as mock_search:
             mock_search.return_value = {"results": []}
 
             result = await research_consensus(
@@ -454,7 +454,7 @@ class TestCreativeTools:
     @pytest.mark.asyncio
     async def test_research_curriculum(self) -> None:
         """Test research_curriculum."""
-        from loom.tools.creative import research_curriculum
+        from loom.tools.llm.creative import research_curriculum
 
         with patch("loom.tools.llm.research_llm_chat") as mock_chat:
             mock_chat.return_value = {"text": "Lesson 1..."}
@@ -468,14 +468,14 @@ class TestEnrichmentTools:
 
     def test_research_detect_language(self) -> None:
         """Test research_detect_language."""
-        from loom.tools.enrich import research_detect_language
+        from loom.tools.core.enrich import research_detect_language
 
         result = research_detect_language("The quick brown fox jumps over the lazy dog")
         assert isinstance(result, dict)
 
     def test_research_wayback(self) -> None:
         """Test research_wayback."""
-        from loom.tools.enrich import research_wayback
+        from loom.tools.core.enrich import research_wayback
 
         with patch("httpx.get") as mock_get:
             mock_response = MagicMock()
@@ -491,9 +491,9 @@ class TestEnrichmentTools:
     @pytest.mark.asyncio
     async def test_research_find_experts(self) -> None:
         """Test research_find_experts."""
-        from loom.tools.experts import research_find_experts
+        from loom.tools.llm.experts import research_find_experts
 
-        with patch("loom.tools.search.research_search") as mock_search:
+        with patch("loom.tools.core.search.research_search") as mock_search:
             mock_search.return_value = {"results": []}
 
             result = await research_find_experts("machine learning", n=3)
@@ -506,9 +506,9 @@ class TestDeepResearch:
     @pytest.mark.asyncio
     async def test_research_deep(self) -> None:
         """Test research_deep."""
-        from loom.tools.deep import research_deep
+        from loom.tools.core.deep import research_deep
 
-        with patch("loom.tools.search.research_search") as mock_search:
+        with patch("loom.tools.core.search.research_search") as mock_search:
             mock_search.return_value = {"results": []}
 
             result = await research_deep("artificial intelligence", depth=1)
@@ -548,14 +548,14 @@ class TestCacheTools:
 
     def test_research_cache_stats(self) -> None:
         """Test research_cache_stats."""
-        from loom.tools.cache_mgmt import research_cache_stats
+        from loom.tools.core.cache_mgmt import research_cache_stats
 
         result = research_cache_stats()
         assert isinstance(result, dict)
 
     def test_research_cache_clear(self) -> None:
         """Test research_cache_clear."""
-        from loom.tools.cache_mgmt import research_cache_clear
+        from loom.tools.core.cache_mgmt import research_cache_clear
 
         result = research_cache_clear(365)
         assert isinstance(result, dict)
@@ -584,7 +584,7 @@ class TestNetworkTools:
 
     def test_research_dns_lookup(self) -> None:
         """Test research_dns_lookup."""
-        from loom.tools.network import research_dns_lookup
+        from loom.tools.intelligence.domain_intel import research_dns_lookup
 
         with patch("socket.getaddrinfo") as mock_dns:
             mock_dns.return_value = [
@@ -596,7 +596,7 @@ class TestNetworkTools:
 
     def test_research_whois(self) -> None:
         """Test research_whois."""
-        from loom.tools.network import research_whois
+        from loom.tools.intelligence.domain_intel import research_whois
 
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(stdout="Whois data", returncode=0)
@@ -606,7 +606,7 @@ class TestNetworkTools:
 
     def test_research_ip_geolocation(self) -> None:
         """Test research_ip_geolocation."""
-        from loom.tools.network import research_ip_geolocation
+        from loom.tools.intelligence.ip_intel import research_ip_geolocation
 
         with patch("httpx.get") as mock_get:
             mock_response = MagicMock()
@@ -618,7 +618,7 @@ class TestNetworkTools:
 
     def test_research_ip_reputation(self) -> None:
         """Test research_ip_reputation."""
-        from loom.tools.network import research_ip_reputation
+        from loom.tools.intelligence.ip_intel import research_ip_reputation
 
         with patch("httpx.get") as mock_get:
             mock_response = MagicMock()
@@ -630,14 +630,14 @@ class TestNetworkTools:
 
     def test_research_geoip_local(self) -> None:
         """Test research_geoip_local."""
-        from loom.tools.network import research_geoip_local
+        from loom.tools.intelligence.geoip_local import research_geoip_local
 
         result = research_geoip_local()
         assert isinstance(result, dict)
 
     def test_research_security_headers(self) -> None:
         """Test research_security_headers."""
-        from loom.tools.security_headers import research_security_headers
+        from loom.tools.security.security_headers import research_security_headers
 
         with patch("httpx.head") as mock_head:
             mock_response = MagicMock()
@@ -653,7 +653,7 @@ class TestSecurityTools:
 
     def test_research_password_check(self) -> None:
         """Test research_password_check."""
-        from loom.tools.breach_check import research_password_check
+        from loom.tools.intelligence.breach_check import research_password_check
 
         with patch("httpx.get") as mock_get:
             mock_response = MagicMock()
@@ -665,7 +665,7 @@ class TestSecurityTools:
 
     def test_research_breach_check(self) -> None:
         """Test research_breach_check."""
-        from loom.tools.breach_check import research_breach_check
+        from loom.tools.intelligence.breach_check import research_breach_check
 
         with patch("httpx.get") as mock_get:
             mock_response = MagicMock()
@@ -677,7 +677,7 @@ class TestSecurityTools:
 
     def test_research_urlhaus_check(self) -> None:
         """Test research_urlhaus_check."""
-        from loom.tools.urlhaus_lookup import research_urlhaus_check
+        from loom.tools.security.urlhaus_lookup import research_urlhaus_check
 
         with patch("httpx.post") as mock_post:
             mock_response = MagicMock()
@@ -689,7 +689,7 @@ class TestSecurityTools:
 
     def test_research_urlhaus_search(self) -> None:
         """Test research_urlhaus_search."""
-        from loom.tools.urlhaus_lookup import research_urlhaus_search
+        from loom.tools.security.urlhaus_lookup import research_urlhaus_search
 
         with patch("httpx.get") as mock_get:
             mock_response = MagicMock()
@@ -701,7 +701,7 @@ class TestSecurityTools:
 
     def test_research_cve_lookup(self) -> None:
         """Test research_cve_lookup."""
-        from loom.tools.cve import research_cve_lookup
+        from loom.tools.security.cve_lookup import research_cve_lookup
 
         with patch("httpx.get") as mock_get:
             mock_response = MagicMock()
@@ -713,7 +713,7 @@ class TestSecurityTools:
 
     def test_research_cve_detail(self) -> None:
         """Test research_cve_detail."""
-        from loom.tools.cve import research_cve_detail
+        from loom.tools.security.cve_lookup import research_cve_detail
 
         with patch("httpx.get") as mock_get:
             mock_response = MagicMock()
@@ -725,7 +725,7 @@ class TestSecurityTools:
 
     def test_research_cert_analyze(self) -> None:
         """Test research_cert_analyze."""
-        from loom.tools.cert_analyzer import research_cert_analyze
+        from loom.tools.security.cert_analyzer import research_cert_analyze
 
         with patch("ssl.create_default_context") as mock_ssl:
             mock_ssl.return_value.wrap_socket = MagicMock()
@@ -735,7 +735,7 @@ class TestSecurityTools:
 
     def test_research_nmap_scan(self) -> None:
         """Test research_nmap_scan."""
-        from loom.tools.network import research_nmap_scan
+        from loom.tools.intelligence.domain_intel import research_nmap_scan
 
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(stdout="Nmap output", returncode=0)
@@ -750,7 +750,7 @@ class TestImageTools:
     @pytest.mark.asyncio
     async def test_research_image_analyze(self) -> None:
         """Test research_image_analyze."""
-        from loom.tools.gcp import research_image_analyze
+        from loom.tools.infrastructure.gcp import research_image_analyze
 
         with patch("loom.tools.llm.research_llm_chat") as mock_chat:
             mock_chat.return_value = {"text": "Image analysis"}
@@ -761,7 +761,7 @@ class TestImageTools:
     @pytest.mark.asyncio
     async def test_research_exif_extract(self) -> None:
         """Test research_exif_extract."""
-        from loom.tools.image_intel import research_exif_extract
+        from loom.tools.intelligence.image_intel import research_exif_extract
 
         with patch("httpx.get") as mock_get:
             mock_response = MagicMock()
@@ -774,7 +774,7 @@ class TestImageTools:
     @pytest.mark.asyncio
     async def test_research_ocr_extract(self) -> None:
         """Test research_ocr_extract."""
-        from loom.tools.image_intel import research_ocr_extract
+        from loom.tools.intelligence.image_intel import research_ocr_extract
 
         with patch("httpx.get") as mock_get:
             mock_response = MagicMock()
@@ -786,7 +786,7 @@ class TestImageTools:
 
     def test_research_pdf_extract(self) -> None:
         """Test research_pdf_extract."""
-        from loom.tools.pdf_extract import research_pdf_extract
+        from loom.tools.core.pdf_extract import research_pdf_extract
 
         with patch("httpx.get") as mock_get:
             mock_response = MagicMock()
@@ -798,7 +798,7 @@ class TestImageTools:
 
     def test_research_pdf_search(self) -> None:
         """Test research_pdf_search."""
-        from loom.tools.pdf_extract import research_pdf_search
+        from loom.tools.core.pdf_extract import research_pdf_search
 
         with patch("httpx.get") as mock_get:
             mock_response = MagicMock()
@@ -810,7 +810,7 @@ class TestImageTools:
 
     def test_research_screenshot(self) -> None:
         """Test research_screenshot."""
-        from loom.tools.fetch import research_fetch
+        from loom.tools.core.fetch import research_fetch
 
         with patch("httpx.get") as mock_get:
             mock_response = MagicMock()
@@ -827,7 +827,7 @@ class TestTextAnalysisTools:
 
     def test_research_text_analyze(self) -> None:
         """Test research_text_analyze."""
-        from loom.tools.text_analyze import research_text_analyze
+        from loom.tools.research.text_analyze import research_text_analyze
 
         text = "This is sample text for analysis. " * 10
 
@@ -837,7 +837,7 @@ class TestTextAnalysisTools:
     @pytest.mark.asyncio
     async def test_research_sentiment_deep(self) -> None:
         """Test research_sentiment_deep."""
-        from loom.tools.sentiment_deep import research_sentiment_deep
+        from loom.tools.research.sentiment_deep import research_sentiment_deep
 
         text = "This product is amazing and I love it so much! " * 10
 
@@ -849,7 +849,7 @@ class TestTextAnalysisTools:
 
     def test_research_stylometry(self) -> None:
         """Test research_stylometry."""
-        from loom.tools.stylometry import research_stylometry
+        from loom.tools.research.stylometry import research_stylometry
 
         text = "This is the writing style of an author. " * 20
 
@@ -862,7 +862,7 @@ class TestRSSTools:
 
     def test_research_rss_fetch(self) -> None:
         """Test research_rss_fetch."""
-        from loom.tools.rss_monitor import research_rss_fetch
+        from loom.tools.core.rss_monitor import research_rss_fetch
 
         with patch("httpx.get") as mock_get:
             mock_response = MagicMock()
@@ -874,7 +874,7 @@ class TestRSSTools:
 
     def test_research_rss_search(self) -> None:
         """Test research_rss_search."""
-        from loom.tools.rss_monitor import research_rss_search
+        from loom.tools.core.rss_monitor import research_rss_search
 
         with patch("loom.tools.rss.research_rss_fetch") as mock_fetch:
             mock_fetch.return_value = {"items": []}
@@ -888,7 +888,7 @@ class TestCommunicationTools:
 
     def test_research_email_report(self) -> None:
         """Test research_email_report."""
-        from loom.tools.email_report import research_email_report
+        from loom.tools.infrastructure.email_report import research_email_report
 
         with patch("smtplib.SMTP") as mock_smtp:
             mock_smtp.return_value.__enter__.return_value.send_message = MagicMock()
@@ -898,7 +898,7 @@ class TestCommunicationTools:
 
     def test_research_slack_notify(self) -> None:
         """Test research_slack_notify."""
-        from loom.tools.slack import research_slack_notify
+        from loom.tools.infrastructure.slack import research_slack_notify
 
         with patch("httpx.post") as mock_post:
             mock_response = MagicMock()
@@ -914,7 +914,7 @@ class TestNotebookTools:
 
     def test_research_save_note(self) -> None:
         """Test research_save_note."""
-        from loom.tools.joplin import research_save_note
+        from loom.tools.infrastructure.joplin import research_save_note
 
         with patch("httpx.post") as mock_post:
             mock_response = MagicMock()
@@ -926,7 +926,7 @@ class TestNotebookTools:
 
     def test_research_list_notebooks(self) -> None:
         """Test research_list_notebooks."""
-        from loom.tools.joplin import research_list_notebooks
+        from loom.tools.infrastructure.joplin import research_list_notebooks
 
         with patch("httpx.get") as mock_get:
             mock_response = MagicMock()
@@ -942,7 +942,7 @@ class TestTorTools:
 
     def test_research_tor_status(self) -> None:
         """Test research_tor_status."""
-        from loom.tools.tor import research_tor_status
+        from loom.tools.infrastructure.tor import research_tor_status
 
         with patch("socket.create_connection") as mock_socket:
             mock_conn = MagicMock()
@@ -955,7 +955,7 @@ class TestTorTools:
 
     def test_research_tor_new_identity(self) -> None:
         """Test research_tor_new_identity."""
-        from loom.tools.tor import research_tor_new_identity
+        from loom.tools.infrastructure.tor import research_tor_new_identity
 
         with patch("socket.create_connection") as mock_socket:
             mock_conn = MagicMock()
@@ -972,7 +972,7 @@ class TestTranscriptionTools:
 
     def test_research_transcribe(self) -> None:
         """Test research_transcribe."""
-        from loom.tools.transcribe import research_transcribe
+        from loom.tools.core.transcribe import research_transcribe
 
         with patch("httpx.post") as mock_post:
             mock_response = MagicMock()
@@ -984,14 +984,14 @@ class TestTranscriptionTools:
 
     def test_research_tts_voices(self) -> None:
         """Test research_tts_voices."""
-        from loom.tools.transcribe import research_tts_voices
+        from loom.tools.core.transcribe import research_tts_voices
 
         result = research_tts_voices()
         assert isinstance(result, dict)
 
     def test_research_text_to_speech(self) -> None:
         """Test research_text_to_speech."""
-        from loom.tools.transcribe import research_text_to_speech
+        from loom.tools.core.transcribe import research_text_to_speech
 
         with patch("httpx.post") as mock_post:
             mock_response = MagicMock()
@@ -1007,7 +1007,7 @@ class TestInfrastructureTools:
 
     def test_research_vastai_search(self) -> None:
         """Test research_vastai_search."""
-        from loom.tools.vastai import research_vastai_search
+        from loom.tools.infrastructure.vastai import research_vastai_search
 
         with patch("httpx.get") as mock_get:
             mock_response = MagicMock()
@@ -1019,7 +1019,7 @@ class TestInfrastructureTools:
 
     def test_research_vastai_status(self) -> None:
         """Test research_vastai_status."""
-        from loom.tools.vastai import research_vastai_status
+        from loom.tools.infrastructure.vastai import research_vastai_status
 
         with patch("httpx.get") as mock_get:
             mock_response = MagicMock()
@@ -1031,7 +1031,7 @@ class TestInfrastructureTools:
 
     def test_research_stripe_balance(self) -> None:
         """Test research_stripe_balance."""
-        from loom.tools.billing import research_stripe_balance
+        from loom.tools.infrastructure.billing import research_stripe_balance
 
         with patch("httpx.get") as mock_get:
             mock_response = MagicMock()
@@ -1043,7 +1043,7 @@ class TestInfrastructureTools:
 
     def test_research_usage_report(self) -> None:
         """Test research_usage_report."""
-        from loom.tools.billing import research_usage_report
+        from loom.tools.infrastructure.billing import research_usage_report
 
         with patch("loom.cache.get_cache") as mock_cache:
             mock_cache.return_value.stats.return_value = {"total_hits": 0}
@@ -1053,7 +1053,7 @@ class TestInfrastructureTools:
 
     def test_research_vercel_status(self) -> None:
         """Test research_vercel_status."""
-        from loom.tools.vercel import research_vercel_status
+        from loom.tools.infrastructure.vercel import research_vercel_status
 
         with patch("httpx.get") as mock_get:
             mock_response = MagicMock()
@@ -1065,7 +1065,7 @@ class TestInfrastructureTools:
 
     def test_research_health_check(self) -> None:
         """Test research_health_check."""
-        from loom.tools.domain_intel import research_health_check
+        from loom.tools.intelligence.domain_intel import research_health_check
 
         with patch("httpx.get") as mock_get:
             mock_response = MagicMock()
@@ -1082,7 +1082,7 @@ class TestPsychologyTools:
     @pytest.mark.asyncio
     async def test_research_radicalization_detect(self) -> None:
         """Test research_radicalization_detect."""
-        from loom.tools.radicalization_detect import research_radicalization_detect
+        from loom.tools.intelligence.radicalization_detect import research_radicalization_detect
 
         text = "This is sample text for radicalization detection. " * 10
 
@@ -1094,7 +1094,7 @@ class TestPsychologyTools:
 
     def test_research_persona_profile(self) -> None:
         """Test research_persona_profile."""
-        from loom.tools.persona_profile import research_persona_profile
+        from loom.tools.adversarial.persona_profile import research_persona_profile
 
         text = "This user enjoys technology and science. " * 20
 
@@ -1103,7 +1103,7 @@ class TestPsychologyTools:
 
     def test_research_deception_detect(self) -> None:
         """Test research_deception_detect."""
-        from loom.tools.deception_detect import research_deception_detect
+        from loom.tools.research.deception_detect import research_deception_detect
 
         text = "I am being truthful about everything. " * 20
 
@@ -1112,9 +1112,9 @@ class TestPsychologyTools:
 
     def test_research_network_persona(self) -> None:
         """Test research_network_persona."""
-        from loom.tools.network_persona import research_network_persona
+        from loom.tools.adversarial.network_persona import research_network_persona
 
-        with patch("loom.tools.search.research_search") as mock_search:
+        with patch("loom.tools.core.search.research_search") as mock_search:
             mock_search.return_value = {"results": []}
 
             result = research_network_persona("john.doe@example.com", lookback_days=30)
@@ -1122,9 +1122,9 @@ class TestPsychologyTools:
 
     def test_research_social_profile(self) -> None:
         """Test research_social_profile."""
-        from loom.tools.social_intel import research_social_profile
+        from loom.tools.intelligence.social_intel import research_social_profile
 
-        with patch("loom.tools.search.research_search") as mock_search:
+        with patch("loom.tools.core.search.research_search") as mock_search:
             mock_search.return_value = {"results": []}
 
             result = research_social_profile("@username")
@@ -1132,9 +1132,9 @@ class TestPsychologyTools:
 
     def test_research_social_search(self) -> None:
         """Test research_social_search."""
-        from loom.tools.social_intel import research_social_search
+        from loom.tools.intelligence.social_intel import research_social_search
 
-        with patch("loom.tools.search.research_search") as mock_search:
+        with patch("loom.tools.core.search.research_search") as mock_search:
             mock_search.return_value = {"results": []}
 
             result = research_social_search("topic", platforms=["twitter"], limit=10)
@@ -1142,9 +1142,9 @@ class TestPsychologyTools:
 
     def test_research_forum_cortex(self) -> None:
         """Test research_forum_cortex."""
-        from loom.tools.forum_cortex import research_forum_cortex
+        from loom.tools.intelligence.forum_cortex import research_forum_cortex
 
-        with patch("loom.tools.search.research_search") as mock_search:
+        with patch("loom.tools.core.search.research_search") as mock_search:
             mock_search.return_value = {"results": []}
 
             result = research_forum_cortex("discussion topic", limit=5)
@@ -1157,9 +1157,9 @@ class TestStealthTools:
     @pytest.mark.asyncio
     async def test_research_camoufox(self) -> None:
         """Test research_camoufox."""
-        from loom.tools.stealth import research_camoufox
+        from loom.tools.adversarial.stealth import research_camoufox
 
-        with patch("loom.tools.fetch.research_fetch") as mock_fetch:
+        with patch("loom.tools.core.fetch.research_fetch") as mock_fetch:
             mock_fetch.return_value = {"text": "Page content"}
 
             result = await research_camoufox("https://example.com")
@@ -1168,9 +1168,9 @@ class TestStealthTools:
     @pytest.mark.asyncio
     async def test_research_botasaurus(self) -> None:
         """Test research_botasaurus."""
-        from loom.tools.stealth import research_botasaurus
+        from loom.tools.adversarial.stealth import research_botasaurus
 
-        with patch("loom.tools.fetch.research_fetch") as mock_fetch:
+        with patch("loom.tools.core.fetch.research_fetch") as mock_fetch:
             mock_fetch.return_value = {"text": "Page content"}
 
             result = await research_botasaurus("https://example.com")
@@ -1198,7 +1198,7 @@ class TestDarkwebTools:
 
     def test_research_onion_spectra(self) -> None:
         """Test research_onion_spectra."""
-        from loom.tools.onion_spectra import research_onion_spectra
+        from loom.tools.intelligence.onion_spectra import research_onion_spectra
 
         with patch("httpx.get") as mock_get:
             mock_response = MagicMock()
@@ -1210,7 +1210,7 @@ class TestDarkwebTools:
 
     def test_research_dead_drop_scanner(self) -> None:
         """Test research_dead_drop_scanner."""
-        from loom.tools.dead_drop_scanner import research_dead_drop_scanner
+        from loom.tools.intelligence.dead_drop_scanner import research_dead_drop_scanner
 
         with patch("httpx.get") as mock_get:
             mock_response = MagicMock()
@@ -1226,14 +1226,14 @@ class TestMetricsTools:
 
     def test_research_metrics(self) -> None:
         """Test research_metrics."""
-        from loom.tools.metrics import research_metrics
+        from loom.tools.monitoring.metrics import research_metrics
 
         result = research_metrics()
         assert isinstance(result, dict)
 
     def test_research_cipher_mirror(self) -> None:
         """Test research_cipher_mirror."""
-        from loom.tools.cipher_mirror import research_cipher_mirror
+        from loom.tools.privacy.cipher_mirror import research_cipher_mirror
 
         result = research_cipher_mirror("plaintext message")
         assert isinstance(result, dict)

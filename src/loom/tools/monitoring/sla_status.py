@@ -7,7 +7,6 @@ breach status, and alert history.
 from __future__ import annotations
 
 import logging
-from datetime import datetime
 from typing import Any
 
 from loom.error_responses import handle_tool_errors

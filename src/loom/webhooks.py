@@ -260,7 +260,7 @@ class WebhookManager:
                 self._send_notification(webhook, event, payload)
                 for webhook in matching_webhooks
             ],
-            return_exceptions=False,
+            return_exceptions=True,
         )
 
         succeeded = sum(1 for r in results if r["status"] == "success")

@@ -258,19 +258,28 @@ class TestResolveToolName:
     """Test _resolve_tool_name fuzzy matching."""
 
     def test_exact_match(self, mock_brain_index: dict) -> None:
+        from unittest.mock import patch
         from loom.brain.reasoning import _resolve_tool_name
 
-        result = _resolve_tool_name("research_search", mock_brain_index)
-        assert result == "research_search"
+        with patch("loom.brain.reasoning._fetch_server_tools_sync", return_value=mock_brain_index):
+            with patch("loom.brain.reasoning._build_tool_name_index", return_value={}):
+                result = _resolve_tool_name("research_search")
+                assert result == "research_search"
 
     def test_fuzzy_match_high_similarity(self, mock_brain_index: dict) -> None:
+        from unittest.mock import patch
         from loom.brain.reasoning import _resolve_tool_name
 
-        result = _resolve_tool_name("research_searc", mock_brain_index)
-        assert result in ("research_search", "research_searc")
+        with patch("loom.brain.reasoning._fetch_server_tools_sync", return_value=mock_brain_index):
+            with patch("loom.brain.reasoning._build_tool_name_index", return_value={}):
+                result = _resolve_tool_name("research_searc")
+                assert result == "research_search"
 
     def test_no_match_returns_unchanged(self, mock_brain_index: dict) -> None:
+        from unittest.mock import patch
         from loom.brain.reasoning import _resolve_tool_name
 
-        result = _resolve_tool_name("completely_different_name", mock_brain_index)
-        assert result == "completely_different_name"
+        with patch("loom.brain.reasoning._fetch_server_tools_sync", return_value=mock_brain_index):
+            with patch("loom.brain.reasoning._build_tool_name_index", return_value={}):
+                result = _resolve_tool_name("completely_different_name")
+                assert result == "completely_different_name"

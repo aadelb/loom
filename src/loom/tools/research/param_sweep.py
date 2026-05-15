@@ -7,7 +7,6 @@ temperature, top_p, and max_tokens affect model refusal/compliance behavior.
 
 from __future__ import annotations
 
-import json
 import logging
 from typing import Any
 from loom.error_responses import handle_tool_errors

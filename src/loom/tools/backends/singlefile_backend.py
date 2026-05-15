@@ -12,13 +12,13 @@ import asyncio
 import logging
 import os
 import re
-import subprocess
 import tempfile
 import uuid
 from pathlib import Path
 from typing import Any
 
 from loom.error_responses import handle_tool_errors
+from loom.subprocess_helpers import run_command
 
 logger = logging.getLogger("loom.tools.singlefile_backend")
 
@@ -98,13 +98,13 @@ def _check_singlefile_available() -> tuple[bool, str]:
         Tuple of (available: bool, message: str)
     """
     try:
-        result = subprocess.run(
+        result = run_command(
             ["single-file", "--version"],
             capture_output=True,
             text=True,
             timeout=5,
         )
-        if result.returncode == 0:
+        if result["success"]:
             return True, "SingleFile CLI found"
     except FileNotFoundError:
         pass
@@ -113,13 +113,13 @@ def _check_singlefile_available() -> tuple[bool, str]:
 
     try:
         # Try alternative binary name
-        result = subprocess.run(
+        result = run_command(
             ["sf", "--version"],
             capture_output=True,
             text=True,
             timeout=5,
         )
-        if result.returncode == 0:
+        if result["success"]:
             return True, "SingleFile CLI found"
     except FileNotFoundError:
         pass
@@ -206,7 +206,7 @@ async def research_archive_page(
         if not os.path.exists(output_path):
             return {
                 "url": url,
-                "error": f"SingleFile did not create output file. stdout: {result.stdout}, stderr: {result.stderr}",
+                "error": f"SingleFile did not create output file. stdout: {result["stdout"]}, stderr: {result["stderr"]}",
                 "singlefile_available": True,
             }
 

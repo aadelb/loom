@@ -168,7 +168,7 @@ class DeepResearchTester:
 
     async def test_cache_tools(self) -> None:
         """Test cache tools (2 tools)."""
-        from loom.tools.cache_mgmt import research_cache_clear, research_cache_stats
+        from loom.tools.core.cache_mgmt import research_cache_clear, research_cache_stats
 
         # Test research_cache_stats
         start = time.time()
@@ -230,9 +230,9 @@ class DeepResearchTester:
 
     async def test_fetch_tools(self) -> None:
         """Test fetch & extract tools (4 tools)."""
-        from loom.tools.fetch import research_fetch
-        from loom.tools.markdown import research_markdown
-        from loom.tools.spider import research_spider
+        from loom.tools.core.fetch import research_fetch
+        from loom.tools.core.markdown import research_markdown
+        from loom.tools.core.spider import research_spider
 
         # Test research_fetch basic mode
         start = time.time()
@@ -363,7 +363,7 @@ class DeepResearchTester:
 
     async def test_search_tools(self) -> None:
         """Test search tools with 9 providers."""
-        from loom.tools.search import research_search
+        from loom.tools.core.search import research_search
 
         providers_configs = [
             ("exa", {"n": 5, "include_domains": ["nature.com"]}),
@@ -444,7 +444,7 @@ class DeepResearchTester:
 
     async def test_github_tools(self) -> None:
         """Test GitHub tools (5 tools)."""
-        from loom.tools.github import (
+        from loom.tools.core.github import (
             research_github,
             research_github_readme,
             research_github_releases,
@@ -594,7 +594,7 @@ class DeepResearchTester:
     async def test_llm_tools(self) -> None:
         """Test LLM tools (8 tools)."""
         try:
-            from loom.tools.llm import (
+            from loom.tools.llm.llm import (
                 research_llm_answer,
                 research_llm_chat,
                 research_llm_classify,
@@ -913,7 +913,7 @@ class DeepResearchTester:
     async def test_enrichment_tools(self) -> None:
         """Test enrichment tools (2 tools)."""
         try:
-            from loom.tools.enrich import (
+            from loom.tools.core.enrich import (
                 research_detect_language,
                 research_wayback,
             )
@@ -1019,7 +1019,7 @@ class DeepResearchTester:
     async def test_expert_tools(self) -> None:
         """Test expert finder (1 tool)."""
         try:
-            from loom.tools.experts import research_find_experts
+            from loom.tools.llm.experts import research_find_experts
         except ImportError:
             logger.warning("Expert tools not available")
             return
@@ -1102,7 +1102,7 @@ class DeepResearchTester:
     async def test_creative_tools(self) -> None:
         """Test creative research tools (11 tools)."""
         try:
-            from loom.tools.creative import (
+            from loom.tools.llm.creative import (
                 research_ai_detect,
                 research_citation_graph,
                 research_community_sentiment,
@@ -1534,7 +1534,7 @@ class DeepResearchTester:
 
     async def test_deep_tool(self) -> None:
         """Test research_deep tool."""
-        from loom.tools.deep import research_deep
+        from loom.tools.core.deep import research_deep
 
         start = time.time()
         try:

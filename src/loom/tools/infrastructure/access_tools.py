@@ -2,18 +2,18 @@
 
 from __future__ import annotations
 
-import asyncio
 import hashlib
 import json
 import logging
 from typing import Any
-from urllib.parse import quote, urlparse, urljoin
+from urllib.parse import quote, urlparse
 
 import httpx
 
 from loom.error_responses import handle_tool_errors
 from loom.http_helpers import fetch_json, fetch_text, fetch_bytes
 from loom.validators import validate_url
+from loom.exif_utils import extract_exif_from_bytes
 
 try:
     from PIL import Image
@@ -38,19 +38,7 @@ _WAYBACK_SNAPSHOT = "https://web.archive.org/web"
 
 def _extract_exif(image_data: bytes) -> dict[str, Any]:
     """Extract EXIF metadata from image bytes."""
-    if not _PIL_AVAILABLE:
-        return {"error": "PIL/Pillow not installed"}
-    exif_info: dict[str, Any] = {}
-    try:
-        image = Image.open(BytesIO(image_data))
-        exif_data = image._getexif() if hasattr(image, '_getexif') else None
-        if exif_data:
-            for tag_id, value in exif_data.items():
-                tag_name = TAGS.get(tag_id, tag_id)
-                exif_info[str(tag_name)] = str(value)[:100]
-    except Exception as exc:
-        logger.debug("EXIF extraction failed: %s", exc)
-    return exif_info
+    return extract_exif_from_bytes(image_data)
 
 
 def _compute_ela(original_bytes: bytes, quality: int = 95) -> dict[str, Any]:

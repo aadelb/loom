@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import logging
 import re
-import subprocess
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -21,6 +20,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from loom.cli_checker import is_available
 from loom.validators import validate_url
 from loom.error_responses import handle_tool_errors
+from loom.subprocess_helpers import run_command
 
 logger = logging.getLogger("loom.tools.photon_backend")
 
@@ -143,8 +143,8 @@ async def _run_photon_cli(
             check=False,
         )
 
-        if result.returncode != 0:
-            logger.warning("photon_cli failed: %s", result.stderr[:500])
+        if not result["success"]:
+            logger.warning("photon_cli failed: %s", result["stderr"][:500])
             return {}
 
         # Parse output files

@@ -15,16 +15,12 @@ Public API:
 
 from __future__ import annotations
 
-import asyncio
-import json
 import logging
-import sqlite3
 import threading
 import time
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger("loom.quota_tracker")

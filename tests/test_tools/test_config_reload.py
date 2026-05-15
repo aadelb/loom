@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pytest
 
-from loom.tools import config_reload
+import loom.tools.infrastructure.config_reload
 
 
 @pytest.fixture
@@ -95,7 +95,7 @@ class TestConfigWatch:
             "LOG_LEVEL": "INFO",
         }
         monkeypatch.setattr(
-            "loom.tools.config_reload.get_config",
+            "loom.tools.infrastructure.config_reload.get_config",
             lambda: test_config
         )
 
@@ -111,7 +111,7 @@ class TestConfigCheck:
         """Check should detect no changes if mtime hasn't changed."""
         test_config = {"SPIDER_CONCURRENCY": 10}
         monkeypatch.setattr(
-            "loom.tools.config_reload.get_config",
+            "loom.tools.infrastructure.config_reload.get_config",
             lambda: test_config
         )
 
@@ -132,7 +132,7 @@ class TestConfigCheck:
 
         # Start with old config
         monkeypatch.setattr(
-            "loom.tools.config_reload.get_config",
+            "loom.tools.infrastructure.config_reload.get_config",
             lambda: old_config
         )
         config_reload.research_config_watch(str(temp_config_file))
@@ -143,11 +143,11 @@ class TestConfigCheck:
 
         # Mock load_config to return new config
         monkeypatch.setattr(
-            "loom.tools.config_reload.load_config",
+            "loom.tools.infrastructure.config_reload.load_config",
             lambda path: new_config
         )
         monkeypatch.setattr(
-            "loom.tools.config_reload.get_config",
+            "loom.tools.infrastructure.config_reload.get_config",
             lambda: new_config
         )
 
@@ -161,7 +161,7 @@ class TestConfigCheck:
         """Check should work even if watch wasn't called first."""
         test_config = {"SPIDER_CONCURRENCY": 10}
         monkeypatch.setattr(
-            "loom.tools.config_reload.get_config",
+            "loom.tools.infrastructure.config_reload.get_config",
             lambda: test_config
         )
 
@@ -187,7 +187,7 @@ class TestConfigDiff:
         config = {"SPIDER_CONCURRENCY": 10, "LOG_LEVEL": "INFO"}
 
         monkeypatch.setattr(
-            "loom.tools.config_reload.get_config",
+            "loom.tools.infrastructure.config_reload.get_config",
             lambda: config
         )
 
@@ -213,7 +213,7 @@ class TestConfigDiff:
         }
 
         monkeypatch.setattr(
-            "loom.tools.config_reload.get_config",
+            "loom.tools.infrastructure.config_reload.get_config",
             lambda: new_config
         )
         config_reload._watch_state["last_config"] = dict(old_config)
@@ -236,7 +236,7 @@ class TestConfigDiff:
         new_config = {"SPIDER_CONCURRENCY": 15, "LOG_LEVEL": "INFO"}
 
         monkeypatch.setattr(
-            "loom.tools.config_reload.get_config",
+            "loom.tools.infrastructure.config_reload.get_config",
             lambda: new_config
         )
         config_reload._watch_state["last_config"] = dict(old_config)
@@ -253,7 +253,7 @@ class TestConfigDiff:
         config = {"SPIDER_CONCURRENCY": 10, "LOG_LEVEL": "INFO"}
 
         monkeypatch.setattr(
-            "loom.tools.config_reload.get_config",
+            "loom.tools.infrastructure.config_reload.get_config",
             lambda: config
         )
         config_reload._watch_state["last_config"] = dict(config)
@@ -272,7 +272,7 @@ class TestConfigDiff:
         }
 
         monkeypatch.setattr(
-            "loom.tools.config_reload.get_config",
+            "loom.tools.infrastructure.config_reload.get_config",
             lambda: new_config
         )
         config_reload._watch_state["last_config"] = dict(old_config)
@@ -293,7 +293,7 @@ class TestConfigDiff:
         new_config = {"SPIDER_CONCURRENCY": 10}
 
         monkeypatch.setattr(
-            "loom.tools.config_reload.get_config",
+            "loom.tools.infrastructure.config_reload.get_config",
             lambda: new_config
         )
         config_reload._watch_state["last_config"] = dict(old_config)
@@ -316,7 +316,7 @@ class TestConfigReloadIntegration:
 
         # Mock initial get_config
         monkeypatch.setattr(
-            "loom.tools.config_reload.get_config",
+            "loom.tools.infrastructure.config_reload.get_config",
             lambda: old_config
         )
 
@@ -330,11 +330,11 @@ class TestConfigReloadIntegration:
 
         # Mock updated config
         monkeypatch.setattr(
-            "loom.tools.config_reload.get_config",
+            "loom.tools.infrastructure.config_reload.get_config",
             lambda: new_config
         )
         monkeypatch.setattr(
-            "loom.tools.config_reload.load_config",
+            "loom.tools.infrastructure.config_reload.load_config",
             lambda path: new_config
         )
 

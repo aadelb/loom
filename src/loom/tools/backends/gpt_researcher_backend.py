@@ -6,10 +6,8 @@ with automatic source gathering and synthesis.
 
 from __future__ import annotations
 
-import asyncio
 import inspect
 import logging
-import os
 from typing import Any, TypedDict
 from loom.error_responses import handle_tool_errors
 
@@ -61,7 +59,7 @@ async def research_gpt_researcher(
     report_type: str = "research_report",
     max_sources: int = 10,
     include_tavily: bool = False,
-) -> ResearchResult:
+) -> dict[str, Any]:
     """Run autonomous research and generate a report.
 
     Uses gpt-researcher library to conduct multi-source research with

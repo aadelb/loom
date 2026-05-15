@@ -14,6 +14,13 @@ import json
 import logging
 import re
 from typing import Any, Literal
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text, max_chars=500, *, suffix="..."):
+        if len(text) <= max_chars: return text
+        return text[:max_chars - len(suffix)] + suffix
+
 
 try:
     from bs4 import BeautifulSoup, Comment
@@ -26,7 +33,7 @@ try:
 except ImportError:
     TextContent = None  # type: ignore[assignment,misc]
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
 try:
     from loom.cache import get_cache
@@ -545,7 +552,7 @@ Return ONLY valid JSON (array or object) with no additional text. If no data mat
         extracted = _JSONExtractor.extract_json(response_text)
         if extracted is None:
             # Fallback: try to return response as structured data
-            extracted = {"raw_response": response_text[:1000]}
+            extracted = {"raw_response": truncate(response_text, 1000)}
 
         # Step 6: Cache result
         cache.put(f"cyberscraper:{cache_hash}", {"data": extracted})

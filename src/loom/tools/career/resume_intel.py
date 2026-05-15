@@ -7,17 +7,23 @@ Tools:
 
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
 import re
-from typing import Any, Literal
+from typing import Any
 
-import httpx
 
 logger = logging.getLogger("loom.tools.resume_intel")
 
 from loom.error_responses import handle_tool_errors
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text: str, max_chars: int = 500, *, suffix: str = "...") -> str:
+        """Fallback truncate if text_utils unavailable."""
+        if len(text) <= max_chars:
+            return text
+        return text[: max_chars - len(suffix)] + suffix
 
 
 def _extract_keywords(text: str) -> set[str]:
@@ -73,6 +79,7 @@ async def _get_llm_provider() -> Any:
                 if await provider.available():
                     return provider
             except Exception:
+                logger.exception("Provider %s unavailable", provider_name)
                 continue
         # Fallback
         return _get_provider("openai")
@@ -176,7 +183,7 @@ async def research_optimize_resume(
             prompt = f"""Analyze this resume against the job description and provide 2-3 specific improvements.
 
 Resume excerpt:
-{resume_text[:800]}
+{truncate(resume_text, 800)}
 
 Job Description excerpt:
 {job_description[:800]}
@@ -521,3 +528,31 @@ def _extract_key_topics(
             unique_topics.append(topic)
 
     return unique_topics[:15]  # Return top 15 topics
+
+
+async def _cross_reference_with_job_signals(
+    company: str = "", use_job_signals: bool = False
+) -> dict[str, Any]:
+    """Optionally cross-reference resume context with job signals from the target company.
+
+    Integration 4a: Wires resume_intel to job_signals for company hiring intelligence.
+    """
+    if not use_job_signals or not company:
+        return {}
+
+    try:
+        from loom.tools.career.job_signals import research_funding_signal
+
+        logger.debug("resume_intel integrating with job_signals for company=%s", company)
+
+        result = await research_funding_signal(company=company)
+
+        if result and "hiring_signals" in result:
+            return {
+                "company_signals": result.get("hiring_signals", []),
+                "signal_source": "research_funding_signal",
+            }
+    except Exception as exc:
+        logger.debug("job_signals integration failed: %s", exc)
+
+    return {}

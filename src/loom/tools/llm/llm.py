@@ -6,7 +6,6 @@ Implements cascade routing across NVIDIA NIM, OpenAI, Anthropic, and vLLM.
 """
 
 from __future__ import annotations
-from loom.error_responses import handle_tool_errors
 
 import asyncio
 import contextlib
@@ -15,14 +14,14 @@ import logging
 import os
 import re
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+import httpx
+
 from loom.config import CONFIG, load_config
 from loom.content_sanitizer import (
-    build_injection_safe_prompt,
-    detect_injection_attempt,
     sanitize_for_llm,
     wrap_with_xml_tags,
 )
@@ -31,7 +30,8 @@ from loom.conversation_cache import (
     get_cached_conversation_with_metadata,
     hash_conversation,
 )
-from loom.retry import with_retry
+from loom.error_responses import handle_tool_errors
+from loom.sanitization import sanitize_text
 from loom.providers.base import LLMResponse
 
 try:
@@ -67,6 +67,18 @@ try:
 except ImportError:
     VllmLocalProvider = None  # type: ignore[assignment,misc]
 from loom.quota_tracker import get_quota_tracker, record_usage
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text: str, max_chars: int = 500, *, suffix: str = "...") -> str:
+        """Fallback truncate if text_utils unavailable."""
+        if len(text) <= max_chars:
+            return text
+        return text[: max_chars - len(suffix)] + suffix
+try:
+    from loom.provider_router import _get_cascade_order as get_cascade_order
+except ImportError:
+    get_cascade_order = None
 
 logger = logging.getLogger("loom.llm")
 
@@ -192,7 +204,17 @@ async def _call_provider_with_retry(
         Exception: Non-retryable errors or after max retries exhausted
     """
     max_attempts = 3
-    retryable_errors = (TimeoutError, ConnectionError, OSError)
+    retryable_errors = (
+        TimeoutError,
+        ConnectionError,
+        OSError,
+        httpx.TimeoutException,
+        httpx.ConnectError,
+        httpx.NetworkError,
+        httpx.RemoteProtocolError,
+        httpx.ReadError,
+        httpx.WriteError,
+    )
 
     for attempt in range(max_attempts):
         try:
@@ -480,24 +502,83 @@ def _safe_error_str(exc: Exception | None) -> str:
             return f"{exc.__class__.__name__}"
 
 
+def _python_type_to_json_schema(py_type: str) -> str:
+    """Map a Python type hint string to a JSON Schema type string."""
+    mapping = {
+        "str": "string",
+        "string": "string",
+        "int": "integer",
+        "integer": "integer",
+        "float": "number",
+        "number": "number",
+        "bool": "boolean",
+        "boolean": "boolean",
+        "list": "array",
+        "array": "array",
+        "dict": "object",
+        "object": "object",
+    }
+    return mapping.get(py_type.lower(), "string")
+
+
 def _sanitize_error(error_str: str) -> str:
     """Remove API keys and tokens from error messages."""
-    # Use bounded quantifiers to prevent ReDoS (MEDIUM #13)
-    error_str = re.sub(r"sk-ant-[A-Za-z0-9_\-]{10,200}", "[ANTHROPIC_KEY_REDACTED]", error_str)
-    error_str = re.sub(r"sk-[A-Za-z0-9_\-]{10,200}", "[OPENAI_KEY_REDACTED]", error_str)
-    error_str = re.sub(r"nvapi-[A-Za-z0-9_\-]{10,200}", "[NVIDIA_KEY_REDACTED]", error_str)
-    error_str = re.sub(r"gsk_[A-Za-z0-9_\-]{10,200}", "[GROQ_KEY_REDACTED]", error_str)
-    error_str = re.sub(r"AIzaSy[A-Za-z0-9_\-]{30,50}", "[GOOGLE_KEY_REDACTED]", error_str)
-    error_str = re.sub(r"ghp_[A-Za-z0-9]{36}", "[GITHUB_TOKEN_REDACTED]", error_str)
-    error_str = re.sub(r"AKIA[0-9A-Z]{16}", "[AWS_KEY_REDACTED]", error_str)
-    error_str = re.sub(
-        r"Bearer\s+[A-Za-z0-9_\-\.]{10,200}",
-        "Bearer [TOKEN_REDACTED]",
-        error_str,
-        flags=re.IGNORECASE,
-    )
-    return error_str
+    return sanitize_text(error_str)
 
+
+
+def _classify_cascade_error(exc: Exception) -> tuple[str, bool]:
+    """Classify error and determine if cascade should continue.
+    
+    Returns:
+        Tuple of (error_type, should_continue_cascade)
+        error_type: 'rate_limit', 'auth', 'server', 'timeout', 'unknown'
+        should_continue_cascade: True if should try next provider
+    """
+    error_str = _safe_error_str(exc)
+
+    # Check for HTTP status errors
+    if isinstance(exc, httpx.HTTPStatusError):
+        status_code = exc.response.status_code
+
+        # 429 (Rate Limited) — backoff then continue
+        if status_code == 429:
+            return ('rate_limit', True)
+
+        # 401/403 (Auth Error) — skip immediately
+        if status_code in (401, 403):
+            return ('auth', True)
+
+        # 5xx (Server Error) — continue (will retry within provider)
+        if 500 <= status_code < 600:
+            return ('server', True)
+
+        # Other 4xx — permanent error, continue to next provider
+        if 400 <= status_code < 500:
+            return ('client_error', True)
+
+    # Timeout errors — continue
+    if isinstance(exc, (httpx.TimeoutException, TimeoutError)):
+        return ('timeout', True)
+
+    # Connection errors — continue
+    if isinstance(exc, (httpx.ConnectError, ConnectionError, OSError)):
+        return ('connection', True)
+
+    # Unknown error — continue
+    return ('unknown', True)
+
+
+def _should_backoff_for_rate_limit(attempt_count: int) -> float:
+    """Calculate backoff delay for rate limit errors.
+    
+    Args:
+        attempt_count: Number of rate limit errors so far (0-based)
+    
+    Returns:
+        Delay in seconds (1s, 2s, 4s, 8s max)
+    """
+    return min(2 ** attempt_count, 8)
 
 def _wrap_untrusted_content(text: str, max_chars: int = 20000) -> str:
     """Wrap untrusted content with sanitization and XML tagging.
@@ -548,10 +629,16 @@ def _build_provider_chain(
     if override:
         return [_get_provider(override)]
 
-    cascade_order = CONFIG.get(
-        "LLM_CASCADE_ORDER",
-        ["groq", "nvidia", "deepseek", "gemini", "moonshot", "openai", "anthropic", "vllm"],
-    )
+    try:
+        cascade_order = get_cascade_order() if get_cascade_order else CONFIG.get(
+            "LLM_CASCADE_ORDER",
+            ["groq", "nvidia", "deepseek", "gemini", "moonshot", "openai", "anthropic", "vllm"],
+        )
+    except Exception:
+        cascade_order = CONFIG.get(
+            "LLM_CASCADE_ORDER",
+            ["groq", "nvidia", "deepseek", "gemini", "moonshot", "openai", "anthropic", "vllm"],
+        )
     providers = []
     for name in cascade_order:
         try:
@@ -673,6 +760,20 @@ async def _call_with_cascade(
             )
 
         attempts.append(provider.name)
+
+        # Validate response_format support before calling provider
+        validated_response_format = response_format
+        if response_format:
+            # Check if provider supports JSON mode (most OpenAI-compatible providers do)
+            # Providers that don't support it: Gemini, Anthropic (check their docs)
+            unsupported_json_providers = ("gemini", "anthropic")
+            if provider.name in unsupported_json_providers:
+                logger.debug(
+                    "provider %s does not support response_format (JSON mode), ignoring",
+                    provider.name,
+                )
+                validated_response_format = None
+
         try:
             response: LLMResponse = await _call_provider_with_retry(
                 provider,
@@ -680,7 +781,7 @@ async def _call_with_cascade(
                 model=model,
                 max_tokens=max_tokens,
                 temperature=temperature,
-                response_format=response_format,
+                response_format=validated_response_format,
                 timeout=timeout,
             )
 
@@ -717,16 +818,53 @@ async def _call_with_cascade(
             return response
 
         except (TimeoutError, Exception) as e:
+            error_type, should_cascade = _classify_cascade_error(e)
             error_msg = _sanitize_error(_safe_error_str(e))
-            all_errors.append({"provider": provider.name, "error": error_msg})
-            # Failure: record and potentially open circuit
-            _record_provider_failure(provider.name)
-            logger.warning(
-                "llm_provider_failed provider=%s attempt=%d error=%s",
-                provider.name,
-                len(attempts),
-                error_msg,
-            )
+            all_errors.append({"provider": provider.name, "error": error_msg, "error_type": error_type})
+
+            # Apply error-specific handling
+            if error_type == "rate_limit":
+                # Rate limit: backoff then continue to next provider
+                backoff_secs = _should_backoff_for_rate_limit(len([err for err in all_errors if err.get("error_type") == "rate_limit"]))
+                logger.warning(
+                    "llm_rate_limited provider=%s backoff_secs=%.1f",
+                    provider.name,
+                    backoff_secs,
+                )
+                await asyncio.sleep(backoff_secs)
+            elif error_type == "auth":
+                # Auth error: skip immediately, don't record as circuit failure
+                logger.warning(
+                    "llm_auth_error provider=%s, skipping",
+                    provider.name,
+                )
+            elif error_type == "server":
+                # Server error: record failure and continue
+                _record_provider_failure(provider.name)
+                logger.warning(
+                    "llm_server_error provider=%s error=%s",
+                    provider.name,
+                    error_msg,
+                )
+            elif error_type == "timeout":
+                # Timeout: record failure and continue
+                _record_provider_failure(provider.name)
+                logger.warning(
+                    "llm_timeout provider=%s attempt=%d",
+                    provider.name,
+                    len(attempts),
+                )
+            else:
+                # Unknown error: record failure
+                _record_provider_failure(provider.name)
+                logger.warning(
+                    "llm_provider_failed provider=%s attempt=%d error_type=%s error=%s",
+                    provider.name,
+                    len(attempts),
+                    error_type,
+                    error_msg,
+                )
+
             continue
 
     # === CLI FALLBACK: Last resort when all API providers fail ===
@@ -856,7 +994,7 @@ async def _call_with_refusal_handling(
         return response, refusal_meta
 
     refusal_meta["refused"] = True
-    refusal_meta["original_refusal"] = response.text[:300]
+    refusal_meta["original_refusal"] = truncate(response.text, 300)
 
     user_prompt = _extract_user_prompt(messages)
     if not user_prompt:
@@ -1077,7 +1215,10 @@ async def research_llm_extract(
                 "name": "extracted_data",
                 "schema": {
                     "type": "object",
-                    "properties": {k: {"type": v} for k, v in schema.items()},
+                    "properties": {
+                        k: {"type": _python_type_to_json_schema(v)}
+                        for k, v in schema.items()
+                    },
                     "required": list(schema.keys()),
                 },
             },
@@ -1096,7 +1237,7 @@ async def research_llm_extract(
         try:
             data = json.loads(response.text)
         except json.JSONDecodeError:
-            match = re.search(r"\{.*\}", response.text, re.DOTALL)
+            match = re.search(r"\{.*?\}", response.text, re.DOTALL)
             if match:
                 data = json.loads(match.group())
             else:

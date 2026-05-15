@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from loom.tools.deception_detect import (
+from loom.tools.research.deception_detect import (
     research_deception_detect,
     _extract_deception_indicators,
     _identify_red_flags,

@@ -6,39 +6,31 @@ via dynamic tool discovery from the loom.tools namespace.
 from __future__ import annotations
 
 import asyncio
-import functools
-import difflib
 import logging
 import os
 import signal
 import time
-from collections.abc import Callable
 from contextlib import suppress
-from datetime import UTC, datetime
 from typing import Any
 
 from mcp.server import FastMCP
 from mcp.server.auth.settings import AuthSettings
 from starlette.middleware.cors import CORSMiddleware
 
-from starlette.websockets import WebSocket
-from loom.websocket import get_ws_manager, WebSocketManager
+from loom.websocket import get_ws_manager
 
 from loom.config import load_config, research_config_get, research_config_set
-from loom.feature_flags import research_feature_flags, get_feature_flags
+from loom.feature_flags import research_feature_flags
 from loom.orchestrator import research_orchestrate
-from loom.audit import export_audit, log_invocation
+from loom.audit import export_audit
 from loom.backup_manager import (
     research_backup_create,
     research_backup_restore,
     research_backup_list,
     research_backup_cleanup,
 )
-from loom.alerting import handle_tool_error
 from loom.logging_config import setup_logging
-from loom.rate_limiter import rate_limited
 from loom.sessions import (
-    cleanup_all_sessions,
     research_session_close,
     research_session_list,
     research_session_open,
@@ -54,17 +46,12 @@ from loom.consensus_builder import (
 from loom.crescendo_loop import research_crescendo_loop
 from loom.model_profiler import research_model_profile
 from loom.reid_pipeline import research_reid_pipeline
-from loom.full_spectrum import FullSpectrumPipeline
 from loom import crawlee_backend
 from loom import zendriver_backend
 from loom.sqlite_pool import research_pool_stats, research_pool_reset
 
 from loom.batch_queue import (
-    research_batch_submit,
-    research_batch_status,
-    research_batch_list,
     start_batch_queue_background,
-    stop_batch_queue_background,
 )
 
 from loom.scheduler import (
@@ -75,40 +62,27 @@ from loom.scheduler import (
 from loom.api_auth import ApiKeyAuthMiddleware
 from loom.request_id_middleware import RequestIdMiddleware
 
-from loom.tracing import install_tracing, new_request_id
-from loom.versioning import (
-    get_version_info,
-    is_version_supported,
-    DEFAULT_VERSION,
-)
-from loom.billing.meter import record_usage
-from loom.billing.token_economy import get_tool_cost, check_balance, deduct_credits
-from loom.analytics import ToolAnalytics, research_analytics_dashboard
+from loom.tracing import install_tracing
+from loom.analytics import research_analytics_dashboard
 
 log = logging.getLogger("loom.server")
-from loom.registrations.tracking import record_optional_module_loaded, record_import_failure
+from loom.registrations.tracking import record_optional_module_loaded
 from loom.secret_manager import get_secret_manager, research_secret_health
 from loom.tools.monitoring.quota_status import research_quota_status
 from loom.tools.monitoring.sla_status import research_sla_status
 from loom.startup_validator import (
     validate_all_tools,
-    validate_registrations,
     research_validate_startup,
 )
-from loom.tool_latency import get_latency_tracker
 from loom.tools.monitoring.latency_report import research_latency_report
-from loom.tool_rate_limiter import check_tool_rate_limit, research_rate_limits
+from loom.tool_rate_limiter import research_rate_limits
 from loom.tools.monitoring.scheduler_status import research_scheduler_status
-from loom.sla_monitor import get_sla_monitor
 
 # ── Extracted modules (wired in) ──
-from loom.middleware import _wrap_tool, _fuzzy_correct_params, _normalize_result  # noqa: E402
-from loom.shutdown import _shutdown, _handle_signal  # noqa: E402
+from loom.middleware import _wrap_tool  # noqa: E402
+from loom.shutdown import _handle_signal  # noqa: E402
 from loom.routes import register_http_routes  # noqa: E402
 from loom.tool_functions import (  # noqa: E402
-    _get_strategy_count,
-    _check_llm_provider_available,
-    _check_search_provider_available,
     research_health_check,
     research_cpu_pool_status,
     research_cpu_executor_shutdown,
@@ -945,7 +919,7 @@ def create_app() -> FastMCP:
         cors_enabled = os.environ.get("LOOM_CORS_ENABLED", "true").lower() == "true"
         if cors_enabled:
             origins = os.environ.get("LOOM_CORS_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",")
-            app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+            app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=True, allow_methods=["GET", "POST", "OPTIONS"], allow_headers=["Content-Type", "Authorization", "X-API-Key"])
             log.info("middleware_registered request_id=true auth=true cors=true origins=%s", origins)
         else:
             log.info("middleware_registered request_id=true auth=true cors=false")

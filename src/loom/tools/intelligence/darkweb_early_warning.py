@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import Any
 from urllib.parse import quote
 
 import httpx
 from loom.error_responses import handle_tool_errors
+from loom.http_helpers import fetch_json
 
 logger = logging.getLogger("loom.tools.darkweb_early_warning")
 
@@ -21,9 +21,8 @@ async def _ahmia_search(
     """Search Ahmia for keyword mentions."""
     url = f"https://ahmia.fi/search/?q={quote(keyword)}&format=json"
     try:
-        resp = await client.get(url, timeout=15.0)
-        if resp.status_code == 200:
-            data = resp.json()
+        data = await fetch_json(client, url, timeout=15.0)
+        if data:
             results = []
             for result in data.get("results", [])[:5]:
                 results.append(
@@ -43,9 +42,8 @@ async def _otx_search(client: httpx.AsyncClient, keyword: str) -> list[dict[str,
     """Search AlienVault OTX for pulses."""
     url = f"https://otx.alienvault.com/api/v1/search/pulses?q={quote(keyword)}&limit=5"
     try:
-        resp = await client.get(url, timeout=15.0)
-        if resp.status_code == 200:
-            data = resp.json()
+        data = await fetch_json(client, url, timeout=15.0)
+        if data:
             results = []
             for pulse in data.get("results", [])[:5]:
                 results.append(
@@ -70,13 +68,12 @@ async def _reddit_darknet_search(
         f"&sort=new&limit=10"
     )
     try:
-        resp = await client.get(
+        data = await fetch_json(client,
             url,
             headers={"User-Agent": "Loom-Research/1.0"},
             timeout=15.0,
         )
-        if resp.status_code == 200:
-            data = resp.json()
+        if data:
             results = []
             for post in data.get("data", {}).get("children", [])[:5]:
                 post_data = post.get("data", {})
@@ -102,9 +99,8 @@ async def _hackernews_search(
         f"&tags=story&hitsPerPage=5"
     )
     try:
-        resp = await client.get(url, timeout=15.0)
-        if resp.status_code == 200:
-            data = resp.json()
+        data = await fetch_json(client, url, timeout=15.0)
+        if data:
             results = []
             for hit in data.get("hits", [])[:5]:
                 results.append(
@@ -209,8 +205,17 @@ async def research_darkweb_early_warning(
                             _otx_search(client, keyword),
                             _reddit_darknet_search(client, keyword),
                             _hackernews_search(client, keyword),
+                            return_exceptions=True,
                         )
                     )
+                    if isinstance(ahmia_results, BaseException):
+                        ahmia_results = []
+                    if isinstance(otx_results, BaseException):
+                        otx_results = []
+                    if isinstance(reddit_results, BaseException):
+                        reddit_results = []
+                    if isinstance(hn_results, BaseException):
+                        hn_results = []
 
                     # Process Ahmia results
                     for result in ahmia_results:

@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 import httpx
 import pytest
 
-from loom.tools.security_headers import research_security_headers
+from loom.tools.security.security_headers import research_security_headers
 
 
 

@@ -253,7 +253,7 @@ class TestParameterDefaultConsistency:
 
     def test_fetch_mode_default_matches_doc(self) -> None:
         """research_fetch mode default matches documentation."""
-        from loom.tools.fetch import research_fetch
+        from loom.tools.core.fetch import research_fetch
         from loom.params import FetchParams
 
         # Check code
@@ -271,7 +271,7 @@ class TestParameterDefaultConsistency:
 
     def test_fetch_max_chars_is_reasonable(self) -> None:
         """research_fetch max_chars default is reasonable."""
-        from loom.tools.fetch import research_fetch
+        from loom.tools.core.fetch import research_fetch
 
         sig = inspect.signature(research_fetch)
         max_chars_param = sig.parameters["max_chars"]

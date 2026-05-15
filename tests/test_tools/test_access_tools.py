@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from loom.tools.access_tools import (
+from loom.tools.infrastructure.access_tools import (
     research_legal_takedown,
     research_open_access,
     research_content_authenticity,

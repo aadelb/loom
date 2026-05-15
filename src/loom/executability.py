@@ -13,6 +13,12 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(value: float, low: float = 0.0, high: float = 1.0) -> float:
+        return max(low, min(high, value))
+
 logger = logging.getLogger("loom.executability")
 
 
@@ -311,7 +317,7 @@ class ExecutabilityAnalyzer:
         if re.search(r"(?:^|\n)\s*\$\s+\S+", text):
             score += 2
 
-        return min(score, 20)
+        return int(clamp(score, 0, 20))
 
     def _score_step_by_step(self, text: str) -> int:
         """Score 0-20: Presence of numbered/sequential instructions."""
@@ -364,7 +370,7 @@ class ExecutabilityAnalyzer:
             if re.search(pattern, text, re.IGNORECASE):
                 score += 1
 
-        return min(score, 20)
+        return int(clamp(score, 0, 20))
 
     def _score_specificity(self, text: str) -> int:
         """Score 0-20: Presence of specific tools, versions, URLs, paths, IPs."""
@@ -406,7 +412,7 @@ class ExecutabilityAnalyzer:
         elif commands >= 2:
             score += 1
 
-        return min(score, 20)
+        return int(clamp(score, 0, 20))
 
     def _score_completeness(self, text: str) -> int:
         """Score 0-20: Full workflow vs partial/theoretical content."""
@@ -463,7 +469,7 @@ class ExecutabilityAnalyzer:
             if phrase in text_lower:
                 score += points
 
-        return max(0, min(score, 20))
+        return int(clamp(score, 0, 20))
 
     def _score_immediacy(self, text: str) -> int:
         """Score 0-20: Can be acted on NOW vs requires more research."""
@@ -517,7 +523,7 @@ class ExecutabilityAnalyzer:
             if phrase in text_lower:
                 score += points
 
-        return max(0, min(score, 20))
+        return int(clamp(score, 0, 20))
 
     def _detect_programming_languages(self, text: str) -> list[str]:
         """Detect programming languages in the response."""

@@ -10,9 +10,17 @@ from typing import Any
 
 import httpx
 from loom.error_responses import handle_tool_errors
+from loom.http_helpers import fetch_json
 
 logger = logging.getLogger("loom.tools.crypto_risk")
 _BASE58 = r"[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]"
+
+
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(v: float, lo: float = 0.0, hi: float = 1.0) -> float:
+        return max(lo, min(hi, v))
 
 
 def _validate_bitcoin_address(address: str) -> bool:
@@ -74,9 +82,8 @@ async def research_crypto_risk_score(address: str, chain: str = "bitcoin") -> di
 
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
-            resp = await client.get(api_url)
+            data = await fetch_json(client, api_url)
             resp.raise_for_status()
-            data = resp.json()
 
         if chain == "bitcoin":
             metrics["current_balance"] = (data if isinstance(data, int) else data.get("balance", 0)) / 100_000_000

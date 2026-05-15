@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Literal
 
 from pydantic import BaseModel, Field
 from loom.error_responses import handle_tool_errors
@@ -20,7 +19,7 @@ class NeuromorphicScheduleParams(BaseModel):
     """Parameters for neuromorphic scheduling."""
 
     tools: list[str] = Field(min_length=1, max_length=50)
-    timing_pattern: Literal["burst", "gamma", "theta", "spike_train", "resonance"] = "burst"
+    timing_pattern: str = "burst"
     interval_ms: int = Field(default=100, ge=10, le=5000)
 
     model_config = {"extra": "forbid", "strict": True}
@@ -149,7 +148,7 @@ def _calculate_resonance_schedule(
 @handle_tool_errors("research_neuromorphic_schedule")
 async def research_neuromorphic_schedule(
     tools: list[str] | str,
-    timing_pattern: Literal["burst", "gamma", "theta", "spike_train", "resonance"] = "burst",
+    timing_pattern: str = "burst",
     interval_ms: int = 100,
 ) -> NeuromorphicSchedule:
     """Schedule tool executions using neuromorphic spike-timing patterns.

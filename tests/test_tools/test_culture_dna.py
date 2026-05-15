@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from loom.tools.culture_dna import (
+from loom.tools.research.culture_dna import (
     _analyze_github_signals,
     _analyze_job_postings,
     _classify_culture_type,

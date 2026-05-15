@@ -580,15 +580,15 @@ class TestServerRegistration:
     def test_create_app_tool_names_follow_convention(self) -> None:
         """Verify tool names follow convention (research_*, find_*, etc)."""
         # We test this by checking that calling functions works
-        from loom.tools import fetch
+        import loom.tools.core.fetch
 
         assert hasattr(fetch, "research_fetch")
 
-        from loom.tools import search
+        import loom.tools.core.search
 
         assert hasattr(search, "research_search")
 
-        from loom.tools import deep
+        import loom.tools.core.deep
 
         assert hasattr(deep, "research_deep")
 

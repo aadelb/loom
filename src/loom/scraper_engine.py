@@ -8,13 +8,12 @@ Patchright, nodriver, zendriver, Camoufox, and Botasaurus.
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import logging
 import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import IntEnum
-from typing import Any, Literal, cast
+from typing import Any, Literal
 from urllib.parse import urlparse
 
 from loom.cache import get_cache

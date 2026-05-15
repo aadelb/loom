@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
-from loom.tools.cert_analyzer import (
+from loom.tools.security.cert_analyzer import (
     _extract_san,
     _is_valid_hostname,
     _parse_cert_date,

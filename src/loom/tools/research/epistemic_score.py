@@ -14,6 +14,11 @@ from typing import Any
 
 from loom.error_responses import handle_tool_errors
 
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    clamp = lambda v, lo, hi: max(lo, min(hi, v))
+
 logger = logging.getLogger("loom.tools.epistemic_score")
 
 # Constraints
@@ -90,7 +95,7 @@ def _specificity_score(claim: str) -> float:
     if claim_words == 0:
         return 0.0
     # Specificity ratio: specific markers per word (capped at 1.0)
-    return min(1.0, (entities + numbers * 0.5) / claim_words)
+    return clamp((entities + numbers * 0.5) / claim_words, 0.0, 1.0)
 
 
 def _is_factual_claim(claim: str) -> bool:
@@ -134,7 +139,7 @@ def _compute_confidence(claim: str) -> float:
     if claim_words < 5:
         score -= 0.1
 
-    return max(0.0, min(1.0, score))
+    return clamp(score, 0.0, 1.0)
 
 
 @handle_tool_errors("research_epistemic_score")

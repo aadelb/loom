@@ -8,6 +8,7 @@ from typing import Any
 
 import httpx
 from loom.error_responses import handle_tool_errors
+from loom.http_helpers import fetch_json
 
 logger = logging.getLogger("loom.tools.cve_lookup")
 
@@ -39,7 +40,7 @@ async def research_cve_lookup(query: str, limit: int = 10) -> dict[str, Any]:
 
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.get(
+            data = await fetch_json(client, 
                 _NVD_API_BASE,
                 params={
                     "keywordSearch": query,
@@ -47,7 +48,6 @@ async def research_cve_lookup(query: str, limit: int = 10) -> dict[str, Any]:
                 },
             )
             resp.raise_for_status()
-            data = resp.json()
 
         cves = []
         total_results = data.get("totalResults", 0)
@@ -141,12 +141,11 @@ async def research_cve_detail(cve_id: str) -> dict[str, Any]:
 
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.get(
+            data = await fetch_json(client, 
                 _NVD_API_BASE,
                 params={"cveId": cve_id.upper()},
             )
             resp.raise_for_status()
-            data = resp.json()
 
         if not data.get("vulnerabilities"):
             return {"cve_id": cve_id, "error": "CVE not found"}

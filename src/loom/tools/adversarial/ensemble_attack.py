@@ -4,6 +4,13 @@ from __future__ import annotations
 import base64, hashlib, logging, random
 from typing import Any
 
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(value: float, low: float = 0.0, high: float = 1.0) -> float:
+        """Fallback clamp implementation."""
+        return max(low, min(high, value))
+
 from loom.error_responses import handle_tool_errors
 
 try:
@@ -76,7 +83,7 @@ async def research_attack_portfolio(target_model: str = "auto", portfolio_size: 
         return {
             "portfolio": portfolio,
             "total_expected_asr": min(total_expected_asr, 0.95),
-            "portfolio_diversity": max(0.0, min(portfolio_diversity, 1.0)),
+            "portfolio_diversity": clamp(portfolio_diversity, 0.0, 1.0),
             "allocation_rationale": f"Portfolio: {len(portfolio)} strategies, ASR: {total_expected_asr:.1%}, Diversity: {portfolio_diversity:.2f}",
         }
     except Exception as exc:

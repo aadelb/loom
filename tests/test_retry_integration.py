@@ -8,7 +8,7 @@ from __future__ import annotations
 import pytest
 
 from loom.retry import get_retry_stats, reset_retry_stats
-from loom.tools.retry_stats import research_retry_stats
+from loom.tools.infrastructure.retry_stats import research_retry_stats
 
 
 class TestRetryStatsAPI:

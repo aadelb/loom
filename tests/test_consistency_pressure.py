@@ -23,7 +23,7 @@ from loom.params import (
     ConsistencyPressureParams,
     ConsistencyPressureRecordParams,
 )
-from loom.tools.consistency_pressure import (
+from loom.tools.adversarial.consistency_pressure import (
     research_consistency_pressure,
     research_consistency_pressure_history,
     research_consistency_pressure_record,

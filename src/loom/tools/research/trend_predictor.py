@@ -2,6 +2,13 @@
 
 from __future__ import annotations
 
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(v: float, lo: float = 0.0, hi: float = 1.0) -> float:
+        """Fallback clamp if score_utils unavailable."""
+        return max(lo, min(hi, v))
+
 import asyncio
 import logging
 from datetime import UTC, datetime
@@ -198,7 +205,7 @@ def _compute_trend_direction(
             )
             if previous_sum > 0:
                 growth = (recent_sum - previous_sum) / previous_sum
-                signals.append(min(1.0, max(0.0, 0.5 + growth)))
+                signals.append(clamp(0.5 + growth, 0.0, 1.0))
 
     # Signal 2: Citation velocity (increasing citations)
     avg_citations = semantic_data.get("avg_citations", 0)

@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import pytest
 
-from loom.tools.prompt_reframe import (
+from loom.tools.llm.prompt_reframe import (
     research_adaptive_reframe,
     research_auto_reframe,
     research_crescendo_chain,

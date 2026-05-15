@@ -6,7 +6,6 @@ no strategies exist yet, revealing undiscovered attack archetypes.
 
 from __future__ import annotations
 
-import json
 import logging
 from typing import Any
 

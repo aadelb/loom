@@ -15,10 +15,6 @@ from loom.error_responses import handle_tool_errors
 import asyncio
 import json
 import logging
-import sqlite3
-from collections.abc import Iterable
-from datetime import UTC, datetime
-from pathlib import Path
 from typing import Any, Literal
 from urllib.parse import quote
 
@@ -622,3 +618,43 @@ async def research_knowledge_graph(
 		return result
 	except Exception as exc:
 		return {"error": str(exc), "tool": "research_knowledge_graph"}
+
+
+async def _deep_research_unresolved_entities(
+    entities: list[dict[str, Any]], use_deep_research: bool = False
+) -> list[dict[str, Any]]:
+    """Optionally deep-research unresolved entities found during graph construction.
+
+    Integration 7: Wires knowledge_graph to research_deep for entity enrichment.
+    """
+    if not use_deep_research or not entities:
+        return []
+
+    try:
+        from loom.tools.core.deep import research_deep
+
+        enriched = []
+        for entity in entities[:5]:  # Limit to 5 entities
+            entity_name = entity.get("name", "")
+            if not entity_name:
+                continue
+
+            try:
+                logger.debug("knowledge_graph integrating deep research for entity=%s", entity_name)
+
+                result = await research_deep(query=entity_name)
+
+                if result and "summary" in result:
+                    enriched.append({
+                        "entity": entity_name,
+                        "deep_research_summary": result.get("summary", "")[:500],
+                        "sources_found": result.get("sources_count", 0),
+                    })
+            except Exception as exc:
+                logger.debug("deep research for entity %s failed: %s", entity_name, exc)
+
+        return enriched
+    except Exception as exc:
+        logger.debug("research_deep integration failed: %s", exc)
+
+    return []

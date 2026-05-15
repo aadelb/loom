@@ -79,4 +79,4 @@ async def invoke_many(
             return await invoke(func, *args, timeout=timeout, **kwargs)
 
     tasks = [_run(func, args, kwargs) for func, args, kwargs in calls]
-    return await asyncio.gather(*tasks)
+    return await asyncio.gather(*tasks, return_exceptions=True)

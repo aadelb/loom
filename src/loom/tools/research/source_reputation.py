@@ -7,7 +7,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 from loom.error_responses import handle_tool_errors
-from loom.validators import validate_url, UrlSafetyError
+from loom.validators import validate_url
 
 logger = logging.getLogger("loom.tools.source_reputation")
 

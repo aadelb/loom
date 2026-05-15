@@ -1,7 +1,7 @@
 """Tests for sandbox code analysis tools."""
 
 import pytest
-from loom.tools import sandbox
+import loom.tools.security.sandbox
 
 
 @pytest.mark.asyncio

@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from loom.tools.osint_extended import (
+from loom.tools.intelligence.osint_extended import (
     _estimate_timezone_from_hours,
     _extract_interests_from_text,
     _extract_skills_from_repos,

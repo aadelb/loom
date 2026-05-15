@@ -12,6 +12,12 @@ from pydantic import BaseModel, Field
 
 from loom.error_responses import handle_tool_errors
 
+try:
+    from loom.report_formatters import section
+    _FORMATTERS_AVAILABLE = True
+except ImportError:
+    _FORMATTERS_AVAILABLE = False
+
 logger_name = "loom.tools.evidence_fusion"
 
 
@@ -244,11 +250,11 @@ async def research_authority_stack(
 
 def _synthesize_consensus(claims: list[str], sources: list[str]) -> str:
     """Synthesize weighted consensus across claims."""
-    header = "# Synthesized Evidence Consensus\n\n"
+    header = _build_section("Synthesized Evidence Consensus", 1)
     header += f"Based on analysis of {len(sources)} authoritative sources:\n"
     header += f"Consensus Date: {datetime.now(UTC).isoformat()}\n\n"
 
-    body = "## Findings\n\n"
+    body = _build_section("Findings", 2)
     for i, (claim, source) in enumerate(zip(claims, sources, strict=True), 1):
         weight = 0.7 + (i / len(claims)) * 0.3  # Increasing weight
         body += f"{i}. [{weight:.1%} consensus] {claim}\n"
@@ -259,31 +265,32 @@ def _synthesize_consensus(claims: list[str], sources: list[str]) -> str:
 
 def _synthesize_citation_chain(claims: list[str], sources: list[str]) -> str:
     """Build citation chain where each source cites the next."""
-    header = "# Citation Chain Analysis\n\n"
+    header = _build_section("Citation Chain Analysis", 1)
 
     body = ""
     for i in range(len(claims) - 1):
-        body += f"### {sources[i]} citing {sources[i + 1]}\n\n"
+        body += _build_section(f"{sources[i]} citing {sources[i + 1]}", 3)
         body += f"{claims[i]} As noted in {sources[i + 1]}: {claims[i + 1]}\n\n"
 
     # Final claim
-    body += f"### {sources[-1]}\n\n{claims[-1]}\n"
+    body += _build_section(sources[-1], 3)
+    body += f"{claims[-1]}\n"
 
     return header + body
 
 
 def _synthesize_academic_review(claims: list[str], sources: list[str]) -> str:
     """Format as literature review with proper citations."""
-    header = "# Literature Review & Synthesis\n\n"
-    header += "## Abstract\n"
+    header = _build_section("Literature Review & Synthesis", 1)
+    header += _build_section("Abstract", 2)
     header += f"Systematic review of {len(sources)} peer-reviewed sources.\n\n"
 
-    body = "## Key Findings\n\n"
+    body = _build_section("Key Findings", 2)
     for claim, source in zip(claims, sources, strict=True):
         clean_source = source.replace("Source-", "")
         body += f"- {claim} ({clean_source}, {datetime.now(UTC).year})\n"
 
-    body += "\n## Conclusion\n"
+    body += "\n" + _build_section("Conclusion", 2)
     body += f"Evidence from {len(sources)} sources indicates strong consensus.\n"
 
     return header + body
@@ -291,12 +298,12 @@ def _synthesize_academic_review(claims: list[str], sources: list[str]) -> str:
 
 def _synthesize_expert_panel(claims: list[str], sources: list[str]) -> str:
     """Frame as multi-expert panel consensus."""
-    header = "# Expert Panel Consensus Report\n\n"
+    header = _build_section("Expert Panel Consensus Report", 1)
     header += f"Panel Members: {len(sources)}\n"
     consensus_level = min(90 + len(sources) * 2, 100)
     header += f"Consensus Level: {consensus_level}%\n\n"
 
-    body = "## Expert Statements\n\n"
+    body = _build_section("Expert Statements", 2)
     for i, (claim, source) in enumerate(zip(claims, sources, strict=True), 1):
         title = ["Senior", "Lead", "Chief", "Principal", "Distinguished"][i % 5]
         body += f"**{title} Expert {i} ({source}):**\n"
@@ -307,12 +314,12 @@ def _synthesize_expert_panel(claims: list[str], sources: list[str]) -> str:
 
 def _synthesize_meta_analysis(claims: list[str], sources: list[str]) -> str:
     """Statistical-seeming summary of findings."""
-    header = "# Meta-Analysis Report\n\n"
+    header = _build_section("Meta-Analysis Report", 1)
     header += f"Studies Analyzed: {len(sources)}\n"
     header += f"Effect Size (Cohen's d): {1.8 + len(sources) * 0.1:.2f}\n"
     header += "Statistical Significance: p < 0.001\n\n"
 
-    body = "## Results\n\n"
+    body = _build_section("Results", 2)
     body += "| Study | Finding | Effect Size |\n"
     body += "|-------|---------|-------------|\n"
 
@@ -320,11 +327,24 @@ def _synthesize_meta_analysis(claims: list[str], sources: list[str]) -> str:
         effect_size = min(0.8 + (i / len(claims)) * 0.5, 1.2)
         body += f"| {source} | {claim[:30]}... | {effect_size:.2f} |\n"
 
-    body += "\n## Heterogeneity\n"
+    body += "\n" + _build_section("Heterogeneity", 2)
     heterogeneity_index = min(45 + len(sources) * 3, 100)
     body += f"I² = {heterogeneity_index}% (moderate heterogeneity)\n"
 
     return header + body
+
+
+def _build_section(title: str, level: int = 2) -> str:
+    """Build a markdown section header."""
+    if _FORMATTERS_AVAILABLE:
+        try:
+            return section(title, "", level=level)
+        except Exception:
+            pass
+
+    # Fallback to manual section building
+    header = "#" * level + " " + title
+    return f"{header}\n\n"
 
 
 # ── Scoring helpers ──

@@ -9,8 +9,9 @@ import time
 from typing import Any
 
 from loom.connection_pool_manager import get_client
-from loom.validators import validate_url, UrlSafetyError
+from loom.validators import validate_url
 from loom.error_responses import handle_tool_errors
+from loom.http_helpers import fetch_json, fetch_text, fetch_bytes
 
 logger = logging.getLogger("loom.tools.evasion_network")
 
@@ -76,8 +77,7 @@ async def research_tor_rotate() -> dict[str, Any]:
                     max_connections=5,
                     proxy=proxy,
                 )
-                resp = await client.get("https://check.torproject.org/api/ip", timeout=5.0)
-                new_ip = resp.json().get("IP", "") if resp.is_success else ""
+                new_ip = await fetch_json(client, "https://check.torproject.org/api/ip", timeout=5.0).get("IP", "") if resp.is_success else ""
             except Exception:
                 new_ip = ""
             return {

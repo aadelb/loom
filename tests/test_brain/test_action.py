@@ -305,7 +305,7 @@ class TestBuildSchema:
         async def sample_tool(query: str, limit: int = 10, timeout: float = 30.0) -> dict:
             pass
 
-        schema = _build_schema(sample_tool)
+        schema = _build_schema("sample_tool", sample_tool)
         assert "query" in schema
         assert schema["query"]["type"] == "string"
         assert "limit" in schema
@@ -317,7 +317,7 @@ class TestBuildSchema:
         async def no_params_tool() -> dict:
             pass
 
-        schema = _build_schema(no_params_tool)
+        schema = _build_schema("no_params_tool", no_params_tool)
         assert schema == {} or len(schema) == 0
 
 

@@ -9,16 +9,23 @@ headline (one sentence).
 from __future__ import annotations
 
 import logging
-from typing import Any, Literal
+from typing import Any
 
 from loom.error_responses import handle_tool_errors
+try:
+    from loom.text_utils import truncate
+except ImportError:
+    def truncate(text, max_chars=500, *, suffix="..."):
+        if len(text) <= max_chars: return text
+        return text[:max_chars - len(suffix)] + suffix
+
 
 try:
-    from loom.tools.llm.llm import _call_with_cascade
+    from loom.llm_client import query_llm
     _LLM_AVAILABLE = True
 except ImportError:
     _LLM_AVAILABLE = False
-    _call_with_cascade = None  # type: ignore[assignment]
+    query_llm = None  # type: ignore[assignment]
 
 logger = logging.getLogger("loom.tools.simplifier")
 
@@ -111,7 +118,7 @@ async def research_simplify(
         raise ValueError("text cannot be empty")
 
     if len(text.strip()) > 50000:
-        text = text[:50000]
+        text = truncate(text, 50000)
         logger.warning("text truncated to 50000 chars")
 
     original_length = len(text.split())
@@ -130,20 +137,22 @@ async def research_simplify(
     }
     max_tokens = token_targets.get(target_audience, 300)
 
-    # Call LLM via cascade
+    # Call LLM via llm_client
     if not _LLM_AVAILABLE:
         raise RuntimeError("LLM providers not available; cannot simplify")
 
     try:
-        response = await _call_with_cascade(
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=max_tokens,
+        response = await query_llm(
+            prompt,
             temperature=0.3,
-            timeout=30,
+            max_tokens=max_tokens,
         )
-        simplified = response.text.strip()
+        if response.get("error"):
+            logger.error("simplify_query_failed audience=%s error=%s", target_audience, response.get("error"))
+            raise RuntimeError(response.get("error"))
+        simplified = response.get("text", "").strip()
     except Exception as exc:
-        logger.error("simplify_cascade_failed audience=%s error=%s", target_audience, exc)
+        logger.error("simplify_query_failed audience=%s error=%s", target_audience, exc)
         raise
 
     simplified_length = len(simplified.split())

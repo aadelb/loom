@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from loom.tools.vercel import research_vercel_status
+from loom.tools.infrastructure.vercel import research_vercel_status
 
 
 pytestmark = pytest.mark.asyncio

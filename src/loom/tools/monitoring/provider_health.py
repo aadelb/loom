@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from collections import deque
 from datetime import UTC, datetime
-from typing import Any, Literal
+from typing import Any
 from loom.error_responses import handle_tool_errors
 
 # Health tracking: bounded deque per provider

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from loom.tools.model_sentiment import ModelSentimentAnalyzer, research_model_sentiment
+from loom.tools.llm.model_sentiment import ModelSentimentAnalyzer, research_model_sentiment
 
 
 

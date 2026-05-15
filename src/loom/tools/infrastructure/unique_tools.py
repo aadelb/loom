@@ -16,14 +16,13 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
-from datetime import datetime, timedelta, timezone
-from functools import partial
+from datetime import datetime, timezone
 from typing import Any
 from urllib.parse import urlparse
 
 import httpx
 
-from loom.validators import validate_url, UrlSafetyError
+from loom.validators import validate_url
 from loom.http_helpers import fetch_json, fetch_text
 
 from loom.error_responses import handle_tool_errors

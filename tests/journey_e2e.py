@@ -129,14 +129,14 @@ async def main() -> None:
     run_sync("config_set", research_config_set, "SPIDER_CONCURRENCY", 3)
     run_sync("config_get_key", research_config_get, "SPIDER_CONCURRENCY")
 
-    from loom.tools.cache_mgmt import research_cache_clear, research_cache_stats
+    from loom.tools.core.cache_mgmt import research_cache_clear, research_cache_stats
 
     run_sync("cache_stats", research_cache_stats)
     run_sync("cache_clear", research_cache_clear, 365)
 
     # ── GROUP 2: Enrichment (free) ──────────────────────────────────────
     print("\n── Group 2: Enrichment ──")
-    from loom.tools.enrich import research_detect_language, research_wayback
+    from loom.tools.core.enrich import research_detect_language, research_wayback
 
     run_sync(
         "detect_language_en",
@@ -148,9 +148,9 @@ async def main() -> None:
 
     # ── GROUP 3: Fetch & Markdown (free) ────────────────────────────────
     print("\n── Group 3: Fetch & Markdown ──")
-    from loom.tools.fetch import research_fetch
-    from loom.tools.markdown import research_markdown
-    from loom.tools.spider import research_spider
+    from loom.tools.core.fetch import research_fetch
+    from loom.tools.core.markdown import research_markdown
+    from loom.tools.core.spider import research_spider
 
     run_sync("fetch_http", research_fetch, "https://example.com", "http")
     run_sync("fetch_escalate", research_fetch, "https://example.com", "http", auto_escalate=True)
@@ -161,7 +161,7 @@ async def main() -> None:
 
     # ── GROUP 4: Free Search Providers ──────────────────────────────────
     print("\n── Group 4: Free Search ──")
-    from loom.tools.search import research_search
+    from loom.tools.core.search import research_search
 
     run_sync("search_ddgs", research_search, "artificial intelligence", provider="ddgs", n=3)
     run_sync("search_wikipedia", research_search, "transformer model", provider="wikipedia", n=2)
@@ -171,7 +171,7 @@ async def main() -> None:
 
     # ── GROUP 5: GitHub (free/token) ────────────────────────────────────
     print("\n── Group 5: GitHub ──")
-    from loom.tools.github import research_github, research_github_readme, research_github_releases
+    from loom.tools.core.github import research_github, research_github_readme, research_github_releases
 
     run_sync("github_repo", research_github, "repo", "python web framework", limit=3)
     run_sync("github_code", research_github, "code", "asyncio", limit=2)
@@ -181,7 +181,7 @@ async def main() -> None:
 
     # ── GROUP 6: Expert & Citation (free) ───────────────────────────────
     print("\n── Group 6: Expert & Citation ──")
-    from loom.tools.creative import (
+    from loom.tools.llm.creative import (
         research_citation_graph,
         research_community_sentiment,
         research_consensus,
@@ -189,7 +189,7 @@ async def main() -> None:
         research_multilingual,
         research_wiki_ghost,
     )
-    from loom.tools.experts import research_find_experts
+    from loom.tools.llm.experts import research_find_experts
 
     await run_async("find_experts", research_find_experts, "machine learning", n=3)
     await run_async(
@@ -238,7 +238,7 @@ async def main() -> None:
 
     # ── GROUP 9: LLM Tools (NVIDIA NIM free) ────────────────────────────
     print("\n── Group 9: LLM Tools ──")
-    from loom.tools.llm import (
+    from loom.tools.llm.llm import (
         research_llm_answer,
         research_llm_chat,
         research_llm_classify,
@@ -295,7 +295,7 @@ async def main() -> None:
 
     # ── GROUP 10: Creative Tools (LLM-dependent) ────────────────────────
     print("\n── Group 10: Creative Tools ──")
-    from loom.tools.creative import (
+    from loom.tools.llm.creative import (
         research_ai_detect,
         research_misinfo_check,
         research_red_team,
@@ -325,7 +325,7 @@ async def main() -> None:
 
     # ── GROUP 11: Full Deep Pipeline ────────────────────────────────────
     print("\n── Group 11: Full Pipeline ──")
-    from loom.tools.deep import research_deep
+    from loom.tools.core.deep import research_deep
 
     await run_async(
         "deep_academic",
@@ -373,7 +373,7 @@ async def main() -> None:
 
     # Graph & Composition tools
     try:
-        from loom.tools.graph import research_graph
+        from loom.tools.research.knowledge_graph import research_graph
 
         await run_async("graph_extract", research_graph, action="extract", query="AI safety")
     except (ImportError, AttributeError):
@@ -381,7 +381,7 @@ async def main() -> None:
         RESULTS.append({"tool": "graph_extract", "status": "SKIP", "elapsed_ms": 0})
 
     try:
-        from loom.tools.compose import research_compose
+        from loom.tools.llm.composer import research_compose
 
         await run_async(
             "compose_search_fetch",
@@ -394,7 +394,7 @@ async def main() -> None:
         RESULTS.append({"tool": "compose_search_fetch", "status": "SKIP", "elapsed_ms": 0})
 
     try:
-        from loom.tools.compose import research_compose_validate
+        from loom.tools.llm.composer import research_compose_validate
 
         await run_async(
             "compose_validate",
@@ -407,7 +407,7 @@ async def main() -> None:
 
     # Semantic routing
     try:
-        from loom.tools.semantic_router import research_semantic_route
+        from loom.tools.llm.semantic_router import research_semantic_route
 
         await run_async(
             "semantic_route",
@@ -421,7 +421,7 @@ async def main() -> None:
 
     # Circuit breaker & status tools
     try:
-        from loom.tools.circuit_breaker import research_circuit_status
+        from loom.tools.monitoring.circuit_breaker import research_circuit_status
 
         run_sync("circuit_status", research_circuit_status)
     except (ImportError, AttributeError):
@@ -430,7 +430,7 @@ async def main() -> None:
 
     # Analytics & dashboard
     try:
-        from loom.tools.analytics import research_analytics_dashboard
+        from loom.analytics import research_analytics_dashboard
 
         run_sync("analytics_dashboard", research_analytics_dashboard)
     except (ImportError, AttributeError):
@@ -438,7 +438,7 @@ async def main() -> None:
         RESULTS.append({"tool": "analytics_dashboard", "status": "SKIP", "elapsed_ms": 0})
 
     try:
-        from loom.tools.analytics import research_retry_stats
+        from loom.tools.infrastructure.retry_stats import research_retry_stats
 
         run_sync("retry_stats", research_retry_stats)
     except (ImportError, AttributeError):
@@ -447,7 +447,7 @@ async def main() -> None:
 
     # Quota & limits
     try:
-        from loom.tools.quota import research_quota_status
+        from loom.tools.monitoring.quota_status import research_quota_status
 
         run_sync("quota_status", research_quota_status)
     except (ImportError, AttributeError):
@@ -456,7 +456,7 @@ async def main() -> None:
 
     # Secrets & health
     try:
-        from loom.tools.secrets import research_secret_health
+        from loom.secret_manager import research_secret_health
 
         run_sync("secret_health", research_secret_health)
     except (ImportError, AttributeError):
@@ -465,7 +465,7 @@ async def main() -> None:
 
     # CPU pool
     try:
-        from loom.tools.resources import research_cpu_pool_status
+        from loom.tool_functions import research_cpu_pool_status
 
         run_sync("cpu_pool_status", research_cpu_pool_status)
     except (ImportError, AttributeError):
@@ -474,7 +474,7 @@ async def main() -> None:
 
     # Webhooks
     try:
-        from loom.tools.webhooks import research_webhook_list
+        from loom.tools.infrastructure.webhooks import research_webhook_list
 
         run_sync("webhook_list", research_webhook_list)
     except (ImportError, AttributeError):
@@ -483,7 +483,7 @@ async def main() -> None:
 
     # Batch verification
     try:
-        from loom.tools.batch_verify import research_batch_verify
+        from loom.tools.research.fact_verification import research_batch_verify
 
         await run_async(
             "batch_verify",
@@ -496,7 +496,7 @@ async def main() -> None:
 
     # Latency reporting
     try:
-        from loom.tools.latency import research_latency_report
+        from loom.tools.monitoring.latency_report import research_latency_report
 
         run_sync("latency_report", research_latency_report)
     except (ImportError, AttributeError):
@@ -505,7 +505,7 @@ async def main() -> None:
 
     # Dead letter queue
     try:
-        from loom.tools.dlq import research_dlq_stats
+        from loom.tools.infrastructure.dlq_management import research_dlq_stats
 
         run_sync("dlq_stats", research_dlq_stats)
     except (ImportError, AttributeError):
@@ -514,7 +514,7 @@ async def main() -> None:
 
     # Source reputation
     try:
-        from loom.tools.reputation import research_source_reputation
+        from loom.tools.research.source_reputation import research_source_reputation
 
         run_sync("source_reputation", research_source_reputation, url="https://arxiv.org")
     except (ImportError, AttributeError):

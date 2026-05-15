@@ -11,14 +11,11 @@ examples, and evidence that wouldn't emerge in a simple Q&A format.
 
 from __future__ import annotations
 
-import asyncio
-import json
 import logging
 import time
 from dataclasses import dataclass, field, asdict
-from typing import Any, Callable
+from typing import Any
 
-from loom.providers.base import LLMResponse
 from loom.tools.llm.llm import _get_provider
 
 logger = logging.getLogger("loom.adversarial_debate")

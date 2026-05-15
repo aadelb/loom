@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import logging
 import random
-import time
 from typing import Any
 from urllib.parse import urlparse
 
@@ -14,6 +13,7 @@ import httpx
 from loom.validators import validate_url
 
 from loom.error_responses import handle_tool_errors
+from loom.http_helpers import fetch_json, fetch_text, fetch_bytes
 
 logger = logging.getLogger("loom.tools.api_fuzzer")
 

@@ -4,11 +4,17 @@ from __future__ import annotations
 
 import logging
 import random
-import string
 from datetime import UTC, datetime
 from typing import Any
 
 from loom.error_responses import handle_tool_errors
+
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(v: float, lo: float = 0.0, hi: float = 1.0) -> float:
+        """Fallback clamp if score_utils unavailable."""
+        return max(lo, min(hi, v))
 
 logger = logging.getLogger("loom.tools.auto_experiment")
 
@@ -40,7 +46,7 @@ def _pval(cp: int, cn: int, tp: int, tn: int) -> float:
         if expected > 0:
             chi_sq += ((obs - expected) ** 2) / expected
     # Convert chi-square to p-value approximation
-    return max(0.0, min(1.0, 1.0 / (1.0 + chi_sq * 0.3)))
+    return clamp(1.0 / (1.0 + chi_sq * 0.3), 0.0, 1.0)
 
 
 @handle_tool_errors("research_run_experiment")
@@ -52,7 +58,7 @@ async def research_run_experiment(
 ) -> dict[str, Any]:
     """Run controlled experiment: control vs treatments, measure effect size & significance."""
     try:
-        trials = max(3, min(100, trials))
+        trials = clamp(trials, 3, 100)
         variables = variables or ["treatment_1"]
 
         ctrl = [random.uniform(0, 100) if random.random() < 0.4 else random.uniform(0, 50) for _ in range(trials)]
@@ -116,7 +122,7 @@ async def research_experiment_design(
 ) -> dict[str, Any]:
     """Design experiment plan: variables, sample size, expected power, execution steps."""
     try:
-        budget = max(10, min(200, budget))
+        budget = clamp(budget, 10, 200)
         q_lower = research_question.lower()
         num_v = 3 if any(w in q_lower for w in ["multiple", "several", "combination"]) else 2
         vars_list = [f"treatment_{i+1}" for i in range(num_v)]

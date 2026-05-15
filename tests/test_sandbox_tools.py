@@ -15,7 +15,7 @@ import json
 import pytest
 from mcp.types import TextContent
 
-from loom.tools.sandbox_tools import (
+from loom.tools.security.sandbox_tools import (
     research_sandbox_run,
     research_sandbox_status,
 )

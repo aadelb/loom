@@ -15,7 +15,7 @@ class TestOnionDiscover:
     @pytest.mark.asyncio
     async def test_ahmia_fetch_success(self):
         """Test successful Ahmia API response."""
-        from loom.tools.onion_discover import _fetch_ahmia
+        from loom.tools.intelligence.onion_discover import _fetch_ahmia
 
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -40,7 +40,7 @@ class TestOnionDiscover:
     @pytest.mark.asyncio
     async def test_ahmia_fetch_failure(self):
         """Test Ahmia API failure."""
-        from loom.tools.onion_discover import _fetch_ahmia
+        from loom.tools.intelligence.onion_discover import _fetch_ahmia
 
         mock_client = AsyncMock(spec=httpx.AsyncClient)
         mock_client.get = AsyncMock(side_effect=Exception("Connection error"))
@@ -52,7 +52,7 @@ class TestOnionDiscover:
     @pytest.mark.asyncio
     async def test_darksearch_fetch_success(self):
         """Test successful DarkSearch API response."""
-        from loom.tools.onion_discover import _fetch_darksearch
+        from loom.tools.intelligence.onion_discover import _fetch_darksearch
 
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -85,7 +85,7 @@ class TestOnionDiscover:
     @pytest.mark.asyncio
     async def test_darksearch_no_onion_urls(self):
         """Test DarkSearch with no .onion URLs."""
-        from loom.tools.onion_discover import _fetch_darksearch
+        from loom.tools.intelligence.onion_discover import _fetch_darksearch
 
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -111,7 +111,7 @@ class TestOnionDiscover:
     @pytest.mark.asyncio
     async def test_intelx_fetch_success(self):
         """Test successful IntelX API response."""
-        from loom.tools.onion_discover import _fetch_intelx
+        from loom.tools.intelligence.onion_discover import _fetch_intelx
 
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -136,7 +136,7 @@ class TestOnionDiscover:
     @pytest.mark.asyncio
     async def test_ct_onion_certs_success(self):
         """Test successful Certificate Transparency fetch."""
-        from loom.tools.onion_discover import _fetch_ct_onion_certs
+        from loom.tools.intelligence.onion_discover import _fetch_ct_onion_certs
 
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -159,7 +159,7 @@ class TestOnionDiscover:
     @pytest.mark.asyncio
     async def test_ct_deduplication(self):
         """Test that CT deduplicates URLs."""
-        from loom.tools.onion_discover import _fetch_ct_onion_certs
+        from loom.tools.intelligence.onion_discover import _fetch_ct_onion_certs
 
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -182,7 +182,7 @@ class TestOnionDiscover:
     @pytest.mark.asyncio
     async def test_reddit_onions_fetch_success(self):
         """Test successful Reddit fetch."""
-        from loom.tools.onion_discover import _fetch_reddit_onions
+        from loom.tools.intelligence.onion_discover import _fetch_reddit_onions
 
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -212,7 +212,7 @@ class TestOnionDiscover:
     @pytest.mark.asyncio
     async def test_reddit_onions_no_urls(self):
         """Test Reddit fetch with no onion URLs."""
-        from loom.tools.onion_discover import _fetch_reddit_onions
+        from loom.tools.intelligence.onion_discover import _fetch_reddit_onions
 
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -240,7 +240,7 @@ class TestOnionDiscover:
 
     def test_research_onion_discover_return_keys(self):
         """Test research_onion_discover returns correct keys."""
-        from loom.tools.onion_discover import research_onion_discover
+        from loom.tools.intelligence.onion_discover import research_onion_discover
 
         # This test will call the actual function with httpx mocked
         with patch("httpx.AsyncClient") as mock_client_class:
@@ -267,7 +267,7 @@ class TestOnionDiscover:
 
     def test_research_onion_discover_max_results_validation(self):
         """Test research_onion_discover respects max_results bounds."""
-        from loom.tools.onion_discover import research_onion_discover
+        from loom.tools.intelligence.onion_discover import research_onion_discover
 
         with patch("httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
@@ -289,7 +289,7 @@ class TestOnionDiscoverEdgeCases:
     @pytest.mark.asyncio
     async def test_malformed_json_response(self):
         """Test handling of malformed JSON."""
-        from loom.tools.onion_discover import _fetch_darksearch
+        from loom.tools.intelligence.onion_discover import _fetch_darksearch
 
         mock_client = AsyncMock(spec=httpx.AsyncClient)
         mock_response = MagicMock()
@@ -305,7 +305,7 @@ class TestOnionDiscoverEdgeCases:
     @pytest.mark.asyncio
     async def test_timeout_handling(self):
         """Test timeout handling."""
-        from loom.tools.onion_discover import _fetch_ahmia
+        from loom.tools.intelligence.onion_discover import _fetch_ahmia
 
         mock_client = AsyncMock(spec=httpx.AsyncClient)
         mock_client.get = AsyncMock(side_effect=TimeoutError("Request timeout"))
@@ -317,7 +317,7 @@ class TestOnionDiscoverEdgeCases:
     @pytest.mark.asyncio
     async def test_http_404_response(self):
         """Test handling of 404 responses."""
-        from loom.tools.onion_discover import _fetch_ahmia
+        from loom.tools.intelligence.onion_discover import _fetch_ahmia
 
         mock_client = AsyncMock(spec=httpx.AsyncClient)
         mock_response = MagicMock()
@@ -333,7 +333,7 @@ class TestOnionDiscoverEdgeCases:
     @pytest.mark.asyncio
     async def test_non_dict_response(self):
         """Test handling of non-dict JSON responses."""
-        from loom.tools.onion_discover import _fetch_darksearch
+        from loom.tools.intelligence.onion_discover import _fetch_darksearch
 
         mock_client = AsyncMock(spec=httpx.AsyncClient)
         mock_response = MagicMock()
@@ -349,7 +349,7 @@ class TestOnionDiscoverEdgeCases:
     @pytest.mark.asyncio
     async def test_invalid_onion_format_filtering(self):
         """Test that invalid .onion URLs are filtered."""
-        from loom.tools.onion_discover import _fetch_darksearch
+        from loom.tools.intelligence.onion_discover import _fetch_darksearch
 
         mock_response = MagicMock()
         mock_response.status_code = 200

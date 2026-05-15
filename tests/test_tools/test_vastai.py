@@ -11,9 +11,9 @@ import pytest
 
 @pytest.fixture(autouse=True)
 def _clear_vastai_module():
-    sys.modules.pop("loom.tools.vastai", None)
+    sys.modules.pop("loom.tools.infrastructure.vastai", None)
     yield
-    sys.modules.pop("loom.tools.vastai", None)
+    sys.modules.pop("loom.tools.infrastructure.vastai", None)
 
 
 @pytest.mark.asyncio
@@ -21,7 +21,7 @@ class TestResearchVastaiSearch:
     async def test_missing_api_key(self):
         """Test returns error when VASTAI_API_KEY is not set."""
         with patch.dict("os.environ", {}, clear=True):
-            from loom.tools.vastai import research_vastai_search
+            from loom.tools.infrastructure.vastai import research_vastai_search
 
             result = await research_vastai_search()
 
@@ -62,7 +62,7 @@ class TestResearchVastaiSearch:
             mock_instance.__aexit__ = AsyncMock(return_value=None)
             mock_client_class.return_value = mock_instance
 
-            from loom.tools.vastai import research_vastai_search
+            from loom.tools.infrastructure.vastai import research_vastai_search
 
             result = await research_vastai_search(gpu_type="RTX 4090", max_price=1.0, n=5)
 
@@ -90,7 +90,7 @@ class TestResearchVastaiSearch:
             mock_instance.__aexit__ = AsyncMock(return_value=None)
             mock_client_class.return_value = mock_instance
 
-            from loom.tools.vastai import research_vastai_search
+            from loom.tools.infrastructure.vastai import research_vastai_search
 
             result = await research_vastai_search()
 
@@ -114,7 +114,7 @@ class TestResearchVastaiSearch:
             mock_instance.__aexit__ = AsyncMock(return_value=None)
             mock_client_class.return_value = mock_instance
 
-            from loom.tools.vastai import research_vastai_search
+            from loom.tools.infrastructure.vastai import research_vastai_search
 
             result = await research_vastai_search()
 
@@ -134,7 +134,7 @@ class TestResearchVastaiSearch:
             mock_instance.__aexit__ = AsyncMock(return_value=None)
             mock_client_class.return_value = mock_instance
 
-            from loom.tools.vastai import research_vastai_search
+            from loom.tools.infrastructure.vastai import research_vastai_search
 
             result = await research_vastai_search()
 
@@ -147,7 +147,7 @@ class TestResearchVastaiStatus:
     async def test_missing_api_key(self):
         """Test returns default values when VASTAI_API_KEY is not set."""
         with patch.dict("os.environ", {}, clear=True):
-            from loom.tools.vastai import research_vastai_status
+            from loom.tools.infrastructure.vastai import research_vastai_status
 
             result = await research_vastai_status()
 
@@ -177,7 +177,7 @@ class TestResearchVastaiStatus:
             mock_instance.__aexit__ = AsyncMock(return_value=None)
             mock_client_class.return_value = mock_instance
 
-            from loom.tools.vastai import research_vastai_status
+            from loom.tools.infrastructure.vastai import research_vastai_status
 
             result = await research_vastai_status()
 
@@ -198,7 +198,7 @@ class TestResearchVastaiStatus:
             "httpx.AsyncClient.get",
             return_value=mock_response,
         ):
-            from loom.tools.vastai import research_vastai_status
+            from loom.tools.infrastructure.vastai import research_vastai_status
 
             result = await research_vastai_status()
 
@@ -218,7 +218,7 @@ class TestResearchVastaiStatus:
             "httpx.AsyncClient.get",
             return_value=mock_response,
         ):
-            from loom.tools.vastai import research_vastai_status
+            from loom.tools.infrastructure.vastai import research_vastai_status
 
             result = await research_vastai_status()
 
@@ -231,7 +231,7 @@ class TestResearchVastaiStatus:
             "httpx.AsyncClient.get",
             side_effect=httpx.ConnectError("Network error"),
         ):
-            from loom.tools.vastai import research_vastai_status
+            from loom.tools.infrastructure.vastai import research_vastai_status
 
             result = await research_vastai_status()
 
@@ -253,7 +253,7 @@ class TestResearchVastaiStatus:
             "httpx.AsyncClient.get",
             return_value=mock_response,
         ):
-            from loom.tools.vastai import research_vastai_status
+            from loom.tools.infrastructure.vastai import research_vastai_status
 
             result = await research_vastai_status()
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import pytest
 
-from loom.tools import event_bus
+import loom.tools.infrastructure.event_bus
 
 
 @pytest.mark.asyncio

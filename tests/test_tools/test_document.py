@@ -19,7 +19,7 @@ class TestResearchConvertDocument:
         # Mock pdfplumber to not be available
         with (
             patch("shutil.which", return_value=None),
-            patch("loom.tools.document._download_document", new_callable=AsyncMock) as mock_download,
+            patch("loom.tools.core.document._download_document", new_callable=AsyncMock) as mock_download,
             patch.dict(sys.modules, {"pdfplumber": None}),
         ):
             # Create a temporary file for the mock download
@@ -29,7 +29,7 @@ class TestResearchConvertDocument:
             try:
                 mock_download.return_value = temp_path
 
-                from loom.tools.document import research_convert_document
+                from loom.tools.core.document import research_convert_document
 
                 result = await research_convert_document("https://example.com/doc.pdf")
 
@@ -45,7 +45,7 @@ class TestResearchConvertDocument:
     async def test_invalid_output_format(self):
         """Test error for invalid output format."""
         with patch("shutil.which", return_value="/usr/bin/pandoc"):
-            from loom.tools.document import research_convert_document
+            from loom.tools.core.document import research_convert_document
 
             result = await research_convert_document(
                 "https://example.com/doc.pdf", output_format="invalid"
@@ -58,7 +58,7 @@ class TestResearchConvertDocument:
     async def test_invalid_url(self):
         """Test error for invalid URL."""
         with patch("shutil.which", return_value="/usr/bin/pandoc"):
-            from loom.tools.document import research_convert_document
+            from loom.tools.core.document import research_convert_document
 
             result = await research_convert_document(
                 "not a valid url", output_format="markdown"
@@ -78,7 +78,7 @@ class TestResearchConvertDocument:
             mock_client_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
             mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
 
-            from loom.tools.document import research_convert_document
+            from loom.tools.core.document import research_convert_document
 
             result = await research_convert_document(
                 "https://example.com/doc.pdf", output_format="markdown"
@@ -103,7 +103,7 @@ class TestResearchConvertDocument:
             mock_client_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
             mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
 
-            from loom.tools.document import research_convert_document
+            from loom.tools.core.document import research_convert_document
 
             result = await research_convert_document(
                 "https://example.com/doc.pdf", output_format="markdown"
@@ -144,7 +144,7 @@ class TestResearchConvertDocument:
                 returncode=0, stdout="# Document Title\n\nContent here"
             )
 
-            from loom.tools.document import research_convert_document
+            from loom.tools.core.document import research_convert_document
 
             result = await research_convert_document(
                 "https://example.com/doc.pdf", output_format="markdown"
@@ -174,7 +174,7 @@ class TestResearchConvertDocument:
             mock_client_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
             mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
 
-            from loom.tools.document import research_convert_document
+            from loom.tools.core.document import research_convert_document
 
             result = await research_convert_document(
                 "https://example.com/doc.html", output_format="md"
@@ -200,7 +200,7 @@ class TestResearchConvertDocument:
             mock_client_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
             mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
 
-            from loom.tools.document import research_convert_document
+            from loom.tools.core.document import research_convert_document
 
             result = await research_convert_document(
                 "https://example.com/notfound.pdf", output_format="markdown"
@@ -221,7 +221,7 @@ class TestResearchConvertDocument:
             mock_client_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
             mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
 
-            from loom.tools.document import research_convert_document
+            from loom.tools.core.document import research_convert_document
 
             result = await research_convert_document(
                 "https://example.com/doc.pdf", output_format="markdown"
@@ -292,7 +292,7 @@ class TestPandocExecution:
                 returncode=0, stdout="# Test\n\nContent"
             )
 
-            from loom.tools.document import research_convert_document
+            from loom.tools.core.document import research_convert_document
 
             result = await research_convert_document(
                 "https://example.com/doc.html", output_format="markdown"
@@ -330,7 +330,7 @@ class TestPandocExecution:
             # Mock pandoc failure
             mock_run.return_value = MagicMock(returncode=1, stderr="Pandoc error")
 
-            from loom.tools.document import research_convert_document
+            from loom.tools.core.document import research_convert_document
 
             result = await research_convert_document(
                 "https://example.com/doc.html", output_format="markdown"
@@ -360,7 +360,7 @@ class TestFallbackTextExtraction:
             mock_client_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
             mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
 
-            from loom.tools.document import research_convert_document
+            from loom.tools.core.document import research_convert_document
 
             result = await research_convert_document(
                 "https://example.com/doc.html", output_format="markdown"
@@ -381,30 +381,30 @@ class TestSupportedFormats:
 
     def test_pdf_supported(self):
         """Test PDF is in supported sources."""
-        from loom.tools.document import SUPPORTED_SOURCES
+        from loom.tools.core.document import SUPPORTED_SOURCES
 
         assert "pdf" in SUPPORTED_SOURCES
 
     def test_docx_supported(self):
         """Test DOCX is in supported sources."""
-        from loom.tools.document import SUPPORTED_SOURCES
+        from loom.tools.core.document import SUPPORTED_SOURCES
 
         assert "docx" in SUPPORTED_SOURCES
 
     def test_markdown_output_supported(self):
         """Test markdown output format is supported."""
-        from loom.tools.document import SUPPORTED_OUTPUTS
+        from loom.tools.core.document import SUPPORTED_OUTPUTS
 
         assert "markdown" in SUPPORTED_OUTPUTS or "md" in SUPPORTED_OUTPUTS
 
     def test_txt_output_supported(self):
         """Test txt output format is supported."""
-        from loom.tools.document import SUPPORTED_OUTPUTS
+        from loom.tools.core.document import SUPPORTED_OUTPUTS
 
         assert "txt" in SUPPORTED_OUTPUTS
 
     def test_html_output_supported(self):
         """Test html output format is supported."""
-        from loom.tools.document import SUPPORTED_OUTPUTS
+        from loom.tools.core.document import SUPPORTED_OUTPUTS
 
         assert "html" in SUPPORTED_OUTPUTS

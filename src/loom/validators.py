@@ -394,11 +394,19 @@ def validate_url(url: str) -> str:
             raise UrlSafetyError(".onion URLs require TOR_ENABLED=true in config")
         return url  # Skip DNS resolution for .onion addresses
 
+    # Block known cloud metadata hostnames that use public IP ranges
+    _BLOCKED_METADATA_HOSTS = {"metadata.aliyuncs.com"}
+    if host.lower() in _BLOCKED_METADATA_HOSTS:
+        raise UrlSafetyError(f"host {host} is a known cloud metadata endpoint")
+
     # Resolve to IPs and check each. getaddrinfo handles both v4 and v6.
     try:
         infos = socket.getaddrinfo(host, None)
     except socket.gaierror as exc:
         raise UrlSafetyError(f"dns resolve failed for {host}: {exc}") from None
+
+    # Cloud metadata IPs that use public ranges (not caught by is_private)
+    _BLOCKED_METADATA_IPS = {"100.100.100.200", "100.100.100.201"}
 
     resolved_ips: list[str] = []
     for _family, _, _, _, sockaddr in infos:
@@ -407,6 +415,11 @@ def validate_url(url: str) -> str:
             ip = ipaddress.ip_address(ip_str)
         except ValueError:
             raise UrlSafetyError(f"invalid resolved ip: {ip_str}") from None
+
+        if ip_str in _BLOCKED_METADATA_IPS:
+            raise UrlSafetyError(
+                f"host {host} resolves to cloud metadata endpoint {ip_str}"
+            )
 
         # Check for IPv4-mapped IPv6 addresses (Fix C2)
         if hasattr(ip, 'ipv4_mapped') and ip.ipv4_mapped:

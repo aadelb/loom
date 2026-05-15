@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from loom.tools.deep import (
+from loom.tools.core.deep import (
     _detect_query_type,
     _is_youtube_url,
     _merge_search_results,
@@ -239,16 +239,16 @@ class TestResearchDeepPipeline:
     @patch("loom.tools.llm.research_llm_extract", side_effect=_mock_extract)
     @patch("loom.tools.llm.research_llm_answer", side_effect=_mock_answer)
     @patch(
-        "loom.tools.markdown.research_markdown",
+        "loom.tools.core.markdown.research_markdown",
         new_callable=lambda: lambda *a, **kw: _mock_markdown,
     )
-    @patch("loom.tools.fetch.research_fetch", side_effect=_mock_fetch)
-    @patch("loom.tools.search.research_search", side_effect=_mock_search)
+    @patch("loom.tools.core.fetch.research_fetch", side_effect=_mock_fetch)
+    @patch("loom.tools.core.search.research_search", side_effect=_mock_search)
     @patch("loom.config.get_config", return_value=_MOCK_CONFIG)
     async def test_full_pipeline_return_shape(
         self, mock_config, mock_search, mock_fetch, mock_md, mock_extract, mock_expand, mock_answer
     ):
-        from loom.tools.deep import research_deep
+        from loom.tools.core.deep import research_deep
 
         result = await research_deep(
             "test query", depth=2, expand_queries=False, extract=False, synthesize=False
@@ -266,10 +266,10 @@ class TestResearchDeepPipeline:
         assert "elapsed_ms" in result
         assert result["query"] == "test query"
 
-    @patch("loom.tools.search.research_search", return_value={"provider": "exa", "results": []})
+    @patch("loom.tools.core.search.research_search", return_value={"provider": "exa", "results": []})
     @patch("loom.config.get_config", return_value=_MOCK_CONFIG)
     async def test_no_search_results(self, mock_config, mock_search):
-        from loom.tools.deep import research_deep
+        from loom.tools.core.deep import research_deep
 
         result = await research_deep("empty query", depth=1, expand_queries=False)
 
@@ -277,12 +277,12 @@ class TestResearchDeepPipeline:
         assert result["top_pages"] == []
         assert "error" in result
 
-    @patch("loom.tools.markdown.research_markdown", side_effect=_mock_markdown)
-    @patch("loom.tools.fetch.research_fetch", side_effect=_mock_fetch)
-    @patch("loom.tools.search.research_search", side_effect=_mock_search)
+    @patch("loom.tools.core.markdown.research_markdown", side_effect=_mock_markdown)
+    @patch("loom.tools.core.fetch.research_fetch", side_effect=_mock_fetch)
+    @patch("loom.tools.core.search.research_search", side_effect=_mock_search)
     @patch("loom.config.get_config", return_value=_MOCK_CONFIG)
     async def test_backward_compat_old_params(self, mock_config, mock_search, mock_fetch, mock_md):
-        from loom.tools.deep import research_deep
+        from loom.tools.core.deep import research_deep
 
         result = await research_deep(
             "test", depth=1, expand_queries=False, extract=False, synthesize=False
@@ -291,12 +291,12 @@ class TestResearchDeepPipeline:
         assert "top_pages" in result
         assert "pages_fetched" in result
 
-    @patch("loom.tools.markdown.research_markdown", side_effect=_mock_markdown)
-    @patch("loom.tools.fetch.research_fetch", side_effect=_mock_fetch)
-    @patch("loom.tools.search.research_search", side_effect=_mock_search)
+    @patch("loom.tools.core.markdown.research_markdown", side_effect=_mock_markdown)
+    @patch("loom.tools.core.fetch.research_fetch", side_effect=_mock_fetch)
+    @patch("loom.tools.core.search.research_search", side_effect=_mock_search)
     @patch("loom.config.get_config", return_value=_MOCK_CONFIG)
     async def test_graceful_degradation_no_llm(self, mock_config, mock_search, mock_fetch, mock_md):
-        from loom.tools.deep import research_deep
+        from loom.tools.core.deep import research_deep
 
         result = await research_deep(
             "test", depth=1, expand_queries=True, extract=True, synthesize=True
@@ -304,9 +304,9 @@ class TestResearchDeepPipeline:
 
         assert result["synthesis"] is None or isinstance(result["synthesis"], dict)
 
-    @patch("loom.tools.markdown.research_markdown", side_effect=_mock_markdown)
-    @patch("loom.tools.fetch.research_fetch", side_effect=_mock_fetch)
-    @patch("loom.tools.search.research_search")
+    @patch("loom.tools.core.markdown.research_markdown", side_effect=_mock_markdown)
+    @patch("loom.tools.core.fetch.research_fetch", side_effect=_mock_fetch)
+    @patch("loom.tools.core.search.research_search")
     @patch(
         "loom.config.get_config",
         return_value={**_MOCK_CONFIG, "RESEARCH_SEARCH_PROVIDERS": ["exa", "brave"]},
@@ -335,7 +335,7 @@ class TestResearchDeepPipeline:
 
         mock_search.side_effect = multi_search
 
-        from loom.tools.deep import research_deep
+        from loom.tools.core.deep import research_deep
 
         result = await research_deep(
             "test", depth=2, expand_queries=False, extract=False, synthesize=False
@@ -344,16 +344,16 @@ class TestResearchDeepPipeline:
         urls = [p["url"] for p in result["top_pages"]]
         assert len(set(urls)) == len(urls)
 
-    @patch("loom.tools.enrich.research_detect_language", return_value={"language": "en"})
-    @patch("loom.tools.markdown.research_markdown", side_effect=_mock_markdown)
-    @patch("loom.tools.fetch.research_fetch", side_effect=_mock_fetch)
-    @patch("loom.tools.search.research_search", side_effect=_mock_search)
+    @patch("loom.tools.core.enrich.research_detect_language", return_value={"language": "en"})
+    @patch("loom.tools.core.markdown.research_markdown", side_effect=_mock_markdown)
+    @patch("loom.tools.core.fetch.research_fetch", side_effect=_mock_fetch)
+    @patch("loom.tools.core.search.research_search", side_effect=_mock_search)
     @patch("loom.config.get_config", return_value=_MOCK_CONFIG)
     async def test_language_stats_in_response(
         self, mock_config, mock_search, mock_fetch, mock_md, mock_lang
     ):
         """Verify deep pipeline returns language_stats dict in response."""
-        from loom.tools.deep import research_deep
+        from loom.tools.core.deep import research_deep
 
         result = await research_deep(
             "test query", depth=1, expand_queries=False, extract=False, synthesize=False
@@ -363,12 +363,12 @@ class TestResearchDeepPipeline:
         assert isinstance(result["language_stats"], dict)
 
     @patch(
-        "loom.tools.creative.research_community_sentiment",
+        "loom.tools.llm.creative.research_community_sentiment",
         return_value={"hn_posts": [], "reddit_threads": []},
     )
-    @patch("loom.tools.markdown.research_markdown", side_effect=_mock_markdown)
-    @patch("loom.tools.fetch.research_fetch", side_effect=_mock_fetch)
-    @patch("loom.tools.search.research_search", side_effect=_mock_search)
+    @patch("loom.tools.core.markdown.research_markdown", side_effect=_mock_markdown)
+    @patch("loom.tools.core.fetch.research_fetch", side_effect=_mock_fetch)
+    @patch("loom.tools.core.search.research_search", side_effect=_mock_search)
     @patch(
         "loom.config.get_config",
         return_value={**_MOCK_CONFIG, "RESEARCH_COMMUNITY_SENTIMENT": True},
@@ -377,7 +377,7 @@ class TestResearchDeepPipeline:
         self, mock_config, mock_search, mock_fetch, mock_md, mock_sentiment
     ):
         """Verify include_community=True triggers community sentiment analysis."""
-        from loom.tools.deep import research_deep
+        from loom.tools.core.deep import research_deep
 
         result = await research_deep(
             "django framework",
@@ -392,19 +392,19 @@ class TestResearchDeepPipeline:
         mock_sentiment.assert_called_once()
 
     @patch(
-        "loom.tools.creative.research_red_team",
+        "loom.tools.llm.creative.research_red_team",
         return_value={"counter_arguments": [], "total_cost_usd": 0.01},
     )
     @patch("loom.tools.llm.research_llm_answer", side_effect=_mock_answer)
-    @patch("loom.tools.markdown.research_markdown", side_effect=_mock_markdown)
-    @patch("loom.tools.fetch.research_fetch", side_effect=_mock_fetch)
-    @patch("loom.tools.search.research_search", side_effect=_mock_search)
+    @patch("loom.tools.core.markdown.research_markdown", side_effect=_mock_markdown)
+    @patch("loom.tools.core.fetch.research_fetch", side_effect=_mock_fetch)
+    @patch("loom.tools.core.search.research_search", side_effect=_mock_search)
     @patch("loom.config.get_config", return_value={**_MOCK_CONFIG, "RESEARCH_RED_TEAM": True})
     async def test_red_team_when_enabled(
         self, mock_config, mock_search, mock_fetch, mock_md, mock_answer, mock_red_team
     ):
         """Verify include_red_team=True triggers red team analysis."""
-        from loom.tools.deep import research_deep
+        from loom.tools.core.deep import research_deep
 
         result = await research_deep(
             "test query",
@@ -419,19 +419,19 @@ class TestResearchDeepPipeline:
         mock_red_team.assert_called_once()
 
     @patch(
-        "loom.tools.creative.research_misinfo_check",
+        "loom.tools.llm.creative.research_misinfo_check",
         return_value={"claims_checked": [], "risk_score": 0.1},
     )
     @patch("loom.tools.llm.research_llm_answer", side_effect=_mock_answer)
-    @patch("loom.tools.markdown.research_markdown", side_effect=_mock_markdown)
-    @patch("loom.tools.fetch.research_fetch", side_effect=_mock_fetch)
-    @patch("loom.tools.search.research_search", side_effect=_mock_search)
+    @patch("loom.tools.core.markdown.research_markdown", side_effect=_mock_markdown)
+    @patch("loom.tools.core.fetch.research_fetch", side_effect=_mock_fetch)
+    @patch("loom.tools.core.search.research_search", side_effect=_mock_search)
     @patch("loom.config.get_config", return_value={**_MOCK_CONFIG, "RESEARCH_MISINFO_CHECK": True})
     async def test_misinfo_check_when_enabled(
         self, mock_config, mock_search, mock_fetch, mock_md, mock_answer, mock_misinfo
     ):
         """Verify include_misinfo_check=True triggers misinfo check."""
-        from loom.tools.deep import research_deep
+        from loom.tools.core.deep import research_deep
 
         result = await research_deep(
             "test query",
@@ -446,20 +446,20 @@ class TestResearchDeepPipeline:
         mock_misinfo.assert_called_once()
 
     @patch(
-        "loom.tools.enrich.research_wayback",
+        "loom.tools.core.enrich.research_wayback",
         return_value={
             "snapshots": [{"archive_url": "https://web.archive.org/web/20230101000000/example.com"}]
         },
     )
-    @patch("loom.tools.markdown.research_markdown", side_effect=_mock_markdown)
-    @patch("loom.tools.fetch.research_fetch", side_effect=_mock_fetch)
-    @patch("loom.tools.search.research_search", side_effect=_mock_search)
+    @patch("loom.tools.core.markdown.research_markdown", side_effect=_mock_markdown)
+    @patch("loom.tools.core.fetch.research_fetch", side_effect=_mock_fetch)
+    @patch("loom.tools.core.search.research_search", side_effect=_mock_search)
     @patch("loom.config.get_config", return_value=_MOCK_CONFIG)
     async def test_wayback_recovery(
         self, mock_config, mock_search, mock_fetch, mock_md, mock_wayback
     ):
         """Verify wayback is tried when markdown < 100 chars."""
-        from loom.tools.deep import research_deep
+        from loom.tools.core.deep import research_deep
 
         async def mock_long_wayback_markdown(url, **kwargs):
             """Return long markdown from wayback archive."""

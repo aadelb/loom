@@ -11,23 +11,23 @@ import pytest
 
 @pytest.fixture(autouse=True)
 def _clear_billing_module():
-    sys.modules.pop("loom.tools.billing", None)
+    sys.modules.pop("loom.tools.infrastructure.billing", None)
     yield
-    sys.modules.pop("loom.tools.billing", None)
+    sys.modules.pop("loom.tools.infrastructure.billing", None)
 
 
 @pytest.mark.asyncio
 class TestResearchUsageReport:
     async def test_no_logs_directory(self):
         """Test handling when logs directory doesn't exist."""
-        with patch("loom.tools.billing.Path") as mock_path_cls:
+        with patch("loom.tools.infrastructure.billing.Path") as mock_path_cls:
             # Create a mock that returns itself for all / operations
             mock_path = MagicMock()
             mock_path.exists.return_value = False
             mock_path.__truediv__.return_value = mock_path
             mock_path_cls.home.return_value = mock_path
 
-            from loom.tools.billing import research_usage_report
+            from loom.tools.infrastructure.billing import research_usage_report
 
             result = await research_usage_report(days=7)
 
@@ -44,13 +44,13 @@ class TestResearchUsageReport:
             '{"cost_usd": 0.02, "provider": "openai", "model": "gpt-3.5", "timestamp": "2024-01-15T12:00:00"}\n'
         )
 
-        with patch("loom.tools.billing.Path") as mock_path_cls, patch(
+        with patch("loom.tools.infrastructure.billing.Path") as mock_path_cls, patch(
             "builtins.open",
             create=True,
         ) as mock_open:
             from datetime import datetime
 
-            from loom.tools.billing import research_usage_report
+            from loom.tools.infrastructure.billing import research_usage_report
 
             # Create mock file
             mock_stat_result = MagicMock()
@@ -95,7 +95,7 @@ class TestResearchUsageReport:
         ) as mock_open:
             from datetime import datetime
 
-            from loom.tools.billing import research_usage_report
+            from loom.tools.infrastructure.billing import research_usage_report
 
             mock_stat_result = MagicMock()
             mock_stat_result.st_mtime = datetime.now().timestamp()
@@ -121,7 +121,7 @@ class TestResearchStripeBalance:
     async def test_missing_api_key(self):
         """Test returns error when STRIPE_LIVE_KEY is not set."""
         with patch.dict("os.environ", {}, clear=True):
-            from loom.tools.billing import research_stripe_balance
+            from loom.tools.infrastructure.billing import research_stripe_balance
 
             result = await research_stripe_balance()
 
@@ -152,7 +152,7 @@ class TestResearchStripeBalance:
             "httpx.AsyncClient.get",
             return_value=mock_response,
         ):
-            from loom.tools.billing import research_stripe_balance
+            from loom.tools.infrastructure.billing import research_stripe_balance
 
             result = await research_stripe_balance()
 
@@ -174,7 +174,7 @@ class TestResearchStripeBalance:
             "httpx.AsyncClient.get",
             return_value=mock_response,
         ):
-            from loom.tools.billing import research_stripe_balance
+            from loom.tools.infrastructure.billing import research_stripe_balance
 
             result = await research_stripe_balance()
 
@@ -194,7 +194,7 @@ class TestResearchStripeBalance:
             "httpx.AsyncClient.get",
             return_value=mock_response,
         ):
-            from loom.tools.billing import research_stripe_balance
+            from loom.tools.infrastructure.billing import research_stripe_balance
 
             result = await research_stripe_balance()
 
@@ -207,7 +207,7 @@ class TestResearchStripeBalance:
             "httpx.AsyncClient.get",
             side_effect=httpx.ConnectError("Network error"),
         ):
-            from loom.tools.billing import research_stripe_balance
+            from loom.tools.infrastructure.billing import research_stripe_balance
 
             result = await research_stripe_balance()
 
@@ -232,7 +232,7 @@ class TestResearchStripeBalance:
             "httpx.AsyncClient.get",
             return_value=mock_response,
         ):
-            from loom.tools.billing import research_stripe_balance
+            from loom.tools.infrastructure.billing import research_stripe_balance
 
             result = await research_stripe_balance()
 

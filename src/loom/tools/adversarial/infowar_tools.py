@@ -4,7 +4,6 @@ from __future__ import annotations
 from loom.error_responses import handle_tool_errors
 
 import asyncio
-import json
 import logging
 import time
 from datetime import datetime, timezone

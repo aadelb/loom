@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from loom.tools.expert_engine import (
+from loom.tools.llm.expert_engine import (
     research_expert,
     _detect_domain,
     _estimate_source_credibility,
@@ -286,7 +286,7 @@ class TestExpertResearch:
     @pytest.mark.asyncio
     async def test_quick_quality_mode(self) -> None:
         """Test quick quality mode (fewer tools, faster)."""
-        with patch("loom.tools.expert_engine._gather_evidence_for_angle") as mock_gather:
+        with patch("loom.tools.llm.expert_engine._gather_evidence_for_angle") as mock_gather:
             mock_gather.return_value = {
                 "angle": "factual",
                 "sources": [],
@@ -304,7 +304,7 @@ class TestExpertResearch:
     @pytest.mark.asyncio
     async def test_expert_quality_mode(self) -> None:
         """Test expert quality mode (comprehensive research)."""
-        with patch("loom.tools.expert_engine._gather_evidence_for_angle") as mock_gather:
+        with patch("loom.tools.llm.expert_engine._gather_evidence_for_angle") as mock_gather:
             mock_gather.return_value = {
                 "angle": "factual",
                 "sources": [{"url": "https://example.com", "credibility": 0.8}],
@@ -320,7 +320,7 @@ class TestExpertResearch:
     @pytest.mark.asyncio
     async def test_publication_quality_mode(self) -> None:
         """Test publication quality mode (maximum tools and rigor)."""
-        with patch("loom.tools.expert_engine._gather_evidence_for_angle") as mock_gather:
+        with patch("loom.tools.llm.expert_engine._gather_evidence_for_angle") as mock_gather:
             mock_gather.return_value = {
                 "angle": "factual",
                 "sources": [],
@@ -336,7 +336,7 @@ class TestExpertResearch:
     @pytest.mark.asyncio
     async def test_auto_domain_detection(self) -> None:
         """Test that domain is auto-detected when set to 'auto'."""
-        with patch("loom.tools.expert_engine._gather_evidence_for_angle") as mock_gather:
+        with patch("loom.tools.llm.expert_engine._gather_evidence_for_angle") as mock_gather:
             mock_gather.return_value = {
                 "angle": "factual",
                 "sources": [],
@@ -351,7 +351,7 @@ class TestExpertResearch:
     @pytest.mark.asyncio
     async def test_output_structure(self) -> None:
         """Test that output has all required fields."""
-        with patch("loom.tools.expert_engine._gather_evidence_for_angle") as mock_gather:
+        with patch("loom.tools.llm.expert_engine._gather_evidence_for_angle") as mock_gather:
             mock_gather.return_value = {
                 "angle": "factual",
                 "sources": [],
@@ -388,7 +388,7 @@ class TestExpertResearch:
     @pytest.mark.asyncio
     async def test_confidence_scoring(self) -> None:
         """Test that confidence scores are properly calculated."""
-        with patch("loom.tools.expert_engine._gather_evidence_for_angle") as mock_gather:
+        with patch("loom.tools.llm.expert_engine._gather_evidence_for_angle") as mock_gather:
             mock_gather.return_value = {
                 "angle": "factual",
                 "sources": [],
@@ -405,7 +405,7 @@ class TestExpertResearch:
     @pytest.mark.asyncio
     async def test_multi_perspective_disabled(self) -> None:
         """Test that multi_perspective=False uses only factual angle."""
-        with patch("loom.tools.expert_engine._gather_evidence_for_angle") as mock_gather:
+        with patch("loom.tools.llm.expert_engine._gather_evidence_for_angle") as mock_gather:
             mock_gather.return_value = {
                 "angle": "factual",
                 "sources": [],
@@ -420,7 +420,7 @@ class TestExpertResearch:
     @pytest.mark.asyncio
     async def test_iterative_refinement_disabled(self) -> None:
         """Test with max_iterations=1 to skip refinement."""
-        with patch("loom.tools.expert_engine._gather_evidence_for_angle") as mock_gather:
+        with patch("loom.tools.llm.expert_engine._gather_evidence_for_angle") as mock_gather:
             mock_gather.return_value = {
                 "angle": "factual",
                 "sources": [],
@@ -436,7 +436,7 @@ class TestExpertResearch:
     @pytest.mark.asyncio
     async def test_claim_verification_flag(self) -> None:
         """Test that verify_claims flag is respected."""
-        with patch("loom.tools.expert_engine._gather_evidence_for_angle") as mock_gather:
+        with patch("loom.tools.llm.expert_engine._gather_evidence_for_angle") as mock_gather:
             mock_gather.return_value = {
                 "angle": "factual",
                 "sources": [],
@@ -451,7 +451,7 @@ class TestExpertResearch:
     @pytest.mark.asyncio
     async def test_action_items_generated(self) -> None:
         """Test that action items are generated from gaps."""
-        with patch("loom.tools.expert_engine._gather_evidence_for_angle") as mock_gather:
+        with patch("loom.tools.llm.expert_engine._gather_evidence_for_angle") as mock_gather:
             mock_gather.return_value = {
                 "angle": "factual",
                 "sources": [],
@@ -459,7 +459,7 @@ class TestExpertResearch:
                 "raw_evidence": [],
             }
 
-            with patch("loom.tools.expert_engine._adversarial_review") as mock_review:
+            with patch("loom.tools.llm.expert_engine._adversarial_review") as mock_review:
                 mock_review.return_value = {
                     "gaps": ["gap1", "gap2"],
                     "flaws": [],
@@ -474,7 +474,7 @@ class TestExpertResearch:
     @pytest.mark.asyncio
     async def test_tool_tracking(self) -> None:
         """Test that tools are properly tracked."""
-        with patch("loom.tools.expert_engine._gather_evidence_for_angle") as mock_gather:
+        with patch("loom.tools.llm.expert_engine._gather_evidence_for_angle") as mock_gather:
             mock_gather.return_value = {
                 "angle": "factual",
                 "sources": [],
@@ -538,7 +538,7 @@ class TestSourceCredibilityConstants:
 @pytest.mark.asyncio
 async def test_expert_research_integration() -> None:
     """Integration test: full research pipeline."""
-    with patch("loom.tools.expert_engine._gather_evidence_for_angle") as mock_gather:
+    with patch("loom.tools.llm.expert_engine._gather_evidence_for_angle") as mock_gather:
         mock_gather.return_value = {
             "angle": "factual",
             "sources": [
@@ -552,7 +552,7 @@ async def test_expert_research_integration() -> None:
             "raw_evidence": [],
         }
 
-        with patch("loom.tools.expert_engine._adversarial_review") as mock_review:
+        with patch("loom.tools.llm.expert_engine._adversarial_review") as mock_review:
             mock_review.return_value = {
                 "critique": "Good research, but missing XYZ",
                 "flaws": ["Assumption not validated"],

@@ -14,6 +14,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import secrets
 from typing import Any
 
 log = logging.getLogger("loom.api_auth")
@@ -122,7 +123,7 @@ class ApiKeyAuthMiddleware:
         api_key = self._extract_api_key(scope)
 
         # Validate API key
-        if not api_key or api_key not in self.api_keys:
+        if not api_key or not any(secrets.compare_digest(api_key, k) for k in self.api_keys):
             log.warning(
                 "auth_middleware_rejected "
                 "path=%s method=%s remote_addr=%s",

@@ -17,7 +17,7 @@ class TestDetectLanguage:
         mock_langdetect.detect_langs = MagicMock(return_value=[mock_lang])
 
         with patch.dict("sys.modules", {"langdetect": mock_langdetect}):
-            from loom.tools.enrich import research_detect_language
+            from loom.tools.core.enrich import research_detect_language
 
             result = research_detect_language("This is a test sentence in English.")
 
@@ -25,14 +25,14 @@ class TestDetectLanguage:
         assert result["confidence"] == 0.99
 
     def test_short_text(self):
-        from loom.tools.enrich import research_detect_language
+        from loom.tools.core.enrich import research_detect_language
 
         result = research_detect_language("hi")
         assert result["language"] == "unknown"
         assert "too short" in result.get("error", "")
 
     def test_empty_text(self):
-        from loom.tools.enrich import research_detect_language
+        from loom.tools.core.enrich import research_detect_language
 
         result = research_detect_language("")
         assert result["language"] == "unknown"
@@ -42,7 +42,7 @@ class TestDetectLanguage:
             # Need to reimport to trigger the ImportError
             import importlib
 
-            import loom.tools.enrich
+            import loom.tools.core.enrich
 
             importlib.reload(loom.tools.enrich)
             result = loom.tools.enrich.research_detect_language("This is English text for testing.")
@@ -60,7 +60,7 @@ class TestDetectLanguage:
         mock_langdetect.detect_langs = MagicMock(return_value=[])
 
         with patch.dict("sys.modules", {"langdetect": mock_langdetect}):
-            from loom.tools.enrich import research_detect_language
+            from loom.tools.core.enrich import research_detect_language
 
             result = research_detect_language("12345 !@#$% 67890")
 
@@ -84,7 +84,7 @@ class TestWayback:
         mock_client.__aexit__.return_value = None
 
         with patch("httpx.AsyncClient", return_value=mock_client):
-            from loom.tools.enrich import research_wayback
+            from loom.tools.core.enrich import research_wayback
 
             result = await research_wayback("https://example.com")
 
@@ -106,7 +106,7 @@ class TestWayback:
         mock_client.__aexit__.return_value = None
 
         with patch("httpx.AsyncClient", return_value=mock_client):
-            from loom.tools.enrich import research_wayback
+            from loom.tools.core.enrich import research_wayback
 
             result = await research_wayback("https://dead-link.com")
 
@@ -131,7 +131,7 @@ class TestWayback:
         mock_client.__aexit__.return_value = None
 
         with patch("httpx.AsyncClient", return_value=mock_client):
-            from loom.tools.enrich import research_wayback
+            from loom.tools.core.enrich import research_wayback
 
             result = await research_wayback("https://example.com")
 
@@ -153,7 +153,7 @@ class TestWayback:
         mock_client.__aexit__.return_value = None
 
         with patch("httpx.AsyncClient", return_value=mock_client):
-            from loom.tools.enrich import research_wayback
+            from loom.tools.core.enrich import research_wayback
 
             result = await research_wayback("https://example.com")
 

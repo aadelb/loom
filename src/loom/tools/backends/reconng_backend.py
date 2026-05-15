@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 import os
 from loom.cli_checker import is_available
 from loom.error_responses import handle_tool_errors
-import subprocess
+from loom.subprocess_helpers import run_command
 import tempfile
 from typing import Any
 
@@ -138,9 +137,9 @@ async def research_reconng_scan(
                     text=True,
                     check=False,
                 )
-                if init_result.returncode != 0:
-                    result.error = f"Workspace initialization failed: {init_result.stderr[:200]}"
-                    logger.warning(f"recon-ng workspace init failed: {init_result.stderr}")
+                if init_result["returncode"] != 0:
+                    result.error = f"Workspace initialization failed: {init_result["stderr"][:200]}"
+                    logger.warning(f"recon-ng workspace init failed: {init_result["stderr"]}")
                     return result.model_dump()
             except subprocess.TimeoutExpired:
                 result.error = "Workspace initialization timed out"
@@ -174,16 +173,16 @@ async def research_reconng_scan(
                         check=False,
                     )
 
-                    if proc_result.returncode == 0:
+                    if proc_result["returncode"] == 0:
                         result.modules_run.append(module_name)
                         # Parse output for findings (simplified extraction)
                         _parse_module_output(
-                            proc_result.stdout, module_name, result.findings
+                            proc_result["stdout"], module_name, result.findings
                         )
                     else:
                         result.modules_failed.append(module_name)
                         logger.warning(
-                            f"recon-ng module {module_name} failed: {proc_result.stderr[:200]}"
+                            f"recon-ng module {module_name} failed: {proc_result["stderr"][:200]}"
                         )
 
                 except subprocess.TimeoutExpired:

@@ -10,7 +10,6 @@ Integrates JailbreakBench and HarmBench datasets for evaluating attack success r
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from datetime import UTC, datetime
 from typing import Callable, Literal

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from loom.tools.auto_docs import research_generate_docs, research_docs_coverage
+from loom.tools.infrastructure.auto_docs import research_generate_docs, research_docs_coverage
 
 
 @pytest.mark.asyncio

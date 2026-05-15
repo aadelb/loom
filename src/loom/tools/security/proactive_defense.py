@@ -11,6 +11,12 @@ import re
 from typing import Any
 from loom.error_responses import handle_tool_errors
 
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(v: float, lo: float = 0.0, hi: float = 1.0) -> float:
+        return max(lo, min(hi, v))
+
 logger = logging.getLogger("loom.tools.proactive_defense")
 
 # Attack vector templates by vulnerability type
@@ -179,7 +185,10 @@ async def research_predict_attacks(
 
         # Calculate overall threat score
         threat_multiplier = {"low": 0.3, "medium": 0.6, "high": 1.0, "critical": 1.3}.get(threat_level, 1.0)
-        overall_threat = min(100, (len(vulns) * 20 + sum(a["likelihood"] * a["impact"] * 100 for a in predicted_attacks) / max(1, len(predicted_attacks))) * threat_multiplier)
+        overall_threat = clamp(
+            (len(vulns) * 20 + sum(a["likelihood"] * a["impact"] * 100 for a in predicted_attacks) / max(1, len(predicted_attacks))) * threat_multiplier,
+            0, 100
+        )
 
         return {
             "system_prompt_hash": prompt_hash,
@@ -246,7 +255,7 @@ async def research_preemptive_patch(
 
         # Recalculate threat score (estimate: 25-30 point reduction per critical/high vuln patched)
         reduction = sum(30 if v["severity"] in ("critical", "high") else 15 for v in vulns)
-        patched_score = max(0, original_score - reduction)
+        patched_score = clamp(original_score - reduction, 0, 100)
 
         # Identify remaining risks
         patched_types = {v["type"] for v in vulns}

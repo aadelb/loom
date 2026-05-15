@@ -30,7 +30,7 @@ class TestCitationAnalysis:
     @pytest.mark.live
     async def test_citation_analysis_valid_paper_id(self) -> None:
         """Citation analysis returns dict with paper_id, citation metrics."""
-        from loom.tools.academic_integrity import research_citation_analysis
+        from loom.tools.research.academic_integrity import research_citation_analysis
 
         # Use a well-known paper ID from Semantic Scholar
         # Example: A paper on transformers (widely cited)
@@ -46,7 +46,7 @@ class TestCitationAnalysis:
     @pytest.mark.live
     async def test_citation_analysis_unknown_paper(self) -> None:
         """Citation analysis returns error for invalid paper ID."""
-        from loom.tools.academic_integrity import research_citation_analysis
+        from loom.tools.research.academic_integrity import research_citation_analysis
 
         result = await research_citation_analysis(paper_id="nonexistent123456789")
 
@@ -58,7 +58,7 @@ class TestCitationAnalysis:
     @pytest.mark.live
     async def test_citation_analysis_includes_anomaly_score(self) -> None:
         """Citation analysis should compute anomaly_score when data available."""
-        from loom.tools.academic_integrity import research_citation_analysis
+        from loom.tools.research.academic_integrity import research_citation_analysis
 
         result = await research_citation_analysis(
             paper_id="649def34f8be52c8b66281af98ae884c427425b7", depth=1
@@ -77,7 +77,7 @@ class TestRetractionCheck:
     @pytest.mark.live
     async def test_retraction_check_returns_dict(self) -> None:
         """Retraction check returns dict with papers_checked and retractions_found."""
-        from loom.tools.academic_integrity import research_retraction_check
+        from loom.tools.research.academic_integrity import research_retraction_check
 
         result = await research_retraction_check(query="data fabrication", max_results=10)
 
@@ -88,7 +88,7 @@ class TestRetractionCheck:
     @pytest.mark.live
     async def test_retraction_check_author_query(self) -> None:
         """Retraction check works with author name queries."""
-        from loom.tools.academic_integrity import research_retraction_check
+        from loom.tools.research.academic_integrity import research_retraction_check
 
         # Test with a general research term
         result = await research_retraction_check(query="machine learning research", max_results=5)
@@ -100,7 +100,7 @@ class TestRetractionCheck:
     @pytest.mark.live
     async def test_retraction_check_max_results_respected(self) -> None:
         """Retraction check respects max_results parameter."""
-        from loom.tools.academic_integrity import research_retraction_check
+        from loom.tools.research.academic_integrity import research_retraction_check
 
         result = await research_retraction_check(query="neural networks", max_results=3)
 
@@ -116,7 +116,7 @@ class TestPredatoryJournalCheck:
     @pytest.mark.live
     async def test_predatory_check_legitimate_journal(self) -> None:
         """Predatory check returns low score for reputable journal."""
-        from loom.tools.academic_integrity import research_predatory_journal_check
+        from loom.tools.research.academic_integrity import research_predatory_journal_check
 
         result = await research_predatory_journal_check("Nature")
 
@@ -130,7 +130,7 @@ class TestPredatoryJournalCheck:
     @pytest.mark.live
     async def test_predatory_check_returns_risk_indicators(self) -> None:
         """Predatory check returns risk_indicators list."""
-        from loom.tools.academic_integrity import research_predatory_journal_check
+        from loom.tools.research.academic_integrity import research_predatory_journal_check
 
         result = await research_predatory_journal_check("Journal of Research")
 
@@ -143,7 +143,7 @@ class TestPredatoryJournalCheck:
     @pytest.mark.live
     async def test_predatory_check_includes_crossref_status(self) -> None:
         """Predatory check includes Crossref registration status."""
-        from loom.tools.academic_integrity import research_predatory_journal_check
+        from loom.tools.research.academic_integrity import research_predatory_journal_check
 
         result = await research_predatory_journal_check("Science")
 
@@ -161,7 +161,7 @@ class TestGrantForensics:
     @pytest.mark.live
     async def test_grant_forensics_normal_text(self) -> None:
         """Grant forensics analyzes normal grant abstract."""
-        from loom.tools.hcs10_academic import research_grant_forensics
+        from loom.tools.adversarial.hcs10_academic import research_grant_forensics
 
         # Realistic grant abstract
         text = """
@@ -183,7 +183,7 @@ class TestGrantForensics:
     @pytest.mark.live
     async def test_grant_forensics_computes_zipf_exponent(self) -> None:
         """Grant forensics computes Zipf exponent."""
-        from loom.tools.hcs10_academic import research_grant_forensics
+        from loom.tools.adversarial.hcs10_academic import research_grant_forensics
 
         text = "research research research methodology methodology methodology approach approach"
         result = await research_grant_forensics(text=text)
@@ -196,7 +196,7 @@ class TestGrantForensics:
     @pytest.mark.live
     async def test_grant_forensics_detects_benford_anomaly(self) -> None:
         """Grant forensics applies Benford's law test."""
-        from loom.tools.hcs10_academic import research_grant_forensics
+        from loom.tools.adversarial.hcs10_academic import research_grant_forensics
 
         # Text with numbers
         text = "We conducted 47 experiments with 183 participants. Found 12 significant effects."
@@ -214,7 +214,7 @@ class TestDataFabrication:
     @pytest.mark.live
     async def test_data_fabrication_legitimate_numbers(self) -> None:
         """Data fabrication test returns low risk for realistic numbers."""
-        from loom.tools.hcs10_academic import research_data_fabrication
+        from loom.tools.adversarial.hcs10_academic import research_data_fabrication
 
         # Realistic means from psychological study (n=30)
         numbers = [3.2, 4.1, 3.8, 2.9, 4.5, 3.3, 3.7, 4.0, 3.5, 2.8]
@@ -228,7 +228,7 @@ class TestDataFabrication:
     @pytest.mark.live
     async def test_data_fabrication_includes_grim_test(self) -> None:
         """Data fabrication includes GRIM test results."""
-        from loom.tools.hcs10_academic import research_data_fabrication
+        from loom.tools.adversarial.hcs10_academic import research_data_fabrication
 
         numbers = [1.5, 2.3, 3.7, 4.2, 5.1]
 
@@ -242,7 +242,7 @@ class TestDataFabrication:
     @pytest.mark.live
     async def test_data_fabrication_benford_check(self) -> None:
         """Data fabrication includes Benford test."""
-        from loom.tools.hcs10_academic import research_data_fabrication
+        from loom.tools.adversarial.hcs10_academic import research_data_fabrication
 
         numbers = [10, 20, 30, 15, 25, 35, 40, 12, 22, 32]
 
@@ -259,7 +259,7 @@ class TestReviewCartel:
     @pytest.mark.live
     async def test_review_cartel_detection_valid_author(self) -> None:
         """Review cartel detection analyzes author papers."""
-        from loom.tools.hcs10_academic import research_review_cartel
+        from loom.tools.adversarial.hcs10_academic import research_review_cartel
 
         # Use a valid Semantic Scholar author ID format
         result = await research_review_cartel(author_id="1695689")
@@ -274,7 +274,7 @@ class TestReviewCartel:
     @pytest.mark.live
     async def test_review_cartel_returns_score(self) -> None:
         """Review cartel returns cartel_score (0-1)."""
-        from loom.tools.hcs10_academic import research_review_cartel
+        from loom.tools.adversarial.hcs10_academic import research_review_cartel
 
         result = await research_review_cartel(author_id="1695689")
 
@@ -286,7 +286,7 @@ class TestReviewCartel:
     @pytest.mark.live
     async def test_review_cartel_includes_risk_level(self) -> None:
         """Review cartel includes risk_level assessment."""
-        from loom.tools.hcs10_academic import research_review_cartel
+        from loom.tools.adversarial.hcs10_academic import research_review_cartel
 
         result = await research_review_cartel(author_id="1695689")
 
@@ -301,7 +301,7 @@ class TestMonocultureDetect:
     @pytest.mark.live
     async def test_monoculture_detection_valid_field(self) -> None:
         """Monoculture detection analyzes research field."""
-        from loom.tools.hcs10_academic import research_monoculture_detect
+        from loom.tools.adversarial.hcs10_academic import research_monoculture_detect
 
         result = await research_monoculture_detect(field="machine learning", max_papers=10)
 
@@ -314,7 +314,7 @@ class TestMonocultureDetect:
     @pytest.mark.live
     async def test_monoculture_computes_diversity_index(self) -> None:
         """Monoculture detection computes Shannon diversity index."""
-        from loom.tools.hcs10_academic import research_monoculture_detect
+        from loom.tools.adversarial.hcs10_academic import research_monoculture_detect
 
         result = await research_monoculture_detect(field="deep learning", max_papers=5)
 
@@ -326,7 +326,7 @@ class TestMonocultureDetect:
     @pytest.mark.live
     async def test_monoculture_risk_level(self) -> None:
         """Monoculture detection includes risk_level."""
-        from loom.tools.hcs10_academic import research_monoculture_detect
+        from loom.tools.adversarial.hcs10_academic import research_monoculture_detect
 
         result = await research_monoculture_detect(field="neural networks", max_papers=8)
 
@@ -341,7 +341,7 @@ class TestInstitutionalDecay:
     @pytest.mark.live
     async def test_institutional_decay_valid_institution(self) -> None:
         """Institutional decay analyzes institution papers."""
-        from loom.tools.hcs10_academic import research_institutional_decay
+        from loom.tools.adversarial.hcs10_academic import research_institutional_decay
 
         result = await research_institutional_decay("Stanford University")
 
@@ -354,7 +354,7 @@ class TestInstitutionalDecay:
     @pytest.mark.live
     async def test_institutional_decay_computes_metrics(self) -> None:
         """Institutional decay computes retraction rate and trend."""
-        from loom.tools.hcs10_academic import research_institutional_decay
+        from loom.tools.adversarial.hcs10_academic import research_institutional_decay
 
         result = await research_institutional_decay("MIT")
 
@@ -368,7 +368,7 @@ class TestInstitutionalDecay:
     @pytest.mark.live
     async def test_institutional_decay_publication_trend(self) -> None:
         """Institutional decay includes publication trend slope."""
-        from loom.tools.hcs10_academic import research_institutional_decay
+        from loom.tools.adversarial.hcs10_academic import research_institutional_decay
 
         result = await research_institutional_decay("Harvard")
 
@@ -386,7 +386,7 @@ class TestShellFunding:
     @pytest.mark.live
     async def test_shell_funding_valid_company(self) -> None:
         """Shell funding detection analyzes company."""
-        from loom.tools.hcs10_academic import research_shell_funding
+        from loom.tools.adversarial.hcs10_academic import research_shell_funding
 
         result = await research_shell_funding("Apple Inc")
 
@@ -399,7 +399,7 @@ class TestShellFunding:
     @pytest.mark.live
     async def test_shell_funding_opacity_score(self) -> None:
         """Shell funding returns opacity_score (0-1)."""
-        from loom.tools.hcs10_academic import research_shell_funding
+        from loom.tools.adversarial.hcs10_academic import research_shell_funding
 
         result = await research_shell_funding("Tech Startup LLC")
 
@@ -411,7 +411,7 @@ class TestShellFunding:
     @pytest.mark.live
     async def test_shell_funding_indicators(self) -> None:
         """Shell funding includes opacity indicators."""
-        from loom.tools.hcs10_academic import research_shell_funding
+        from loom.tools.adversarial.hcs10_academic import research_shell_funding
 
         result = await research_shell_funding("Research Foundation")
 
@@ -427,7 +427,7 @@ class TestConferenceArbitrage:
     @pytest.mark.live
     async def test_conference_arbitrage_valid_conference(self) -> None:
         """Conference arbitrage analyzes conference."""
-        from loom.tools.hcs10_academic import research_conference_arbitrage
+        from loom.tools.adversarial.hcs10_academic import research_conference_arbitrage
 
         result = await research_conference_arbitrage("NeurIPS")
 
@@ -440,7 +440,7 @@ class TestConferenceArbitrage:
     @pytest.mark.live
     async def test_conference_arbitrage_trend_analysis(self) -> None:
         """Conference arbitrage includes acceptance trend."""
-        from loom.tools.hcs10_academic import research_conference_arbitrage
+        from loom.tools.adversarial.hcs10_academic import research_conference_arbitrage
 
         result = await research_conference_arbitrage("ICML")
 
@@ -452,7 +452,7 @@ class TestConferenceArbitrage:
     @pytest.mark.live
     async def test_conference_arbitrage_risk_level(self) -> None:
         """Conference arbitrage includes risk assessment."""
-        from loom.tools.hcs10_academic import research_conference_arbitrage
+        from loom.tools.adversarial.hcs10_academic import research_conference_arbitrage
 
         result = await research_conference_arbitrage("ICCV")
 
@@ -468,7 +468,7 @@ class TestPreprintManipulation:
     @pytest.mark.live
     async def test_preprint_manipulation_with_arxiv_id(self) -> None:
         """Preprint manipulation analyzes arXiv paper."""
-        from loom.tools.hcs10_academic import research_preprint_manipulation
+        from loom.tools.adversarial.hcs10_academic import research_preprint_manipulation
 
         # Use a valid arXiv ID format (YYMM.NNNNN)
         result = await research_preprint_manipulation(arxiv_id="2310.12345")
@@ -480,7 +480,7 @@ class TestPreprintManipulation:
     @pytest.mark.live
     async def test_preprint_manipulation_with_topic(self) -> None:
         """Preprint manipulation searches by topic."""
-        from loom.tools.hcs10_academic import research_preprint_manipulation
+        from loom.tools.adversarial.hcs10_academic import research_preprint_manipulation
 
         result = await research_preprint_manipulation(topic="transformer")
 
@@ -490,7 +490,7 @@ class TestPreprintManipulation:
     @pytest.mark.live
     async def test_preprint_manipulation_scoring(self) -> None:
         """Preprint manipulation includes manipulation_risk score."""
-        from loom.tools.hcs10_academic import research_preprint_manipulation
+        from loom.tools.adversarial.hcs10_academic import research_preprint_manipulation
 
         result = await research_preprint_manipulation(arxiv_id="2310.12345")
 
@@ -504,7 +504,7 @@ class TestPreprintManipulation:
     @pytest.mark.live
     async def test_preprint_manipulation_risk_level(self) -> None:
         """Preprint manipulation includes risk_level."""
-        from loom.tools.hcs10_academic import research_preprint_manipulation
+        from loom.tools.adversarial.hcs10_academic import research_preprint_manipulation
 
         result = await research_preprint_manipulation(topic="neural networks")
 
@@ -519,12 +519,12 @@ class TestAcademicIntegritySuite:
     @pytest.mark.live
     async def test_all_tools_return_dicts(self) -> None:
         """All academic integrity tools return dict results."""
-        from loom.tools.academic_integrity import (
+        from loom.tools.research.academic_integrity import (
             research_citation_analysis,
             research_predatory_journal_check,
             research_retraction_check,
         )
-        from loom.tools.hcs10_academic import (
+        from loom.tools.adversarial.hcs10_academic import (
             research_conference_arbitrage,
             research_data_fabrication,
             research_grant_forensics,
@@ -557,8 +557,8 @@ class TestAcademicIntegritySuite:
     @pytest.mark.live
     async def test_academic_tools_handle_errors_gracefully(self) -> None:
         """Academic integrity tools handle errors gracefully."""
-        from loom.tools.academic_integrity import research_retraction_check
-        from loom.tools.hcs10_academic import research_grant_forensics
+        from loom.tools.research.academic_integrity import research_retraction_check
+        from loom.tools.adversarial.hcs10_academic import research_grant_forensics
 
         # These should not raise exceptions
         result1 = await research_retraction_check("")

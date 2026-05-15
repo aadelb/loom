@@ -7,6 +7,13 @@ import re
 from typing import Any
 from loom.error_responses import handle_tool_errors
 
+try:
+    from loom.score_utils import clamp
+except ImportError:
+    def clamp(v: float, lo: float = 0.0, hi: float = 1.0) -> float:
+        """Fallback clamp if score_utils unavailable."""
+        return max(lo, min(hi, v))
+
 logger = logging.getLogger("loom.tools.model_compare")
 
 
@@ -103,7 +110,7 @@ async def research_model_consensus(
         if not responses:
             return {"error": "No responses", "models_count": 0, "consensus_claims": [], "consensus_score": 0.0}
 
-        threshold = max(0.0, min(1.0, threshold))
+        threshold = clamp(threshold, 0.0, 1.0)
         n = len(responses)
         min_agree = max(1, int(n * threshold))
 

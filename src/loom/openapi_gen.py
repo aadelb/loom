@@ -6,7 +6,6 @@ a valid OpenAPI 3.1 specification. Serves as documentation and API contract.
 
 from __future__ import annotations
 
-import inspect
 import logging
 from typing import Any
 
@@ -137,12 +136,28 @@ def generate_openapi_spec(mcp_instance: Any) -> dict[str, Any]:
     Returns:
         Valid OpenAPI 3.1 specification dict
     """
-    # Get registered tools
+    # Get registered tools (list_tools may be async in newer FastMCP)
     try:
-        tools = mcp_instance.list_tools()
-    except Exception as e:
-        log.warning("Failed to list tools from MCP instance: %s", e)
-        return _empty_spec()
+        result = mcp_instance.list_tools()
+        import asyncio
+        if asyncio.iscoroutine(result):
+            try:
+                loop = asyncio.get_running_loop()
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as pool:
+                    tools = loop.run_in_executor(pool, lambda: asyncio.run(mcp_instance.list_tools()))
+                    # Fallback: extract from tool manager directly
+                    tools = None
+            except RuntimeError:
+                tools = asyncio.run(result)
+        else:
+            tools = result
+    except Exception:
+        tools = None
+
+    # Fallback: extract tools directly from tool manager
+    if not tools and hasattr(mcp_instance, "_tool_manager"):
+        tools = list(mcp_instance._tool_manager._tools.values())
 
     if not tools:
         return _empty_spec()

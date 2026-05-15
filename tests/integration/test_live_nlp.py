@@ -21,14 +21,14 @@ import asyncio
 import pytest
 
 # Import tools
-from loom.tools.stylometry import research_stylometry
-from loom.tools.deception_detect import research_deception_detect
-from loom.tools.sentiment_deep import research_sentiment_deep
-from loom.tools.persona_profile import research_persona_profile
-from loom.tools.text_analyze import research_text_analyze
-from loom.tools.radicalization_detect import research_radicalization_detect
-from loom.tools.network_persona import research_network_persona
-from loom.tools.psycholinguistic import research_psycholinguistic
+from loom.tools.research.stylometry import research_stylometry
+from loom.tools.research.deception_detect import research_deception_detect
+from loom.tools.research.sentiment_deep import research_sentiment_deep
+from loom.tools.adversarial.persona_profile import research_persona_profile
+from loom.tools.research.text_analyze import research_text_analyze
+from loom.tools.intelligence.radicalization_detect import research_radicalization_detect
+from loom.tools.adversarial.network_persona import research_network_persona
+from loom.tools.research.psycholinguistic import research_psycholinguistic
 
 
 @pytest.fixture

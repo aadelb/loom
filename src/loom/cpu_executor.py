@@ -13,7 +13,7 @@ import os
 import signal
 from concurrent.futures import ProcessPoolExecutor
 from functools import wraps
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable
 
 logger = logging.getLogger("loom.cpu_executor")
 

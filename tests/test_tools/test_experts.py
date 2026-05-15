@@ -11,9 +11,9 @@ import pytest
 @pytest.fixture(autouse=True)
 def _clear_module_cache():
     """Ensure clean import state for each test."""
-    sys.modules.pop("loom.tools.experts", None)
+    sys.modules.pop("loom.tools.llm.experts", None)
     yield
-    sys.modules.pop("loom.tools.experts", None)
+    sys.modules.pop("loom.tools.llm.experts", None)
 
 
 @pytest.mark.asyncio
@@ -38,10 +38,10 @@ class TestResearchFindExperts:
         }
 
         with (
-            patch("loom.tools.github.research_github", return_value=mock_github_result),
+            patch("loom.tools.core.github.research_github", return_value=mock_github_result),
             patch("loom.providers.arxiv_search.search_arxiv", return_value=mock_arxiv_result),
         ):
-            from loom.tools.experts import research_find_experts
+            from loom.tools.llm.experts import research_find_experts
 
             result = await research_find_experts("machine learning", n=5)
 
@@ -69,10 +69,10 @@ class TestResearchFindExperts:
         }
 
         with (
-            patch("loom.tools.github.research_github", return_value={"results": []}),
+            patch("loom.tools.core.github.research_github", return_value={"results": []}),
             patch("loom.providers.arxiv_search.search_arxiv", return_value=mock_arxiv_result),
         ):
-            from loom.tools.experts import research_find_experts
+            from loom.tools.llm.experts import research_find_experts
 
             result = await research_find_experts("topic", n=5)
 
@@ -88,10 +88,10 @@ class TestResearchFindExperts:
         }
 
         with (
-            patch("loom.tools.github.research_github", return_value=mock_github_result),
+            patch("loom.tools.core.github.research_github", return_value=mock_github_result),
             patch("loom.providers.arxiv_search.search_arxiv", return_value={"results": []}),
         ):
-            from loom.tools.experts import research_find_experts
+            from loom.tools.llm.experts import research_find_experts
 
             result = await research_find_experts("topic", n=5)
 

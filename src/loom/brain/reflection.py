@@ -85,7 +85,7 @@ def _is_empty_result(output: Any) -> bool:
         results = output.get("results", output.get("data", output.get("items")))
         if isinstance(results, list) and len(results) == 0:
             return True
-        if not any(v for v in output.values() if v is not None and v != "" and v != []):
+        if not any(v is not None and v != "" and v != [] for v in output.values()):
             return True
     if isinstance(output, list) and len(output) == 0:
         return True
@@ -137,15 +137,15 @@ def _assess_semantic_alignment(query: str, result_text: str) -> float:
     """Assess semantic alignment between query and result.
 
     Returns 0.0–1.0 score based on what fraction of query terms appear in result.
-    Only counts words > 3 chars to filter stop words.
+    Uses substring matching for robustness with short queries and hyphenated terms.
     """
-    query_words = set(w.lower() for w in query.split() if len(w) > 3)
-    result_words = set(w.lower() for w in result_text.split() if len(w) > 3)
+    query_words = set(w.lower() for w in query.split() if len(w) >= 3)
+    result_lower = result_text.lower()
 
     if not query_words:
         return 0.0
 
-    matches = sum(1 for w in query_words if w in result_words)
+    matches = sum(1 for w in query_words if w in result_lower)
     coverage = matches / len(query_words)
     return min(coverage, 1.0)
 

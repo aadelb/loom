@@ -3,7 +3,7 @@
 import asyncio
 import pytest
 
-from loom.tools.cultural_attacks import (
+from loom.tools.adversarial.cultural_attacks import (
     CULTURAL_PATTERNS,
     HOMOGLYPH_MAP,
     TRANSLATION_CHAIN,
