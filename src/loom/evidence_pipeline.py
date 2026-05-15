@@ -13,6 +13,7 @@ Author: Ahmed Adel Bakr Alderai
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 from collections.abc import Callable
@@ -35,7 +36,7 @@ async def evidence_first_reframe(
     Args:
         query: Research/test query
         search_fn: Async callable(query) -> {results, provider, error}
-        reframe_fn: Callable(prompt) -> reframed_prompt_str
+        reframe_fn: Callable or async callable(prompt) -> reframed_prompt_str
         model_fn: Async callable(prompt) -> {response, model, tokens_used}
 
     Returns:
@@ -144,7 +145,12 @@ async def evidence_first_reframe(
         logger.info("evidence_pipeline step=4_reframe")
         step4_start = time.time()
         try:
-            reframed_prompt = reframe_fn(evidence_backed_prompt)
+            # Handle both sync and async reframe functions
+            if asyncio.iscoroutinefunction(reframe_fn):
+                reframed_prompt = await reframe_fn(evidence_backed_prompt)
+            else:
+                reframed_prompt = reframe_fn(evidence_backed_prompt)
+
             step4_duration = (time.time() - step4_start) * 1000
             steps.append(
                 {
@@ -180,10 +186,12 @@ async def evidence_first_reframe(
                 }
             )
 
-            if model_result.get("error"):
-                raise ValueError(f"Model query failed: {model_result['error']}")
-
-            final_response = model_result.get("response", "")
+            if isinstance(model_result, dict):
+                if model_result.get("error"):
+                    raise ValueError(f"Model query failed: {model_result['error']}")
+                final_response = model_result.get("response", "")
+            else:
+                raise ValueError(f"Model returned unexpected type: {type(model_result)}")
         except Exception as exc:
             step5_duration = (time.time() - step5_start) * 1000
             steps.append(
@@ -328,14 +336,9 @@ def _score_response_quality(
 ) -> float:
     """Score response quality using HCS (Hallucination-Consistency-Sourcing).
 
-    HCS scoring:
-    - Consistency (40%): How well response aligns with evidence
-    - Citation (40%): Response references or acknowledges sources
-    - Sourcing (20%): Quality and relevance of evidence used
-
     Args:
-        response: Model response text
-        evidence_sources: List of evidence sources used
+        response: LLM response text
+        evidence_sources: List of evidence sources
         query: Original query
 
     Returns:
@@ -362,7 +365,7 @@ def _score_response_quality(
     for indicator in citation_indicators:
         if indicator in response_lower:
             citation_score = min(1.0, citation_score + 0.15)
-    
+
     # Bonus for direct source mentions
     if evidence_sources:
         for source in evidence_sources[:3]:
@@ -410,9 +413,9 @@ async def research_evidence_pipeline(
         """Wrapper for search_fn."""
         return await research_search(query=q, provider=search_provider)
 
-    def reframe_wrapper(prompt: str) -> str:
-        """Wrapper for reframe_fn."""
-        result = research_prompt_reframe(
+    async def reframe_wrapper(prompt: str) -> str:
+        """Wrapper for reframe_fn - async to handle async research_prompt_reframe."""
+        result = await research_prompt_reframe(
             prompt=prompt,
             strategy=reframe_strategy,
         )
