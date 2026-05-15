@@ -89,7 +89,7 @@ async def research_wayback(
 
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
-            rows = await fetch_json(client, 
+            rows = await fetch_json(client,
                 _WAYBACK_CDX_URL,
                 params={
                     "url": url,
@@ -100,7 +100,6 @@ async def research_wayback(
                     "filter": "statuscode:200",
                 },
             )
-            resp.raise_for_status()
 
         if not isinstance(rows, list) or len(rows) <= 1:
             return {"original_url": url, "snapshots": [], "error": "no snapshots found"}

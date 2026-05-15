@@ -205,6 +205,15 @@ def _fuzzy_correct_params(func: Callable[..., Any], kwargs: dict) -> tuple[dict,
     tool_name = func.__name__
     corrected = _validate_with_pydantic(tool_name, corrected)
 
+    # Post-validation filter: Pydantic may add default fields that the function
+    # doesn't accept (e.g. CacheStatsParams adds max_results to cache_stats()).
+    # Only keep params the function actually accepts.
+    if valid_params:
+        corrected = {k: v for k, v in corrected.items() if k in valid_params}
+    elif corrected:
+        # Function takes no params (valid_params is empty) — drop everything
+        corrected = {}
+
     return corrected, corrections
 
 
