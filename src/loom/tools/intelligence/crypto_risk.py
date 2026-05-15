@@ -83,7 +83,8 @@ async def research_crypto_risk_score(address: str, chain: str = "bitcoin") -> di
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
             data = await fetch_json(client, api_url)
-            resp.raise_for_status()
+            if not data:
+                raise ValueError("Empty response from blockchain API")
 
         if chain == "bitcoin":
             metrics["current_balance"] = (data if isinstance(data, int) else data.get("balance", 0)) / 100_000_000

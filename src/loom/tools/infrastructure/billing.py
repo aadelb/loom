@@ -176,11 +176,12 @@ async def research_stripe_balance() -> dict[str, Any]:
 
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
-            data = await fetch_json(client, 
+            data = await fetch_json(client,
                 f"{_STRIPE_API_BASE}/balance",
                 headers=headers,
             )
-            resp.raise_for_status()
+            if not data:
+                raise ValueError("Empty response from Stripe API")
 
             available = 0
             pending = 0

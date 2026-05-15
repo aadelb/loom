@@ -69,7 +69,9 @@ async def _search_adzuna(
             logger.debug("adzuna_fetch query=%s location=%s", query[:50], location)
 
             data = await fetch_json(client, url, params=params)
-            resp.raise_for_status()
+            if not data:
+                logger.debug("adzuna_no_data")
+                return []
 
             for job in data.get("results", []):
                 salary_min = job.get("salary_min")
@@ -119,7 +121,9 @@ async def _search_remoteok(
             logger.debug("remoteok_fetch query=%s", query[:50])
 
             jobs = await fetch_json(client, url)
-            resp.raise_for_status()
+            if not jobs:
+                logger.debug("remoteok_no_data")
+                return []
 
             # Filter by query (search in title and description)
             query_lower = query.lower()
@@ -186,7 +190,9 @@ async def _search_hn_hiring(
             }
 
             stories = await fetch_json(client, url, params=params)
-            resp.raise_for_status()
+            if not stories:
+                logger.debug("hn_hiring_no_stories")
+                return []
 
             # For each story, search comments for the job query
             for story in stories.get("hits", []):
@@ -203,10 +209,10 @@ async def _search_hn_hiring(
                 }
 
                 comment_data = await fetch_json(client, url, params=comment_params)
-                comment_resp.raise_for_status()
-                comments = comment_resp.json()
+                if not comment_data:
+                    continue
 
-                for comment in comments.get("hits", []):
+                for comment in comment_data.get("hits", []):
                     if len(results) >= limit:
                         break
 
@@ -274,8 +280,9 @@ async def _search_github_jobs(
                     "no_html": 1,
                 }
 
-                resp = await client.get(url, params=params)
-                resp.raise_for_status()
+                data = await fetch_json(client, url, params=params)
+                if not data:
+                    continue
 
                 for result in data.get("Results", [])[:5]:
                     if len(results) >= limit:

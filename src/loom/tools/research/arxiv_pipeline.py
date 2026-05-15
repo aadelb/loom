@@ -162,7 +162,8 @@ async def research_arxiv_ingest(
 
         async with httpx.AsyncClient(timeout=30.0) as client:
             resp_text = await fetch_text(client, url)
-            resp.raise_for_status()
+            if not resp_text:
+                raise ValueError("Empty response from arXiv API")
 
         # Parse Atom XML response
         root = ET.fromstring(resp_text)

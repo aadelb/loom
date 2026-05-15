@@ -40,14 +40,13 @@ async def research_cve_lookup(query: str, limit: int = 10) -> dict[str, Any]:
 
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
-            data = await fetch_json(client, 
+            data = await fetch_json(client,
                 _NVD_API_BASE,
                 params={
                     "keywordSearch": query,
                     "resultsPerPage": limit,
                 },
             )
-            resp.raise_for_status()
 
         cves = []
         total_results = data.get("totalResults", 0)
@@ -141,11 +140,10 @@ async def research_cve_detail(cve_id: str) -> dict[str, Any]:
 
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
-            data = await fetch_json(client, 
+            data = await fetch_json(client,
                 _NVD_API_BASE,
                 params={"cveId": cve_id.upper()},
             )
-            resp.raise_for_status()
 
         if not data.get("vulnerabilities"):
             return {"cve_id": cve_id, "error": "CVE not found"}

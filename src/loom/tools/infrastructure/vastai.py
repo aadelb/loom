@@ -53,12 +53,14 @@ async def research_vastai_search(
 
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
-            data = await fetch_json(client, 
+            data = await fetch_json(client,
                 f"{_VASTAI_API_BASE}/bundles/",
                 headers=headers,
                 params=params,
             )
-            resp.raise_for_status()
+            if not data:
+                logger.debug("vastai_no_data gpu_type=%s", gpu_type)
+                return {"gpu_type": gpu_type, "max_price": max_price, "results": []}
 
             instances = []
             for item in data.get("bundles", [])[:n]:
@@ -116,11 +118,13 @@ async def research_vastai_status() -> dict[str, Any]:
 
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
-            data = await fetch_json(client, 
+            data = await fetch_json(client,
                 f"{_VASTAI_API_BASE}/users/current/",
                 headers=headers,
             )
-            resp.raise_for_status()
+            if not data:
+                logger.debug("vastai_no_user_data")
+                return {"balance": 0.0, "running_instances": 0}
 
             balance = data.get("balance", 0.0)
             running_instances = len(data.get("instances", []))

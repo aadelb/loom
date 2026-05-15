@@ -13,6 +13,7 @@ import asyncio
 import logging
 import re
 import socket
+import subprocess
 from typing import Any
 
 from loom.input_validators import validate_domain, validate_ip, ValidationError

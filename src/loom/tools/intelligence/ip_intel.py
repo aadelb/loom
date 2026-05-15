@@ -69,15 +69,17 @@ async def research_ip_reputation(ip: str) -> dict[str, Any]:
     if abuseipdb_key:
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
-                data = await fetch_json(client, 
+                data = await fetch_json(client,
                     _ABUSEIPDB_URL,
                     params={"ipAddress": ip, "maxAgeInDays": 90},
                     headers={"Key": abuseipdb_key, "Accept": "application/json"},
                 )
-                resp.raise_for_status()
-                if data.get("data"):
-                    result["abuse_score"] = data["data"].get("abuseConfidenceScore")
-                    result["is_tor_exit"] = data["data"].get("isTor")
+                if not data:
+                    logger.debug("abuseipdb_no_data ip=%s", ip)
+                else:
+                    if data.get("data"):
+                        result["abuse_score"] = data["data"].get("abuseConfidenceScore")
+                        result["is_tor_exit"] = data["data"].get("isTor")
         except Exception as exc:
             logger.warning("abuseipdb_check_failed ip=%s: %s", ip, exc)
 
@@ -85,8 +87,9 @@ async def research_ip_reputation(ip: str) -> dict[str, Any]:
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             data = await fetch_json(client, f"{_IP_API_URL}/{ip}")
-            resp.raise_for_status()
-            if data.get("status") == "success":
+            if not data:
+                logger.debug("ip_api_no_data ip=%s", ip)
+            elif data.get("status") == "success":
                 result["geolocation"] = {
                     "country": data.get("country"),
                     "city": data.get("city"),
@@ -133,7 +136,8 @@ async def research_ip_geolocation(ip: str) -> dict[str, Any]:
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             data = await fetch_json(client, f"{_IP_API_URL}/{ip}")
-            resp.raise_for_status()
+            if not data:
+                raise ValueError("Empty response from ip-api.com")
 
         if data.get("status") == "success":
             return {

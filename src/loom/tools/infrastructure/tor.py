@@ -63,11 +63,13 @@ async def research_tor_status() -> dict[str, Any]:
             max_connections=5,
             proxy=proxy,
         )
-        data = await fetch_json(client, 
+        data = await fetch_json(client,
             "https://check.torproject.org/api/ip",
             timeout=10.0,
         )
-        resp.raise_for_status()
+        if not data:
+            raise ValueError("Empty response from check.torproject.org")
+
         exit_ip = data.get("IP", "")
 
         result = {
