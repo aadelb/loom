@@ -76,7 +76,10 @@ async def research_ask_all_llms(
                     break
             if provider_class:
                 instance = provider_class()
-                if await instance.available():
+                is_avail = instance.available()
+                if asyncio.iscoroutine(is_avail):
+                    is_avail = await is_avail
+                if is_avail:
                     providers_available.append((name, instance))
         except Exception as exc:
             logger.debug("Provider %s not available: %s", name, exc)

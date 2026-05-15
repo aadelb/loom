@@ -279,10 +279,14 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
 
     is_async = inspect.iscoroutinefunction(func)
 
-    tool_timeout = 60  # seconds
+    _HEAVY_TOOLS = {"research_deep", "research_smart_call", "research_full_pipeline",
+                     "research_evidence_pipeline", "research_consensus_build",
+                     "research_adversarial_debate", "research_hierarchical_research",
+                     "research_ask_all_llms", "research_expert"}
+    tool_name = func.__name__
+    tool_timeout = 300 if tool_name in _HEAVY_TOOLS else 60
     billing_enabled = os.getenv("LOOM_BILLING_ENABLED", "").lower() == "true"
     token_economy_enabled = os.getenv("LOOM_TOKEN_ECONOMY", "").lower() == "true"
-    tool_name = func.__name__
 
     # Detect if function is CPU-bound
     is_cpu_bound_func = getattr(func, "_cpu_bound", False) is True

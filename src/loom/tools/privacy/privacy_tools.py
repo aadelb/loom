@@ -55,7 +55,7 @@ def research_fingerprint_audit(
         }
 
     try:
-        logger.info("fingerprint_audit url=%s", url)
+        logger.info("fingerprint_audit url=%s", target_url)
 
         with sync_playwright() as p:
             # Launch headless Chrome
@@ -68,14 +68,14 @@ def research_fingerprint_audit(
 
             # Navigate to target URL
             try:
-                page.goto(url, wait_until="domcontentloaded", timeout=30000)
+                page.goto(target_url, wait_until="domcontentloaded", timeout=30000)
             except Exception as e:
                 logger.warning("page.goto failed: %s", e)
                 context.close()
                 browser.close()
                 return {
                     "error": f"Failed to load URL: {e}",
-                    "url": url,
+                    "url": target_url,
                 }
 
             # Execute fingerprinting script
@@ -164,7 +164,7 @@ def research_fingerprint_audit(
                 browser.close()
                 return {
                     "error": f"Failed to execute fingerprinting script: {e}",
-                    "url": url,
+                    "url": target_url,
                 }
 
             # Close browser
@@ -211,7 +211,7 @@ def research_fingerprint_audit(
         logger.exception("Unexpected error in fingerprint_audit")
         return {
             "error": f"Unexpected error: {type(e).__name__}: {e}",
-            "url": url,
+            "url": target_url,
         }
 
 
