@@ -146,6 +146,67 @@ def research_github(
                     }
                 )
 
+        # Auto-decompose: if 4+ word query returns 0 results, split and retry
+        # Only decompose if we have API budget (check rate limit header)
+        remaining = int(resp.headers.get("x-ratelimit-remaining", "10"))
+        if not results and len(query.split()) >= 4 and remaining >= 3:
+            logger.info("github_auto_decompose query=%s (0 results, splitting)", query[:60])
+            words = query.split()
+            sub_queries = set()
+            # Generate 2-3 word combinations from key terms
+            for i in range(len(words)):
+                for j in range(i + 1, min(i + 3, len(words))):
+                    sub_queries.add(" ".join(words[i:j + 1]))
+            # Also try individual important words (>3 chars)
+            for w in words:
+                if len(w) > 3:
+                    sub_queries.add(w)
+
+            seen_names: set[str] = set()
+            merged: list[dict[str, Any]] = []
+            for sq in sorted(sub_queries, key=len, reverse=True)[:3]:
+                sq_parts = [sq]
+                if language:
+                    sq_parts.append(f"language:{language}")
+                try:
+                    with httpx.Client(timeout=15.0) as sub_client:
+                        sub_resp = sub_client.get(
+                            f"https://api.github.com{endpoint}",
+                            params={"q": " ".join(sq_parts), "sort": sort, "order": order, "per_page": min(limit, 5)},
+                            headers=headers,
+                        )
+                        if sub_resp.status_code == 403:
+                            logger.warning("github_rate_limited during decompose, stopping")
+                            break
+                        if sub_resp.status_code == 200:
+                            sub_items = sub_resp.json().get("items", [])
+                            for item in sub_items:
+                                name = item.get("full_name", "")
+                                if name not in seen_names:
+                                    seen_names.add(name)
+                                    merged.append({
+                                        "name": name,
+                                        "url": item.get("html_url"),
+                                        "description": item.get("description"),
+                                        "stars": item.get("stargazers_count", 0),
+                                        "forks": item.get("forks_count", 0),
+                                        "language": item.get("language"),
+                                        "updated_at": item.get("updated_at"),
+                                    })
+                except Exception:
+                    continue
+
+            if merged:
+                merged.sort(key=lambda x: x.get("stars", 0), reverse=True)
+                return {
+                    "kind": kind,
+                    "query": query,
+                    "total_count": len(merged),
+                    "results": merged[:limit],
+                    "auto_decomposed": True,
+                    "sub_queries_used": len(sub_queries),
+                }
+
         return {
             "kind": kind,
             "query": query,
