@@ -417,7 +417,7 @@ class TestVaultRoundTrip:
         """Test storing and retrieving various secret formats."""
         with patch("loom.tools.credential_vault.Path.home", return_value=tmp_path):
             test_cases = [
-                ("api_key_long", "sk_live_123456789abcdefghijklmnopqrst", "api_key"),
+                ("api_key_long", "sk_test_FAKE0000000000000000000000000", "api_key"),
                 ("oauth_token", "ghp_1234567890abcdefghijklmnopqrstuv", "token"),
                 ("password", "MyP@ssw0rd!#$%", "password"),
                 ("jwt", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9", "token"),

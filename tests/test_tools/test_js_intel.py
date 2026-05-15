@@ -94,7 +94,7 @@ class TestScanForSecrets:
 
     async def test_detect_slack_token(self) -> None:
         """Detect Slack tokens."""
-        content = "const token = 'xoxb-123456789-1234567890-abcdefghijklmnop';"
+        content = "const token = 'xoxb-0000000000-0000000000-FAKEFAKEFAKEFAKE';"
         secrets = _scan_for_secrets(content)
         assert any(s["type"] == "slack_token" for s in secrets)
 

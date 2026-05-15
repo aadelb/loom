@@ -49,7 +49,7 @@ Store a credential securely in the vault.
 ```python
 result = await research_vault_store(
     name="openai_key",
-    value="sk_live_123456789abcdefghijklmnop",
+    value="sk_test_FAKE000000000000000000000",
     category="api_key"
 )
 ```
@@ -65,7 +65,7 @@ Retrieve and decrypt a stored credential.
 ```json
 {
   "name": "openai_key",
-  "value": "sk_live_123456789abcdefghijklmnop",
+  "value": "sk_test_FAKE000000000000000000000",
   "category": "api_key",
   "last_accessed": "2026-05-02T15:30:45.123456+00:00"
 }
@@ -137,7 +137,7 @@ Credentials are stored at: `~/.loom/vault.json`
 # Store your API keys on first use
 await research_vault_store(
     name="stripe_key",
-    value="sk_live_abc123...",
+    value="sk_test_FAKE123...",
     category="api_key"
 )
 
@@ -164,7 +164,7 @@ if "error" not in stripe_key_result:
 # Update a credential by storing with the same name
 await research_vault_store(
     name="stripe_key",
-    value="sk_live_new_abc123...",
+    value="sk_test_FAKE_NEW123...",
     category="api_key"
 )
 # Old value is overwritten
