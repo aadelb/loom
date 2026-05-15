@@ -285,7 +285,7 @@ def _normalize_provider_scores(results: list[dict[str, Any]]) -> list[dict[str, 
         by_provider.setdefault(provider, []).append(r)
 
     for provider, items in by_provider.items():
-        scores = [i.get("score", 0) for i in items]
+        scores = [float(i.get("score") or 0) for i in items]
         if not scores or max(scores) == min(scores):
             # Uniform scores: assign neutral score
             for i in items:
@@ -294,7 +294,7 @@ def _normalize_provider_scores(results: list[dict[str, Any]]) -> list[dict[str, 
 
         min_s, max_s = min(scores), max(scores)
         for i in items:
-            raw_score = i.get("score", 0)
+            raw_score = float(i.get("score") or 0)
             i["normalized_score"] = (raw_score - min_s) / (max_s - min_s) if (max_s - min_s) > 0 else 0.5
 
     return results

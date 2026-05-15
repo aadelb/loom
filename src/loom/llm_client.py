@@ -38,8 +38,8 @@ async def query_llm(
     try:
         response = await _call_with_cascade(
             messages,
-            model=model or None,
-            provider=provider or None,
+            model=model or "auto",
+            provider_override=provider or None,
             temperature=temperature,
             max_tokens=max_tokens,
         )
