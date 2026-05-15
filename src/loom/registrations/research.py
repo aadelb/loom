@@ -277,4 +277,28 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip social_graph_demo: %s", e)
         record_failure("research", "social_graph_demo", str(e))
 
-    log.info("registered research tools count=430")
+    # ── UAE Retail Intelligence ──
+    try:
+        from loom.tools.research.uae_retail_intel import (
+            research_uae_price_compare,
+            research_uae_wholesale_markets,
+            research_uae_distributor_find,
+            research_uae_price_search,
+            research_uae_margin_calculator,
+            research_uae_sourcing_plan,
+        )
+        for fn in [
+            research_uae_price_compare,
+            research_uae_wholesale_markets,
+            research_uae_distributor_find,
+            research_uae_price_search,
+            research_uae_margin_calculator,
+            research_uae_sourcing_plan,
+        ]:
+            mcp.tool()(wrap_tool(fn))
+            record_success("research", fn.__name__)
+    except (ImportError, AttributeError) as e:
+        log.debug("skip uae_retail_intel: %s", e)
+        record_failure("research", "uae_retail_intel", str(e))
+
+    log.info("registered research tools count=436")
