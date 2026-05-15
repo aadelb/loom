@@ -328,13 +328,17 @@ async def research_smart_call(
     final_output: Any = None
     iterations = 0
     step_outputs: list[dict[str, Any]] = []
+    executed_step_indices: set[int] = set()
 
     try:
         async with asyncio.timeout(timeout):
             for iteration in range(max_iterations):
                 iterations = iteration + 1
 
-                for step in plan.steps:
+                for step_idx, step in enumerate(plan.steps):
+                    if step_idx in executed_step_indices:
+                        continue
+                    executed_step_indices.add(step_idx)
                     step_context = {
                         "recent": recent_context,
                         "previous_outputs": step_outputs,

@@ -158,7 +158,16 @@ class IdempotencyManager:
                     f"operation_result required for new idempotency key: {idempotency_key[:16]}"
                 )
 
-            await redis.cache_set(cache_key, operation_result, ttl_seconds)
+            # Atomic set-if-not-exists to prevent double-charge on concurrent requests
+            if hasattr(redis, "cache_set_nx"):
+                stored = await redis.cache_set_nx(cache_key, operation_result, ttl_seconds)
+                if not stored:
+                    # Another request stored first — return that result
+                    existing = await redis.cache_get(cache_key)
+                    if existing is not None:
+                        return existing
+            else:
+                await redis.cache_set(cache_key, operation_result, ttl_seconds)
             log.info(
                 "idempotency_stored key=%s result_id=%s ttl=%d",
                 idempotency_key[:16],

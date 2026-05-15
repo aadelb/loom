@@ -313,11 +313,23 @@ def register_http_routes(mcp: "FastMCP") -> None:
 
     @mcp.custom_route("/api/v1/tools/{name}", methods=["POST"])
     async def api_v1_tool_call(request: Request) -> JSONResponse:
-        """Call any tool with JSON body: POST /api/v1/tools/{name} {"param1": "value"}"""
-        import inspect
+        """Call any tool with JSON body: POST /api/v1/tools/{name} {"param1": "value"}
+
+        Routes through the wrapped tool function (same as MCP) so auth,
+        rate limiting, param validation, billing, and audit all apply.
+        """
+        import os
         name = request.path_params.get("name", "")
         if not hasattr(mcp, "_tool_manager") or name not in mcp._tool_manager._tools:
             return JSONResponse({"error": f"Tool '{name}' not found"}, status_code=404)
+
+        # Auth check: if LOOM_AUTH_REQUIRED, validate bearer token
+        if os.getenv("LOOM_AUTH_REQUIRED", "").lower() == "true":
+            auth_header = request.headers.get("authorization", "")
+            api_key = os.getenv("LOOM_API_KEY", "")
+            if not auth_header.startswith("Bearer ") or auth_header[7:] != api_key:
+                return JSONResponse({"error": "unauthorized"}, status_code=401)
+
         tool = mcp._tool_manager._tools[name]
         func = getattr(tool, "fn", None)
         if func is None:
@@ -327,7 +339,10 @@ def register_http_routes(mcp: "FastMCP") -> None:
         except Exception:
             body = {}
         try:
-            if inspect.iscoroutinefunction(func):
+            # Call the wrapped function (includes middleware: param correction,
+            # rate limiting, billing, audit, metrics, error handling)
+            import asyncio
+            if asyncio.iscoroutinefunction(func):
                 result = await func(**body)
             else:
                 result = func(**body)
@@ -337,7 +352,12 @@ def register_http_routes(mcp: "FastMCP") -> None:
         except TypeError as e:
             return JSONResponse({"error": f"Invalid parameters: {e}"}, status_code=400)
         except Exception as e:
-            return JSONResponse({"error": str(e)[:500]}, status_code=500)
+            err_str = str(e)[:500]
+            for pattern in ("://", "api_key=", "token=", "password=", "secret="):
+                if pattern in err_str.lower():
+                    err_str = f"Internal error in {name}"
+                    break
+            return JSONResponse({"error": err_str}, status_code=500)
 
     @mcp.custom_route("/api/v1/health", methods=["GET"])
     async def api_v1_health(request: Request) -> JSONResponse:

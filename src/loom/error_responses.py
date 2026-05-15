@@ -69,15 +69,20 @@ def error_response(
     Returns:
         Dict with error response structure (error + metadata)
     """
+    _REDACT_PATTERNS = ("://", "api_key=", "token=", "password=", "secret=", "bearer ", "authorization:")
     if isinstance(error, Exception):
         raw = str(error)
-        for pattern in ("://", "api_key=", "token=", "password=", "secret="):
+        for pattern in _REDACT_PATTERNS:
             if pattern in raw.lower():
                 raw = type(error).__name__
                 break
         msg = raw
     else:
-        msg = error
+        msg = str(error)
+        for pattern in _REDACT_PATTERNS:
+            if pattern in msg.lower():
+                msg = "Internal error (details redacted)"
+                break
     result: dict[str, Any] = {"error": msg}
     if tool:
         result["tool"] = tool
