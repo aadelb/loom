@@ -62,11 +62,9 @@ def _run_whois(domain: str) -> tuple[str, int, str]:
     """
     result = run_command(
         ["whois", domain],
-        capture_output=True,
-        text=True,
         timeout=15,
     )
-    return result["stdout"], result["returncode"], result["stderr"]
+    return result["stdout"], result.get("returncode", 0), result.get("stderr", "")
 
 
 def _run_nmap(cmd: list[str]) -> tuple[str, int]:
@@ -80,11 +78,9 @@ def _run_nmap(cmd: list[str]) -> tuple[str, int]:
     """
     result = run_command(
         cmd,
-        capture_output=True,
-        text=True,
         timeout=60,
     )
-    return result["stdout"], result["returncode"]
+    return result["stdout"], result.get("returncode", 0)
 
 
 @handle_tool_errors("research_whois")

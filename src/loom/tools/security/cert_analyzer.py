@@ -118,7 +118,13 @@ async def research_cert_analyze(
         # Get version (1=v1, 2=v2, 3=v3 in pyOpenSSL convention)
         version = cert_dict.get("version", 3)
 
-        serial_hex = format(cert_dict.get("serialNumber", 0), "X") if cert_dict.get("serialNumber") else ""
+        serial_raw = cert_dict.get("serialNumber", 0)
+        if isinstance(serial_raw, int):
+            serial_hex = format(serial_raw, "X")
+        elif isinstance(serial_raw, str):
+            serial_hex = serial_raw.upper().replace(":", "")
+        else:
+            serial_hex = str(serial_raw)
 
         return {
             "hostname": target_hostname,
