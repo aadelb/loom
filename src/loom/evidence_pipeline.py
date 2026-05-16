@@ -425,7 +425,7 @@ async def research_evidence_pipeline(
         """Wrapper for model_fn."""
         return await research_llm_chat(
             messages=[{"role": "user", "content": prompt}],
-            provider=model_provider,
+            provider_override=model_provider if model_provider else None,
         )
 
     return await evidence_first_reframe(
