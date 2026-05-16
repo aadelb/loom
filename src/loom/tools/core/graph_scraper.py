@@ -68,22 +68,22 @@ except ImportError:
 
 def _get_llm_provider() -> LLMProvider | None:
     """Get an available LLM provider from Loom's cascade."""
-    try:
-        from loom.providers.groq_provider import GroqProvider
-        from loom.providers.nvidia_nim import NVIDIANIMProvider
-        from loom.providers.deepseek_provider import DeepSeekProvider
-
-        # Try each provider in order
-        if os.environ.get("GROQ_API_KEY"):
-            return GroqProvider()
-        if os.environ.get("NVIDIA_NIM_API_KEY"):
-            return NVIDIANIMProvider()
-        if os.environ.get("DEEPSEEK_API_KEY"):
-            return DeepSeekProvider()
-        return None
-    except (ImportError, Exception) as e:
-        logger.debug("Failed to load LLM provider: %s", e)
-        return None
+    providers = [
+        ("GROQ_API_KEY", "loom.providers.groq_provider", "GroqProvider"),
+        ("NVIDIA_NIM_API_KEY", "loom.providers.nvidia_nim", "NvidiaNimProvider"),
+        ("DEEPSEEK_API_KEY", "loom.providers.deepseek_provider", "DeepSeekProvider"),
+    ]
+    for env_key, module_path, class_name in providers:
+        if os.environ.get(env_key):
+            try:
+                import importlib
+                mod = importlib.import_module(module_path)
+                cls = getattr(mod, class_name)
+                return cls()
+            except (ImportError, AttributeError, Exception) as e:
+                logger.debug("Provider %s failed: %s", class_name, e)
+                continue
+    return None
 
 
 async def _fetch_url_content(url: str, max_chars: int = 20000) -> str:
