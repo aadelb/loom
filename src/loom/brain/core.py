@@ -370,7 +370,10 @@ async def research_smart_call(
                     )
 
                     if step_result.get("success"):
-                        final_output = step_result.get("result")
+                        new_result = step_result.get("result")
+                        from loom.brain.reflection import _is_empty_result
+                        if not _is_empty_result(new_result) or final_output is None:
+                            final_output = new_result
                     elif mode != QualityMode.ECONOMY:
                         # Error recovery: try next best tool from matched list
                         fallback = _find_fallback_tool(

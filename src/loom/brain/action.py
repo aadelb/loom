@@ -187,6 +187,23 @@ async def extract_params(
     return params
 
 
+_STOP_WORDS = frozenset({
+    "find", "search", "get", "show", "list", "tell", "me", "about",
+    "how", "to", "the", "a", "an", "for", "of", "in", "on", "with",
+    "what", "is", "are", "can", "do", "does", "explain", "write",
+    "give", "provide", "look", "up", "check", "analyze", "scan",
+    "cves", "cve", "vulnerabilities", "vulnerability", "exploits",
+    "exploit", "latest", "recent", "all", "details", "information",
+})
+
+
+def _extract_key_terms(query: str) -> str:
+    """Extract meaningful keywords from a natural language query."""
+    words = query.split()
+    key_words = [w for w in words if w.lower().strip(".,!?") not in _STOP_WORDS]
+    return " ".join(key_words) if key_words else query
+
+
 def _rule_based_extract(query: str, schema: dict[str, Any]) -> dict[str, Any]:
     """Extract params using pattern matching on common param names."""
     import re
@@ -198,7 +215,7 @@ def _rule_based_extract(query: str, schema: dict[str, Any]) -> dict[str, Any]:
         param_type = info.get("type", "string")
 
         if param_name in ("query", "q", "text", "input", "prompt"):
-            params[param_name] = query
+            params[param_name] = _extract_key_terms(query)
         elif param_name == "url":
             urls = re.findall(r"https?://[^\s,\"'<>]+", query)
             if urls:
@@ -335,10 +352,25 @@ def _filter_and_validate_params(
                 filtered[key] = value
             continue
 
-        if expected_type == "integer" and isinstance(value, (int, float)):
-            filtered[key] = int(value)
-        elif expected_type == "float" and isinstance(value, (int, float)):
-            filtered[key] = float(value)
+        # Infer type from default value if schema says "string" but default is numeric
+        default_val = info.get("default")
+        if expected_type == "string" and isinstance(default_val, int):
+            expected_type = "integer"
+        elif expected_type == "string" and isinstance(default_val, float):
+            expected_type = "float"
+
+        if expected_type == "integer":
+            try:
+                filtered[key] = int(value)
+            except (ValueError, TypeError):
+                filtered[key] = value
+            continue
+        elif expected_type == "float":
+            try:
+                filtered[key] = float(value)
+            except (ValueError, TypeError):
+                filtered[key] = value
+            continue
         elif expected_type == "boolean" and isinstance(value, bool):
             filtered[key] = value
         elif expected_type == "list" and isinstance(value, list):
