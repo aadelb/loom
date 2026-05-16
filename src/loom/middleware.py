@@ -282,9 +282,15 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
     _HEAVY_TOOLS = {"research_deep", "research_smart_call", "research_full_pipeline",
                      "research_evidence_pipeline", "research_consensus_build",
                      "research_adversarial_debate", "research_hierarchical_research",
-                     "research_ask_all_llms", "research_expert"}
+                     "research_ask_all_llms", "research_expert",
+                     "research_llm_chat", "research_llm_query", "research_llm_summarize",
+                     "research_llm_translate", "research_llm_classify",
+                     "research_llm_extract", "research_llm_embed",
+                     "research_prompt_reframe", "research_auto_reframe",
+                     "research_stack_reframe", "research_adaptive_reframe",
+                     "research_augmented_generate"}
     tool_name = func.__name__
-    tool_timeout = 300 if tool_name in _HEAVY_TOOLS else 60
+    tool_timeout = 600 if tool_name in _HEAVY_TOOLS else 60
     billing_enabled = os.getenv("LOOM_BILLING_ENABLED", "").lower() == "true"
     token_economy_enabled = os.getenv("LOOM_TOKEN_ECONOMY", "").lower() == "true"
 

@@ -8,6 +8,7 @@ from loom.providers.groq_provider import GroqProvider
 from loom.providers.moonshot_provider import MoonshotProvider
 from loom.providers.nvidia_nim import NvidiaNimProvider
 from loom.providers.openai_provider import OpenAIProvider
+from loom.providers.ollama_provider import OllamaProvider
 from loom.providers.vllm_local import VllmLocalProvider
 
 __all__ = [
@@ -19,6 +20,7 @@ __all__ = [
     "LLMResponse",
     "MoonshotProvider",
     "NvidiaNimProvider",
+    "OllamaProvider",
     "OpenAIProvider",
     "VllmLocalProvider",
     "_estimate_cost",

@@ -66,6 +66,10 @@ try:
     from loom.providers.vllm_local import VllmLocalProvider
 except ImportError:
     VllmLocalProvider = None  # type: ignore[assignment,misc]
+try:
+    from loom.providers.ollama_provider import OllamaProvider
+except ImportError:
+    OllamaProvider = None  # type: ignore[assignment,misc]
 from loom.quota_tracker import get_quota_tracker, record_usage
 try:
     from loom.text_utils import truncate
@@ -284,6 +288,8 @@ def _get_provider(name: str) -> Any:
             _PROVIDERS[name] = GeminiProvider()
         elif name == "moonshot":
             _PROVIDERS[name] = MoonshotProvider()
+        elif name == "ollama":
+            _PROVIDERS[name] = OllamaProvider()
         else:
             raise ValueError(f"unknown provider: {name}")
     return _PROVIDERS[name]

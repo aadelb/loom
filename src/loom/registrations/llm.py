@@ -50,3 +50,11 @@ def register_compression_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip compression tools: %s", e)
         record_failure("compression", "prompt_compression", str(e))
+
+    try:
+        from loom.tools.llm.augmented_generate import research_augmented_generate
+        mcp.tool()(wrap_tool(research_augmented_generate))
+        record_success("llm", "research_augmented_generate")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip augmented_generate: %s", e)
+        record_failure("llm", "augmented_generate", str(e))

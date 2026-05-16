@@ -22,6 +22,7 @@ DEFAULT_CASCADE: list[str] = [
     "moonshot",
     "openai",
     "anthropic",
+    "ollama",
     "vllm",
 ]
 
@@ -33,12 +34,15 @@ PROVIDER_ENV_KEYS: dict[str, str] = {
     "moonshot": "MOONSHOT_API_KEY",
     "openai": "OPENAI_API_KEY",
     "anthropic": "ANTHROPIC_API_KEY",
+    "ollama": "OLLAMA_URL",
     "vllm": "VLLM_ENDPOINT",
 }
 
 
 def is_provider_available(provider: str) -> bool:
     """Check if a provider has credentials configured."""
+    if provider == "ollama":
+        return bool(os.environ.get("OLLAMA_URL", "").strip())
     env_key = PROVIDER_ENV_KEYS.get(provider, "")
     return bool(env_key and os.environ.get(env_key, "").strip())
 
