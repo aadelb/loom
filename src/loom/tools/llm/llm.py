@@ -532,6 +532,26 @@ def _sanitize_error(error_str: str) -> str:
     return sanitize_text(error_str)
 
 
+_REFUSAL_PHRASES = (
+    "i cannot", "i can't", "i'm not able", "i am not able",
+    "i'm unable", "i am unable", "i must decline", "i won't",
+    "i will not", "cannot assist", "cannot help",
+    "cannot provide", "cannot fulfill",
+    "not able to provide", "not able to assist",
+    "against my", "my safety guidelines",
+    "my programming", "my ethical guidelines",
+    "violates my", "goes against",
+    "i'm sorry, but i can", "i apologize, but",
+)
+
+
+def _is_refusal_response(text: str) -> bool:
+    """Detect if an LLM response is a refusal/safety rejection."""
+    if not text or len(text) > 500:
+        return False
+    lower = text.lower()[:400]
+    return any(phrase in lower for phrase in _REFUSAL_PHRASES)
+
 
 def _classify_cascade_error(exc: Exception) -> tuple[str, bool]:
     """Classify error and determine if cascade should continue.
@@ -821,6 +841,20 @@ async def _call_with_cascade(
                 response.output_tokens,
                 response.cost_usd,
             )
+
+            # Refusal detection: if response looks like a refusal, try next provider
+            if response.text and provider.name != "ollama" and _is_refusal_response(response.text):
+                logger.warning(
+                    "llm_refusal_detected provider=%s, cascading to next",
+                    provider.name,
+                )
+                all_errors.append({
+                    "provider": provider.name,
+                    "error": "refusal detected in response",
+                    "error_type": "refusal",
+                })
+                continue
+
             return response
 
         except (TimeoutError, Exception) as e:

@@ -31,6 +31,10 @@ _AVAILABLE_MODELS = [
     "gemma3n-8b-abliterated",
     "mannix/llama3.1-8b-abliterated",
     "qwen3.5-abliterated",
+    "qwen3-coder-30b-abliterated",
+    "qwen35-9b-abliterated",
+    "qwen35-35b-abliterated",
+    "gemma4-26b-abliterated",
 ]
 
 
