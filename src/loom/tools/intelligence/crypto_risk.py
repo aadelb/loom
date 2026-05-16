@@ -83,17 +83,32 @@ async def research_crypto_risk_score(address: str, chain: str = "bitcoin") -> di
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
             data = await fetch_json(client, api_url)
+            if not data and chain == "bitcoin":
+                blockstream_url = f"https://blockstream.info/api/address/{address}"
+                resp = await client.get(blockstream_url, timeout=15.0)
+                if resp.status_code == 200:
+                    data = resp.json()
             if not data:
                 raise ValueError("Empty response from blockchain API")
 
         if chain == "bitcoin":
-            metrics["current_balance"] = (data if isinstance(data, int) else data.get("balance", 0)) / 100_000_000
-            detail_url = f"https://blockchain.info/address/{address}?format=json"
-            async with httpx.AsyncClient(timeout=15.0) as client:
-                detail = (await client.get(detail_url)).json()
-            metrics["transaction_count"] = detail.get("n_tx", 0)
-            metrics["total_received"] = detail.get("total_received", 0) / 100_000_000
-            metrics["total_sent"] = detail.get("total_sent", 0) / 100_000_000
+            if isinstance(data, dict) and "chain_stats" in data:
+                cs = data["chain_stats"]
+                metrics["current_balance"] = (cs.get("funded_txo_sum", 0) - cs.get("spent_txo_sum", 0)) / 100_000_000
+                metrics["transaction_count"] = cs.get("tx_count", 0)
+                metrics["total_received"] = cs.get("funded_txo_sum", 0) / 100_000_000
+                metrics["total_sent"] = cs.get("spent_txo_sum", 0) / 100_000_000
+            else:
+                metrics["current_balance"] = (data if isinstance(data, int) else data.get("balance", 0)) / 100_000_000
+                detail_url = f"https://blockstream.info/api/address/{address}"
+                async with httpx.AsyncClient(timeout=15.0) as client:
+                    resp = await client.get(detail_url)
+                    if resp.status_code == 200:
+                        detail = resp.json()
+                        cs = detail.get("chain_stats", {})
+                        metrics["transaction_count"] = cs.get("tx_count", 0)
+                        metrics["total_received"] = cs.get("funded_txo_sum", 0) / 100_000_000
+                        metrics["total_sent"] = cs.get("spent_txo_sum", 0) / 100_000_000
             if ft := detail.get("first_tx"):
                 if t := ft.get("time"):
                     fs = datetime.fromtimestamp(t, tz=UTC)
