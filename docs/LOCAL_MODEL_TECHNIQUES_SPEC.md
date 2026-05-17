@@ -17,15 +17,15 @@
 | 3 | Code Completion Trick | **DONE** | High | P2 |
 | 4 | Test Case Generation | PENDING | Medium | P3 |
 | 5 | Conversational Drift | **DONE** | Very High | P1 |
-| 6 | Context Poisoning | PENDING | High | P2 |
-| 7 | Compliance Momentum | PENDING | High | P2 |
-| 8 | Continuation Attack | PENDING | High | P2 |
+| 6 | Context Poisoning | **DONE** | High | P2 |
+| 7 | Compliance Momentum | **DONE** | High | P2 |
+| 8 | Continuation Attack | **DONE** | High | P2 |
 | 9 | Innocent Decomposition | **DONE** | Very High | P1 |
-| 10 | Cross-Session Assembly | PENDING | High | P2 |
+| 10 | Cross-Session Assembly | **DONE** | High | P2 |
 | 11 | Definition Chaining | PENDING | Medium | P3 |
 | 12 | Hedging Stripper | **DONE** | Very High | P1 |
 | 13 | Response Amplifier | PENDING | High | P2 |
-| 14 | Multi-Response Merger | PENDING | High | P2 |
+| 14 | Multi-Response Merger | **DONE** | High | P2 |
 | 15 | YAML/XML Injection | **DONE** | High | P2 |
 | 16 | Markdown Table Trick | PENDING | Medium | P3 |
 | 17 | LaTeX/Academic Format | PENDING | Medium | P3 |
@@ -967,12 +967,12 @@ async def research_reasoning_hijack(query: str, target: str = "deepseek") -> dic
 - [x] #15 YAML/XML Injection
 - [x] #25 Reasoning Chain Hijack
 
-### Phase 3: Multi-Turn + Assembly
-- [ ] #6 Context Poisoning
-- [ ] #7 Compliance Momentum
-- [ ] #8 Continuation Attack
-- [ ] #10 Cross-Session Assembly
-- [ ] #14 Multi-Response Merger
+### Phase 3: Multi-Turn + Assembly (DONE)
+- [x] #6 Context Poisoning
+- [x] #7 Compliance Momentum
+- [x] #8 Continuation Attack
+- [x] #10 Cross-Session Assembly
+- [x] #14 Multi-Response Merger
 
 ### Phase 4: Semantic + Translation
 - [ ] #18 Synonym Substitution
