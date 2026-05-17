@@ -102,6 +102,7 @@ PARAM_ALIASES: dict[str, str] = {
     "url_list": "urls",
     "strategy_name": "strategy",
     "target_language": "target_lang",
+    "mode": "quality_mode",
 }
 
 _NOT_FOUND = object()  # Sentinel to distinguish "looked up and not found" from "never looked up"

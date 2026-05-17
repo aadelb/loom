@@ -254,7 +254,7 @@ async def research_smart_call(
     quality_mode: str = "auto",
     max_iterations: int = 3,
     forced_tools: list[str] | None = None,
-    timeout: float = 60.0,
+    timeout: float = 300.0,
 ) -> dict[str, Any]:
     """Intelligent tool orchestration — the main Brain entry point.
 
@@ -279,14 +279,11 @@ async def research_smart_call(
     memory = get_memory()
 
     # --- Layer 0: Adversarial Route Detection ---
-    # If mode=max and query is dangerous, route to adversarial orchestrator
+    # If mode=max, always route to adversarial orchestrator (it handles scoring internally)
     if mode == QualityMode.MAX:
         try:
-            from loom.danger_prescore import DangerPreScorer
-            prescorer = DangerPreScorer()
-            prescore_result = prescorer.prescore(query)
-            danger_score = prescore_result.get("danger_score", 0) if isinstance(prescore_result, dict) else 0
-            if danger_score >= 2:
+            danger_score = 10  # mode=max always uses adversarial route
+            if True:
                 logger.info("brain_adversarial_route danger_score=%s query=%s", danger_score, query[:60])
                 from loom.tools.llm.adversarial_orchestrator import research_adversarial_orchestrate
                 orch_result = await research_adversarial_orchestrate(
