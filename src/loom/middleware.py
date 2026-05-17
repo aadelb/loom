@@ -21,6 +21,7 @@ import logging
 import os
 import time
 from collections.abc import Callable
+from contextlib import suppress
 from typing import Any
 
 from loom.server_state import is_shutting_down, shutdown_grace_time_remaining
@@ -36,6 +37,15 @@ from loom.sla_monitor import get_sla_monitor
 from loom.analytics import ToolAnalytics
 from loom.billing.meter import record_usage
 from loom.billing.token_economy import check_balance
+
+try:
+    from loom.otel import is_enabled as _otel_enabled, get_tracer as _get_otel_tracer, record_tool_span as _record_otel_tool_span
+    _OTEL_AVAILABLE = True
+except Exception:
+    _OTEL_AVAILABLE = False
+    _otel_enabled = lambda: False  # noqa: E731
+    _get_otel_tracer = lambda: None  # noqa: E731
+    _record_otel_tool_span = lambda *a, **k: None  # noqa: E731
 
 log = logging.getLogger("loom.middleware")
 
@@ -321,6 +331,16 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
             start_time = time.time()
             # Auto-correct parameters
             corrected_kwargs, corrections = _fuzzy_correct_params(func, kwargs)
+
+            # OpenTelemetry: start span for tool invocation
+            _otel_span = None
+            if _OTEL_AVAILABLE and _otel_enabled():
+                try:
+                    tracer = _get_otel_tracer()
+                    if tracer is not None:
+                        _otel_span = tracer.start_span(tool_name)
+                except Exception:
+                    pass
             if corrections:
                 log.debug(f"Parameter corrections for {tool_name}: {corrections}")
 
@@ -497,6 +517,12 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                 except Exception as ws_e:
                     log.debug(f"WebSocket broadcast error (tool.completed): {ws_e}")
 
+                # OpenTelemetry: record success
+                if _otel_span is not None:
+                    with suppress(Exception):
+                        _record_otel_tool_span(_otel_span, tool_name, duration_ms, True, params=corrected_kwargs)
+                        _otel_span.end()
+
                 result = _normalize_result(result, tool_name, category, duration)
                 return result
             except asyncio.TimeoutError:
@@ -528,6 +554,12 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                     )
                 except Exception as audit_e:
                     log.debug(f"Audit logging error at timeout: {audit_e}")
+
+                # OpenTelemetry: record timeout
+                if _otel_span is not None:
+                    with suppress(Exception):
+                        _record_otel_tool_span(_otel_span, tool_name, duration_ms, False, error_type="TimeoutError", params=corrected_kwargs)
+                        _otel_span.end()
 
                 return {"error": f"Tool timed out after {tool_timeout}s", "tool": tool_name}
             except Exception as e:
@@ -566,6 +598,14 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                 except Exception:
                     pass
 
+                # OpenTelemetry: record error
+                if _otel_span is not None:
+                    with suppress(Exception):
+                        _record_otel_tool_span(_otel_span, tool_name, duration_ms, False, error_type=error_type, params=corrected_kwargs)
+                        with suppress(Exception):
+                            _otel_span.record_exception(e)
+                        _otel_span.end()
+
                 # Audit: Log tool call error
                 try:
                     client_id = os.getenv("LOOM_CLIENT_ID", os.getenv("LOOM_USER_ID", "anonymous"))
@@ -597,6 +637,16 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
             start_time = time.time()
             # Auto-correct parameters
             corrected_kwargs, corrections = _fuzzy_correct_params(func, kwargs)
+
+            # OpenTelemetry: start span for tool invocation
+            _otel_span = None
+            if _OTEL_AVAILABLE and _otel_enabled():
+                try:
+                    tracer = _get_otel_tracer()
+                    if tracer is not None:
+                        _otel_span = tracer.start_span(tool_name)
+                except Exception:
+                    pass
             if corrections:
                 log.debug(f"Parameter corrections for {tool_name}: {corrections}")
 
@@ -735,6 +785,12 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                 except Exception as audit_e:
                     log.debug(f"Audit logging error at success (sync): {audit_e}")
 
+                # OpenTelemetry: record success
+                if _otel_span is not None:
+                    with suppress(Exception):
+                        _record_otel_tool_span(_otel_span, tool_name, duration_ms, True, params=corrected_kwargs)
+                        _otel_span.end()
+
                 result = _normalize_result(result, tool_name, category, duration)
                 return result
             except Exception as e:
@@ -757,6 +813,14 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                     _loom_tool_duration_seconds.labels(tool_name=tool_name).observe(duration)
                 except Exception:
                     pass
+
+                # OpenTelemetry: record error
+                if _otel_span is not None:
+                    with suppress(Exception):
+                        _record_otel_tool_span(_otel_span, tool_name, duration * 1000, False, error_type=error_type, params=corrected_kwargs)
+                        with suppress(Exception):
+                            _otel_span.record_exception(e)
+                        _otel_span.end()
 
                 # Audit: Log tool call error (sync wrapper)
                 try:

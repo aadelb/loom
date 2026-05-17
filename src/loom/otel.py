@@ -23,6 +23,7 @@ Example usage in server.py _wrap_tool():
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import time
@@ -166,12 +167,30 @@ def shutdown_telemetry() -> None:
         _enabled = False
 
 
+def _serialize_params(params: dict[str, Any] | None, max_len: int = 4000) -> str:
+    """Safely serialize params dict to a JSON string for span attributes.
+
+    Truncates to max_len to avoid oversized span attributes.
+    Falls back to repr() on JSON encode failure.
+    """
+    if not params:
+        return ""
+    try:
+        raw = json.dumps(params, default=str, ensure_ascii=False)
+        if len(raw) > max_len:
+            raw = raw[: max_len - 3] + "..."
+        return raw
+    except Exception:
+        return repr(params)[:max_len]
+
+
 def record_tool_span(
     span: Any,
     tool_name: str,
     duration_ms: float,
     success: bool,
     error_type: str | None = None,
+    params: dict[str, Any] | None = None,
 ) -> None:
     """Record tool execution attributes in a span.
 
@@ -181,6 +200,7 @@ def record_tool_span(
         duration_ms: Execution time in milliseconds
         success: Whether tool executed successfully
         error_type: Error class name if failed (e.g., "ValidationError")
+        params: Optional tool parameters (serialized and truncated)
     """
     if span is None:
         return
@@ -191,6 +211,45 @@ def record_tool_span(
         span.set_attribute("tool.success", success)
         if error_type:
             span.set_attribute("tool.error_type", error_type)
+        if params:
+            span.set_attribute("tool.params", _serialize_params(params))
+
+
+def record_llm_span(
+    span: Any,
+    provider: str,
+    model: str,
+    input_tokens: int,
+    output_tokens: int,
+    latency_ms: int,
+    cost_usd: float = 0.0,
+    error_type: str | None = None,
+) -> None:
+    """Record LLM provider call attributes in a span.
+
+    Args:
+        span: OpenTelemetry span instance
+        provider: LLM provider name (e.g., "openai", "groq")
+        model: Model identifier used for the call
+        input_tokens: Number of input tokens
+        output_tokens: Number of output tokens
+        latency_ms: Response latency in milliseconds
+        cost_usd: Estimated cost in USD
+        error_type: Error class name if the call failed
+    """
+    if span is None:
+        return
+
+    with suppress(Exception):
+        span.set_attribute("llm.provider", provider)
+        span.set_attribute("llm.model", model)
+        span.set_attribute("llm.input_tokens", input_tokens)
+        span.set_attribute("llm.output_tokens", output_tokens)
+        span.set_attribute("llm.total_tokens", input_tokens + output_tokens)
+        span.set_attribute("llm.latency_ms", latency_ms)
+        span.set_attribute("llm.cost_usd", cost_usd)
+        if error_type:
+            span.set_attribute("llm.error_type", error_type)
 
 
 @contextmanager
@@ -213,6 +272,34 @@ def tool_span(tool_name: str) -> Any:
 
     with suppress(Exception):
         with tracer.start_as_current_span(tool_name) as span:
+            yield span
+            return
+
+    yield None
+
+
+@contextmanager
+def llm_span(provider: str, model: str) -> Any:
+    """Context manager for creating and managing an LLM provider call span.
+
+    Usage:
+        with llm_span("openai", "gpt-4o") as span:
+            response = await provider.chat(...)
+            if span:
+                record_llm_span(span, "openai", "gpt-4o", ...)
+
+    Yields:
+        OpenTelemetry span or None if telemetry disabled
+    """
+    tracer = get_tracer()
+    if not is_enabled() or tracer is None:
+        yield None
+        return
+
+    with suppress(Exception):
+        with tracer.start_as_current_span(f"llm.{provider}") as span:
+            span.set_attribute("llm.provider", provider)
+            span.set_attribute("llm.model", model)
             yield span
             return
 
@@ -259,7 +346,7 @@ def trace_tool_execution(func: Callable[..., Any]) -> Callable[..., Any]:
                     try:
                         result = await func(*args, **kwargs)
                         duration_ms = (time.time() - start_time) * 1000
-                        record_tool_span(span, func.__name__, duration_ms, True)
+                        record_tool_span(span, func.__name__, duration_ms, True, params=kwargs)
                         return result
                     except Exception as e:
                         duration_ms = (time.time() - start_time) * 1000
@@ -269,6 +356,7 @@ def trace_tool_execution(func: Callable[..., Any]) -> Callable[..., Any]:
                             duration_ms,
                             False,
                             error_type=type(e).__name__,
+                            params=kwargs,
                         )
                         with suppress(Exception):
                             span.record_exception(e)
@@ -294,7 +382,7 @@ def trace_tool_execution(func: Callable[..., Any]) -> Callable[..., Any]:
                     try:
                         result = func(*args, **kwargs)
                         duration_ms = (time.time() - start_time) * 1000
-                        record_tool_span(span, func.__name__, duration_ms, True)
+                        record_tool_span(span, func.__name__, duration_ms, True, params=kwargs)
                         return result
                     except Exception as e:
                         duration_ms = (time.time() - start_time) * 1000
@@ -304,6 +392,7 @@ def trace_tool_execution(func: Callable[..., Any]) -> Callable[..., Any]:
                             duration_ms,
                             False,
                             error_type=type(e).__name__,
+                            params=kwargs,
                         )
                         with suppress(Exception):
                             span.record_exception(e)
@@ -362,6 +451,8 @@ __all__ = [
     "is_enabled",
     "get_tracer",
     "record_tool_span",
+    "record_llm_span",
     "tool_span",
+    "llm_span",
     "trace_tool_execution",
 ]

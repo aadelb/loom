@@ -23,7 +23,9 @@ from loom.otel import (
     is_enabled,
     get_tracer,
     record_tool_span,
+    record_llm_span,
     tool_span,
+    llm_span,
     trace_tool_execution,
     _NoOpTracer,
     _NoOpSpan,
@@ -166,6 +168,84 @@ class TestRecordToolSpan:
         """record_tool_span should handle None span gracefully."""
         # Should not raise
         record_tool_span(None, "test_tool", 100.0, True)
+
+    def test_record_tool_span_with_params(self):
+        """record_tool_span should serialize params when provided."""
+        span = MagicMock()
+        params = {"query": "hello", "limit": 10}
+        record_tool_span(span, "test_tool", 120.0, True, params=params)
+
+        span.set_attribute.assert_any_call("tool.name", "test_tool")
+        span.set_attribute.assert_any_call("tool.duration_ms", 120.0)
+        span.set_attribute.assert_any_call("tool.success", True)
+        # Params should be serialized to JSON
+        call_args = {call.args[0]: call.args[1] for call in span.set_attribute.call_args_list}
+        assert "tool.params" in call_args
+        assert '"query": "hello"' in call_args["tool.params"]
+
+
+class TestRecordLLMSpan:
+    """Test recording LLM provider call attributes to spans."""
+
+    def test_record_llm_span_success(self):
+        """record_llm_span should set all LLM attributes on success."""
+        span = MagicMock()
+        record_llm_span(span, "openai", "gpt-4o", 150, 300, 420, 0.0025)
+
+        span.set_attribute.assert_any_call("llm.provider", "openai")
+        span.set_attribute.assert_any_call("llm.model", "gpt-4o")
+        span.set_attribute.assert_any_call("llm.input_tokens", 150)
+        span.set_attribute.assert_any_call("llm.output_tokens", 300)
+        span.set_attribute.assert_any_call("llm.total_tokens", 450)
+        span.set_attribute.assert_any_call("llm.latency_ms", 420)
+        span.set_attribute.assert_any_call("llm.cost_usd", 0.0025)
+
+    def test_record_llm_span_with_error(self):
+        """record_llm_span should record error_type on failure."""
+        span = MagicMock()
+        record_llm_span(span, "groq", "llama3", 0, 0, 1000, 0.0, error_type="RateLimitError")
+
+        span.set_attribute.assert_any_call("llm.provider", "groq")
+        span.set_attribute.assert_any_call("llm.error_type", "RateLimitError")
+
+    def test_record_llm_span_none_span(self):
+        """record_llm_span should handle None span gracefully."""
+        record_llm_span(None, "openai", "gpt-4o", 100, 200, 300, 0.001)
+
+
+class TestLLMSpanContextManager:
+    """Test llm_span context manager."""
+
+    def test_llm_span_when_disabled(self):
+        """llm_span should yield None when disabled."""
+        import loom.otel as otel_module
+        otel_module._enabled = False
+
+        with llm_span("openai", "gpt-4o") as span:
+            assert span is None
+
+    def test_llm_span_when_enabled(self):
+        """llm_span should yield span when enabled."""
+        import loom.otel as otel_module
+
+        mock_tracer = MagicMock()
+        mock_span = MagicMock()
+        mock_tracer.start_as_current_span.return_value.__enter__ = MagicMock(
+            return_value=mock_span
+        )
+        mock_tracer.start_as_current_span.return_value.__exit__ = MagicMock(
+            return_value=None
+        )
+
+        otel_module._enabled = True
+        otel_module._tracer = mock_tracer
+
+        with llm_span("openai", "gpt-4o") as span:
+            assert span is mock_span
+
+        mock_tracer.start_as_current_span.assert_called_once_with("llm.openai")
+        mock_span.set_attribute.assert_any_call("llm.provider", "openai")
+        mock_span.set_attribute.assert_any_call("llm.model", "gpt-4o")
 
 
 class TestToolSpanContextManager:

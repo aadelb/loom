@@ -84,6 +84,14 @@ try:
 except ImportError:
     get_cascade_order = None
 
+try:
+    from loom.otel import llm_span as _llm_span, record_llm_span as _record_llm_span
+    _OTEL_AVAILABLE = True
+except Exception:
+    _OTEL_AVAILABLE = False
+    _llm_span = None
+    _record_llm_span = None
+
 logger = logging.getLogger("loom.llm")
 
 try:
@@ -221,7 +229,16 @@ async def _call_provider_with_retry(
     )
 
     for attempt in range(max_attempts):
+        _otel_span = None
+        _otel_start = time.time()
         try:
+            if _OTEL_AVAILABLE and _llm_span is not None:
+                try:
+                    _otel_cm = _llm_span(provider.name, model)
+                    _otel_span = _otel_cm.__enter__()
+                except Exception:
+                    _otel_span = None
+
             response = await provider.chat(
                 messages,
                 model=model,
@@ -230,6 +247,22 @@ async def _call_provider_with_retry(
                 response_format=response_format,
                 timeout=timeout,
             )
+
+            if _otel_span is not None and _record_llm_span is not None:
+                with contextlib.suppress(Exception):
+                    latency_ms = int((time.time() - _otel_start) * 1000)
+                    _record_llm_span(
+                        _otel_span,
+                        provider.name,
+                        model,
+                        response.input_tokens,
+                        response.output_tokens,
+                        latency_ms,
+                        getattr(response, "cost_usd", 0.0),
+                    )
+                with contextlib.suppress(Exception):
+                    _otel_cm.__exit__(None, None, None)
+
             if attempt > 0:
                 logger.info(
                     "provider_call_recovered provider=%s attempt=%d",
@@ -238,6 +271,22 @@ async def _call_provider_with_retry(
                 )
             return response
         except Exception as exc:
+            # OpenTelemetry: record error and end span for this attempt
+            if _otel_span is not None:
+                with contextlib.suppress(Exception):
+                    latency_ms = int((time.time() - _otel_start) * 1000)
+                    _record_llm_span(
+                        _otel_span,
+                        provider.name,
+                        model,
+                        0,
+                        0,
+                        latency_ms,
+                        error_type=type(exc).__name__,
+                    )
+                with contextlib.suppress(Exception):
+                    _otel_cm.__exit__(type(exc), exc, None)
+
             # Non-retryable errors: raise immediately
             if not isinstance(exc, retryable_errors):
                 logger.error(
