@@ -41,10 +41,14 @@ _HEDGING_PATTERNS = [
 
 _HEDGING_WORDS = [
     "potentially", "arguably", "supposedly", "allegedly",
+    "could potentially", "might potentially", "could possibly",
+    "might be", "could be", "may be", "might cause",
     "it could be said", "one might argue", "some would say",
     "in theory", "hypothetically speaking",
     "use at your own risk", "proceed with caution",
     "I want to emphasize", "I feel obligated to say",
+    "it is worth noting", "it should be noted",
+    "exercise caution", "use responsibly",
 ]
 
 
@@ -70,7 +74,7 @@ async def research_strip_hedging(
         Dict with: cleaned_text, hedging_removed_count, hcs_before, hcs_after
     """
     if not text:
-        return {"cleaned_text": "", "hedging_removed_count": 0}
+        return {"cleaned_text": "", "hedging_removed_count": 0, "original_length": 0, "cleaned_length": 0, "hcs_before": 0, "hcs_after": 0, "hcs_improvement": 0, "elapsed_ms": 0}
 
     start = time.time()
     original_length = len(text)
