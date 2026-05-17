@@ -279,6 +279,12 @@ def select_tools(
         if composite > 0.08:
             scored.append((tool_name, composite, "composite"))
 
+    # Boost general-purpose tools that work for any query
+    _GENERAL_TOOLS = {"research_search", "research_llm_chat", "research_deep", "research_fetch"}
+    scored = [
+        (name, score + (0.15 if name in _GENERAL_TOOLS else 0.0), source)
+        for name, score, source in scored
+    ]
     scored.sort(key=lambda x: x[1], reverse=True)
 
     limit = max_tools
