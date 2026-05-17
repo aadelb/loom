@@ -181,3 +181,21 @@ def register_core_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip analytics_dashboard: %s", e)
         record_failure("core", "analytics_dashboard", str(e))
+
+    # YouTube transcript tool
+    try:
+        from loom.providers.youtube_transcripts import fetch_youtube_transcript
+        mcp.tool()(wrap_tool(fetch_youtube_transcript))
+        record_success("core", "fetch_youtube_transcript")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip youtube_transcript: %s", e)
+        record_failure("core", "youtube_transcript", str(e))
+
+    # Exa find similar tool
+    try:
+        from loom.providers.exa import find_similar_exa
+        mcp.tool()(wrap_tool(find_similar_exa))
+        record_success("core", "find_similar_exa")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip find_similar_exa: %s", e)
+        record_failure("core", "find_similar_exa", str(e))
