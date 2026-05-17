@@ -8,6 +8,7 @@ from typing import Any
 import httpx
 
 from loom.error_responses import handle_tool_errors
+from loom.http_helpers import fetch_json
 
 try:
     from loom.score_utils import clamp

@@ -234,6 +234,7 @@ async def research_social_profile(url: str) -> dict[str, Any]:
             }
 
         # Extract Open Graph metadata
+        html = resp.text
         metadata = _extract_og_metadata(html)
 
         name = metadata.get("og:title")

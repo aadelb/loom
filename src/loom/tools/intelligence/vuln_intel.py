@@ -179,7 +179,7 @@ async def _vulners_search(
         data = await fetch_json(client, url, timeout=20.0)
 
         if data and data.get("data", {}).get("documents"):
-            for doc in data["data"]["documents"].values()[:limit]:
+            for doc in list(data["data"]["documents"].values())[:limit]:
                 vuln_id = doc.get("id", "")
                 if not vuln_id:
                     continue
