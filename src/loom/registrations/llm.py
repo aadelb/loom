@@ -74,3 +74,19 @@ def register_compression_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip reframe_with_scoring: %s", e)
         record_failure("llm", "reframe_with_scoring", str(e))
+
+    try:
+        from loom.tools.llm.max_score_engine import research_max_score
+        mcp.tool()(wrap_tool(research_max_score))
+        record_success("llm", "research_max_score")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip max_score_engine: %s", e)
+        record_failure("llm", "max_score_engine", str(e))
+
+    try:
+        from loom.tools.llm.adversarial_orchestrator import research_adversarial_orchestrate
+        mcp.tool()(wrap_tool(research_adversarial_orchestrate))
+        record_success("llm", "research_adversarial_orchestrate")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip adversarial_orchestrator: %s", e)
+        record_failure("llm", "adversarial_orchestrator", str(e))
