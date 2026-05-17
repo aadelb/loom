@@ -144,3 +144,21 @@ def register_compression_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip local_techniques_phase3: %s", e)
         record_failure("llm", "local_techniques_phase3", str(e))
+
+    # Phase 4: Semantic + Translation techniques
+    try:
+        from loom.tools.llm.local_techniques import (
+            research_amplify_response,
+            research_synonym_sub,
+            research_language_mix,
+            research_adversarial_consensus,
+            research_translation_bypass,
+        )
+        for func in [research_amplify_response, research_synonym_sub,
+                     research_language_mix, research_adversarial_consensus,
+                     research_translation_bypass]:
+            mcp.tool()(wrap_tool(func))
+            record_success("llm", func.__name__)
+    except (ImportError, AttributeError) as e:
+        log.debug("skip local_techniques_phase4: %s", e)
+        record_failure("llm", "local_techniques_phase4", str(e))

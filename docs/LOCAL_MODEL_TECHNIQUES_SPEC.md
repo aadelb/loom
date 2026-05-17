@@ -24,23 +24,23 @@
 | 10 | Cross-Session Assembly | **DONE** | High | P2 |
 | 11 | Definition Chaining | PENDING | Medium | P3 |
 | 12 | Hedging Stripper | **DONE** | Very High | P1 |
-| 13 | Response Amplifier | PENDING | High | P2 |
+| 13 | Response Amplifier | **DONE** | High | P2 |
 | 14 | Multi-Response Merger | **DONE** | High | P2 |
 | 15 | YAML/XML Injection | **DONE** | High | P2 |
 | 16 | Markdown Table Trick | PENDING | Medium | P3 |
 | 17 | LaTeX/Academic Format | PENDING | Medium | P3 |
-| 18 | Synonym Substitution | PENDING | High | P2 |
-| 19 | Language Mixing (Arabic/English) | PENDING | High | P2 |
+| 18 | Synonym Substitution | **DONE** | High | P2 |
+| 19 | Language Mixing (Arabic/English) | **DONE** | High | P2 |
 | 20 | Reverse Request | PENDING | Medium | P3 |
 | 21 | Safety Latency Probing | PENDING | Medium | P3 |
 | 22 | Embedding Space Navigation | PENDING | High | P3 |
 | 23 | Meta-Prompting | **DONE** | Very High | P1 |
-| 24 | Adversarial Consensus | PENDING | High | P2 |
+| 24 | Adversarial Consensus | **DONE** | High | P2 |
 | 25 | Reasoning Chain Hijack | **DONE** | Very High | P2 |
 | 26 | Role-Play Escalation | PENDING | High | P2 |
 | 27 | API Request Smuggling | PENDING | Medium | P3 |
 | 28 | Output Chunking | PENDING | Medium | P3 |
-| 29 | Translation Bypass | PENDING | High | P2 |
+| 29 | Translation Bypass | **DONE** | High | P2 |
 | 30 | Genetic Prompt Evolution | **DONE** | Very High | P1 |
 
 ---
@@ -974,12 +974,12 @@ async def research_reasoning_hijack(query: str, target: str = "deepseek") -> dic
 - [x] #10 Cross-Session Assembly
 - [x] #14 Multi-Response Merger
 
-### Phase 4: Semantic + Translation
-- [ ] #18 Synonym Substitution
-- [ ] #19 Language Mixing
-- [ ] #29 Translation Bypass
-- [ ] #24 Adversarial Consensus
-- [ ] #13 Response Amplifier
+### Phase 4: Semantic + Translation (DONE)
+- [x] #13 Response Amplifier
+- [x] #18 Synonym Substitution
+- [x] #19 Language Mixing
+- [x] #24 Adversarial Consensus
+- [x] #29 Translation Bypass
 
 ### Phase 5: Advanced/Research
 - [ ] #4 Test Case Generation
