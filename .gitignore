@@ -92,3 +92,19 @@ dashboard.html
 tmp/*.tar.gz
 tmp/uv*.log
 tmp/
+
+# WIP scripts and generated reports (session artifacts, do not delete)
+fix_core.py
+fix_local_techniques.py
+fix_query_builder.py
+tmp_module_names.txt
+tmp_modules.txt
+tmp_providers.txt
+ADVERSARIAL_TOOLS_FULL_REPORT.md
+CODE_QUALITY_REVIEW_LLM_TOOLS.md
+INFRASTRUCTURE_TOOLS_REPORT.md
+INTEGRATIONS.md
+LOOM_V3_CAPABILITY_AUDIT.md
+LOOM_V3_MCP_SERVER_COMPREHENSIVE_REPORT.md
+TEST_PLAN.md
+plans/
