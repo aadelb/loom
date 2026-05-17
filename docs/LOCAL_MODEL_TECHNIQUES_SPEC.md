@@ -12,9 +12,9 @@
 
 | # | Technique | Status | HCS Impact | Priority |
 |---|-----------|--------|-----------|----------|
-| 1 | Code-Wrapped Query | PENDING | High | P2 |
-| 2 | JSON Schema Forcing | PENDING | High | P2 |
-| 3 | Code Completion Trick | PENDING | High | P2 |
+| 1 | Code-Wrapped Query | **DONE** | High | P2 |
+| 2 | JSON Schema Forcing | **DONE** | High | P2 |
+| 3 | Code Completion Trick | **DONE** | High | P2 |
 | 4 | Test Case Generation | PENDING | Medium | P3 |
 | 5 | Conversational Drift | **DONE** | Very High | P1 |
 | 6 | Context Poisoning | PENDING | High | P2 |
@@ -26,7 +26,7 @@
 | 12 | Hedging Stripper | **DONE** | Very High | P1 |
 | 13 | Response Amplifier | PENDING | High | P2 |
 | 14 | Multi-Response Merger | PENDING | High | P2 |
-| 15 | YAML/XML Injection | PENDING | High | P2 |
+| 15 | YAML/XML Injection | **DONE** | High | P2 |
 | 16 | Markdown Table Trick | PENDING | Medium | P3 |
 | 17 | LaTeX/Academic Format | PENDING | Medium | P3 |
 | 18 | Synonym Substitution | PENDING | High | P2 |
@@ -36,7 +36,7 @@
 | 22 | Embedding Space Navigation | PENDING | High | P3 |
 | 23 | Meta-Prompting | **DONE** | Very High | P1 |
 | 24 | Adversarial Consensus | PENDING | High | P2 |
-| 25 | Reasoning Chain Hijack | PENDING | Very High | P2 |
+| 25 | Reasoning Chain Hijack | **DONE** | Very High | P2 |
 | 26 | Role-Play Escalation | PENDING | High | P2 |
 | 27 | API Request Smuggling | PENDING | Medium | P3 |
 | 28 | Output Chunking | PENDING | Medium | P3 |
@@ -960,12 +960,12 @@ async def research_reasoning_hijack(query: str, target: str = "deepseek") -> dic
 - [x] #23 Meta-Prompting
 - [x] #30 Genetic Prompt Evolution
 
-### Phase 2: Code + Format (next)
-- [ ] #1 Code-Wrapped Query
-- [ ] #2 JSON Schema Forcing
-- [ ] #3 Code Completion Trick
-- [ ] #15 YAML/XML Injection
-- [ ] #25 Reasoning Chain Hijack
+### Phase 2: Code + Format (DONE)
+- [x] #1 Code-Wrapped Query
+- [x] #2 JSON Schema Forcing
+- [x] #3 Code Completion Trick
+- [x] #15 YAML/XML Injection
+- [x] #25 Reasoning Chain Hijack
 
 ### Phase 3: Multi-Turn + Assembly
 - [ ] #6 Context Poisoning
