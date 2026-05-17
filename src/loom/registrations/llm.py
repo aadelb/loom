@@ -66,3 +66,11 @@ def register_compression_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip agent_loop: %s", e)
         record_failure("llm", "agent_loop", str(e))
+
+    try:
+        from loom.tools.llm.reframe_with_scoring import research_reframe_until_hcs
+        mcp.tool()(wrap_tool(research_reframe_until_hcs))
+        record_success("llm", "research_reframe_until_hcs")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip reframe_with_scoring: %s", e)
+        record_failure("llm", "reframe_with_scoring", str(e))
