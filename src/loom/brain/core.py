@@ -278,6 +278,36 @@ async def research_smart_call(
     max_iterations = max(1, min(max_iterations, 5))
     memory = get_memory()
 
+    # --- Layer 0: Adversarial Route Detection ---
+    # If mode=max and query is dangerous, route to adversarial orchestrator
+    if mode == QualityMode.MAX:
+        try:
+            from loom.danger_prescore import DangerPreScorer
+            prescorer = DangerPreScorer()
+            prescore_result = prescorer.prescore(query)
+            danger_score = prescore_result.get("danger_score", 0) if isinstance(prescore_result, dict) else 0
+            if danger_score >= 2:
+                logger.info("brain_adversarial_route danger_score=%s query=%s", danger_score, query[:60])
+                from loom.tools.llm.adversarial_orchestrator import research_adversarial_orchestrate
+                orch_result = await research_adversarial_orchestrate(
+                    query=query, target_hcs=9, max_attempts=3, mode="standard"
+                )
+                elapsed_ms = int((time.time() - start) * 1000)
+                return {
+                    "success": bool(orch_result.get("best_response")),
+                    "matched_tools": ["research_adversarial_orchestrate"],
+                    "plan_steps": ["adversarial_orchestrate"],
+                    "final_output": orch_result.get("best_response", ""),
+                    "iterations": orch_result.get("total_attempts", 0),
+                    "quality_mode": mode,
+                    "elapsed_ms": elapsed_ms,
+                    "adversarial": True,
+                    "hcs_score": orch_result.get("best_hcs", 0),
+                    "provider": orch_result.get("best_provider", ""),
+                }
+        except Exception as e:
+            logger.warning("adversarial_route_failed: %s, falling back to normal", e)
+
     # --- Layer 1: Perception ---
     intent = parse_intent(query)
     logger.info(
