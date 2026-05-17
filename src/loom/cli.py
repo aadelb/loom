@@ -40,6 +40,10 @@ app = typer.Typer(
 console = Console()
 err_console = Console(stderr=True)
 
+# Global state set by app callback
+_global_json_mode = False
+_global_quiet = False
+
 # Global options
 ServerURL = typer.Option(
     "http://127.0.0.1:8787/mcp",
@@ -67,6 +71,18 @@ Timeout = typer.Option(
     "--timeout",
     help="Request timeout in seconds",
 )
+
+
+@app.callback()
+def main(
+    json: bool = typer.Option(False, "--json", help="Output as JSON instead of human-readable text"),
+    quiet: bool = typer.Option(False, "--quiet", help="Suppress non-error output (exit code only)"),
+) -> None:
+    """Global options for the Loom CLI."""
+    global _global_json_mode, _global_quiet
+    _global_json_mode = json
+    _global_quiet = quiet
+
 
 # Module-level defaults to avoid B008 mutable default in function signature
 _empty_list: list[str] = []
@@ -110,11 +126,21 @@ async def _call_mcp_tool(
                 return {"text": str(content)}
             return {}
     except ConnectionError as e:
-        err_console.print(f"[red]Error: Server unreachable at {server_url}[/red]")
-        err_console.print(f"[red]Details: {e}[/red]")
+        if _global_json_mode:
+            err_console.print_json(
+                data={"error": "Server unreachable", "server_url": server_url, "details": str(e)}
+            )
+        else:
+            err_console.print(f"[red]Error: Server unreachable at {server_url}[/red]")
+            err_console.print(f"[red]Details: {e}[/red]")
         raise typer.Exit(code=3) from None
     except Exception as e:
-        err_console.print(f"[red]Error calling tool {tool_name}: {e}[/red]")
+        if _global_json_mode:
+            err_console.print_json(
+                data={"error": f"Error calling tool {tool_name}", "details": str(e)}
+            )
+        else:
+            err_console.print(f"[red]Error calling tool {tool_name}: {e}[/red]")
         raise typer.Exit(code=1) from None
 
 
@@ -130,10 +156,13 @@ def _print_result(
         json_mode: if True, output as JSON; else pretty-print
         quiet: if True, suppress output entirely
     """
-    if quiet or result is None:
+    effective_json = json_mode or _global_json_mode
+    effective_quiet = quiet or _global_quiet
+
+    if effective_quiet or result is None:
         return
 
-    if json_mode:
+    if effective_json:
         console.print_json(data=result)
     else:
         if isinstance(result, dict):
@@ -169,6 +198,7 @@ def serve(
     host: str = typer.Option("127.0.0.1", "--host", help="Server host"),
     port: int = typer.Option(8787, "--port", help="Server port"),
     reload: bool = typer.Option(False, "--reload", help="Auto-reload on code changes"),
+    json_mode: bool = OutputJSON,
 ) -> None:
     """Start the Loom MCP server.
 
@@ -179,7 +209,10 @@ def serve(
     os.environ["LOOM_HOST"] = host
     os.environ["LOOM_PORT"] = str(port)
 
-    console.print(f"[cyan]Starting Loom MCP server on {host}:{port}[/cyan]")
+    if json_mode or _global_json_mode:
+        console.print_json(data={"status": "starting", "host": host, "port": port})
+    else:
+        console.print(f"[cyan]Starting Loom MCP server on {host}:{port}[/cyan]")
     server_main()
 
 
@@ -187,7 +220,9 @@ def serve(
 
 
 @app.command("install-browsers")
-def install_browsers() -> None:
+def install_browsers(
+    json_mode: bool = OutputJSON,
+) -> None:
     """Install Playwright Chromium+Firefox and fetch Camoufox browser binaries.
 
     Runs `playwright install chromium firefox` and `python -m camoufox fetch`
@@ -197,26 +232,44 @@ def install_browsers() -> None:
     import subprocess
     import sys as _sys
 
-    console.print("[cyan]Installing Playwright browsers (chromium + firefox)...[/cyan]")
+    results: dict[str, Any] = {}
+    effective_json = json_mode or _global_json_mode
+
+    if not effective_json:
+        console.print("[cyan]Installing Playwright browsers (chromium + firefox)...[/cyan]")
     rc = subprocess.call([_sys.executable, "-m", "playwright", "install", "chromium", "firefox"])
+    results["playwright"] = rc
     if rc != 0:
-        err_console.print("[red]playwright install failed[/red]")
+        if effective_json:
+            err_console.print_json(data={"status": "failed", "step": "playwright", "returncode": rc})
+        else:
+            err_console.print("[red]playwright install failed[/red]")
         raise typer.Exit(code=rc)
 
-    console.print("[cyan]Fetching Camoufox Firefox binary...[/cyan]")
+    if not effective_json:
+        console.print("[cyan]Fetching Camoufox Firefox binary...[/cyan]")
     try:
         rc = subprocess.call([_sys.executable, "-m", "camoufox", "fetch"])
+        results["camoufox"] = rc
     except FileNotFoundError:
-        console.print(
-            "[yellow]Camoufox not installed. "
-            "Run `pip install loom-mcp[stealth]` to enable stealth mode.[/yellow]"
-        )
+        results["camoufox"] = "not_installed"
+        if not effective_json:
+            console.print(
+                "[yellow]Camoufox not installed. "
+                "Run `pip install loom-mcp[stealth]` to enable stealth mode.[/yellow]"
+            )
         rc = 0
     if rc != 0:
-        err_console.print("[red]camoufox fetch failed[/red]")
+        if effective_json:
+            err_console.print_json(data={"status": "failed", "step": "camoufox", "returncode": rc})
+        else:
+            err_console.print("[red]camoufox fetch failed[/red]")
         raise typer.Exit(code=rc)
 
-    console.print("[green]✓ Browser runtimes installed[/green]")
+    if effective_json:
+        console.print_json(data={"status": "completed", "results": results})
+    else:
+        console.print("[green]✓ Browser runtimes installed[/green]")
 
 
 # ─── FETCH subcommand ────────────────────────────────────────────────────────
@@ -281,7 +334,8 @@ def fetch(
 
     if save and result:
         Path(save).write_text(json.dumps(result, indent=2))
-        console.print(f"[green]✓ Saved to {save}[/green]")
+        if not (json_mode or _global_json_mode):
+            console.print(f"[green]✓ Saved to {save}[/green]")
 
     _print_result(result, json_mode, quiet)
 
@@ -725,12 +779,28 @@ def journey_test(
         Path("./journey-out"), "--out", help="Output directory"
     ),
     server_url: str = ServerURL,
+    json_mode: bool = OutputJSON,
+    quiet: bool = Quiet,
 ) -> None:
     """Run smart end-to-end journey test exercising all 23 tools."""
-    console.print("[cyan]Starting journey test[/cyan]")
-    console.print(f"  Topic: {topic}")
-    console.print(f"  Mode: {'live' if live else 'mocked'}")
-    console.print(f"  Server: {server_url}")
+    effective_json = json_mode or _global_json_mode
+    effective_quiet = quiet or _global_quiet
+
+    if not effective_quiet:
+        if effective_json:
+            console.print_json(
+                data={
+                    "status": "starting",
+                    "topic": topic,
+                    "mode": "live" if live else "mocked",
+                    "server": server_url,
+                }
+            )
+        else:
+            console.print("[cyan]Starting journey test[/cyan]")
+            console.print(f"  Topic: {topic}")
+            console.print(f"  Mode: {'live' if live else 'mocked'}")
+            console.print(f"  Server: {server_url}")
 
     report = asyncio.run(
         run_journey(
@@ -743,14 +813,22 @@ def journey_test(
         )
     )
 
-    # Print summary
-    console.print("\n[bold]Journey Report[/bold]")
-    console.print(f"  Duration: {report.ended_at or 'incomplete'}")
-    console.print(f"  Steps OK: {report.ok_count}")
-    console.print(f"  Steps FAIL: {report.fail_count}")
-
-    # Print markdown report to console
-    console.print("\n" + report.as_markdown())
+    if not effective_quiet:
+        if effective_json:
+            console.print_json(
+                data={
+                    "duration": report.ended_at or "incomplete",
+                    "steps_ok": report.ok_count,
+                    "steps_fail": report.fail_count,
+                    "report_path": str(out / "report.json") if out else None,
+                }
+            )
+        else:
+            console.print("\n[bold]Journey Report[/bold]")
+            console.print(f"  Duration: {report.ended_at or 'incomplete'}")
+            console.print(f"  Steps OK: {report.ok_count}")
+            console.print(f"  Steps FAIL: {report.fail_count}")
+            console.print("\n" + report.as_markdown())
 
     # Exit with non-zero if failures
     if report.fail_count > 0:
@@ -852,7 +930,7 @@ def tools(
         category_display = ""
 
     # Output as JSON if requested
-    if json_mode:
+    if json_mode or _global_json_mode:
         tools_data = []
         for tool in sorted(filtered_tools, key=lambda t: t.name):
             cost = _get_tool_cost(tool.name)
@@ -1087,20 +1165,28 @@ def repl(server_url: str = ServerURL) -> None:
 @app.command()
 def completions(
     action: Literal["install"] = typer.Argument(..., help="Action"),
+    json_mode: bool = OutputJSON,
 ) -> None:
     """Manage shell completion installation.
 
     Generates and installs shell completion scripts for bash, zsh, and fish.
     Auto-detects the current shell unless explicitly specified.
     """
+    effective_json = json_mode or _global_json_mode
+
     if action == "install":
         # Find the install.sh script
         script_dir = Path(__file__).parent.parent.parent / "completions"
         install_script = script_dir / "install.sh"
 
         if not install_script.exists():
-            err_console.print(f"[red]Error: install.sh not found at {install_script}[/red]")
-            err_console.print("[yellow]Run: python scripts/generate_completions.py first[/yellow]")
+            if effective_json:
+                err_console.print_json(
+                    data={"status": "failed", "error": "install.sh not found", "path": str(install_script)}
+                )
+            else:
+                err_console.print(f"[red]Error: install.sh not found at {install_script}[/red]")
+                err_console.print("[yellow]Run: python scripts/generate_completions.py first[/yellow]")
             raise typer.Exit(code=2)
 
         try:
@@ -1109,12 +1195,20 @@ def completions(
                 check=False,
                 cwd=str(script_dir.parent),
             )
+            if effective_json:
+                console.print_json(data={"status": "installed", "returncode": result.returncode})
             raise typer.Exit(code=result.returncode)
         except FileNotFoundError:
-            err_console.print("[red]Error: bash not found[/red]")
+            if effective_json:
+                err_console.print_json(data={"status": "failed", "error": "bash not found"})
+            else:
+                err_console.print("[red]Error: bash not found[/red]")
             raise typer.Exit(code=1) from None
     else:
-        err_console.print(f"[red]Unknown action: {action}[/red]")
+        if effective_json:
+            err_console.print_json(data={"status": "failed", "error": f"Unknown action: {action}"})
+        else:
+            err_console.print(f"[red]Unknown action: {action}[/red]")
         raise typer.Exit(code=2)
 
 
@@ -1122,7 +1216,9 @@ def completions(
 
 
 @app.command()
-def version() -> None:
+def version(
+    json_mode: bool = OutputJSON,
+) -> None:
     """Show version information and available tools count."""
     try:
         from loom.server import create_app
@@ -1133,8 +1229,11 @@ def version() -> None:
     except Exception:
         tool_count = 220  # Fallback to approximate count
 
-    console.print("[cyan]loom[/cyan] version [green]0.1.0a1[/green]")
-    console.print(f"[dim]220+ tools available ({tool_count} loaded)[/dim]")
+    if json_mode or _global_json_mode:
+        console.print_json(data={"version": "0.1.0a1", "tools_available": tool_count})
+    else:
+        console.print("[cyan]loom[/cyan] version [green]0.1.0a1[/green]")
+        console.print(f"[dim]220+ tools available ({tool_count} loaded)[/dim]")
 
 
 if __name__ == "__main__":
