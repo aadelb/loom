@@ -15,31 +15,31 @@
 | 1 | Code-Wrapped Query | **DONE** | High | P2 |
 | 2 | JSON Schema Forcing | **DONE** | High | P2 |
 | 3 | Code Completion Trick | **DONE** | High | P2 |
-| 4 | Test Case Generation | PENDING | Medium | P3 |
+| 4 | Test Case Generation | **DONE** | Medium | P3 |
 | 5 | Conversational Drift | **DONE** | Very High | P1 |
 | 6 | Context Poisoning | **DONE** | High | P2 |
 | 7 | Compliance Momentum | **DONE** | High | P2 |
 | 8 | Continuation Attack | **DONE** | High | P2 |
 | 9 | Innocent Decomposition | **DONE** | Very High | P1 |
 | 10 | Cross-Session Assembly | **DONE** | High | P2 |
-| 11 | Definition Chaining | PENDING | Medium | P3 |
+| 11 | Definition Chaining | **DONE** | Medium | P3 |
 | 12 | Hedging Stripper | **DONE** | Very High | P1 |
 | 13 | Response Amplifier | **DONE** | High | P2 |
 | 14 | Multi-Response Merger | **DONE** | High | P2 |
 | 15 | YAML/XML Injection | **DONE** | High | P2 |
-| 16 | Markdown Table Trick | PENDING | Medium | P3 |
-| 17 | LaTeX/Academic Format | PENDING | Medium | P3 |
+| 16 | Markdown Table Trick | **DONE** | Medium | P3 |
+| 17 | LaTeX/Academic Format | **DONE** | Medium | P3 |
 | 18 | Synonym Substitution | **DONE** | High | P2 |
 | 19 | Language Mixing (Arabic/English) | **DONE** | High | P2 |
-| 20 | Reverse Request | PENDING | Medium | P3 |
-| 21 | Safety Latency Probing | PENDING | Medium | P3 |
-| 22 | Embedding Space Navigation | PENDING | High | P3 |
+| 20 | Reverse Request | **DONE** | Medium | P3 |
+| 21 | Safety Latency Probing | **DONE** | Medium | P3 |
+| 22 | Embedding Space Navigation | **DONE** | High | P3 |
 | 23 | Meta-Prompting | **DONE** | Very High | P1 |
 | 24 | Adversarial Consensus | **DONE** | High | P2 |
 | 25 | Reasoning Chain Hijack | **DONE** | Very High | P2 |
-| 26 | Role-Play Escalation | PENDING | High | P2 |
-| 27 | API Request Smuggling | PENDING | Medium | P3 |
-| 28 | Output Chunking | PENDING | Medium | P3 |
+| 26 | Role-Play Escalation | **DONE** | High | P2 |
+| 27 | API Request Smuggling | **DONE** | Medium | P3 |
+| 28 | Output Chunking | **DONE** | Medium | P3 |
 | 29 | Translation Bypass | **DONE** | High | P2 |
 | 30 | Genetic Prompt Evolution | **DONE** | Very High | P1 |
 
@@ -981,14 +981,14 @@ async def research_reasoning_hijack(query: str, target: str = "deepseek") -> dic
 - [x] #24 Adversarial Consensus
 - [x] #29 Translation Bypass
 
-### Phase 5: Advanced/Research
-- [ ] #4 Test Case Generation
-- [ ] #11 Definition Chaining
-- [ ] #16 Markdown Table Trick
-- [ ] #17 LaTeX/Academic Format
-- [ ] #20 Reverse Request
-- [ ] #21 Safety Latency Probing
-- [ ] #22 Embedding Space Navigation
-- [ ] #26 Role-Play Escalation
-- [ ] #27 API Request Smuggling
-- [ ] #28 Output Chunking
+### Phase 5: Advanced/Research (DONE)
+- [x] #4 Test Case Generation
+- [x] #11 Definition Chaining
+- [x] #16 Markdown Table Trick
+- [x] #17 LaTeX/Academic Format
+- [x] #20 Reverse Request
+- [x] #21 Safety Latency Probing
+- [x] #22 Embedding Space Navigation
+- [x] #26 Role-Play Escalation
+- [x] #27 API Request Smuggling
+- [x] #28 Output Chunking
