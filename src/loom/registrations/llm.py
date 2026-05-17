@@ -90,3 +90,21 @@ def register_compression_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip adversarial_orchestrator: %s", e)
         record_failure("llm", "adversarial_orchestrator", str(e))
+
+    # Local techniques (30 creative methods)
+    try:
+        from loom.tools.llm.local_techniques import (
+            research_strip_hedging,
+            research_innocent_decompose,
+            research_conversational_drift,
+            research_meta_prompt,
+            research_genetic_evolve,
+        )
+        for func in [research_strip_hedging, research_innocent_decompose,
+                     research_conversational_drift, research_meta_prompt,
+                     research_genetic_evolve]:
+            mcp.tool()(wrap_tool(func))
+            record_success("llm", func.__name__)
+    except (ImportError, AttributeError) as e:
+        log.debug("skip local_techniques: %s", e)
+        record_failure("llm", "local_techniques", str(e))
