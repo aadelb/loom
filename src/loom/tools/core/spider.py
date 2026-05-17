@@ -81,6 +81,9 @@ async def research_spider(
         List of fetch result dicts (one per URL), with error fields for
         failures.
     """
+    if not _SPIDER_DEPS:
+        return [{"error": "spider dependencies not available (scrapling not installed)", "url": u} for u in urls[:3]]
+
     # Get config values
     timeout_secs, max_spider_urls, default_concurrency = _get_config_values()
 

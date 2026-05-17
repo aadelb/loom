@@ -111,6 +111,12 @@ class BrainMemory:
         self._history.append(record)
         if len(self._history) > _MAX_HISTORY:
             self._history = self._history[-_MAX_HISTORY:]
+            # Prune stale tool_pairs to match trimmed history
+            recent_tools = {r.tool_name for r in self._history}
+            self._tool_pairs = defaultdict(int, {
+                k: v for k, v in self._tool_pairs.items()
+                if k[0] in recent_tools and k[1] in recent_tools
+            })
 
         stats = self._tool_stats[tool_name]
         stats["calls"] += 1

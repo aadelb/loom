@@ -28,7 +28,7 @@ async def _nvd_search(
     """Search NVD/CVE API for vulnerabilities."""
     vulnerabilities: list[dict[str, Any]] = []
     try:
-        url = "https://services.nvd.nist.gov/rest/json/cves/2.0"
+        url = f"https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch={query}&resultsPerPage={limit}"
         data = await fetch_json(
             client,
             url,
