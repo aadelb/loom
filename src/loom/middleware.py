@@ -288,7 +288,7 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                      "research_llm_extract", "research_llm_embed",
                      "research_prompt_reframe", "research_auto_reframe",
                      "research_stack_reframe", "research_adaptive_reframe",
-                     "research_augmented_generate"}
+                     "research_augmented_generate", "research_agent_loop"}
     tool_name = func.__name__
     tool_timeout = 600 if tool_name in _HEAVY_TOOLS else 60
     billing_enabled = os.getenv("LOOM_BILLING_ENABLED", "").lower() == "true"
