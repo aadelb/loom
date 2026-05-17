@@ -105,3 +105,11 @@ def register_adversarial_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip thinking_injection: %s", e)
         record_failure("adversarial", "thinking_injection", str(e))
     log.info("registered adversarial tools count=20")
+
+    try:
+        from loom.tools.adversarial.expert_assessment import research_expert_assessment
+        mcp.tool()(wrap_tool(research_expert_assessment))
+        record_success("adversarial", "research_expert_assessment")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip expert_assessment: %s", e)
+        record_failure("adversarial", "expert_assessment", str(e))
