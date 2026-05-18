@@ -1,3 +1,19 @@
+## Architecture Assessment — 2026-05-18
+**Recommendation: DEFER**
+
+Since this plan was drafted (2026-05-03), tool count has grown from 581 to **910** — a 56% increase in ~15 days. This velocity validates the monolith concern but also makes the proposed 12-week / 680 engineer-day split a moving-target risk. The four service boundaries (core, redteam, intel, infra) were defined against a much smaller surface and are already stale.
+
+The monolith still functions: startup completes, all 910 tools register, and the existing lightweight `gateway/` handles routing. The immediate pain points — startup time and memory — are better addressed by **lazy-loading tool modules** and **selective import footprints** within the current process, rather than by distributed inter-service HTTP calls that add latency and failure modes.
+
+**Defer until:**
+1. Tool growth plateaus below 5/day for two consecutive weeks.
+2. A modular-plugin loader exists so tools are discovered dynamically without eager imports.
+3. There is a dedicated SRE to own the gateway, health aggregation, and circuit-breaker logic.
+
+Proceeding now risks building brittle service boundaries around a codebase that is still redefining itself daily.
+
+---
+
 # Loom Microservice Split Plan
 
 **Document Version:** 1.0
