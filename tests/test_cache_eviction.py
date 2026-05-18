@@ -133,9 +133,9 @@ class TestSizeEviction:
     async def test_put_evicts_oldest_when_over_limit(self, tmp_cache_dir: Path) -> None:
         """put() evicts oldest files when total size exceeds max_size_bytes."""
         # Very small limit so we can trigger eviction easily
-        cache = CacheStore(tmp_cache_dir, max_size_bytes=200)
+        cache = CacheStore(tmp_cache_dir, max_size_bytes=80)
 
-        # Write two small entries; each compressed JSON is ~40-60 bytes
+        # Write two small entries; each compressed JSON is ~35 bytes
         cache.put("key1", {"data": "a" * 100})
         cache.put("key2", {"data": "b" * 100})
 
@@ -167,7 +167,7 @@ class TestSizeEviction:
 
     async def test_put_eviction_respects_mtime_not_name(self, tmp_cache_dir: Path) -> None:
         """Eviction uses mtime (LRU), not alphabetical order."""
-        cache = CacheStore(tmp_cache_dir, max_size_bytes=200)
+        cache = CacheStore(tmp_cache_dir, max_size_bytes=80)
 
         cache.put("aaa", {"data": "a" * 100})
         cache.put("zzz", {"data": "z" * 100})
