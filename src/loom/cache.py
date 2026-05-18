@@ -35,15 +35,34 @@ class CacheStore:
     to achieve 60%+ space savings. Uses atomic writes (uuid tmp +
     os.replace) to prevent corruption from concurrent writers. Automatically
     reads legacy .json files for backward compatibility.
+
+    Supports TTL eviction on read (files older than cache_ttl_hours are
+    deleted and treated as misses) and size-bound LRU eviction on write
+    (oldest files removed when total cache exceeds max_size_bytes).
     """
 
-    def __init__(self, base_dir: str | Path | None = None) -> None:
+    CACHE_TTL_HOURS: int = 24
+    DEFAULT_MAX_SIZE_BYTES: int = 1_073_741_824  # 1 GiB
+
+    def __init__(
+        self,
+        base_dir: str | Path | None = None,
+        *,
+        cache_ttl_hours: int | None = None,
+        max_size_bytes: int | None = None,
+    ) -> None:
         """Initialize cache store.
 
         Args:
             base_dir: root directory for cache storage. If None, reads from
                      LOOM_CACHE_DIR environment variable or defaults to
                      ~/.cache/loom.
+            cache_ttl_hours: hours after which a cached entry is considered
+                             expired and deleted on get(). Defaults to
+                             LOOM_CACHE_TTL_HOURS env var or 24.
+            max_size_bytes: maximum total bytes for the cache. When exceeded,
+                            oldest files are evicted on put(). Defaults to
+                            LOOM_CACHE_MAX_SIZE_BYTES env var or 1 GiB.
         """
         if base_dir is None:
             base_dir = os.environ.get(
@@ -52,6 +71,20 @@ class CacheStore:
             )
         self.base_dir = Path(base_dir)
         self.base_dir.mkdir(parents=True, exist_ok=True)
+
+        if cache_ttl_hours is None:
+            cache_ttl_hours = int(
+                os.environ.get("LOOM_CACHE_TTL_HOURS", self.CACHE_TTL_HOURS)
+            )
+        self.cache_ttl_hours = cache_ttl_hours
+
+        if max_size_bytes is None:
+            max_size_bytes = int(
+                os.environ.get(
+                    "LOOM_CACHE_MAX_SIZE_BYTES", self.DEFAULT_MAX_SIZE_BYTES
+                )
+            )
+        self.max_size_bytes = max_size_bytes
 
     def _cache_path(self, key: str) -> Path:
         """Compute cache file path from key.
@@ -71,12 +104,73 @@ class CacheStore:
         p.parent.mkdir(parents=True, exist_ok=True)
         return p
 
+    def _is_expired(self, path: Path) -> bool:
+        """Return True if path's mtime is older than cache_ttl_hours."""
+        try:
+            mtime = _dt.datetime.fromtimestamp(
+                path.stat().st_mtime, tz=_dt.timezone.utc
+            )
+            age_hours = (
+                _dt.datetime.now(_dt.timezone.utc) - mtime
+            ).total_seconds() / 3600
+            return age_hours > self.cache_ttl_hours
+        except (OSError, ValueError):
+            return False
+
+    def _delete_file(self, path: Path) -> bool:
+        """Delete a single cache file, logging on failure."""
+        try:
+            path.unlink()
+            log.debug("cache_evicted path=%s", path)
+            return True
+        except FileNotFoundError:
+            return False
+        except Exception as e:
+            log.warning("cache_evict_failed path=%s: %s", path, e)
+            return False
+
+    def _evict_oldest_if_over_limit(self) -> None:
+        """If total cache size exceeds max_size_bytes, delete oldest files first."""
+        if self.max_size_bytes <= 0:
+            return
+
+        # Gather all cache files with their mtimes
+        files: list[tuple[Path, float]] = []
+        total = 0
+        for pattern in ("*.json.gz", "*.json"):
+            for f in self.base_dir.rglob(pattern):
+                try:
+                    if f.is_file():
+                        stat = f.stat()
+                        files.append((f, stat.st_mtime))
+                        total += stat.st_size
+                except FileNotFoundError:
+                    continue
+
+        if total <= self.max_size_bytes:
+            return
+
+        # Sort by mtime ascending (oldest first) and evict until under limit
+        files.sort(key=lambda x: x[1])
+        for f, _ in files:
+            if total <= self.max_size_bytes:
+                break
+            try:
+                size = f.stat().st_size
+            except FileNotFoundError:
+                continue
+            if self._delete_file(f):
+                total -= size
+
     def get(self, key: str) -> dict[str, Any] | None:
         """Retrieve cached value by key.
 
         Searches today's directory first, then all date directories
         so entries from previous days still produce cache hits. Tries
         compressed (.json.gz) first, then legacy uncompressed (.json).
+
+        If the file is older than cache_ttl_hours, it is deleted and
+        None is returned.
 
         Args:
             key: cache key
@@ -91,23 +185,29 @@ class CacheStore:
         gz_path = p.with_suffix(".json.gz")
 
         if gz_path.exists():
+            if self._is_expired(gz_path):
+                self._delete_file(gz_path)
+                return None
             try:
-                if _dt.datetime.now(_dt.UTC).timestamp() - os.path.getmtime(gz_path) > 86400:
-                    gz_path.unlink()
-                    return None
                 compressed_data = gz_path.read_bytes()
                 decompressed = gzip.decompress(compressed_data)
-                return cast(dict[str, Any] | None, json.loads(decompressed.decode("utf-8")))
+                return cast(
+                    dict[str, Any] | None,
+                    json.loads(decompressed.decode("utf-8")),
+                )
             except Exception as e:
                 log.debug("cache_get_failed (compressed) key=%s: %s", key, e)
                 return None
 
         if p.exists():
+            if self._is_expired(p):
+                self._delete_file(p)
+                return None
             try:
-                if _dt.datetime.now(_dt.UTC).timestamp() - os.path.getmtime(p) > 86400:
-                    p.unlink()
-                    return None
-                return cast(dict[str, Any] | None, json.loads(p.read_text(encoding="utf-8")))
+                return cast(
+                    dict[str, Any] | None,
+                    json.loads(p.read_text(encoding="utf-8")),
+                )
             except Exception as e:
                 log.debug("cache_get_failed (legacy) key=%s: %s", key, e)
                 return None
@@ -116,26 +216,34 @@ class CacheStore:
         # Try compressed first across all dirs, then legacy
         try:
             # Search for compressed files
-            matches = sorted(self.base_dir.glob(f"*/{h}.json.gz"), reverse=True)
+            matches = sorted(
+                self.base_dir.glob(f"*/{h}.json.gz"), reverse=True
+            )
             for match in matches:
+                if self._is_expired(match):
+                    self._delete_file(match)
+                    continue
                 try:
-                    if _dt.datetime.now(_dt.UTC).timestamp() - os.path.getmtime(match) > 86400:
-                        match.unlink()
-                        continue
                     compressed_data = match.read_bytes()
                     decompressed = gzip.decompress(compressed_data)
-                    return cast(dict[str, Any] | None, json.loads(decompressed.decode("utf-8")))
+                    return cast(
+                        dict[str, Any] | None,
+                        json.loads(decompressed.decode("utf-8")),
+                    )
                 except Exception:
                     continue
 
             # Fallback to legacy uncompressed files
             matches = sorted(self.base_dir.glob(f"*/{h}.json"), reverse=True)
             for match in matches:
+                if self._is_expired(match):
+                    self._delete_file(match)
+                    continue
                 try:
-                    if _dt.datetime.now(_dt.UTC).timestamp() - os.path.getmtime(match) > 86400:
-                        match.unlink()
-                        continue
-                    return cast(dict[str, Any] | None, json.loads(match.read_text(encoding="utf-8")))
+                    return cast(
+                        dict[str, Any] | None,
+                        json.loads(match.read_text(encoding="utf-8")),
+                    )
                 except Exception:
                     continue
         except Exception as e:
@@ -163,7 +271,9 @@ class CacheStore:
         # Try compressed first, then legacy
         try:
             # Search for compressed files
-            matches = sorted(self.base_dir.glob(f"*/{h}.json.gz"), reverse=True)
+            matches = sorted(
+                self.base_dir.glob(f"*/{h}.json.gz"), reverse=True
+            )
             for match in matches:
                 try:
                     compressed_data = match.read_bytes()
@@ -185,7 +295,11 @@ class CacheStore:
                         "is_stale": is_stale,
                     }
                 except Exception as e:
-                    log.debug("cache_metadata_extraction_failed (compressed) for %s: %s", match, e)
+                    log.debug(
+                        "cache_metadata_extraction_failed (compressed) for %s: %s",
+                        match,
+                        e,
+                    )
                     continue
 
             # Fallback to legacy uncompressed files
@@ -209,7 +323,11 @@ class CacheStore:
                         "is_stale": is_stale,
                     }
                 except Exception as e:
-                    log.debug("cache_metadata_extraction_failed (legacy) for %s: %s", match, e)
+                    log.debug(
+                        "cache_metadata_extraction_failed (legacy) for %s: %s",
+                        match,
+                        e,
+                    )
                     continue
         except Exception as e:
             log.debug("cache_glob_failed key=%s: %s", key, e)
@@ -222,6 +340,9 @@ class CacheStore:
         Uses uuid-suffixed temp file + os.replace to ensure atomic,
         concurrent-safe writes (even within the same process). Compresses
         JSON with gzip level 6 for optimal compression/speed tradeoff.
+
+        After a successful write, if the total cache size exceeds
+        max_size_bytes, oldest files are evicted first.
 
         Args:
             key: cache key
@@ -243,7 +364,6 @@ class CacheStore:
             # Write compressed data to tmp file
             tmp.write_bytes(compressed)
             os.replace(tmp, gz_path)
-            self._evict_if_oversized()
         except Exception:
             log.exception("cache_put_failed key=%s", key)
             if tmp.exists():
@@ -251,32 +371,8 @@ class CacheStore:
                     tmp.unlink()
             raise
 
-    def _evict_if_oversized(self) -> None:
-        """Delete oldest cache files if total size exceeds 1GB."""
-        max_bytes = 1024 * 1024 * 1024
-        total = 0
-        files: list[tuple[float, Path]] = []
-        for root, _dirs, filenames in os.walk(self.base_dir):
-            for name in filenames:
-                path = Path(root) / name
-                try:
-                    st = path.stat()
-                    total += st.st_size
-                    files.append((st.st_mtime, path))
-                except (OSError, FileNotFoundError):
-                    continue
-        if total > max_bytes:
-            files.sort(key=lambda x: x[0])
-            for _mtime, path in files:
-                if total <= max_bytes:
-                    break
-                try:
-                    st = path.stat()
-                    size = st.st_size
-                    path.unlink()
-                    total -= size
-                except (OSError, FileNotFoundError):
-                    continue
+        # Enforce size limit after successful write
+        self._evict_oldest_if_over_limit()
 
     def delete(self, key: str) -> bool:
         """Delete a cache entry by key.
@@ -303,7 +399,9 @@ class CacheStore:
                 deleted = True
                 log.debug("cache_deleted key=%s path=%s", key, gz_path)
             except Exception as e:
-                log.warning("cache_delete_failed key=%s path=%s: %s", key, gz_path, e)
+                log.warning(
+                    "cache_delete_failed key=%s path=%s: %s", key, gz_path, e
+                )
 
         if p.exists():
             try:
@@ -311,7 +409,9 @@ class CacheStore:
                 deleted = True
                 log.debug("cache_deleted key=%s path=%s", key, p)
             except Exception as e:
-                log.warning("cache_delete_failed key=%s path=%s: %s", key, p, e)
+                log.warning(
+                    "cache_delete_failed key=%s path=%s: %s", key, p, e
+                )
 
         # Search and delete from other date directories
         try:
@@ -325,7 +425,12 @@ class CacheStore:
                 except FileNotFoundError:
                     continue
                 except Exception as e:
-                    log.warning("cache_delete_failed key=%s path=%s: %s", key, match, e)
+                    log.warning(
+                        "cache_delete_failed key=%s path=%s: %s",
+                        key,
+                        match,
+                        e,
+                    )
 
             # Legacy uncompressed files
             matches = sorted(self.base_dir.glob(f"*/{h}.json"))
@@ -337,7 +442,12 @@ class CacheStore:
                 except FileNotFoundError:
                     continue
                 except Exception as e:
-                    log.warning("cache_delete_failed key=%s path=%s: %s", key, match, e)
+                    log.warning(
+                        "cache_delete_failed key=%s path=%s: %s",
+                        key,
+                        match,
+                        e,
+                    )
         except Exception as e:
             log.debug("cache_glob_failed key=%s: %s", key, e)
 
@@ -412,7 +522,9 @@ class CacheStore:
                             # File deleted by another process; skip
                             continue
                         except Exception as e:
-                            log.warning("failed to remove cache file %s: %s", f, e)
+                            log.warning(
+                                "failed to remove cache file %s: %s", f, e
+                            )
 
                 with contextlib.suppress(OSError):
                     day_dir.rmdir()

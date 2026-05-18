@@ -1,126 +1,102 @@
 import os
 import re
-import ast
-from pathlib import Path
+import glob
 
-def get_server_tools():
-    content = Path('src/loom/server.py').read_text()
-    tree = ast.parse(content)
-    funcs = set()
-    for node in ast.walk(tree):
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            if not node.name.startswith('_'):
-                funcs.add(node.name)
+def audit():
+    # 1. Find all research_ functions in src/loom/tools/
+    tools_dir = 'src/loom/tools/'
+    registrations_dir = 'src/loom/registrations/'
     
-    # Also find all registered tools via mcp.tool()(_wrap_tool(module.func))
-    import re
-    wrapped = set(re.findall(r'_wrap_tool\([^.]+\.([a-zA-Z0-9_]+)', content))
-    wrapped.update(re.findall(r'_wrap_tool\((research_[a-zA-Z0-9_]+)', content))
-    wrapped.update(re.findall(r'hasattr\([^,]+,\s*"([^"]+)"\)', content))
+    function_pattern = re.compile(r'(?:async\s+)?def\s+(research_[a-zA-Z0-9_]+)')
     
-    # Also anything that looks like a tool name
-    for line in content.split('\n'):
-        if 'research_' in line or 'fetch_' in line or 'search_' in line:
-            m = re.search(r'\b(research_[a-z0-9_]+|fetch_[a-z0-9_]+|search_[a-z0-9_]+)\b', line)
-            if m: funcs.add(m.group(1))
-
-    funcs.update(wrapped)
-    return funcs
-
-def extract_ideas(directory):
-    idea_pattern = re.compile(r'\b(?:research|fetch|search|find|analyze|detect|run)_[a-z_]+\b')
-    ideas = {}
-    for root, _, files in os.walk(directory):
+    # functions mapping: name -> filename
+    tools_functions = {}
+    for root, dirs, files in os.walk(tools_dir):
         for file in files:
-            if not file.endswith('.txt') and not file.endswith('.md'):
-                continue
-            filepath = os.path.join(root, file)
-            try:
-                content = Path(filepath).read_text(encoding='utf-8', errors='ignore')
-                matches = idea_pattern.findall(content)
-                for match in set(matches):
-                    if match not in ideas:
-                        ideas[match] = set()
-                    ideas[match].add(file)
-            except Exception:
-                pass
-    return ideas
+            if file.endswith('.py'):
+                filepath = os.path.join(root, file)
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                    matches = function_pattern.findall(content)
+                    for match in matches:
+                        tools_functions[match] = filepath
+                        
+    # 2. Find all registrations in src/loom/registrations/
+    # Usually it looks like:
+    # mcp.tool()(research_func) or @mcp.tool(...) def research_func
+    # Let's just find all occurrences of "research_[a-zA-Z0-9_]+" in registrations directory
+    
+    registered_names = set()
+    registration_files = {}
+    
+    for root, dirs, files in os.walk(registrations_dir):
+        for file in files:
+            if file.endswith('.py'):
+                filepath = os.path.join(root, file)
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                    # Find all mentions of research_ functions
+                    mentions = re.findall(r'(research_[a-zA-Z0-9_]+)', content)
+                    for mention in mentions:
+                        registered_names.add(mention)
+                        if mention not in registration_files:
+                            registration_files[mention] = []
+                        registration_files[mention].append(filepath)
 
-def check_tool_file(tool_name):
-    # Search for the tool in src/loom/tools/
-    tools_dir = Path('src/loom/tools')
-    for py_file in tools_dir.glob('*.py'):
-        if py_file.name == '__init__.py': continue
-        try:
-            content = py_file.read_text(encoding='utf-8')
-            if tool_name in content:
-                # Check first 20 lines around the function
-                lines = content.split('\n')
-                for i, line in enumerate(lines):
-                    if f"def {tool_name}" in line or f"async def {tool_name}" in line:
-                        # Extract the next 20 lines
-                        chunk = "\n".join(lines[i:i+20])
-                        has_docstring = '"""' in chunk or "'''" in chunk
-                        has_type_hints = '->' in chunk or ':' in line
-                        has_return_dict = 'dict' in chunk or 'Any' in chunk
-                        if has_docstring and has_type_hints and has_return_dict:
-                            return True, py_file.name
-                        return False, py_file.name
-        except Exception:
-            pass
-    return False, None
+    # 3. Find unregistered tools (in tools_functions but not in registered_names)
+    unregistered = []
+    for func, filepath in tools_functions.items():
+        if func not in registered_names:
+            unregistered.append(func)
+            
+    # 4. Find broken registrations (in registered_names but not in tools_functions)
+    broken = []
+    for func in registered_names:
+        if func not in tools_functions:
+            broken.append(func)
 
-def main():
-    tools = get_server_tools()
-    ideas = extract_ideas('docs/creative-research/')
+    # Note: Sometimes a function might be defined in registrations/ directly, we should check if they are in tools_functions or defined in registrations.
+    # Let's refine broken: check if it's defined in registrations
+    for root, dirs, files in os.walk(registrations_dir):
+        for file in files:
+            if file.endswith('.py'):
+                filepath = os.path.join(root, file)
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                    matches = function_pattern.findall(content)
+                    for match in matches:
+                        if match in broken:
+                            broken.remove(match) # It's defined in registration file itself
+                            # and add to tools_functions so it counts as a function
+                            tools_functions[match] = filepath
+                            
+    # Also we should count actual registrations, which is the number of @mcp.tool or mcp.tool()
+    reg_count_pattern = re.compile(r'mcp\.tool|record_success')
+    reg_count = 0
+    for root, dirs, files in os.walk(registrations_dir):
+        for file in files:
+            if file.endswith('.py'):
+                filepath = os.path.join(root, file)
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                    lines = content.split('\n')
+                    for line in lines:
+                        if reg_count_pattern.search(line):
+                            reg_count += 1
+                            
+    func_count = len(tools_functions)
     
-    implemented = []
-    covered = []
-    gaps = []
+    print(f"FUNCTION_COUNT: {func_count}")
+    print(f"REGISTERED_COUNT (approx by mcp.tool/record_success): {reg_count}")
+    print(f"Functions imported/used in registrations: {len(registered_names)}")
     
-    for idea, files in ideas.items():
-        if idea in tools:
-            # Check implementation
-            valid, filename = check_tool_file(idea)
-            if filename:
-                implemented.append((idea, filename, valid))
-            else:
-                # If registered but file not found, it might be in a provider
-                implemented.append((idea, "server.py (dynamic)", True))
-        else:
-            # Try to see if it's covered by a similar name
-            core_name = idea.replace('research_', '').replace('fetch_', '').replace('search_', '')
-            found_cover = False
-            for t in tools:
-                if core_name in t:
-                    covered.append((idea, t, list(files)[0]))
-                    found_cover = True
-                    break
-            if not found_cover:
-                gaps.append((idea, list(files)[0]))
-                
-    report = []
-    report.append("=== AUDIT REPORT ===")
-    report.append(f"Total ideas found across all files: {len(ideas)}")
-    report.append(f"Total IMPLEMENTED: {len(implemented)}")
-    report.append(f"Total COVERED: {len(covered)}")
-    report.append(f"Total GAP: {len(gaps)}")
-    
-    report.append("\n=== GAPS (Not Implemented) ===")
-    for gap, file in sorted(gaps):
-        report.append(f"- GAP: {gap} (found in {file})")
+    print("\n--- UNREGISTERED TOOLS ---")
+    for func in sorted(unregistered):
+        print(f"{func} (in {tools_functions[func]})")
         
-    report.append("\n=== IMPLEMENTED ===")
-    for imp, filename, valid in sorted(implemented):
-        valid_str = "VALIDATED" if valid else "MISSING_DOCS_OR_TYPES"
-        report.append(f"- IMPLEMENTED: {imp} -> {filename} [{valid_str}]")
-        
-    report.append("\n=== COVERED (Different name, same capability) ===")
-    for cov, t, file in sorted(covered):
-        report.append(f"- COVERED: {cov} is covered by {t} (found in {file})")
-        
-    Path('audit_report_final.txt').write_text('\n'.join(report))
-    print("Done. Wrote audit_report_final.txt")
+    print("\n--- BROKEN REGISTRATIONS ---")
+    for func in sorted(broken):
+        print(f"{func} (mentioned in {registration_files[func]})")
 
 if __name__ == '__main__':
-    main()
+    audit()
