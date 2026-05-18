@@ -213,6 +213,35 @@ def _fuzzy_correct_params(func: Callable[..., Any], kwargs: dict) -> tuple[dict,
                 corrections[key] = None
                 log.warning("param_dropped tool=%s param=%s (no close match found)", func.__name__, key)
 
+    # Auto-map generic params to the first required string param when names don't match.
+    # e.g. caller sends {"query": "log4j"} but tool expects paper_id, domain, url, prompt, etc.
+    _GENERIC_PARAMS = ("query", "text", "input", "target", "q")
+    generic_value = None
+    for gp in _GENERIC_PARAMS:
+        if gp in corrected:
+            generic_value = corrected[gp]
+            break
+        if gp in kwargs:
+            generic_value = kwargs[gp]
+            break
+
+    if generic_value is not None:
+        for pname, param in sig.parameters.items():
+            if pname in corrected:
+                continue
+            if param.default is inspect.Parameter.empty and param.kind in (
+                inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                inspect.Parameter.KEYWORD_ONLY,
+            ):
+                ann = param.annotation
+                is_str = ann is str or ann is inspect.Parameter.empty or (
+                    isinstance(ann, str) and ann in ("str", "str | None")
+                )
+                if is_str:
+                    corrected[pname] = generic_value
+                    corrections[f"_auto_map_{pname}"] = f"mapped from generic param"
+                    break
+
     tool_name = func.__name__
     corrected = _validate_with_pydantic(tool_name, corrected)
 
