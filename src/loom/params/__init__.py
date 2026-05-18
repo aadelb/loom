@@ -8,6 +8,7 @@ This module is organized into category submodules:
 - infrastructure: Sessions, config, cache, billing, workflows
 - academic: Citation analysis, retraction checking, etc.
 - security: Security scanning, breach checking, CVE lookup
+- legal: UAE/Dubai legal compliance tools
 - research: Comprehensive research and analysis tools
 - operations: Operational monitoring, audit, health checks, DLQ management
 
@@ -212,6 +213,18 @@ from loom.params.webhook import (
     WebhookRegisterParams,
     WebhookUnregisterParams,
     WebhookTestParams,
+)
+
+# LEGAL tools
+from loom.params.legal import (
+    UaeCommercialLawParams,
+    UaeCustomsParams,
+    UaeFoodSafetyParams,
+    UaeLaborLawParams,
+    UaeReraParams,
+    UaeTaxComplianceParams,
+    UaeTradeLicenseParams,
+    UaeVisaRulesParams,
 )
 
 # OPERATIONS tools
@@ -544,6 +557,14 @@ __all__ = [
     "ShodanSearchParams",
     "URLhausSearchParams",
     "WhoisParams",
+    "UaeCommercialLawParams",
+    "UaeCustomsParams",
+    "UaeFoodSafetyParams",
+    "UaeLaborLawParams",
+    "UaeReraParams",
+    "UaeTaxComplianceParams",
+    "UaeTradeLicenseParams",
+    "UaeVisaRulesParams",
     "AdaptComplexityParams",
     "AdaptiveReframeParams",
     "AgentBenchmarkParams",

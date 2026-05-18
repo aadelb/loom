@@ -92,6 +92,7 @@ def _guess_module_names(tool_name: str) -> list[str]:
         "camoufox": "stealth",
         "botasaurus": "stealth",
         "smart_call": "core",
+        "uae": "legal.uae_legal",
     }
     for keyword, module in common_mappings.items():
         if keyword in base:

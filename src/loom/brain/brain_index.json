@@ -19299,6 +19299,97 @@
       "categories": [
         "search"
       ]
+    },
+    {
+      "name": "research_uae_labor_law",
+      "module": "legal.uae_legal",
+      "description": "UAE labor law lookup. Federal Decree-Law No. 33/2021 — termination, salary, leave, gratuity, visa cancellation, probation, discrimination, work hours.",
+      "parameters": {
+        "query": {"required": true, "type": "str"},
+        "topic": {"required": false, "type": "str", "default": "general"}
+      },
+      "is_async": true,
+      "categories": ["legal", "uae"]
+    },
+    {
+      "name": "research_uae_trade_license",
+      "module": "legal.uae_legal",
+      "description": "UAE trade license requirements — DED, free zone, commercial/professional/industrial license costs, documents, processing time.",
+      "parameters": {
+        "business_type": {"required": true, "type": "str"},
+        "emirate": {"required": false, "type": "str", "default": "ajman"},
+        "free_zone": {"required": false, "type": "bool", "default": false}
+      },
+      "is_async": true,
+      "categories": ["legal", "uae"]
+    },
+    {
+      "name": "research_uae_food_safety",
+      "module": "legal.uae_legal",
+      "description": "UAE food safety regulations — ESMA standards, municipality food handling permits, halal certification, temperature requirements, labeling rules.",
+      "parameters": {
+        "query": {"required": true, "type": "str"},
+        "business_type": {"required": false, "type": "str", "default": "supermarket"}
+      },
+      "is_async": true,
+      "categories": ["legal", "uae"]
+    },
+    {
+      "name": "research_uae_visa_rules",
+      "module": "legal.uae_legal",
+      "description": "UAE visa and residency rules — employment, investor, golden, green, tourist, family, domestic worker visas with costs and requirements.",
+      "parameters": {
+        "visa_type": {"required": false, "type": "str", "default": "employment"},
+        "nationality": {"required": false, "type": "str", "default": ""},
+        "query": {"required": false, "type": "str", "default": ""}
+      },
+      "is_async": true,
+      "categories": ["legal", "uae"]
+    },
+    {
+      "name": "research_uae_commercial_law",
+      "module": "legal.uae_legal",
+      "description": "UAE commercial law — Federal Law No. 50/2022 — company formation, partnerships, LLC, free zone, foreign ownership, bankruptcy, IP.",
+      "parameters": {
+        "query": {"required": true, "type": "str"},
+        "topic": {"required": false, "type": "str", "default": "general"}
+      },
+      "is_async": true,
+      "categories": ["legal", "uae"]
+    },
+    {
+      "name": "research_uae_customs",
+      "module": "legal.uae_legal",
+      "description": "UAE customs and import rules — tariff rates, documentation, prohibited items, free zone benefits, re-export rules by product category.",
+      "parameters": {
+        "product_category": {"required": true, "type": "str"},
+        "origin_country": {"required": false, "type": "str", "default": ""},
+        "query": {"required": false, "type": "str", "default": ""}
+      },
+      "is_async": true,
+      "categories": ["legal", "uae"]
+    },
+    {
+      "name": "research_uae_rera",
+      "module": "legal.uae_legal",
+      "description": "Dubai RERA real estate rules — Ejari registration, rent increase calculator, tenant/landlord rights, deposit rules, off-plan regulations.",
+      "parameters": {
+        "query": {"required": true, "type": "str"},
+        "transaction_type": {"required": false, "type": "str", "default": "rent"}
+      },
+      "is_async": true,
+      "categories": ["legal", "uae"]
+    },
+    {
+      "name": "research_uae_tax_compliance",
+      "module": "legal.uae_legal",
+      "description": "UAE tax compliance — VAT 5%, corporate tax 9%, excise tax, customs duty. FTA registration, filing deadlines, penalties, zero-rated items.",
+      "parameters": {
+        "query": {"required": true, "type": "str"},
+        "tax_type": {"required": false, "type": "str", "default": "vat"}
+      },
+      "is_async": true,
+      "categories": ["legal", "uae"]
     }
   ]
 }
