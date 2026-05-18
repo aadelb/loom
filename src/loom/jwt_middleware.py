@@ -14,13 +14,14 @@ from loom.jwt_auth import (
     InvalidTokenError,
     TokenExpiredError,
     check_tool_access,
-    is_jti_revoked,
-    refresh_token,
+    create_token,
     validate_token,
     verify_and_get_role,
 )
 
 logger = logging.getLogger("loom.jwt_middleware")
+
+_REVOKED_JTIS: set[str] = set()
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -29,6 +30,57 @@ class AuthorizationError(Exception):
     """Raised when user is not authorized to access a tool."""
 
     pass
+
+
+def verify_token(token: str) -> dict[str, Any]:
+    """Validate JWT token and check revocation status.
+
+    Args:
+        token: JWT token string to validate
+
+    Returns:
+        Token payload dict
+
+    Raises:
+        InvalidTokenError: If token is invalid or has been revoked
+        TokenExpiredError: If token has expired
+    """
+    payload = validate_token(token)
+    jti = payload.get("jti")
+    if jti and jti in _REVOKED_JTIS:
+        logger.warning("token_revoked jti=%s user_id=%s", jti, payload.get("sub"))
+        raise InvalidTokenError("Token has been revoked")
+    return payload
+
+
+def revoke_token(jti: str) -> None:
+    """Revoke a token by its JTI identifier.
+
+    Args:
+        jti: JWT ID to revoke
+    """
+    _REVOKED_JTIS.add(jti)
+    logger.info("token_revoked jti=%s", jti)
+
+
+def rotate_token(old_token: str) -> str:
+    """Revoke old token and issue a new one with the same claims.
+
+    Args:
+        old_token: Existing JWT token to rotate
+
+    Returns:
+        New JWT token string
+
+    Raises:
+        InvalidTokenError: If old token is invalid or revoked
+        TokenExpiredError: If old token has expired
+    """
+    payload = verify_token(old_token)
+    old_jti = payload.get("jti")
+    if old_jti:
+        revoke_token(old_jti)
+    return create_token(payload["sub"], payload["role"])
 
 
 def extract_token_from_kwargs(kwargs: dict[str, Any]) -> str | None:
@@ -99,7 +151,7 @@ def require_auth(
 
             # Validate token signature and expiration
             try:
-                payload = validate_token(token)
+                payload = verify_token(token)
                 role = payload.get("role")
             except (InvalidTokenError, TokenExpiredError) as e:
                 logger.warning(
@@ -108,16 +160,6 @@ def require_auth(
                     str(e),
                 )
                 raise
-
-            # Check JTI against revocation set
-            jti = payload.get("jti")
-            if is_jti_revoked(jti):
-                logger.warning(
-                    "auth_failed tool=%s error=token_revoked jti=%s",
-                    func.__name__,
-                    jti,
-                )
-                raise InvalidTokenError("Token has been revoked")
 
             # Check role requirements
             if require_role and role != require_role:
@@ -166,7 +208,7 @@ def require_auth(
 
             # Validate token signature and expiration
             try:
-                payload = validate_token(token)
+                payload = verify_token(token)
                 role = payload.get("role")
             except (InvalidTokenError, TokenExpiredError) as e:
                 logger.warning(
@@ -175,16 +217,6 @@ def require_auth(
                     str(e),
                 )
                 raise
-
-            # Check JTI against revocation set
-            jti = payload.get("jti")
-            if is_jti_revoked(jti):
-                logger.warning(
-                    "auth_failed tool=%s error=token_revoked jti=%s",
-                    func.__name__,
-                    jti,
-                )
-                raise InvalidTokenError("Token has been revoked")
 
             # Check role requirements
             if require_role and role != require_role:
@@ -265,7 +297,7 @@ def get_user_from_token(token: str) -> dict[str, Any]:
         InvalidTokenError: If token is invalid
         TokenExpiredError: If token is expired
     """
-    payload = validate_token(token)
+    payload = verify_token(token)
     return {
         "user_id": payload.get("sub"),
         "role": payload.get("role"),
@@ -299,20 +331,10 @@ def create_authorized_wrapper(func: Callable[..., Any], allow_unauthenticated: b
 
         # Validate token
         try:
-            payload = validate_token(token)
+            verify_token(token)
         except (InvalidTokenError, TokenExpiredError) as e:
             logger.warning("auth_failed tool=%s error=%s", func.__name__, str(e))
             raise
-
-        # Check JTI against revocation set
-        jti = payload.get("jti")
-        if is_jti_revoked(jti):
-            logger.warning(
-                "auth_failed tool=%s error=token_revoked jti=%s",
-                func.__name__,
-                jti,
-            )
-            raise InvalidTokenError("Token has been revoked")
 
         # Check tool access
         if not check_tool_authorization(token, func.__name__):
@@ -340,20 +362,10 @@ def create_authorized_wrapper(func: Callable[..., Any], allow_unauthenticated: b
 
         # Validate token
         try:
-            payload = validate_token(token)
+            verify_token(token)
         except (InvalidTokenError, TokenExpiredError) as e:
             logger.warning("auth_failed tool=%s error=%s", func.__name__, str(e))
             raise
-
-        # Check JTI against revocation set
-        jti = payload.get("jti")
-        if is_jti_revoked(jti):
-            logger.warning(
-                "auth_failed tool=%s error=token_revoked jti=%s",
-                func.__name__,
-                jti,
-            )
-            raise InvalidTokenError("Token has been revoked")
 
         # Check tool access
         if not check_tool_authorization(token, func.__name__):
