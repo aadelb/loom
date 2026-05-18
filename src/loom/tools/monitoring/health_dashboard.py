@@ -10,6 +10,7 @@ try:
 except ImportError:
     psutil = None
 
+import html as html_mod
 from datetime import UTC, datetime
 from typing import Any
 
@@ -87,7 +88,7 @@ async def research_dashboard_html() -> dict[str, Any]:
                     continue
                 status_val = "up" if prov_data.get("status") == "up" else "dn"
                 # Escape provider name to prevent HTML injection
-                escaped_name = html.escape(str(name))
+                escaped_name = html_mod.escape(str(name))
                 items.append(f'<div class="pi"><div class="ps-{status_val}"></div>{escaped_name}</div>')
             return "".join(items)
 

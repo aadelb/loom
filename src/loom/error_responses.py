@@ -124,6 +124,8 @@ def handle_tool_errors(tool_name: str) -> Callable[[F], F]:
                 t0 = time.monotonic()
                 try:
                     result = await func(*args, **kwargs)
+                    if hasattr(result, "model_dump"):
+                        result = result.model_dump()
                     if isinstance(result, dict):
                         if "elapsed_ms" not in result:
                             result["elapsed_ms"] = int((time.monotonic() - t0) * 1000)
@@ -144,6 +146,8 @@ def handle_tool_errors(tool_name: str) -> Callable[[F], F]:
                 t0 = time.monotonic()
                 try:
                     result = func(*args, **kwargs)
+                    if hasattr(result, "model_dump"):
+                        result = result.model_dump()
                     if isinstance(result, dict):
                         if "elapsed_ms" not in result:
                             result["elapsed_ms"] = int((time.monotonic() - t0) * 1000)

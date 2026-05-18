@@ -68,14 +68,12 @@ async def research_latency_report(tool_name: str = "") -> dict[str, Any]:
                 reverse=True,
             )
 
-            # Guard: ensure we have at least two data points for meaningful stats
-            if len(sorted_tools) < 2:
-                slow_tools = []  # empty list when insufficient data
+            if len(sorted_tools) == 0:
                 return {
-                    "error": "insufficient_data",
-                    "message": "At least 2 tools with data needed for comparison",
+                    "error": "no_data",
+                    "message": "No tools have recorded latencies yet",
                     "total_tools_tracked": len(all_stats),
-                    "total_tools_with_data": len(sorted_tools),
+                    "total_tools_with_data": 0,
                     "slow_tools": slow_tools,
                     "slow_count": 0,
                 }

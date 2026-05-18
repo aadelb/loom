@@ -12,6 +12,7 @@ import logging
 from datetime import UTC, datetime
 from typing import Any
 
+from loom.full_spectrum import FullSpectrumPipeline
 from loom.server_state import get_start_time
 
 log = logging.getLogger("loom.tool_functions")
