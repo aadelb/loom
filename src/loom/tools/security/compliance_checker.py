@@ -19,9 +19,19 @@ logger = logging.getLogger("loom.tools.compliance_checker")
 _PII = {
     "email": r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b",
     "phone": r"\b(?:\+1|1)?[-.\s]?\(?[0-9]{3}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}\b",
+    "phone_intl": r"\b\+(?:44|49|33|971|966|91|86|81)\s?\d[\d\s-]{7,14}\b",
     "ssn": r"\b\d{3}-\d{2}-\d{4}\b",
     "credit_card": r"\b(?:\d{4}[-\s]?){3}\d{4}\b",
     "ip_address": r"\b(?:\d{1,3}\.){3}\d{1,3}\b",
+    "iban": r"\b[A-Z]{2}\d{2}[A-Z0-9]{11,30}\b",
+    "passport": r"\b[A-Z]{1,2}\d{6,9}\b",
+    "uae_emirates_id": r"\b784-\d{4}-\d{7}-\d\b",
+    "date_of_birth": r"\b(?:0[1-9]|[12]\d|3[01])[/-](?:0[1-9]|1[0-2])[/-](?:19|20)\d{2}\b",
+    "aws_key": r"\bAKIA[0-9A-Z]{16}\b",
+    "jwt_token": r"\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b",
+    "api_key_generic": r"\b(?:api[_-]?key|apikey|secret[_-]?key)\s*[:=]\s*['\"]?[A-Za-z0-9_-]{20,}['\"]?\b",
+    "bitcoin_address": r"\b[13][a-km-zA-HJ-NP-Z1-9]{25,34}\b",
+    "private_key_header": r"-----BEGIN (?:RSA |EC |DSA )?PRIVATE KEY-----",
 }
 
 

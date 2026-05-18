@@ -944,14 +944,94 @@ def research_browser_privacy_score(browser: str = "chromium") -> dict[str, Any]:
         # Ensure score is within bounds
         score = max(0, min(100, score))
 
+        fingerprint_vectors = {
+            "chromium": {
+                "canvas": not profile["canvas_fingerprint_blocked"],
+                "webgl": True,
+                "audio_context": True,
+                "fonts": True,
+                "screen_resolution": True,
+                "timezone": True,
+                "language": True,
+                "platform": True,
+                "plugins": True,
+                "hardware_concurrency": True,
+                "device_memory": True,
+                "connection_type": True,
+            },
+            "firefox": {
+                "canvas": not profile["canvas_fingerprint_blocked"],
+                "webgl": False,
+                "audio_context": False,
+                "fonts": False,
+                "screen_resolution": True,
+                "timezone": True,
+                "language": True,
+                "platform": True,
+                "plugins": False,
+                "hardware_concurrency": True,
+                "device_memory": False,
+                "connection_type": False,
+            },
+            "safari": {
+                "canvas": not profile["canvas_fingerprint_blocked"],
+                "webgl": False,
+                "audio_context": False,
+                "fonts": False,
+                "screen_resolution": True,
+                "timezone": True,
+                "language": True,
+                "platform": True,
+                "plugins": False,
+                "hardware_concurrency": False,
+                "device_memory": False,
+                "connection_type": False,
+            },
+            "edge": {
+                "canvas": not profile["canvas_fingerprint_blocked"],
+                "webgl": True,
+                "audio_context": True,
+                "fonts": True,
+                "screen_resolution": True,
+                "timezone": True,
+                "language": True,
+                "platform": True,
+                "plugins": True,
+                "hardware_concurrency": True,
+                "device_memory": True,
+                "connection_type": True,
+            },
+        }
+
+        vectors = fingerprint_vectors.get(browser, fingerprint_vectors["chromium"])
+        exposed_count = sum(1 for v in vectors.values() if v)
+        total_vectors = len(vectors)
+        entropy_bits = exposed_count * 2.5
+        bot_detection_resistance = "HIGH" if exposed_count <= 4 else "MEDIUM" if exposed_count <= 7 else "LOW"
+
+        if exposed_count > 8:
+            issues.append(f"{exposed_count}/{total_vectors} fingerprint vectors exposed (high uniqueness)")
+            score -= 5
+        if entropy_bits > 20:
+            issues.append(f"Estimated {entropy_bits:.0f} bits of entropy (easily trackable)")
+
         return {
             "browser": browser,
             "privacy_score": score,
             "risk_level": "HIGH" if score < 40 else "MEDIUM" if score < 70 else "LOW",
             "issues": issues,
             "recommendations": recommendations,
+            "fingerprint_analysis": {
+                "exposed_vectors": [k for k, v in vectors.items() if v],
+                "blocked_vectors": [k for k, v in vectors.items() if not v],
+                "exposed_count": exposed_count,
+                "total_vectors": total_vectors,
+                "estimated_entropy_bits": round(entropy_bits, 1),
+                "bot_detection_resistance": bot_detection_resistance,
+                "uniqueness_risk": "HIGH" if entropy_bits > 20 else "MEDIUM" if entropy_bits > 12 else "LOW",
+            },
             "timestamp": datetime.now().isoformat(),
-            "assessment_type": "static_defaults",
+            "assessment_type": "static_defaults_with_fingerprint_analysis",
         }
     except Exception as e:
         logger.error(f"browser_privacy_score failed: {e}")

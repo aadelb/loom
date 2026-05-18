@@ -10,7 +10,7 @@ from loom.error_responses import handle_tool_errors
 @handle_tool_errors("research_stego_encode")
 def research_stego_encode(
     message: str,
-    method: Literal["lsb", "whitespace", "unicode_zero_width", "metadata_exif"] = "lsb",
+    method: Literal["lsb", "whitespace", "unicode_zero_width", "metadata_exif", "audio_lsb", "video_lsb", "pdf_whitespace"] = "lsb",
     output_format: str = "description",
 ) -> dict[str, Any]:
     """Describe steganography encoding (no image creation)."""
@@ -47,6 +47,32 @@ def research_stego_encode(
                 "detection": "Very Low (exiftool reads instantly)",
                 "pros": ["Large capacity", "Standard", "Survives sharing"],
                 "cons": ["Online tools strip", "EXIF analysis detects", "No deniability"],
+            },
+            "audio_lsb": {
+                "description": "Hide data in LSB of WAV/FLAC audio samples (16-bit PCM)",
+                "capacity": f"{msg_bits} bits (~{msg_bits / 44100:.2f}s of 44.1kHz mono audio)",
+                "detection": "Low (spectral analysis may detect, human ear cannot)",
+                "pros": ["Inaudible", "High capacity in WAV", "Survives format conversion if lossless"],
+                "cons": ["MP3/AAC compression destroys payload", "Large carrier files", "Requires lossless format"],
+                "implementation": "Modify LSB of each 16-bit PCM sample. Use wave module for WAV files.",
+                "carrier_requirement": f"WAV file with >= {msg_bits} samples ({msg_bits / 44100:.2f}s at 44.1kHz)",
+            },
+            "video_lsb": {
+                "description": "Hide data in LSB of video frame pixels (I-frames only)",
+                "capacity": f"{msg_bits} bits (~{msg_bits / (1920 * 1080 * 3):.4f} frames at 1080p)",
+                "detection": "Medium (frame diff analysis reveals, but spread across frames is harder)",
+                "pros": ["Massive capacity", "Multiple embedding layers (spatial + temporal)", "Robust with I-frames"],
+                "cons": ["Re-encoding destroys", "Requires raw/lossless", "Complex extraction", "Large files"],
+                "implementation": "Extract I-frames via ffmpeg, embed in pixel LSBs, re-mux. Use only keyframes.",
+                "carrier_requirement": f"Video with >= {max(1, msg_bits // (1920 * 1080 * 3) + 1)} I-frames at 1080p",
+            },
+            "pdf_whitespace": {
+                "description": "Hide data in PDF whitespace: extra spaces between words, trailing spaces, font size micro-variation",
+                "capacity": f"~{msg_bits} bits (~{msg_len} chars) in a 1-page PDF",
+                "detection": "Low-Medium (PDF text extraction normalizes whitespace, but raw bytes reveal)",
+                "pros": ["Works with any PDF", "Survives printing if font-based", "Common format"],
+                "cons": ["OCR re-extraction loses payload", "PDF optimization strips whitespace", "Limited capacity"],
+                "implementation": "Insert U+2003 (em space) for 1, U+2002 (en space) for 0 between words.",
             },
         }
         if method not in methods:
