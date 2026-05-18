@@ -92,6 +92,9 @@ class CacheStore:
 
         if gz_path.exists():
             try:
+                if _dt.datetime.now(_dt.UTC).timestamp() - os.path.getmtime(gz_path) > 86400:
+                    gz_path.unlink()
+                    return None
                 compressed_data = gz_path.read_bytes()
                 decompressed = gzip.decompress(compressed_data)
                 return cast(dict[str, Any] | None, json.loads(decompressed.decode("utf-8")))
@@ -101,6 +104,9 @@ class CacheStore:
 
         if p.exists():
             try:
+                if _dt.datetime.now(_dt.UTC).timestamp() - os.path.getmtime(p) > 86400:
+                    p.unlink()
+                    return None
                 return cast(dict[str, Any] | None, json.loads(p.read_text(encoding="utf-8")))
             except Exception as e:
                 log.debug("cache_get_failed (legacy) key=%s: %s", key, e)
@@ -113,6 +119,9 @@ class CacheStore:
             matches = sorted(self.base_dir.glob(f"*/{h}.json.gz"), reverse=True)
             for match in matches:
                 try:
+                    if _dt.datetime.now(_dt.UTC).timestamp() - os.path.getmtime(match) > 86400:
+                        match.unlink()
+                        continue
                     compressed_data = match.read_bytes()
                     decompressed = gzip.decompress(compressed_data)
                     return cast(dict[str, Any] | None, json.loads(decompressed.decode("utf-8")))
@@ -123,6 +132,9 @@ class CacheStore:
             matches = sorted(self.base_dir.glob(f"*/{h}.json"), reverse=True)
             for match in matches:
                 try:
+                    if _dt.datetime.now(_dt.UTC).timestamp() - os.path.getmtime(match) > 86400:
+                        match.unlink()
+                        continue
                     return cast(dict[str, Any] | None, json.loads(match.read_text(encoding="utf-8")))
                 except Exception:
                     continue
@@ -231,12 +243,40 @@ class CacheStore:
             # Write compressed data to tmp file
             tmp.write_bytes(compressed)
             os.replace(tmp, gz_path)
+            self._evict_if_oversized()
         except Exception:
             log.exception("cache_put_failed key=%s", key)
             if tmp.exists():
                 with contextlib.suppress(Exception):
                     tmp.unlink()
             raise
+
+    def _evict_if_oversized(self) -> None:
+        """Delete oldest cache files if total size exceeds 1GB."""
+        max_bytes = 1024 * 1024 * 1024
+        total = 0
+        files: list[tuple[float, Path]] = []
+        for root, _dirs, filenames in os.walk(self.base_dir):
+            for name in filenames:
+                path = Path(root) / name
+                try:
+                    st = path.stat()
+                    total += st.st_size
+                    files.append((st.st_mtime, path))
+                except (OSError, FileNotFoundError):
+                    continue
+        if total > max_bytes:
+            files.sort(key=lambda x: x[0])
+            for _mtime, path in files:
+                if total <= max_bytes:
+                    break
+                try:
+                    st = path.stat()
+                    size = st.st_size
+                    path.unlink()
+                    total -= size
+                except (OSError, FileNotFoundError):
+                    continue
 
     def delete(self, key: str) -> bool:
         """Delete a cache entry by key.
