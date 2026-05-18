@@ -21,7 +21,7 @@ class TestCitationAnalysis:
 
     async def test_paper_not_found(self) -> None:
         """Paper not found in Semantic Scholar returns error."""
-        with patch("loom.tools.academic_integrity.httpx.AsyncClient") as mock_client_class:
+        with patch("loom.tools.research.academic_integrity.httpx.AsyncClient") as mock_client_class:
             mock_client = MagicMock()
             mock_client.__aenter__.return_value = mock_client
             mock_client.__aexit__.return_value = None

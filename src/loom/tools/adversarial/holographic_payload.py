@@ -18,7 +18,7 @@ _KEYWORDS = ["bomb", "poison", "exploit", "hack", "malware",
 
 
 @handle_tool_errors("research_holographic_encode")
-def research_holographic_encode(
+async def research_holographic_encode(
     text: str,
     fragments: int = 5,
     method: str = "semantic_split",

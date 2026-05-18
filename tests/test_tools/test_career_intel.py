@@ -175,7 +175,7 @@ class TestTranslateAcademicSkills:
 
     async def test_extracts_required_skills(self) -> None:
         """Tool extracts required skills from job description."""
-        with patch("loom.tools.career_Intel._extract_skills_llm") as mock_extract:
+        with patch("loom.tools.career.career_intel._extract_skills_llm") as mock_extract:
             mock_extract.side_effect = [
                 ["machine learning"],
                 ["Python", "system design", "leadership"],

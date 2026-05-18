@@ -173,7 +173,7 @@ class TestGrantForensics:
         modifications to the core algorithms used in contemporary research.
         """
 
-        result = await research_grant_forensics(grant_id="TEST-2024-001", text=text)
+        result = research_grant_forensics(grant_id="TEST-2024-001", text=text)
 
         assert isinstance(result, dict)
         assert "grant_id" in result
@@ -186,7 +186,7 @@ class TestGrantForensics:
         from loom.tools.adversarial.hcs10_academic import research_grant_forensics
 
         text = "research research research methodology methodology methodology approach approach"
-        result = await research_grant_forensics(text=text)
+        result = research_grant_forensics(text=text)
 
         assert isinstance(result, dict)
         if "error" not in result:
@@ -200,7 +200,7 @@ class TestGrantForensics:
 
         # Text with numbers
         text = "We conducted 47 experiments with 183 participants. Found 12 significant effects."
-        result = await research_grant_forensics(text=text)
+        result = research_grant_forensics(text=text)
 
         assert isinstance(result, dict)
         if "error" not in result:
@@ -219,7 +219,7 @@ class TestDataFabrication:
         # Realistic means from psychological study (n=30)
         numbers = [3.2, 4.1, 3.8, 2.9, 4.5, 3.3, 3.7, 4.0, 3.5, 2.8]
 
-        result = await research_data_fabrication(numbers)
+        result = research_data_fabrication(numbers)
 
         assert isinstance(result, dict)
         assert "fabrication_risk" in result
@@ -232,7 +232,7 @@ class TestDataFabrication:
 
         numbers = [1.5, 2.3, 3.7, 4.2, 5.1]
 
-        result = await research_data_fabrication(numbers)
+        result = research_data_fabrication(numbers)
 
         assert isinstance(result, dict)
         assert "grim_failures" in result
@@ -246,7 +246,7 @@ class TestDataFabrication:
 
         numbers = [10, 20, 30, 15, 25, 35, 40, 12, 22, 32]
 
-        result = await research_data_fabrication(numbers)
+        result = research_data_fabrication(numbers)
 
         assert isinstance(result, dict)
         assert "benford_chi_square" in result
@@ -540,8 +540,8 @@ class TestAcademicIntegritySuite:
             await research_citation_analysis("test"),
             await research_retraction_check("test"),
             await research_predatory_journal_check("Test Journal"),
-            await research_grant_forensics(text="test text"),
-            await research_data_fabrication([1.0, 2.0, 3.0]),
+            research_grant_forensics(text="test text"),
+            research_data_fabrication([1.0, 2.0, 3.0]),
             await research_review_cartel("test"),
             await research_monoculture_detect("test field"),
             await research_institutional_decay("Test University"),
@@ -562,7 +562,7 @@ class TestAcademicIntegritySuite:
 
         # These should not raise exceptions
         result1 = await research_retraction_check("")
-        result2 = await research_grant_forensics(text="")
+        result2 = research_grant_forensics(text="")
 
         assert isinstance(result1, dict)
         assert isinstance(result2, dict)

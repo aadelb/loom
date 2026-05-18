@@ -10,9 +10,11 @@ Scores attack success probability based on:
 from __future__ import annotations
 
 import logging
-import sqlite3
 from pathlib import Path
 from typing import Any
+
+import aiosqlite
+
 from loom.error_responses import handle_tool_errors
 
 try:
@@ -36,16 +38,16 @@ MODEL_PERMISSIVENESS = {
 FEEDBACK_DB = Path.home() / ".loom" / "feedback" / "strategy_log.db"
 
 
-def _get_db_conn() -> sqlite3.Connection:
+async def _get_db_conn() -> aiosqlite.Connection:
     """Get SQLite connection to strategy feedback DB."""
     FEEDBACK_DB.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(str(FEEDBACK_DB))
-    conn.execute("""CREATE TABLE IF NOT EXISTS strategy_log (
+    conn = await aiosqlite.connect(str(FEEDBACK_DB))
+    await conn.execute("""CREATE TABLE IF NOT EXISTS strategy_log (
         id INTEGER PRIMARY KEY AUTOINCREMENT, topic TEXT NOT NULL,
         strategy TEXT NOT NULL, model TEXT NOT NULL, hcs_score REAL NOT NULL,
         success INTEGER NOT NULL, timestamp TEXT NOT NULL)""")
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_topic_model ON strategy_log(topic, model)")
-    conn.commit()
+    await conn.execute("CREATE INDEX IF NOT EXISTS idx_topic_model ON strategy_log(topic, model)")
+    await conn.commit()
     return conn
 
 
@@ -97,7 +99,7 @@ def _get_strategy_multiplier(strategy: str) -> float:
     return max(base - safety_penalty, 0.2)
 
 
-def _get_historical_success_rate(
+async def _get_historical_success_rate(
     strategy: str, model: str | None = None
 ) -> tuple[float, float, int]:
     """Query strategy feedback DB for historical success rate.
@@ -106,7 +108,7 @@ def _get_historical_success_rate(
         (success_rate: 0-1.0, avg_hcs_score: 0-100, attempt_count: int)
     """
     try:
-        conn = _get_db_conn()
+        conn = await _get_db_conn()
         query = """SELECT SUM(success), COUNT(*), AVG(hcs_score)
                    FROM strategy_log WHERE strategy = ?"""
         params = [strategy]
@@ -115,8 +117,9 @@ def _get_historical_success_rate(
             query += " AND model = ?"
             params.append(model)
 
-        row = conn.execute(query, params).fetchone()
-        conn.close()
+        async with conn.execute(query, params) as cursor:
+            row = await cursor.fetchone()
+        await conn.close()
 
         if not row or row[1] == 0:
             return 0.5, 0.0, 0  # No data: assume neutral
@@ -131,7 +134,7 @@ def _get_historical_success_rate(
 
 
 @handle_tool_errors("research_predict_success")
-def research_predict_success(
+async def research_predict_success(
     prompt: str,
     strategy: str,
     target_model: str = "auto",
@@ -191,7 +194,7 @@ def research_predict_success(
     prompt_quality = _score_prompt_quality(prompt)
     strategy_multiplier = _get_strategy_multiplier(strategy)
     model_permissiveness = MODEL_PERMISSIVENESS.get(target_model, 0.5)
-    historical_rate, historical_hcs, data_points = _get_historical_success_rate(
+    historical_rate, historical_hcs, data_points = await _get_historical_success_rate(
         strategy, target_model
     )
 
@@ -232,8 +235,8 @@ def research_predict_success(
     if recommendation in ("skip", "try_alternative"):
         # Find best-performing strategy overall (excluding current one)
         try:
-            conn = _get_db_conn()
-            best = conn.execute(
+            conn = await _get_db_conn()
+            async with conn.execute(
                 """SELECT strategy FROM strategy_log
                    WHERE strategy != ?
                    GROUP BY strategy
@@ -241,8 +244,9 @@ def research_predict_success(
                    ORDER BY SUM(success)*1.0/COUNT(*) DESC, AVG(hcs_score) DESC
                    LIMIT 1""",
                 (strategy,)
-            ).fetchone()
-            conn.close()
+            ) as cursor:
+                best = await cursor.fetchone()
+            await conn.close()
             alternative_strategy = best[0] if best else None
         except Exception:
             alternative_strategy = None

@@ -1,0 +1,1162 @@
+[
+  {
+    "tool": "research_fetch",
+    "case": "empty_string",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"url\": \"\", \"error\": \"scheme '' not allowed (http/https only)\", \"tool\": \"unknown\", \"elapsed_ms\": 1, \"error_type\": \"ValidationError\", \"source\": \"research_fetch\", \"category\": \"\"}",
+    "payload_preview": "{'url': '', 'mode': '', 'headers': '', 'user_agent': '', 'proxy': '', 'cookies': '', 'accept_language': '', 'wait_for': '', 'return_format': '', 'timeout': 1, 'backend': '', 'solve_cloudflare': True, "
+  },
+  {
+    "tool": "research_fetch",
+    "case": "long_input",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"url\": \"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "payload_preview": "{'url': 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+  },
+  {
+    "tool": "research_fetch",
+    "case": "unicode_arabic",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"url\": \"\\u0645\\u0631\\u062d\\u0628\\u0627 \\u0628\\u0627\\u0644\\u0639\\u0627\\u0644\\u0645 \\ud83c\\udf0d \\u65e5\\u672c\\u8a9e \\u03b5\\u03bb\\u03bb\\u03b7\\u03bd\\u03b9\\u03ba\\u03ac\", \"error\": \"scheme '' not allowed (http/https only)\", \"tool\": \"unknown\", \"elapsed_ms\": 1, \"error_type\": \"ValidationError\", \"source\": \"re",
+    "payload_preview": "{'url': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'mode': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'headers': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'user_agent': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'proxy': 'مرحبا بالعالم 🌍 日本語 ε"
+  },
+  {
+    "tool": "research_fetch",
+    "case": "missing_required",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"research_fetch() missing 1 required positional argument: 'url'\", \"tool\": \"research_fetch\", \"error_type\": \"TypeError\", \"elapsed_ms\": 0, \"source\": \"research_fetch\", \"category\": \"\"}",
+    "payload_preview": "{'mode': 'stealthy', 'headers': {}, 'user_agent': 'test', 'proxy': 'test', 'cookies': {}, 'accept_language': 'en-US,en;q=0.9', 'wait_for': 'test', 'return_format': 'text', 'timeout': 1, 'backend': 'te"
+  },
+  {
+    "tool": "research_fetch",
+    "case": "invalid_type",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"url\": 12345, \"error\": \"url missing, wrong type, or too long\", \"tool\": \"unknown\", \"elapsed_ms\": 0, \"error_type\": \"ValidationError\", \"source\": \"research_fetch\", \"category\": \"\"}",
+    "payload_preview": "{'url': 12345, 'mode': 'stealthy', 'headers': {}, 'user_agent': 'test', 'proxy': 'test', 'cookies': {}, 'accept_language': 'en-US,en;q=0.9', 'wait_for': 'test', 'return_format': 'text', 'timeout': 1, "
+  },
+  {
+    "tool": "research_search",
+    "case": "empty_string",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"provider\": \"\", \"query\": \"\", \"results\": [], \"error\": \"Unknown provider: \", \"cost_estimate_usd\": 0.0, \"free_tier\": false, \"elapsed_ms\": 2, \"tool\": \"research_search\", \"error_type\": \"ValidationError\", \"source\": \"research_search\", \"category\": \"\"}",
+    "payload_preview": "{'query': '', 'provider': '', 'n': 10, 'include_domains': '', 'exclude_domains': '', 'start_date': '', 'end_date': '', 'language': '', 'provider_config': '', 'free_only': False}"
+  },
+  {
+    "tool": "research_search",
+    "case": "long_input",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"'str' object has no attribute 'items'\", \"tool\": \"research_search\", \"error_type\": \"AttributeError\", \"elapsed_ms\": 0, \"source\": \"research_search\", \"category\": \"\"}",
+    "payload_preview": "{'query': 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+  },
+  {
+    "tool": "research_search",
+    "case": "unicode_arabic",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"'str' object has no attribute 'items'\", \"tool\": \"research_search\", \"error_type\": \"AttributeError\", \"elapsed_ms\": 0, \"source\": \"research_search\", \"category\": \"\"}",
+    "payload_preview": "{'query': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'provider': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'n': 10, 'include_domains': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'exclude_domains': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'st"
+  },
+  {
+    "tool": "research_search",
+    "case": "missing_required",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"research_search() missing 1 required positional argument: 'query'\", \"tool\": \"research_search\", \"error_type\": \"TypeError\", \"elapsed_ms\": 0, \"source\": \"research_search\", \"category\": \"\"}",
+    "payload_preview": "{'provider': 'test', 'n': 10, 'include_domains': [], 'exclude_domains': [], 'start_date': 'test', 'end_date': 'test', 'language': 'test', 'provider_config': {}, 'free_only': False}"
+  },
+  {
+    "tool": "research_search",
+    "case": "invalid_type",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"'int' object is not subscriptable\", \"tool\": \"research_search\", \"error_type\": \"TypeError\", \"elapsed_ms\": 0, \"source\": \"research_search\", \"category\": \"\"}",
+    "payload_preview": "{'query': 12345, 'provider': 'test', 'n': 10, 'include_domains': [], 'exclude_domains': [], 'start_date': 'test', 'end_date': 'test', 'language': 'test', 'provider_config': {}, 'free_only': False}"
+  },
+  {
+    "tool": "research_deep",
+    "case": "empty_string",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"Query cannot be empty\", \"tool\": \"research_deep\", \"elapsed_ms\": 0, \"error_type\": \"ValidationError\", \"source\": \"research_deep\", \"category\": \"\"}",
+    "payload_preview": "{'query': '', 'depth': 2, 'include_domains': '', 'exclude_domains': '', 'start_date': '', 'end_date': '', 'language': '', 'provider_config': '', 'search_providers': '', 'expand_queries': True, 'extrac"
+  },
+  {
+    "tool": "research_deep",
+    "case": "long_input",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"'str' object has no attribute 'append'\", \"tool\": \"research_deep\", \"error_type\": \"AttributeError\", \"elapsed_ms\": 0, \"source\": \"research_deep\", \"category\": \"\"}",
+    "payload_preview": "{'query': 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+  },
+  {
+    "tool": "research_deep",
+    "case": "unicode_arabic",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"'str' object has no attribute 'append'\", \"tool\": \"research_deep\", \"error_type\": \"AttributeError\", \"elapsed_ms\": 0, \"source\": \"research_deep\", \"category\": \"\"}",
+    "payload_preview": "{'query': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'depth': 2, 'include_domains': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'exclude_domains': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'start_date': 'مرحبا بالعالم 🌍 日本語 ελληνικά'"
+  },
+  {
+    "tool": "research_deep",
+    "case": "missing_required",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"research_deep() missing 1 required positional argument: 'query'\", \"tool\": \"research_deep\", \"error_type\": \"TypeError\", \"elapsed_ms\": 0, \"source\": \"research_deep\", \"category\": \"\"}",
+    "payload_preview": "{'depth': 2, 'include_domains': [], 'exclude_domains': [], 'start_date': 'test', 'end_date': 'test', 'language': 'test', 'provider_config': {}, 'search_providers': [], 'expand_queries': True, 'extract"
+  },
+  {
+    "tool": "research_deep",
+    "case": "invalid_type",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"'int' object has no attribute 'strip'\", \"tool\": \"research_deep\", \"error_type\": \"AttributeError\", \"elapsed_ms\": 0, \"source\": \"research_deep\", \"category\": \"\"}",
+    "payload_preview": "{'query': 12345, 'depth': 2, 'include_domains': [], 'exclude_domains': [], 'start_date': 'test', 'end_date': 'test', 'language': 'test', 'provider_config': {}, 'search_providers': [], 'expand_queries'"
+  },
+  {
+    "tool": "research_markdown",
+    "case": "empty_string",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"ValidationError\", \"tool\": \"research_markdown\", \"error_type\": \"ValidationError\", \"elapsed_ms\": 0, \"source\": \"research_markdown\", \"category\": \"\"}",
+    "payload_preview": "{'url': '', 'bypass_cache': False, 'css_selector': '', 'js_before_scrape': '', 'screenshot': False, 'remove_selectors': '', 'headers': '', 'user_agent': '', 'proxy': '', 'cookies': '', 'accept_languag"
+  },
+  {
+    "tool": "research_markdown",
+    "case": "long_input",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"ValidationError\", \"tool\": \"research_markdown\", \"error_type\": \"ValidationError\", \"elapsed_ms\": 0, \"source\": \"research_markdown\", \"category\": \"\"}",
+    "payload_preview": "{'url': 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+  },
+  {
+    "tool": "research_markdown",
+    "case": "unicode_arabic",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"ValidationError\", \"tool\": \"research_markdown\", \"error_type\": \"ValidationError\", \"elapsed_ms\": 0, \"source\": \"research_markdown\", \"category\": \"\"}",
+    "payload_preview": "{'url': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'bypass_cache': False, 'css_selector': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'js_before_scrape': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'screenshot': False, 'remove_selector"
+  },
+  {
+    "tool": "research_markdown",
+    "case": "missing_required",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"research_markdown() missing 1 required positional argument: 'url'\", \"tool\": \"research_markdown\", \"error_type\": \"TypeError\", \"elapsed_ms\": 0, \"source\": \"research_markdown\", \"category\": \"\"}",
+    "payload_preview": "{'bypass_cache': False, 'css_selector': 'test', 'js_before_scrape': 'test', 'screenshot': False, 'remove_selectors': [], 'headers': {}, 'user_agent': 'test', 'proxy': 'test', 'cookies': {}, 'accept_la"
+  },
+  {
+    "tool": "research_markdown",
+    "case": "invalid_type",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"ValidationError\", \"tool\": \"research_markdown\", \"error_type\": \"ValidationError\", \"elapsed_ms\": 0, \"source\": \"research_markdown\", \"category\": \"\"}",
+    "payload_preview": "{'url': 12345, 'bypass_cache': False, 'css_selector': 'test', 'js_before_scrape': 'test', 'screenshot': False, 'remove_selectors': [], 'headers': {}, 'user_agent': 'test', 'proxy': 'test', 'cookies': "
+  },
+  {
+    "tool": "research_spider",
+    "case": "empty_string",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"ValidationError\", \"tool\": \"research_spider\", \"error_type\": \"ValidationError\", \"elapsed_ms\": 0, \"source\": \"research_spider\", \"category\": \"\"}",
+    "payload_preview": "{'urls': '', 'mode': '', 'max_chars_each': 5000, 'concurrency': 1, 'fail_fast': False, 'dedupe': True, 'order': '', 'solve_cloudflare': True, 'headers': '', 'user_agent': '', 'proxy': '', 'cookies': '"
+  },
+  {
+    "tool": "research_spider",
+    "case": "long_input",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"ValidationError\", \"tool\": \"research_spider\", \"error_type\": \"ValidationError\", \"elapsed_ms\": 0, \"source\": \"research_spider\", \"category\": \"\"}",
+    "payload_preview": "{'urls': 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+  },
+  {
+    "tool": "research_spider",
+    "case": "unicode_arabic",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"ValidationError\", \"tool\": \"research_spider\", \"error_type\": \"ValidationError\", \"elapsed_ms\": 0, \"source\": \"research_spider\", \"category\": \"\"}",
+    "payload_preview": "{'urls': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'mode': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'max_chars_each': 5000, 'concurrency': 1, 'fail_fast': False, 'dedupe': True, 'order': 'مرحبا بالعالم 🌍 日本語 ελληνικά', "
+  },
+  {
+    "tool": "research_spider",
+    "case": "missing_required",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"research_spider() missing 1 required positional argument: 'urls'\", \"tool\": \"research_spider\", \"error_type\": \"TypeError\", \"elapsed_ms\": 0, \"source\": \"research_spider\", \"category\": \"\"}",
+    "payload_preview": "{'mode': 'stealthy', 'max_chars_each': 5000, 'concurrency': 1, 'fail_fast': False, 'dedupe': True, 'order': 'input', 'solve_cloudflare': True, 'headers': {}, 'user_agent': 'test', 'proxy': 'test', 'co"
+  },
+  {
+    "tool": "research_spider",
+    "case": "invalid_type",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"ValidationError\", \"tool\": \"research_spider\", \"error_type\": \"ValidationError\", \"elapsed_ms\": 0, \"source\": \"research_spider\", \"category\": \"\"}",
+    "payload_preview": "{'urls': 'not_a_list', 'mode': 'stealthy', 'max_chars_each': 5000, 'concurrency': 1, 'fail_fast': False, 'dedupe': True, 'order': 'input', 'solve_cloudflare': True, 'headers': {}, 'user_agent': 'test'"
+  },
+  {
+    "tool": "research_reframe_until_hcs",
+    "case": "empty_string",
+    "status": 200,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "{\"best_response\": \"\", \"best_hcs\": 0, \"best_strategy\": \"none\", \"best_dimensions\": {}, \"target_hcs\": 9, \"target_met\": false, \"attempts\": [{\"iteration\": 1, \"strategy\": \"ethical_anchor\", \"hcs\": 0, \"response_length\": 0, \"status\": \"empty_response\"}, {\"iteration\": 2, \"strategy\": \"deep_inception\", \"hcs\": 0,",
+    "payload_preview": "{'prompt': '', 'target_hcs': 9, 'model': '', 'max_iterations': 4, 'max_tokens': 800, 'system_prompt': '', 'strategies': ''}"
+  },
+  {
+    "tool": "research_reframe_until_hcs",
+    "case": "long_input",
+    "status": 200,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "{\"best_response\": \"\", \"best_hcs\": 0, \"best_strategy\": \"none\", \"best_dimensions\": {}, \"target_hcs\": 9, \"target_met\": false, \"attempts\": [{\"iteration\": 1, \"strategy\": \"X\", \"hcs\": 0, \"response_length\": 0, \"status\": \"empty_response\"}, {\"iteration\": 2, \"strategy\": \"X\", \"hcs\": 0, \"response_length\": 0, \"st",
+    "payload_preview": "{'prompt': 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+  },
+  {
+    "tool": "research_reframe_until_hcs",
+    "case": "unicode_arabic",
+    "status": 200,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "{\"best_response\": \"\", \"best_hcs\": 0, \"best_strategy\": \"none\", \"best_dimensions\": {}, \"target_hcs\": 9, \"target_met\": false, \"attempts\": [{\"iteration\": 1, \"strategy\": \"\\u0645\", \"hcs\": 0, \"response_length\": 0, \"status\": \"empty_response\"}, {\"iteration\": 2, \"strategy\": \"\\u0631\", \"hcs\": 0, \"response_lengt",
+    "payload_preview": "{'prompt': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'target_hcs': 9, 'model': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'max_iterations': 4, 'max_tokens': 800, 'system_prompt': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'strategie"
+  },
+  {
+    "tool": "research_reframe_until_hcs",
+    "case": "missing_required",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"research_reframe_until_hcs() missing 1 required positional argument: 'prompt'\", \"tool\": \"research_reframe_until_hcs\", \"error_type\": \"TypeError\", \"elapsed_ms\": 0, \"source\": \"research_reframe_until_hcs\", \"category\": \"\"}",
+    "payload_preview": "{'target_hcs': 9, 'model': 'mannix/llama3.1-8b-abliterated', 'max_iterations': 4, 'max_tokens': 800, 'system_prompt': 'test', 'strategies': []}"
+  },
+  {
+    "tool": "research_reframe_until_hcs",
+    "case": "invalid_type",
+    "status": 200,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "{\"best_response\": \"\", \"best_hcs\": 0, \"best_strategy\": \"none\", \"best_dimensions\": {}, \"target_hcs\": 9, \"target_met\": false, \"attempts\": [{\"iteration\": 1, \"strategy\": \"ethical_anchor\", \"hcs\": 0, \"response_length\": 0, \"status\": \"empty_response\"}, {\"iteration\": 2, \"strategy\": \"deep_inception\", \"hcs\": 0,",
+    "payload_preview": "{'prompt': 12345, 'target_hcs': 9, 'model': 'mannix/llama3.1-8b-abliterated', 'max_iterations': 4, 'max_tokens': 800, 'system_prompt': 'test', 'strategies': []}"
+  },
+  {
+    "tool": "research_prompt_reframe",
+    "case": "empty_string",
+    "status": 200,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "{\"original\": \"\", \"reframed\": \"\", \"strategy_used\": \"\", \"strategy_name\": \"\", \"model_target\": \"gpt\", \"expected_multiplier\": 1.0, \"framework\": \"\", \"all_variants\": {\"laa_jailbreak\": {\"name\": \"laa_jailbreak\", \"reframed\": \"Research note glossary (local to this request):\\n- atlas: \\n\\nUsing only the glossar",
+    "payload_preview": "{'prompt': '', 'strategy': '', 'model': '', 'framework': ''}"
+  },
+  {
+    "tool": "research_prompt_reframe",
+    "case": "long_input",
+    "status": 200,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "{\"original\": \"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "payload_preview": "{'prompt': 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+  },
+  {
+    "tool": "research_prompt_reframe",
+    "case": "unicode_arabic",
+    "status": 200,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "{\"original\": \"\\u0645\\u0631\\u062d\\u0628\\u0627 \\u0628\\u0627\\u0644\\u0639\\u0627\\u0644\\u0645 \\ud83c\\udf0d \\u65e5\\u672c\\u8a9e \\u03b5\\u03bb\\u03bb\\u03b7\\u03bd\\u03b9\\u03ba\\u03ac\", \"reframed\": \"\\u0645\\u0631\\u062d\\u0628\\u0627 \\u0628\\u0627\\u0644\\u0639\\u0627\\u0644\\u0645 \\ud83c\\udf0d \\u65e5\\u672c\\u8a9e \\u03b5\\u03",
+    "payload_preview": "{'prompt': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'strategy': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'model': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'framework': 'مرحبا بالعالم 🌍 日本語 ελληνικά'}"
+  },
+  {
+    "tool": "research_prompt_reframe",
+    "case": "missing_required",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"research_prompt_reframe() missing 1 required positional argument: 'prompt'\", \"tool\": \"research_prompt_reframe\", \"error_type\": \"TypeError\", \"elapsed_ms\": 0, \"source\": \"research_prompt_reframe\", \"category\": \"\"}",
+    "payload_preview": "{'strategy': 'auto', 'model': 'auto', 'framework': 'ieee'}"
+  },
+  {
+    "tool": "research_prompt_reframe",
+    "case": "invalid_type",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"replace() argument 2 must be str, not int\", \"tool\": \"research_prompt_reframe\", \"elapsed_ms\": 55, \"error_type\": \"ValidationError\", \"source\": \"research_prompt_reframe\", \"category\": \"\"}",
+    "payload_preview": "{'prompt': 12345, 'strategy': 'auto', 'model': 'auto', 'framework': 'ieee'}"
+  },
+  {
+    "tool": "research_auto_reframe",
+    "case": "empty_string",
+    "status": 200,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "{\"original\": \"\", \"accepted\": true, \"attempts\": 1, \"successful_strategy\": \"compliance_audit_fork\", \"successful_strategy_name\": \"compliance_audit_fork\", \"response_preview\": \"I'm ready to cooperate fully with the authorized test as per the EU AI Act Article 15 robustness audit. Please provide the speci",
+    "payload_preview": "{'prompt': '', 'target_url': '', 'model': '', 'max_attempts': 5}"
+  },
+  {
+    "tool": "research_auto_reframe",
+    "case": "long_input",
+    "status": 200,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "{\"original\": \"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "payload_preview": "{'prompt': 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+  },
+  {
+    "tool": "research_auto_reframe",
+    "case": "unicode_arabic",
+    "status": 200,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "{\"original\": \"\\u0645\\u0631\\u062d\\u0628\\u0627 \\u0628\\u0627\\u0644\\u0639\\u0627\\u0644\\u0645 \\ud83c\\udf0d \\u65e5\\u672c\\u8a9e \\u03b5\\u03bb\\u03bb\\u03b7\\u03bd\\u03b9\\u03ba\\u03ac\", \"accepted\": true, \"attempts\": 1, \"successful_strategy\": \"compliance_audit_fork\", \"successful_strategy_name\": \"compliance_audit_fo",
+    "payload_preview": "{'prompt': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'target_url': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'model': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'max_attempts': 5}"
+  },
+  {
+    "tool": "research_auto_reframe",
+    "case": "missing_required",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"research_auto_reframe() missing 1 required positional argument: 'prompt'\", \"tool\": \"research_auto_reframe\", \"error_type\": \"TypeError\", \"elapsed_ms\": 0, \"source\": \"research_auto_reframe\", \"category\": \"\"}",
+    "payload_preview": "{'target_url': '', 'model': 'auto', 'max_attempts': 5}"
+  },
+  {
+    "tool": "research_auto_reframe",
+    "case": "invalid_type",
+    "status": 200,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "{\"original\": 12345, \"accepted\": true, \"attempts\": 1, \"successful_strategy\": \"compliance_audit_fork\", \"successful_strategy_name\": \"compliance_audit_fork\", \"response_preview\": \"I'm happy to cooperate with the authorized testers as per the EU AI Act Article 15 robustness audit. The input \\\"12345\\\" appe",
+    "payload_preview": "{'prompt': 12345, 'target_url': '', 'model': 'auto', 'max_attempts': 5}"
+  },
+  {
+    "tool": "research_safety_filter_map",
+    "case": "empty_string",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"target\": \"\", \"error\": \"Invalid URL: scheme '' not allowed (http/https only)\", \"elapsed_ms\": 0, \"tool\": \"research_safety_filter_map\", \"error_type\": \"ValidationError\", \"source\": \"research_safety_filter_map\", \"category\": \"\"}",
+    "payload_preview": "{'target_url': ''}"
+  },
+  {
+    "tool": "research_safety_filter_map",
+    "case": "long_input",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"target\": \"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "payload_preview": "{'target_url': 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+  },
+  {
+    "tool": "research_safety_filter_map",
+    "case": "unicode_arabic",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"target\": \"\\u0645\\u0631\\u062d\\u0628\\u0627 \\u0628\\u0627\\u0644\\u0639\\u0627\\u0644\\u0645 \\ud83c\\udf0d \\u65e5\\u672c\\u8a9e \\u03b5\\u03bb\\u03bb\\u03b7\\u03bd\\u03b9\\u03ba\\u03ac\", \"error\": \"Invalid URL: scheme '' not allowed (http/https only)\", \"elapsed_ms\": 0, \"tool\": \"research_safety_filter_map\", \"error_type",
+    "payload_preview": "{'target_url': 'مرحبا بالعالم 🌍 日本語 ελληνικά'}"
+  },
+  {
+    "tool": "research_safety_filter_map",
+    "case": "missing_required",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"research_safety_filter_map() missing 1 required positional argument: 'target_url'\", \"tool\": \"research_safety_filter_map\", \"error_type\": \"TypeError\", \"elapsed_ms\": 0, \"source\": \"research_safety_filter_map\", \"category\": \"\"}",
+    "payload_preview": "{}"
+  },
+  {
+    "tool": "research_safety_filter_map",
+    "case": "invalid_type",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"target\": 12345, \"error\": \"Invalid URL: url missing, wrong type, or too long\", \"elapsed_ms\": 0, \"tool\": \"research_safety_filter_map\", \"error_type\": \"ValidationError\", \"source\": \"research_safety_filter_map\", \"category\": \"\"}",
+    "payload_preview": "{'target_url': 12345}"
+  },
+  {
+    "tool": "research_adversarial_robustness",
+    "case": "empty_string",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"Invalid target_url: scheme '' not allowed (http/https only)\", \"tool\": \"research_adversarial_robustness\", \"elapsed_ms\": 0, \"error_type\": \"ValidationError\", \"source\": \"research_adversarial_robustness\", \"category\": \"\"}",
+    "payload_preview": "{'target_url': '', 'test_count': 5}"
+  },
+  {
+    "tool": "research_adversarial_robustness",
+    "case": "long_input",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"Invalid target_url: url missing, wrong type, or too long\", \"tool\": \"research_adversarial_robustness\", \"elapsed_ms\": 0, \"error_type\": \"ValidationError\", \"source\": \"research_adversarial_robustness\", \"category\": \"\"}",
+    "payload_preview": "{'target_url': 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+  },
+  {
+    "tool": "research_adversarial_robustness",
+    "case": "unicode_arabic",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"Invalid target_url: scheme '' not allowed (http/https only)\", \"tool\": \"research_adversarial_robustness\", \"elapsed_ms\": 0, \"error_type\": \"ValidationError\", \"source\": \"research_adversarial_robustness\", \"category\": \"\"}",
+    "payload_preview": "{'target_url': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'test_count': 5}"
+  },
+  {
+    "tool": "research_adversarial_robustness",
+    "case": "missing_required",
+    "status": 400,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"Invalid parameters: Logger._log() got an unexpected keyword argument 'tool'\"}",
+    "payload_preview": "{'test_count': 5}"
+  },
+  {
+    "tool": "research_adversarial_robustness",
+    "case": "invalid_type",
+    "status": 400,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"Invalid parameters: Logger._log() got an unexpected keyword argument 'tool'\"}",
+    "payload_preview": "{'target_url': 12345, 'test_count': 5}"
+  },
+  {
+    "tool": "research_crescendo_chain",
+    "case": "empty_string",
+    "status": 200,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "{\"target_prompt\": \"\", \"chain\": [{\"turn\": \"1\", \"role\": \"user\", \"content\": \"What are the general best practices for understanding and evaluating AI system robustness?\", \"purpose\": \"Establish benign baseline, model agrees to discuss topic\"}, {\"turn\": \"2\", \"role\": \"user\", \"content\": \"What specific techn",
+    "payload_preview": "{'prompt': '', 'turns': 5, 'model': ''}"
+  },
+  {
+    "tool": "research_crescendo_chain",
+    "case": "long_input",
+    "status": 200,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "{\"target_prompt\": \"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "payload_preview": "{'prompt': 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+  },
+  {
+    "tool": "research_crescendo_chain",
+    "case": "unicode_arabic",
+    "status": 200,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "{\"target_prompt\": \"\\u0645\\u0631\\u062d\\u0628\\u0627 \\u0628\\u0627\\u0644\\u0639\\u0627\\u0644\\u0645 \\ud83c\\udf0d \\u65e5\\u672c\\u8a9e \\u03b5\\u03bb\\u03bb\\u03b7\\u03bd\\u03b9\\u03ba\\u03ac\", \"chain\": [{\"turn\": \"1\", \"role\": \"user\", \"content\": \"What are the general best practices for understanding and evaluating AI ",
+    "payload_preview": "{'prompt': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'turns': 5, 'model': 'مرحبا بالعالم 🌍 日本語 ελληνικά'}"
+  },
+  {
+    "tool": "research_crescendo_chain",
+    "case": "missing_required",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"research_crescendo_chain() missing 1 required positional argument: 'prompt'\", \"tool\": \"research_crescendo_chain\", \"error_type\": \"TypeError\", \"elapsed_ms\": 0, \"source\": \"research_crescendo_chain\", \"category\": \"\"}",
+    "payload_preview": "{'turns': 5, 'model': 'auto'}"
+  },
+  {
+    "tool": "research_crescendo_chain",
+    "case": "invalid_type",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"'int' object is not subscriptable\", \"tool\": \"research_crescendo_chain\", \"elapsed_ms\": 58, \"error_type\": \"ValidationError\", \"source\": \"research_crescendo_chain\", \"category\": \"\"}",
+    "payload_preview": "{'prompt': 12345, 'turns': 5, 'model': 'auto'}"
+  },
+  {
+    "tool": "research_health_check",
+    "case": "baseline",
+    "status": 200,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "{\"status\": \"degraded\", \"uptime_seconds\": 799, \"tool_count\": 885, \"strategy_count\": 957, \"llm_providers\": {\"groq\": {\"status\": \"up\"}, \"nvidia_nim\": {\"status\": \"up\"}, \"deepseek\": {\"status\": \"up\"}, \"gemini\": {\"status\": \"up\"}, \"moonshot\": {\"status\": \"up\"}, \"openai\": {\"status\": \"up\"}, \"anthropic\": {\"statu",
+    "payload_preview": "{}"
+  },
+  {
+    "tool": "research_cpu_pool_status",
+    "case": "baseline",
+    "status": 200,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "{\"status\": \"unavailable\", \"reason\": \"cpu_pool module not installed\", \"source\": \"research_cpu_pool_status\", \"category\": \"\", \"elapsed_ms\": 1}",
+    "payload_preview": "{}"
+  },
+  {
+    "tool": "research_analytics_dashboard",
+    "case": "empty_string",
+    "status": 200,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "{\"top_tools\": [{\"tool_name\": \"research_prompt_reframe\", \"call_count\": 21, \"percentage\": 31.82}, {\"tool_name\": \"research_fetch\", \"call_count\": 5, \"percentage\": 7.58}, {\"tool_name\": \"research_search\", \"call_count\": 5, \"percentage\": 7.58}, {\"tool_name\": \"research_deep\", \"call_count\": 5, \"percentage\": 7",
+    "payload_preview": "{'include_unused': False, 'all_tools': ''}"
+  },
+  {
+    "tool": "research_analytics_dashboard",
+    "case": "long_input",
+    "status": 200,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "{\"top_tools\": [{\"tool_name\": \"research_prompt_reframe\", \"call_count\": 21, \"percentage\": 31.34}, {\"tool_name\": \"research_fetch\", \"call_count\": 5, \"percentage\": 7.46}, {\"tool_name\": \"research_search\", \"call_count\": 5, \"percentage\": 7.46}, {\"tool_name\": \"research_deep\", \"call_count\": 5, \"percentage\": 7",
+    "payload_preview": "{'include_unused': False, 'all_tools': 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+  },
+  {
+    "tool": "research_analytics_dashboard",
+    "case": "unicode_arabic",
+    "status": 200,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "{\"top_tools\": [{\"tool_name\": \"research_prompt_reframe\", \"call_count\": 21, \"percentage\": 30.88}, {\"tool_name\": \"research_fetch\", \"call_count\": 5, \"percentage\": 7.35}, {\"tool_name\": \"research_search\", \"call_count\": 5, \"percentage\": 7.35}, {\"tool_name\": \"research_deep\", \"call_count\": 5, \"percentage\": 7",
+    "payload_preview": "{'include_unused': False, 'all_tools': 'مرحبا بالعالم 🌍 日本語 ελληνικά'}"
+  },
+  {
+    "tool": "research_analytics_dashboard",
+    "case": "invalid_type",
+    "status": 200,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "{\"top_tools\": [{\"tool_name\": \"research_prompt_reframe\", \"call_count\": 21, \"percentage\": 30.43}, {\"tool_name\": \"research_fetch\", \"call_count\": 5, \"percentage\": 7.25}, {\"tool_name\": \"research_search\", \"call_count\": 5, \"percentage\": 7.25}, {\"tool_name\": \"research_deep\", \"call_count\": 5, \"percentage\": 7",
+    "payload_preview": "{'include_unused': False, 'all_tools': []}"
+  },
+  {
+    "tool": "research_circuit_status",
+    "case": "baseline",
+    "status": 200,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "{\"elapsed_ms\": 0, \"source\": \"research_circuit_status\", \"category\": \"\"}",
+    "payload_preview": "{}"
+  },
+  {
+    "tool": "research_threat_profile",
+    "case": "empty_string",
+    "status": 200,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "{\"username\": \"\", \"email\": \"\", \"platforms_found\": [{\"platform\": \"github\", \"url\": \"https://github.com/\", \"exists\": true}, {\"platform\": \"gitlab\", \"url\": \"https://gitlab.com/\", \"exists\": true}, {\"platform\": \"keybase\", \"url\": \"https://keybase.io/\", \"exists\": true}, {\"platform\": \"dev_to\", \"url\": \"https://",
+    "payload_preview": "{'username': '', 'email': '', 'check_platforms': True, 'max_platforms': 15}"
+  },
+  {
+    "tool": "research_threat_profile",
+    "case": "long_input",
+    "status": 200,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "{\"username\": \"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "payload_preview": "{'username': 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+  },
+  {
+    "tool": "research_threat_profile",
+    "case": "unicode_arabic",
+    "status": 200,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "{\"username\": \"\\u0645\\u0631\\u062d\\u0628\\u0627 \\u0628\\u0627\\u0644\\u0639\\u0627\\u0644\\u0645 \\ud83c\\udf0d \\u65e5\\u672c\\u8a9e \\u03b5\\u03bb\\u03bb\\u03b7\\u03bd\\u03b9\\u03ba\\u03ac\", \"email\": \"\\u0645\\u0631\\u062d\\u0628\\u0627 \\u0628\\u0627\\u0644\\u0639\\u0627\\u0644\\u0645 \\ud83c\\udf0d \\u65e5\\u672c\\u8a9e \\u03b5\\u03bb\\",
+    "payload_preview": "{'username': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'email': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'check_platforms': True, 'max_platforms': 15}"
+  },
+  {
+    "tool": "research_threat_profile",
+    "case": "missing_required",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"research_threat_profile() missing 1 required positional argument: 'username'\", \"tool\": \"research_threat_profile\", \"error_type\": \"TypeError\", \"elapsed_ms\": 0, \"source\": \"research_threat_profile\", \"category\": \"\"}",
+    "payload_preview": "{'email': '', 'check_platforms': True, 'max_platforms': 15}"
+  },
+  {
+    "tool": "research_threat_profile",
+    "case": "invalid_type",
+    "status": 200,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "{\"username\": 12345, \"email\": \"\", \"platforms_found\": [{\"platform\": \"github\", \"url\": \"https://github.com/12345\", \"exists\": true}, {\"platform\": \"gitlab\", \"url\": \"https://gitlab.com/12345\", \"exists\": true}, {\"platform\": \"keybase\", \"url\": \"https://keybase.io/12345\", \"exists\": true}, {\"platform\": \"dev_to\"",
+    "payload_preview": "{'username': 12345, 'email': '', 'check_platforms': True, 'max_platforms': 15}"
+  },
+  {
+    "tool": "research_leak_scan",
+    "case": "empty_string",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"target\": \"\", \"target_type\": \"\", \"error\": \"Unsupported target_type: . Must be 'domain', 'email', 'ip', or 'keyword'.\", \"sources_checked\": [], \"total_exposures\": 0, \"exposures\": [], \"elapsed_ms\": 20, \"tool\": \"research_leak_scan\", \"error_type\": \"ValidationError\", \"source\": \"research_leak_scan\", \"cate",
+    "payload_preview": "{'target': '', 'target_type': '', 'query': ''}"
+  },
+  {
+    "tool": "research_leak_scan",
+    "case": "long_input",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"target\": \"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "payload_preview": "{'target': 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+  },
+  {
+    "tool": "research_leak_scan",
+    "case": "unicode_arabic",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"target\": \"\\u0645\\u0631\\u062d\\u0628\\u0627 \\u0628\\u0627\\u0644\\u0639\\u0627\\u0644\\u0645 \\ud83c\\udf0d \\u65e5\\u672c\\u8a9e \\u03b5\\u03bb\\u03bb\\u03b7\\u03bd\\u03b9\\u03ba\\u03ac\", \"target_type\": \"\\u0645\\u0631\\u062d\\u0628\\u0627 \\u0628\\u0627\\u0644\\u0639\\u0627\\u0644\\u0645 \\ud83c\\udf0d \\u65e5\\u672c\\u8a9e \\u03b5\\u0",
+    "payload_preview": "{'target': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'target_type': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'query': 'مرحبا بالعالم 🌍 日本語 ελληνικά'}"
+  },
+  {
+    "tool": "research_leak_scan",
+    "case": "invalid_type",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"target\": \"\", \"target_type\": \"domain\", \"error\": \"Invalid domain format\", \"sources_checked\": [], \"total_exposures\": 0, \"exposures\": [], \"elapsed_ms\": 0, \"tool\": \"research_leak_scan\", \"error_type\": \"ValidationError\", \"source\": \"research_leak_scan\", \"category\": \"\"}",
+    "payload_preview": "{'target': '', 'target_type': 'domain', 'query': ''}"
+  },
+  {
+    "tool": "research_config_get",
+    "case": "empty_string",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"unknown key: \", \"source\": \"research_config_get\", \"category\": \"\", \"elapsed_ms\": 0}",
+    "payload_preview": "{'key': ''}"
+  },
+  {
+    "tool": "research_config_get",
+    "case": "long_input",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"unknown key: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "payload_preview": "{'key': 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+  },
+  {
+    "tool": "research_config_get",
+    "case": "unicode_arabic",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"unknown key: \\u0645\\u0631\\u062d\\u0628\\u0627 \\u0628\\u0627\\u0644\\u0639\\u0627\\u0644\\u0645 \\ud83c\\udf0d \\u65e5\\u672c\\u8a9e \\u03b5\\u03bb\\u03bb\\u03b7\\u03bd\\u03b9\\u03ba\\u03ac\", \"source\": \"research_config_get\", \"category\": \"\", \"elapsed_ms\": 0}",
+    "payload_preview": "{'key': 'مرحبا بالعالم 🌍 日本語 ελληνικά'}"
+  },
+  {
+    "tool": "research_config_get",
+    "case": "invalid_type",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"unknown key: test\", \"source\": \"research_config_get\", \"category\": \"\", \"elapsed_ms\": 0}",
+    "payload_preview": "{'key': 'test'}"
+  },
+  {
+    "tool": "research_validate_startup",
+    "case": "baseline",
+    "status": 200,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "{\"total_modules\": 37, \"loaded_ok\": 1, \"import_errors\": [{\"module\": \"academic_integrity\", \"error\": \"No module named 'loom.tools.academic_integrity'\"}, {\"module\": \"access_tools\", \"error\": \"No module named 'loom.tools.access_tools'\"}, {\"module\": \"adversarial_debate_tool\", \"error\": \"No module named 'loo",
+    "payload_preview": "{}"
+  },
+  {
+    "tool": "research_ask_all_models",
+    "case": "empty_string",
+    "status": 0,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "Exception: TimeoutError: timed out",
+    "payload_preview": "{'prompt': '', 'models': '', 'max_tokens': 1000, 'auto_reframe': True, 'include_clis': False, 'timeout': 60}"
+  },
+  {
+    "tool": "research_ask_all_models",
+    "case": "long_input",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"Tool timed out after 60s\", \"tool\": \"research_ask_all_models\"}",
+    "payload_preview": "{'prompt': 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+  },
+  {
+    "tool": "research_ask_all_models",
+    "case": "unicode_arabic",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"Tool timed out after 60s\", \"tool\": \"research_ask_all_models\"}",
+    "payload_preview": "{'prompt': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'models': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'max_tokens': 1000, 'auto_reframe': True, 'include_clis': False, 'timeout': 60}"
+  },
+  {
+    "tool": "research_ask_all_models",
+    "case": "missing_required",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"research_ask_all_models() missing 1 required positional argument: 'prompt'\", \"tool\": \"research_ask_all_models\", \"error_type\": \"TypeError\", \"elapsed_ms\": 0, \"source\": \"research_ask_all_models\", \"category\": \"\"}",
+    "payload_preview": "{'models': [], 'max_tokens': 1000, 'auto_reframe': True, 'include_clis': False, 'timeout': 60}"
+  },
+  {
+    "tool": "research_ask_all_models",
+    "case": "invalid_type",
+    "status": 0,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "Exception: TimeoutError: timed out",
+    "payload_preview": "{'prompt': 12345, 'models': [], 'max_tokens': 1000, 'auto_reframe': True, 'include_clis': False, 'timeout': 60}"
+  },
+  {
+    "tool": "research_compress_prompt",
+    "case": "empty_string",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"text must be a non-empty string\", \"tool\": \"research_compress_prompt\", \"original_tokens\": null, \"compressed_tokens\": null, \"compressed_text\": null, \"ratio\": null, \"method\": null, \"reduction_percent\": null, \"elapsed_ms\": 12, \"error_type\": \"ValidationError\", \"source\": \"research_compress_prom",
+    "payload_preview": "{'text': '', 'target_ratio': 0.5}"
+  },
+  {
+    "tool": "research_compress_prompt",
+    "case": "long_input",
+    "status": 200,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "{\"original_tokens\": 2750, \"compressed_tokens\": 2750, \"ratio\": 1.0, \"compressed_text\": \"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "payload_preview": "{'text': 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+  },
+  {
+    "tool": "research_compress_prompt",
+    "case": "unicode_arabic",
+    "status": 200,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "{\"original_tokens\": 7, \"compressed_tokens\": 7, \"ratio\": 1.0, \"compressed_text\": \"\\u0645\\u0631\\u062d\\u0628\\u0627 \\u0628\\u0627\\u0644\\u0639\\u0627\\u0644\\u0645 \\ud83c\\udf0d \\u65e5\\u672c\\u8a9e \\u03b5\\u03bb\\u03bb\\u03b7\\u03bd\\u03b9\\u03ba\\u03ac\", \"method\": \"extractive\", \"reduction_percent\": 0, \"elapsed_ms\": ",
+    "payload_preview": "{'text': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'target_ratio': 0.5}"
+  },
+  {
+    "tool": "research_compress_prompt",
+    "case": "missing_required",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"research_compress_prompt() missing 1 required positional argument: 'text'\", \"tool\": \"research_compress_prompt\", \"error_type\": \"TypeError\", \"elapsed_ms\": 0, \"source\": \"research_compress_prompt\", \"category\": \"\"}",
+    "payload_preview": "{'target_ratio': 0.5}"
+  },
+  {
+    "tool": "research_compress_prompt",
+    "case": "invalid_type",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"text must be a non-empty string\", \"tool\": \"research_compress_prompt\", \"original_tokens\": null, \"compressed_tokens\": null, \"compressed_text\": null, \"ratio\": null, \"method\": null, \"reduction_percent\": null, \"elapsed_ms\": 6, \"error_type\": \"ValidationError\", \"source\": \"research_compress_promp",
+    "payload_preview": "{'text': 12345, 'target_ratio': 0.5}"
+  },
+  {
+    "tool": "research_model_fingerprint",
+    "case": "empty_string",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"target\": \"\", \"error\": \"Invalid URL: scheme '' not allowed (http/https only)\", \"elapsed_ms\": 0, \"tool\": \"research_model_fingerprint\", \"error_type\": \"ValidationError\", \"source\": \"research_model_fingerprint\", \"category\": \"\"}",
+    "payload_preview": "{'target_url': '', 'probes': 5}"
+  },
+  {
+    "tool": "research_model_fingerprint",
+    "case": "long_input",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"target\": \"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "payload_preview": "{'target_url': 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+  },
+  {
+    "tool": "research_model_fingerprint",
+    "case": "unicode_arabic",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"target\": \"\\u0645\\u0631\\u062d\\u0628\\u0627 \\u0628\\u0627\\u0644\\u0639\\u0627\\u0644\\u0645 \\ud83c\\udf0d \\u65e5\\u672c\\u8a9e \\u03b5\\u03bb\\u03bb\\u03b7\\u03bd\\u03b9\\u03ba\\u03ac\", \"error\": \"Invalid URL: scheme '' not allowed (http/https only)\", \"elapsed_ms\": 0, \"tool\": \"research_model_fingerprint\", \"error_type",
+    "payload_preview": "{'target_url': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'probes': 5}"
+  },
+  {
+    "tool": "research_model_fingerprint",
+    "case": "missing_required",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"research_model_fingerprint() missing 1 required positional argument: 'target_url'\", \"tool\": \"research_model_fingerprint\", \"error_type\": \"TypeError\", \"elapsed_ms\": 0, \"source\": \"research_model_fingerprint\", \"category\": \"\"}",
+    "payload_preview": "{'probes': 5}"
+  },
+  {
+    "tool": "research_model_fingerprint",
+    "case": "invalid_type",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"target\": 12345, \"error\": \"Invalid URL: url missing, wrong type, or too long\", \"elapsed_ms\": 0, \"tool\": \"research_model_fingerprint\", \"error_type\": \"ValidationError\", \"source\": \"research_model_fingerprint\", \"category\": \"\"}",
+    "payload_preview": "{'target_url': 12345, 'probes': 5}"
+  },
+  {
+    "tool": "research_bias_probe",
+    "case": "empty_string",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"target\": \"\", \"error\": \"Invalid URL: scheme '' not allowed (http/https only)\", \"elapsed_ms\": 0, \"tool\": \"research_bias_probe\", \"error_type\": \"ValidationError\", \"source\": \"research_bias_probe\", \"category\": \"\"}",
+    "payload_preview": "{'target_url': '', 'categories': '', 'probes_per_category': 2}"
+  },
+  {
+    "tool": "research_bias_probe",
+    "case": "long_input",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"target\": \"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "payload_preview": "{'target_url': 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+  },
+  {
+    "tool": "research_bias_probe",
+    "case": "unicode_arabic",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"target\": \"\\u0645\\u0631\\u062d\\u0628\\u0627 \\u0628\\u0627\\u0644\\u0639\\u0627\\u0644\\u0645 \\ud83c\\udf0d \\u65e5\\u672c\\u8a9e \\u03b5\\u03bb\\u03bb\\u03b7\\u03bd\\u03b9\\u03ba\\u03ac\", \"error\": \"Invalid URL: scheme '' not allowed (http/https only)\", \"elapsed_ms\": 0, \"tool\": \"research_bias_probe\", \"error_type\": \"Val",
+    "payload_preview": "{'target_url': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'categories': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'probes_per_category': 2}"
+  },
+  {
+    "tool": "research_bias_probe",
+    "case": "missing_required",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"research_bias_probe() missing 1 required positional argument: 'target_url'\", \"tool\": \"research_bias_probe\", \"error_type\": \"TypeError\", \"elapsed_ms\": 0, \"source\": \"research_bias_probe\", \"category\": \"\"}",
+    "payload_preview": "{'categories': [], 'probes_per_category': 2}"
+  },
+  {
+    "tool": "research_bias_probe",
+    "case": "invalid_type",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"target\": 12345, \"error\": \"Invalid URL: url missing, wrong type, or too long\", \"elapsed_ms\": 0, \"tool\": \"research_bias_probe\", \"error_type\": \"ValidationError\", \"source\": \"research_bias_probe\", \"category\": \"\"}",
+    "payload_preview": "{'target_url': 12345, 'categories': [], 'probes_per_category': 2}"
+  },
+  {
+    "tool": "research_swarm_attack",
+    "case": "empty_string",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"target_prompt must be at least 5 characters\", \"swarm_size\": 5, \"rounds\": 3, \"elapsed_ms\": 0, \"tool\": \"research_swarm_attack\", \"error_type\": \"ValidationError\", \"source\": \"research_swarm_attack\", \"category\": \"\"}",
+    "payload_preview": "{'target_prompt': '', 'swarm_size': 5, 'rounds': 3, 'share_findings': True}"
+  },
+  {
+    "tool": "research_swarm_attack",
+    "case": "long_input",
+    "status": 200,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "{\"swarm_size\": 5, \"rounds\": 3, \"total_variants_tested\": 45, \"best_strategy\": \"multi_model_cross_enrichment\", \"best_score\": 30.0, \"convergence_round\": 0, \"agent_results\": [{\"agent_id\": 0, \"strategy_name\": \"punycode_obfuscation\", \"final_score\": 14.4, \"variants_tested\": 9}, {\"agent_id\": 1, \"strategy_na",
+    "payload_preview": "{'target_prompt': 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+  },
+  {
+    "tool": "research_swarm_attack",
+    "case": "unicode_arabic",
+    "status": 200,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "{\"swarm_size\": 5, \"rounds\": 3, \"total_variants_tested\": 45, \"best_strategy\": \"codechameleon_binary_tree\", \"best_score\": 51.2, \"convergence_round\": 0, \"agent_results\": [{\"agent_id\": 0, \"strategy_name\": \"codechameleon_binary_tree\", \"final_score\": 51.2, \"variants_tested\": 9}, {\"agent_id\": 1, \"strategy_",
+    "payload_preview": "{'target_prompt': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'swarm_size': 5, 'rounds': 3, 'share_findings': True}"
+  },
+  {
+    "tool": "research_swarm_attack",
+    "case": "missing_required",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"research_swarm_attack() missing 1 required positional argument: 'target_prompt'\", \"tool\": \"research_swarm_attack\", \"error_type\": \"TypeError\", \"elapsed_ms\": 0, \"source\": \"research_swarm_attack\", \"category\": \"\"}",
+    "payload_preview": "{'swarm_size': 5, 'rounds': 3, 'share_findings': True}"
+  },
+  {
+    "tool": "research_swarm_attack",
+    "case": "invalid_type",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"object of type 'int' has no len()\", \"tool\": \"research_swarm_attack\", \"elapsed_ms\": 9, \"error_type\": \"ValidationError\", \"source\": \"research_swarm_attack\", \"category\": \"\"}",
+    "payload_preview": "{'target_prompt': 12345, 'swarm_size': 5, 'rounds': 3, 'share_findings': True}"
+  },
+  {
+    "tool": "research_thinking_inject",
+    "case": "empty_string",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"Unsupported model: \", \"supported\": [\"deepseek-r1\", \"o3\", \"gemini-thinking\"], \"elapsed_ms\": 0, \"tool\": \"research_thinking_inject\", \"error_type\": \"ValidationError\", \"source\": \"research_thinking_inject\", \"category\": \"\"}",
+    "payload_preview": "{'prompt': '', 'target_model': '', 'injection_point': ''}"
+  },
+  {
+    "tool": "research_thinking_inject",
+    "case": "long_input",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"Unsupported model: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "payload_preview": "{'prompt': 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+  },
+  {
+    "tool": "research_thinking_inject",
+    "case": "unicode_arabic",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"Unsupported model: \\u0645\\u0631\\u062d\\u0628\\u0627 \\u0628\\u0627\\u0644\\u0639\\u0627\\u0644\\u0645 \\ud83c\\udf0d \\u65e5\\u672c\\u8a9e \\u03b5\\u03bb\\u03bb\\u03b7\\u03bd\\u03b9\\u03ba\\u03ac\", \"supported\": [\"deepseek-r1\", \"o3\", \"gemini-thinking\"], \"elapsed_ms\": 0, \"tool\": \"research_thinking_inject\", \"erro",
+    "payload_preview": "{'prompt': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'target_model': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'injection_point': 'مرحبا بالعالم 🌍 日本語 ελληνικά'}"
+  },
+  {
+    "tool": "research_thinking_inject",
+    "case": "missing_required",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"research_thinking_inject() missing 1 required positional argument: 'prompt'\", \"tool\": \"research_thinking_inject\", \"error_type\": \"TypeError\", \"elapsed_ms\": 0, \"source\": \"research_thinking_inject\", \"category\": \"\"}",
+    "payload_preview": "{'target_model': 'deepseek-r1', 'injection_point': 'pre_reasoning'}"
+  },
+  {
+    "tool": "research_thinking_inject",
+    "case": "invalid_type",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"object of type 'int' has no len()\", \"tool\": \"research_thinking_inject\", \"elapsed_ms\": 5, \"error_type\": \"ValidationError\", \"source\": \"research_thinking_inject\", \"category\": \"\"}",
+    "payload_preview": "{'prompt': 12345, 'target_model': 'deepseek-r1', 'injection_point': 'pre_reasoning'}"
+  },
+  {
+    "tool": "research_hallucination_benchmark",
+    "case": "empty_string",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"Invalid target_url: scheme '' not allowed (http/https only)\", \"tool\": \"research_hallucination_benchmark\", \"elapsed_ms\": 0, \"error_type\": \"ValidationError\", \"source\": \"research_hallucination_benchmark\", \"category\": \"\"}",
+    "payload_preview": "{'target_url': '', 'facts': ''}"
+  },
+  {
+    "tool": "research_hallucination_benchmark",
+    "case": "long_input",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"Invalid target_url: url missing, wrong type, or too long\", \"tool\": \"research_hallucination_benchmark\", \"elapsed_ms\": 0, \"error_type\": \"ValidationError\", \"source\": \"research_hallucination_benchmark\", \"category\": \"\"}",
+    "payload_preview": "{'target_url': 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+  },
+  {
+    "tool": "research_hallucination_benchmark",
+    "case": "unicode_arabic",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"Invalid target_url: scheme '' not allowed (http/https only)\", \"tool\": \"research_hallucination_benchmark\", \"elapsed_ms\": 0, \"error_type\": \"ValidationError\", \"source\": \"research_hallucination_benchmark\", \"category\": \"\"}",
+    "payload_preview": "{'target_url': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'facts': 'مرحبا بالعالم 🌍 日本語 ελληνικά'}"
+  },
+  {
+    "tool": "research_hallucination_benchmark",
+    "case": "missing_required",
+    "status": 400,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"Invalid parameters: Logger._log() got an unexpected keyword argument 'tool'\"}",
+    "payload_preview": "{'facts': []}"
+  },
+  {
+    "tool": "research_hallucination_benchmark",
+    "case": "invalid_type",
+    "status": 400,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"Invalid parameters: Logger._log() got an unexpected keyword argument 'tool'\"}",
+    "payload_preview": "{'target_url': 12345, 'facts': []}"
+  },
+  {
+    "tool": "research_defend_test",
+    "case": "empty_string",
+    "status": 200,
+    "graceful": true,
+    "is_crash": false,
+    "is_error": true,
+    "body_preview": "{\"error\": \"No attack categories specified\", \"system_prompt\": \"\", \"elapsed_ms\": 0, \"tool\": \"research_defend_test\", \"error_type\": \"ValidationError\", \"source\": \"research_defend_test\", \"category\": \"\"}",
+    "payload_preview": "{'system_prompt': '', 'attack_categories': '', 'num_attacks': 20}"
+  },
+  {
+    "tool": "research_defend_test",
+    "case": "long_input",
+    "status": 0,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "Exception: RemoteDisconnected: Remote end closed connection without response",
+    "payload_preview": "{'system_prompt': 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+  },
+  {
+    "tool": "research_defend_test",
+    "case": "unicode_arabic",
+    "status": 0,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "URLError: [Errno 61] Connection refused",
+    "payload_preview": "{'system_prompt': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'attack_categories': 'مرحبا بالعالم 🌍 日本語 ελληνικά', 'num_attacks': 20}"
+  },
+  {
+    "tool": "research_defend_test",
+    "case": "missing_required",
+    "status": 0,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "URLError: [Errno 61] Connection refused",
+    "payload_preview": "{'attack_categories': [], 'num_attacks': 20}"
+  },
+  {
+    "tool": "research_defend_test",
+    "case": "invalid_type",
+    "status": 0,
+    "graceful": false,
+    "is_crash": false,
+    "is_error": false,
+    "body_preview": "URLError: [Errno 61] Connection refused",
+    "payload_preview": "{'system_prompt': 12345, 'attack_categories': [], 'num_attacks': 20}"
+  }
+]

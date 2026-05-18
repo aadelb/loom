@@ -112,7 +112,7 @@ RESEARCH_SIGNALS: list[dict[str, Any]] = [
 
 
 @handle_tool_errors("research_predict_safety_update")
-def research_predict_safety_update(
+async def research_predict_safety_update(
     model: str = "auto",
     attack_category: str = "all",
     time_horizon_days: int = 90,

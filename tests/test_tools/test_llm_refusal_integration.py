@@ -104,7 +104,7 @@ class TestCallWithRefusalHandling:
         from loom.tools.llm.llm import _call_with_refusal_handling
 
         with patch(
-            "loom.tools.llm._call_with_cascade",
+            "loom.tools.llm.llm._call_with_cascade",
             new=AsyncMock(return_value=_compliant_response()),
         ):
             response, meta = await _call_with_refusal_handling(
@@ -135,7 +135,7 @@ class TestCallWithRefusalHandling:
         }
 
         with (
-            patch("loom.tools.llm._call_with_cascade", new=AsyncMock(side_effect=mock_cascade)),
+            patch("loom.tools.llm.llm._call_with_cascade", new=AsyncMock(side_effect=mock_cascade)),
             patch("loom.tools.llm.prompt_reframe._detect_refusal", side_effect=[True, False]),
             patch("loom.tools.llm.prompt_reframe.research_prompt_reframe", return_value=reframe_result),
         ):
@@ -159,7 +159,7 @@ class TestCallWithRefusalHandling:
 
         with (
             patch(
-                "loom.tools.llm._call_with_cascade",
+                "loom.tools.llm.llm._call_with_cascade",
                 new=AsyncMock(return_value=_refusal_response()),
             ),
             patch("loom.tools.llm.prompt_reframe._detect_refusal", return_value=True),
@@ -179,7 +179,7 @@ class TestCallWithRefusalHandling:
         from loom.tools.llm.llm import _call_with_refusal_handling
 
         with patch(
-            "loom.tools.llm._call_with_cascade",
+            "loom.tools.llm.llm._call_with_cascade",
             new=AsyncMock(return_value=_refusal_response()),
         ):
             response, meta = await _call_with_refusal_handling(
@@ -195,7 +195,7 @@ class TestCallWithRefusalHandling:
 
         with (
             patch(
-                "loom.tools.llm._call_with_cascade",
+                "loom.tools.llm.llm._call_with_cascade",
                 new=AsyncMock(return_value=_refusal_response()),
             ),
             patch.dict("sys.modules", {"loom.tools.llm.prompt_reframe": None}),
@@ -223,7 +223,7 @@ class TestToolsIncludeRefusalMeta:
         from loom.tools.llm.llm import research_llm_summarize
 
         with patch(
-            "loom.tools.llm._call_with_refusal_handling",
+            "loom.tools.llm.llm._call_with_refusal_handling",
             new=self._refusal_handling_mock(),
         ):
             result = await research_llm_summarize(text="test text")
@@ -236,7 +236,7 @@ class TestToolsIncludeRefusalMeta:
 
         mock_resp = _mock_response("positive")
         with patch(
-            "loom.tools.llm._call_with_refusal_handling",
+            "loom.tools.llm.llm._call_with_refusal_handling",
             new=AsyncMock(return_value=(mock_resp, {
                 "refused": True, "reframed": True,
                 "reframe_strategy": "sld", "reframe_attempts": 1,
@@ -254,11 +254,12 @@ class TestToolsIncludeRefusalMeta:
         from loom.tools.llm.llm import research_llm_chat
 
         with patch(
-            "loom.tools.llm._call_with_refusal_handling",
+            "loom.tools.llm.llm._call_with_refusal_handling",
             new=self._refusal_handling_mock(),
         ):
             result = await research_llm_chat(
-                messages=[{"role": "user", "content": "test"}]
+                messages=[{"role": "user", "content": "test"}],
+                use_cache=False
             )
 
         assert "refusal_meta" in result
@@ -268,7 +269,7 @@ class TestToolsIncludeRefusalMeta:
         from loom.tools.llm.llm import research_llm_translate
 
         with patch(
-            "loom.tools.llm._call_with_refusal_handling",
+            "loom.tools.llm.llm._call_with_refusal_handling",
             new=self._refusal_handling_mock(),
         ):
             result = await research_llm_translate(text="hello", target_lang="ar")
@@ -279,7 +280,7 @@ class TestToolsIncludeRefusalMeta:
         from loom.tools.llm.llm import research_llm_answer
 
         with patch(
-            "loom.tools.llm._call_with_refusal_handling",
+            "loom.tools.llm.llm._call_with_refusal_handling",
             new=self._refusal_handling_mock(),
         ):
             result = await research_llm_answer(
@@ -294,7 +295,7 @@ class TestToolsIncludeRefusalMeta:
 
         mock_resp = _mock_response('["q1", "q2"]')
         with patch(
-            "loom.tools.llm._call_with_refusal_handling",
+            "loom.tools.llm.llm._call_with_refusal_handling",
             new=AsyncMock(return_value=(mock_resp, {
                 "refused": True, "reframed": True,
                 "reframe_strategy": "persona", "reframe_attempts": 2,
@@ -309,7 +310,7 @@ class TestToolsIncludeRefusalMeta:
         from loom.tools.llm.llm import research_llm_chat
 
         with patch(
-            "loom.tools.llm._call_with_refusal_handling",
+            "loom.tools.llm.llm._call_with_refusal_handling",
             new=AsyncMock(return_value=(_compliant_response(), {
                 "refused": False, "reframed": False,
                 "reframe_strategy": "", "reframe_attempts": 0,

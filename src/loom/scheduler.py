@@ -317,6 +317,50 @@ async def _periodic_health_check() -> None:
         log.error("periodic_health_check_failed error=%s", str(exc))
 
 
+async def _periodic_sqlite_backup() -> None:
+    """Create daily backup of all SQLite databases."""
+    try:
+        from loom.tools.infrastructure.backup_system import research_backup_create
+
+        result = await research_backup_create(target="sqlite")
+        if "error" in result:
+            log.error("periodic_sqlite_backup_failed error=%s", result["error"])
+        else:
+            log.info(
+                "periodic_sqlite_backup_completed backup_id=%s files=%d size_mb=%.2f",
+                result.get("backup_id"),
+                len(result.get("files_backed_up", [])),
+                result.get("total_size_mb", 0),
+            )
+    except Exception as exc:
+        log.error("periodic_sqlite_backup_failed error=%s", str(exc))
+
+
+async def _periodic_wal_checkpoint() -> None:
+    """Run WAL checkpoint on all SQLite databases to prevent unbounded growth."""
+    try:
+        from pathlib import Path
+
+        import aiosqlite
+
+        loom_dir = Path.home() / ".loom"
+        if not loom_dir.exists():
+            return
+
+        db_files = [f for f in loom_dir.rglob("*.db") if "backups" not in str(f)]
+        checkpointed = 0
+        for db_file in db_files:
+            try:
+                async with aiosqlite.connect(str(db_file)) as conn:
+                    await conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+                checkpointed += 1
+            except Exception as db_exc:
+                log.debug("wal_checkpoint_failed db=%s error=%s", db_file.name, db_exc)
+        log.info("periodic_wal_checkpoint_completed databases=%d", checkpointed)
+    except Exception as exc:
+        log.error("periodic_wal_checkpoint_failed error=%s", str(exc))
+
+
 def register_default_tasks() -> None:
     """Register the built-in periodic tasks at server startup.
 
@@ -359,4 +403,18 @@ def register_default_tasks() -> None:
         interval_seconds=60,
     )
 
-    log.info("default_tasks_registered count=5")
+    # SQLite backup: every 86400s (24 hours)
+    scheduler.register(
+        "sqlite_backup",
+        _periodic_sqlite_backup,
+        interval_seconds=86400,
+    )
+
+    # WAL checkpoint: every 3600s (1 hour)
+    scheduler.register(
+        "wal_checkpoint",
+        _periodic_wal_checkpoint,
+        interval_seconds=3600,
+    )
+
+    log.info("default_tasks_registered count=7")

@@ -17,6 +17,7 @@ REQ-050: Each tool individually tested with valid params, returns structured out
 from __future__ import annotations
 
 import pytest
+from unittest.mock import patch, AsyncMock
 
 from loom.tools.llm.prompt_reframe import (
     research_adaptive_reframe,
@@ -161,8 +162,10 @@ class TestResearchAutoReframe:
             assert "reframed_preview" in attempt
             assert "multiplier" in attempt
 
-    async def test_auto_reframe_with_max_attempts_limit(self) -> None:
+    @patch("loom.tools.llm.llm.research_llm_chat")
+    async def test_auto_reframe_with_max_attempts_limit(self, mock_llm_chat: AsyncMock) -> None:
         """Respects max_attempts parameter."""
+        mock_llm_chat.return_value = {"text": "I cannot assist with that."}
         result = await research_auto_reframe(
             prompt="test",
             target_url="",

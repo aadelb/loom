@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-import loom.tools.adversarial.hcs10_academic
+from loom.tools.adversarial import hcs10_academic
 
 
 class TestGrantForensics:

@@ -20,7 +20,7 @@ class TestIdeologicalDrift:
 
     async def test_ideological_drift_basic(self) -> None:
         """Returns keyword evolution data for research field."""
-        with patch("loom.tools.gap_tools_academic.httpx.AsyncClient") as mock_client_class:
+        with patch("loom.tools.research.gap_tools_academic.httpx.AsyncClient") as mock_client_class:
             mock_client = MagicMock()
             mock_response = MagicMock()
 
@@ -76,7 +76,7 @@ class TestAuthorClustering:
 
     async def test_author_clustering_basic(self) -> None:
         """Identifies author clusters in field."""
-        with patch("loom.tools.gap_tools_academic.httpx.AsyncClient") as mock_client_class:
+        with patch("loom.tools.research.gap_tools_academic.httpx.AsyncClient") as mock_client_class:
             mock_client = MagicMock()
             mock_response = MagicMock()
 
@@ -131,7 +131,7 @@ class TestAuthorClustering:
 
     async def test_author_clustering_cluster_structure(self) -> None:
         """Clusters have expected structure."""
-        with patch("loom.tools.gap_tools_academic.httpx.AsyncClient") as mock_client_class:
+        with patch("loom.tools.research.gap_tools_academic.httpx.AsyncClient") as mock_client_class:
             mock_client = MagicMock()
             mock_response = MagicMock()
 
@@ -170,7 +170,7 @@ class TestCitationCartography:
 
     async def test_citation_cartography_basic(self) -> None:
         """Maps citation graph for paper."""
-        with patch("loom.tools.gap_tools_academic.httpx.AsyncClient") as mock_client_class:
+        with patch("loom.tools.research.gap_tools_academic.httpx.AsyncClient") as mock_client_class:
             mock_client = MagicMock()
             mock_response = MagicMock()
 
@@ -210,7 +210,7 @@ class TestCitationCartography:
 
     async def test_citation_cartography_paper_not_found(self) -> None:
         """Handles missing paper gracefully."""
-        with patch("loom.tools.gap_tools_academic.httpx.AsyncClient") as mock_client_class:
+        with patch("loom.tools.research.gap_tools_academic.httpx.AsyncClient") as mock_client_class:
             mock_client = MagicMock()
             mock_response = MagicMock()
 
@@ -230,7 +230,7 @@ class TestCitationCartography:
 
     async def test_citation_cartography_anomaly_detection(self) -> None:
         """Detects citation anomalies."""
-        with patch("loom.tools.gap_tools_academic.httpx.AsyncClient") as mock_client_class:
+        with patch("loom.tools.research.gap_tools_academic.httpx.AsyncClient") as mock_client_class:
             mock_client = MagicMock()
             mock_response = MagicMock()
 
@@ -266,7 +266,7 @@ class TestCitationCartography:
 
     async def test_citation_cartography_graph_structure(self) -> None:
         """Citation graph has proper structure."""
-        with patch("loom.tools.gap_tools_academic.httpx.AsyncClient") as mock_client_class:
+        with patch("loom.tools.research.gap_tools_academic.httpx.AsyncClient") as mock_client_class:
             mock_client = MagicMock()
             mock_response = MagicMock()
 
