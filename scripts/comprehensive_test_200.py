@@ -80,9 +80,13 @@ def run_tests(tests: list[dict]) -> dict:
         expected = test.get("expected", {"no_error": True})
         category = test.get("category", "")
 
+        # Heavy categories get longer timeouts (local CPU models)
+        _HEAVY_CATS = {"technique", "pipeline", "workflow"}
+        tool_timeout = 600 if category in _HEAVY_CATS else TIMEOUT
+
         start = time.time()
         try:
-            r = requests.post(f"{BASE}/{tool}", json=params, timeout=TIMEOUT)
+            r = requests.post(f"{BASE}/{tool}", json=params, timeout=tool_timeout)
             actual = r.json()
             elapsed = time.time() - start
 
