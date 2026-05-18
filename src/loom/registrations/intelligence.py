@@ -333,9 +333,9 @@ def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip yara_backend: %s", e)
         record_failure("intelligence", "yara_backend", str(e))
     try:
-        from loom.tools.backends.spiderfoot_backend import research_spiderfoot_scan
-        mcp.tool()(wrap_tool(research_spiderfoot_scan))
-        record_success("intelligence", "research_spiderfoot_scan")
+        from loom.tools.backends.spiderfoot_backend import research_spiderfoot
+        mcp.tool()(wrap_tool(research_spiderfoot))
+        record_success("intelligence", "research_spiderfoot")
     except Exception as e:
         log.debug("skip spiderfoot_backend: %s", e)
         record_failure("intelligence", "spiderfoot_backend", str(e))
