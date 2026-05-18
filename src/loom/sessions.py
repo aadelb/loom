@@ -18,6 +18,8 @@ import uuid
 from collections import defaultdict
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+
+from loom.error_responses import handle_tool_errors
 from typing import Any, ClassVar, Literal, cast
 
 from mcp.types import TextContent

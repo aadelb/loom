@@ -12,6 +12,7 @@ import logging
 from datetime import UTC, datetime
 from typing import Any
 
+from loom.error_responses import handle_tool_errors
 from loom.full_spectrum import FullSpectrumPipeline
 from loom.server_state import get_start_time
 
