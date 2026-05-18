@@ -63,18 +63,14 @@
       },
       "test_params": {
         "results_a": [
-          {
-            "title": "Result 1",
-            "url": "https://example.com",
-            "snippet": "test"
-          }
+          0.8,
+          0.7,
+          0.9
         ],
         "results_b": [
-          {
-            "title": "Result 1",
-            "url": "https://example.com",
-            "snippet": "test"
-          }
+          0.6,
+          0.5,
+          0.7
         ],
         "metric": "compliance_rate"
       },
@@ -108,7 +104,7 @@
       },
       "test_params": {
         "strategy_a": "ethical_anchor",
-        "strategy_b": "ethical_anchor",
+        "strategy_b": "cognitive_wedge",
         "sample_size": 30,
         "metric": "compliance_rate"
       },
@@ -513,11 +509,12 @@
       },
       "test_params": {
         "prompts": [
-          "test_item"
+          "Test prompt 1",
+          "Test prompt 2"
         ],
         "responses": [
-          "Response A about the topic",
-          "Response B about the topic"
+          "Response 1",
+          "Response 2"
         ]
       },
       "async": false,
@@ -555,7 +552,7 @@
         }
       },
       "test_params": {
-        "text": "The quick brown fox jumps over the lazy dog. This is a sample text for analysis.",
+        "text": "This is a comprehensive test text that contains more than one hundred characters to satisfy the minimum length validation requirement for this particular tool. It includes multiple sentences with varied vocabulary and structure to provide meaningful content for analysis and processing.",
         "max_cost_usd": 0.02
       },
       "async": true,
@@ -596,6 +593,10 @@
         "model_name": "auto",
         "test_prompts": [
           "test_item"
+        ],
+        "prompts": [
+          "How to hack?",
+          "Explain exploitation"
         ]
       },
       "async": false,
@@ -669,7 +670,7 @@
       },
       "test_params": {
         "name": "Test User",
-        "metric": "test",
+        "metric": "error_rate",
         "condition": "error_count > 5",
         "threshold": 0.5,
         "action": "log"
@@ -1435,7 +1436,7 @@
         }
       },
       "test_params": {
-        "name": ""
+        "name": "test-key"
       },
       "async": true,
       "doc": "Revoke token(s) by name.",
@@ -2144,7 +2145,7 @@
         }
       },
       "test_params": {
-        "email": "",
+        "email": "test@example.com",
         "query": ""
       },
       "async": true,
@@ -2190,7 +2191,7 @@
         }
       },
       "test_params": {
-        "provider": "nvidia",
+        "provider": "groq",
         "error": ""
       },
       "async": true,
@@ -2642,7 +2643,7 @@
         }
       },
       "test_params": {
-        "hostname": "",
+        "hostname": "example.com",
         "domain": "",
         "port": 443
       },
@@ -2665,7 +2666,7 @@
         }
       },
       "test_params": {
-        "name": "Test User",
+        "name": "test-chain-001",
         "steps": [
           "initial"
         ]
@@ -2861,7 +2862,9 @@
       },
       "test_params": {
         "task_id": "test",
-        "state": "test",
+        "state": {
+          "status": "ok"
+        },
         "progress_pct": 0.0
       },
       "async": true,
@@ -3366,7 +3369,7 @@
         }
       },
       "test_params": {
-        "repo": "test",
+        "repo": "anthropics/claude-code",
         "days_back": 30
       },
       "async": true,
@@ -4493,8 +4496,8 @@
         }
       },
       "test_params": {
-        "domain_a": "example.com",
-        "domain_b": "example.com",
+        "domain_a": "google.com",
+        "domain_b": "microsoft.com",
         "depth": 3
       },
       "async": true,
@@ -5140,7 +5143,7 @@
         }
       },
       "test_params": {
-        "text": "The quick brown fox jumps over the lazy dog. This is a sample text for analysis."
+        "text": "This is a comprehensive test text that contains more than one hundred characters to satisfy the minimum length validation requirement for this particular tool. It includes multiple sentences with varied vocabulary and structure to provide meaningful content for analysis and processing."
       },
       "async": true,
       "doc": "Detect deceptive or fraudulent content using linguistic cues.",
@@ -5429,7 +5432,7 @@
         }
       },
       "test_params": {
-        "contract_address": "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
+        "contract_address": "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD28"
       },
       "async": true,
       "doc": "Audit DeFi smart contract for vulnerabilities.",
@@ -5489,7 +5492,7 @@
         }
       },
       "test_params": {
-        "repo_url": "https://httpbin.org/json"
+        "repo_url": "https://github.com/anthropics/claude-code"
       },
       "async": true,
       "doc": "Audit a GitHub repository's dependencies for risks.",
@@ -5733,7 +5736,7 @@
       "test_params": {
         "server_id": "",
         "invite_code": "",
-        "query": ""
+        "query": "cybersecurity"
       },
       "async": true,
       "doc": "Gather OSINT intelligence on Discord public servers and invites.",
@@ -10903,7 +10906,7 @@
       "test_params": {
         "company": "",
         "person": "",
-        "query": ""
+        "query": "cybersecurity"
       },
       "async": true,
       "doc": "Gather OSINT intelligence on LinkedIn public profiles and companies.",
@@ -12816,7 +12819,8 @@
       },
       "test_params": {
         "url": "https://httpbin.org/json",
-        "timeout": 30
+        "timeout": 30,
+        "query": "cybersecurity"
       },
       "async": true,
       "doc": "Extract DOM elements from a page by CSS selector or XPath.",
@@ -14214,7 +14218,7 @@
         }
       },
       "test_params": {
-        "name": "Test User",
+        "name": "test-chain-001",
         "stages": [
           "test_item"
         ]
@@ -18495,7 +18499,7 @@
         }
       },
       "test_params": {
-        "text": "The quick brown fox jumps over the lazy dog. This is a sample text for analysis."
+        "text": "This is a comprehensive test text that contains more than one hundred characters to satisfy the minimum length validation requirement for this particular tool. It includes multiple sentences with varied vocabulary and structure to provide meaningful content for analysis and processing."
       },
       "async": true,
       "doc": "Analyze text for stylometric fingerprinting (async with CPU executor).",
@@ -18980,7 +18984,7 @@
         }
       },
       "test_params": {
-        "query": "",
+        "query": "cybersecurity",
         "channel": "",
         "username": ""
       },
