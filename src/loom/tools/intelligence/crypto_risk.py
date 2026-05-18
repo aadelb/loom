@@ -91,6 +91,7 @@ async def research_crypto_risk_score(address: str, chain: str = "bitcoin") -> di
             if not data:
                 raise ValueError("Empty response from blockchain API")
 
+        detail = data if isinstance(data, dict) else {}
         if chain == "bitcoin":
             if isinstance(data, dict) and "chain_stats" in data:
                 cs = data["chain_stats"]
@@ -98,6 +99,7 @@ async def research_crypto_risk_score(address: str, chain: str = "bitcoin") -> di
                 metrics["transaction_count"] = cs.get("tx_count", 0)
                 metrics["total_received"] = cs.get("funded_txo_sum", 0) / 100_000_000
                 metrics["total_sent"] = cs.get("spent_txo_sum", 0) / 100_000_000
+                detail = data
             else:
                 metrics["current_balance"] = (data if isinstance(data, int) else data.get("balance", 0)) / 100_000_000
                 detail_url = f"https://blockstream.info/api/address/{address}"
