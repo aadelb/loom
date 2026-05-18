@@ -488,3 +488,171 @@ class TestSecurityProperties:
         # (since we return the original set, this test verifies we're aware)
         allowed = get_allowed_tools("researcher")
         assert isinstance(allowed, set)
+
+
+class TestTokenRefresh:
+    """Test JWT token refresh with rotation."""
+
+    def test_refresh_token_issues_new_jti(self, admin_token: str, jwt_secret: str) -> None:
+        """Test refresh issues a new token with a different JTI."""
+        if pyjwt is None:
+            pytest.skip("PyJWT not installed")
+
+        from loom.jwt_auth import refresh_token, validate_token
+
+        old_payload = validate_token(admin_token)
+        old_jti = old_payload["jti"]
+
+        new_token = refresh_token(admin_token)
+        new_payload = validate_token(new_token)
+
+        assert new_payload["sub"] == old_payload["sub"]
+        assert new_payload["role"] == old_payload["role"]
+        assert new_payload["jti"] != old_jti
+        assert "jti" in new_payload
+
+    def test_refresh_token_revokes_old_jti(self, admin_token: str, jwt_secret: str) -> None:
+        """Test that refreshing revokes the old token."""
+        if pyjwt is None:
+            pytest.skip("PyJWT not installed")
+
+        from loom.jwt_auth import InvalidTokenError, refresh_token, validate_token
+
+        new_token = refresh_token(admin_token)
+        # old token should now be revoked
+        with pytest.raises(InvalidTokenError, match="revoked"):
+            validate_token(admin_token)
+
+        # new token should still be valid
+        payload = validate_token(new_token)
+        assert payload["role"] == "admin"
+
+    def test_refresh_token_preserves_role_and_user(self, researcher_token: str, jwt_secret: str) -> None:
+        """Test refresh preserves user_id and role."""
+        if pyjwt is None:
+            pytest.skip("PyJWT not installed")
+
+        from loom.jwt_auth import refresh_token, validate_token
+
+        new_token = refresh_token(researcher_token)
+        payload = validate_token(new_token)
+
+        assert payload["sub"] == "researcher-user"
+        assert payload["role"] == "researcher"
+
+    def test_refresh_token_custom_expiry(self, admin_token: str, jwt_secret: str) -> None:
+        """Test refresh with custom expiry."""
+        if pyjwt is None:
+            pytest.skip("PyJWT not installed")
+
+        from loom.jwt_auth import refresh_token, validate_token
+
+        new_token = refresh_token(admin_token, expires_in_hours=1)
+        payload = validate_token(new_token)
+
+        exp_time = datetime.fromtimestamp(payload["exp"], tz=UTC)
+        now = datetime.now(UTC)
+        diff = (exp_time - now).total_seconds()
+
+        # Should be approximately 1 hour (within 5 seconds)
+        assert 3595 < diff < 3605
+
+    def test_refresh_invalid_token(self, jwt_secret: str) -> None:
+        """Test refreshing an invalid token raises error."""
+        if pyjwt is None:
+            pytest.skip("PyJWT not installed")
+
+        from loom.jwt_auth import InvalidTokenError, refresh_token
+
+        with pytest.raises(InvalidTokenError):
+            refresh_token("invalid.token.here")
+
+    def test_refresh_expired_token(self, jwt_secret: str) -> None:
+        """Test refreshing an expired token raises error."""
+        if pyjwt is None:
+            pytest.skip("PyJWT not installed")
+
+        import time
+        from loom.jwt_auth import TokenExpiredError, create_token, refresh_token
+
+        token = create_token("user123", "admin", expires_in_hours=0)
+        time.sleep(0.1)
+
+        with pytest.raises(TokenExpiredError):
+            refresh_token(token)
+
+
+class TestJtiRevocation:
+    """Test JTI revocation logic."""
+
+    def test_is_jti_revoked_false_for_unknown_jti(self, jwt_secret: str) -> None:
+        """Test unknown JTI is not revoked."""
+        from loom.jwt_auth import is_jti_revoked
+
+        assert is_jti_revoked("never-seen-jti") is False
+
+    def test_is_jti_revoked_none_is_allowed(self, jwt_secret: str) -> None:
+        """Test None JTI is allowed for backward compatibility."""
+        from loom.jwt_auth import is_jti_revoked
+
+        assert is_jti_revoked(None) is False
+
+    def test_revoke_jti_makes_it_revoked(self, jwt_secret: str) -> None:
+        """Test revoking a JTI works."""
+        from loom.jwt_auth import is_jti_revoked, revoke_jti
+
+        jti = "test-jti-123"
+        assert is_jti_revoked(jti) is False
+        revoke_jti(jti)
+        assert is_jti_revoked(jti) is True
+
+    def test_revoked_jti_blocks_validation(self, jwt_secret: str) -> None:
+        """Test that a revoked JTI blocks token validation."""
+        if pyjwt is None:
+            pytest.skip("PyJWT not installed")
+
+        from loom.jwt_auth import InvalidTokenError, create_token, revoke_jti, validate_token
+
+        token = create_token("user123", "admin", expires_in_hours=24)
+        payload = validate_token(token)
+        jti = payload["jti"]
+
+        revoke_jti(jti)
+
+        with pytest.raises(InvalidTokenError, match="revoked"):
+            validate_token(token)
+
+    def test_token_contains_jti(self, admin_token: str, jwt_secret: str) -> None:
+        """Test newly created tokens contain a JTI claim."""
+        if pyjwt is None:
+            pytest.skip("PyJWT not installed")
+
+        payload = validate_token(admin_token)
+        assert "jti" in payload
+        assert isinstance(payload["jti"], str)
+        assert len(payload["jti"]) > 0
+
+
+class TestBackwardCompatibility:
+    """Test backward compatibility with tokens lacking JTI."""
+
+    def test_token_without_jti_still_validates(self, jwt_secret: str) -> None:
+        """Test legacy tokens without JTI are still accepted."""
+        if pyjwt is None:
+            pytest.skip("PyJWT not installed")
+
+        import jwt as pyjwt_lib
+
+        secret = jwt_secret
+        payload = {
+            "sub": "legacy-user",
+            "role": "admin",
+            "iat": int(datetime.now(UTC).timestamp()),
+            "exp": int((datetime.now(UTC) + timedelta(hours=24)).timestamp()),
+        }
+        token = pyjwt_lib.encode(payload, secret, algorithm="HS256")
+
+        result = validate_token(token)
+        assert result["sub"] == "legacy-user"
+        assert result["role"] == "admin"
+        assert "jti" not in result

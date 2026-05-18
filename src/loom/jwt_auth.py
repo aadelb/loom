@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 import os
+import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -17,6 +18,35 @@ except ImportError:
     jwt = None  # type: ignore
 
 logger = logging.getLogger("loom.jwt_auth")
+
+# ── In-Memory Revocation Set ──
+_REVOKED_JTIS: set[str] = set()
+
+
+def revoke_jti(jti: str) -> None:
+    """Add a JTI to the in-memory revocation set.
+
+    Args:
+        jti: JWT ID to revoke
+    """
+    _REVOKED_JTIS.add(jti)
+    logger.debug("jti_revoked jti=%s", jti)
+
+
+def is_jti_revoked(jti: str | None) -> bool:
+    """Check whether a JTI has been revoked.
+
+    Tokens without a JTI are allowed for backward compatibility.
+
+    Args:
+        jti: JWT ID to check
+
+    Returns:
+        True if revoked (or if JTI is present and revoked), False otherwise
+    """
+    if jti is None:
+        return False
+    return jti in _REVOKED_JTIS
 
 
 # ── Role Definitions ──
@@ -188,6 +218,7 @@ def create_token(
         "role": role,
         "iat": int(now.timestamp()),
         "exp": int(expires_at.timestamp()),
+        "jti": uuid.uuid4().hex,
     }
 
     try:
@@ -195,9 +226,48 @@ def create_token(
         token = jwt.encode(payload, secret, algorithm="HS256")
         logger.info("token_created user_id=%s role=%s expires_in=%dh", user_id, role, expires_in_hours)
         return token
+    except ValueError:
+        raise
     except Exception as e:
         logger.error("token_creation_failed user_id=%s error=%s", user_id, str(e))
         raise JWTAuthError(f"Token creation failed: {str(e)}") from e
+
+
+def refresh_token(
+    token: str,
+    expires_in_hours: int = 24,
+) -> str:
+    """Refresh a JWT token, issuing a new one with a fresh JTI and revoking the old JTI.
+
+    Args:
+        token: Existing valid JWT token string
+        expires_in_hours: Token expiration time in hours (default: 24)
+
+    Returns:
+        New encoded JWT token string
+
+    Raises:
+        InvalidTokenError: If token is invalid
+        TokenExpiredError: If token has expired
+        JWTAuthError: If token refresh fails
+    """
+    if not jwt:
+        raise ValueError("PyJWT library required. Install: pip install PyJWT")
+
+    payload = validate_token(token)
+    old_jti = payload.get("jti")
+    if old_jti:
+        revoke_jti(old_jti)
+
+    user_id = payload.get("sub")
+    role = payload.get("role", "viewer")
+
+    if not user_id:
+        raise InvalidTokenError("Token missing subject claim")
+
+    new_token = create_token(user_id, role, expires_in_hours=expires_in_hours)
+    logger.info("token_refreshed user_id=%s role=%s old_jti=%s", user_id, role, old_jti)
+    return new_token
 
 
 def validate_token(token: str) -> dict[str, Any]:
@@ -207,11 +277,11 @@ def validate_token(token: str) -> dict[str, Any]:
         token: JWT token string to validate
 
     Returns:
-        Token payload dict with keys: sub, role, iat, exp
+        Token payload dict with keys: sub, role, iat, exp, jti
 
     Raises:
         ValueError: If JWT library unavailable
-        InvalidTokenError: If token is malformed or signature invalid
+        InvalidTokenError: If token is malformed, signature invalid, or JTI revoked
         TokenExpiredError: If token has expired
     """
     if not jwt:
@@ -220,8 +290,6 @@ def validate_token(token: str) -> dict[str, Any]:
     try:
         secret = _get_secret_key()
         payload = jwt.decode(token, secret, algorithms=["HS256"])
-        logger.debug("token_validated user_id=%s role=%s", payload.get("sub"), payload.get("role"))
-        return payload
     except jwt.ExpiredSignatureError as e:
         logger.warning("token_expired token=%s...", token[:20])
         raise TokenExpiredError("Token has expired") from e
@@ -231,6 +299,14 @@ def validate_token(token: str) -> dict[str, Any]:
     except Exception as e:
         logger.error("token_validation_failed error=%s", str(e))
         raise InvalidTokenError(f"Token validation failed: {str(e)}") from e
+
+    jti = payload.get("jti")
+    if is_jti_revoked(jti):
+        logger.warning("token_revoked jti=%s user_id=%s", jti, payload.get("sub"))
+        raise InvalidTokenError("Token has been revoked")
+
+    logger.debug("token_validated user_id=%s role=%s jti=%s", payload.get("sub"), payload.get("role"), jti)
+    return payload
 
 
 def get_allowed_tools(role: str) -> set[str]:

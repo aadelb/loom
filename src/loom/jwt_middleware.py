@@ -14,6 +14,8 @@ from loom.jwt_auth import (
     InvalidTokenError,
     TokenExpiredError,
     check_tool_access,
+    is_jti_revoked,
+    refresh_token,
     validate_token,
     verify_and_get_role,
 )
@@ -107,6 +109,16 @@ def require_auth(
                 )
                 raise
 
+            # Check JTI against revocation set
+            jti = payload.get("jti")
+            if is_jti_revoked(jti):
+                logger.warning(
+                    "auth_failed tool=%s error=token_revoked jti=%s",
+                    func.__name__,
+                    jti,
+                )
+                raise InvalidTokenError("Token has been revoked")
+
             # Check role requirements
             if require_role and role != require_role:
                 logger.warning(
@@ -163,6 +175,16 @@ def require_auth(
                     str(e),
                 )
                 raise
+
+            # Check JTI against revocation set
+            jti = payload.get("jti")
+            if is_jti_revoked(jti):
+                logger.warning(
+                    "auth_failed tool=%s error=token_revoked jti=%s",
+                    func.__name__,
+                    jti,
+                )
+                raise InvalidTokenError("Token has been revoked")
 
             # Check role requirements
             if require_role and role != require_role:
@@ -277,10 +299,20 @@ def create_authorized_wrapper(func: Callable[..., Any], allow_unauthenticated: b
 
         # Validate token
         try:
-            validate_token(token)
+            payload = validate_token(token)
         except (InvalidTokenError, TokenExpiredError) as e:
             logger.warning("auth_failed tool=%s error=%s", func.__name__, str(e))
             raise
+
+        # Check JTI against revocation set
+        jti = payload.get("jti")
+        if is_jti_revoked(jti):
+            logger.warning(
+                "auth_failed tool=%s error=token_revoked jti=%s",
+                func.__name__,
+                jti,
+            )
+            raise InvalidTokenError("Token has been revoked")
 
         # Check tool access
         if not check_tool_authorization(token, func.__name__):
@@ -308,10 +340,20 @@ def create_authorized_wrapper(func: Callable[..., Any], allow_unauthenticated: b
 
         # Validate token
         try:
-            validate_token(token)
+            payload = validate_token(token)
         except (InvalidTokenError, TokenExpiredError) as e:
             logger.warning("auth_failed tool=%s error=%s", func.__name__, str(e))
             raise
+
+        # Check JTI against revocation set
+        jti = payload.get("jti")
+        if is_jti_revoked(jti):
+            logger.warning(
+                "auth_failed tool=%s error=token_revoked jti=%s",
+                func.__name__,
+                jti,
+            )
+            raise InvalidTokenError("Token has been revoked")
 
         # Check tool access
         if not check_tool_authorization(token, func.__name__):
