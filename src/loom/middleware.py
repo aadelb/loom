@@ -171,7 +171,7 @@ def _validate_with_pydantic(tool_name: str, kwargs: dict) -> dict:
 
     try:
         validated = model_cls(**kwargs)
-        return validated.model_dump()
+        return validated.model_dump(by_alias=True)
     except Exception as exc:
         log.debug("pydantic_validation_skip tool=%s error=%s", tool_name, exc)
         return kwargs
