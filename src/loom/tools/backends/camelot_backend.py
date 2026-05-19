@@ -114,7 +114,7 @@ async def research_table_extract(
 
                     # Stream to bytes with size check
                     data = io.BytesIO()
-                    for chunk in response.aiter_bytes(chunk_size=65536):
+                    async for chunk in response.aiter_bytes(chunk_size=65536):
                         data.write(chunk)
                         if data.tell() > MAX_PDF_SIZE_BYTES:
                             raise ValueError(

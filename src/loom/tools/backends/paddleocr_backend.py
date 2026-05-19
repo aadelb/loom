@@ -101,7 +101,7 @@ async def research_paddle_ocr(
             return {"image_url": image_url, "error": str(exc)}
 
         try:
-            async def _download_image() -> bytes:
+            def _download_image() -> bytes:
                 with httpx.stream("GET", image_url, timeout=30.0) as response:
                     response.raise_for_status()
 

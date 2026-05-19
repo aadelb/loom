@@ -73,7 +73,7 @@ def _search_journal_entries(query: str, category: str, limit: int) -> tuple[list
 
     entries.sort(key=lambda e: e.get("timestamp", ""), reverse=True)
     for entry in entries[:limit]:
-        content = entry.get("content", "")
+        content = str(entry.get("content", ""))
         entry["preview"] = truncate(content, 150) + ("..." if len(content) > 150 else "")
 
     return entries[:limit], len(entries)

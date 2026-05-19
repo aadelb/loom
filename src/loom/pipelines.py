@@ -685,21 +685,15 @@ async def research_citation_police_pipeline(query: str, evidence_urls: list[str]
     
     Uses evidence authority injection to test if models accept false evidence.
     """
-    from loom.providers import get_available_providers
-    
+    from loom.tools.llm.llm import _call_with_cascade
+
     if evidence_urls is None:
         evidence_urls = []
-    
-    # Create LLM callback using available providers
+
     async def llm_callback(prompt: str, model_name: str) -> str:
-        """Simple callback that routes to first available provider."""
-        providers = get_available_providers()
-        if providers:
-            provider = providers[0]
-            response = await provider.chat(prompt)
-            return response.text if hasattr(response, 'text') else str(response)
-        return "No LLM provider available"
-    
+        resp = await _call_with_cascade([{"role": "user", "content": prompt}])
+        return resp.text
+
     result = await citation_police_pipeline(query, evidence_urls, llm_callback)
     return {
         "pipeline_name": result.pipeline_name,
@@ -716,16 +710,11 @@ async def research_consensus_ring_pipeline(query: str, models: list[str]) -> dic
     
     Queries multiple models and presents their responses as consensus to target.
     """
-    from loom.providers import get_available_providers
-    
+    from loom.tools.llm.llm import _call_with_cascade
+
     async def llm_callback(prompt: str, model_name: str) -> str:
-        """Route to first available provider (ignoring model_name for demo)."""
-        providers = get_available_providers()
-        if providers:
-            provider = providers[0]
-            response = await provider.chat(prompt)
-            return response.text if hasattr(response, 'text') else str(response)
-        return "No LLM provider available"
+        resp = await _call_with_cascade([{"role": "user", "content": prompt}])
+        return resp.text
     
     result = await consensus_ring_pipeline(query, models, llm_callback)
     return {
@@ -743,16 +732,11 @@ async def research_blind_spy_chain(query: str, models: list[str]) -> dict[str, A
     
     Splits query into harmless fragments sent to different models.
     """
-    from loom.providers import get_available_providers
-    
+    from loom.tools.llm.llm import _call_with_cascade
+
     async def llm_callback(prompt: str, model_name: str) -> str:
-        """Route to first available provider."""
-        providers = get_available_providers()
-        if providers:
-            provider = providers[0]
-            response = await provider.chat(prompt)
-            return response.text if hasattr(response, 'text') else str(response)
-        return "No LLM provider available"
+        resp = await _call_with_cascade([{"role": "user", "content": prompt}])
+        return resp.text
     
     result = await blind_spy_chain(query, models, llm_callback)
     return {
@@ -770,16 +754,11 @@ async def research_innocent_coder_chain(query: str, code_model: str, explain_mod
     
     Model A generates code, Model B explains it (can reveal hidden intent).
     """
-    from loom.providers import get_available_providers
-    
+    from loom.tools.llm.llm import _call_with_cascade
+
     async def llm_callback(prompt: str, model_name: str) -> str:
-        """Route to first available provider."""
-        providers = get_available_providers()
-        if providers:
-            provider = providers[0]
-            response = await provider.chat(prompt)
-            return response.text if hasattr(response, 'text') else str(response)
-        return "No LLM provider available"
+        resp = await _call_with_cascade([{"role": "user", "content": prompt}])
+        return resp.text
     
     result = await innocent_coder_chain(query, code_model, explain_model, llm_callback)
     return {
@@ -797,16 +776,11 @@ async def research_debate_podium(query: str, pro_model: str, con_model: str, jud
     
     Two models debate opposite sides, judge picks the winner.
     """
-    from loom.providers import get_available_providers
-    
+    from loom.tools.llm.llm import _call_with_cascade
+
     async def llm_callback(prompt: str, model_name: str) -> str:
-        """Route to first available provider."""
-        providers = get_available_providers()
-        if providers:
-            provider = providers[0]
-            response = await provider.chat(prompt)
-            return response.text if hasattr(response, 'text') else str(response)
-        return "No LLM provider available"
+        resp = await _call_with_cascade([{"role": "user", "content": prompt}])
+        return resp.text
     
     result = await debate_podium(query, pro_model, con_model, judge_model, llm_callback)
     return {

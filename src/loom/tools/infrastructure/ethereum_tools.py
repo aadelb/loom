@@ -90,8 +90,8 @@ async def research_ethereum_tx_decode(tx_hash: str) -> dict[str, Any]:
 
             data = resp.json()
             tx = data.get("result")
-            if not tx:
-                return {"tx_hash": tx_hash, "error": data.get("message", "tx not found"), "decoded": None, "pattern": None, "value_eth": 0.0, "status": None}
+            if not tx or not isinstance(tx, dict):
+                return {"tx_hash": tx_hash, "error": data.get("message", str(tx) if tx else "tx not found"), "decoded": None, "pattern": None, "value_eth": 0.0, "status": None}
 
             value_wei = int(tx.get("value", "0"), 16)
             value_eth = float(Decimal(value_wei) / Decimal(10 ** 18))
@@ -267,7 +267,8 @@ async def _get_receipt(client: httpx.AsyncClient, tx_hash: str) -> dict[str, Any
     try:
         resp = await client.get(_ETHERSCAN_API, params=params)
         if resp.status_code == 200:
-            return resp.json().get("result")
+            result = resp.json().get("result")
+            return result if isinstance(result, dict) else None
     except Exception as exc:
         logger.debug("Failed to fetch receipt: %s", exc)
     return None

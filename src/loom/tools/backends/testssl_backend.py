@@ -267,14 +267,14 @@ async def research_testssl(
             check=False,
         )
 
-        if result["returncode"] not in (0, 1):  # testssl.sh exits 0 or 1
-            logger.warning("testssl_failed returncode=%d stderr=%s", result["returncode"], result["stderr"])
+        if result.returncode not in (0, 1):  # testssl.sh exits 0 or 1
+            logger.warning("testssl_failed returncode=%d stderr=%s", result.returncode, result.stderr)
             return {
                 "host": host,
                 "port": port,
                 "success": False,
-                "error": f"testssl.sh exited with code {result["returncode"]}",
-                "stderr": result["stderr"][:500],
+                "error": f"testssl.sh exited with code {result.returncode}",
+                "stderr": result.stderr[:500],
                 "testssl_available": True,
             }
 

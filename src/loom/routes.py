@@ -363,4 +363,68 @@ def register_http_routes(mcp: "FastMCP") -> None:
     async def api_v1_health(request: Request) -> JSONResponse:
         return await health_endpoint(request)
 
-    log.info("http_routes_registered count=16")
+    # ── Tool Discovery Service ──────────────────────────────────────
+    from loom.tool_discovery import (
+        get_overview,
+        search_tools,
+        list_categories,
+        get_category_tools,
+        get_tool_detail,
+        get_tool_examples,
+        suggest_tools,
+    )
+
+    @mcp.custom_route("/api/v1/discover", methods=["GET"])
+    async def api_v1_discover(request: Request) -> JSONResponse:
+        return JSONResponse(get_overview())
+
+    @mcp.custom_route("/api/v1/discover/search", methods=["GET"])
+    async def api_v1_discover_search(request: Request) -> JSONResponse:
+        q = request.query_params.get("q", "").strip()
+        if not q:
+            return JSONResponse({"error": "Missing ?q= parameter", "example": "/api/v1/discover/search?q=email"}, status_code=400)
+        limit = min(int(request.query_params.get("limit", "20")), 100)
+        category = request.query_params.get("category")
+        return JSONResponse(search_tools(q, limit=limit, category=category))
+
+    @mcp.custom_route("/api/v1/discover/categories", methods=["GET"])
+    async def api_v1_discover_categories(request: Request) -> JSONResponse:
+        return JSONResponse(list_categories())
+
+    @mcp.custom_route("/api/v1/discover/category/{cat_id}", methods=["GET"])
+    async def api_v1_discover_category(request: Request) -> JSONResponse:
+        cat_id = request.path_params.get("cat_id", "")
+        result = get_category_tools(cat_id)
+        if result["tool_count"] == 0:
+            available = list_categories()
+            return JSONResponse({
+                "error": f"Category '{cat_id}' not found or empty",
+                "available_categories": [c["id"] for c in available["categories"]],
+            }, status_code=404)
+        return JSONResponse(result)
+
+    @mcp.custom_route("/api/v1/discover/tool/{name}", methods=["GET"])
+    async def api_v1_discover_tool(request: Request) -> JSONResponse:
+        name = request.path_params.get("name", "")
+        result = get_tool_detail(name)
+        if "error" in result:
+            return JSONResponse(result, status_code=404)
+        return JSONResponse(result)
+
+    @mcp.custom_route("/api/v1/discover/examples/{name}", methods=["GET"])
+    async def api_v1_discover_examples(request: Request) -> JSONResponse:
+        name = request.path_params.get("name", "")
+        result = get_tool_examples(name)
+        if "error" in result:
+            return JSONResponse(result, status_code=404)
+        return JSONResponse(result)
+
+    @mcp.custom_route("/api/v1/discover/suggest", methods=["GET"])
+    async def api_v1_discover_suggest(request: Request) -> JSONResponse:
+        task = request.query_params.get("task", "").strip()
+        if not task:
+            return JSONResponse({"error": "Missing ?task= parameter", "example": "/api/v1/discover/suggest?task=verify an email address"}, status_code=400)
+        limit = min(int(request.query_params.get("limit", "10")), 50)
+        return JSONResponse(suggest_tools(task, limit=limit))
+
+    log.info("http_routes_registered count=23 (includes 7 discovery endpoints)")

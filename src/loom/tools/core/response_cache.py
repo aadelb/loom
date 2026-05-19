@@ -95,10 +95,8 @@ async def research_cache_store(
             expires_dt = datetime.fromtimestamp(expires_at, UTC).isoformat()
 
             logger.info(
-                "cache_stored",
-                cache_key=cache_key[:16],
-                ttl_hours=ttl_hours,
-                tool_name=tool_name,
+                "cache_stored cache_key=%s ttl_hours=%s tool_name=%s",
+                cache_key[:16], ttl_hours, tool_name,
             )
 
             return {
