@@ -875,4 +875,34 @@ def register_remaining_tools(mcp: "FastMCP", wrap_tool) -> None:
         record_success("remaining", "research_dashboard")
     except Exception as e:
         record_failure("remaining", "dashboard", str(e))
+    try:
+        from loom.tools.intelligence.email_intel import research_email_verify, research_email_find
+        mcp.tool()(wrap_tool(research_email_verify))
+        record_success("remaining", "research_email_verify")
+        mcp.tool()(wrap_tool(research_email_find))
+        record_success("remaining", "research_email_find")
+    except Exception as e:
+        log.debug("skip email_intel: %s", e)
+        record_failure("remaining", "email_intel", str(e))
+    try:
+        from loom.tools.intelligence.contact_finder import (
+            research_contact_find,
+            research_phone_lookup,
+            research_email_to_phone,
+            research_phone_to_email,
+            research_holehe_check,
+        )
+        mcp.tool()(wrap_tool(research_contact_find))
+        record_success("remaining", "research_contact_find")
+        mcp.tool()(wrap_tool(research_phone_lookup))
+        record_success("remaining", "research_phone_lookup")
+        mcp.tool()(wrap_tool(research_email_to_phone))
+        record_success("remaining", "research_email_to_phone")
+        mcp.tool()(wrap_tool(research_phone_to_email))
+        record_success("remaining", "research_phone_to_email")
+        mcp.tool()(wrap_tool(research_holehe_check))
+        record_success("remaining", "research_holehe_check")
+    except Exception as e:
+        log.debug("skip contact_finder: %s", e)
+        record_failure("remaining", "contact_finder", str(e))
     log.info("registered remaining tools")
