@@ -1,7 +1,7 @@
 """LLM and search provider implementations for Loom."""
 
 from loom.providers.anthropic_provider import AnthropicProvider
-from loom.providers.base import LLMProvider, LLMResponse, _estimate_cost
+from loom.providers.base import LLMProvider, LLMResponse, _estimate_cost, get_available_providers
 from loom.providers.deepseek_provider import DeepSeekProvider
 from loom.providers.gemini_provider import GeminiProvider
 from loom.providers.groq_provider import GroqProvider
@@ -24,6 +24,7 @@ __all__ = [
     "OpenAIProvider",
     "VllmLocalProvider",
     "_estimate_cost",
+    "get_available_providers",
 ]
 
 # Search providers — optional, may fail if SDKs not installed

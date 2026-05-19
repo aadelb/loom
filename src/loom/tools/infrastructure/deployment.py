@@ -10,6 +10,7 @@ import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+import subprocess
 
 from loom.error_responses import handle_tool_errors
 

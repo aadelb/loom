@@ -741,7 +741,7 @@ async def research_holehe_check(email: str) -> dict[str, Any]:
         out = []
 
         tasks = []
-        for module in modules:
+        for module in modules.values():
             check_fn = getattr(module, module.__name__.split(".")[-1], None)
             if check_fn and callable(check_fn):
                 tasks.append(check_fn(email, client, out))

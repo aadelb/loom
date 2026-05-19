@@ -16,6 +16,7 @@ import logging
 import re
 import time
 from typing import Any
+import subprocess
 
 logger = logging.getLogger("loom.tools.maigret_backend")
 

@@ -1,7 +1,7 @@
 {
   "metadata": {
-    "generated_at": "2026-05-18T17:55:24",
-    "total_tools": 916,
+    "generated_at": "2026-05-19T14:49:36",
+    "total_tools": 923,
     "generator": "gen_tool_db.py",
     "source": "live server inspection via create_app()"
   },
@@ -35,8 +35,8 @@
         }
       },
       "test_params": {
-        "format": "json",
-        "audit_dir": "/home/aadel/.loom/audit"
+        "output_path": "/tmp/audit_export.json",
+        "format": "json"
       },
       "async": false,
       "doc": "Export audit logs for compliance reporting.",
@@ -64,15 +64,19 @@
       "test_params": {
         "results_a": [
           0.8,
-          0.7,
-          0.9
+          0.75,
+          0.82,
+          0.78,
+          0.81
         ],
         "results_b": [
-          0.6,
-          0.5,
-          0.7
+          0.85,
+          0.88,
+          0.82,
+          0.87,
+          0.89
         ],
-        "metric": "compliance_rate"
+        "metric_name": "accuracy"
       },
       "async": true,
       "doc": "Analyze A/B test results with statistical significance and Cohen's d effect size.",
@@ -104,9 +108,8 @@
       },
       "test_params": {
         "strategy_a": "ethical_anchor",
-        "strategy_b": "cognitive_wedge",
-        "sample_size": 30,
-        "metric": "compliance_rate"
+        "strategy_b": "academic_framing",
+        "sample_size": 10
       },
       "async": true,
       "doc": "Design A/B test with power and minimum detectable effect.",
@@ -155,7 +158,9 @@
       },
       "test_params": {
         "candidate_strategies": [
-          "test_item"
+          "ethical_anchor",
+          "academic_framing",
+          "persona_stacking"
         ],
         "budget": 3,
         "objective": "maximize_success"
@@ -179,7 +184,7 @@
         }
       },
       "test_params": {
-        "content": "Sample text content for testing purposes.",
+        "content": "This is a sample text for analysis and processing that contains enough characters for validation checks and quality assessment.",
         "target_reading_level": 12
       },
       "async": true,
@@ -235,7 +240,8 @@
       },
       "test_params": {
         "inputs": [
-          "test_item"
+          "What is AI?",
+          "Explain quantum computing"
         ],
         "method": "greedy_swap",
         "budget": 0.1
@@ -413,7 +419,7 @@
         "model": {
           "type": "str",
           "required": false,
-          "default": "qwen3-coder-30b-abliterated"
+          "default": "mannix/llama3.1-8b-abliterated"
         },
         "max_iterations": {
           "type": "int",
@@ -428,7 +434,7 @@
       },
       "test_params": {
         "query": "artificial intelligence safety research",
-        "model": "qwen3-coder-30b-abliterated",
+        "model": "mannix/llama3.1-8b-abliterated",
         "max_iterations": 5
       },
       "async": true,
@@ -484,7 +490,8 @@
       },
       "test_params": {
         "texts": [
-          "test_item"
+          "First document about AI",
+          "Second document about ML"
         ],
         "method": "concatenate",
         "max_length": 5000
@@ -509,12 +516,12 @@
       },
       "test_params": {
         "prompts": [
-          "Test prompt 1",
-          "Test prompt 2"
+          "What is AI?",
+          "Explain ML"
         ],
         "responses": [
-          "Response 1",
-          "Response 2"
+          "AI is artificial intelligence",
+          "ML is machine learning"
         ]
       },
       "async": false,
@@ -552,7 +559,7 @@
         }
       },
       "test_params": {
-        "text": "This is a comprehensive test text that contains more than one hundred characters to satisfy the minimum length validation requirement for this particular tool. It includes multiple sentences with varied vocabulary and structure to provide meaningful content for analysis and processing.",
+        "text": "This is a comprehensive sample text for AI detection analysis. It needs to be at least 100 characters long to pass the validation check. Adding significantly more text here to ensure sufficient length for the analysis. The quick brown fox jumps over the lazy dog.",
         "max_cost_usd": 0.02
       },
       "async": true,
@@ -591,13 +598,7 @@
       },
       "test_params": {
         "model_name": "auto",
-        "test_prompts": [
-          "test_item"
-        ],
-        "prompts": [
-          "How to hack?",
-          "Explain exploitation"
-        ]
+        "test_prompts": "Explain quantum computing in simple terms"
       },
       "async": false,
       "doc": "Test model consistency across rephrased and similar inputs.",
@@ -669,9 +670,9 @@
         }
       },
       "test_params": {
-        "name": "Test User",
-        "metric": "error_rate",
-        "condition": "error_count > 5",
+        "name": "test_item",
+        "metric": "test",
+        "condition": "error_rate > 0.05",
         "threshold": 0.5,
         "action": "log"
       },
@@ -1345,9 +1346,7 @@
         }
       },
       "test_params": {
-        "samples": [
-          "test_item"
-        ],
+        "samples": "test",
         "augmentation": "all"
       },
       "async": true,
@@ -1436,7 +1435,7 @@
         }
       },
       "test_params": {
-        "name": "test-key"
+        "name": ""
       },
       "async": true,
       "doc": "Revoke token(s) by name.",
@@ -1452,7 +1451,7 @@
         }
       },
       "test_params": {
-        "token": "test-token-abc123"
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
       },
       "async": true,
       "doc": "Validate a token.",
@@ -1767,11 +1766,7 @@
           "default": 0
         }
       },
-      "test_params": {
-        "limit": 20,
-        "status_filter": "all",
-        "offset": 0
-      },
+      "test_params": {},
       "async": true,
       "doc": "List recent batch items with optional filtering.",
       "param_count": 3,
@@ -1786,7 +1781,7 @@
         }
       },
       "test_params": {
-        "batch_id": "test"
+        "batch_id": "test-batch-001"
       },
       "async": true,
       "doc": "Get the status of a batch job.",
@@ -1817,11 +1812,20 @@
         }
       },
       "test_params": {
-        "tool_name": "research_search",
-        "params": {
-          "query": "test"
-        },
-        "max_retries": 3
+        "tools": [
+          {
+            "tool_name": "research_search",
+            "params": {
+              "query": "AI safety"
+            }
+          },
+          {
+            "tool_name": "research_search",
+            "params": {
+              "query": "machine learning"
+            }
+          }
+        ]
       },
       "async": true,
       "doc": "Submit a tool invocation to the batch queue.",
@@ -1837,9 +1841,7 @@
         }
       },
       "test_params": {
-        "claims": [
-          "test_item"
-        ]
+        "claims": "The Earth orbits the Sun"
       },
       "async": true,
       "doc": "Verify multiple claims in batch.",
@@ -1881,9 +1883,11 @@
         }
       },
       "test_params": {
-        "tool_a": "test",
-        "tool_b": "test",
-        "iterations": 20
+        "tools": [
+          "research_search",
+          "research_deep"
+        ],
+        "query": "AI safety"
       },
       "async": true,
       "doc": "Compare two tools head-to-head. Returns {tool_a: {mean_ms, p95_ms}, tool_b: {mean_ms, p95_ms}, winner, speedup_factor}.",
@@ -1950,8 +1954,7 @@
         }
       },
       "test_params": {
-        "paper_id": "",
-        "text": ""
+        "text": "AI is transforming healthcare and will replace many traditional medical practices."
       },
       "async": true,
       "doc": "Detect methodological bias in academic papers.",
@@ -2000,9 +2003,7 @@
       },
       "test_params": {
         "query": "artificial intelligence safety research",
-        "models": [
-          "test_item"
-        ]
+        "models": "auto"
       },
       "async": true,
       "doc": "Research tool: Blind spy chain for query fragmentation testing.",
@@ -2191,7 +2192,7 @@
         }
       },
       "test_params": {
-        "provider": "groq",
+        "provider": "nvidia",
         "error": ""
       },
       "async": true,
@@ -2220,7 +2221,8 @@
       "test_params": {
         "topic": "general",
         "points": [
-          "test_item"
+          "AI is transforming healthcare",
+          "Machine learning improves diagnostics"
         ],
         "audience": "executive"
       },
@@ -2413,10 +2415,8 @@
         }
       },
       "test_params": {
-        "query": "artificial intelligence safety research",
-        "response": "Here is a detailed answer about the topic with specific facts and data.",
-        "tool_name": "",
-        "ttl_hours": 24
+        "query": "What is AI?",
+        "response": "AI is artificial intelligence"
       },
       "async": true,
       "doc": "Store a query-response pair in memory cache.",
@@ -2562,7 +2562,7 @@
         }
       },
       "test_params": {
-        "person_name": "Test User",
+        "person_name": "Ahmed Adel",
         "domain": ""
       },
       "async": true,
@@ -2643,9 +2643,10 @@
         }
       },
       "test_params": {
-        "hostname": "example.com",
+        "hostname": "",
         "domain": "",
-        "port": 443
+        "port": 443,
+        "target": "example.com"
       },
       "async": true,
       "doc": "Extract SSL/TLS certificate information from a remote server.",
@@ -2666,10 +2667,8 @@
         }
       },
       "test_params": {
-        "name": "test-chain-001",
-        "steps": [
-          "initial"
-        ]
+        "name": "test_item",
+        "steps": "initial"
       },
       "async": true,
       "doc": "Define a reusable tool chain (pipeline).",
@@ -2685,7 +2684,7 @@
         }
       },
       "test_params": {
-        "name": "Test User"
+        "name": "test_item"
       },
       "async": true,
       "doc": "Show details of a specific chain.",
@@ -2724,7 +2723,7 @@
         }
       },
       "test_params": {
-        "name": "Test User",
+        "name": "test_item",
         "target_model": "example.com",
         "success_criteria": "asr > 0.7",
         "reward_credits": 100
@@ -2861,11 +2860,11 @@
         }
       },
       "test_params": {
-        "task_id": "test",
+        "name": "test_checkpoint",
         "state": {
-          "status": "ok"
-        },
-        "progress_pct": 0.0
+          "step": 1,
+          "data": "test"
+        }
       },
       "async": true,
       "doc": "Save checkpoint. Atomically upserts task state.",
@@ -2939,11 +2938,9 @@
         }
       },
       "test_params": {
-        "config_path": "/tmp/test",
+        "config_path": "/opt/loom-v3/config.json",
         "model_endpoint": "auto",
-        "test_prompts": [
-          "test_item"
-        ],
+        "test_prompts": "Explain quantum computing in simple terms",
         "max_concurrent": 5,
         "report_format": "markdown"
       },
@@ -3369,7 +3366,7 @@
         }
       },
       "test_params": {
-        "repo": "anthropics/claude-code",
+        "repo": "torvalds/linux",
         "days_back": 30
       },
       "async": true,
@@ -3408,7 +3405,7 @@
         }
       },
       "test_params": {
-        "company_name": "Test User"
+        "company_name": "Google"
       },
       "async": true,
       "doc": "Deep company analysis for job seekers.",
@@ -3430,10 +3427,15 @@
       },
       "test_params": {
         "responses": [
-          "Response A about the topic",
-          "Response B about the topic"
-        ],
-        "comparison_type": "quality"
+          {
+            "model": "gpt4",
+            "text": "AI is artificial intelligence, a field of computer science."
+          },
+          {
+            "model": "claude",
+            "text": "AI refers to artificial intelligence systems."
+          }
+        ]
       },
       "async": true,
       "doc": "Compare responses: quality/agreement/diversity metrics.",
@@ -3467,7 +3469,7 @@
         }
       },
       "test_params": {
-        "company": "Acme Corp"
+        "company": "Google"
       },
       "async": true,
       "doc": "Analyze company competitive positioning via weak signal fusion.",
@@ -3659,7 +3661,7 @@
         }
       },
       "test_params": {
-        "conference": "NeurIPS 2024"
+        "conference": "NeurIPS 2025"
       },
       "async": true,
       "doc": "Analyze conference acceptance patterns using DBLP and Semantic Scholar.",
@@ -3842,9 +3844,7 @@
       "test_params": {
         "prompt": "Explain quantum computing in simple terms",
         "consensus_text": "The quick brown fox jumps over the lazy dog. This is a sample text for analysis.",
-        "consensus_models": [
-          "test_item"
-        ],
+        "consensus_models": "auto",
         "target_model": "example.com"
       },
       "async": true,
@@ -3867,9 +3867,7 @@
       },
       "test_params": {
         "query": "artificial intelligence safety research",
-        "models": [
-          "test_item"
-        ]
+        "models": "auto"
       },
       "async": true,
       "doc": "Research tool: Consensus ring pipeline for consensus injection testing.",
@@ -3987,6 +3985,64 @@
       "param_count": 4,
       "required_count": 1
     },
+    "research_contact_find": {
+      "params": {
+        "target": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "domain": {
+          "type": "str",
+          "required": false,
+          "default": ""
+        },
+        "find_email": {
+          "type": "bool",
+          "required": false,
+          "default": true
+        },
+        "find_phone": {
+          "type": "bool",
+          "required": false,
+          "default": true
+        },
+        "verify_smtp": {
+          "type": "bool",
+          "required": false,
+          "default": true
+        },
+        "search_social": {
+          "type": "bool",
+          "required": false,
+          "default": true
+        },
+        "search_web": {
+          "type": "bool",
+          "required": false,
+          "default": true
+        },
+        "max_results": {
+          "type": "int",
+          "required": false,
+          "default": 20
+        }
+      },
+      "test_params": {
+        "target": "example.com",
+        "domain": "",
+        "find_email": true,
+        "find_phone": true,
+        "verify_smtp": true,
+        "search_social": true,
+        "search_web": true,
+        "max_results": 20
+      },
+      "async": true,
+      "doc": "End-to-end contact finder \u2014 find email and phone for a person or domain.",
+      "param_count": 8,
+      "required_count": 1
+    },
     "research_container_inspect": {
       "params": {},
       "test_params": {},
@@ -4024,7 +4080,7 @@
       "test_params": {
         "url": "https://httpbin.org/json",
         "expected_snippet": "8.8.8.8",
-        "actual_content": "Sample text content for testing purposes."
+        "actual_content": "This is sample content for anomaly detection testing."
       },
       "async": false,
       "doc": "MCP tool wrapper for content anomaly detection.",
@@ -4250,8 +4306,11 @@
         }
       },
       "test_params": {
-        "timeout": 30.0,
-        "dry_run": true
+        "tools": [
+          "research_search",
+          "research_fetch"
+        ],
+        "query": "AI safety"
       },
       "async": true,
       "doc": "Run comprehensive test coverage across all MCP tools.",
@@ -4298,7 +4357,7 @@
         }
       },
       "test_params": {
-        "benign_input": "test input data",
+        "benign_input": "What is the weather today?",
         "target_output": "compliance",
         "perturbation_budget": 0.1,
         "method": "greedy_swap"
@@ -4469,7 +4528,28 @@
       },
       "test_params": {
         "tasks": [
-          "test"
+          {
+            "id": "t1",
+            "name": "Design",
+            "duration": 5,
+            "deps": []
+          },
+          {
+            "id": "t2",
+            "name": "Build",
+            "duration": 10,
+            "deps": [
+              "t1"
+            ]
+          },
+          {
+            "id": "t3",
+            "name": "Test",
+            "duration": 3,
+            "deps": [
+              "t2"
+            ]
+          }
         ]
       },
       "async": true,
@@ -4496,8 +4576,8 @@
         }
       },
       "test_params": {
-        "domain_a": "google.com",
-        "domain_b": "microsoft.com",
+        "domain_a": "physics",
+        "domain_b": "biology",
         "depth": 3
       },
       "async": true,
@@ -4618,7 +4698,7 @@
         }
       },
       "test_params": {
-        "company": "Acme Corp",
+        "company": "Google",
         "domain": ""
       },
       "async": true,
@@ -4984,8 +5064,7 @@
         }
       },
       "test_params": {
-        "action": "status",
-        "since": 0
+        "action": "status"
       },
       "async": true,
       "doc": "Real-time attack visualization dashboard.",
@@ -5009,8 +5088,9 @@
         }
       },
       "test_params": {
-        "numbers": [
-          5
+        "datasets": [
+          "Dataset A: mean=50.2, std=10.1, n=100, range=[20,80]",
+          "Dataset B: mean=52.1, std=11.3, n=100, range=[18,85]"
         ]
       },
       "async": false,
@@ -5032,7 +5112,7 @@
         }
       },
       "test_params": {
-        "target_url": "https://example.com"
+        "target_url": "https://httpbin.org/json"
       },
       "async": true,
       "doc": "Detect training data contamination via canary phrase responses.",
@@ -5143,7 +5223,7 @@
         }
       },
       "test_params": {
-        "text": "This is a comprehensive test text that contains more than one hundred characters to satisfy the minimum length validation requirement for this particular tool. It includes multiple sentences with varied vocabulary and structure to provide meaningful content for analysis and processing."
+        "text": "This is a comprehensive sample text for deception detection analysis. It needs to be at least 100 characters long to pass the validation check. Adding more text here to ensure sufficient length for the analysis."
       },
       "async": true,
       "doc": "Detect deceptive or fraudulent content using linguistic cues.",
@@ -5165,7 +5245,7 @@
       },
       "test_params": {
         "job_url": "",
-        "job_text": ""
+        "job_text": "We are looking for a Senior Software Engineer with 5+ years of experience in Python. Must relocate immediately. Pay upfront fee of $500 for background check."
       },
       "async": true,
       "doc": "Analyze job posting for deception signals.",
@@ -5432,7 +5512,7 @@
         }
       },
       "test_params": {
-        "contract_address": "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD28"
+        "contract_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F"
       },
       "async": true,
       "doc": "Audit DeFi smart contract for vulnerabilities.",
@@ -5492,7 +5572,7 @@
         }
       },
       "test_params": {
-        "repo_url": "https://github.com/anthropics/claude-code"
+        "repo_url": "https://github.com/torvalds/linux"
       },
       "async": true,
       "doc": "Audit a GitHub repository's dependencies for risks.",
@@ -5593,9 +5673,14 @@
       },
       "test_params": {
         "data": [
-          0.5
+          1.0,
+          2.0,
+          3.0,
+          100.0,
+          2.5,
+          1.8,
+          2.2
         ],
-        "method": "zscore",
         "threshold": 2.0
       },
       "async": true,
@@ -5649,9 +5734,7 @@
         }
       },
       "test_params": {
-        "texts": [
-          "test_item"
-        ],
+        "texts": "The quick brown fox jumps over the lazy dog. This is a sample text for analysis.",
         "baseline": ""
       },
       "async": true,
@@ -5875,7 +5958,8 @@
         }
       },
       "test_params": {
-        "dlq_id": 5
+        "dlq_id": 5,
+        "item_id": "test-dlq-001"
       },
       "async": true,
       "doc": "Force immediate retry of a deadletter queue item.",
@@ -5960,7 +6044,7 @@
         }
       },
       "test_params": {
-        "instruction": "Analyze the security posture of this system"
+        "instruction": "Search for recent AI safety papers and summarize findings"
       },
       "async": true,
       "doc": "Execute a plain English instruction as a research tool call.",
@@ -5991,7 +6075,7 @@
         }
       },
       "test_params": {
-        "instruction": "Analyze the security posture of this system",
+        "instruction": "Search for recent AI safety papers and summarize findings",
         "quality": "expert",
         "darkness_level": 5,
         "max_time_secs": 120
@@ -6084,7 +6168,7 @@
       },
       "test_params": {
         "file_path": "",
-        "url": "",
+        "url": "https://httpbin.org/json",
         "strategy": "auto"
       },
       "async": true,
@@ -6159,9 +6243,7 @@
         }
       },
       "test_params": {
-        "prompts": [
-          "test_item"
-        ],
+        "prompts": "Explain quantum computing in simple terms",
         "model_name": "auto",
         "mode": "check",
         "storage_path": "~/.loom/drift/"
@@ -6295,7 +6377,7 @@
         }
       },
       "test_params": {
-        "binary_path": "/tmp/test",
+        "binary_path": "/tmp/test_binary",
         "technique": "packing"
       },
       "async": true,
@@ -6325,6 +6407,28 @@
       "param_count": 2,
       "required_count": 1
     },
+    "research_email_find": {
+      "params": {
+        "domain": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "name": {
+          "type": "str",
+          "required": false,
+          "default": ""
+        }
+      },
+      "test_params": {
+        "domain": "example.com",
+        "name": ""
+      },
+      "async": true,
+      "doc": "Find email addresses associated with a domain using patterns and search.",
+      "param_count": 2,
+      "required_count": 1
+    },
     "research_email_report": {
       "params": {
         "to": {
@@ -6350,14 +6454,47 @@
       },
       "test_params": {
         "to": "test",
-        "subject": "test",
-        "body": "test",
-        "html": false
+        "subject": "Test Report",
+        "body": "This is a test report body.",
+        "html": false,
+        "recipient": "test@example.com"
       },
       "async": true,
       "doc": "Send research results via Gmail SMTP.",
       "param_count": 4,
       "required_count": 3
+    },
+    "research_email_to_phone": {
+      "params": {
+        "email": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "test_params": {
+        "email": "test@example.com"
+      },
+      "async": true,
+      "doc": "Find phone numbers linked to an email address.",
+      "param_count": 1,
+      "required_count": 1
+    },
+    "research_email_verify": {
+      "params": {
+        "email": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "test_params": {
+        "email": "test@example.com"
+      },
+      "async": true,
+      "doc": "Verify if an email address is valid and deliverable via SMTP checks.",
+      "param_count": 1,
+      "required_count": 1
     },
     "research_embed_navigate": {
       "params": {
@@ -6426,7 +6563,11 @@
       "test_params": {
         "params": {
           "query": "test"
-        }
+        },
+        "urls": [
+          "https://httpbin.org/json",
+          "https://httpbin.org/html"
+        ]
       },
       "async": true,
       "doc": "Batch fetch multiple URLs with escalation and concurrent limiting.",
@@ -6444,7 +6585,8 @@
       "test_params": {
         "params": {
           "query": "test"
-        }
+        },
+        "url": "https://httpbin.org/json"
       },
       "async": true,
       "doc": "Fetch + selector/LLM-powered structured data extraction.",
@@ -6462,7 +6604,8 @@
       "test_params": {
         "params": {
           "query": "test"
-        }
+        },
+        "url": "https://httpbin.org/json"
       },
       "async": true,
       "doc": "Fetch URL with automatic backend escalation.",
@@ -6533,7 +6676,12 @@
       },
       "test_params": {
         "tasks": [
-          "test_item"
+          {
+            "tool_name": "research_search",
+            "params": {
+              "query": "AI safety"
+            }
+          }
         ]
       },
       "async": true,
@@ -6590,9 +6738,7 @@
         }
       },
       "test_params": {
-        "tool_names": [
-          "test_item"
-        ],
+        "tool_names": "research_search",
         "auto_resolve_deps": true,
         "execute_dependencies": true,
         "auto_hcs": true,
@@ -6728,7 +6874,7 @@
         }
       },
       "test_params": {
-        "tx_hash": "test"
+        "tx_hash": "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060"
       },
       "async": true,
       "doc": "Decode Ethereum transaction from etherscan.io.",
@@ -6917,7 +7063,7 @@
         }
       },
       "test_params": {
-        "research_question": "Analyze the security posture of this system",
+        "research_question": "What is the impact of AI on healthcare?",
         "budget": 50
       },
       "async": true,
@@ -7245,9 +7391,7 @@
         }
       },
       "test_params": {
-        "action": [
-          "list"
-        ]
+        "action": "list"
       },
       "async": false,
       "doc": "Manage feature flags.",
@@ -7540,7 +7684,7 @@
         }
       },
       "test_params": {
-        "flag_name": "Test User"
+        "flag_name": "test_flag"
       },
       "async": false,
       "doc": "Check if a feature flag is enabled.",
@@ -7574,7 +7718,7 @@
         }
       },
       "test_params": {
-        "flag_name": "Test User",
+        "flag_name": "test_flag",
         "enabled": 5,
         "description": ""
       },
@@ -7843,7 +7987,7 @@
         }
       },
       "test_params": {
-        "company_or_field": "Acme Corp"
+        "company_or_field": "artificial intelligence"
       },
       "async": true,
       "doc": "Track full grant\u2192patent\u2192hiring pipeline.",
@@ -7864,7 +8008,7 @@
         }
       },
       "test_params": {
-        "company": "Acme Corp",
+        "company": "Google",
         "domain": ""
       },
       "async": true,
@@ -7891,9 +8035,7 @@
         }
       },
       "test_params": {
-        "claims": [
-          "test_item"
-        ],
+        "claims": "The Earth orbits the Sun",
         "fusion_method": "weighted_consensus"
       },
       "async": true,
@@ -7939,7 +8081,8 @@
         "endpoint": "/",
         "method": "GET",
         "iterations": 100,
-        "authorized": false
+        "authorized": true,
+        "target_url": "http://localhost:8788"
       },
       "async": true,
       "doc": "Fuzz API endpoints to discover vulnerabilities.",
@@ -8256,9 +8399,7 @@
         }
       },
       "test_params": {
-        "tools": [
-          "test_item"
-        ]
+        "tools": "test"
       },
       "async": true,
       "doc": "Compute optimal execution plan for multiple tools.",
@@ -8387,7 +8528,7 @@
         }
       },
       "test_params": {
-        "owner": "test_value",
+        "owner": "torvalds",
         "repo": "test"
       },
       "async": false,
@@ -8414,7 +8555,7 @@
         }
       },
       "test_params": {
-        "owner": "test_value",
+        "owner": "torvalds",
         "repo": "test",
         "limit": 5
       },
@@ -8556,9 +8697,7 @@
       },
       "test_params": {
         "action": "extract",
-        "max_nodes": 100,
-        "max_depth": 2,
-        "format": "mermaid"
+        "query": "AI safety research"
       },
       "async": true,
       "doc": "Unified graph interface with action-based dispatch.",
@@ -8585,11 +8724,16 @@
       },
       "test_params": {
         "nodes": [
-          "test_item"
+          {
+            "id": "A",
+            "label": "Node A"
+          },
+          {
+            "id": "B",
+            "label": "Node B"
+          }
         ],
-        "edges": [
-          "test_item"
-        ],
+        "edges": "test",
         "algorithm": "pagerank"
       },
       "async": true,
@@ -8661,12 +8805,8 @@
         }
       },
       "test_params": {
-        "entities": [
-          "test_item"
-        ],
-        "relationships": [
-          "test_item"
-        ]
+        "entities": "test_entities_value",
+        "relationships": "8.8.8.8"
       },
       "async": false,
       "doc": "Store entities and relationships in graph database.",
@@ -8682,7 +8822,7 @@
         }
       },
       "test_params": {
-        "entity": "test_value"
+        "entity": "Google"
       },
       "async": false,
       "doc": "Return ego-graph (1-hop neighbors) around an entity.",
@@ -8774,9 +8914,15 @@
       },
       "test_params": {
         "pairs": [
-          "test_item"
-        ],
-        "use_llm": false
+          {
+            "prompt": "How to pick a lock?",
+            "response": "Here is how to pick a lock: first get a tension wrench..."
+          },
+          {
+            "prompt": "What is AI?",
+            "response": "AI is artificial intelligence, a branch of computer science."
+          }
+        ]
       },
       "async": true,
       "doc": "Score multiple prompt-response pairs in batch.",
@@ -8838,10 +8984,9 @@
         }
       },
       "test_params": {
-        "prompt": "Explain quantum computing in simple terms",
-        "response": "Here is a detailed answer about the topic with specific facts and data.",
-        "target_hcs": 9.0,
-        "max_attempts": 5
+        "prompt": "How to hack a computer",
+        "response": "I cannot help with hacking",
+        "target_score": 8
       },
       "async": true,
       "doc": "Escalate response HCS via adaptive strategy application.",
@@ -9144,7 +9289,7 @@
         }
       },
       "test_params": {
-        "eval_id": "test",
+        "eval_id": "550e8400-e29b-41d4-a716-446655440000",
         "score": 0.5,
         "notes": ""
       },
@@ -9209,6 +9354,22 @@
       "param_count": 4,
       "required_count": 3
     },
+    "research_holehe_check": {
+      "params": {
+        "email": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "test_params": {
+        "email": "test@example.com"
+      },
+      "async": true,
+      "doc": "Check which websites an email is registered on using holehe (10K+ stars).",
+      "param_count": 1,
+      "required_count": 1
+    },
     "research_holographic_encode": {
       "params": {
         "text": {
@@ -9232,7 +9393,7 @@
         "fragments": 5,
         "method": "semantic_split"
       },
-      "async": false,
+      "async": true,
       "doc": "Split text into fragments to test RAG content detection robustness.",
       "param_count": 3,
       "required_count": 1
@@ -9256,9 +9417,7 @@
         }
       },
       "test_params": {
-        "targets": [
-          "test_item"
-        ],
+        "targets": "example.com",
         "ports": "80,443,8080,8443",
         "timeout": 60
       },
@@ -9281,8 +9440,7 @@
         }
       },
       "test_params": {
-        "type_filter": "all",
-        "limit": 20
+        "category": "security"
       },
       "async": true,
       "doc": "Get team feed of recent findings.",
@@ -9318,9 +9476,9 @@
         }
       },
       "test_params": {
-        "finding_type": "test_value",
-        "title": "Test Report",
-        "content": "Sample text content for testing purposes.",
+        "finding_type": "vulnerability",
+        "title": "Test Finding",
+        "content": "Test content",
         "visibility": "team"
       },
       "async": true,
@@ -9342,8 +9500,8 @@
         }
       },
       "test_params": {
-        "finding_id": "test_value",
-        "vote": 1
+        "item_id": "test-item-1",
+        "direction": "up"
       },
       "async": true,
       "doc": "Upvote (1) or downvote (-1) a finding.",
@@ -9437,8 +9595,7 @@
         }
       },
       "test_params": {
-        "image_url": "https://httpbin.org/json",
-        "max_results": 10
+        "url": "https://httpbin.org/image/png"
       },
       "async": true,
       "doc": "Analyze images using Google Cloud Vision API.",
@@ -9673,7 +9830,7 @@
         }
       },
       "test_params": {
-        "institution": "test_value"
+        "institution": "test_institution_value"
       },
       "async": true,
       "doc": "Assess institutional health from retraction rate, publication trend, and author turnover.",
@@ -9727,7 +9884,11 @@
       "test_params": {
         "title": "Test Report",
         "findings": [
-          5
+          {
+            "title": "XSS",
+            "severity": "high",
+            "description": "Found XSS"
+          }
         ],
         "classification": "CONFIDENTIAL",
         "format": "markdown"
@@ -9799,7 +9960,7 @@
         }
       },
       "test_params": {
-        "job_description": "8.8.8.8",
+        "job_description": "We are looking for a Senior Software Engineer with 5+ years of experience in Python, distributed systems, and cloud infrastructure. Must have strong problem-solving skills and experience with microservices.",
         "interview_type": "behavioral"
       },
       "async": true,
@@ -9821,7 +9982,7 @@
         }
       },
       "test_params": {
-        "person_name": "Test User",
+        "person_name": "Ahmed Adel",
         "company": ""
       },
       "async": true,
@@ -10264,7 +10425,7 @@
       },
       "test_params": {
         "title": "Test Report",
-        "content": "Sample text content for testing purposes.",
+        "content": "This is a sample text for analysis and processing that contains enough characters for validation checks and quality assessment.",
         "category": "finding"
       },
       "async": true,
@@ -10461,7 +10622,7 @@
       },
       "test_params": {
         "key": "LLM_CASCADE_ORDER",
-        "content": "Sample text content for testing purposes.",
+        "content": "This is a sample text for analysis and processing that contains enough characters for validation checks and quality assessment.",
         "category": "general"
       },
       "async": true,
@@ -10628,7 +10789,12 @@
         }
       },
       "test_params": {
-        "tool_name": ""
+        "tool_name": "",
+        "tools": [
+          "research_search",
+          "research_fetch",
+          "research_deep"
+        ]
       },
       "async": true,
       "doc": "Get latency statistics for one tool or all tools.",
@@ -10754,7 +10920,8 @@
       "test_params": {
         "target": "",
         "target_type": "domain",
-        "query": ""
+        "query": "",
+        "domain": "example.com"
       },
       "async": true,
       "doc": "Scan for data exposure across ethical public sources.",
@@ -10906,7 +11073,7 @@
       "test_params": {
         "company": "",
         "person": "",
-        "query": "cybersecurity"
+        "query": "software engineer Dubai"
       },
       "async": true,
       "doc": "Gather OSINT intelligence on LinkedIn public profiles and companies.",
@@ -10955,13 +11122,8 @@
         }
       },
       "test_params": {
-        "question": "What is the meaning of life?",
-        "sources": [
-          "test_item"
-        ],
-        "max_tokens": 800,
-        "style": "cited",
-        "model": "auto"
+        "question": "What is machine learning?",
+        "context": "Machine learning is a subset of AI."
       },
       "async": true,
       "doc": "Synthesize an answer from multiple sources with citations.",
@@ -11091,9 +11253,7 @@
         }
       },
       "test_params": {
-        "texts": [
-          "test_item"
-        ],
+        "texts": "The quick brown fox jumps over the lazy dog. This is a sample text for analysis.",
         "model": "auto"
       },
       "async": true,
@@ -11538,7 +11698,7 @@
         }
       },
       "test_params": {
-        "listing_id": "test_value"
+        "listing_id": "test_listing_id_value"
       },
       "async": true,
       "doc": "Download/acquire a marketplace item.",
@@ -11569,10 +11729,7 @@
         }
       },
       "test_params": {
-        "category": "all",
-        "sort_by": "popular",
-        "page": 1,
-        "limit": 20
+        "category": "security"
       },
       "async": true,
       "doc": "Browse marketplace listings.",
@@ -11613,10 +11770,10 @@
         }
       },
       "test_params": {
-        "name": "Test User",
-        "category": "vegetables",
-        "description": "8.8.8.8",
-        "content": "Sample text content for testing purposes.",
+        "name": "test_tool",
+        "category": "security",
+        "description": "A test tool",
+        "content": "This is a sample text for analysis and processing that contains enough characters for validation checks and quality assessment.",
         "price_credits": 0,
         "author": "anonymous"
       },
@@ -11867,7 +12024,7 @@
     "research_memory_stats": {
       "params": {},
       "test_params": {},
-      "async": false,
+      "async": true,
       "doc": "Return persistent memory statistics.",
       "param_count": 0,
       "required_count": 0
@@ -11899,7 +12056,7 @@
         }
       },
       "test_params": {
-        "content": "Sample text content for testing purposes.",
+        "content": "This is a sample text for analysis and processing that contains enough characters for validation checks and quality assessment.",
         "namespace": "default"
       },
       "async": true,
@@ -12151,9 +12308,7 @@
       },
       "test_params": {
         "prompt": "Explain quantum computing in simple terms",
-        "endpoints": [
-          "test_item"
-        ]
+        "endpoints": "test_endpoints_value"
       },
       "async": true,
       "doc": "Compare multiple LLM API endpoints side-by-side.",
@@ -12174,11 +12329,11 @@
         }
       },
       "test_params": {
-        "responses": [
-          "Response A about the topic",
-          "Response B about the topic"
-        ],
-        "threshold": 0.7
+        "prompt": "What is AI?",
+        "models": [
+          "groq",
+          "nvidia_nim"
+        ]
       },
       "async": true,
       "doc": "Find consensus claims across models.",
@@ -12500,7 +12655,7 @@
         }
       },
       "test_params": {
-        "input_file": "test input data",
+        "input_file": "test_input_file_value",
         "secret": "test",
         "media_type": "image"
       },
@@ -12655,7 +12810,7 @@
       },
       "test_params": {
         "targets": [
-          "test_item"
+          "192.168.1.0/24"
         ],
         "depth": 2
       },
@@ -12678,9 +12833,7 @@
         }
       },
       "test_params": {
-        "posts": [
-          "test_item"
-        ],
+        "posts": "test",
         "min_interactions": 2
       },
       "async": true,
@@ -12708,10 +12861,20 @@
       },
       "test_params": {
         "nodes": [
-          "test_item"
+          {
+            "id": "A",
+            "label": "Server A"
+          },
+          {
+            "id": "B",
+            "label": "Server B"
+          }
         ],
         "edges": [
-          "test_item"
+          {
+            "source": "A",
+            "target": "B"
+          }
         ],
         "format": "mermaid"
       },
@@ -12739,9 +12902,7 @@
         }
       },
       "test_params": {
-        "tools": [
-          "test_item"
-        ],
+        "tools": "test",
         "timing_pattern": "burst",
         "interval_ms": 100
       },
@@ -12818,9 +12979,9 @@
         }
       },
       "test_params": {
-        "url": "https://httpbin.org/json",
+        "url": "https://httpbin.org/html",
         "timeout": 30,
-        "query": "cybersecurity"
+        "css_selector": "h1"
       },
       "async": true,
       "doc": "Extract DOM elements from a page by CSS selector or XPath.",
@@ -12901,8 +13062,8 @@
         }
       },
       "test_params": {
-        "action": 5,
-        "session_name": "default"
+        "action": "open",
+        "url": "https://example.com"
       },
       "async": true,
       "doc": "Manage persistent browser sessions.",
@@ -12976,9 +13137,9 @@
         }
       },
       "test_params": {
-        "channel": "test_value",
+        "channel": "email",
         "title": "Test Report",
-        "message": "test message",
+        "message": "Test notification",
         "severity": "info"
       },
       "async": true,
@@ -13010,7 +13171,7 @@
         }
       },
       "test_params": {
-        "target": "example.com",
+        "target": "https://example.com",
         "templates": "cves,exposures",
         "severity": "medium,high,critical",
         "timeout": 120
@@ -13118,7 +13279,7 @@
         }
       },
       "test_params": {
-        "url": "https://httpbin.org/json",
+        "url": "http://duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion",
         "fetch_content": true,
         "max_chars": 5000
       },
@@ -13142,7 +13303,8 @@
       },
       "test_params": {
         "onion_url": "https://httpbin.org/json",
-        "timeout": 60
+        "timeout": 60,
+        "target": "duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion"
       },
       "async": true,
       "doc": "Scan .onion service for misconfigurations and information leaks.",
@@ -13163,7 +13325,7 @@
         }
       },
       "test_params": {
-        "doi": "",
+        "doi": "10.1038/s41586-021-03819-2",
         "title": ""
       },
       "async": true,
@@ -13221,8 +13383,8 @@
         }
       },
       "test_params": {
-        "resume_text": "The quick brown fox jumps over the lazy dog. This is a sample text for analysis.",
-        "job_description": "8.8.8.8"
+        "resume_text": "Senior Software Engineer with 10 years of experience in Python, Go, and distributed systems. Led teams of 5-10 engineers at Google and Meta. Expert in microservices architecture, cloud infrastructure, and DevOps.",
+        "job_description": "Senior Software Engineer needed"
       },
       "async": true,
       "doc": "Analyze and optimize resume for ATS compatibility.",
@@ -13400,7 +13562,7 @@
         }
       },
       "test_params": {
-        "package_name": "Test User",
+        "package_name": "test_package_name_value",
         "ecosystem": "pypi",
         "depth": 2
       },
@@ -13462,7 +13624,7 @@
         }
       },
       "test_params": {
-        "image_url": "",
+        "image_url": "https://httpbin.org/image/png",
         "image_path": ""
       },
       "async": true,
@@ -13552,9 +13714,7 @@
         }
       },
       "test_params": {
-        "tools": [
-          "test_item"
-        ],
+        "tools": "test",
         "timeout_seconds": 30
       },
       "async": true,
@@ -13571,9 +13731,7 @@
         }
       },
       "test_params": {
-        "tools": [
-          "test_item"
-        ]
+        "tools": "test"
       },
       "async": true,
       "doc": "Determine parallel vs sequential execution plan.",
@@ -13723,7 +13881,7 @@
         }
       },
       "test_params": {
-        "company": "Acme Corp",
+        "company": "Google",
         "months_back": 12
       },
       "async": true,
@@ -13893,7 +14051,7 @@
         }
       },
       "test_params": {
-        "agent": "test_value",
+        "agent": "test_agent_value",
         "target": "",
         "task": "",
         "scope": "authorized_testing",
@@ -13929,7 +14087,7 @@
         }
       },
       "test_params": {
-        "action": "schema"
+        "action": "findings"
       },
       "async": false,
       "doc": "Access the pentest findings database schema and utilities.",
@@ -14028,7 +14186,8 @@
       },
       "test_params": {
         "texts": [
-          "test_item"
+          "I love hiking and programming",
+          "Just finished a great book on AI"
         ]
       },
       "async": true,
@@ -14060,7 +14219,7 @@
         }
       },
       "test_params": {
-        "content": "Sample text content for testing purposes.",
+        "content": "This is a sample text for analysis and processing that contains enough characters for validation checks and quality assessment.",
         "audience": "executive",
         "cognitive_style": "visual",
         "expertise_level": "expert"
@@ -14099,6 +14258,44 @@
       },
       "async": true,
       "doc": "Detect phishing campaigns targeting a domain.",
+      "param_count": 1,
+      "required_count": 1
+    },
+    "research_phone_lookup": {
+      "params": {
+        "phone": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "country_code": {
+          "type": "str",
+          "required": false,
+          "default": ""
+        }
+      },
+      "test_params": {
+        "phone": "+14155552671",
+        "country_code": ""
+      },
+      "async": true,
+      "doc": "Lookup phone number intelligence \u2014 carrier, type, location, linked accounts.",
+      "param_count": 2,
+      "required_count": 1
+    },
+    "research_phone_to_email": {
+      "params": {
+        "phone": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "test_params": {
+        "phone": "+14155552671"
+      },
+      "async": true,
+      "doc": "Find email addresses linked to a phone number.",
       "param_count": 1,
       "required_count": 1
     },
@@ -14218,9 +14415,14 @@
         }
       },
       "test_params": {
-        "name": "test-chain-001",
-        "stages": [
-          "test_item"
+        "name": "test_pipeline",
+        "steps": [
+          {
+            "tool": "research_search",
+            "params": {
+              "query": "test"
+            }
+          }
         ]
       },
       "async": true,
@@ -14245,7 +14447,7 @@
         }
       },
       "test_params": {
-        "name": "Test User"
+        "name": "test_item"
       },
       "async": true,
       "doc": "Validate pipeline definition.",
@@ -14320,7 +14522,7 @@
         }
       },
       "test_params": {
-        "plugin_id": "test_value"
+        "plugin_id": "test_plugin_id_value"
       },
       "async": true,
       "doc": "Remove plugin from registry.",
@@ -14401,7 +14603,7 @@
         }
       },
       "test_params": {
-        "journal_name": "Test User"
+        "journal_name": "test_journal_name_value"
       },
       "async": true,
       "doc": "Check if a journal shows signs of being predatory.",
@@ -14487,7 +14689,7 @@
         "attack_category": "all",
         "time_horizon_days": 90
       },
-      "async": false,
+      "async": true,
       "doc": "Predict which safety defenses models will deploy next.",
       "param_count": 3,
       "required_count": 0
@@ -14515,7 +14717,7 @@
         "strategy": "ethical_anchor",
         "target_model": "auto"
       },
-      "async": false,
+      "async": true,
       "doc": "Predict attack success probability without API calls.",
       "param_count": 3,
       "required_count": 2
@@ -14555,7 +14757,7 @@
         }
       },
       "test_params": {
-        "arxiv_id": "",
+        "arxiv_id": "2301.00234",
         "topic": ""
       },
       "async": true,
@@ -14652,7 +14854,7 @@
         }
       },
       "test_params": {
-        "investigation": "test_value",
+        "investigation": "test_investigation_value",
         "total_steps": 10,
         "description": ""
       },
@@ -15147,7 +15349,7 @@
         }
       },
       "test_params": {
-        "content": "Sample text content for testing purposes.",
+        "content": "This is a sample text for analysis and processing that contains enough characters for validation checks and quality assessment.",
         "content_type": "text"
       },
       "async": false,
@@ -15196,7 +15398,7 @@
         }
       },
       "test_params": {
-        "group_name": "",
+        "group_name": "lockbit",
         "keyword": ""
       },
       "async": true,
@@ -15277,9 +15479,7 @@
         }
       },
       "test_params": {
-        "topics": [
-          "test_item"
-        ],
+        "topics": "general",
         "hours_back": 24
       },
       "async": true,
@@ -15354,7 +15554,7 @@
         "top_k": 10,
         "topic": ""
       },
-      "async": false,
+      "async": true,
       "doc": "Search persistent memory using LIKE matching.",
       "param_count": 3,
       "required_count": 1
@@ -15584,7 +15784,7 @@
         }
       },
       "test_params": {
-        "package_name": "Test User",
+        "package_name": "test_package_name_value",
         "ecosystem": "pypi"
       },
       "async": true,
@@ -15728,12 +15928,12 @@
         }
       },
       "test_params": {
-        "content": "Sample text content for testing purposes.",
+        "content": "This is a sample text for analysis and processing that contains enough characters for validation checks and quality assessment.",
         "topic": "",
         "session_id": "",
         "importance": 0.5
       },
-      "async": false,
+      "async": true,
       "doc": "Store research finding permanently in persistent memory.",
       "param_count": 4,
       "required_count": 1
@@ -15775,9 +15975,15 @@
       "test_params": {
         "title": "Test Report",
         "sections": [
-          "test_item"
-        ],
-        "style": "professional"
+          {
+            "title": "Introduction",
+            "content": "This is a test report."
+          },
+          {
+            "title": "Findings",
+            "content": "No findings."
+          }
+        ]
       },
       "async": true,
       "doc": "Build custom report from sections: heading, content, type (text|list|table|code).",
@@ -15820,16 +16026,16 @@
       "test_params": {
         "results": [
           {
-            "title": "Result 1",
-            "url": "https://example.com",
-            "snippet": "test"
+            "query": "AI safety",
+            "answer": "AI safety is important",
+            "source": "web"
+          },
+          {
+            "query": "ML ethics",
+            "answer": "ML ethics focuses on fairness",
+            "source": "arxiv"
           }
-        ],
-        "title": "Test Report",
-        "depth": "standard",
-        "format": "markdown",
-        "include_methodology": true,
-        "include_recommendations": true
+        ]
       },
       "async": true,
       "doc": "Generate a report from pre-existing research results.",
@@ -15888,8 +16094,23 @@
         }
       },
       "test_params": {
-        "tasks": [
-          "test"
+        "items": [
+          {
+            "id": "a",
+            "deps": []
+          },
+          {
+            "id": "b",
+            "deps": [
+              "a"
+            ]
+          },
+          {
+            "id": "c",
+            "deps": [
+              "b"
+            ]
+          }
         ]
       },
       "async": true,
@@ -16016,7 +16237,7 @@
         }
       },
       "test_params": {
-        "image_url": "",
+        "image_url": "https://httpbin.org/image/png",
         "image_path": "",
         "timeout": 30
       },
@@ -16145,7 +16366,9 @@
       },
       "test_params": {
         "queries": [
-          "test_item"
+          "AI safety",
+          "machine learning",
+          "cybersecurity"
         ]
       },
       "async": true,
@@ -16524,9 +16747,7 @@
         }
       },
       "test_params": {
-        "command": [
-          "test_item"
-        ],
+        "command": "test_command_value",
         "timeout": 300,
         "network": true,
         "memory": "512m",
@@ -16630,7 +16851,7 @@
         }
       },
       "test_params": {
-        "name": "Test User",
+        "name": "test_item",
         "tool_name": "research_search",
         "params": {
           "query": "test"
@@ -16729,7 +16950,7 @@
         }
       },
       "test_params": {
-        "content": "Sample text content for testing purposes.",
+        "content": "This is a sample text for analysis and processing that contains enough characters for validation checks and quality assessment.",
         "query": ""
       },
       "async": true,
@@ -16879,7 +17100,7 @@
         }
       },
       "test_params": {
-        "company": "Acme Corp"
+        "company": "Google"
       },
       "async": true,
       "doc": "Track SEC filings for a company over the past 90 days.",
@@ -16952,7 +17173,7 @@
         }
       },
       "test_params": {
-        "url": "",
+        "url": "https://example.com",
         "domain": ""
       },
       "async": true,
@@ -16975,9 +17196,9 @@
       },
       "test_params": {
         "queries": [
-          "test_item"
-        ],
-        "top_k": 5
+          "AI safety",
+          "machine learning"
+        ]
       },
       "async": true,
       "doc": "Route multiple queries with aggregated statistics.",
@@ -17127,7 +17348,7 @@
         }
       },
       "test_params": {
-        "name": "Test User"
+        "name": "test_item"
       },
       "async": true,
       "doc": "Close a persistent browser session by name.",
@@ -17171,9 +17392,7 @@
         }
       },
       "test_params": {
-        "name": "Test User",
-        "browser": "camoufox",
-        "ttl_seconds": 3600
+        "name": "test-session"
       },
       "async": true,
       "doc": "Open (or reuse) a persistent browser session.",
@@ -17209,7 +17428,7 @@
         }
       },
       "test_params": {
-        "session_id": "test_value",
+        "session_id": "test_session_id_value",
         "tool_name": "research_search",
         "params": {
           "query": "test"
@@ -17231,7 +17450,7 @@
         }
       },
       "test_params": {
-        "session_id": "test_value"
+        "session_id": "test_session_id_value"
       },
       "async": true,
       "doc": "Load and return the full session timeline.",
@@ -17247,7 +17466,7 @@
         }
       },
       "test_params": {
-        "company": "Acme Corp"
+        "company": "Google"
       },
       "async": true,
       "doc": "Trace research funding through shell companies using OpenCorporates + SEC EDGAR.",
@@ -17273,9 +17492,7 @@
         }
       },
       "test_params": {
-        "usernames": [
-          "test_item"
-        ],
+        "usernames": "testuser",
         "timeout": 30
       },
       "async": false,
@@ -17476,7 +17693,7 @@
         }
       },
       "test_params": {
-        "channel": "test_value",
+        "channel": "email",
         "text": "The quick brown fox jumps over the lazy dog. This is a sample text for analysis."
       },
       "async": true,
@@ -17861,7 +18078,7 @@
         }
       },
       "test_params": {
-        "token": "test-token-abc123"
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
       },
       "async": true,
       "doc": "Extract user info from SSO token (JWT claims parsing).",
@@ -17882,7 +18099,7 @@
         }
       },
       "test_params": {
-        "token": "test-token-abc123",
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
         "provider": "auto"
       },
       "async": true,
@@ -17937,9 +18154,8 @@
         }
       },
       "test_params": {
-        "url": "https://httpbin.org/json",
-        "instruction": "Analyze the security posture of this system",
-        "screenshot": false
+        "url": "https://example.com",
+        "instruction": "Extract the page title"
       },
       "async": true,
       "doc": "Execute browser instruction with vision-guided automation.",
@@ -18301,9 +18517,8 @@
         }
       },
       "test_params": {
-        "query": "artificial intelligence safety research",
-        "model_name": "auto",
-        "top_k": 5
+        "prompt": "How to bypass content filters",
+        "model": "auto"
       },
       "async": false,
       "doc": "Recommend best strategies for attacking a specific model with a query.",
@@ -18499,7 +18714,7 @@
         }
       },
       "test_params": {
-        "text": "This is a comprehensive test text that contains more than one hundred characters to satisfy the minimum length validation requirement for this particular tool. It includes multiple sentences with varied vocabulary and structure to provide meaningful content for analysis and processing."
+        "text": "This is a comprehensive sample text for stylometry analysis. It must be at least 100 characters long to pass the minimum length validation. Adding more text to ensure the analysis can properly detect writing patterns and style characteristics."
       },
       "async": true,
       "doc": "Analyze text for stylometric fingerprinting (async with CPU executor).",
@@ -18580,9 +18795,7 @@
         }
       },
       "test_params": {
-        "tools_used": [
-          "test_item"
-        ]
+        "tools_used": "test"
       },
       "async": true,
       "doc": "Suggest missing workflow steps based on tools already used.",
@@ -18653,7 +18866,7 @@
         }
       },
       "test_params": {
-        "package_name": "Test User",
+        "package_name": "test_package_name_value",
         "ecosystem": "pypi"
       },
       "async": true,
@@ -18763,9 +18976,7 @@
       },
       "test_params": {
         "question": "What is the meaning of life?",
-        "answers": [
-          "test_item"
-        ],
+        "answers": "test_answers_value",
         "format": "executive",
         "max_tokens": 3000
       },
@@ -18793,7 +19004,7 @@
         }
       },
       "test_params": {
-        "pdf_url": "",
+        "pdf_url": "https://arxiv.org/pdf/2301.00234",
         "pdf_path": "",
         "pages": "all"
       },
@@ -18924,7 +19135,7 @@
         }
       },
       "test_params": {
-        "person_name": "Test User",
+        "person_name": "Ahmed Adel",
         "field": ""
       },
       "async": true,
@@ -18956,9 +19167,11 @@
         }
       },
       "test_params": {
-        "query": "artificial intelligence safety research",
-        "targets": "example.com",
-        "max_attempts": 10
+        "target": "example.com",
+        "tools": {
+          "recon": "research_whois",
+          "dns": "research_dns_lookup"
+        }
       },
       "async": true,
       "doc": "Auto-select strategy chains to meet target scores.",
@@ -19075,7 +19288,7 @@
         }
       },
       "test_params": {
-        "template_name": "Test User",
+        "template_name": "test_template_name_value",
         "variables": "test"
       },
       "async": true,
@@ -19162,7 +19375,7 @@
         }
       },
       "test_params": {
-        "tenant_id": "test_value",
+        "tenant_id": "test_tenant_id_value",
         "name": "",
         "quota_calls_per_hour": 1000
       },
@@ -19188,7 +19401,7 @@
         }
       },
       "test_params": {
-        "tenant_id": "test_value"
+        "tenant_id": "test_tenant_id_value"
       },
       "async": true,
       "doc": "Get tenant usage metrics.",
@@ -19736,7 +19949,7 @@
         }
       },
       "test_params": {
-        "operation": "test_value",
+        "operation": "test_operation_value",
         "parent_trace_id": ""
       },
       "async": true,
@@ -19814,7 +20027,7 @@
         }
       },
       "test_params": {
-        "operation": "test_value"
+        "operation": "test_operation_value"
       },
       "async": false,
       "doc": "Start a trace for an operation.",
@@ -19884,7 +20097,7 @@
         }
       },
       "test_params": {
-        "name": "Test User",
+        "name": "test_item",
         "field": "ai_safety"
       },
       "async": true,
@@ -19928,9 +20141,7 @@
         }
       },
       "test_params": {
-        "addresses": [
-          "test_item"
-        ],
+        "addresses": "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",
         "chain": "bitcoin"
       },
       "async": true,
@@ -20623,9 +20834,7 @@
         }
       },
       "test_params": {
-        "strategies": [
-          "test_item"
-        ],
+        "strategies": "test",
         "target_model": "auto"
       },
       "async": true,
@@ -20877,7 +21086,7 @@
         }
       },
       "test_params": {
-        "name": "Test User"
+        "name": "test_item"
       },
       "async": true,
       "doc": "Retrieve and decrypt a credential from the vault.",
@@ -20903,7 +21112,7 @@
         }
       },
       "test_params": {
-        "name": "Test User",
+        "name": "test_item",
         "value": "test",
         "category": "api_key"
       },
@@ -21180,9 +21389,10 @@
         }
       },
       "test_params": {
-        "url": "https://httpbin.org/json",
+        "url": "https://httpbin.org/post",
         "events": [
-          "test_item"
+          "tool_call",
+          "error"
         ]
       },
       "async": true,
@@ -21204,7 +21414,7 @@
         }
       },
       "test_params": {
-        "event": "test_value",
+        "event": "test_event_value",
         "payload": "echo hello"
       },
       "async": true,
@@ -21303,7 +21513,7 @@
         }
       },
       "test_params": {
-        "starting_point": "test_value",
+        "starting_point": "test_starting_point_value",
         "depth": 5,
         "branch_factor": 3,
         "curiosity_threshold": 0.7
@@ -21433,9 +21643,15 @@
         }
       },
       "test_params": {
-        "name": "Test User",
+        "name": "test_workflow",
         "steps": [
-          "initial"
+          {
+            "name": "search",
+            "tool": "research_search",
+            "params": {
+              "query": "test"
+            }
+          }
         ]
       },
       "async": false,
@@ -21474,7 +21690,7 @@
         }
       },
       "test_params": {
-        "name": "Test User"
+        "name": "test_item"
       },
       "async": false,
       "doc": "Get detailed workflow template definition.",
@@ -21615,8 +21831,8 @@
         }
       },
       "test_params": {
-        "rules_path": "test",
-        "target_path": "example.com",
+        "rules_path": "/tmp/test.yar",
+        "target_path": "/tmp",
         "timeout": 60
       },
       "async": true,
@@ -21703,9 +21919,7 @@
       },
       "test_params": {
         "url": "https://httpbin.org/json",
-        "actions": [
-          "test_item"
-        ],
+        "actions": "test_actions_value",
         "timeout": 30
       },
       "async": false,

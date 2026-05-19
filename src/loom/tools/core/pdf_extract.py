@@ -9,6 +9,7 @@ import tempfile
 from typing import Any
 
 import httpx
+import subprocess
 
 from loom.validators import UrlSafetyError, validate_url
 from loom.error_responses import handle_tool_errors

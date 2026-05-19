@@ -90,7 +90,7 @@ async def research_cache_store(
             if len(_response_cache) > _MAX_CACHE_SIZE:
                 oldest_key = min(_response_cache.keys(), key=lambda k: _response_cache[k]["created_at"])
                 del _response_cache[oldest_key]
-                logger.info("cache_evicted_oldest", oldest_key=oldest_key[:16], cache_size=len(_response_cache))
+                logger.info("cache_evicted_oldest oldest_key=%s cache_size=%s", oldest_key[:16], len(_response_cache))
 
             expires_dt = datetime.fromtimestamp(expires_at, UTC).isoformat()
 
@@ -132,7 +132,7 @@ async def research_cache_lookup(query: str) -> dict[str, Any]:
         async with _get_cache_lock():
             if cache_key not in _response_cache:
                 _cache_stats["misses"] += 1
-                logger.debug("cache_miss", cache_key=cache_key[:16])
+                logger.debug("cache_miss cache_key=%s", cache_key[:16])
                 return {
                     "hit": False,
                     "response": None,
@@ -146,7 +146,7 @@ async def research_cache_lookup(query: str) -> dict[str, Any]:
             if now > entry["expires_at"]:
                 del _response_cache[cache_key]
                 _cache_stats["misses"] += 1
-                logger.debug("cache_expired", cache_key=cache_key[:16])
+                logger.debug("cache_expired cache_key=%s", cache_key[:16])
                 return {
                     "hit": False,
                     "response": None,
@@ -157,7 +157,7 @@ async def research_cache_lookup(query: str) -> dict[str, Any]:
             # Cache hit
             _cache_stats["hits"] += 1
             age_seconds = int(now - entry["created_at"])
-            logger.debug("cache_hit", cache_key=cache_key[:16], age_seconds=age_seconds)
+            logger.debug("cache_hit cache_key=%s age_seconds=%s", cache_key[:16], age_seconds)
 
             return {
                 "hit": True,

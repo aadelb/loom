@@ -17,6 +17,7 @@ import logging
 import os
 import tempfile
 from typing import Any
+import subprocess
 
 logger = logging.getLogger("loom.tools.lightpanda_backend")
 

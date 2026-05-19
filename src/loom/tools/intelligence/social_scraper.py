@@ -153,7 +153,7 @@ def _fetch_instagram_profile(username: str, max_posts: int) -> dict[str, Any]:
         return result
 
     except Exception as e:
-        if _HAS_INSTALOADER and isinstance(e, instaloader.exceptions.UserNotFound):
+        if _HAS_INSTALOADER and isinstance(e, instaloader.exceptions.ProfileNotExistsException):
             logger.warning("instagram_user_not_found username=%s", username)
             return {"error": f"User {username} not found", "username": username}
         logger.error("instagram_fetch_error username=%s error=%s", username, str(e))

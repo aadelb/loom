@@ -69,7 +69,7 @@ def _search_journal_entries(query: str, category: str, limit: int) -> tuple[list
                             continue
                     entries.append(entry)
         except (OSError, json.JSONDecodeError) as e:
-            logger.warning("journal_read_failed", file=month_file, error=str(e))
+            logger.warning("journal_read_failed file=%s error=%s", month_file, str(e))
 
     entries.sort(key=lambda e: e.get("timestamp", ""), reverse=True)
     for entry in entries[:limit]:
@@ -107,9 +107,9 @@ def _read_journal_timeline(months: int) -> tuple[list[dict[str, Any]], int, int]
                             entries_by_week[week] = []
                         entries_by_week[week].append(entry)
                     except ValueError:
-                        logger.warning("invalid_timestamp", entry_id=entry.get("id"))
+                        logger.warning("invalid_timestamp entry_id=%s", entry.get("id"))
         except (OSError, json.JSONDecodeError) as e:
-            logger.warning("journal_read_failed", file=month_file, error=str(e))
+            logger.warning("journal_read_failed file=%s error=%s", month_file, str(e))
 
     cutoff = datetime.now(UTC) - timedelta(days=months * 30)
     timeline, total = [], 0
@@ -156,9 +156,9 @@ async def research_journal_add(title: str, content: str, tags: list[str] | None 
         try:
             # Run blocking file I/O in executor
             await asyncio.to_thread(_write_journal_entry, _month_file(now), entry)
-            logger.info("journal_entry_added", entry_id=entry_id, category=category)
+            logger.info("journal_entry_added entry_id=%s category=%s", entry_id, category)
         except OSError as e:
-            logger.error("journal_write_failed", error=str(e))
+            logger.error("journal_write_failed error=%s", str(e))
             return {"error": f"Write failed: {e}", "entry_id": None}
 
         return {

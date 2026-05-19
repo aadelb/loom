@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import uuid
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -16,7 +17,7 @@ logger = logging.getLogger("loom.tools.scheduler")
 
 def _get_schedules_file() -> Path:
     """Get path to schedules.json file."""
-    base = Path(_cfg().get("HOME", "~")).expanduser() / ".loom"
+    base = Path(os.environ.get("HOME", "~")).expanduser() / ".loom"
     base.mkdir(parents=True, exist_ok=True)
     return base / "schedules.json"
 

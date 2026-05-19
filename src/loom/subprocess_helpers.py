@@ -37,6 +37,8 @@ def run_command(
     env: dict[str, str] | None = None,
     input_data: str | None = None,
     capture_output: bool = True,
+    text: bool = True,
+    check: bool = False,
 ) -> dict[str, Any]:
     """Run a subprocess synchronously with consistent error handling.
 

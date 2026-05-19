@@ -15,6 +15,7 @@ import logging
 import re
 import time
 from typing import Any
+import subprocess
 
 from loom.input_validators import validate_domain, validate_email, validate_ip, ValidationError
 from loom.error_responses import handle_tool_errors

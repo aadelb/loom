@@ -372,11 +372,8 @@ async def research_memetic_simulate(
         results = simulator.simulate(idea.strip())
 
         logger.info(
-            "memetic_simulate completed",
-            idea=idea[:50],
-            r0=results["R0"],
-            virality_class=results["virality_class"],
-            reach_pct=results["total_reach_pct"],
+            "memetic_simulate completed idea=%s r0=%s virality_class=%s reach_pct=%s",
+            idea[:50], results["R0"], results["virality_class"], results["total_reach_pct"],
         )
 
         return results

@@ -13,6 +13,7 @@ import os
 import tempfile
 import time
 from typing import Any
+import subprocess
 
 from loom.cli_checker import is_available
 from loom.subprocess_helpers import run_command

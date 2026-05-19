@@ -16,6 +16,7 @@ import tempfile
 import uuid
 from pathlib import Path
 from typing import Any
+import subprocess
 
 from loom.error_responses import handle_tool_errors
 from loom.subprocess_helpers import run_command

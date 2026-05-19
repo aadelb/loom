@@ -16,6 +16,7 @@ import os
 import re
 import uuid
 from typing import Any
+import subprocess
 
 from loom.error_responses import handle_tool_errors
 

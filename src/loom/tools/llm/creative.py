@@ -409,6 +409,7 @@ async def research_temporal_diff(
     Returns:
         Dict with ``changes_summary``, ``archive_date``, ``current_date``.
     """
+    loop = asyncio.get_event_loop()
     from loom.tools.core.enrich import research_wayback
     from loom.validators import UrlSafetyError, validate_url
 
@@ -504,6 +505,7 @@ async def research_citation_graph(
     Returns:
         Dict with ``papers`` list and ``edges`` (citation links).
     """
+    loop = asyncio.get_event_loop()
     papers: dict[str, dict[str, Any]] = {}
     edges: list[dict[str, str]] = []
 
@@ -696,6 +698,7 @@ async def research_curriculum(
     Returns:
         Dict with ``levels`` (beginner/intermediate/advanced), each with resources.
     """
+    loop = asyncio.get_event_loop()
     from loom.tools.core.search import research_search
 
     levels: dict[str, list[dict[str, Any]]] = {
@@ -773,6 +776,7 @@ async def research_community_sentiment(
     Returns:
         Dict with HN and Reddit results, combined sentiment indicators.
     """
+    loop = asyncio.get_event_loop()
 
     hn_results: dict[str, Any] = {"results": []}
     reddit_results: dict[str, Any] = {"results": []}
@@ -960,6 +964,7 @@ async def research_semantic_sitemap(
         Dict with ``clusters`` (each with representative URL + members),
         ``total_urls``, ``clusters_found``.
     """
+    loop = asyncio.get_event_loop()
     from urllib.parse import urlparse
 
 
