@@ -162,10 +162,11 @@ async def _extract_from_url(
         logger.info("document_download_complete url=%s size=%d", url, len(file_bytes))
 
         # Determine file extension from URL
-        url_path = url.split("?")[0]  # Remove query params
+        url_path = url.split("?")[0].rstrip("/")
+        last_segment = url_path.rsplit("/", 1)[-1] if "/" in url_path else url_path
         file_ext = ""
-        if "." in url_path:
-            file_ext = "." + url_path.rsplit(".", 1)[-1].lower()
+        if "." in last_segment:
+            file_ext = "." + last_segment.rsplit(".", 1)[-1].lower()[:10]
 
         # Create temp file and extract
         tmp_path = None
