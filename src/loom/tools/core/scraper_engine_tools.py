@@ -51,7 +51,7 @@ def _map_engine_mode_to_fetch_mode(engine_mode: str) -> str:
 
 
 @handle_tool_errors("research_engine_fetch")
-async def research_engine_fetch(params: ScraperEngineFetchParams) -> dict[str, Any]:
+async def research_engine_fetch(url: str = "", mode: str = "auto", max_escalation: int = 7, **kwargs: Any) -> dict[str, Any]:
 	"""Fetch URL with automatic backend escalation.
 
 	Chains through HTTP → Scrapling → Crawl4AI → Patchright → nodriver →
@@ -72,14 +72,8 @@ async def research_engine_fetch(params: ScraperEngineFetchParams) -> dict[str, A
 		- elapsed_ms: int
 	"""
 	try:
-		# Extract URL from params (handle both Pydantic objects and dicts)
-		url = params.url if hasattr(params, "url") else params.get("url", str(params))
-		engine_mode = params.mode if hasattr(params, "mode") else params.get("mode", "auto")
-		max_escalation = (
-			params.max_escalation
-			if hasattr(params, "max_escalation")
-			else params.get("max_escalation", 7)
-		)
+		engine_mode = mode
+		# url and max_escalation come from function params directly
 
 		validate_url(url)
 
@@ -124,7 +118,7 @@ async def research_engine_fetch(params: ScraperEngineFetchParams) -> dict[str, A
 
 
 @handle_tool_errors("research_engine_extract")
-async def research_engine_extract(params: ScraperEngineExtractParams) -> dict[str, Any]:
+async def research_engine_extract(url: str = "", selector: str = "", llm_extract: bool = False, mode: str = "auto", **kwargs: Any) -> dict[str, Any]:
 	"""Fetch + selector/LLM-powered structured data extraction.
 
 	Chains through HTTP → Scrapling → Crawl4AI → Patchright → nodriver →
@@ -144,17 +138,6 @@ async def research_engine_extract(params: ScraperEngineExtractParams) -> dict[st
 		- error: str or None
 	"""
 	try:
-		# Extract parameters
-		url = params.url if hasattr(params, "url") else params.get("url", str(params))
-		selector = (
-			params.selector if hasattr(params, "selector") else params.get("selector", "")
-		)
-		llm_extract = (
-			params.llm_extract
-			if hasattr(params, "llm_extract")
-			else params.get("llm_extract", False)
-		)
-		mode = params.mode if hasattr(params, "mode") else params.get("mode", "auto")
 
 		validate_url(url)
 
@@ -240,7 +223,7 @@ async def research_engine_extract(params: ScraperEngineExtractParams) -> dict[st
 
 
 @handle_tool_errors("research_engine_batch")
-async def research_engine_batch(params: ScraperEngineBatchParams) -> dict[str, Any]:
+async def research_engine_batch(urls: list[str] | None = None, mode: str = "auto", max_concurrent: int = 5, max_escalation: int = 7, **kwargs: Any) -> dict[str, Any]:
 	"""Batch fetch multiple URLs with escalation and concurrent limiting.
 
 	Fetches multiple URLs in parallel (respecting concurrency limit) with
@@ -258,15 +241,9 @@ async def research_engine_batch(params: ScraperEngineBatchParams) -> dict[str, A
 		- results: list of fetch results for each URL
 		- error: str or None
 	"""
+	if urls is None:
+		urls = []
 	try:
-		# Extract parameters
-		urls = params.urls if hasattr(params, "urls") else params.get("urls", [])
-		mode = params.mode if hasattr(params, "mode") else params.get("mode", "auto")
-		max_concurrent = (
-			params.max_concurrent
-			if hasattr(params, "max_concurrent")
-			else params.get("max_concurrent", 5)
-		)
 
 		if not urls:
 			return {
