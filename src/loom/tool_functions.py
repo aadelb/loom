@@ -258,6 +258,15 @@ async def research_full_spectrum(
 
     return result
 
+_dashboard_instance = None
+
+def _get_dashboard():
+    global _dashboard_instance
+    if _dashboard_instance is None:
+        from loom.dashboard import AttackDashboard
+        _dashboard_instance = AttackDashboard()
+    return _dashboard_instance
+
 @handle_tool_errors("research_dashboard")
 async def research_dashboard(
     action: str,
