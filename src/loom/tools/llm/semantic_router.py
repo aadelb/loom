@@ -220,6 +220,13 @@ async def _similarity_search(query_embedding: np.ndarray, top_k: int = 5) -> lis
     if len(query_embedding.shape) == 1:
         query_embedding = query_embedding.reshape(1, -1)
 
+    if query_embedding.shape[1] != _TOOL_EMBEDDINGS.shape[1]:
+        logger.warning(
+            "embedding_dimension_mismatch query=%d tools=%d, falling back to keywords",
+            query_embedding.shape[1], _TOOL_EMBEDDINGS.shape[1],
+        )
+        return []
+
     similarities = cosine_similarity(query_embedding, _TOOL_EMBEDDINGS)[0]
     top_indices = np.argsort(-similarities)[:top_k]
 
