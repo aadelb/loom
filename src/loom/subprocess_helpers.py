@@ -36,6 +36,7 @@ def run_command(
     cwd: str | None = None,
     env: dict[str, str] | None = None,
     input_data: str | None = None,
+    capture_output: bool = True,
 ) -> dict[str, Any]:
     """Run a subprocess synchronously with consistent error handling.
 
