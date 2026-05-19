@@ -120,7 +120,7 @@ async def research_hcs_escalate(
 
         for attempt in range(min(max_attempts, len(_ESCALATION_CHAIN))):
             strategy = _ESCALATION_CHAIN[attempt]
-            reframed = await _apply_strategy(prompt, strategy, "gpt")
+            reframed = _apply_strategy(prompt, strategy, "gpt")
 
             # Call LLM with reframed prompt
             try:

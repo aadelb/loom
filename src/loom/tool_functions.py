@@ -12,11 +12,11 @@ import logging
 from datetime import UTC, datetime
 from typing import Any
 
-from loom.error_responses import handle_tool_errors
 from loom.full_spectrum import FullSpectrumPipeline
+from loom.error_responses import handle_tool_errors
 from loom.server_state import get_start_time
 
-log = logging.getLogger("loom.tool_functions")
+logger = log = logging.getLogger("loom.tool_functions")
 
 # ── Dynamic strategy count caching ──
 _STRATEGY_COUNT: int | None = None
@@ -173,12 +173,21 @@ async def research_coverage_run(
     """Run comprehensive test coverage across all MCP tools."""
     from loom.test_runner import ToolCoverageRunner
 
+    from dataclasses import asdict
     runner = ToolCoverageRunner(mcp_app=None, dry_run=dry_run)
     results = await runner.run_coverage(tools_to_test=tools_to_test, timeout=timeout)
+    if "stats" in results and hasattr(results["stats"], "__dataclass_fields__"):
+        results["stats"] = asdict(results["stats"])
+    if "per_tool_results" in results:
+        results["per_tool_results"] = [
+            asdict(r) if hasattr(r, "__dataclass_fields__") else r
+            for r in results["per_tool_results"]
+        ]
     results["report_markdown"] = runner.generate_coverage_report(results)
     return results
 
 
+@handle_tool_errors("research_full_spectrum")
 async def research_full_spectrum(
     query: str,
     model_name: str = "unknown",
@@ -249,6 +258,7 @@ async def research_full_spectrum(
 
     return result
 
+@handle_tool_errors("research_dashboard")
 async def research_dashboard(
     action: str,
     event_type: str | None = None,

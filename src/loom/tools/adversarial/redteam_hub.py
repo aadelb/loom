@@ -22,9 +22,11 @@ logger = logging.getLogger("loom.tools.redteam_hub")
 HUB_DB = Path.home() / ".loom" / "hub.db"
 
 
+HUB_DB.parent.mkdir(parents=True, exist_ok=True)
+
+
 async def _init_db() -> aiosqlite.Connection:
     """Initialize SQLite connection with schema."""
-    HUB_DB.parent.mkdir(parents=True, exist_ok=True)
     conn = await aiosqlite.connect(str(HUB_DB))
     await conn.execute(
         "CREATE TABLE IF NOT EXISTS findings ("
@@ -62,7 +64,7 @@ async def research_hub_share(
     timestamp = datetime.now(UTC).isoformat()
 
     try:
-        async with await _init_db() as conn:
+        async with aiosqlite.connect(str(HUB_DB)) as conn:
             await conn.execute(
                 "INSERT INTO findings VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)",
                 (finding_id, finding_type, title, content, json.dumps(tags or []), visibility, "anonymous", timestamp),
@@ -88,7 +90,7 @@ async def research_hub_feed(
     """
     limit = min(limit, 100)
     try:
-        async with await _init_db() as conn:
+        async with aiosqlite.connect(str(HUB_DB)) as conn:
             query = "SELECT id, type, title, tags, author, created, votes FROM findings WHERE visibility IN ('team', 'public')"
             params: list[Any] = []
             if type_filter != "all":
@@ -124,7 +126,7 @@ async def research_hub_vote(
         return {"success": False, "error": "vote must be 1 or -1"}
 
     try:
-        async with await _init_db() as conn:
+        async with aiosqlite.connect(str(HUB_DB)) as conn:
             cursor = await conn.execute("SELECT votes FROM findings WHERE id = ?", (finding_id,))
             row = await cursor.fetchone()
             if not row:
