@@ -418,4 +418,30 @@ def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip ai_safety compliance: %s", e)
         record_failure("intelligence", "ai_safety", str(e))
 
-    log.info("registered intelligence tools count=116")
+    # ── Facebook Research Tools (via SharedModels) ──
+    try:
+        from loom.tools.intelligence.facebook_research import (
+            research_facebook_search,
+            research_facebook_page,
+            research_facebook_profile,
+            research_facebook_group,
+            research_facebook_marketplace,
+            research_facebook_page_insights,
+        )
+        mcp.tool()(wrap_tool(research_facebook_search))
+        record_success("intelligence", "research_facebook_search")
+        mcp.tool()(wrap_tool(research_facebook_page))
+        record_success("intelligence", "research_facebook_page")
+        mcp.tool()(wrap_tool(research_facebook_profile))
+        record_success("intelligence", "research_facebook_profile")
+        mcp.tool()(wrap_tool(research_facebook_group))
+        record_success("intelligence", "research_facebook_group")
+        mcp.tool()(wrap_tool(research_facebook_marketplace))
+        record_success("intelligence", "research_facebook_marketplace")
+        mcp.tool()(wrap_tool(research_facebook_page_insights))
+        record_success("intelligence", "research_facebook_page_insights")
+    except Exception as e:
+        log.debug("skip facebook_research: %s", e)
+        record_failure("intelligence", "facebook_research", str(e))
+
+    log.info("registered intelligence tools count=122")
