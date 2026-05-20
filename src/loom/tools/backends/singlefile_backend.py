@@ -207,7 +207,7 @@ async def research_archive_page(
         if not os.path.exists(output_path):
             return {
                 "url": url,
-                "error": f"SingleFile did not create output file. stdout: {result["stdout"]}, stderr: {result["stderr"]}",
+                "error": f"SingleFile did not create output file. stdout: {result.stdout}, stderr: {result.stderr}",
                 "singlefile_available": True,
             }
 
