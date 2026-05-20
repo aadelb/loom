@@ -196,8 +196,7 @@ async def _fetch_with_zendriver(
     return result
 
 @handle_tool_errors("research_zen_fetch")
-
-def research_zen_fetch(
+async def research_zen_fetch(
     url: str,
     timeout: int = 30,
     headless: bool = True,
@@ -211,32 +210,17 @@ def research_zen_fetch(
 
     Returns:
         Dictionary: {url, html, text, status, method, error, elapsed_ms, title}
-        - html: Full HTML content of the page
-        - text: Extracted text content
-        - status: HTTP status code (None if not available via CDP)
-        - title: Page title from <title> tag
-        - error: Error message if fetch failed
-
-    Example:
-        result = research_zen_fetch("https://example.com", timeout=30)
-        print(result["text"])
     """
     if not _HAS_ZENDRIVER:
         raise ImportError("zendriver not installed. Install with: pip install zendriver")
 
-    # Validate URL
     validated_url = validate_url(url)
 
-    # Validate timeout
     if timeout < 1 or timeout > 120:
         raise ValueError("timeout must be 1-120 seconds")
 
-    # Get or create event loop and run async fetch
-    loop = _ensure_event_loop()
     try:
-        result = loop.run_until_complete(
-            _fetch_with_zendriver(validated_url, timeout, headless),
-        )
+        result = await _fetch_with_zendriver(validated_url, timeout, headless)
         return ZenFetchResult(**result).model_dump()
     except Exception as e:
         logger.error("research_zen_fetch_failed url=%s error=%s", url, str(e))
@@ -301,8 +285,7 @@ async def _batch_fetch_concurrent(
     }
 
 @handle_tool_errors("research_zen_batch")
-
-def research_zen_batch(
+async def research_zen_batch(
     urls: list[str],
     max_concurrent: int = 5,
     timeout: int = 30,
@@ -340,12 +323,8 @@ def research_zen_batch(
     if timeout < 1 or timeout > 120:
         raise ValueError("timeout must be 1-120 seconds")
 
-    # Run batch fetch
-    loop = _ensure_event_loop()
     try:
-        result = loop.run_until_complete(
-            _batch_fetch_concurrent(validated_urls, max_concurrent, timeout),
-        )
+        result = await _batch_fetch_concurrent(validated_urls, max_concurrent, timeout)
         return ZenBatchResult(**result).model_dump()
     except Exception as e:
         logger.error("research_zen_batch_failed urls_count=%d error=%s", len(urls), str(e))
@@ -493,8 +472,7 @@ async def _interact_with_page(
     return result
 
 @handle_tool_errors("research_zen_interact")
-
-def research_zen_interact(
+async def research_zen_interact(
     url: str,
     actions: list[dict[str, str]],
     timeout: int = 30,
@@ -545,12 +523,8 @@ def research_zen_interact(
     if len(actions) > 50:
         raise ValueError("actions list max 50 items")
 
-    # Get or create event loop and run async interact
-    loop = _ensure_event_loop()
     try:
-        result = loop.run_until_complete(
-            _interact_with_page(validated_url, actions, timeout),
-        )
+        result = await _interact_with_page(validated_url, actions, timeout)
         return ZenInteractResult(**result).model_dump()
     except Exception as e:
         logger.error("research_zen_interact_failed url=%s error=%s", url, str(e))
