@@ -42,6 +42,49 @@ def _load_li_cookies() -> list[dict[str, str]]:
         return []
 
 
+async def _refresh_li_session() -> bool:
+    """Re-login to LinkedIn if session expired."""
+    email = os.environ.get("LINKEDIN_EMAIL", "")
+    password = os.environ.get("LINKEDIN_PASSWORD", "")
+    if not email or not password:
+        logger.warning("no LINKEDIN_EMAIL/PASSWORD for session refresh")
+        return False
+
+    try:
+        from camoufox.async_api import AsyncCamoufox
+
+        async with AsyncCamoufox(headless=True) as browser:
+            page = await browser.new_page()
+            await page.goto("https://www.linkedin.com/login", wait_until="domcontentloaded")
+            await asyncio.sleep(3)
+            await page.locator('#username').fill(email)
+            await page.locator('#password').fill(password)
+            await page.locator('#password').press('Enter')
+            await asyncio.sleep(8)
+
+            cookies = await page.context.cookies()
+            li_at = next((c for c in cookies if c["name"] == "li_at"), None)
+            if not li_at:
+                return False
+
+            session = {
+                "cookies": [
+                    {"name": c["name"], "value": c["value"],
+                     "domain": c.get("domain", ".linkedin.com"),
+                     "path": c.get("path", "/")}
+                    for c in cookies
+                ],
+                "authenticated": True,
+            }
+            with open(_LI_COOKIES, "w") as f:
+                json.dump(session, f, indent=2)
+            logger.info("linkedin_session_refreshed cookies=%d", len(cookies))
+            return True
+    except Exception as e:
+        logger.warning("linkedin_session_refresh_failed: %s", e)
+        return False
+
+
 async def _camoufox_fetch_li(url: str, wait_secs: int = 6) -> str:
     from camoufox.async_api import AsyncCamoufox
 
@@ -58,6 +101,24 @@ async def _camoufox_fetch_li(url: str, wait_secs: int = 6) -> str:
         await page.goto(url, wait_until="domcontentloaded")
         await asyncio.sleep(wait_secs)
         content = await page.content()
+
+    if "Sign Up" in content[:500] or "Sign in" in content[:500]:
+        logger.info("linkedin_session_expired, refreshing...")
+        if await _refresh_li_session():
+            cookies = _load_li_cookies()
+            async with AsyncCamoufox(headless=True) as browser:
+                page = await browser.new_page()
+                for c in cookies:
+                    if isinstance(c, dict):
+                        await page.context.add_cookies([{
+                            "name": c["name"], "value": c["value"],
+                            "domain": c.get("domain", ".linkedin.com"),
+                            "path": c.get("path", "/"),
+                        }])
+                await page.goto(url, wait_until="domcontentloaded")
+                await asyncio.sleep(wait_secs)
+                content = await page.content()
+
     return content
 
 
