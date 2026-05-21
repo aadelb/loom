@@ -444,4 +444,30 @@ def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip facebook_research: %s", e)
         record_failure("intelligence", "facebook_research", str(e))
 
-    log.info("registered intelligence tools count=122")
+    # ── LinkedIn Research Tools (Camoufox-based) ──
+    try:
+        from loom.tools.intelligence.linkedin_research import (
+            research_linkedin_profile,
+            research_linkedin_company,
+            research_linkedin_search,
+            research_linkedin_jobs,
+            research_linkedin_employees,
+            research_linkedin_posts,
+        )
+        mcp.tool()(wrap_tool(research_linkedin_profile))
+        record_success("intelligence", "research_linkedin_profile")
+        mcp.tool()(wrap_tool(research_linkedin_company))
+        record_success("intelligence", "research_linkedin_company")
+        mcp.tool()(wrap_tool(research_linkedin_search))
+        record_success("intelligence", "research_linkedin_search")
+        mcp.tool()(wrap_tool(research_linkedin_jobs))
+        record_success("intelligence", "research_linkedin_jobs")
+        mcp.tool()(wrap_tool(research_linkedin_employees))
+        record_success("intelligence", "research_linkedin_employees")
+        mcp.tool()(wrap_tool(research_linkedin_posts))
+        record_success("intelligence", "research_linkedin_posts")
+    except Exception as e:
+        log.debug("skip linkedin_research: %s", e)
+        record_failure("intelligence", "linkedin_research", str(e))
+
+    log.info("registered intelligence tools count=128")
