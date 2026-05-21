@@ -40,14 +40,14 @@ def _headers() -> dict[str, str]:
 @handle_tool_errors("research_facebook_search")
 async def research_facebook_search(
     query: str,
-    search_type: str = "pages",
+    search_type: str = "page",
     limit: int = 10,
 ) -> dict[str, Any]:
     """Search Facebook for pages, people, groups, or posts.
 
     Args:
         query: Search term (person name, company, topic)
-        search_type: Type of search — pages, people, groups, posts
+        search_type: Type of search — page, post, group
         limit: Max results (1-50, default 10)
 
     Returns:
