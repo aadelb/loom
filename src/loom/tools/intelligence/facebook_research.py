@@ -91,28 +91,50 @@ async def research_facebook_page(
     post_limit = max(1, min(post_limit, 100))
 
     async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
-        info_resp = await client.get(
-            f"{SHARED_MODELS_BASE}/v1/social/facebook/page/{page_id}/info",
-            headers=_headers(),
-        )
-        info_resp.raise_for_status()
-        page_info = info_resp.json()
-
-        posts = []
-        if include_posts:
-            posts_resp = await client.get(
-                f"{SHARED_MODELS_BASE}/v1/social/facebook/page/{page_id}/posts",
+        page_info: dict[str, Any] = {"page_id": page_id}
+        try:
+            info_resp = await client.get(
+                f"{SHARED_MODELS_BASE}/v1/social/facebook/page/{page_id}/info",
                 headers=_headers(),
-                params={"limit": post_limit},
             )
-            posts_resp.raise_for_status()
-            posts_data = posts_resp.json()
-            posts = posts_data.get("posts", posts_data) if isinstance(posts_data, dict) else posts_data
+            if info_resp.status_code == 200:
+                page_info = info_resp.json()
+        except Exception:
+            pass
+
+        if "name" not in page_info:
+            try:
+                search_resp = await client.post(
+                    f"{SHARED_MODELS_BASE}/facebook/search",
+                    headers=_headers(),
+                    json={"query": page_id, "type": "page", "limit": 1},
+                )
+                if search_resp.status_code == 200:
+                    results = search_resp.json().get("results", [])
+                    if results:
+                        page_info = results[0] if isinstance(results[0], dict) else {"name": str(results[0])}
+                        page_info["page_id"] = page_id
+            except Exception:
+                pass
+
+        posts: list[Any] = []
+        if include_posts:
+            try:
+                posts_resp = await client.get(
+                    f"{SHARED_MODELS_BASE}/facebook/page/{page_id}/posts",
+                    headers=_headers(),
+                    params={"limit": post_limit},
+                )
+                if posts_resp.status_code == 200:
+                    posts_data = posts_resp.json()
+                    posts = posts_data.get("posts", posts_data) if isinstance(posts_data, dict) else posts_data
+            except Exception:
+                pass
 
     return {
         "page_id": page_id,
         "info": page_info,
-        "posts": posts,
+        "posts": posts if isinstance(posts, list) else [],
         "post_count": len(posts) if isinstance(posts, list) else 0,
     }
 
@@ -215,6 +237,8 @@ async def research_facebook_page_insights(
 ) -> dict[str, Any]:
     """Get analytics/insights for a Facebook page.
 
+    Falls back to page posts analysis if Graph API token not configured.
+
     Args:
         page_id: Facebook page ID
 
@@ -222,9 +246,35 @@ async def research_facebook_page_insights(
         Dict with engagement metrics, reach, impressions, follower growth
     """
     async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
-        resp = await client.get(
-            f"{SHARED_MODELS_BASE}/v1/social/facebook/page/{page_id}/insights",
+        try:
+            resp = await client.get(
+                f"{SHARED_MODELS_BASE}/v1/social/facebook/page/{page_id}/insights",
+                headers=_headers(),
+            )
+            if resp.status_code == 200:
+                return resp.json()
+        except Exception:
+            pass
+
+        posts_resp = await client.get(
+            f"{SHARED_MODELS_BASE}/facebook/page/{page_id}/posts",
             headers=_headers(),
+            params={"limit": 20},
         )
-        resp.raise_for_status()
-        return resp.json()
+        posts_data = posts_resp.json() if posts_resp.status_code == 200 else {}
+        posts = posts_data.get("posts", []) if isinstance(posts_data, dict) else []
+
+        total_likes = sum(p.get("likes", 0) for p in posts if isinstance(p, dict))
+        total_comments = sum(p.get("comments", 0) for p in posts if isinstance(p, dict))
+        total_shares = sum(p.get("shares", 0) for p in posts if isinstance(p, dict))
+
+        return {
+            "page_id": page_id,
+            "source": "post_analysis",
+            "posts_analyzed": len(posts),
+            "total_likes": total_likes,
+            "total_comments": total_comments,
+            "total_shares": total_shares,
+            "avg_engagement": (total_likes + total_comments + total_shares) / max(len(posts), 1),
+            "note": "Derived from recent posts (Graph API token not configured)",
+        }
