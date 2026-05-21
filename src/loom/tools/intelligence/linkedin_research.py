@@ -62,58 +62,44 @@ async def _camoufox_fetch_li(url: str, wait_secs: int = 6) -> str:
 
 
 def _extract_profile_data(html: str) -> dict[str, Any]:
-    """Extract LinkedIn profile data from rendered HTML."""
+    """Extract LinkedIn profile data from rendered HTML spans."""
     name = ""
-    m = re.search(r'<title[^>]*>([^<|]+)', html)
+    m = re.search(r'<title>([^<|]+)', html)
     if m:
         name = _safe(re.sub(r'\s*[|\-]\s*LinkedIn.*$', '', m.group(1)).strip())
 
     headline = ""
-    m = re.search(r'"headline":\s*"((?:[^"\\]|\\.)*)"\s*[,}]', html)
-    if m:
-        headline = _safe(m.group(1))
+    headlines = re.findall(r'<span>([^<]*?(?:at |@ )[^<]{5,80})</span>', html[:100000])
+    if headlines:
+        headline = _safe(headlines[0])
 
     location = ""
-    m = re.search(r'"locationName":\s*"((?:[^"\\]|\\.)*)"\s*[,}]', html)
-    if not m:
-        m = re.search(r'"geoLocationName":\s*"((?:[^"\\]|\\.)*)"\s*[,}]', html)
+    m = re.search(r'<span[^>]*>([^<]*(?:Area|Region|Metro|Greater|United States|India|UAE|Dubai|London|Berlin|Singapore|Remote)[^<]*)</span>', html[:100000])
     if m:
-        location = _safe(m.group(1))
+        location = _safe(m.group(1).strip())
 
     summary = ""
-    m = re.search(r'"summary":\s*"((?:[^"\\]|\\.)*)"\s*[,}]', html)
-    if m:
-        summary = _safe(m.group(1))[:500]
+    long_texts = re.findall(r'<span[^>]*>((?:[^<]){100,500})</span>', html)
+    for t in long_texts:
+        if any(skip in t.lower() for skip in ["cookie", "privacy", "javascript", "class=", "style=", "linkedin.com"]):
+            continue
+        summary = _safe(t.strip())[:500]
+        break
 
     connections = 0
-    m = re.search(r'"connectionsCount":\s*(\d+)', html)
-    if not m:
-        m = re.search(r'(\d+)\+?\s*connections', html, re.IGNORECASE)
+    m = re.search(r'([\d,]+)\+?\s*connections', html)
     if m:
-        connections = int(m.group(1))
+        connections = int(m.group(1).replace(",", ""))
 
     followers = 0
-    m = re.search(r'(\d[\d,]*)\s*followers', html, re.IGNORECASE)
+    m = re.search(r'([\d,]+)\s*followers', html, re.IGNORECASE)
     if m:
         followers = int(m.group(1).replace(",", ""))
 
-    industry = ""
-    m = re.search(r'"industryName":\s*"((?:[^"\\]|\\.)*)"\s*[,}]', html)
-    if m:
-        industry = _safe(m.group(1))
-
     profile_pic = ""
-    m = re.search(r'"profilePicture".*?"url":\s*"(https://[^"]+)"', html)
+    m = re.search(r'<img[^>]*src="(https://media\.licdn\.com/dms/image/[^"]+)"', html)
     if m:
         profile_pic = m.group(1)
-
-    experiences = []
-    exp_matches = re.findall(
-        r'"companyName":\s*"((?:[^"\\]|\\.)*)".*?"title":\s*"((?:[^"\\]|\\.)*)"',
-        html[:50000]
-    )
-    for company, title in exp_matches[:5]:
-        experiences.append({"company": _safe(company), "title": _safe(title)})
 
     return {
         "name": name,
@@ -122,56 +108,48 @@ def _extract_profile_data(html: str) -> dict[str, Any]:
         "summary": summary,
         "connections": connections,
         "followers": followers,
-        "industry": industry,
         "profile_picture": profile_pic,
-        "experiences": experiences,
     }
 
 
 def _extract_company_data(html: str) -> dict[str, Any]:
-    """Extract LinkedIn company data from rendered HTML."""
+    """Extract LinkedIn company data from rendered HTML spans."""
     name = ""
-    m = re.search(r'<title[^>]*>([^<|]+)', html)
+    m = re.search(r'<title>([^<|]+)', html)
     if m:
-        name = _safe(re.sub(r'\s*[|\-]\s*LinkedIn.*$', '', m.group(1)).strip())
+        raw = re.sub(r'\s*[|\-]\s*LinkedIn.*$', '', m.group(1)).strip()
+        raw = re.sub(r'^\(\d+\)\s*', '', raw).strip()
+        name = _safe(re.sub(r':\s*About$', '', raw).strip())
 
     description = ""
-    m = re.search(r'"description":\s*"((?:[^"\\]|\\.)*)"\s*[,}]', html)
-    if m:
-        description = _safe(m.group(1))[:500]
-
-    industry = ""
-    m = re.search(r'"companyIndustries".*?"localizedName":\s*"((?:[^"\\]|\\.)*)"', html)
-    if not m:
-        m = re.search(r'"industryName":\s*"((?:[^"\\]|\\.)*)"', html)
-    if m:
-        industry = _safe(m.group(1))
+    long_texts = re.findall(r'<span[^>]*>((?:[^<]){80,500})</span>', html)
+    for t in long_texts:
+        if any(skip in t.lower() for skip in ["cookie", "privacy", "javascript", "linkedin.com", "sign in"]):
+            continue
+        description = _safe(t.strip())[:500]
+        break
 
     employees = 0
-    m = re.search(r'"staffCount":\s*(\d+)', html)
-    if not m:
-        m = re.search(r'([\d,]+)\s*employees', html, re.IGNORECASE)
+    m = re.search(r'([\d,]+)\s*(?:employees|associated members)', html, re.IGNORECASE)
     if m:
-        employees = int(str(m.group(1)).replace(",", ""))
+        employees = int(m.group(1).replace(",", ""))
 
     followers = 0
-    m = re.search(r'"followersCount":\s*(\d+)', html)
-    if not m:
-        m = re.search(r'([\d,]+)\s*followers', html, re.IGNORECASE)
+    m = re.search(r'([\d,]+)\s*followers', html, re.IGNORECASE)
     if m:
-        followers = int(str(m.group(1)).replace(",", ""))
+        followers = int(m.group(1).replace(",", ""))
+
+    industry = ""
+    industry_spans = re.findall(r'<span>([^<]{3,40})</span>', html[50000:150000])
+    for s in industry_spans:
+        if any(ind in s for ind in ["Technology", "Software", "Research", "Services", "Financial", "Healthcare", "Education", "Consulting"]):
+            industry = _safe(s)
+            break
 
     website = ""
-    m = re.search(r'"companyPageUrl":\s*"(https?://[^"]+)"', html)
-    if not m:
-        m = re.search(r'"url":\s*"(https?://(?!.*linkedin)[^"]+)"', html)
+    m = re.search(r'href="(https?://(?!.*linkedin\.com)[^"]{10,80})"', html)
     if m:
         website = m.group(1)
-
-    hq = ""
-    m = re.search(r'"headquarter".*?"city":\s*"((?:[^"\\]|\\.)*)"', html)
-    if m:
-        hq = _safe(m.group(1))
 
     return {
         "name": name,
@@ -180,7 +158,6 @@ def _extract_company_data(html: str) -> dict[str, Any]:
         "employee_count": employees,
         "followers": followers,
         "website": website,
-        "headquarters": hq,
     }
 
 
