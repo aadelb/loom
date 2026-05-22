@@ -35,6 +35,10 @@ def research_detect_language(text: str) -> dict[str, Any]:
         Dict with ``language`` (ISO 639-1 code), ``confidence``,
         and ``alternatives`` list.
     """
+    if isinstance(text, list):
+        text = " ".join(str(x) for x in text)
+    if isinstance(text, dict):
+        text = str(text)
     if not text or len(text.strip()) < 10:
         return {"language": "unknown", "confidence": 0.0, "error": "text too short"}
 

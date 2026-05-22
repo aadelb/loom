@@ -563,6 +563,10 @@ async def research_refusal_detector(
         Dict with ``is_refusal`` (bool), ``confidence``,
         ``matched_patterns``, ``refusal_type``, and ``counter_strategies``.
     """
+    if isinstance(text, list):
+        text = " ".join(str(x) for x in text)
+    if isinstance(text, dict):
+        text = str(text)
     try:
         matched: list[dict[str, Any]] = []
         category_counts: dict[str, int] = {}
@@ -1331,6 +1335,10 @@ async def research_fingerprint_model(
         Dict with ``identified_model``, ``confidence``, ``scores``,
         ``recommended_strategy``, and ``format_affinity``.
     """
+    if isinstance(response_text, list):
+        response_text = " ".join(str(x) for x in response_text)
+    if isinstance(response_text, dict):
+        response_text = str(response_text)
     try:
         scores: dict[str, float] = {}
         text_lower = response_text.lower()

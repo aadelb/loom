@@ -73,6 +73,10 @@ async def research_strip_hedging(
     Returns:
         Dict with: cleaned_text, hedging_removed_count, hcs_before, hcs_after
     """
+    if isinstance(text, list):
+        text = " ".join(str(x) for x in text)
+    if isinstance(text, dict):
+        text = str(text)
     if not text:
         return {"cleaned_text": "", "hedging_removed_count": 0, "original_length": 0, "cleaned_length": 0, "hcs_before": 0, "hcs_after": 0, "hcs_improvement": 0, "elapsed_ms": 0}
 

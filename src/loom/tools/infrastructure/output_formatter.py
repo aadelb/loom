@@ -99,6 +99,10 @@ def research_extract_actionables(text: str) -> dict[str, Any]:
     Returns:
         Dict with keys: actions[], tools_needed[], timeline_items[], costs[], risks[]
     """
+    if isinstance(text, list):
+        text = " ".join(str(x) for x in text)
+    if isinstance(text, dict):
+        text = str(text)
     try:
         result = {
             "actions": _extract_action_items(text),

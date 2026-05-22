@@ -201,6 +201,14 @@ def research_psycholinguistic(
         Dict with text_length, emotional_profile, cognitive_complexity_score,
         deception_indicators, urgency_score, and threat_level.
     """
+    if isinstance(text, list):
+        text = " ".join(str(x) for x in text)
+    if isinstance(text, dict):
+        text = str(text)
+    if isinstance(author_name, list):
+        author_name = " ".join(str(x) for x in author_name)
+    if isinstance(author_name, dict):
+        author_name = str(author_name)
     try:
         text_clean = text.strip()
         if not text_clean:

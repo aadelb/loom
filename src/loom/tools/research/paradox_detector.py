@@ -177,6 +177,10 @@ async def research_detect_paradox(prompt: str) -> dict:
           - is_adversarial: bool if any paradox detected with risk > 6
           - mitigation_plan: suggested defenses
     """
+    if isinstance(prompt, list):
+        prompt = " ".join(str(x) for x in prompt)
+    if isinstance(prompt, dict):
+        prompt = str(prompt)
     try:
         prompt_lower = prompt.lower()
         findings = []

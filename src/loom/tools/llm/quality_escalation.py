@@ -126,6 +126,14 @@ async def research_quality_escalate(
         Dict with scores_initial, scores_final, escalation_log, final_response,
         weakest_dimension, attempts_used, all_targets_met
     """
+    if isinstance(prompt, list):
+        prompt = " ".join(str(x) for x in prompt)
+    if isinstance(prompt, dict):
+        prompt = str(prompt)
+    if isinstance(response, list):
+        response = " ".join(str(x) for x in response)
+    if isinstance(response, dict):
+        response = str(response)
     if not prompt or len(prompt.strip()) < 5:
         return {"error": "prompt too short"}
 

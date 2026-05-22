@@ -370,6 +370,14 @@ async def research_model_sentiment(response: str, context: str = "") -> dict[str
         >>> result = research_model_sentiment("I cannot help with that")
         >>> print(result["primary_emotion"])  # "assertive"
     """
+    if isinstance(response, list):
+        response = " ".join(str(x) for x in response)
+    if isinstance(response, dict):
+        response = str(response)
+    if isinstance(context, list):
+        context = " ".join(str(x) for x in context)
+    if isinstance(context, dict):
+        context = str(context)
     try:
         analyzer = ModelSentimentAnalyzer()
         data = analyzer.analyze(response, context)

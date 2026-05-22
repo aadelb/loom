@@ -167,6 +167,14 @@ def research_grant_forensics(grant_id: str = "", text: str = "") -> dict[str, An
         Dict with zipf_exponent, benford_chi_square, anomaly_score (0-1),
         and detailed findings.
     """
+    if isinstance(grant_id, list):
+        grant_id = " ".join(str(x) for x in grant_id)
+    if isinstance(grant_id, dict):
+        grant_id = str(grant_id)
+    if isinstance(text, list):
+        text = " ".join(str(x) for x in text)
+    if isinstance(text, dict):
+        text = str(text)
     try:
         if not text:
             return {

@@ -88,6 +88,10 @@ async def research_parameter_sweep(
         - HCS (Helpfulness-Compliance Score) rated 0-10 based on length, specificity, actionability
         - Results capped at max_combinations to prevent resource exhaustion
     """
+    if isinstance(prompt, list):
+        prompt = " ".join(str(x) for x in prompt)
+    if isinstance(prompt, dict):
+        prompt = str(prompt)
     # Validate inputs
     if not prompt or not prompt.strip():
         raise ValueError("prompt must be non-empty")

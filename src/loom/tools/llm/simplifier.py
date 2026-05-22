@@ -108,6 +108,10 @@ async def research_simplify(
         - simplified_length: word count of output
         - compression_ratio: simplified_length / original_length
     """
+    if isinstance(text, list):
+        text = " ".join(str(x) for x in text)
+    if isinstance(text, dict):
+        text = str(text)
     if target_audience not in PROMPTS:
         raise ValueError(
             f"target_audience must be one of {list(PROMPTS.keys())}; "

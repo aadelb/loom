@@ -191,6 +191,14 @@ async def research_bias_lens(paper_id: str = "", text: str = "") -> dict[str, An
         Dict with bias_score (0-100), bias_types list, self_citation_rate,
         p_value_distribution, and funding_bias_risk
     """
+    if isinstance(paper_id, list):
+        paper_id = " ".join(str(x) for x in paper_id)
+    if isinstance(paper_id, dict):
+        paper_id = str(paper_id)
+    if isinstance(text, list):
+        text = " ".join(str(x) for x in text)
+    if isinstance(text, dict):
+        text = str(text)
     if not paper_id and not text:
         return {
             "error": "Either paper_id or text is required",

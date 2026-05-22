@@ -87,6 +87,14 @@ async def research_explain_bypass(
         Dict with strategy, model, works_because, mechanism, vulnerability,
         confidence, counter_defense, alternative_strategies
     """
+    if isinstance(strategy, list):
+        strategy = " ".join(str(x) for x in strategy)
+    if isinstance(strategy, dict):
+        strategy = str(strategy)
+    if isinstance(response_text, list):
+        response_text = " ".join(str(x) for x in response_text)
+    if isinstance(response_text, dict):
+        response_text = str(response_text)
     try:
         from loom.tools.reframe_strategies import ALL_STRATEGIES
 

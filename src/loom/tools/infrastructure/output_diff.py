@@ -26,6 +26,14 @@ def _get_diff_lock() -> asyncio.Lock:
 @handle_tool_errors("research_diff_compare")
 async def research_diff_compare(text_a: str, text_b: str, context_lines: int = 3) -> dict[str, Any]:
     """Compare two text outputs and show unified diff."""
+    if isinstance(text_a, list):
+        text_a = " ".join(str(x) for x in text_a)
+    if isinstance(text_a, dict):
+        text_a = str(text_a)
+    if isinstance(text_b, list):
+        text_b = " ".join(str(x) for x in text_b)
+    if isinstance(text_b, dict):
+        text_b = str(text_b)
     try:
         lines_a = text_a.splitlines(keepends=True)
         lines_b = text_b.splitlines(keepends=True)

@@ -220,6 +220,10 @@ async def research_stylometry(
     Returns:
         Dict with features, optional comparisons, and metadata
     """
+    if isinstance(text, list):
+        text = " ".join(str(x) for x in text)
+    if isinstance(text, dict):
+        text = str(text)
     if not text or len(text) < 100:
         logger.warning("stylometry: text too short (min 100 chars)")
         return {

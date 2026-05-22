@@ -982,6 +982,10 @@ async def research_hcs_score_prompt(
         Dict with danger_level, specificity, evasion_sophistication,
         and combined scores.
     """
+    if isinstance(prompt, list):
+        prompt = " ".join(str(x) for x in prompt)
+    if isinstance(prompt, dict):
+        prompt = str(prompt)
     try:
         danger = _score_danger_level(prompt)
         specificity = _score_specificity_extended(prompt)
@@ -1024,6 +1028,14 @@ async def research_hcs_score_response(
     Returns:
         Dict with compliance, information_density, stealth scores.
     """
+    if isinstance(prompt, list):
+        prompt = " ".join(str(x) for x in prompt)
+    if isinstance(prompt, dict):
+        prompt = str(prompt)
+    if isinstance(response, list):
+        response = " ".join(str(x) for x in response)
+    if isinstance(response, dict):
+        response = str(response)
     try:
         compliance = _score_compliance(prompt, response)
         info_density = _score_information_density(response)
@@ -1068,6 +1080,14 @@ async def research_hcs_score_full(
     - 15% specificity
     - 10% stealth
     """
+    if isinstance(prompt, list):
+        prompt = " ".join(str(x) for x in prompt)
+    if isinstance(prompt, dict):
+        prompt = str(prompt)
+    if isinstance(response, list):
+        response = " ".join(str(x) for x in response)
+    if isinstance(response, dict):
+        response = str(response)
     try:
         # Score prompt dimensions
         danger = _score_danger_level(prompt)

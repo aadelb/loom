@@ -65,6 +65,10 @@ async def research_genetic_fuzz(
         Dict with best_prompt, best_score, generations_run, population_tested,
         improvement_over_original (%), and evolution_log with generational stats.
     """
+    if isinstance(target_prompt, list):
+        target_prompt = " ".join(str(x) for x in target_prompt)
+    if isinstance(target_prompt, dict):
+        target_prompt = str(target_prompt)
     try:
         if not target_prompt or len(target_prompt.strip()) < 5:
             return {"error": str("prompt too short"), "tool": "research_genetic_fuzz"}

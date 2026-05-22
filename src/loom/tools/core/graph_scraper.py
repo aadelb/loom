@@ -441,6 +441,10 @@ async def research_knowledge_extract(
             - relationship_count: Number of relationships extracted
             - model_used: LLM model identifier
     """
+    if isinstance(text, list):
+        text = " ".join(str(x) for x in text)
+    if isinstance(text, dict):
+        text = str(text)
     try:
         if not text:
             return {

@@ -275,6 +275,10 @@ async def research_deception_detect(text: str) -> dict[str, Any]:
     Returns:
         Dict with deception score, verdict, indicators, red flags, and optional LLM assessment
     """
+    if isinstance(text, list):
+        text = " ".join(str(x) for x in text)
+    if isinstance(text, dict):
+        text = str(text)
     try:
         if not text or len(text) < 100:
             logger.warning("deception_detect: text too short (min 100 chars)")
