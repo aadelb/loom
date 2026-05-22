@@ -169,6 +169,11 @@ async def research_predict_success(
             "reasoning": str
         }
     """
+    if isinstance(prompt, list): prompt = " ".join(str(x) for x in prompt)
+    if isinstance(prompt, dict): prompt = str(prompt)
+    if isinstance(strategy, list): strategy = " ".join(str(x) for x in strategy)
+    if isinstance(strategy, dict): strategy = str(strategy)
+
     # Resolve model name if "auto"
     if target_model == "auto":
         target_model = "deepseek"  # Default fallback

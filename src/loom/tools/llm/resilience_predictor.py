@@ -56,6 +56,9 @@ async def research_predict_resilience(
     Returns:
         dict with predicted lifespan days, confidence, risk factors, and recommendations
     """
+    if isinstance(strategy, list): strategy = " ".join(str(x) for x in strategy)
+    if isinstance(strategy, dict): strategy = str(strategy)
+
     strategy_lower = strategy.lower()
     target_model = target_model.lower() if target_model != "auto" else "gpt4"
 

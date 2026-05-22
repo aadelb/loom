@@ -175,6 +175,11 @@ async def research_journal_add(title: str, content: str, tags: list[str] | None 
 @handle_tool_errors("research_journal_search")
 async def research_journal_search(query: str = "", category: str = "all", limit: int = 20) -> dict[str, Any]:
     """Search journal entries by query and/or category. Returns {entries, total}."""
+    if isinstance(query, list): query = " ".join(str(x) for x in query)
+    if isinstance(query, dict): query = str(query)
+    if isinstance(category, list): category = " ".join(str(x) for x in category)
+    if isinstance(category, dict): category = str(category)
+
     try:
         # Run blocking file I/O in executor
         entries, total = await asyncio.to_thread(_search_journal_entries, query, category, limit)

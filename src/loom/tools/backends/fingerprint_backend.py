@@ -171,6 +171,10 @@ def research_browser_fingerprint(
         - recommendations: List of privacy recommendations
         - error: Error message if failed
     """
+    if isinstance(url, list):
+        url = " ".join(str(x) for x in url)
+    if isinstance(url, dict):
+        url = str(url)
     result: dict[str, Any] = {
         "url": url,
         "success": False,

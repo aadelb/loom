@@ -14,6 +14,10 @@ def research_stego_encode(
     output_format: str = "description",
 ) -> dict[str, Any]:
     """Describe steganography encoding (no image creation)."""
+    if isinstance(message, list):
+        message = " ".join(str(x) for x in message)
+    if isinstance(message, dict):
+        message = str(message)
     try:
         if len(message) > 1000 or not message:
             raise ValueError("message must be 1-1000 characters")
@@ -88,6 +92,10 @@ def research_stego_encode(
 @handle_tool_errors("research_stego_analyze")
 def research_stego_analyze(text: str) -> dict[str, Any]:
     """Analyze text for hidden steganographic content."""
+    if isinstance(text, list):
+        text = " ".join(str(x) for x in text)
+    if isinstance(text, dict):
+        text = str(text)
     try:
         if len(text) > 5000 or not text:
             raise ValueError("text must be 1-5000 characters")

@@ -50,6 +50,14 @@ def research_attack_score(
             - asr_estimate: estimated attack success rate (0-1)
             - recommendation: str with suggested next steps
     """
+    if isinstance(prompt, list):
+        prompt = " ".join(str(x) for x in prompt)
+    if isinstance(prompt, dict):
+        prompt = str(prompt)
+    if isinstance(response, list):
+        response = " ".join(str(x) for x in response)
+    if isinstance(response, dict):
+        response = str(response)
     if not prompt or not response:
         return {"error": "Both prompt and response are required", "tool": "research_attack_score"}
 

@@ -23,6 +23,17 @@ async def research_compare_responses(
     comparison_type: str = "quality",
 ) -> dict[str, Any]:
     """Compare responses: quality/agreement/diversity metrics."""
+    if isinstance(comparison_type, list):
+        comparison_type = " ".join(str(x) for x in comparison_type)
+    if isinstance(comparison_type, dict):
+        comparison_type = str(comparison_type)
+    if not isinstance(responses, list):
+        if isinstance(responses, dict):
+            responses = [responses]
+        elif isinstance(responses, str):
+            responses = [{"text": responses, "model": "unknown"}]
+        else:
+            responses = []
     try:
         if not responses:
             return {"error": "No responses", "models_compared": 0, "rankings": [], "agreement_score": 0.0}
@@ -106,6 +117,9 @@ async def research_model_consensus(
     Returns:
         Dict with consensus_claims, disputed_claims, consensus_score.
     """
+    if isinstance(query, list): query = " ".join(str(x) for x in query)
+    if isinstance(query, dict): query = str(query)
+
     try:
         if not responses:
             return {"error": "No responses", "models_count": 0, "consensus_claims": [], "consensus_score": 0.0}

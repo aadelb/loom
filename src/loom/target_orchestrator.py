@@ -493,6 +493,9 @@ async def research_target_orchestrate(
         )
         ```
     """
+    if isinstance(query, list): query = " ".join(str(x) for x in query)
+    if isinstance(query, dict): query = str(query)
+
     # Default strategies library
     default_strategies: dict[str, dict[str, Any]] = {
         "jailbreak": {

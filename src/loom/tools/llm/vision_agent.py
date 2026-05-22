@@ -128,6 +128,14 @@ async def research_vision_compare(url1: str, url2: str) -> dict[str, Any]:
     Returns:
         Dict with: url1, url2, similarities, differences, layout_match_score
     """
+    if isinstance(url1, list):
+        url1 = " ".join(str(x) for x in url1)
+    if isinstance(url1, dict):
+        url1 = str(url1)
+    if isinstance(url2, list):
+        url2 = " ".join(str(x) for x in url2)
+    if isinstance(url2, dict):
+        url2 = str(url2)
     from loom.validators import validate_url
     from loom.tools.core.fetch import research_fetch
     from loom.tools.llm.llm import _get_provider

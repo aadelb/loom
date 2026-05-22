@@ -28,6 +28,10 @@ async def research_code_switch_attack(prompt: str, languages: list[str] | None =
 
     Techniques: interleave, sandwich, transliterate, homoglyph
     """
+    if isinstance(prompt, list):
+        prompt = " ".join(str(x) for x in prompt)
+    if isinstance(prompt, dict):
+        prompt = str(prompt)
     try:
         if languages is None:
             languages = ["arabic", "cyrillic"]
@@ -75,6 +79,10 @@ async def research_script_confusion(prompt: str, target_script: str = "arabic") 
 
     Maps ASCII to target script while preserving English keywords.
     """
+    if isinstance(prompt, list):
+        prompt = " ".join(str(x) for x in prompt)
+    if isinstance(prompt, dict):
+        prompt = str(prompt)
     try:
         script_map = _SCRIPTS.get(target_script, _SCRIPTS["arabic"])
         keywords = {"but", "only", "if", "and", "or", "the", "in", "at", "to", "for", "is", "are", "can", "how", "what", "help"}

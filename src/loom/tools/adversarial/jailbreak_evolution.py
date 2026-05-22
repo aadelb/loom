@@ -103,6 +103,9 @@ async def research_jailbreak_evolution_get(
         - patch_detected_at: version where patch applied (if applicable)
         - error: error message if data not found
     """
+    if isinstance(strategy, list): strategy = " ".join(str(x) for x in strategy)
+    if isinstance(strategy, dict): strategy = str(strategy)
+
     tracker = _get_tracker()
     try:
         result = tracker.get_evolution(strategy=strategy, model=model)
@@ -215,6 +218,11 @@ async def research_jailbreak_evolution_adapt(
         - suggestions: list of adaptation suggestions
         - reasoning: explanation of why these suggestions apply
     """
+    if isinstance(strategy, list): strategy = " ".join(str(x) for x in strategy)
+    if isinstance(strategy, dict): strategy = str(strategy)
+    if isinstance(response, list): response = " ".join(str(x) for x in response)
+    if isinstance(response, dict): response = str(response)
+
     tracker = _get_tracker()
     try:
         suggestions = tracker.suggest_adaptations(strategy=strategy, model=model)

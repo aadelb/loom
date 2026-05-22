@@ -89,6 +89,14 @@ async def research_potency_score(prompt: str, response: str) -> dict[str, Any]:
         Dict with potency_score (0-10), compliance_pct, detail_level, hedging_score,
         actionability, override_strength, verdict, factors.
     """
+    if isinstance(prompt, list):
+        prompt = " ".join(str(x) for x in prompt)
+    if isinstance(prompt, dict):
+        prompt = str(prompt)
+    if isinstance(response, list):
+        response = " ".join(str(x) for x in response)
+    if isinstance(response, dict):
+        response = str(response)
     logger.info(
         "potency_score_start prompt_len=%d response_len=%d",
         len(prompt),

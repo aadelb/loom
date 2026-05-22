@@ -72,6 +72,9 @@ async def research_marketplace_list(
     Returns:
         Dict with listings, total count, and pagination info
     """
+    if isinstance(category, list): category = " ".join(str(x) for x in category)
+    if isinstance(category, dict): category = str(category)
+
     if category not in ("strategy", "tool", "template", "dataset", "pipeline", "all"):
         return {"error": f"Invalid category: {category}"}
     if sort_by not in ("popular", "newest", "price_low", "price_high", "rating"):

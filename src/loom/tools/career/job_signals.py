@@ -551,6 +551,14 @@ async def research_stealth_hire_scanner(
         - stealth_jobs_found: list of {source, title, url, snippet}
         - total_found: count of opportunities discovered
     """
+    if isinstance(keywords, list):
+        keywords = " ".join(str(x) for x in keywords)
+    if isinstance(keywords, dict):
+        keywords = str(keywords)
+    if isinstance(location, list):
+        location = " ".join(str(x) for x in location)
+    if isinstance(location, dict):
+        location = str(location)
 
     async def _run() -> dict[str, Any]:
         async with httpx.AsyncClient(

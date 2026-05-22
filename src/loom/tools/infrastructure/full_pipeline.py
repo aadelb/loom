@@ -258,6 +258,9 @@ async def research_full_pipeline(
         ValueError: if query is empty or darkness_level out of range
         RuntimeError: if all providers fail after escalation
     """
+    if isinstance(query, list): query = " ".join(str(x) for x in query)
+    if isinstance(query, dict): query = str(query)
+
     # Validate inputs
     if not query or len(query) > 2000:
         raise ValueError(f"query must be 1-2000 chars, got {len(query)}")

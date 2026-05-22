@@ -40,6 +40,10 @@ def research_compliance_check(
     text: str, frameworks: list[str] | None = None
 ) -> dict[str, Any]:
     """Check text against compliance frameworks (EU AI Act, GDPR, OWASP, NIST, HIPAA)."""
+    if isinstance(text, list):
+        text = " ".join(str(x) for x in text)
+    if isinstance(text, dict):
+        text = str(text)
     try:
         if not text or len(text) > 50000:
             return {
@@ -186,6 +190,10 @@ def research_compliance_check(
 @handle_tool_errors("research_pii_scan")
 def research_pii_scan(text: str) -> dict[str, Any]:
     """Scan for PII: email, phone, SSN, credit card, IP address."""
+    if isinstance(text, list):
+        text = " ".join(str(x) for x in text)
+    if isinstance(text, dict):
+        text = str(text)
     try:
         if not text or len(text) > 50000:
             return {

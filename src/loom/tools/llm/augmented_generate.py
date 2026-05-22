@@ -92,6 +92,19 @@ async def research_augmented_generate(
     Returns:
         Dict with: response, hcs_score, context_sources, model, elapsed_ms
     """
+    if isinstance(query, list): query = " ".join(str(x) for x in query)
+    if isinstance(query, dict): query = str(query)
+    if isinstance(context, list): context = " ".join(str(x) for x in context)
+    if isinstance(context, dict): context = str(context)
+
+    if isinstance(query, list):
+        query = " ".join(str(x) for x in query)
+    if isinstance(query, dict):
+        query = str(query)
+    if isinstance(system_prompt, list):
+        system_prompt = " ".join(str(x) for x in system_prompt)
+    if isinstance(system_prompt, dict):
+        system_prompt = str(system_prompt)
     start = time.time()
 
     # Step 1: Gather real internet context

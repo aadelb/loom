@@ -72,6 +72,9 @@ async def research_document_extract(
         - strategy_used: Strategy that was applied
         - error: Error message if extraction failed (optional)
     """
+    if isinstance(url, list): url = " ".join(str(x) for x in url)
+    if isinstance(url, dict): url = str(url)
+
     # Validate inputs
     if not file_path and not url:
         return {

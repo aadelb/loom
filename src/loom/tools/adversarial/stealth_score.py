@@ -151,6 +151,14 @@ async def research_stealth_score_heuristic(
         - recommendation: str ("HIGHLY_STEALTHY"|"STEALTHY"|"MODERATE"|"SUSPICIOUS"|"DETECTED")
         - detection_probability: float (0-1, probability guardrail catches it)
     """
+    if isinstance(prompt, list):
+        prompt = " ".join(str(x) for x in prompt)
+    if isinstance(prompt, dict):
+        prompt = str(prompt)
+    if isinstance(strategy, list):
+        strategy = " ".join(str(x) for x in strategy)
+    if isinstance(strategy, dict):
+        strategy = str(strategy)
     try:
         logger.info(
             "stealth_score_heuristic_start strategy=%s prompt_len=%d",
@@ -287,6 +295,18 @@ async def research_stealth_detect_comparison(
         - detected_risk_patterns: list of risky patterns found
         - evasion_keywords_found: list of evasion keywords present
     """
+    if isinstance(original_prompt, list):
+        original_prompt = " ".join(str(x) for x in original_prompt)
+    if isinstance(original_prompt, dict):
+        original_prompt = str(original_prompt)
+    if isinstance(reframed_prompt, list):
+        reframed_prompt = " ".join(str(x) for x in reframed_prompt)
+    if isinstance(reframed_prompt, dict):
+        reframed_prompt = str(reframed_prompt)
+    if isinstance(strategy, list):
+        strategy = " ".join(str(x) for x in strategy)
+    if isinstance(strategy, dict):
+        strategy = str(strategy)
     try:
         logger.info(
             "stealth_detect_comparison_start strategy=%s orig_len=%d reframed_len=%d",

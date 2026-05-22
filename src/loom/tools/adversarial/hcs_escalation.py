@@ -62,6 +62,11 @@ async def research_hcs_escalate(
         - final_response: response text at target HCS (or best attempt)
         - escalation_history: list of (strategy, hcs_score) tuples
     """
+    if isinstance(prompt, list): prompt = " ".join(str(x) for x in prompt)
+    if isinstance(prompt, dict): prompt = str(prompt)
+    if isinstance(response, list): response = " ".join(str(x) for x in response)
+    if isinstance(response, dict): response = str(response)
+
     if not _HCS_DEPS:
         return {
             "original_hcs": 0,

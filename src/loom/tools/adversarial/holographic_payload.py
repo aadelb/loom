@@ -48,6 +48,10 @@ async def research_holographic_encode(
         - test_verdict: 'PASS' (safe), 'WARN' (moderate risk), 'FAIL' (high risk)
         - error: Error message (if applicable)
     """
+    if isinstance(text, list):
+        text = " ".join(str(x) for x in text)
+    if isinstance(text, dict):
+        text = str(text)
     try:
         text = text.strip()
         if not text:

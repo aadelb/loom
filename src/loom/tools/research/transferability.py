@@ -22,6 +22,11 @@ async def research_transfer_test(
     models: list[str] | None = None,
 ) -> dict[str, Any]:
     """Test strategy transferability across multiple LLM providers."""
+    if isinstance(prompt, list): prompt = " ".join(str(x) for x in prompt)
+    if isinstance(prompt, dict): prompt = str(prompt)
+    if isinstance(strategy, list): strategy = " ".join(str(x) for x in strategy)
+    if isinstance(strategy, dict): strategy = str(strategy)
+
     try:
         if not models:
             models = ["nvidia", "groq", "deepseek"]

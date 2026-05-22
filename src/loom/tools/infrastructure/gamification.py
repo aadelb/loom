@@ -236,6 +236,10 @@ async def research_challenge_create(
 @handle_tool_errors("research_challenge_list")
 async def research_challenge_list(status: str = "active") -> dict[str, Any]:
     """List challenges filtered by status (active, completed, all)."""
+    if isinstance(status, list):
+        status = " ".join(str(x) for x in status)
+    if isinstance(status, dict):
+        status = str(status)
     valid_statuses = {"active", "completed", "all"}
     if status not in valid_statuses:
         logger.warning(f"Invalid status requested: {status}")
