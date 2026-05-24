@@ -514,4 +514,29 @@ def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip realestate_research: %s", e)
         record_failure("intelligence", "realestate_research", str(e))
 
-    log.info("registered intelligence tools count=138")
+    try:
+        from loom.tools.intelligence.realestate_uae import (
+            research_uae_property_search,
+            research_uae_dld_transactions,
+            research_uae_offplan,
+            research_uae_mortgage_calc,
+            research_uae_area_guide,
+            research_uae_agent_find,
+        )
+        mcp.tool()(wrap_tool(research_uae_property_search))
+        record_success("intelligence", "research_uae_property_search")
+        mcp.tool()(wrap_tool(research_uae_dld_transactions))
+        record_success("intelligence", "research_uae_dld_transactions")
+        mcp.tool()(wrap_tool(research_uae_offplan))
+        record_success("intelligence", "research_uae_offplan")
+        mcp.tool()(wrap_tool(research_uae_mortgage_calc))
+        record_success("intelligence", "research_uae_mortgage_calc")
+        mcp.tool()(wrap_tool(research_uae_area_guide))
+        record_success("intelligence", "research_uae_area_guide")
+        mcp.tool()(wrap_tool(research_uae_agent_find))
+        record_success("intelligence", "research_uae_agent_find")
+    except Exception as e:
+        log.debug("skip realestate_uae: %s", e)
+        record_failure("intelligence", "realestate_uae", str(e))
+
+    log.info("registered intelligence tools count=144")
