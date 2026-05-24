@@ -1,0 +1,73 @@
+# Loom Full Project Audit — All Todos
+# Generated: 2026-05-22
+# R15 Audit: 507/936 passed (54.2% raw, 74.8% adjusted)
+
+## PENDING TODOS
+
+### TODO-1: [#1687] Privacy TIER 3 integrations (10 items: 040-049)
+Status: PENDING
+Items:
+  040: ulexecve fileless execution
+  041: saruman ELF binary obfuscation
+  042: flock-detection wireless surveillance
+  043: browser-fingerprinting bot evasion analysis
+  044: chameleon fingerprint randomizer
+  045: stegma multi-format steganography
+  046: BrowserBlackBox interactive privacy audit
+  047: PII-Recon exposure auditing
+  048: swiftGuard macOS anti-forensics
+  049: steganography-python image hiding
+
+### TODO-2: Fix 52 type error bugs from R15 audit
+Status: NEW
+Root cause: Tools receive list/dict from generic params where they expect str
+Pattern: `'list' object has no attribute 'lower'` (35 tools)
+Pattern: `'dict' object has no attribute 'lower'` (8 tools)
+Pattern: `unhashable type: 'dict'` (3 tools)
+Pattern: `'list' object has no attribute 'strip/split/encode'` (6 tools)
+Fix: Add type coercion in middleware or individual tool param validation
+
+### TODO-3: Fix 4 SQLite DB parameter binding errors
+Status: NEW
+Tools: research_backoff_dlq_list, research_exploit_register, research_trace_end, research_webhook_system_register
+Root cause: Passing dict/list to SQLite which expects str
+Fix: JSON-serialize complex params before DB insert
+
+### TODO-4: Fix 2 Playwright sync-in-async errors
+Status: NEW
+Tools: research_cloak_session, research_fingerprint_audit
+Root cause: Playwright Sync API called inside asyncio event loop
+Fix: Wrap in asyncio.to_thread() or use Playwright async API
+
+### TODO-5: Fix 14 HTTP 400/500 tools
+Status: NEW
+Tools: research_cicd_run, research_consensus_build, research_consensus_pressure,
+  research_crescendo_loop, research_danger_prescore, research_debate_podium,
+  + 8 more
+Root cause: Likely param validation failing server-side
+Fix: Investigate each tool's expected params
+
+### TODO-6: LinkedIn authentication (fresh li_at cookie)
+Status: BLOCKED (needs browser login from residential IP)
+Current: Tools execute but can't auth — CAPTCHA blocks datacenter IP login
+
+## COMPLETED (key items to deep-audit)
+
+### AUDIT-1: LLM cascade (import time fix)
+Fixed: 7 modules missing `import time` — blocked 76+ LLM tools
+Verify: research_llm_chat, research_llm_summarize, research_llm_translate all working
+
+### AUDIT-2: LinkedIn StaffSpy/Voyager rewrite
+Fixed: 6 tools rewritten from SharedModels to StaffSpy + li_at cookie
+Verify: Code correct but auth blocked (needs fresh cookie)
+
+### AUDIT-3: Middleware by_alias fix
+Fixed: model_dump(by_alias=True) → by_alias=False
+Verify: All tools with Pydantic field aliases working
+
+### AUDIT-4: Zendriver sync-to-async
+Fixed: 3 functions converted from sync to async
+Verify: zen_fetch, zen_batch, zen_interact
+
+### AUDIT-5: Facebook tools (6 tools via Camoufox)
+Verified: NASA page returns posts + reactions, zuck profile works

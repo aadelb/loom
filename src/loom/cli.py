@@ -46,7 +46,7 @@ _global_quiet = False
 
 # Global options
 ServerURL = typer.Option(
-    "http://127.0.0.1:8787/mcp",
+    "http://127.0.0.1:8788/mcp",
     "--server",
     help="MCP server URL",
     envvar="LOOM_SERVER",
@@ -196,13 +196,13 @@ def _safe_asyncio_run(coro: Any) -> Any:
 @app.command()
 def serve(
     host: str = typer.Option("127.0.0.1", "--host", help="Server host"),
-    port: int = typer.Option(8787, "--port", help="Server port"),
+    port: int = typer.Option(8788, "--port", help="Server port"),
     reload: bool = typer.Option(False, "--reload", help="Auto-reload on code changes"),
     json_mode: bool = OutputJSON,
 ) -> None:
     """Start the Loom MCP server.
 
-    By default listens on 127.0.0.1:8787 with streamable-http transport.
+    By default listens on 127.0.0.1:8788 with streamable-http transport.
     """
     import os
 

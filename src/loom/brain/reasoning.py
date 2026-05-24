@@ -111,7 +111,7 @@ def _fetch_server_tools_sync() -> dict[str, ToolMeta]:
     try:
         import httpx
 
-        resp = httpx.get("http://localhost:8787/api/v1/tools", timeout=5.0)
+        resp = httpx.get("http://localhost:8788/api/v1/tools", timeout=5.0)
         if resp.status_code == 200:
             data = resp.json()
             tools = {}

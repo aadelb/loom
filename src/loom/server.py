@@ -780,7 +780,7 @@ def create_app() -> FastMCP:
     try:
         from dotenv import load_dotenv
         from pathlib import Path
-        for env_path in [Path('/opt/research-toolbox/.env'), Path('.env'), Path(__file__).parent.parent.parent / '.env']:
+        for env_path in [Path('/opt/loom-v3/.env'), Path('.env'), Path(__file__).parent.parent.parent / '.env']:
             if env_path.exists():
                 load_dotenv(env_path)
                 break
@@ -857,7 +857,7 @@ def create_app() -> FastMCP:
 
     # Create FastMCP instance
     host = os.environ.get("LOOM_HOST", "127.0.0.1")
-    port = int(os.environ.get("LOOM_PORT", "8787"))
+    port = int(os.environ.get("LOOM_PORT", "8788"))
 
     # Set up authentication if LOOM_API_KEY is configured
     api_key = os.environ.get("LOOM_API_KEY", "")

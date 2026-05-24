@@ -167,7 +167,7 @@ class JourneyReport:
 
 async def run_journey(
     topic: str = "llama model family",
-    server_url: str = "http://127.0.0.1:8787/mcp",
+    server_url: str = "http://127.0.0.1:8788/mcp",
     live: bool = False,
     record_screenshots: bool = False,
     fixtures_dir: Path | None = None,
@@ -193,7 +193,7 @@ async def run_journey(
 
     Args:
         topic: research topic (default: public-safe "llama model family")
-        server_url: MCP server URL (default: localhost:8787)
+        server_url: MCP server URL (default: localhost:8788)
         live: if True, use real network; else use mocked/fixture data
         record_screenshots: if True, capture screenshots from stealth scraping
         fixtures_dir: directory with fixture JSON files (used if not live)

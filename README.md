@@ -34,7 +34,7 @@ loom serve
 ## Docker
 
 ```bash
-docker run -p 127.0.0.1:8787:8787 ghcr.io/aadelb/loom:latest
+docker run -p 127.0.0.1:8788:8787 ghcr.io/aadelb/loom:latest
 ```
 
 ## Register with Claude Code
@@ -44,7 +44,7 @@ Add this to `~/.claude/settings.json` under `mcpServers`:
 ```json
 "loom": {
   "type": "http",
-  "url": "http://127.0.0.1:8787/mcp"
+  "url": "http://127.0.0.1:8788/mcp"
 }
 ```
 
@@ -75,7 +75,7 @@ loom journey-test --fixtures tests/fixtures/journey
 ## MCP tools
 
 <details>
-<summary><strong>45+ tools exposed over streamable HTTP on port 8787</strong></summary>
+<summary><strong>45+ tools exposed over streamable HTTP on port 8788</strong></summary>
 
 **Scraping (9)**
 - research_fetch — fetch single URL with mode selection (http/stealthy/dynamic) and auto-escalation

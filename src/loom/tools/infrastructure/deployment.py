@@ -33,7 +33,7 @@ async def research_deploy_status() -> dict[str, Any]:
 
     try:
         proc = await asyncio.create_subprocess_exec(
-            "systemctl", "status", "research-toolbox",
+            "systemctl", "status", "loom-v3",
             stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
         )
         text = (await asyncio.wait_for(proc.communicate(), timeout=5))[0].decode()
@@ -48,7 +48,7 @@ async def research_deploy_status() -> dict[str, Any]:
 
     try:
         proc = await asyncio.create_subprocess_exec(
-            "lsof", "-i", ":8787",
+            "lsof", "-i", ":8788",
             stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
         )
         result["port_listening"] = len((await asyncio.wait_for(proc.communicate(), timeout=5))[0]) > 0
@@ -57,7 +57,7 @@ async def research_deploy_status() -> dict[str, Any]:
 
     try:
         proc = await asyncio.create_subprocess_exec(
-            "systemctl", "show", "-p", "ActiveEnterTimestamp", "research-toolbox",
+            "systemctl", "show", "-p", "ActiveEnterTimestamp", "loom-v3",
             stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
         )
         ts_line = (await asyncio.wait_for(proc.communicate(), timeout=5))[0].decode().strip()

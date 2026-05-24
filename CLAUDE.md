@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What is Loom
 
-Loom is a Python MCP (Model Context Protocol) server that exposes 440+ research and attack tools over streamable-HTTP (port 8787). It wraps scraping (Scrapling, Crawl4AI, Camoufox, Botasaurus), search across 21 providers, 8 LLM providers, infrastructure tools (VastAI, Stripe, Billing), communication tools (Email, Joplin notes), media tools (Audio transcription, Document conversion), Tor/darkweb tools, GitHub CLI, persistent browser sessions, creative research tools, killer research tools, dark research tools, intelligence tools, revolutionary tools, AI safety tools, academic integrity tools, career intelligence tools, signal detection tools, supply chain intelligence tools, plus a content-hash cache and 957 prompt reframing strategies into a single MCP service. It also ships a Typer CLI (`loom`) that calls the MCP server as a client.
+Loom is a Python MCP (Model Context Protocol) server that exposes 440+ research and attack tools over streamable-HTTP (port 8788). It wraps scraping (Scrapling, Crawl4AI, Camoufox, Botasaurus), search across 21 providers, 8 LLM providers, infrastructure tools (VastAI, Stripe, Billing), communication tools (Email, Joplin notes), media tools (Audio transcription, Document conversion), Tor/darkweb tools, GitHub CLI, persistent browser sessions, creative research tools, killer research tools, dark research tools, intelligence tools, revolutionary tools, AI safety tools, academic integrity tools, career intelligence tools, signal detection tools, supply chain intelligence tools, plus a content-hash cache and 957 prompt reframing strategies into a single MCP service. It also ships a Typer CLI (`loom`) that calls the MCP server as a client.
 
 ## Commands
 
@@ -13,7 +13,7 @@ Loom is a Python MCP (Model Context Protocol) server that exposes 440+ research 
 pip install -e ".[all]"
 
 # Run MCP server
-loom serve                        # default: 127.0.0.1:8787
+loom serve                        # default: 127.0.0.1:8788
 loom-server                       # alternative entry point
 
 # Lint & format
@@ -267,7 +267,7 @@ src/loom/                        61 core modules:
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `LOOM_HOST` | `127.0.0.1` | Server bind address |
-| `LOOM_PORT` | `8787` | Server port |
+| `LOOM_PORT` | `8788` | Server port |
 | `LOOM_CONFIG_PATH` | `./config.json` | Config file location |
 | `LOOM_CACHE_DIR` | `~/.cache/loom` | Cache storage root |
 | `LOOM_SESSIONS_DIR` | `~/.loom/sessions` | Session storage root |

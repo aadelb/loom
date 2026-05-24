@@ -45,7 +45,7 @@ async def research_openapi_schema() -> dict[str, Any]:
         return {
             "openapi": "3.0.0",
             "info": {"title": "Loom Research API", "description": "220+ research and attack tools", "version": "4.0.0"},
-            "servers": [{"url": "http://127.0.0.1:8787"}],
+            "servers": [{"url": "http://127.0.0.1:8788"}],
             "paths": paths,
             "components": components,
         }

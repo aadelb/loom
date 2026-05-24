@@ -80,7 +80,7 @@ class WebSocketManager:
         """Accept and authenticate a WebSocket connection.
 
         Performs authentication check if enabled. API key can be provided via:
-        1. X-API-Key query parameter: ws://localhost:8787/ws?X-API-Key=...
+        1. X-API-Key query parameter: ws://localhost:8788/ws?X-API-Key=...
         2. First message: {"api_key": "..."}
 
         Args:

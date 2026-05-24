@@ -107,7 +107,7 @@ class RedTeamCicdConfig(CicdModel):
 class RedTeamCI:
     """CI/CD integration for continuous red-team testing of LLM deployments."""
 
-    def __init__(self, loom_url: str = "http://127.0.0.1:8787/mcp"):
+    def __init__(self, loom_url: str = "http://127.0.0.1:8788/mcp"):
         """Initialize CI/CD runner.
 
         Args:
@@ -354,7 +354,7 @@ on:
     - cron: '0 2 * * *'
 
 env:
-  LOOM_PORT: 8787
+  LOOM_PORT: 8788
 
 jobs:
   red-team-test:

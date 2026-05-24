@@ -279,7 +279,7 @@ def generate_openapi_spec(mcp_instance: Any) -> dict[str, Any]:
         },
         "servers": [
             {
-                "url": "http://localhost:8787",
+                "url": "http://localhost:8788",
                 "description": "Local development server",
             },
         ],
@@ -312,7 +312,7 @@ def _empty_spec() -> dict[str, Any]:
             "description": "Loom Model Context Protocol API",
             "version": "1.0.0",
         },
-        "servers": [{"url": "http://localhost:8787"}],
+        "servers": [{"url": "http://localhost:8788"}],
         "paths": {},
         "components": {
             "securitySchemes": {
