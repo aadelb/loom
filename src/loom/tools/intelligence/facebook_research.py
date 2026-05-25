@@ -446,16 +446,15 @@ async def research_facebook_group_posts(
         from camoufox.async_api import AsyncCamoufox
 
         cookies = _load_cookie_list()
-        camoufox_cookies = [
-            {"name": c["name"], "value": c["value"], "domain": ".facebook.com", "path": "/"}
-            for c in cookies
-        ]
 
         async with AsyncCamoufox(headless=True) as browser:
-            context = await browser.new_context()
-            if camoufox_cookies:
-                await context.add_cookies(camoufox_cookies)
-            page = await context.new_page()
+            page = await browser.new_page()
+            for c in cookies:
+                await page.context.add_cookies([{
+                    "name": c["name"], "value": c["value"],
+                    "domain": c.get("domain", ".facebook.com"),
+                    "path": c.get("path", "/"),
+                }])
 
             await page.goto(target, wait_until="domcontentloaded")
             await asyncio.sleep(5)
@@ -541,8 +540,6 @@ async def research_facebook_group_posts(
                 await page.evaluate("window.scrollBy(0, 800)")
                 await asyncio.sleep(2)
                 scroll_attempts += 1
-
-            await context.close()
 
         return {
             "group_url": target,
