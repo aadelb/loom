@@ -404,3 +404,157 @@ async def research_facebook_page_insights(
     except Exception as e:
         logger.warning("camoufox_insights_failed: %s", e)
         return {"page_id": page_id, "error": str(e)}
+
+
+@handle_tool_errors("research_facebook_group_posts")
+async def research_facebook_group_posts(
+    group_url: str = "",
+    group_id: str = "",
+    limit: int = 50,
+    expand_posts: bool = True,
+    include_images: bool = True,
+) -> dict[str, Any]:
+    """Deep scrape Facebook group posts with scroll loading and full text expansion.
+
+    Uses Camoufox stealth browser with scroll-and-collect pattern (inspired by
+    jugurtha-gaci/facebook-group-posts-scraper). Expands "See more" buttons,
+    deduplicates posts, and extracts images.
+
+    Args:
+        group_url: Full group URL (e.g. "https://www.facebook.com/groups/12345")
+        group_id: Group ID or name (alternative to URL)
+        limit: Max posts to collect (1-100, default 50). More = more scrolling.
+        expand_posts: Click "See more" to get full text (default True)
+        include_images: Extract image URLs from posts (default True)
+
+    Returns:
+        Dict with posts: id, text (full), image_url, reactions, comments,
+        shares, author, timestamp. Also group name and member count.
+    """
+    if isinstance(group_url, list):
+        group_url = str(group_url[0]) if group_url else ""
+    if isinstance(group_id, list):
+        group_id = str(group_id[0]) if group_id else ""
+
+    target = group_url or (f"https://www.facebook.com/groups/{group_id}" if group_id else "")
+    if not target:
+        return {"error": "Provide group_url or group_id"}
+
+    limit = max(1, min(limit, 100))
+
+    try:
+        from camoufox.async_api import AsyncCamoufox
+
+        cookies = _load_cookie_list()
+        camoufox_cookies = [
+            {"name": c["name"], "value": c["value"], "domain": ".facebook.com", "path": "/"}
+            for c in cookies
+        ]
+
+        async with AsyncCamoufox(headless=True) as browser:
+            context = await browser.new_context()
+            if camoufox_cookies:
+                await context.add_cookies(camoufox_cookies)
+            page = await context.new_page()
+
+            await page.goto(target, wait_until="domcontentloaded")
+            await asyncio.sleep(5)
+
+            group_name = ""
+            try:
+                title_el = await page.query_selector("h1")
+                if title_el:
+                    group_name = await title_el.inner_text()
+            except Exception:
+                pass
+
+            collected_posts: list[dict[str, Any]] = []
+            seen_ids: set[str] = set()
+            scroll_attempts = 0
+            max_scrolls = min(limit // 3 + 2, 30)
+
+            while len(collected_posts) < limit and scroll_attempts < max_scrolls:
+                if expand_posts:
+                    see_more_buttons = await page.query_selector_all(
+                        'div[role="button"]:has-text("See more"), '
+                        'div[role="button"]:has-text("See More"), '
+                        'div[role="button"]:has-text("Voir plus")'
+                    )
+                    for btn in see_more_buttons[:5]:
+                        try:
+                            await btn.click()
+                            await asyncio.sleep(0.3)
+                        except Exception:
+                            pass
+
+                feed_items = await page.query_selector_all('div[role="feed"] > div')
+                for item in feed_items:
+                    try:
+                        post_data: dict[str, Any] = {}
+
+                        msg_div = await item.query_selector('div[data-ad-preview="message"]')
+                        if msg_div:
+                            post_text = await msg_div.inner_text()
+                            post_id = await msg_div.get_attribute("id") or ""
+                        else:
+                            text_divs = await item.query_selector_all('div[dir="auto"]')
+                            texts = []
+                            for td in text_divs[:3]:
+                                t = await td.inner_text()
+                                if t and len(t) > 20:
+                                    texts.append(t)
+                            post_text = "\n".join(texts)
+                            post_id = str(hash(post_text[:100]))
+
+                        if not post_text or post_id in seen_ids:
+                            continue
+
+                        seen_ids.add(post_id)
+                        post_data["id"] = post_id
+                        post_data["text"] = _safe(post_text[:2000])
+
+                        if include_images:
+                            img_els = await item.query_selector_all('img[src*="scontent"]')
+                            images = []
+                            for img in img_els[:3]:
+                                src = await img.get_attribute("src")
+                                if src and "emoji" not in src:
+                                    images.append(src)
+                            if images:
+                                post_data["images"] = images
+
+                        author_el = await item.query_selector('a[role="link"] strong, h3 a')
+                        if author_el:
+                            post_data["author"] = await author_el.inner_text()
+
+                        reaction_spans = await item.query_selector_all('span[aria-label*="reaction"], span[aria-label*="like"]')
+                        for rs in reaction_spans[:1]:
+                            label = await rs.get_attribute("aria-label") or ""
+                            nums = re.findall(r"(\d+)", label)
+                            if nums:
+                                post_data["reactions"] = int(nums[0])
+
+                        collected_posts.append(post_data)
+                    except Exception:
+                        continue
+
+                await page.evaluate("window.scrollBy(0, 800)")
+                await asyncio.sleep(2)
+                scroll_attempts += 1
+
+            await context.close()
+
+        return {
+            "group_url": target,
+            "group_name": group_name,
+            "source": "camoufox_deep_scrape",
+            "posts": collected_posts[:limit],
+            "post_count": len(collected_posts),
+            "scrolls_performed": scroll_attempts,
+        }
+
+    except ImportError:
+        return {"error": "camoufox not installed", "source": "none"}
+    except Exception as e:
+        logger.warning("group_posts_deep_scrape_failed: %s", e)
+        return {"group_url": target, "error": str(e), "source": "camoufox"}

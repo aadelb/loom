@@ -427,6 +427,7 @@ def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
             research_facebook_group,
             research_facebook_marketplace,
             research_facebook_page_insights,
+            research_facebook_group_posts,
         )
         mcp.tool()(wrap_tool(research_facebook_search))
         record_success("intelligence", "research_facebook_search")
@@ -440,6 +441,8 @@ def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
         record_success("intelligence", "research_facebook_marketplace")
         mcp.tool()(wrap_tool(research_facebook_page_insights))
         record_success("intelligence", "research_facebook_page_insights")
+        mcp.tool()(wrap_tool(research_facebook_group_posts))
+        record_success("intelligence", "research_facebook_group_posts")
     except Exception as e:
         log.debug("skip facebook_research: %s", e)
         record_failure("intelligence", "facebook_research", str(e))
