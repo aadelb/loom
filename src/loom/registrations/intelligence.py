@@ -542,4 +542,20 @@ def register_intelligence_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip realestate_uae: %s", e)
         record_failure("intelligence", "realestate_uae", str(e))
 
-    log.info("registered intelligence tools count=144")
+    try:
+        from loom.tools.intelligence.moet_uae import (
+            research_moet_prices,
+            research_moet_consumer,
+            research_moet_services,
+        )
+        mcp.tool()(wrap_tool(research_moet_prices))
+        record_success("intelligence", "research_moet_prices")
+        mcp.tool()(wrap_tool(research_moet_consumer))
+        record_success("intelligence", "research_moet_consumer")
+        mcp.tool()(wrap_tool(research_moet_services))
+        record_success("intelligence", "research_moet_services")
+    except Exception as e:
+        log.debug("skip moet_uae: %s", e)
+        record_failure("intelligence", "moet_uae", str(e))
+
+    log.info("registered intelligence tools count=147")
