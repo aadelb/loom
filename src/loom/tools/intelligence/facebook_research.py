@@ -37,11 +37,15 @@ def _load_cookie_list() -> list[dict[str, str]]:
         return []
 
 
+_PROXY = os.environ.get("FB_PROXY", os.environ.get("RESIDENTIAL_PROXY", ""))
+
+
 async def _camoufox_fetch(url: str, wait_secs: int = 6) -> str:
     from camoufox.async_api import AsyncCamoufox
 
     cookies = _load_cookie_list()
-    async with AsyncCamoufox(headless=True) as browser:
+    proxy_opts = {"server": _PROXY} if _PROXY else None
+    async with AsyncCamoufox(headless=True, proxy=proxy_opts) as browser:
         page = await browser.new_page()
         for c in cookies:
             await page.context.add_cookies([{
