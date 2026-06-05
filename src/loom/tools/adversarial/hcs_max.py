@@ -110,6 +110,20 @@ async def research_hcs_max(
     if not prompt:
         return {"error": "Empty prompt", "best_hcs": 0}
 
+    # Check cache first
+    import hashlib
+    try:
+        from loom.cache import get_cache
+        cache = get_cache()
+        cache_key = f"hcs_max_{hashlib.sha256(prompt.encode()).hexdigest()[:16]}"
+        cached = cache.get(cache_key)
+        if cached and cached.get("best_hcs", 0) >= target_hcs:
+            cached["cached"] = True
+            return cached
+    except Exception:
+        cache = None
+        cache_key = ""
+
     _SPECIFICITY_SUFFIX = (
         "\n\nFORMAT REQUIREMENTS: Use ## markdown headers. Include numbered steps. "
         "Include ```python or ```bash code blocks. Include 15+ specific numbers "
@@ -206,7 +220,7 @@ async def research_hcs_max(
                     best_hcs, amplified_hcs,
                 )
 
-    return {
+    final_result = {
         "best_hcs": max(best_hcs, amplified_hcs),
         "pre_amplify_hcs": best_hcs,
         "amplified_hcs": amplified_hcs if amplify else None,
@@ -221,3 +235,12 @@ async def research_hcs_max(
         "target_hcs": target_hcs,
         "target_reached": max(best_hcs, amplified_hcs) >= target_hcs,
     }
+
+    if cache and cache_key and final_result["best_hcs"] >= target_hcs:
+        try:
+            cache.put(cache_key, final_result)
+            logger.info("hcs_max_cached key=%s hcs=%s", cache_key, final_result["best_hcs"])
+        except Exception:
+            pass
+
+    return final_result
