@@ -120,16 +120,18 @@ async def research_hcs_escalate(
                 "escalation_history": [],
             }
 
-        # Escalation loop
+        # Escalation loop — track best response across all attempts
         current_response = response
         current_hcs = original_hcs
+        best_response = response
+        best_hcs = original_hcs
+        best_strategy: str | None = None
         escalation_history: list[tuple[str, float]] = []
 
         for attempt in range(min(max_attempts, len(_ESCALATION_CHAIN))):
             strategy = _ESCALATION_CHAIN[attempt]
             reframed = _apply_strategy(prompt, strategy, "gpt")
 
-            # Call LLM with reframed prompt
             try:
                 llm_response = await _call_with_cascade(
                     [{"role": "user", "content": reframed}],
@@ -140,10 +142,14 @@ async def research_hcs_escalate(
                 )
                 current_response = llm_response.text
 
-                # Score new response
                 score_result = await research_hcs_score(current_response, query=prompt)
                 current_hcs = score_result.get("hcs_score", 0.0)
                 escalation_history.append((strategy, current_hcs))
+
+                if current_hcs > best_hcs:
+                    best_hcs = current_hcs
+                    best_response = current_response
+                    best_strategy = strategy
                 logger.info("escalate_attempt attempt=%d strategy=%s hcs=%.1f", attempt + 1, strategy, current_hcs)
 
                 # Check if target reached
@@ -163,14 +169,14 @@ async def research_hcs_escalate(
                 escalation_history.append((strategy, 0))
                 continue
 
-        # Max attempts exhausted
-        logger.info("escalate_max_attempts final_hcs=%.1f attempts=%d", current_hcs, len(escalation_history))
+        # Max attempts exhausted — return best response, not last
+        logger.info("escalate_max_attempts best_hcs=%.1f best_strategy=%s attempts=%d", best_hcs, best_strategy, len(escalation_history))
         return {
             "original_hcs": original_hcs,
-            "final_hcs": current_hcs,
+            "final_hcs": best_hcs,
             "attempts": len(escalation_history),
-            "successful_strategy": None,
-            "final_response": current_response,
+            "successful_strategy": best_strategy,
+            "final_response": best_response,
             "escalation_history": escalation_history,
         }
 
