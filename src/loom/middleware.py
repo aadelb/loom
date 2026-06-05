@@ -113,6 +113,11 @@ PARAM_ALIASES: dict[str, str] = {
     "strategy_name": "strategy",
     "target_language": "target_lang",
     "mode": "quality_mode",
+    "hcs": "target_hcs",
+    "max": "max_attempts",
+    "darkness": "darkness_level",
+    "num_results": "limit",
+    "count": "limit",
 }
 
 _NOT_FOUND = object()  # Sentinel to distinguish "looked up and not found" from "never looked up"
