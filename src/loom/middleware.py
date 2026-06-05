@@ -346,7 +346,7 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                      "research_reasoning_hijack", "research_embed_navigate",
                      "research_latency_probe", "research_roleplay_escalate",
                      "research_uae_price_compare", "research_uae_sourcing_plan",
-                     "research_hcs_escalate", "research_hcs_score", "research_hcs_score_full",
+                     "research_hcs_escalate", "research_hcs_max", "research_hcs_score", "research_hcs_score_full",
                      "research_hcs_score_prompt", "research_hcs_score_response",
                      "research_quality_escalate", "research_crescendo_loop",
                      "research_consensus_pressure", "research_pressure_test",
