@@ -751,6 +751,12 @@ def register_missing_tools(mcp, wrap_tool):
     except Exception:
         pass
     try:
+        from loom.tools.adversarial.quality_router import research_quality_route
+        mcp.tool()(wrap_tool(research_quality_route))
+        count += 1
+    except Exception:
+        pass
+    try:
         from loom.tools.adversarial.hcs_report import research_hcs_report
         mcp.tool()(wrap_tool(research_hcs_report))
         count += 1
