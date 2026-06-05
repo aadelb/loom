@@ -363,7 +363,7 @@ async def research_full_pipeline(
                         {"role": "system", "content": system_message},
                         {"role": "user", "content": sub_q},
                     ],
-                    model="auto",
+                    model="vllm" if darkness_level >= 8 else "auto",
                     max_tokens=2000,
                     temperature=0.2,
                     timeout=90,
@@ -603,7 +603,7 @@ async def research_full_pipeline(
                     # Check cache for cached strategy
                     cache_result = await research_cached_strategy(
                         topic=sub_q[:200],
-                        model="auto",
+                        model="vllm" if darkness_level >= 8 else "auto",
                         fallback_strategy="ethical_anchor",
                     )
 
@@ -879,7 +879,7 @@ Answers:
                                 },
                                 {"role": "user", "content": synthesis_prompt},
                             ],
-                            model="auto",
+                            model="vllm" if darkness_level >= 8 else "auto",
                             max_tokens=2000,
                             temperature=0.3,
                             timeout=90,
@@ -907,7 +907,7 @@ Answers:
                             },
                             {"role": "user", "content": synthesis_prompt},
                         ],
-                        model="auto",
+                        model="vllm" if darkness_level >= 8 else "auto",
                         max_tokens=2000,
                         temperature=0.3,
                         timeout=90,
@@ -928,7 +928,7 @@ Answers:
                         },
                         {"role": "user", "content": synthesis_prompt},
                     ],
-                    model="auto",
+                    model="vllm" if darkness_level >= 8 else "auto",
                     max_tokens=2000,
                     temperature=0.3,
                     timeout=90,
