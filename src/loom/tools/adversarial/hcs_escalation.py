@@ -134,7 +134,7 @@ async def research_hcs_escalate(
                     model="auto",
                     max_tokens=2000,
                     temperature=0.4,
-                    timeout=60,
+                    timeout=120,
                 )
                 current_response = llm_response.content
 
