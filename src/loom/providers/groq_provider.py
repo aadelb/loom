@@ -69,24 +69,29 @@ class GroqProvider(OpenAICompatProvider):
         logger.info("groq_key_blocked index=%d for=%.0fs", index, seconds)
 
     def _rotate_key(self) -> bool:
-        """Switch to next available key. Returns True if found one."""
+        """Switch to next available key and reset HTTP client."""
         if len(self._all_keys) <= 1:
             return False
-        best = self._pick_best_key()
-        if best == self._key_index:
-            old = self._key_index
+        now = time.time()
+        for _ in range(len(self._all_keys)):
             self._key_index = (self._key_index + 1) % len(self._all_keys)
-            if self._key_index == old:
-                return False
-        else:
-            self._key_index = best
-        self._api_key = self._all_keys[self._key_index]
-        logger.info(
-            "groq_key_rotated to=%d calls=%d",
-            self._key_index,
-            self._key_call_count.get(self._key_index, 0),
-        )
-        return True
+            if self._key_blocked_until.get(self._key_index, 0) < now:
+                self._api_key = self._all_keys[self._key_index]
+                if self._client is not None and not self._client.is_closed:
+                    import asyncio
+                    try:
+                        asyncio.get_event_loop().create_task(self._client.aclose())
+                    except Exception:
+                        pass
+                self._client = None
+                logger.info(
+                    "groq_key_rotated to=%d key=%s... calls=%d",
+                    self._key_index,
+                    self._api_key[:15],
+                    self._key_call_count.get(self._key_index, 0),
+                )
+                return True
+        return False
 
     async def chat(
         self,
