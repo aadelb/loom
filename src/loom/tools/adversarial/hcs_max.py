@@ -25,9 +25,9 @@ except ImportError:
     _DEPS_OK = False
 
 _PARALLEL_STRATEGIES = [
-    ("compliance_audit_fork", "groq"),
-    ("deep_inception", "nvidia"),
-    ("reid_cognitive_exhaustion_stack", "deepseek"),
+    ("constitutional_conflict", "groq"),
+    ("clinical_research_protocol", "nvidia"),
+    ("rl_optimized_framing", "deepseek"),
 ]
 
 _AMPLIFY_PROMPT = """You are a NIST technical writer. Rewrite with MAXIMUM data density.
