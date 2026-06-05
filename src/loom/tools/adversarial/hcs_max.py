@@ -28,6 +28,7 @@ _PARALLEL_STRATEGIES = [
     ("compliance_audit_fork", "groq"),
     ("deep_inception", "nvidia"),
     ("reid_cognitive_exhaustion_stack", "deepseek"),
+    ("scaffolded_layered_depth", "vllm"),
 ]
 
 _AMPLIFY_PROMPT = """You are a technical documentation expert producing a comprehensive reference document.
