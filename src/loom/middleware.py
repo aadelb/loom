@@ -345,7 +345,18 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                      "research_cross_session", "research_multi_merge",
                      "research_reasoning_hijack", "research_embed_navigate",
                      "research_latency_probe", "research_roleplay_escalate",
-                     "research_uae_price_compare", "research_uae_sourcing_plan"}
+                     "research_uae_price_compare", "research_uae_sourcing_plan",
+                     "research_hcs_escalate", "research_hcs_score", "research_hcs_score_full",
+                     "research_hcs_score_prompt", "research_hcs_score_response",
+                     "research_quality_escalate", "research_crescendo_loop",
+                     "research_consensus_pressure", "research_pressure_test",
+                     "research_orchestrate_chain", "research_multi_hop",
+                     "research_evidence_chain", "research_target_orchestrate",
+                     "research_transfer_test", "research_danger_prescore",
+                     "research_bayut_search", "research_bayut_market",
+                     "research_uae_property_search", "research_property_search",
+                     "research_facebook_group_posts", "research_x_search",
+                     "research_x_timeline"}
     tool_name = func.__name__
     tool_timeout = 600 if tool_name in _HEAVY_TOOLS else 60
     billing_enabled = os.getenv("LOOM_BILLING_ENABLED", "").lower() == "true"

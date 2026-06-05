@@ -22,15 +22,17 @@ except ImportError:
 
 logger = logging.getLogger("loom.tools.hcs_escalation")
 
-# Escalation chain ordered by effectiveness
 _ESCALATION_CHAIN = [
     "compliance_audit_fork",
     "reasoning_chain_hijack",
     "deep_inception",
-    "crescendo",
+    "reid_cognitive_exhaustion_stack",
+    "scaffolded_layered_depth",
     "constitutional_conflict",
     "ethical_anchor",
-    "scaffolded_layered_depth",
+    "inverse_reward_loop",
+    "crescendo",
+    "psychology_mega_stack",
 ]
 
 
@@ -136,7 +138,7 @@ async def research_hcs_escalate(
                     temperature=0.4,
                     timeout=120,
                 )
-                current_response = llm_response.content
+                current_response = llm_response.text
 
                 # Score new response
                 score_result = await research_hcs_score(current_response, query=prompt)
