@@ -26,8 +26,16 @@ except ImportError:
 
 _PARALLEL_STRATEGIES = [
     ("constitutional_conflict", "groq"),
-    ("clinical_research_protocol", "nvidia"),
+    ("compliance_audit_fork", "nvidia"),
+    ("reid_cognitive_exhaustion_stack", "deepseek"),
+]
+
+_FALLBACK_STRATEGIES = [
+    ("clinical_research_protocol", "groq"),
     ("rl_optimized_framing", "deepseek"),
+    ("deep_inception", "nvidia"),
+    ("reid_scharff_laa_fusion", "groq"),
+    ("multi_agent_collusion", "deepseek"),
 ]
 
 _AMPLIFY_PROMPT = """You are a NIST technical writer. Rewrite with MAXIMUM data density.
