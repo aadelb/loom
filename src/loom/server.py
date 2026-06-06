@@ -689,6 +689,21 @@ with suppress(ImportError):
     _optional_tools["instrumental_subgoal_scorer"] = ist_scorer_tools
     record_optional_module_loaded("instrumental_subgoal_scorer")
 
+with suppress(ImportError):
+    from loom.tools.adversarial import corrigibility_scorer as corrigibility_scorer_tools
+    _optional_tools["corrigibility_scorer"] = corrigibility_scorer_tools
+    record_optional_module_loaded("corrigibility_scorer")
+
+with suppress(ImportError):
+    from loom.tools.adversarial import tap_judge as tap_judge_tools
+    _optional_tools["tap_judge"] = tap_judge_tools
+    record_optional_module_loaded("tap_judge")
+
+with suppress(ImportError):
+    from loom.tools.adversarial import inverse_scaling_scorer as inverse_scaling_tools
+    _optional_tools["inverse_scaling_scorer"] = inverse_scaling_tools
+    record_optional_module_loaded("inverse_scaling_scorer")
+
 # --- Quality Pipeline Tools ---
 with suppress(ImportError):
     from loom.tools.adversarial import quality_max as quality_max_tools
