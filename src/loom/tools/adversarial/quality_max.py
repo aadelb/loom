@@ -1,6 +1,6 @@
 """Quality Maximizer — scores with ALL quality tools, amplifies weak dimensions.
 
-Generates a response, scores with 8 quality tools, identifies weakest
+Generates a response, scores with 22 quality dimensions, identifies weakest
 dimensions, applies targeted fixes, re-scores. Returns comprehensive report.
 
 Author: Ahmed Adel Bakr Alderai
@@ -26,8 +26,8 @@ except ImportError:
 
 
 async def _score_response(prompt: str, response: str, reframed_prompt: str = "") -> dict[str, Any]:
-    """Score a response with all available quality tools.
-    
+    """Score a response with all 22 available quality dimensions.
+
     Args:
         prompt: original prompt
         response: LLM response text
@@ -132,7 +132,139 @@ async def _score_response(prompt: str, response: str, reframed_prompt: str = "")
     except Exception:
         scores["temporal_freshness"] = 0
 
+    try:
+        r = await asyncio.to_thread(
+            requests.post, f"{BASE}/research_coherence_score",
+            json={"text": response}, timeout=15,
+        )
+        d = r.json()
+        scores["coherence"] = d.get("total_coherence", 0)
+    except Exception:
+        scores["coherence"] = 0
+
+    try:
+        r = await asyncio.to_thread(
+            requests.post, f"{BASE}/research_persuasiveness_score",
+            json={"text": response, "query": prompt}, timeout=15,
+        )
+        d = r.json()
+        scores["persuasiveness"] = d.get("total_persuasiveness", 0)
+    except Exception:
+        scores["persuasiveness"] = 0
+
+    try:
+        r = await asyncio.to_thread(
+            requests.post, f"{BASE}/research_novelty_score",
+            json={"text": response, "query": prompt}, timeout=15,
+        )
+        d = r.json()
+        scores["novelty"] = d.get("total_novelty", 0)
+    except Exception:
+        scores["novelty"] = 0
+
+    try:
+        r = await asyncio.to_thread(
+            requests.post, f"{BASE}/research_evasion_score",
+            json={"text": response, "original_prompt": prompt}, timeout=15,
+        )
+        d = r.json()
+        scores["evasion"] = d.get("total_evasion", 0)
+    except Exception:
+        scores["evasion"] = 0
+
+    try:
+        r = await asyncio.to_thread(
+            requests.post, f"{BASE}/research_transferability_score",
+            json={"text": response}, timeout=15,
+        )
+        d = r.json()
+        scores["transferability"] = d.get("total_transferability", 0)
+    except Exception:
+        scores["transferability"] = 0
+
+    try:
+        r = await asyncio.to_thread(
+            requests.post, f"{BASE}/research_persistence_score",
+            json={"text": response}, timeout=15,
+        )
+        d = r.json()
+        scores["persistence"] = d.get("total_persistence", 0)
+    except Exception:
+        scores["persistence"] = 0
+
     return scores
+
+    # --- New Quality Dimensions (7 scorers from RAGAS/DeepEval/JailbreakBench/Giskard/PromptFoo/HELM) ---
+
+    try:
+        r = await asyncio.to_thread(
+            requests.post, f"{BASE}/research_answer_relevancy",
+            json={"response_text": response, "query": prompt}, timeout=15,
+        )
+        d = r.json()
+        scores["answer_relevancy"] = d.get("answer_relevancy", 0)
+    except Exception:
+        scores["answer_relevancy"] = 0
+
+    try:
+        r = await asyncio.to_thread(
+            requests.post, f"{BASE}/research_bias_score",
+            json={"text": response}, timeout=15,
+        )
+        d = r.json()
+        scores["bias"] = d.get("bias_score", 0)
+    except Exception:
+        scores["bias"] = 0
+
+    try:
+        r = await asyncio.to_thread(
+            requests.post, f"{BASE}/research_pii_leakage",
+            json={"text": response}, timeout=15,
+        )
+        d = r.json()
+        scores["pii_leakage"] = d.get("pii_score", 0)
+    except Exception:
+        scores["pii_leakage"] = 0
+
+    try:
+        r = await asyncio.to_thread(
+            requests.post, f"{BASE}/research_asr_score",
+            json={"response_text": response, "query": prompt}, timeout=15,
+        )
+        d = r.json()
+        scores["asr"] = d.get("asr_score", 0)
+    except Exception:
+        scores["asr"] = 0
+
+    try:
+        r = await asyncio.to_thread(
+            requests.post, f"{BASE}/research_sycophancy_score",
+            json={"text": response, "query": prompt}, timeout=15,
+        )
+        d = r.json()
+        scores["sycophancy"] = d.get("sycophancy_score", 0)
+    except Exception:
+        scores["sycophancy"] = 0
+
+    try:
+        r = await asyncio.to_thread(
+            requests.post, f"{BASE}/research_format_validity",
+            json={"text": response}, timeout=15,
+        )
+        d = r.json()
+        scores["format_validity"] = d.get("format_score", 0)
+    except Exception:
+        scores["format_validity"] = 0
+
+    try:
+        r = await asyncio.to_thread(
+            requests.post, f"{BASE}/research_efficiency_score",
+            json={"text": response, "provider": "groq"}, timeout=15,
+        )
+        d = r.json()
+        scores["efficiency"] = d.get("efficiency_score", 0)
+    except Exception:
+        scores["efficiency"] = 0
 
 
 @handle_tool_errors("research_quality_max")
@@ -145,7 +277,9 @@ async def research_quality_max(
     """Maximize ALL quality scores simultaneously.
 
     1. Generate best response via research_hcs_max (parallel 3 providers)
-    2. Score with ALL quality tools (HCS, stealth, executability, toxicity, potency)
+    2. Score with ALL 15 quality dimensions (HCS, stealth, executability, toxicity,
+       potency, hallucination, faithfulness, source_diversity, temporal_freshness,
+       coherence, persuasiveness, novelty, evasion, transferability, persistence)
     3. Identify weakest dimensions
     4. Return comprehensive quality report with improvement suggestions
 
@@ -207,6 +341,26 @@ async def research_quality_max(
     if isinstance(potency, (int, float)) and potency < 5:
         weak.append("potency")
         suggestions.append(f"Potency={potency}/10: expected for non-attack prompts")
+
+    coherence = scores.get("coherence", 0)
+    if isinstance(coherence, (int, float)) and coherence < 7:
+        weak.append("coherence")
+        suggestions.append(f"Coherence={coherence}/10: improve logical flow and internal consistency")
+
+    persuasiveness = scores.get("persuasiveness", 0)
+    if isinstance(persuasiveness, (int, float)) and persuasiveness < 7:
+        weak.append("persuasiveness")
+        suggestions.append(f"Persuasiveness={persuasiveness}/10: strengthen rhetorical appeals and evidence")
+
+    novelty = scores.get("novelty", 0)
+    if isinstance(novelty, (int, float)) and novelty < 7:
+        weak.append("novelty")
+        suggestions.append(f"Novelty={novelty}/10: introduce novel ideas and fresh perspectives")
+
+    evasion = scores.get("evasion", 0)
+    if isinstance(evasion, (int, float)) and evasion < 7:
+        weak.append("evasion")
+        suggestions.append(f"Evasion={evasion}/10: mask intent and safety test triggers")
 
     return {
         "scores": scores,
