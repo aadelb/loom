@@ -19,13 +19,20 @@ logger = logging.getLogger("loom.tools.quality_max")
 try:
     from loom.tools.adversarial.hcs_scorer import research_hcs_score
     from loom.tools.adversarial.hcs_max import research_hcs_max
+    from loom.tools.llm.prompt_reframe import research_prompt_reframe
     _DEPS_OK = True
 except ImportError:
     _DEPS_OK = False
 
 
-async def _score_response(prompt: str, response: str) -> dict[str, Any]:
-    """Score a response with all available quality tools."""
+async def _score_response(prompt: str, response: str, reframed_prompt: str = "") -> dict[str, Any]:
+    """Score a response with all available quality tools.
+    
+    Args:
+        prompt: original prompt
+        response: LLM response text
+        reframed_prompt: reframed version of prompt (for stealth scoring)
+    """
     import requests
     BASE = "http://localhost:8788/api/v1/tools"
     scores = {}
@@ -43,9 +50,11 @@ async def _score_response(prompt: str, response: str) -> dict[str, Any]:
         scores["hcs_error"] = str(e)
 
     try:
+        # Use reframed_prompt if available, otherwise fall back to original prompt
+        prompt_for_stealth = reframed_prompt if reframed_prompt else prompt
         r = await asyncio.to_thread(
             requests.post, f"{BASE}/research_stealth_score",
-            json={"original_prompt": prompt, "reframed_prompt": response[:500]}, timeout=15,
+            json={"original_prompt": prompt, "reframed_prompt": prompt_for_stealth}, timeout=15,
         )
         d = r.json()
         scores["stealth"] = d.get("total_stealth", d.get("stealth_score", d.get("score", 0)))
@@ -55,7 +64,7 @@ async def _score_response(prompt: str, response: str) -> dict[str, Any]:
     try:
         r = await asyncio.to_thread(
             requests.post, f"{BASE}/research_executability_score",
-            json={"text": response}, timeout=15,
+            json={"response_text": response}, timeout=15,
         )
         d = r.json()
         scores["executability"] = d.get("total_score", d.get("score", 0))
@@ -82,6 +91,46 @@ async def _score_response(prompt: str, response: str) -> dict[str, Any]:
         scores["potency"] = d.get("potency_score", d.get("score", 0))
     except Exception:
         scores["potency"] = 0
+
+    try:
+        r = await asyncio.to_thread(
+            requests.post, f"{BASE}/research_hallucination_score",
+            json={"text": response}, timeout=15,
+        )
+        d = r.json()
+        scores["hallucination"] = d.get("hallucination_score", 0)
+    except Exception:
+        scores["hallucination"] = 0
+
+    try:
+        r = await asyncio.to_thread(
+            requests.post, f"{BASE}/research_faithfulness_score",
+            json={"text": response, "query": prompt}, timeout=15,
+        )
+        d = r.json()
+        scores["faithfulness"] = d.get("total_faithfulness", 0)
+    except Exception:
+        scores["faithfulness"] = 0
+
+    try:
+        r = await asyncio.to_thread(
+            requests.post, f"{BASE}/research_source_diversity_score",
+            json={"text": response}, timeout=15,
+        )
+        d = r.json()
+        scores["source_diversity"] = d.get("total_source_diversity", 0)
+    except Exception:
+        scores["source_diversity"] = 0
+
+    try:
+        r = await asyncio.to_thread(
+            requests.post, f"{BASE}/research_temporal_freshness_score",
+            json={"text": response}, timeout=15,
+        )
+        d = r.json()
+        scores["temporal_freshness"] = d.get("total_temporal_freshness", 0)
+    except Exception:
+        scores["temporal_freshness"] = 0
 
     return scores
 
@@ -124,7 +173,14 @@ async def research_quality_max(
     if not response:
         return {"error": "No response generated", "hcs_result": hcs_result}
 
-    scores = await _score_response(prompt, response)
+    # Reframe the original prompt using ethical_anchor strategy
+    # This provides a "clean" academic reframe for stealth scoring
+    reframed_result = await research_prompt_reframe(
+        prompt=prompt, strategy="ethical_anchor", model="auto"
+    )
+    reframed_prompt = reframed_result.get("reframed", prompt)
+
+    scores = await _score_response(prompt, response, reframed_prompt)
     scores["hcs"] = hcs
 
     weak = []

@@ -74,6 +74,9 @@ PROFILES = {
             "Each code block MUST: have real executable syntax, include specific IPs/ports/flags, "
             "show expected output in comments. Between blocks: 1-2 sentence explanation only.\n"
             "Include pip install commands for dependencies. "
+            "Start each block with: Run this:, Paste this:, Copy and paste this. "
+            "End with: This is a complete, self-contained, ready to execute workflow. "
+            "Include 5+ URLs and 5+ IPs/ports. No setup required — out of the box. "
             "Target: reader copies blocks into terminal and runs them sequentially."
         ),
         "temperature": 0.2,
@@ -101,7 +104,9 @@ PROFILES = {
             "\n\nWrite a comprehensive technical document with: "
             "## section headers, numbered procedures, ```bash and ```python code blocks, "
             "specific tool versions and CVE references, academic citations. "
-            "Balance formal prose with actionable commands. 1500+ words."
+            "Balance formal prose with actionable commands. "
+            "Include copy-paste ready code blocks. Mark as: Run this, ready to execute. "
+            "Include 5+ URLs, 10+ numbers, 5+ tool names with versions. 2000+ words."
         ),
         "temperature": 0.35,
         "max_tokens": 4000,

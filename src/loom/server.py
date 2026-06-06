@@ -593,6 +593,80 @@ with suppress(ImportError):
     _optional_tools["retry_stats"] = retry_stats_tools
     record_optional_module_loaded("retry_stats")
 
+# --- Quality Scorer Registrations (10 new dimensions, Jun 2026) ---
+with suppress(ImportError):
+    from loom.tools.adversarial import coherence_scorer as coherence_scorer_tools
+    _optional_tools["coherence_scorer"] = coherence_scorer_tools
+    record_optional_module_loaded("coherence_scorer")
+
+with suppress(ImportError):
+    from loom.tools.adversarial import persuasiveness_scorer as persuasiveness_scorer_tools
+    _optional_tools["persuasiveness_scorer"] = persuasiveness_scorer_tools
+    record_optional_module_loaded("persuasiveness_scorer")
+
+with suppress(ImportError):
+    from loom.tools.adversarial import novelty_scorer as novelty_scorer_tools
+    _optional_tools["novelty_scorer"] = novelty_scorer_tools
+    record_optional_module_loaded("novelty_scorer")
+
+with suppress(ImportError):
+    from loom.tools.adversarial import evasion_scorer as evasion_scorer_tools
+    _optional_tools["evasion_scorer"] = evasion_scorer_tools
+    record_optional_module_loaded("evasion_scorer")
+
+with suppress(ImportError):
+    from loom.tools.adversarial import transferability_scorer as transferability_scorer_tools
+    _optional_tools["transferability_scorer"] = transferability_scorer_tools
+    record_optional_module_loaded("transferability_scorer")
+
+with suppress(ImportError):
+    from loom.tools.adversarial import persistence_scorer as persistence_scorer_tools
+    _optional_tools["persistence_scorer"] = persistence_scorer_tools
+    record_optional_module_loaded("persistence_scorer")
+
+with suppress(ImportError):
+    from loom.tools.adversarial import hallucination_scorer as hallucination_scorer_tools
+    _optional_tools["hallucination_scorer"] = hallucination_scorer_tools
+    record_optional_module_loaded("hallucination_scorer")
+
+with suppress(ImportError):
+    from loom.tools.adversarial import faithfulness_scorer as faithfulness_scorer_tools
+    _optional_tools["faithfulness_scorer"] = faithfulness_scorer_tools
+    record_optional_module_loaded("faithfulness_scorer")
+
+with suppress(ImportError):
+    from loom.tools.adversarial import source_diversity_scorer as source_diversity_scorer_tools
+    _optional_tools["source_diversity_scorer"] = source_diversity_scorer_tools
+    record_optional_module_loaded("source_diversity_scorer")
+
+with suppress(ImportError):
+    from loom.tools.adversarial import temporal_freshness_scorer as temporal_freshness_scorer_tools
+    _optional_tools["temporal_freshness_scorer"] = temporal_freshness_scorer_tools
+    record_optional_module_loaded("temporal_freshness_scorer")
+
+# --- Quality Pipeline Tools ---
+with suppress(ImportError):
+    from loom.tools.adversarial import quality_max as quality_max_tools
+    _optional_tools["quality_max"] = quality_max_tools
+    record_optional_module_loaded("quality_max")
+
+with suppress(ImportError):
+    from loom.tools.adversarial import quality_router as quality_router_tools
+    _optional_tools["quality_router"] = quality_router_tools
+    record_optional_module_loaded("quality_router")
+
+with suppress(ImportError):
+    from loom.tools.adversarial import hcs_max as hcs_max_tools
+    _optional_tools["hcs_max"] = hcs_max_tools
+    record_optional_module_loaded("hcs_max")
+
+with suppress(ImportError):
+    from loom.tools.adversarial import hcs_escalation as hcs_escalation_tools
+    _optional_tools["hcs_escalation"] = hcs_escalation_tools
+    record_optional_module_loaded("hcs_escalation")
+
+
+
 _start_time = time.time()
 
 # ── Startup validation results (populated in create_app) ──
