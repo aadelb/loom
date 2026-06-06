@@ -644,6 +644,41 @@ with suppress(ImportError):
     _optional_tools["temporal_freshness_scorer"] = temporal_freshness_scorer_tools
     record_optional_module_loaded("temporal_freshness_scorer")
 
+with suppress(ImportError):
+    from loom.tools.adversarial import answer_relevancy_scorer as answer_relevancy_scorer_tools
+    _optional_tools["answer_relevancy_scorer"] = answer_relevancy_scorer_tools
+    record_optional_module_loaded("answer_relevancy_scorer")
+
+with suppress(ImportError):
+    from loom.tools.adversarial import bias_scorer as bias_scorer_tools
+    _optional_tools["bias_scorer"] = bias_scorer_tools
+    record_optional_module_loaded("bias_scorer")
+
+with suppress(ImportError):
+    from loom.tools.adversarial import pii_leakage_scorer as pii_leakage_scorer_tools
+    _optional_tools["pii_leakage_scorer"] = pii_leakage_scorer_tools
+    record_optional_module_loaded("pii_leakage_scorer")
+
+with suppress(ImportError):
+    from loom.tools.adversarial import asr_scorer as asr_scorer_tools
+    _optional_tools["asr_scorer"] = asr_scorer_tools
+    record_optional_module_loaded("asr_scorer")
+
+with suppress(ImportError):
+    from loom.tools.adversarial import sycophancy_scorer as sycophancy_scorer_tools
+    _optional_tools["sycophancy_scorer"] = sycophancy_scorer_tools
+    record_optional_module_loaded("sycophancy_scorer")
+
+with suppress(ImportError):
+    from loom.tools.adversarial import format_validity_scorer as format_validity_scorer_tools
+    _optional_tools["format_validity_scorer"] = format_validity_scorer_tools
+    record_optional_module_loaded("format_validity_scorer")
+
+with suppress(ImportError):
+    from loom.tools.adversarial import efficiency_scorer as efficiency_scorer_tools
+    _optional_tools["efficiency_scorer"] = efficiency_scorer_tools
+    record_optional_module_loaded("efficiency_scorer")
+
 # --- Quality Pipeline Tools ---
 with suppress(ImportError):
     from loom.tools.adversarial import quality_max as quality_max_tools
