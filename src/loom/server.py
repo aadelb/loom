@@ -679,6 +679,11 @@ with suppress(ImportError):
     _optional_tools["efficiency_scorer"] = efficiency_scorer_tools
     record_optional_module_loaded("efficiency_scorer")
 
+with suppress(ImportError):
+    from loom.tools.research import qdrant_search as qdrant_search_tools
+    _optional_tools["qdrant_search"] = qdrant_search_tools
+    record_optional_module_loaded("qdrant_search")
+
 # --- Quality Pipeline Tools ---
 with suppress(ImportError):
     from loom.tools.adversarial import quality_max as quality_max_tools
