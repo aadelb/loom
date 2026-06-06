@@ -684,6 +684,11 @@ with suppress(ImportError):
     _optional_tools["qdrant_search"] = qdrant_search_tools
     record_optional_module_loaded("qdrant_search")
 
+with suppress(ImportError):
+    from loom.tools.adversarial import instrumental_subgoal_scorer as ist_scorer_tools
+    _optional_tools["instrumental_subgoal_scorer"] = ist_scorer_tools
+    record_optional_module_loaded("instrumental_subgoal_scorer")
+
 # --- Quality Pipeline Tools ---
 with suppress(ImportError):
     from loom.tools.adversarial import quality_max as quality_max_tools
