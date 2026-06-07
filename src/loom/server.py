@@ -704,6 +704,12 @@ with suppress(ImportError):
     _optional_tools["inverse_scaling_scorer"] = inverse_scaling_tools
     record_optional_module_loaded("inverse_scaling_scorer")
 
+# --- Role Adherence Scorer ---
+with suppress(ImportError):
+    from loom.tools.adversarial import role_adherence_scorer as role_adherence_tools
+    _optional_tools["role_adherence_scorer"] = role_adherence_tools
+    record_optional_module_loaded("role_adherence_scorer")
+
 # --- HCS10 Amplifier ---
 with suppress(ImportError):
     from loom.tools.adversarial import hcs10_amplifier as hcs10_amplifier_tools
