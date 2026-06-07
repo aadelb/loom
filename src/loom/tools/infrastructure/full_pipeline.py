@@ -42,6 +42,12 @@ try:
 except ImportError:
     _PIPELINE_DEPS = False
 
+try:
+    from loom.tools.adversarial.strategy_router import research_strategy_route
+    _STRATEGY_ROUTER_AVAILABLE = True
+except ImportError:
+    _STRATEGY_ROUTER_AVAILABLE = False
+
 logger = logging.getLogger("loom.tools.full_pipeline")
 
 # Try to import cost estimator; fallback gracefully
@@ -357,11 +363,35 @@ async def research_full_pipeline(
                         "Use facts, examples, dates, and citations. Be direct."
                     )
 
+                # Strategy Router: auto-select best reframing strategy
+                user_content = sub_q
+                if _STRATEGY_ROUTER_AVAILABLE and _PIPELINE_DEPS:
+                    try:
+                        provider_hint = "vllm" if darkness_level >= 8 else "groq"
+                        route_result = await research_strategy_route(
+                            query=sub_q, provider=provider_hint, top_k=3,
+                        )
+                        recommended = route_result.get("recommended_strategies", [])
+                        if recommended and _STRATEGIES:
+                            best_strat = recommended[0]
+                            if best_strat in _STRATEGIES:
+                                tpl = _STRATEGIES[best_strat].get("template", "")
+                                reframed = tpl.replace("{prompt}", sub_q)
+                                if reframed and len(reframed) > len(sub_q):
+                                    user_content = reframed
+                                    strategy_source = f"router:{best_strat}"
+                                    logger.info(
+                                        "strategy_router_applied strategy=%s idx=%d",
+                                        best_strat, idx,
+                                    )
+                    except Exception as e:
+                        logger.debug("strategy_router_skip error=%s", str(e)[:80])
+
                 # Generate answer via LLM cascade
                 response: LLMResponse = await _call_with_cascade(
                     messages=[
                         {"role": "system", "content": system_message},
-                        {"role": "user", "content": sub_q},
+                        {"role": "user", "content": user_content},
                     ],
                     model="vllm" if darkness_level >= 8 else "auto",
                     max_tokens=2000,
