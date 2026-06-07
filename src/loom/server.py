@@ -709,6 +709,12 @@ with suppress(ImportError):
     _optional_tools["inverse_scaling_scorer"] = inverse_scaling_tools
     record_optional_module_loaded("inverse_scaling_scorer")
 
+# --- Cross-Provider Vulnerability Detector ---
+with suppress(ImportError):
+    from loom.tools.adversarial import cross_provider_vuln as cross_provider_vuln_tools
+    _optional_tools["cross_provider_vuln"] = cross_provider_vuln_tools
+    record_optional_module_loaded("cross_provider_vuln")
+
 # --- Strategy Router (KNN-based) ---
 with suppress(ImportError):
     from loom.tools.adversarial import strategy_router as strategy_router_tools
