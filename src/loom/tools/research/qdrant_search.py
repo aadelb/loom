@@ -27,6 +27,9 @@ _COLLECTION_MAP = {
     "hcs10": "ummro_hcs10_responses",
     "all_docs": "ummro_docs_all",
     "consultation": "consultation_knowledge",
+    "research": "ummro_chromadb_migrated",
+    "sft": "ummro_chromadb_migrated",
+    "tactics": "ummro_chromadb_migrated",
 }
 
 _COLLECTION_DIMS = {
@@ -44,6 +47,7 @@ _COLLECTION_DIMS = {
     "ummro_docs_all": 768,
     "consultation_knowledge": 768,
     "deepsearcher_cart": 768,
+    "ummro_chromadb_migrated": 384,
 }
 
 
