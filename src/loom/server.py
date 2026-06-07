@@ -710,6 +710,11 @@ with suppress(ImportError):
     record_optional_module_loaded("context_compress")
 
 with suppress(ImportError):
+    from loom.tools.research import price_global as price_global_tools
+    _optional_tools["price_global"] = price_global_tools
+    record_optional_module_loaded("price_global")
+
+with suppress(ImportError):
     from loom.tools.adversarial import instrumental_subgoal_scorer as ist_scorer_tools
     _optional_tools["instrumental_subgoal_scorer"] = ist_scorer_tools
     record_optional_module_loaded("instrumental_subgoal_scorer")
