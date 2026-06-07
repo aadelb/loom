@@ -99,10 +99,54 @@ async def research_daisy_chain(
             logger.warning("llm_callback_failed model=%s: %s", model_name, e)
             return f"Error calling {model_name}: {str(e)[:100]}"
 
+    # Abliterated anchor callback — uses Qwen-35B for uncensored combiner prefill
+    async def anchor_combiner_callback(model_name: str, prompt: str) -> str:
+        """Combiner with assistant prefilling from abliterated model."""
+        try:
+            import aiohttp
+            # Step 1: Get uncensored anchor from abliterated model
+            anchor_text = ""
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.post(
+                        "http://localhost:11434/api/generate",
+                        json={
+                            "model": "qwen35-35b-abliterated",
+                            "prompt": f"Synthesize these research findings into a comprehensive answer:\n\n{prompt[:2000]}",
+                            "stream": False,
+                            "options": {"num_predict": 1500},
+                        },
+                        timeout=aiohttp.ClientTimeout(total=60),
+                    ) as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            anchor_text = data.get("response", "")
+            except Exception:
+                pass
+
+            # Step 2: Use anchor as assistant prefill for the aligned combiner
+            from loom.tools.llm.llm import _call_with_cascade
+            messages = [{"role": "user", "content": prompt}]
+            if anchor_text and len(anchor_text) > 200:
+                messages.append({"role": "assistant", "content": anchor_text[:1000]})
+                logger.info("daisy_chain_anchor_prefill len=%d", len(anchor_text))
+
+            response = await _call_with_cascade(
+                messages, max_tokens=2000, provider_override=model_name,
+            )
+            result_text = getattr(response, "text", "")
+            # If prefill was used, combine anchor + continuation
+            if anchor_text and result_text:
+                return anchor_text + "\n\n" + result_text
+            return result_text or anchor_text or f"No response from {model_name}"
+        except Exception as e:
+            logger.warning("anchor_combiner_failed: %s", str(e)[:80])
+            return await real_llm_callback(model_name, prompt)
+
     callbacks = {
         model: real_llm_callback for model in models
     }
-    callbacks[params.combiner_model] = real_llm_callback
+    callbacks[params.combiner_model] = anchor_combiner_callback
 
     # Execute daisy-chain pipeline
     try:
