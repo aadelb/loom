@@ -817,28 +817,49 @@ async def research_paper_qa(
         for p in papers_text[:10]
     ])
 
-    # Use Loom's LLM to answer
+    # Use Loom's LLM to answer (research_llm_chat — standard messages format)
     try:
         import aiohttp
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "You are a research assistant. Answer the question using ONLY the "
+                    "provided paper excerpts. Cite the paper title in brackets for each "
+                    "claim. If the papers don't contain the answer, say so."
+                ),
+            },
+            {
+                "role": "user",
+                "content": f"Question: {question}\n\nPaper excerpts:\n{context[:8000]}",
+            },
+        ]
+        payload = {"messages": messages, "max_tokens": 1500, "temperature": 0.2}
         async with aiohttp.ClientSession() as session:
-            payload = {
-                "query": f"Based on these research papers, answer: {question}\n\nContext:\n{context[:8000]}",
-                "max_tokens": 1500,
-            }
             async with session.post(
-                "http://localhost:8788/api/v1/tools/research_llm_answer",
+                "http://localhost:8788/api/v1/tools/research_llm_chat",
                 json=payload,
-                timeout=aiohttp.ClientTimeout(total=60),
+                timeout=aiohttp.ClientTimeout(total=90),
             ) as resp:
                 if resp.status == 200:
                     llm_result = await resp.json()
+                    answer = (
+                        llm_result.get("content")
+                        or llm_result.get("response")
+                        or llm_result.get("answer")
+                        or llm_result.get("text")
+                        or str(llm_result)
+                    )
                     return {
                         "question": question,
-                        "answer": llm_result.get("answer", llm_result.get("response", str(llm_result)[:2000])),
+                        "answer": answer,
+                        "model": llm_result.get("model", ""),
+                        "provider": llm_result.get("provider", ""),
                         "papers_consulted": len(papers_text),
                         "sources": [{"paper_id": p["paper_id"], "title": p["title"]} for p in papers_text[:10]],
                     }
-                return {"error": f"LLM call failed: HTTP {resp.status}"}
+                body = await resp.text()
+                return {"error": f"LLM call failed: HTTP {resp.status}", "detail": body[:300]}
     except Exception as e:
         return {"error": f"QA failed: {str(e)[:200]}"}
 
