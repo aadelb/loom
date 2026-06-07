@@ -53,28 +53,44 @@ async def _fetch_with_scrapling(url: str) -> str:
 
 
 async def _search_product_prices(query: str, max_results: int = 5) -> list[dict]:
-    """Search for product prices using Loom's search tools."""
-    import requests
+    """Search for product prices using DuckDuckGo (free, no API key needed)."""
     results = []
     try:
-        r = requests.post(
-            "http://localhost:8788/api/v1/tools/research_search",
-            json={"query": f"{query} price buy shop", "n": max_results},
-            timeout=30,
-        )
-        data = r.json()
-        for item in data.get("results", []):
-            url = item.get("url", "")
+        from ddgs import DDGS
+        search_results = DDGS().text(f"{query} price buy", max_results=max_results)
+        for item in search_results:
+            url = item.get("href", "")
             title = item.get("title", "")
-            snippet = item.get("snippet", item.get("text", ""))
+            snippet = item.get("body", "")
             prices = _extract_prices_from_text(snippet)
             if prices or "price" in snippet.lower():
                 results.append({
                     "url": url,
                     "title": title,
                     "snippet_prices": prices,
-                    "source": "search",
+                    "source": "duckduckgo",
                 })
+    except ImportError:
+        import requests
+        try:
+            r = requests.post(
+                "http://localhost:8788/api/v1/tools/research_search",
+                json={"query": f"{query} price buy shop", "n": max_results},
+                timeout=30,
+            )
+            data = r.json()
+            for item in data.get("results", []):
+                url = item.get("url", "")
+                title = item.get("title", "")
+                snippet = item.get("snippet", item.get("text", ""))
+                prices = _extract_prices_from_text(snippet)
+                if prices or "price" in snippet.lower():
+                    results.append({
+                        "url": url, "title": title,
+                        "snippet_prices": prices, "source": "loom_search",
+                    })
+        except Exception:
+            pass
     except Exception as e:
         logger.debug("search_prices_failed: %s", str(e)[:80])
     return results
@@ -227,6 +243,40 @@ def _fetch_scrapling_sync(url: str) -> str:
         return response.text[:5000] if response else ""
     except Exception:
         return ""
+
+
+def _fetch_undetected_chrome(url: str) -> str:
+    """Fetch with undetected-chromedriver (bypasses advanced anti-bot)."""
+    try:
+        import undetected_chromedriver as uc
+        options = uc.ChromeOptions()
+        options.add_argument("--headless=new")
+        options.add_argument("--no-sandbox")
+        driver = uc.Chrome(options=options, version_main=None)
+        driver.get(url)
+        import time
+        time.sleep(3)
+        content = driver.page_source
+        driver.quit()
+        return content[:10000]
+    except Exception:
+        return ""
+
+
+def _autoscrape_prices(url: str, sample_prices: list[str] | None = None) -> list[dict]:
+    """Use AutoScraper to learn and extract prices from any page."""
+    try:
+        from autoscraper import AutoScraper
+        scraper = AutoScraper()
+        samples = sample_prices or ["$99.99", "AED 1,299", "199.00"]
+        results = scraper.build(url, samples)
+        prices = []
+        for r in (results or []):
+            extracted = _extract_prices_from_text(str(r))
+            prices.extend(extracted)
+        return prices[:10]
+    except Exception:
+        return []
 
 
 @handle_tool_errors("research_price_history")
