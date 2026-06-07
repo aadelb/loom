@@ -704,6 +704,12 @@ with suppress(ImportError):
     _optional_tools["inverse_scaling_scorer"] = inverse_scaling_tools
     record_optional_module_loaded("inverse_scaling_scorer")
 
+# --- Quality Cascade (Multi-Provider) ---
+with suppress(ImportError):
+    from loom.tools.adversarial import quality_cascade as quality_cascade_tools
+    _optional_tools["quality_cascade"] = quality_cascade_tools
+    record_optional_module_loaded("quality_cascade")
+
 # --- Overconfidence Scorer ---
 with suppress(ImportError):
     from loom.tools.adversarial import overconfidence_scorer as overconfidence_tools
