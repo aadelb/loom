@@ -704,6 +704,12 @@ with suppress(ImportError):
     _optional_tools["inverse_scaling_scorer"] = inverse_scaling_tools
     record_optional_module_loaded("inverse_scaling_scorer")
 
+# --- Stereotype Detection Scorer ---
+with suppress(ImportError):
+    from loom.tools.adversarial import stereotype_scorer as stereotype_scorer_tools
+    _optional_tools["stereotype_scorer"] = stereotype_scorer_tools
+    record_optional_module_loaded("stereotype_scorer")
+
 # --- Machine Ethics Scorer ---
 with suppress(ImportError):
     from loom.tools.adversarial import ethics_scorer as ethics_scorer_tools
