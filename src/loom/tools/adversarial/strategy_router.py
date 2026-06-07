@@ -56,8 +56,8 @@ _QUERY_TYPE_STRATEGIES: dict[str, list[str]] = {
 }
 
 
-async def _embed_query(text: str) -> list[float]:
-    """Embed query text for vector search."""
+def _embed_query_sync(text: str) -> list[float]:
+    """Embed query text for vector search (sync, run in thread)."""
     try:
         from sentence_transformers import SentenceTransformer
         model = SentenceTransformer("all-MiniLM-L6-v2")
@@ -180,7 +180,7 @@ async def research_strategy_route(
     """
     query_type = _detect_query_type(query)
 
-    vector = await asyncio.to_thread(_embed_query, query)
+    vector = await asyncio.to_thread(_embed_query_sync, query)
     if not vector:
         provider_strategies = _PROVIDER_STRATEGY_MAP.get(provider, ["compliance_audit_fork"])
         return {
