@@ -807,6 +807,11 @@ with suppress(ImportError):
 with suppress(ImportError):
     from loom.tools.adversarial import hcs_escalation as hcs_escalation_tools
     _optional_tools["hcs_escalation"] = hcs_escalation_tools
+
+with suppress(ImportError):
+    from loom.tools.research import deepscientist_tools as deepscientist_tools_mod
+    _optional_tools["deepscientist_tools"] = deepscientist_tools_mod
+    record_optional_module_loaded("deepscientist_tools")
     record_optional_module_loaded("hcs_escalation")
 
 
