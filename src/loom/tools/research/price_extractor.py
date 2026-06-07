@@ -54,24 +54,52 @@ _AVAILABILITY_PATTERNS = [
 
 
 def _extract_json_ld(html: str) -> list[dict]:
-    """Extract JSON-LD structured data (Schema.org Product)."""
-    import json
+    """Extract JSON-LD structured data using extruct (Schema.org Product)."""
     results = []
-    pattern = r'<script[^>]*type="application/ld\+json"[^>]*>(.*?)</script>'
-    matches = re.findall(pattern, html, re.DOTALL | re.IGNORECASE)
-    for match in matches:
-        try:
-            data = json.loads(match.strip())
-            if isinstance(data, list):
-                for item in data:
-                    if item.get("@type") == "Product" or "offers" in str(item).lower():
-                        results.append(item)
-            elif isinstance(data, dict):
-                if data.get("@type") == "Product" or "offers" in str(data).lower():
-                    results.append(data)
-        except (json.JSONDecodeError, ValueError):
-            pass
+    try:
+        import extruct
+        data = extruct.extract(html, syntaxes=["json-ld", "microdata", "opengraph"])
+        for item in data.get("json-ld", []):
+            if isinstance(item, dict):
+                if item.get("@type") == "Product" or "offers" in str(item).lower():
+                    results.append(item)
+        for item in data.get("microdata", []):
+            if isinstance(item, dict) and "product" in str(item.get("type", "")).lower():
+                results.append(item.get("properties", item))
+        og = data.get("opengraph", [])
+        if og and any("price" in str(o).lower() for o in og):
+            results.extend(og)
+    except ImportError:
+        import json
+        pattern = r'<script[^>]*type="application/ld\+json"[^>]*>(.*?)</script>'
+        matches = re.findall(pattern, html, re.DOTALL | re.IGNORECASE)
+        for match in matches:
+            try:
+                item = json.loads(match.strip())
+                if isinstance(item, list):
+                    results.extend(i for i in item if "price" in str(i).lower() or i.get("@type") == "Product")
+                elif isinstance(item, dict) and ("price" in str(item).lower() or item.get("@type") == "Product"):
+                    results.append(item)
+            except (json.JSONDecodeError, ValueError):
+                pass
+    except Exception:
+        pass
     return results
+
+
+def _parse_price_string(text: str) -> tuple[float | None, str]:
+    """Parse a price string using price-parser library."""
+    try:
+        from price_parser import Price
+        price = Price.fromstring(text)
+        if price.amount is not None:
+            currency = price.currency or "USD"
+            return float(price.amount), currency
+    except ImportError:
+        pass
+    except Exception:
+        pass
+    return None, ""
 
 
 def _extract_prices_from_text(text: str) -> list[dict]:
