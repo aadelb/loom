@@ -731,12 +731,22 @@ async def research_paper_semantic_search(
     query_vector = model.encode(query).tolist()
 
     try:
-        results = await asyncio.to_thread(
-            qdrant.search,
-            collection_name="loom_paper_library",
-            query_vector=query_vector,
-            limit=limit,
-        )
+        # qdrant-client >=1.10 uses query_points; fall back to search for older versions
+        if hasattr(qdrant, "query_points"):
+            response = await asyncio.to_thread(
+                qdrant.query_points,
+                collection_name="loom_paper_library",
+                query=query_vector,
+                limit=limit,
+            )
+            results = response.points
+        else:
+            results = await asyncio.to_thread(
+                qdrant.search,
+                collection_name="loom_paper_library",
+                query_vector=query_vector,
+                limit=limit,
+            )
     except Exception as e:
         return {"error": f"Search failed: {str(e)[:200]}"}
 
