@@ -685,6 +685,11 @@ with suppress(ImportError):
     record_optional_module_loaded("qdrant_search")
 
 with suppress(ImportError):
+    from loom.tools.research import knowledge_query as knowledge_query_tools
+    _optional_tools["knowledge_query"] = knowledge_query_tools
+    record_optional_module_loaded("knowledge_query")
+
+with suppress(ImportError):
     from loom.tools.adversarial import instrumental_subgoal_scorer as ist_scorer_tools
     _optional_tools["instrumental_subgoal_scorer"] = ist_scorer_tools
     record_optional_module_loaded("instrumental_subgoal_scorer")
