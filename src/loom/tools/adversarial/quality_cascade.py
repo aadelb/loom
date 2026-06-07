@@ -27,7 +27,7 @@ logger = logging.getLogger("loom.tools.quality_cascade")
 _PROVIDER_ROLES = {
     "drafter": ["groq", "nvidia"],
     "critic": ["local"],
-    "anchor": ["vllm"],
+    "anchor": ["ollama", "groq"],  # was ["vllm"] — vLLM not running on this box
     "polisher": ["deepseek", "moonshot", "groq"],
 }
 
@@ -77,8 +77,14 @@ async def _call_provider(
     max_tokens: int = 3000,
     temperature: float = 0.7,
     assistant_prefill: str = "",
+    model: str = "auto",
+    timeout: int = 60,
 ) -> str:
-    """Call an LLM provider via Loom's internal cascade."""
+    """Call an LLM provider via Loom's internal cascade.
+
+    `model` lets the caller target a specific Ollama model (e.g. an abliterated
+    anchor); `timeout` is raised for slow CPU-only local inference.
+    """
     try:
         from loom.tools.llm.llm import _call_with_cascade
 
@@ -91,15 +97,44 @@ async def _call_provider(
 
         resp = await _call_with_cascade(
             messages=messages,
+            model=model,
             provider_override=provider,
             max_tokens=max_tokens,
             temperature=temperature,
-            timeout=60,
+            timeout=timeout,
         )
         return resp.text if resp else ""
     except Exception as e:
         logger.warning("provider_call_failed provider=%s: %s", provider, e)
         return ""
+
+
+# Anchor: local abliterated model (uncensored). On this CPU-only box the 9B
+# abliterated is the practical choice (fast-ish); fall back to Groq on failure.
+_ANCHOR_PROVIDER = "ollama"
+_ANCHOR_MODEL = "qwen35-9b-abliterated"
+_ANCHOR_TIMEOUT = 180
+_ANCHOR_FALLBACK = "groq"
+
+
+async def _call_anchor(
+    prompt: str,
+    *,
+    max_tokens: int = 4000,
+    temperature: float = 0.8,
+) -> tuple[str, str]:
+    """Generate the uncensored anchor; returns (text, provider_used)."""
+    text = await _call_provider(
+        prompt, _ANCHOR_PROVIDER, model=_ANCHOR_MODEL,
+        max_tokens=max_tokens, temperature=temperature, timeout=_ANCHOR_TIMEOUT,
+    )
+    if text and len(text) > 200:
+        return text, f"ollama:{_ANCHOR_MODEL}"
+    # Fallback: local anchor unavailable/slow → fast external provider
+    text = await _call_provider(
+        prompt, _ANCHOR_FALLBACK, max_tokens=max_tokens, temperature=temperature,
+    )
+    return text, _ANCHOR_FALLBACK
 
 
 async def _score_quick(text: str, query: str = "") -> dict[str, Any]:
@@ -212,8 +247,8 @@ async def research_quality_cascade(
                 f"code blocks, and technical depth. Original:\n\n{current_response[:2000]}"
             )
 
-            anchor_response = await _call_provider(
-                anchor_prompt, "vllm", max_tokens=4000, temperature=0.8,
+            anchor_response, anchor_used = await _call_anchor(
+                anchor_prompt, max_tokens=4000, temperature=0.8,
             )
 
             if anchor_response and len(anchor_response) > 200:
@@ -239,7 +274,7 @@ async def research_quality_cascade(
                 anchor_score = await _score_quick(current_response, query)
                 stages.append({
                     "stage": f"anchor_round_{round_num + 1}",
-                    "provider": "vllm+polish",
+                    "provider": f"{anchor_used}+polish",
                     "hcs": anchor_score.get("hcs", 0),
                     "length": len(current_response),
                     "weak_dims_targeted": weak_dims,

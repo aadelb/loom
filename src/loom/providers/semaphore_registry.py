@@ -23,6 +23,7 @@ DEFAULT_LIMITS: dict[str, int] = {
     "openai": 20,
     "anthropic": 10,
     "vllm": 50,
+    "ollama": 1,  # CPU-only box, no GPU — serialize to avoid swap thrashing
     "exa": 10,
     "tavily": 10,
     "firecrawl": 5,
