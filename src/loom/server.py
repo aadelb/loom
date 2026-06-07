@@ -824,6 +824,11 @@ with suppress(ImportError):
     record_optional_module_loaded("paper_library_advanced")
     record_optional_module_loaded("hcs_escalation")
 
+with suppress(ImportError):
+    from loom.tools.research import paper_library_rag as paper_library_rag_mod
+    _optional_tools["paper_library_rag"] = paper_library_rag_mod
+    record_optional_module_loaded("paper_library_rag")
+
 
 
 _start_time = time.time()
