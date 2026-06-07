@@ -168,6 +168,7 @@ async def research_price_live(
         page_content = ""
         fetch_method = "search_snippet"
 
+        # Strategy 1: Extract from search snippet (instant)
         if item.get("snippet_prices"):
             for p in item["snippet_prices"]:
                 all_prices.append({
@@ -177,24 +178,87 @@ async def research_price_live(
                     "method": "search_snippet",
                 })
 
+        # Strategy 2: Crawl4AI — JS rendering for dynamic prices
         if use_js_rendering and not page_content:
             page_content = await _fetch_with_crawl4ai(url)
             if page_content:
                 fetch_method = "crawl4ai"
 
+        # Strategy 3: Scrapling — stealth anti-bot fetching
         if not page_content:
             page_content = await asyncio.to_thread(_fetch_scrapling_sync, url)
             if page_content:
                 fetch_method = "scrapling"
 
+        # Strategy 4: undetected-chromedriver — bypass advanced anti-bot
+        if not page_content:
+            page_content = await asyncio.to_thread(_fetch_undetected_chrome, url)
+            if page_content:
+                fetch_method = "undetected_chrome"
+
+        # Strategy 5: extruct — extract Schema.org structured data
         if page_content:
+            try:
+                import extruct
+                structured = extruct.extract(page_content[:50000], syntaxes=["json-ld", "microdata"])
+                for item_ld in structured.get("json-ld", []):
+                    if isinstance(item_ld, dict):
+                        offers = item_ld.get("offers", {})
+                        if isinstance(offers, list):
+                            offers = offers[0] if offers else {}
+                        if isinstance(offers, dict) and offers.get("price"):
+                            all_prices.append({
+                                "price": float(offers["price"]),
+                                "source": url,
+                                "title": item_ld.get("name", item.get("title", "")),
+                                "method": "extruct_jsonld",
+                                "currency": offers.get("priceCurrency", ""),
+                            })
+            except Exception:
+                pass
+
+        # Strategy 6: price-parser — parse all price strings in page
+        if page_content:
+            try:
+                from price_parser import Price
+                import re as _re
+                price_candidates = _re.findall(
+                    r'[\$€£¥₹][\s]?[\d,]+\.?\d*|[\d,]+\.?\d*\s*(?:AED|USD|EUR|GBP|SAR|EGP)',
+                    page_content[:5000]
+                )
+                for candidate in price_candidates[:5]:
+                    parsed = Price.fromstring(candidate)
+                    if parsed.amount and 0.01 <= float(parsed.amount) <= 10_000_000:
+                        all_prices.append({
+                            "price": float(parsed.amount),
+                            "source": url,
+                            "title": item.get("title", ""),
+                            "method": "price_parser",
+                            "currency": parsed.currency or "",
+                        })
+            except Exception:
+                pass
+
+        # Strategy 7: regex fallback
+        if page_content and not any(p.get("source") == url and p.get("method") != "search_snippet" for p in all_prices):
             extracted = _extract_prices_from_text(page_content[:5000])
             for p in extracted[:3]:
                 all_prices.append({
                     "price": p["price"],
                     "source": url,
                     "title": item.get("title", ""),
-                    "method": fetch_method,
+                    "method": f"regex_via_{fetch_method}",
+                })
+
+        # Strategy 8: AutoScraper — ML-based extraction (learns from samples)
+        if not any(p.get("source") == url for p in all_prices):
+            auto_prices = await asyncio.to_thread(_autoscrape_prices, url)
+            for p in auto_prices[:2]:
+                all_prices.append({
+                    "price": p["price"],
+                    "source": url,
+                    "title": item.get("title", ""),
+                    "method": "autoscraper",
                 })
 
         source_details.append({
@@ -235,14 +299,29 @@ async def research_price_live(
 
 
 def _fetch_scrapling_sync(url: str) -> str:
-    """Sync wrapper for Scrapling fetch."""
+    """Sync wrapper for Scrapling fetch (v0.4+ API)."""
     try:
         from scrapling import Fetcher
-        fetcher = Fetcher(auto_match=True)
+        fetcher = Fetcher()
         response = fetcher.get(url)
-        return response.text[:5000] if response else ""
-    except Exception:
+        if response and hasattr(response, 'text'):
+            return response.text[:10000]
+        elif response and hasattr(response, 'content'):
+            return response.content.decode('utf-8', errors='ignore')[:10000]
         return ""
+    except Exception:
+        # Fallback to requests with stealth headers
+        try:
+            import requests
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml",
+                "Accept-Language": "en-US,en;q=0.9,ar;q=0.8",
+            }
+            r = requests.get(url, headers=headers, timeout=15)
+            return r.text[:10000] if r.status_code == 200 else ""
+        except Exception:
+            return ""
 
 
 def _fetch_undetected_chrome(url: str) -> str:
