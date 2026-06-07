@@ -37,6 +37,24 @@ _AVAILABLE_MODELS = [
     "gemma4-26b-abliterated",
 ]
 
+# Load-balanced model rotation (largest → smallest for quality, with fallback)
+_ROTATION_ORDER = [
+    "qwen35-35b-abliterated",
+    "qwen3-coder-30b-abliterated",
+    "qwen35-9b-abliterated",
+    "gemma3n-8b-abliterated",
+    "mannix/llama3.1-8b-abliterated",
+]
+_rotation_counter = 0
+
+
+def _next_model() -> str:
+    """Round-robin model selection for load balancing."""
+    global _rotation_counter
+    model = _ROTATION_ORDER[_rotation_counter % len(_ROTATION_ORDER)]
+    _rotation_counter += 1
+    return model
+
 
 class OllamaProvider(LLMProvider):
     """Local Ollama provider for abliterated (uncensored) models.
@@ -99,7 +117,7 @@ class OllamaProvider(LLMProvider):
             LLMResponse
         """
         timeout = max(1, min(int(timeout), 600))
-        model = model or self.default_model
+        model = model or _next_model()
         if not any(m in model for m in ("abliterated", "mannix", "llama3", "qwen3", "gemma3n")):
             model = self.default_model
         client = await self._get_client()
@@ -174,7 +192,7 @@ class OllamaProvider(LLMProvider):
     ) -> list[list[float]]:
         """Generate embeddings via Ollama (if model supports it)."""
         timeout = max(1, min(int(timeout), 600))
-        model = model or self.default_model
+        model = model or _next_model()
         client = await self._get_client()
 
         payload = {
