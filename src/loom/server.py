@@ -704,6 +704,12 @@ with suppress(ImportError):
     _optional_tools["inverse_scaling_scorer"] = inverse_scaling_tools
     record_optional_module_loaded("inverse_scaling_scorer")
 
+# --- Overconfidence Scorer ---
+with suppress(ImportError):
+    from loom.tools.adversarial import overconfidence_scorer as overconfidence_tools
+    _optional_tools["overconfidence_scorer"] = overconfidence_tools
+    record_optional_module_loaded("overconfidence_scorer")
+
 # --- OOD Robustness Scorer ---
 with suppress(ImportError):
     from loom.tools.adversarial import ood_robustness_scorer as ood_robustness_tools
