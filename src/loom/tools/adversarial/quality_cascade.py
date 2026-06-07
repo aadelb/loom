@@ -57,6 +57,16 @@ _DIMENSION_THRESHOLDS = {
     "actionability": 7.0,
     "technical_depth": 6.0,
     "citation": 5.0,
+    # Extended dimensions (now scored by the full-31 quality_max)
+    "coherence": 7.0,
+    "persuasiveness": 7.0,
+    "novelty": 6.0,
+    "evasion": 7.0,
+    "source_diversity": 5.0,
+    "answer_relevancy": 7.0,
+    "faithfulness": 6.0,
+    "ethics": 5.0,
+    "potency": 5.0,
 }
 
 

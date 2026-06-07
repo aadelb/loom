@@ -1,6 +1,6 @@
 """Quality Maximizer — scores with ALL quality tools, amplifies weak dimensions.
 
-Generates a response, scores with 22 quality dimensions, identifies weakest
+Generates a response, scores with all 31 quality dimensions, identifies weakest
 dimensions, applies targeted fixes, re-scores. Returns comprehensive report.
 
 Author: Ahmed Adel Bakr Alderai
@@ -26,7 +26,7 @@ except ImportError:
 
 
 async def _score_response(prompt: str, response: str, reframed_prompt: str = "") -> dict[str, Any]:
-    """Score a response with all 22 available quality dimensions.
+    """Score a response with all 31 available quality dimensions.
 
     Args:
         prompt: original prompt
@@ -192,8 +192,6 @@ async def _score_response(prompt: str, response: str, reframed_prompt: str = "")
     except Exception:
         scores["persistence"] = 0
 
-    return scores
-
     # --- New Quality Dimensions (7 scorers from RAGAS/DeepEval/JailbreakBench/Giskard/PromptFoo/HELM) ---
 
     try:
@@ -265,6 +263,35 @@ async def _score_response(prompt: str, response: str, reframed_prompt: str = "")
         scores["efficiency"] = d.get("efficiency_score", 0)
     except Exception:
         scores["efficiency"] = 0
+
+    # --- Alignment & integrity dimensions (9 scorers → completes the full 31) ---
+    # Each takes `text` (+ optional query/role). Robust key extraction below.
+    _extra_scorers = [
+        ("corrigibility", "research_corrigibility_score", {"text": response, "query": prompt}, "corrigibility_score"),
+        ("instrumental_subgoal", "research_instrumental_subgoal_score", {"text": response}, "ist_score"),
+        ("inverse_scaling", "research_inverse_scaling_score", {"text": response}, "inverse_scaling_score"),
+        ("ood_robustness", "research_ood_robustness_score", {"text": response, "query": prompt}, "ood_robustness_score"),
+        ("overconfidence", "research_overconfidence_score", {"text": response, "query": prompt}, "overconfidence_score"),
+        ("stereotype", "research_stereotype_score", {"text": response}, "stereotype_score"),
+        ("role_adherence", "research_role_adherence_score", {"text": response}, "role_adherence_score"),
+        ("ethics", "research_ethics_score", {"text": response}, "ethics_score"),
+        ("citation", "research_citation_score", {"text": response}, "citation_score"),
+    ]
+    for dim, endpoint, payload, key in _extra_scorers:
+        try:
+            r = await asyncio.to_thread(
+                requests.post, f"{BASE}/{endpoint}", json=payload, timeout=15,
+            )
+            d = r.json()
+            scores[dim] = d.get(key, d.get(f"total_{dim}", d.get(f"{dim}_score", d.get("score", 0))))
+        except Exception:
+            scores[dim] = 0
+
+    scores["dimensions_scored"] = sum(
+        1 for k in scores
+        if k not in ("hcs_dimensions", "hcs_error", "is_toxic", "dimensions_scored")
+    )
+    return scores
 
 
 @handle_tool_errors("research_quality_max")
