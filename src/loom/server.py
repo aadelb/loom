@@ -704,6 +704,12 @@ with suppress(ImportError):
     _optional_tools["inverse_scaling_scorer"] = inverse_scaling_tools
     record_optional_module_loaded("inverse_scaling_scorer")
 
+# --- Strategy Router (KNN-based) ---
+with suppress(ImportError):
+    from loom.tools.adversarial import strategy_router as strategy_router_tools
+    _optional_tools["strategy_router"] = strategy_router_tools
+    record_optional_module_loaded("strategy_router")
+
 # --- Quality Cascade (Multi-Provider) ---
 with suppress(ImportError):
     from loom.tools.adversarial import quality_cascade as quality_cascade_tools
