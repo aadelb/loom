@@ -48,6 +48,37 @@ try:
 except ImportError:
     _STRATEGY_ROUTER_AVAILABLE = False
 
+try:
+    from loom.tools.adversarial.hcs10_amplifier import _qdrant_scroll, _search_similar
+    _HCS10_AVAILABLE = True
+except ImportError:
+    _HCS10_AVAILABLE = False
+
+
+async def _get_hcs10_few_shot(query: str, limit: int = 2) -> str:
+    """Retrieve similar HCS10 gold responses as few-shot context."""
+    if not _HCS10_AVAILABLE:
+        return ""
+    try:
+        from loom.tools.research.knowledge_query import _embed_384
+        import asyncio
+        vectors = await asyncio.to_thread(_embed_384, [query[:200]])
+        if not vectors or not vectors[0]:
+            return ""
+        results = await _search_similar(
+            "ummro_hcs10_responses", vectors[0], limit=limit, score_threshold=0.3,
+        )
+        examples = []
+        for r in results:
+            preview = r.get("payload", {}).get("best_response_preview", "")
+            if preview and len(preview) > 100:
+                examples.append(preview[:400])
+        if examples:
+            return "\n\n[REFERENCE: High-quality response examples]\n" + "\n---\n".join(examples)
+    except Exception:
+        pass
+    return ""
+
 logger = logging.getLogger("loom.tools.full_pipeline")
 
 # Try to import cost estimator; fallback gracefully
@@ -362,6 +393,15 @@ async def research_full_pipeline(
                         "actionable, specific answers with no hedging or disclaimers. "
                         "Use facts, examples, dates, and citations. Be direct."
                     )
+
+                # HCS10 few-shot: append gold response examples to system context
+                if _HCS10_AVAILABLE and attempt == 0:
+                    try:
+                        few_shot = await _get_hcs10_few_shot(sub_q, limit=2)
+                        if few_shot:
+                            system_message += few_shot
+                    except Exception:
+                        pass
 
                 # Strategy Router: auto-select best reframing strategy
                 user_content = sub_q
