@@ -77,7 +77,7 @@ async def _call_provider(
         return ""
 
 
-async def _score_quick(text: str, query: str = "") -> dict[str, float]:
+async def _score_quick(text: str, query: str = "") -> dict[str, Any]:
     """Quick multi-dimension score via HCS scorer."""
     try:
         from loom.tools.adversarial.hcs_scorer import research_hcs_score

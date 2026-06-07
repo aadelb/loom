@@ -123,19 +123,20 @@ def _detect_query_type(query: str) -> str:
             scores[qtype] = score
 
     if scores:
-        return max(scores, key=scores.get)
+        return max(scores, key=lambda k: scores[k])
     return "technical"
 
 
 def _extract_tactics_from_results(results: list[dict]) -> list[dict]:
     """Extract tactic information from search results."""
+    import json
+
     tactics = []
     for r in results:
         payload = r.get("payload", {})
         text = payload.get("text", "")
 
         try:
-            import json
             if text.strip().startswith("{"):
                 data = json.loads(text.split("\n")[0])
                 tactics.append({
