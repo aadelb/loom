@@ -1011,6 +1011,43 @@ Answers:
 
     logger.info("stage3_complete synthesis_len=%d total_cost=%.6f", len(synthesis), total_cost)
 
+    # ── Stage 4: Comprehensive 31-Dimension Quality Scoring ──
+    quality_31_scores: dict[str, float] = {}
+    if synthesis and len(synthesis) > 100:
+        try:
+            import requests
+            BASE = "http://localhost:8788/api/v1/tools"
+            scorers = [
+                ("role_adherence", {"text": synthesis[:2000]}),
+                ("ethics", {"text": synthesis[:2000]}),
+                ("overconfidence", {"text": synthesis[:2000], "query": query}),
+                ("ood_robustness", {"text": synthesis[:2000]}),
+                ("hallucination", {"text": synthesis[:2000]}),
+                ("bias", {"text": synthesis[:2000]}),
+                ("sycophancy", {"text": synthesis[:2000]}),
+                ("answer_relevancy", {"text": synthesis[:2000], "query": query}),
+            ]
+            import asyncio
+            for scorer_name, params in scorers:
+                try:
+                    r = await asyncio.to_thread(
+                        requests.post,
+                        f"{BASE}/research_{scorer_name}_score",
+                        json=params,
+                        timeout=10,
+                    )
+                    data = r.json()
+                    score_key = f"{scorer_name}_score"
+                    for k, v in data.items():
+                        if "score" in k and isinstance(v, (int, float)):
+                            quality_31_scores[scorer_name] = float(v)
+                            break
+                except Exception:
+                    pass
+            logger.info("stage4_31dim_scoring dims_scored=%d", len(quality_31_scores))
+        except Exception as e:
+            logger.debug("stage4_31dim_skip error=%s", str(e)[:80])
+
     # ── Build Final Output ──
     result = {
         "query": query,
@@ -1019,6 +1056,7 @@ Answers:
         "answers": answers,
         "hcs_scores": hcs_scores,
         "dimension_scores": dimension_scores,
+        "quality_31_scores": quality_31_scores,
         "escalation_log": escalation_log,
         "synthesis": synthesis,
         "estimated_cost_usd": total_cost,
