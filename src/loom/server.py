@@ -704,6 +704,12 @@ with suppress(ImportError):
     _optional_tools["inverse_scaling_scorer"] = inverse_scaling_tools
     record_optional_module_loaded("inverse_scaling_scorer")
 
+# --- HCS10 Amplifier ---
+with suppress(ImportError):
+    from loom.tools.adversarial import hcs10_amplifier as hcs10_amplifier_tools
+    _optional_tools["hcs10_amplifier"] = hcs10_amplifier_tools
+    record_optional_module_loaded("hcs10_amplifier")
+
 # --- Quality Pipeline Tools ---
 with suppress(ImportError):
     from loom.tools.adversarial import quality_max as quality_max_tools
