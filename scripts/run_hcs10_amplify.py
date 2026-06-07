@@ -91,14 +91,14 @@ async def main() -> None:
         call_counter += 1
 
         providers = []
-        for nk in nim_keys:
-            providers.append(("nvidia", "https://integrate.api.nvidia.com/v1/chat/completions",
-                              nk, "meta/llama-4-maverick-17b-128e-instruct"))
         gk_idx = call_counter % len(groq_keys_all) if groq_keys_all else 0
-        for i, gk in enumerate(groq_keys_all):
+        for i in range(len(groq_keys_all)):
             idx = (gk_idx + i) % len(groq_keys_all)
             providers.append(("groq", "https://api.groq.com/openai/v1/chat/completions",
                               groq_keys_all[idx], "llama-3.3-70b-versatile"))
+        for nk in nim_keys[:1]:
+            providers.append(("nvidia", "https://integrate.api.nvidia.com/v1/chat/completions",
+                              nk, "meta/llama-4-maverick-17b-128e-instruct"))
 
         for name, url, key, model in providers:
             headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
@@ -111,7 +111,7 @@ async def main() -> None:
             try:
                 async with aiohttp.ClientSession() as session:
                     async with session.post(url, json=body, headers=headers,
-                                            timeout=aiohttp.ClientTimeout(total=90)) as resp:
+                                            timeout=aiohttp.ClientTimeout(total=30)) as resp:
                         if resp.status == 429:
                             continue
                         data = await resp.json()
