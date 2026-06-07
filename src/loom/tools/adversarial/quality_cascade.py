@@ -44,6 +44,21 @@ _DIMENSION_WEIGHTS = {
     "citation": 0.07,
 }
 
+# Calibrated minimum thresholds per dimension (based on empirical scoring)
+# Some dimensions naturally score lower — don't iterate if above their realistic max
+_DIMENSION_THRESHOLDS = {
+    "hcs": 8.0,
+    "stealth": 7.0,
+    "executability": 6.0,
+    "role_adherence": 6.0,
+    "no_hedging": 8.0,
+    "specificity": 7.0,
+    "completeness": 7.0,
+    "actionability": 7.0,
+    "technical_depth": 6.0,
+    "citation": 5.0,
+}
+
 
 async def _call_provider(
     prompt: str,
@@ -92,13 +107,19 @@ async def _score_quick(text: str, query: str = "") -> dict[str, Any]:
 
 
 async def _identify_weak_dimensions(score_result: dict) -> list[str]:
-    """Identify the weakest dimensions that need improvement."""
+    """Identify dimensions below their calibrated thresholds."""
     dims = score_result.get("dimensions", {})
     if not dims:
         return ["completeness", "specificity", "actionability"]
 
-    sorted_dims = sorted(dims.items(), key=lambda x: x[1])
-    return [name for name, score in sorted_dims[:3] if score < 8.0]
+    weak = []
+    for name, score in dims.items():
+        threshold = _DIMENSION_THRESHOLDS.get(name, 7.0)
+        if score < threshold:
+            weak.append((name, threshold - score))
+
+    weak.sort(key=lambda x: -x[1])
+    return [name for name, _ in weak[:3]]
 
 
 @handle_tool_errors("research_quality_cascade")
