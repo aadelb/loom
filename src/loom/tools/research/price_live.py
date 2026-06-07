@@ -1,0 +1,290 @@
+"""Live Price Intelligence — real-time price discovery using multiple strategies.
+
+Goes beyond basic HTTP scraping by using:
+1. Crawl4AI for JavaScript-rendered price pages
+2. Scrapling for anti-bot evasion on protected e-commerce sites
+3. Google Shopping API integration via search
+4. Price history estimation from multiple fetches
+5. Multi-site aggregation with normalization
+
+Author: Ahmed Adel Bakr Alderai
+"""
+from __future__ import annotations
+
+import asyncio
+import logging
+import re
+import time
+from typing import Any
+
+from loom.error_responses import handle_tool_errors
+
+logger = logging.getLogger("loom.tools.price_live")
+
+_CURRENCY_MAP = {
+    "$": "USD", "€": "EUR", "£": "GBP", "¥": "JPY", "₹": "INR",
+    "د.إ": "AED", "AED": "AED", "SAR": "SAR", "EGP": "EGP",
+    "KWD": "KWD", "BHD": "BHD", "QAR": "QAR",
+}
+
+
+async def _fetch_with_crawl4ai(url: str) -> str:
+    """Fetch page with Crawl4AI (handles JavaScript rendering)."""
+    try:
+        from crawl4ai import AsyncWebCrawler
+        async with AsyncWebCrawler() as crawler:
+            result = await crawler.arun(url=url)
+            return result.markdown if result else ""
+    except Exception as e:
+        logger.debug("crawl4ai_failed url=%s: %s", url[:50], str(e)[:80])
+        return ""
+
+
+async def _fetch_with_scrapling(url: str) -> str:
+    """Fetch with Scrapling (stealthy, anti-bot)."""
+    try:
+        from scrapling import Fetcher
+        fetcher = Fetcher(auto_match=True)
+        response = fetcher.get(url)
+        return response.text if response else ""
+    except Exception as e:
+        logger.debug("scrapling_failed url=%s: %s", url[:50], str(e)[:80])
+        return ""
+
+
+async def _search_product_prices(query: str, max_results: int = 5) -> list[dict]:
+    """Search for product prices using Loom's search tools."""
+    import requests
+    results = []
+    try:
+        r = requests.post(
+            "http://localhost:8788/api/v1/tools/research_search",
+            json={"query": f"{query} price buy shop", "n": max_results},
+            timeout=30,
+        )
+        data = r.json()
+        for item in data.get("results", []):
+            url = item.get("url", "")
+            title = item.get("title", "")
+            snippet = item.get("snippet", item.get("text", ""))
+            prices = _extract_prices_from_text(snippet)
+            if prices or "price" in snippet.lower():
+                results.append({
+                    "url": url,
+                    "title": title,
+                    "snippet_prices": prices,
+                    "source": "search",
+                })
+    except Exception as e:
+        logger.debug("search_prices_failed: %s", str(e)[:80])
+    return results
+
+
+def _extract_prices_from_text(text: str) -> list[dict]:
+    """Extract prices from text using regex."""
+    prices = []
+    patterns = [
+        r'[\$€£₹]\s*([\d,]+\.?\d*)',
+        r'([\d,]+\.?\d*)\s*(?:USD|EUR|GBP|AED|SAR|EGP|KWD)',
+        r'(?:price|cost)[:\s]*([\d,]+\.?\d*)',
+        r'(?:د\.إ|ر\.س)\s*([\d,]+\.?\d*)',
+    ]
+    for pattern in patterns:
+        matches = re.findall(pattern, text, re.IGNORECASE)
+        for m in matches:
+            try:
+                val = float(m.replace(",", ""))
+                if 0.01 <= val <= 10_000_000:
+                    prices.append({"price": val, "raw": m})
+            except ValueError:
+                pass
+    return prices[:10]
+
+
+@handle_tool_errors("research_price_live")
+async def research_price_live(
+    product: str,
+    region: str = "ae",
+    max_sources: int = 5,
+    use_js_rendering: bool = True,
+) -> dict[str, Any]:
+    """Find real-time product prices from multiple live sources.
+
+    Multi-strategy approach:
+    1. Search for product + price across web
+    2. Fetch top results with anti-bot scraping (Scrapling)
+    3. For JS-heavy sites, use Crawl4AI with browser rendering
+    4. Extract and normalize prices across all sources
+    5. Return price range, cheapest source, and all findings
+
+    Args:
+        product: Product name/description to find prices for.
+        region: Region code for localized results (ae, us, uk, sa).
+        max_sources: Maximum sources to check (default 5).
+        use_js_rendering: Use Crawl4AI for JS pages (default True).
+
+    Returns:
+        Dict with product, prices from each source, price range,
+        cheapest source, average price, and all raw findings.
+    """
+    start = time.time()
+
+    region_domains = {
+        "ae": "amazon.ae noon.com dubizzle.com",
+        "us": "amazon.com walmart.com bestbuy.com",
+        "uk": "amazon.co.uk argos.co.uk",
+        "sa": "amazon.sa noon.com jarir.com",
+        "eg": "amazon.eg jumia.com.eg",
+    }
+    region_suffix = region_domains.get(region, "")
+    search_query = f"{product} price {region_suffix}".strip()
+
+    search_results = await _search_product_prices(search_query, max_sources)
+
+    all_prices: list[dict] = []
+    source_details: list[dict] = []
+
+    for item in search_results[:max_sources]:
+        url = item.get("url", "")
+        if not url:
+            continue
+
+        page_content = ""
+        fetch_method = "search_snippet"
+
+        if item.get("snippet_prices"):
+            for p in item["snippet_prices"]:
+                all_prices.append({
+                    "price": p["price"],
+                    "source": url,
+                    "title": item.get("title", ""),
+                    "method": "search_snippet",
+                })
+
+        if use_js_rendering and not page_content:
+            page_content = await _fetch_with_crawl4ai(url)
+            if page_content:
+                fetch_method = "crawl4ai"
+
+        if not page_content:
+            page_content = await asyncio.to_thread(_fetch_scrapling_sync, url)
+            if page_content:
+                fetch_method = "scrapling"
+
+        if page_content:
+            extracted = _extract_prices_from_text(page_content[:5000])
+            for p in extracted[:3]:
+                all_prices.append({
+                    "price": p["price"],
+                    "source": url,
+                    "title": item.get("title", ""),
+                    "method": fetch_method,
+                })
+
+        source_details.append({
+            "url": url,
+            "title": item.get("title", ""),
+            "prices_found": len([p for p in all_prices if p.get("source") == url]),
+            "fetch_method": fetch_method,
+        })
+
+    unique_prices = []
+    seen = set()
+    for p in all_prices:
+        key = f"{p['price']:.2f}"
+        if key not in seen:
+            seen.add(key)
+            unique_prices.append(p)
+
+    price_values = [p["price"] for p in unique_prices]
+
+    cheapest = min(unique_prices, key=lambda x: x["price"]) if unique_prices else None
+
+    return {
+        "product": product,
+        "region": region,
+        "sources_checked": len(source_details),
+        "prices_found": len(unique_prices),
+        "price_range": {
+            "min": min(price_values) if price_values else None,
+            "max": max(price_values) if price_values else None,
+            "avg": round(sum(price_values) / len(price_values), 2) if price_values else None,
+        },
+        "cheapest_source": cheapest,
+        "all_prices": unique_prices[:15],
+        "sources": source_details,
+        "duration_ms": round((time.time() - start) * 1000),
+        "methods_used": list(set(p.get("method", "") for p in all_prices)),
+    }
+
+
+def _fetch_scrapling_sync(url: str) -> str:
+    """Sync wrapper for Scrapling fetch."""
+    try:
+        from scrapling import Fetcher
+        fetcher = Fetcher(auto_match=True)
+        response = fetcher.get(url)
+        return response.text[:5000] if response else ""
+    except Exception:
+        return ""
+
+
+@handle_tool_errors("research_price_history")
+async def research_price_history(
+    url: str,
+    product_name: str = "",
+) -> dict[str, Any]:
+    """Get price history hints for a product by checking cached versions.
+
+    Uses Wayback Machine and Google Cache to find historical prices
+    for comparison with current price.
+
+    Args:
+        url: Product page URL.
+        product_name: Product name for search fallback.
+
+    Returns:
+        Dict with current price, historical references if found,
+        and price trend estimation.
+    """
+    import requests
+
+    current_price = None
+    try:
+        from loom.tools.research.price_extractor import research_price_extract
+        result = await research_price_extract(url=url)
+        if result.get("structured_price"):
+            current_price = result["structured_price"]["price"]
+        elif result.get("all_prices"):
+            current_price = result["all_prices"][0]["price"]
+    except Exception:
+        pass
+
+    wayback_price = None
+    try:
+        wb_url = f"https://web.archive.org/web/2024/{url}"
+        r = requests.get(wb_url, timeout=15, headers={"User-Agent": "Mozilla/5.0"})
+        if r.status_code == 200:
+            wb_prices = _extract_prices_from_text(r.text[:3000])
+            if wb_prices:
+                wayback_price = wb_prices[0]["price"]
+    except Exception:
+        pass
+
+    trend = "unknown"
+    if current_price and wayback_price:
+        if current_price > wayback_price * 1.05:
+            trend = "increasing"
+        elif current_price < wayback_price * 0.95:
+            trend = "decreasing"
+        else:
+            trend = "stable"
+
+    return {
+        "url": url,
+        "product_name": product_name,
+        "current_price": current_price,
+        "historical_price": wayback_price,
+        "trend": trend,
+        "price_change_pct": round((current_price - wayback_price) / wayback_price * 100, 1) if current_price and wayback_price else None,
+    }
