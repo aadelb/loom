@@ -817,6 +817,11 @@ with suppress(ImportError):
     from loom.tools.research import paper_library as paper_library_mod
     _optional_tools["paper_library"] = paper_library_mod
     record_optional_module_loaded("paper_library")
+
+with suppress(ImportError):
+    from loom.tools.research import paper_library_advanced as paper_library_advanced_mod
+    _optional_tools["paper_library_advanced"] = paper_library_advanced_mod
+    record_optional_module_loaded("paper_library_advanced")
     record_optional_module_loaded("hcs_escalation")
 
 
