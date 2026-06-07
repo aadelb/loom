@@ -47,6 +47,59 @@ def _paper_id(title: str) -> str:
     return hashlib.sha256(title.lower().strip().encode()).hexdigest()[:12]
 
 
+def _normalize_arxiv_id(arxiv_id: str | None) -> str:
+    if not arxiv_id:
+        return ""
+    return re.sub(r"v\d+$", "", str(arxiv_id).strip().lower())
+
+
+def _canonical_id(
+    *,
+    arxiv_id: str | None = None,
+    file_path: str | None = None,
+    title: str | None = None,
+) -> str:
+    """Stable identity for a paper (arxiv_id > file path > title)."""
+    norm_arxiv = _normalize_arxiv_id(arxiv_id)
+    if norm_arxiv:
+        return "arx_" + hashlib.sha256(norm_arxiv.encode()).hexdigest()[:9]
+    if file_path:
+        resolved = str(Path(file_path).expanduser().resolve())
+        return "f_" + hashlib.sha256(resolved.encode()).hexdigest()[:10]
+    return _paper_id(title or "untitled")
+
+
+def _resolve_existing_id(
+    index: dict[str, Any],
+    *,
+    arxiv_id: str | None = None,
+    file_path: str | None = None,
+    title: str | None = None,
+) -> str | None:
+    """Find an existing entry matching arxiv_id, file path, or title."""
+    papers = index.get("papers", {})
+
+    norm_arxiv = _normalize_arxiv_id(arxiv_id)
+    if norm_arxiv:
+        for pid, paper in papers.items():
+            if _normalize_arxiv_id(paper.get("arxiv_id")) == norm_arxiv:
+                return pid
+
+    if file_path:
+        resolved = str(Path(file_path).expanduser().resolve())
+        for pid, paper in papers.items():
+            paper_file = paper.get("file")
+            if paper_file and str(Path(paper_file).expanduser().resolve()) == resolved:
+                return pid
+
+    if title:
+        tid = _paper_id(title)
+        if tid in papers:
+            return tid
+
+    return None
+
+
 # ─── KNOWLEDGE GRAPH (citation/concept graph over papers) ──────────────
 
 @handle_tool_errors("research_paper_knowledge_graph")
@@ -398,7 +451,13 @@ async def research_paper_ocr(
     title_match = re.search(r"^#\s+(.+)$", md, re.MULTILINE)
     title = title_match.group(1).strip() if title_match else path.stem
 
-    pid = _paper_id(title)
+    # Merge into the existing entry (matched by file path) so OCR re-parsing
+    # never forks a second entry for the same PDF.
+    index = _load_index()
+    pid = _resolve_existing_id(
+        index, file_path=str(path), title=title
+    ) or _canonical_id(file_path=str(path), title=title)
+
     parsed_path = PAPERS_DIR / "parsed" / f"{pid}.json"
     parsed_path.parent.mkdir(parents=True, exist_ok=True)
     parsed_path.write_text(json.dumps({
@@ -408,14 +467,14 @@ async def research_paper_ocr(
         "file": str(path),
     }, indent=2))
 
-    index = _load_index()
-    index["papers"][pid] = {
-        **index["papers"].get(pid, {}),
+    entry = index["papers"].get(pid, {})
+    entry.update({
         "id": pid,
-        "title": title,
+        "title": title or entry.get("title", ""),
         "file": str(path),
         "marker_parsed_at": _utc_now(),
-    }
+    })
+    index["papers"][pid] = entry
     _save_index(index)
 
     result["paper_id"] = pid

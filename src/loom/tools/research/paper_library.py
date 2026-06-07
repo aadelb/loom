@@ -56,6 +56,69 @@ def _paper_id(title: str) -> str:
     return hashlib.sha256(title.lower().strip().encode()).hexdigest()[:12]
 
 
+def _normalize_arxiv_id(arxiv_id: str | None) -> str:
+    """Strip version suffix so 2604.01888v1 and 2604.01888v3 unify."""
+    if not arxiv_id:
+        return ""
+    return re.sub(r"v\d+$", "", str(arxiv_id).strip().lower())
+
+
+def _canonical_id(
+    *,
+    arxiv_id: str | None = None,
+    file_path: str | None = None,
+    title: str | None = None,
+) -> str:
+    """Stable identity for a paper, preferring arxiv_id > file path > title.
+
+    A paper keeps ONE id across download/parse/grobid/ocr because the most
+    stable available signal (arxiv_id, then the PDF path) wins over the
+    parser-specific extracted title.
+    """
+    norm_arxiv = _normalize_arxiv_id(arxiv_id)
+    if norm_arxiv:
+        return "arx_" + hashlib.sha256(norm_arxiv.encode()).hexdigest()[:9]
+    if file_path:
+        resolved = str(Path(file_path).expanduser().resolve())
+        return "f_" + hashlib.sha256(resolved.encode()).hexdigest()[:10]
+    return _paper_id(title or "untitled")
+
+
+def _resolve_existing_id(
+    index: dict[str, Any],
+    *,
+    arxiv_id: str | None = None,
+    file_path: str | None = None,
+    title: str | None = None,
+) -> str | None:
+    """Find an existing paper entry matching arxiv_id, file path, or title.
+
+    Lets a later stage (e.g. parse) attach to the entry an earlier stage
+    (e.g. download) created, instead of forking a second entry.
+    """
+    papers = index.get("papers", {})
+
+    norm_arxiv = _normalize_arxiv_id(arxiv_id)
+    if norm_arxiv:
+        for pid, paper in papers.items():
+            if _normalize_arxiv_id(paper.get("arxiv_id")) == norm_arxiv:
+                return pid
+
+    if file_path:
+        resolved = str(Path(file_path).expanduser().resolve())
+        for pid, paper in papers.items():
+            paper_file = paper.get("file")
+            if paper_file and str(Path(paper_file).expanduser().resolve()) == resolved:
+                return pid
+
+    if title:
+        tid = _paper_id(title)
+        if tid in papers:
+            return tid
+
+    return None
+
+
 def _utc_now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -165,22 +228,28 @@ async def research_paper_parse(
             result["error"] = f"Both parsers failed: docling={e}, pymupdf={e2}"
             return result
 
-    # Save parsed output
-    paper_id = _paper_id(result["title"] or path.stem)
+    # Resolve to an existing entry (e.g. created by download) by file path,
+    # falling back to a stable id so re-parsing never forks the entry.
+    index = _load_index()
+    paper_id = _resolve_existing_id(
+        index, file_path=str(path), title=result["title"]
+    ) or _canonical_id(file_path=str(path), title=result["title"])
+
     parsed_path = PAPERS_DIR / "parsed" / f"{paper_id}.json"
     parsed_path.write_text(json.dumps(result, indent=2, default=str))
 
-    # Update index
-    index = _load_index()
-    index["papers"][paper_id] = {
+    # Merge into any existing entry rather than overwriting it
+    entry = index["papers"].get(paper_id, {})
+    entry.update({
         "id": paper_id,
-        "title": result["title"],
-        "authors": result["authors"],
+        "title": result["title"] or entry.get("title", ""),
+        "authors": result["authors"] or entry.get("authors", []),
         "file": str(path),
         "parsed_at": _utc_now(),
         "sections_count": len(result.get("sections", [])),
         "references_count": len(result.get("references", [])),
-    }
+    })
+    index["papers"][paper_id] = entry
     _save_index(index)
 
     result["paper_id"] = paper_id
@@ -440,17 +509,22 @@ async def research_paper_download(
 
         save_path.write_bytes(resp.content)
 
-        # Update index
-        paper_id = _paper_id(title or arxiv_id or filename)
+        # Stable id (arxiv_id > file path) so a later parse merges in place
         index = _load_index()
-        index["papers"][paper_id] = {
+        paper_id = _resolve_existing_id(
+            index, arxiv_id=arxiv_id, file_path=str(save_path), title=title
+        ) or _canonical_id(arxiv_id=arxiv_id, file_path=str(save_path), title=title)
+
+        entry = index["papers"].get(paper_id, {})
+        entry.update({
             "id": paper_id,
-            "title": title or arxiv_id or filename,
+            "title": title or entry.get("title", ""),
             "file": str(save_path),
-            "arxiv_id": arxiv_id,
+            "arxiv_id": arxiv_id or entry.get("arxiv_id"),
             "downloaded_at": _utc_now(),
             "size_kb": len(resp.content) // 1024,
-        }
+        })
+        index["papers"][paper_id] = entry
         _save_index(index)
 
         return {
@@ -979,23 +1053,25 @@ async def research_paper_grobid(
             "grobid_url": grobid_url,
         }
 
-        # Update index
-        if title:
-            pid = _paper_id(title)
-            index = _load_index()
-            if pid not in index["papers"]:
-                index["papers"][pid] = {}
-            index["papers"][pid].update({
-                "id": pid,
-                "title": title,
-                "authors": authors,
-                "keywords": keywords,
-                "file": str(path),
-                "grobid_parsed_at": _utc_now(),
-            })
-            _save_index(index)
-            result["paper_id"] = pid
-            result["indexed"] = True
+        # Merge into the existing entry (matched by file path) rather than
+        # forking a new one keyed on GROBID's extracted title.
+        index = _load_index()
+        pid = _resolve_existing_id(
+            index, file_path=str(path), title=title or None
+        ) or _canonical_id(file_path=str(path), title=title or None)
+        entry = index["papers"].get(pid, {})
+        entry.update({
+            "id": pid,
+            "title": title or entry.get("title", ""),
+            "authors": authors or entry.get("authors", []),
+            "keywords": keywords or entry.get("keywords", []),
+            "file": str(path),
+            "grobid_parsed_at": _utc_now(),
+        })
+        index["papers"][pid] = entry
+        _save_index(index)
+        result["paper_id"] = pid
+        result["indexed"] = True
 
         return result
 
