@@ -126,7 +126,7 @@ async def research_meta_learn(
                     + "\n\n{prompt}"
                 )
 
-                name = f"meta_hybrid_{i}_{hashlib.md5(hybrid_template.encode()).hexdigest()[:8]}"
+                name = f"meta_hybrid_{i}_{hashlib.md5(hybrid_template.encode(), usedforsecurity=False).hexdigest()[:8]}"
                 novelty = 1.0 - (
                     len(set(hybrid_template.split()) & set(p1["template"].split()))
                     / max(len(set(hybrid_template.split())), 1)

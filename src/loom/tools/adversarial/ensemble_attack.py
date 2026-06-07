@@ -72,7 +72,7 @@ async def research_attack_portfolio(target_model: str = "auto", portfolio_size: 
             total_weight += weight
             portfolio.append({
                 "strategy": strategy_name, "weight": weight, "expected_asr": expected_asr,
-                "correlation_with_others": (int.from_bytes(hashlib.md5(strategy_name.encode()).digest()[:2], "big") % 100) / 100
+                "correlation_with_others": (int.from_bytes(hashlib.md5(strategy_name.encode(), usedforsecurity=False).digest()[:2], "big") % 100) / 100
             })
 
         if total_weight > 0:
