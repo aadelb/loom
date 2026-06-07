@@ -690,6 +690,11 @@ with suppress(ImportError):
     record_optional_module_loaded("knowledge_query")
 
 with suppress(ImportError):
+    from loom.tools.research import price_extractor as price_extractor_tools
+    _optional_tools["price_extractor"] = price_extractor_tools
+    record_optional_module_loaded("price_extractor")
+
+with suppress(ImportError):
     from loom.tools.adversarial import instrumental_subgoal_scorer as ist_scorer_tools
     _optional_tools["instrumental_subgoal_scorer"] = ist_scorer_tools
     record_optional_module_loaded("instrumental_subgoal_scorer")
