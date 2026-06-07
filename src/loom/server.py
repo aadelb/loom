@@ -700,6 +700,11 @@ with suppress(ImportError):
     record_optional_module_loaded("price_live")
 
 with suppress(ImportError):
+    from loom.tools.research import tool_rag as tool_rag_tools
+    _optional_tools["tool_rag"] = tool_rag_tools
+    record_optional_module_loaded("tool_rag")
+
+with suppress(ImportError):
     from loom.tools.adversarial import instrumental_subgoal_scorer as ist_scorer_tools
     _optional_tools["instrumental_subgoal_scorer"] = ist_scorer_tools
     record_optional_module_loaded("instrumental_subgoal_scorer")
