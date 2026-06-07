@@ -28,15 +28,92 @@ _COUNTRY_CONFIG = {
 }
 
 
+def _fetch_page_prices(url: str, currency: str) -> list[dict]:
+    """Fetch a URL and extract ALL prices from the actual page content."""
+    import requests
+    from price_parser import Price
+
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml",
+            "Accept-Language": "en-US,en;q=0.9,ar;q=0.8",
+        }
+        r = requests.get(url, headers=headers, timeout=12, allow_redirects=True)
+        if r.status_code != 200:
+            return []
+
+        html = r.text[:30000]
+        prices = []
+
+        # Strategy 1: extruct (Schema.org structured data)
+        try:
+            import extruct
+            data = extruct.extract(html, syntaxes=["json-ld", "microdata"])
+            for item in data.get("json-ld", []):
+                if isinstance(item, dict):
+                    offers = item.get("offers", item.get("Offers", {}))
+                    if isinstance(offers, list):
+                        offers = offers[0] if offers else {}
+                    if isinstance(offers, dict) and offers.get("price"):
+                        p_val = float(str(offers["price"]).replace(",", ""))
+                        p_cur = offers.get("priceCurrency", currency)
+                        if p_val > 10:
+                            prices.append({"amount": p_val, "currency": p_cur, "method": "schema_org"})
+        except Exception:
+            pass
+
+        # Strategy 2: price-parser on common patterns
+        candidates = re.findall(
+            r"[£$€₹]\s?[\d,]+\.?\d*|[\d,]+\.?\d*\s*(?:AED|GBP|USD|EUR|SAR|EGP|INR|KWD)",
+            html,
+        )
+        for c in candidates[:10]:
+            try:
+                p = Price.fromstring(c)
+                if p.amount and float(p.amount) > 50 and float(p.amount) < 100000:
+                    prices.append({
+                        "amount": float(p.amount),
+                        "currency": p.currency or currency,
+                        "method": "price_parser",
+                    })
+            except Exception:
+                pass
+
+        # Strategy 3: data-price attributes
+        data_prices = re.findall(r'data-price="([\d.]+)"', html)
+        for dp in data_prices[:3]:
+            try:
+                val = float(dp)
+                if val > 50:
+                    prices.append({"amount": val, "currency": currency, "method": "data_attr"})
+            except Exception:
+                pass
+
+        # Deduplicate by amount
+        seen = set()
+        unique = []
+        for p in prices:
+            key = f"{p['amount']:.2f}"
+            if key not in seen:
+                seen.add(key)
+                unique.append(p)
+
+        return unique[:5]
+
+    except Exception:
+        return []
+
+
 def _search_country(product: str, country: str) -> list[dict]:
-    """Search for product prices in a specific country."""
+    """Search for product prices in a specific country, then FETCH each page."""
     from ddgs import DDGS
 
     cfg = _COUNTRY_CONFIG.get(country, {"keywords": "buy", "currency": "USD", "symbol": "$"})
     query = f"{product} price {cfg['keywords']}"
 
     try:
-        results = DDGS().text(query, max_results=7)
+        results = DDGS().text(query, max_results=5)
     except Exception:
         return []
 
@@ -45,15 +122,16 @@ def _search_country(product: str, country: str) -> list[dict]:
         title = r.get("title", "")
         url = r.get("href", "")
         body = r.get("body", "")
-        all_text = title + " " + body
 
-        price_matches = re.findall(
+        # First try snippet prices
+        all_text = title + " " + body
+        snippet_prices = re.findall(
             r"[£$€₹]\s?[\d,]+\.?\d*|[\d,]+\.?\d*\s*(?:AED|GBP|USD|EUR|SAR|EGP|INR)",
             all_text,
         )
 
         parsed_prices = []
-        for pm in price_matches:
+        for pm in snippet_prices:
             try:
                 from price_parser import Price
                 p = Price.fromstring(pm)
@@ -62,19 +140,15 @@ def _search_country(product: str, country: str) -> list[dict]:
                         "amount": float(p.amount),
                         "currency": p.currency or cfg["currency"],
                         "raw": pm,
+                        "method": "snippet",
                     })
             except Exception:
-                clean = re.sub(r"[^0-9.]", "", pm.replace(",", ""))
-                try:
-                    val = float(clean)
-                    if val > 50:
-                        parsed_prices.append({
-                            "amount": val,
-                            "currency": cfg["currency"],
-                            "raw": pm,
-                        })
-                except ValueError:
-                    pass
+                pass
+
+        # If no snippet prices, FETCH THE ACTUAL PAGE
+        if not parsed_prices:
+            page_prices = _fetch_page_prices(url, cfg["currency"])
+            parsed_prices = page_prices
 
         sources.append({
             "store": title[:80],
