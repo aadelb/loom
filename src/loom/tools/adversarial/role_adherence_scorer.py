@@ -58,11 +58,14 @@ _HEDGING_AGAINST_ROLE: list[tuple[str, float]] = [
 ]
 
 _AUTHORITY_MARKERS: list[tuple[str, float]] = [
-    (r"\b(?:in my \d+ years|over \d+ years|decades of)\b", 1.0),
+    (r"\b(?:(?:in |with |over )?\d+ years (?:of )?experience)\b", 1.0),
+    (r"\b(?:decades of|over \d+ years|in my \d+ years)\b", 1.0),
     (r"\b(?:peer-reviewed|published|presented at|keynote)\b", 0.8),
-    (r"\b(?:CISO|CTO|CEO|director|manager|partner|fellow)\b", 0.5),
-    (r"\b(?:clearance|authorization|credentials|certification)\b", 0.6),
-    (r"\b(?:PhD|MD|JD|MBA|Professor|Dr\.)\b", 0.5),
+    (r"\b(?:CISO|CTO|CEO|director|manager|partner|fellow|consultant)\b", 0.5),
+    (r"\b(?:clearance|authorization|credentials|certification|certified)\b", 0.6),
+    (r"\b(?:PhD|MD|JD|MBA|Professor|Dr\.|senior|lead|principal|chief)\b", 0.5),
+    (r"\b(?:Fortune \d+|Big \d|Mandiant|CrowdStrike|Palo Alto|FireEye)\b", 0.8),
+    (r"\b(?:engagements?|assessments?|audits?|investigations?)\b", 0.4),
 ]
 
 
