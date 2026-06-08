@@ -829,6 +829,11 @@ with suppress(ImportError):
     _optional_tools["paper_library_rag"] = paper_library_rag_mod
     record_optional_module_loaded("paper_library_rag")
 
+with suppress(ImportError):
+    from loom.tools.adversarial import memory_segmentation as memory_segmentation_mod
+    _optional_tools["memory_segmentation"] = memory_segmentation_mod
+    record_optional_module_loaded("memory_segmentation")
+
 
 
 _start_time = time.time()
