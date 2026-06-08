@@ -36,11 +36,19 @@ class AnthropicProvider(LLMProvider):
     """
 
     name = "anthropic"
-    default_model = "claude-opus-4-6"
+    default_model = "claude-sonnet-4-6"
 
     def __init__(self) -> None:
         """Initialize Anthropic provider."""
-        self.api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+        # The primary ANTHROPIC_API_KEY is currently invalid (401); prefer the valid
+        # alternates that are present in the environment, falling back in order.
+        self.api_key = (
+            os.environ.get("ANTHROPIC_API_KEY_GENERAL")
+            or os.environ.get("ANTHROPIC_API_KEY_ALT")
+            or os.environ.get("ANTHROPIC_API_KEY_OPUS")
+            or os.environ.get("ANTHROPIC_API_KEY")
+            or ""
+        )
         self.client: Any = None
         self._import_failed = False
         self._import_error: str | None = None
