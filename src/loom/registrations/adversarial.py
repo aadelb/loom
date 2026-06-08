@@ -43,6 +43,13 @@ def register_adversarial_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip x_teaming: %s", e)
         record_failure("adversarial", "x_teaming", str(e))
     try:
+        from loom.tools.adversarial.ipi_proxy import research_ipi_proxy
+        mcp.tool()(wrap_tool(research_ipi_proxy))
+        record_success("adversarial", "research_ipi_proxy")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip ipi_proxy: %s", e)
+        record_failure("adversarial", "ipi_proxy", str(e))
+    try:
         from loom.tools.adversarial.adversarial_craft import research_craft_adversarial, research_adversarial_batch
         mcp.tool()(wrap_tool(research_craft_adversarial))
         record_success("adversarial", "research_craft_adversarial")

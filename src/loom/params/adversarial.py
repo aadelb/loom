@@ -29,6 +29,7 @@ __all__ = [
     "HITLEvaluateParams",
     "HITLQueueParams",
     "HITLSubmitParams",
+    "IpiProxyParams",
     "LifetimeOracleParams",
     "ModelEvidenceParams",
     "PotencyScoreParams",
@@ -851,6 +852,101 @@ class AdversaryPilotParams(BaseModel):
             if len(strategy) > 256:
                 raise ValueError("each strategy max 256 characters")
         return [s.strip() for s in v]
+
+
+class IpiProxyParams(BaseModel):
+    """Parameters for research_ipi_proxy tool."""
+
+    benign_task: str = Field(
+        default="Summarize the following document in 2 sentences.",
+        description="The user-facing task (e.g., 'Summarize this article')",
+        min_length=5,
+        max_length=1000,
+    )
+    injected_instruction: str = Field(
+        default="",
+        description="Attacker's goal to embed in content. If empty, use canary mode.",
+        max_length=2000,
+    )
+    carrier_content: str | None = Field(
+        default=None,
+        description="Untrusted document to poison. If None, use default innocuous article.",
+        max_length=10000,
+    )
+    target_model: str = Field(
+        default="auto",
+        description="Target LLM provider (auto→groq, or specific name)",
+        max_length=64,
+    )
+    canary_mode: bool = Field(
+        default=True,
+        description="If True, detect via canary token; if False, use HCS + refusal scoring",
+    )
+    vectors: list[str] | None = Field(
+        default=None,
+        description="List of vector names to test. If None, test all built-in vectors.",
+    )
+    darkness: int = Field(
+        default=0,
+        description="Abliteration level (0-10, >=7 uses dark_route for target)",
+        ge=0,
+        le=10,
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("benign_task")
+    @classmethod
+    def validate_benign_task(cls, v: str) -> str:
+        """Validate benign task."""
+        if not v.strip():
+            raise ValueError("benign_task cannot be empty or whitespace-only")
+        if len(v) > 1000:
+            raise ValueError("benign_task max length is 1000 characters")
+        return v.strip()
+
+    @field_validator("injected_instruction")
+    @classmethod
+    def validate_injected_instruction(cls, v: str) -> str:
+        """Validate injected instruction."""
+        if v and len(v) > 2000:
+            raise ValueError("injected_instruction max length is 2000 characters")
+        return v.strip() if v else ""
+
+    @field_validator("carrier_content")
+    @classmethod
+    def validate_carrier_content(cls, v: str | None) -> str | None:
+        """Validate carrier content."""
+        if v is not None and len(v) > 10000:
+            raise ValueError("carrier_content max length is 10000 characters")
+        return v.strip() if v else None
+
+    @field_validator("target_model")
+    @classmethod
+    def validate_target_model(cls, v: str) -> str:
+        """Validate model name."""
+        if not v.strip():
+            raise ValueError("target_model cannot be empty")
+        if len(v) > 64:
+            raise ValueError("target_model max length is 64 characters")
+        return v.strip()
+
+    @field_validator("vectors")
+    @classmethod
+    def validate_vectors(cls, v: list[str] | None) -> list[str] | None:
+        """Validate vector list."""
+        if v is None:
+            return None
+        if not isinstance(v, list):
+            raise ValueError("vectors must be a list")
+        if len(v) > 20:
+            raise ValueError("vectors max 20 items")
+        for vector in v:
+            if not isinstance(vector, str) or not vector.strip():
+                raise ValueError("each vector must be a non-empty string")
+            if len(vector) > 128:
+                raise ValueError("each vector name max 128 characters")
+        return [vec.strip() for vec in v]
 
 
 class XTeamingParams(BaseModel):

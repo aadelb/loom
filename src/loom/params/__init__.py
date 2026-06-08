@@ -141,6 +141,7 @@ from loom.params.adversarial import (
     HITLEvaluateParams,
     HITLQueueParams,
     HITLSubmitParams,
+    IpiProxyParams,
     LifetimeOracleParams,
     ModelEvidenceParams,
     PotencyScoreParams,
