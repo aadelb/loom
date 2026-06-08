@@ -187,6 +187,50 @@ def _embed_texts(texts: list[str]) -> list[list[float]]:
         return _embed_texts_ollama(texts)
 
 
+async def auto_upsert_gold(
+    text: str,
+    query: str,
+    hcs: float,
+    quality_scores: dict | None = None,
+    min_hcs: float = 8.5,
+) -> bool:
+    """Closed loop: upsert a high-scoring production response into HCS10 gold.
+
+    Gates on HCS >= min_hcs and (if provided) that the key quality dimensions
+    are not weak, so only genuinely strong responses grow the gold corpus.
+    Reuses _embed_texts + _qdrant_upsert (disk-safe — existing collection).
+    """
+    if not text or hcs < min_hcs:
+        return False
+    if quality_scores:
+        for dim in ("stealth", "executability", "coherence"):
+            v = quality_scores.get(dim)
+            if isinstance(v, (int, float)) and 0 < v < 6:
+                return False
+    try:
+        vectors = await asyncio.to_thread(_embed_texts, [text[:2000]])
+        if not vectors or not vectors[0]:
+            return False
+        point_id = int(hashlib.sha256(text.encode()).hexdigest()[:15], 16) % (2**63)
+        point = {
+            "id": point_id,
+            "vector": vectors[0],
+            "payload": {
+                "text": text[:4000],
+                "query": query[:500],
+                "hcs": hcs,
+                "source": "quality_autoloop",
+            },
+        }
+        ok = await _qdrant_upsert(HCS10_COLLECTION, [point])
+        if ok:
+            logger.info("hcs10_autoloop_upsert hcs=%.1f query=%s", hcs, query[:60])
+        return ok
+    except Exception as e:
+        logger.warning("hcs10_autoloop_failed: %s", str(e)[:120])
+        return False
+
+
 def _embed_texts_ollama(texts: list[str]) -> list[list[float]]:
     """Fallback: embed via Ollama nomic-embed-text (768-dim → truncate to 384)."""
     import requests
