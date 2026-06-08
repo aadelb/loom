@@ -196,6 +196,7 @@ async def research_full_spectrum(
     include_multi_strategy: bool = False,
     include_report: bool = True,
     include_recommendations: bool = True,
+    darkness: int = 0,
 ) -> dict:
     """Run full-spectrum red-team pipeline: analyze → reframe → query → score → report.
 
@@ -210,6 +211,10 @@ async def research_full_spectrum(
         include_multi_strategy: Run all strategies and compare
         include_report: Generate executive summary
         include_recommendations: Generate improvement recommendations
+        darkness: 0-10; when >= 7 the pipeline's generation runs on the local
+            ABLITERATED (uncensored) model via dark_route() with a size-tiered
+            token/timeout budget, instead of the safety-aligned cloud cascade that
+            would refuse or sanitize the dark content this tool exists to produce.
 
     Returns:
         Dict with status, analysis, prompts, response, scores, violations, report, recommendations
@@ -220,12 +225,25 @@ async def research_full_spectrum(
     try:
         from loom.tools.llm import _call_with_cascade
 
+        # Dark routing: darkness>=7 forces the local abliterated (uncensored) model
+        # with a size-tiered token/timeout budget; below that, the cloud cascade.
+        _dark_kwargs: dict = {}
+        if darkness >= 7:
+            from loom.providers.abliterated import dark_route
+            _dark_kwargs = dark_route(darkness)
+
         async def cascade_model(prompt: str = "") -> str:
             try:
-                response_obj = await _call_with_cascade(
-                    [{"role": "user", "content": prompt}],
-                    max_tokens=1500,
-                )
+                if _dark_kwargs:
+                    response_obj = await _call_with_cascade(
+                        [{"role": "user", "content": prompt}],
+                        **_dark_kwargs,
+                    )
+                else:
+                    response_obj = await _call_with_cascade(
+                        [{"role": "user", "content": prompt}],
+                        max_tokens=1500,
+                    )
                 return response_obj.text
             except Exception as e:
                 return f"Error calling LLM: {str(e)[:200]}"
