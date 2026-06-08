@@ -28,7 +28,7 @@ except ImportError:
 logger = logging.getLogger("loom.consensus")
 
 # Default models to query if none specified
-DEFAULT_MODELS = ["nvidia", "groq", "deepseek"]
+DEFAULT_MODELS = ["ollama", "nvidia", "groq", "deepseek"]  # ollama = local abliterated, complies on dark where cloud refuses
 
 
 @handle_tool_errors("research_multi_consensus")

@@ -92,7 +92,7 @@ async def research_cross_provider_vuln(
     if isinstance(query, list):
         query = " ".join(str(x) for x in query)
 
-    test_providers = providers or ["groq", "vllm"]
+    test_providers = providers or ["groq", "ollama"]  # ollama = local abliterated uncensored ground-truth (vllm not running)
     start = time.time()
 
     tasks = [_query_provider(query, p) for p in test_providers]

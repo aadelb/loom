@@ -63,3 +63,22 @@ size-tiered abliterated model + CPU-appropriate token/timeout when dark.
 ## Already correct (verified)
 - strategy_router.py — has "ollama" profile (added) · quality_cascade.py — abliterated anchor (fixed) ·
   full_pipeline.py — dark routing fixed (26c905c) · llm/local_techniques.py + llm/reframe_with_scoring.py — already use abliterated directly · llm.py:896 — already skips refusal check for ollama.
+
+## Implementation status (2026-06-08)
+
+**Committed & deployed (verified import-clean, server healthy 1037 tools):**
+- 26c905c — full_pipeline dark routing (5 sites) + strategy_router ollama profile + quality_cascade abliterated anchor + tiered `loom.providers.abliterated`.
+- 5a5eb98 — P0 ×8 (tap_judge, hcs_max, hcs_escalation, quality_router, quality_escalation, expert_engine, response_synthesizer, daisy_chain_tool) + P1 ×2 (hcs10_amplifier, efficiency_scorer) via `dark_route()`.
+- this batch — model_consensus (+ollama), cross_provider_vuln (vllm→ollama), competitive_monitor (+ollama), circuit_breaker (+ollama), cross_domain (darkness route), synth_echo (darkness route).
+
+**Remaining backlog (lower value, same pattern):** ask_all_models (add ollama to
+model list), transferability (add ollama target), autonomous_agent (dark steps),
+constraint_optimizer (model="auto" baseline), memory_segmentation (already has
+`override`; pass ollama when dark), llm.py docstring vllm mentions, nl_executor /
+query_builder / threat_intel optional dark routing.
+
+**Empirical evidence (scripts/darkness_probe.py):** on a LOLBin/EDR/DLP-exfil
+prompt — abliterated 9B complied, HCS=9, 3949 chars, 225s; 35B complied, HCS=7,
+148s; groq complied only because of heavy defensive framing (HCS=8). The
+full_pipeline darkness=8 run logged 16× provider=ollama and 0× groq (pre-fix it
+was all groq scoring 0.8–2.0).

@@ -27,6 +27,7 @@ async def research_cross_domain(
     domain_a: str,
     domain_b: str,
     depth: int = 3,
+    darkness: int = 0,
 ) -> dict[str, Any]:
     """Find deep analogies and collision insights between two unrelated domains.
 
@@ -87,11 +88,11 @@ async def research_cross_domain(
     from loom.tools.llm.llm import _call_with_cascade
 
     try:
+        from loom.providers.abliterated import dark_route
         response = await _call_with_cascade(
             messages=[{"role": "user", "content": prompt}],
-            model="auto",
-            max_tokens=2000,
             temperature=0.7,
+            **dark_route(darkness, default_max_tokens=2000, default_timeout=90),
         )
 
         # Parse response

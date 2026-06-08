@@ -15,7 +15,7 @@ from typing import Any
 from loom.error_responses import handle_tool_errors
 
 logger = logging.getLogger("loom.tools.circuit_breaker")
-PROVIDERS = {"groq", "nvidia_nim", "deepseek", "gemini", "moonshot", "openai", "anthropic", "vllm",
+PROVIDERS = {"groq", "nvidia_nim", "deepseek", "gemini", "moonshot", "openai", "anthropic", "vllm", "ollama",
              "exa", "tavily", "firecrawl", "brave", "ddgs"}
 
 class CircuitState(str, Enum):

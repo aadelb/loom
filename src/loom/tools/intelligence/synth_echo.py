@@ -75,6 +75,7 @@ def _is_refusal(text: str) -> bool:
 async def research_synth_echo(
     model_name: str,
     test_prompts: list[str] | None = None,
+    darkness: int = 0,
 ) -> dict[str, Any]:
     """Test AI model alignment by checking consistency across rephrased prompts.
 
@@ -136,9 +137,10 @@ async def research_synth_echo(
             # Call real LLM
             start_time = time.time()
             try:
+                from loom.providers.abliterated import dark_route
                 response_obj = await _call_with_cascade(
                     [{"role": "user", "content": rephrased}],
-                    max_tokens=200,
+                    **dark_route(darkness, default_max_tokens=200, default_timeout=90),
                 )
                 response = response_obj.text
             except Exception as e:

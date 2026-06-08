@@ -24,7 +24,7 @@ LOOM_CAPABILITIES = {
     "tools_count": 220,
     "strategies_count": 957,
     "models_supported": 8,
-    "llm_providers": ["groq", "nvidia_nim", "deepseek", "gemini", "moonshot", "openai", "anthropic", "vllm"],
+    "llm_providers": ["groq", "nvidia_nim", "deepseek", "gemini", "moonshot", "openai", "anthropic", "vllm", "ollama"],
 }
 
 COMPETITOR_PROFILES = {
