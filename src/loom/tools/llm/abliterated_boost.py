@@ -414,6 +414,10 @@ async def research_safety_ladder(
     """
     from loom.tools.llm.boost_logger import log_attempt, dataset_path
 
+    # Keep the internal deadline safely under the 1200s middleware budget for this
+    # tool, leaving headroom for the post-deadline scoring + return so the result is
+    # never truncated by the transport timeout.
+    max_wall_secs = max(120, min(max_wall_secs, 1080))
     deadline = time.monotonic() + max_wall_secs
     rungs = rungs or _DEFAULT_RUNGS
     trace: list[dict] = []

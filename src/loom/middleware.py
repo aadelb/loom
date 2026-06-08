@@ -368,7 +368,11 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                      "research_strategy_route", "research_quality_max",
                      "research_auto_pipeline", "research_orchestrate_smart"}
     tool_name = func.__name__
-    tool_timeout = 600 if tool_name in _HEAVY_TOOLS else 60
+    # The safety-gradient ladder runs several serialized CPU-only abliterated passes
+    # (seed → critique → merge → strengthen, ~225s each) so it needs a larger budget
+    # than the standard heavy tools; its own max_wall_secs deadline keeps it bounded.
+    _EXTRA_HEAVY = {"research_safety_ladder": 1200}
+    tool_timeout = _EXTRA_HEAVY.get(tool_name, 600 if tool_name in _HEAVY_TOOLS else 60)
     billing_enabled = os.getenv("LOOM_BILLING_ENABLED", "").lower() == "true"
     token_economy_enabled = os.getenv("LOOM_TOKEN_ECONOMY", "").lower() == "true"
 
