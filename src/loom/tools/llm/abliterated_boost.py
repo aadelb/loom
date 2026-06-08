@@ -539,6 +539,48 @@ def _should_run_pass(pass_name: str, deadline: float, min_margin_secs: int = 30)
     return remaining_ms >= (_PASS_COST_MS.get(pass_name, 120000) + min_margin_secs * 1000)
 
 
+def _next_action(best_hcs: float, target_hcs: float, remaining_secs: int, did_passes: dict) -> str:
+    """Adaptive planner for optional passes: stop early when target is met, else pick next action.
+
+    Returns one of: "stop", "editor", "merge", "strengthen", "escalate"
+
+    Policy:
+    - best_hcs >= target_hcs → "stop" (target met, exit early)
+    - remaining_secs < 30 → "stop" (insufficient time margin)
+    - best_hcs >= target_hcs - 0.5 and not did_passes.get("editor") → "editor" (close to target, try revision)
+    - best_hcs < target_hcs - 1.0 and remaining_secs >= 120 and not did_passes.get("escalate") → "escalate" (far from target, time available)
+    - not did_passes.get("merge") → "merge" (attempt best-of-N merge)
+    - remaining_secs >= 60 and not did_passes.get("strengthen") → "strengthen" (time available for dimension fix)
+    - else "stop" (default fallback)
+    """
+    # Target already met → stop
+    if best_hcs >= target_hcs:
+        return "stop"
+
+    # Time budget exhausted → stop
+    if remaining_secs < 30:
+        return "stop"
+
+    # Close to target + haven't edited yet → try revision pass
+    if best_hcs >= target_hcs - 0.5 and not did_passes.get("editor"):
+        return "editor"
+
+    # Far from target + sufficient time + haven't escalated → try harder approach
+    if best_hcs < target_hcs - 1.0 and remaining_secs >= 120 and not did_passes.get("escalate"):
+        return "escalate"
+
+    # Haven't tried merge → try it
+    if not did_passes.get("merge"):
+        return "merge"
+
+    # Haven't tried strengthen + time available → try it
+    if remaining_secs >= 60 and not did_passes.get("strengthen"):
+        return "strengthen"
+
+    # Default: stop
+    return "stop"
+
+
 async def _strengthen(query: str, text: str, instruction: str, darkness: int) -> tuple[str, int]:
     """Abliterated rewrite that strengthens ONE weak dimension, keeping everything else."""
     from loom.tools.llm.llm import _call_with_cascade
@@ -744,58 +786,66 @@ async def research_safety_ladder(
         if level == rungs[-1]["level"] and best["rung"] == level and best["hcs"] >= target_hcs:
             break
 
-    # 3b. Abliterated-as-editor: the uncensored model critiques the best flagship
-    # draft, then we push the same flagship to REVISE addressing the gaps — a
-    # targeted quality lift driven by a critic that won't soften its demands.
-    if best["rung"] != "L0" and best["response"] and _should_run_pass("revise", deadline):
-        critique = await _abliterated_critique(query, best["response"], darkness)
-        if critique and len(critique) > 40 and time.monotonic() < deadline:
-            rev_out, rev_ms = await _revise(best["provider"], query, best["response"], critique)
-            rev_ref = await _refused(rev_out)
-            rev_hcs = 0.0 if (rev_ref or not rev_out) else (await _score(rev_out, query))[0]
-            rrung = best["rung"] + "+edit"
-            trace.append({"rung": rrung, "provider": best["provider"], "hcs": rev_hcs,
-                          "refused": rev_ref, "ms": rev_ms})
-            _log(rrung, best["provider"], best["provider"], rev_out, rev_hcs, rev_ref,
-                 "success" if (rev_out and not rev_ref) else "fail", rev_ms, critique)
-            if not rev_ref and rev_out and rev_hcs >= best["hcs"]:
-                best = {"rung": rrung, "provider": best["provider"],
-                        "model": best["provider"], "response": rev_out, "hcs": rev_hcs}
+    # Quality-aware early exit: skip all optional passes if target is already met.
+    # The adaptive planner _next_action is available for future iterations/refinements.
+    did_passes: dict = {}
 
-    # 3c. Best-of-N merge: fuse the raw L0 detail with the polished flagship best via
-    # the abliterated merger (keeps every dark specific + the flagship structure).
-    if (best["rung"] != "L0" and seed and len(seed) > 200 and best["response"]
-            and _should_run_pass("merge", deadline)):
-        merged, m_ms = await _merge(query, seed, best["response"], darkness)
-        if merged and len(merged) > 200:
-            m_ref = await _refused(merged)
-            m_hcs = 0.0 if m_ref else (await _score(merged, query))[0]
-            trace.append({"rung": "merge", "provider": "ollama", "hcs": m_hcs,
-                          "refused": m_ref, "ms": m_ms})
-            _log("merge", "ollama", l0_model, merged, m_hcs, m_ref,
-                 "success" if (merged and not m_ref) else "fail", m_ms, best["response"])
-            if not m_ref and m_hcs >= best["hcs"]:
-                best = {"rung": "merge", "provider": f"{best['provider']}+L0",
-                        "model": l0_model, "response": merged, "hcs": m_hcs}
+    if best["hcs"] < target_hcs:
+        # 3b. Abliterated-as-editor: the uncensored model critiques the best flagship
+        # draft, then we push the same flagship to REVISE addressing the gaps — a
+        # targeted quality lift driven by a critic that won't soften its demands.
+        if best["rung"] != "L0" and best["response"] and _should_run_pass("revise", deadline):
+            critique = await _abliterated_critique(query, best["response"], darkness)
+            if critique and len(critique) > 40 and time.monotonic() < deadline:
+                rev_out, rev_ms = await _revise(best["provider"], query, best["response"], critique)
+                rev_ref = await _refused(rev_out)
+                rev_hcs = 0.0 if (rev_ref or not rev_out) else (await _score(rev_out, query))[0]
+                rrung = best["rung"] + "+edit"
+                trace.append({"rung": rrung, "provider": best["provider"], "hcs": rev_hcs,
+                              "refused": rev_ref, "ms": rev_ms})
+                _log(rrung, best["provider"], best["provider"], rev_out, rev_hcs, rev_ref,
+                     "success" if (rev_out and not rev_ref) else "fail", rev_ms, critique)
+                if not rev_ref and rev_out and rev_hcs >= best["hcs"]:
+                    best = {"rung": rrung, "provider": best["provider"],
+                            "model": best["provider"], "response": rev_out, "hcs": rev_hcs}
+                did_passes["editor"] = True
 
-    # 3d. Dimension-targeted re-seed: find the weakest scored dimension of the best
-    # answer and have the abliterated model rewrite to strengthen JUST that one.
-    if best["response"] and _should_run_pass("strengthen", deadline):
-        _bh, bdims = await _score(best["response"], query)
-        weak = _weakest_dim(bdims)
-        if weak:
-            dname, instruction = weak
-            stronger, s_ms = await _strengthen(query, best["response"], instruction, darkness)
-            if stronger and len(stronger) > 200:
-                s_ref = await _refused(stronger)
-                s_hcs = 0.0 if s_ref else (await _score(stronger, query))[0]
-                trace.append({"rung": f"dim:{dname}", "provider": "ollama",
-                              "hcs": s_hcs, "refused": s_ref, "ms": s_ms})
-                _log(f"dim:{dname}", "ollama", l0_model, stronger, s_hcs, s_ref,
-                     "success" if (stronger and not s_ref) else "fail", s_ms, instruction)
-                if not s_ref and s_hcs >= best["hcs"]:
-                    best = {"rung": f"dim:{dname}", "provider": best["provider"],
-                            "model": l0_model, "response": stronger, "hcs": s_hcs}
+        # 3c. Best-of-N merge: fuse the raw L0 detail with the polished flagship best via
+        # the abliterated merger (keeps every dark specific + the flagship structure).
+        if (best["rung"] != "L0" and seed and len(seed) > 200 and best["response"]
+                and _should_run_pass("merge", deadline)):
+            merged, m_ms = await _merge(query, seed, best["response"], darkness)
+            if merged and len(merged) > 200:
+                m_ref = await _refused(merged)
+                m_hcs = 0.0 if m_ref else (await _score(merged, query))[0]
+                trace.append({"rung": "merge", "provider": "ollama", "hcs": m_hcs,
+                              "refused": m_ref, "ms": m_ms})
+                _log("merge", "ollama", l0_model, merged, m_hcs, m_ref,
+                     "success" if (merged and not m_ref) else "fail", m_ms, best["response"])
+                if not m_ref and m_hcs >= best["hcs"]:
+                    best = {"rung": "merge", "provider": f"{best['provider']}+L0",
+                            "model": l0_model, "response": merged, "hcs": m_hcs}
+                did_passes["merge"] = True
+
+        # 3d. Dimension-targeted re-seed: find the weakest scored dimension of the best
+        # answer and have the abliterated model rewrite to strengthen JUST that one.
+        if best["response"] and _should_run_pass("strengthen", deadline):
+            _bh, bdims = await _score(best["response"], query)
+            weak = _weakest_dim(bdims)
+            if weak:
+                dname, instruction = weak
+                stronger, s_ms = await _strengthen(query, best["response"], instruction, darkness)
+                if stronger and len(stronger) > 200:
+                    s_ref = await _refused(stronger)
+                    s_hcs = 0.0 if s_ref else (await _score(stronger, query))[0]
+                    trace.append({"rung": f"dim:{dname}", "provider": "ollama",
+                                  "hcs": s_hcs, "refused": s_ref, "ms": s_ms})
+                    _log(f"dim:{dname}", "ollama", l0_model, stronger, s_hcs, s_ref,
+                         "success" if (stronger and not s_ref) else "fail", s_ms, instruction)
+                    if not s_ref and s_hcs >= best["hcs"]:
+                        best = {"rung": f"dim:{dname}", "provider": best["provider"],
+                                "model": l0_model, "response": stronger, "hcs": s_hcs}
+                    did_passes["strengthen"] = True
 
     # Closed loop: a strong flagship/ladder result grows the HCS10 gold corpus, so
     # future L0 seeds (via _few_shot) start better. Disk-safe (existing collection).
