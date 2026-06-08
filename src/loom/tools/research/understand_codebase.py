@@ -195,7 +195,7 @@ Return valid JSON with exactly this structure (no markdown, no extra text):
 
 Be concise. Extract 3-10 nodes and 2-5 edges per file."""
 
-        result = await _call_with_cascade(extraction_prompt)
+        result = await _call_with_cascade([{"role": "user", "content": extraction_prompt}])
         text_result = result.text if hasattr(result, "text") else str(result)
 
         # Try to extract JSON from response
@@ -545,7 +545,7 @@ Question: {question}
 
 Provide a concise, specific answer based on the graph."""
 
-        result = await _call_with_cascade(ask_prompt)
+        result = await _call_with_cascade([{"role": "user", "content": ask_prompt}])
         answer = result.text if hasattr(result, "text") else str(result)
 
         return {
@@ -597,7 +597,7 @@ async def _action_explain(graph_db: str, focus: str) -> dict[str, Any]:
 
 Explain its role, how it connects to other components, and its architectural importance."""
 
-        result = await _call_with_cascade(explain_prompt)
+        result = await _call_with_cascade([{"role": "user", "content": explain_prompt}])
         explanation = result.text if hasattr(result, "text") else str(result)
 
         return {
@@ -642,7 +642,7 @@ Cover:
 4. Architectural patterns
 Keep it under 500 words."""
 
-        result = await _call_with_cascade(onboard_prompt)
+        result = await _call_with_cascade([{"role": "user", "content": onboard_prompt}])
         onboarding = result.text if hasattr(result, "text") else str(result)
 
         return {
@@ -697,7 +697,7 @@ Current question: {question}
 
 Provide a concise, specific answer based on the graph. If this is a follow-up to prior discussion, maintain continuity."""
 
-        result = await _call_with_cascade(chat_prompt)
+        result = await _call_with_cascade([{"role": "user", "content": chat_prompt}])
         answer = result.text if hasattr(result, "text") else str(result)
 
         # Append new turn to history
@@ -817,7 +817,7 @@ Changed {len(changed_nodes)} nodes
 
 What changed architecturally? Keep it under 200 words."""
 
-            result = await _call_with_cascade(summary_prompt)
+            result = await _call_with_cascade([{"role": "user", "content": summary_prompt}])
             summary = result.text if hasattr(result, "text") else str(result)
 
             return {
@@ -888,7 +888,7 @@ Extract:
 
 Return as structured text."""
 
-        result = await _call_with_cascade(domain_prompt)
+        result = await _call_with_cascade([{"role": "user", "content": domain_prompt}])
         analysis = result.text if hasattr(result, "text") else str(result)
 
         return {
@@ -1007,7 +1007,7 @@ Return valid JSON with exactly this structure (no markdown, no extra text):
 
 Extract 2-5 nodes and 1-3 edges."""
 
-            result = await _call_with_cascade(extraction_prompt)
+            result = await _call_with_cascade([{"role": "user", "content": extraction_prompt}])
             text_result = result.text if hasattr(result, "text") else str(result)
 
             # Parse JSON
