@@ -42,6 +42,9 @@ __all__ = [
     "RefusalDetectorParams",
     "RegistryGraveyardParams",
     "ScraperEngineFetchParams",
+    "ScraplingFetchParams",
+    "ScraplingFindSimilarParams",
+    "ScraplingAdaptiveParams",
     "SearchDiscrepancyParams",
     "SearchParams",
     "SpiderParams",
@@ -1063,6 +1066,159 @@ class ZenFetchParams(BaseModel):
 
 
 
+
+
+class ScraplingFetchParams(BaseModel):
+    """Parameters for research_scrape tool (Scrapling fetch + extract)."""
+
+    url: str = Field(..., description="Target URL to fetch")
+    selector: str | None = Field(
+        default=None,
+        description="CSS selector for element extraction"
+    )
+    fetcher: Literal["auto", "basic", "stealthy", "dynamic", "async"] = Field(
+        default="stealthy",
+        description="Fetcher type: auto (escalate on failure), basic, stealthy, dynamic, async"
+    )
+    extract: Literal["text", "html", "attribute", "all"] = Field(
+        default="text",
+        description="Extraction mode: text, html, attribute, or all"
+    )
+    attribute: str | None = Field(
+        default=None,
+        description="Attribute name to extract (when extract='attribute')"
+    )
+    regex: str | None = Field(
+        default=None,
+        description="Optional regex to filter extracted text"
+    )
+    wait_for: str | None = Field(
+        default=None,
+        description="CSS selector to wait for (dynamic mode only)"
+    )
+    timeout: int = Field(
+        default=30,
+        ge=1,
+        le=120,
+        description="Request timeout in seconds (1-120)"
+    )
+    headless: bool = Field(
+        default=True,
+        description="Headless browser mode (dynamic only)"
+    )
+    max_results: int = Field(
+        default=100,
+        ge=1,
+        le=1000,
+        description="Max results to return (1-1000)"
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def validate_url_field(cls, v: str) -> str:
+        return validate_url(v)
+
+
+class ScraplingFindSimilarParams(BaseModel):
+    """Parameters for research_scrape_similar tool (find structurally similar elements)."""
+
+    url: str = Field(..., description="Target URL to fetch")
+    example_selector: str = Field(
+        ...,
+        description="CSS selector matching example element to find similar to"
+    )
+    fetcher: Literal["auto", "basic", "stealthy", "dynamic", "async"] = Field(
+        default="stealthy",
+        description="Fetcher type: auto, basic, stealthy, dynamic, async"
+    )
+    fields: dict[str, str] | None = Field(
+        default=None,
+        description="Optional dict mapping field name → CSS sub-selector for extraction"
+    )
+    similarity_threshold: float = Field(
+        default=0.2,
+        ge=0.0,
+        le=1.0,
+        description="Similarity threshold for matching (0.0-1.0)"
+    )
+    match_text: bool = Field(
+        default=False,
+        description="Also match on text content"
+    )
+    timeout: int = Field(
+        default=30,
+        ge=1,
+        le=120,
+        description="Request timeout in seconds"
+    )
+    max_results: int = Field(
+        default=100,
+        ge=1,
+        le=1000,
+        description="Max results to return"
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def validate_url_field(cls, v: str) -> str:
+        return validate_url(v)
+
+    @field_validator("example_selector")
+    @classmethod
+    def validate_selector(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("example_selector cannot be empty")
+        return v
+
+
+class ScraplingAdaptiveParams(BaseModel):
+    """Parameters for research_scrape_adaptive tool (adaptive element relocation)."""
+
+    url: str = Field(..., description="Target URL to fetch")
+    selector: str = Field(
+        ...,
+        description="CSS selector to find element"
+    )
+    fetcher: Literal["auto", "basic", "stealthy", "dynamic", "async"] = Field(
+        default="stealthy",
+        description="Fetcher type: auto, basic, stealthy, dynamic, async"
+    )
+    auto_match: bool = Field(
+        default=True,
+        description="Enable automatic selector relocation on HTML changes"
+    )
+    storage_id: str | None = Field(
+        default=None,
+        description="Persistent storage key for adaptive data across runs"
+    )
+    timeout: int = Field(
+        default=30,
+        ge=1,
+        le=120,
+        description="Request timeout in seconds"
+    )
+    extract: Literal["text", "html", "attribute", "all"] = Field(
+        default="text",
+        description="Extraction mode: text, html, attribute, or all"
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def validate_url_field(cls, v: str) -> str:
+        return validate_url(v)
+
+    @field_validator("selector")
+    @classmethod
+    def validate_selector(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("selector cannot be empty")
+        return v
 
 
 class AnalyticsDashboardParams(BaseModel):

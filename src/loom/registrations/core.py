@@ -199,3 +199,20 @@ def register_core_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip find_similar_exa: %s", e)
         record_failure("core", "find_similar_exa", str(e))
+
+    # Scrapling advanced tools
+    try:
+        from loom.tools.core.scrapling_tools import (
+            research_scrape,
+            research_scrape_similar,
+            research_scrape_adaptive,
+        )
+        mcp.tool()(wrap_tool(research_scrape))
+        record_success("core", "research_scrape")
+        mcp.tool()(wrap_tool(research_scrape_similar))
+        record_success("core", "research_scrape_similar")
+        mcp.tool()(wrap_tool(research_scrape_adaptive))
+        record_success("core", "research_scrape_adaptive")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip scrapling_tools: %s", e)
+        record_failure("core", "scrapling_tools", str(e))
