@@ -371,6 +371,8 @@ async def research_deep(
     allow_escalation: bool = True,
     provider_tier: str = "auto",
     max_urls: int = 10,
+    recency_pulse: bool = False,
+    recency_days: int = 30,
 ) -> dict[str, Any]:
     """Full-pipeline deep research with dynamic provider selection.
 
@@ -836,6 +838,20 @@ async def research_deep(
                             }
                             for p in top_pages[:10]
                         ]
+                        # Recency pulse: add engagement-ranked real-world signal
+                        # (HN points, Polymarket money/odds, GitHub stars) as a source.
+                        if recency_pulse:
+                            try:
+                                from loom.tools.research.last30days import last30days_evidence
+                                pulse = await last30days_evidence(query, days=recency_days, depth="quick")
+                                if pulse:
+                                    sources.append({
+                                        "title": f"Recent engagement-ranked signal (last {recency_days} days)",
+                                        "text": pulse,
+                                        "url": "https://github.com/mvanhorn/last30days-skill",
+                                    })
+                            except Exception as exc:
+                                logger.debug("recency_pulse_skip: %s", exc)
                         answer_result = await research_llm_answer(
                             question=query, sources=sources, style="cited"
                         )

@@ -259,6 +259,8 @@ async def research_full_pipeline(
     max_escalation_attempts: int = 5,
     output_format: str = "report",
     max_cost_usd: float = 10.0,
+    recency_pulse: bool = True,
+    recency_days: int = 30,
 ) -> dict[str, Any]:
     """Execute complete research pipeline end-to-end.
 
@@ -901,6 +903,17 @@ async def research_full_pipeline(
 
         logger.info("stage2_5_dark_web_enrichment_complete enriched=%d", len(dark_web_enrichments))
 
+    # ── Stage 2.7: Recency pulse (engagement-ranked real-world signal) ──
+    recency_evidence = ""
+    if recency_pulse:
+        try:
+            from loom.tools.research.last30days import last30days_evidence
+            recency_evidence = await last30days_evidence(query, days=recency_days, depth="quick")
+            if recency_evidence:
+                logger.info("recency_pulse_complete chars=%d", len(recency_evidence))
+        except Exception as e:
+            logger.warning("recency_pulse_failed error=%s", str(e)[:100])
+
     # ── Stage 3: Synthesis ──
     synthesis_prompt = f"""Synthesize the following research answers into a cohesive summary:
 
@@ -910,6 +923,15 @@ Answers:
 """
     for idx, answer in answers.items():
         synthesis_prompt += f"\n[Answer {idx}]: {answer}\n"
+
+    if recency_evidence:
+        synthesis_prompt += (
+            "\n\nRecent real-world signal (last "
+            f"{recency_days} days, ranked by what people actually engage with — "
+            "HN points, Polymarket money/odds, GitHub stars):\n"
+            f"{recency_evidence}\n"
+            "\nWeave the most relevant recent signal into the summary and cite it.\n"
+        )
 
     synthesis_prompt += "\nProvide a unified summary integrating all answers."
 
@@ -1059,6 +1081,7 @@ Answers:
         "quality_31_scores": quality_31_scores,
         "escalation_log": escalation_log,
         "synthesis": synthesis,
+        "recency_pulse_evidence": recency_evidence,
         "estimated_cost_usd": total_cost,
         "metadata": {
             "total_questions": len(sub_questions),

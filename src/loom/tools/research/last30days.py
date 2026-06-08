@@ -222,6 +222,31 @@ async def _web(topic: str, limit: int) -> list[dict]:
     return out
 
 
+async def last30days_evidence(topic: str, days: int = 30, depth: str = "quick") -> str:
+    """Return a compact engagement-ranked grounding block (no LLM synthesis).
+
+    Reusable by research pipelines to inject recent real-world signal (HN
+    points, Polymarket money/odds, GitHub stars, web) as RAG context. Returns
+    an empty string on total failure so callers can no-op safely.
+    """
+    try:
+        res = await research_last30days(
+            topic=topic, days=days, depth=depth, synthesize=False,
+        )
+        by_source = res.get("by_source", {}) if isinstance(res, dict) else {}
+        lines: list[str] = []
+        for src, items in by_source.items():
+            if not items:
+                continue
+            lines.append(f"[{src.upper()} — last {days}d, engagement-ranked]")
+            for it in items[:4]:
+                lines.append(f"- {it['title']} ({it['signal']}) {it['url']}")
+        return "\n".join(lines)[:4000]
+    except Exception as e:
+        logger.debug("last30days_evidence_fail: %s", e)
+        return ""
+
+
 # ─── MAIN TOOL ────────────────────────────────────────────────────────
 
 @handle_tool_errors("research_last30days")
