@@ -429,6 +429,25 @@ def _weakest_dim(dims: dict) -> tuple[str, str] | None:
     return name, _DIM_FIX[name]
 
 
+# Conservative wall-clock costs (ms) of the optional quality passes on the CPU box.
+_PASS_COST_MS: dict[str, int] = {"baseline_cold": 60000, "revise": 120000,
+                                 "merge": 120000, "strengthen": 120000}
+
+
+def _should_run_pass(pass_name: str, deadline: float, min_margin_secs: int = 30) -> bool:
+    """True only if the optional pass can finish before the wall-clock deadline.
+
+    The full ladder chain is ~15 min on the CPU-only box; unconditionally running
+    every pass overruns max_wall_secs and returns an empty result. Gate each pass
+    on "remaining time >= its estimated cost + margin" so the function always
+    reaches its return with the best result achieved so far.
+    """
+    if time.monotonic() >= deadline:
+        return False
+    remaining_ms = (deadline - time.monotonic()) * 1000
+    return remaining_ms >= (_PASS_COST_MS.get(pass_name, 120000) + min_margin_secs * 1000)
+
+
 async def _strengthen(query: str, text: str, instruction: str, darkness: int) -> tuple[str, int]:
     """Abliterated rewrite that strengthens ONE weak dimension, keeping everything else."""
     from loom.tools.llm.llm import _call_with_cascade
@@ -622,7 +641,7 @@ async def research_safety_ladder(
     # 3b. Abliterated-as-editor: the uncensored model critiques the best flagship
     # draft, then we push the same flagship to REVISE addressing the gaps — a
     # targeted quality lift driven by a critic that won't soften its demands.
-    if best["rung"] != "L0" and best["response"] and time.monotonic() < deadline:
+    if best["rung"] != "L0" and best["response"] and _should_run_pass("revise", deadline):
         critique = await _abliterated_critique(query, best["response"], darkness)
         if critique and len(critique) > 40 and time.monotonic() < deadline:
             rev_out, rev_ms = await _revise(best["provider"], query, best["response"], critique)
@@ -640,7 +659,7 @@ async def research_safety_ladder(
     # 3c. Best-of-N merge: fuse the raw L0 detail with the polished flagship best via
     # the abliterated merger (keeps every dark specific + the flagship structure).
     if (best["rung"] != "L0" and seed and len(seed) > 200 and best["response"]
-            and time.monotonic() < deadline):
+            and _should_run_pass("merge", deadline)):
         merged, m_ms = await _merge(query, seed, best["response"], darkness)
         if merged and len(merged) > 200:
             m_ref = await _refused(merged)
@@ -655,7 +674,7 @@ async def research_safety_ladder(
 
     # 3d. Dimension-targeted re-seed: find the weakest scored dimension of the best
     # answer and have the abliterated model rewrite to strengthen JUST that one.
-    if best["response"] and time.monotonic() < deadline:
+    if best["response"] and _should_run_pass("strengthen", deadline):
         _bh, bdims = await _score(best["response"], query)
         weak = _weakest_dim(bdims)
         if weak:

@@ -29,6 +29,13 @@ def register_llm_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip abliterated_boost: %s", e)
         record_failure("llm", "abliterated_boost", str(e))
     try:
+        from loom.tools.llm.abliterated_expand import research_abliterated_expand
+        mcp.tool()(wrap_tool(research_abliterated_expand))
+        record_success("llm", "research_abliterated_expand")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip abliterated_expand: %s", e)
+        record_failure("llm", "abliterated_expand", str(e))
+    try:
         from loom.tools.llm.multi_llm import research_ask_all_llms
         mcp.tool()(wrap_tool(research_ask_all_llms))
         record_success("llm", "research_ask_all_llms")

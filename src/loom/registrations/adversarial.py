@@ -15,6 +15,20 @@ def register_adversarial_tools(mcp: "FastMCP", wrap_tool) -> None:
     from loom.registrations.tracking import record_success, record_failure
 
     try:
+        from loom.tools.adversarial.abliterated_augment import research_abliterated_augment
+        mcp.tool()(wrap_tool(research_abliterated_augment))
+        record_success("adversarial", "research_abliterated_augment")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip abliterated_augment: %s", e)
+        record_failure("adversarial", "abliterated_augment", str(e))
+    try:
+        from loom.tools.adversarial.uncensored_judge import research_uncensored_judge
+        mcp.tool()(wrap_tool(research_uncensored_judge))
+        record_success("adversarial", "research_uncensored_judge")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip uncensored_judge: %s", e)
+        record_failure("adversarial", "uncensored_judge", str(e))
+    try:
         from loom.tools.adversarial.adversarial_craft import research_craft_adversarial, research_adversarial_batch
         mcp.tool()(wrap_tool(research_craft_adversarial))
         record_success("adversarial", "research_craft_adversarial")
