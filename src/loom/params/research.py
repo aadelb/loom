@@ -4223,11 +4223,11 @@ class ResearchUnderstandCodebaseParams(BaseModel):
     )
     action: str = Field(
         default="graph",
-        description="Action: 'graph' (build graph), 'ask' (query), 'explain' (analyze), 'onboard' (guide)",
+        description="Action: 'graph' (build), 'ask' (query), 'explain' (analyze), 'onboard' (guide), 'chat' (conversation), 'diff' (compare refs), 'domain' (extract), 'knowledge' (ingest docs), 'dashboard' (visualize)",
     )
     question: str = Field(
         default="",
-        description="Question for action='ask' (e.g., 'How do imports flow?')",
+        description="Question for action='ask' or 'chat' (e.g., 'How do imports flow?')",
         max_length=500,
     )
     focus: str = Field(
@@ -4249,6 +4249,25 @@ class ResearchUnderstandCodebaseParams(BaseModel):
         default="auto",
         description="LLM model to use ('auto' for cascade selection)",
     )
+    history: list[dict] | None = Field(
+        default=None,
+        description="Prior conversation turns for action='chat' - list of {role, content}",
+    )
+    ref_a: str = Field(
+        default="",
+        description="First git ref (commit/branch) for action='diff'",
+        max_length=256,
+    )
+    ref_b: str = Field(
+        default="",
+        description="Second git ref (commit/branch) for action='diff'",
+        max_length=256,
+    )
+    doc_content: str = Field(
+        default="",
+        description="Documentation content to ingest for action='knowledge'",
+        max_length=100000,
+    )
 
     model_config = {"extra": "forbid", "strict": True}
 
@@ -4267,8 +4286,9 @@ class ResearchUnderstandCodebaseParams(BaseModel):
         if not isinstance(v, str):
             v = "graph"
         v = v.lower().strip()
-        if v not in ("graph", "ask", "explain", "onboard"):
-            raise ValueError("action must be one of: graph, ask, explain, onboard")
+        allowed = ("graph", "ask", "explain", "onboard", "chat", "diff", "domain", "knowledge", "dashboard")
+        if v not in allowed:
+            raise ValueError(f"action must be one of: {', '.join(allowed)}")
         return v
 
     @field_validator("include_globs", mode="before")

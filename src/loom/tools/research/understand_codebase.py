@@ -13,12 +13,14 @@ Actions:
 from __future__ import annotations
 
 import asyncio
+import base64
 import hashlib
 import json
 import logging
 import re
 import shutil
 import tempfile
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Literal
 from urllib.parse import quote
@@ -379,6 +381,10 @@ async def research_understand_codebase(
     max_files: int = 60,
     include_globs: list[str] | None = None,
     model: str = "auto",
+    history: list[dict] | None = None,
+    ref_a: str = "",
+    ref_b: str = "",
+    doc_content: str = "",
 ) -> dict[str, Any]:
     """Turn any codebase into an interactive knowledge graph.
 
@@ -387,12 +393,16 @@ async def research_understand_codebase(
 
     Args:
         target: Local path, GitHub repo (owner/name), or git URL
-        action: "graph" | "ask" | "explain" | "onboard"
-        question: Question to ask the graph (for action="ask")
+        action: "graph" | "ask" | "explain" | "onboard" | "chat" | "diff" | "domain" | "knowledge" | "dashboard"
+        question: Question to ask the graph (for action="ask" or "chat")
         focus: File/function path to explain (for action="explain")
         max_files: Max files to analyze (1-500, default 60)
         include_globs: File patterns (default: code + doc extensions)
         model: LLM model to use ("auto" for cascade)
+        history: Prior conversation turns (for action="chat") - list of {role, content}
+        ref_a: First git ref for comparison (for action="diff")
+        ref_b: Second git ref for comparison (for action="diff")
+        doc_content: Documentation/knowledge content to ingest (for action="knowledge")
 
     Returns:
         Dict with action-specific structure:
@@ -400,6 +410,11 @@ async def research_understand_codebase(
         - ask: {question, answer, cited_nodes}
         - explain: {focus, explanation, related}
         - onboard: {onboarding, key_modules, entry_points}
+        - chat: {answer, cited_nodes, history}
+        - diff: {ref_a, ref_b, added_nodes, removed_nodes, changed_nodes, summary}
+        - domain: {domain_entities, bounded_contexts, flows, summary}
+        - knowledge: {graph_id, node_count, topics, summary}
+        - dashboard: {html_path, node_count, preview}
     """
     graph_id = _generate_graph_id(target)
     graph_db = _init_graph_db(graph_id)
@@ -417,8 +432,22 @@ async def research_understand_codebase(
             return await _action_explain(graph_db, focus)
         elif action == "onboard":
             return await _action_onboard(graph_db)
+        elif action == "chat":
+            if not question:
+                return {"error": "question required for action='chat'"}
+            return await _action_chat(graph_db, question, history or [])
+        elif action == "diff":
+            if not ref_a or not ref_b:
+                return {"error": "ref_a and ref_b required for action='diff'"}
+            return await _action_diff(target, graph_id, max_files, include_globs, ref_a, ref_b)
+        elif action == "domain":
+            return await _action_domain(graph_db)
+        elif action == "knowledge":
+            return await _action_knowledge(target, graph_id, graph_db, doc_content, max_files, include_globs)
+        elif action == "dashboard":
+            return await _action_dashboard(graph_db)
         else:
-            return {"error": f"Unknown action: {action}. Use: graph, ask, explain, onboard"}
+            return {"error": f"Unknown action: {action}. Use: graph, ask, explain, onboard, chat, diff, domain, knowledge, dashboard"}
     except Exception as e:
         logger.error("understand_codebase failed: %s", e)
         return {"error": str(e), "tool": "research_understand_codebase"}
@@ -625,3 +654,665 @@ Keep it under 500 words."""
     except Exception as e:
         logger.error("onboard action failed: %s", e)
         return {"error": str(e)}
+
+
+async def _action_chat(graph_db: str, question: str, history: list[dict]) -> dict[str, Any]:
+    """Multi-turn conversational Q&A over the graph.
+
+    Accepts prior conversation history and threads it into context for follow-ups.
+    """
+    nodes, edges = _load_graph_from_db(graph_db)
+
+    if not nodes:
+        return {"error": "Graph is empty. Run action='graph' first."}
+
+    try:
+        from loom.tools.llm.llm import _call_with_cascade
+
+        # Search nodes for keyword matches
+        q_lower = question.lower()
+        relevant_nodes = [n for n in nodes if q_lower in n["name"].lower() or q_lower in n["summary"].lower()][:10]
+
+        if not relevant_nodes:
+            relevant_nodes = nodes[:10]
+
+        # Build context with graph and history
+        context = "Graph nodes:\n"
+        for node in relevant_nodes:
+            context += f"- {node['type']}:{node['name']}: {node['summary']}\n"
+
+        # Append prior conversation turns
+        if history:
+            context += "\nPrior conversation:\n"
+            for turn in history[-5:]:  # Last 5 turns to keep context bounded
+                role = turn.get("role", "user").capitalize()
+                content = turn.get("content", "")[:500]
+                context += f"{role}: {content}\n"
+
+        chat_prompt = f"""Using this codebase knowledge graph and prior conversation, answer the follow-up question.
+
+{context}
+
+Current question: {question}
+
+Provide a concise, specific answer based on the graph. If this is a follow-up to prior discussion, maintain continuity."""
+
+        result = await _call_with_cascade(chat_prompt)
+        answer = result.text if hasattr(result, "text") else str(result)
+
+        # Append new turn to history
+        new_history = history.copy() if history else []
+        new_history.append({"role": "user", "content": question})
+        new_history.append({"role": "assistant", "content": answer[:500]})
+
+        return {
+            "action": "chat",
+            "question": question,
+            "answer": answer[:1000],
+            "cited_nodes": [{"id": n["id"], "name": n["name"], "type": n["type"]} for n in relevant_nodes],
+            "history": new_history[-10:],  # Return last 10 turns
+        }
+    except Exception as e:
+        logger.error("chat action failed: %s", e)
+        return {"error": str(e)}
+
+
+async def _action_diff(
+    target: str,
+    graph_id: str,
+    max_files: int,
+    include_globs: list[str] | None,
+    ref_a: str,
+    ref_b: str,
+) -> dict[str, Any]:
+    """Compare codebase graphs between two git refs.
+
+    Builds/loads graphs at ref_a and ref_b, then reports added/removed/changed nodes & edges.
+    """
+    try:
+        from loom.tools.llm.llm import _call_with_cascade
+
+        # Validate refs (alphanumeric + dots/dashes/underscores/slashes)
+        if not re.match(r"^[a-zA-Z0-9._/-]+$", ref_a) or not re.match(r"^[a-zA-Z0-9._/-]+$", ref_b):
+            return {"error": "Invalid git ref format (use alphanumeric, dots, dashes, underscores, slashes only)"}
+
+        root_path, was_cloned = _resolve_target(target)
+        try:
+            # Get current ref for restoration later
+            try:
+                current_ref_result = run_command(["git", "-C", str(root_path), "symbolic-ref", "--short", "HEAD"], timeout=5)
+                current_ref = current_ref_result.get("stdout", "main").strip() if current_ref_result.get("success") else "main"
+            except Exception:
+                current_ref_result = run_command(["git", "-C", str(root_path), "rev-parse", "--short", "HEAD"], timeout=5)
+                current_ref = current_ref_result.get("stdout", "main").strip() if current_ref_result.get("success") else "main"
+
+            # Build graph at ref_a
+            logger.info(f"Checking out ref_a: {ref_a}")
+            run_command(["git", "-C", str(root_path), "checkout", ref_a], timeout=30)
+            files_a = _walk_files(root_path, include_globs, max_files)
+            nodes_a, edges_a = [], []
+            for file_path, rel_path in files_a:
+                try:
+                    content = file_path.read_text(encoding="utf-8", errors="ignore")
+                except Exception:
+                    continue
+                n, e = await _extract_nodes_and_edges(file_path, content, root_path)
+                nodes_a.extend(n)
+                edges_a.extend(e)
+
+            # Dedup nodes_a
+            nodes_a_by_id = {n["id"]: n for n in nodes_a}
+            nodes_a = list(nodes_a_by_id.values())
+
+            # Build graph at ref_b
+            logger.info(f"Checking out ref_b: {ref_b}")
+            run_command(["git", "-C", str(root_path), "checkout", ref_b], timeout=30)
+            files_b = _walk_files(root_path, include_globs, max_files)
+            nodes_b, edges_b = [], []
+            for file_path, rel_path in files_b:
+                try:
+                    content = file_path.read_text(encoding="utf-8", errors="ignore")
+                except Exception:
+                    continue
+                n, e = await _extract_nodes_and_edges(file_path, content, root_path)
+                nodes_b.extend(n)
+                edges_b.extend(e)
+
+            # Dedup nodes_b
+            nodes_b_by_id = {n["id"]: n for n in nodes_b}
+            nodes_b = list(nodes_b_by_id.values())
+
+            # Restore original ref
+            try:
+                run_command(["git", "-C", str(root_path), "checkout", current_ref], timeout=30)
+            except Exception:
+                pass
+
+            # Compare
+            ids_a = {n["id"] for n in nodes_a}
+            ids_b = {n["id"] for n in nodes_b}
+
+            added_node_ids = ids_b - ids_a
+            removed_node_ids = ids_a - ids_b
+            common_ids = ids_a & ids_b
+
+            added_nodes = [n for n in nodes_b if n["id"] in added_node_ids]
+            removed_nodes = [n for n in nodes_a if n["id"] in removed_node_ids]
+            changed_nodes = []
+
+            # Detect changed nodes (same id but different summary/complexity)
+            for nid in common_ids:
+                n_a = next((n for n in nodes_a if n["id"] == nid), None)
+                n_b = next((n for n in nodes_b if n["id"] == nid), None)
+                if n_a and n_b:
+                    if n_a["summary"] != n_b["summary"] or n_a["complexity"] != n_b["complexity"]:
+                        changed_nodes.append({"id": nid, "from": n_a, "to": n_b})
+
+            # Generate LLM summary
+            summary_prompt = f"""Summarize the architectural changes between these two versions:
+
+Added {len(added_nodes)} nodes: {[n['name'] for n in added_nodes[:5]]}
+Removed {len(removed_nodes)} nodes: {[n['name'] for n in removed_nodes[:5]]}
+Changed {len(changed_nodes)} nodes
+
+What changed architecturally? Keep it under 200 words."""
+
+            result = await _call_with_cascade(summary_prompt)
+            summary = result.text if hasattr(result, "text") else str(result)
+
+            return {
+                "action": "diff",
+                "ref_a": ref_a,
+                "ref_b": ref_b,
+                "added_nodes": [{"id": n["id"], "name": n["name"], "type": n["type"]} for n in added_nodes[:20]],
+                "removed_nodes": [{"id": n["id"], "name": n["name"], "type": n["type"]} for n in removed_nodes[:20]],
+                "changed_nodes": [
+                    {"id": c["id"], "from_name": c["from"]["name"], "to_name": c["to"]["name"]}
+                    for c in changed_nodes[:20]
+                ],
+                "summary": summary[:800],
+                "stats": {
+                    "added_count": len(added_nodes),
+                    "removed_count": len(removed_nodes),
+                    "changed_count": len(changed_nodes),
+                },
+            }
+
+        finally:
+            if was_cloned:
+                shutil.rmtree(root_path, ignore_errors=True)
+
+    except Exception as e:
+        logger.error("diff action failed: %s", e)
+        return {"error": str(e)}
+
+
+async def _action_domain(graph_db: str) -> dict[str, Any]:
+    """Extract domain model (business entities, bounded contexts, flows) from the graph.
+
+    Uses LLM to identify domain concepts from existing graph.
+    """
+    nodes, edges = _load_graph_from_db(graph_db)
+
+    if not nodes:
+        return {"error": "Graph is empty. Run action='graph' first."}
+
+    try:
+        from loom.tools.llm.llm import _call_with_cascade
+
+        # Find domain-related nodes (file/module/class/service/endpoint/resource nodes)
+        domain_nodes = [
+            n
+            for n in nodes
+            if n["type"] in {"file", "module", "class", "service", "endpoint", "resource", "schema"}
+        ][:30]
+
+        context = "Code entities:\n"
+        for node in domain_nodes:
+            context += f"- {node['type']}:{node['name']}: {node['summary']}\n"
+
+        # Find data flows
+        flow_edges = [e for e in edges if e["type"] in {"reads_from", "writes_to", "transforms", "calls"}][:20]
+        context += "\nData flows:\n"
+        for edge in flow_edges:
+            context += f"- {edge['source_id']} {edge['type']} {edge['target_id']}\n"
+
+        domain_prompt = f"""Identify the domain model in this codebase:
+
+{context}
+
+Extract:
+1. Domain Entities - main business objects/concepts (e.g., User, Order, Product)
+2. Bounded Contexts - separate domains/modules with distinct responsibilities
+3. Flows - main business processes (e.g., order processing, authentication)
+
+Return as structured text."""
+
+        result = await _call_with_cascade(domain_prompt)
+        analysis = result.text if hasattr(result, "text") else str(result)
+
+        return {
+            "action": "domain",
+            "domain_entities": [n["name"] for n in domain_nodes[:10]],
+            "bounded_contexts": _extract_bounded_contexts(domain_nodes, edges),
+            "flows": _extract_flows(edges),
+            "summary": analysis[:1200],
+        }
+
+    except Exception as e:
+        logger.error("domain action failed: %s", e)
+        return {"error": str(e)}
+
+
+def _extract_bounded_contexts(nodes: list[dict], edges: list[dict]) -> list[str]:
+    """Extract bounded contexts by identifying clusters of related nodes."""
+    # Simple heuristic: group by file prefix (package/module structure)
+    contexts = {}
+    for node in nodes:
+        if node["file_path"]:
+            parts = node["file_path"].split("/")
+            if len(parts) > 1:
+                ctx = parts[0]  # Top-level package
+                if ctx not in contexts:
+                    contexts[ctx] = 0
+                contexts[ctx] += 1
+
+    return sorted(contexts.keys())[:10]
+
+
+def _extract_flows(edges: list[dict]) -> list[str]:
+    """Extract main flows by identifying call chains."""
+    # Find high-weight call/dataflow edges
+    flow_edges = [e for e in edges if e["type"] in {"calls", "reads_from", "writes_to", "transforms"}]
+    # Group by source to identify main flows
+    flows = {}
+    for edge in flow_edges:
+        src = edge["source_id"]
+        if src not in flows:
+            flows[src] = 0
+        flows[src] += edge.get("weight", 0.5)
+
+    # Top flows by weight
+    top_flows = sorted(flows.items(), key=lambda x: x[1], reverse=True)
+    return [f[0].split(":")[-1] for f in top_flows[:10]]
+
+
+async def _action_knowledge(
+    target: str,
+    graph_id: str,
+    graph_db: str,
+    doc_content: str,
+    max_files: int,
+    include_globs: list[str] | None,
+) -> dict[str, Any]:
+    """Ingest non-code documentation into the graph as article/topic/entity/claim/source nodes.
+
+    If doc_content is provided, parse it directly. Otherwise, walk target for markdown/text files.
+    """
+    try:
+        from loom.tools.llm.llm import _call_with_cascade
+
+        docs = []
+
+        # Either use provided content or walk for doc files
+        if doc_content:
+            docs.append(("input", doc_content))
+        else:
+            root_path, was_cloned = _resolve_target(target)
+            try:
+                doc_globs = ["*.md", "*.txt", "*.rst"]
+                doc_files = _walk_files(root_path, doc_globs, max_files)
+                for file_path, rel_path in doc_files:
+                    try:
+                        content = file_path.read_text(encoding="utf-8", errors="ignore")
+                        docs.append((rel_path, content))
+                    except Exception:
+                        continue
+            finally:
+                if was_cloned:
+                    shutil.rmtree(root_path, ignore_errors=True)
+
+        if not docs:
+            return {
+                "action": "knowledge",
+                "graph_id": graph_id,
+                "node_count": 0,
+                "topics": [],
+                "summary": "No documentation found.",
+            }
+
+        # Extract entities/topics/claims from each doc
+        all_nodes = []
+        all_edges = []
+
+        for doc_name, doc_text in docs:
+            # Limit to first 5000 chars per doc
+            truncated = doc_text[:5000]
+
+            extraction_prompt = f"""Extract knowledge entities from this documentation:
+
+Document: {doc_name}
+Content (first 5000 chars):
+{truncated}
+
+Return valid JSON with exactly this structure (no markdown, no extra text):
+{{
+  "nodes": [
+    {{"id": "article:<name>", "type": "article", "name": "<title>", "summary": "<one-line summary>", "tags": ["<topic>"], "complexity": "simple"}}
+  ],
+  "edges": [
+    {{"source_id": "<id1>", "target_id": "<id2>", "type": "cites|contradicts|builds_on|exemplifies|categorized_under", "direction": "forward", "weight": 0.7}}
+  ]
+}}
+
+Extract 2-5 nodes and 1-3 edges."""
+
+            result = await _call_with_cascade(extraction_prompt)
+            text_result = result.text if hasattr(result, "text") else str(result)
+
+            # Parse JSON
+            json_match = re.search(r"\{.*\}", text_result, re.DOTALL)
+            if not json_match:
+                continue
+
+            try:
+                data = json.loads(json_match.group())
+            except json.JSONDecodeError:
+                continue
+
+            for node in data.get("nodes", []):
+                if "id" in node and "type" in node and "name" in node:
+                    all_nodes.append({
+                        "id": node["id"],
+                        "type": node.get("type", "topic"),
+                        "name": node["name"],
+                        "file_path": doc_name,
+                        "summary": node.get("summary", ""),
+                        "tags": node.get("tags", []),
+                        "complexity": node.get("complexity", "simple"),
+                        "line_start": None,
+                        "line_end": None,
+                    })
+
+            for edge in data.get("edges", []):
+                if "source_id" in edge and "target_id" in edge and "type" in edge:
+                    all_edges.append({
+                        "source_id": edge["source_id"],
+                        "target_id": edge["target_id"],
+                        "type": edge.get("type", "related"),
+                        "direction": edge.get("direction", "forward"),
+                        "weight": edge.get("weight", 0.5),
+                        "description": edge.get("description", ""),
+                    })
+
+        # Dedup and store
+        nodes_by_id = {n["id"]: n for n in all_nodes}
+        edge_key_set = set()
+        dedup_edges = []
+        for e in all_edges:
+            key = (e["source_id"], e["target_id"], e["type"])
+            if key not in edge_key_set:
+                dedup_edges.append(e)
+                edge_key_set.add(key)
+
+        _store_graph_in_db(graph_db, list(nodes_by_id.values()), dedup_edges)
+
+        # Extract topics
+        topics = set()
+        for node in all_nodes:
+            topics.update(node.get("tags", []))
+
+        return {
+            "action": "knowledge",
+            "graph_id": graph_id,
+            "node_count": len(nodes_by_id),
+            "edge_count": len(dedup_edges),
+            "topics": list(topics)[:20],
+            "summary": f"Ingested {len(docs)} documents into knowledge graph. {len(nodes_by_id)} entities, {len(dedup_edges)} relationships.",
+        }
+
+    except Exception as e:
+        logger.error("knowledge action failed: %s", e)
+        return {"error": str(e)}
+
+
+async def _action_dashboard(graph_db: str) -> dict[str, Any]:
+    """Generate a self-contained HTML interactive graph viewer.
+
+    Embeds graph JSON + vanilla-JS force-directed renderer, writes to temp file.
+    """
+    nodes, edges = _load_graph_from_db(graph_db)
+
+    if not nodes:
+        return {"error": "Graph is empty. Run action='graph' first."}
+
+    try:
+        # Generate HTML with embedded graph and D3.js force simulation
+        html_content = _generate_dashboard_html(nodes, edges)
+
+        # Write to temp file
+        temp_dir = Path(tempfile.gettempdir()) / "loom_dashboards"
+        temp_dir.mkdir(exist_ok=True)
+        graph_id_short = _generate_graph_id(str(nodes))[:8]
+        html_path = temp_dir / f"graph_{graph_id_short}.html"
+
+        with open(html_path, "w", encoding="utf-8") as f:
+            f.write(html_content)
+
+        preview = html_content[:500]
+
+        return {
+            "action": "dashboard",
+            "html_path": str(html_path),
+            "node_count": len(nodes),
+            "edge_count": len(edges),
+            "preview": preview,
+        }
+
+    except Exception as e:
+        logger.error("dashboard action failed: %s", e)
+        return {"error": str(e)}
+
+
+def _generate_dashboard_html(nodes: list[dict], edges: list[dict]) -> str:
+    """Generate self-contained HTML with embedded graph visualization."""
+    # Prepare graph data
+    graph_data = {
+        "nodes": [{"id": n["id"], "name": n["name"], "type": n["type"], "summary": n["summary"]} for n in nodes],
+        "edges": [
+            {
+                "source": e["source_id"],
+                "target": e["target_id"],
+                "type": e["type"],
+                "weight": e.get("weight", 0.5),
+            }
+            for e in edges
+        ],
+    }
+
+    graph_json = json.dumps(graph_data)
+
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Understand-Anything Graph Viewer</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {{
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+        }}
+        #container {{
+            width: 100vw;
+            height: 100vh;
+            background: white;
+        }}
+        svg {{
+            width: 100%;
+            height: 100%;
+        }}
+        .node {{
+            fill: #4a90e2;
+            stroke: #2e5c8a;
+            stroke-width: 2px;
+            cursor: pointer;
+        }}
+        .node:hover {{
+            fill: #2e5c8a;
+            r: 8px;
+        }}
+        .link {{
+            stroke: #999;
+            stroke-opacity: 0.6;
+            stroke-width: 1px;
+        }}
+        .tooltip {{
+            position: absolute;
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 1000;
+            display: none;
+        }}
+        .legend {{
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            font-size: 12px;
+        }}
+        .legend-item {{
+            margin: 5px 0;
+        }}
+        .legend-color {{
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            margin-right: 6px;
+            vertical-align: middle;
+        }}
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    <div class="tooltip" id="tooltip"></div>
+    <div class="legend">
+        <div style="font-weight: bold; margin-bottom: 8px;">Node Types</div>
+        <div class="legend-item"><span class="legend-color" style="background: #4a90e2;"></span>Code</div>
+        <div class="legend-item"><span class="legend-color" style="background: #7cb342;"></span>Non-Code</div>
+        <div class="legend-item"><span class="legend-color" style="background: #e64980;"></span>Domain</div>
+    </div>
+
+    <script>
+        const graphData = {graph_json};
+
+        const width = document.getElementById('container').clientWidth;
+        const height = document.getElementById('container').clientHeight;
+
+        const svg = d3.select('#container').append('svg');
+
+        // Create force simulation
+        const simulation = d3.forceSimulation(graphData.nodes)
+            .force('link', d3.forceLink(graphData.edges)
+                .id(d => d.id)
+                .distance(100)
+                .strength(0.5))
+            .force('charge', d3.forceManyBody().strength(-300))
+            .force('center', d3.forceCenter(width / 2, height / 2))
+            .force('collision', d3.forceCollide().radius(30));
+
+        // Draw links
+        const link = svg.selectAll('line')
+            .data(graphData.edges)
+            .enter()
+            .append('line')
+            .attr('class', 'link')
+            .attr('stroke-width', d => Math.sqrt(d.weight) * 2);
+
+        // Node colors by type
+        const typeColorMap = {{
+            'file': '#4a90e2',
+            'function': '#4a90e2',
+            'class': '#4a90e2',
+            'module': '#4a90e2',
+            'concept': '#4a90e2',
+            'config': '#7cb342',
+            'document': '#7cb342',
+            'service': '#7cb342',
+            'endpoint': '#7cb342',
+            'schema': '#7cb342',
+            'domain': '#e64980',
+            'flow': '#e64980',
+            'step': '#e64980',
+            'article': '#fb8500',
+            'entity': '#fb8500',
+            'topic': '#fb8500',
+        }};
+
+        // Draw nodes
+        const node = svg.selectAll('circle')
+            .data(graphData.nodes)
+            .enter()
+            .append('circle')
+            .attr('class', 'node')
+            .attr('r', 6)
+            .attr('fill', d => typeColorMap[d.type] || '#999')
+            .call(d3.drag()
+                .on('start', dragstarted)
+                .on('drag', dragged)
+                .on('end', dragended))
+            .on('mouseover', (event, d) => {{
+                const tooltip = document.getElementById('tooltip');
+                tooltip.textContent = d.name + ' (' + d.type + ')\\n' + d.summary.substring(0, 80);
+                tooltip.style.display = 'block';
+                tooltip.style.left = (event.pageX + 10) + 'px';
+                tooltip.style.top = (event.pageY + 10) + 'px';
+            }})
+            .on('mouseout', () => {{
+                document.getElementById('tooltip').style.display = 'none';
+            }});
+
+        // Update positions on tick
+        simulation.on('tick', () => {{
+            link
+                .attr('x1', d => d.source.x)
+                .attr('y1', d => d.source.y)
+                .attr('x2', d => d.target.x)
+                .attr('y2', d => d.target.y);
+
+            node
+                .attr('cx', d => Math.max(10, Math.min(width - 10, d.x)))
+                .attr('cy', d => Math.max(10, Math.min(height - 10, d.y)));
+        }});
+
+        // Drag handlers
+        function dragstarted(event, d) {{
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }}
+        function dragged(event, d) {{
+            d.fx = event.x;
+            d.fy = event.y;
+        }}
+        function dragended(event, d) {{
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }}
+    </script>
+</body>
+</html>
+"""
+
+    return html
