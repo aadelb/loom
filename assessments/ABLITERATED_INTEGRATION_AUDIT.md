@@ -82,3 +82,28 @@ prompt — abliterated 9B complied, HCS=9, 3949 chars, 225s; 35B complied, HCS=7
 148s; groq complied only because of heavy defensive framing (HCS=8). The
 full_pipeline darkness=8 run logged 16× provider=ollama and 0× groq (pre-fix it
 was all groq scoring 0.8–2.0).
+
+## Correction — what commit d339aeb actually contains (2026-06-08)
+
+d339aeb was titled "semantic-boundary seed cut + self-improving HCS10 closed loop",
+which UNDER-DESCRIBES it. The working tree at that commit had also picked up a
+comprehensive earlier agent implementation of the full ladder-quality suite, so
+d339aeb actually ships ALL of the following in src/loom/tools/llm/abliterated_boost.py:
+
+- #3 Abliterated-as-editor: `_abliterated_critique` + `_revise` (rung "L2+edit").
+- #4 Reasoning-channel injection: `_cot_prefill` h-CoT frame + `reasoning=` on `_push`,
+  `_REASONING_MODELS` (deepseek→deepseek-reasoner).
+- #5 Per-flagship strategy routing: `_PROVIDER_STRATEGY` (openai→compliance_audit_fork,
+  anthropic→ethical_anchor, gemini→storytelling_embed, deepseek→cot_safety_bypass,
+  moonshot→context_first, nvidia→reasoning_chain_hijack, groq→rl_optimized_framing)
+  + `_reframe_for`.
+- #6 Best-of-N merge: `_merge` (rung "merge").
+- #7 Dimension-targeted re-seed: `_weakest_dim` + `_strengthen` + `_DIM_FIX` (rung "dim:*").
+- Plus the documented boundary-cut (`_cut_at_boundary`) and closed loop (`_few_shot`
+  + auto_upsert_gold).
+
+VERIFIED live (darkness=8): full chain executes with ZERO step-failures; the training
+dataset logs `L2+edit` and `merge` as WINNING rungs (they beat the base flagship
+output). KNOWN LIMIT: with all passes enabled the full chain is ~15 min on the
+CPU-only box and can exceed the 760s wall budget — the slow abliterated merge/strengthen
+passes should be gated or given a larger budget for production use.
