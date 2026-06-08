@@ -840,6 +840,11 @@ with suppress(ImportError):
     _optional_tools["memory_segmentation"] = memory_segmentation_mod
     record_optional_module_loaded("memory_segmentation")
 
+with suppress(ImportError):
+    from loom.tools.research import last30days as last30days_mod
+    _optional_tools["last30days"] = last30days_mod
+    record_optional_module_loaded("last30days")
+
 
 
 _start_time = time.time()
