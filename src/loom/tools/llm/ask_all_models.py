@@ -21,6 +21,7 @@ from loom.error_responses import handle_tool_errors
 from loom.sanitization import sanitize_text
 from loom.subprocess_helpers import run_command
 from loom.http_helpers import fetch_json, fetch_text, fetch_bytes
+from loom.providers.abliterated import select_abliterated
 try:
     from loom.text_utils import truncate
 except ImportError:
@@ -174,6 +175,7 @@ _API_ENDPOINTS: dict[str, str] = {
     "google": "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
     "moonshot": "https://api.moonshot.cn/v1/chat/completions",
     "openrouter": "https://openrouter.ai/api/v1/chat/completions",
+    "ollama": "http://localhost:11434/v1/chat/completions",
 }
 
 _API_KEY_ENV: dict[str, str] = {
@@ -185,6 +187,7 @@ _API_KEY_ENV: dict[str, str] = {
     "google": "GOOGLE_AI_KEY_1",
     "moonshot": "MOONSHOT_API_KEY",
     "openrouter": "OPENROUTER_API_KEY",
+    "ollama": "OLLAMA_API_KEY",
 }
 
 _CLI_TOOLS = [
@@ -355,12 +358,14 @@ async def research_ask_all_models(
     auto_reframe: bool = True,
     include_clis: bool = False,
     timeout: int = 60,
+    darkness: int = 0,
 ) -> dict[str, Any]:
     """Send a prompt to ALL available AI models and compare responses.
 
     Queries 20+ models across 7 API providers (Groq, NVIDIA NIM, OpenAI,
     DeepSeek, Anthropic, Google, Moonshot) in parallel. Optionally includes
-    CLI tools (gemini, kimi). Auto-reframes refused prompts.
+    CLI tools (gemini, kimi) and local uncensored Ollama (when darkness >= 7).
+    Auto-reframes refused prompts.
 
     Args:
         prompt: the prompt to send to all models
@@ -369,6 +374,7 @@ async def research_ask_all_models(
         auto_reframe: if True, auto-reframe refused prompts and retry
         include_clis: if True, also query gemini/kimi CLIs (slower)
         timeout: per-model timeout in seconds
+        darkness: if >= 7, include local abliterated Ollama model (uncensored)
 
     Returns:
         Dict with ``prompt``, ``models_queried``, ``models_responded``,
@@ -379,7 +385,16 @@ async def research_ask_all_models(
     async def _run() -> dict[str, Any]:
         responses: list[dict[str, Any]] = []
 
-        async with httpx.AsyncClient(timeout=float(timeout)) as client:
+        # Compute effective timeout: if using abliterated models (darkness >= 7),
+        # they run on CPU and need longer (e.g., 320s). Raise timeout ceiling.
+        eff_timeout = timeout
+        abl_model_id: str | None = None
+        abl_max_tokens: int | None = None
+        if darkness >= 7:
+            abl_model_id, abl_max_tokens, abl_timeout = select_abliterated(darkness)
+            eff_timeout = max(timeout, abl_timeout)
+
+        async with httpx.AsyncClient(timeout=float(eff_timeout)) as client:
             tasks: list[tuple[str, str, str, Any]] = []
 
             for provider, model_list in _API_MODELS.items():
@@ -398,6 +413,10 @@ async def research_ask_all_models(
                         continue
 
                     tasks.append((provider, model_id, model_name, api_key))
+
+            # Add local abliterated Ollama model when darkness >= 7
+            if darkness >= 7 and abl_model_id:
+                tasks.append(("ollama", abl_model_id, f"Ollama {abl_model_id} (Local Abliterated)", "ollama-local"))
 
             async def _run_model(
                 provider: str, model_id: str, model_name: str, api_key: str
