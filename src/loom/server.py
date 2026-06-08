@@ -875,6 +875,11 @@ with suppress(ImportError):
     _optional_tools["last30days"] = last30days_mod
     record_optional_module_loaded("last30days")
 
+with suppress(ImportError):
+    from loom.tools.research import legal_cases as legal_cases_mod
+    _optional_tools["legal_cases"] = legal_cases_mod
+    record_optional_module_loaded("legal_cases")
+
 
 
 _start_time = time.time()
