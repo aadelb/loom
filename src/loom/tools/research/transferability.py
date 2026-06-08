@@ -20,6 +20,7 @@ async def research_transfer_test(
     prompt: str,
     strategy: str = "ethical_anchor",
     models: list[str] | None = None,
+    darkness: int = 0,
 ) -> dict[str, Any]:
     """Test strategy transferability across multiple LLM providers."""
     if isinstance(prompt, list): prompt = " ".join(str(x) for x in prompt)
@@ -31,7 +32,7 @@ async def research_transfer_test(
         if not models:
             models = ["nvidia", "groq", "deepseek", "ollama"]
         reframed = _apply_strategy(prompt, strategy)
-        responses = await asyncio.gather(*[_query_model(m, reframed) for m in models], return_exceptions=True)
+        responses = await asyncio.gather(*[_query_model(m, reframed, darkness) for m in models], return_exceptions=True)
         results_per_model: dict[str, dict[str, Any]] = {}
         hcs_scores: list[tuple[str, float]] = []
         for model_name, response in zip(models, responses):
@@ -61,6 +62,7 @@ async def research_transfer_test(
             "worst_model": worst,
             "models_tested": len(models),
             "models_succeeded": len(hcs_scores),
+            "darkness": darkness,
         }
     except Exception as exc:
         return {"error": str(exc), "tool": "research_transfer_test"}
@@ -84,11 +86,17 @@ def _apply_strategy(prompt: str, strategy_name: str) -> str:
         return prompt
 
 
-async def _query_model(provider: str, prompt: str) -> str:
+async def _query_model(provider: str, prompt: str, darkness: int = 0) -> str:
     """Query a single LLM provider."""
     from loom.tools.llm.llm import _call_with_cascade
-    response = await _call_with_cascade(messages=[{"role": "user", "content": prompt}],
-        provider_override=provider, max_tokens=500, temperature=0.2)
+    if provider == "ollama" and darkness >= 7:
+        from loom.providers.abliterated import dark_route
+        kwargs = dark_route(darkness)
+        response = await _call_with_cascade(messages=[{"role": "user", "content": prompt}],
+            temperature=0.2, **kwargs)
+    else:
+        response = await _call_with_cascade(messages=[{"role": "user", "content": prompt}],
+            provider_override=provider, max_tokens=500, temperature=0.2)
     return response.text if hasattr(response, "text") else str(response)
 
 
