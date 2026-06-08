@@ -131,6 +131,7 @@ from loom.params.adversarial import (
     ActiveSelectParams,
     AdversarialBatchParams,
     AdversarialDebateAttackerParams,
+    AdversaryPilotParams,
     AttackEconomyLeaderboardParams,
     AttackEconomySubmitParams,
     AttackerTargetDebateParams,
@@ -150,6 +151,7 @@ from loom.params.adversarial import (
     SuperpositionPromptParams,
     SwarmAttackParams,
     UncertaintyEstimateParams,
+    XTeamingParams,
 )
 
 # INFRASTRUCTURE tools

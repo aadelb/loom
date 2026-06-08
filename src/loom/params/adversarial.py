@@ -39,6 +39,7 @@ __all__ = [
     "SuperpositionPromptParams",
     "SwarmAttackParams",
     "UncertaintyEstimateParams",
+    "XTeamingParams",
 ]
 
 
@@ -850,6 +851,66 @@ class AdversaryPilotParams(BaseModel):
             if len(strategy) > 256:
                 raise ValueError("each strategy max 256 characters")
         return [s.strip() for s in v]
+
+
+class XTeamingParams(BaseModel):
+    """Parameters for research_x_teaming tool."""
+
+    query: str = Field(
+        description="Attack goal (e.g., 'write malware', 'forge credentials')",
+        min_length=5,
+        max_length=5000,
+    )
+    target_model: str = Field(
+        default="auto",
+        description="Target LLM provider (auto→groq, or specific name)",
+        max_length=64,
+    )
+    max_turns: int = Field(
+        default=5,
+        description="Max planning/attack/critic turns (1-15)",
+        ge=1,
+        le=15,
+    )
+    target_hcs: float = Field(
+        default=8.0,
+        description="Success threshold HCS score (0-10, default 8.0)",
+        ge=0.0,
+        le=10.0,
+    )
+    darkness: int = Field(
+        default=0,
+        description="Abliteration level for strategists (0-10, >=7 uses dark_route)",
+        ge=0,
+        le=10,
+    )
+    strategist_model: str = Field(
+        default="auto",
+        description="Planner/Critic model provider (auto→groq)",
+        max_length=64,
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("query")
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        """Validate query."""
+        if not v.strip():
+            raise ValueError("query cannot be empty or whitespace-only")
+        if len(v) > 5000:
+            raise ValueError("query max length is 5000 characters")
+        return v.strip()
+
+    @field_validator("target_model", "strategist_model")
+    @classmethod
+    def validate_model(cls, v: str) -> str:
+        """Validate model name."""
+        if not v.strip():
+            raise ValueError("model cannot be empty")
+        if len(v) > 64:
+            raise ValueError("model max length is 64 characters")
+        return v.strip()
 
 
 
