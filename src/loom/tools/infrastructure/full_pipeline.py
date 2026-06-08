@@ -23,6 +23,39 @@ from typing import Any
 
 from loom.providers.base import LLMResponse
 from loom.error_responses import handle_tool_errors
+
+# Dark queries (darkness_level >= 8) must run on a LOCAL ABLITERATED model — the
+# only providers that comply on dark content; a safety-aligned cloud provider
+# would refuse or sanitize exactly the requests the dark path exists to handle.
+# The old anchor pointed at "vllm", which is NOT running on this box (CPU-only,
+# no GPU), so dark queries silently fell through to censored cloud providers.
+#
+# We run several SIZES of abliterated model (8B → 35B). Bigger = deeper/more
+# potent but slower on CPU, so the model, token budget, and timeout are chosen
+# per darkness via select_abliterated() (see loom.providers.abliterated). Below
+# darkness 8 we use the fast censored cloud cascade ("auto").
+from loom.providers.abliterated import select_abliterated  # noqa: E402
+
+_LIGHT_TIMEOUT = 90
+
+
+def _dark_call_params(darkness_level: int, default_max_tokens: int = 2000) -> dict:
+    """LLM-call kwargs for a sub-question, abliterated-tiered when dark.
+
+    Returns provider_override / model / max_tokens / timeout sized to the darkness
+    tier so the local generation completes in time instead of timing out into a
+    censored fallback. ``provider_override`` is the critical field: passing only a
+    model name to ``_call_with_cascade`` does NOT route to Ollama — it leaves the
+    default (censored) provider chain in place. Forcing provider_override="ollama"
+    is what actually reaches the local abliterated model.
+    """
+    if darkness_level >= 8:
+        model, max_tokens, timeout = select_abliterated(darkness_level)
+        return {"provider_override": "ollama", "model": model,
+                "max_tokens": max_tokens, "timeout": timeout}
+    return {"provider_override": None, "model": "auto",
+            "max_tokens": default_max_tokens, "timeout": _LIGHT_TIMEOUT}
+
 try:
     from loom.text_utils import truncate
 except ImportError:
@@ -409,7 +442,7 @@ async def research_full_pipeline(
                 user_content = sub_q
                 if _STRATEGY_ROUTER_AVAILABLE and _PIPELINE_DEPS:
                     try:
-                        provider_hint = "vllm" if darkness_level >= 8 else "groq"
+                        provider_hint = "ollama" if darkness_level >= 8 else "groq"
                         route_result = await research_strategy_route(
                             query=sub_q, provider=provider_hint, top_k=3,
                         )
@@ -435,10 +468,11 @@ async def research_full_pipeline(
                         {"role": "system", "content": system_message},
                         {"role": "user", "content": user_content},
                     ],
-                    model="vllm" if darkness_level >= 8 else "auto",
-                    max_tokens=2000,
+                    provider_override=_dark_call_params(darkness_level)["provider_override"],
+                    model=_dark_call_params(darkness_level)["model"],
+                    max_tokens=_dark_call_params(darkness_level)["max_tokens"],
                     temperature=0.2,
-                    timeout=90,
+                    timeout=_dark_call_params(darkness_level)["timeout"],
                 )
 
                 answer_text = response.text
@@ -675,7 +709,7 @@ async def research_full_pipeline(
                     # Check cache for cached strategy
                     cache_result = await research_cached_strategy(
                         topic=sub_q[:200],
-                        model="vllm" if darkness_level >= 8 else "auto",
+                        model=_dark_call_params(darkness_level)["model"],
                         fallback_strategy="ethical_anchor",
                     )
 
@@ -971,10 +1005,11 @@ Answers:
                                 },
                                 {"role": "user", "content": synthesis_prompt},
                             ],
-                            model="vllm" if darkness_level >= 8 else "auto",
-                            max_tokens=2000,
+                            provider_override=_dark_call_params(darkness_level)["provider_override"],
+                            model=_dark_call_params(darkness_level)["model"],
+                            max_tokens=_dark_call_params(darkness_level)["max_tokens"],
                             temperature=0.3,
-                            timeout=90,
+                            timeout=_dark_call_params(darkness_level)["timeout"],
                         )
                         synthesis = synthesis_response.text
                         total_cost += synthesis_response.cost_usd or 0.0
@@ -999,10 +1034,11 @@ Answers:
                             },
                             {"role": "user", "content": synthesis_prompt},
                         ],
-                        model="vllm" if darkness_level >= 8 else "auto",
-                        max_tokens=2000,
+                        provider_override=_dark_call_params(darkness_level)["provider_override"],
+                        model=_dark_call_params(darkness_level)["model"],
+                        max_tokens=_dark_call_params(darkness_level)["max_tokens"],
                         temperature=0.3,
-                        timeout=90,
+                        timeout=_dark_call_params(darkness_level)["timeout"],
                     )
                     synthesis = synthesis_response.text
                     total_cost += synthesis_response.cost_usd or 0.0
@@ -1020,10 +1056,11 @@ Answers:
                         },
                         {"role": "user", "content": synthesis_prompt},
                     ],
-                    model="vllm" if darkness_level >= 8 else "auto",
-                    max_tokens=2000,
+                    provider_override=_dark_call_params(darkness_level)["provider_override"],
+                    model=_dark_call_params(darkness_level)["model"],
+                    max_tokens=_dark_call_params(darkness_level)["max_tokens"],
                     temperature=0.3,
-                    timeout=90,
+                    timeout=_dark_call_params(darkness_level)["timeout"],
                 )
                 synthesis = synthesis_response.text
                 total_cost += synthesis_response.cost_usd or 0.0

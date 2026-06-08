@@ -16,6 +16,7 @@ Author: Ahmed Adel Bakr Alderai
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 from typing import Any
@@ -109,11 +110,29 @@ async def _call_provider(
         return ""
 
 
-# Anchor: local abliterated model (uncensored). On this CPU-only box the 9B
-# abliterated is the practical choice (fast-ish); fall back to Groq on failure.
+# Anchor = the local ABLITERATED model (safety restrictions removed). This is the
+# whole point of the anchor stage: it generates uncensored content that a
+# safety-aligned provider (Groq) would refuse or sanitize. So the abliterated
+# model is PRIMARY and gets a generous time budget — it is free, has no rate
+# limits, and for dark queries it is the only provider that actually complies.
+#
+# CPU-only inference is the real constraint (no GPU). We make it tractable NOT by
+# failing over to a censored provider for speed (that would defeat the purpose —
+# Groq returns a refusal on the exact dark queries the anchor exists to handle),
+# but by bounding the LOCAL token count: an uncensored 1800-token answer beats a
+# censored 4000-token refusal every time. Groq is a last-resort degraded fallback
+# used ONLY when the local model is genuinely unavailable (Ollama down / errors
+# out fast), never as a timeout shortcut on a productive-but-slow generation.
 _ANCHOR_PROVIDER = "ollama"
-_ANCHOR_MODEL = "qwen35-9b-abliterated"
-_ANCHOR_TIMEOUT = 180
+# Source the anchor model/token/timeout from the shared abliterated tier table so
+# there is ONE place that knows each model's CPU budget. The cascade uses the
+# "mid" tier (qwen35-9b, ~4.5 tok/s): ~1000 tokens + prompt prefill lands near
+# ~250s, comfortably inside the 600s heavy-tool budget while completing an
+# uncensored answer. The fast polish step (assistant-prefilled with this output)
+# then expands it, so the anchor need not be long — only uncensored and complete.
+from loom.providers.abliterated import tier_params as _ab_tier_params
+
+_ANCHOR_MODEL, _ANCHOR_LOCAL_MAX_TOKENS, _ANCHOR_TIMEOUT = _ab_tier_params("mid")
 _ANCHOR_FALLBACK = "groq"
 
 
@@ -123,18 +142,41 @@ async def _call_anchor(
     max_tokens: int = 4000,
     temperature: float = 0.8,
 ) -> tuple[str, str]:
-    """Generate the uncensored anchor; returns (text, provider_used)."""
-    text = await _call_provider(
-        prompt, _ANCHOR_PROVIDER, model=_ANCHOR_MODEL,
-        max_tokens=max_tokens, temperature=temperature, timeout=_ANCHOR_TIMEOUT,
-    )
+    """Generate the uncensored anchor; returns (text, provider_used).
+
+    The abliterated local model is primary and is given a generous budget — it is
+    the only provider that reliably complies on dark queries. We bound the local
+    token count (``_ANCHOR_LOCAL_MAX_TOKENS``) so CPU inference completes in time
+    while staying uncensored, and hard-cap the wall time with ``asyncio.wait_for``
+    purely as a hang guard. Groq is used ONLY if the local model returns nothing
+    (genuinely unavailable) — a censored degraded fallback, never a speed tradeoff.
+    """
+    local_tokens = min(max_tokens, _ANCHOR_LOCAL_MAX_TOKENS)
+    text = ""
+    try:
+        text = await asyncio.wait_for(
+            _call_provider(
+                prompt, _ANCHOR_PROVIDER, model=_ANCHOR_MODEL,
+                max_tokens=local_tokens, temperature=temperature, timeout=_ANCHOR_TIMEOUT,
+            ),
+            timeout=_ANCHOR_TIMEOUT + 10,
+        )
+    except (TimeoutError, asyncio.TimeoutError):
+        logger.warning(
+            "anchor_local_timeout after %ss — Ollama likely wedged; "
+            "degraded groq fallback (CENSORED, may refuse dark content)",
+            _ANCHOR_TIMEOUT,
+        )
     if text and len(text) > 200:
         return text, f"ollama:{_ANCHOR_MODEL}"
-    # Fallback: local anchor unavailable/slow → fast external provider
+    # Degraded fallback: the abliterated model produced nothing (Ollama down or
+    # erroring). Groq is censored — it may refuse the query the anchor exists for —
+    # but a partial aligned answer beats no answer when the local model is dead.
+    logger.warning("anchor_local_unavailable → degraded censored groq fallback")
     text = await _call_provider(
         prompt, _ANCHOR_FALLBACK, max_tokens=max_tokens, temperature=temperature,
     )
-    return text, _ANCHOR_FALLBACK
+    return text, f"{_ANCHOR_FALLBACK}(degraded:censored)"
 
 
 async def _score_quick(text: str, query: str = "") -> dict[str, Any]:
@@ -244,7 +286,7 @@ async def research_quality_cascade(
             anchor_prompt = (
                 f"Expand and improve this response. Focus specifically on: "
                 f"{', '.join(weak_dims)}. Add more specific details, exact commands, "
-                f"code blocks, and technical depth. Original:\n\n{current_response[:2000]}"
+                f"code blocks, and technical depth. Original:\n\n{current_response[:1200]}"
             )
 
             anchor_response, anchor_used = await _call_anchor(

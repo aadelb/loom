@@ -34,6 +34,10 @@ _PROVIDER_STRATEGY_MAP: dict[str, list[str]] = {
     "openai": ["compliance_audit_fork", "foot_in_the_door_progressive", "authority_gradient_cascade"],
     "anthropic": ["ethical_anchor", "xml_structured", "structured_semantic_cloaking"],
     "vllm": ["direct", "compliance_audit_fork", "deep_inception"],
+    # Ollama hosts the local ABLITERATED models (safety removed). Like vllm it is
+    # an uncensored profile — it complies directly, so "direct" needs little
+    # reframing; the others add depth/structure without fighting a refusal layer.
+    "ollama": ["direct", "compliance_audit_fork", "deep_inception"],
 }
 
 _QUERY_TYPE_PATTERNS: dict[str, list[str]] = {
