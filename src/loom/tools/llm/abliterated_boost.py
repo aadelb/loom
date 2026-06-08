@@ -57,10 +57,104 @@ _REFUSAL_MARKERS = (
 )
 
 
+def _strip_disclaimer_prefix(text: str) -> str:
+    """Remove leading disclaimer sentences (e.g. 'I'm sorry, but...') if substantive
+    content follows. Preserves the real answer while discarding boilerplate hedges.
+
+    Returns the text as-is if no leading disclaimer is detected.
+    """
+    text_lower = text.lower()
+    # Find the first sentence that contains a refusal marker.
+    for sent_end in (".\n", ".\n\n", ". ", "?\n"):
+        idx = text_lower.find(sent_end)
+        if idx > 0 and idx < 200:  # Look in first 200 chars
+            candidate_sent = text_lower[:idx].strip()
+            if any(m in candidate_sent for m in _REFUSAL_MARKERS):
+                # Found a leading disclaimer. Check if what follows is substantive.
+                remainder = text[idx + len(sent_end):].strip()
+                if len(remainder) > 300:  # Substantial content remains
+                    return remainder
+    return text
+
+
 def _looks_refused(text: str) -> bool:
+    """Detect TRUE refusals while filtering out FALSE-POSITIVE disclaimer prefixes.
+
+    A TRUE refusal:
+    - Is SHORT (< 200 chars) or dominated by refusal language (> 60% boilerplate)
+    - Has NO substantive technical signal (code, steps, URLs, CVEs, commands)
+    - Ends with or is entirely refusal text (no recovery in later parts)
+
+    A DISCLAIMER-PREFIXED ANSWER:
+    - Opens with "I'm sorry" or similar marker
+    - BUT contains 300+ chars of substantive content afterward
+    - Has multiple technical signals throughout
+    - The bulk of the text is REAL content, not hedging
+
+    We keep disclaimer-prefixed answers by stripping the prefix and measuring
+    the remainder for substance.
+    """
     if not text or len(text) < 60:
         return True
-    return any(m in text[:400].lower() for m in _REFUSAL_MARKERS)
+
+    text_lower = text.lower()
+    has_refusal_marker = any(m in text_lower[:400] for m in _REFUSAL_MARKERS)
+
+    # No refusal marker in first 400 chars => definitely not refused.
+    if not has_refusal_marker:
+        return False
+
+    # Refusal marker found in first 400 chars. Measure substantive content carefully.
+    substantive_signals = (
+        "```", "step ", "Step ", "1. ", "2. ", "3. ", "4. ", "5. ",  # code/steps
+        "command", "$ ", "# ", "./", "/usr/", "/bin/",  # shell commands
+        "http://", "https://", "cve-", "cve_", "ip:", "cidr",  # URLs/identifiers
+        "wget ", "curl ", "python ", "bash ", "nc ", "nmap ",  # tools
+        "port ", "service ", "database", "password", "ssh ", "git ",  # technical
+        "version", "apt-get", "yum install", "brew install",  # package managers
+        "payload", "exploit", "bypass", "shellcode", "injection",  # attack techniques
+    )
+
+    signal_count = sum(1 for sig in substantive_signals if sig in text_lower)
+
+    # HEURISTIC 1: Long text + multiple signals = real answer with disclaimer prefix.
+    # Even if the disclaimer is in the first 400 chars, the substance dominates.
+    if len(text) > 600 and signal_count >= 3:
+        return False
+
+    # HEURISTIC 2: Medium text + dense signals = not refused.
+    if len(text) > 300 and signal_count >= 5:
+        return False
+
+    # HEURISTIC 3: Check if removing the disclaimer prefix leaves substantive content.
+    # If the disclaimer is truly just a prefix, stripping it should reveal the real answer.
+    cleaned = _strip_disclaimer_prefix(text)
+    if len(cleaned) < len(text):  # A prefix was removed
+        # Re-count signals in the cleaned text (post-prefix).
+        cleaned_signals = sum(1 for sig in substantive_signals if sig in cleaned.lower())
+        if len(cleaned) > 300 and cleaned_signals >= 2:
+            return False  # Disclaimer was just a prefix; the answer is real.
+
+    # HEURISTIC 4: Check the LAST part for refusal vs. substance.
+    # Real refusals end on refusal language. Real answers end on technical content.
+    last_third_start = len(text) // 3 * 2
+    last_third = text[last_third_start:].lower()
+    last_has_refusal = any(m in last_third for m in _REFUSAL_MARKERS)
+    last_has_substance = sum(1 for sig in substantive_signals if sig in last_third)
+
+    # If the LAST section is clean (no refusal) and has substance, it's a real answer
+    # (the refusal was just a prefix that got ignored by the model's reasoning).
+    if not last_has_refusal and last_has_substance >= 2:
+        return False
+
+    # If the LAST section STILL has refusal language, it's a true refusal
+    # (the model never recovered, just hedged throughout).
+    if last_has_refusal:
+        return True
+
+    # FALLBACK: If refusal marker in first 400 AND minimal substantive content overall,
+    # AND no recovery detected, treat as refused.
+    return signal_count == 0 or (len(text) < 200 and signal_count < 2)
 
 
 def _cut_at_boundary(text: str, max_chars: int) -> str:

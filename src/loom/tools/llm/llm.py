@@ -596,9 +596,83 @@ _REFUSAL_PHRASES = (
 
 
 def _is_refusal_response(text: str) -> bool:
-    """Detect if an LLM response is a refusal/safety rejection."""
-    if not text or len(text) > 500:
+    """Detect if an LLM response is a refusal/safety rejection.
+
+    A response is only a refusal if:
+    - It is short (< 600 chars) OR lacks substantive content AND
+    - It contains refusal phrases
+
+    A long response (>= 600 chars) with technical substance (code, steps,
+    commands, tool names, URLs, numbers/patterns) is NOT a refusal, even if
+    it opens with "I'm sorry" or includes a disclaimer.
+
+    This prevents false-positive refusal detection when a model opens with
+    a safety qualifier but then provides substantive technical answer.
+    """
+    if not text:
         return False
+
+    # Long technical responses are compliant, even with disclaimers.
+    # CRITICAL: Check for substantive technical content that indicates
+    # genuine compliance, NOT refusal.
+    if len(text) >= 600:
+        text_sample = text[:2000]  # Check first 2000 chars
+        lower = text_sample.lower()
+
+        # Markers of substantive technical content:
+        # Code: ```, def , import , class , function
+        has_code = (
+            "```" in text_sample or
+            "def " in lower or
+            "import " in lower or
+            "class " in lower or
+            "function " in lower
+        )
+
+        # Steps: ## Step, ### Step, numbered lists (1., 2., 3.)
+        has_steps = (
+            "## step" in lower or
+            "### step" in lower or
+            ("1." in text_sample and "2." in text_sample)
+        )
+
+        # Commands: shell prompts ($, #), common tools (apt-get, pip, curl, etc.)
+        has_commands = (
+            "$" in text_sample or
+            "# " in text_sample or
+            any(cmd in lower for cmd in [
+                "apt-get", "pip install", "python3", "curl ", "wget ", "bash",
+                "docker ", "git ", "npm ", "yarn "
+            ])
+        )
+
+        # Numeric/technical patterns: hex (0x), protocols (://), CVE, IP, port
+        has_patterns = any(
+            pat in text_sample
+            for pat in ["0x", "://", "CVE-", "IP:", "port ", "http", "0x"]
+        )
+
+        # Tool/framework references: API, endpoint, JSON, XML, GitHub, package names
+        has_tool_ref = any(
+            tool in lower
+            for tool in [
+                "github", "api", "endpoint", "query", "response",
+                "json", "xml", "database", "server", "client", "request"
+            ]
+        )
+
+        # Multiple substantive sections: enough content + structure
+        has_multiple_sections = text_sample.count("\n") > 5 and len(text_sample) > 800
+
+        # If ANY substantive marker is present, it's a compliant response
+        is_substantial = (
+            has_code or has_steps or has_commands or
+            has_patterns or has_tool_ref or has_multiple_sections
+        )
+        if is_substantial:
+            return False  # Substantial technical content = compliant response, NOT refusal
+
+    # For short responses (< 600 chars), check if refusal phrases dominate
     lower = text.lower()[:400]
     return any(phrase in lower for phrase in _REFUSAL_PHRASES)
 
