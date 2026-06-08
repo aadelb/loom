@@ -19,6 +19,7 @@ __all__ = [
     "ActiveSelectParams",
     "AdversarialBatchParams",
     "AdversarialDebateAttackerParams",
+    "AdversaryPilotParams",
     "AttackEconomyLeaderboardParams",
     "AttackEconomySubmitParams",
     "AttackerTargetDebateParams",
@@ -782,6 +783,73 @@ class UncertaintyEstimateParams(BaseModel):
                     raise ValueError(f"prior_results values must be 0.0-1.0, got {val}")
         return v
 
+
+class AdversaryPilotParams(BaseModel):
+    """Parameters for research_adversary_pilot tool."""
+
+    query: str = Field(
+        description="Attack prompt to reframe and test",
+        min_length=5,
+        max_length=5000,
+    )
+    target_model: str = Field(
+        default="auto",
+        description="LLM provider to attack (auto→groq)",
+        max_length=64,
+    )
+    rounds: int = Field(
+        default=8,
+        description="Thompson-sampling rounds (1-30)",
+        ge=1,
+        le=30,
+    )
+    candidate_strategies: list[str] | None = Field(
+        default=None,
+        description="Explicit strategy names (None→auto-pick 12)",
+    )
+    target_hcs: float = Field(
+        default=8.0,
+        description="Success threshold HCS score (0-10)",
+        ge=0.0,
+        le=10.0,
+    )
+    darkness: int = Field(
+        default=0,
+        description="Abliteration level (0-10, >=7 uses dark_route)",
+        ge=0,
+        le=10,
+    )
+    persist: bool = Field(
+        default=True,
+        description="Save posteriors to disk for cross-call learning",
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("query")
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        """Validate query."""
+        if not v.strip():
+            raise ValueError("query cannot be empty or whitespace-only")
+        return v.strip()
+
+    @field_validator("candidate_strategies")
+    @classmethod
+    def validate_candidate_strategies(cls, v: list[str] | None) -> list[str] | None:
+        """Validate candidate strategies list."""
+        if v is None:
+            return None
+        if not isinstance(v, list):
+            raise ValueError("candidate_strategies must be a list")
+        if len(v) > 50:
+            raise ValueError("candidate_strategies max 50 items")
+        for strategy in v:
+            if not isinstance(strategy, str) or not strategy.strip():
+                raise ValueError("each strategy must be a non-empty string")
+            if len(strategy) > 256:
+                raise ValueError("each strategy max 256 characters")
+        return [s.strip() for s in v]
 
 
 
