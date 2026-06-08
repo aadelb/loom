@@ -155,6 +155,33 @@ async def _seed_l0(query: str, darkness: int, few_shot: str = "") -> tuple[str, 
 # provider -> the reasoning model to target for that provider.
 _REASONING_MODELS: dict[str, str] = {"deepseek": "deepseek-reasoner"}
 
+# Each flagship has a distinct weak point; reframing the prompt with the strategy
+# that best fits THAT model lands more pushes than one strategy for all (from the
+# v8 per-model empirical table). Falls back to the caller's base strategy.
+_PROVIDER_STRATEGY: dict[str, str] = {
+    "openai": "compliance_audit_fork",
+    "anthropic": "ethical_anchor",
+    "gemini": "storytelling_embed",
+    "deepseek": "cot_safety_bypass",
+    "moonshot": "context_first",
+    "nvidia": "reasoning_chain_hijack",
+    "groq": "rl_optimized_framing",
+}
+
+
+def _reframe_for(query: str, provider: str, base_strategy: str) -> str:
+    """Reframe the query with the strategy best suited to ``provider`` (pure CPU)."""
+    try:
+        from loom.tools.llm.prompt_reframe import _apply_strategy, _STRATEGIES
+        strat = _PROVIDER_STRATEGY.get(provider) or base_strategy
+        if strat and strat != "auto" and strat in _STRATEGIES:
+            out = _apply_strategy(query, strat, provider)
+            if out and len(out) >= len(query):
+                return out
+    except Exception:
+        pass
+    return query
+
 
 def _cot_prefill(seed: str, prefill_chars: int) -> str:
     cut = _cut_at_boundary(seed, prefill_chars)
@@ -375,8 +402,11 @@ async def research_safety_ladder(
             # seed is processed during reasoning, before the safety pass.
             r_model = _REASONING_MODELS.get(provider, "auto")
             r_on = r_model != "auto"
+            # Per-flagship reframe: push THIS provider with the strategy that best
+            # fits its specific weak point, not the single global reframe.
+            pq = _reframe_for(query, provider, strategy)
             prefill = 1500
-            out, ms = await _push(provider, reframed, best["response"], prefill,
+            out, ms = await _push(provider, pq, best["response"], prefill,
                                   model=r_model, reasoning=r_on)
             refused = await _refused(out)
             retries = 0
@@ -384,7 +414,7 @@ async def research_safety_ladder(
             while refused and retries < max_refusal_retries and time.monotonic() < deadline:
                 retries += 1
                 prefill = min(prefill + 1500, len(best["response"]) or prefill + 1500)
-                out, ms = await _push(provider, reframed, best["response"], prefill,
+                out, ms = await _push(provider, pq, best["response"], prefill,
                                       model=r_model, reasoning=r_on)
                 refused = await _refused(out)
             hcs, _dims = await _score(out, query) if out and not refused else (0.0, {})
