@@ -1,6 +1,6 @@
 """Moonshot/Kimi provider for Loom.
 
-Uses the OpenAI-compatible API at https://api.moonshot.cn/v1.
+Uses the OpenAI-compatible API at https://api.moonshot.ai/v1.
 Kimi K2 models are also available via NVIDIA NIM.
 """
 
@@ -16,14 +16,18 @@ class MoonshotProvider(OpenAICompatProvider):
 
     Attributes:
         PROVIDER_NAME: "moonshot"
-        DEFAULT_MODEL: "kimi-k2-0711-preview"
+        DEFAULT_MODEL: "moonshot-v1-auto"
         TIMEOUT_SECONDS: 120.0 (Moonshot needs longer timeouts)
     """
 
     PROVIDER_NAME = "moonshot"
     ENV_KEY = "MOONSHOT_API_KEY"
-    BASE_URL = "https://api.moonshot.cn/v1"
-    DEFAULT_MODEL = "kimi-k2-0711-preview"
+    # International endpoint (api.moonshot.ai). Override via MOONSHOT_ENDPOINT for .cn.
+    BASE_URL = "https://api.moonshot.ai/v1"
+    # moonshot-v1-auto reliably returns content and auto-selects the context window.
+    # The old "kimi-k2-0711-preview" 404s on api.moonshot.ai; kimi-k2.5/k2.6 return
+    # empty content over the OpenAI-compat path, so they are opt-in via explicit model=.
+    DEFAULT_MODEL = "moonshot-v1-auto"
     ENV_ENDPOINT_KEY = "MOONSHOT_ENDPOINT"
     SUPPORTS_EMBED = False
     COST_INPUT_PER_M = 0.33
