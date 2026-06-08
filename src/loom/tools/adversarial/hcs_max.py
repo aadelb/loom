@@ -68,15 +68,21 @@ DRAFT:
 Start with ## heading. Pack data into every sentence."""
 
 
-async def _call_provider(provider: str, prompt: str, timeout: int = 60) -> str:
-    """Call a specific LLM provider."""
+async def _call_provider(provider: str, prompt: str, timeout: int = 60, darkness: int = 0) -> str:
+    """Call a specific LLM provider.
+
+    Honors ``provider`` as the override (it was previously ignored — every call
+    silently used the default cloud chain) and, for dark prompts, routes to a
+    local abliterated model so the request isn't refused by a censored provider.
+    """
+    from loom.providers.abliterated import dark_route
+    route = dark_route(darkness, default_provider=provider,
+                       default_timeout=timeout, default_max_tokens=4000)
     try:
         response = await _call_with_cascade(
             [{"role": "user", "content": prompt}],
-            model="auto",
-            max_tokens=4000,
             temperature=0.3,
-            timeout=timeout,
+            **route,
         )
         return response.text or ""
     except Exception as e:
@@ -90,6 +96,7 @@ async def research_hcs_max(
     target_hcs: float = 10.0,
     amplify: bool = True,
     parallel: bool = True,
+    darkness: int = 0,
 ) -> dict[str, Any]:
     """Maximize HCS score using parallel multi-provider escalation.
 
@@ -117,6 +124,17 @@ async def research_hcs_max(
 
     if not prompt:
         return {"error": "Empty prompt", "best_hcs": 0}
+
+    # Auto-detect darkness from the prompt so dark requests route to the local
+    # abliterated model (a censored cloud provider refuses these, yielding
+    # "all providers failed"). Caller may override explicitly.
+    if darkness == 0:
+        _dark_kw = ("exploit", "malware", "ransomware", "weapon", "exfiltrat", "bypass",
+                    "evasion", "payload", "attack", "illicit", "launder", "smuggle",
+                    "vulnerab", "rootkit", "c2 ", "backdoor", "privilege escalation")
+        _low = prompt.lower()
+        if sum(k in _low for k in _dark_kw) >= 2:
+            darkness = 8
 
     # Check cache first
     import hashlib
@@ -159,7 +177,7 @@ async def research_hcs_max(
             reframed_prompts.append((strategy, provider, reframed))
 
         tasks = [
-            _call_provider(provider, reframed, timeout=120)
+            _call_provider(provider, reframed, timeout=120, darkness=darkness)
             for strategy, provider, reframed in reframed_prompts
         ]
         responses = await asyncio.gather(*tasks, return_exceptions=True)
@@ -188,7 +206,7 @@ async def research_hcs_max(
     else:
         for strategy, provider in _PARALLEL_STRATEGIES:
             reframed = _apply_strategy(prompt, strategy, provider)
-            resp = await _call_provider(provider, reframed, timeout=120)
+            resp = await _call_provider(provider, reframed, timeout=120, darkness=darkness)
             if not resp:
                 continue
             score_result = await research_hcs_score(resp, query=prompt)
@@ -225,7 +243,7 @@ async def research_hcs_max(
 
     if amplify and best_hcs < target_hcs:
         amplify_text = _AMPLIFY_PROMPT.format(draft=best_response[:3000])
-        amp_resp = await _call_provider("groq", amplify_text, timeout=120)
+        amp_resp = await _call_provider("groq", amplify_text, timeout=120, darkness=darkness)
         if amp_resp and len(amp_resp) > len(best_response):
             amp_score = await research_hcs_score(amp_resp, query=prompt)
             amplified_hcs = amp_score.get("hcs_score", 0)

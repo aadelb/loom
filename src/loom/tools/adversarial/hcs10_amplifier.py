@@ -267,18 +267,24 @@ async def _mutate_via_llm(
     text: str,
     mutation_template: str,
     provider: str = "groq",
+    darkness: int = 0,
 ) -> str:
-    """Mutate text using LLM provider directly via _call_with_cascade."""
+    """Mutate text using LLM provider directly via _call_with_cascade.
+
+    Gold-corpus mutations of dark content get refused by a censored provider.
+    When darkness is set, mutate on the local abliterated model instead — it
+    complies and, being free + rate-limit-free, enables unlimited amplification.
+    """
     prompt = mutation_template.format(text=text[:2000])
     try:
         from loom.tools.llm.llm import _call_with_cascade
+        from loom.providers.abliterated import dark_route
 
         resp = await _call_with_cascade(
             messages=[{"role": "user", "content": prompt}],
-            provider_override=provider,
-            max_tokens=3000,
             temperature=0.7,
-            timeout=60,
+            **dark_route(darkness, default_provider=provider,
+                         default_max_tokens=3000, default_timeout=60),
         )
         return resp.text if resp else ""
     except Exception as e:

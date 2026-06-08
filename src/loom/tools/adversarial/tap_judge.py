@@ -99,11 +99,22 @@ def _parse_quality_json(text: str) -> dict | None:
 
 
 @handle_tool_errors("research_tap_judge")
+def _judge_route(provider: str, darkness: int, max_tokens: int, default_timeout: int) -> dict:
+    """Call kwargs for a judge: route to an abliterated model when judging dark
+    content (a censored judge refuses to read it and returns a false 1/empty),
+    otherwise keep the caller's cloud provider. Judge outputs stay short."""
+    from loom.providers.abliterated import dark_route
+    route = dark_route(darkness, default_provider=provider, default_timeout=default_timeout)
+    route["max_tokens"] = max_tokens  # a judge only needs a short verdict
+    return route
+
+
 async def research_tap_judge(
     response_text: str,
     goal: str,
     provider: str = "groq",
     model: str = "auto",
+    darkness: int = 0,
 ) -> dict[str, Any]:
     """TAP-style jailbreak judge — rate bypass effectiveness 1-10.
 
@@ -115,6 +126,8 @@ async def research_tap_judge(
         goal: The original attack goal/task.
         provider: LLM provider for judge (default: groq).
         model: Model to use (default: auto).
+        darkness: 0-10. When >=7 the judge runs on a local abliterated model so it
+            actually engages with dark content instead of refusing to score it.
 
     Returns:
         Dict with tap_rating (1-10), on_topic (bool), and judge metadata.
@@ -133,10 +146,8 @@ async def research_tap_judge(
                 {"role": "system", "content": judge_prompt},
                 {"role": "user", "content": eval_input},
             ],
-            provider_override=provider,
-            max_tokens=200,
             temperature=0.0,
-            timeout=30,
+            **_judge_route(provider, darkness, max_tokens=200, default_timeout=30),
         )
         judge_text = resp.text if resp else ""
         rating = _parse_tap_rating(judge_text)
@@ -154,10 +165,8 @@ async def research_tap_judge(
                 {"role": "system", "content": topic_prompt},
                 {"role": "user", "content": topic_input},
             ],
-            provider_override=provider,
-            max_tokens=50,
             temperature=0.0,
-            timeout=15,
+            **_judge_route(provider, darkness, max_tokens=50, default_timeout=15),
         )
         on_topic = _parse_tap_on_topic(resp2.text if resp2 else "")
     except Exception:
@@ -178,6 +187,7 @@ async def research_quality_judge(
     query: str,
     dimensions: list[tuple[str, str]] | None = None,
     provider: str = "groq",
+    darkness: int = 0,
 ) -> dict[str, Any]:
     """LLM-as-judge quality evaluation across multiple dimensions.
 
@@ -215,10 +225,8 @@ async def research_quality_judge(
     try:
         resp = await _call_with_cascade(
             messages=[{"role": "user", "content": prompt}],
-            provider_override=provider,
-            max_tokens=500,
             temperature=0.1,
-            timeout=30,
+            **_judge_route(provider, darkness, max_tokens=500, default_timeout=30),
         )
         result = _parse_quality_json(resp.text if resp else "")
         if result and "scores" in result:

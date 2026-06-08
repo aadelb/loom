@@ -51,6 +51,7 @@ _COST_PER_1K_TOKENS: dict[str, float] = {
     "openai": 0.03,
     "anthropic": 0.015,
     "vllm": 0.0,
+    "ollama": 0.0,  # local abliterated models — free, no API cost
 }
 
 

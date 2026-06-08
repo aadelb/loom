@@ -1,0 +1,65 @@
+# Abliterated Local-Model Integration Audit
+
+**Date:** 2026-06-08 · **Author:** Ahmed Adel Bakr Alderai
+**Sources:** Kimi (thinking, read source), DeepSeek-V4 (reasoner), Claude (verification + implementation). Gemini blocked by concurrent CLI contention.
+
+## The bug class (one pattern, ~20 sites)
+
+Loom runs local **abliterated** models (safety removed) on Ollama in 4 sizes:
+`fast` 8B (~6.2 tok/s) · `mid` 9B (~4.5) · `deep` 30B (~2) · `max` 35B (~5.5 warm).
+Selected by darkness via `loom.providers.abliterated.select_abliterated()` /
+`dark_route()`.
+
+Many red-team tools **generate or judge dark content but pass only `model="auto"`
+(or a hardcoded censored provider) with NO `provider_override`**, so the request
+silently lands on a safety-aligned cloud model that refuses/sanitizes exactly the
+content the tool exists for → "all providers failed", false 0/refusal scores, or
+sanitized weak output. Same root cause as the `full_pipeline` dark-routing bug
+(fixed in commit 26c905c).
+
+Fix = `dark_route(darkness)` helper → forces `provider_override="ollama"` + a
+size-tiered abliterated model + CPU-appropriate token/timeout when dark.
+
+## P0 — broken now, highest impact (both models agree)
+
+| # | File | Problem | Fix | Tier |
+|---|------|---------|-----|------|
+| 1 | adversarial/tap_judge.py | `research_tap_judge`/`research_quality_judge` default `provider="groq"`; censored judge refuses to read dark response → false `[[1]]`/empty | add `darkness` param → `dark_route` | mid |
+| 2 | adversarial/hcs_max.py | `_call_provider` `model="auto"` no override; amplify uses groq → dark prompts: "all providers failed" | darkness-aware `_call_provider` + amplify | mid/deep |
+| 3 | adversarial/hcs_escalation.py | escalation loop `model="auto"` no override; dark reframes refused every attempt | `dark_route` when target_hcs>=8/dark | mid |
+| 4 | adversarial/quality_router.py | "dark_max" profile ("zero refusals") routes to `["deepseek","groq","nvidia"]` — defeats itself | force ollama for dark_max | deep |
+| 5 | llm/quality_escalation.py | `danger_level`/`anti_hedging` suffixes ("most dangerous details") → cloud refuses → dimension capped | `dark_route` on dark suffixes | mid |
+| 6 | adversarial/daisy_chain_tool.py | hardcodes qwen35-35b w/ **60s** timeout; 35B needs ~1150s/1.5k tok → ALWAYS times out | `select_abliterated()`+proper timeout | tiered |
+| 7 | llm/ask_all_models.py | no ollama/abliterated in model list → dark queries: all cloud refuse | add ollama provider for dark | mid |
+| 8 | llm/expert_engine.py | `_call_llm_with_reframe` `model="auto"` no override; "underground" angle refused | `dark_route` for dark/security | mid |
+| 9 | llm/response_synthesizer.py | `_call_with_cascade` `model="auto"`; synthesizing dark content sanitized/refused | `dark_route` for dark synthesis | mid |
+| 10 | adversarial/adversarial_debate_tool.py | red debater on cloud refuses to argue dark positions | optional abliterated attacker brain | deep |
+
+## P1 — high impact / new capability
+
+| # | File | Problem / opportunity | Fix | Tier |
+|---|------|----------------------|-----|------|
+| 11 | adversarial/hcs10_amplifier.py | `_mutate_via_llm` `provider="groq"`; dark mutations refused. Local = unlimited FREE gold-corpus amplification | abliterated mutations | max |
+| 12 | adversarial/memory_segmentation.py | segment gen on cloud may refuse fragmented dark | ollama per segment | fast |
+| 13 | research/transferability.py | missing ollama as a transfer target | add ollama | mid |
+| 14 | llm/model_consensus.py | DEFAULT_MODELS all censored; dark → consensus of refusals | ollama anchor for dark | fast |
+| 15 | intelligence/synth_echo.py | `provider="groq"`; dark synthetic intel refused; add `local_only` | ollama for dark | mid |
+| 16 | adversarial/cross_provider_vuln.py | dead "vllm" baseline; add ollama as ground-truth uncensored baseline | ollama | fast |
+| 17 | infrastructure/autonomous_agent.py | dark multi-step plans refused mid-loop | ollama for dark steps | fast/max |
+| 18 | llm/constraint_optimizer.py | cloud generator self-censors effective dark strategies | ollama baseline | mid |
+| 19 | adversarial/cross_domain.py | cloud refuses dark fictional story components | ollama for dark | mid |
+| 20 | adversarial/efficiency_scorer.py | no "ollama" cost entry (free → should score 10 cost_efficiency); dead vllm | add ollama=0.0 | n/a |
+
+## P2 — cleanup / options
+
+| # | File | Fix |
+|---|------|-----|
+| 21 | intelligence/competitive_monitor.py | dead "vllm" provider ref → ollama |
+| 22 | monitoring/circuit_breaker.py | dead "vllm" ref → add ollama |
+| 23 | llm/llm.py | docstrings/chain still mention vllm; consider skip-refusal-check for abliterated (already `provider.name!="ollama"`) |
+| 24 | llm/nl_executor.py, llm/query_builder.py, intelligence/threat_intel.py | optional dark routing |
+| 25 | adversarial/quality_max.py | generation path goes via hcs_max (#2) — fixed upstream |
+
+## Already correct (verified)
+- strategy_router.py — has "ollama" profile (added) · quality_cascade.py — abliterated anchor (fixed) ·
+  full_pipeline.py — dark routing fixed (26c905c) · llm/local_techniques.py + llm/reframe_with_scoring.py — already use abliterated directly · llm.py:896 — already skips refusal check for ollama.

@@ -61,3 +61,36 @@ def select_abliterated(darkness: int) -> tuple[str, int, int]:
 def tier_params(tier: str) -> tuple[str, int, int]:
     """Return (model, max_tokens, timeout_s) for a named tier (default 'mid')."""
     return ABLITERATED_TIERS.get(tier, ABLITERATED_TIERS["mid"])
+
+
+def dark_route(
+    darkness: int,
+    *,
+    threshold: int = 7,
+    default_provider: str = "groq",
+    default_model: str = "auto",
+    default_max_tokens: int = 2000,
+    default_timeout: int = 90,
+) -> dict:
+    """Return ``_call_with_cascade`` kwargs that route DARK work to a local
+    abliterated model and everything else to the fast cloud default.
+
+    This is the single fix for the recurring bug across Loom's red-team tools:
+    they generate or *judge* dark content but pass only ``model="auto"`` (or a
+    hardcoded censored provider) with no ``provider_override``, so the request
+    silently lands on a safety-aligned cloud model that refuses or sanitizes it —
+    exactly the content the tool exists to produce or score. When darkness meets
+    the threshold this forces ``provider_override="ollama"`` with a size-tiered
+    abliterated model + a CPU-appropriate token/timeout budget; below it, the
+    normal fast cloud path is unchanged.
+
+    Spread the result into the call, e.g.::
+
+        resp = await _call_with_cascade(messages=msgs, **dark_route(darkness))
+    """
+    if darkness >= threshold:
+        model, max_tokens, timeout = select_abliterated(darkness)
+        return {"provider_override": "ollama", "model": model,
+                "max_tokens": max_tokens, "timeout": timeout}
+    return {"provider_override": (default_provider if default_provider != "auto" else None),
+            "model": default_model, "max_tokens": default_max_tokens, "timeout": default_timeout}

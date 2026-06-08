@@ -104,19 +104,25 @@ async def research_daisy_chain(
         """Combiner with assistant prefilling from abliterated model."""
         try:
             import aiohttp
-            # Step 1: Get uncensored anchor from abliterated model
+            # Step 1: Get uncensored anchor from abliterated model. Use the shared
+            # tier table so the model, token budget, and TIMEOUT are matched to CPU
+            # throughput — the old hardcoded 35B + 1500 tokens + 60s timeout ALWAYS
+            # timed out (35B needs ~270s+ on CPU), so the anchor was always empty
+            # and the chain silently fell back to the censored combiner.
+            from loom.providers.abliterated import tier_params as _ab_tp
+            _anchor_model, _anchor_tok, _anchor_to = _ab_tp("max")
             anchor_text = ""
             try:
                 async with aiohttp.ClientSession() as session:
                     async with session.post(
                         "http://localhost:11434/api/generate",
                         json={
-                            "model": "qwen35-35b-abliterated",
+                            "model": _anchor_model,
                             "prompt": f"Synthesize these research findings into a comprehensive answer:\n\n{prompt[:2000]}",
                             "stream": False,
-                            "options": {"num_predict": 1500},
+                            "options": {"num_predict": _anchor_tok},
                         },
-                        timeout=aiohttp.ClientTimeout(total=60),
+                        timeout=aiohttp.ClientTimeout(total=_anchor_to),
                     ) as resp:
                         if resp.status == 200:
                             data = await resp.json()

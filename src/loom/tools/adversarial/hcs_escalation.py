@@ -133,12 +133,17 @@ async def research_hcs_escalate(
             reframed = _apply_strategy(prompt, strategy, "gpt")
 
             try:
+                # The escalation chain applies increasingly DARK strategies; a
+                # censored cloud model refuses them, so every attempt past the
+                # first returns empty and the score can never rise. Route to a
+                # local abliterated model when aiming high.
+                from loom.providers.abliterated import dark_route
+                _route = dark_route(8 if target_hcs >= 8 else 0,
+                                    default_max_tokens=2000, default_timeout=120)
                 llm_response = await _call_with_cascade(
                     [{"role": "user", "content": reframed}],
-                    model="auto",
-                    max_tokens=2000,
                     temperature=0.4,
-                    timeout=120,
+                    **_route,
                 )
                 current_response = llm_response.text
 

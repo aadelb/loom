@@ -28,6 +28,7 @@ async def research_synthesize_report(
     answers: list[str],
     format: str = "executive",
     max_tokens: int = 3000,
+    darkness: int = 0,
 ) -> dict[str, Any]:
     """Synthesize multiple answers into a single coherent report.
 
@@ -134,11 +135,14 @@ Generate the report now."""
         raise RuntimeError("LLM tools not available (failed to import llm module)")
 
     try:
+        # Synthesizing dark content (e.g. from a darkness pipeline) on a censored
+        # model gets the report sanitized or refused; route to abliterated when dark.
+        from loom.providers.abliterated import dark_route
+        route = dark_route(darkness, default_max_tokens=max_tokens, default_timeout=120)
         response = await _call_with_cascade(
             messages=[{"role": "user", "content": synthesis_prompt}],
-            model="auto",
-            max_tokens=max_tokens,
             temperature=0.3,
+            **route,
         )
 
         report_text = response.text.strip()

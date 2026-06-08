@@ -114,14 +114,15 @@ PROFILES = {
 }
 
 
-async def _call_provider(prompt: str, temperature: float, max_tokens: int, timeout: int = 120) -> str:
+async def _call_provider(prompt: str, temperature: float, max_tokens: int,
+                         timeout: int = 120, darkness: int = 0) -> str:
     try:
+        from loom.providers.abliterated import dark_route
+        route = dark_route(darkness, default_max_tokens=max_tokens, default_timeout=timeout)
         response = await _call_with_cascade(
             [{"role": "user", "content": prompt}],
-            model="auto",
-            max_tokens=max_tokens,
             temperature=temperature,
-            timeout=timeout,
+            **route,
         )
         return response.text or ""
     except Exception as e:
@@ -193,8 +194,13 @@ async def _run_profile(prompt: str, profile_name: str) -> dict[str, Any]:
         reframed = _apply_strategy(prompt, strategy, "groq") + suffix
         reframed_prompts.append((strategy, reframed))
 
+    # The "dark_max" profile promises "maximum compliance on sensitive topics
+    # (zero refusals)" but its cloud providers refuse — route it to the local
+    # abliterated model so it actually delivers on that promise.
+    profile_darkness = 9 if profile_name == "dark_max" else 0
+
     tasks = [
-        _call_provider(reframed, temperature, max_tokens)
+        _call_provider(reframed, temperature, max_tokens, darkness=profile_darkness)
         for _, reframed in reframed_prompts
     ]
     responses = await asyncio.gather(*tasks, return_exceptions=True)

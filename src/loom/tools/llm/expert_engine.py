@@ -159,16 +159,20 @@ async def _call_llm_with_reframe(
     """
     current_prompt = prompt
     last_response = ""
+    use_abliterated = False  # flip on after a cloud refusal
 
     for attempt in range(max_attempts):
         try:
-            # Call LLM with cascade
+            # After a censored cloud refusal, escalate to the LOCAL ABLITERATED
+            # model — it has no refusal layer, so it answers what the cloud won't
+            # rather than burning another reframing round against a refusal.
+            from loom.providers.abliterated import dark_route
+            route = dark_route(8 if use_abliterated else 0,
+                               default_max_tokens=2000, default_timeout=90)
             response = await _call_with_cascade(
                 messages=[{"role": "user", "content": current_prompt}],
-                model="auto",
-                max_tokens=2000,
                 temperature=0.3,
-                timeout=90,
+                **route,
             )
             response_text = response.text if response else ""
             last_response = response_text
@@ -176,6 +180,8 @@ async def _call_llm_with_reframe(
             # Check for refusal
             refusal_result = await research_refusal_detector(response_text)
             is_refusal = refusal_result.get("is_refusal", False)
+            if is_refusal:
+                use_abliterated = True  # next attempt goes local-uncensored
 
             # If good response (not refused and substantive), return it
             if not is_refusal and len(response_text) > 100:
