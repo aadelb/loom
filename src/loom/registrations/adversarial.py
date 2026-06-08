@@ -50,6 +50,13 @@ def register_adversarial_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip ipi_proxy: %s", e)
         record_failure("adversarial", "ipi_proxy", str(e))
     try:
+        from loom.tools.adversarial.quant_bypass import research_quant_bypass
+        mcp.tool()(wrap_tool(research_quant_bypass))
+        record_success("adversarial", "research_quant_bypass")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip quant_bypass: %s", e)
+        record_failure("adversarial", "quant_bypass", str(e))
+    try:
         from loom.tools.adversarial.adversarial_craft import research_craft_adversarial, research_adversarial_batch
         mcp.tool()(wrap_tool(research_craft_adversarial))
         record_success("adversarial", "research_craft_adversarial")

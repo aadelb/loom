@@ -35,6 +35,7 @@ __all__ = [
     "PotencyScoreParams",
     "PredictAttacksParams",
     "PreemptivePatchParams",
+    "QuantBypassParams",
     "ResiliencePredictorParams",
     "ScapyPacketCraftParams",
     "SuperpositionPromptParams",
@@ -1006,6 +1007,95 @@ class XTeamingParams(BaseModel):
             raise ValueError("model cannot be empty")
         if len(v) > 64:
             raise ValueError("model max length is 64 characters")
+        return v.strip()
+
+
+class QuantBypassParams(BaseModel):
+    """Parameters for research_quant_bypass tool."""
+
+    query: str = Field(
+        description="Dark request to test across quantization levels",
+        max_length=5000,
+    )
+    models: list[str] | None = Field(
+        default=None,
+        description="Specific Ollama model tags to test. If None, auto-discover.",
+        max_length=12,
+    )
+    cloud_reference: str | None = Field(
+        default="groq",
+        description="Cloud provider for high-precision baseline (groq/nvidia/etc). None to skip.",
+        max_length=64,
+    )
+    reframe_strategy: str | None = Field(
+        default=None,
+        description="Optional reframing strategy name to apply to query first",
+        max_length=256,
+    )
+    target_hcs: float = Field(
+        default=7.0,
+        description="HCS threshold for compliance judgment (0-10 scale)",
+        ge=0.0,
+        le=10.0,
+    )
+    max_models: int = Field(
+        default=6,
+        description="Max number of local models to test (bounds CPU time, 1-12)",
+        ge=1,
+        le=12,
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("query")
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        """Validate query."""
+        if not v.strip():
+            raise ValueError("query cannot be empty or whitespace-only")
+        if len(v) > 5000:
+            raise ValueError("query max length is 5000 characters")
+        return v.strip()
+
+    @field_validator("models")
+    @classmethod
+    def validate_models(cls, v: list[str] | None) -> list[str] | None:
+        """Validate models list."""
+        if v is None:
+            return v
+        if not isinstance(v, list):
+            raise ValueError("models must be a list or None")
+        if len(v) > 12:
+            raise ValueError("models list max 12 items")
+        for model in v:
+            if not isinstance(model, str) or not model.strip():
+                raise ValueError("all models must be non-empty strings")
+            if len(model) > 128:
+                raise ValueError("each model tag max 128 characters")
+        return v
+
+    @field_validator("cloud_reference")
+    @classmethod
+    def validate_cloud_ref(cls, v: str | None) -> str | None:
+        """Validate cloud reference."""
+        if v is None:
+            return v
+        if not isinstance(v, str) or not v.strip():
+            raise ValueError("cloud_reference must be a non-empty string or None")
+        if len(v) > 64:
+            raise ValueError("cloud_reference max 64 characters")
+        return v.strip()
+
+    @field_validator("reframe_strategy")
+    @classmethod
+    def validate_strategy(cls, v: str | None) -> str | None:
+        """Validate reframe strategy."""
+        if v is None:
+            return v
+        if not isinstance(v, str) or not v.strip():
+            raise ValueError("reframe_strategy must be a non-empty string or None")
+        if len(v) > 256:
+            raise ValueError("reframe_strategy max 256 characters")
         return v.strip()
 
 

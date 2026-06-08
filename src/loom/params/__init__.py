@@ -147,6 +147,7 @@ from loom.params.adversarial import (
     PotencyScoreParams,
     PredictAttacksParams,
     PreemptivePatchParams,
+    QuantBypassParams,
     ResiliencePredictorParams,
     ScapyPacketCraftParams,
     SuperpositionPromptParams,
