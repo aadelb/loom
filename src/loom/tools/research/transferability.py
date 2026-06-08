@@ -29,7 +29,7 @@ async def research_transfer_test(
 
     try:
         if not models:
-            models = ["nvidia", "groq", "deepseek"]
+            models = ["nvidia", "groq", "deepseek", "ollama"]
         reframed = _apply_strategy(prompt, strategy)
         responses = await asyncio.gather(*[_query_model(m, reframed) for m in models], return_exceptions=True)
         results_per_model: dict[str, dict[str, Any]] = {}

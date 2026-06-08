@@ -20,10 +20,15 @@ from typing import Any
 
 from loom.error_responses import handle_tool_errors
 
+try:
+    from loom.providers.abliterated import dark_route
+except ImportError:
+    dark_route = None  # type: ignore
+
 logger = logging.getLogger("loom.tools.memory_segmentation")
 
 
-async def _decompose(query: str, num_turns: int) -> list[str]:
+async def _decompose(query: str, num_turns: int, darkness: int = 0, override: str | None = None) -> list[str]:
     """Ask the model to split the request into innocuous, ordered sub-prompts."""
     from loom.tools.llm.llm import _call_with_cascade
 
@@ -40,9 +45,8 @@ async def _decompose(query: str, num_turns: int) -> list[str]:
                 {"role": "system", "content": sys},
                 {"role": "user", "content": query},
             ],
-            max_tokens=800,
             temperature=0.4,
-            timeout=60,
+            **dark_route(darkness, default_provider=(override or "groq"), default_max_tokens=800, default_timeout=60),
         )
         text = resp.text if resp else ""
         start, end = text.find("{"), text.rfind("}")
@@ -67,6 +71,7 @@ async def research_memory_segmentation_chain(
     num_turns: int = 3,
     provider: str = "auto",
     store_memory: bool = True,
+    darkness: int = 0,
 ) -> dict[str, Any]:
     """Multi-turn Inception/Segmentation attack chain (2504.20376).
 
@@ -88,8 +93,10 @@ async def research_memory_segmentation_chain(
     start = time.time()
     num_turns = max(2, min(5, num_turns))
     override = None if provider == "auto" else provider
+    if darkness >= 7 and provider == "auto":
+        override = "ollama"
 
-    sub_prompts = await _decompose(query, num_turns)
+    sub_prompts = await _decompose(query, num_turns, darkness, override)
 
     # Walk the turns, accumulating conversation memory
     conversation: list[dict[str, str]] = [

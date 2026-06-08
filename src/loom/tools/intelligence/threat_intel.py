@@ -15,6 +15,12 @@ import httpx
 from loom.http_helpers import fetch_json, fetch_text
 
 from loom.error_responses import handle_tool_errors
+
+try:
+    from loom.providers.abliterated import dark_route
+except ImportError:
+    dark_route = None  # type: ignore
+
 logger = logging.getLogger("loom.tools.threat_intel")
 
 # API endpoints for threat intelligence services
@@ -183,7 +189,7 @@ def _extract_urls_from_text(text: str) -> list[str]:
 
 
 async def _llm_analyze_threat_data(
-    threat_data: dict[str, Any], use_llm_analysis: bool = False
+    threat_data: dict[str, Any], use_llm_analysis: bool = False, darkness: int = 0
 ) -> dict[str, Any]:
     """Optionally use LLM to analyze and structure threat data.
 
@@ -193,7 +199,7 @@ async def _llm_analyze_threat_data(
         return {}
 
     try:
-        from loom.tools.llm.llm import research_llm_chat
+        from loom.tools.llm.llm import _call_with_cascade
 
         # Build a summary of the threat data
         summary = json.dumps(threat_data, indent=2)[:2000]
@@ -206,17 +212,17 @@ async def _llm_analyze_threat_data(
 Data:
 {summary}"""
 
-        logger.debug("threat_intel integrating with research_llm_chat for analysis")
+        logger.debug("threat_intel integrating with LLM for analysis")
 
-        result = await research_llm_chat(
-            prompt=prompt,
-            model="auto",
+        resp = await _call_with_cascade(
+            messages=[{"role": "user", "content": prompt}],
+            **dark_route(darkness, default_max_tokens=1000, default_timeout=90),
         )
 
-        if result and "response" in result:
+        if resp:
             return {
-                "llm_analysis": result.get("response", ""),
-                "model_used": result.get("model", ""),
+                "llm_analysis": resp.text if hasattr(resp, "text") else str(resp),
+                "model_used": getattr(resp, "model", ""),
             }
     except Exception as exc:
         logger.debug("LLM analysis integration failed: %s", exc)
@@ -659,7 +665,7 @@ async def research_malware_intel(hash_value: str) -> dict[str, Any]:
 
 @handle_tool_errors("research_domain_reputation")
 
-async def research_domain_reputation(domain: str, use_llm_analysis: bool = False) -> dict[str, Any]:
+async def research_domain_reputation(domain: str, use_llm_analysis: bool = False, darkness: int = 0) -> dict[str, Any]:
     """Aggregate domain reputation from multiple threat intelligence sources.
 
     Checks domain reputation across 5+ sources:
@@ -772,7 +778,7 @@ async def research_domain_reputation(domain: str, use_llm_analysis: bool = False
 
         # Optional LLM analysis integration
         if use_llm_analysis:
-            llm_analysis = await _llm_analyze_threat_data(result, True)
+            llm_analysis = await _llm_analyze_threat_data(result, True, darkness)
             result.update(llm_analysis)
 
         return result
@@ -781,7 +787,7 @@ async def research_domain_reputation(domain: str, use_llm_analysis: bool = False
 
 @handle_tool_errors("research_ioc_enrich")
 
-async def research_ioc_enrich(ioc: str, ioc_type: str = "auto") -> dict[str, Any]:
+async def research_ioc_enrich(ioc: str, ioc_type: str = "auto", darkness: int = 0) -> dict[str, Any]:
     """Enrich any IOC (IP, domain, hash, URL) from multiple free sources.
 
     Simultaneously queries all available free threat intelligence sources:

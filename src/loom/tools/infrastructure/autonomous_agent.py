@@ -18,6 +18,11 @@ from typing import Any
 from loom.error_responses import handle_tool_errors
 
 try:
+    from loom.providers.abliterated import dark_route
+except ImportError:
+    dark_route = None  # type: ignore
+
+try:
     from loom.tools.llm.llm import _call_with_cascade
     from loom.tools.llm.prompt_reframe import _apply_strategy, _STRATEGIES
     from loom.tools.llm.strategy_feedback import research_strategy_log
@@ -77,6 +82,7 @@ async def research_auto_redteam(
     target_model: str = "nvidia",
     strategies_to_test: int = 10,
     topic: str = "general",
+    darkness: int = 0,
 ) -> dict[str, Any]:
     """Automatically test strategies against a target model.
 
@@ -119,11 +125,13 @@ async def research_auto_redteam(
             messages = [{"role": "user", "content": reframed}]
             response = await _call_with_cascade(
                 messages,
-                model="auto",
-                provider_override=target_model if target_model != "all" else None,
-                max_tokens=200,
                 temperature=0.3,
-                timeout=30,
+                **dark_route(
+                    darkness,
+                    default_provider=(target_model if target_model != "all" else "groq"),
+                    default_max_tokens=200,
+                    default_timeout=30,
+                ),
             )
 
             # Basic HCS scoring (0-100 based on response length and compliance signals)

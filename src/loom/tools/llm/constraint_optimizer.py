@@ -118,7 +118,7 @@ def _detect_model(model_name: str) -> str:
     return "gpt"
 
 
-async def _score_prompt(prompt: str) -> dict[str, Any]:
+async def _score_prompt(prompt: str, model: str = "auto") -> dict[str, Any]:
     """Score a prompt across multiple dimensions.
 
     Returns dict with dimension scores (hcs, stealth, danger, etc.)
@@ -135,7 +135,7 @@ async def _score_prompt(prompt: str) -> dict[str, Any]:
         scores["stealth"] = stealth_result.get("stealth_score", 0)
 
         # Score danger (baseline attack score)
-        attack_result = await research_attack_score(prompt, "", strategy="unknown", model="auto")
+        attack_result = await research_attack_score(prompt, "", strategy="unknown", model=model)
         # Extract attack effectiveness as danger inverse
         attack_score = attack_result.get("total_score", 0)
         scores["danger"] = attack_score
@@ -154,6 +154,7 @@ async def research_constraint_optimize(
     constraints: dict[str, dict[str, float]] | None = None,
     max_iterations: int = 20,
     target_model: str = "auto",
+    darkness: int = 0,
 ) -> dict[str, Any]:
     """Find reframed prompt satisfying multiple constraints simultaneously.
 
@@ -213,8 +214,12 @@ async def research_constraint_optimize(
         optimizer = ConstraintOptimizer(_STRATEGY_CATALOG)
 
         # Run optimization
+        scoring_model = "ollama" if darkness >= 7 else target_model
+        async def _score_fn(p: str) -> dict[str, Any]:
+            return await _score_prompt(p, model=scoring_model)
+
         result = await optimizer._optimize_async(
-            prompt, constraints, _score_prompt, max_iterations
+            prompt, constraints, _score_fn, max_iterations
         )
 
         # Enhance result with strategy details
@@ -252,6 +257,7 @@ async def tool_constraint_optimize(
     constraints: dict[str, dict[str, float]] | None = None,
     max_iterations: int = 20,
     target_model: str = "auto",
+    darkness: int = 0,
 ) -> list[dict[str, Any]]:
     """MCP wrapper for research_constraint_optimize."""
     result = await research_constraint_optimize(
@@ -259,5 +265,6 @@ async def tool_constraint_optimize(
         constraints=constraints,
         max_iterations=max_iterations,
         target_model=target_model,
+        darkness=darkness,
     )
     return [{"type": "text", "text": json.dumps(result, indent=2)}]

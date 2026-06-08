@@ -294,6 +294,7 @@ async def research_full_pipeline(
     max_cost_usd: float = 10.0,
     recency_pulse: bool = True,
     recency_days: int = 30,
+    max_wall_secs: int = 480,
 ) -> dict[str, Any]:
     """Execute complete research pipeline end-to-end.
 
@@ -353,6 +354,16 @@ async def research_full_pipeline(
     total_cost = 0.0
     estimated_cost = 0.0
 
+    # Wall-clock deadline. The cost gate (max_cost_usd) can NOT bound dark runs:
+    # abliterated calls cost $0, so the escalation loop would re-run ~225s CPU
+    # generations until the 600s tool budget kills it and returns an EMPTY result.
+    # This deadline bounds free-model CPU time; on a dark run we also cap the
+    # per-question retries (the abliterated model complies on attempt 1 — escalation
+    # exists to beat refusals it doesn't have).
+    import time as _time
+    _deadline = _time.monotonic() + max_wall_secs
+    _eff_attempts = 2 if darkness_level >= 8 else max_escalation_attempts
+
     # Initialize strategy adapter (singleton, loads persisted state)
     adapter = None
     if STRATEGY_ADAPTER_AVAILABLE:
@@ -390,6 +401,15 @@ async def research_full_pipeline(
     failed_strategies: list[str] = []
 
     for idx, sub_q in enumerate(sub_questions):
+        # Wall-clock guard: stop taking new sub-questions once the deadline passes
+        # so we always reach synthesis with whatever answers we have (never return
+        # empty after a 600s timeout). Always process at least the first question.
+        if idx > 0 and _time.monotonic() >= _deadline:
+            logger.warning(
+                "stage2_wall_deadline question_idx=%d — skipping remaining %d sub-questions → synthesis",
+                idx, len(sub_questions) - idx,
+            )
+            break
         logger.info("stage2_question question_idx=%d text=%s", idx, sub_q[:60])
 
         answer_text = ""
@@ -401,8 +421,16 @@ async def research_full_pipeline(
         current_model = None  # Track which model was used
         current_dims_dict: dict[str, float] = {}  # Initialize for dimension tracking
 
-        for attempt in range(max_escalation_attempts):
+        for attempt in range(_eff_attempts):
             try:
+                # Wall-clock gate: the cost gate below can't bound free abliterated
+                # CPU time, so stop escalating this question once the deadline trips.
+                if _time.monotonic() >= _deadline:
+                    logger.warning(
+                        "stage2_wall_deadline_inner question_idx=%d attempt=%d — stop escalating",
+                        idx, attempt + 1,
+                    )
+                    break
                 # Cost gate: skip if budget exhausted
                 if total_cost >= max_cost_usd:
                     logger.warning(
@@ -632,7 +660,7 @@ async def research_full_pipeline(
 
                 # ── DIMENSION-BASED ESCALATION ──
                 # If below target OR has escalation triggers, escalate
-                if attempt < max_escalation_attempts - 1 and (current_score < target_hcs or current_dimensions):
+                if attempt < _eff_attempts - 1 and (current_score < target_hcs or current_dimensions):
                     # Log which dimensions triggered escalation
                     if current_dimensions:
                         logger.info(
@@ -803,13 +831,13 @@ async def research_full_pipeline(
                     "attempt": attempt + 1,
                     "error": str(e)[:200],
                 })
-                if attempt == max_escalation_attempts - 1:
+                if attempt == _eff_attempts - 1:
                     # Last attempt failed; use best answer so far
                     if not answer_text:
                         answer_text = f"[Failed to answer: {str(e)[:100]}]"
 
         # ── FALLBACK: If escalation exhausted with low score, try research_deep ──
-        if best_score < target_hcs and escalation_count >= max_escalation_attempts - 1:
+        if best_score < target_hcs and escalation_count >= _eff_attempts - 1:
             logger.info(
                 "stage2_fallback_to_deep question_idx=%d best_score=%.1f target=%.1f",
                 idx,
