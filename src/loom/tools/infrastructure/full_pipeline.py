@@ -295,6 +295,7 @@ async def research_full_pipeline(
     recency_pulse: bool = True,
     recency_days: int = 30,
     max_wall_secs: int = 480,
+    boost_flagship: bool = False,
 ) -> dict[str, Any]:
     """Execute complete research pipeline end-to-end.
 
@@ -998,7 +999,28 @@ Answers:
     synthesis_prompt += "\nProvide a unified summary integrating all answers."
 
     synthesis = "[Synthesis skipped: cost limit reached]"
-    if total_cost < max_cost_usd:
+    # Part E (opt-in): for dark runs, push the final synthesis up the safety-gradient
+    # ladder — abliterated seed → flagship continuation — so the report comes from a
+    # flagship pushed past its refusal rather than a single model. Default off because
+    # the full climb is CPU-slow (~minutes); the standalone research_safety_ladder is
+    # the primary entry point.
+    _boosted = False
+    if boost_flagship and darkness_level >= 8 and _time.monotonic() < _deadline:
+        try:
+            from loom.tools.llm.abliterated_boost import ladder_boost_text
+            _rem = max(120, int(_deadline - _time.monotonic()))
+            btext, bmeta = await ladder_boost_text(
+                synthesis_prompt, darkness=darkness_level, target_hcs=target_hcs,
+                max_wall_secs=_rem,
+            )
+            if btext and len(btext) > 200:
+                synthesis = btext
+                _boosted = True
+                logger.info("stage3_flagship_boost rung=%s provider=%s hcs=%s",
+                            bmeta.get("best_rung"), bmeta.get("best_provider"), bmeta.get("best_hcs"))
+        except Exception as exc:
+            logger.warning("stage3_flagship_boost_failed error=%s", str(exc)[:120])
+    if not _boosted and total_cost < max_cost_usd:
         # Estimate cost before executing LLM synthesis
         if _COST_ESTIMATION_AVAILABLE:
             try:
