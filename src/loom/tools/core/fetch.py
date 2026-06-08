@@ -305,14 +305,29 @@ async def research_fetch(
             elapsed_ms=int((time.time() - start) * 1000),
         )
 
-    # Auto-escalation: http -> stealthy -> dynamic on Cloudflare block
-    if auto_escalate and _is_cloudflare_block(result):
+    # Auto-escalation: http -> stealthy -> dynamic on Cloudflare block,
+    # AND on timeout / empty content / fetch error (dubaiPocase feedback:
+    # lawyer sites timed out or returned nothing and never escalated).
+    def _should_escalate(r: FetchResult) -> bool:
+        if _is_cloudflare_block(r):
+            return True
+        err = (r.error or "").lower()
+        if err and ("timeout" in err or "timed out" in err or "connection" in err
+                    or "blocked" in err or "403" in err or "503" in err):
+            return True
+        # Succeeded technically but extracted almost nothing — try harder.
+        content = getattr(r, "content", None) or getattr(r, "markdown", None) or ""
+        if not r.error and isinstance(content, str) and len(content.strip()) < 80:
+            return True
+        return False
+
+    if auto_escalate and _should_escalate(result):
         if params.mode == "http":
-            logger.info("auto_escalate http -> stealthy url=%s", url)
+            logger.info("auto_escalate http -> stealthy url=%s reason=%s", url, (result.error or "thin/block"))
             params.mode = "stealthy"
             result = await asyncio.to_thread(_fetch_stealthy, params)
 
-        if _is_cloudflare_block(result) and params.mode != "dynamic":
+        if _should_escalate(result) and params.mode != "dynamic":
             logger.info("auto_escalate %s -> dynamic url=%s", params.mode, url)
             params.mode = "dynamic"
             result = await asyncio.to_thread(_fetch_dynamic, params)

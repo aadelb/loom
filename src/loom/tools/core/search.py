@@ -399,18 +399,53 @@ async def research_search(
                 "free_tier": False,
             }
 
-        # Automatic fallback to free provider when paid provider fails
-        if result is not None and "error" in result and not is_free:
-            logger.warning(
-                "paid_provider_failed provider=%s error=%s; falling back to ddgs",
-                provider,
-                result["error"],
+        # Automatic fallback when a provider fails OR returns zero results.
+        # (dubaiPocase feedback: ddgs returned empty for queries that brave
+        # answered fine — empty must trigger fallback, not just errors.)
+        def _empty_or_error(r: dict | None) -> bool:
+            if r is None:
+                return True
+            if "error" in r:
+                return True
+            return not r.get("results")
+
+        if _empty_or_error(result):
+            primary_status = (
+                result.get("error", "empty_results") if result else "no_response"
             )
-            from loom.providers.ddgs import search_ddgs
-            result = await asyncio.to_thread(search_ddgs, query=query, n=n)
-            result["provider"] = "ddgs"
-            result["cost_estimate_usd"] = 0.0
-            result["free_tier"] = True
+            # Prefer a different provider than the one that just failed.
+            # brave self-handles a missing key (guarded by the try/except below).
+            fallback_chain: list[str] = [
+                p for p in ("brave", "ddgs") if p != provider
+            ]
+
+            tried: list[dict[str, Any]] = [{"provider": provider, "status": primary_status}]
+            for fb in fallback_chain:
+                logger.warning(
+                    "search_fallback from=%s status=%s trying=%s",
+                    provider, primary_status, fb,
+                )
+                try:
+                    if fb == "brave":
+                        from loom.providers.brave import search_brave
+                        fb_result = await asyncio.to_thread(search_brave, query=query, n=n)
+                    else:
+                        from loom.providers.ddgs import search_ddgs
+                        fb_result = await asyncio.to_thread(search_ddgs, query=query, n=n)
+                except Exception as exc:  # never let a fallback raise
+                    tried.append({"provider": fb, "status": f"exception: {str(exc)[:60]}"})
+                    continue
+                fb_result["provider"] = fb
+                fb_result["cost_estimate_usd"] = 0.0
+                fb_result["free_tier"] = True
+                tried.append({"provider": fb, "status": "ok" if fb_result.get("results") else "empty"})
+                if fb_result.get("results"):
+                    fb_result["fallback_chain"] = tried
+                    result = fb_result
+                    break
+                result = fb_result  # keep last attempt even if empty
+            if isinstance(result, dict):
+                result.setdefault("fallback_chain", tried)
 
         # Enforce n limit on returned results
         if result is not None and "results" in result and isinstance(result["results"], list):

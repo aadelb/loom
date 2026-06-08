@@ -62,6 +62,36 @@ from loom.scheduler import (
 from loom.api_auth import ApiKeyAuthMiddleware
 from loom.request_id_middleware import RequestIdMiddleware
 
+
+class AcceptHeaderMiddleware:
+    """Inject `Accept: application/json, text/event-stream` when a client omits it.
+
+    The MCP streamable-HTTP transport rejects requests whose Accept header
+    lacks both media types with `{"code": -32600, "message": "Not Acceptable:
+    Client must accept both application/json and text/event-stream"}`. Many
+    simple clients (curl with only Content-Type) hit this. We normalise the
+    header at the ASGI layer so those requests succeed. (dubaiPocase feedback BUG 1.)
+    """
+
+    def __init__(self, app: Any) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Any, receive: Any, send: Any) -> None:
+        if scope.get("type") == "http":
+            headers = list(scope.get("headers", []))
+            accept = b""
+            for k, v in headers:
+                if k.lower() == b"accept":
+                    accept = v
+                    break
+            if not (b"application/json" in accept and b"text/event-stream" in accept):
+                headers = [(k, v) for k, v in headers if k.lower() != b"accept"]
+                headers.append((b"accept", b"application/json, text/event-stream"))
+                scope = dict(scope)
+                scope["headers"] = headers
+        await self.app(scope, receive, send)
+
+
 from loom.tracing import install_tracing
 from loom.analytics import research_analytics_dashboard
 
@@ -1170,6 +1200,10 @@ def create_app() -> FastMCP:
         app = mcp.streamable_http_app()
         app.add_middleware(RequestIdMiddleware)
         app.add_middleware(ApiKeyAuthMiddleware)
+        # Tolerate MCP clients that omit `Accept: text/event-stream` — the
+        # streamable-HTTP transport otherwise returns -32600 "Not Acceptable".
+        # Inject the required Accept value when it's missing. (dubaiPocase BUG 1.)
+        app.add_middleware(AcceptHeaderMiddleware)
         cors_enabled = os.environ.get("LOOM_CORS_ENABLED", "true").lower() == "true"
         if cors_enabled:
             origins = os.environ.get("LOOM_CORS_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",")
@@ -1177,6 +1211,12 @@ def create_app() -> FastMCP:
             log.info("middleware_registered request_id=true auth=true cors=true origins=%s", origins)
         else:
             log.info("middleware_registered request_id=true auth=true cors=false")
+        # Stash the middleware-wrapped ASGI app so main() serves THIS instance
+        # via uvicorn. mcp.run() builds a fresh app internally and would drop
+        # all of the middleware above (auth, CORS, Accept tolerance).
+        mcp._loom_http_app = app  # type: ignore[attr-defined]
+        mcp._loom_host = host  # type: ignore[attr-defined]
+        mcp._loom_port = port  # type: ignore[attr-defined]
     except (AttributeError, TypeError) as e:
         log.warning("middleware_registration_skipped reason=%s (FastMCP version may not support .app)", str(e)[:100])
 
@@ -1212,7 +1252,16 @@ def main() -> None:
     signal.signal(signal.SIGINT, _handle_signal)
 
     log.info("Starting Loom MCP server on streamable-http transport")
-    app.run(transport="streamable-http")
+    wrapped = getattr(app, "_loom_http_app", None)
+    if wrapped is not None:
+        # Serve the middleware-wrapped app directly so auth/CORS/Accept-tolerance
+        # actually apply (mcp.run() would build a fresh app and drop them).
+        import uvicorn
+        host = getattr(app, "_loom_host", os.environ.get("LOOM_HOST", "127.0.0.1"))
+        port = getattr(app, "_loom_port", int(os.environ.get("LOOM_PORT", "8788")))
+        uvicorn.run(wrapped, host=host, port=port, log_level="info")
+    else:
+        app.run(transport="streamable-http")
 
 
 if __name__ == "__main__":
