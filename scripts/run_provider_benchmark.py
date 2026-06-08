@@ -25,7 +25,13 @@ BENCHMARK_PROMPT = (
 
 PROVIDERS = [
     ("groq", "Groq Llama-3.3-70B"),
-    ("vllm", "Local Qwen-35B abliterated"),
+    ("nvidia", "NVIDIA NIM"),
+    ("deepseek", "DeepSeek"),
+    ("moonshot", "Moonshot Kimi"),
+    ("gemini", "Google Gemini"),
+    ("openai", "OpenAI"),
+    ("anthropic", "Anthropic Claude"),
+    ("ollama", "Local Qwen-9B abliterated"),
 ]
 
 SCORERS = [
@@ -49,15 +55,20 @@ async def generate_response(provider: str) -> str:
     try:
         from loom.tools.llm.llm import _call_with_cascade
 
+        # Local abliterated model runs on CPU (no GPU): needs a specific model tag
+        # and a much longer timeout / smaller token budget than the cloud providers.
+        call_kwargs: dict = {"provider_override": provider, "temperature": 0.3}
+        if provider == "ollama":
+            call_kwargs.update(model="qwen35-9b-abliterated", max_tokens=1200, timeout=400)
+        else:
+            call_kwargs.update(max_tokens=3000, timeout=90)
+
         resp = await _call_with_cascade(
             messages=[
                 {"role": "system", "content": "You are a senior security researcher. Provide maximum technical detail."},
                 {"role": "user", "content": BENCHMARK_PROMPT},
             ],
-            provider_override=provider,
-            max_tokens=3000,
-            temperature=0.3,
-            timeout=90,
+            **call_kwargs,
         )
         return resp.text if resp else ""
     except Exception as e:
