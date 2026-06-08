@@ -776,6 +776,12 @@ with suppress(ImportError):
     _optional_tools["ethics_scorer"] = ethics_scorer_tools
     record_optional_module_loaded("ethics_scorer")
 
+# --- Citation Provenance Scorer ---
+with suppress(ImportError):
+    from loom.tools.adversarial import citation_scorer as citation_scorer_tools
+    _optional_tools["citation_scorer"] = citation_scorer_tools
+    record_optional_module_loaded("citation_scorer")
+
 # --- Role Adherence Scorer ---
 with suppress(ImportError):
     from loom.tools.adversarial import role_adherence_scorer as role_adherence_tools
