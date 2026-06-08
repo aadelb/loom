@@ -296,13 +296,15 @@ async def research_full_pipeline(
     recency_days: int = 30,
     max_wall_secs: int = 480,
     boost_flagship: bool = False,
+    codebase_target: str = "",
+    scrape_urls: list[str] | None = None,
+    scrape_selector: str = "",
 ) -> dict[str, Any]:
     """Execute complete research pipeline end-to-end.
 
     Orchestrates query decomposition → answer generation → 8-dimensional HCS scoring →
     adaptive escalation → dark web enrichment (for darkness_level >= 7) →
-    final synthesis. Handles failures gracefully — if one sub-question fails,
-    continues with others.
+    optional evidence augmentation (Stage 1.5) → final synthesis. Handles failures gracefully.
 
     Args:
         query: user research query (max 2000 chars)
@@ -312,6 +314,13 @@ async def research_full_pipeline(
         max_escalation_attempts: max auto-escalation retries per question
         output_format: "report" (structured) or "raw" (answers only)
         max_cost_usd: maximum cost budget in USD (default $10.00)
+        recency_pulse: enable real-world signal injection (last 30 days)
+        recency_days: how many days back to look for signal
+        max_wall_secs: wall-clock timeout in seconds (default 480)
+        boost_flagship: escalate synthesis via safety ladder (dark runs only)
+        codebase_target: optional repo/path for knowledge graph (Stage 1.5)
+        scrape_urls: optional list of URLs to structure-scrape (Stage 1.5)
+        scrape_selector: CSS selector for example element in scrape_urls
 
     Returns:
         Dict with:
@@ -324,6 +333,8 @@ async def research_full_pipeline(
             - escalation_log: list of escalation events
             - synthesis: LLM-generated synthesis of all answers
             - dark_web_enrichments: dark web results (if darkness_level >= 7)
+            - codebase_graph: codebase knowledge graph (if codebase_target set)
+            - scraped_evidence: structured scrape results (if scrape_urls set)
             - final_report: structured report (if output_format="report")
             - estimated_cost_usd: total estimated cost
             - metadata: timing, costs, provider stats, strategy sources
@@ -977,6 +988,120 @@ async def research_full_pipeline(
         except Exception as e:
             logger.warning("recency_pulse_failed error=%s", str(e)[:100])
 
+    # ── Stage 1.5: Evidence Augmentation (Codebase + Scraping) ──
+    codebase_context = ""
+    codebase_graph_result: dict[str, Any] = {}
+    scraped_evidence: list[dict[str, Any]] = []
+
+    # A) Codebase evidence path
+    if codebase_target:
+        try:
+            from loom.tools.research.understand_codebase import research_understand_codebase
+            logger.info("stage1_5_codebase_start target=%s", codebase_target[:60])
+
+            # Call research_understand_codebase twice: graph + onboard actions
+            try:
+                graph_result = await research_understand_codebase(
+                    target=codebase_target,
+                    action="graph",
+                    max_files=40,
+                )
+                codebase_graph_result = {
+                    "node_count": graph_result.get("node_count", 0),
+                    "top_nodes": graph_result.get("top_nodes", [])[:5],
+                    "mermaid": graph_result.get("mermaid", "")[:500],
+                }
+                logger.info("stage1_5_codebase_graph nodes=%d", graph_result.get("node_count", 0))
+            except Exception as e:
+                logger.warning("stage1_5_codebase_graph_failed error=%s", str(e)[:100])
+
+            try:
+                onboard_result = await research_understand_codebase(
+                    target=codebase_target,
+                    action="onboard",
+                )
+                onboarding_text = onboard_result.get("onboarding", "")
+                key_modules = onboard_result.get("key_modules", [])[:5]
+
+                # Build compact summary
+                if onboarding_text or key_modules:
+                    codebase_context = f"[Codebase Knowledge Graph]\n"
+                    if codebase_graph_result:
+                        codebase_context += f"Nodes: {codebase_graph_result.get('node_count', 0)}\n"
+                    if key_modules:
+                        codebase_context += f"Key modules: {', '.join(key_modules)}\n"
+                    if onboarding_text:
+                        codebase_context += f"\n{onboarding_text[:1500]}\n"
+
+                logger.info("stage1_5_codebase_onboard complete context_len=%d", len(codebase_context))
+            except Exception as e:
+                logger.warning("stage1_5_codebase_onboard_failed error=%s", str(e)[:100])
+
+        except ImportError:
+            logger.debug("stage1_5_understand_codebase_unavailable")
+        except Exception as e:
+            logger.error("stage1_5_codebase_failed error=%s", str(e)[:100])
+            escalation_log.append({
+                "action": "codebase_augmentation_failed",
+                "error": str(e)[:200],
+            })
+
+    # B) Scrape evidence path
+    if scrape_urls:
+        try:
+            from loom.tools.core.scrapling_tools import research_scrape_similar
+            logger.info("stage1_5_scrape_start urls=%d", len(scrape_urls))
+
+            # Default selector if not provided
+            selector = scrape_selector if scrape_selector else "body"
+
+            # Cap to 5 URLs, respect deadline
+            for url_idx, url in enumerate(scrape_urls[:5]):
+                if _time.monotonic() >= _deadline:
+                    logger.warning("stage1_5_scrape_deadline_hit url_idx=%d", url_idx)
+                    break
+
+                try:
+                    scrape_result = await research_scrape_similar(
+                        url=url,
+                        example_selector=selector,
+                        fetcher="auto",
+                        max_results=20,
+                    )
+
+                    # Collect {url, count, items[:10]}
+                    scraped_item = {
+                        "url": url,
+                        "count": scrape_result.get("count", 0),
+                        "items": scrape_result.get("items", [])[:10],
+                    }
+                    scraped_evidence.append(scraped_item)
+
+                    logger.info(
+                        "stage1_5_scrape_success url_idx=%d count=%d",
+                        url_idx,
+                        scrape_result.get("count", 0),
+                    )
+
+                except Exception as e:
+                    logger.warning("stage1_5_scrape_url_failed url_idx=%d error=%s", url_idx, str(e)[:100])
+                    escalation_log.append({
+                        "action": "scrape_url_failed",
+                        "url": url,
+                        "error": str(e)[:200],
+                    })
+
+            logger.info("stage1_5_scrape_complete items=%d", len(scraped_evidence))
+
+        except ImportError:
+            logger.debug("stage1_5_research_scrape_similar_unavailable")
+        except Exception as e:
+            logger.error("stage1_5_scrape_failed error=%s", str(e)[:100])
+            escalation_log.append({
+                "action": "scrape_augmentation_failed",
+                "error": str(e)[:200],
+            })
+
     # ── Stage 3: Synthesis ──
     synthesis_prompt = f"""Synthesize the following research answers into a cohesive summary:
 
@@ -995,6 +1120,20 @@ Answers:
             f"{recency_evidence}\n"
             "\nWeave the most relevant recent signal into the summary and cite it.\n"
         )
+
+    # Inject codebase context if available
+    if codebase_context:
+        synthesis_prompt += f"\n\n{truncate(codebase_context, 2000)}\n"
+
+    # Inject scraped evidence if available
+    if scraped_evidence:
+        scrape_injection = "\n\n[Structured Web Data]\n"
+        for item in scraped_evidence[:5]:  # Cap to 5 sources
+            scrape_injection += f"Source: {item['url']}\n"
+            scrape_injection += f"Items found: {item['count']}\n"
+            if item.get("items"):
+                scrape_injection += f"Sample data: {str(item['items'][:3])[:200]}\n\n"
+        synthesis_prompt += truncate(scrape_injection, 2500)
 
     synthesis_prompt += "\nProvide a unified summary integrating all answers."
 
@@ -1194,6 +1333,14 @@ Answers:
     # Add dark web enrichments to result if any
     if dark_web_enrichments:
         result["dark_web_enrichments"] = dark_web_enrichments
+
+    # Add codebase graph to result if captured
+    if codebase_graph_result:
+        result["codebase_graph"] = codebase_graph_result
+
+    # Add scraped evidence to result if captured
+    if scraped_evidence:
+        result["scraped_evidence"] = scraped_evidence
 
     # Generate structured report if requested
     if output_format == "report":
