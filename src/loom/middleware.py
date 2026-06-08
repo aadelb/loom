@@ -328,7 +328,7 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                      "research_safety_ladder",
                      "research_adversary_pilot", "research_x_teaming",
                      "research_ipi_proxy", "research_quant_bypass",
-                     "research_ask_all_models",
+                     "research_ask_all_models", "research_understand_codebase",
                      "research_evidence_pipeline", "research_consensus_build",
                      "research_adversarial_debate", "research_hierarchical_research",
                      "research_ask_all_llms", "research_expert",

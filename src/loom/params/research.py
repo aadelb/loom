@@ -113,6 +113,7 @@ __all__ = [
     "ReidTacticsParams",
     "RecommendNextParams",
     "ReframeRouterParams",
+    "ResearchUnderstandCodebaseParams",
     "RunExperimentParams",
     "SafetyCircuitMapParams",
     "SaveNoteParams",
@@ -4208,4 +4209,88 @@ class ReidTacticsParams(BaseModel):
         v = v.lower().strip()
         if v not in ("dict", "list"):
             raise ValueError("output_format must be 'dict' or 'list'")
+        return v
+
+
+class ResearchUnderstandCodebaseParams(BaseModel):
+    """Parameters for research_understand_codebase tool."""
+
+    target: str = Field(
+        ...,
+        description="Local path, GitHub repo (owner/name), or git URL to analyze",
+        min_length=1,
+        max_length=512,
+    )
+    action: str = Field(
+        default="graph",
+        description="Action: 'graph' (build graph), 'ask' (query), 'explain' (analyze), 'onboard' (guide)",
+    )
+    question: str = Field(
+        default="",
+        description="Question for action='ask' (e.g., 'How do imports flow?')",
+        max_length=500,
+    )
+    focus: str = Field(
+        default="",
+        description="File/function path for action='explain' (e.g., 'src/main.py:process_data')",
+        max_length=500,
+    )
+    max_files: int = Field(
+        default=60,
+        ge=1,
+        le=500,
+        description="Max files to analyze (1-500)",
+    )
+    include_globs: list[str] | None = Field(
+        default=None,
+        description="File patterns (default: .py, .ts, .js, .md, .json, .yml, etc.)",
+    )
+    model: str = Field(
+        default="auto",
+        description="LLM model to use ('auto' for cascade selection)",
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("target", mode="before")
+    @classmethod
+    def validate_target(cls, v: str) -> str:
+        """Validate target is non-empty and not too long."""
+        if not isinstance(v, str) or not v.strip():
+            raise ValueError("target must be a non-empty string")
+        return v.strip()
+
+    @field_validator("action", mode="before")
+    @classmethod
+    def validate_action(cls, v: str) -> str:
+        """Validate action is one of allowed values."""
+        if not isinstance(v, str):
+            v = "graph"
+        v = v.lower().strip()
+        if v not in ("graph", "ask", "explain", "onboard"):
+            raise ValueError("action must be one of: graph, ask, explain, onboard")
+        return v
+
+    @field_validator("include_globs", mode="before")
+    @classmethod
+    def validate_globs(cls, v: list[str] | None) -> list[str] | None:
+        """Validate file glob patterns."""
+        if v is None:
+            return None
+        if not isinstance(v, list):
+            raise ValueError("include_globs must be a list of strings")
+        for glob_pattern in v:
+            if not isinstance(glob_pattern, str) or not glob_pattern.strip():
+                raise ValueError("All glob patterns must be non-empty strings")
+        return [g.strip() for g in v]
+
+    @field_validator("model", mode="before")
+    @classmethod
+    def validate_model(cls, v: str) -> str:
+        """Validate model string is reasonable."""
+        if not isinstance(v, str):
+            v = "auto"
+        v = v.lower().strip()
+        if len(v) > 100:
+            raise ValueError("model name must be max 100 characters")
         return v

@@ -259,6 +259,7 @@ from loom.params.research import (
     AdaptComplexityParams,
     AdaptiveReframeParams,
     AgentBenchmarkParams,
+    ResearchUnderstandCodebaseParams,
     AIBiasAuditParams,
     AIDataGovernanceParams,
     AIRiskClassifyParams,

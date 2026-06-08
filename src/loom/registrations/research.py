@@ -325,4 +325,13 @@ def register_research_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip uae_retail_advanced: %s", e)
         record_failure("research", "uae_retail_advanced", str(e))
 
-    log.info("registered research tools count=442")
+    # ── Understand Anything (Codebase Knowledge Graph) ──
+    try:
+        from loom.tools.research.understand_codebase import research_understand_codebase
+        mcp.tool()(wrap_tool(research_understand_codebase))
+        record_success("research", "research_understand_codebase")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip understand_codebase: %s", e)
+        record_failure("research", "understand_codebase", str(e))
+
+    log.info("registered research tools count=443")
