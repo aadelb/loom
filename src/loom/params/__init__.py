@@ -81,6 +81,7 @@ from loom.params.llm import (
     NodriverExtractParams,
     PDFExtractParams,
     PaddleOCRParams,
+    PlanModeParams,
     ScraperEngineExtractParams,
     StructuredCrawlParams,
     StructuredLLMParams,

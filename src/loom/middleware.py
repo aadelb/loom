@@ -357,6 +357,7 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                      "research_legal_cases", "research_paper_parse",
                      "research_hcs_escalate", "research_hcs_max", "research_quality_route", "research_quality_max", "research_hcs_score", "research_hcs_score_full",
                      "research_hcs_score_prompt", "research_hcs_score_response",
+                     "research_plan_mode",
                      "research_quality_escalate", "research_crescendo_loop",
                      "research_consensus_pressure", "research_pressure_test",
                      "research_orchestrate_chain", "research_multi_hop",

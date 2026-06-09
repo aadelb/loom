@@ -11,7 +11,7 @@ log = logging.getLogger("loom.registrations.llm")
 
 
 def register_llm_tools(mcp: "FastMCP", wrap_tool) -> None:
-    """Register 2 llm tools."""
+    """Register 4 llm tools."""
     from loom.registrations.tracking import record_success, record_failure
 
     try:
@@ -49,7 +49,14 @@ def register_llm_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip ladder_trace: %s", e)
         record_failure("llm", "ladder_trace", str(e))
-    log.info("registered llm tools count=3")
+    try:
+        from loom.tools.llm.plan_mode import research_plan_mode
+        mcp.tool()(wrap_tool(research_plan_mode))
+        record_success("llm", "research_plan_mode")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip plan_mode: %s", e)
+        record_failure("llm", "plan_mode", str(e))
+    log.info("registered llm tools count=4")
 
 def register_compression_tools(mcp: "FastMCP", wrap_tool) -> None:
     """Register 3 prompt compression tools."""

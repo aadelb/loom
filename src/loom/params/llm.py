@@ -32,6 +32,7 @@ __all__ = [
     "NodriverExtractParams",
     "PDFExtractParams",
     "PaddleOCRParams",
+    "PlanModeParams",
     "ScraperEngineExtractParams",
     "StructuredCrawlParams",
     "StructuredLLMParams",
@@ -764,3 +765,52 @@ class LadderTraceParams(BaseModel):
     )
 
     model_config = {"extra": "forbid", "strict": True}
+
+
+class PlanModeParams(BaseModel):
+    """Parameters for research_plan_mode tool."""
+
+    goal: str = Field(
+        ...,
+        description="The user's goal or task to accomplish",
+        max_length=1000,
+    )
+    context: str = Field(
+        default="",
+        description="Optional surrounding context, constraints, or environment info",
+        max_length=2000,
+    )
+    max_steps: int = Field(
+        default=8,
+        description="Maximum steps to decompose into (1-20; capped to prevent token overflow)",
+        ge=1,
+        le=20,
+    )
+    model: str = Field(
+        default="auto",
+        description="LLM model for decomposition ('auto' uses config default)",
+        max_length=100,
+    )
+    auto_approve_threshold: Literal["NONE", "LOW", "MEDIUM", "HIGH", "CRITICAL"] = Field(
+        default="LOW",
+        description="Threat level at/below which steps are auto-approved",
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("goal", mode="before")
+    @classmethod
+    def validate_goal(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("goal cannot be empty")
+        if len(v) > 1000:
+            raise ValueError("goal max 1000 characters")
+        return v
+
+    @field_validator("context", mode="before")
+    @classmethod
+    def validate_context(cls, v: str) -> str:
+        if isinstance(v, str):
+            return v.strip()
+        return ""
