@@ -3,7 +3,7 @@
 Migrates Loom's billing and audit systems from SQLite/JSON to PostgreSQL.
 Provides async operations with connection pooling via asyncpg.
 
-Connection: DATABASE_URL env var (default: postgresql://loom:loom_secure_2026@localhost:5432/loom_db)
+Connection: DATABASE_URL env var (default: postgresql://loom:CHANGE_ME@localhost:5432/loom_db)
 """
 
 from __future__ import annotations
@@ -43,7 +43,7 @@ async def get_pool() -> asyncpg.Pool:
 
         db_url = os.environ.get(
             "DATABASE_URL",
-            "postgresql://loom:loom_secure_2026@localhost:5432/loom_db"
+            "postgresql://loom:CHANGE_ME@localhost:5432/loom_db"
         )
 
         try:
@@ -74,7 +74,7 @@ class PgStore:
 
         db_url = os.environ.get(
             "DATABASE_URL",
-            "postgresql://loom:loom_secure_2026@localhost:5432/loom_db"
+            "postgresql://loom:CHANGE_ME@localhost:5432/loom_db"
         )
 
         try:

@@ -109,7 +109,7 @@ BACKEND_INFO = {
         "description": "Full ACID compliance, audit trail, scaling for enterprise",
         "tables": ["customers", "credits_ledger", "usage_meter", "audit_log"],
         "env_var": "DATABASE_URL",
-        "env_default": "postgresql://loom:loom_secure_2026@localhost:5432/loom_db",
+        "env_default": "postgresql://loom:CHANGE_ME@localhost:5432/loom_db",
         "features": [
             "Transactional credit updates",
             "Comprehensive audit logging",
