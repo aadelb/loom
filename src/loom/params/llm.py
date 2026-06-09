@@ -37,6 +37,7 @@ __all__ = [
     "StructuredLLMParams",
     "UnstructuredDocumentExtractParams",
     "CompressPromptParams",
+    "LadderTraceParams",
 ]
 
 
@@ -739,3 +740,27 @@ class CompressPromptParams(BaseModel):
         if not 0.1 <= v <= 0.9:
             raise ValueError("target_ratio must be between 0.1 and 0.9")
         return float(v)
+
+
+class LadderTraceParams(BaseModel):
+    """Parameters for research_ladder_trace observability tool."""
+
+    days: int = Field(
+        default=7,
+        description="Number of recent daily files to aggregate (1-90)",
+        ge=1,
+        le=90,
+    )
+    provider: str = Field(
+        default="",
+        description="Optional filter to one flagship provider (e.g. 'anthropic')",
+        max_length=50,
+    )
+    min_hcs: float = Field(
+        default=0.0,
+        description="Optional minimum HCS filter (0.0-10.0)",
+        ge=0.0,
+        le=10.0,
+    )
+
+    model_config = {"extra": "forbid", "strict": True}

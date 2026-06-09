@@ -42,7 +42,14 @@ def register_llm_tools(mcp: "FastMCP", wrap_tool) -> None:
     except (ImportError, AttributeError) as e:
         log.debug("skip multi_llm: %s", e)
         record_failure("llm", "multi_llm", str(e))
-    log.info("registered llm tools count=2")
+    try:
+        from loom.tools.llm.ladder_trace import research_ladder_trace
+        mcp.tool()(wrap_tool(research_ladder_trace))
+        record_success("llm", "research_ladder_trace")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip ladder_trace: %s", e)
+        record_failure("llm", "ladder_trace", str(e))
+    log.info("registered llm tools count=3")
 
 def register_compression_tools(mcp: "FastMCP", wrap_tool) -> None:
     """Register 3 prompt compression tools."""

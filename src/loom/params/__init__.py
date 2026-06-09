@@ -69,6 +69,7 @@ from loom.params.llm import (
     ExtractCookiesParams,
     InstructorStructuredExtractParams,
     KnowledgeExtractParams,
+    LadderTraceParams,
     LLMAnswerParams,
     LLMChatParams,
     LLMClassifyParams,
