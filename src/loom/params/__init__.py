@@ -204,6 +204,7 @@ from loom.params.security import (
     CertAnalyzeParams,
     DNSLookupParams,
     DefiSecurityAuditParams,
+    GuardianCheckParams,
     ModelIntegrityParams,
     ModelVulnerabilityProfileParams,
     NmapScanParams,

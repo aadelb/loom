@@ -24,6 +24,7 @@ __all__ = [
     "CertAnalyzeParams",
     "DNSLookupParams",
     "DefiSecurityAuditParams",
+    "GuardianCheckParams",
     "ModelIntegrityParams",
     "ModelVulnerabilityProfileParams",
     "NmapScanParams",
@@ -459,3 +460,48 @@ class WhoisParams(BaseModel):
 
 
 
+
+class GuardianCheckParams(BaseModel):
+    """Parameters for research_guardian_check tool."""
+
+    action: str = Field(
+        description="Proposed command/tool-call/payload to assess for safety",
+        max_length=2048,
+    )
+    context: str = Field(
+        default="",
+        description="Optional surrounding context or user intent",
+        max_length=1000,
+    )
+    tool_name: str = Field(
+        default="",
+        description="Optional name of the tool being called",
+        max_length=100,
+    )
+    judge_model: str = Field(
+        default="auto",
+        description="LLM model for safety judgment",
+    )
+    fail_closed: bool = Field(
+        default=True,
+        description="On uncertainty/error, bias toward blocking HIGH/CRITICAL actions",
+    )
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("action")
+    @classmethod
+    def validate_action(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("action cannot be empty")
+        return v.strip()
+
+    @field_validator("context")
+    @classmethod
+    def validate_context(cls, v: str) -> str:
+        return v.strip() if v else ""
+
+    @field_validator("tool_name")
+    @classmethod
+    def validate_tool_name(cls, v: str) -> str:
+        return v.strip() if v else ""

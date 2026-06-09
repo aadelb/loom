@@ -73,6 +73,13 @@ def register_adversarial_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip adversarial_debate_tool: %s", e)
         record_failure("adversarial", "adversarial_debate_tool", str(e))
     try:
+        from loom.tools.security.guardian import research_guardian_check
+        mcp.tool()(wrap_tool(research_guardian_check))
+        record_success("adversarial", "research_guardian_check")
+    except (ImportError, AttributeError) as e:
+        log.debug("skip guardian: %s", e)
+        record_failure("adversarial", "guardian", str(e))
+    try:
         from loom.tools.security.ai_safety import research_prompt_injection_test, research_model_fingerprint, research_bias_probe, research_safety_filter_map
         mcp.tool()(wrap_tool(research_prompt_injection_test))
         record_success("adversarial", "research_prompt_injection_test")
