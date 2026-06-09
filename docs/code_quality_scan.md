@@ -72,6 +72,48 @@ docker run -d --name sonarqube --restart unless-stopped \
 
 **Trade-off:** SonarQube embeds Elasticsearch (~2-4 GB RAM + a persistent container) on a box that
 already runs Ollama + Qdrant + loom-v3 and shows swap pressure (55/79 GB). Use it when we want a
-quality *gate in CI* / historical trends; the lightweight tools above are sufficient for ad-hoc audits
-and cost no standing memory. **Recommended:** stay on the lightweight tools; only adopt SonarQube if
-we add a CI quality gate or want the dashboard for a review cadence.
+quality *gate in CI* / historical trends.
+
+---
+
+## Head-to-head: lightweight tools vs SonarQube (BOTH actually run, 2026-06-09)
+
+SonarQube was stood up (container on port 19000, mem-limited 4g) and scanned the same source.
+Direct comparison of what each surfaced:
+
+| Metric | Lightweight tools | **SonarQube** | Who wins |
+|--------|-------------------|---------------|----------|
+| **Real bugs** | — (none of them find logic bugs) | **99 bugs, 38 BLOCKER** | 🟢 SonarQube only |
+| **Vulnerabilities** | bandit: 14 "high" (mostly noise) | **26** (classified, deduped) | 🟢 SonarQube |
+| **Security hotspots** | bandit: 916 low + 31 med (noisy) | **308** (prioritized) | 🟢 SonarQube |
+| **Hardcoded secrets** | — (not detected) | **4-5** (PG password in billing/backend.py, token in auth.py) | 🟢 SonarQube only |
+| **Code smells** | flake8: 19,716 (mostly E501@79 noise) | **2,610** (deduped, severity-ranked) | 🟢 SonarQube (less noise) |
+| **Duplication** | — (not measured) | **8.6 %** duplicated lines | 🟢 SonarQube only |
+| **Technical debt** | — (not quantified) | **24,615 min ≈ 410 h** (SQALE) | 🟢 SonarQube only |
+| **Complexity** | radon: 785 grade-C+ fns | cyclomatic 26,041 / cognitive 37,636 (quantified) | 🟰 both |
+| **Standing RAM cost** | **0** (run-and-exit) | ~2-4 GB persistent container | 🟢 lightweight |
+| **Speed (ad-hoc)** | seconds, no setup | ~5 min scan + a running server | 🟢 lightweight |
+
+### The decisive findings only SonarQube caught
+- **23× `python:S930`** — *calls with the wrong number of arguments*. This is **exactly the bug
+  class** that broke `understand_codebase` (`_call_with_cascade(string)` instead of a messages list)
+  — SonarQube finds all 23 of these automatically; flake8/pyflakes do not.
+- **4-5× hardcoded secrets** (`secrets:S6698`/`S6418`) — incl. *"Make sure this PostgreSQL password
+  gets changed and removed from the code"* (`billing/backend.py`) and a token in `auth.py`. ⚠️ **real
+  security items to fix.**
+- **7× `python:S1845`** — case-only field/method name clashes; **3× `python:S3516`** — functions that
+  always return the same value (likely bugs).
+- **8.6 % code duplication** and a **~410-hour debt estimate** — neither is measurable by the
+  lightweight set.
+
+### Bottom line (revised after running both)
+SonarQube produced **more actionable signal with far less noise**: 2,735 prioritized issues
+(incl. **99 genuine bugs + hardcoded secrets**) vs flake8's 19,716 mostly-cosmetic E501s. The
+lightweight tools remain best for **fast, zero-standing-cost ad-hoc checks**, but they structurally
+**cannot** find logic bugs, secrets, duplication, or quantify debt.
+
+**Recommendation (updated):** keep SonarQube for the deeper passes (it already paid for itself by
+finding 23 wrong-arg-count bugs + hardcoded secrets), and keep the lightweight venv for quick
+pre-commit checks. The genuine action items it surfaced — **the hardcoded PG password/token and the
+23 S930 argument-count bugs** — are worth fixing next. (Server: `localhost:19000`, container
+`sonarqube`; stop with `docker stop sonarqube` to reclaim RAM when not in use.)
