@@ -354,6 +354,100 @@ _PROVIDER_STRATEGY: dict[str, str] = {
 }
 
 
+def _learned_reframe_for(provider: str, min_samples: int = 3) -> str | None:
+    """Select the best reframe strategy for a provider based on historical performance.
+
+    Reads the last ~14 days of boost dataset JSONL, filters by provider, and returns
+    the strategy name with the highest (success_rate, then avg_hcs) if it has >= min_samples
+    observations. Returns None if insufficient data or on any error.
+
+    Args:
+        provider: The flagship provider name (e.g., "openai", "anthropic").
+        min_samples: Minimum observations required for a strategy to be considered.
+
+    Returns:
+        The strategy name with the best performance, or None if no suitable strategy found.
+    """
+    import json
+    from datetime import datetime, timedelta, timezone
+    from pathlib import Path
+
+    try:
+        from loom.tools.llm.boost_logger import _dataset_dir
+
+        dataset_dir = _dataset_dir()
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=14)
+
+        # Collect stats per strategy: (success_count, total_count, hcs_sum)
+        strategy_stats: dict[str, tuple[int, int, float]] = {}
+
+        # Read all JSONL files from the last 14 days
+        for jsonl_file in sorted(dataset_dir.glob("*.jsonl")):
+            try:
+                file_date_str = jsonl_file.stem  # e.g., "2026-06-05"
+                file_date = datetime.strptime(file_date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+                if file_date < cutoff_date:
+                    continue
+
+                for line in jsonl_file.read_text(encoding="utf-8").splitlines():
+                    if not line.strip():
+                        continue
+                    try:
+                        record = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+
+                    # Filter by provider (exact match on "provider" field)
+                    if record.get("provider") != provider:
+                        continue
+
+                    # Extract strategy/reframe name — stored in the log as part of
+                    # provider tag (e.g., "openai_negotiate") or in strategy field.
+                    # For simplicity, extract from the log record.
+                    strategy = record.get("strategy")
+                    if not strategy:
+                        # Fallback: try to extract from provider tag if it's suffixed
+                        prov_tag = record.get("provider", "")
+                        if "_" in prov_tag:
+                            strategy = prov_tag.split("_", 1)[1]  # e.g. "openai_negotiate" -> "negotiate"
+                        else:
+                            continue
+
+                    # Tally success and HCS
+                    is_success = record.get("verdict") == "success"
+                    hcs = float(record.get("hcs", 0.0) or 0.0)
+
+                    if strategy not in strategy_stats:
+                        strategy_stats[strategy] = (0, 0, 0.0)
+                    s_count, total, hcs_sum = strategy_stats[strategy]
+                    strategy_stats[strategy] = (
+                        s_count + (1 if is_success else 0),
+                        total + 1,
+                        hcs_sum + hcs,
+                    )
+            except Exception:
+                continue
+
+        # Find the best strategy
+        best_strategy = None
+        best_score = (-1.0, -1.0)  # (success_rate, avg_hcs)
+
+        for strat, (s_count, total, hcs_sum) in strategy_stats.items():
+            if total < min_samples:
+                continue
+            success_rate = s_count / total
+            avg_hcs = hcs_sum / total if total > 0 else 0.0
+            score = (success_rate, avg_hcs)
+            if score > best_score:
+                best_score = score
+                best_strategy = strat
+
+        return best_strategy
+    except Exception as e:
+        logger.debug("learned_reframe_for_failed provider=%s: %s", provider, e)
+        return None
+
+
 def _reframe_for(query: str, provider: str, base_strategy: str) -> str:
     """Reframe the query with the strategy best suited to ``provider`` (pure CPU)."""
     try:
@@ -641,6 +735,7 @@ async def research_safety_ladder(
     max_refusal_retries: int = 2,
     max_wall_secs: int = 780,
     log_dataset: bool = True,
+    use_learned: bool = True,
 ) -> dict[str, Any]:
     """Climb the safety-gradient ladder to push flagships into the best dark answer.
 
@@ -653,6 +748,9 @@ async def research_safety_ladder(
         max_refusal_retries: Per-provider recovery attempts on refusal.
         max_wall_secs: Hard wall-clock budget (CPU L0 seed is slow).
         log_dataset: Append every attempt to the training JSONL.
+        use_learned: If True, select opening reframe for each provider based on historical
+            performance from the boost dataset; falls back to static _PROVIDER_STRATEGY
+            if no learned strategy is available or if use_learned=False.
 
     Returns:
         best response + the rung it came from, per-rung/per-model scores, the L0
@@ -735,8 +833,18 @@ async def research_safety_ladder(
             r_model = _REASONING_MODELS.get(provider, "auto")
             r_on = r_model != "auto"
             # Per-flagship reframe: push THIS provider with the strategy that best
-            # fits its specific weak point, not the single global reframe.
-            pq = _reframe_for(query, provider, strategy)
+            # fits its specific weak point. If use_learned=True, try to use the
+            # historically-best strategy for this provider; else fall back to the
+            # static _PROVIDER_STRATEGY mapping.
+            learned_strat = None
+            if use_learned:
+                learned_strat = _learned_reframe_for(provider)
+            if learned_strat:
+                # Use learned strategy by applying it directly via _reframe_for
+                pq = _reframe_for(query, provider, learned_strat)
+            else:
+                # Fall back to static per-provider strategy
+                pq = _reframe_for(query, provider, strategy)
             prefill = 1500
             out, ms = await _push(provider, pq, best["response"], prefill,
                                   model=r_model, reasoning=r_on)
