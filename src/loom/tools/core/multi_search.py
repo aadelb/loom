@@ -152,7 +152,7 @@ async def _search_marginalia(client: httpx.AsyncClient, query: str) -> list[dict
 
 
 async def _search_crt_sh(client: httpx.AsyncClient, query: str) -> list[dict[str, Any]]:
-    data = await fetch_json(client, _CRT_SH.format(q=quote(query)), None)
+    data = await fetch_json(client, _CRT_SH.format(q=quote(query)))
     if not data:
         return []
     domains: set[str] = set()

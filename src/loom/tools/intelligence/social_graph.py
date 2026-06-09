@@ -38,7 +38,7 @@ async def _fetch_github_data(
     try:
         # Fetch repos with rate limiting
         repos_url = f"https://api.github.com/users/{username}/repos"
-        repos = await fetch_json(client, repos_url, {"Accept": "application/vnd.github.v3+json"})
+        repos = await fetch_json(client, repos_url, headers={"Accept": "application/vnd.github.v3+json"})
 
         if not repos or not isinstance(repos, list):
             return nodes, edges
@@ -59,7 +59,7 @@ async def _fetch_github_data(
                 f"https://api.github.com/repos/{username}/{repo_name}/contributors"
             )
             contributors = await fetch_json(
-                client, contributors_url, {"Accept": "application/vnd.github.v3+json"}
+                client, contributors_url, headers={"Accept": "application/vnd.github.v3+json"}
             )
 
             if not contributors or not isinstance(contributors, list):
@@ -134,7 +134,7 @@ async def _fetch_reddit_data(
     try:
         # Fetch user comments
         comments_url = f"https://www.reddit.com/user/{username}/comments.json"
-        data = await fetch_json(client, comments_url, {"User-Agent": "Loom-Research/1.0"})
+        data = await fetch_json(client, comments_url, headers={"User-Agent": "Loom-Research/1.0"})
 
         if not data or "data" not in data:
             return nodes, edges
