@@ -27,6 +27,7 @@ __all__ = [
     "JobResultParams",
     "JobStatusParams",
     "JobSubmitParams",
+    "McpManageParams",
     "NodriverSessionParams",
     "SessionCloseParams",
     "SessionOpenParams",
@@ -637,6 +638,49 @@ class JobResultParams(BaseModel):
     def validate_job_id(cls, v: str) -> str:
         if not v or len(v) != 36:
             raise ValueError("job_id must be a valid UUID (36 chars)")
+        return v
+
+
+class McpManageParams(BaseModel):
+    """Parameters for research_mcp_manage tool."""
+
+    action: Literal["list", "add", "remove", "toggle", "probe", "tools"] = Field(
+        ..., description="Action: list, add, remove, toggle, probe, or tools"
+    )
+    name: str = Field(default="", max_length=100, description="Server name")
+    url: str = Field(default="", max_length=4096, description="MCP endpoint URL")
+    enabled: bool = Field(default=True, description="Enable/disable server")
+    transport: str = Field(default="streamable-http", max_length=50, description="Transport protocol")
+
+    model_config = {"extra": "forbid", "strict": True}
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str, info) -> str:
+        """Validate name is alphanumeric, hyphen, underscore."""
+        action = info.data.get("action", "")
+        if action in ("add", "remove", "toggle", "probe", "tools") and not v:
+            raise ValueError(f"name required for action '{action}'")
+        if v and not re.match(r"^[a-z0-9_-]{1,100}$", v):
+            raise ValueError(
+                "name must be 1-100 chars: alphanumeric, underscore, hyphen"
+            )
+        return v
+
+    @field_validator("url")
+    @classmethod
+    def validate_url_if_present(cls, v: str) -> str:
+        """Validate URL if present (requires http/https)."""
+        if v:
+            return validate_url(v)
+        return v
+
+    @field_validator("transport")
+    @classmethod
+    def validate_transport(cls, v: str) -> str:
+        """Validate transport is supported."""
+        if v and v not in ("streamable-http", "http", "sse"):
+            raise ValueError("transport must be streamable-http, http, or sse")
         return v
 
 

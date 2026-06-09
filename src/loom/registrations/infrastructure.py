@@ -369,6 +369,15 @@ def register_infrastructure_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip security_auditor: %s", e)
         record_failure("infrastructure", "security_auditor", str(e))
 
+    # ── MCP Server Management ──
+    try:
+        from loom.tools.infrastructure.mcp_manager import research_mcp_manage
+        mcp.tool()(wrap_tool(research_mcp_manage))
+        record_success("infrastructure", "research_mcp_manage")
+    except Exception as e:
+        log.debug("skip mcp_manager: %s", e)
+        record_failure("infrastructure", "mcp_manager", str(e))
+
     # ── Startup Validation Tools ──
     try:
         from loom.tools.infrastructure.startup_validator import research_validate_startup
@@ -378,4 +387,4 @@ def register_infrastructure_tools(mcp: "FastMCP", wrap_tool) -> None:
         log.debug("skip startup_validator: %s", e)
         record_failure("infrastructure", "startup_validator", str(e))
 
-    log.info("registered infrastructure tools count=84")
+    log.info("registered infrastructure tools count=85")

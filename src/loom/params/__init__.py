@@ -168,6 +168,7 @@ from loom.params.infrastructure import (
     ConfigGetParams,
     ConfigSetParams,
     EmailReportParams,
+    McpManageParams,
     NodriverSessionParams,
     SessionCloseParams,
     SessionOpenParams,
