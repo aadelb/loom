@@ -777,7 +777,20 @@ def _build_provider_chain(
         load_config()
 
     if override:
-        return [_get_provider(override)]
+        chain = [_get_provider(override)]
+        # NVIDIA NIM is the automatic fallback for Groq everywhere Groq is force-routed:
+        # both are the free/fast tier and Groq's daily quota exhausts often (429), which
+        # would otherwise hard-fail an override="groq" call with no fallback. Scope this to
+        # GROQ ONLY — never add a cloud fallback for "ollama"/local overrides, or dark /
+        # uncensored content would leak to a safety-aligned provider that refuses it.
+        if override == "groq":
+            try:
+                nvidia = _get_provider("nvidia")
+                if nvidia is not None:
+                    chain.append(nvidia)
+            except Exception as e:
+                logger.debug("groq->nvidia fallback unavailable: %s", e)
+        return chain
 
     try:
         cascade_order = get_cascade_order() if get_cascade_order else CONFIG.get(
