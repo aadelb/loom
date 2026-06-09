@@ -47,9 +47,9 @@ async def _get_favicon_hash(client: httpx.AsyncClient, domain: str) -> int:
     if not favicon_data:
         html_text = b""
         try:
-            html_text = await fetch_bytes(client, 
-                f"https://{domain}", timeout=15.0, follow_redirects=True
-            )[:50000]
+            html_text = (await fetch_bytes(
+                client, f"https://{domain}", timeout=15.0
+            ))[:50000]
         except Exception:
             pass
         icon_match = re.search(

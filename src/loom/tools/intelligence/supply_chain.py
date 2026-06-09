@@ -113,7 +113,7 @@ async def _fetch_pypi_info(pkg_name: str) -> dict[str, Any] | None:
     """Fetch PyPI metadata."""
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            data = await fetch_json(client, f"https://pypi.org/pypi/{pkg_name}/json", follow_redirects=True)
+            data = await fetch_json(client, f"https://pypi.org/pypi/{pkg_name}/json")
             if data:
                 info = data.get("info", {})
                 desc = info.get("description", "")
