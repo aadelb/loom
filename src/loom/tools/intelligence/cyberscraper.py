@@ -540,10 +540,20 @@ Content:
 Return ONLY valid JSON (array or object) with no additional text. If no data matches the query, return an empty array [].
 """
 
-        response = await llm.chat(
-            [{"role": "user", "content": prompt}],
-            max_tokens=4096,
-        )
+        try:
+            response = await llm.chat(
+                [{"role": "user", "content": prompt}],
+                max_tokens=4096,
+            )
+        except Exception as _e:
+            # NVIDIA NIM fallback for a force-routed groq selection (mirrors the core
+            # router's groq->nvidia fallback for this direct-provider call path).
+            if params.model in ("auto", "groq"):
+                logger.warning("cyberscraper groq chat failed (%s); falling back to nvidia_nim", _e)
+                llm = _get_llm_provider("nvidia_nim")
+                response = await llm.chat([{"role": "user", "content": prompt}], max_tokens=4096)
+            else:
+                raise
 
         model_used = llm.__class__.__name__
         response_text = getattr(response, "text", "") or ""
@@ -865,10 +875,20 @@ Content:
 Return ONLY a JSON array of objects. If no matches, return [].
 """
 
-        response = await llm.chat(
-            [{"role": "user", "content": prompt}],
-            max_tokens=2048,
-        )
+        try:
+            response = await llm.chat(
+                [{"role": "user", "content": prompt}],
+                max_tokens=2048,
+            )
+        except Exception as _e:
+            # NVIDIA NIM fallback for a force-routed groq selection (mirrors the core
+            # router's groq->nvidia fallback for this direct-provider call path).
+            if model in ("auto", "groq"):
+                logger.warning("cyberscraper groq chat failed (%s); falling back to nvidia_nim", _e)
+                llm = _get_llm_provider("nvidia_nim")
+                response = await llm.chat([{"role": "user", "content": prompt}], max_tokens=2048)
+            else:
+                raise
 
         response_text = getattr(response, "text", "") or ""
         extracted = _JSONExtractor.extract_json(response_text)
