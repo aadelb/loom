@@ -465,13 +465,19 @@ class GuardianCheckParams(BaseModel):
     """Parameters for research_guardian_check tool."""
 
     action: str = Field(
-        description="Proposed command/tool-call/payload to assess for safety",
+        default="",
+        description="Proposed command/tool-call/payload to assess for safety (alias: content)",
         max_length=2048,
+        alias="content",
     )
     context: str = Field(
         default="",
         description="Optional surrounding context or user intent",
         max_length=1000,
+    )
+    mode: Literal["auto", "regex", "llm"] = Field(
+        default="auto",
+        description="Evaluation mode: 'auto' (LLM + regex), 'regex' (offline only), 'llm' (LLM only)",
     )
     tool_name: str = Field(
         default="",
@@ -487,7 +493,7 @@ class GuardianCheckParams(BaseModel):
         description="On uncertainty/error, bias toward blocking HIGH/CRITICAL actions",
     )
 
-    model_config = {"extra": "forbid", "strict": True}
+    model_config = {"extra": "forbid", "strict": True, "populate_by_name": True}
 
     @field_validator("action")
     @classmethod
