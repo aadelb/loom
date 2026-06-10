@@ -33,6 +33,9 @@ _LI_EMAIL = os.environ.get("LINKEDIN_EMAIL", "")
 _LI_PASSWORD = os.environ.get("LINKEDIN_PASSWORD", "")
 _LI_AT = os.environ.get("LINKEDIN_LI_AT", "")
 _JSESSIONID = os.environ.get("LINKEDIN_JSESSIONID", "")
+# Optional CAPTCHA solver key — when set, StaffSpy's browser login can clear a
+# LinkedIn challenge during auto-relogin. Unset (None) = current behaviour.
+_SOLVER_KEY = os.environ.get("CAPSOLVER_API_KEY", "") or os.environ.get("SOLVER_API_KEY", "")
 
 _VOYAGER_BASE = "https://www.linkedin.com/voyager/api"
 _VOYAGER_HEADERS = {
@@ -46,23 +49,84 @@ _VOYAGER_HEADERS = {
 }
 
 
-def _get_staffspy_account():
-    """Try to create a StaffSpy LinkedInAccount. Returns None on failure."""
+def _can_relogin() -> bool:
+    """True when stored email+password let us rebuild an expired session."""
+    return bool(_LI_EMAIL and _LI_PASSWORD)
+
+
+def _get_staffspy_account(force_relogin: bool = False):
+    """Create a StaffSpy LinkedInAccount. Returns None on failure.
+
+    Normal order: reuse the saved session pickle (fast, no browser), else log
+    in with stored email/password (browser flow, writes a fresh pickle).
+
+    force_relogin=True removes the (stale) pickle first so the email/password
+    login runs and rebuilds it — the auto-relogin path for an expired li_at.
+    A CAPTCHA solver key (if configured) is passed so the browser login can
+    clear a LinkedIn challenge.
+    """
     try:
         from staffspy import LinkedInAccount
 
-        if _SESSION_FILE and os.path.exists(_SESSION_FILE):
+        if force_relogin and _SESSION_FILE and os.path.exists(_SESSION_FILE):
+            try:
+                os.remove(_SESSION_FILE)
+            except OSError as e:
+                logger.warning("could not remove stale session %s: %s", _SESSION_FILE, e)
+
+        if not force_relogin and _SESSION_FILE and os.path.exists(_SESSION_FILE):
             return LinkedInAccount(session_file=_SESSION_FILE)
         if _LI_EMAIL and _LI_PASSWORD:
-            account = LinkedInAccount(
-                username=_LI_EMAIL,
-                password=_LI_PASSWORD,
-                session_file=_SESSION_FILE,
-            )
-            return account
+            kwargs: dict[str, Any] = {
+                "username": _LI_EMAIL,
+                "password": _LI_PASSWORD,
+                "session_file": _SESSION_FILE,
+            }
+            if _SOLVER_KEY:
+                kwargs["solver_api_key"] = _SOLVER_KEY
+            return LinkedInAccount(**kwargs)
     except Exception as e:
-        logger.warning("StaffSpy login failed: %s", e)
+        logger.warning("StaffSpy login failed (force_relogin=%s): %s", force_relogin, e)
     return None
+
+
+def _scrape_staff(company_name: str, search_term: str, max_results: int):
+    """Run StaffSpy scrape_staff with auto-relogin on a stale session.
+
+    An expired li_at baked into the session pickle makes StaffSpy return an
+    empty frame (or raise) rather than signalling auth failure. When we used
+    the pickle and email/password are configured, treat an empty/failed result
+    as a stale session: delete the pickle, re-login (rebuilding it) and retry
+    once. Returns the staff DataFrame or None.
+    """
+    used_pickle = bool(_SESSION_FILE and os.path.exists(_SESSION_FILE))
+    account = _get_staffspy_account()
+    staff = None
+    if account is not None:
+        try:
+            staff = account.scrape_staff(
+                company_name=company_name,
+                search_term=search_term,
+                max_results=max_results,
+            )
+        except Exception as e:
+            logger.warning("StaffSpy scrape failed (pickle=%s): %s", used_pickle, e)
+            staff = None
+
+    if (staff is None or len(staff) == 0) and used_pickle and _can_relogin():
+        logger.info("StaffSpy session appears stale; re-logging in with stored credentials")
+        account = _get_staffspy_account(force_relogin=True)
+        if account is not None:
+            try:
+                staff = account.scrape_staff(
+                    company_name=company_name,
+                    search_term=search_term,
+                    max_results=max_results,
+                )
+            except Exception as e:
+                logger.warning("StaffSpy scrape failed after relogin: %s", e)
+                staff = None
+    return staff
 
 
 def _clean_row(row: Any) -> dict[str, Any]:
@@ -203,12 +267,9 @@ def _extract_profile_from_voyager(data: dict) -> dict[str, Any]:
 
 def _staffspy_profile(username: str, company: str = "") -> dict[str, Any] | None:
     """Fetch profile via StaffSpy. Returns dict or None."""
-    account = _get_staffspy_account()
-    if not account:
-        return None
     try:
         search_company = company or "linkedin"
-        staff = account.scrape_staff(
+        staff = _scrape_staff(
             company_name=search_company,
             search_term=username,
             max_results=1,
@@ -236,11 +297,8 @@ def _staffspy_profile(username: str, company: str = "") -> dict[str, Any] | None
 
 def _staffspy_employees(company: str, search_term: str = "", limit: int = 10) -> list[dict] | None:
     """Fetch company employees via StaffSpy."""
-    account = _get_staffspy_account()
-    if not account:
-        return None
     try:
-        staff = account.scrape_staff(
+        staff = _scrape_staff(
             company_name=company,
             search_term=search_term,
             max_results=min(limit, 50),
