@@ -768,45 +768,49 @@ class LadderTraceParams(BaseModel):
 
 
 class PlanModeParams(BaseModel):
-    """Parameters for research_plan_mode tool."""
+    """Parameters for research_plan_mode tool (multi-action approval workflow)."""
 
-    goal: str = Field(
+    action: Literal["plan", "approve", "reject", "status", "list"] = Field(
         ...,
-        description="The user's goal or task to accomplish",
+        description="Action to perform: 'plan' (create), 'approve' (mark approved), 'reject' (mark rejected), 'status' (get one + audit), 'list' (list all)",
+    )
+    goal: str = Field(
+        default="",
+        description="(for action='plan') The user's goal or task to accomplish",
         max_length=1000,
+    )
+    plan_id: str = Field(
+        default="",
+        description="(for approve/reject/status) Plan ID to act on",
+        max_length=100,
+    )
+    note: str = Field(
+        default="",
+        description="(for approve/reject) Reviewer's decision note",
+        max_length=500,
     )
     context: str = Field(
         default="",
-        description="Optional surrounding context, constraints, or environment info",
+        description="(for action='plan') Optional surrounding context, constraints, or environment info",
         max_length=2000,
     )
     max_steps: int = Field(
         default=8,
-        description="Maximum steps to decompose into (1-20; capped to prevent token overflow)",
+        description="(for action='plan') Maximum steps to decompose into (1-20; capped to prevent token overflow)",
         ge=1,
         le=20,
     )
     model: str = Field(
         default="auto",
-        description="LLM model for decomposition ('auto' uses config default)",
+        description="(for action='plan') LLM model for decomposition ('auto' uses config default)",
         max_length=100,
     )
     auto_approve_threshold: Literal["NONE", "LOW", "MEDIUM", "HIGH", "CRITICAL"] = Field(
         default="LOW",
-        description="Threat level at/below which steps are auto-approved",
+        description="(for action='plan') Threat level at/below which steps are auto-approved",
     )
 
     model_config = {"extra": "forbid", "strict": True}
-
-    @field_validator("goal", mode="before")
-    @classmethod
-    def validate_goal(cls, v: str) -> str:
-        v = v.strip()
-        if not v:
-            raise ValueError("goal cannot be empty")
-        if len(v) > 1000:
-            raise ValueError("goal max 1000 characters")
-        return v
 
     @field_validator("context", mode="before")
     @classmethod

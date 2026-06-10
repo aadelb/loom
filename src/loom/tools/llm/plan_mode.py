@@ -5,7 +5,12 @@ each step is risk-assessed via the Guardian tool, and human approval is required
 if any step exceeds a configurable threat threshold.
 
 Provides:
-  - research_plan_mode: Decompose goal → risk-assess steps → approval gate
+  - research_plan_mode: Multi-action planning with approval workflow:
+    - "plan": Decompose goal → risk-assess steps → return pending plan
+    - "approve": Mark plan approved with note → audit record
+    - "reject": Mark plan rejected with note → audit record
+    - "status": Get one plan + its audit trail
+    - "list": List all plans with truncated summaries
 """
 
 from __future__ import annotations
@@ -13,12 +18,21 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
+import time
+import uuid
+from datetime import datetime
+from pathlib import Path
 from typing import Any, Literal
 
 from loom.error_responses import handle_tool_errors
 from loom.llm_parsers import extract_json
 
 logger = logging.getLogger("loom.tools.llm.plan_mode")
+
+# Plans storage directory
+_PLANS_DIR = Path.home() / ".loom" / "plans"
+_AUDIT_LOG = _PLANS_DIR / "_audit.jsonl"
 
 # Threat level ordering (ascending severity)
 _THREAT_LEVEL_ORDER: dict[str, int] = {
@@ -33,6 +47,49 @@ _VALID_THREAT_LEVELS = frozenset(_THREAT_LEVEL_ORDER.keys())
 
 # Auto-approve threshold order: steps AT or BELOW this level need no human approval
 _VALID_AUTO_APPROVE = frozenset({"NONE", "LOW", "MEDIUM", "HIGH", "CRITICAL"})
+
+# Valid actions
+_VALID_ACTIONS = frozenset({"plan", "approve", "reject", "status", "list"})
+
+
+def _ensure_plans_dir() -> None:
+    """Ensure ~/.loom/plans directory exists."""
+    _PLANS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _atomic_write(path: Path, data: str) -> None:
+    """Atomic file write: write to temp, then rename."""
+    tmp_path = path.parent / f".{path.name}.{uuid.uuid4().hex[:8]}.tmp"
+    try:
+        tmp_path.write_text(data, encoding="utf-8")
+        os.replace(tmp_path, path)
+    except Exception:
+        if tmp_path.exists():
+            tmp_path.unlink(missing_ok=True)
+        raise
+
+
+def _write_audit_record(decision: str, plan_id: str, note: str) -> None:
+    """Append an audit record to the audit log (append-only JSONL)."""
+    _ensure_plans_dir()
+    record = {
+        "timestamp": datetime.utcnow().isoformat(),
+        "plan_id": plan_id,
+        "decision": decision,  # "approved" | "rejected"
+        "note": note,
+    }
+    try:
+        with open(_AUDIT_LOG, "a") as f:
+            f.write(json.dumps(record) + "\n")
+    except Exception as e:
+        logger.error("audit_write_error plan_id=%s error=%s", plan_id, str(e)[:100])
+
+
+def _generate_plan_id(goal: str) -> str:
+    """Generate a deterministic plan_id from the goal."""
+    # Use hash of goal for determinism (not time/random)
+    hash_val = abs(hash(goal)) % (10**8)
+    return f"plan_{hash_val:08d}"
 
 
 def _parse_plan_json(text: str) -> list[dict[str, Any]] | None:
@@ -67,95 +124,172 @@ def _order_threat_levels(threat: str) -> int:
     return _THREAT_LEVEL_ORDER.get(threat, 4)  # Default to CRITICAL if unknown
 
 
+def _load_plan(plan_id: str) -> dict[str, Any] | None:
+    """Load a plan by ID from disk."""
+    plan_path = _PLANS_DIR / f"{plan_id}.json"
+    if not plan_path.exists():
+        return None
+    try:
+        data = plan_path.read_text(encoding="utf-8")
+        return json.loads(data)
+    except Exception as e:
+        logger.error("plan_load_error plan_id=%s error=%s", plan_id, str(e)[:100])
+        return None
+
+
+def _save_plan(plan_id: str, plan_data: dict[str, Any]) -> None:
+    """Atomically save a plan to disk."""
+    _ensure_plans_dir()
+    plan_path = _PLANS_DIR / f"{plan_id}.json"
+    plan_data["last_updated"] = datetime.utcnow().isoformat()
+    _atomic_write(plan_path, json.dumps(plan_data, indent=2))
+
+
+def _get_plan_audit_trail(plan_id: str) -> list[dict[str, Any]]:
+    """Load audit records for a specific plan from the audit log."""
+    trail: list[dict[str, Any]] = []
+    if not _AUDIT_LOG.exists():
+        return trail
+    try:
+        with open(_AUDIT_LOG, "r") as f:
+            for line in f:
+                if line.strip():
+                    record = json.loads(line)
+                    if record.get("plan_id") == plan_id:
+                        trail.append(record)
+    except Exception as e:
+        logger.error("audit_read_error plan_id=%s error=%s", plan_id, str(e)[:100])
+    return trail
+
+
 @handle_tool_errors("research_plan_mode")
 async def research_plan_mode(
-    goal: str,
+    action: str,
+    goal: str = "",
+    plan_id: str = "",
+    note: str = "",
     context: str = "",
     max_steps: int = 8,
     model: str = "auto",
     auto_approve_threshold: str = "LOW",
 ) -> dict[str, Any]:
-    """Decompose a goal into steps, risk-assess each, and gate on approval.
+    """Multi-action approval-gated planning with persistent audit trail.
 
-    Plans a multi-step goal with built-in safety checks. Breaks the goal into
-    concrete steps, evaluates the threat level of each step using the Guardian
-    tool, and determines whether human approval is required before execution.
+    Implements PocketPaw's planning mode with approval/rejection workflow:
+    - "plan": LLM decomposes goal into steps, Guardian assesses risk, plan persisted pending approval
+    - "approve": Mark plan approved + audit record + store reviewer note
+    - "reject": Mark plan rejected + audit record + store reviewer note
+    - "status": Retrieve one plan + its full audit trail
+    - "list": List all plans with goals, risks, statuses
 
-    This tool does NOT execute any steps; it only produces a plan and gates
-    it based on configurable threat thresholds.
-
-    **Threat Level Ordering:**
-    NONE < LOW < MEDIUM < HIGH < CRITICAL
-
-    A step requires approval if its threat_level exceeds auto_approve_threshold
-    (via numeric ordering) OR if the Guardian explicitly returns allow=False.
-
-    **Auto-Approval Threshold:**
-    - NONE: All steps auto-approved (threshold = 0)
-    - LOW: NONE, LOW auto-approved; MEDIUM+ need approval (threshold = 1)
-    - MEDIUM: NONE, LOW, MEDIUM auto-approved (threshold = 2)
-    - HIGH: NONE, LOW, MEDIUM, HIGH auto-approved (threshold = 3)
-    - CRITICAL: No auto-approval, all need human decision (threshold = 4)
+    Plans are persisted to ~/.loom/plans/<plan_id>.json (atomically written).
+    Approval decisions logged to ~/.loom/plans/_audit.jsonl (append-only).
 
     Args:
-        goal: The user's goal or task to accomplish (e.g., "fetch user data and export to CSV").
-        context: Optional surrounding context, constraints, or environment info.
-        max_steps: Maximum steps to decompose into (1-20; capped to prevent token overflow).
-        model: LLM model for decomposition ("auto" uses config default).
-        auto_approve_threshold: Threat level at/below which steps are auto-approved.
-                              Must be one of: NONE, LOW, MEDIUM, HIGH, CRITICAL.
+        action: One of "plan", "approve", "reject", "status", "list".
+        goal: (for action="plan") The task to plan.
+        plan_id: (for approve/reject/status) Plan ID to act on.
+        note: (for approve/reject) Reviewer's decision note.
+        context: (for action="plan") Optional surrounding context/constraints.
+        max_steps: (for action="plan") Max steps to decompose (1-20).
+        model: (for action="plan") LLM model ("auto" = config default).
+        auto_approve_threshold: (for action="plan") Threat level for auto-approval (NONE|LOW|MEDIUM|HIGH|CRITICAL).
 
     Returns:
         {
-            "goal": str (the original goal),
-            "steps": [
-                {
-                    "n": int (step number),
-                    "action": str (what to do),
-                    "tool": str (which tool/command),
-                    "threat_level": str (NONE|LOW|MEDIUM|HIGH|CRITICAL),
-                    "allow": bool (Guardian verdict),
-                    "reason": str (Guardian justification),
-                }
-            ],
-            "step_count": int,
-            "overall_risk": str (max threat level across all steps),
-            "requires_approval": bool (True if any step exceeds threshold or allow=False),
-            "auto_approvable": bool (True if all steps are auto-approvable),
-            "summary": str (human-readable one-liner on approval status),
-            "error": str (optional, if decomposition failed),
+            "success": bool,
+            "action": str (the action performed),
+            "plan_id": str (for plan/approve/reject/status),
+            "plan": {...} (full plan object for plan/approve/reject/status),
+            "audit_trail": [...] (for status/approve/reject),
+            "plans": [...] (for list),
+            "error": str (if action failed),
         }
 
     Example:
+        >>> # Step 1: Create a plan
         >>> result = await research_plan_mode(
+        ...     action="plan",
         ...     goal="fetch customer data and send email notifications",
         ...     auto_approve_threshold="MEDIUM"
         ... )
-        >>> result["requires_approval"]
-        True  # if any step is HIGH or CRITICAL
-        >>> result["overall_risk"]
-        "HIGH"
+        >>> plan_id = result["plan_id"]
+        >>>
+        >>> # Step 2: Reviewer checks the plan
+        >>> status = await research_plan_mode(
+        ...     action="status",
+        ...     plan_id=plan_id
+        ... )
+        >>> print(status["plan"]["overall_risk"])  # HIGH → requires approval
+        >>>
+        >>> # Step 3: Approve with note
+        >>> approval = await research_plan_mode(
+        ...     action="approve",
+        ...     plan_id=plan_id,
+        ...     note="Risk accepted; HIGH-risk steps are within tolerance"
+        ... )
+        >>> print(approval["plan"]["status"])  # approved
+        >>> print(approval["audit_trail"])  # includes the approval record
     """
+    # Validate action
+    if action not in _VALID_ACTIONS:
+        return {
+            "success": False,
+            "action": action,
+            "error": f"Invalid action {action!r}; must be one of {sorted(_VALID_ACTIONS)}",
+        }
+
+    # Route to appropriate sub-handler
+    if action == "plan":
+        return await _action_plan(goal, context, max_steps, model, auto_approve_threshold)
+    elif action == "approve":
+        return await _action_approve(plan_id, note)
+    elif action == "reject":
+        return await _action_reject(plan_id, note)
+    elif action == "status":
+        return await _action_status(plan_id)
+    elif action == "list":
+        return await _action_list()
+    else:
+        # Unreachable (action validated above)
+        return {"success": False, "action": action, "error": "Unknown action"}
+
+
+async def _action_plan(
+    goal: str,
+    context: str,
+    max_steps: int,
+    model: str,
+    auto_approve_threshold: str,
+) -> dict[str, Any]:
+    """Create a new plan: decompose goal, assess risk, persist with status=pending_approval."""
+    if not goal or not goal.strip():
+        return {
+            "success": False,
+            "action": "plan",
+            "error": "goal is required and must be non-empty",
+        }
+
     # Validate auto_approve_threshold
     if auto_approve_threshold not in _VALID_AUTO_APPROVE:
         return {
+            "success": False,
+            "action": "plan",
             "error": f"Invalid auto_approve_threshold {auto_approve_threshold!r}; must be one of {sorted(_VALID_AUTO_APPROVE)}",
-            "goal": goal,
-            "step_count": 0,
-            "steps": [],
-            "requires_approval": True,
-            "auto_approvable": False,
         }
 
     # Cap max_steps
     max_steps = max(1, min(int(max_steps), 20))
 
     logger.info(
-        "plan_mode_start goal_preview=%s max_steps=%d threshold=%s",
+        "plan_action_start goal_preview=%s max_steps=%d threshold=%s",
         goal[:60],
         max_steps,
         auto_approve_threshold,
     )
+
+    # Generate deterministic plan_id
+    plan_id = _generate_plan_id(goal)
 
     # STEP 1: Decompose goal into steps via LLM
     steps_list: list[dict[str, Any]] | None = None
@@ -214,11 +348,11 @@ Do NOT include any text outside the JSON array. Do NOT include markdown fences."
 
                 if not steps_list:
                     decompose_error = "LLM returned empty step list"
-                    logger.warning("plan_mode_decompose_empty response_preview=%s", response.text[:200])
+                    logger.warning("plan_decompose_empty response_preview=%s", response.text[:200])
             else:
                 decompose_error = "LLM response was not a JSON array or lacked 'steps' key"
                 logger.warning(
-                    "plan_mode_decompose_invalid response_type=%s response_preview=%s",
+                    "plan_decompose_invalid response_type=%s response_preview=%s",
                     type(parsed),
                     response.text[:200] if response.text else "",
                 )
@@ -227,12 +361,12 @@ Do NOT include any text outside the JSON array. Do NOT include markdown fences."
 
     except Exception as e:
         decompose_error = f"Decomposition failed: {str(e)[:100]}"
-        logger.error("plan_mode_decompose_error error=%s", decompose_error)
+        logger.error("plan_decompose_error error=%s", decompose_error)
 
     # FALLBACK: If decomposition failed, create a single-step placeholder
     if not steps_list:
         logger.info(
-            "plan_mode_fallback_single_step goal_preview=%s decompose_error=%s",
+            "plan_fallback_single_step goal_preview=%s decompose_error=%s",
             goal[:60],
             decompose_error,
         )
@@ -322,7 +456,9 @@ Do NOT include any text outside the JSON array. Do NOT include markdown fences."
     else:
         summary = "Plan auto-approved: all steps below threat threshold"
 
-    result = {
+    # STEP 4: Persist plan
+    plan_data = {
+        "plan_id": plan_id,
         "goal": goal,
         "steps": final_steps,
         "step_count": len(final_steps),
@@ -330,20 +466,177 @@ Do NOT include any text outside the JSON array. Do NOT include markdown fences."
         "requires_approval": requires_approval,
         "auto_approvable": auto_approvable,
         "summary": summary,
+        "status": "pending_approval",  # Will change to approved/rejected
+        "created_at": datetime.utcnow().isoformat(),
+        "last_updated": datetime.utcnow().isoformat(),
     }
 
     if decompose_error:
-        result["error"] = decompose_error
+        plan_data["decompose_error"] = decompose_error
+
+    _save_plan(plan_id, plan_data)
 
     logger.info(
-        "plan_mode_complete goal_preview=%s step_count=%d overall_risk=%s requires_approval=%s",
+        "plan_created plan_id=%s goal_preview=%s step_count=%d overall_risk=%s requires_approval=%s",
+        plan_id,
         goal[:60],
         len(final_steps),
         overall_risk,
         requires_approval,
     )
 
-    return result
+    return {
+        "success": True,
+        "action": "plan",
+        "plan_id": plan_id,
+        "plan": plan_data,
+    }
+
+
+async def _action_approve(plan_id: str, note: str) -> dict[str, Any]:
+    """Approve a plan and record the decision."""
+    if not plan_id or not plan_id.strip():
+        return {
+            "success": False,
+            "action": "approve",
+            "error": "plan_id is required and must be non-empty",
+        }
+
+    plan = _load_plan(plan_id)
+    if not plan:
+        return {
+            "success": False,
+            "action": "approve",
+            "plan_id": plan_id,
+            "error": f"Plan {plan_id} not found",
+        }
+
+    # Update plan status
+    plan["status"] = "approved"
+    plan["approval_note"] = note
+    _save_plan(plan_id, plan)
+
+    # Write audit record
+    _write_audit_record("approved", plan_id, note)
+
+    # Fetch updated audit trail
+    audit_trail = _get_plan_audit_trail(plan_id)
+
+    logger.info("plan_approved plan_id=%s note_preview=%s", plan_id, note[:50])
+
+    return {
+        "success": True,
+        "action": "approve",
+        "plan_id": plan_id,
+        "plan": plan,
+        "audit_trail": audit_trail,
+    }
+
+
+async def _action_reject(plan_id: str, note: str) -> dict[str, Any]:
+    """Reject a plan and record the decision."""
+    if not plan_id or not plan_id.strip():
+        return {
+            "success": False,
+            "action": "reject",
+            "error": "plan_id is required and must be non-empty",
+        }
+
+    plan = _load_plan(plan_id)
+    if not plan:
+        return {
+            "success": False,
+            "action": "reject",
+            "plan_id": plan_id,
+            "error": f"Plan {plan_id} not found",
+        }
+
+    # Update plan status
+    plan["status"] = "rejected"
+    plan["rejection_note"] = note
+    _save_plan(plan_id, plan)
+
+    # Write audit record
+    _write_audit_record("rejected", plan_id, note)
+
+    # Fetch updated audit trail
+    audit_trail = _get_plan_audit_trail(plan_id)
+
+    logger.info("plan_rejected plan_id=%s note_preview=%s", plan_id, note[:50])
+
+    return {
+        "success": True,
+        "action": "reject",
+        "plan_id": plan_id,
+        "plan": plan,
+        "audit_trail": audit_trail,
+    }
+
+
+async def _action_status(plan_id: str) -> dict[str, Any]:
+    """Retrieve a plan and its audit trail."""
+    if not plan_id or not plan_id.strip():
+        return {
+            "success": False,
+            "action": "status",
+            "error": "plan_id is required and must be non-empty",
+        }
+
+    plan = _load_plan(plan_id)
+    if not plan:
+        return {
+            "success": False,
+            "action": "status",
+            "plan_id": plan_id,
+            "error": f"Plan {plan_id} not found",
+        }
+
+    audit_trail = _get_plan_audit_trail(plan_id)
+
+    logger.info("plan_status_retrieved plan_id=%s status=%s", plan_id, plan.get("status"))
+
+    return {
+        "success": True,
+        "action": "status",
+        "plan_id": plan_id,
+        "plan": plan,
+        "audit_trail": audit_trail,
+    }
+
+
+async def _action_list() -> dict[str, Any]:
+    """List all plans with truncated goals and status summaries."""
+    _ensure_plans_dir()
+    plans_list: list[dict[str, Any]] = []
+
+    try:
+        for plan_file in sorted(_PLANS_DIR.glob("plan_*.json")):
+            try:
+                plan = json.loads(plan_file.read_text(encoding="utf-8"))
+                plans_list.append(
+                    {
+                        "plan_id": plan.get("plan_id", "unknown"),
+                        "goal": plan.get("goal", "")[:100],  # Truncate
+                        "overall_risk": plan.get("overall_risk", "UNKNOWN"),
+                        "status": plan.get("status", "unknown"),
+                        "step_count": plan.get("step_count", 0),
+                        "created_at": plan.get("created_at", ""),
+                    }
+                )
+            except Exception as e:
+                logger.warning("plan_list_skip file=%s error=%s", plan_file.name, str(e)[:50])
+
+    except Exception as e:
+        logger.error("plan_list_error error=%s", str(e)[:100])
+
+    logger.info("plan_list_retrieved count=%d", len(plans_list))
+
+    return {
+        "success": True,
+        "action": "list",
+        "plans": plans_list,
+        "count": len(plans_list),
+    }
 
 
 async def _assess_step_risk(
