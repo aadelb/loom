@@ -196,7 +196,8 @@ def _threat_to_recommendation(
 
 @handle_tool_errors("research_guardian_check")
 async def research_guardian_check(
-    action: str,
+    action: str = "",
+    content: str = "",
     context: str = "",
     mode: str = "auto",
     tool_name: str = "",
@@ -255,6 +256,8 @@ async def research_guardian_check(
         >>> result["recommendation"]
         "block"
     """
+    # `content` is an accepted alias for `action` — coalesce so callers can use either.
+    action = action or content
     # Cap action length to prevent context-overflow attacks
     action = action[: _MAX_ACTION_LENGTH]
     action_preview = truncate(action, 100)
