@@ -770,9 +770,9 @@ class LadderTraceParams(BaseModel):
 class PlanModeParams(BaseModel):
     """Parameters for research_plan_mode tool (multi-action approval workflow)."""
 
-    action: Literal["plan", "approve", "reject", "status", "list"] = Field(
+    action: Literal["plan", "approve", "reject", "status", "list", "revise", "execute", "complete_step"] = Field(
         ...,
-        description="Action to perform: 'plan' (create), 'approve' (mark approved), 'reject' (mark rejected), 'status' (get one + audit), 'list' (list all)",
+        description="Action: 'plan' (create), 'approve' (mark approved), 'reject' (mark rejected), 'status' (get one + audit), 'list' (list all), 'revise' (refine), 'execute' (start), 'complete_step' (mark step done)",
     )
     goal: str = Field(
         default="",
@@ -781,12 +781,12 @@ class PlanModeParams(BaseModel):
     )
     plan_id: str = Field(
         default="",
-        description="(for approve/reject/status) Plan ID to act on",
+        description="(for approve/reject/status/revise/execute/complete_step) Plan ID to act on",
         max_length=100,
     )
     note: str = Field(
         default="",
-        description="(for approve/reject) Reviewer's decision note",
+        description="(for approve/reject/revise) Reviewer's decision or feedback note",
         max_length=500,
     )
     context: str = Field(
@@ -808,6 +808,22 @@ class PlanModeParams(BaseModel):
     auto_approve_threshold: Literal["NONE", "LOW", "MEDIUM", "HIGH", "CRITICAL"] = Field(
         default="LOW",
         description="(for action='plan') Threat level at/below which steps are auto-approved",
+    )
+    step_n: int = Field(
+        default=0,
+        description="(for action='complete_step') Step number to mark as done (1-100)",
+        ge=0,
+        le=100,
+    )
+    step_result: str = Field(
+        default="",
+        description="(for action='complete_step') Result/output of the completed step",
+        max_length=1000,
+    )
+    step_state: str = Field(
+        default="",
+        description="(for action='complete_step') State: 'done' or 'failed'",
+        max_length=20,
     )
 
     model_config = {"extra": "forbid", "strict": True}

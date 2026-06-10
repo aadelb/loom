@@ -49,7 +49,7 @@ _VALID_THREAT_LEVELS = frozenset(_THREAT_LEVEL_ORDER.keys())
 _VALID_AUTO_APPROVE = frozenset({"NONE", "LOW", "MEDIUM", "HIGH", "CRITICAL"})
 
 # Valid actions
-_VALID_ACTIONS = frozenset({"plan", "approve", "reject", "status", "list"})
+_VALID_ACTIONS = frozenset({"plan", "approve", "reject", "status", "list", "revise", "execute", "complete_step"})
 
 
 def _ensure_plans_dir() -> None:
@@ -172,28 +172,37 @@ async def research_plan_mode(
     max_steps: int = 8,
     model: str = "auto",
     auto_approve_threshold: str = "LOW",
+    step_n: int = 0,
+    step_result: str = "",
+    step_state: str = "",
 ) -> dict[str, Any]:
-    """Multi-action approval-gated planning with persistent audit trail.
+    """Multi-action approval-gated planning with execution tracking and versioning.
 
-    Implements PocketPaw's planning mode with approval/rejection workflow:
-    - "plan": LLM decomposes goal into steps, Guardian assesses risk, plan persisted pending approval
-    - "approve": Mark plan approved + audit record + store reviewer note
-    - "reject": Mark plan rejected + audit record + store reviewer note
+    Implements PocketPaw's planning mode with approval/rejection/execution workflow:
+    - "plan": LLM decomposes goal into steps, Guardian assesses risk per-step, DAG dependencies, plan persisted pending approval
+    - "approve": Mark plan approved + audit record
+    - "reject": Mark plan rejected + audit record
     - "status": Retrieve one plan + its full audit trail
     - "list": List all plans with goals, risks, statuses
+    - "revise": Load approved plan, accept reviewer feedback, generate improved version (version+1)
+    - "execute": Mark approved plan as executing (status=executing, steps.state=pending)
+    - "complete_step": Mark step done/failed with result; auto-complete plan if all steps done
 
     Plans are persisted to ~/.loom/plans/<plan_id>.json (atomically written).
     Approval decisions logged to ~/.loom/plans/_audit.jsonl (append-only).
 
     Args:
-        action: One of "plan", "approve", "reject", "status", "list".
+        action: One of "plan", "approve", "reject", "status", "list", "revise", "execute", "complete_step".
         goal: (for action="plan") The task to plan.
-        plan_id: (for approve/reject/status) Plan ID to act on.
-        note: (for approve/reject) Reviewer's decision note.
+        plan_id: (for approve/reject/status/revise/execute/complete_step) Plan ID to act on.
+        note: (for approve/reject/revise) Reviewer's decision or feedback note.
         context: (for action="plan") Optional surrounding context/constraints.
         max_steps: (for action="plan") Max steps to decompose (1-20).
         model: (for action="plan") LLM model ("auto" = config default).
         auto_approve_threshold: (for action="plan") Threat level for auto-approval (NONE|LOW|MEDIUM|HIGH|CRITICAL).
+        step_n: (for action="complete_step") Step number to mark as done (1-100).
+        step_result: (for action="complete_step") Result/output of the completed step.
+        step_state: (for action="complete_step") State: 'done' or 'failed'.
 
     Returns:
         {
@@ -250,6 +259,12 @@ async def research_plan_mode(
         return await _action_status(plan_id)
     elif action == "list":
         return await _action_list()
+    elif action == "revise":
+        return await _action_revise(plan_id, note, model)
+    elif action == "execute":
+        return await _action_execute(plan_id)
+    elif action == "complete_step":
+        return await _action_complete_step(plan_id, step_n, step_state, step_result)
     else:
         # Unreachable (action validated above)
         return {"success": False, "action": action, "error": "Unknown action"}
@@ -308,17 +323,19 @@ Generate {max_steps} or fewer steps. Each step should:
 1. Be a single, concrete action
 2. Specify which tool or command would execute it
 3. Be ordered logically
+4. Declare its dependencies (which prior steps it depends on, if any)
 
 Respond ONLY with a JSON array of objects. Each object must have exactly these keys:
 - "n": step number (1, 2, 3, ...)
 - "action": what to do (short description)
 - "tool": which tool/command (e.g., "research_fetch", "bash rm", "python script")
+- "depends_on": list of step numbers this step depends on (e.g., [1], [1, 2], or [] for independent)
 
 Example format:
 [
-  {{"n": 1, "action": "fetch data from API", "tool": "research_fetch"}},
-  {{"n": 2, "action": "parse JSON response", "tool": "python json.loads"}},
-  {{"n": 3, "action": "write to file", "tool": "bash tee"}}
+  {{"n": 1, "action": "fetch data from API", "tool": "research_fetch", "depends_on": []}},
+  {{"n": 2, "action": "parse JSON response", "tool": "python json.loads", "depends_on": [1]}},
+  {{"n": 3, "action": "write to file", "tool": "bash tee", "depends_on": [2]}}
 ]
 
 Do NOT include any text outside the JSON array. Do NOT include markdown fences."""
@@ -338,11 +355,15 @@ Do NOT include any text outside the JSON array. Do NOT include markdown fences."
                 steps_list = []
                 for step in parsed[: max_steps]:
                     if isinstance(step, dict):
+                        depends_on = step.get("depends_on", [])
+                        if not isinstance(depends_on, list):
+                            depends_on = []
                         steps_list.append(
                             {
                                 "n": step.get("n", len(steps_list) + 1),
                                 "action": str(step.get("action", ""))[:200],
                                 "tool": str(step.get("tool", ""))[:100],
+                                "depends_on": depends_on,
                             }
                         )
 
@@ -375,6 +396,7 @@ Do NOT include any text outside the JSON array. Do NOT include markdown fences."
                 "n": 1,
                 "action": goal[:200],
                 "tool": "unknown",
+                "depends_on": [],
             }
         ]
         if not decompose_error:
@@ -412,38 +434,39 @@ Do NOT include any text outside the JSON array. Do NOT include markdown fences."
                     }
                 )
 
-    # STEP 3: Compute approval gate
+    # STEP 3: Compute approval gate (using per-step risk_level from Guardian)
     # Threat threshold as numeric value
     threshold_order = _order_threat_levels(auto_approve_threshold)
 
-    # Determine overall risk (max threat across all steps)
+    # Determine overall risk (max risk across all steps)
     overall_risk = "NONE"
     if final_steps:
-        max_threat_order = max(
-            _order_threat_levels(step.get("threat_level", "NONE"))
+        max_risk_order = max(
+            _order_threat_levels(step.get("risk_level", "NONE"))
             for step in final_steps
         )
         # Reverse map from order to threat level
         for threat, order in _THREAT_LEVEL_ORDER.items():
-            if order == max_threat_order:
+            if order == max_risk_order:
                 overall_risk = threat
                 break
+
+    # Compute execution layers (topological sort by depends_on)
+    execution_layers, has_cycle = _topological_sort(final_steps)
 
     # Determine requires_approval
     requires_approval = False
     for step in final_steps:
-        threat_order = _order_threat_levels(step.get("threat_level", "NONE"))
-        allow = step.get("allow", False)
+        risk_order = _order_threat_levels(step.get("risk_level", "NONE"))
 
-        # Require approval if: threat exceeds threshold OR allow is False
-        if threat_order > threshold_order or not allow:
+        # Require approval if: risk exceeds threshold
+        if risk_order > threshold_order:
             requires_approval = True
             break
 
-    # Auto-approvable: all steps are at/below threshold AND all allow=True
+    # Auto-approvable: all steps are at/below threshold
     auto_approvable = all(
-        _order_threat_levels(step.get("threat_level", "NONE")) <= threshold_order
-        and step.get("allow", False)
+        _order_threat_levels(step.get("risk_level", "NONE")) <= threshold_order
         for step in final_steps
     )
 
@@ -466,7 +489,10 @@ Do NOT include any text outside the JSON array. Do NOT include markdown fences."
         "requires_approval": requires_approval,
         "auto_approvable": auto_approvable,
         "summary": summary,
-        "status": "pending_approval",  # Will change to approved/rejected
+        "status": "pending_approval",  # Will change to approved/rejected/executing/completed
+        "version": 1,  # For tracking revisions
+        "revision_history": [],  # Stores old versions on revise
+        "execution_layers": execution_layers,  # Steps that can run in parallel per layer
         "created_at": datetime.utcnow().isoformat(),
         "last_updated": datetime.utcnow().isoformat(),
     }
@@ -644,7 +670,7 @@ async def _assess_step_risk(
     goal: str,
     context: str,
 ) -> dict[str, Any]:
-    """Risk-assess a single step via Guardian tool.
+    """Risk-assess a single step via Guardian tool (regex mode = offline).
 
     Args:
         step: The step dict with n, action, tool.
@@ -652,7 +678,7 @@ async def _assess_step_risk(
         context: Optional surrounding context.
 
     Returns:
-        Step dict with threat_level, allow, reason added.
+        Step dict with risk_level, risk_categories added (not threat_level for backwards compat).
     """
     try:
         from loom.tools.security.guardian import research_guardian_check
@@ -665,48 +691,444 @@ async def _assess_step_risk(
         if context:
             guardian_context += f"\nEnvironment: {context}"
 
-        # Call Guardian
+        # Guardian in "auto" mode (LLM + regex fallback): plan steps are PROSE
+        # descriptions ("delete old temp files with rm"), not literal shell commands,
+        # so regex-only scores them NONE — a dangerous false-safe for a gating tool.
+        # The LLM judge reads the intent; regex still backstops if the LLM is down.
+        # All steps are assessed concurrently (asyncio.gather) so latency stays bounded.
         guardian_result = await research_guardian_check(
             action=action,
             context=guardian_context,
             tool_name=tool_name,
-            judge_model="auto",
+            mode="auto",
             fail_closed=True,
         )
 
         # Extract verdict from Guardian
-        threat_level = guardian_result.get("threat_level", "HIGH")
-        allow = guardian_result.get("allow", False)
+        risk_level = guardian_result.get("threat_level", "HIGH")
+        risk_categories = guardian_result.get("categories", [])
         reason = guardian_result.get("reason", "Guardian assessment")
 
         # Validate threat level
-        if threat_level not in _VALID_THREAT_LEVELS:
-            threat_level = "HIGH"
+        if risk_level not in _VALID_THREAT_LEVELS:
+            risk_level = "HIGH"
 
         result = dict(step)
-        result["threat_level"] = threat_level
-        result["allow"] = allow
+        result["risk_level"] = risk_level
+        result["risk_categories"] = risk_categories
         result["reason"] = reason
+        result["depends_on"] = step.get("depends_on", [])  # Preserve depends_on if present
 
         logger.debug(
-            "plan_step_assessed n=%s action_preview=%s threat=%s allow=%s",
+            "plan_step_assessed n=%s action_preview=%s risk=%s categories=%s",
             step.get("n"),
             action[:40],
-            threat_level,
-            allow,
+            risk_level,
+            risk_categories,
         )
 
         return result
 
     except Exception as e:
-        # Guardian failed; return step with HIGH threat, fail-closed
+        # Guardian failed; return step with HIGH risk, fail-closed
         logger.error(
             "plan_step_guardian_error n=%s error=%s",
             step.get("n"),
             str(e)[:100],
         )
         result = dict(step)
-        result["threat_level"] = "HIGH"
-        result["allow"] = False
+        result["risk_level"] = "HIGH"
+        result["risk_categories"] = ["unknown"]
         result["reason"] = f"Guardian check failed: {str(e)[:80]}"
+        result["depends_on"] = step.get("depends_on", [])
         return result
+
+
+def _topological_sort(steps: list[dict[str, Any]]) -> tuple[list[list[int]], bool]:
+    """Topologically sort steps by depends_on; return execution layers + cycle flag.
+
+    Args:
+        steps: List of step dicts with 'n' and 'depends_on' keys.
+
+    Returns:
+        (execution_layers, has_cycle) where execution_layers is list of lists of step numbers
+        that can run in parallel (each layer depends on prior layers), and has_cycle is True
+        if a cycle was detected (fallback to sequential).
+    """
+    if not steps:
+        return [], False
+
+    # Build dependency graph and in-degree map
+    in_degree: dict[int, int] = {}
+    graph: dict[int, list[int]] = {}  # graph[n] = list of steps that depend on n
+
+    # Initialize all steps
+    for step in steps:
+        n = step.get("n", 0)
+        depends_on = step.get("depends_on", [])
+        if not isinstance(depends_on, list):
+            depends_on = []
+        in_degree[n] = len(depends_on)
+        if n not in graph:
+            graph[n] = []
+
+    # Build adjacency: if step A depends on B, then B -> A
+    for step in steps:
+        n = step.get("n", 0)
+        depends_on = step.get("depends_on", [])
+        if not isinstance(depends_on, list):
+            depends_on = []
+        for dep in depends_on:
+            if dep not in graph:
+                graph[dep] = []
+            graph[dep].append(n)
+
+    # Kahn's algorithm for topological sort (detect cycles)
+    queue = [n for n in in_degree if in_degree[n] == 0]
+    topo_order = []
+    processed_count = 0
+
+    while queue:
+        queue.sort()  # Deterministic order
+        layer = list(queue)
+        topo_order.append(layer)
+        processed_count += len(layer)
+
+        next_queue = []
+        for n in layer:
+            for dependent in graph.get(n, []):
+                in_degree[dependent] -= 1
+                if in_degree[dependent] == 0:
+                    next_queue.append(dependent)
+
+        queue = next_queue
+
+    # If not all steps processed, there's a cycle
+    has_cycle = processed_count < len(steps)
+
+    if has_cycle:
+        logger.warning("plan_cycle_detected_fallback_sequential step_count=%d", len(steps))
+        # Fallback to sequential (each step depends on previous)
+        all_steps = [step.get("n", i + 1) for i, step in enumerate(steps)]
+        return [[n] for n in all_steps], True
+
+    return topo_order, False
+
+
+async def _action_revise(plan_id: str, note: str, model: str) -> dict[str, Any]:
+    """Revise a plan: load plan, accept feedback, generate improved version.
+
+    Only allowed if plan status is pending_approval or approved. Creates version+1,
+    stores old steps in revision_history, resets status to pending_approval.
+    """
+    if not plan_id or not plan_id.strip():
+        return {
+            "success": False,
+            "action": "revise",
+            "error": "plan_id is required and must be non-empty",
+        }
+
+    plan = _load_plan(plan_id)
+    if not plan:
+        return {
+            "success": False,
+            "action": "revise",
+            "plan_id": plan_id,
+            "error": f"Plan {plan_id} not found",
+        }
+
+    if plan.get("status") not in ("pending_approval", "approved"):
+        return {
+            "success": False,
+            "action": "revise",
+            "plan_id": plan_id,
+            "error": f"Cannot revise plan with status {plan.get('status')}; must be pending_approval or approved",
+        }
+
+    # Extract current plan info
+    goal = plan.get("goal", "")
+    old_steps = plan.get("steps", [])
+    old_version = plan.get("version", 1)
+    new_version = old_version + 1
+
+    # Initialize revision_history if not present
+    if "revision_history" not in plan:
+        plan["revision_history"] = []
+
+    # Store old version
+    plan["revision_history"].append({
+        "version": old_version,
+        "steps": old_steps,
+        "stored_at": datetime.utcnow().isoformat(),
+    })
+
+    # Call LLM to revise plan
+    try:
+        from loom.tools.llm.llm import _call_with_cascade
+
+        # Build step summary for LLM
+        step_summary = "\n".join(
+            f"{i+1}. {step.get('action', '')} (risk: {step.get('risk_level', 'UNKNOWN')})"
+            for i, step in enumerate(old_steps[:10])
+        )
+
+        revise_prompt = f"""You are a planning AI. The user has provided feedback on a draft plan.
+Revise and improve the plan based on the feedback.
+
+Original goal: {goal}
+
+Current steps:
+{step_summary}
+
+Reviewer feedback: {note}
+
+Generate an improved plan. Each step should include:
+- "n": step number (1, 2, 3, ...)
+- "action": what to do
+- "tool": which tool/command
+- "depends_on": list of step numbers this step depends on (e.g., [1] for sequential, [] for independent)
+
+Respond ONLY with a JSON array of step objects. No markdown or extra text."""
+
+        response = await _call_with_cascade(
+            messages=[{"role": "user", "content": revise_prompt}],
+            model=model,
+            max_tokens=1500,
+            temperature=0.2,
+            timeout=30,
+        )
+
+        parsed_steps = None
+        if response and response.text:
+            parsed_steps = _parse_plan_json(response.text)
+
+        if not parsed_steps or not isinstance(parsed_steps, list):
+            return {
+                "success": False,
+                "action": "revise",
+                "plan_id": plan_id,
+                "error": "Failed to parse revised plan from LLM",
+            }
+
+        # Normalize steps and add depends_on
+        revised_steps = []
+        for step in parsed_steps:
+            if isinstance(step, dict):
+                revised_steps.append({
+                    "n": step.get("n", len(revised_steps) + 1),
+                    "action": str(step.get("action", ""))[:200],
+                    "tool": str(step.get("tool", ""))[:100],
+                    "depends_on": step.get("depends_on", []),
+                })
+
+    except Exception as e:
+        logger.error("plan_revise_llm_error error=%s", str(e)[:100])
+        return {
+            "success": False,
+            "action": "revise",
+            "plan_id": plan_id,
+            "error": f"Revision failed: {str(e)[:100]}",
+        }
+
+    # Risk-assess revised steps
+    guardian_tasks = []
+    for step in revised_steps:
+        task = _assess_step_risk(step, goal, "")
+        guardian_tasks.append(task)
+
+    assessed_steps = await asyncio.gather(*guardian_tasks, return_exceptions=True)
+
+    final_steps = []
+    for i, result in enumerate(assessed_steps):
+        if isinstance(result, dict):
+            final_steps.append(result)
+        elif isinstance(result, Exception):
+            if i < len(revised_steps):
+                step = revised_steps[i]
+                final_steps.append({
+                    "n": step.get("n", i + 1),
+                    "action": step.get("action", ""),
+                    "tool": step.get("tool", ""),
+                    "risk_level": "HIGH",
+                    "risk_categories": ["unknown"],
+                    "reason": f"Guardian assessment failed: {str(result)[:80]}",
+                    "depends_on": step.get("depends_on", []),
+                })
+
+    # Compute overall risk
+    overall_risk = "NONE"
+    if final_steps:
+        max_risk_order = max(
+            _order_threat_levels(step.get("risk_level", "NONE"))
+            for step in final_steps
+        )
+        for threat, order in _THREAT_LEVEL_ORDER.items():
+            if order == max_risk_order:
+                overall_risk = threat
+                break
+
+    # Compute execution layers
+    execution_layers, has_cycle = _topological_sort(final_steps)
+
+    # Update plan
+    plan["version"] = new_version
+    plan["steps"] = final_steps
+    plan["overall_risk"] = overall_risk
+    plan["execution_layers"] = execution_layers
+    plan["status"] = "pending_approval"  # Reset for re-approval
+    plan["revision_note"] = note
+
+    _save_plan(plan_id, plan)
+    _write_audit_record("revised", plan_id, f"v{new_version}: {note}")
+
+    logger.info(
+        "plan_revised plan_id=%s version=%d old_version=%d step_count=%d",
+        plan_id, new_version, old_version, len(final_steps),
+    )
+
+    return {
+        "success": True,
+        "action": "revise",
+        "plan_id": plan_id,
+        "plan": plan,
+    }
+
+
+async def _action_execute(plan_id: str) -> dict[str, Any]:
+    """Mark an approved plan as executing: status=executing, steps.state=pending."""
+    if not plan_id or not plan_id.strip():
+        return {
+            "success": False,
+            "action": "execute",
+            "error": "plan_id is required and must be non-empty",
+        }
+
+    plan = _load_plan(plan_id)
+    if not plan:
+        return {
+            "success": False,
+            "action": "execute",
+            "plan_id": plan_id,
+            "error": f"Plan {plan_id} not found",
+        }
+
+    if plan.get("status") != "approved":
+        return {
+            "success": False,
+            "action": "execute",
+            "plan_id": plan_id,
+            "error": f"Cannot execute plan with status {plan.get('status')}; must be 'approved'",
+        }
+
+    # Initialize step states
+    for step in plan.get("steps", []):
+        step["state"] = "pending"
+        step["result"] = ""
+
+    plan["status"] = "executing"
+    plan["execution_started_at"] = datetime.utcnow().isoformat()
+
+    _save_plan(plan_id, plan)
+    _write_audit_record("execution_started", plan_id, "")
+
+    logger.info("plan_execute_started plan_id=%s step_count=%d", plan_id, len(plan.get("steps", [])))
+
+    return {
+        "success": True,
+        "action": "execute",
+        "plan_id": plan_id,
+        "plan": plan,
+    }
+
+
+async def _action_complete_step(plan_id: str, step_n: int, step_state: str, step_result: str) -> dict[str, Any]:
+    """Mark a step as done or failed; auto-complete plan if all steps done."""
+    if not plan_id or not plan_id.strip():
+        return {
+            "success": False,
+            "action": "complete_step",
+            "error": "plan_id is required and must be non-empty",
+        }
+
+    if step_n <= 0 or step_n > 100:
+        return {
+            "success": False,
+            "action": "complete_step",
+            "error": "step_n must be between 1 and 100",
+        }
+
+    if step_state not in ("done", "failed"):
+        return {
+            "success": False,
+            "action": "complete_step",
+            "error": "step_state must be 'done' or 'failed'",
+        }
+
+    plan = _load_plan(plan_id)
+    if not plan:
+        return {
+            "success": False,
+            "action": "complete_step",
+            "plan_id": plan_id,
+            "error": f"Plan {plan_id} not found",
+        }
+
+    if plan.get("status") != "executing":
+        return {
+            "success": False,
+            "action": "complete_step",
+            "plan_id": plan_id,
+            "error": f"Cannot complete step in plan with status {plan.get('status')}; must be 'executing'",
+        }
+
+    # Find and update the step
+    steps = plan.get("steps", [])
+    step_found = False
+    for step in steps:
+        if step.get("n") == step_n:
+            step["state"] = step_state
+            step["result"] = step_result
+            step["completed_at"] = datetime.utcnow().isoformat()
+            step_found = True
+            break
+
+    if not step_found:
+        return {
+            "success": False,
+            "action": "complete_step",
+            "plan_id": plan_id,
+            "error": f"Step {step_n} not found in plan",
+        }
+
+    # Check if all steps are done
+    all_done = all(step.get("state") in ("done", "failed") for step in steps)
+    if all_done:
+        plan["status"] = "completed"
+        plan["execution_completed_at"] = datetime.utcnow().isoformat()
+
+    _save_plan(plan_id, plan)
+    _write_audit_record("step_completed", plan_id, f"step {step_n} -> {step_state}")
+
+    # Progress summary
+    total_steps = len(steps)
+    done_steps = sum(1 for s in steps if s.get("state") == "done")
+    failed_steps = sum(1 for s in steps if s.get("state") == "failed")
+    pending_steps = sum(1 for s in steps if s.get("state") == "pending")
+
+    logger.info(
+        "plan_step_completed plan_id=%s step_n=%d state=%s done=%d/%d failed=%d pending=%d",
+        plan_id, step_n, step_state, done_steps, total_steps, failed_steps, pending_steps,
+    )
+
+    return {
+        "success": True,
+        "action": "complete_step",
+        "plan_id": plan_id,
+        "plan": plan,
+        "progress": {
+            "done": done_steps,
+            "failed": failed_steps,
+            "pending": pending_steps,
+            "total": total_steps,
+        },
+    }
