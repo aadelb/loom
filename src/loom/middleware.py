@@ -371,7 +371,8 @@ def _wrap_tool(func: Callable[..., Any], category: str | None = None) -> Callabl
                      "research_hcs10_amplify", "research_hcs10_cross_pollinate",
                      "research_full_spectrum", "research_daisy_chain",
                      "research_strategy_route", "research_quality_max",
-                     "research_auto_pipeline", "research_orchestrate_smart"}
+                     "research_auto_pipeline", "research_orchestrate_smart",
+                     "research_mcp_manage"}
     tool_name = func.__name__
     # The safety-gradient ladder runs several serialized CPU-only abliterated passes
     # (seed → critique → merge → strengthen, ~225s each) so it needs a larger budget

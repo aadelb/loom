@@ -19,6 +19,7 @@ import re
 import time
 from typing import Any
 
+import asyncio
 import httpx
 
 from loom.error_responses import handle_tool_errors
@@ -30,7 +31,6 @@ from loom.mcp_registry import (
     set_registry_entry,
     update_registry_entry,
 )
-from loom.validators import validate_url
 
 logger = logging.getLogger("loom.tools.mcp_manager")
 
@@ -121,11 +121,16 @@ async def _handle_add(
     if name in registry:
         return {"error": f"server '{name}' already exists"}
 
-    # Validate URL (reuses SSRF prevention from loom.validators)
-    try:
-        url = validate_url(url)
-    except Exception as e:
-        return {"error": f"invalid url: {e}"}
+    # Lightweight URL validation. MCP endpoints are TRUSTED infrastructure the user
+    # explicitly registers — and are almost always on localhost / private networks
+    # (Loom's own /mcp, Hermes on the same box, internal services). The full SSRF
+    # validator (which blocks loopback/private/link-local) is therefore the WRONG
+    # check here; it would reject every legitimate internal MCP server. We only
+    # enforce a well-formed http(s) URL.
+    from urllib.parse import urlparse
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        return {"error": f"invalid MCP url: {url!r} (expected http(s)://host:port/path)"}
 
     # Create entry (status="unknown" until first probe)
     entry = {
@@ -312,97 +317,35 @@ async def _probe_server(url: str) -> dict[str, Any]:
 
 
 async def _list_tools(url: str) -> dict[str, Any]:
-    """List tools available on an MCP server via JSON-RPC tools/list.
-
-    Sends POST request with JSON-RPC 2.0 tools/list and parses response.
-    Tolerates SSE framing. Caps tool list to 100 items.
-
-    Args:
-        url: Full MCP endpoint URL
-
-    Returns:
-        Dict with keys:
-          - reachable: bool
-          - tool_count: int (if reachable)
-          - tools: list[str] (tool names, capped to 100)
-          - error: str (if error occurred)
+    """List tools on an MCP server using the proper MCP streamable-http client
+    (does the initialize handshake + session, then list_tools — a bare JSON-RPC
+    tools/list POST returns nothing because the session is never initialized).
+    Falls back to error (never crashes) if the mcp client / handshake fails.
     """
-    timeout = httpx.Timeout(15.0, connect=5.0)
-    result: dict[str, Any] = {
-        "reachable": False,
-        "tool_count": 0,
-        "tools": [],
-        "error": None,
-    }
-
-    async with httpx.AsyncClient(timeout=timeout) as client:
+    result: dict[str, Any] = {"reachable": False, "tool_count": 0, "tools": [], "error": None}
+    try:
         try:
-            response = await client.post(
-                url,
-                json={"jsonrpc": "2.0", "method": "tools/list", "id": 1},
-                headers={
-                    "content-type": "application/json",
-                    "accept": "application/json, text/event-stream",
-                },
-                follow_redirects=True,
-            )
+            from mcp.client.streamable_http import streamablehttp_client
+        except ImportError:  # older/newer name
+            from mcp.client.streamable_http import streamable_http_client as streamablehttp_client
+        from mcp import ClientSession
 
-            if response.status_code != 200:
-                result["error"] = f"HTTP {response.status_code}"
-                return result
+        async def _do() -> list[str]:
+            async with streamablehttp_client(url) as ctx:
+                read, write = ctx[0], ctx[1]
+                async with ClientSession(read, write) as session:
+                    await session.initialize()
+                    tl = await session.list_tools()
+                    return [t.name for t in tl.tools]
 
-            result["reachable"] = True
-
-            # Parse response (handle SSE framing)
-            text = response.text.strip()
-            tools = []
-
-            # If SSE framed (data: prefix), extract JSON
-            if text.startswith("data:"):
-                lines = text.split("\n")
-                for line in lines:
-                    if line.startswith("data:"):
-                        json_str = line[5:].strip()
-                        try:
-                            data = json.loads(json_str)
-                            if isinstance(data, dict) and "result" in data:
-                                tools_list = data.get("result", {}).get("tools", [])
-                                if isinstance(tools_list, list):
-                                    tools.extend(tools_list)
-                        except json.JSONDecodeError:
-                            pass
-            else:
-                # Try direct JSON parse
-                try:
-                    data = json.loads(text)
-                    if isinstance(data, dict) and "result" in data:
-                        tools_list = data.get("result", {}).get("tools", [])
-                        if isinstance(tools_list, list):
-                            tools = tools_list
-                except json.JSONDecodeError:
-                    pass
-
-            # Extract tool names and cap to 100
-            tool_names = []
-            for tool in tools:
-                if isinstance(tool, dict) and "name" in tool:
-                    tool_names.append(tool["name"])
-                elif isinstance(tool, str):
-                    tool_names.append(tool)
-            tool_names = tool_names[:100]
-
-            result["tool_count"] = len(tool_names)
-            result["tools"] = tool_names
-            logger.debug(
-                "tools_list_success url=%s tool_count=%d", url, len(tool_names)
-            )
-
-        except Exception as e:
-            result["error"] = f"request failed: {e}"
-            logger.debug("tools_list_failed url=%s: %s", url, e)
-
+        names = await asyncio.wait_for(_do(), timeout=25.0)
+        result["reachable"] = True
+        result["tool_count"] = len(names)
+        result["tools"] = names[:100]
+    except Exception as e:
+        result["error"] = f"mcp tools/list failed: {type(e).__name__}: {e}"
+        logger.debug("tools_list failed url=%s: %s", url, e)
     return result
-
 
 def _iso_now() -> str:
     """Return current UTC time in ISO 8601 format."""
