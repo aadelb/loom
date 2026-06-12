@@ -16,6 +16,7 @@ Provides:
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import logging
 import os
@@ -85,11 +86,40 @@ def _write_audit_record(decision: str, plan_id: str, note: str) -> None:
         logger.error("audit_write_error plan_id=%s error=%s", plan_id, str(e)[:100])
 
 
-def _generate_plan_id(goal: str) -> str:
-    """Generate a deterministic plan_id from the goal."""
-    # Use hash of goal for determinism (not time/random)
-    hash_val = abs(hash(goal)) % (10**8)
-    return f"plan_{hash_val:08d}"
+def _generate_plan_id(goal: str, salt: str = "") -> str:
+    """Generate a stable plan_id from the goal.
+
+    Uses SHA-256, which is stable across processes — unlike the builtin ``hash()``,
+    which is salted per-process via PYTHONHASHSEED (so the old "deterministic" id was
+    not actually stable between restarts, and its 10**8 space risked birthday
+    collisions). ``salt`` lets the caller mint a NEW id for the same goal when an
+    existing plan must not be overwritten (see ``_action_plan``).
+    """
+    digest = hashlib.sha256((goal + salt).encode("utf-8")).hexdigest()
+    return f"plan_{digest[:12]}"
+
+
+# Statuses a plan must never be silently overwritten in — re-planning the same goal
+# must not invalidate an approval or clobber an in-flight/finished run.
+_LOCKED_STATUSES = frozenset({"approved", "executing", "completed", "failed"})
+
+
+def _mint_plan_id(goal: str) -> str:
+    """Return a plan_id for ``goal`` that does not clobber a locked plan.
+
+    Re-uses the stable id when free or when the existing plan is still re-plannable
+    (pending_approval / rejected). If a plan with that id is in a LOCKED state
+    (approved/executing/completed/failed), salts a fresh id so the locked plan is
+    preserved. Bounded retry guards against the pathological all-collide case.
+    """
+    plan_id = _generate_plan_id(goal)
+    for attempt in range(1, 50):
+        existing = _load_plan(plan_id)
+        if not existing or existing.get("status") not in _LOCKED_STATUSES:
+            return plan_id
+        plan_id = _generate_plan_id(goal, salt=f"#{attempt}")
+    # Extremely unlikely fallback: append a uuid suffix so we never overwrite.
+    return f"{_generate_plan_id(goal)}-{uuid.uuid4().hex[:6]}"
 
 
 def _parse_plan_json(text: str) -> list[dict[str, Any]] | None:
@@ -307,8 +337,9 @@ async def _action_plan(
         auto_approve_threshold,
     )
 
-    # Generate deterministic plan_id
-    plan_id = _generate_plan_id(goal)
+    # Stable plan_id from the goal, but never one that would overwrite an already
+    # approved/executing/completed/failed plan (re-planning must not invalidate an approval).
+    plan_id = _mint_plan_id(goal)
 
     # STEP 1: Decompose goal into steps via LLM
     steps_list: list[dict[str, Any]] | None = None
