@@ -49,7 +49,7 @@ _VALID_THREAT_LEVELS = frozenset(_THREAT_LEVEL_ORDER.keys())
 _VALID_AUTO_APPROVE = frozenset({"NONE", "LOW", "MEDIUM", "HIGH", "CRITICAL"})
 
 # Valid actions
-_VALID_ACTIONS = frozenset({"plan", "approve", "reject", "status", "list", "revise", "execute", "complete_step"})
+_VALID_ACTIONS = frozenset({"plan", "approve", "reject", "status", "list", "revise", "execute", "complete_step", "rollback"})
 
 
 def _ensure_plans_dir() -> None:
@@ -186,13 +186,15 @@ async def research_plan_mode(
     - "list": List all plans with goals, risks, statuses
     - "revise": Load approved plan, accept reviewer feedback, generate improved version (version+1)
     - "execute": Mark approved plan as executing (status=executing, steps.state=pending)
-    - "complete_step": Mark step done/failed with result; auto-complete plan if all steps done
+    - "complete_step": Mark step done/failed with result; enforces DAG order (deps must be done first);
+                       returns next_steps (step numbers now unblocked); auto-completes plan when all steps finish
+    - "rollback": Revert an executing plan back to approved (clears step states), so it can be revised and re-executed
 
     Plans are persisted to ~/.loom/plans/<plan_id>.json (atomically written).
     Approval decisions logged to ~/.loom/plans/_audit.jsonl (append-only).
 
     Args:
-        action: One of "plan", "approve", "reject", "status", "list", "revise", "execute", "complete_step".
+        action: One of "plan", "approve", "reject", "status", "list", "revise", "execute", "complete_step", "rollback".
         goal: (for action="plan") The task to plan.
         plan_id: (for approve/reject/status/revise/execute/complete_step) Plan ID to act on.
         note: (for approve/reject/revise) Reviewer's decision or feedback note.
@@ -265,6 +267,8 @@ async def research_plan_mode(
         return await _action_execute(plan_id)
     elif action == "complete_step":
         return await _action_complete_step(plan_id, step_n, step_state, step_result)
+    elif action == "rollback":
+        return await _action_rollback(plan_id, note)
     else:
         # Unreachable (action validated above)
         return {"success": False, "action": action, "error": "Unknown action"}
@@ -619,6 +623,46 @@ async def _action_status(plan_id: str) -> dict[str, Any]:
 
     audit_trail = _get_plan_audit_trail(plan_id)
 
+    # Build a focused progress view so callers don't have to parse the full plan blob.
+    # Includes: per-step state summary, which steps are now runnable (deps satisfied),
+    # which are blocked (deps not done), and what's failed.
+    steps = plan.get("steps", [])
+    step_states: dict[int, str] = {s.get("n", 0): s.get("state", "pending") for s in steps}
+    done_set = {n for n, st in step_states.items() if st == "done"}
+
+    progress_steps = []
+    next_runnable: list[int] = []
+    blocked: list[int] = []
+    for s in steps:
+        n = s.get("n", 0)
+        st = s.get("state", "pending")
+        deps = [d for d in s.get("depends_on", []) if isinstance(d, int)]
+        deps_done = all(step_states.get(d) == "done" for d in deps)
+        entry: dict[str, Any] = {
+            "n": n,
+            "action": s.get("action", "")[:80],
+            "state": st,
+            "risk_level": s.get("risk_level", "NONE"),
+            "depends_on": deps,
+            "deps_satisfied": deps_done,
+        }
+        if st == "pending" and deps_done:
+            next_runnable.append(n)
+        elif st == "pending" and not deps_done:
+            blocked.append(n)
+        progress_steps.append(entry)
+
+    progress = {
+        "status": plan.get("status"),
+        "done": sum(1 for s in steps if s.get("state") == "done"),
+        "failed": sum(1 for s in steps if s.get("state") == "failed"),
+        "pending": sum(1 for s in steps if s.get("state") == "pending"),
+        "total": len(steps),
+        "next_runnable": next_runnable,
+        "blocked_on_deps": blocked,
+        "steps": progress_steps,
+    }
+
     logger.info("plan_status_retrieved plan_id=%s status=%s", plan_id, plan.get("status"))
 
     return {
@@ -626,6 +670,7 @@ async def _action_status(plan_id: str) -> dict[str, Any]:
         "action": "status",
         "plan_id": plan_id,
         "plan": plan,
+        "progress": progress,
         "audit_trail": audit_trail,
     }
 
@@ -813,6 +858,70 @@ def _topological_sort(steps: list[dict[str, Any]]) -> tuple[list[list[int]], boo
         return [[n] for n in all_steps], True
 
     return topo_order, False
+
+
+async def _action_rollback(plan_id: str, note: str) -> dict[str, Any]:
+    """Revert an executing plan back to approved so it can be revised or re-executed.
+
+    Clears per-step state (back to 'pending') and removes execution timestamps.
+    Only valid when status == 'executing' — safe to call after a failed step
+    when you want to revise the plan rather than abandon it.
+    """
+    if not plan_id or not plan_id.strip():
+        return {"success": False, "action": "rollback", "error": "plan_id is required"}
+
+    plan = _load_plan(plan_id)
+    if not plan:
+        return {"success": False, "action": "rollback", "plan_id": plan_id,
+                "error": f"Plan {plan_id} not found"}
+
+    current_status = plan.get("status")
+    if current_status not in ("executing", "failed"):
+        return {
+            "success": False,
+            "action": "rollback",
+            "plan_id": plan_id,
+            "error": (
+                f"Cannot rollback plan with status '{current_status}'; "
+                "rollback is only valid for status 'executing' or 'failed'"
+            ),
+        }
+
+    # Snapshot current state into revision_history before clearing
+    snapshot = {
+        "rolled_back_from_status": current_status,
+        "rolled_back_at": datetime.utcnow().isoformat(),
+        "note": note,
+        "step_states": {str(s.get("n")): s.get("state", "pending") for s in plan.get("steps", [])},
+    }
+    plan.setdefault("rollback_history", []).append(snapshot)
+
+    # Clear per-step execution state
+    for step in plan.get("steps", []):
+        step["state"] = "pending"
+        step.pop("result", None)
+        step.pop("completed_at", None)
+
+    plan["status"] = "approved"
+    plan["last_updated"] = datetime.utcnow().isoformat()
+    plan.pop("execution_started_at", None)
+    plan.pop("execution_completed_at", None)
+
+    _save_plan(plan_id, plan)
+    _write_audit_record("rollback", plan_id, note or f"rolled back from {current_status}")
+
+    logger.info("plan_rolled_back plan_id=%s from_status=%s", plan_id, current_status)
+
+    return {
+        "success": True,
+        "action": "rollback",
+        "plan_id": plan_id,
+        "plan": plan,
+        "message": (
+            f"Plan rolled back from '{current_status}' to 'approved'. "
+            "All step states cleared. Use 'revise' to update steps, or 'execute' to re-run as-is."
+        ),
+    }
 
 
 async def _action_revise(plan_id: str, note: str, model: str) -> dict[str, Any]:
@@ -1081,18 +1190,10 @@ async def _action_complete_step(plan_id: str, step_n: int, step_state: str, step
             "error": f"Cannot complete step in plan with status {plan.get('status')}; must be 'executing'",
         }
 
-    # Find and update the step
+    # Find the target step; enforce DAG order before accepting the update.
     steps = plan.get("steps", [])
-    step_found = False
-    for step in steps:
-        if step.get("n") == step_n:
-            step["state"] = step_state
-            step["result"] = step_result
-            step["completed_at"] = datetime.utcnow().isoformat()
-            step_found = True
-            break
-
-    if not step_found:
+    target_step = next((s for s in steps if s.get("n") == step_n), None)
+    if target_step is None:
         return {
             "success": False,
             "action": "complete_step",
@@ -1100,11 +1201,43 @@ async def _action_complete_step(plan_id: str, step_n: int, step_state: str, step
             "error": f"Step {step_n} not found in plan",
         }
 
-    # Check if all steps are done
-    all_done = all(step.get("state") in ("done", "failed") for step in steps)
-    if all_done:
-        plan["status"] = "completed"
+    # DAG enforcement: all depends_on steps must be "done" before this step can complete.
+    # (A failed predecessor means this step may not run; caller should rollback+revise.)
+    step_states: dict[int, str] = {s.get("n", 0): s.get("state", "pending") for s in steps}
+    deps = [d for d in target_step.get("depends_on", []) if isinstance(d, int)]
+    not_done_deps = [d for d in deps if step_states.get(d) != "done"]
+    if not_done_deps and step_state == "done":
+        return {
+            "success": False,
+            "action": "complete_step",
+            "plan_id": plan_id,
+            "error": (
+                f"Step {step_n} depends on step(s) {not_done_deps} which are not yet 'done'. "
+                "Complete prerequisite steps first, or use rollback+revise to reorder the plan."
+            ),
+        }
+
+    # Apply the update
+    target_step["state"] = step_state
+    target_step["result"] = step_result
+    target_step["completed_at"] = datetime.utcnow().isoformat()
+    step_states[step_n] = step_state  # keep in sync for next_steps calc below
+
+    # Auto-complete: all steps terminal → determine final plan status.
+    # Bug fix: a plan where ALL steps failed must become "failed", not "completed".
+    all_terminal = all(s.get("state") in ("done", "failed") for s in steps)
+    if all_terminal:
+        any_done = any(s.get("state") == "done" for s in steps)
+        plan["status"] = "completed" if any_done else "failed"
         plan["execution_completed_at"] = datetime.utcnow().isoformat()
+
+    # Compute which pending steps are now unblocked (all their deps are "done").
+    done_set = {n for n, st in step_states.items() if st == "done"}
+    next_steps: list[int] = [
+        s["n"] for s in steps
+        if s.get("state") == "pending"
+        and all(d in done_set for d in s.get("depends_on", []) if isinstance(d, int))
+    ]
 
     _save_plan(plan_id, plan)
     _write_audit_record("step_completed", plan_id, f"step {step_n} -> {step_state}")
@@ -1116,8 +1249,8 @@ async def _action_complete_step(plan_id: str, step_n: int, step_state: str, step
     pending_steps = sum(1 for s in steps if s.get("state") == "pending")
 
     logger.info(
-        "plan_step_completed plan_id=%s step_n=%d state=%s done=%d/%d failed=%d pending=%d",
-        plan_id, step_n, step_state, done_steps, total_steps, failed_steps, pending_steps,
+        "plan_step_completed plan_id=%s step_n=%d state=%s done=%d/%d failed=%d pending=%d next=%s",
+        plan_id, step_n, step_state, done_steps, total_steps, failed_steps, pending_steps, next_steps,
     )
 
     return {
@@ -1125,6 +1258,7 @@ async def _action_complete_step(plan_id: str, step_n: int, step_state: str, step
         "action": "complete_step",
         "plan_id": plan_id,
         "plan": plan,
+        "next_steps": next_steps,   # step numbers now runnable (deps satisfied)
         "progress": {
             "done": done_steps,
             "failed": failed_steps,

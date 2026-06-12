@@ -770,9 +770,9 @@ class LadderTraceParams(BaseModel):
 class PlanModeParams(BaseModel):
     """Parameters for research_plan_mode tool (multi-action approval workflow)."""
 
-    action: Literal["plan", "approve", "reject", "status", "list", "revise", "execute", "complete_step"] = Field(
+    action: Literal["plan", "approve", "reject", "status", "list", "revise", "execute", "complete_step", "rollback"] = Field(
         ...,
-        description="Action: 'plan' (create), 'approve' (mark approved), 'reject' (mark rejected), 'status' (get one + audit), 'list' (list all), 'revise' (refine), 'execute' (start), 'complete_step' (mark step done)",
+        description="Action: 'plan' (create), 'approve', 'reject', 'status' (progress view + audit), 'list', 'revise' (refine), 'execute' (start), 'complete_step' (mark step done/failed; enforces DAG order; returns next_steps), 'rollback' (revert executing→approved for re-run)",
     )
     goal: str = Field(
         default="",
