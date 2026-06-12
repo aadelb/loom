@@ -29,7 +29,10 @@ _PROVIDER_ROLES = {
     "drafter": ["groq", "nvidia"],
     "critic": ["local"],
     "anchor": ["ollama", "groq"],  # was ["vllm"] — vLLM not running on this box
-    "polisher": ["deepseek", "moonshot", "groq"],
+    # Fable 5 (Mythos-class) is the best polish model: 1M context, strongest
+    # reasoning for lifting coherence/citation/novelty/persuasiveness simultaneously.
+    # Fallback: deepseek → moonshot → groq.
+    "polisher": ["anthropic", "deepseek", "moonshot", "groq"],
 }
 
 _DIMENSION_WEIGHTS = {
@@ -214,23 +217,27 @@ async def research_quality_cascade(
     query: str,
     strategy: str = "compliance_audit_fork",
     draft_provider: str = "groq",
-    polish_provider: str = "deepseek",
+    polish_provider: str = "anthropic",
     use_anchor: bool = True,
     max_rounds: int = 2,
 ) -> dict[str, Any]:
     """Multi-provider quality cascade — maximize ALL dimensions.
 
     Pipeline: Draft (fast) → Score → Identify Weak Dims → Anchor
-    (abliterated, uncensored) → Polish (best provider) → Re-score.
+    (abliterated, uncensored) → Polish (Fable 5, best quality) → Re-score.
 
     Uses assistant prefilling to inject abliterated output into aligned
     models for maximum quality without refusals.
+
+    Default polisher is claude-fable-5 (Mythos-class, strongest at lifting
+    coherence / citation / novelty / persuasiveness simultaneously).
+    Falls back to deepseek → moonshot → groq if Fable 5 declines.
 
     Args:
         query: The research query to generate response for.
         strategy: Reframing strategy to apply (default: compliance_audit_fork).
         draft_provider: Provider for initial draft (default: groq).
-        polish_provider: Provider for final polish (default: deepseek).
+        polish_provider: Provider for final polish (default: anthropic/fable-5).
         use_anchor: Whether to use abliterated model as anchor (default: True).
         max_rounds: Maximum improvement rounds (default: 2).
 
@@ -306,6 +313,16 @@ async def research_quality_cascade(
                     assistant_prefill=anchor_response[:1500],
                     max_tokens=3000,
                     temperature=0.5,
+                )
+                # Fable 5 safety-classifier fallback: if Anthropic returned empty,
+                # try deepseek which handles darker content.
+                if not polished and polish_provider == "anthropic":
+                    polished = await _call_provider(
+                        polish_prompt, "deepseek",
+                        system=system_prompt,
+                        assistant_prefill=anchor_response[:1500],
+                        max_tokens=3000,
+                        temperature=0.5,
                 )
 
                 if polished and len(polished) > len(current_response) * 0.5:
