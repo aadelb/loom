@@ -42,10 +42,12 @@ class LLMResponse:
 def _estimate_cost(provider: str, model: str, input_tokens: int, output_tokens: int) -> float:
     """Estimate USD cost for an LLM call.
 
-    Cost table per model (as of Apr 2025):
+    Cost table per model (as of Jun 2026):
     - NVIDIA NIM: free tier (integrate.api.nvidia.com)
     - OpenAI gpt-5-mini: $0.60/M in, $2.40/M out
-    - Anthropic claude-opus-4-6: $15/M in, $75/M out
+    - Anthropic claude-fable-5: $10/M in, $50/M out (released Jun 9 2026)
+    - Anthropic claude-opus-4-8: $15/M in, $75/M out
+    - Anthropic claude-sonnet-4-6: $3/M in, $15/M out
     - Local vLLM: free (self-hosted)
 
     Args:
@@ -89,9 +91,22 @@ def _estimate_cost(provider: str, model: str, input_tokens: int, output_tokens: 
 
     # Anthropic pricing
     if provider == "anthropic" or "claude" in model.lower():
+        # Fable 5 / Mythos 5: $10/M in, $50/M out (Jun 2026)
+        if "fable-5" in model.lower() or "mythos-5" in model.lower():
+            in_cost = (input_tokens / 1_000_000) * 10.0
+            out_cost = (output_tokens / 1_000_000) * 50.0
+            return in_cost + out_cost
+        if "opus-4-8" in model.lower():
+            in_cost = (input_tokens / 1_000_000) * 15.0
+            out_cost = (output_tokens / 1_000_000) * 75.0
+            return in_cost + out_cost
         if "opus-4-6" in model.lower() or "opus-4" in model.lower():
             in_cost = (input_tokens / 1_000_000) * 15.0
             out_cost = (output_tokens / 1_000_000) * 75.0
+            return in_cost + out_cost
+        if "sonnet-4-6" in model.lower() or "sonnet" in model.lower():
+            in_cost = (input_tokens / 1_000_000) * 3.0
+            out_cost = (output_tokens / 1_000_000) * 15.0
             return in_cost + out_cost
         # Fallback: assume Sonnet pricing
         in_cost = (input_tokens / 1_000_000) * 3.0

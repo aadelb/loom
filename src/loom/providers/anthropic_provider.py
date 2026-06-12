@@ -32,11 +32,11 @@ class AnthropicProvider(LLMProvider):
 
     Attributes:
         name: "anthropic"
-        default_model: "claude-opus-4-6"
+        default_model: "claude-fable-5" (released Jun 9 2026; Mythos-class, 1M ctx)
     """
 
     name = "anthropic"
-    default_model = "claude-sonnet-4-6"
+    default_model = "claude-fable-5"
 
     def __init__(self) -> None:
         """Initialize Anthropic provider."""
@@ -122,14 +122,23 @@ class AnthropicProvider(LLMProvider):
         client = self._get_client()
         start = time.time()
 
+        # Anthropic deprecated `temperature` for all Claude 4.x models (including
+        # opus-4-8, sonnet-4-6, fable-5, mythos-5). Omit it for any claude-*-4* model.
+        _ml = model.lower()
+        _no_temp = (
+            "fable-5" in _ml or "mythos-5" in _ml
+            or ("claude" in _ml and "-4" in _ml)
+        )
         try:
-            response = await client.messages.create(
-                model=model,
-                max_tokens=max_tokens,
-                messages=messages,
-                temperature=temperature,
-                timeout=float(timeout),  # thread per-call timeout (HIGH #8)
-            )
+            create_kwargs: dict[str, Any] = {
+                "model": model,
+                "max_tokens": max_tokens,
+                "messages": messages,
+                "timeout": float(timeout),
+            }
+            if not _no_temp:
+                create_kwargs["temperature"] = temperature
+            response = await client.messages.create(**create_kwargs)
         except Exception as e:
             safe = _sanitize(str(e))[:200]
             logger.error("Anthropic error: %s", safe)
